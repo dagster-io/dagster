@@ -123,6 +123,24 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
+                                'description': ''
+                            },
+                            {
+                                'description': None
+                            },
+                            {
+                                'description': None
+                            },
+                            {
+                                'description': ''
+                            },
+                            {
+                                'description': None
+                            },
+                            {
+                                'description': None
+                            },
+                            {
                                 'description': None
                             },
                             {
@@ -133,24 +151,6 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                             },
                             {
                                 'description': None
-                            },
-                            {
-                                'description': ''
-                            },
-                            {
-                                'description': None
-                            },
-                            {
-                                'description': None
-                            },
-                            {
-                                'description': None
-                            },
-                            {
-                                'description': None
-                            },
-                            {
-                                'description': ''
                             }
                         ],
                         'isBuiltin': False,
@@ -175,10 +175,10 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'description': None
+                                'description': ''
                             },
                             {
-                                'description': ''
+                                'description': None
                             }
                         ],
                         'isBuiltin': False,
@@ -215,10 +215,10 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'description': None
+                                'description': ''
                             },
                             {
-                                'description': ''
+                                'description': None
                             }
                         ],
                         'isBuiltin': False,
@@ -254,20 +254,20 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                             }
                         ],
                         'innerTypes': [
+                            {
+                                'description': ''
+                            },
+                            {
+                                'description': ''
+                            },
+                            {
+                                'description': None
+                            },
+                            {
+                                'description': None
+                            },
                             {
                                 'description': 'A configuration dictionary with typed fields'
-                            },
-                            {
-                                'description': None
-                            },
-                            {
-                                'description': ''
-                            },
-                            {
-                                'description': None
-                            },
-                            {
-                                'description': ''
                             }
                         ],
                         'isBuiltin': False,
@@ -348,43 +348,43 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                                 'description': None
                             },
                             {
+                                'description': ''
+                            },
+                            {
+                                'description': None
+                            },
+                            {
+                                'description': None
+                            },
+                            {
+                                'description': None
+                            },
+                            {
+                                'description': ''
+                            },
+                            {
+                                'description': None
+                            },
+                            {
+                                'description': ''
+                            },
+                            {
+                                'description': None
+                            },
+                            {
+                                'description': None
+                            },
+                            {
+                                'description': None
+                            },
+                            {
+                                'description': None
+                            },
+                            {
                                 'description': 'A configuration dictionary with typed fields'
                             },
                             {
                                 'description': None
-                            },
-                            {
-                                'description': ''
-                            },
-                            {
-                                'description': None
-                            },
-                            {
-                                'description': None
-                            },
-                            {
-                                'description': ''
-                            },
-                            {
-                                'description': None
-                            },
-                            {
-                                'description': None
-                            },
-                            {
-                                'description': None
-                            },
-                            {
-                                'description': None
-                            },
-                            {
-                                'description': None
-                            },
-                            {
-                                'description': None
-                            },
-                            {
-                                'description': ''
                             },
                             {
                                 'description': None
@@ -556,13 +556,13 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'description': 'A configuration dictionary with typed fields'
-                            },
-                            {
                                 'description': None
                             },
                             {
                                 'description': ''
+                            },
+                            {
+                                'description': 'A configuration dictionary with typed fields'
                             },
                             {
                                 'description': None
@@ -646,10 +646,7 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                                 'description': None
                             },
                             {
-                                'description': None
-                            },
-                            {
-                                'description': None
+                                'description': 'A configuration dictionary with typed fields'
                             },
                             {
                                 'description': ''
@@ -658,16 +655,19 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                                 'description': None
                             },
                             {
-                                'description': 'A configuration dictionary with typed fields'
-                            },
-                            {
                                 'description': None
                             },
                             {
                                 'description': None
                             },
                             {
+                                'description': None
+                            },
+                            {
                                 'description': 'A configuration dictionary with typed fields'
+                            },
+                            {
+                                'description': None
                             },
                             {
                                 'description': None
@@ -809,9 +809,6 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'description': 'List of Nullable.Int'
-                            },
-                            {
                                 'description': ''
                             },
                             {
@@ -819,6 +816,9 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                             },
                             {
                                 'description': None
+                            },
+                            {
+                                'description': 'List of Nullable.Int'
                             }
                         ],
                         'isBuiltin': True,
@@ -853,10 +853,7 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'description': 'List of Nullable.Int'
-                            },
-                            {
-                                'description': None
+                                'description': ''
                             },
                             {
                                 'description': 'A configuration dictionary with typed fields'
@@ -865,7 +862,10 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                                 'description': ''
                             },
                             {
-                                'description': ''
+                                'description': None
+                            },
+                            {
+                                'description': 'List of Nullable.Int'
                             }
                         ],
                         'isBuiltin': True,
@@ -915,10 +915,10 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'description': 'A configuration dictionary with typed fields'
+                                'description': ''
                             },
                             {
-                                'description': ''
+                                'description': 'A configuration dictionary with typed fields'
                             },
                             {
                                 'description': None
@@ -949,13 +949,13 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'description': None
-                            },
-                            {
                                 'description': ''
                             },
                             {
                                 'description': 'A configuration dictionary with typed fields'
+                            },
+                            {
+                                'description': None
                             }
                         ],
                         'isBuiltin': False,
@@ -1002,6 +1002,33 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
+                                'description': ''
+                            },
+                            {
+                                'description': None
+                            },
+                            {
+                                'description': 'A configuration dictionary with typed fields'
+                            },
+                            {
+                                'description': None
+                            },
+                            {
+                                'description': ''
+                            },
+                            {
+                                'description': None
+                            },
+                            {
+                                'description': ''
+                            },
+                            {
+                                'description': 'A configuration dictionary with typed fields'
+                            },
+                            {
+                                'description': None
+                            },
+                            {
                                 'description': 'List of Nullable.Int'
                             },
                             {
@@ -1015,33 +1042,6 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                             },
                             {
                                 'description': None
-                            },
-                            {
-                                'description': 'A configuration dictionary with typed fields'
-                            },
-                            {
-                                'description': None
-                            },
-                            {
-                                'description': 'A configuration dictionary with typed fields'
-                            },
-                            {
-                                'description': ''
-                            },
-                            {
-                                'description': None
-                            },
-                            {
-                                'description': None
-                            },
-                            {
-                                'description': ''
-                            },
-                            {
-                                'description': None
-                            },
-                            {
-                                'description': ''
                             },
                             {
                                 'description': None
@@ -1096,22 +1096,22 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'description': 'List of Nullable.Int'
+                                'description': ''
                             },
                             {
                                 'description': 'A configuration dictionary with typed fields'
+                            },
+                            {
+                                'description': ''
                             },
                             {
                                 'description': None
                             },
                             {
+                                'description': 'List of Nullable.Int'
+                            },
+                            {
                                 'description': 'A configuration dictionary with typed fields'
-                            },
-                            {
-                                'description': ''
-                            },
-                            {
-                                'description': ''
                             }
                         ],
                         'isBuiltin': False,
@@ -1131,25 +1131,25 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
+                                'description': ''
+                            },
+                            {
+                                'description': 'A configuration dictionary with typed fields'
+                            },
+                            {
+                                'description': None
+                            },
+                            {
+                                'description': ''
+                            },
+                            {
+                                'description': None
+                            },
+                            {
                                 'description': 'List of Nullable.Int'
                             },
                             {
-                                'description': None
-                            },
-                            {
                                 'description': 'A configuration dictionary with typed fields'
-                            },
-                            {
-                                'description': 'A configuration dictionary with typed fields'
-                            },
-                            {
-                                'description': ''
-                            },
-                            {
-                                'description': ''
-                            },
-                            {
-                                'description': None
                             }
                         ],
                         'isBuiltin': False,
@@ -1350,10 +1350,10 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'description': 'A configuration dictionary with typed fields'
+                                'description': ''
                             },
                             {
-                                'description': ''
+                                'description': 'A configuration dictionary with typed fields'
                             },
                             {
                                 'description': None
@@ -1384,10 +1384,10 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'description': 'A configuration dictionary with typed fields'
+                                'description': ''
                             },
                             {
-                                'description': ''
+                                'description': 'A configuration dictionary with typed fields'
                             },
                             {
                                 'description': None
@@ -1437,6 +1437,30 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
+                                'description': None
+                            },
+                            {
+                                'description': ''
+                            },
+                            {
+                                'description': 'A configuration dictionary with typed fields'
+                            },
+                            {
+                                'description': ''
+                            },
+                            {
+                                'description': None
+                            },
+                            {
+                                'description': None
+                            },
+                            {
+                                'description': 'A configuration dictionary with typed fields'
+                            },
+                            {
+                                'description': None
+                            },
+                            {
                                 'description': 'A configuration dictionary with typed fields'
                             },
                             {
@@ -1446,7 +1470,25 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                                 'description': None
                             },
                             {
-                                'description': ''
+                                'description': None
+                            },
+                            {
+                                'description': None
+                            },
+                            {
+                                'description': 'List of PandasHelloWorld.SumSolid.Outputs'
+                            },
+                            {
+                                'description': 'A configuration dictionary with typed fields'
+                            },
+                            {
+                                'description': 'A configuration dictionary with typed fields'
+                            },
+                            {
+                                'description': None
+                            },
+                            {
+                                'description': None
                             },
                             {
                                 'description': 'A configuration dictionary with typed fields'
@@ -1455,61 +1497,19 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                                 'description': 'List of PandasHelloWorld.SumSqSolid.Outputs'
                             },
                             {
+                                'description': 'A configuration dictionary with typed fields'
+                            },
+                            {
+                                'description': None
+                            },
+                            {
+                                'description': None
+                            },
+                            {
+                                'description': None
+                            },
+                            {
                                 'description': ''
-                            },
-                            {
-                                'description': 'A configuration dictionary with typed fields'
-                            },
-                            {
-                                'description': ''
-                            },
-                            {
-                                'description': 'A configuration dictionary with typed fields'
-                            },
-                            {
-                                'description': None
-                            },
-                            {
-                                'description': None
-                            },
-                            {
-                                'description': None
-                            },
-                            {
-                                'description': None
-                            },
-                            {
-                                'description': None
-                            },
-                            {
-                                'description': None
-                            },
-                            {
-                                'description': 'A configuration dictionary with typed fields'
-                            },
-                            {
-                                'description': 'A configuration dictionary with typed fields'
-                            },
-                            {
-                                'description': None
-                            },
-                            {
-                                'description': None
-                            },
-                            {
-                                'description': None
-                            },
-                            {
-                                'description': None
-                            },
-                            {
-                                'description': 'A configuration dictionary with typed fields'
-                            },
-                            {
-                                'description': 'List of PandasHelloWorld.SumSolid.Outputs'
-                            },
-                            {
-                                'description': None
                             }
                         ],
                         'isBuiltin': False,
@@ -1569,40 +1569,40 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                                 'description': 'A configuration dictionary with typed fields'
                             },
                             {
+                                'description': 'A configuration dictionary with typed fields'
+                            },
+                            {
+                                'description': 'A configuration dictionary with typed fields'
+                            },
+                            {
+                                'description': ''
+                            },
+                            {
+                                'description': 'A configuration dictionary with typed fields'
+                            },
+                            {
+                                'description': ''
+                            },
+                            {
                                 'description': None
                             },
                             {
                                 'description': 'A configuration dictionary with typed fields'
                             },
                             {
-                                'description': 'A configuration dictionary with typed fields'
-                            },
-                            {
                                 'description': None
                             },
                             {
                                 'description': 'A configuration dictionary with typed fields'
+                            },
+                            {
+                                'description': None
                             },
                             {
                                 'description': None
                             },
                             {
                                 'description': 'List of PandasHelloWorld.SumSolid.Outputs'
-                            },
-                            {
-                                'description': 'A configuration dictionary with typed fields'
-                            },
-                            {
-                                'description': 'A configuration dictionary with typed fields'
-                            },
-                            {
-                                'description': None
-                            },
-                            {
-                                'description': ''
-                            },
-                            {
-                                'description': ''
                             }
                         ],
                         'isBuiltin': False,
@@ -1628,22 +1628,22 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                                 'description': 'A configuration dictionary with typed fields'
                             },
                             {
+                                'description': ''
+                            },
+                            {
+                                'description': ''
+                            },
+                            {
                                 'description': 'A configuration dictionary with typed fields'
                             },
                             {
                                 'description': None
                             },
                             {
-                                'description': 'List of PandasHelloWorld.SumSqSolid.Outputs'
-                            },
-                            {
                                 'description': None
                             },
                             {
-                                'description': ''
-                            },
-                            {
-                                'description': ''
+                                'description': 'List of PandasHelloWorld.SumSqSolid.Outputs'
                             }
                         ],
                         'isBuiltin': False,
@@ -1671,22 +1671,43 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                                 'description': 'A configuration dictionary with typed fields'
                             },
                             {
-                                'description': None
-                            },
-                            {
                                 'description': 'A configuration dictionary with typed fields'
-                            },
-                            {
-                                'description': 'A configuration dictionary with typed fields'
-                            },
-                            {
-                                'description': None
                             },
                             {
                                 'description': 'A configuration dictionary with typed fields'
                             },
                             {
                                 'description': ''
+                            },
+                            {
+                                'description': 'A configuration dictionary with typed fields'
+                            },
+                            {
+                                'description': ''
+                            },
+                            {
+                                'description': None
+                            },
+                            {
+                                'description': None
+                            },
+                            {
+                                'description': 'A configuration dictionary with typed fields'
+                            },
+                            {
+                                'description': None
+                            },
+                            {
+                                'description': None
+                            },
+                            {
+                                'description': 'A configuration dictionary with typed fields'
+                            },
+                            {
+                                'description': None
+                            },
+                            {
+                                'description': None
                             },
                             {
                                 'description': None
@@ -1695,28 +1716,7 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                                 'description': 'List of PandasHelloWorld.SumSolid.Outputs'
                             },
                             {
-                                'description': None
-                            },
-                            {
-                                'description': 'A configuration dictionary with typed fields'
-                            },
-                            {
-                                'description': None
-                            },
-                            {
-                                'description': 'A configuration dictionary with typed fields'
-                            },
-                            {
-                                'description': None
-                            },
-                            {
                                 'description': 'List of PandasHelloWorld.SumSqSolid.Outputs'
-                            },
-                            {
-                                'description': ''
-                            },
-                            {
-                                'description': None
                             }
                         ],
                         'isBuiltin': False,
@@ -1742,16 +1742,16 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                                 'description': 'A configuration dictionary with typed fields'
                             },
                             {
+                                'description': ''
+                            },
+                            {
+                                'description': ''
+                            },
+                            {
                                 'description': None
                             },
                             {
                                 'description': 'A configuration dictionary with typed fields'
-                            },
-                            {
-                                'description': ''
-                            },
-                            {
-                                'description': ''
                             }
                         ],
                         'isBuiltin': False,
@@ -1777,16 +1777,16 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                                 'description': 'A configuration dictionary with typed fields'
                             },
                             {
+                                'description': ''
+                            },
+                            {
+                                'description': ''
+                            },
+                            {
                                 'description': 'A configuration dictionary with typed fields'
                             },
                             {
                                 'description': None
-                            },
-                            {
-                                'description': ''
-                            },
-                            {
-                                'description': ''
                             }
                         ],
                         'isBuiltin': False,
@@ -1812,16 +1812,16 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                                 'description': 'A configuration dictionary with typed fields'
                             },
                             {
+                                'description': ''
+                            },
+                            {
+                                'description': ''
+                            },
+                            {
                                 'description': 'A configuration dictionary with typed fields'
                             },
                             {
                                 'description': None
-                            },
-                            {
-                                'description': ''
-                            },
-                            {
-                                'description': ''
                             }
                         ],
                         'isBuiltin': False,
@@ -1867,13 +1867,13 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                                 'description': 'A configuration dictionary with typed fields'
                             },
                             {
+                                'description': ''
+                            },
+                            {
+                                'description': ''
+                            },
+                            {
                                 'description': 'A configuration dictionary with typed fields'
-                            },
-                            {
-                                'description': ''
-                            },
-                            {
-                                'description': ''
                             }
                         ],
                         'isBuiltin': True,
@@ -1906,7 +1906,7 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                                 'description': 'A configuration dictionary with typed fields'
                             },
                             {
-                                'description': 'A configuration dictionary with typed fields'
+                                'description': ''
                             },
                             {
                                 'description': 'A configuration dictionary with typed fields'
@@ -1915,7 +1915,7 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                                 'description': ''
                             },
                             {
-                                'description': ''
+                                'description': 'A configuration dictionary with typed fields'
                             }
                         ],
                         'isBuiltin': True,
@@ -2116,13 +2116,13 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'description': 'A configuration dictionary with typed fields'
+                                'description': ''
                             },
                             {
                                 'description': None
                             },
                             {
-                                'description': ''
+                                'description': 'A configuration dictionary with typed fields'
                             },
                             {
                                 'description': None
@@ -2153,10 +2153,10 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                                 'description': ''
                             },
                             {
-                                'description': 'A configuration dictionary with typed fields'
+                                'description': None
                             },
                             {
-                                'description': None
+                                'description': 'A configuration dictionary with typed fields'
                             }
                         ],
                         'isBuiltin': False,
@@ -2203,25 +2203,10 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'description': 'A configuration dictionary with typed fields'
-                            },
-                            {
-                                'description': None
-                            },
-                            {
                                 'description': ''
                             },
                             {
                                 'description': 'A configuration dictionary with typed fields'
-                            },
-                            {
-                                'description': None
-                            },
-                            {
-                                'description': ''
-                            },
-                            {
-                                'description': None
                             },
                             {
                                 'description': ''
@@ -2231,42 +2216,57 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                             },
                             {
                                 'description': 'A configuration dictionary with typed fields'
+                            },
+                            {
+                                'description': None
+                            },
+                            {
+                                'description': 'A configuration dictionary with typed fields'
+                            },
+                            {
+                                'description': 'A configuration dictionary with typed fields'
+                            },
+                            {
+                                'description': None
+                            },
+                            {
+                                'description': None
+                            },
+                            {
+                                'description': None
+                            },
+                            {
+                                'description': 'A configuration dictionary with typed fields'
+                            },
+                            {
+                                'description': 'A configuration dictionary with typed fields'
+                            },
+                            {
+                                'description': None
+                            },
+                            {
+                                'description': None
+                            },
+                            {
+                                'description': None
+                            },
+                            {
+                                'description': None
+                            },
+                            {
+                                'description': None
                             },
                             {
                                 'description': 'List of PandasHelloWorldTwo.SumSolid.Outputs'
                             },
                             {
-                                'description': None
-                            },
-                            {
-                                'description': None
-                            },
-                            {
                                 'description': 'A configuration dictionary with typed fields'
                             },
                             {
                                 'description': None
                             },
                             {
-                                'description': 'A configuration dictionary with typed fields'
-                            },
-                            {
-                                'description': 'A configuration dictionary with typed fields'
-                            },
-                            {
-                                'description': None
-                            },
-                            {
-                                'description': 'A configuration dictionary with typed fields'
-                            },
-                            {
-                                'description': None
-                            },
-                            {
-                                'description': None
-                            },
-                            {
-                                'description': None
+                                'description': ''
                             }
                         ],
                         'isBuiltin': False,
@@ -2326,18 +2326,30 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                                 'description': 'A configuration dictionary with typed fields'
                             },
                             {
+                                'description': 'A configuration dictionary with typed fields'
+                            },
+                            {
+                                'description': 'A configuration dictionary with typed fields'
+                            },
+                            {
+                                'description': None
+                            },
+                            {
+                                'description': ''
+                            },
+                            {
+                                'description': 'A configuration dictionary with typed fields'
+                            },
+                            {
+                                'description': None
+                            },
+                            {
+                                'description': ''
+                            },
+                            {
                                 'description': 'List of PandasHelloWorldTwo.SumSolid.Outputs'
                             },
                             {
-                                'description': 'A configuration dictionary with typed fields'
-                            },
-                            {
-                                'description': 'A configuration dictionary with typed fields'
-                            },
-                            {
-                                'description': 'A configuration dictionary with typed fields'
-                            },
-                            {
                                 'description': None
                             },
                             {
@@ -2345,18 +2357,6 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                             },
                             {
                                 'description': 'A configuration dictionary with typed fields'
-                            },
-                            {
-                                'description': None
-                            },
-                            {
-                                'description': ''
-                            },
-                            {
-                                'description': None
-                            },
-                            {
-                                'description': ''
                             },
                             {
                                 'description': None
@@ -2382,18 +2382,30 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                                 'description': 'A configuration dictionary with typed fields'
                             },
                             {
+                                'description': 'A configuration dictionary with typed fields'
+                            },
+                            {
+                                'description': 'A configuration dictionary with typed fields'
+                            },
+                            {
+                                'description': None
+                            },
+                            {
+                                'description': ''
+                            },
+                            {
+                                'description': 'A configuration dictionary with typed fields'
+                            },
+                            {
+                                'description': None
+                            },
+                            {
+                                'description': ''
+                            },
+                            {
                                 'description': 'List of PandasHelloWorldTwo.SumSolid.Outputs'
                             },
                             {
-                                'description': 'A configuration dictionary with typed fields'
-                            },
-                            {
-                                'description': 'A configuration dictionary with typed fields'
-                            },
-                            {
-                                'description': 'A configuration dictionary with typed fields'
-                            },
-                            {
                                 'description': None
                             },
                             {
@@ -2404,18 +2416,6 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                             },
                             {
                                 'description': None
-                            },
-                            {
-                                'description': None
-                            },
-                            {
-                                'description': ''
-                            },
-                            {
-                                'description': None
-                            },
-                            {
-                                'description': ''
                             },
                             {
                                 'description': None
@@ -2444,16 +2444,16 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                                 'description': 'A configuration dictionary with typed fields'
                             },
                             {
+                                'description': ''
+                            },
+                            {
+                                'description': ''
+                            },
+                            {
                                 'description': None
                             },
                             {
                                 'description': 'A configuration dictionary with typed fields'
-                            },
-                            {
-                                'description': ''
-                            },
-                            {
-                                'description': ''
                             }
                         ],
                         'isBuiltin': False,
@@ -2479,16 +2479,16 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                                 'description': 'A configuration dictionary with typed fields'
                             },
                             {
+                                'description': ''
+                            },
+                            {
+                                'description': ''
+                            },
+                            {
                                 'description': 'A configuration dictionary with typed fields'
                             },
                             {
                                 'description': None
-                            },
-                            {
-                                'description': ''
-                            },
-                            {
-                                'description': ''
                             }
                         ],
                         'isBuiltin': False,
@@ -2534,13 +2534,13 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                                 'description': 'A configuration dictionary with typed fields'
                             },
                             {
+                                'description': ''
+                            },
+                            {
+                                'description': ''
+                            },
+                            {
                                 'description': 'A configuration dictionary with typed fields'
-                            },
-                            {
-                                'description': ''
-                            },
-                            {
-                                'description': ''
                             }
                         ],
                         'isBuiltin': True,
@@ -2573,7 +2573,7 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                                 'description': 'A configuration dictionary with typed fields'
                             },
                             {
-                                'description': 'A configuration dictionary with typed fields'
+                                'description': ''
                             },
                             {
                                 'description': 'A configuration dictionary with typed fields'
@@ -2582,7 +2582,7 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                                 'description': ''
                             },
                             {
-                                'description': ''
+                                'description': 'A configuration dictionary with typed fields'
                             }
                         ],
                         'isBuiltin': True,
@@ -2660,10 +2660,10 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                                 'description': 'A configuration dictionary with typed fields'
                             },
                             {
-                                'description': None
+                                'description': ''
                             },
                             {
-                                'description': ''
+                                'description': None
                             },
                             {
                                 'description': None
@@ -2694,10 +2694,10 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                                 'description': 'A configuration dictionary with typed fields'
                             },
                             {
-                                'description': None
+                                'description': ''
                             },
                             {
-                                'description': ''
+                                'description': None
                             }
                         ],
                         'isBuiltin': False,
@@ -2744,6 +2744,18 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
+                                'description': 'A configuration dictionary with typed fields'
+                            },
+                            {
+                                'description': ''
+                            },
+                            {
+                                'description': ''
+                            },
+                            {
+                                'description': None
+                            },
+                            {
                                 'description': None
                             },
                             {
@@ -2766,18 +2778,6 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                             },
                             {
                                 'description': None
-                            },
-                            {
-                                'description': 'A configuration dictionary with typed fields'
-                            },
-                            {
-                                'description': None
-                            },
-                            {
-                                'description': ''
-                            },
-                            {
-                                'description': ''
                             }
                         ],
                         'isBuiltin': False,
@@ -2829,10 +2829,10 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'description': 'List of Int'
+                                'description': ''
                             },
                             {
-                                'description': ''
+                                'description': 'List of Int'
                             }
                         ],
                         'isBuiltin': False,
@@ -2852,13 +2852,13 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'description': 'List of Int'
-                            },
-                            {
                                 'description': None
                             },
                             {
                                 'description': ''
+                            },
+                            {
+                                'description': 'List of Int'
                             }
                         ],
                         'isBuiltin': False,
@@ -3059,10 +3059,10 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'description': 'A configuration dictionary with typed fields'
+                                'description': ''
                             },
                             {
-                                'description': ''
+                                'description': 'A configuration dictionary with typed fields'
                             },
                             {
                                 'description': None
@@ -3093,13 +3093,13 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
+                                'description': ''
+                            },
+                            {
                                 'description': 'A configuration dictionary with typed fields'
                             },
                             {
                                 'description': None
-                            },
-                            {
-                                'description': ''
                             }
                         ],
                         'isBuiltin': False,
@@ -3146,12 +3146,6 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'description': 'A configuration dictionary with typed fields'
-                            },
-                            {
-                                'description': None
-                            },
-                            {
                                 'description': None
                             },
                             {
@@ -3159,36 +3153,15 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                             },
                             {
                                 'description': 'A configuration dictionary with typed fields'
-                            },
-                            {
-                                'description': None
-                            },
-                            {
-                                'description': ''
-                            },
-                            {
-                                'description': ''
-                            },
-                            {
-                                'description': None
-                            },
-                            {
-                                'description': 'A configuration dictionary with typed fields'
-                            },
-                            {
-                                'description': None
-                            },
-                            {
-                                'description': None
-                            },
-                            {
-                                'description': None
-                            },
-                            {
-                                'description': None
                             },
                             {
                                 'description': 'List of PandasHelloWorldDfInput.SumSolid.Outputs'
+                            },
+                            {
+                                'description': ''
+                            },
+                            {
+                                'description': None
                             },
                             {
                                 'description': 'A configuration dictionary with typed fields'
@@ -3206,6 +3179,15 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                                 'description': 'List of PandasHelloWorldDfInput.SumSqSolid.Outputs'
                             },
                             {
+                                'description': None
+                            },
+                            {
+                                'description': 'A configuration dictionary with typed fields'
+                            },
+                            {
+                                'description': None
+                            },
+                            {
                                 'description': 'A configuration dictionary with typed fields'
                             },
                             {
@@ -3216,6 +3198,24 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                             },
                             {
                                 'description': None
+                            },
+                            {
+                                'description': None
+                            },
+                            {
+                                'description': None
+                            },
+                            {
+                                'description': None
+                            },
+                            {
+                                'description': 'A configuration dictionary with typed fields'
+                            },
+                            {
+                                'description': None
+                            },
+                            {
+                                'description': ''
                             },
                             {
                                 'description': None
@@ -3284,34 +3284,34 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                                 'description': 'A configuration dictionary with typed fields'
                             },
                             {
-                                'description': 'A configuration dictionary with typed fields'
-                            },
-                            {
-                                'description': None
-                            },
-                            {
-                                'description': 'A configuration dictionary with typed fields'
-                            },
-                            {
-                                'description': 'A configuration dictionary with typed fields'
-                            },
-                            {
-                                'description': None
-                            },
-                            {
-                                'description': None
-                            },
-                            {
                                 'description': None
                             },
                             {
                                 'description': ''
+                            },
+                            {
+                                'description': 'A configuration dictionary with typed fields'
                             },
                             {
                                 'description': 'List of PandasHelloWorldDfInput.SumSolid.Outputs'
                             },
                             {
                                 'description': ''
+                            },
+                            {
+                                'description': None
+                            },
+                            {
+                                'description': 'A configuration dictionary with typed fields'
+                            },
+                            {
+                                'description': 'A configuration dictionary with typed fields'
+                            },
+                            {
+                                'description': None
+                            },
+                            {
+                                'description': None
                             }
                         ],
                         'isBuiltin': False,
@@ -3340,19 +3340,19 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                                 'description': ''
                             },
                             {
-                                'description': 'A configuration dictionary with typed fields'
-                            },
-                            {
                                 'description': None
                             },
                             {
                                 'description': ''
                             },
                             {
-                                'description': None
+                                'description': 'List of PandasHelloWorldDfInput.SumSqSolid.Outputs'
                             },
                             {
-                                'description': 'List of PandasHelloWorldDfInput.SumSqSolid.Outputs'
+                                'description': 'A configuration dictionary with typed fields'
+                            },
+                            {
+                                'description': None
                             }
                         ],
                         'isBuiltin': False,
@@ -3386,31 +3386,22 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                                 'description': 'A configuration dictionary with typed fields'
                             },
                             {
-                                'description': 'A configuration dictionary with typed fields'
-                            },
-                            {
                                 'description': None
                             },
                             {
                                 'description': None
                             },
                             {
-                                'description': None
-                            },
-                            {
-                                'description': 'A configuration dictionary with typed fields'
+                                'description': ''
                             },
                             {
                                 'description': 'A configuration dictionary with typed fields'
                             },
                             {
-                                'description': None
+                                'description': 'List of PandasHelloWorldDfInput.SumSolid.Outputs'
                             },
                             {
-                                'description': None
-                            },
-                            {
-                                'description': None
+                                'description': ''
                             },
                             {
                                 'description': None
@@ -3419,13 +3410,22 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                                 'description': 'List of PandasHelloWorldDfInput.SumSqSolid.Outputs'
                             },
                             {
-                                'description': ''
+                                'description': None
                             },
                             {
-                                'description': 'List of PandasHelloWorldDfInput.SumSolid.Outputs'
+                                'description': 'A configuration dictionary with typed fields'
                             },
                             {
-                                'description': ''
+                                'description': None
+                            },
+                            {
+                                'description': 'A configuration dictionary with typed fields'
+                            },
+                            {
+                                'description': None
+                            },
+                            {
+                                'description': None
                             }
                         ],
                         'isBuiltin': False,
@@ -3451,16 +3451,16 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                                 'description': 'A configuration dictionary with typed fields'
                             },
                             {
+                                'description': ''
+                            },
+                            {
+                                'description': ''
+                            },
+                            {
                                 'description': None
                             },
                             {
                                 'description': 'A configuration dictionary with typed fields'
-                            },
-                            {
-                                'description': ''
-                            },
-                            {
-                                'description': ''
                             }
                         ],
                         'isBuiltin': False,
@@ -3486,16 +3486,16 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                                 'description': 'A configuration dictionary with typed fields'
                             },
                             {
+                                'description': ''
+                            },
+                            {
+                                'description': ''
+                            },
+                            {
                                 'description': 'A configuration dictionary with typed fields'
                             },
                             {
                                 'description': None
-                            },
-                            {
-                                'description': ''
-                            },
-                            {
-                                'description': ''
                             }
                         ],
                         'isBuiltin': False,
@@ -3521,16 +3521,16 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                                 'description': 'A configuration dictionary with typed fields'
                             },
                             {
+                                'description': ''
+                            },
+                            {
+                                'description': ''
+                            },
+                            {
                                 'description': 'A configuration dictionary with typed fields'
                             },
                             {
                                 'description': None
-                            },
-                            {
-                                'description': ''
-                            },
-                            {
-                                'description': ''
                             }
                         ],
                         'isBuiltin': False,
@@ -3576,13 +3576,13 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                                 'description': 'A configuration dictionary with typed fields'
                             },
                             {
+                                'description': ''
+                            },
+                            {
+                                'description': ''
+                            },
+                            {
                                 'description': 'A configuration dictionary with typed fields'
-                            },
-                            {
-                                'description': ''
-                            },
-                            {
-                                'description': ''
                             }
                         ],
                         'isBuiltin': True,
@@ -3615,7 +3615,7 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                                 'description': 'A configuration dictionary with typed fields'
                             },
                             {
-                                'description': 'A configuration dictionary with typed fields'
+                                'description': ''
                             },
                             {
                                 'description': 'A configuration dictionary with typed fields'
@@ -3624,7 +3624,7 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                                 'description': ''
                             },
                             {
-                                'description': ''
+                                'description': 'A configuration dictionary with typed fields'
                             }
                         ],
                         'isBuiltin': True,
@@ -3679,16 +3679,16 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'description': ''
-                            },
-                            {
-                                'description': 'A configuration dictionary with typed fields'
-                            },
-                            {
                                 'description': None
                             },
                             {
                                 'description': 'A configuration dictionary with typed fields'
+                            },
+                            {
+                                'description': 'A configuration dictionary with typed fields'
+                            },
+                            {
+                                'description': ''
                             }
                         ],
                         'isBuiltin': False,
@@ -3713,13 +3713,13 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
+                                'description': 'A configuration dictionary with typed fields'
+                            },
+                            {
+                                'description': 'A configuration dictionary with typed fields'
+                            },
+                            {
                                 'description': ''
-                            },
-                            {
-                                'description': 'A configuration dictionary with typed fields'
-                            },
-                            {
-                                'description': 'A configuration dictionary with typed fields'
                             }
                         ],
                         'isBuiltin': False,
@@ -3852,13 +3852,13 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                                 'description': None
                             },
                             {
-                                'description': 'A configuration dictionary with typed fields'
-                            },
-                            {
                                 'description': ''
                             },
                             {
                                 'description': None
+                            },
+                            {
+                                'description': 'A configuration dictionary with typed fields'
                             }
                         ],
                         'isBuiltin': False,
@@ -3883,13 +3883,13 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
+                                'description': ''
+                            },
+                            {
                                 'description': None
                             },
                             {
                                 'description': 'A configuration dictionary with typed fields'
-                            },
-                            {
-                                'description': ''
                             }
                         ],
                         'isBuiltin': False,
@@ -3942,6 +3942,24 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                                 'description': None
                             },
                             {
+                                'description': ''
+                            },
+                            {
+                                'description': ''
+                            },
+                            {
+                                'description': None
+                            },
+                            {
+                                'description': 'A configuration dictionary with typed fields'
+                            },
+                            {
+                                'description': ''
+                            },
+                            {
+                                'description': None
+                            },
+                            {
                                 'description': None
                             },
                             {
@@ -3949,39 +3967,21 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                             },
                             {
                                 'description': 'A configuration dictionary with typed fields'
+                            },
+                            {
+                                'description': 'A configuration dictionary with typed fields'
+                            },
+                            {
+                                'description': None
                             },
                             {
                                 'description': 'List of NoConfigPipeline.ReturnHello.Outputs'
                             },
                             {
-                                'description': 'A configuration dictionary with typed fields'
-                            },
-                            {
-                                'description': ''
-                            },
-                            {
                                 'description': None
                             },
                             {
                                 'description': None
-                            },
-                            {
-                                'description': ''
-                            },
-                            {
-                                'description': None
-                            },
-                            {
-                                'description': None
-                            },
-                            {
-                                'description': 'A configuration dictionary with typed fields'
-                            },
-                            {
-                                'description': None
-                            },
-                            {
-                                'description': ''
                             }
                         ],
                         'isBuiltin': False,
@@ -4033,9 +4033,6 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'description': ''
-                            },
-                            {
                                 'description': None
                             },
                             {
@@ -4043,6 +4040,9 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                             },
                             {
                                 'description': 'A configuration dictionary with typed fields'
+                            },
+                            {
+                                'description': ''
                             }
                         ],
                         'isBuiltin': False,
@@ -4062,19 +4062,19 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'description': None
+                                'description': ''
                             },
                             {
-                                'description': 'List of NoConfigPipeline.ReturnHello.Outputs'
+                                'description': None
                             },
                             {
                                 'description': 'A configuration dictionary with typed fields'
                             },
                             {
-                                'description': ''
+                                'description': None
                             },
                             {
-                                'description': None
+                                'description': 'List of NoConfigPipeline.ReturnHello.Outputs'
                             },
                             {
                                 'description': 'A configuration dictionary with typed fields'
@@ -4097,6 +4097,15 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
+                                'description': ''
+                            },
+                            {
+                                'description': None
+                            },
+                            {
+                                'description': 'A configuration dictionary with typed fields'
+                            },
+                            {
                                 'description': None
                             },
                             {
@@ -4104,15 +4113,6 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                             },
                             {
                                 'description': 'List of NoConfigPipeline.ReturnHello.Outputs'
-                            },
-                            {
-                                'description': 'A configuration dictionary with typed fields'
-                            },
-                            {
-                                'description': ''
-                            },
-                            {
-                                'description': None
                             },
                             {
                                 'description': 'A configuration dictionary with typed fields'
@@ -4180,16 +4180,16 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'description': ''
-                            },
-                            {
-                                'description': 'A configuration dictionary with typed fields'
-                            },
-                            {
                                 'description': None
                             },
                             {
                                 'description': 'A configuration dictionary with typed fields'
+                            },
+                            {
+                                'description': 'A configuration dictionary with typed fields'
+                            },
+                            {
+                                'description': ''
                             }
                         ],
                         'isBuiltin': False,
@@ -4214,13 +4214,13 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
+                                'description': 'A configuration dictionary with typed fields'
+                            },
+                            {
+                                'description': 'A configuration dictionary with typed fields'
+                            },
+                            {
                                 'description': ''
-                            },
-                            {
-                                'description': 'A configuration dictionary with typed fields'
-                            },
-                            {
-                                'description': 'A configuration dictionary with typed fields'
                             }
                         ],
                         'isBuiltin': False,
@@ -4263,10 +4263,10 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                                 'description': 'A configuration dictionary with typed fields'
                             },
                             {
-                                'description': ''
+                                'description': 'A configuration dictionary with typed fields'
                             },
                             {
-                                'description': 'A configuration dictionary with typed fields'
+                                'description': ''
                             },
                             {
                                 'description': ''
@@ -4308,26 +4308,6 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         'isNullable': False,
                         'isSelector': True,
                         'isSystemGenerated': True
-                    },
-                    {
-                        'description': 'A configuration dictionary with typed fields',
-                        'fields': [
-                            {
-                                'description': None,
-                                'isOptional': False,
-                                'name': 'path'
-                            }
-                        ],
-                        'innerTypes': [
-                            {
-                                'description': ''
-                            }
-                        ],
-                        'isBuiltin': True,
-                        'isList': False,
-                        'isNullable': False,
-                        'isSelector': False,
-                        'isSystemGenerated': False
                     },
                     {
                         'description': 'A configuration dictionary with typed fields',
@@ -4650,6 +4630,26 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         'isSystemGenerated': False
                     },
                     {
+                        'description': 'A configuration dictionary with typed fields',
+                        'fields': [
+                            {
+                                'description': None,
+                                'isOptional': False,
+                                'name': 'path'
+                            }
+                        ],
+                        'innerTypes': [
+                            {
+                                'description': ''
+                            }
+                        ],
+                        'isBuiltin': True,
+                        'isList': False,
+                        'isNullable': False,
+                        'isSelector': False,
+                        'isSystemGenerated': False
+                    },
+                    {
                         'description': '',
                         'innerTypes': [
                         ],
@@ -4717,10 +4717,10 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                                 'description': 'A configuration dictionary with typed fields'
                             },
                             {
-                                'description': ''
+                                'description': 'A configuration dictionary with typed fields'
                             },
                             {
-                                'description': 'A configuration dictionary with typed fields'
+                                'description': ''
                             }
                         ],
                         'isBuiltin': False,
@@ -4750,9 +4750,6 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'description': 'A configuration dictionary with typed fields'
-                            },
-                            {
                                 'description': ''
                             },
                             {
@@ -4760,6 +4757,9 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                             },
                             {
                                 'description': None
+                            },
+                            {
+                                'description': 'A configuration dictionary with typed fields'
                             }
                         ],
                         'isBuiltin': False,
@@ -4784,10 +4784,10 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'description': None
+                                'description': ''
                             },
                             {
-                                'description': ''
+                                'description': None
                             },
                             {
                                 'description': 'A configuration dictionary with typed fields'
@@ -4840,58 +4840,13 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                                 'description': None
                             },
                             {
-                                'description': 'A configuration dictionary with typed fields'
-                            },
-                            {
-                                'description': None
-                            },
-                            {
-                                'description': ''
-                            },
-                            {
-                                'description': 'A configuration dictionary with typed fields'
-                            },
-                            {
                                 'description': ''
                             },
                             {
                                 'description': None
                             },
                             {
-                                'description': None
-                            },
-                            {
-                                'description': None
-                            },
-                            {
-                                'description': None
-                            },
-                            {
-                                'description': 'A configuration dictionary with typed fields'
-                            },
-                            {
                                 'description': ''
-                            },
-                            {
-                                'description': 'List of ScalarOutputPipeline.ReturnStr.Outputs'
-                            },
-                            {
-                                'description': None
-                            },
-                            {
-                                'description': 'A configuration dictionary with typed fields'
-                            },
-                            {
-                                'description': 'A configuration dictionary with typed fields'
-                            },
-                            {
-                                'description': None
-                            },
-                            {
-                                'description': None
-                            },
-                            {
-                                'description': None
                             },
                             {
                                 'description': 'List of ScalarOutputPipeline.ReturnInt.Outputs'
@@ -4900,16 +4855,13 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                                 'description': 'A configuration dictionary with typed fields'
                             },
                             {
-                                'description': 'A configuration dictionary with typed fields'
-                            },
-                            {
-                                'description': 'A configuration dictionary with typed fields'
-                            },
-                            {
-                                'description': 'A configuration dictionary with typed fields'
-                            },
-                            {
                                 'description': None
+                            },
+                            {
+                                'description': 'A configuration dictionary with typed fields'
+                            },
+                            {
+                                'description': 'A configuration dictionary with typed fields'
                             },
                             {
                                 'description': None
@@ -4924,19 +4876,67 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                                 'description': None
                             },
                             {
+                                'description': 'A configuration dictionary with typed fields'
+                            },
+                            {
+                                'description': 'A configuration dictionary with typed fields'
+                            },
+                            {
                                 'description': None
+                            },
+                            {
+                                'description': 'A configuration dictionary with typed fields'
                             },
                             {
                                 'description': None
                             },
                             {
                                 'description': None
+                            },
+                            {
+                                'description': 'A configuration dictionary with typed fields'
                             },
                             {
                                 'description': None
                             },
                             {
                                 'description': 'List of ScalarOutputPipeline.ReturnAny.Outputs'
+                            },
+                            {
+                                'description': None
+                            },
+                            {
+                                'description': None
+                            },
+                            {
+                                'description': None
+                            },
+                            {
+                                'description': None
+                            },
+                            {
+                                'description': None
+                            },
+                            {
+                                'description': None
+                            },
+                            {
+                                'description': None
+                            },
+                            {
+                                'description': 'List of ScalarOutputPipeline.ReturnStr.Outputs'
+                            },
+                            {
+                                'description': 'A configuration dictionary with typed fields'
+                            },
+                            {
+                                'description': None
+                            },
+                            {
+                                'description': ''
+                            },
+                            {
+                                'description': 'A configuration dictionary with typed fields'
                             }
                         ],
                         'isBuiltin': False,
@@ -4988,8 +4988,34 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'description': ''
+                                'description': None
                             },
+                            {
+                                'description': 'A configuration dictionary with typed fields'
+                            },
+                            {
+                                'description': 'A configuration dictionary with typed fields'
+                            },
+                            {
+                                'description': ''
+                            }
+                        ],
+                        'isBuiltin': False,
+                        'isList': False,
+                        'isNullable': False,
+                        'isSelector': False,
+                        'isSystemGenerated': True
+                    },
+                    {
+                        'description': None,
+                        'fields': [
+                            {
+                                'description': None,
+                                'isOptional': True,
+                                'name': 'result'
+                            }
+                        ],
+                        'innerTypes': [
                             {
                                 'description': None
                             },
@@ -4998,6 +5024,9 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                             },
                             {
                                 'description': 'A configuration dictionary with typed fields'
+                            },
+                            {
+                                'description': ''
                             }
                         ],
                         'isBuiltin': False,
@@ -5049,42 +5078,13 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                                 'description': 'A configuration dictionary with typed fields'
                             },
                             {
-                                'description': ''
-                            },
-                            {
-                                'description': None
-                            },
-                            {
                                 'description': 'A configuration dictionary with typed fields'
-                            }
-                        ],
-                        'isBuiltin': False,
-                        'isList': False,
-                        'isNullable': False,
-                        'isSelector': False,
-                        'isSystemGenerated': True
-                    },
-                    {
-                        'description': None,
-                        'fields': [
-                            {
-                                'description': None,
-                                'isOptional': True,
-                                'name': 'result'
-                            }
-                        ],
-                        'innerTypes': [
+                            },
                             {
                                 'description': ''
                             },
                             {
                                 'description': None
-                            },
-                            {
-                                'description': 'A configuration dictionary with typed fields'
-                            },
-                            {
-                                'description': 'A configuration dictionary with typed fields'
                             }
                         ],
                         'isBuiltin': False,
@@ -5104,22 +5104,22 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'description': 'A configuration dictionary with typed fields'
+                                'description': None
                             },
                             {
                                 'description': ''
-                            },
-                            {
-                                'description': None
-                            },
-                            {
-                                'description': None
-                            },
-                            {
-                                'description': 'A configuration dictionary with typed fields'
                             },
                             {
                                 'description': 'List of ScalarOutputPipeline.ReturnAny.Outputs'
+                            },
+                            {
+                                'description': None
+                            },
+                            {
+                                'description': 'A configuration dictionary with typed fields'
+                            },
+                            {
+                                'description': 'A configuration dictionary with typed fields'
                             }
                         ],
                         'isBuiltin': False,
@@ -5139,22 +5139,22 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
+                                'description': 'A configuration dictionary with typed fields'
+                            },
+                            {
                                 'description': None
-                            },
-                            {
-                                'description': 'A configuration dictionary with typed fields'
-                            },
-                            {
-                                'description': 'A configuration dictionary with typed fields'
                             },
                             {
                                 'description': ''
                             },
                             {
+                                'description': 'List of ScalarOutputPipeline.ReturnBool.Outputs'
+                            },
+                            {
                                 'description': None
                             },
                             {
-                                'description': 'List of ScalarOutputPipeline.ReturnBool.Outputs'
+                                'description': 'A configuration dictionary with typed fields'
                             }
                         ],
                         'isBuiltin': False,
@@ -5173,23 +5173,23 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                             }
                         ],
                         'innerTypes': [
+                            {
+                                'description': None
+                            },
+                            {
+                                'description': ''
+                            },
                             {
                                 'description': 'List of ScalarOutputPipeline.ReturnInt.Outputs'
                             },
                             {
-                                'description': 'A configuration dictionary with typed fields'
-                            },
-                            {
                                 'description': None
                             },
                             {
                                 'description': 'A configuration dictionary with typed fields'
                             },
                             {
-                                'description': ''
-                            },
-                            {
-                                'description': None
+                                'description': 'A configuration dictionary with typed fields'
                             }
                         ],
                         'isBuiltin': False,
@@ -5208,6 +5208,12 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                             }
                         ],
                         'innerTypes': [
+                            {
+                                'description': ''
+                            },
+                            {
+                                'description': None
+                            },
                             {
                                 'description': 'List of ScalarOutputPipeline.ReturnStr.Outputs'
                             },
@@ -5218,13 +5224,7 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                                 'description': None
                             },
                             {
-                                'description': ''
-                            },
-                            {
                                 'description': 'A configuration dictionary with typed fields'
-                            },
-                            {
-                                'description': None
                             }
                         ],
                         'isBuiltin': False,
@@ -5259,37 +5259,10 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'description': 'A configuration dictionary with typed fields'
+                                'description': None
                             },
                             {
                                 'description': ''
-                            },
-                            {
-                                'description': None
-                            },
-                            {
-                                'description': None
-                            },
-                            {
-                                'description': None
-                            },
-                            {
-                                'description': 'A configuration dictionary with typed fields'
-                            },
-                            {
-                                'description': 'List of ScalarOutputPipeline.ReturnStr.Outputs'
-                            },
-                            {
-                                'description': 'A configuration dictionary with typed fields'
-                            },
-                            {
-                                'description': 'A configuration dictionary with typed fields'
-                            },
-                            {
-                                'description': None
-                            },
-                            {
-                                'description': None
                             },
                             {
                                 'description': None
@@ -5301,16 +5274,10 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                                 'description': 'A configuration dictionary with typed fields'
                             },
                             {
-                                'description': 'A configuration dictionary with typed fields'
-                            },
-                            {
                                 'description': None
                             },
                             {
                                 'description': 'A configuration dictionary with typed fields'
-                            },
-                            {
-                                'description': None
                             },
                             {
                                 'description': None
@@ -5325,13 +5292,46 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                                 'description': None
                             },
                             {
+                                'description': 'A configuration dictionary with typed fields'
+                            },
+                            {
+                                'description': 'A configuration dictionary with typed fields'
+                            },
+                            {
+                                'description': 'A configuration dictionary with typed fields'
+                            },
+                            {
                                 'description': None
                             },
                             {
                                 'description': 'A configuration dictionary with typed fields'
                             },
                             {
+                                'description': None
+                            },
+                            {
                                 'description': 'List of ScalarOutputPipeline.ReturnAny.Outputs'
+                            },
+                            {
+                                'description': None
+                            },
+                            {
+                                'description': None
+                            },
+                            {
+                                'description': None
+                            },
+                            {
+                                'description': None
+                            },
+                            {
+                                'description': 'List of ScalarOutputPipeline.ReturnStr.Outputs'
+                            },
+                            {
+                                'description': 'A configuration dictionary with typed fields'
+                            },
+                            {
+                                'description': 'A configuration dictionary with typed fields'
                             }
                         ],
                         'isBuiltin': False,
@@ -5377,10 +5377,10 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                                 'description': ''
                             },
                             {
-                                'description': ''
+                                'description': 'A configuration dictionary with typed fields'
                             },
                             {
-                                'description': 'A configuration dictionary with typed fields'
+                                'description': ''
                             }
                         ],
                         'isBuiltin': False,
@@ -5405,13 +5405,13 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
+                                'description': 'A configuration dictionary with typed fields'
+                            },
+                            {
+                                'description': 'A configuration dictionary with typed fields'
+                            },
+                            {
                                 'description': ''
-                            },
-                            {
-                                'description': 'A configuration dictionary with typed fields'
-                            },
-                            {
-                                'description': 'A configuration dictionary with typed fields'
                             }
                         ],
                         'isBuiltin': False,
@@ -5456,16 +5456,16 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'description': ''
-                            },
-                            {
-                                'description': 'A configuration dictionary with typed fields'
-                            },
-                            {
                                 'description': None
                             },
                             {
                                 'description': 'A configuration dictionary with typed fields'
+                            },
+                            {
+                                'description': 'A configuration dictionary with typed fields'
+                            },
+                            {
+                                'description': ''
                             }
                         ],
                         'isBuiltin': False,
@@ -5490,13 +5490,13 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
+                                'description': 'A configuration dictionary with typed fields'
+                            },
+                            {
+                                'description': 'A configuration dictionary with typed fields'
+                            },
+                            {
                                 'description': ''
-                            },
-                            {
-                                'description': 'A configuration dictionary with typed fields'
-                            },
-                            {
-                                'description': 'A configuration dictionary with typed fields'
                             }
                         ],
                         'isBuiltin': False,
@@ -5670,13 +5670,13 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'description': None
+                                'description': ''
                             },
                             {
                                 'description': 'A configuration dictionary with typed fields'
                             },
                             {
-                                'description': ''
+                                'description': None
                             }
                         ],
                         'isBuiltin': False,
@@ -5726,52 +5726,52 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                                 'description': None
                             },
                             {
-                                'description': 'A configuration dictionary with typed fields'
-                            },
-                            {
-                                'description': None
-                            },
-                            {
-                                'description': ''
-                            },
-                            {
-                                'description': 'A configuration dictionary with typed fields'
-                            },
-                            {
-                                'description': ''
-                            },
-                            {
-                                'description': None
-                            },
-                            {
-                                'description': None
-                            },
-                            {
-                                'description': None
-                            },
-                            {
-                                'description': None
-                            },
-                            {
-                                'description': ''
-                            },
-                            {
-                                'description': None
-                            },
-                            {
-                                'description': None
-                            },
-                            {
-                                'description': 'A configuration dictionary with typed fields'
-                            },
-                            {
-                                'description': None
-                            },
-                            {
-                                'description': None
-                            },
-                            {
                                 'description': 'List of PipelineWithEnumConfig.TakesAnEnum.Outputs'
+                            },
+                            {
+                                'description': ''
+                            },
+                            {
+                                'description': None
+                            },
+                            {
+                                'description': ''
+                            },
+                            {
+                                'description': None
+                            },
+                            {
+                                'description': None
+                            },
+                            {
+                                'description': 'A configuration dictionary with typed fields'
+                            },
+                            {
+                                'description': None
+                            },
+                            {
+                                'description': ''
+                            },
+                            {
+                                'description': None
+                            },
+                            {
+                                'description': None
+                            },
+                            {
+                                'description': 'A configuration dictionary with typed fields'
+                            },
+                            {
+                                'description': None
+                            },
+                            {
+                                'description': 'A configuration dictionary with typed fields'
+                            },
+                            {
+                                'description': None
+                            },
+                            {
+                                'description': None
                             }
                         ],
                         'isBuiltin': False,
@@ -5828,25 +5828,25 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'description': 'A configuration dictionary with typed fields'
-                            },
-                            {
-                                'description': None
-                            },
-                            {
-                                'description': None
+                                'description': 'List of PipelineWithEnumConfig.TakesAnEnum.Outputs'
                             },
                             {
                                 'description': ''
                             },
                             {
+                                'description': 'A configuration dictionary with typed fields'
+                            },
+                            {
+                                'description': None
+                            },
+                            {
                                 'description': None
                             },
                             {
                                 'description': 'A configuration dictionary with typed fields'
                             },
                             {
-                                'description': 'List of PipelineWithEnumConfig.TakesAnEnum.Outputs'
+                                'description': None
                             }
                         ],
                         'isBuiltin': False,
@@ -5869,15 +5869,6 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                                 'description': 'List of PipelineWithEnumConfig.TakesAnEnum.Outputs'
                             },
                             {
-                                'description': 'A configuration dictionary with typed fields'
-                            },
-                            {
-                                'description': None
-                            },
-                            {
-                                'description': None
-                            },
-                            {
                                 'description': ''
                             },
                             {
@@ -5885,6 +5876,15 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                             },
                             {
                                 'description': 'A configuration dictionary with typed fields'
+                            },
+                            {
+                                'description': None
+                            },
+                            {
+                                'description': 'A configuration dictionary with typed fields'
+                            },
+                            {
+                                'description': None
                             },
                             {
                                 'description': None
@@ -5907,9 +5907,6 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'description': ''
-                            },
-                            {
                                 'description': None
                             },
                             {
@@ -5917,6 +5914,9 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                             },
                             {
                                 'description': 'A configuration dictionary with typed fields'
+                            },
+                            {
+                                'description': ''
                             }
                         ],
                         'isBuiltin': False,
