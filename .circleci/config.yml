@@ -694,6 +694,6 @@ jobs:
       - run:
           name: Test dev setup script
           command: |
-          python -m venv .
-          source bin/activate
-          . dev_env_setup.sh
+            python -m venv .
+            source bin/activate
+            . dev_env_setup.sh
