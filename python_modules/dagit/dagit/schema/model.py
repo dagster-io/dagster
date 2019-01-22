@@ -5,13 +5,13 @@ import uuid
 from graphql.execution.base import ResolveInfo
 
 from dagster import check
-from dagster.core.types.evaluator import evaluate_config_value
-from dagster.core.system_config.types import construct_environment_config
+from dagster.core.definitions.environment_configs import construct_environment_config
 from dagster.core.execution import (
     ExecutionSelector,
     create_execution_plan_with_typed_environment,
     get_subset_pipeline,
 )
+from dagster.core.types.evaluator import evaluate_config_value
 
 from dagster.utils.error import serializable_error_info_from_exc_info
 

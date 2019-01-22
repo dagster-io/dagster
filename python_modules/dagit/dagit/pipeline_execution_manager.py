@@ -16,7 +16,7 @@ from dagster.core.execution import (
 )
 from dagster.core.events import PipelineEventRecord, EventType
 from dagster.core.types.evaluator import evaluate_config_value
-from dagster.core.system_config.types import construct_environment_config
+from dagster.core.definitions.environment_configs import construct_environment_config
 from dagster.utils.error import serializable_error_info_from_exc_info, SerializableErrorInfo
 from dagster.utils.logging import level_from_string
 
