@@ -1262,7 +1262,7 @@ def test_smoke_test_config_type_system(snapshot):
 
 ALL_CONFIG_TYPES_QUERY = '''
 fragment configTypeFragment on ConfigType {
-  name
+  # name # not stable, include-order dependent
   description
   innerTypes {
     name
