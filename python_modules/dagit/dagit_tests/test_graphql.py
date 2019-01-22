@@ -1265,7 +1265,12 @@ fragment configTypeFragment on ConfigType {
   # name # not stable, include-order dependent
   description
   innerTypes {
-    name
+    isNullable
+    isList
+    isSelector
+    isBuiltin
+    isSystemGenerated
+    description
   }
   isNullable
   isList
@@ -1283,9 +1288,6 @@ fragment configTypeFragment on ConfigType {
       name
       isOptional
       description
-      configType {
-        name
-      }
     }
   }
 }
