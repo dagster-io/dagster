@@ -123,84 +123,34 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'description': 'A configuration dictionary with typed fields',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': None
                             },
                             {
-                                'description': None,
-                                'isBuiltin': False,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': True
+                                'description': 'A configuration dictionary with typed fields'
                             },
                             {
-                                'description': '',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': None
                             },
                             {
-                                'description': None,
-                                'isBuiltin': False,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': True
+                                'description': None
                             },
                             {
-                                'description': None,
-                                'isBuiltin': False,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': True
+                                'description': ''
                             },
                             {
-                                'description': '',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': None
                             },
                             {
-                                'description': None,
-                                'isBuiltin': False,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': True
+                                'description': None
                             },
                             {
-                                'description': None,
-                                'isBuiltin': False,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': True
+                                'description': None
                             },
                             {
-                                'description': None,
-                                'isBuiltin': False,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': True
+                                'description': None
                             },
                             {
-                                'description': None,
-                                'isBuiltin': False,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': True
+                                'description': ''
                             }
                         ],
                         'isBuiltin': False,
@@ -225,20 +175,10 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'description': None,
-                                'isBuiltin': False,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': True
+                                'description': None
                             },
                             {
-                                'description': '',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': ''
                             }
                         ],
                         'isBuiltin': False,
@@ -275,20 +215,10 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'description': '',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': None
                             },
                             {
-                                'description': None,
-                                'isBuiltin': False,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': True
+                                'description': ''
                             }
                         ],
                         'isBuiltin': False,
@@ -325,44 +255,19 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'description': 'A configuration dictionary with typed fields',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': 'A configuration dictionary with typed fields'
                             },
                             {
-                                'description': '',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': None
                             },
                             {
-                                'description': None,
-                                'isBuiltin': False,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': True
+                                'description': ''
                             },
                             {
-                                'description': '',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': None
                             },
                             {
-                                'description': None,
-                                'isBuiltin': False,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': True
+                                'description': ''
                             }
                         ],
                         'isBuiltin': False,
@@ -382,20 +287,10 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'description': '',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': None
                             },
                             {
-                                'description': None,
-                                'isBuiltin': False,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': True
+                                'description': ''
                             }
                         ],
                         'isBuiltin': False,
@@ -415,12 +310,7 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'description': '',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': ''
                             }
                         ],
                         'isBuiltin': False,
@@ -455,124 +345,49 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'description': 'A configuration dictionary with typed fields',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': None
                             },
                             {
-                                'description': None,
-                                'isBuiltin': False,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': True
+                                'description': 'A configuration dictionary with typed fields'
                             },
                             {
-                                'description': None,
-                                'isBuiltin': False,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': True
+                                'description': None
                             },
                             {
-                                'description': '',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': ''
                             },
                             {
-                                'description': None,
-                                'isBuiltin': False,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': True
+                                'description': None
                             },
                             {
-                                'description': None,
-                                'isBuiltin': False,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': True
+                                'description': None
                             },
                             {
-                                'description': '',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': ''
                             },
                             {
-                                'description': None,
-                                'isBuiltin': False,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': True
+                                'description': None
                             },
                             {
-                                'description': '',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': None
                             },
                             {
-                                'description': None,
-                                'isBuiltin': False,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': True
+                                'description': None
                             },
                             {
-                                'description': None,
-                                'isBuiltin': False,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': True
+                                'description': None
                             },
                             {
-                                'description': None,
-                                'isBuiltin': False,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': True,
-                                'isSystemGenerated': True
+                                'description': None
                             },
                             {
-                                'description': None,
-                                'isBuiltin': False,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': True
+                                'description': None
                             },
                             {
-                                'description': None,
-                                'isBuiltin': False,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': True
+                                'description': ''
                             },
                             {
-                                'description': None,
-                                'isBuiltin': False,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': True
+                                'description': None
                             }
                         ],
                         'isBuiltin': False,
@@ -604,12 +419,7 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'description': '',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': ''
                             }
                         ],
                         'isBuiltin': False,
@@ -641,12 +451,7 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'description': '',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': ''
                             }
                         ],
                         'isBuiltin': True,
@@ -711,12 +516,7 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'description': '',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': ''
                             }
                         ],
                         'isBuiltin': True,
@@ -736,12 +536,7 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'description': '',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': ''
                             }
                         ],
                         'isBuiltin': True,
@@ -761,36 +556,16 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'description': None,
-                                'isBuiltin': False,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': True
+                                'description': 'A configuration dictionary with typed fields'
                             },
                             {
-                                'description': 'A configuration dictionary with typed fields',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': None
                             },
                             {
-                                'description': None,
-                                'isBuiltin': False,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': True
+                                'description': ''
                             },
                             {
-                                'description': '',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': None
                             }
                         ],
                         'isBuiltin': False,
@@ -815,28 +590,13 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'description': '',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': 'A configuration dictionary with typed fields'
                             },
                             {
-                                'description': None,
-                                'isBuiltin': False,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': True
+                                'description': ''
                             },
                             {
-                                'description': 'A configuration dictionary with typed fields',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': None
                             }
                         ],
                         'isBuiltin': False,
@@ -883,92 +643,37 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'description': None,
-                                'isBuiltin': False,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': True
+                                'description': None
                             },
                             {
-                                'description': None,
-                                'isBuiltin': False,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': True
+                                'description': None
                             },
                             {
-                                'description': 'A configuration dictionary with typed fields',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': None
                             },
                             {
-                                'description': '',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': ''
                             },
                             {
-                                'description': '',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': None
                             },
                             {
-                                'description': None,
-                                'isBuiltin': False,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': True
+                                'description': 'A configuration dictionary with typed fields'
                             },
                             {
-                                'description': None,
-                                'isBuiltin': False,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': True,
-                                'isSystemGenerated': True
+                                'description': None
                             },
                             {
-                                'description': None,
-                                'isBuiltin': False,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': True
+                                'description': None
                             },
                             {
-                                'description': None,
-                                'isBuiltin': False,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': True
+                                'description': 'A configuration dictionary with typed fields'
                             },
                             {
-                                'description': 'A configuration dictionary with typed fields',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': None
                             },
                             {
-                                'description': None,
-                                'isBuiltin': False,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': True
+                                'description': ''
                             }
                         ],
                         'isBuiltin': False,
@@ -1000,12 +705,7 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'description': '',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': ''
                             }
                         ],
                         'isBuiltin': False,
@@ -1025,20 +725,10 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'description': 'A configuration dictionary with typed fields',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': ''
                             },
                             {
-                                'description': '',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': 'A configuration dictionary with typed fields'
                             }
                         ],
                         'isBuiltin': False,
@@ -1058,28 +748,13 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'description': 'A configuration dictionary with typed fields',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': None
                             },
                             {
-                                'description': None,
-                                'isBuiltin': False,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': True
+                                'description': ''
                             },
                             {
-                                'description': '',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': 'A configuration dictionary with typed fields'
                             }
                         ],
                         'isBuiltin': False,
@@ -1134,36 +809,16 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'description': '',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': 'List of Nullable.Int'
                             },
                             {
-                                'description': None,
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': True,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': ''
                             },
                             {
-                                'description': 'List of Nullable.Int',
-                                'isBuiltin': True,
-                                'isList': True,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': ''
                             },
                             {
-                                'description': '',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': None
                             }
                         ],
                         'isBuiltin': True,
@@ -1198,44 +853,19 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'description': '',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': 'List of Nullable.Int'
                             },
                             {
-                                'description': '',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': None
                             },
                             {
-                                'description': 'A configuration dictionary with typed fields',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': 'A configuration dictionary with typed fields'
                             },
                             {
-                                'description': None,
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': True,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': ''
                             },
                             {
-                                'description': 'List of Nullable.Int',
-                                'isBuiltin': True,
-                                'isList': True,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': ''
                             }
                         ],
                         'isBuiltin': True,
@@ -1255,12 +885,7 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'description': '',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': ''
                             }
                         ],
                         'isBuiltin': True,
@@ -1290,36 +915,16 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'description': None,
-                                'isBuiltin': False,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': True
+                                'description': 'A configuration dictionary with typed fields'
                             },
                             {
-                                'description': None,
-                                'isBuiltin': False,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': True
+                                'description': ''
                             },
                             {
-                                'description': 'A configuration dictionary with typed fields',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': None
                             },
                             {
-                                'description': '',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': None
                             }
                         ],
                         'isBuiltin': False,
@@ -1344,28 +949,13 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'description': None,
-                                'isBuiltin': False,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': True
+                                'description': None
                             },
                             {
-                                'description': 'A configuration dictionary with typed fields',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': ''
                             },
                             {
-                                'description': '',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': 'A configuration dictionary with typed fields'
                             }
                         ],
                         'isBuiltin': False,
@@ -1412,124 +1002,49 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'description': None,
-                                'isBuiltin': False,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': True,
-                                'isSystemGenerated': True
+                                'description': 'List of Nullable.Int'
                             },
                             {
-                                'description': '',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': None
                             },
                             {
-                                'description': None,
-                                'isBuiltin': False,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': True
+                                'description': 'A configuration dictionary with typed fields'
                             },
                             {
-                                'description': None,
-                                'isBuiltin': False,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': True
+                                'description': None
                             },
                             {
-                                'description': 'A configuration dictionary with typed fields',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': None
                             },
                             {
-                                'description': '',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': 'A configuration dictionary with typed fields'
                             },
                             {
-                                'description': None,
-                                'isBuiltin': False,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': True
+                                'description': None
                             },
                             {
-                                'description': 'A configuration dictionary with typed fields',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': 'A configuration dictionary with typed fields'
                             },
                             {
-                                'description': '',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': ''
                             },
                             {
-                                'description': None,
-                                'isBuiltin': False,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': True
+                                'description': None
                             },
                             {
-                                'description': None,
-                                'isBuiltin': False,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': True
+                                'description': None
                             },
                             {
-                                'description': None,
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': True,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': ''
                             },
                             {
-                                'description': 'A configuration dictionary with typed fields',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': None
                             },
                             {
-                                'description': 'List of Nullable.Int',
-                                'isBuiltin': True,
-                                'isList': True,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': ''
                             },
                             {
-                                'description': None,
-                                'isBuiltin': False,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': True
+                                'description': None
                             }
                         ],
                         'isBuiltin': False,
@@ -1561,12 +1076,7 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'description': '',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': ''
                             }
                         ],
                         'isBuiltin': False,
@@ -1586,52 +1096,22 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'description': '',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': 'List of Nullable.Int'
                             },
                             {
-                                'description': 'A configuration dictionary with typed fields',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': 'A configuration dictionary with typed fields'
                             },
                             {
-                                'description': '',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': None
                             },
                             {
-                                'description': 'A configuration dictionary with typed fields',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': 'A configuration dictionary with typed fields'
                             },
                             {
-                                'description': None,
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': True,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': ''
                             },
                             {
-                                'description': 'List of Nullable.Int',
-                                'isBuiltin': True,
-                                'isList': True,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': ''
                             }
                         ],
                         'isBuiltin': False,
@@ -1651,60 +1131,25 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'description': '',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': 'List of Nullable.Int'
                             },
                             {
-                                'description': 'A configuration dictionary with typed fields',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': None
                             },
                             {
-                                'description': '',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': 'A configuration dictionary with typed fields'
                             },
                             {
-                                'description': 'A configuration dictionary with typed fields',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': 'A configuration dictionary with typed fields'
                             },
                             {
-                                'description': None,
-                                'isBuiltin': False,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': True
+                                'description': ''
                             },
                             {
-                                'description': None,
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': True,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': ''
                             },
                             {
-                                'description': 'List of Nullable.Int',
-                                'isBuiltin': True,
-                                'isList': True,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': None
                             }
                         ],
                         'isBuiltin': False,
@@ -1749,12 +1194,7 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'description': '',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': ''
                             }
                         ],
                         'isBuiltin': True,
@@ -1779,20 +1219,10 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'description': '',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': ''
                             },
                             {
-                                'description': '',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': ''
                             }
                         ],
                         'isBuiltin': True,
@@ -1812,12 +1242,7 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'description': '',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': ''
                             }
                         ],
                         'isBuiltin': True,
@@ -1837,12 +1262,7 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'description': '',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': ''
                             }
                         ],
                         'isBuiltin': True,
@@ -1867,20 +1287,10 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'description': '',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': ''
                             },
                             {
-                                'description': '',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': ''
                             }
                         ],
                         'isBuiltin': True,
@@ -1900,12 +1310,7 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'description': '',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': ''
                             }
                         ],
                         'isBuiltin': True,
@@ -1925,12 +1330,7 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'description': '',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': ''
                             }
                         ],
                         'isBuiltin': True,
@@ -1950,36 +1350,16 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'description': 'A configuration dictionary with typed fields',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': 'A configuration dictionary with typed fields'
                             },
                             {
-                                'description': None,
-                                'isBuiltin': False,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': True
+                                'description': ''
                             },
                             {
-                                'description': None,
-                                'isBuiltin': False,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': True
+                                'description': None
                             },
                             {
-                                'description': '',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': None
                             }
                         ],
                         'isBuiltin': False,
@@ -2004,28 +1384,13 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'description': 'A configuration dictionary with typed fields',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': 'A configuration dictionary with typed fields'
                             },
                             {
-                                'description': None,
-                                'isBuiltin': False,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': True
+                                'description': ''
                             },
                             {
-                                'description': '',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': None
                             }
                         ],
                         'isBuiltin': False,
@@ -2072,204 +1437,79 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'description': 'A configuration dictionary with typed fields',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': 'A configuration dictionary with typed fields'
                             },
                             {
-                                'description': 'List of PandasHelloWorld.SumSolid.Outputs',
-                                'isBuiltin': True,
-                                'isList': True,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': None
                             },
                             {
-                                'description': '',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': None
                             },
                             {
-                                'description': None,
-                                'isBuiltin': False,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': True
+                                'description': ''
                             },
                             {
-                                'description': '',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': 'A configuration dictionary with typed fields'
                             },
                             {
-                                'description': 'A configuration dictionary with typed fields',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': 'List of PandasHelloWorld.SumSqSolid.Outputs'
                             },
                             {
-                                'description': 'A configuration dictionary with typed fields',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': ''
                             },
                             {
-                                'description': None,
-                                'isBuiltin': False,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': True
+                                'description': 'A configuration dictionary with typed fields'
                             },
                             {
-                                'description': None,
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': True,
-                                'isSystemGenerated': False
+                                'description': ''
                             },
                             {
-                                'description': None,
-                                'isBuiltin': False,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': True
+                                'description': 'A configuration dictionary with typed fields'
                             },
                             {
-                                'description': 'List of PandasHelloWorld.SumSqSolid.Outputs',
-                                'isBuiltin': True,
-                                'isList': True,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': None
                             },
                             {
-                                'description': 'A configuration dictionary with typed fields',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': None
                             },
                             {
-                                'description': 'A configuration dictionary with typed fields',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': None
                             },
                             {
-                                'description': None,
-                                'isBuiltin': False,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': True
+                                'description': None
                             },
                             {
-                                'description': None,
-                                'isBuiltin': False,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': True
+                                'description': None
                             },
                             {
-                                'description': 'A configuration dictionary with typed fields',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': None
                             },
                             {
-                                'description': None,
-                                'isBuiltin': False,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': True
+                                'description': 'A configuration dictionary with typed fields'
                             },
                             {
-                                'description': '',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': 'A configuration dictionary with typed fields'
                             },
                             {
-                                'description': None,
-                                'isBuiltin': False,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': True
+                                'description': None
                             },
                             {
-                                'description': None,
-                                'isBuiltin': False,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': True,
-                                'isSystemGenerated': True
+                                'description': None
                             },
                             {
-                                'description': None,
-                                'isBuiltin': False,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': True
+                                'description': None
                             },
                             {
-                                'description': 'A configuration dictionary with typed fields',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': None
                             },
                             {
-                                'description': None,
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': True,
-                                'isSystemGenerated': False
+                                'description': 'A configuration dictionary with typed fields'
                             },
                             {
-                                'description': None,
-                                'isBuiltin': False,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': True
+                                'description': 'List of PandasHelloWorld.SumSolid.Outputs'
                             },
                             {
-                                'description': None,
-                                'isBuiltin': False,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': True
+                                'description': None
                             }
                         ],
                         'isBuiltin': False,
@@ -2301,12 +1541,7 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'description': '',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': ''
                             }
                         ],
                         'isBuiltin': False,
@@ -2331,108 +1566,43 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'description': 'A configuration dictionary with typed fields',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': 'A configuration dictionary with typed fields'
                             },
                             {
-                                'description': None,
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': True,
-                                'isSystemGenerated': False
+                                'description': None
                             },
                             {
-                                'description': 'A configuration dictionary with typed fields',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': 'A configuration dictionary with typed fields'
                             },
                             {
-                                'description': 'List of PandasHelloWorld.SumSolid.Outputs',
-                                'isBuiltin': True,
-                                'isList': True,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': 'A configuration dictionary with typed fields'
                             },
                             {
-                                'description': 'A configuration dictionary with typed fields',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': None
                             },
                             {
-                                'description': 'A configuration dictionary with typed fields',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': 'A configuration dictionary with typed fields'
                             },
                             {
-                                'description': '',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': None
                             },
                             {
-                                'description': None,
-                                'isBuiltin': False,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': True
+                                'description': 'List of PandasHelloWorld.SumSolid.Outputs'
                             },
                             {
-                                'description': '',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': 'A configuration dictionary with typed fields'
                             },
                             {
-                                'description': 'A configuration dictionary with typed fields',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': 'A configuration dictionary with typed fields'
                             },
                             {
-                                'description': 'A configuration dictionary with typed fields',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': None
                             },
                             {
-                                'description': None,
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': True,
-                                'isSystemGenerated': False
+                                'description': ''
                             },
                             {
-                                'description': None,
-                                'isBuiltin': False,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': True
+                                'description': ''
                             }
                         ],
                         'isBuiltin': False,
@@ -2452,68 +1622,28 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'description': None,
-                                'isBuiltin': False,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': True
+                                'description': 'A configuration dictionary with typed fields'
                             },
                             {
-                                'description': 'A configuration dictionary with typed fields',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': 'A configuration dictionary with typed fields'
                             },
                             {
-                                'description': 'A configuration dictionary with typed fields',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': 'A configuration dictionary with typed fields'
                             },
                             {
-                                'description': 'List of PandasHelloWorld.SumSqSolid.Outputs',
-                                'isBuiltin': True,
-                                'isList': True,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': None
                             },
                             {
-                                'description': '',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': 'List of PandasHelloWorld.SumSqSolid.Outputs'
                             },
                             {
-                                'description': '',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': None
                             },
                             {
-                                'description': 'A configuration dictionary with typed fields',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': ''
                             },
                             {
-                                'description': None,
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': True,
-                                'isSystemGenerated': False
+                                'description': ''
                             }
                         ],
                         'isBuiltin': False,
@@ -2538,140 +1668,55 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'description': 'A configuration dictionary with typed fields',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': 'A configuration dictionary with typed fields'
                             },
                             {
-                                'description': None,
-                                'isBuiltin': False,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': True
+                                'description': None
                             },
                             {
-                                'description': 'A configuration dictionary with typed fields',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': 'A configuration dictionary with typed fields'
                             },
                             {
-                                'description': 'List of PandasHelloWorld.SumSolid.Outputs',
-                                'isBuiltin': True,
-                                'isList': True,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': 'A configuration dictionary with typed fields'
                             },
                             {
-                                'description': None,
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': True,
-                                'isSystemGenerated': False
+                                'description': None
                             },
                             {
-                                'description': 'A configuration dictionary with typed fields',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': 'A configuration dictionary with typed fields'
                             },
                             {
-                                'description': 'A configuration dictionary with typed fields',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': ''
                             },
                             {
-                                'description': None,
-                                'isBuiltin': False,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': True
+                                'description': None
                             },
                             {
-                                'description': 'List of PandasHelloWorld.SumSqSolid.Outputs',
-                                'isBuiltin': True,
-                                'isList': True,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': 'List of PandasHelloWorld.SumSolid.Outputs'
                             },
                             {
-                                'description': '',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': None
                             },
                             {
-                                'description': None,
-                                'isBuiltin': False,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': True
+                                'description': 'A configuration dictionary with typed fields'
                             },
                             {
-                                'description': '',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': None
                             },
                             {
-                                'description': 'A configuration dictionary with typed fields',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': 'A configuration dictionary with typed fields'
                             },
                             {
-                                'description': 'A configuration dictionary with typed fields',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': None
                             },
                             {
-                                'description': None,
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': True,
-                                'isSystemGenerated': False
+                                'description': 'List of PandasHelloWorld.SumSqSolid.Outputs'
                             },
                             {
-                                'description': None,
-                                'isBuiltin': False,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': True
+                                'description': ''
                             },
                             {
-                                'description': None,
-                                'isBuiltin': False,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': True
+                                'description': None
                             }
                         ],
                         'isBuiltin': False,
@@ -2691,52 +1736,22 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'description': 'A configuration dictionary with typed fields',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': 'A configuration dictionary with typed fields'
                             },
                             {
-                                'description': None,
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': True,
-                                'isSystemGenerated': False
+                                'description': 'A configuration dictionary with typed fields'
                             },
                             {
-                                'description': 'A configuration dictionary with typed fields',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': None
                             },
                             {
-                                'description': '',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': 'A configuration dictionary with typed fields'
                             },
                             {
-                                'description': '',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': ''
                             },
                             {
-                                'description': 'A configuration dictionary with typed fields',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': ''
                             }
                         ],
                         'isBuiltin': False,
@@ -2756,52 +1771,22 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'description': 'A configuration dictionary with typed fields',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': 'A configuration dictionary with typed fields'
                             },
                             {
-                                'description': 'A configuration dictionary with typed fields',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': 'A configuration dictionary with typed fields'
                             },
                             {
-                                'description': '',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': 'A configuration dictionary with typed fields'
                             },
                             {
-                                'description': '',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': None
                             },
                             {
-                                'description': 'A configuration dictionary with typed fields',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': ''
                             },
                             {
-                                'description': None,
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': True,
-                                'isSystemGenerated': False
+                                'description': ''
                             }
                         ],
                         'isBuiltin': False,
@@ -2821,52 +1806,22 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'description': 'A configuration dictionary with typed fields',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': 'A configuration dictionary with typed fields'
                             },
                             {
-                                'description': 'A configuration dictionary with typed fields',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': 'A configuration dictionary with typed fields'
                             },
                             {
-                                'description': '',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': 'A configuration dictionary with typed fields'
                             },
                             {
-                                'description': '',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': None
                             },
                             {
-                                'description': 'A configuration dictionary with typed fields',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': ''
                             },
                             {
-                                'description': None,
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': True,
-                                'isSystemGenerated': False
+                                'description': ''
                             }
                         ],
                         'isBuiltin': False,
@@ -2906,44 +1861,19 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'description': 'A configuration dictionary with typed fields',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': 'A configuration dictionary with typed fields'
                             },
                             {
-                                'description': 'A configuration dictionary with typed fields',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': 'A configuration dictionary with typed fields'
                             },
                             {
-                                'description': '',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': 'A configuration dictionary with typed fields'
                             },
                             {
-                                'description': '',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': ''
                             },
                             {
-                                'description': 'A configuration dictionary with typed fields',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': ''
                             }
                         ],
                         'isBuiltin': True,
@@ -2973,44 +1903,19 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'description': 'A configuration dictionary with typed fields',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': 'A configuration dictionary with typed fields'
                             },
                             {
-                                'description': 'A configuration dictionary with typed fields',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': 'A configuration dictionary with typed fields'
                             },
                             {
-                                'description': '',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': 'A configuration dictionary with typed fields'
                             },
                             {
-                                'description': '',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': ''
                             },
                             {
-                                'description': 'A configuration dictionary with typed fields',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': ''
                             }
                         ],
                         'isBuiltin': True,
@@ -3055,12 +1960,7 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'description': '',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': ''
                             }
                         ],
                         'isBuiltin': True,
@@ -3085,20 +1985,10 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'description': '',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': ''
                             },
                             {
-                                'description': '',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': ''
                             }
                         ],
                         'isBuiltin': True,
@@ -3118,12 +2008,7 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'description': '',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': ''
                             }
                         ],
                         'isBuiltin': True,
@@ -3143,12 +2028,7 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'description': '',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': ''
                             }
                         ],
                         'isBuiltin': True,
@@ -3173,20 +2053,10 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'description': '',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': ''
                             },
                             {
-                                'description': '',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': ''
                             }
                         ],
                         'isBuiltin': True,
@@ -3206,12 +2076,7 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'description': '',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': ''
                             }
                         ],
                         'isBuiltin': True,
@@ -3231,12 +2096,7 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'description': '',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': ''
                             }
                         ],
                         'isBuiltin': True,
@@ -3256,36 +2116,16 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'description': None,
-                                'isBuiltin': False,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': True
+                                'description': 'A configuration dictionary with typed fields'
                             },
                             {
-                                'description': 'A configuration dictionary with typed fields',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': None
                             },
                             {
-                                'description': None,
-                                'isBuiltin': False,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': True
+                                'description': ''
                             },
                             {
-                                'description': '',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': None
                             }
                         ],
                         'isBuiltin': False,
@@ -3310,28 +2150,13 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'description': 'A configuration dictionary with typed fields',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': ''
                             },
                             {
-                                'description': None,
-                                'isBuiltin': False,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': True
+                                'description': 'A configuration dictionary with typed fields'
                             },
                             {
-                                'description': '',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': None
                             }
                         ],
                         'isBuiltin': False,
@@ -3378,180 +2203,70 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'description': 'A configuration dictionary with typed fields',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': 'A configuration dictionary with typed fields'
                             },
                             {
-                                'description': None,
-                                'isBuiltin': False,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': True
+                                'description': None
                             },
                             {
-                                'description': '',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': ''
                             },
                             {
-                                'description': '',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': 'A configuration dictionary with typed fields'
                             },
                             {
-                                'description': None,
-                                'isBuiltin': False,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': True,
-                                'isSystemGenerated': True
+                                'description': None
                             },
                             {
-                                'description': 'A configuration dictionary with typed fields',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': ''
                             },
                             {
-                                'description': None,
-                                'isBuiltin': False,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': True
+                                'description': None
                             },
                             {
-                                'description': 'A configuration dictionary with typed fields',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': ''
                             },
                             {
-                                'description': None,
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': True,
-                                'isSystemGenerated': False
+                                'description': None
                             },
                             {
-                                'description': None,
-                                'isBuiltin': False,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': True
+                                'description': 'A configuration dictionary with typed fields'
                             },
                             {
-                                'description': None,
-                                'isBuiltin': False,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': True
+                                'description': 'List of PandasHelloWorldTwo.SumSolid.Outputs'
                             },
                             {
-                                'description': 'A configuration dictionary with typed fields',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': None
                             },
                             {
-                                'description': None,
-                                'isBuiltin': False,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': True
+                                'description': None
                             },
                             {
-                                'description': 'List of PandasHelloWorldTwo.SumSolid.Outputs',
-                                'isBuiltin': True,
-                                'isList': True,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': 'A configuration dictionary with typed fields'
                             },
                             {
-                                'description': 'A configuration dictionary with typed fields',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': None
                             },
                             {
-                                'description': None,
-                                'isBuiltin': False,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': True
+                                'description': 'A configuration dictionary with typed fields'
                             },
                             {
-                                'description': None,
-                                'isBuiltin': False,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': True
+                                'description': 'A configuration dictionary with typed fields'
                             },
                             {
-                                'description': 'A configuration dictionary with typed fields',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': None
                             },
                             {
-                                'description': 'A configuration dictionary with typed fields',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': 'A configuration dictionary with typed fields'
                             },
                             {
-                                'description': None,
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': True,
-                                'isSystemGenerated': False
+                                'description': None
                             },
                             {
-                                'description': None,
-                                'isBuiltin': False,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': True
+                                'description': None
                             },
                             {
-                                'description': '',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': None
                             }
                         ],
                         'isBuiltin': False,
@@ -3583,12 +2298,7 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'description': '',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': ''
                             }
                         ],
                         'isBuiltin': False,
@@ -3613,108 +2323,43 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'description': 'A configuration dictionary with typed fields',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': 'A configuration dictionary with typed fields'
                             },
                             {
-                                'description': None,
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': True,
-                                'isSystemGenerated': False
+                                'description': 'List of PandasHelloWorldTwo.SumSolid.Outputs'
                             },
                             {
-                                'description': 'A configuration dictionary with typed fields',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': 'A configuration dictionary with typed fields'
                             },
                             {
-                                'description': 'A configuration dictionary with typed fields',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': 'A configuration dictionary with typed fields'
                             },
                             {
-                                'description': 'A configuration dictionary with typed fields',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': 'A configuration dictionary with typed fields'
                             },
                             {
-                                'description': '',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': None
                             },
                             {
-                                'description': '',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': 'A configuration dictionary with typed fields'
                             },
                             {
-                                'description': None,
-                                'isBuiltin': False,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': True
+                                'description': 'A configuration dictionary with typed fields'
                             },
                             {
-                                'description': 'A configuration dictionary with typed fields',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': None
                             },
                             {
-                                'description': 'A configuration dictionary with typed fields',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': ''
                             },
                             {
-                                'description': None,
-                                'isBuiltin': False,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': True
+                                'description': None
                             },
                             {
-                                'description': None,
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': True,
-                                'isSystemGenerated': False
+                                'description': ''
                             },
                             {
-                                'description': 'List of PandasHelloWorldTwo.SumSolid.Outputs',
-                                'isBuiltin': True,
-                                'isList': True,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': None
                             }
                         ],
                         'isBuiltin': False,
@@ -3734,116 +2379,46 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'description': 'A configuration dictionary with typed fields',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': 'A configuration dictionary with typed fields'
                             },
                             {
-                                'description': None,
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': True,
-                                'isSystemGenerated': False
+                                'description': 'List of PandasHelloWorldTwo.SumSolid.Outputs'
                             },
                             {
-                                'description': 'A configuration dictionary with typed fields',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': 'A configuration dictionary with typed fields'
                             },
                             {
-                                'description': 'A configuration dictionary with typed fields',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': 'A configuration dictionary with typed fields'
                             },
                             {
-                                'description': 'A configuration dictionary with typed fields',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': 'A configuration dictionary with typed fields'
                             },
                             {
-                                'description': None,
-                                'isBuiltin': False,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': True
+                                'description': None
                             },
                             {
-                                'description': '',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': 'A configuration dictionary with typed fields'
                             },
                             {
-                                'description': '',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': 'A configuration dictionary with typed fields'
                             },
                             {
-                                'description': None,
-                                'isBuiltin': False,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': True
+                                'description': None
                             },
                             {
-                                'description': 'A configuration dictionary with typed fields',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': None
                             },
                             {
-                                'description': 'A configuration dictionary with typed fields',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': ''
                             },
                             {
-                                'description': None,
-                                'isBuiltin': False,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': True
+                                'description': None
                             },
                             {
-                                'description': None,
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': True,
-                                'isSystemGenerated': False
+                                'description': ''
                             },
                             {
-                                'description': 'List of PandasHelloWorldTwo.SumSolid.Outputs',
-                                'isBuiltin': True,
-                                'isList': True,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': None
                             }
                         ],
                         'isBuiltin': False,
@@ -3863,52 +2438,22 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'description': 'A configuration dictionary with typed fields',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': 'A configuration dictionary with typed fields'
                             },
                             {
-                                'description': None,
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': True,
-                                'isSystemGenerated': False
+                                'description': 'A configuration dictionary with typed fields'
                             },
                             {
-                                'description': 'A configuration dictionary with typed fields',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': None
                             },
                             {
-                                'description': '',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': 'A configuration dictionary with typed fields'
                             },
                             {
-                                'description': '',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': ''
                             },
                             {
-                                'description': 'A configuration dictionary with typed fields',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': ''
                             }
                         ],
                         'isBuiltin': False,
@@ -3928,52 +2473,22 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'description': 'A configuration dictionary with typed fields',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': 'A configuration dictionary with typed fields'
                             },
                             {
-                                'description': 'A configuration dictionary with typed fields',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': 'A configuration dictionary with typed fields'
                             },
                             {
-                                'description': '',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': 'A configuration dictionary with typed fields'
                             },
                             {
-                                'description': '',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': None
                             },
                             {
-                                'description': 'A configuration dictionary with typed fields',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': ''
                             },
                             {
-                                'description': None,
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': True,
-                                'isSystemGenerated': False
+                                'description': ''
                             }
                         ],
                         'isBuiltin': False,
@@ -4013,44 +2528,19 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'description': 'A configuration dictionary with typed fields',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': 'A configuration dictionary with typed fields'
                             },
                             {
-                                'description': 'A configuration dictionary with typed fields',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': 'A configuration dictionary with typed fields'
                             },
                             {
-                                'description': '',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': 'A configuration dictionary with typed fields'
                             },
                             {
-                                'description': '',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': ''
                             },
                             {
-                                'description': 'A configuration dictionary with typed fields',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': ''
                             }
                         ],
                         'isBuiltin': True,
@@ -4080,44 +2570,19 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'description': 'A configuration dictionary with typed fields',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': 'A configuration dictionary with typed fields'
                             },
                             {
-                                'description': 'A configuration dictionary with typed fields',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': 'A configuration dictionary with typed fields'
                             },
                             {
-                                'description': '',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': 'A configuration dictionary with typed fields'
                             },
                             {
-                                'description': '',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': ''
                             },
                             {
-                                'description': 'A configuration dictionary with typed fields',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': ''
                             }
                         ],
                         'isBuiltin': True,
@@ -4162,12 +2627,7 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'description': '',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': ''
                             }
                         ],
                         'isBuiltin': True,
@@ -4197,36 +2657,16 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'description': 'A configuration dictionary with typed fields',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': 'A configuration dictionary with typed fields'
                             },
                             {
-                                'description': None,
-                                'isBuiltin': False,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': True
+                                'description': None
                             },
                             {
-                                'description': None,
-                                'isBuiltin': False,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': True
+                                'description': ''
                             },
                             {
-                                'description': '',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': None
                             }
                         ],
                         'isBuiltin': False,
@@ -4251,28 +2691,13 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'description': None,
-                                'isBuiltin': False,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': True
+                                'description': 'A configuration dictionary with typed fields'
                             },
                             {
-                                'description': 'A configuration dictionary with typed fields',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': None
                             },
                             {
-                                'description': '',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': ''
                             }
                         ],
                         'isBuiltin': False,
@@ -4319,100 +2744,40 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'description': None,
-                                'isBuiltin': False,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': True
+                                'description': None
                             },
                             {
-                                'description': None,
-                                'isBuiltin': False,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': True
+                                'description': None
                             },
                             {
-                                'description': None,
-                                'isBuiltin': False,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': True
+                                'description': None
                             },
                             {
-                                'description': '',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': 'List of Int'
                             },
                             {
-                                'description': 'A configuration dictionary with typed fields',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': None
                             },
                             {
-                                'description': None,
-                                'isBuiltin': False,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': True
+                                'description': None
                             },
                             {
-                                'description': '',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': ''
                             },
                             {
-                                'description': '',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': None
                             },
                             {
-                                'description': None,
-                                'isBuiltin': False,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': True,
-                                'isSystemGenerated': True
+                                'description': 'A configuration dictionary with typed fields'
                             },
                             {
-                                'description': None,
-                                'isBuiltin': False,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': True
+                                'description': None
                             },
                             {
-                                'description': None,
-                                'isBuiltin': False,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': True
+                                'description': ''
                             },
                             {
-                                'description': 'List of Int',
-                                'isBuiltin': True,
-                                'isList': True,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': ''
                             }
                         ],
                         'isBuiltin': False,
@@ -4444,12 +2809,7 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'description': '',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': ''
                             }
                         ],
                         'isBuiltin': False,
@@ -4469,20 +2829,10 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'description': '',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': 'List of Int'
                             },
                             {
-                                'description': 'List of Int',
-                                'isBuiltin': True,
-                                'isList': True,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': ''
                             }
                         ],
                         'isBuiltin': False,
@@ -4502,28 +2852,13 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'description': '',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': 'List of Int'
                             },
                             {
-                                'description': None,
-                                'isBuiltin': False,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': True
+                                'description': None
                             },
                             {
-                                'description': 'List of Int',
-                                'isBuiltin': True,
-                                'isList': True,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': ''
                             }
                         ],
                         'isBuiltin': False,
@@ -4568,12 +2903,7 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'description': '',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': ''
                             }
                         ],
                         'isBuiltin': True,
@@ -4598,20 +2928,10 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'description': '',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': ''
                             },
                             {
-                                'description': '',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': ''
                             }
                         ],
                         'isBuiltin': True,
@@ -4631,12 +2951,7 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'description': '',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': ''
                             }
                         ],
                         'isBuiltin': True,
@@ -4656,12 +2971,7 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'description': '',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': ''
                             }
                         ],
                         'isBuiltin': True,
@@ -4686,20 +2996,10 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'description': '',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': ''
                             },
                             {
-                                'description': '',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': ''
                             }
                         ],
                         'isBuiltin': True,
@@ -4719,12 +3019,7 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'description': '',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': ''
                             }
                         ],
                         'isBuiltin': True,
@@ -4744,12 +3039,7 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'description': '',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': ''
                             }
                         ],
                         'isBuiltin': True,
@@ -4769,36 +3059,16 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'description': None,
-                                'isBuiltin': False,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': True
+                                'description': 'A configuration dictionary with typed fields'
                             },
                             {
-                                'description': None,
-                                'isBuiltin': False,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': True
+                                'description': ''
                             },
                             {
-                                'description': 'A configuration dictionary with typed fields',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': None
                             },
                             {
-                                'description': '',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': None
                             }
                         ],
                         'isBuiltin': False,
@@ -4823,28 +3093,13 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'description': None,
-                                'isBuiltin': False,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': True
+                                'description': 'A configuration dictionary with typed fields'
                             },
                             {
-                                'description': '',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': None
                             },
                             {
-                                'description': 'A configuration dictionary with typed fields',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': ''
                             }
                         ],
                         'isBuiltin': False,
@@ -4891,204 +3146,79 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'description': 'A configuration dictionary with typed fields',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': 'A configuration dictionary with typed fields'
                             },
                             {
-                                'description': None,
-                                'isBuiltin': False,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': True
+                                'description': None
                             },
                             {
-                                'description': '',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': None
                             },
                             {
-                                'description': '',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': ''
                             },
                             {
-                                'description': 'A configuration dictionary with typed fields',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': 'A configuration dictionary with typed fields'
                             },
                             {
-                                'description': None,
-                                'isBuiltin': False,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': True
+                                'description': None
                             },
                             {
-                                'description': None,
-                                'isBuiltin': False,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': True
+                                'description': ''
                             },
                             {
-                                'description': 'A configuration dictionary with typed fields',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': ''
                             },
                             {
-                                'description': None,
-                                'isBuiltin': False,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': True
+                                'description': None
                             },
                             {
-                                'description': None,
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': True,
-                                'isSystemGenerated': False
+                                'description': 'A configuration dictionary with typed fields'
                             },
                             {
-                                'description': None,
-                                'isBuiltin': False,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': True,
-                                'isSystemGenerated': True
+                                'description': None
                             },
                             {
-                                'description': 'A configuration dictionary with typed fields',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': None
                             },
                             {
-                                'description': None,
-                                'isBuiltin': False,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': True
+                                'description': None
                             },
                             {
-                                'description': None,
-                                'isBuiltin': False,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': True
+                                'description': None
                             },
                             {
-                                'description': 'A configuration dictionary with typed fields',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': 'List of PandasHelloWorldDfInput.SumSolid.Outputs'
                             },
                             {
-                                'description': None,
-                                'isBuiltin': False,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': True
+                                'description': 'A configuration dictionary with typed fields'
                             },
                             {
-                                'description': None,
-                                'isBuiltin': False,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': True
+                                'description': 'A configuration dictionary with typed fields'
                             },
                             {
-                                'description': 'List of PandasHelloWorldDfInput.SumSolid.Outputs',
-                                'isBuiltin': True,
-                                'isList': True,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': None
                             },
                             {
-                                'description': 'A configuration dictionary with typed fields',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': None
                             },
                             {
-                                'description': None,
-                                'isBuiltin': False,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': True
+                                'description': 'List of PandasHelloWorldDfInput.SumSqSolid.Outputs'
                             },
                             {
-                                'description': None,
-                                'isBuiltin': False,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': True
+                                'description': 'A configuration dictionary with typed fields'
                             },
                             {
-                                'description': None,
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': True,
-                                'isSystemGenerated': False
+                                'description': 'A configuration dictionary with typed fields'
                             },
                             {
-                                'description': 'List of PandasHelloWorldDfInput.SumSqSolid.Outputs',
-                                'isBuiltin': True,
-                                'isList': True,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': None
                             },
                             {
-                                'description': '',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': None
                             },
                             {
-                                'description': 'A configuration dictionary with typed fields',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': None
                             }
                         ],
                         'isBuiltin': False,
@@ -5120,12 +3250,7 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'description': '',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': ''
                             }
                         ],
                         'isBuiltin': False,
@@ -5150,108 +3275,43 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'description': 'A configuration dictionary with typed fields',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': 'A configuration dictionary with typed fields'
                             },
                             {
-                                'description': None,
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': True,
-                                'isSystemGenerated': False
+                                'description': 'A configuration dictionary with typed fields'
                             },
                             {
-                                'description': 'A configuration dictionary with typed fields',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': 'A configuration dictionary with typed fields'
                             },
                             {
-                                'description': 'A configuration dictionary with typed fields',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': 'A configuration dictionary with typed fields'
                             },
                             {
-                                'description': None,
-                                'isBuiltin': False,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': True
+                                'description': None
                             },
                             {
-                                'description': 'A configuration dictionary with typed fields',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': 'A configuration dictionary with typed fields'
                             },
                             {
-                                'description': '',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': 'A configuration dictionary with typed fields'
                             },
                             {
-                                'description': None,
-                                'isBuiltin': False,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': True
+                                'description': None
                             },
                             {
-                                'description': '',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': None
                             },
                             {
-                                'description': 'List of PandasHelloWorldDfInput.SumSolid.Outputs',
-                                'isBuiltin': True,
-                                'isList': True,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': None
                             },
                             {
-                                'description': 'A configuration dictionary with typed fields',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': ''
                             },
                             {
-                                'description': 'A configuration dictionary with typed fields',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': 'List of PandasHelloWorldDfInput.SumSolid.Outputs'
                             },
                             {
-                                'description': None,
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': True,
-                                'isSystemGenerated': False
+                                'description': ''
                             }
                         ],
                         'isBuiltin': False,
@@ -5271,68 +3331,28 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'description': 'A configuration dictionary with typed fields',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': 'A configuration dictionary with typed fields'
                             },
                             {
-                                'description': 'A configuration dictionary with typed fields',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': 'A configuration dictionary with typed fields'
                             },
                             {
-                                'description': '',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': ''
                             },
                             {
-                                'description': None,
-                                'isBuiltin': False,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': True
+                                'description': 'A configuration dictionary with typed fields'
                             },
                             {
-                                'description': '',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': None
                             },
                             {
-                                'description': 'A configuration dictionary with typed fields',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': ''
                             },
                             {
-                                'description': 'List of PandasHelloWorldDfInput.SumSqSolid.Outputs',
-                                'isBuiltin': True,
-                                'isList': True,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': None
                             },
                             {
-                                'description': None,
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': True,
-                                'isSystemGenerated': False
+                                'description': 'List of PandasHelloWorldDfInput.SumSqSolid.Outputs'
                             }
                         ],
                         'isBuiltin': False,
@@ -5357,140 +3377,55 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'description': 'A configuration dictionary with typed fields',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': 'A configuration dictionary with typed fields'
                             },
                             {
-                                'description': None,
-                                'isBuiltin': False,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': True
+                                'description': 'A configuration dictionary with typed fields'
                             },
                             {
-                                'description': None,
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': True,
-                                'isSystemGenerated': False
+                                'description': 'A configuration dictionary with typed fields'
                             },
                             {
-                                'description': 'A configuration dictionary with typed fields',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': 'A configuration dictionary with typed fields'
                             },
                             {
-                                'description': 'A configuration dictionary with typed fields',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': None
                             },
                             {
-                                'description': None,
-                                'isBuiltin': False,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': True
+                                'description': None
                             },
                             {
-                                'description': 'A configuration dictionary with typed fields',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': None
                             },
                             {
-                                'description': '',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': 'A configuration dictionary with typed fields'
                             },
                             {
-                                'description': None,
-                                'isBuiltin': False,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': True
+                                'description': 'A configuration dictionary with typed fields'
                             },
                             {
-                                'description': None,
-                                'isBuiltin': False,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': True
+                                'description': None
                             },
                             {
-                                'description': '',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': None
                             },
                             {
-                                'description': 'List of PandasHelloWorldDfInput.SumSolid.Outputs',
-                                'isBuiltin': True,
-                                'isList': True,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': None
                             },
                             {
-                                'description': 'A configuration dictionary with typed fields',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': None
                             },
                             {
-                                'description': 'A configuration dictionary with typed fields',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': 'List of PandasHelloWorldDfInput.SumSqSolid.Outputs'
                             },
                             {
-                                'description': None,
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': True,
-                                'isSystemGenerated': False
+                                'description': ''
                             },
                             {
-                                'description': None,
-                                'isBuiltin': False,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': True
+                                'description': 'List of PandasHelloWorldDfInput.SumSolid.Outputs'
                             },
                             {
-                                'description': 'List of PandasHelloWorldDfInput.SumSqSolid.Outputs',
-                                'isBuiltin': True,
-                                'isList': True,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': ''
                             }
                         ],
                         'isBuiltin': False,
@@ -5510,52 +3445,22 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'description': 'A configuration dictionary with typed fields',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': 'A configuration dictionary with typed fields'
                             },
                             {
-                                'description': None,
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': True,
-                                'isSystemGenerated': False
+                                'description': 'A configuration dictionary with typed fields'
                             },
                             {
-                                'description': 'A configuration dictionary with typed fields',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': None
                             },
                             {
-                                'description': '',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': 'A configuration dictionary with typed fields'
                             },
                             {
-                                'description': '',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': ''
                             },
                             {
-                                'description': 'A configuration dictionary with typed fields',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': ''
                             }
                         ],
                         'isBuiltin': False,
@@ -5575,52 +3480,22 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'description': 'A configuration dictionary with typed fields',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': 'A configuration dictionary with typed fields'
                             },
                             {
-                                'description': 'A configuration dictionary with typed fields',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': 'A configuration dictionary with typed fields'
                             },
                             {
-                                'description': '',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': 'A configuration dictionary with typed fields'
                             },
                             {
-                                'description': '',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': None
                             },
                             {
-                                'description': 'A configuration dictionary with typed fields',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': ''
                             },
                             {
-                                'description': None,
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': True,
-                                'isSystemGenerated': False
+                                'description': ''
                             }
                         ],
                         'isBuiltin': False,
@@ -5640,52 +3515,22 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'description': 'A configuration dictionary with typed fields',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': 'A configuration dictionary with typed fields'
                             },
                             {
-                                'description': 'A configuration dictionary with typed fields',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': 'A configuration dictionary with typed fields'
                             },
                             {
-                                'description': '',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': 'A configuration dictionary with typed fields'
                             },
                             {
-                                'description': '',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': None
                             },
                             {
-                                'description': 'A configuration dictionary with typed fields',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': ''
                             },
                             {
-                                'description': None,
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': True,
-                                'isSystemGenerated': False
+                                'description': ''
                             }
                         ],
                         'isBuiltin': False,
@@ -5725,44 +3570,19 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'description': 'A configuration dictionary with typed fields',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': 'A configuration dictionary with typed fields'
                             },
                             {
-                                'description': 'A configuration dictionary with typed fields',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': 'A configuration dictionary with typed fields'
                             },
                             {
-                                'description': '',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': 'A configuration dictionary with typed fields'
                             },
                             {
-                                'description': '',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': ''
                             },
                             {
-                                'description': 'A configuration dictionary with typed fields',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': ''
                             }
                         ],
                         'isBuiltin': True,
@@ -5792,44 +3612,19 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'description': 'A configuration dictionary with typed fields',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': 'A configuration dictionary with typed fields'
                             },
                             {
-                                'description': 'A configuration dictionary with typed fields',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': 'A configuration dictionary with typed fields'
                             },
                             {
-                                'description': '',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': 'A configuration dictionary with typed fields'
                             },
                             {
-                                'description': '',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': ''
                             },
                             {
-                                'description': 'A configuration dictionary with typed fields',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': ''
                             }
                         ],
                         'isBuiltin': True,
@@ -5884,36 +3679,16 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'description': None,
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': ''
                             },
                             {
-                                'description': '',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': 'A configuration dictionary with typed fields'
                             },
                             {
-                                'description': 'A configuration dictionary with typed fields',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': None
                             },
                             {
-                                'description': 'A configuration dictionary with typed fields',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': 'A configuration dictionary with typed fields'
                             }
                         ],
                         'isBuiltin': False,
@@ -5938,28 +3713,13 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'description': 'A configuration dictionary with typed fields',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': ''
                             },
                             {
-                                'description': '',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': 'A configuration dictionary with typed fields'
                             },
                             {
-                                'description': 'A configuration dictionary with typed fields',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': 'A configuration dictionary with typed fields'
                             }
                         ],
                         'isBuiltin': False,
@@ -5989,12 +3749,7 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'description': '',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': ''
                             }
                         ],
                         'isBuiltin': True,
@@ -6014,12 +3769,7 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'description': '',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': ''
                             }
                         ],
                         'isBuiltin': True,
@@ -6039,12 +3789,7 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'description': '',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': ''
                             }
                         ],
                         'isBuiltin': True,
@@ -6064,12 +3809,7 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'description': '',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': ''
                             }
                         ],
                         'isBuiltin': True,
@@ -6089,12 +3829,7 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'description': '',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': ''
                             }
                         ],
                         'isBuiltin': True,
@@ -6114,36 +3849,16 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'description': 'A configuration dictionary with typed fields',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': None
                             },
                             {
-                                'description': None,
-                                'isBuiltin': False,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': True
+                                'description': 'A configuration dictionary with typed fields'
                             },
                             {
-                                'description': None,
-                                'isBuiltin': False,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': True
+                                'description': ''
                             },
                             {
-                                'description': '',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': None
                             }
                         ],
                         'isBuiltin': False,
@@ -6168,28 +3883,13 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'description': 'A configuration dictionary with typed fields',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': None
                             },
                             {
-                                'description': None,
-                                'isBuiltin': False,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': True
+                                'description': 'A configuration dictionary with typed fields'
                             },
                             {
-                                'description': '',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': ''
                             }
                         ],
                         'isBuiltin': False,
@@ -6236,132 +3936,52 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'description': 'A configuration dictionary with typed fields',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': None
                             },
                             {
-                                'description': 'A configuration dictionary with typed fields',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': None
                             },
                             {
-                                'description': 'List of NoConfigPipeline.ReturnHello.Outputs',
-                                'isBuiltin': True,
-                                'isList': True,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': None
                             },
                             {
-                                'description': None,
-                                'isBuiltin': False,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': True,
-                                'isSystemGenerated': True
+                                'description': None
                             },
                             {
-                                'description': None,
-                                'isBuiltin': False,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': True
+                                'description': 'A configuration dictionary with typed fields'
                             },
                             {
-                                'description': '',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': 'List of NoConfigPipeline.ReturnHello.Outputs'
                             },
                             {
-                                'description': None,
-                                'isBuiltin': False,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': True
+                                'description': 'A configuration dictionary with typed fields'
                             },
                             {
-                                'description': '',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': ''
                             },
                             {
-                                'description': None,
-                                'isBuiltin': False,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': True,
-                                'isSystemGenerated': True
+                                'description': None
                             },
                             {
-                                'description': None,
-                                'isBuiltin': False,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': True
+                                'description': None
                             },
                             {
-                                'description': 'A configuration dictionary with typed fields',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': ''
                             },
                             {
-                                'description': None,
-                                'isBuiltin': False,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': True
+                                'description': None
                             },
                             {
-                                'description': None,
-                                'isBuiltin': False,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': True
+                                'description': None
                             },
                             {
-                                'description': '',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': 'A configuration dictionary with typed fields'
                             },
                             {
-                                'description': None,
-                                'isBuiltin': False,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': True
+                                'description': None
                             },
                             {
-                                'description': None,
-                                'isBuiltin': False,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': True
+                                'description': ''
                             }
                         ],
                         'isBuiltin': False,
@@ -6393,12 +4013,7 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'description': '',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': ''
                             }
                         ],
                         'isBuiltin': False,
@@ -6418,36 +4033,16 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'description': 'A configuration dictionary with typed fields',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': ''
                             },
                             {
-                                'description': '',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': None
                             },
                             {
-                                'description': None,
-                                'isBuiltin': False,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': True,
-                                'isSystemGenerated': True
+                                'description': 'A configuration dictionary with typed fields'
                             },
                             {
-                                'description': 'A configuration dictionary with typed fields',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': 'A configuration dictionary with typed fields'
                             }
                         ],
                         'isBuiltin': False,
@@ -6467,52 +4062,22 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'description': 'A configuration dictionary with typed fields',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': None
                             },
                             {
-                                'description': 'List of NoConfigPipeline.ReturnHello.Outputs',
-                                'isBuiltin': True,
-                                'isList': True,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': 'List of NoConfigPipeline.ReturnHello.Outputs'
                             },
                             {
-                                'description': '',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': 'A configuration dictionary with typed fields'
                             },
                             {
-                                'description': None,
-                                'isBuiltin': False,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': True,
-                                'isSystemGenerated': True
+                                'description': ''
                             },
                             {
-                                'description': 'A configuration dictionary with typed fields',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': None
                             },
                             {
-                                'description': None,
-                                'isBuiltin': False,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': True
+                                'description': 'A configuration dictionary with typed fields'
                             }
                         ],
                         'isBuiltin': False,
@@ -6532,60 +4097,25 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'description': 'A configuration dictionary with typed fields',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': None
                             },
                             {
-                                'description': 'List of NoConfigPipeline.ReturnHello.Outputs',
-                                'isBuiltin': True,
-                                'isList': True,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': None
                             },
                             {
-                                'description': '',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': 'List of NoConfigPipeline.ReturnHello.Outputs'
                             },
                             {
-                                'description': None,
-                                'isBuiltin': False,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': True,
-                                'isSystemGenerated': True
+                                'description': 'A configuration dictionary with typed fields'
                             },
                             {
-                                'description': 'A configuration dictionary with typed fields',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': ''
                             },
                             {
-                                'description': None,
-                                'isBuiltin': False,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': True
+                                'description': None
                             },
                             {
-                                'description': None,
-                                'isBuiltin': False,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': True
+                                'description': 'A configuration dictionary with typed fields'
                             }
                         ],
                         'isBuiltin': False,
@@ -6650,36 +4180,16 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'description': None,
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': ''
                             },
                             {
-                                'description': '',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': 'A configuration dictionary with typed fields'
                             },
                             {
-                                'description': 'A configuration dictionary with typed fields',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': None
                             },
                             {
-                                'description': 'A configuration dictionary with typed fields',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': 'A configuration dictionary with typed fields'
                             }
                         ],
                         'isBuiltin': False,
@@ -6704,28 +4214,13 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'description': 'A configuration dictionary with typed fields',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': ''
                             },
                             {
-                                'description': '',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': 'A configuration dictionary with typed fields'
                             },
                             {
-                                'description': 'A configuration dictionary with typed fields',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': 'A configuration dictionary with typed fields'
                             }
                         ],
                         'isBuiltin': False,
@@ -6765,36 +4260,16 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'description': 'A configuration dictionary with typed fields',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': 'A configuration dictionary with typed fields'
                             },
                             {
-                                'description': 'A configuration dictionary with typed fields',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': ''
                             },
                             {
-                                'description': '',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': 'A configuration dictionary with typed fields'
                             },
                             {
-                                'description': '',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': ''
                             }
                         ],
                         'isBuiltin': False,
@@ -6819,28 +4294,13 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'description': '',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': 'A configuration dictionary with typed fields'
                             },
                             {
-                                'description': 'A configuration dictionary with typed fields',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': 'A configuration dictionary with typed fields'
                             },
                             {
-                                'description': 'A configuration dictionary with typed fields',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': ''
                             }
                         ],
                         'isBuiltin': False,
@@ -6860,12 +4320,7 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'description': '',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': ''
                             }
                         ],
                         'isBuiltin': True,
@@ -6885,12 +4340,7 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'description': '',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': ''
                             }
                         ],
                         'isBuiltin': True,
@@ -6910,12 +4360,7 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'description': '',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': ''
                             }
                         ],
                         'isBuiltin': True,
@@ -6935,12 +4380,7 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'description': '',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': ''
                             }
                         ],
                         'isBuiltin': True,
@@ -6960,12 +4400,7 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'description': '',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': ''
                             }
                         ],
                         'isBuiltin': True,
@@ -6985,12 +4420,7 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'description': '',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': ''
                             }
                         ],
                         'isBuiltin': True,
@@ -7010,12 +4440,7 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'description': '',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': ''
                             }
                         ],
                         'isBuiltin': True,
@@ -7035,12 +4460,7 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'description': '',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': ''
                             }
                         ],
                         'isBuiltin': True,
@@ -7060,12 +4480,7 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'description': '',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': ''
                             }
                         ],
                         'isBuiltin': True,
@@ -7085,12 +4500,7 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'description': '',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': ''
                             }
                         ],
                         'isBuiltin': True,
@@ -7110,12 +4520,7 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'description': '',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': ''
                             }
                         ],
                         'isBuiltin': True,
@@ -7135,12 +4540,7 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'description': '',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': ''
                             }
                         ],
                         'isBuiltin': True,
@@ -7160,12 +4560,7 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'description': '',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': ''
                             }
                         ],
                         'isBuiltin': True,
@@ -7185,12 +4580,7 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'description': '',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': ''
                             }
                         ],
                         'isBuiltin': True,
@@ -7210,12 +4600,7 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'description': '',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': ''
                             }
                         ],
                         'isBuiltin': True,
@@ -7235,12 +4620,7 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'description': '',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': ''
                             }
                         ],
                         'isBuiltin': True,
@@ -7260,12 +4640,7 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'description': '',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': ''
                             }
                         ],
                         'isBuiltin': True,
@@ -7305,36 +4680,16 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'description': '',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': ''
                             },
                             {
-                                'description': 'A configuration dictionary with typed fields',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': 'A configuration dictionary with typed fields'
                             },
                             {
-                                'description': 'A configuration dictionary with typed fields',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': 'A configuration dictionary with typed fields'
                             },
                             {
-                                'description': '',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': ''
                             }
                         ],
                         'isBuiltin': False,
@@ -7359,28 +4714,13 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'description': '',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': 'A configuration dictionary with typed fields'
                             },
                             {
-                                'description': 'A configuration dictionary with typed fields',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': ''
                             },
                             {
-                                'description': 'A configuration dictionary with typed fields',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': 'A configuration dictionary with typed fields'
                             }
                         ],
                         'isBuiltin': False,
@@ -7410,36 +4750,16 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'description': None,
-                                'isBuiltin': False,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': True
+                                'description': 'A configuration dictionary with typed fields'
                             },
                             {
-                                'description': '',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': ''
                             },
                             {
-                                'description': 'A configuration dictionary with typed fields',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': None
                             },
                             {
-                                'description': None,
-                                'isBuiltin': False,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': True
+                                'description': None
                             }
                         ],
                         'isBuiltin': False,
@@ -7464,28 +4784,13 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'description': None,
-                                'isBuiltin': False,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': True
+                                'description': None
                             },
                             {
-                                'description': 'A configuration dictionary with typed fields',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': ''
                             },
                             {
-                                'description': '',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': 'A configuration dictionary with typed fields'
                             }
                         ],
                         'isBuiltin': False,
@@ -7532,276 +4837,106 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'description': 'A configuration dictionary with typed fields',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': None
                             },
                             {
-                                'description': None,
-                                'isBuiltin': False,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': True
+                                'description': 'A configuration dictionary with typed fields'
                             },
                             {
-                                'description': '',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': None
                             },
                             {
-                                'description': None,
-                                'isBuiltin': False,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': True
+                                'description': ''
                             },
                             {
-                                'description': None,
-                                'isBuiltin': False,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': True
+                                'description': 'A configuration dictionary with typed fields'
                             },
                             {
-                                'description': '',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': ''
                             },
                             {
-                                'description': 'A configuration dictionary with typed fields',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': None
                             },
                             {
-                                'description': None,
-                                'isBuiltin': False,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': True,
-                                'isSystemGenerated': True
+                                'description': None
                             },
                             {
-                                'description': None,
-                                'isBuiltin': False,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': True
+                                'description': None
                             },
                             {
-                                'description': 'List of ScalarOutputPipeline.ReturnAny.Outputs',
-                                'isBuiltin': True,
-                                'isList': True,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': None
                             },
                             {
-                                'description': None,
-                                'isBuiltin': False,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': True,
-                                'isSystemGenerated': True
+                                'description': 'A configuration dictionary with typed fields'
                             },
                             {
-                                'description': 'A configuration dictionary with typed fields',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': ''
                             },
                             {
-                                'description': None,
-                                'isBuiltin': False,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': True
+                                'description': 'List of ScalarOutputPipeline.ReturnStr.Outputs'
                             },
                             {
-                                'description': 'A configuration dictionary with typed fields',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': None
                             },
                             {
-                                'description': None,
-                                'isBuiltin': False,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': True
+                                'description': 'A configuration dictionary with typed fields'
                             },
                             {
-                                'description': None,
-                                'isBuiltin': False,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': True,
-                                'isSystemGenerated': True
+                                'description': 'A configuration dictionary with typed fields'
                             },
                             {
-                                'description': None,
-                                'isBuiltin': False,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': True
+                                'description': None
                             },
                             {
-                                'description': None,
-                                'isBuiltin': False,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': True
+                                'description': None
                             },
                             {
-                                'description': 'A configuration dictionary with typed fields',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': None
                             },
                             {
-                                'description': 'List of ScalarOutputPipeline.ReturnStr.Outputs',
-                                'isBuiltin': True,
-                                'isList': True,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': 'List of ScalarOutputPipeline.ReturnInt.Outputs'
                             },
                             {
-                                'description': None,
-                                'isBuiltin': False,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': True
+                                'description': 'A configuration dictionary with typed fields'
                             },
                             {
-                                'description': 'A configuration dictionary with typed fields',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': 'A configuration dictionary with typed fields'
                             },
                             {
-                                'description': 'A configuration dictionary with typed fields',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': 'A configuration dictionary with typed fields'
                             },
                             {
-                                'description': None,
-                                'isBuiltin': False,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': True,
-                                'isSystemGenerated': True
+                                'description': 'A configuration dictionary with typed fields'
                             },
                             {
-                                'description': None,
-                                'isBuiltin': False,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': True
+                                'description': None
                             },
                             {
-                                'description': None,
-                                'isBuiltin': False,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': True
+                                'description': None
                             },
                             {
-                                'description': None,
-                                'isBuiltin': False,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': True,
-                                'isSystemGenerated': True
+                                'description': None
                             },
                             {
-                                'description': 'List of ScalarOutputPipeline.ReturnInt.Outputs',
-                                'isBuiltin': True,
-                                'isList': True,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': 'List of ScalarOutputPipeline.ReturnBool.Outputs'
                             },
                             {
-                                'description': 'A configuration dictionary with typed fields',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': None
                             },
                             {
-                                'description': None,
-                                'isBuiltin': False,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': True
+                                'description': None
                             },
                             {
-                                'description': 'A configuration dictionary with typed fields',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': None
                             },
                             {
-                                'description': None,
-                                'isBuiltin': False,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': True
+                                'description': None
                             },
                             {
-                                'description': 'List of ScalarOutputPipeline.ReturnBool.Outputs',
-                                'isBuiltin': True,
-                                'isList': True,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': None
                             },
                             {
-                                'description': '',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': 'List of ScalarOutputPipeline.ReturnAny.Outputs'
                             }
                         ],
                         'isBuiltin': False,
@@ -7833,12 +4968,7 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'description': '',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': ''
                             }
                         ],
                         'isBuiltin': False,
@@ -7858,36 +4988,16 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'description': 'A configuration dictionary with typed fields',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': ''
                             },
                             {
-                                'description': '',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': None
                             },
                             {
-                                'description': None,
-                                'isBuiltin': False,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': True,
-                                'isSystemGenerated': True
+                                'description': 'A configuration dictionary with typed fields'
                             },
                             {
-                                'description': 'A configuration dictionary with typed fields',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': 'A configuration dictionary with typed fields'
                             }
                         ],
                         'isBuiltin': False,
@@ -7907,36 +5017,16 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'description': '',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': None
                             },
                             {
-                                'description': None,
-                                'isBuiltin': False,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': True,
-                                'isSystemGenerated': True
+                                'description': 'A configuration dictionary with typed fields'
                             },
                             {
-                                'description': 'A configuration dictionary with typed fields',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': 'A configuration dictionary with typed fields'
                             },
                             {
-                                'description': 'A configuration dictionary with typed fields',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': ''
                             }
                         ],
                         'isBuiltin': False,
@@ -7956,36 +5046,16 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'description': 'A configuration dictionary with typed fields',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': 'A configuration dictionary with typed fields'
                             },
                             {
-                                'description': '',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': ''
                             },
                             {
-                                'description': None,
-                                'isBuiltin': False,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': True,
-                                'isSystemGenerated': True
+                                'description': None
                             },
                             {
-                                'description': 'A configuration dictionary with typed fields',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': 'A configuration dictionary with typed fields'
                             }
                         ],
                         'isBuiltin': False,
@@ -8005,36 +5075,16 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'description': None,
-                                'isBuiltin': False,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': True,
-                                'isSystemGenerated': True
+                                'description': ''
                             },
                             {
-                                'description': 'A configuration dictionary with typed fields',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': None
                             },
                             {
-                                'description': 'A configuration dictionary with typed fields',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': 'A configuration dictionary with typed fields'
                             },
                             {
-                                'description': '',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': 'A configuration dictionary with typed fields'
                             }
                         ],
                         'isBuiltin': False,
@@ -8054,52 +5104,22 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'description': 'A configuration dictionary with typed fields',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': 'A configuration dictionary with typed fields'
                             },
                             {
-                                'description': '',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': ''
                             },
                             {
-                                'description': None,
-                                'isBuiltin': False,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': True,
-                                'isSystemGenerated': True
+                                'description': None
                             },
                             {
-                                'description': 'A configuration dictionary with typed fields',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': None
                             },
                             {
-                                'description': None,
-                                'isBuiltin': False,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': True
+                                'description': 'A configuration dictionary with typed fields'
                             },
                             {
-                                'description': 'List of ScalarOutputPipeline.ReturnAny.Outputs',
-                                'isBuiltin': True,
-                                'isList': True,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': 'List of ScalarOutputPipeline.ReturnAny.Outputs'
                             }
                         ],
                         'isBuiltin': False,
@@ -8119,52 +5139,22 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'description': 'A configuration dictionary with typed fields',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': None
                             },
                             {
-                                'description': '',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': 'A configuration dictionary with typed fields'
                             },
                             {
-                                'description': None,
-                                'isBuiltin': False,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': True
+                                'description': 'A configuration dictionary with typed fields'
                             },
                             {
-                                'description': None,
-                                'isBuiltin': False,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': True,
-                                'isSystemGenerated': True
+                                'description': ''
                             },
                             {
-                                'description': 'List of ScalarOutputPipeline.ReturnBool.Outputs',
-                                'isBuiltin': True,
-                                'isList': True,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': None
                             },
                             {
-                                'description': 'A configuration dictionary with typed fields',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': 'List of ScalarOutputPipeline.ReturnBool.Outputs'
                             }
                         ],
                         'isBuiltin': False,
@@ -8184,52 +5174,22 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'description': '',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': 'List of ScalarOutputPipeline.ReturnInt.Outputs'
                             },
                             {
-                                'description': 'A configuration dictionary with typed fields',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': 'A configuration dictionary with typed fields'
                             },
                             {
-                                'description': None,
-                                'isBuiltin': False,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': True,
-                                'isSystemGenerated': True
+                                'description': None
                             },
                             {
-                                'description': None,
-                                'isBuiltin': False,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': True
+                                'description': 'A configuration dictionary with typed fields'
                             },
                             {
-                                'description': 'List of ScalarOutputPipeline.ReturnInt.Outputs',
-                                'isBuiltin': True,
-                                'isList': True,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': ''
                             },
                             {
-                                'description': 'A configuration dictionary with typed fields',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': None
                             }
                         ],
                         'isBuiltin': False,
@@ -8249,52 +5209,22 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'description': 'A configuration dictionary with typed fields',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': 'List of ScalarOutputPipeline.ReturnStr.Outputs'
                             },
                             {
-                                'description': '',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': 'A configuration dictionary with typed fields'
                             },
                             {
-                                'description': None,
-                                'isBuiltin': False,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': True,
-                                'isSystemGenerated': True
+                                'description': None
                             },
                             {
-                                'description': 'A configuration dictionary with typed fields',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': ''
                             },
                             {
-                                'description': None,
-                                'isBuiltin': False,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': True
+                                'description': 'A configuration dictionary with typed fields'
                             },
                             {
-                                'description': 'List of ScalarOutputPipeline.ReturnStr.Outputs',
-                                'isBuiltin': True,
-                                'isList': True,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': None
                             }
                         ],
                         'isBuiltin': False,
@@ -8329,204 +5259,79 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'description': 'A configuration dictionary with typed fields',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': 'A configuration dictionary with typed fields'
                             },
                             {
-                                'description': '',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': ''
                             },
                             {
-                                'description': None,
-                                'isBuiltin': False,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': True
+                                'description': None
                             },
                             {
-                                'description': 'A configuration dictionary with typed fields',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': None
                             },
                             {
-                                'description': None,
-                                'isBuiltin': False,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': True,
-                                'isSystemGenerated': True
+                                'description': None
                             },
                             {
-                                'description': None,
-                                'isBuiltin': False,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': True
+                                'description': 'A configuration dictionary with typed fields'
                             },
                             {
-                                'description': 'List of ScalarOutputPipeline.ReturnAny.Outputs',
-                                'isBuiltin': True,
-                                'isList': True,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': 'List of ScalarOutputPipeline.ReturnStr.Outputs'
                             },
                             {
-                                'description': 'A configuration dictionary with typed fields',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': 'A configuration dictionary with typed fields'
                             },
                             {
-                                'description': 'A configuration dictionary with typed fields',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': 'A configuration dictionary with typed fields'
                             },
                             {
-                                'description': None,
-                                'isBuiltin': False,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': True
+                                'description': None
                             },
                             {
-                                'description': None,
-                                'isBuiltin': False,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': True,
-                                'isSystemGenerated': True
+                                'description': None
                             },
                             {
-                                'description': None,
-                                'isBuiltin': False,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': True
+                                'description': None
                             },
                             {
-                                'description': 'A configuration dictionary with typed fields',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': 'List of ScalarOutputPipeline.ReturnInt.Outputs'
                             },
                             {
-                                'description': 'List of ScalarOutputPipeline.ReturnStr.Outputs',
-                                'isBuiltin': True,
-                                'isList': True,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': 'A configuration dictionary with typed fields'
                             },
                             {
-                                'description': 'A configuration dictionary with typed fields',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': 'A configuration dictionary with typed fields'
                             },
                             {
-                                'description': 'A configuration dictionary with typed fields',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': None
                             },
                             {
-                                'description': None,
-                                'isBuiltin': False,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': True,
-                                'isSystemGenerated': True
+                                'description': 'A configuration dictionary with typed fields'
                             },
                             {
-                                'description': None,
-                                'isBuiltin': False,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': True
+                                'description': None
                             },
                             {
-                                'description': None,
-                                'isBuiltin': False,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': True
+                                'description': None
                             },
                             {
-                                'description': None,
-                                'isBuiltin': False,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': True,
-                                'isSystemGenerated': True
+                                'description': None
                             },
                             {
-                                'description': 'List of ScalarOutputPipeline.ReturnInt.Outputs',
-                                'isBuiltin': True,
-                                'isList': True,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': 'List of ScalarOutputPipeline.ReturnBool.Outputs'
                             },
                             {
-                                'description': None,
-                                'isBuiltin': False,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': True
+                                'description': None
                             },
                             {
-                                'description': 'A configuration dictionary with typed fields',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': None
                             },
                             {
-                                'description': None,
-                                'isBuiltin': False,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': True
+                                'description': 'A configuration dictionary with typed fields'
                             },
                             {
-                                'description': 'List of ScalarOutputPipeline.ReturnBool.Outputs',
-                                'isBuiltin': True,
-                                'isList': True,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': 'List of ScalarOutputPipeline.ReturnAny.Outputs'
                             }
                         ],
                         'isBuiltin': False,
@@ -8566,36 +5371,16 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'description': '',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': 'A configuration dictionary with typed fields'
                             },
                             {
-                                'description': 'A configuration dictionary with typed fields',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': ''
                             },
                             {
-                                'description': 'A configuration dictionary with typed fields',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': ''
                             },
                             {
-                                'description': '',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': 'A configuration dictionary with typed fields'
                             }
                         ],
                         'isBuiltin': False,
@@ -8620,28 +5405,13 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'description': 'A configuration dictionary with typed fields',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': ''
                             },
                             {
-                                'description': 'A configuration dictionary with typed fields',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': 'A configuration dictionary with typed fields'
                             },
                             {
-                                'description': '',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': 'A configuration dictionary with typed fields'
                             }
                         ],
                         'isBuiltin': False,
@@ -8686,36 +5456,16 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'description': None,
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': ''
                             },
                             {
-                                'description': '',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': 'A configuration dictionary with typed fields'
                             },
                             {
-                                'description': 'A configuration dictionary with typed fields',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': None
                             },
                             {
-                                'description': 'A configuration dictionary with typed fields',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': 'A configuration dictionary with typed fields'
                             }
                         ],
                         'isBuiltin': False,
@@ -8740,28 +5490,13 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'description': 'A configuration dictionary with typed fields',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': ''
                             },
                             {
-                                'description': '',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': 'A configuration dictionary with typed fields'
                             },
                             {
-                                'description': 'A configuration dictionary with typed fields',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': 'A configuration dictionary with typed fields'
                             }
                         ],
                         'isBuiltin': False,
@@ -8791,12 +5526,7 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'description': '',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': ''
                             }
                         ],
                         'isBuiltin': True,
@@ -8816,12 +5546,7 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'description': '',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': ''
                             }
                         ],
                         'isBuiltin': True,
@@ -8841,12 +5566,7 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'description': '',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': ''
                             }
                         ],
                         'isBuiltin': True,
@@ -8866,12 +5586,7 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'description': '',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': ''
                             }
                         ],
                         'isBuiltin': True,
@@ -8891,12 +5606,7 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'description': '',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': ''
                             }
                         ],
                         'isBuiltin': True,
@@ -8926,36 +5636,16 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'description': 'A configuration dictionary with typed fields',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': None
                             },
                             {
-                                'description': None,
-                                'isBuiltin': False,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': True
+                                'description': ''
                             },
                             {
-                                'description': None,
-                                'isBuiltin': False,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': True
+                                'description': 'A configuration dictionary with typed fields'
                             },
                             {
-                                'description': '',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': None
                             }
                         ],
                         'isBuiltin': False,
@@ -8980,28 +5670,13 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'description': 'A configuration dictionary with typed fields',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': None
                             },
                             {
-                                'description': None,
-                                'isBuiltin': False,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': True
+                                'description': 'A configuration dictionary with typed fields'
                             },
                             {
-                                'description': '',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': ''
                             }
                         ],
                         'isBuiltin': False,
@@ -9048,140 +5723,55 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'description': 'A configuration dictionary with typed fields',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': None
                             },
                             {
-                                'description': None,
-                                'isBuiltin': False,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': True
+                                'description': 'A configuration dictionary with typed fields'
                             },
                             {
-                                'description': None,
-                                'isBuiltin': False,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': True
+                                'description': None
                             },
                             {
-                                'description': None,
-                                'isBuiltin': False,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': True
+                                'description': ''
                             },
                             {
-                                'description': None,
-                                'isBuiltin': False,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': True
+                                'description': 'A configuration dictionary with typed fields'
                             },
                             {
-                                'description': '',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': ''
                             },
                             {
-                                'description': 'List of PipelineWithEnumConfig.TakesAnEnum.Outputs',
-                                'isBuiltin': True,
-                                'isList': True,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': None
                             },
                             {
-                                'description': '',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': None
                             },
                             {
-                                'description': None,
-                                'isBuiltin': False,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': True,
-                                'isSystemGenerated': True
+                                'description': None
                             },
                             {
-                                'description': 'A configuration dictionary with typed fields',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': None
                             },
                             {
-                                'description': None,
-                                'isBuiltin': False,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': True,
-                                'isSystemGenerated': True
+                                'description': ''
                             },
                             {
-                                'description': None,
-                                'isBuiltin': False,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': True
+                                'description': None
                             },
                             {
-                                'description': None,
-                                'isBuiltin': False,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': None
                             },
                             {
-                                'description': '',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': 'A configuration dictionary with typed fields'
                             },
                             {
-                                'description': None,
-                                'isBuiltin': False,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': True
+                                'description': None
                             },
                             {
-                                'description': 'A configuration dictionary with typed fields',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': None
                             },
                             {
-                                'description': None,
-                                'isBuiltin': False,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': True
+                                'description': 'List of PipelineWithEnumConfig.TakesAnEnum.Outputs'
                             }
                         ],
                         'isBuiltin': False,
@@ -9213,12 +5803,7 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'description': '',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': ''
                             }
                         ],
                         'isBuiltin': False,
@@ -9243,60 +5828,25 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'description': 'A configuration dictionary with typed fields',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': 'A configuration dictionary with typed fields'
                             },
                             {
-                                'description': None,
-                                'isBuiltin': False,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': True
+                                'description': None
                             },
                             {
-                                'description': '',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': None
                             },
                             {
-                                'description': 'List of PipelineWithEnumConfig.TakesAnEnum.Outputs',
-                                'isBuiltin': True,
-                                'isList': True,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': ''
                             },
                             {
-                                'description': None,
-                                'isBuiltin': False,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': True,
-                                'isSystemGenerated': True
+                                'description': None
                             },
                             {
-                                'description': 'A configuration dictionary with typed fields',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': 'A configuration dictionary with typed fields'
                             },
                             {
-                                'description': None,
-                                'isBuiltin': False,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': 'List of PipelineWithEnumConfig.TakesAnEnum.Outputs'
                             }
                         ],
                         'isBuiltin': False,
@@ -9316,68 +5866,28 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'description': 'A configuration dictionary with typed fields',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': 'List of PipelineWithEnumConfig.TakesAnEnum.Outputs'
                             },
                             {
-                                'description': None,
-                                'isBuiltin': False,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': True
+                                'description': 'A configuration dictionary with typed fields'
                             },
                             {
-                                'description': None,
-                                'isBuiltin': False,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': True
+                                'description': None
                             },
                             {
-                                'description': '',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': None
                             },
                             {
-                                'description': 'List of PipelineWithEnumConfig.TakesAnEnum.Outputs',
-                                'isBuiltin': True,
-                                'isList': True,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': ''
                             },
                             {
-                                'description': None,
-                                'isBuiltin': False,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': True,
-                                'isSystemGenerated': True
+                                'description': None
                             },
                             {
-                                'description': 'A configuration dictionary with typed fields',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': 'A configuration dictionary with typed fields'
                             },
                             {
-                                'description': None,
-                                'isBuiltin': False,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': None
                             }
                         ],
                         'isBuiltin': False,
@@ -9397,36 +5907,16 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'description': 'A configuration dictionary with typed fields',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': ''
                             },
                             {
-                                'description': '',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': None
                             },
                             {
-                                'description': None,
-                                'isBuiltin': False,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': True,
-                                'isSystemGenerated': True
+                                'description': 'A configuration dictionary with typed fields'
                             },
                             {
-                                'description': 'A configuration dictionary with typed fields',
-                                'isBuiltin': True,
-                                'isList': False,
-                                'isNullable': False,
-                                'isSelector': False,
-                                'isSystemGenerated': False
+                                'description': 'A configuration dictionary with typed fields'
                             }
                         ],
                         'isBuiltin': False,
