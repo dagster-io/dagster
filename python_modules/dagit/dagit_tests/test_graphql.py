@@ -1251,6 +1251,58 @@ def test_pipeline_or_error_by_name():
     assert result.data['pipelineOrError']['name'] == 'pandas_hello_world_two'
 
 
+def test_smoke_test_config_type_system(snapshot):
+    result = execute_dagster_graphql(define_context(), ALL_CONFIG_TYPES_QUERY)
+
+    assert not result.errors
+    assert result.data
+
+    snapshot.assert_match(result.data)
+
+
+ALL_CONFIG_TYPES_QUERY = '''
+fragment configTypeFragment on ConfigType {
+  name
+  description
+  innerTypes {
+    name
+  }
+  isNullable
+  isList
+  isSelector
+  isBuiltin
+  isSystemGenerated
+  isNamed
+  ... on EnumConfigType {
+    values {
+      value
+      description
+    }
+  }
+  ... on CompositeConfigType {
+    fields {
+      name
+      isOptional
+      description
+      configType {
+        name
+      }
+    }
+  }
+}
+
+{
+ 	pipelines {
+    nodes {
+      name
+      configTypes {
+        ...configTypeFragment
+      }
+    }
+  } 
+}
+'''
+
 EXECUTION_PLAN_QUERY = '''
 query PipelineQuery($config: PipelineConfig, $pipeline: ExecutionSelector!) {
   executionPlan(config: $config, pipeline: $pipeline) {
