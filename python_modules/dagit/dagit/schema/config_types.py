@@ -59,7 +59,7 @@ filter out those types by default.
 
 
 def _resolve_inner_types(config_type):
-    return list(map(to_dauphin_config_type, config_type.inner_types))
+    return sorted(list(map(to_dauphin_config_type, config_type.inner_types)), key=lambda t: t.name)
 
 
 class DauphinRegularConfigType(dauphin.ObjectType):
@@ -120,10 +120,13 @@ class DauphinCompositeConfigType(dauphin.ObjectType):
     fields = dauphin.non_null_list('ConfigTypeField')
 
     def resolve_fields(self, _info):
-        return [
-            DauphinConfigTypeField(name=name, field=field)
-            for name, field in self._config_type.fields.items()
-        ]
+        return sorted(
+            [
+                DauphinConfigTypeField(name=name, field=field)
+                for name, field in self._config_type.fields.items()
+            ],
+            key=lambda field: field.name,
+        )
 
     def resolve_inner_types(self, _info):
         return _resolve_inner_types(self._config_type)

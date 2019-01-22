@@ -1264,9 +1264,6 @@ ALL_CONFIG_TYPES_QUERY = '''
 fragment configTypeFragment on ConfigType {
   # name # not stable, include-order dependent
   description
-  innerTypes {
-    description
-  }
   isNullable
   isList
   isSelector
