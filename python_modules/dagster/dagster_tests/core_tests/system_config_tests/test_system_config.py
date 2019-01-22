@@ -37,19 +37,12 @@ from dagster.core.definitions.environment_configs import (
     define_expectations_config_cls,
     define_solid_config_cls,
     define_solid_dictionary_cls,
+    EnvironmentClassCreationData,
 )
 
 from dagster.core.types.evaluator import evaluate_config_value
 
 from dagster.core.test_utils import throwing_evaluate_config_value
-
-
-class EnvironmentClassCreationData:
-    def __init__(self, pipeline_name, solids, context_definitions, dependency_structure):
-        self.pipeline_name = pipeline_name
-        self.solids = solids
-        self.context_definitions = context_definitions
-        self.dependency_structure = dependency_structure
 
 
 def create_creation_data(pipeline_def):

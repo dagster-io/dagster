@@ -18,7 +18,7 @@ from dagster.core.types.field_utils import check_opt_field_param, FieldImpl
 
 from .context import PipelineContextDefinition
 from .resource import ResourceDefinition
-from .dependency import Solid, SolidInputHandle
+from .dependency import Solid, SolidInputHandle, DependencyStructure
 from .solid import SolidDefinition
 
 
@@ -139,21 +139,25 @@ def define_solid_config_cls(name, config_field, inputs_field, outputs_field):
     )
 
 
-# class EnvironmentClassCreationData(
-#     namedtuple(
-#         'EnvironmentClassCreationData',
-#         'pipeline_name solids context_definitions dependency_structure',
-#     )
-# ):
-#     pass
-
-
-class EnvironmentClassCreationData:
-    def __init__(self, pipeline_name, solids, context_definitions, dependency_structure):
-        self.pipeline_name = pipeline_name
-        self.solids = solids
-        self.context_definitions = context_definitions
-        self.dependency_structure = dependency_structure
+class EnvironmentClassCreationData(
+    namedtuple(
+        'EnvironmentClassCreationData',
+        'pipeline_name solids context_definitions dependency_structure',
+    )
+):
+    def __new__(cls, pipeline_name, solids, context_definitions, dependency_structure):
+        return super(EnvironmentClassCreationData, cls).__new__(
+            cls,
+            check.str_param(pipeline_name, 'pipeline_name'),
+            check.list_param(solids, 'solids', of_type=Solid),
+            check.dict_param(
+                context_definitions,
+                'context_definitions',
+                key_type=str,
+                value_type=PipelineContextDefinition,
+            ),
+            check.inst_param(dependency_structure, 'dependency_structure', DependencyStructure),
+        )
 
 
 def define_environment_cls(creation_data):
