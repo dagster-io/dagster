@@ -1272,7 +1272,6 @@ fragment configTypeFragment on ConfigType {
   isSelector
   isBuiltin
   isSystemGenerated
-  isNamed
   ... on EnumConfigType {
     values {
       value

@@ -21,7 +21,6 @@ def _ctor_kwargs(config_type):
         description=config_type.description,
         is_builtin=config_type.type_attributes.is_builtin,
         is_list=config_type.is_list,
-        is_named=config_type.type_attributes.is_named,
         is_nullable=config_type.is_nullable,
         is_selector=config_type.is_selector,
         is_system_generated=config_type.type_attributes.is_system_config,
@@ -57,8 +56,6 @@ and are typically not relevant to an end user. This flag allows tool authors to
 filter out those types by default.
 ''',
     )
-
-    is_named = dauphin.NonNull(dauphin.Boolean)
 
 
 def _resolve_inner_types(config_type):

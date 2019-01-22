@@ -98,7 +98,6 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'isBuiltin': True,
                         'isList': False,
-                        'isNamed': True,
                         'isNullable': False,
                         'isSelector': False,
                         'isSystemGenerated': False,
@@ -134,39 +133,38 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'name': 'ContextConfigPipeline.ContextDefinitionConfig.ContextTwo.Resources'
-                            },
-                            {
-                                'name': 'ContextConfigPipeline.ContextDefinitionConfig.ContextWithResources.Resources'
-                            },
-                            {
-                                'name': 'Int'
-                            },
-                            {
-                                'name': 'Dict.115'
-                            },
-                            {
                                 'name': 'ContextConfigPipeline.ContextDefinitionConfig.ContextOne.Resources'
-                            },
-                            {
-                                'name': 'ContextConfigPipeline.ContextDefinitionConfig.ContextWithResources'
                             },
                             {
                                 'name': 'ContextConfigPipeline.ContextDefinitionConfig.ContextTwo'
                             },
                             {
-                                'name': 'String'
+                                'name': 'ContextConfigPipeline.ContextDefinitionConfig.ContextWithResources'
+                            },
+                            {
+                                'name': 'Dict.115'
+                            },
+                            {
+                                'name': 'ContextConfigPipeline.ContextDefinitionConfig.ContextOne'
                             },
                             {
                                 'name': 'ContextConfigPipeline.ContextDefinitionConfig.ContextWithResources.Resources.resource_one'
                             },
                             {
-                                'name': 'ContextConfigPipeline.ContextDefinitionConfig.ContextOne'
+                                'name': 'Int'
+                            },
+                            {
+                                'name': 'ContextConfigPipeline.ContextDefinitionConfig.ContextWithResources.Resources'
+                            },
+                            {
+                                'name': 'ContextConfigPipeline.ContextDefinitionConfig.ContextTwo.Resources'
+                            },
+                            {
+                                'name': 'String'
                             }
                         ],
                         'isBuiltin': False,
                         'isList': False,
-                        'isNamed': True,
                         'isNullable': False,
                         'isSelector': True,
                         'isSystemGenerated': True,
@@ -202,7 +200,6 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'isBuiltin': False,
                         'isList': False,
-                        'isNamed': True,
                         'isNullable': False,
                         'isSelector': False,
                         'isSystemGenerated': True,
@@ -216,7 +213,6 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'isBuiltin': False,
                         'isList': False,
-                        'isNamed': True,
                         'isNullable': False,
                         'isSelector': False,
                         'isSystemGenerated': True,
@@ -252,7 +248,6 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'isBuiltin': False,
                         'isList': False,
-                        'isNamed': True,
                         'isNullable': False,
                         'isSelector': False,
                         'isSystemGenerated': True,
@@ -266,7 +261,6 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'isBuiltin': False,
                         'isList': False,
-                        'isNamed': True,
                         'isNullable': False,
                         'isSelector': False,
                         'isSystemGenerated': True,
@@ -294,24 +288,23 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'name': 'ContextConfigPipeline.ContextDefinitionConfig.ContextWithResources.Resources'
+                                'name': 'ContextConfigPipeline.ContextDefinitionConfig.ContextWithResources.Resources.resource_one'
                             },
                             {
                                 'name': 'Int'
+                            },
+                            {
+                                'name': 'ContextConfigPipeline.ContextDefinitionConfig.ContextWithResources.Resources'
                             },
                             {
                                 'name': 'Dict.115'
                             },
                             {
                                 'name': 'String'
-                            },
-                            {
-                                'name': 'ContextConfigPipeline.ContextDefinitionConfig.ContextWithResources.Resources.resource_one'
                             }
                         ],
                         'isBuiltin': False,
                         'isList': False,
-                        'isNamed': True,
                         'isNullable': False,
                         'isSelector': False,
                         'isSystemGenerated': True,
@@ -339,7 +332,6 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'isBuiltin': False,
                         'isList': False,
-                        'isNamed': True,
                         'isNullable': False,
                         'isSelector': False,
                         'isSystemGenerated': True,
@@ -364,7 +356,6 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'isBuiltin': False,
                         'isList': False,
-                        'isNamed': True,
                         'isNullable': False,
                         'isSelector': False,
                         'isSystemGenerated': True,
@@ -408,40 +399,25 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'name': 'ContextConfigPipeline.ContextDefinitionConfig.ContextTwo.Resources'
-                            },
-                            {
-                                'name': 'ContextConfigPipeline.ContextDefinitionConfig.ContextWithResources.Resources'
-                            },
-                            {
-                                'name': 'ContextConfigPipeline.ContextDefinitionConfig.ContextOne'
-                            },
-                            {
-                                'name': 'ContextConfigPipeline.SolidsConfigDictionary'
-                            },
-                            {
-                                'name': 'Int'
-                            },
-                            {
-                                'name': 'Dict.115'
-                            },
-                            {
                                 'name': 'ContextConfigPipeline.ContextDefinitionConfig.ContextOne.Resources'
-                            },
-                            {
-                                'name': 'ContextConfigPipeline.ContextDefinitionConfig.ContextWithResources'
                             },
                             {
                                 'name': 'ContextConfigPipeline.ContextDefinitionConfig.ContextTwo'
                             },
                             {
-                                'name': 'String'
+                                'name': 'ContextConfigPipeline.ContextDefinitionConfig.ContextWithResources'
                             },
                             {
                                 'name': 'ContextConfigPipeline.ExpectationsConfig'
                             },
                             {
+                                'name': 'Bool'
+                            },
+                            {
                                 'name': 'ContextConfigPipeline.ContextConfig'
+                            },
+                            {
+                                'name': 'ContextConfigPipeline.ContextDefinitionConfig.ContextOne'
                             },
                             {
                                 'name': 'ContextConfigPipeline.ContextDefinitionConfig.ContextWithResources.Resources.resource_one'
@@ -450,12 +426,26 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                                 'name': 'ContextConfigPipeline.ExecutionConfig'
                             },
                             {
-                                'name': 'Bool'
+                                'name': 'Int'
+                            },
+                            {
+                                'name': 'ContextConfigPipeline.ContextDefinitionConfig.ContextWithResources.Resources'
+                            },
+                            {
+                                'name': 'Dict.115'
+                            },
+                            {
+                                'name': 'String'
+                            },
+                            {
+                                'name': 'ContextConfigPipeline.SolidsConfigDictionary'
+                            },
+                            {
+                                'name': 'ContextConfigPipeline.ContextDefinitionConfig.ContextTwo.Resources'
                             }
                         ],
                         'isBuiltin': False,
                         'isList': False,
-                        'isNamed': True,
                         'isNullable': False,
                         'isSelector': False,
                         'isSystemGenerated': True,
@@ -469,7 +459,6 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'isBuiltin': False,
                         'isList': False,
-                        'isNamed': True,
                         'isNullable': False,
                         'isSelector': False,
                         'isSystemGenerated': True,
@@ -494,7 +483,6 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'isBuiltin': False,
                         'isList': False,
-                        'isNamed': True,
                         'isNullable': False,
                         'isSelector': False,
                         'isSystemGenerated': True,
@@ -508,7 +496,6 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'isBuiltin': False,
                         'isList': False,
-                        'isNamed': True,
                         'isNullable': False,
                         'isSelector': False,
                         'isSystemGenerated': True,
@@ -533,7 +520,6 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'isBuiltin': True,
                         'isList': False,
-                        'isNamed': True,
                         'isNullable': False,
                         'isSelector': False,
                         'isSystemGenerated': False,
@@ -545,7 +531,6 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'isBuiltin': True,
                         'isList': False,
-                        'isNamed': True,
                         'isNullable': False,
                         'isSelector': False,
                         'isSystemGenerated': False,
@@ -557,7 +542,6 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'isBuiltin': True,
                         'isList': False,
-                        'isNamed': True,
                         'isNullable': False,
                         'isSelector': False,
                         'isSystemGenerated': False,
@@ -574,7 +558,6 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'isBuiltin': True,
                         'isList': False,
-                        'isNamed': True,
                         'isNullable': False,
                         'isSelector': False,
                         'isSystemGenerated': False,
@@ -615,7 +598,6 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'isBuiltin': True,
                         'isList': False,
-                        'isNamed': True,
                         'isNullable': False,
                         'isSelector': False,
                         'isSystemGenerated': False,
@@ -640,7 +622,6 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'isBuiltin': True,
                         'isList': False,
-                        'isNamed': True,
                         'isNullable': False,
                         'isSelector': False,
                         'isSystemGenerated': False,
@@ -660,21 +641,20 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'name': 'String'
-                            },
-                            {
-                                'name': 'MoreComplicatedConfig.ContextDefinitionConfig.Default.Resources'
-                            },
-                            {
                                 'name': 'MoreComplicatedConfig.ContextDefinitionConfig.Default'
                             },
                             {
+                                'name': 'String'
+                            },
+                            {
                                 'name': 'Dict.117'
+                            },
+                            {
+                                'name': 'MoreComplicatedConfig.ContextDefinitionConfig.Default.Resources'
                             }
                         ],
                         'isBuiltin': False,
                         'isList': False,
-                        'isNamed': True,
                         'isNullable': False,
                         'isSelector': True,
                         'isSystemGenerated': True,
@@ -702,18 +682,17 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'name': 'MoreComplicatedConfig.ContextDefinitionConfig.Default.Resources'
+                                'name': 'Dict.117'
                             },
                             {
                                 'name': 'String'
                             },
                             {
-                                'name': 'Dict.117'
+                                'name': 'MoreComplicatedConfig.ContextDefinitionConfig.Default.Resources'
                             }
                         ],
                         'isBuiltin': False,
                         'isList': False,
-                        'isNamed': True,
                         'isNullable': False,
                         'isSelector': False,
                         'isSystemGenerated': True,
@@ -727,7 +706,6 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'isBuiltin': False,
                         'isList': False,
-                        'isNamed': True,
                         'isNullable': False,
                         'isSelector': False,
                         'isSystemGenerated': True,
@@ -771,13 +749,28 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
+                                'name': 'MoreComplicatedConfig.ContextDefinitionConfig.Default'
+                            },
+                            {
+                                'name': 'Dict.117'
+                            },
+                            {
+                                'name': 'MoreComplicatedConfig.ContextConfig'
+                            },
+                            {
+                                'name': 'Bool'
+                            },
+                            {
+                                'name': 'MoreComplicatedConfig.ContextDefinitionConfig.Default.Resources'
+                            },
+                            {
+                                'name': 'MoreComplicatedConfig.ExpectationsConfig'
+                            },
+                            {
                                 'name': 'Dict.116'
                             },
                             {
                                 'name': 'MoreComplicatedConfig.SolidsConfigDictionary'
-                            },
-                            {
-                                'name': 'MoreComplicatedConfig.ExecutionConfig'
                             },
                             {
                                 'name': 'MoreComplicatedConfig.SolidConfig.ASolidWithThreeFieldConfig'
@@ -786,27 +779,11 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                                 'name': 'String'
                             },
                             {
-                                'name': 'Dict.117'
-                            },
-                            {
-                                'name': 'MoreComplicatedConfig.ContextDefinitionConfig.Default'
-                            },
-                            {
-                                'name': 'MoreComplicatedConfig.ContextConfig'
-                            },
-                            {
-                                'name': 'MoreComplicatedConfig.ExpectationsConfig'
-                            },
-                            {
-                                'name': 'MoreComplicatedConfig.ContextDefinitionConfig.Default.Resources'
-                            },
-                            {
-                                'name': 'Bool'
+                                'name': 'MoreComplicatedConfig.ExecutionConfig'
                             }
                         ],
                         'isBuiltin': False,
                         'isList': False,
-                        'isNamed': True,
                         'isNullable': False,
                         'isSelector': False,
                         'isSystemGenerated': True,
@@ -820,7 +797,6 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'isBuiltin': False,
                         'isList': False,
-                        'isNamed': True,
                         'isNullable': False,
                         'isSelector': False,
                         'isSystemGenerated': True,
@@ -845,7 +821,6 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'isBuiltin': False,
                         'isList': False,
-                        'isNamed': True,
                         'isNullable': False,
                         'isSelector': False,
                         'isSystemGenerated': True,
@@ -865,15 +840,14 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'name': 'Dict.116'
+                                'name': 'String'
                             },
                             {
-                                'name': 'String'
+                                'name': 'Dict.116'
                             }
                         ],
                         'isBuiltin': False,
                         'isList': False,
-                        'isNamed': True,
                         'isNullable': False,
                         'isSelector': False,
                         'isSystemGenerated': True,
@@ -893,18 +867,17 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'name': 'Dict.116'
+                                'name': 'MoreComplicatedConfig.SolidConfig.ASolidWithThreeFieldConfig'
                             },
                             {
                                 'name': 'String'
                             },
                             {
-                                'name': 'MoreComplicatedConfig.SolidConfig.ASolidWithThreeFieldConfig'
+                                'name': 'Dict.116'
                             }
                         ],
                         'isBuiltin': False,
                         'isList': False,
-                        'isNamed': True,
                         'isNullable': False,
                         'isSelector': False,
                         'isSystemGenerated': True,
@@ -916,7 +889,6 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'isBuiltin': True,
                         'isList': False,
-                        'isNamed': True,
                         'isNullable': False,
                         'isSelector': False,
                         'isSystemGenerated': False,
@@ -933,7 +905,6 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'isBuiltin': True,
                         'isList': False,
-                        'isNamed': True,
                         'isNullable': False,
                         'isSelector': False,
                         'isSystemGenerated': False,
@@ -972,18 +943,17 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                                 'name': 'List.Nullable.Int'
                             },
                             {
-                                'name': 'Nullable.Int'
-                            },
-                            {
                                 'name': 'String'
                             },
                             {
                                 'name': 'Int'
+                            },
+                            {
+                                'name': 'Nullable.Int'
                             }
                         ],
                         'isBuiltin': True,
                         'isList': False,
-                        'isNamed': True,
                         'isNullable': False,
                         'isSelector': False,
                         'isSystemGenerated': False,
@@ -1027,6 +997,12 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
+                                'name': 'Dict.118'
+                            },
+                            {
+                                'name': 'Nullable.Int'
+                            },
+                            {
                                 'name': 'List.Nullable.Int'
                             },
                             {
@@ -1034,17 +1010,10 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                             },
                             {
                                 'name': 'String'
-                            },
-                            {
-                                'name': 'Nullable.Int'
-                            },
-                            {
-                                'name': 'Dict.118'
                             }
                         ],
                         'isBuiltin': True,
                         'isList': False,
-                        'isNamed': True,
                         'isNullable': False,
                         'isSelector': False,
                         'isSystemGenerated': False,
@@ -1069,7 +1038,6 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'isBuiltin': True,
                         'isList': False,
-                        'isNamed': True,
                         'isNullable': False,
                         'isSelector': False,
                         'isSystemGenerated': False,
@@ -1081,7 +1049,6 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'isBuiltin': True,
                         'isList': False,
-                        'isNamed': True,
                         'isNullable': False,
                         'isSelector': False,
                         'isSystemGenerated': False,
@@ -1101,13 +1068,13 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'name': 'String'
+                                'name': 'MoreComplicatedNestedConfig.ContextDefinitionConfig.Default'
                             },
                             {
                                 'name': 'Dict.120'
                             },
                             {
-                                'name': 'MoreComplicatedNestedConfig.ContextDefinitionConfig.Default'
+                                'name': 'String'
                             },
                             {
                                 'name': 'MoreComplicatedNestedConfig.ContextDefinitionConfig.Default.Resources'
@@ -1115,7 +1082,6 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'isBuiltin': False,
                         'isList': False,
-                        'isNamed': True,
                         'isNullable': False,
                         'isSelector': True,
                         'isSystemGenerated': True,
@@ -1143,10 +1109,10 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'name': 'String'
+                                'name': 'Dict.120'
                             },
                             {
-                                'name': 'Dict.120'
+                                'name': 'String'
                             },
                             {
                                 'name': 'MoreComplicatedNestedConfig.ContextDefinitionConfig.Default.Resources'
@@ -1154,7 +1120,6 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'isBuiltin': False,
                         'isList': False,
-                        'isNamed': True,
                         'isNullable': False,
                         'isSelector': False,
                         'isSystemGenerated': True,
@@ -1168,7 +1133,6 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'isBuiltin': False,
                         'isList': False,
-                        'isNamed': True,
                         'isNullable': False,
                         'isSelector': False,
                         'isSystemGenerated': True,
@@ -1218,16 +1182,31 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                                 'name': 'Dict.119'
                             },
                             {
-                                'name': 'List.Nullable.Int'
-                            },
-                            {
-                                'name': 'MoreComplicatedNestedConfig.ContextDefinitionConfig.Default.Resources'
-                            },
-                            {
-                                'name': 'Int'
+                                'name': 'MoreComplicatedNestedConfig.ExecutionConfig'
                             },
                             {
                                 'name': 'MoreComplicatedNestedConfig.SolidConfig.ASolidWithMultilayeredConfig'
+                            },
+                            {
+                                'name': 'Dict.118'
+                            },
+                            {
+                                'name': 'Bool'
+                            },
+                            {
+                                'name': 'Nullable.Int'
+                            },
+                            {
+                                'name': 'MoreComplicatedNestedConfig.ContextDefinitionConfig.Default'
+                            },
+                            {
+                                'name': 'Dict.120'
+                            },
+                            {
+                                'name': 'List.Nullable.Int'
+                            },
+                            {
+                                'name': 'Int'
                             },
                             {
                                 'name': 'String'
@@ -1236,30 +1215,14 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                                 'name': 'MoreComplicatedNestedConfig.ContextConfig'
                             },
                             {
-                                'name': 'Nullable.Int'
-                            },
-                            {
-                                'name': 'Dict.118'
-                            },
-                            {
                                 'name': 'MoreComplicatedNestedConfig.ExpectationsConfig'
                             },
                             {
-                                'name': 'Dict.120'
-                            },
-                            {
-                                'name': 'MoreComplicatedNestedConfig.ExecutionConfig'
-                            },
-                            {
-                                'name': 'MoreComplicatedNestedConfig.ContextDefinitionConfig.Default'
-                            },
-                            {
-                                'name': 'Bool'
+                                'name': 'MoreComplicatedNestedConfig.ContextDefinitionConfig.Default.Resources'
                             }
                         ],
                         'isBuiltin': False,
                         'isList': False,
-                        'isNamed': True,
                         'isNullable': False,
                         'isSelector': False,
                         'isSystemGenerated': True,
@@ -1273,7 +1236,6 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'isBuiltin': False,
                         'isList': False,
-                        'isNamed': True,
                         'isNullable': False,
                         'isSelector': False,
                         'isSystemGenerated': True,
@@ -1298,7 +1260,6 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'isBuiltin': False,
                         'isList': False,
-                        'isNamed': True,
                         'isNullable': False,
                         'isSelector': False,
                         'isSystemGenerated': True,
@@ -1318,7 +1279,10 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'name': 'Dict.119'
+                                'name': 'Dict.118'
+                            },
+                            {
+                                'name': 'Nullable.Int'
                             },
                             {
                                 'name': 'List.Nullable.Int'
@@ -1330,15 +1294,11 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                                 'name': 'String'
                             },
                             {
-                                'name': 'Nullable.Int'
-                            },
-                            {
-                                'name': 'Dict.118'
+                                'name': 'Dict.119'
                             }
                         ],
                         'isBuiltin': False,
                         'isList': False,
-                        'isNamed': True,
                         'isNullable': False,
                         'isSelector': False,
                         'isSystemGenerated': True,
@@ -1358,7 +1318,13 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'name': 'Dict.119'
+                                'name': 'MoreComplicatedNestedConfig.SolidConfig.ASolidWithMultilayeredConfig'
+                            },
+                            {
+                                'name': 'Dict.118'
+                            },
+                            {
+                                'name': 'Nullable.Int'
                             },
                             {
                                 'name': 'List.Nullable.Int'
@@ -1367,21 +1333,14 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                                 'name': 'Int'
                             },
                             {
-                                'name': 'MoreComplicatedNestedConfig.SolidConfig.ASolidWithMultilayeredConfig'
-                            },
-                            {
                                 'name': 'String'
                             },
                             {
-                                'name': 'Nullable.Int'
-                            },
-                            {
-                                'name': 'Dict.118'
+                                'name': 'Dict.119'
                             }
                         ],
                         'isBuiltin': False,
                         'isList': False,
-                        'isNamed': True,
                         'isNullable': False,
                         'isSelector': False,
                         'isSystemGenerated': True,
@@ -1393,7 +1352,6 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'isBuiltin': True,
                         'isList': False,
-                        'isNamed': True,
                         'isNullable': False,
                         'isSelector': False,
                         'isSystemGenerated': False,
@@ -1410,7 +1368,6 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'isBuiltin': True,
                         'isList': False,
-                        'isNamed': True,
                         'isNullable': False,
                         'isSelector': False,
                         'isSystemGenerated': False,
@@ -1435,7 +1392,6 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'isBuiltin': True,
                         'isList': False,
-                        'isNamed': True,
                         'isNullable': False,
                         'isSelector': False,
                         'isSystemGenerated': False,
@@ -1463,15 +1419,14 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'name': 'Path'
+                                'name': 'String'
                             },
                             {
-                                'name': 'String'
+                                'name': 'Path'
                             }
                         ],
                         'isBuiltin': True,
                         'isList': False,
-                        'isNamed': True,
                         'isNullable': False,
                         'isSelector': False,
                         'isSystemGenerated': False,
@@ -1496,7 +1451,6 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'isBuiltin': True,
                         'isList': False,
-                        'isNamed': True,
                         'isNullable': False,
                         'isSelector': False,
                         'isSystemGenerated': False,
@@ -1521,7 +1475,6 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'isBuiltin': True,
                         'isList': False,
-                        'isNamed': True,
                         'isNullable': False,
                         'isSelector': False,
                         'isSystemGenerated': False,
@@ -1549,15 +1502,14 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'name': 'Path'
+                                'name': 'String'
                             },
                             {
-                                'name': 'String'
+                                'name': 'Path'
                             }
                         ],
                         'isBuiltin': True,
                         'isList': False,
-                        'isNamed': True,
                         'isNullable': False,
                         'isSelector': False,
                         'isSystemGenerated': False,
@@ -1582,7 +1534,6 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'isBuiltin': True,
                         'isList': False,
-                        'isNamed': True,
                         'isNullable': False,
                         'isSelector': False,
                         'isSystemGenerated': False,
@@ -1607,7 +1558,6 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'isBuiltin': True,
                         'isList': False,
-                        'isNamed': True,
                         'isNullable': False,
                         'isSelector': False,
                         'isSystemGenerated': False,
@@ -1630,18 +1580,17 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                                 'name': 'String'
                             },
                             {
-                                'name': 'PandasHelloWorld.ContextDefinitionConfig.Default.Resources'
-                            },
-                            {
                                 'name': 'PandasHelloWorld.ContextDefinitionConfig.Default'
                             },
                             {
                                 'name': 'Dict.121'
+                            },
+                            {
+                                'name': 'PandasHelloWorld.ContextDefinitionConfig.Default.Resources'
                             }
                         ],
                         'isBuiltin': False,
                         'isList': False,
-                        'isNamed': True,
                         'isNullable': False,
                         'isSelector': True,
                         'isSystemGenerated': True,
@@ -1669,18 +1618,17 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'name': 'PandasHelloWorld.ContextDefinitionConfig.Default.Resources'
-                            },
-                            {
                                 'name': 'String'
                             },
                             {
                                 'name': 'Dict.121'
+                            },
+                            {
+                                'name': 'PandasHelloWorld.ContextDefinitionConfig.Default.Resources'
                             }
                         ],
                         'isBuiltin': False,
                         'isList': False,
-                        'isNamed': True,
                         'isNullable': False,
                         'isSelector': False,
                         'isSystemGenerated': True,
@@ -1694,7 +1642,6 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'isBuiltin': False,
                         'isList': False,
-                        'isNamed': True,
                         'isNullable': False,
                         'isSelector': False,
                         'isSystemGenerated': True,
@@ -1738,22 +1685,13 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'name': 'PandasHelloWorld.ContextDefinitionConfig.Default.Resources'
-                            },
-                            {
-                                'name': 'PandasHelloWorld.ExpectationsConfig'
-                            },
-                            {
                                 'name': 'PandasHelloWorld.ExecutionConfig'
                             },
                             {
-                                'name': 'Dict.24'
+                                'name': 'Dict.23'
                             },
                             {
                                 'name': 'PandasHelloWorld.ContextDefinitionConfig.Default'
-                            },
-                            {
-                                'name': 'Dict.23'
                             },
                             {
                                 'name': 'PandasHelloWorld.ContextConfig'
@@ -1768,10 +1706,10 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                                 'name': 'PandasHelloWorld.SumSolid.Inputs'
                             },
                             {
-                                'name': 'Dict.25'
+                                'name': 'PandasHelloWorld.SumSolid.Outputs'
                             },
                             {
-                                'name': 'PandasHelloWorld.SumSolid.Outputs'
+                                'name': 'Dict.25'
                             },
                             {
                                 'name': 'List.PandasHelloWorld.SumSolid.Outputs'
@@ -1780,10 +1718,10 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                                 'name': 'Selector.26'
                             },
                             {
-                                'name': 'Dict.27'
+                                'name': 'Bool'
                             },
                             {
-                                'name': 'Bool'
+                                'name': 'Dict.27'
                             },
                             {
                                 'name': 'PandasHelloWorld.SolidConfig.SumSqSolid'
@@ -1798,10 +1736,10 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                                 'name': 'String'
                             },
                             {
-                                'name': 'Dict.28'
+                                'name': 'List.PandasHelloWorld.SumSqSolid.Outputs'
                             },
                             {
-                                'name': 'List.PandasHelloWorld.SumSqSolid.Outputs'
+                                'name': 'Dict.28'
                             },
                             {
                                 'name': 'Dict.121'
@@ -1810,12 +1748,20 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                                 'name': 'Dict.29'
                             },
                             {
+                                'name': 'PandasHelloWorld.ContextDefinitionConfig.Default.Resources'
+                            },
+                            {
+                                'name': 'Dict.24'
+                            },
+                            {
                                 'name': 'Selector.30'
+                            },
+                            {
+                                'name': 'PandasHelloWorld.ExpectationsConfig'
                             }
                         ],
                         'isBuiltin': False,
                         'isList': False,
-                        'isNamed': True,
                         'isNullable': False,
                         'isSelector': False,
                         'isSystemGenerated': True,
@@ -1829,7 +1775,6 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'isBuiltin': False,
                         'isList': False,
-                        'isNamed': True,
                         'isNullable': False,
                         'isSelector': False,
                         'isSystemGenerated': True,
@@ -1854,7 +1799,6 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'isBuiltin': False,
                         'isList': False,
-                        'isNamed': True,
                         'isNullable': False,
                         'isSelector': False,
                         'isSystemGenerated': True,
@@ -1882,13 +1826,31 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
+                                'name': 'Selector.26'
+                            },
+                            {
+                                'name': 'Dict.23'
+                            },
+                            {
+                                'name': 'Dict.25'
+                            },
+                            {
+                                'name': 'Dict.29'
+                            },
+                            {
+                                'name': 'Dict.27'
+                            },
+                            {
                                 'name': 'PandasHelloWorld.SumSolid.Inputs'
+                            },
+                            {
+                                'name': 'Dict.24'
                             },
                             {
                                 'name': 'PandasHelloWorld.SumSolid.Outputs'
                             },
                             {
-                                'name': 'Dict.25'
+                                'name': 'Selector.30'
                             },
                             {
                                 'name': 'Path'
@@ -1901,29 +1863,10 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                             },
                             {
                                 'name': 'Dict.28'
-                            },
-                            {
-                                'name': 'Selector.26'
-                            },
-                            {
-                                'name': 'Selector.30'
-                            },
-                            {
-                                'name': 'Dict.29'
-                            },
-                            {
-                                'name': 'Dict.24'
-                            },
-                            {
-                                'name': 'Dict.23'
-                            },
-                            {
-                                'name': 'Dict.27'
                             }
                         ],
                         'isBuiltin': False,
                         'isList': False,
-                        'isNamed': True,
                         'isNullable': False,
                         'isSelector': False,
                         'isSystemGenerated': True,
@@ -1943,33 +1886,32 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
+                                'name': 'Selector.26'
+                            },
+                            {
+                                'name': 'Dict.23'
+                            },
+                            {
+                                'name': 'Dict.24'
+                            },
+                            {
+                                'name': 'Path'
+                            },
+                            {
                                 'name': 'Dict.25'
                             },
                             {
                                 'name': 'PandasHelloWorld.SumSqSolid.Outputs'
                             },
                             {
-                                'name': 'Path'
-                            },
-                            {
                                 'name': 'String'
                             },
                             {
                                 'name': 'List.PandasHelloWorld.SumSqSolid.Outputs'
-                            },
-                            {
-                                'name': 'Selector.26'
-                            },
-                            {
-                                'name': 'Dict.24'
-                            },
-                            {
-                                'name': 'Dict.23'
                             }
                         ],
                         'isBuiltin': False,
                         'isList': False,
-                        'isNamed': True,
                         'isNullable': False,
                         'isSelector': False,
                         'isSystemGenerated': True,
@@ -1997,16 +1939,37 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
+                                'name': 'Selector.26'
+                            },
+                            {
+                                'name': 'PandasHelloWorld.SumSqSolid.Outputs'
+                            },
+                            {
+                                'name': 'Dict.23'
+                            },
+                            {
+                                'name': 'Dict.29'
+                            },
+                            {
+                                'name': 'PandasHelloWorld.SolidConfig.SumSolid'
+                            },
+                            {
+                                'name': 'Dict.27'
+                            },
+                            {
                                 'name': 'PandasHelloWorld.SumSolid.Inputs'
                             },
                             {
-                                'name': 'PandasHelloWorld.SolidConfig.SumSqSolid'
-                            },
-                            {
-                                'name': 'Dict.25'
+                                'name': 'Dict.24'
                             },
                             {
                                 'name': 'PandasHelloWorld.SumSolid.Outputs'
+                            },
+                            {
+                                'name': 'Selector.30'
+                            },
+                            {
+                                'name': 'Dict.25'
                             },
                             {
                                 'name': 'Path'
@@ -2015,42 +1978,20 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                                 'name': 'List.PandasHelloWorld.SumSolid.Outputs'
                             },
                             {
-                                'name': 'PandasHelloWorld.SumSqSolid.Outputs'
-                            },
-                            {
                                 'name': 'String'
                             },
                             {
-                                'name': 'Dict.28'
+                                'name': 'PandasHelloWorld.SolidConfig.SumSqSolid'
                             },
                             {
                                 'name': 'List.PandasHelloWorld.SumSqSolid.Outputs'
                             },
                             {
-                                'name': 'Selector.26'
-                            },
-                            {
-                                'name': 'Dict.27'
-                            },
-                            {
-                                'name': 'Dict.29'
-                            },
-                            {
-                                'name': 'Dict.24'
-                            },
-                            {
-                                'name': 'PandasHelloWorld.SolidConfig.SumSolid'
-                            },
-                            {
-                                'name': 'Dict.23'
-                            },
-                            {
-                                'name': 'Selector.30'
+                                'name': 'Dict.28'
                             }
                         ],
                         'isBuiltin': False,
                         'isList': False,
-                        'isNamed': True,
                         'isNullable': False,
                         'isSelector': False,
                         'isSystemGenerated': True,
@@ -2070,27 +2011,26 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
+                                'name': 'Dict.29'
+                            },
+                            {
+                                'name': 'Dict.27'
+                            },
+                            {
                                 'name': 'Path'
+                            },
+                            {
+                                'name': 'Selector.30'
                             },
                             {
                                 'name': 'String'
                             },
                             {
                                 'name': 'Dict.28'
-                            },
-                            {
-                                'name': 'Dict.27'
-                            },
-                            {
-                                'name': 'Dict.29'
-                            },
-                            {
-                                'name': 'Selector.30'
                             }
                         ],
                         'isBuiltin': False,
                         'isList': False,
-                        'isNamed': True,
                         'isNullable': False,
                         'isSelector': False,
                         'isSystemGenerated': True,
@@ -2110,27 +2050,26 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'name': 'Dict.25'
-                            },
-                            {
-                                'name': 'Path'
-                            },
-                            {
-                                'name': 'String'
-                            },
-                            {
                                 'name': 'Selector.26'
+                            },
+                            {
+                                'name': 'Dict.23'
                             },
                             {
                                 'name': 'Dict.24'
                             },
                             {
-                                'name': 'Dict.23'
+                                'name': 'Path'
+                            },
+                            {
+                                'name': 'Dict.25'
+                            },
+                            {
+                                'name': 'String'
                             }
                         ],
                         'isBuiltin': False,
                         'isList': False,
-                        'isNamed': True,
                         'isNullable': False,
                         'isSelector': False,
                         'isSystemGenerated': True,
@@ -2150,27 +2089,26 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'name': 'Dict.25'
-                            },
-                            {
-                                'name': 'Path'
-                            },
-                            {
-                                'name': 'String'
-                            },
-                            {
                                 'name': 'Selector.26'
+                            },
+                            {
+                                'name': 'Dict.23'
                             },
                             {
                                 'name': 'Dict.24'
                             },
                             {
-                                'name': 'Dict.23'
+                                'name': 'Path'
+                            },
+                            {
+                                'name': 'Dict.25'
+                            },
+                            {
+                                'name': 'String'
                             }
                         ],
                         'isBuiltin': False,
                         'isList': False,
-                        'isNamed': True,
                         'isNullable': False,
                         'isSelector': False,
                         'isSystemGenerated': True,
@@ -2182,7 +2120,6 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'isBuiltin': True,
                         'isList': False,
-                        'isNamed': True,
                         'isNullable': False,
                         'isSelector': False,
                         'isSystemGenerated': False,
@@ -2218,24 +2155,23 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'name': 'Dict.25'
-                            },
-                            {
-                                'name': 'Path'
-                            },
-                            {
-                                'name': 'String'
+                                'name': 'Dict.23'
                             },
                             {
                                 'name': 'Dict.24'
                             },
                             {
-                                'name': 'Dict.23'
+                                'name': 'Path'
+                            },
+                            {
+                                'name': 'Dict.25'
+                            },
+                            {
+                                'name': 'String'
                             }
                         ],
                         'isBuiltin': True,
                         'isList': False,
-                        'isNamed': True,
                         'isNullable': False,
                         'isSelector': True,
                         'isSystemGenerated': False,
@@ -2271,24 +2207,23 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'name': 'Path'
+                                'name': 'Dict.29'
                             },
                             {
-                                'name': 'Dict.28'
+                                'name': 'Dict.27'
+                            },
+                            {
+                                'name': 'Path'
                             },
                             {
                                 'name': 'String'
                             },
                             {
-                                'name': 'Dict.29'
-                            },
-                            {
-                                'name': 'Dict.27'
+                                'name': 'Dict.28'
                             }
                         ],
                         'isBuiltin': True,
                         'isList': False,
-                        'isNamed': True,
                         'isNullable': False,
                         'isSelector': True,
                         'isSystemGenerated': False,
@@ -2300,7 +2235,6 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'isBuiltin': True,
                         'isList': False,
-                        'isNamed': True,
                         'isNullable': False,
                         'isSelector': False,
                         'isSystemGenerated': False,
@@ -2317,7 +2251,6 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'isBuiltin': True,
                         'isList': False,
-                        'isNamed': True,
                         'isNullable': False,
                         'isSelector': False,
                         'isSystemGenerated': False,
@@ -2342,7 +2275,6 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'isBuiltin': True,
                         'isList': False,
-                        'isNamed': True,
                         'isNullable': False,
                         'isSelector': False,
                         'isSystemGenerated': False,
@@ -2370,15 +2302,14 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'name': 'Path'
+                                'name': 'String'
                             },
                             {
-                                'name': 'String'
+                                'name': 'Path'
                             }
                         ],
                         'isBuiltin': True,
                         'isList': False,
-                        'isNamed': True,
                         'isNullable': False,
                         'isSelector': False,
                         'isSystemGenerated': False,
@@ -2403,7 +2334,6 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'isBuiltin': True,
                         'isList': False,
-                        'isNamed': True,
                         'isNullable': False,
                         'isSelector': False,
                         'isSystemGenerated': False,
@@ -2428,7 +2358,6 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'isBuiltin': True,
                         'isList': False,
-                        'isNamed': True,
                         'isNullable': False,
                         'isSelector': False,
                         'isSystemGenerated': False,
@@ -2456,15 +2385,14 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'name': 'Path'
+                                'name': 'String'
                             },
                             {
-                                'name': 'String'
+                                'name': 'Path'
                             }
                         ],
                         'isBuiltin': True,
                         'isList': False,
-                        'isNamed': True,
                         'isNullable': False,
                         'isSelector': False,
                         'isSystemGenerated': False,
@@ -2489,7 +2417,6 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'isBuiltin': True,
                         'isList': False,
-                        'isNamed': True,
                         'isNullable': False,
                         'isSelector': False,
                         'isSystemGenerated': False,
@@ -2514,7 +2441,6 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'isBuiltin': True,
                         'isList': False,
-                        'isNamed': True,
                         'isNullable': False,
                         'isSelector': False,
                         'isSystemGenerated': False,
@@ -2534,13 +2460,13 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'name': 'Dict.122'
-                            },
-                            {
                                 'name': 'PandasHelloWorldTwo.ContextDefinitionConfig.Default.Resources'
                             },
                             {
                                 'name': 'String'
+                            },
+                            {
+                                'name': 'Dict.122'
                             },
                             {
                                 'name': 'PandasHelloWorldTwo.ContextDefinitionConfig.Default'
@@ -2548,7 +2474,6 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'isBuiltin': False,
                         'isList': False,
-                        'isNamed': True,
                         'isNullable': False,
                         'isSelector': True,
                         'isSystemGenerated': True,
@@ -2576,18 +2501,17 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'name': 'Dict.122'
-                            },
-                            {
                                 'name': 'PandasHelloWorldTwo.ContextDefinitionConfig.Default.Resources'
                             },
                             {
                                 'name': 'String'
+                            },
+                            {
+                                'name': 'Dict.122'
                             }
                         ],
                         'isBuiltin': False,
                         'isList': False,
-                        'isNamed': True,
                         'isNullable': False,
                         'isSelector': False,
                         'isSystemGenerated': True,
@@ -2601,7 +2525,6 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'isBuiltin': False,
                         'isList': False,
-                        'isNamed': True,
                         'isNullable': False,
                         'isSelector': False,
                         'isSystemGenerated': True,
@@ -2645,12 +2568,6 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'name': 'List.PandasHelloWorldTwo.SumSolid.Outputs'
-                            },
-                            {
-                                'name': 'Dict.24'
-                            },
-                            {
                                 'name': 'Dict.23'
                             },
                             {
@@ -2678,13 +2595,13 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                                 'name': 'PandasHelloWorldTwo.ContextConfig'
                             },
                             {
-                                'name': 'Dict.27'
-                            },
-                            {
                                 'name': 'Bool'
                             },
                             {
                                 'name': 'PandasHelloWorldTwo.SolidsConfigDictionary'
+                            },
+                            {
+                                'name': 'Dict.27'
                             },
                             {
                                 'name': 'Path'
@@ -2693,19 +2610,25 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                                 'name': 'String'
                             },
                             {
+                                'name': 'PandasHelloWorldTwo.SolidConfig.SumSolid'
+                            },
+                            {
                                 'name': 'Dict.28'
                             },
                             {
                                 'name': 'PandasHelloWorldTwo.SumSolid.Inputs'
                             },
                             {
+                                'name': 'PandasHelloWorldTwo.SumSolid.Outputs'
+                            },
+                            {
                                 'name': 'Dict.29'
                             },
                             {
-                                'name': 'PandasHelloWorldTwo.SolidConfig.SumSolid'
+                                'name': 'List.PandasHelloWorldTwo.SumSolid.Outputs'
                             },
                             {
-                                'name': 'PandasHelloWorldTwo.SumSolid.Outputs'
+                                'name': 'Dict.24'
                             },
                             {
                                 'name': 'Selector.30'
@@ -2713,7 +2636,6 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'isBuiltin': False,
                         'isList': False,
-                        'isNamed': True,
                         'isNullable': False,
                         'isSelector': False,
                         'isSystemGenerated': True,
@@ -2727,7 +2649,6 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'isBuiltin': False,
                         'isList': False,
-                        'isNamed': True,
                         'isNullable': False,
                         'isSelector': False,
                         'isSystemGenerated': True,
@@ -2752,7 +2673,6 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'isBuiltin': False,
                         'isList': False,
-                        'isNamed': True,
                         'isNullable': False,
                         'isSelector': False,
                         'isSystemGenerated': True,
@@ -2780,10 +2700,34 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
+                                'name': 'Selector.26'
+                            },
+                            {
+                                'name': 'PandasHelloWorldTwo.SumSolid.Inputs'
+                            },
+                            {
+                                'name': 'PandasHelloWorldTwo.SumSolid.Outputs'
+                            },
+                            {
+                                'name': 'Dict.23'
+                            },
+                            {
                                 'name': 'Dict.25'
                             },
                             {
+                                'name': 'Dict.29'
+                            },
+                            {
                                 'name': 'List.PandasHelloWorldTwo.SumSolid.Outputs'
+                            },
+                            {
+                                'name': 'Dict.27'
+                            },
+                            {
+                                'name': 'Dict.24'
+                            },
+                            {
+                                'name': 'Selector.30'
                             },
                             {
                                 'name': 'Path'
@@ -2793,35 +2737,10 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                             },
                             {
                                 'name': 'Dict.28'
-                            },
-                            {
-                                'name': 'Selector.26'
-                            },
-                            {
-                                'name': 'PandasHelloWorldTwo.SumSolid.Inputs'
-                            },
-                            {
-                                'name': 'Selector.30'
-                            },
-                            {
-                                'name': 'Dict.29'
-                            },
-                            {
-                                'name': 'Dict.24'
-                            },
-                            {
-                                'name': 'PandasHelloWorldTwo.SumSolid.Outputs'
-                            },
-                            {
-                                'name': 'Dict.23'
-                            },
-                            {
-                                'name': 'Dict.27'
                             }
                         ],
                         'isBuiltin': False,
                         'isList': False,
-                        'isNamed': True,
                         'isNullable': False,
                         'isSelector': False,
                         'isSystemGenerated': True,
@@ -2841,37 +2760,10 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'name': 'Dict.25'
-                            },
-                            {
-                                'name': 'List.PandasHelloWorldTwo.SumSolid.Outputs'
-                            },
-                            {
-                                'name': 'Path'
-                            },
-                            {
-                                'name': 'String'
-                            },
-                            {
-                                'name': 'Dict.28'
-                            },
-                            {
                                 'name': 'Selector.26'
                             },
                             {
                                 'name': 'PandasHelloWorldTwo.SumSolid.Inputs'
-                            },
-                            {
-                                'name': 'Dict.24'
-                            },
-                            {
-                                'name': 'Dict.29'
-                            },
-                            {
-                                'name': 'PandasHelloWorldTwo.SolidConfig.SumSolid'
-                            },
-                            {
-                                'name': 'Dict.27'
                             },
                             {
                                 'name': 'PandasHelloWorldTwo.SumSolid.Outputs'
@@ -2880,12 +2772,38 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                                 'name': 'Dict.23'
                             },
                             {
+                                'name': 'Dict.28'
+                            },
+                            {
+                                'name': 'Dict.29'
+                            },
+                            {
+                                'name': 'List.PandasHelloWorldTwo.SumSolid.Outputs'
+                            },
+                            {
+                                'name': 'Dict.27'
+                            },
+                            {
+                                'name': 'Dict.24'
+                            },
+                            {
                                 'name': 'Selector.30'
+                            },
+                            {
+                                'name': 'Dict.25'
+                            },
+                            {
+                                'name': 'Path'
+                            },
+                            {
+                                'name': 'String'
+                            },
+                            {
+                                'name': 'PandasHelloWorldTwo.SolidConfig.SumSolid'
                             }
                         ],
                         'isBuiltin': False,
                         'isList': False,
-                        'isNamed': True,
                         'isNullable': False,
                         'isSelector': False,
                         'isSystemGenerated': True,
@@ -2905,27 +2823,26 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
+                                'name': 'Dict.29'
+                            },
+                            {
+                                'name': 'Dict.27'
+                            },
+                            {
                                 'name': 'Path'
+                            },
+                            {
+                                'name': 'Selector.30'
                             },
                             {
                                 'name': 'String'
                             },
                             {
                                 'name': 'Dict.28'
-                            },
-                            {
-                                'name': 'Dict.27'
-                            },
-                            {
-                                'name': 'Dict.29'
-                            },
-                            {
-                                'name': 'Selector.30'
                             }
                         ],
                         'isBuiltin': False,
                         'isList': False,
-                        'isNamed': True,
                         'isNullable': False,
                         'isSelector': False,
                         'isSystemGenerated': True,
@@ -2945,27 +2862,26 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'name': 'Dict.25'
-                            },
-                            {
-                                'name': 'Path'
-                            },
-                            {
-                                'name': 'String'
-                            },
-                            {
                                 'name': 'Selector.26'
+                            },
+                            {
+                                'name': 'Dict.23'
                             },
                             {
                                 'name': 'Dict.24'
                             },
                             {
-                                'name': 'Dict.23'
+                                'name': 'Path'
+                            },
+                            {
+                                'name': 'Dict.25'
+                            },
+                            {
+                                'name': 'String'
                             }
                         ],
                         'isBuiltin': False,
                         'isList': False,
-                        'isNamed': True,
                         'isNullable': False,
                         'isSelector': False,
                         'isSystemGenerated': True,
@@ -2977,7 +2893,6 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'isBuiltin': True,
                         'isList': False,
-                        'isNamed': True,
                         'isNullable': False,
                         'isSelector': False,
                         'isSystemGenerated': False,
@@ -3013,24 +2928,23 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'name': 'Dict.25'
-                            },
-                            {
-                                'name': 'Path'
-                            },
-                            {
-                                'name': 'String'
+                                'name': 'Dict.23'
                             },
                             {
                                 'name': 'Dict.24'
                             },
                             {
-                                'name': 'Dict.23'
+                                'name': 'Path'
+                            },
+                            {
+                                'name': 'Dict.25'
+                            },
+                            {
+                                'name': 'String'
                             }
                         ],
                         'isBuiltin': True,
                         'isList': False,
-                        'isNamed': True,
                         'isNullable': False,
                         'isSelector': True,
                         'isSystemGenerated': False,
@@ -3066,24 +2980,23 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'name': 'Path'
+                                'name': 'Dict.29'
                             },
                             {
-                                'name': 'Dict.28'
+                                'name': 'Dict.27'
+                            },
+                            {
+                                'name': 'Path'
                             },
                             {
                                 'name': 'String'
                             },
                             {
-                                'name': 'Dict.29'
-                            },
-                            {
-                                'name': 'Dict.27'
+                                'name': 'Dict.28'
                             }
                         ],
                         'isBuiltin': True,
                         'isList': False,
-                        'isNamed': True,
                         'isNullable': False,
                         'isSelector': True,
                         'isSystemGenerated': False,
@@ -3095,7 +3008,6 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'isBuiltin': True,
                         'isList': False,
-                        'isNamed': True,
                         'isNullable': False,
                         'isSelector': False,
                         'isSystemGenerated': False,
@@ -3112,7 +3024,6 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'isBuiltin': True,
                         'isList': False,
-                        'isNamed': True,
                         'isNullable': False,
                         'isSelector': False,
                         'isSystemGenerated': False,
@@ -3137,7 +3048,6 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'isBuiltin': True,
                         'isList': False,
-                        'isNamed': True,
                         'isNullable': False,
                         'isSelector': False,
                         'isSystemGenerated': False,
@@ -3149,7 +3059,6 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'isBuiltin': True,
                         'isList': False,
-                        'isNamed': True,
                         'isNullable': False,
                         'isSelector': False,
                         'isSystemGenerated': False,
@@ -3172,18 +3081,17 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                                 'name': 'Dict.123'
                             },
                             {
-                                'name': 'PipelineWithList.ContextDefinitionConfig.Default'
-                            },
-                            {
                                 'name': 'String'
                             },
                             {
                                 'name': 'PipelineWithList.ContextDefinitionConfig.Default.Resources'
+                            },
+                            {
+                                'name': 'PipelineWithList.ContextDefinitionConfig.Default'
                             }
                         ],
                         'isBuiltin': False,
                         'isList': False,
-                        'isNamed': True,
                         'isNullable': False,
                         'isSelector': True,
                         'isSystemGenerated': True,
@@ -3222,7 +3130,6 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'isBuiltin': False,
                         'isList': False,
-                        'isNamed': True,
                         'isNullable': False,
                         'isSelector': False,
                         'isSystemGenerated': True,
@@ -3236,7 +3143,6 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'isBuiltin': False,
                         'isList': False,
-                        'isNamed': True,
                         'isNullable': False,
                         'isSelector': False,
                         'isSystemGenerated': True,
@@ -3280,45 +3186,44 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'name': 'PipelineWithList.SolidsConfigDictionary'
-                            },
-                            {
-                                'name': 'Int'
-                            },
-                            {
-                                'name': 'List.Int'
-                            },
-                            {
-                                'name': 'PipelineWithList.SolidConfig.SolidWithList'
-                            },
-                            {
-                                'name': 'PipelineWithList.ExecutionConfig'
-                            },
-                            {
-                                'name': 'String'
-                            },
-                            {
                                 'name': 'Dict.123'
                             },
                             {
-                                'name': 'PipelineWithList.ContextDefinitionConfig.Default'
+                                'name': 'PipelineWithList.ContextConfig'
                             },
                             {
                                 'name': 'Bool'
-                            },
-                            {
-                                'name': 'PipelineWithList.ContextConfig'
                             },
                             {
                                 'name': 'PipelineWithList.ExpectationsConfig'
                             },
                             {
                                 'name': 'PipelineWithList.ContextDefinitionConfig.Default.Resources'
+                            },
+                            {
+                                'name': 'Int'
+                            },
+                            {
+                                'name': 'PipelineWithList.SolidsConfigDictionary'
+                            },
+                            {
+                                'name': 'List.Int'
+                            },
+                            {
+                                'name': 'PipelineWithList.ExecutionConfig'
+                            },
+                            {
+                                'name': 'PipelineWithList.SolidConfig.SolidWithList'
+                            },
+                            {
+                                'name': 'String'
+                            },
+                            {
+                                'name': 'PipelineWithList.ContextDefinitionConfig.Default'
                             }
                         ],
                         'isBuiltin': False,
                         'isList': False,
-                        'isNamed': True,
                         'isNullable': False,
                         'isSelector': False,
                         'isSystemGenerated': True,
@@ -3332,7 +3237,6 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'isBuiltin': False,
                         'isList': False,
-                        'isNamed': True,
                         'isNullable': False,
                         'isSelector': False,
                         'isSystemGenerated': True,
@@ -3357,7 +3261,6 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'isBuiltin': False,
                         'isList': False,
-                        'isNamed': True,
                         'isNullable': False,
                         'isSelector': False,
                         'isSystemGenerated': True,
@@ -3385,7 +3288,6 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'isBuiltin': False,
                         'isList': False,
-                        'isNamed': True,
                         'isNullable': False,
                         'isSelector': False,
                         'isSystemGenerated': True,
@@ -3416,7 +3318,6 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'isBuiltin': False,
                         'isList': False,
-                        'isNamed': True,
                         'isNullable': False,
                         'isSelector': False,
                         'isSystemGenerated': True,
@@ -3428,7 +3329,6 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'isBuiltin': True,
                         'isList': False,
-                        'isNamed': True,
                         'isNullable': False,
                         'isSelector': False,
                         'isSystemGenerated': False,
@@ -3445,7 +3345,6 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'isBuiltin': True,
                         'isList': False,
-                        'isNamed': True,
                         'isNullable': False,
                         'isSelector': False,
                         'isSystemGenerated': False,
@@ -3470,7 +3369,6 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'isBuiltin': True,
                         'isList': False,
-                        'isNamed': True,
                         'isNullable': False,
                         'isSelector': False,
                         'isSystemGenerated': False,
@@ -3498,15 +3396,14 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'name': 'Path'
+                                'name': 'String'
                             },
                             {
-                                'name': 'String'
+                                'name': 'Path'
                             }
                         ],
                         'isBuiltin': True,
                         'isList': False,
-                        'isNamed': True,
                         'isNullable': False,
                         'isSelector': False,
                         'isSystemGenerated': False,
@@ -3531,7 +3428,6 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'isBuiltin': True,
                         'isList': False,
-                        'isNamed': True,
                         'isNullable': False,
                         'isSelector': False,
                         'isSystemGenerated': False,
@@ -3556,7 +3452,6 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'isBuiltin': True,
                         'isList': False,
-                        'isNamed': True,
                         'isNullable': False,
                         'isSelector': False,
                         'isSystemGenerated': False,
@@ -3584,15 +3479,14 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'name': 'Path'
+                                'name': 'String'
                             },
                             {
-                                'name': 'String'
+                                'name': 'Path'
                             }
                         ],
                         'isBuiltin': True,
                         'isList': False,
-                        'isNamed': True,
                         'isNullable': False,
                         'isSelector': False,
                         'isSystemGenerated': False,
@@ -3617,7 +3511,6 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'isBuiltin': True,
                         'isList': False,
-                        'isNamed': True,
                         'isNullable': False,
                         'isSelector': False,
                         'isSystemGenerated': False,
@@ -3642,7 +3535,6 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'isBuiltin': True,
                         'isList': False,
-                        'isNamed': True,
                         'isNullable': False,
                         'isSelector': False,
                         'isSystemGenerated': False,
@@ -3662,21 +3554,20 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'name': 'PandasHelloWorldDfInput.ContextDefinitionConfig.Default'
+                                'name': 'String'
                             },
                             {
                                 'name': 'Dict.124'
                             },
                             {
-                                'name': 'String'
+                                'name': 'PandasHelloWorldDfInput.ContextDefinitionConfig.Default.Resources'
                             },
                             {
-                                'name': 'PandasHelloWorldDfInput.ContextDefinitionConfig.Default.Resources'
+                                'name': 'PandasHelloWorldDfInput.ContextDefinitionConfig.Default'
                             }
                         ],
                         'isBuiltin': False,
                         'isList': False,
-                        'isNamed': True,
                         'isNullable': False,
                         'isSelector': True,
                         'isSystemGenerated': True,
@@ -3715,7 +3606,6 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'isBuiltin': False,
                         'isList': False,
-                        'isNamed': True,
                         'isNullable': False,
                         'isSelector': False,
                         'isSystemGenerated': True,
@@ -3729,7 +3619,6 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'isBuiltin': False,
                         'isList': False,
-                        'isNamed': True,
                         'isNullable': False,
                         'isSelector': False,
                         'isSystemGenerated': True,
@@ -3779,13 +3668,10 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                                 'name': 'PandasHelloWorldDfInput.SumSolid.Outputs'
                             },
                             {
-                                'name': 'Dict.24'
+                                'name': 'Dict.23'
                             },
                             {
                                 'name': 'List.PandasHelloWorldDfInput.SumSolid.Outputs'
-                            },
-                            {
-                                'name': 'Dict.23'
                             },
                             {
                                 'name': 'PandasHelloWorldDfInput.SolidConfig.SumSqSolid'
@@ -3812,10 +3698,10 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                                 'name': 'PandasHelloWorldDfInput.ExpectationsConfig'
                             },
                             {
-                                'name': 'Dict.27'
+                                'name': 'Bool'
                             },
                             {
-                                'name': 'Bool'
+                                'name': 'Dict.27'
                             },
                             {
                                 'name': 'PandasHelloWorldDfInput.ExecutionConfig'
@@ -3830,27 +3716,29 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                                 'name': 'String'
                             },
                             {
-                                'name': 'Dict.28'
-                            },
-                            {
                                 'name': 'PandasHelloWorldDfInput.ContextConfig'
                             },
                             {
-                                'name': 'Dict.29'
+                                'name': 'Dict.28'
                             },
                             {
                                 'name': 'PandasHelloWorldDfInput.SolidsConfigDictionary'
                             },
                             {
-                                'name': 'PandasHelloWorldDfInput.SumSolid.Inputs'
+                                'name': 'Dict.29'
+                            },
+                            {
+                                'name': 'Dict.24'
                             },
                             {
                                 'name': 'Selector.30'
+                            },
+                            {
+                                'name': 'PandasHelloWorldDfInput.SumSolid.Inputs'
                             }
                         ],
                         'isBuiltin': False,
                         'isList': False,
-                        'isNamed': True,
                         'isNullable': False,
                         'isSelector': False,
                         'isSystemGenerated': True,
@@ -3864,7 +3752,6 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'isBuiltin': False,
                         'isList': False,
-                        'isNamed': True,
                         'isNullable': False,
                         'isSelector': False,
                         'isSystemGenerated': True,
@@ -3889,7 +3776,6 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'isBuiltin': False,
                         'isList': False,
-                        'isNamed': True,
                         'isNullable': False,
                         'isSelector': False,
                         'isSystemGenerated': True,
@@ -3917,25 +3803,16 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'name': 'Dict.25'
-                            },
-                            {
-                                'name': 'Path'
-                            },
-                            {
-                                'name': 'String'
+                                'name': 'Selector.26'
                             },
                             {
                                 'name': 'Dict.28'
                             },
                             {
-                                'name': 'Selector.26'
-                            },
-                            {
                                 'name': 'PandasHelloWorldDfInput.SumSolid.Outputs'
                             },
                             {
-                                'name': 'Selector.30'
+                                'name': 'Dict.23'
                             },
                             {
                                 'name': 'Dict.29'
@@ -3944,21 +3821,29 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                                 'name': 'List.PandasHelloWorldDfInput.SumSolid.Outputs'
                             },
                             {
-                                'name': 'Dict.24'
-                            },
-                            {
-                                'name': 'PandasHelloWorldDfInput.SumSolid.Inputs'
-                            },
-                            {
-                                'name': 'Dict.23'
+                                'name': 'Dict.25'
                             },
                             {
                                 'name': 'Dict.27'
+                            },
+                            {
+                                'name': 'Dict.24'
+                            },
+                            {
+                                'name': 'Selector.30'
+                            },
+                            {
+                                'name': 'Path'
+                            },
+                            {
+                                'name': 'String'
+                            },
+                            {
+                                'name': 'PandasHelloWorldDfInput.SumSolid.Inputs'
                             }
                         ],
                         'isBuiltin': False,
                         'isList': False,
-                        'isNamed': True,
                         'isNullable': False,
                         'isSelector': False,
                         'isSystemGenerated': True,
@@ -3978,33 +3863,32 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'name': 'Dict.25'
-                            },
-                            {
-                                'name': 'Path'
-                            },
-                            {
-                                'name': 'String'
-                            },
-                            {
                                 'name': 'Selector.26'
-                            },
-                            {
-                                'name': 'Dict.24'
                             },
                             {
                                 'name': 'PandasHelloWorldDfInput.SumSqSolid.Outputs'
                             },
                             {
+                                'name': 'Dict.23'
+                            },
+                            {
                                 'name': 'List.PandasHelloWorldDfInput.SumSqSolid.Outputs'
                             },
                             {
-                                'name': 'Dict.23'
+                                'name': 'Dict.24'
+                            },
+                            {
+                                'name': 'Path'
+                            },
+                            {
+                                'name': 'Dict.25'
+                            },
+                            {
+                                'name': 'String'
                             }
                         ],
                         'isBuiltin': False,
                         'isList': False,
-                        'isNamed': True,
                         'isNullable': False,
                         'isSelector': False,
                         'isSystemGenerated': True,
@@ -4032,31 +3916,25 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'name': 'Dict.25'
-                            },
-                            {
-                                'name': 'Path'
+                                'name': 'Selector.26'
                             },
                             {
                                 'name': 'PandasHelloWorldDfInput.SolidConfig.SumSolid'
                             },
                             {
-                                'name': 'Dict.28'
-                            },
-                            {
-                                'name': 'String'
-                            },
-                            {
-                                'name': 'Selector.26'
-                            },
-                            {
                                 'name': 'PandasHelloWorldDfInput.SolidConfig.SumSqSolid'
+                            },
+                            {
+                                'name': 'PandasHelloWorldDfInput.SumSqSolid.Outputs'
                             },
                             {
                                 'name': 'PandasHelloWorldDfInput.SumSolid.Outputs'
                             },
                             {
-                                'name': 'Dict.24'
+                                'name': 'Dict.23'
+                            },
+                            {
+                                'name': 'PandasHelloWorldDfInput.SumSolid.Inputs'
                             },
                             {
                                 'name': 'Dict.29'
@@ -4065,27 +3943,32 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                                 'name': 'List.PandasHelloWorldDfInput.SumSolid.Outputs'
                             },
                             {
-                                'name': 'Dict.27'
-                            },
-                            {
-                                'name': 'PandasHelloWorldDfInput.SumSqSolid.Outputs'
-                            },
-                            {
                                 'name': 'List.PandasHelloWorldDfInput.SumSqSolid.Outputs'
                             },
                             {
-                                'name': 'PandasHelloWorldDfInput.SumSolid.Inputs'
+                                'name': 'Dict.27'
                             },
                             {
-                                'name': 'Dict.23'
+                                'name': 'Dict.24'
                             },
                             {
                                 'name': 'Selector.30'
+                            },
+                            {
+                                'name': 'Dict.25'
+                            },
+                            {
+                                'name': 'Path'
+                            },
+                            {
+                                'name': 'String'
+                            },
+                            {
+                                'name': 'Dict.28'
                             }
                         ],
                         'isBuiltin': False,
                         'isList': False,
-                        'isNamed': True,
                         'isNullable': False,
                         'isSelector': False,
                         'isSystemGenerated': True,
@@ -4105,27 +3988,26 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
+                                'name': 'Dict.29'
+                            },
+                            {
+                                'name': 'Dict.27'
+                            },
+                            {
                                 'name': 'Path'
+                            },
+                            {
+                                'name': 'Selector.30'
                             },
                             {
                                 'name': 'String'
                             },
                             {
                                 'name': 'Dict.28'
-                            },
-                            {
-                                'name': 'Dict.27'
-                            },
-                            {
-                                'name': 'Dict.29'
-                            },
-                            {
-                                'name': 'Selector.30'
                             }
                         ],
                         'isBuiltin': False,
                         'isList': False,
-                        'isNamed': True,
                         'isNullable': False,
                         'isSelector': False,
                         'isSystemGenerated': True,
@@ -4145,27 +4027,26 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'name': 'Dict.25'
-                            },
-                            {
-                                'name': 'Path'
-                            },
-                            {
-                                'name': 'String'
-                            },
-                            {
                                 'name': 'Selector.26'
+                            },
+                            {
+                                'name': 'Dict.23'
                             },
                             {
                                 'name': 'Dict.24'
                             },
                             {
-                                'name': 'Dict.23'
+                                'name': 'Path'
+                            },
+                            {
+                                'name': 'Dict.25'
+                            },
+                            {
+                                'name': 'String'
                             }
                         ],
                         'isBuiltin': False,
                         'isList': False,
-                        'isNamed': True,
                         'isNullable': False,
                         'isSelector': False,
                         'isSystemGenerated': True,
@@ -4185,27 +4066,26 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'name': 'Dict.25'
-                            },
-                            {
-                                'name': 'Path'
-                            },
-                            {
-                                'name': 'String'
-                            },
-                            {
                                 'name': 'Selector.26'
+                            },
+                            {
+                                'name': 'Dict.23'
                             },
                             {
                                 'name': 'Dict.24'
                             },
                             {
-                                'name': 'Dict.23'
+                                'name': 'Path'
+                            },
+                            {
+                                'name': 'Dict.25'
+                            },
+                            {
+                                'name': 'String'
                             }
                         ],
                         'isBuiltin': False,
                         'isList': False,
-                        'isNamed': True,
                         'isNullable': False,
                         'isSelector': False,
                         'isSystemGenerated': True,
@@ -4217,7 +4097,6 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'isBuiltin': True,
                         'isList': False,
-                        'isNamed': True,
                         'isNullable': False,
                         'isSelector': False,
                         'isSystemGenerated': False,
@@ -4253,24 +4132,23 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'name': 'Dict.25'
-                            },
-                            {
-                                'name': 'Path'
-                            },
-                            {
-                                'name': 'String'
+                                'name': 'Dict.23'
                             },
                             {
                                 'name': 'Dict.24'
                             },
                             {
-                                'name': 'Dict.23'
+                                'name': 'Path'
+                            },
+                            {
+                                'name': 'Dict.25'
+                            },
+                            {
+                                'name': 'String'
                             }
                         ],
                         'isBuiltin': True,
                         'isList': False,
-                        'isNamed': True,
                         'isNullable': False,
                         'isSelector': True,
                         'isSystemGenerated': False,
@@ -4306,24 +4184,23 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'name': 'Path'
+                                'name': 'Dict.29'
                             },
                             {
-                                'name': 'Dict.28'
+                                'name': 'Dict.27'
+                            },
+                            {
+                                'name': 'Path'
                             },
                             {
                                 'name': 'String'
                             },
                             {
-                                'name': 'Dict.29'
-                            },
-                            {
-                                'name': 'Dict.27'
+                                'name': 'Dict.28'
                             }
                         ],
                         'isBuiltin': True,
                         'isList': False,
-                        'isNamed': True,
                         'isNullable': False,
                         'isSelector': True,
                         'isSystemGenerated': False,
@@ -4335,7 +4212,6 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'isBuiltin': True,
                         'isList': False,
-                        'isNamed': True,
                         'isNullable': False,
                         'isSelector': False,
                         'isSystemGenerated': False,
@@ -4352,7 +4228,6 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'isBuiltin': True,
                         'isList': False,
-                        'isNamed': True,
                         'isNullable': False,
                         'isSelector': False,
                         'isSystemGenerated': False,
@@ -4388,21 +4263,20 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'name': 'Dict.1'
+                                'name': 'Any'
+                            },
+                            {
+                                'name': 'Dict.2'
                             },
                             {
                                 'name': 'Path'
                             },
                             {
-                                'name': 'Any'
-                            },
-                            {
-                                'name': 'Dict.2'
+                                'name': 'Dict.1'
                             }
                         ],
                         'isBuiltin': False,
                         'isList': False,
-                        'isNamed': True,
                         'isNullable': False,
                         'isSelector': True,
                         'isSystemGenerated': True,
@@ -4430,18 +4304,17 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'name': 'Path'
-                            },
-                            {
                                 'name': 'Dict.3'
                             },
                             {
                                 'name': 'Dict.4'
+                            },
+                            {
+                                'name': 'Path'
                             }
                         ],
                         'isBuiltin': False,
                         'isList': False,
-                        'isNamed': True,
                         'isNullable': False,
                         'isSelector': True,
                         'isSystemGenerated': True,
@@ -4453,7 +4326,6 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'isBuiltin': True,
                         'isList': False,
-                        'isNamed': True,
                         'isNullable': False,
                         'isSelector': False,
                         'isSystemGenerated': False,
@@ -4478,7 +4350,6 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'isBuiltin': True,
                         'isList': False,
-                        'isNamed': True,
                         'isNullable': False,
                         'isSelector': False,
                         'isSystemGenerated': False,
@@ -4503,7 +4374,6 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'isBuiltin': True,
                         'isList': False,
-                        'isNamed': True,
                         'isNullable': False,
                         'isSelector': False,
                         'isSystemGenerated': False,
@@ -4528,7 +4398,6 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'isBuiltin': True,
                         'isList': False,
-                        'isNamed': True,
                         'isNullable': False,
                         'isSelector': False,
                         'isSystemGenerated': False,
@@ -4553,7 +4422,6 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'isBuiltin': True,
                         'isList': False,
-                        'isNamed': True,
                         'isNullable': False,
                         'isSelector': False,
                         'isSystemGenerated': False,
@@ -4578,7 +4446,6 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'isBuiltin': True,
                         'isList': False,
-                        'isNamed': True,
                         'isNullable': False,
                         'isSelector': False,
                         'isSystemGenerated': False,
@@ -4601,18 +4468,17 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                                 'name': 'NoConfigPipeline.ContextDefinitionConfig.Default'
                             },
                             {
-                                'name': 'NoConfigPipeline.ContextDefinitionConfig.Default.Resources'
-                            },
-                            {
                                 'name': 'String'
                             },
                             {
                                 'name': 'Dict.125'
+                            },
+                            {
+                                'name': 'NoConfigPipeline.ContextDefinitionConfig.Default.Resources'
                             }
                         ],
                         'isBuiltin': False,
                         'isList': False,
-                        'isNamed': True,
                         'isNullable': False,
                         'isSelector': True,
                         'isSystemGenerated': True,
@@ -4640,18 +4506,17 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'name': 'NoConfigPipeline.ContextDefinitionConfig.Default.Resources'
-                            },
-                            {
                                 'name': 'String'
                             },
                             {
                                 'name': 'Dict.125'
+                            },
+                            {
+                                'name': 'NoConfigPipeline.ContextDefinitionConfig.Default.Resources'
                             }
                         ],
                         'isBuiltin': False,
                         'isList': False,
-                        'isNamed': True,
                         'isNullable': False,
                         'isSelector': False,
                         'isSystemGenerated': True,
@@ -4665,7 +4530,6 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'isBuiltin': False,
                         'isList': False,
-                        'isNamed': True,
                         'isNullable': False,
                         'isSelector': False,
                         'isSystemGenerated': True,
@@ -4709,13 +4573,25 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'name': 'NoConfigPipeline.SolidConfig.ReturnHello'
+                                'name': 'NoConfigPipeline.ContextDefinitionConfig.Default.Resources'
+                            },
+                            {
+                                'name': 'Dict.4'
+                            },
+                            {
+                                'name': 'NoConfigPipeline.SolidsConfigDictionary'
+                            },
+                            {
+                                'name': 'Bool'
                             },
                             {
                                 'name': 'NoConfigPipeline.ContextDefinitionConfig.Default'
                             },
                             {
-                                'name': 'NoConfigPipeline.ExpectationsConfig'
+                                'name': 'NoConfigPipeline.SolidConfig.ReturnHello'
+                            },
+                            {
+                                'name': 'Any.MaterializationSchema'
                             },
                             {
                                 'name': 'NoConfigPipeline.ReturnHello.Outputs'
@@ -4724,42 +4600,29 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                                 'name': 'Dict.125'
                             },
                             {
-                                'name': 'List.NoConfigPipeline.ReturnHello.Outputs'
+                                'name': 'Dict.3'
                             },
                             {
                                 'name': 'Path'
                             },
                             {
-                                'name': 'NoConfigPipeline.ContextConfig'
+                                'name': 'List.NoConfigPipeline.ReturnHello.Outputs'
+                            },
+                            {
+                                'name': 'NoConfigPipeline.ExpectationsConfig'
                             },
                             {
                                 'name': 'String'
                             },
                             {
-                                'name': 'Dict.3'
-                            },
-                            {
-                                'name': 'Any.MaterializationSchema'
+                                'name': 'NoConfigPipeline.ContextConfig'
                             },
                             {
                                 'name': 'NoConfigPipeline.ExecutionConfig'
-                            },
-                            {
-                                'name': 'NoConfigPipeline.ContextDefinitionConfig.Default.Resources'
-                            },
-                            {
-                                'name': 'Bool'
-                            },
-                            {
-                                'name': 'NoConfigPipeline.SolidsConfigDictionary'
-                            },
-                            {
-                                'name': 'Dict.4'
                             }
                         ],
                         'isBuiltin': False,
                         'isList': False,
-                        'isNamed': True,
                         'isNullable': False,
                         'isSelector': False,
                         'isSystemGenerated': True,
@@ -4773,7 +4636,6 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'isBuiltin': False,
                         'isList': False,
-                        'isNamed': True,
                         'isNullable': False,
                         'isSelector': False,
                         'isSystemGenerated': True,
@@ -4798,7 +4660,6 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'isBuiltin': False,
                         'isList': False,
-                        'isNamed': True,
                         'isNullable': False,
                         'isSelector': False,
                         'isSystemGenerated': True,
@@ -4818,21 +4679,20 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'name': 'Path'
+                                'name': 'Any.MaterializationSchema'
                             },
                             {
                                 'name': 'Dict.3'
                             },
                             {
-                                'name': 'Any.MaterializationSchema'
+                                'name': 'Dict.4'
                             },
                             {
-                                'name': 'Dict.4'
+                                'name': 'Path'
                             }
                         ],
                         'isBuiltin': False,
                         'isList': False,
-                        'isNamed': True,
                         'isNullable': False,
                         'isSelector': False,
                         'isSystemGenerated': True,
@@ -4852,27 +4712,26 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'name': 'NoConfigPipeline.ReturnHello.Outputs'
-                            },
-                            {
-                                'name': 'List.NoConfigPipeline.ReturnHello.Outputs'
-                            },
-                            {
-                                'name': 'Path'
-                            },
-                            {
-                                'name': 'Dict.3'
+                                'name': 'Dict.4'
                             },
                             {
                                 'name': 'Any.MaterializationSchema'
                             },
                             {
-                                'name': 'Dict.4'
+                                'name': 'NoConfigPipeline.ReturnHello.Outputs'
+                            },
+                            {
+                                'name': 'Dict.3'
+                            },
+                            {
+                                'name': 'Path'
+                            },
+                            {
+                                'name': 'List.NoConfigPipeline.ReturnHello.Outputs'
                             }
                         ],
                         'isBuiltin': False,
                         'isList': False,
-                        'isNamed': True,
                         'isNullable': False,
                         'isSelector': False,
                         'isSystemGenerated': True,
@@ -4892,30 +4751,29 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
+                                'name': 'Dict.4'
+                            },
+                            {
                                 'name': 'NoConfigPipeline.SolidConfig.ReturnHello'
-                            },
-                            {
-                                'name': 'NoConfigPipeline.ReturnHello.Outputs'
-                            },
-                            {
-                                'name': 'List.NoConfigPipeline.ReturnHello.Outputs'
-                            },
-                            {
-                                'name': 'Path'
-                            },
-                            {
-                                'name': 'Dict.3'
                             },
                             {
                                 'name': 'Any.MaterializationSchema'
                             },
                             {
-                                'name': 'Dict.4'
+                                'name': 'NoConfigPipeline.ReturnHello.Outputs'
+                            },
+                            {
+                                'name': 'Dict.3'
+                            },
+                            {
+                                'name': 'Path'
+                            },
+                            {
+                                'name': 'List.NoConfigPipeline.ReturnHello.Outputs'
                             }
                         ],
                         'isBuiltin': False,
                         'isList': False,
-                        'isNamed': True,
                         'isNullable': False,
                         'isSelector': False,
                         'isSystemGenerated': True,
@@ -4927,7 +4785,6 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'isBuiltin': True,
                         'isList': False,
-                        'isNamed': True,
                         'isNullable': False,
                         'isSelector': False,
                         'isSystemGenerated': False,
@@ -4939,7 +4796,6 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'isBuiltin': True,
                         'isList': False,
-                        'isNamed': True,
                         'isNullable': False,
                         'isSelector': False,
                         'isSystemGenerated': False,
@@ -4956,7 +4812,6 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'isBuiltin': True,
                         'isList': False,
-                        'isNamed': True,
                         'isNullable': False,
                         'isSelector': False,
                         'isSystemGenerated': False,
@@ -4992,21 +4847,20 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'name': 'Dict.1'
+                                'name': 'Any'
+                            },
+                            {
+                                'name': 'Dict.2'
                             },
                             {
                                 'name': 'Path'
                             },
                             {
-                                'name': 'Any'
-                            },
-                            {
-                                'name': 'Dict.2'
+                                'name': 'Dict.1'
                             }
                         ],
                         'isBuiltin': False,
                         'isList': False,
-                        'isNamed': True,
                         'isNullable': False,
                         'isSelector': True,
                         'isSystemGenerated': True,
@@ -5034,18 +4888,17 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'name': 'Path'
-                            },
-                            {
                                 'name': 'Dict.3'
                             },
                             {
                                 'name': 'Dict.4'
+                            },
+                            {
+                                'name': 'Path'
                             }
                         ],
                         'isBuiltin': False,
                         'isList': False,
-                        'isNamed': True,
                         'isNullable': False,
                         'isSelector': True,
                         'isSystemGenerated': True,
@@ -5057,7 +4910,6 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'isBuiltin': True,
                         'isList': False,
-                        'isNamed': True,
                         'isNullable': False,
                         'isSelector': False,
                         'isSystemGenerated': False,
@@ -5093,21 +4945,20 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'name': 'Dict.6'
-                            },
-                            {
-                                'name': 'Path'
-                            },
-                            {
                                 'name': 'Dict.5'
                             },
                             {
+                                'name': 'Dict.6'
+                            },
+                            {
                                 'name': 'Bool'
+                            },
+                            {
+                                'name': 'Path'
                             }
                         ],
                         'isBuiltin': False,
                         'isList': False,
-                        'isNamed': True,
                         'isNullable': False,
                         'isSelector': True,
                         'isSystemGenerated': True,
@@ -5135,18 +4986,17 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'name': 'Path'
-                            },
-                            {
                                 'name': 'Dict.7'
                             },
                             {
                                 'name': 'Dict.8'
+                            },
+                            {
+                                'name': 'Path'
                             }
                         ],
                         'isBuiltin': False,
                         'isList': False,
-                        'isNamed': True,
                         'isNullable': False,
                         'isSelector': True,
                         'isSystemGenerated': True,
@@ -5171,7 +5021,6 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'isBuiltin': True,
                         'isList': False,
-                        'isNamed': True,
                         'isNullable': False,
                         'isSelector': False,
                         'isSystemGenerated': False,
@@ -5196,7 +5045,6 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'isBuiltin': True,
                         'isList': False,
-                        'isNamed': True,
                         'isNullable': False,
                         'isSelector': False,
                         'isSystemGenerated': False,
@@ -5221,7 +5069,6 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'isBuiltin': True,
                         'isList': False,
-                        'isNamed': True,
                         'isNullable': False,
                         'isSelector': False,
                         'isSystemGenerated': False,
@@ -5246,7 +5093,6 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'isBuiltin': True,
                         'isList': False,
-                        'isNamed': True,
                         'isNullable': False,
                         'isSelector': False,
                         'isSystemGenerated': False,
@@ -5271,7 +5117,6 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'isBuiltin': True,
                         'isList': False,
-                        'isNamed': True,
                         'isNullable': False,
                         'isSelector': False,
                         'isSystemGenerated': False,
@@ -5296,7 +5141,6 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'isBuiltin': True,
                         'isList': False,
-                        'isNamed': True,
                         'isNullable': False,
                         'isSelector': False,
                         'isSystemGenerated': False,
@@ -5321,7 +5165,6 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'isBuiltin': True,
                         'isList': False,
-                        'isNamed': True,
                         'isNullable': False,
                         'isSelector': False,
                         'isSystemGenerated': False,
@@ -5346,7 +5189,6 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'isBuiltin': True,
                         'isList': False,
-                        'isNamed': True,
                         'isNullable': False,
                         'isSelector': False,
                         'isSystemGenerated': False,
@@ -5371,7 +5213,6 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'isBuiltin': True,
                         'isList': False,
-                        'isNamed': True,
                         'isNullable': False,
                         'isSelector': False,
                         'isSystemGenerated': False,
@@ -5396,7 +5237,6 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'isBuiltin': True,
                         'isList': False,
-                        'isNamed': True,
                         'isNullable': False,
                         'isSelector': False,
                         'isSystemGenerated': False,
@@ -5421,7 +5261,6 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'isBuiltin': True,
                         'isList': False,
-                        'isNamed': True,
                         'isNullable': False,
                         'isSelector': False,
                         'isSystemGenerated': False,
@@ -5446,7 +5285,6 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'isBuiltin': True,
                         'isList': False,
-                        'isNamed': True,
                         'isNullable': False,
                         'isSelector': False,
                         'isSystemGenerated': False,
@@ -5471,7 +5309,6 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'isBuiltin': True,
                         'isList': False,
-                        'isNamed': True,
                         'isNullable': False,
                         'isSelector': False,
                         'isSystemGenerated': False,
@@ -5496,7 +5333,6 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'isBuiltin': True,
                         'isList': False,
-                        'isNamed': True,
                         'isNullable': False,
                         'isSelector': False,
                         'isSystemGenerated': False,
@@ -5521,7 +5357,6 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'isBuiltin': True,
                         'isList': False,
-                        'isNamed': True,
                         'isNullable': False,
                         'isSelector': False,
                         'isSystemGenerated': False,
@@ -5546,7 +5381,6 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'isBuiltin': True,
                         'isList': False,
-                        'isNamed': True,
                         'isNullable': False,
                         'isSelector': False,
                         'isSystemGenerated': False,
@@ -5571,7 +5405,6 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'isBuiltin': True,
                         'isList': False,
-                        'isNamed': True,
                         'isNullable': False,
                         'isSelector': False,
                         'isSystemGenerated': False,
@@ -5583,7 +5416,6 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'isBuiltin': True,
                         'isList': False,
-                        'isNamed': True,
                         'isNullable': False,
                         'isSelector': False,
                         'isSystemGenerated': False,
@@ -5619,21 +5451,20 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'name': 'Dict.14'
+                                'name': 'Dict.13'
                             },
                             {
-                                'name': 'Path'
+                                'name': 'Dict.14'
                             },
                             {
                                 'name': 'Int'
                             },
                             {
-                                'name': 'Dict.13'
+                                'name': 'Path'
                             }
                         ],
                         'isBuiltin': False,
                         'isList': False,
-                        'isNamed': True,
                         'isNullable': False,
                         'isSelector': True,
                         'isSystemGenerated': True,
@@ -5664,15 +5495,14 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                                 'name': 'Dict.16'
                             },
                             {
-                                'name': 'Path'
+                                'name': 'Dict.15'
                             },
                             {
-                                'name': 'Dict.15'
+                                'name': 'Path'
                             }
                         ],
                         'isBuiltin': False,
                         'isList': False,
-                        'isNamed': True,
                         'isNullable': False,
                         'isSelector': True,
                         'isSystemGenerated': True,
@@ -5684,7 +5514,6 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'isBuiltin': True,
                         'isList': False,
-                        'isNamed': True,
                         'isNullable': False,
                         'isSelector': False,
                         'isSystemGenerated': False,
@@ -5707,18 +5536,17 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                                 'name': 'String'
                             },
                             {
-                                'name': 'Dict.126'
-                            },
-                            {
                                 'name': 'ScalarOutputPipeline.ContextDefinitionConfig.Default'
                             },
                             {
                                 'name': 'ScalarOutputPipeline.ContextDefinitionConfig.Default.Resources'
+                            },
+                            {
+                                'name': 'Dict.126'
                             }
                         ],
                         'isBuiltin': False,
                         'isList': False,
-                        'isNamed': True,
                         'isNullable': False,
                         'isSelector': True,
                         'isSystemGenerated': True,
@@ -5746,10 +5574,10 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'name': 'ScalarOutputPipeline.ContextDefinitionConfig.Default.Resources'
+                                'name': 'String'
                             },
                             {
-                                'name': 'String'
+                                'name': 'ScalarOutputPipeline.ContextDefinitionConfig.Default.Resources'
                             },
                             {
                                 'name': 'Dict.126'
@@ -5757,7 +5585,6 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'isBuiltin': False,
                         'isList': False,
-                        'isNamed': True,
                         'isNullable': False,
                         'isSelector': False,
                         'isSystemGenerated': True,
@@ -5771,7 +5598,6 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'isBuiltin': False,
                         'isList': False,
-                        'isNamed': True,
                         'isNullable': False,
                         'isSelector': False,
                         'isSystemGenerated': True,
@@ -5815,43 +5641,31 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'name': 'ScalarOutputPipeline.ExecutionConfig'
-                            },
-                            {
-                                'name': 'Any.MaterializationSchema'
-                            },
-                            {
-                                'name': 'Dict.15'
-                            },
-                            {
                                 'name': 'ScalarOutputPipeline.SolidConfig.ReturnInt'
-                            },
-                            {
-                                'name': 'Dict.7'
                             },
                             {
                                 'name': 'ScalarOutputPipeline.ReturnInt.Outputs'
                             },
                             {
-                                'name': 'List.ScalarOutputPipeline.ReturnInt.Outputs'
+                                'name': 'Dict.16'
                             },
                             {
-                                'name': 'Dict.16'
+                                'name': 'List.ScalarOutputPipeline.ReturnInt.Outputs'
                             },
                             {
                                 'name': 'Dict.8'
                             },
                             {
-                                'name': 'Dict.126'
-                            },
-                            {
                                 'name': 'Int.MaterializationSchema'
                             },
                             {
-                                'name': 'ScalarOutputPipeline.SolidConfig.ReturnBool'
+                                'name': 'Bool.MaterializationSchema'
                             },
                             {
-                                'name': 'Bool.MaterializationSchema'
+                                'name': 'Dict.126'
+                            },
+                            {
+                                'name': 'ScalarOutputPipeline.SolidConfig.ReturnBool'
                             },
                             {
                                 'name': 'ScalarOutputPipeline.ReturnBool.Outputs'
@@ -5860,10 +5674,10 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                                 'name': 'List.ScalarOutputPipeline.ReturnBool.Outputs'
                             },
                             {
-                                'name': 'ScalarOutputPipeline.ContextDefinitionConfig.Default.Resources'
+                                'name': 'Dict.21'
                             },
                             {
-                                'name': 'Dict.21'
+                                'name': 'ScalarOutputPipeline.ContextDefinitionConfig.Default.Resources'
                             },
                             {
                                 'name': 'ScalarOutputPipeline.SolidConfig.ReturnAny'
@@ -5878,31 +5692,34 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                                 'name': 'List.ScalarOutputPipeline.ReturnAny.Outputs'
                             },
                             {
-                                'name': 'ScalarOutputPipeline.ContextConfig'
+                                'name': 'Dict.22'
                             },
                             {
                                 'name': 'Bool'
                             },
                             {
-                                'name': 'Dict.22'
-                            },
-                            {
-                                'name': 'ScalarOutputPipeline.SolidsConfigDictionary'
-                            },
-                            {
-                                'name': 'Path'
-                            },
-                            {
-                                'name': 'String'
+                                'name': 'ScalarOutputPipeline.ContextConfig'
                             },
                             {
                                 'name': 'Dict.3'
                             },
                             {
+                                'name': 'Path'
+                            },
+                            {
+                                'name': 'ScalarOutputPipeline.SolidsConfigDictionary'
+                            },
+                            {
                                 'name': 'String.MaterializationSchema'
                             },
                             {
+                                'name': 'String'
+                            },
+                            {
                                 'name': 'ScalarOutputPipeline.SolidConfig.ReturnStr'
+                            },
+                            {
+                                'name': 'Dict.4'
                             },
                             {
                                 'name': 'ScalarOutputPipeline.ExpectationsConfig'
@@ -5914,12 +5731,20 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                                 'name': 'List.ScalarOutputPipeline.ReturnStr.Outputs'
                             },
                             {
-                                'name': 'Dict.4'
+                                'name': 'ScalarOutputPipeline.ExecutionConfig'
+                            },
+                            {
+                                'name': 'Any.MaterializationSchema'
+                            },
+                            {
+                                'name': 'Dict.15'
+                            },
+                            {
+                                'name': 'Dict.7'
                             }
                         ],
                         'isBuiltin': False,
                         'isList': False,
-                        'isNamed': True,
                         'isNullable': False,
                         'isSelector': False,
                         'isSystemGenerated': True,
@@ -5933,7 +5758,6 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'isBuiltin': False,
                         'isList': False,
-                        'isNamed': True,
                         'isNullable': False,
                         'isSelector': False,
                         'isSystemGenerated': True,
@@ -5958,7 +5782,6 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'isBuiltin': False,
                         'isList': False,
-                        'isNamed': True,
                         'isNullable': False,
                         'isSelector': False,
                         'isSystemGenerated': True,
@@ -5978,21 +5801,20 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'name': 'Path'
+                                'name': 'Any.MaterializationSchema'
                             },
                             {
                                 'name': 'Dict.3'
                             },
                             {
-                                'name': 'Any.MaterializationSchema'
+                                'name': 'Dict.4'
                             },
                             {
-                                'name': 'Dict.4'
+                                'name': 'Path'
                             }
                         ],
                         'isBuiltin': False,
                         'isList': False,
-                        'isNamed': True,
                         'isNullable': False,
                         'isSelector': False,
                         'isSystemGenerated': True,
@@ -6018,15 +5840,14 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                                 'name': 'Bool.MaterializationSchema'
                             },
                             {
-                                'name': 'Dict.7'
+                                'name': 'Dict.8'
                             },
                             {
-                                'name': 'Dict.8'
+                                'name': 'Dict.7'
                             }
                         ],
                         'isBuiltin': False,
                         'isList': False,
-                        'isNamed': True,
                         'isNullable': False,
                         'isSelector': False,
                         'isSystemGenerated': True,
@@ -6046,21 +5867,20 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'name': 'Dict.16'
-                            },
-                            {
-                                'name': 'Path'
+                                'name': 'Dict.15'
                             },
                             {
                                 'name': 'Int.MaterializationSchema'
                             },
                             {
-                                'name': 'Dict.15'
+                                'name': 'Path'
+                            },
+                            {
+                                'name': 'Dict.16'
                             }
                         ],
                         'isBuiltin': False,
                         'isList': False,
-                        'isNamed': True,
                         'isNullable': False,
                         'isSelector': False,
                         'isSystemGenerated': True,
@@ -6080,21 +5900,20 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'name': 'Dict.22'
-                            },
-                            {
-                                'name': 'Path'
+                                'name': 'String.MaterializationSchema'
                             },
                             {
                                 'name': 'Dict.21'
                             },
                             {
-                                'name': 'String.MaterializationSchema'
+                                'name': 'Dict.22'
+                            },
+                            {
+                                'name': 'Path'
                             }
                         ],
                         'isBuiltin': False,
                         'isList': False,
-                        'isNamed': True,
                         'isNullable': False,
                         'isSelector': False,
                         'isSystemGenerated': True,
@@ -6114,13 +5933,7 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'name': 'Path'
-                            },
-                            {
-                                'name': 'Any.MaterializationSchema'
-                            },
-                            {
-                                'name': 'Dict.3'
+                                'name': 'Dict.4'
                             },
                             {
                                 'name': 'ScalarOutputPipeline.ReturnAny.Outputs'
@@ -6129,12 +5942,17 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                                 'name': 'List.ScalarOutputPipeline.ReturnAny.Outputs'
                             },
                             {
-                                'name': 'Dict.4'
+                                'name': 'Any.MaterializationSchema'
+                            },
+                            {
+                                'name': 'Dict.3'
+                            },
+                            {
+                                'name': 'Path'
                             }
                         ],
                         'isBuiltin': False,
                         'isList': False,
-                        'isNamed': True,
                         'isNullable': False,
                         'isSelector': False,
                         'isSystemGenerated': True,
@@ -6154,15 +5972,6 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'name': 'Dict.8'
-                            },
-                            {
-                                'name': 'Path'
-                            },
-                            {
-                                'name': 'Bool.MaterializationSchema'
-                            },
-                            {
                                 'name': 'Dict.7'
                             },
                             {
@@ -6170,11 +5979,19 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                             },
                             {
                                 'name': 'List.ScalarOutputPipeline.ReturnBool.Outputs'
+                            },
+                            {
+                                'name': 'Dict.8'
+                            },
+                            {
+                                'name': 'Path'
+                            },
+                            {
+                                'name': 'Bool.MaterializationSchema'
                             }
                         ],
                         'isBuiltin': False,
                         'isList': False,
-                        'isNamed': True,
                         'isNullable': False,
                         'isSelector': False,
                         'isSystemGenerated': True,
@@ -6194,10 +6011,13 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
+                                'name': 'ScalarOutputPipeline.ReturnInt.Outputs'
+                            },
+                            {
                                 'name': 'Dict.16'
                             },
                             {
-                                'name': 'Path'
+                                'name': 'List.ScalarOutputPipeline.ReturnInt.Outputs'
                             },
                             {
                                 'name': 'Int.MaterializationSchema'
@@ -6206,15 +6026,11 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                                 'name': 'Dict.15'
                             },
                             {
-                                'name': 'ScalarOutputPipeline.ReturnInt.Outputs'
-                            },
-                            {
-                                'name': 'List.ScalarOutputPipeline.ReturnInt.Outputs'
+                                'name': 'Path'
                             }
                         ],
                         'isBuiltin': False,
                         'isList': False,
-                        'isNamed': True,
                         'isNullable': False,
                         'isSelector': False,
                         'isSystemGenerated': True,
@@ -6234,27 +6050,26 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
+                                'name': 'ScalarOutputPipeline.ReturnStr.Outputs'
+                            },
+                            {
+                                'name': 'List.ScalarOutputPipeline.ReturnStr.Outputs'
+                            },
+                            {
                                 'name': 'Dict.22'
                             },
                             {
                                 'name': 'Path'
                             },
                             {
-                                'name': 'Dict.21'
-                            },
-                            {
                                 'name': 'String.MaterializationSchema'
                             },
                             {
-                                'name': 'ScalarOutputPipeline.ReturnStr.Outputs'
-                            },
-                            {
-                                'name': 'List.ScalarOutputPipeline.ReturnStr.Outputs'
+                                'name': 'Dict.21'
                             }
                         ],
                         'isBuiltin': False,
                         'isList': False,
-                        'isNamed': True,
                         'isNullable': False,
                         'isSelector': False,
                         'isSystemGenerated': True,
@@ -6298,25 +6113,16 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'name': 'Any.MaterializationSchema'
-                            },
-                            {
-                                'name': 'Dict.15'
-                            },
-                            {
                                 'name': 'ScalarOutputPipeline.SolidConfig.ReturnInt'
-                            },
-                            {
-                                'name': 'Dict.7'
                             },
                             {
                                 'name': 'ScalarOutputPipeline.ReturnInt.Outputs'
                             },
                             {
-                                'name': 'List.ScalarOutputPipeline.ReturnInt.Outputs'
+                                'name': 'Dict.16'
                             },
                             {
-                                'name': 'Dict.16'
+                                'name': 'List.ScalarOutputPipeline.ReturnInt.Outputs'
                             },
                             {
                                 'name': 'Dict.8'
@@ -6325,10 +6131,10 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                                 'name': 'Int.MaterializationSchema'
                             },
                             {
-                                'name': 'ScalarOutputPipeline.SolidConfig.ReturnBool'
+                                'name': 'Bool.MaterializationSchema'
                             },
                             {
-                                'name': 'Bool.MaterializationSchema'
+                                'name': 'ScalarOutputPipeline.SolidConfig.ReturnBool'
                             },
                             {
                                 'name': 'ScalarOutputPipeline.ReturnBool.Outputs'
@@ -6352,10 +6158,10 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                                 'name': 'Dict.22'
                             },
                             {
-                                'name': 'Path'
+                                'name': 'Dict.3'
                             },
                             {
-                                'name': 'Dict.3'
+                                'name': 'Path'
                             },
                             {
                                 'name': 'String.MaterializationSchema'
@@ -6364,18 +6170,26 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                                 'name': 'ScalarOutputPipeline.SolidConfig.ReturnStr'
                             },
                             {
+                                'name': 'Dict.4'
+                            },
+                            {
                                 'name': 'ScalarOutputPipeline.ReturnStr.Outputs'
                             },
                             {
                                 'name': 'List.ScalarOutputPipeline.ReturnStr.Outputs'
                             },
                             {
-                                'name': 'Dict.4'
+                                'name': 'Any.MaterializationSchema'
+                            },
+                            {
+                                'name': 'Dict.15'
+                            },
+                            {
+                                'name': 'Dict.7'
                             }
                         ],
                         'isBuiltin': False,
                         'isList': False,
-                        'isNamed': True,
                         'isNullable': False,
                         'isSelector': False,
                         'isSystemGenerated': True,
@@ -6387,7 +6201,6 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'isBuiltin': True,
                         'isList': False,
-                        'isNamed': True,
                         'isNullable': False,
                         'isSelector': False,
                         'isSystemGenerated': False,
@@ -6423,13 +6236,13 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'name': 'Path'
-                            },
-                            {
                                 'name': 'Dict.19'
                             },
                             {
                                 'name': 'String'
+                            },
+                            {
+                                'name': 'Path'
                             },
                             {
                                 'name': 'Dict.20'
@@ -6437,7 +6250,6 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'isBuiltin': False,
                         'isList': False,
-                        'isNamed': True,
                         'isNullable': False,
                         'isSelector': True,
                         'isSystemGenerated': True,
@@ -6465,18 +6277,17 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
+                                'name': 'Dict.21'
+                            },
+                            {
                                 'name': 'Dict.22'
                             },
                             {
                                 'name': 'Path'
-                            },
-                            {
-                                'name': 'Dict.21'
                             }
                         ],
                         'isBuiltin': False,
                         'isList': False,
-                        'isNamed': True,
                         'isNullable': False,
                         'isSelector': True,
                         'isSystemGenerated': True,
@@ -6493,7 +6304,6 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'isBuiltin': True,
                         'isList': False,
-                        'isNamed': True,
                         'isNullable': False,
                         'isSelector': False,
                         'isSystemGenerated': False,
@@ -6529,21 +6339,20 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'name': 'Dict.1'
+                                'name': 'Any'
+                            },
+                            {
+                                'name': 'Dict.2'
                             },
                             {
                                 'name': 'Path'
                             },
                             {
-                                'name': 'Any'
-                            },
-                            {
-                                'name': 'Dict.2'
+                                'name': 'Dict.1'
                             }
                         ],
                         'isBuiltin': False,
                         'isList': False,
-                        'isNamed': True,
                         'isNullable': False,
                         'isSelector': True,
                         'isSystemGenerated': True,
@@ -6571,18 +6380,17 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'name': 'Path'
-                            },
-                            {
                                 'name': 'Dict.3'
                             },
                             {
                                 'name': 'Dict.4'
+                            },
+                            {
+                                'name': 'Path'
                             }
                         ],
                         'isBuiltin': False,
                         'isList': False,
-                        'isNamed': True,
                         'isNullable': False,
                         'isSelector': True,
                         'isSystemGenerated': True,
@@ -6594,7 +6402,6 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'isBuiltin': True,
                         'isList': False,
-                        'isNamed': True,
                         'isNullable': False,
                         'isSelector': False,
                         'isSystemGenerated': False,
@@ -6619,7 +6426,6 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'isBuiltin': True,
                         'isList': False,
-                        'isNamed': True,
                         'isNullable': False,
                         'isSelector': False,
                         'isSystemGenerated': False,
@@ -6644,7 +6450,6 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'isBuiltin': True,
                         'isList': False,
-                        'isNamed': True,
                         'isNullable': False,
                         'isSelector': False,
                         'isSystemGenerated': False,
@@ -6669,7 +6474,6 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'isBuiltin': True,
                         'isList': False,
-                        'isNamed': True,
                         'isNullable': False,
                         'isSelector': False,
                         'isSystemGenerated': False,
@@ -6694,7 +6498,6 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'isBuiltin': True,
                         'isList': False,
-                        'isNamed': True,
                         'isNullable': False,
                         'isSelector': False,
                         'isSystemGenerated': False,
@@ -6719,7 +6522,6 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'isBuiltin': True,
                         'isList': False,
-                        'isNamed': True,
                         'isNullable': False,
                         'isSelector': False,
                         'isSystemGenerated': False,
@@ -6731,7 +6533,6 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'isBuiltin': True,
                         'isList': False,
-                        'isNamed': True,
                         'isNullable': False,
                         'isSelector': False,
                         'isSystemGenerated': False,
@@ -6754,18 +6555,17 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                                 'name': 'PipelineWithEnumConfig.ContextDefinitionConfig.Default'
                             },
                             {
-                                'name': 'Dict.127'
+                                'name': 'String'
                             },
                             {
                                 'name': 'PipelineWithEnumConfig.ContextDefinitionConfig.Default.Resources'
                             },
                             {
-                                'name': 'String'
+                                'name': 'Dict.127'
                             }
                         ],
                         'isBuiltin': False,
                         'isList': False,
-                        'isNamed': True,
                         'isNullable': False,
                         'isSelector': True,
                         'isSystemGenerated': True,
@@ -6793,18 +6593,17 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
+                                'name': 'String'
+                            },
+                            {
                                 'name': 'Dict.127'
                             },
                             {
                                 'name': 'PipelineWithEnumConfig.ContextDefinitionConfig.Default.Resources'
-                            },
-                            {
-                                'name': 'String'
                             }
                         ],
                         'isBuiltin': False,
                         'isList': False,
-                        'isNamed': True,
                         'isNullable': False,
                         'isSelector': False,
                         'isSystemGenerated': True,
@@ -6818,7 +6617,6 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'isBuiltin': False,
                         'isList': False,
-                        'isNamed': True,
                         'isNullable': False,
                         'isSelector': False,
                         'isSystemGenerated': True,
@@ -6862,43 +6660,19 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'name': 'Dict.127'
-                            },
-                            {
-                                'name': 'PipelineWithEnumConfig.SolidsConfigDictionary'
-                            },
-                            {
-                                'name': 'Path'
-                            },
-                            {
-                                'name': 'String'
-                            },
-                            {
-                                'name': 'Dict.3'
-                            },
-                            {
-                                'name': 'PipelineWithEnumConfig.SolidConfig.TakesAnEnum'
-                            },
-                            {
-                                'name': 'Any.MaterializationSchema'
-                            },
-                            {
                                 'name': 'PipelineWithEnumConfig.ContextDefinitionConfig.Default'
-                            },
-                            {
-                                'name': 'PipelineWithEnumConfig.TakesAnEnum.Outputs'
-                            },
-                            {
-                                'name': 'PipelineWithEnumConfig.ExpectationsConfig'
                             },
                             {
                                 'name': 'List.PipelineWithEnumConfig.TakesAnEnum.Outputs'
                             },
                             {
-                                'name': 'Bool'
+                                'name': 'Dict.4'
                             },
                             {
                                 'name': 'PipelineWithEnumConfig.ContextConfig'
+                            },
+                            {
+                                'name': 'PipelineWithEnumConfig.ExpectationsConfig'
                             },
                             {
                                 'name': 'PipelineWithEnumConfig.ExecutionConfig'
@@ -6910,12 +6684,35 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                                 'name': 'TestEnum'
                             },
                             {
-                                'name': 'Dict.4'
+                                'name': 'Bool'
+                            },
+                            {
+                                'name': 'PipelineWithEnumConfig.SolidsConfigDictionary'
+                            },
+                            {
+                                'name': 'Dict.127'
+                            },
+                            {
+                                'name': 'Any.MaterializationSchema'
+                            },
+                            {
+                                'name': 'Dict.3'
+                            },
+                            {
+                                'name': 'Path'
+                            },
+                            {
+                                'name': 'String'
+                            },
+                            {
+                                'name': 'PipelineWithEnumConfig.SolidConfig.TakesAnEnum'
+                            },
+                            {
+                                'name': 'PipelineWithEnumConfig.TakesAnEnum.Outputs'
                             }
                         ],
                         'isBuiltin': False,
                         'isList': False,
-                        'isNamed': True,
                         'isNullable': False,
                         'isSelector': False,
                         'isSystemGenerated': True,
@@ -6929,7 +6726,6 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'isBuiltin': False,
                         'isList': False,
-                        'isNamed': True,
                         'isNullable': False,
                         'isSelector': False,
                         'isSystemGenerated': True,
@@ -6954,7 +6750,6 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'isBuiltin': False,
                         'isList': False,
-                        'isNamed': True,
                         'isNullable': False,
                         'isSelector': False,
                         'isSystemGenerated': True,
@@ -6982,30 +6777,29 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'name': 'Path'
-                            },
-                            {
-                                'name': 'Dict.3'
-                            },
-                            {
-                                'name': 'Any.MaterializationSchema'
-                            },
-                            {
-                                'name': 'PipelineWithEnumConfig.TakesAnEnum.Outputs'
-                            },
-                            {
                                 'name': 'List.PipelineWithEnumConfig.TakesAnEnum.Outputs'
+                            },
+                            {
+                                'name': 'Dict.4'
                             },
                             {
                                 'name': 'TestEnum'
                             },
                             {
-                                'name': 'Dict.4'
+                                'name': 'Any.MaterializationSchema'
+                            },
+                            {
+                                'name': 'Dict.3'
+                            },
+                            {
+                                'name': 'Path'
+                            },
+                            {
+                                'name': 'PipelineWithEnumConfig.TakesAnEnum.Outputs'
                             }
                         ],
                         'isBuiltin': False,
                         'isList': False,
-                        'isNamed': True,
                         'isNullable': False,
                         'isSelector': False,
                         'isSystemGenerated': True,
@@ -7025,33 +6819,32 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'name': 'Path'
-                            },
-                            {
-                                'name': 'Dict.3'
-                            },
-                            {
-                                'name': 'PipelineWithEnumConfig.SolidConfig.TakesAnEnum'
-                            },
-                            {
-                                'name': 'Any.MaterializationSchema'
-                            },
-                            {
-                                'name': 'PipelineWithEnumConfig.TakesAnEnum.Outputs'
-                            },
-                            {
                                 'name': 'List.PipelineWithEnumConfig.TakesAnEnum.Outputs'
+                            },
+                            {
+                                'name': 'Dict.4'
                             },
                             {
                                 'name': 'TestEnum'
                             },
                             {
-                                'name': 'Dict.4'
+                                'name': 'Any.MaterializationSchema'
+                            },
+                            {
+                                'name': 'Dict.3'
+                            },
+                            {
+                                'name': 'Path'
+                            },
+                            {
+                                'name': 'PipelineWithEnumConfig.SolidConfig.TakesAnEnum'
+                            },
+                            {
+                                'name': 'PipelineWithEnumConfig.TakesAnEnum.Outputs'
                             }
                         ],
                         'isBuiltin': False,
                         'isList': False,
-                        'isNamed': True,
                         'isNullable': False,
                         'isSelector': False,
                         'isSystemGenerated': True,
@@ -7071,21 +6864,20 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'name': 'Path'
+                                'name': 'Any.MaterializationSchema'
                             },
                             {
                                 'name': 'Dict.3'
                             },
                             {
-                                'name': 'Any.MaterializationSchema'
+                                'name': 'Dict.4'
                             },
                             {
-                                'name': 'Dict.4'
+                                'name': 'Path'
                             }
                         ],
                         'isBuiltin': False,
                         'isList': False,
-                        'isNamed': True,
                         'isNullable': False,
                         'isSelector': False,
                         'isSystemGenerated': True,
@@ -7097,7 +6889,6 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'isBuiltin': True,
                         'isList': False,
-                        'isNamed': True,
                         'isNullable': False,
                         'isSelector': False,
                         'isSystemGenerated': False,
@@ -7109,7 +6900,6 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'isBuiltin': False,
                         'isList': False,
-                        'isNamed': True,
                         'isNullable': False,
                         'isSelector': False,
                         'isSystemGenerated': False,
