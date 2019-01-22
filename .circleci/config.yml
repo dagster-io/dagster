@@ -646,7 +646,7 @@ jobs:
 
   nightly:
     docker:
-      - image: circleci/python:3.7.2
+      - image: dagster/cci-test:3.7
 
     working_directory: ~/repo
 
