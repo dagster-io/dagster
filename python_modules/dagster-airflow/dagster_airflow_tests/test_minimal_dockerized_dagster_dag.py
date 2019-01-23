@@ -55,6 +55,7 @@ def test_minimal_dockerized_dagster_dag():
     task_id = 'minimal_dockerized_dagster_airflow_node'
     execution_date = datetime.datetime.utcnow().strftime('%Y-%m-%d')
 
+    subprocess.check_output(['airflow', 'initdb'])
     res = subprocess.check_output(
         ['airflow', 'test', 'minimal_dockerized_dagster_airflow_demo', task_id, execution_date]
     )
