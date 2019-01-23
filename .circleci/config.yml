@@ -354,6 +354,7 @@ jobs:
       - image: circleci/python:3.6.6
     environment:
       TOXENV: py36
+      AIRFLOW_HOME: ~/airflow
     working_directory: ~/repo
     steps:
       - checkout
@@ -370,6 +371,10 @@ jobs:
           command: |
             sudo pip install -U 'pip<19.0' # see: https://github.com/pypa/pip/issues/6163
             sudo pip install tox
+      - run:
+          name: Setup AIRFLOW_HOME
+          command: |
+            mkdir -p $AIRFLOW_HOME
       - run:
           name: Run Dagster Tests
           command: |
