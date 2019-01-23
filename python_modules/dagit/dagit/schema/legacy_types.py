@@ -1,3 +1,6 @@
+#
+# Note: When migrate dagit to use the runtime and config types instead
+# the weird type shims this entire file should be deleted -- schrockn (01/23/2019)
 from dagit.schema import dauphin
 
 from dagster import check

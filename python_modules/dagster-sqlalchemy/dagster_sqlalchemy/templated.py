@@ -20,9 +20,7 @@ from .common import execute_sql_text_on_context
 class SqlTextType(Stringish):
     def __init__(self):
         super(SqlTextType, self).__init__(
-            key='SqlText',
-            name='SqlText',
-            description='A string of SQL text that is directly executable.',
+            description='A string of SQL text that is directly executable.'
         )
 
 

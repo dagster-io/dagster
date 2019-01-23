@@ -289,6 +289,11 @@ def List(inner_type):
 
 
 class Stringish(RuntimeType):
+    def __init__(self, key=None, name=None, **kwargs):
+        name = check.opt_str_param(name, 'name', type(self).__name__)
+        key = check.opt_str_param(key, 'key', name)
+        super(Stringish, self).__init__(key=key, name=name, **kwargs)
+
     def is_scalar(self):
         return True
 
