@@ -368,6 +368,7 @@ jobs:
       - run:
           name: Install Dependencies
           command: |
+            sudo pip install -U 'pip<19.0' # see: https://github.com/pypa/pip/issues/6163
             sudo pip install tox
       - run:
           name: Run Dagster Tests
