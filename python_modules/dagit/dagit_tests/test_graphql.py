@@ -1260,6 +1260,7 @@ def test_smoke_test_config_type_system():
 
 ALL_CONFIG_TYPES_QUERY = '''
 fragment configTypeFragment on ConfigType {
+  key
   name
   description
   isNullable
@@ -1268,6 +1269,7 @@ fragment configTypeFragment on ConfigType {
   isBuiltin
   isSystemGenerated
   innerTypes {
+    key
     name
     description
     ... on CompositeConfigType {
@@ -1315,20 +1317,24 @@ def test_smoke_test_runtime_type_system():
 
 ALL_RUNTIME_TYPES_QUERY = '''
 fragment schemaTypeFragment on ConfigType {
+  key
   name
   ... on CompositeConfigType {
     fields {
       name
       configType {
+        key
         name
       }
     }
     innerTypes {
+      key
       name
     }
   }
 }
 fragment runtimeTypeFragment on RuntimeType {
+    key
     name
     isNullable
     isList

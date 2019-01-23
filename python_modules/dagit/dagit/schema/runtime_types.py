@@ -13,6 +13,7 @@ def to_dauphin_runtime_type(runtime_type):
     check.inst_param(runtime_type, 'runtime_type', RuntimeType)
 
     return DauphinRuntimeType(
+        key=runtime_type.key,
         name=runtime_type.name,
         description=runtime_type.description,
         is_nullable=runtime_type.is_nullable,
@@ -26,7 +27,8 @@ class DauphinRuntimeType(dauphin.ObjectType):
     class Meta:
         name = 'RuntimeType'
 
-    name = dauphin.NonNull(dauphin.String)
+    key = dauphin.NonNull(dauphin.String)
+    name = dauphin.String()
     description = dauphin.String()
 
     is_nullable = dauphin.NonNull(dauphin.Boolean)
