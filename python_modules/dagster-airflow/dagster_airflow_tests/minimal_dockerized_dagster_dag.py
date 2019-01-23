@@ -1,9 +1,21 @@
+import errno
+import os
+
 from datetime import datetime, timedelta
 
 from airflow import DAG
 from airflow.operators.dagster_plugin import DagsterOperator
 
-from dagster.utils import mkdir_p
+
+def mkdir_p(path):
+    try:
+        os.makedirs(path)
+    except OSError as exc:  # Python >2.5
+        if exc.errno == errno.EEXIST and os.path.isdir(path):
+            pass
+        else:
+            raise
+
 
 mkdir_p('/tmp/airflow')
 
