@@ -1,12 +1,22 @@
 import datetime
+import errno
 import os
 import shutil
 import subprocess
-import uuid
 
 import docker
 
-from dagster.utils import mkdir_p, pushd, script_relative_path
+from dagster.utils import script_relative_path
+
+
+def mkdir_p(path):
+    try:
+        os.makedirs(path)
+    except OSError as exc:  # Python >2.5
+        if exc.errno == errno.EEXIST and os.path.isdir(path):
+            pass
+        else:
+            raise
 
 
 def test_minimal_dockerized_dagster_dag():
