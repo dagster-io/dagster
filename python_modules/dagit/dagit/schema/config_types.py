@@ -11,6 +11,10 @@ def to_dauphin_config_type(config_type):
         return DauphinEnumConfigType(config_type)
     elif config_type.has_fields:
         return DauphinCompositeConfigType(config_type)
+    elif config_type.is_list:
+        return DauphinListConfigType(config_type)
+    elif config_type.is_nullable:
+        return DauphinNullableConfigType(config_type)
     else:
         return DauphinRegularConfigType(config_type)
 
@@ -75,6 +79,39 @@ class DauphinRegularConfigType(dauphin.ObjectType):
 
     def resolve_inner_types(self, _info):
         return _resolve_inner_types(self._config_type)
+
+
+class DauphinWrappingConfigType(dauphin.Interface):
+    class Meta:
+        name = 'WrappingConfigType'
+
+    of_type = dauphin.Field(dauphin.NonNull(DauphinConfigType))
+
+
+class DauphinListConfigType(dauphin.ObjectType):
+    def __init__(self, config_type):
+        self._config_type = check.inst_param(config_type, 'config_type', ConfigType)
+        super(DauphinListConfigType, self).__init__(**_ctor_kwargs(config_type))
+
+    class Meta:
+        name = 'ListConfigType'
+        interfaces = [DauphinConfigType, DauphinWrappingConfigType]
+
+    def resolve_of_type(self, _info):
+        return self._config_type.inner_type
+
+
+class DauphinNullableConfigType(dauphin.ObjectType):
+    def __init__(self, config_type):
+        self._config_type = check.inst_param(config_type, 'config_type', ConfigType)
+        super(DauphinNullableConfigType, self).__init__(**_ctor_kwargs(config_type))
+
+    class Meta:
+        name = 'NullableConfigType'
+        interfaces = [DauphinConfigType, DauphinWrappingConfigType]
+
+    def resolve_of_type(self, _info):
+        return self._config_type.inner_type
 
 
 class DauphinEnumConfigType(dauphin.ObjectType):

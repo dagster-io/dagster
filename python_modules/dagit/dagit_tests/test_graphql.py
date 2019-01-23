@@ -1260,6 +1260,7 @@ def test_smoke_test_config_type_system():
 
 ALL_CONFIG_TYPES_QUERY = '''
 fragment configTypeFragment on ConfigType {
+  __typename
   key
   name
   description
@@ -1292,6 +1293,9 @@ fragment configTypeFragment on ConfigType {
       isOptional
       description
     }
+  }
+  ... on WrappingConfigType {
+    ofType { key }
   }
 }
 
@@ -1344,6 +1348,11 @@ fragment runtimeTypeFragment on RuntimeType {
     }
     outputSchemaType {
     ...schemaTypeFragment
+    }
+    ... on WrappingRuntimeType {
+        ofType {
+            key
+        }
     }
 }
 

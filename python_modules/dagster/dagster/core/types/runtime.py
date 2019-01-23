@@ -221,6 +221,10 @@ class NullableType(RuntimeType):
     def is_nullable(self):
         return True
 
+    @property
+    def of_type(self):
+        return self.inner_type
+
 
 def _create_list_input_schema(inner_type):
     if not inner_type.input_schema:
@@ -254,6 +258,10 @@ class ListType(RuntimeType):
     @property
     def is_list(self):
         return True
+
+    @property
+    def of_type(self):
+        return self.inner_type
 
 
 def Nullable(inner_type):

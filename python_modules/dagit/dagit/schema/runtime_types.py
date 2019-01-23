@@ -12,7 +12,7 @@ def config_type_for_schema(schema):
 def to_dauphin_runtime_type(runtime_type):
     check.inst_param(runtime_type, 'runtime_type', RuntimeType)
 
-    return DauphinRuntimeType(
+    base_args = dict(
         key=runtime_type.key,
         name=runtime_type.name,
         description=runtime_type.description,
@@ -22,8 +22,17 @@ def to_dauphin_runtime_type(runtime_type):
         output_schema_type=config_type_for_schema(runtime_type.output_schema),
     )
 
+    if runtime_type.is_list:
+        base_args['of_type'] = runtime_type.inner_type
+        return DauphinListRuntimeType(**base_args)
+    elif runtime_type.is_nullable:
+        base_args['of_type'] = runtime_type.inner_type
+        return DauphinNullableRuntimeType(**base_args)
+    else:
+        return DauphinRegularRuntimeType(**base_args)
 
-class DauphinRuntimeType(dauphin.ObjectType):
+
+class DauphinRuntimeType(dauphin.Interface):
     class Meta:
         name = 'RuntimeType'
 
@@ -36,3 +45,28 @@ class DauphinRuntimeType(dauphin.ObjectType):
 
     input_schema_type = dauphin.Field(DauphinConfigType)
     output_schema_type = dauphin.Field(DauphinConfigType)
+
+
+class DauphinRegularRuntimeType(dauphin.ObjectType):
+    class Meta:
+        name = 'RegularRuntimeType'
+        interfaces = [DauphinRuntimeType]
+
+
+class DauphinWrappingRuntimeType(dauphin.Interface):
+    class Meta:
+        name = 'WrappingRuntimeType'
+
+    of_type = dauphin.Field(dauphin.NonNull(DauphinRuntimeType))
+
+
+class DauphinListRuntimeType(dauphin.ObjectType):
+    class Meta:
+        name = 'ListRuntimeType'
+        interfaces = [DauphinRuntimeType, DauphinWrappingRuntimeType]
+
+
+class DauphinNullableRuntimeType(dauphin.ObjectType):
+    class Meta:
+        name = 'NullableRuntimeType'
+        interfaces = [DauphinRuntimeType, DauphinWrappingRuntimeType]
