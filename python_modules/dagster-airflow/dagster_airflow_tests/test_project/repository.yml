@@ -1,0 +1,4 @@
+repository:
+  file: dagster_airflow_demo.py
+  fn: define_dagster_airflow_demo_repo
+
