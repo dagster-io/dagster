@@ -69,6 +69,11 @@ class Manager:
         out_file = os.path.join(self.marshal_dir, 'output-{}'.format(output_name))
         pm.record(output_name, marshal_value(runtime_type, value, out_file))
 
+    def populate_context(self, solid_def, marshal_dir):
+        self.solid_def = solid_def
+        self.marshal_dir = marshal_dir
+        self.populated_by_papermill = True
+
 
 class DagsterTranslator(pm.translators.PythonTranslator):
     @classmethod
@@ -128,9 +133,7 @@ def populate_context(dm_context):
     solid_def_name = dm_context_data['solid_def_name']
     check.invariant(pipeline_def.has_solid_def(solid_def_name))
     solid_def = pipeline_def.solid_def_named(solid_def_name)
-    MANAGER_FOR_NOTEBOOK_INSTANCE.solid_def = solid_def
-    MANAGER_FOR_NOTEBOOK_INSTANCE.populated_by_papermill = True
-    MANAGER_FOR_NOTEBOOK_INSTANCE.marshal_dir = dm_context_data['marshal_dir']
+    MANAGER_FOR_NOTEBOOK_INSTANCE.populate_context(solid_def, dm_context_data['marshal_dir'])
 
 
 def load_parameter(input_name, input_value):
@@ -148,7 +151,11 @@ def unmarshal_value(runtime_type, value):
     elif runtime_type.marshalling_strategy:
         return runtime_type.marshalling_strategy.unmarshal_value(value)
     else:
-        check.failed('Unsupported type {name}'.format(name=runtime_type.name))
+        check.failed(
+            'Unsupported type {name}: no marshalling strategy defined'.format(
+                name=runtime_type.name
+            )
+        )
 
 
 def get_papermill_parameters(transform_execution_info, inputs):
@@ -172,7 +179,9 @@ def get_papermill_parameters(transform_execution_info, inputs):
     input_defs = transform_execution_info.solid_def.input_defs
     input_def_dict = {inp.name: inp for inp in input_defs}
     for input_name, input_value in inputs.items():
-        assert input_name != "dm_context", "Protected input name!"
+        assert (
+            input_name != "dm_context"
+        ), "Dagstermill solids cannot have inputs named 'dm_context'"
         runtime_type = input_def_dict[input_name].runtime_type
         parameter_value = marshal_value(
             runtime_type, input_value, os.path.join(marshal_dir, 'input-{}'.format(input_name))
