@@ -36,6 +36,8 @@ from .definitions import (
     solids_in_topological_order,
 )
 
+from .definitions.environment_configs import construct_environment_config
+
 from .execution_context import ExecutionContext, ReentrantInfo, RuntimeExecutionContext
 
 from .errors import DagsterInvariantViolationError, DagsterUserCodeExecutionError
@@ -57,7 +59,6 @@ from .execution_plan.objects import (
 from .execution_plan.simple_engine import execute_plan_core
 
 from .system_config.objects import EnvironmentConfig
-from .system_config.types import construct_environment_config
 
 
 class PipelineExecutionResult(object):

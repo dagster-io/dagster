@@ -646,7 +646,7 @@ jobs:
 
   nightly:
     docker:
-      - image: circleci/python:3.7.2
+      - image: dagster/cci-test:3.7
 
     working_directory: ~/repo
 
@@ -690,3 +690,10 @@ jobs:
       - run:
           name: Publish nightlies
           command: python bin/publish.py publish --nightly
+
+      - run:
+          name: Test dev setup script
+          command: |
+            python -m venv .
+            source bin/activate
+            . dev_env_setup.sh
