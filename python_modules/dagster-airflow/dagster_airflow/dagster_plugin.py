@@ -187,7 +187,7 @@ class DagsterOperator(BaseOperator):
             self.cli = self.get_hook().get_conn()
         else:
             try:
-                self.cli = docker.from_env()
+                self.cli = docker.from_env().api
             except:
                 self.cli = APIClient(
                     base_url=self.docker_url, version=self.api_version, tls=tls_config
