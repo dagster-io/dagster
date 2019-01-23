@@ -27,7 +27,8 @@ def _do_setup(name='dagster-airflow'):
             'Programming Language :: Python :: 2.7',
             'Programming Language :: Python :: 3.5',
             'Programming Language :: Python :: 3.6',
-            'Programming Language :: Python :: 3.7',
+            # https://github.com/apache/airflow/pull/3723
+            # 'Programming Language :: Python :: 3.7',
             'License :: OSI Approved :: Apache Software License',
             'Operating System :: OS Independent',
         ],

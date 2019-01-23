@@ -62,8 +62,9 @@ workflows:
           context: coveralls
       - dagster-ge-py27:
           context: coveralls
-      - dagster-airflow-py37:
-          context: coveralls
+      # see: https://github.com/apache/airflow/pull/3723
+      # - dagster-airflow-py37:
+      #     context: coveralls
       - dagster-airflow-py36:
           context: coveralls
       - dagster-airflow-py35:
@@ -112,7 +113,8 @@ workflows:
             - dagster-ge-py36
             - dagster-ge-py35
             - dagster-ge-py27
-            - dagster-airflow-py37
+            # https://github.com/apache/airflow/pull/3723
+            # - dagster-airflow-py37
             - dagster-airflow-py36
             - dagster-airflow-py35
             - dagster-airflow-py27
@@ -541,13 +543,14 @@ jobs:
     environment:
       TOXENV: py27
 
-  dagster-airflow-py37:
-    <<: *dagster-airflow-template
-    docker:
-      - image: circleci/python:3.7.2
-    environment:
-      TOXENV: py37
-      AIRFLOW_HOME: "/home/circleci/airflow"
+  # https://github.com/apache/airflow/pull/3723
+  # dagster-airflow-py37:
+  #   <<: *dagster-airflow-template
+  #   docker:
+  #     - image: circleci/python:3.7.2
+  #   environment:
+  #     TOXENV: py37
+  #     AIRFLOW_HOME: "/home/circleci/airflow"
 
   dagster-airflow-py35:
     <<: *dagster-airflow-template
