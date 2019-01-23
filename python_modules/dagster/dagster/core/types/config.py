@@ -23,8 +23,7 @@ DEFAULT_TYPE_ATTRIBUTES = ConfigTypeAttributes()
 
 
 class ConfigType(object):
-    def __init__(self, name=None, type_attributes=DEFAULT_TYPE_ATTRIBUTES, description=None):
-
+    def __init__(self, key, name, type_attributes=DEFAULT_TYPE_ATTRIBUTES, description=None):
         type_obj = type(self)
         if type_obj in ConfigType.__cache:
             check.failed(
@@ -33,8 +32,8 @@ class ConfigType(object):
                     'to construct ConfigTypes and not the ctor'.format(type_obj=type_obj)
                 )
             )
-
-        self.name = check.opt_str_param(name, 'name', type(self).__name__)
+        self.key = check.str_param(key, 'key')
+        self.name = check.opt_str_param(name, 'name')
         self.description = check.opt_str_param(description, 'description')
         self.type_attributes = check.inst_param(
             type_attributes, 'type_attributes', ConfigTypeAttributes
@@ -148,8 +147,9 @@ class ConfigAny(ConfigType):
 
 
 class BuiltinConfigScalar(ConfigScalar):
-    def __init__(self, name=None, description=None):
+    def __init__(self, key, name, description=None):
         super(BuiltinConfigScalar, self).__init__(
+            key=key,
             name=name,
             description=description,
             type_attributes=ConfigTypeAttributes(is_builtin=True),
@@ -158,7 +158,7 @@ class BuiltinConfigScalar(ConfigScalar):
 
 class Int(BuiltinConfigScalar):
     def __init__(self):
-        super(Int, self).__init__(description='')
+        super(Int, self).__init__(key='Int', name='Int', description='')
 
     def is_config_scalar_valid(self, config_value):
         return not isinstance(config_value, bool) and isinstance(config_value, six.integer_types)
@@ -171,17 +171,17 @@ class _StringishBuiltin(BuiltinConfigScalar):
 
 class String(_StringishBuiltin):
     def __init__(self):
-        super(String, self).__init__(description='')
+        super(String, self).__init__(name='String', key='String', description='')
 
 
 class Path(_StringishBuiltin):
     def __init__(self):
-        super(Path, self).__init__(description='')
+        super(Path, self).__init__(name='Path', key='Path', description='')
 
 
 class Bool(BuiltinConfigScalar):
     def __init__(self):
-        super(Bool, self).__init__(description='')
+        super(Bool, self).__init__(name='Bool', key='Bool', description='')
 
     def is_config_scalar_valid(self, config_value):
         return isinstance(config_value, bool)
@@ -189,7 +189,7 @@ class Bool(BuiltinConfigScalar):
 
 class Float(BuiltinConfigScalar):
     def __init__(self):
-        super(Float, self).__init__(description='')
+        super(Float, self).__init__(name='Float', key='Float', description='')
 
     def is_config_scalar_valid(self, config_value):
         return isinstance(config_value, float)
@@ -197,7 +197,9 @@ class Float(BuiltinConfigScalar):
 
 class Any(ConfigAny):
     def __init__(self):
-        super(Any, self).__init__(type_attributes=ConfigTypeAttributes(is_builtin=True))
+        super(Any, self).__init__(
+            key='Any', name='Any', type_attributes=ConfigTypeAttributes(is_builtin=True)
+        )
 
 
 def Nullable(inner_type):
@@ -206,6 +208,7 @@ def Nullable(inner_type):
     class _Nullable(ConfigNullable):
         def __init__(self):
             super(_Nullable, self).__init__(
+                key='Nullable.{inner_type}'.format(inner_type=inner_type.name),
                 name='Nullable.{inner_type}'.format(inner_type=inner_type.name),
                 type_attributes=ConfigTypeAttributes(is_builtin=True, is_named=False),
                 inner_type=inner_type,
@@ -220,6 +223,7 @@ def List(inner_type):
     class _List(ConfigList):
         def __init__(self):
             super(_List, self).__init__(
+                key='List.{inner_type}'.format(inner_type=inner_type.name),
                 name='List.{inner_type}'.format(inner_type=inner_type.name),
                 description='List of {inner_type}'.format(inner_type=inner_type.name),
                 type_attributes=ConfigTypeAttributes(is_builtin=True, is_named=False),
@@ -238,7 +242,8 @@ class EnumValue:
 
 class ConfigEnum(ConfigType):
     def __init__(self, name, enum_values):
-        super(ConfigEnum, self).__init__(name=check.str_param(name, 'name'))
+        check.str_param(name, 'name')
+        super(ConfigEnum, self).__init__(key=name, name=name)
         self.enum_values = check.list_param(enum_values, 'enum_values', of_type=EnumValue)
         self._valid_python_values = {ev.python_value for ev in enum_values}
         check.invariant(len(self._valid_python_values) == len(enum_values))

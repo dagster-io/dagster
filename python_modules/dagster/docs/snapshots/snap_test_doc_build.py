@@ -20496,7 +20496,7 @@ snapshots['test_build_all_docs 53'] = '''
 
 <dl class="class">
 <dt id="dagster.ConfigType">
-<em class="property">class </em><code class="descclassname">dagster.</code><code class="descname">ConfigType</code><span class="sig-paren">(</span><em>name=None</em>, <em>type_attributes=ConfigTypeAttributes(is_builtin=False</em>, <em>is_system_config=False</em>, <em>is_named=True)</em>, <em>description=None</em><span class="sig-paren">)</span><a class="headerlink" href="#dagster.ConfigType" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">dagster.</code><code class="descname">ConfigType</code><span class="sig-paren">(</span><em>key</em>, <em>name</em>, <em>type_attributes=ConfigTypeAttributes(is_builtin=False</em>, <em>is_system_config=False</em>, <em>is_named=True)</em>, <em>description=None</em><span class="sig-paren">)</span><a class="headerlink" href="#dagster.ConfigType" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="function">
@@ -20551,12 +20551,12 @@ snapshots['test_build_all_docs 53'] = '''
 
 <dl class="class">
 <dt id="dagster.PythonObjectType">
-<em class="property">class </em><code class="descclassname">dagster.</code><code class="descname">PythonObjectType</code><span class="sig-paren">(</span><em>python_type</em>, <em>*args</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#dagster.PythonObjectType" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">dagster.</code><code class="descname">PythonObjectType</code><span class="sig-paren">(</span><em>python_type</em>, <em>key=None</em>, <em>name=None</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#dagster.PythonObjectType" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="class">
 <dt id="dagster.RuntimeType">
-<em class="property">class </em><code class="descclassname">dagster.</code><code class="descname">RuntimeType</code><span class="sig-paren">(</span><em>name=None</em>, <em>description=None</em>, <em>input_schema=None</em>, <em>output_schema=None</em>, <em>marshalling_strategy=None</em><span class="sig-paren">)</span><a class="headerlink" href="#dagster.RuntimeType" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">dagster.</code><code class="descname">RuntimeType</code><span class="sig-paren">(</span><em>key</em>, <em>name</em>, <em>description=None</em>, <em>input_schema=None</em>, <em>output_schema=None</em>, <em>marshalling_strategy=None</em><span class="sig-paren">)</span><a class="headerlink" href="#dagster.RuntimeType" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="attribute">

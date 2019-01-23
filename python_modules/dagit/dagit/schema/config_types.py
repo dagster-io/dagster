@@ -31,7 +31,8 @@ class DauphinConfigType(dauphin.Interface):
     class Meta:
         name = 'ConfigType'
 
-    name = dauphin.NonNull(dauphin.String)
+    key = dauphin.NonNull(dauphin.String)
+    name = dauphin.String()
     description = dauphin.String()
 
     inner_types = dauphin.non_null_list('ConfigType')
