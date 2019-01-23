@@ -99,6 +99,10 @@ class RuntimeType(object):
     def is_nullable(self):
         return False
 
+    @property
+    def inner_types(self):
+        return []
+
 
 class BuiltinScalarRuntimeType(RuntimeType):
     def __init__(self, *args, **kwargs):
@@ -222,8 +226,8 @@ class NullableType(RuntimeType):
         return True
 
     @property
-    def of_type(self):
-        return self.inner_type
+    def inner_types(self):
+        return [self.inner_type] + self.inner_type.inner_types
 
 
 def _create_list_input_schema(inner_type):
@@ -260,8 +264,8 @@ class ListType(RuntimeType):
         return True
 
     @property
-    def of_type(self):
-        return self.inner_type
+    def inner_types(self):
+        return [self.inner_type] + self.inner_type.inner_types
 
 
 def Nullable(inner_type):

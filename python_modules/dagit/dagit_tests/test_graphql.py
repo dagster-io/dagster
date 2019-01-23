@@ -1347,7 +1347,10 @@ fragment runtimeTypeFragment on RuntimeType {
         ...schemaTypeFragment
     }
     outputSchemaType {
-    ...schemaTypeFragment
+        ...schemaTypeFragment
+    }
+    innerTypes {
+        key
     }
     ... on WrappingRuntimeType {
         ofType {
