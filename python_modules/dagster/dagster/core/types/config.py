@@ -24,6 +24,7 @@ DEFAULT_TYPE_ATTRIBUTES = ConfigTypeAttributes()
 
 class ConfigType(object):
     def __init__(self, key, name, type_attributes=DEFAULT_TYPE_ATTRIBUTES, description=None):
+
         type_obj = type(self)
         if type_obj in ConfigType.__cache:
             check.failed(
@@ -147,10 +148,10 @@ class ConfigAny(ConfigType):
 
 
 class BuiltinConfigScalar(ConfigScalar):
-    def __init__(self, key, name, description=None):
+    def __init__(self, description=None):
         super(BuiltinConfigScalar, self).__init__(
-            key=key,
-            name=name,
+            key=type(self).__name__,
+            name=type(self).__name__,
             description=description,
             type_attributes=ConfigTypeAttributes(is_builtin=True),
         )
@@ -158,7 +159,7 @@ class BuiltinConfigScalar(ConfigScalar):
 
 class Int(BuiltinConfigScalar):
     def __init__(self):
-        super(Int, self).__init__(key='Int', name='Int', description='')
+        super(Int, self).__init__(description='')
 
     def is_config_scalar_valid(self, config_value):
         return not isinstance(config_value, bool) and isinstance(config_value, six.integer_types)
@@ -171,17 +172,17 @@ class _StringishBuiltin(BuiltinConfigScalar):
 
 class String(_StringishBuiltin):
     def __init__(self):
-        super(String, self).__init__(name='String', key='String', description='')
+        super(String, self).__init__(description='')
 
 
 class Path(_StringishBuiltin):
     def __init__(self):
-        super(Path, self).__init__(name='Path', key='Path', description='')
+        super(Path, self).__init__(description='')
 
 
 class Bool(BuiltinConfigScalar):
     def __init__(self):
-        super(Bool, self).__init__(name='Bool', key='Bool', description='')
+        super(Bool, self).__init__(description='')
 
     def is_config_scalar_valid(self, config_value):
         return isinstance(config_value, bool)
@@ -189,7 +190,7 @@ class Bool(BuiltinConfigScalar):
 
 class Float(BuiltinConfigScalar):
     def __init__(self):
-        super(Float, self).__init__(name='Float', key='Float', description='')
+        super(Float, self).__init__(description='')
 
     def is_config_scalar_valid(self, config_value):
         return isinstance(config_value, float)
