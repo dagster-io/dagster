@@ -354,7 +354,7 @@ jobs:
       - image: circleci/python:3.6.6
     environment:
       TOXENV: py36
-      AIRFLOW_HOME: "~/airflow"
+      AIRFLOW_HOME: "/home/circleci/airflow"
     working_directory: ~/repo
     steps:
       - checkout
@@ -374,7 +374,7 @@ jobs:
       - run:
           name: Setup AIRFLOW_HOME
           command: |
-            mkdir -p ~/airflow
+            mkdir -p /home/circleci/airflow
       - run:
           name: Run Dagster Tests
           command: |
@@ -547,7 +547,7 @@ jobs:
       - image: circleci/python:3.7.2
     environment:
       TOXENV: py37
-      AIRFLOW_HOME: "~/airflow"
+      AIRFLOW_HOME: "/home/circleci/airflow"
 
   dagster-airflow-py35:
     <<: *dagster-airflow-template
@@ -555,7 +555,7 @@ jobs:
       - image: circleci/python:3.5.6
     environment:
       TOXENV: py35
-      AIRFLOW_HOME: "~/airflow"
+      AIRFLOW_HOME: "/home/circleci/airflow"
 
   dagster-airflow-py27:
     <<: *dagster-airflow-template
@@ -563,7 +563,7 @@ jobs:
       - image: circleci/python:2.7.15
     environment:
       TOXENV: py27
-      AIRFLOW_HOME: "~/airflow"
+      AIRFLOW_HOME: "/home/circleci/airflow"
 
   dagma-py37:
     <<: *dagma-template
