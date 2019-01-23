@@ -354,7 +354,7 @@ jobs:
       - image: circleci/python:3.6.6
     environment:
       TOXENV: py36
-      AIRFLOW_HOME: ~/airflow
+      AIRFLOW_HOME: "~/airflow"
     working_directory: ~/repo
     steps:
       - checkout
