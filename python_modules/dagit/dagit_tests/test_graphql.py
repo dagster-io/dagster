@@ -1251,24 +1251,33 @@ def test_pipeline_or_error_by_name():
     assert result.data['pipelineOrError']['name'] == 'pandas_hello_world_two'
 
 
-def test_smoke_test_config_type_system(snapshot):
+def test_smoke_test_config_type_system():
     result = execute_dagster_graphql(define_context(), ALL_CONFIG_TYPES_QUERY)
 
     assert not result.errors
     assert result.data
 
-    snapshot.assert_match(result.data)
-
 
 ALL_CONFIG_TYPES_QUERY = '''
 fragment configTypeFragment on ConfigType {
-  # name # not stable, include-order dependent
+  name
   description
   isNullable
   isList
   isSelector
   isBuiltin
   isSystemGenerated
+  innerTypes {
+    name
+    description
+    ... on CompositeConfigType {
+        fields {
+            name
+            isOptional
+            description
+        }
+    }
+  }
   ... on EnumConfigType {
     values {
       value
