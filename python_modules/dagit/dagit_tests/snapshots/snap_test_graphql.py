@@ -837,53 +837,53 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         'fields': [
                             {
                                 'description': None,
+                                'isOptional': False,
+                                'name': 'path'
+                            }
+                        ],
+                        'isBuiltin': True,
+                        'isList': False,
+                        'isNullable': False,
+                        'isSelector': False,
+                        'isSystemGenerated': False
+                    },
+                    {
+                        'description': 'A configuration dictionary with typed fields',
+                        'fields': [
+                            {
+                                'description': None,
+                                'isOptional': False,
+                                'name': 'path'
+                            }
+                        ],
+                        'isBuiltin': True,
+                        'isList': False,
+                        'isNullable': False,
+                        'isSelector': False,
+                        'isSystemGenerated': False
+                    },
+                    {
+                        'description': 'A configuration dictionary with typed fields',
+                        'fields': [
+                            {
+                                'description': None,
+                                'isOptional': False,
+                                'name': 'path'
+                            }
+                        ],
+                        'isBuiltin': True,
+                        'isList': False,
+                        'isNullable': False,
+                        'isSelector': False,
+                        'isSystemGenerated': False
+                    },
+                    {
+                        'description': 'A configuration dictionary with typed fields',
+                        'fields': [
+                            {
+                                'description': None,
                                 'isOptional': True,
                                 'name': 'log_level'
-                            }
-                        ],
-                        'isBuiltin': True,
-                        'isList': False,
-                        'isNullable': False,
-                        'isSelector': False,
-                        'isSystemGenerated': False
-                    },
-                    {
-                        'description': 'A configuration dictionary with typed fields',
-                        'fields': [
-                            {
-                                'description': None,
-                                'isOptional': False,
-                                'name': 'path'
-                            }
-                        ],
-                        'isBuiltin': True,
-                        'isList': False,
-                        'isNullable': False,
-                        'isSelector': False,
-                        'isSystemGenerated': False
-                    },
-                    {
-                        'description': 'A configuration dictionary with typed fields',
-                        'fields': [
-                            {
-                                'description': None,
-                                'isOptional': False,
-                                'name': 'path'
-                            }
-                        ],
-                        'isBuiltin': True,
-                        'isList': False,
-                        'isNullable': False,
-                        'isSelector': False,
-                        'isSystemGenerated': False
-                    },
-                    {
-                        'description': 'A configuration dictionary with typed fields',
-                        'fields': [
-                            {
-                                'description': None,
-                                'isOptional': False,
-                                'name': 'path'
                             }
                         ],
                         'isBuiltin': True,
@@ -1071,108 +1071,108 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         'fields': [
                             {
                                 'description': None,
+                                'isOptional': False,
+                                'name': 'path'
+                            },
+                            {
+                                'description': None,
+                                'isOptional': True,
+                                'name': 'sep'
+                            }
+                        ],
+                        'isBuiltin': True,
+                        'isList': False,
+                        'isNullable': False,
+                        'isSelector': False,
+                        'isSystemGenerated': False
+                    },
+                    {
+                        'description': 'A configuration dictionary with typed fields',
+                        'fields': [
+                            {
+                                'description': None,
+                                'isOptional': False,
+                                'name': 'path'
+                            }
+                        ],
+                        'isBuiltin': True,
+                        'isList': False,
+                        'isNullable': False,
+                        'isSelector': False,
+                        'isSystemGenerated': False
+                    },
+                    {
+                        'description': 'A configuration dictionary with typed fields',
+                        'fields': [
+                            {
+                                'description': None,
+                                'isOptional': False,
+                                'name': 'path'
+                            }
+                        ],
+                        'isBuiltin': True,
+                        'isList': False,
+                        'isNullable': False,
+                        'isSelector': False,
+                        'isSystemGenerated': False
+                    },
+                    {
+                        'description': 'A configuration dictionary with typed fields',
+                        'fields': [
+                            {
+                                'description': None,
+                                'isOptional': False,
+                                'name': 'path'
+                            },
+                            {
+                                'description': None,
+                                'isOptional': True,
+                                'name': 'sep'
+                            }
+                        ],
+                        'isBuiltin': True,
+                        'isList': False,
+                        'isNullable': False,
+                        'isSelector': False,
+                        'isSystemGenerated': False
+                    },
+                    {
+                        'description': 'A configuration dictionary with typed fields',
+                        'fields': [
+                            {
+                                'description': None,
+                                'isOptional': False,
+                                'name': 'path'
+                            }
+                        ],
+                        'isBuiltin': True,
+                        'isList': False,
+                        'isNullable': False,
+                        'isSelector': False,
+                        'isSystemGenerated': False
+                    },
+                    {
+                        'description': 'A configuration dictionary with typed fields',
+                        'fields': [
+                            {
+                                'description': None,
+                                'isOptional': False,
+                                'name': 'path'
+                            }
+                        ],
+                        'isBuiltin': True,
+                        'isList': False,
+                        'isNullable': False,
+                        'isSelector': False,
+                        'isSystemGenerated': False
+                    },
+                    {
+                        'description': 'A configuration dictionary with typed fields',
+                        'fields': [
+                            {
+                                'description': None,
                                 'isOptional': True,
                                 'name': 'log_level'
-                            }
-                        ],
-                        'isBuiltin': True,
-                        'isList': False,
-                        'isNullable': False,
-                        'isSelector': False,
-                        'isSystemGenerated': False
-                    },
-                    {
-                        'description': 'A configuration dictionary with typed fields',
-                        'fields': [
-                            {
-                                'description': None,
-                                'isOptional': False,
-                                'name': 'path'
-                            },
-                            {
-                                'description': None,
-                                'isOptional': True,
-                                'name': 'sep'
-                            }
-                        ],
-                        'isBuiltin': True,
-                        'isList': False,
-                        'isNullable': False,
-                        'isSelector': False,
-                        'isSystemGenerated': False
-                    },
-                    {
-                        'description': 'A configuration dictionary with typed fields',
-                        'fields': [
-                            {
-                                'description': None,
-                                'isOptional': False,
-                                'name': 'path'
-                            }
-                        ],
-                        'isBuiltin': True,
-                        'isList': False,
-                        'isNullable': False,
-                        'isSelector': False,
-                        'isSystemGenerated': False
-                    },
-                    {
-                        'description': 'A configuration dictionary with typed fields',
-                        'fields': [
-                            {
-                                'description': None,
-                                'isOptional': False,
-                                'name': 'path'
-                            }
-                        ],
-                        'isBuiltin': True,
-                        'isList': False,
-                        'isNullable': False,
-                        'isSelector': False,
-                        'isSystemGenerated': False
-                    },
-                    {
-                        'description': 'A configuration dictionary with typed fields',
-                        'fields': [
-                            {
-                                'description': None,
-                                'isOptional': False,
-                                'name': 'path'
-                            },
-                            {
-                                'description': None,
-                                'isOptional': True,
-                                'name': 'sep'
-                            }
-                        ],
-                        'isBuiltin': True,
-                        'isList': False,
-                        'isNullable': False,
-                        'isSelector': False,
-                        'isSystemGenerated': False
-                    },
-                    {
-                        'description': 'A configuration dictionary with typed fields',
-                        'fields': [
-                            {
-                                'description': None,
-                                'isOptional': False,
-                                'name': 'path'
-                            }
-                        ],
-                        'isBuiltin': True,
-                        'isList': False,
-                        'isNullable': False,
-                        'isSelector': False,
-                        'isSystemGenerated': False
-                    },
-                    {
-                        'description': 'A configuration dictionary with typed fields',
-                        'fields': [
-                            {
-                                'description': None,
-                                'isOptional': False,
-                                'name': 'path'
                             }
                         ],
                         'isBuiltin': True,
@@ -1465,108 +1465,108 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         'fields': [
                             {
                                 'description': None,
+                                'isOptional': False,
+                                'name': 'path'
+                            },
+                            {
+                                'description': None,
+                                'isOptional': True,
+                                'name': 'sep'
+                            }
+                        ],
+                        'isBuiltin': True,
+                        'isList': False,
+                        'isNullable': False,
+                        'isSelector': False,
+                        'isSystemGenerated': False
+                    },
+                    {
+                        'description': 'A configuration dictionary with typed fields',
+                        'fields': [
+                            {
+                                'description': None,
+                                'isOptional': False,
+                                'name': 'path'
+                            }
+                        ],
+                        'isBuiltin': True,
+                        'isList': False,
+                        'isNullable': False,
+                        'isSelector': False,
+                        'isSystemGenerated': False
+                    },
+                    {
+                        'description': 'A configuration dictionary with typed fields',
+                        'fields': [
+                            {
+                                'description': None,
+                                'isOptional': False,
+                                'name': 'path'
+                            }
+                        ],
+                        'isBuiltin': True,
+                        'isList': False,
+                        'isNullable': False,
+                        'isSelector': False,
+                        'isSystemGenerated': False
+                    },
+                    {
+                        'description': 'A configuration dictionary with typed fields',
+                        'fields': [
+                            {
+                                'description': None,
+                                'isOptional': False,
+                                'name': 'path'
+                            },
+                            {
+                                'description': None,
+                                'isOptional': True,
+                                'name': 'sep'
+                            }
+                        ],
+                        'isBuiltin': True,
+                        'isList': False,
+                        'isNullable': False,
+                        'isSelector': False,
+                        'isSystemGenerated': False
+                    },
+                    {
+                        'description': 'A configuration dictionary with typed fields',
+                        'fields': [
+                            {
+                                'description': None,
+                                'isOptional': False,
+                                'name': 'path'
+                            }
+                        ],
+                        'isBuiltin': True,
+                        'isList': False,
+                        'isNullable': False,
+                        'isSelector': False,
+                        'isSystemGenerated': False
+                    },
+                    {
+                        'description': 'A configuration dictionary with typed fields',
+                        'fields': [
+                            {
+                                'description': None,
+                                'isOptional': False,
+                                'name': 'path'
+                            }
+                        ],
+                        'isBuiltin': True,
+                        'isList': False,
+                        'isNullable': False,
+                        'isSelector': False,
+                        'isSystemGenerated': False
+                    },
+                    {
+                        'description': 'A configuration dictionary with typed fields',
+                        'fields': [
+                            {
+                                'description': None,
                                 'isOptional': True,
                                 'name': 'log_level'
-                            }
-                        ],
-                        'isBuiltin': True,
-                        'isList': False,
-                        'isNullable': False,
-                        'isSelector': False,
-                        'isSystemGenerated': False
-                    },
-                    {
-                        'description': 'A configuration dictionary with typed fields',
-                        'fields': [
-                            {
-                                'description': None,
-                                'isOptional': False,
-                                'name': 'path'
-                            },
-                            {
-                                'description': None,
-                                'isOptional': True,
-                                'name': 'sep'
-                            }
-                        ],
-                        'isBuiltin': True,
-                        'isList': False,
-                        'isNullable': False,
-                        'isSelector': False,
-                        'isSystemGenerated': False
-                    },
-                    {
-                        'description': 'A configuration dictionary with typed fields',
-                        'fields': [
-                            {
-                                'description': None,
-                                'isOptional': False,
-                                'name': 'path'
-                            }
-                        ],
-                        'isBuiltin': True,
-                        'isList': False,
-                        'isNullable': False,
-                        'isSelector': False,
-                        'isSystemGenerated': False
-                    },
-                    {
-                        'description': 'A configuration dictionary with typed fields',
-                        'fields': [
-                            {
-                                'description': None,
-                                'isOptional': False,
-                                'name': 'path'
-                            }
-                        ],
-                        'isBuiltin': True,
-                        'isList': False,
-                        'isNullable': False,
-                        'isSelector': False,
-                        'isSystemGenerated': False
-                    },
-                    {
-                        'description': 'A configuration dictionary with typed fields',
-                        'fields': [
-                            {
-                                'description': None,
-                                'isOptional': False,
-                                'name': 'path'
-                            },
-                            {
-                                'description': None,
-                                'isOptional': True,
-                                'name': 'sep'
-                            }
-                        ],
-                        'isBuiltin': True,
-                        'isList': False,
-                        'isNullable': False,
-                        'isSelector': False,
-                        'isSystemGenerated': False
-                    },
-                    {
-                        'description': 'A configuration dictionary with typed fields',
-                        'fields': [
-                            {
-                                'description': None,
-                                'isOptional': False,
-                                'name': 'path'
-                            }
-                        ],
-                        'isBuiltin': True,
-                        'isList': False,
-                        'isNullable': False,
-                        'isSelector': False,
-                        'isSystemGenerated': False
-                    },
-                    {
-                        'description': 'A configuration dictionary with typed fields',
-                        'fields': [
-                            {
-                                'description': None,
-                                'isOptional': False,
-                                'name': 'path'
                             }
                         ],
                         'isBuiltin': True,
@@ -1859,108 +1859,108 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         'fields': [
                             {
                                 'description': None,
+                                'isOptional': False,
+                                'name': 'path'
+                            },
+                            {
+                                'description': None,
+                                'isOptional': True,
+                                'name': 'sep'
+                            }
+                        ],
+                        'isBuiltin': True,
+                        'isList': False,
+                        'isNullable': False,
+                        'isSelector': False,
+                        'isSystemGenerated': False
+                    },
+                    {
+                        'description': 'A configuration dictionary with typed fields',
+                        'fields': [
+                            {
+                                'description': None,
+                                'isOptional': False,
+                                'name': 'path'
+                            }
+                        ],
+                        'isBuiltin': True,
+                        'isList': False,
+                        'isNullable': False,
+                        'isSelector': False,
+                        'isSystemGenerated': False
+                    },
+                    {
+                        'description': 'A configuration dictionary with typed fields',
+                        'fields': [
+                            {
+                                'description': None,
+                                'isOptional': False,
+                                'name': 'path'
+                            }
+                        ],
+                        'isBuiltin': True,
+                        'isList': False,
+                        'isNullable': False,
+                        'isSelector': False,
+                        'isSystemGenerated': False
+                    },
+                    {
+                        'description': 'A configuration dictionary with typed fields',
+                        'fields': [
+                            {
+                                'description': None,
+                                'isOptional': False,
+                                'name': 'path'
+                            },
+                            {
+                                'description': None,
+                                'isOptional': True,
+                                'name': 'sep'
+                            }
+                        ],
+                        'isBuiltin': True,
+                        'isList': False,
+                        'isNullable': False,
+                        'isSelector': False,
+                        'isSystemGenerated': False
+                    },
+                    {
+                        'description': 'A configuration dictionary with typed fields',
+                        'fields': [
+                            {
+                                'description': None,
+                                'isOptional': False,
+                                'name': 'path'
+                            }
+                        ],
+                        'isBuiltin': True,
+                        'isList': False,
+                        'isNullable': False,
+                        'isSelector': False,
+                        'isSystemGenerated': False
+                    },
+                    {
+                        'description': 'A configuration dictionary with typed fields',
+                        'fields': [
+                            {
+                                'description': None,
+                                'isOptional': False,
+                                'name': 'path'
+                            }
+                        ],
+                        'isBuiltin': True,
+                        'isList': False,
+                        'isNullable': False,
+                        'isSelector': False,
+                        'isSystemGenerated': False
+                    },
+                    {
+                        'description': 'A configuration dictionary with typed fields',
+                        'fields': [
+                            {
+                                'description': None,
                                 'isOptional': True,
                                 'name': 'log_level'
-                            }
-                        ],
-                        'isBuiltin': True,
-                        'isList': False,
-                        'isNullable': False,
-                        'isSelector': False,
-                        'isSystemGenerated': False
-                    },
-                    {
-                        'description': 'A configuration dictionary with typed fields',
-                        'fields': [
-                            {
-                                'description': None,
-                                'isOptional': False,
-                                'name': 'path'
-                            },
-                            {
-                                'description': None,
-                                'isOptional': True,
-                                'name': 'sep'
-                            }
-                        ],
-                        'isBuiltin': True,
-                        'isList': False,
-                        'isNullable': False,
-                        'isSelector': False,
-                        'isSystemGenerated': False
-                    },
-                    {
-                        'description': 'A configuration dictionary with typed fields',
-                        'fields': [
-                            {
-                                'description': None,
-                                'isOptional': False,
-                                'name': 'path'
-                            }
-                        ],
-                        'isBuiltin': True,
-                        'isList': False,
-                        'isNullable': False,
-                        'isSelector': False,
-                        'isSystemGenerated': False
-                    },
-                    {
-                        'description': 'A configuration dictionary with typed fields',
-                        'fields': [
-                            {
-                                'description': None,
-                                'isOptional': False,
-                                'name': 'path'
-                            }
-                        ],
-                        'isBuiltin': True,
-                        'isList': False,
-                        'isNullable': False,
-                        'isSelector': False,
-                        'isSystemGenerated': False
-                    },
-                    {
-                        'description': 'A configuration dictionary with typed fields',
-                        'fields': [
-                            {
-                                'description': None,
-                                'isOptional': False,
-                                'name': 'path'
-                            },
-                            {
-                                'description': None,
-                                'isOptional': True,
-                                'name': 'sep'
-                            }
-                        ],
-                        'isBuiltin': True,
-                        'isList': False,
-                        'isNullable': False,
-                        'isSelector': False,
-                        'isSystemGenerated': False
-                    },
-                    {
-                        'description': 'A configuration dictionary with typed fields',
-                        'fields': [
-                            {
-                                'description': None,
-                                'isOptional': False,
-                                'name': 'path'
-                            }
-                        ],
-                        'isBuiltin': True,
-                        'isList': False,
-                        'isNullable': False,
-                        'isSelector': False,
-                        'isSystemGenerated': False
-                    },
-                    {
-                        'description': 'A configuration dictionary with typed fields',
-                        'fields': [
-                            {
-                                'description': None,
-                                'isOptional': False,
-                                'name': 'path'
                             }
                         ],
                         'isBuiltin': True,
@@ -2286,53 +2286,53 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         'fields': [
                             {
                                 'description': None,
+                                'isOptional': False,
+                                'name': 'path'
+                            }
+                        ],
+                        'isBuiltin': True,
+                        'isList': False,
+                        'isNullable': False,
+                        'isSelector': False,
+                        'isSystemGenerated': False
+                    },
+                    {
+                        'description': 'A configuration dictionary with typed fields',
+                        'fields': [
+                            {
+                                'description': None,
+                                'isOptional': False,
+                                'name': 'path'
+                            }
+                        ],
+                        'isBuiltin': True,
+                        'isList': False,
+                        'isNullable': False,
+                        'isSelector': False,
+                        'isSystemGenerated': False
+                    },
+                    {
+                        'description': 'A configuration dictionary with typed fields',
+                        'fields': [
+                            {
+                                'description': None,
+                                'isOptional': False,
+                                'name': 'path'
+                            }
+                        ],
+                        'isBuiltin': True,
+                        'isList': False,
+                        'isNullable': False,
+                        'isSelector': False,
+                        'isSystemGenerated': False
+                    },
+                    {
+                        'description': 'A configuration dictionary with typed fields',
+                        'fields': [
+                            {
+                                'description': None,
                                 'isOptional': True,
                                 'name': 'log_level'
-                            }
-                        ],
-                        'isBuiltin': True,
-                        'isList': False,
-                        'isNullable': False,
-                        'isSelector': False,
-                        'isSystemGenerated': False
-                    },
-                    {
-                        'description': 'A configuration dictionary with typed fields',
-                        'fields': [
-                            {
-                                'description': None,
-                                'isOptional': False,
-                                'name': 'path'
-                            }
-                        ],
-                        'isBuiltin': True,
-                        'isList': False,
-                        'isNullable': False,
-                        'isSelector': False,
-                        'isSystemGenerated': False
-                    },
-                    {
-                        'description': 'A configuration dictionary with typed fields',
-                        'fields': [
-                            {
-                                'description': None,
-                                'isOptional': False,
-                                'name': 'path'
-                            }
-                        ],
-                        'isBuiltin': True,
-                        'isList': False,
-                        'isNullable': False,
-                        'isSelector': False,
-                        'isSystemGenerated': False
-                    },
-                    {
-                        'description': 'A configuration dictionary with typed fields',
-                        'fields': [
-                            {
-                                'description': None,
-                                'isOptional': False,
-                                'name': 'path'
                             }
                         ],
                         'isBuiltin': True,
@@ -2826,173 +2826,173 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         'fields': [
                             {
                                 'description': None,
+                                'isOptional': False,
+                                'name': 'path'
+                            }
+                        ],
+                        'isBuiltin': True,
+                        'isList': False,
+                        'isNullable': False,
+                        'isSelector': False,
+                        'isSystemGenerated': False
+                    },
+                    {
+                        'description': 'A configuration dictionary with typed fields',
+                        'fields': [
+                            {
+                                'description': None,
+                                'isOptional': False,
+                                'name': 'path'
+                            }
+                        ],
+                        'isBuiltin': True,
+                        'isList': False,
+                        'isNullable': False,
+                        'isSelector': False,
+                        'isSystemGenerated': False
+                    },
+                    {
+                        'description': 'A configuration dictionary with typed fields',
+                        'fields': [
+                            {
+                                'description': None,
+                                'isOptional': False,
+                                'name': 'path'
+                            }
+                        ],
+                        'isBuiltin': True,
+                        'isList': False,
+                        'isNullable': False,
+                        'isSelector': False,
+                        'isSystemGenerated': False
+                    },
+                    {
+                        'description': 'A configuration dictionary with typed fields',
+                        'fields': [
+                            {
+                                'description': None,
+                                'isOptional': False,
+                                'name': 'path'
+                            }
+                        ],
+                        'isBuiltin': True,
+                        'isList': False,
+                        'isNullable': False,
+                        'isSelector': False,
+                        'isSystemGenerated': False
+                    },
+                    {
+                        'description': 'A configuration dictionary with typed fields',
+                        'fields': [
+                            {
+                                'description': None,
+                                'isOptional': False,
+                                'name': 'path'
+                            }
+                        ],
+                        'isBuiltin': True,
+                        'isList': False,
+                        'isNullable': False,
+                        'isSelector': False,
+                        'isSystemGenerated': False
+                    },
+                    {
+                        'description': 'A configuration dictionary with typed fields',
+                        'fields': [
+                            {
+                                'description': None,
+                                'isOptional': False,
+                                'name': 'path'
+                            }
+                        ],
+                        'isBuiltin': True,
+                        'isList': False,
+                        'isNullable': False,
+                        'isSelector': False,
+                        'isSystemGenerated': False
+                    },
+                    {
+                        'description': 'A configuration dictionary with typed fields',
+                        'fields': [
+                            {
+                                'description': None,
+                                'isOptional': False,
+                                'name': 'path'
+                            }
+                        ],
+                        'isBuiltin': True,
+                        'isList': False,
+                        'isNullable': False,
+                        'isSelector': False,
+                        'isSystemGenerated': False
+                    },
+                    {
+                        'description': 'A configuration dictionary with typed fields',
+                        'fields': [
+                            {
+                                'description': None,
+                                'isOptional': False,
+                                'name': 'path'
+                            }
+                        ],
+                        'isBuiltin': True,
+                        'isList': False,
+                        'isNullable': False,
+                        'isSelector': False,
+                        'isSystemGenerated': False
+                    },
+                    {
+                        'description': 'A configuration dictionary with typed fields',
+                        'fields': [
+                            {
+                                'description': None,
+                                'isOptional': False,
+                                'name': 'path'
+                            }
+                        ],
+                        'isBuiltin': True,
+                        'isList': False,
+                        'isNullable': False,
+                        'isSelector': False,
+                        'isSystemGenerated': False
+                    },
+                    {
+                        'description': 'A configuration dictionary with typed fields',
+                        'fields': [
+                            {
+                                'description': None,
+                                'isOptional': False,
+                                'name': 'path'
+                            }
+                        ],
+                        'isBuiltin': True,
+                        'isList': False,
+                        'isNullable': False,
+                        'isSelector': False,
+                        'isSystemGenerated': False
+                    },
+                    {
+                        'description': 'A configuration dictionary with typed fields',
+                        'fields': [
+                            {
+                                'description': None,
+                                'isOptional': False,
+                                'name': 'path'
+                            }
+                        ],
+                        'isBuiltin': True,
+                        'isList': False,
+                        'isNullable': False,
+                        'isSelector': False,
+                        'isSystemGenerated': False
+                    },
+                    {
+                        'description': 'A configuration dictionary with typed fields',
+                        'fields': [
+                            {
+                                'description': None,
                                 'isOptional': True,
                                 'name': 'log_level'
-                            }
-                        ],
-                        'isBuiltin': True,
-                        'isList': False,
-                        'isNullable': False,
-                        'isSelector': False,
-                        'isSystemGenerated': False
-                    },
-                    {
-                        'description': 'A configuration dictionary with typed fields',
-                        'fields': [
-                            {
-                                'description': None,
-                                'isOptional': False,
-                                'name': 'path'
-                            }
-                        ],
-                        'isBuiltin': True,
-                        'isList': False,
-                        'isNullable': False,
-                        'isSelector': False,
-                        'isSystemGenerated': False
-                    },
-                    {
-                        'description': 'A configuration dictionary with typed fields',
-                        'fields': [
-                            {
-                                'description': None,
-                                'isOptional': False,
-                                'name': 'path'
-                            }
-                        ],
-                        'isBuiltin': True,
-                        'isList': False,
-                        'isNullable': False,
-                        'isSelector': False,
-                        'isSystemGenerated': False
-                    },
-                    {
-                        'description': 'A configuration dictionary with typed fields',
-                        'fields': [
-                            {
-                                'description': None,
-                                'isOptional': False,
-                                'name': 'path'
-                            }
-                        ],
-                        'isBuiltin': True,
-                        'isList': False,
-                        'isNullable': False,
-                        'isSelector': False,
-                        'isSystemGenerated': False
-                    },
-                    {
-                        'description': 'A configuration dictionary with typed fields',
-                        'fields': [
-                            {
-                                'description': None,
-                                'isOptional': False,
-                                'name': 'path'
-                            }
-                        ],
-                        'isBuiltin': True,
-                        'isList': False,
-                        'isNullable': False,
-                        'isSelector': False,
-                        'isSystemGenerated': False
-                    },
-                    {
-                        'description': 'A configuration dictionary with typed fields',
-                        'fields': [
-                            {
-                                'description': None,
-                                'isOptional': False,
-                                'name': 'path'
-                            }
-                        ],
-                        'isBuiltin': True,
-                        'isList': False,
-                        'isNullable': False,
-                        'isSelector': False,
-                        'isSystemGenerated': False
-                    },
-                    {
-                        'description': 'A configuration dictionary with typed fields',
-                        'fields': [
-                            {
-                                'description': None,
-                                'isOptional': False,
-                                'name': 'path'
-                            }
-                        ],
-                        'isBuiltin': True,
-                        'isList': False,
-                        'isNullable': False,
-                        'isSelector': False,
-                        'isSystemGenerated': False
-                    },
-                    {
-                        'description': 'A configuration dictionary with typed fields',
-                        'fields': [
-                            {
-                                'description': None,
-                                'isOptional': False,
-                                'name': 'path'
-                            }
-                        ],
-                        'isBuiltin': True,
-                        'isList': False,
-                        'isNullable': False,
-                        'isSelector': False,
-                        'isSystemGenerated': False
-                    },
-                    {
-                        'description': 'A configuration dictionary with typed fields',
-                        'fields': [
-                            {
-                                'description': None,
-                                'isOptional': False,
-                                'name': 'path'
-                            }
-                        ],
-                        'isBuiltin': True,
-                        'isList': False,
-                        'isNullable': False,
-                        'isSelector': False,
-                        'isSystemGenerated': False
-                    },
-                    {
-                        'description': 'A configuration dictionary with typed fields',
-                        'fields': [
-                            {
-                                'description': None,
-                                'isOptional': False,
-                                'name': 'path'
-                            }
-                        ],
-                        'isBuiltin': True,
-                        'isList': False,
-                        'isNullable': False,
-                        'isSelector': False,
-                        'isSystemGenerated': False
-                    },
-                    {
-                        'description': 'A configuration dictionary with typed fields',
-                        'fields': [
-                            {
-                                'description': None,
-                                'isOptional': False,
-                                'name': 'path'
-                            }
-                        ],
-                        'isBuiltin': True,
-                        'isList': False,
-                        'isNullable': False,
-                        'isSelector': False,
-                        'isSystemGenerated': False
-                    },
-                    {
-                        'description': 'A configuration dictionary with typed fields',
-                        'fields': [
-                            {
-                                'description': None,
-                                'isOptional': False,
-                                'name': 'path'
                             }
                         ],
                         'isBuiltin': True,

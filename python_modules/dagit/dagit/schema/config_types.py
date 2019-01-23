@@ -59,7 +59,7 @@ filter out those types by default.
 
 
 def _resolve_inner_types(config_type):
-    return sorted(list(map(to_dauphin_config_type, config_type.inner_types)), key=lambda t: t.name)
+    return list(map(to_dauphin_config_type, config_type.inner_types))
 
 
 class DauphinRegularConfigType(dauphin.ObjectType):
