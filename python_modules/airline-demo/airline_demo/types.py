@@ -32,12 +32,18 @@ SqlAlchemyEngineType = as_dagster_type(
 
 class SqlTableName(Stringish):
     def __init__(self):
-        super(SqlTableName, self).__init__(description='The name of a database table')
+        super(SqlTableName, self).__init__(
+            key='SqlTableName', name='SqlTableName', description='The name of a database table'
+        )
 
 
 class FileExistsAtPath(Stringish):
     def __init__(self):
-        super(FileExistsAtPath, self).__init__(description='A path at which a file actually exists')
+        super(FileExistsAtPath, self).__init__(
+            key='FileExistsAtPath',
+            name='FileExistsAtPath',
+            description='A path at which a file actually exists',
+        )
 
     def coerce_runtime_value(self, value):
         value = super(FileExistsAtPath, self).coerce_runtime_value(value)
