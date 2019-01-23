@@ -38,7 +38,7 @@ dag = DAG(
 
 t1 = DagsterOperator(
     api_version='1.21',
-    # docker_url='tcp://localhost:2375',  # Set your docker URL
+    docker_url=os.getenv('DOCKER_HOST'),
     command='pipeline execute demo_pipeline -e env.yml',
     image='dagster-airflow-demo:latest',
     network_mode='bridge',
