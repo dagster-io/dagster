@@ -60,7 +60,7 @@ class RuntimeType(object):
     @classmethod
     def inst(cls):
         if cls not in RuntimeType.__cache:
-            RuntimeType.__cache[cls] = cls()
+            RuntimeType.__cache[cls] = cls()  # pylint: disable=E1120
         return RuntimeType.__cache[cls]
 
     @staticmethod

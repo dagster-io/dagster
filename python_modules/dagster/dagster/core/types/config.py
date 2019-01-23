@@ -45,7 +45,7 @@ class ConfigType(object):
     @classmethod
     def inst(cls):
         if cls not in ConfigType.__cache:
-            ConfigType.__cache[cls] = cls()
+            ConfigType.__cache[cls] = cls()  # pylint: disable=E1120
         return ConfigType.__cache[cls]
 
     @staticmethod
