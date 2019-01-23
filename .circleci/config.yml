@@ -547,6 +547,7 @@ jobs:
       - image: circleci/python:3.7.2
     environment:
       TOXENV: py37
+      AIRFLOW_HOME: "~/airflow"
 
   dagster-airflow-py35:
     <<: *dagster-airflow-template
@@ -554,6 +555,7 @@ jobs:
       - image: circleci/python:3.5.6
     environment:
       TOXENV: py35
+      AIRFLOW_HOME: "~/airflow"
 
   dagster-airflow-py27:
     <<: *dagster-airflow-template
@@ -561,6 +563,7 @@ jobs:
       - image: circleci/python:2.7.15
     environment:
       TOXENV: py27
+      AIRFLOW_HOME: "~/airflow"
 
   dagma-py37:
     <<: *dagma-template
