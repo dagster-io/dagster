@@ -16,6 +16,7 @@ from dagster.core.definitions import Solid, SolidInputHandle, SolidOutputHandle
 from dagit.schema import dauphin
 
 from .config_types import to_dauphin_config_type
+from .runtime_types import to_dauphin_runtime_type
 from .legacy_types import all_types
 
 
@@ -30,6 +31,7 @@ class DauphinPipeline(dauphin.ObjectType):
     environment_type = dauphin.NonNull('Type')
     types = dauphin.non_null_list('Type')
     config_types = dauphin.non_null_list('ConfigType')
+    runtime_types = dauphin.non_null_list('RuntimeType')
     runs = dauphin.non_null_list('PipelineRun')
 
     def __init__(self, pipeline):
@@ -67,6 +69,12 @@ class DauphinPipeline(dauphin.ObjectType):
     def resolve_config_types(self, _info):
         return sorted(
             list(map(to_dauphin_config_type, self._pipeline.all_config_types())),
+            key=lambda config_type: config_type.name,
+        )
+
+    def resolve_runtime_types(self, _info):
+        return sorted(
+            list(map(to_dauphin_runtime_type, self._pipeline.all_runtime_types())),
             key=lambda config_type: config_type.name,
         )
 

@@ -15,6 +15,7 @@ def create_schema():
         legacy_types,
         pipelines,
         roots,
+        runtime_types,
         runs,
     )
 

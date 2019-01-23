@@ -1305,6 +1305,54 @@ fragment configTypeFragment on ConfigType {
 }
 '''
 
+
+def test_smoke_test_runtime_type_system():
+    result = execute_dagster_graphql(define_context(), ALL_RUNTIME_TYPES_QUERY)
+
+    assert not result.errors
+    assert result.data
+
+
+ALL_RUNTIME_TYPES_QUERY = '''
+fragment schemaTypeFragment on ConfigType {
+  name
+  ... on CompositeConfigType {
+    fields {
+      name
+      configType {
+        name
+      }
+    }
+    innerTypes {
+      name
+    }
+  }
+}
+fragment runtimeTypeFragment on RuntimeType {
+    name
+    isNullable
+    isList
+    description
+    inputSchemaType {
+        ...schemaTypeFragment
+    }
+    outputSchemaType {
+    ...schemaTypeFragment
+    }
+}
+
+{
+ 	pipelines {
+    nodes {
+      name
+      runtimeTypes {
+        ...runtimeTypeFragment
+      }
+    }
+  }
+}
+'''
+
 EXECUTION_PLAN_QUERY = '''
 query PipelineQuery($config: PipelineConfig, $pipeline: ExecutionSelector!) {
   executionPlan(config: $config, pipeline: $pipeline) {
