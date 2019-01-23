@@ -4,6 +4,8 @@
 import ast
 import json
 
+import docker
+
 from airflow.hooks.docker_hook import DockerHook
 from airflow.exceptions import AirflowException
 from airflow.models import BaseOperator
@@ -184,7 +186,12 @@ class DagsterOperator(BaseOperator):
         if self.docker_conn_id:
             self.cli = self.get_hook().get_conn()
         else:
-            self.cli = APIClient(base_url=self.docker_url, version=self.api_version, tls=tls_config)
+            try:
+                self.cli = docker.from_env()
+            except:
+                self.cli = APIClient(
+                    base_url=self.docker_url, version=self.api_version, tls=tls_config
+                )
 
         if self.force_pull or len(self.cli.images(name=self.image)) == 0:
             self.log.info('Pulling docker image %s', self.image)
