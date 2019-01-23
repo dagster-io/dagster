@@ -47,5 +47,4 @@ t1 = DagsterOperator(
     host_tmp_dir='/tmp/airflow',
     tmp_dir='/tmp/airflow',
     tls_client_ert=os.getenv('DOCKER_CERT_PATH'),
-    
 )
