@@ -87,7 +87,9 @@ class DagsterTranslator(pm.translators.PythonTranslator):
         for name, val in parameters.items():
             if name == "dm_context":
                 continue
-            dm_unmarshal_call = 'dm.load_parameter("{name}", {val})'.format(name=name, val=val)
+            dm_unmarshal_call = 'dm.load_parameter("{name}", {val})'.format(
+                name=name, val='"{val}"'.format(val=val) if isinstance(val, str) else val
+            )
             content += '{}\n'.format(cls.assign(name, dm_unmarshal_call))
 
         return content
@@ -220,6 +222,8 @@ def _dm_solid_transform(name, notebook_path):
                     name=name, data=output_nb.data
                 )
             )
+
+            info.context.info("Output notebook path is {}".format(output_notebook_dir))
 
             for output_def in info.solid_def.output_defs:
                 if output_def.name in output_nb.data:
