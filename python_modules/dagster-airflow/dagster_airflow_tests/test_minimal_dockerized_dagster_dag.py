@@ -26,7 +26,7 @@ def test_minimal_dockerized_dagster_dag():
 
     # check that docker is running
     try:
-        docker_client = docker.client.APIClient()
+        docker_client = docker.from_env()
         docker_client.info()
     except docker.errors.APIError:
         raise Exception(
