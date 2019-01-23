@@ -374,7 +374,7 @@ jobs:
       - run:
           name: Setup AIRFLOW_HOME
           command: |
-            mkdir -p $AIRFLOW_HOME
+            mkdir -p "$AIRFLOW_HOME"
       - run:
           name: Run Dagster Tests
           command: |
