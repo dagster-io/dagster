@@ -8,7 +8,6 @@ RUN pip install -r requirements.txt
 
 ADD . .
 
-ENTRYPOINT [ "ls" ]
-# ENTRYPOINT [ "dagit" ]
+ENTRYPOINT [ "dagster" ]
 
 EXPOSE 3000

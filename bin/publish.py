@@ -339,8 +339,7 @@ def git_push(tags=False):
                     '--tags',
                     '-q',
                     'https://{github_username}:{github_token}@github.com/dagster-io/dagster.git'.format(
-                        github_username=github_username,
-                        github_token=github_token
+                        github_username=github_username, github_token=github_token
                     ),
                 ]
             )
@@ -351,9 +350,9 @@ def git_push(tags=False):
                     'push',
                     '-q',
                     'https://{github_username}:{github_token}@github.com/dagster-io/dagster.git'.format(
-                        github_username=github_username,
-                        github_token=github_token
-                    ),                ]
+                        github_username=github_username, github_token=github_token
+                    ),
+                ]
             )
     else:
         if tags:

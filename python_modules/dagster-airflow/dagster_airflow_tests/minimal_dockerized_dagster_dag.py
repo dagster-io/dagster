@@ -1,7 +1,11 @@
 from datetime import datetime, timedelta
 
 from airflow import DAG
-from airflow.operators.docker_operator import DockerOperator
+from airflow.operators.dagster_plugin import DagsterOperator
+
+from dagster.utils import mkdir_p
+
+mkdir_p('/tmp/airflow')
 
 default_args = {
     'owner': 'airflow',
@@ -20,12 +24,14 @@ dag = DAG(
     schedule_interval=timedelta(minutes=10),
 )
 
-t1 = DockerOperator(
+t1 = DagsterOperator(
     api_version='1.21',
     # docker_url='tcp://localhost:2375',  # Set your docker URL
-    command='/bin/sleep 30',
+    command='pipeline execute demo_pipeline -e env.yml',
     image='dagster-airflow-demo:latest',
     network_mode='bridge',
     task_id='minimal_dockerized_dagster_airflow_node',
     dag=dag,
+    host_tmp_dir='/tmp/airflow',
+    tmp_dir='/tmp/airflow',
 )

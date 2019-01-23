@@ -1,1 +1,1 @@
-dagit
+dagster

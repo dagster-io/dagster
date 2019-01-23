@@ -357,6 +357,14 @@ jobs:
     working_directory: ~/repo
     steps:
       - checkout
+      - setup_remote_docker:
+          docker_layer_caching: true
+      - run:
+          name: Build Dockerfile
+          command: |
+            pushd python_modules/dagster-airflow/dagster_airflow_tests/test_project
+            . build.sh
+            popd
       - run:
           name: Install Dependencies
           command: |
