@@ -24,6 +24,8 @@ def test_minimal_dockerized_dagster_dag():
     airflow_home = os.getenv('AIRFLOW_HOME')
     assert airflow_home, 'No AIRFLOW_HOME set -- is airflow installed?'
 
+    airflow_home = os.path.expanduser(airflow_home)
+
     # check that docker is running
     try:
         docker_client = docker.from_env()
