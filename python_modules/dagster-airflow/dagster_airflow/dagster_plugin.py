@@ -1,5 +1,6 @@
 # This modified DockerOperator incorporates https://github.com/apache/airflow/pull/4315/files
-# for Docker compatibility on OS X
+# for Docker compatibility on OS X, and additionally allows the Docker client to be configured
+# using `docker.from_env`.
 
 import ast
 import json
@@ -15,7 +16,7 @@ from airflow.utils.file import TemporaryDirectory
 from docker import APIClient, tls
 
 
-class DagsterOperator(BaseOperator):
+class ModifiedDockerOperator(BaseOperator):
     """
     Execute a command inside a docker container.
 
@@ -265,4 +266,4 @@ class DagsterOperator(BaseOperator):
 
 class DagsterPlugin(AirflowPlugin):
     name = 'dagster_plugin'
-    operators = [DagsterOperator]
+    operators = [ModifiedDockerOperator]
