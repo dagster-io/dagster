@@ -4,7 +4,7 @@ import os
 from datetime import datetime, timedelta
 
 from airflow import DAG
-from airflow.operators.dagster_plugin import DagsterOperator
+from airflow.operators.dagster_plugin import ModifiedDockerOperator
 
 
 def mkdir_p(path):
@@ -36,7 +36,7 @@ dag = DAG(
     schedule_interval=timedelta(minutes=10),
 )
 
-t1 = DagsterOperator(
+t1 = ModifiedDockerOperator(
     api_version='1.21',
     docker_url=os.getenv('DOCKER_HOST'),
     command='pipeline execute demo_pipeline -e env.yml',
