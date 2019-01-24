@@ -196,7 +196,7 @@ def get_papermill_parameters(transform_execution_info, inputs):
     return parameters
 
 
-def replace_parameters(nb, parameters):
+def replace_parameters(info, nb, parameters):
     """Assigned parameters into the appropiate place in the input notebook
     Args:
         nb (NotebookNode): Executable notebook object
@@ -232,9 +232,15 @@ def replace_parameters(nb, parameters):
         before = nb.cells[:param_cell_index]
         after = nb.cells[param_cell_index + 1 :]
     else:
-        # Inject to the top of the notebook
-        before = []
-        after = nb.cells
+        # Inject to the top of the notebook, presumably first cell includes dagstermill import
+        info.context.debug(
+            (
+                "Warning notebook has no parameters cell, "
+                "so first cell must import dagstermill and call dm.declare_as_solid"
+            )
+        )
+        before = nb.cells[:1]
+        after = nb.cells[1:]
 
     nb.cells = before + [newcell] + after
     nb.metadata.papermill['parameters'] = parameters
@@ -261,11 +267,11 @@ def _dm_solid_transform(name, notebook_path):
 
         try:
             nb = load_notebook_node(notebook_path)
-            nb = replace_parameters(nb, get_papermill_parameters(info, inputs))
+            nb_no_parameters = replace_parameters(info, nb, get_papermill_parameters(info, inputs))
             intermediate_path = os.path.join(
                 output_notebook_dir, '{prefix}-inter.ipynb'.format(prefix=str(uuid.uuid4()))
             )
-            write_ipynb(nb, intermediate_path)
+            write_ipynb(nb_no_parameters, intermediate_path)
 
             _source_nb = pm.execute_notebook(intermediate_path, temp_path)
 
