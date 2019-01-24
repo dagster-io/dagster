@@ -28,7 +28,6 @@ EXPECTED_OUTPUT_SHELL = '''
     }},
     "outputs": [],
     "source": [
-        "dm_context = dm.define_context()"
     ]
     }}
     ],

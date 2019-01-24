@@ -68,7 +68,6 @@ def get_notebook_scaffolding(register_repo_info):
     }},
     "outputs": [],
     "source": [
-        "dm_context = dm.define_context()"
     ]
     }}
     ],

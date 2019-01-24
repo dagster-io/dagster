@@ -170,6 +170,16 @@ def int_param(obj, param_name):
     return obj
 
 
+def int_value_param(obj, value, param_name):
+    if not isinstance(obj, int):
+        raise_with_traceback(_param_type_mismatch_exception(obj, int, param_name))
+    if obj != value:
+        raise_with_traceback(
+            _param_invariant_exception(param_name, "Should be equal to {value}".format(value=value))
+        )
+    return obj
+
+
 def opt_int_param(obj, param_name):
     if obj is not None and not isinstance(obj, int):
         raise_with_traceback(_param_type_mismatch_exception(obj, int, param_name))
