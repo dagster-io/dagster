@@ -16,7 +16,7 @@ from airflow.utils.file import TemporaryDirectory
 from docker import APIClient, tls
 
 
-class ModifiedDockerOperator(BaseOperator):
+class DagsterOperator(BaseOperator):
     """
     Execute a command inside a docker container.
 
@@ -136,6 +136,7 @@ class ModifiedDockerOperator(BaseOperator):
         dns_search=None,
         auto_remove=False,
         shm_size=None,
+        step=None,
         *args,
         **kwargs
     ):
@@ -180,6 +181,7 @@ class ModifiedDockerOperator(BaseOperator):
         )
 
     def execute(self, context):
+        return
         self.log.info('Starting docker container from image %s', self.image)
 
         tls_config = self.__get_tls_config()

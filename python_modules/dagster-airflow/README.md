@@ -1,0 +1,128 @@
+# dagster-airflow
+An Airflow integration for DAGs defined using Dagster. Schedule and monitor your DAGs with Airflow,
+while defining them using the Dagster abstractions and running them in fully isolated containers.
+
+# Packaging a Dagster repository for Airflow
+In order to schedule, run, and monitor Dagster pipelines using Airflow, you'll need to take a few
+extra steps after you've defined your pipelines in the ordinary way:
+1. Containerize your repository
+2. Install the dagster-airflow plugin
+3. Define your pipeline as an Airflow DAG
+
+## Containerizing your repository
+A Dagster repository must be containerized in order to be run using dagster-airflow.
+
+Make sure you have Docker installed, and write a Dockerfile like the following:
+
+```
+# You may use any base container with a supported Python runtime: 2.7, 3.5, 3.6, or 3.7
+FROM python:3.7
+
+# Install any OS-level requirements (e.g. using apt, yum, apk, etc.) that the pipelines in your
+# repository require to run
+# RUN apt-get install some-package some-other-package
+
+# Install Dagit
+RUN pip install dagit
+
+# Install Python requirements for your repository
+ADD /path/to/requirements.txt .
+RUN pip install -r requirements.txt
+
+# Add your repository.yml file so that Dagit knows where to look to find your repository, the
+# Python file in which your repository is defined, and any local dependencies (e.g., unpackaged
+# Python files from which your repository definition imports, or local packages that cannot be
+# installed using the requirements.txt).
+ADD /path/to/repository.yml .
+ADD /path/to/repository_definition.py .
+# ADD /path/to/additional_file.py .
+
+# The dagster-airflow machinery will use Dagit's GraphQL server to execute steps in your
+# pipelines, so we need to run Dagit (by default on port 3000) when the container starts up
+ENTRYPOINT [ "dagit" ]
+EXPOSE 3000
+```
+
+Of course, you may expand on this Dockerfile in any way that suits your needs.
+
+Once you've written your Dockerfile, you can build your Docker image. You'll need the name of the
+Docker image (`-t`) that contains your repository later so that the docker-airflow machinery knows
+which image to run. E.g., if you want your image to be called `dagster-airflow-demo-repository`:
+
+```
+docker build -t dagster-airflow-demo-repository -f /path/to/Dockerfile .
+```
+
+## Installing the dagster-airflow plugin
+Airflow needs to know about our the custom `DagsterOperator` that we'll use to execute steps in
+containerized pipelines. We use Airflow's [plugin machinery](https://airflow.apache.org/plugins.html)
+to accomplish this.
+
+Airflow looks for plugins in a magic directory, `$AIRFLOW_HOME/plugins/`. The dagster plugin is
+defined in `dagster_airflow/dagster_plugin.py`. You can copy that file to the plugin directory
+yourself, or just run our convenience CLI tool:
+
+```
+dagster-airflow install
+```
+
+## Defining your pipeline as an Airflow DAG
+Airflow DAGs are declaratively defined in Python files that live in another magic directory,
+`$AIRFLOW_HOME/dags/`. Code in these files doesn't do any actual processing -- it's just a way of
+telling Airflow about the structure of your pipelines. The pipeline steps themselves are fully
+containerized, and the `DagsterOperator` manages their execution.
+
+You don't need to construct any Airflow DAG files yourself in order to run Dagster pipelines in
+Airflow -- we've provided facilities to scaffold them for you.
+
+```
+dagster-airflow scaffold --install
+```
+
+
+For example, consider the following Dagster pipeline definition (which should be familiar from the
+Dagster tutorial):
+
+```
+from collections import defaultdict
+
+from dagster import (
+    DependencyDefinition,
+    Dict,
+    Field,
+    InputDefinition,
+    Int,
+    PipelineDefinition,
+    RepositoryDefinition,
+    String,
+    lambda_solid,
+    solid,
+)
+
+
+@solid(inputs=[InputDefinition('word', String)], config_field=Field(Dict({'factor': Field(Int)})))
+def multiply_the_word(info, word):
+    return word * info.config['factor']
+
+
+@lambda_solid(inputs=[InputDefinition('word')])
+def count_letters(word):
+    counts = defaultdict(int)
+    for letter in word:
+        counts[letter] += 1
+    return dict(counts)
+
+
+def define_demo_execution_pipeline():
+    return PipelineDefinition(
+        name='demo_pipeline',
+        solids=[multiply_the_word, count_letters],
+        dependencies={'count_letters': {'word': DependencyDefinition('multiply_the_word')}},
+    )
+
+
+def define_demo_execution_repo():
+    return RepositoryDefinition(
+        name='demo_execution_repo', pipeline_dict={'demo_pipeline': define_demo_execution_pipeline}
+    )
+```
