@@ -1,0 +1,3 @@
+repository:
+  file: dagster_airflow_demo.py
+  fn: define_demo_execution_repo
