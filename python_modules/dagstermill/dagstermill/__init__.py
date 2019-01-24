@@ -197,6 +197,10 @@ def get_papermill_parameters(transform_execution_info, inputs):
 
 
 def replace_parameters(info, nb, parameters):
+    # Uma: This is a copy-paste from papermill papermill/execute.py:104 (execute_parameters).
+    # Typically, papermill injects the injected-parameters cell *below* the parameters cell
+    # but we want to *replace* the parameters cell, which is what this function does.
+
     """Assigned parameters into the appropiate place in the input notebook
     Args:
         nb (NotebookNode): Executable notebook object
@@ -224,9 +228,8 @@ def replace_parameters(info, nb, parameters):
         # Replace the injected cell with a new version
         before = nb.cells[:injected_cell_index]
         after = nb.cells[injected_cell_index + 1 :]
-        assert (
-            param_cell_index == -1
-        )  # if we've injected-parameters, we should have blown away the parameters cell from before
+        check.int_value_param(param_cell_index, -1, "param_cell_index")
+        # We should have blown away the parameters cell if there is an injected-parameters cell
     elif param_cell_index >= 0:
         # Replace the parameter cell with the injected-parameters cell
         before = nb.cells[:param_cell_index]
