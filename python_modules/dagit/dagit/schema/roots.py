@@ -30,6 +30,11 @@ class DauphinQuery(dauphin.ObjectType):
         configTypeName=dauphin.Argument(dauphin.NonNull(dauphin.String)),
     )
 
+    runtimeTypeOrError = dauphin.Field(
+        'RuntimeTypeOrError',
+        pipelineName=dauphin.Argument(dauphin.NonNull(dauphin.String)),
+        runtimeTypeName=dauphin.Argument(dauphin.NonNull(dauphin.String)),
+    )
     pipelineRuns = dauphin.non_null_list('PipelineRun')
     pipelineRun = dauphin.Field('PipelineRun', runId=dauphin.NonNull(dauphin.ID))
 
@@ -51,6 +56,9 @@ class DauphinQuery(dauphin.ObjectType):
 
     def resolve_configTypeOrError(self, info, **kwargs):
         return model.get_config_type(info, kwargs['pipelineName'], kwargs['configTypeName'])
+
+    def resolve_runtimeTypeOrError(self, info, **kwargs):
+        return model.get_runtime_type(info, kwargs['pipelineName'], kwargs['runtimeTypeName'])
 
     def resolve_version(self, _info):
         return __version__

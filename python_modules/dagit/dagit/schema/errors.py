@@ -299,6 +299,15 @@ class DauphinConfigTypeNotFoundError(dauphin.ObjectType):
     config_type_name = dauphin.NonNull(dauphin.String)
 
 
+class DauphinRuntimeTypeNotFoundError(dauphin.ObjectType):
+    class Meta:
+        name = 'RuntimeTypeNotFoundError'
+        interfaces = (DauphinError,)
+
+    pipeline = dauphin.NonNull('Pipeline')
+    runtime_type_name = dauphin.NonNull(dauphin.String)
+
+
 class DauphinConfigTypeOrError(dauphin.Union):
     class Meta:
         name = 'ConfigTypeOrError'
@@ -308,4 +317,14 @@ class DauphinConfigTypeOrError(dauphin.Union):
             'RegularConfigType',
             DauphinPipelineNotFoundError,
             DauphinConfigTypeNotFoundError,
+        )
+
+
+class DauphinRuntimeTypeOrError(dauphin.Union):
+    class Meta:
+        name = 'RuntimeTypeOrError'
+        types = (
+            'RegularRuntimeType',
+            DauphinPipelineNotFoundError,
+            DauphinRuntimeTypeNotFoundError,
         )

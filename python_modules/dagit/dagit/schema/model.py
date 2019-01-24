@@ -16,6 +16,7 @@ from dagster.core.types.evaluator import evaluate_config_value
 from dagster.utils.error import serializable_error_info_from_exc_info
 
 from .config_types import to_dauphin_config_type
+from .runtime_types import to_dauphin_runtime_type
 from .utils import EitherValue, EitherError
 
 
@@ -90,6 +91,31 @@ def get_config_type(info, pipeline_name, type_name):
 
     return pipeline_or_error.chain(
         lambda pipeline: _config_type_or_error(info, pipeline, type_name)
+    ).value()
+
+
+def _runtime_type_or_error(info, dauphin_pipeline, runtime_type_name):
+    pipeline = dauphin_pipeline.get_dagster_pipeline()
+    if not pipeline.has_runtime_type(runtime_type_name):
+        return EitherError(
+            info.schema.type_named('RuntimeTypeNotFoundError')(
+                pipeline=pipeline, runtime_type_name=runtime_type_name
+            )
+        )
+    else:
+        dauphin_runtime_type = to_dauphin_runtime_type(
+            pipeline.runtime_type_named(runtime_type_name)
+        )
+        return EitherValue(dauphin_runtime_type)
+
+
+def get_runtime_type(info, pipeline_name, type_name):
+    pipeline_or_error = _pipeline_or_error_from_container(
+        info, info.context.repository_container, ExecutionSelector(pipeline_name)
+    )
+
+    return pipeline_or_error.chain(
+        lambda pipeline: _runtime_type_or_error(info, pipeline, type_name)
     ).value()
 
 

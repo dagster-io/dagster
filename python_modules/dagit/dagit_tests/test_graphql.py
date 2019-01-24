@@ -1380,6 +1380,67 @@ def test_config_type_or_error_type_not_found():
     assert result.data['configTypeOrError']['configTypeName'] == 'nope'
 
 
+RUNTIME_TYPE_QUERY = '''
+query RuntimeTypeQuery($pipelineName: String! $runtimeTypeName: String!)
+{
+    runtimeTypeOrError(
+        pipelineName: $pipelineName
+        runtimeTypeName: $runtimeTypeName
+    ) {
+        __typename
+        ... on RegularRuntimeType {
+            name
+        }
+        ... on PipelineNotFoundError {
+            pipelineName
+        }
+        ... on RuntimeTypeNotFoundError {
+            pipeline { name }
+            runtimeTypeName
+        }
+    }
+}
+'''
+
+
+def test_runtime_type_query_works():
+    result = execute_dagster_graphql(
+        define_context(),
+        RUNTIME_TYPE_QUERY,
+        {'pipelineName': 'pandas_hello_world', 'runtimeTypeName': 'PandasDataFrame'},
+    )
+
+    assert not result.errors
+    assert result.data
+    assert result.data['runtimeTypeOrError']['__typename'] == 'RegularRuntimeType'
+    assert result.data['runtimeTypeOrError']['name'] == 'PandasDataFrame'
+
+
+def test_runtime_type_or_error_pipeline_not_found():
+    result = execute_dagster_graphql(
+        define_context(), RUNTIME_TYPE_QUERY, {'pipelineName': 'nope', 'runtimeTypeName': 'nope'}
+    )
+
+    assert not result.errors
+    assert result.data
+    assert result.data['runtimeTypeOrError']['__typename'] == 'PipelineNotFoundError'
+    assert result.data['runtimeTypeOrError']['pipelineName'] == 'nope'
+
+
+def test_runtime_type_or_error_type_not_found():
+    result = execute_dagster_graphql(
+        define_context(),
+        RUNTIME_TYPE_QUERY,
+        {'pipelineName': 'pandas_hello_world', 'runtimeTypeName': 'nope'},
+    )
+
+    assert not result.errors
+    assert result.data
+    assert result.data['runtimeTypeOrError']['__typename'] == 'RuntimeTypeNotFoundError'
+    assert result.data['runtimeTypeOrError']['pipeline']['name'] == 'pandas_hello_world'
+    assert result.data['runtimeTypeOrError']['runtimeTypeName'] == 'nope'
+
+
 def test_smoke_test_runtime_type_system():
     result = execute_dagster_graphql(define_context(), ALL_RUNTIME_TYPES_QUERY)
 
