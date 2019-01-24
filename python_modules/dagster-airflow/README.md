@@ -200,3 +200,9 @@ multiply__the__word_transform_task.set_downstream(count__letters_transform_task)
 Now you can visualize and schedule this DAG in Airflow:
 
 ![Example DAG](example_dag.png)
+
+
+# TODO
+- Need to figure out how to scaffold an S3 hook so that the DagsterOperator has access to S3 for
+  persisting outputs
+- Need to figure out how to scaffold a Docker hook so that we can use a custom registry
