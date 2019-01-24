@@ -35,7 +35,9 @@ def _get_pipelines(info):
         pipeline_instances = []
         for pipeline_def in repository.get_all_pipelines():
             pipeline_instances.append(info.schema.type_named('Pipeline')(pipeline_def))
-        return info.schema.type_named('PipelineConnection')(nodes=pipeline_instances)
+        return info.schema.type_named('PipelineConnection')(
+            nodes=sorted(pipeline_instances, key=lambda pipeline: pipeline.name)
+        )
 
     repository_or_error = _repository_or_error_from_container(
         info, info.context.repository_container

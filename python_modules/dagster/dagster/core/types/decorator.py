@@ -13,9 +13,16 @@ def _create_object_type_class(**kwargs):
 
 
 def _decorate_as_dagster_type(
-    bare_cls, name, description, input_schema=None, output_schema=None, marshalling_strategy=None
+    bare_cls,
+    key,
+    name,
+    description,
+    input_schema=None,
+    output_schema=None,
+    marshalling_strategy=None,
 ):
     _ObjectType = _create_object_type_class(
+        key=key,
         name=name,
         description=description,
         python_type=bare_cls,
@@ -33,14 +40,18 @@ def _decorate_as_dagster_type(
 def dagster_type(name=None, description=None):
     def _with_args(bare_cls):
         check.type_param(bare_cls, 'bare_cls')
+        new_name = name if name else bare_cls.__name__
         return _decorate_as_dagster_type(
-            bare_cls=bare_cls, name=name if name else bare_cls.__name__, description=description
+            bare_cls=bare_cls, key=new_name, name=new_name, description=description
         )
 
     # check for no args, no parens case
     if callable(name):
         klass = name
-        return _decorate_as_dagster_type(bare_cls=klass, name=klass.__name__, description=None)
+        new_name = klass.__name__
+        return _decorate_as_dagster_type(
+            bare_cls=klass, key=new_name, name=new_name, description=None
+        )
 
     return _with_args
 
@@ -82,9 +93,12 @@ def as_dagster_type(
     if marshalling_strategy is None:
         marshalling_strategy = PickleMarshallingStrategy()
 
+    name = existing_type.__name__ if name is None else name
+
     return _decorate_as_dagster_type(
         existing_type,
-        name=existing_type.__name__ if name is None else name,
+        key=name,
+        name=name,
         description=description,
         input_schema=input_schema,
         output_schema=output_schema,

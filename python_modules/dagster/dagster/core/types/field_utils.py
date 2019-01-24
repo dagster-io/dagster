@@ -163,7 +163,11 @@ def NamedDict(name, fields, description=None, type_attributes=DEFAULT_TYPE_ATTRI
     class _NamedDict(_ConfigComposite):
         def __init__(self):
             super(_NamedDict, self).__init__(
-                name=name, fields=fields, description=description, type_attributes=type_attributes
+                key=name,
+                name=name,
+                fields=fields,
+                description=description,
+                type_attributes=type_attributes,
             )
 
     return _NamedDict
@@ -172,8 +176,10 @@ def NamedDict(name, fields, description=None, type_attributes=DEFAULT_TYPE_ATTRI
 def Dict(fields):
     class _Dict(_ConfigComposite):
         def __init__(self):
+            name = 'Dict.' + str(DictCounter.get_next_count())
             super(_Dict, self).__init__(
-                name='Dict.' + str(DictCounter.get_next_count()),
+                name=name,
+                key=name,
                 fields=fields,
                 description='A configuration dictionary with typed fields',
                 type_attributes=ConfigTypeAttributes(is_named=True, is_builtin=True),
@@ -185,8 +191,10 @@ def Dict(fields):
 def Selector(fields):
     class _Selector(_ConfigSelector):
         def __init__(self):
+            name = 'Selector.' + str(DictCounter.get_next_count())
             super(_Selector, self).__init__(
-                name='Selector.' + str(DictCounter.get_next_count()),
+                key=name,
+                name=name,
                 fields=fields,
                 # description='A configuration dictionary with typed fields',
                 type_attributes=ConfigTypeAttributes(is_named=True, is_builtin=True),
@@ -199,7 +207,11 @@ def NamedSelector(name, fields, description=None, type_attributes=DEFAULT_TYPE_A
     class _NamedSelector(_ConfigSelector):
         def __init__(self):
             super(_NamedSelector, self).__init__(
-                name=name, fields=fields, description=description, type_attributes=type_attributes
+                key=name,
+                name=name,
+                fields=fields,
+                description=description,
+                type_attributes=type_attributes,
             )
 
     return _NamedSelector

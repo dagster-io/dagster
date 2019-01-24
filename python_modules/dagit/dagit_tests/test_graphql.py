@@ -1251,6 +1251,126 @@ def test_pipeline_or_error_by_name():
     assert result.data['pipelineOrError']['name'] == 'pandas_hello_world_two'
 
 
+def test_smoke_test_config_type_system():
+    result = execute_dagster_graphql(define_context(), ALL_CONFIG_TYPES_QUERY)
+
+    assert not result.errors
+    assert result.data
+
+
+ALL_CONFIG_TYPES_QUERY = '''
+fragment configTypeFragment on ConfigType {
+  __typename
+  key
+  name
+  description
+  isNullable
+  isList
+  isSelector
+  isBuiltin
+  isSystemGenerated
+  innerTypes {
+    key
+    name
+    description
+    ... on CompositeConfigType {
+        fields {
+            name
+            isOptional
+            description
+        }
+    }
+  }
+  ... on EnumConfigType {
+    values {
+      value
+      description
+    }
+  }
+  ... on CompositeConfigType {
+    fields {
+      name
+      isOptional
+      description
+    }
+  }
+  ... on WrappingConfigType {
+    ofType { key }
+  }
+}
+
+{
+ 	pipelines {
+    nodes {
+      name
+      configTypes {
+        ...configTypeFragment
+      }
+    }
+  } 
+}
+'''
+
+
+def test_smoke_test_runtime_type_system():
+    result = execute_dagster_graphql(define_context(), ALL_RUNTIME_TYPES_QUERY)
+
+    assert not result.errors
+    assert result.data
+
+
+ALL_RUNTIME_TYPES_QUERY = '''
+fragment schemaTypeFragment on ConfigType {
+  key
+  name
+  ... on CompositeConfigType {
+    fields {
+      name
+      configType {
+        key
+        name
+      }
+    }
+    innerTypes {
+      key
+      name
+    }
+  }
+}
+fragment runtimeTypeFragment on RuntimeType {
+    key
+    name
+    isNullable
+    isList
+    description
+    inputSchemaType {
+        ...schemaTypeFragment
+    }
+    outputSchemaType {
+        ...schemaTypeFragment
+    }
+    innerTypes {
+        key
+    }
+    ... on WrappingRuntimeType {
+        ofType {
+            key
+        }
+    }
+}
+
+{
+ 	pipelines {
+    nodes {
+      name
+      runtimeTypes {
+        ...runtimeTypeFragment
+      }
+    }
+  }
+}
+'''
+
 EXECUTION_PLAN_QUERY = '''
 query PipelineQuery($config: PipelineConfig, $pipeline: ExecutionSelector!) {
   executionPlan(config: $config, pipeline: $pipeline) {

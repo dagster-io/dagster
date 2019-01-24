@@ -7,6 +7,16 @@ dauphin = DauphinRegistry()
 def create_schema():
     # dauphin depends on import-based side effects
     # pylint: disable=W0611
-    from dagit.schema import generic, roots, pipelines, execution, runs, errors
+    from dagit.schema import (
+        config_types,
+        errors,
+        execution,
+        generic,
+        legacy_types,
+        pipelines,
+        roots,
+        runtime_types,
+        runs,
+    )
 
     return dauphin.create_schema()
