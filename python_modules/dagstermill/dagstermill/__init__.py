@@ -206,12 +206,11 @@ def replace_parameters(nb, parameters):
     # Copy the nb object to avoid polluting the input
     nb = copy.deepcopy(nb)
 
-    kernel_name = nb.metadata.kernelspec.name
-    language = nb.metadata.kernelspec.language
-
     # Generate parameter content based on the kernel_name
 
     param_content = DagsterTranslator.codify(parameters)
+    # papermill method choosed translator based on kernel_name and language,
+    # but we just call the DagsterTranslator
     # translate_parameters(kernel_name, language, parameters)
 
     newcell = nbformat.v4.new_code_cell(source=param_content)
