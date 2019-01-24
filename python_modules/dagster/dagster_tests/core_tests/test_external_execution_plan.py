@@ -52,4 +52,3 @@ def test_basic_pipeline_external_plan_execution():
     assert transform_step_result.success
     assert transform_step_result.success_data.output_name == 'result'
     assert transform_step_result.success_data.value == 6
-
