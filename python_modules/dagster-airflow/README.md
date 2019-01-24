@@ -196,3 +196,7 @@ count__letters_transform_task = DagsterOperator(
 multiply__the__word_word_input__thunk_task.set_downstream(multiply__the__word_transform_task)
 multiply__the__word_transform_task.set_downstream(count__letters_transform_task)
 ```
+
+Now you can visualize and schedule this DAG in Airflow:
+
+![Example DAG](example_dag.png)
