@@ -47,7 +47,6 @@ def test_basic_pipeline_external_plan_execution():
     assert thunk_step_result.tag == StepTag.VALUE_THUNK
 
     transform_step_result = results[1]
-    print(transform_step_result)
     assert transform_step_result.tag == StepTag.TRANSFORM
     assert transform_step_result.success
     assert transform_step_result.success_data.output_name == 'result'
