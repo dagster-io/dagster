@@ -15,6 +15,9 @@ def get_version(name):
         exec(fp.read(), version)  # pylint: disable=W0122
 
 
+# TODO: setup should take care of moving the plugin
+
+
 def _do_setup(name='dagster-airflow'):
     setup(
         name=name,
