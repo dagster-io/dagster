@@ -8,7 +8,6 @@ import black
 from datetime import datetime, timedelta
 
 from airflow import DAG
-from airflow.operators.dagster_plugin import ModifiedDockerOperator as DagsterOperator
 from dagster import check, PipelineDefinition
 from dagster.core.execution import create_execution_plan
 
