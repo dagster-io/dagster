@@ -53,15 +53,13 @@ def conditional(info):
 
 @solid(inputs=[InputDefinition('num', dagster_type=Int)])
 def log_num(info, num):
-    info.context.info('num {num}'.format(num=num))
+    info.log.info('num {num}'.format(num=num))
     return num
 
 
 @solid(inputs=[InputDefinition('num', dagster_type=Int)])
 def log_num_squared(info, num):
-    info.context.info(
-        'num_squared {num_squared}'.format(num_squared=num * num)
-    )
+    info.log.info('num_squared {num_squared}'.format(num_squared=num * num))
     return num * num
 
 

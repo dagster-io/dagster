@@ -286,7 +286,7 @@ def _dm_solid_transform(name, notebook_path):
                 )
             )
 
-            info.context.info("Output notebook path is {}".format(output_notebook_dir))
+            info.log.info("Output notebook path is {}".format(output_notebook_dir))
 
             for output_def in info.solid_def.output_defs:
                 if output_def.name in output_nb.data:

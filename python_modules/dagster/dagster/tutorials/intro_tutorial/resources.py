@@ -31,8 +31,8 @@ class PublicCloudStore:
         # create credential and store it
         self.conn = PublicCloudConn(username, password)
 
-    def record_value(self, context, key, value):
-        context.info(
+    def record_value(self, log, key, value):
+        log.info(
             'Setting key={key} value={value} in cloud'.format(
                 key=key, value=value
             )
@@ -44,8 +44,8 @@ class InMemoryStore:
     def __init__(self):
         self.values = {}
 
-    def record_value(self, context, key, value):
-        context.info(
+    def record_value(self, log, key, value):
+        log.info(
             'Setting key={key} value={value} in memory'.format(
                 key=key, value=value
             )
@@ -82,7 +82,7 @@ def define_cloud_store_resource():
 )
 def add_ints(info, num_one, num_two):
     sum_ints = num_one + num_two
-    info.resources.store.record_value(info.context, 'add', sum_ints)
+    info.resources.store.record_value(info.log, 'add', sum_ints)
     return sum_ints
 
 

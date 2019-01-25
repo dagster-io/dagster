@@ -107,7 +107,7 @@ def sql_solid(name, select_statement, materialization_strategy, table_name=None,
                 The table name of the newly materialized SQL select statement.
         '''
 
-        info.context.info(
+        info.log.info(
             'Executing sql statement:\n{sql_statement}'.format(sql_statement=sql_statement)
         )
         info.resources.db_info.engine.execute(text(sql_statement))
@@ -221,7 +221,7 @@ def download_from_s3(info):
             target_path = info.resources.tempfile.tempfile().name
 
         if file_['skip_if_present'] and safe_isfile(target_path):
-            info.context.info(
+            info.log.info(
                 'Skipping download, file already present at {target_path}'.format(
                     target_path=target_path
                 )
@@ -356,7 +356,7 @@ def unzip_file(
                     zip_ref.extract(archive_member, destination_dir)
                 else:
                     if is_file:
-                        info.context.info(
+                        info.log.info(
                             'Skipping unarchive of {archive_member} from {archive_path}, '
                             'file already present at {target_path}'.format(
                                 archive_member=archive_member,
@@ -365,7 +365,7 @@ def unzip_file(
                             )
                         )
                     if is_dir:
-                        info.context.info(
+                        info.log.info(
                             'Skipping unarchive of {archive_member} from {archive_path}, '
                             'directory already present at {target_path}'.format(
                                 archive_member=archive_member,
@@ -377,7 +377,7 @@ def unzip_file(
                 if not (info.config['skip_if_present'] and is_dir):
                     zip_ref.extractall(destination_dir)
                 else:
-                    info.context.info(
+                    info.log.info(
                         'Skipping unarchive of {archive_path}, directory already present '
                         'at {target_path}'.format(
                             archive_path=archive_path, target_path=target_path

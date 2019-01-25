@@ -1,8 +1,8 @@
 Resources
 =========
 
-We've already learned about logging through the execution context. We can also use the execution
-context to manage pipelines' access to resources like the file system, databases, or cloud services.
+We've already learned about logging through the info object. We can also use the info object
+to manage pipelines' access to resources like the file system, databases, or cloud services.
 In general, interactions with features of the external environment like these should be modeled
 as resources.
 

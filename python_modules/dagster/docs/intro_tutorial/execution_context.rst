@@ -2,17 +2,18 @@ Execution Context
 =================
 
 One of the most important objects in the system is the execution context. The execution
-context is threaded throughout the entire computation (via the ``info`` object passed to
-user code) and contains handles to logging facilities and external resources. Interactions
-with logging systems, databases, and external clusters (e.g. a Spark cluster) should
-be managed through the context. 
+context, the logger, and the resources are threaded throughout the entire computation (
+via the ``info`` object passed to user code) and contains handles to logging facilities
+and external resources. Interactions with logging systems, databases, and external
+clusters (e.g. a Spark cluster) should be managed through these properties of the 
+info object.
 
 This provides a powerful layer of indirection that allows a solid to abstract
-away its surrounding environment. Using an execution context allows the system and pipeline
-infrastructure to provide different implementations for different environments,
-giving the engineer the opportunity to design pipelines that can be executed
-on your local machine or your CI/CD pipeline as readily as your production
-cluster environment.
+away its surrounding environment. Using an execution context allows the system and
+pipeline infrastructure to provide different implementations for different
+environments, giving the engineer the opportunity to design pipelines that
+can be executed on your local machine or your CI/CD pipeline as readily as
+your production cluster environment.
 
 Logging
 ~~~~~~~
