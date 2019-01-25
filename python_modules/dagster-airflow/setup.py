@@ -41,6 +41,7 @@ def _do_setup(name='dagster-airflow'):
             'enum34>=1.1.6',
             'future>=0.16.0',
             'apache-airflow==1.10.2',
+            'black==18.3a0',
             'dagster>=0.2.0',
             'docker==3.7.0',
         ],
