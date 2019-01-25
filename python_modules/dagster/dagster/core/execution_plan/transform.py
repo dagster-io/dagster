@@ -26,37 +26,9 @@ def create_transform_step(execution_info, solid, step_inputs, conf):
     )
 
 
-class DagsterLog:
-    def __init__(self, context):
-        self.context = context
-
-    def debug(self, msg, **kwargs):
-        return self.context.debug(msg, **kwargs)
-
-    def info(self, msg, **kwargs):
-        return self.context.info(msg, **kwargs)
-
-    def warning(self, msg, **kwargs):
-        return self.context.warning(msg, **kwargs)
-
-    def error(self, msg, **kwargs):
-        return self.context.error(msg, **kwargs)
-
-    def critical(self, msg, **kwargs):
-        return self.context.critical(msg, **kwargs)
-
-
 def _yield_transform_results(execution_info, context, step, conf, inputs):
     gen = step.solid.definition.transform_fn(
-        TransformExecutionInfo(
-            context,
-            conf,
-            step.solid,
-            execution_info.pipeline,
-            context.resources,
-            DagsterLog(context),
-        ),
-        inputs,
+        TransformExecutionInfo(context, conf, step.solid, execution_info.pipeline), inputs
     )
 
     if isinstance(gen, Result):

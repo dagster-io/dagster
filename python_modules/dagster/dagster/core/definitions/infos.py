@@ -10,6 +10,26 @@ from .output import OutputDefinition
 from .pipeline import PipelineDefinition
 
 
+class DagsterLog:
+    def __init__(self, context):
+        self.context = context
+
+    def debug(self, msg, **kwargs):
+        return self.context.debug(msg, **kwargs)
+
+    def info(self, msg, **kwargs):
+        return self.context.info(msg, **kwargs)
+
+    def warning(self, msg, **kwargs):
+        return self.context.warning(msg, **kwargs)
+
+    def error(self, msg, **kwargs):
+        return self.context.error(msg, **kwargs)
+
+    def critical(self, msg, **kwargs):
+        return self.context.critical(msg, **kwargs)
+
+
 class ContextCreationExecutionInfo(
     namedtuple('_ContextCreationExecutionInfo', 'config pipeline_def run_id')
 ):
@@ -23,7 +43,7 @@ class ContextCreationExecutionInfo(
 
 
 class ExpectationExecutionInfo(
-    namedtuple('_ExpectationExecutionInfo', 'context inout_def solid expectation_def')
+    namedtuple('_ExpectationExecutionInfo', 'context inout_def solid expectation_def resources log')
 ):
     def __new__(cls, context, inout_def, solid, expectation_def):
         return super(ExpectationExecutionInfo, cls).__new__(
@@ -32,6 +52,8 @@ class ExpectationExecutionInfo(
             check.inst_param(inout_def, 'inout_def', (InputDefinition, OutputDefinition)),
             check.inst_param(solid, 'solid', Solid),
             check.inst_param(expectation_def, 'expectation_def', ExpectationDefinition),
+            context.resources,
+            DagsterLog(context),
         )
 
 
@@ -46,15 +68,15 @@ class TransformExecutionInfo(
         config (Any): Config object for current solid
     '''
 
-    def __new__(cls, context, config, solid, pipeline_def, resources, log):
+    def __new__(cls, context, config, solid, pipeline_def):
         return super(TransformExecutionInfo, cls).__new__(
             cls,
             check.inst_param(context, 'context', RuntimeExecutionContext),
             config,
             check.inst_param(solid, 'solid', Solid),
             check.inst_param(pipeline_def, 'pipeline_def', PipelineDefinition),
-            resources,
-            log,
+            context.resources,
+            DagsterLog(context),
         )
 
     @property
