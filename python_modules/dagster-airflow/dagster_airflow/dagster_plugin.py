@@ -141,7 +141,7 @@ class DagsterOperator(BaseOperator):
         **kwargs
     ):
 
-        super(ModifiedDockerOperator, self).__init__(*args, **kwargs)
+        super(DagsterOperator, self).__init__(*args, **kwargs)
         self.api_version = api_version
         self.auto_remove = auto_remove
         self.command = command
@@ -268,4 +268,4 @@ class DagsterOperator(BaseOperator):
 
 class DagsterPlugin(AirflowPlugin):
     name = 'dagster_plugin'
-    operators = [ModifiedDockerOperator]
+    operators = [DagsterOperator]
