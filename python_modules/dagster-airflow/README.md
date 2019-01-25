@@ -78,13 +78,28 @@ with credentials that Airflow can use to connect to AWS. By default, dagster-air
 use the connection whose `conn_id` is `aws_default`, but we'll see later how you can edit this to
 be any value you like.
 
+Connections can be maintained in the Airflow Interface (Menu --> Admin --> Connections). For AWS connections, leave the values for Host, Schema, Login, Password, and Port empty, and set the Extras
+value as follows:
+
+```
+{"aws_access_key_id": "your_access_key_id", "aws_secret_access_key": "your_secret_access_key"
+ "region_name": "aws-region-of-choice"}
+```
+
 You'll also need to create an S3 bucket that dagster-airflow can use to store intermediate results.
 Make sure that the AWS user for which you've configured an Airflow connection has read and write
-permissions on this bucket.
+permissions on this bucket, and that the bucket is in the same region for which you've configured
+your Airflow connection.
 
 Results will appear in this bucket prefixed by the `run_id` that Airflow generates each time a DAG
 is run (and passes to each operator in its `context` argument), so you can easily search for and
 examine the results produced by each step in any of your DAG runs.
+
+If you're new to using Airflow connections, you may want to [configure your Airflow instance]
+(https://airflow.readthedocs.io/en/stable/howto/secure-connections.html) to encrypt your access
+keys. We also recommend that you use credentials for an IAM user which has the [least privilege]
+(https://docs.aws.amazon.com/IAM/latest/UserGuide/best-practices.html#grant-least-privilege)
+required to access the S3 bucket for dagster-airflow.
 
 ## Installing the dagster-airflow plugin
 Airflow needs to know about our the custom `DagsterOperator` that we'll use to execute steps in
