@@ -288,3 +288,24 @@ class DauphinStartPipelineExecutionResult(dauphin.Union):
             DauphinPipelineConfigValidationInvalid,
             DauphinPipelineNotFoundError,
         )
+
+
+class DauphinConfigTypeNotFoundError(dauphin.ObjectType):
+    class Meta:
+        name = 'ConfigTypeNotFoundError'
+        interfaces = (DauphinError,)
+
+    pipeline = dauphin.NonNull('Pipeline')
+    config_type_name = dauphin.NonNull(dauphin.String)
+
+
+class DauphinConfigTypeOrError(dauphin.Union):
+    class Meta:
+        name = 'ConfigTypeOrError'
+        types = (
+            'EnumConfigType',
+            'CompositeConfigType',
+            'RegularConfigType',
+            DauphinPipelineNotFoundError,
+            DauphinConfigTypeNotFoundError,
+        )

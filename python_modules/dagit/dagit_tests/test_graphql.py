@@ -1311,6 +1311,74 @@ fragment configTypeFragment on ConfigType {
 }
 '''
 
+CONFIG_TYPE_QUERY = '''
+query ConfigTypeQuery($pipelineName: String! $configTypeName: String!)
+{
+    configTypeOrError(
+        pipelineName: $pipelineName
+        configTypeName: $configTypeName
+    ) {
+        __typename
+        ... on RegularConfigType {
+            name
+        }
+        ... on CompositeConfigType {
+            name
+        }
+        ... on EnumConfigType {
+            name
+        }
+        ... on PipelineNotFoundError {
+            pipelineName
+        }
+        ... on ConfigTypeNotFoundError {
+            pipeline { name }
+            configTypeName
+        }
+    }
+}
+'''
+
+
+def test_config_type_or_error_query_success():
+    result = execute_dagster_graphql(
+        define_context(),
+        CONFIG_TYPE_QUERY,
+        {'pipelineName': 'pandas_hello_world', 'configTypeName': 'PandasHelloWorld.Environment'},
+    )
+
+    assert not result.errors
+    assert result.data
+    assert result.data['configTypeOrError']['__typename'] == 'CompositeConfigType'
+    assert result.data['configTypeOrError']['name'] == 'PandasHelloWorld.Environment'
+
+
+def test_config_type_or_error_pipeline_not_found():
+    result = execute_dagster_graphql(
+        define_context(),
+        CONFIG_TYPE_QUERY,
+        {'pipelineName': 'nope', 'configTypeName': 'PandasHelloWorld.Environment'},
+    )
+
+    assert not result.errors
+    assert result.data
+    assert result.data['configTypeOrError']['__typename'] == 'PipelineNotFoundError'
+    assert result.data['configTypeOrError']['pipelineName'] == 'nope'
+
+
+def test_config_type_or_error_type_not_found():
+    result = execute_dagster_graphql(
+        define_context(),
+        CONFIG_TYPE_QUERY,
+        {'pipelineName': 'pandas_hello_world', 'configTypeName': 'nope'},
+    )
+
+    assert not result.errors
+    assert result.data
+    assert result.data['configTypeOrError']['__typename'] == 'ConfigTypeNotFoundError'
+    assert result.data['configTypeOrError']['pipeline']['name'] == 'pandas_hello_world'
+    assert result.data['configTypeOrError']['configTypeName'] == 'nope'
+
 
 def test_smoke_test_runtime_type_system():
     result = execute_dagster_graphql(define_context(), ALL_RUNTIME_TYPES_QUERY)
