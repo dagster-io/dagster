@@ -49,7 +49,7 @@ def define_create_table_solid(name):
         total_sql = '''CREATE TABLE {output_table_name} AS {query_text}'''.format(
             output_table_name=output_table_name, query_text=sql_expr.query_text
         )
-        info.context.resources.sa.engine.connect().execute(total_sql)
+        info.resources.sa.engine.connect().execute(total_sql)
 
     return SolidDefinition(
         name=name,

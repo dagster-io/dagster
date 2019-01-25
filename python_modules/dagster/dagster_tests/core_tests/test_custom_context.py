@@ -76,7 +76,7 @@ def test_default_value():
     def _get_config_test_solid(config_key, config_value):
         @solid(inputs=[], outputs=[OutputDefinition()])
         def config_test(info):
-            assert info.context.resources == {config_key: config_value}
+            assert info.resources == {config_key: config_value}
 
         return config_test
 
@@ -106,7 +106,7 @@ def test_default_value():
 def test_custom_contexts():
     @solid(inputs=[], outputs=[OutputDefinition()])
     def custom_context_transform(info):
-        assert info.context.resources == {'field_one': 'value_two'}
+        assert info.resources == {'field_one': 'value_two'}
 
     pipeline = PipelineDefinition(
         solids=[custom_context_transform],
@@ -135,7 +135,7 @@ def test_yield_context():
 
     @solid(inputs=[], outputs=[OutputDefinition()])
     def custom_context_transform(info):
-        assert info.context.resources == {'field_one': 'value_two'}
+        assert info.resources == {'field_one': 'value_two'}
         assert info.context._context_stack['foo'] == 'bar'  # pylint: disable=W0212
         events.append('during')
 

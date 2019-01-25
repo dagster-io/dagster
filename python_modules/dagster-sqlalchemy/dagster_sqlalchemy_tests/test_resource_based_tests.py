@@ -36,7 +36,7 @@ def execute_sql_text_on_context(info, sql_text):
     # if context.resources.sa.mock_sql:
     #     return
 
-    engine = info.context.resources.engine
+    engine = info.resources.engine
 
     if _is_sqlite_context(info.context):
         # sqlite3 does not support multiple statements in a single

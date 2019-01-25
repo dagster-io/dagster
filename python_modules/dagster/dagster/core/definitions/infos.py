@@ -36,7 +36,7 @@ class ExpectationExecutionInfo(
 
 
 class TransformExecutionInfo(
-    namedtuple('_TransformExecutionInfo', 'context config solid pipeline_def')
+    namedtuple('_TransformExecutionInfo', 'context config solid pipeline_def resources log')
 ):
     '''An instance of TransformExecutionInfo is passed every solid transform function.
 
@@ -46,13 +46,15 @@ class TransformExecutionInfo(
         config (Any): Config object for current solid
     '''
 
-    def __new__(cls, context, config, solid, pipeline_def):
+    def __new__(cls, context, config, solid, pipeline_def, resources, log):
         return super(TransformExecutionInfo, cls).__new__(
             cls,
             check.inst_param(context, 'context', RuntimeExecutionContext),
             config,
             check.inst_param(solid, 'solid', Solid),
             check.inst_param(pipeline_def, 'pipeline_def', PipelineDefinition),
+            resources,
+            log,
         )
 
     @property

@@ -24993,7 +24993,7 @@ key of the <code class="docutils literal notranslate"><span class="pre">info</sp
 <span class="p">)</span>
 <span class="k">def</span> <span class="nf">add_ints</span><span class="p">(</span><span class="n">info</span><span class="p">,</span> <span class="n">num_one</span><span class="p">,</span> <span class="n">num_two</span><span class="p">):</span>
     <span class="n">sum_ints</span> <span class="o">=</span> <span class="n">num_one</span> <span class="o">+</span> <span class="n">num_two</span>
-    <span class="n">info</span><span class="o">.</span><span class="n">context</span><span class="o">.</span><span class="n">resources</span><span class="o">.</span><span class="n">store</span><span class="o">.</span><span class="n">record_value</span><span class="p">(</span><span class="n">info</span><span class="o">.</span><span class="n">context</span><span class="p">,</span> <span class="s1">&#39;add&#39;</span><span class="p">,</span> <span class="n">sum_ints</span><span class="p">)</span>
+    <span class="n">info</span><span class="o">.</span><span class="n">resources</span><span class="o">.</span><span class="n">store</span><span class="o">.</span><span class="n">record_value</span><span class="p">(</span><span class="n">info</span><span class="o">.</span><span class="n">context</span><span class="p">,</span> <span class="s1">&#39;add&#39;</span><span class="p">,</span> <span class="n">sum_ints</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">sum_ints</span>
 
 
