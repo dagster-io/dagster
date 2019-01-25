@@ -22681,13 +22681,13 @@ cluster environment.</p>
 
 <span class="nd">@solid</span>
 <span class="k">def</span> <span class="nf">debug_message</span><span class="p">(</span><span class="n">info</span><span class="p">):</span>
-    <span class="n">info</span><span class="o">.</span><span class="n">context</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;A debug message.&#39;</span><span class="p">)</span>
+    <span class="n">info</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;A debug message.&#39;</span><span class="p">)</span>
     <span class="k">return</span> <span class="s1">&#39;foo&#39;</span>
 
 
 <span class="nd">@solid</span>
 <span class="k">def</span> <span class="nf">error_message</span><span class="p">(</span><span class="n">info</span><span class="p">):</span>
-    <span class="n">info</span><span class="o">.</span><span class="n">context</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s1">&#39;An error occurred.&#39;</span><span class="p">)</span>
+    <span class="n">info</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s1">&#39;An error occurred.&#39;</span><span class="p">)</span>
 
 
 <span class="k">def</span> <span class="nf">define_execution_context_pipeline_step_one</span><span class="p">():</span>

@@ -18,13 +18,15 @@ def define_execution_context_pipeline_step_one():
 
 def define_execution_context_pipeline_step_two():
     return PipelineDefinition(
-        name='execution_context_pipeline', solids=[debug_message, error_message]
+        name='execution_context_pipeline',
+        solids=[debug_message, error_message],
     )
 
 
 def define_execution_context_pipeline_step_three():
     return PipelineDefinition(
-        name='execution_context_pipeline', solids=[debug_message, error_message]
+        name='execution_context_pipeline',
+        solids=[debug_message, error_message],
     )
 
 
