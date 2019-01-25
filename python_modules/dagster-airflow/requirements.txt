@@ -1,4 +1,0 @@
-apache-airflow==1.10.2
-black==18.3a0
-dagster
-docker==3.7.0

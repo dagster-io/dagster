@@ -2,6 +2,9 @@
 An Airflow integration for DAGs defined using Dagster. Schedule and monitor your DAGs with Airflow,
 while defining them using the Dagster abstractions and running them in fully isolated containers.
 
+### Compatibility
+Note that until [AIRFLOW-2876] is resolved, dagster-airflow will not run on Python 3.7.
+
 # Packaging a Dagster repository for Airflow
 In order to schedule, run, and monitor Dagster pipelines using Airflow, you'll need to take a few
 extra steps after you've defined your pipelines in the ordinary way:

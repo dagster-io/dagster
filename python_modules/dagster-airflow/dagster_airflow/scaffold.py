@@ -3,7 +3,14 @@
 
 import os
 
-import black
+try:
+    from black import format_file_contents
+
+    BLACK = True
+except ImportError:
+    from yapf.yapflib.yapf_api import FormatCode
+
+    BLACK = False
 
 from datetime import datetime, timedelta
 
@@ -101,7 +108,11 @@ def scaffold_airflow_dag(
             if pipeline.description
             else ''
         ),
-        printed_env_config=black.format_file_contents(str(env_config), **BLACK_KWARGS),
+        printed_env_config=(
+            format_file_contents(str(env_config), **BLACK_KWARGS)
+            if BLACK
+            else FormatCode(str(env_config))
+        ),
         default_args=str(default_args),
         dag_kwargs=(
             ',\n    '
@@ -135,7 +146,9 @@ def scaffold_airflow_dag(
         ),
     )
 
-    formatted_dag_file = black.format_file_contents(dag_file, **BLACK_KWARGS)
+    formatted_dag_file = (
+        format_file_contents(dag_file, **BLACK_KWARGS) if BLACK else FormatCode(dag_file)
+    )
 
     if output_path:
         with open(output_path, 'w') as fd:
