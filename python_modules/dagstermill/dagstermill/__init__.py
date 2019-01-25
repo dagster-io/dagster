@@ -236,7 +236,7 @@ def replace_parameters(info, nb, parameters):
         after = nb.cells[param_cell_index + 1 :]
     else:
         # Inject to the top of the notebook, presumably first cell includes dagstermill import
-        info.context.debug(
+        info.log.debug(
             (
                 "Warning notebook has no parameters cell, "
                 "so first cell must import dagstermill and call dm.declare_as_solid"
@@ -280,13 +280,13 @@ def _dm_solid_transform(name, notebook_path):
 
             output_nb = pm.read_notebook(temp_path)
 
-            info.context.debug(
+            info.log.debug(
                 'Notebook execution complete for {name}. Data is {data}'.format(
                     name=name, data=output_nb.data
                 )
             )
 
-            info.context.info("Output notebook path is {}".format(output_notebook_dir))
+            info.log.info("Output notebook path is {}".format(output_notebook_dir))
 
             for output_def in info.solid_def.output_defs:
                 if output_def.name in output_nb.data:

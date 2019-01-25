@@ -3295,17 +3295,18 @@ snapshots['test_build_all_docs 25'] = '''Execution Context
 =================
 
 One of the most important objects in the system is the execution context. The execution
-context is threaded throughout the entire computation (via the ``info`` object passed to
-user code) and contains handles to logging facilities and external resources. Interactions
-with logging systems, databases, and external clusters (e.g. a Spark cluster) should
-be managed through the context. 
+context, the logger, and the resources are threaded throughout the entire computation (
+via the ``info`` object passed to user code) and contains handles to logging facilities
+and external resources. Interactions with logging systems, databases, and external
+clusters (e.g. a Spark cluster) should be managed through these properties of the 
+info object.
 
 This provides a powerful layer of indirection that allows a solid to abstract
-away its surrounding environment. Using an execution context allows the system and pipeline
-infrastructure to provide different implementations for different environments,
-giving the engineer the opportunity to design pipelines that can be executed
-on your local machine or your CI/CD pipeline as readily as your production
-cluster environment.
+away its surrounding environment. Using an execution context allows the system and
+pipeline infrastructure to provide different implementations for different
+environments, giving the engineer the opportunity to design pipelines that
+can be executed on your local machine or your CI/CD pipeline as readily as
+your production cluster environment.
 
 Logging
 ~~~~~~~
@@ -4003,8 +4004,8 @@ with swappable config.
 snapshots['test_build_all_docs 33'] = '''Resources
 =========
 
-We've already learned about logging through the execution context. We can also use the execution
-context to manage pipelines' access to resources like the file system, databases, or cloud services.
+We've already learned about logging through the info object. We can also use the info object
+to manage pipelines' access to resources like the file system, databases, or cloud services.
 In general, interactions with features of the external environment like these should be modeled
 as resources.
 
@@ -19107,7 +19108,7 @@ multiple outputs. Useful for solids that have multiple outputs.</li>
     <span class="n">outputs</span><span class="o">=</span><span class="p">[</span><span class="n">OutputDefinition</span><span class="p">()],</span>
 <span class="p">)</span>
 <span class="k">def</span> <span class="nf">hello_world</span><span class="p">(</span><span class="n">info</span><span class="p">,</span> <span class="n">foo</span><span class="p">):</span>
-    <span class="n">info</span><span class="o">.</span><span class="n">context</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;log something&#39;</span><span class="p">)</span>
+    <span class="n">info</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;log something&#39;</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">foo</span>
 
 <span class="nd">@solid</span><span class="p">(</span>
@@ -22661,16 +22662,17 @@ snapshots['test_build_all_docs 60'] = '''
   <div class="section" id="execution-context">
 <h1>Execution Context<a class="headerlink" href="#execution-context" title="Permalink to this headline">¶</a></h1>
 <p>One of the most important objects in the system is the execution context. The execution
-context is threaded throughout the entire computation (via the <code class="docutils literal notranslate"><span class="pre">info</span></code> object passed to
-user code) and contains handles to logging facilities and external resources. Interactions
-with logging systems, databases, and external clusters (e.g. a Spark cluster) should
-be managed through the context.</p>
+context, the logger, and the resources are threaded throughout the entire computation (
+via the <code class="docutils literal notranslate"><span class="pre">info</span></code> object passed to user code) and contains handles to logging facilities
+and external resources. Interactions with logging systems, databases, and external
+clusters (e.g. a Spark cluster) should be managed through these properties of the
+info object.</p>
 <p>This provides a powerful layer of indirection that allows a solid to abstract
-away its surrounding environment. Using an execution context allows the system and pipeline
-infrastructure to provide different implementations for different environments,
-giving the engineer the opportunity to design pipelines that can be executed
-on your local machine or your CI/CD pipeline as readily as your production
-cluster environment.</p>
+away its surrounding environment. Using an execution context allows the system and
+pipeline infrastructure to provide different implementations for different
+environments, giving the engineer the opportunity to design pipelines that
+can be executed on your local machine or your CI/CD pipeline as readily as
+your production cluster environment.</p>
 <div class="section" id="logging">
 <h2>Logging<a class="headerlink" href="#logging" title="Permalink to this headline">¶</a></h2>
 <p>One of the most basic pipeline-level facilities is logging.</p>
@@ -22681,13 +22683,13 @@ cluster environment.</p>
 
 <span class="nd">@solid</span>
 <span class="k">def</span> <span class="nf">debug_message</span><span class="p">(</span><span class="n">info</span><span class="p">):</span>
-    <span class="n">info</span><span class="o">.</span><span class="n">context</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;A debug message.&#39;</span><span class="p">)</span>
+    <span class="n">info</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;A debug message.&#39;</span><span class="p">)</span>
     <span class="k">return</span> <span class="s1">&#39;foo&#39;</span>
 
 
 <span class="nd">@solid</span>
 <span class="k">def</span> <span class="nf">error_message</span><span class="p">(</span><span class="n">info</span><span class="p">):</span>
-    <span class="n">info</span><span class="o">.</span><span class="n">context</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s1">&#39;An error occurred.&#39;</span><span class="p">)</span>
+    <span class="n">info</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s1">&#39;An error occurred.&#39;</span><span class="p">)</span>
 
 
 <span class="k">def</span> <span class="nf">define_execution_context_pipeline_step_one</span><span class="p">():</span>
@@ -24055,18 +24057,18 @@ happened during the computation.</p>
 42</pre></div></td><td class="code"><div class="highlight"><pre><span></span>
 <span class="nd">@solid</span><span class="p">(</span><span class="n">inputs</span><span class="o">=</span><span class="p">[</span><span class="n">InputDefinition</span><span class="p">(</span><span class="s1">&#39;num&#39;</span><span class="p">,</span> <span class="n">dagster_type</span><span class="o">=</span><span class="n">Int</span><span class="p">)])</span>
 <span class="k">def</span> <span class="nf">log_num</span><span class="p">(</span><span class="n">info</span><span class="p">,</span> <span class="n">num</span><span class="p">):</span>
-    <span class="n">info</span><span class="o">.</span><span class="n">context</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;num </span><span class="si">{num}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">num</span><span class="o">=</span><span class="n">num</span><span class="p">))</span>
+    <span class="n">info</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;num </span><span class="si">{num}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">num</span><span class="o">=</span><span class="n">num</span><span class="p">))</span>
     <span class="k">return</span> <span class="n">num</span>
 
 
 <span class="nd">@solid</span><span class="p">(</span><span class="n">inputs</span><span class="o">=</span><span class="p">[</span><span class="n">InputDefinition</span><span class="p">(</span><span class="s1">&#39;num&#39;</span><span class="p">,</span> <span class="n">dagster_type</span><span class="o">=</span><span class="n">Int</span><span class="p">)])</span>
 <span class="k">def</span> <span class="nf">log_num_squared</span><span class="p">(</span><span class="n">info</span><span class="p">,</span> <span class="n">num</span><span class="p">):</span>
-    <span class="n">info</span><span class="o">.</span><span class="n">context</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
-        <span class="s1">&#39;num_squared </span><span class="si">{num_squared}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">num_squared</span><span class="o">=</span><span class="n">num</span> <span class="o">*</span> <span class="n">num</span><span class="p">)</span>
-    <span class="p">)</span>
+    <span class="n">info</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;num_squared </span><span class="si">{num_squared}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">num_squared</span><span class="o">=</span><span class="n">num</span> <span class="o">*</span> <span class="n">num</span><span class="p">))</span>
     <span class="k">return</span> <span class="n">num</span> <span class="o">*</span> <span class="n">num</span>
 
 
+<span class="k">def</span> <span class="nf">define_multiple_outputs_step_one_pipeline</span><span class="p">():</span>
+    <span class="k">return</span> <span class="n">PipelineDefinition</span><span class="p">(</span>
 <span class="nd">@solid</span><span class="p">(</span>
     <span class="n">outputs</span><span class="o">=</span><span class="p">[</span>
         <span class="n">OutputDefinition</span><span class="p">(</span><span class="n">dagster_type</span><span class="o">=</span><span class="n">Int</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;out_one&#39;</span><span class="p">),</span>
@@ -24076,8 +24078,6 @@ happened during the computation.</p>
 <span class="k">def</span> <span class="nf">return_dict_results</span><span class="p">(</span><span class="n">_info</span><span class="p">):</span>
     <span class="k">return</span> <span class="n">MultipleResults</span><span class="o">.</span><span class="n">from_dict</span><span class="p">({</span><span class="s1">&#39;out_one&#39;</span><span class="p">:</span> <span class="mi">23</span><span class="p">,</span> <span class="s1">&#39;out_two&#39;</span><span class="p">:</span> <span class="mi">45</span><span class="p">})</span>
 
-
-<span class="k">def</span> <span class="nf">define_multiple_outputs_step_one_pipeline</span><span class="p">():</span>
     <span class="k">return</span> <span class="n">PipelineDefinition</span><span class="p">(</span>
         <span class="n">name</span><span class="o">=</span><span class="s1">&#39;multiple_outputs_step_one_pipeline&#39;</span><span class="p">,</span>
         <span class="n">solids</span><span class="o">=</span><span class="p">[</span><span class="n">return_dict_results</span><span class="p">,</span> <span class="n">log_num</span><span class="p">,</span> <span class="n">log_num_squared</span><span class="p">],</span>
@@ -24094,6 +24094,8 @@ happened during the computation.</p>
             <span class="p">},</span>
         <span class="p">},</span>
     <span class="p">)</span>
+
+
 </pre></div>
 </td></tr></table></div>
 </div>
@@ -24216,8 +24218,6 @@ and then execute that pipeline.</p>
     <span class="k">else</span><span class="p">:</span>
         <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s1">&#39;invalid config&#39;</span><span class="p">)</span>
 
-
-<span class="k">def</span> <span class="nf">define_multiple_outputs_step_two_pipeline</span><span class="p">():</span>
     <span class="k">return</span> <span class="n">PipelineDefinition</span><span class="p">(</span>
         <span class="n">name</span><span class="o">=</span><span class="s1">&#39;multiple_outputs_step_two_pipeline&#39;</span><span class="p">,</span>
         <span class="n">solids</span><span class="o">=</span><span class="p">[</span><span class="n">yield_outputs</span><span class="p">,</span> <span class="n">log_num</span><span class="p">,</span> <span class="n">log_num_squared</span><span class="p">],</span>
@@ -24230,6 +24230,8 @@ and then execute that pipeline.</p>
             <span class="p">},</span>
         <span class="p">},</span>
     <span class="p">)</span>
+
+
 </pre></div>
 </td></tr></table></div>
 </div>
@@ -24943,8 +24945,8 @@ snapshots['test_build_all_docs 68'] = '''
             
   <div class="section" id="resources">
 <h1>Resources<a class="headerlink" href="#resources" title="Permalink to this headline">¶</a></h1>
-<p>We’ve already learned about logging through the execution context. We can also use the execution
-context to manage pipelines’ access to resources like the file system, databases, or cloud services.
+<p>We’ve already learned about logging through the info object. We can also use the info object
+to manage pipelines’ access to resources like the file system, databases, or cloud services.
 In general, interactions with features of the external environment like these should be modeled
 as resources.</p>
 <p>Let’s imagine that we are using a key value store offered by a cloud service that has a python API.
@@ -24959,8 +24961,8 @@ We are going to record the results of computations in that key value store.</p>
         <span class="c1"># create credential and store it</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">conn</span> <span class="o">=</span> <span class="n">PublicCloudConn</span><span class="p">(</span><span class="n">username</span><span class="p">,</span> <span class="n">password</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">record_value</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">context</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
-        <span class="n">context</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+    <span class="k">def</span> <span class="nf">record_value</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">log</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
             <span class="s1">&#39;Setting key=</span><span class="si">{key}</span><span class="s1"> value=</span><span class="si">{value}</span><span class="s1"> in cloud&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
                 <span class="n">key</span><span class="o">=</span><span class="n">key</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="n">value</span>
             <span class="p">)</span>
@@ -24993,7 +24995,7 @@ key of the <code class="docutils literal notranslate"><span class="pre">info</sp
 <span class="p">)</span>
 <span class="k">def</span> <span class="nf">add_ints</span><span class="p">(</span><span class="n">info</span><span class="p">,</span> <span class="n">num_one</span><span class="p">,</span> <span class="n">num_two</span><span class="p">):</span>
     <span class="n">sum_ints</span> <span class="o">=</span> <span class="n">num_one</span> <span class="o">+</span> <span class="n">num_two</span>
-    <span class="n">info</span><span class="o">.</span><span class="n">context</span><span class="o">.</span><span class="n">resources</span><span class="o">.</span><span class="n">store</span><span class="o">.</span><span class="n">record_value</span><span class="p">(</span><span class="n">info</span><span class="o">.</span><span class="n">context</span><span class="p">,</span> <span class="s1">&#39;add&#39;</span><span class="p">,</span> <span class="n">sum_ints</span><span class="p">)</span>
+    <span class="n">info</span><span class="o">.</span><span class="n">resources</span><span class="o">.</span><span class="n">store</span><span class="o">.</span><span class="n">record_value</span><span class="p">(</span><span class="n">info</span><span class="o">.</span><span class="n">log</span><span class="p">,</span> <span class="s1">&#39;add&#39;</span><span class="p">,</span> <span class="n">sum_ints</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">sum_ints</span>
 
 
@@ -25058,8 +25060,8 @@ in testing contexts but does not touch the public cloud:</p>
     <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">values</span> <span class="o">=</span> <span class="p">{}</span>
 
-    <span class="k">def</span> <span class="nf">record_value</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">context</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
-        <span class="n">context</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+    <span class="k">def</span> <span class="nf">record_value</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">log</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
             <span class="s1">&#39;Setting key=</span><span class="si">{key}</span><span class="s1"> value=</span><span class="si">{value}</span><span class="s1"> in memory&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
                 <span class="n">key</span><span class="o">=</span><span class="n">key</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="n">value</span>
             <span class="p">)</span>

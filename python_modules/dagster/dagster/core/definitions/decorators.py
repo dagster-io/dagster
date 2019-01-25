@@ -242,7 +242,7 @@ def solid(name=None, inputs=None, outputs=None, config_field=None, description=N
                 outputs=[OutputDefinition()],
             )
             def hello_world(info, foo):
-                info.context.info('log something')
+                info.log.info('log something')
                 return foo
 
             @solid(

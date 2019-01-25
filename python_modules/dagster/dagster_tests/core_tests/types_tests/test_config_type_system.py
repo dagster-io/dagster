@@ -491,7 +491,7 @@ def test_context_selector_working():
 
     @solid
     def check_context(info):
-        assert info.context.resources == 32
+        assert info.resources == 32
         called['yup'] = True
 
     pipeline_def = PipelineDefinition(

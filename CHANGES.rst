@@ -10,8 +10,8 @@
 
    - API Additions
       - New decorated-based @resource API as a more concise alternative to ResourceDefinition
-      - Dagster config type system now supports enum types. (dagster.Enum and dagster.EnumType)
-
+      - Dagster config type system now supports enum types. (dagster.Enum and dagster.EnumType) 
+      - New top level properties `resources` and `log` on info.
    - Notes
       - GraphQL queries and mutations taking a pipeline name now take both a pipeline name and an optional
         solid subset and have slightly improved call signatures.

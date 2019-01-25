@@ -30,25 +30,25 @@ def nonce_solid(name, n_inputs, n_outputs):
         for i in range(200):
             time.sleep(0.02)
             if i % 1000 == 420:
-                info.context.error(
+                info.log.error(
                     'Error message seq={i} from solid {name}'.format(
                         i=i, name=name
                     )
                 )
             elif i % 100 == 0:
-                info.context.warning(
+                info.log.warning(
                     'Warning message seq={i} from solid {name}'.format(
                         i=i, name=name
                     )
                 )
             elif i % 10 == 0:
-                info.context.info(
+                info.log.info(
                     'Info message seq={i} from solid {name}'.format(
                         i=i, name=name
                     )
                 )
             else:
-                info.context.debug(
+                info.log.debug(
                     'Debug message seq={i} from solid {name}'.format(
                         i=i, name=name
                     )
