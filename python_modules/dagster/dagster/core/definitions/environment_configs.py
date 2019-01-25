@@ -11,7 +11,7 @@ from dagster.core.system_config.objects import (
     SolidConfig,
 )
 
-from dagster.core.types import Bool, Field, List, NamedDict, NamedSelector
+from dagster.core.types import Bool, Field, List, NamedDict, NamedSelector, Dict
 from dagster.core.types.config import ConfigType, ConfigTypeAttributes
 from dagster.core.types.default_applier import apply_default_values
 from dagster.core.types.field_utils import check_opt_field_param, FieldImpl
@@ -79,6 +79,11 @@ def define_specific_context_config_cls(name, config_field, resources):
                 'config': config_field,
                 'resources': Field(
                     define_resource_dictionary_cls('{name}.Resources'.format(name=name), resources)
+                ),
+                'marshalling': Field(
+                    SystemNamedSelector(
+                        '{name}.Marshalling'.format(name=name), {'file': Field(Dict({}))}
+                    )
                 ),
             }
         ),
@@ -325,7 +330,10 @@ def construct_environment_config(config_value):
 def construct_context_config(config_value):
     context_name, context_value = single_item(config_value)
     return ContextConfig(
-        name=context_name, config=context_value.get('config'), resources=context_value['resources']
+        name=context_name,
+        config=context_value.get('config'),
+        resources=context_value['resources'],
+        marshalling=context_value['marshalling'],
     )
 
 

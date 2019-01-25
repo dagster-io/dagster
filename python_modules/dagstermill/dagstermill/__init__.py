@@ -30,6 +30,7 @@ from dagster import (
 )
 
 from dagster.core.definitions import TransformExecutionInfo
+from dagster.core.types.marshal import serialize_to_file, deserialize_from_file
 from dagster.core.types.runtime import RuntimeType
 
 from dagster.core.definitions.dependency import Solid
@@ -167,8 +168,8 @@ def marshal_value(runtime_type, value, target_file):
         return value
     elif runtime_type.is_any and is_json_serializable(value):
         return value
-    elif runtime_type.marshalling_strategy:
-        runtime_type.marshalling_strategy.marshal_value(value, target_file)
+    elif runtime_type.serialization_strategy:
+        serialize_to_file(runtime_type.serialization_strategy, value, target_file)
         return target_file
     else:
         check.failed('Unsupported type {name}'.format(name=runtime_type.name))
@@ -207,8 +208,8 @@ def unmarshal_value(runtime_type, value):
         return value
     elif runtime_type.is_any and is_json_serializable(value):
         return value
-    elif runtime_type.marshalling_strategy:
-        return runtime_type.marshalling_strategy.unmarshal_value(value)
+    elif runtime_type.serialization_strategy:
+        return deserialize_from_file(runtime_type.serialization_strategy, value)
     else:
         check.failed(
             'Unsupported type {name}: no marshalling strategy defined'.format(

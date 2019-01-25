@@ -13,7 +13,7 @@ from .config import Nullable as ConfigNullable
 
 from .config_schema import InputSchema, OutputSchema
 
-from .marshal import MarshallingStrategy, PickleMarshallingStrategy
+from .marshal import SerializationStrategy, PickleSerializationStrategy
 from .dagster_type import check_dagster_type_param
 from .wrapping import WrappingListType, WrappingNullableType
 
@@ -34,7 +34,7 @@ class RuntimeType(object):
         description=None,
         input_schema=None,
         output_schema=None,
-        marshalling_strategy=None,
+        serialization_strategy=None,
     ):
 
         type_obj = type(self)
@@ -51,11 +51,11 @@ class RuntimeType(object):
         self.description = check.opt_str_param(description, 'description')
         self.input_schema = check.opt_inst_param(input_schema, 'input_schema', InputSchema)
         self.output_schema = check.opt_inst_param(output_schema, 'output_schema', OutputSchema)
-        self.marshalling_strategy = check.opt_inst_param(
-            marshalling_strategy,
-            'marshalling_strategy',
-            MarshallingStrategy,
-            PickleMarshallingStrategy(),
+        self.serialization_strategy = check.opt_inst_param(
+            serialization_strategy,
+            'serialization_strategy',
+            SerializationStrategy,
+            PickleSerializationStrategy(),
         )
 
     __cache = {}

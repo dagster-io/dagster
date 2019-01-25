@@ -1,6 +1,6 @@
 from dagster import check
 from .config_schema import InputSchema, OutputSchema
-from .marshal import MarshallingStrategy, PickleMarshallingStrategy
+from .marshal import SerializationStrategy, PickleSerializationStrategy
 from .runtime import PythonObjectType, RuntimeType
 
 
@@ -19,7 +19,7 @@ def _decorate_as_dagster_type(
     description,
     input_schema=None,
     output_schema=None,
-    marshalling_strategy=None,
+    serialization_strategy=None,
 ):
     _ObjectType = _create_object_type_class(
         key=key,
@@ -28,7 +28,7 @@ def _decorate_as_dagster_type(
         python_type=bare_cls,
         input_schema=input_schema,
         output_schema=output_schema,
-        marshalling_strategy=marshalling_strategy,
+        serialization_strategy=serialization_strategy,
     )
 
     type_inst = _ObjectType.inst()
@@ -81,17 +81,17 @@ def as_dagster_type(
     description=None,
     input_schema=None,
     output_schema=None,
-    marshalling_strategy=None,
+    serialization_strategy=None,
 ):
     check.type_param(existing_type, 'existing_type')
     check.opt_str_param(name, 'name')
     check.opt_str_param(description, 'description')
     check.opt_inst_param(input_schema, 'input_schema', InputSchema)
     check.opt_inst_param(output_schema, 'output_schema', OutputSchema)
-    check.opt_inst_param(marshalling_strategy, 'marshalling_strategy', MarshallingStrategy)
+    check.opt_inst_param(serialization_strategy, 'serialization_strategy', SerializationStrategy)
 
-    if marshalling_strategy is None:
-        marshalling_strategy = PickleMarshallingStrategy()
+    if serialization_strategy is None:
+        serialization_strategy = PickleSerializationStrategy()
 
     name = existing_type.__name__ if name is None else name
 
@@ -102,5 +102,5 @@ def as_dagster_type(
         description=description,
         input_schema=input_schema,
         output_schema=output_schema,
-        marshalling_strategy=marshalling_strategy,
+        serialization_strategy=serialization_strategy,
     )

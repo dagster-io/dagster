@@ -54,14 +54,18 @@ def test_basic_solids_config():
 
     default_context_config_type = context_config_type.fields['default'].config_type
 
-    assert set(default_context_config_type.fields.keys()) == set(['config', 'resources'])
+    assert set(default_context_config_type.fields.keys()) == set(
+        ['config', 'resources', 'marshalling']
+    )
 
     default_context_user_config_type = default_context_config_type.fields['config'].config_type
 
     assert set(default_context_user_config_type.fields.keys()) == set(['log_level'])
 
     assert scaffold_pipeline_config(pipeline_def, skip_optional=False) == {
-        'context': {'default': {'config': {'log_level': ''}, 'resources': {}}},
+        'context': {
+            'default': {'config': {'log_level': ''}, 'marshalling': {'file': {}}, 'resources': {}}
+        },
         'solids': {'required_field_solid': {'config': {'required_int': 0}}},
         'expectations': {'evaluate': True},
         'execution': {},
@@ -88,8 +92,16 @@ def test_two_contexts():
 
     assert scaffold_pipeline_config(pipeline_def, skip_optional=False) == {
         'context': {
-            'context_one': {'config': {'context_one_field': ''}, 'resources': {}},
-            'context_two': {'config': {'context_two_field': 0}, 'resources': {}},
+            'context_one': {
+                'config': {'context_one_field': ''},
+                'marshalling': {'file': {}},
+                'resources': {},
+            },
+            'context_two': {
+                'config': {'context_two_field': 0},
+                'marshalling': {'file': {}},
+                'resources': {},
+            },
         },
         'solids': {},
         'expectations': {'evaluate': True},
