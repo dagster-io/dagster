@@ -99,6 +99,15 @@ Array [
     <div
       className="bp3-navbar-group bp3-align-right"
     >
+      <div
+        className="sc-htpNat eBXEsV"
+        style={
+          Object {
+            "background": "#3DCC91",
+          }
+        }
+        title="Connecting..."
+      />
       <span
         className="sc-bxivhb cvIdVt"
       />
@@ -659,6 +668,15 @@ Array [
     <div
       className="bp3-navbar-group bp3-align-right"
     >
+      <div
+        className="sc-htpNat eBXEsV"
+        style={
+          Object {
+            "background": "#3DCC91",
+          }
+        }
+        title="Connecting..."
+      />
       <span
         className="sc-bxivhb cvIdVt"
       />
@@ -778,6 +796,15 @@ Array [
     <div
       className="bp3-navbar-group bp3-align-right"
     >
+      <div
+        className="sc-htpNat eBXEsV"
+        style={
+          Object {
+            "background": "#3DCC91",
+          }
+        }
+        title="Connecting..."
+      />
       <span
         className="sc-bxivhb cvIdVt"
       />
@@ -1439,6 +1466,15 @@ Array [
     <div
       className="bp3-navbar-group bp3-align-right"
     >
+      <div
+        className="sc-htpNat eBXEsV"
+        style={
+          Object {
+            "background": "#3DCC91",
+          }
+        }
+        title="Connecting..."
+      />
       <span
         className="sc-bxivhb cvIdVt"
       />
@@ -2100,6 +2136,15 @@ Array [
     <div
       className="bp3-navbar-group bp3-align-right"
     >
+      <div
+        className="sc-htpNat eBXEsV"
+        style={
+          Object {
+            "background": "#3DCC91",
+          }
+        }
+        title="Connecting..."
+      />
       <span
         className="sc-bxivhb cvIdVt"
       />
@@ -2818,6 +2863,15 @@ Array [
     <div
       className="bp3-navbar-group bp3-align-right"
     >
+      <div
+        className="sc-htpNat eBXEsV"
+        style={
+          Object {
+            "background": "#3DCC91",
+          }
+        }
+        title="Connecting..."
+      />
       <span
         className="sc-bxivhb cvIdVt"
       />
