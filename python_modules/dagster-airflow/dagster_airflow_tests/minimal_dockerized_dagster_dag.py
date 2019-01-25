@@ -12,7 +12,10 @@
 import datetime
 
 from airflow import DAG
-from airflow.operators.dagster_plugin import ModifiedDockerOperator as DagsterOperator
+from airflow.operators.dagster_plugin import DagsterOperator
+
+# Set your S3 connection id here, if you do not want to use the default `aws_default` connection
+S3_CONN_ID = "aws_default"
 
 dag = DAG(
     dag_id="demo_pipeline",
@@ -20,7 +23,7 @@ dag = DAG(
     default_args={
         "owner": "airflow",
         "depends_on_past": False,
-        "start_date": datetime.datetime(2019, 1, 24, 21, 50, 9, 626934),
+        "start_date": datetime.datetime(2019, 1, 25, 0, 54, 11, 547692),
         "email": ["airflow@example.com"],
         "email_on_failure": False,
         "email_on_retry": False,
@@ -34,18 +37,21 @@ multiply__the__word_word_input__thunk_task = DagsterOperator(
     dag=dag,
     image="dagster-airflow-demo",
     task_id="multiply__the__word_word_input__thunk",
+    s3_conn_id=S3_CONN_ID,
 )
 multiply__the__word_transform_task = DagsterOperator(
     step="multiply__the__word_transform",
     dag=dag,
     image="dagster-airflow-demo",
     task_id="multiply__the__word_transform",
+    s3_conn_id=S3_CONN_ID,
 )
 count__letters_transform_task = DagsterOperator(
     step="count__letters_transform",
     dag=dag,
     image="dagster-airflow-demo",
     task_id="count__letters_transform",
+    s3_conn_id=S3_CONN_ID,
 )
 
 multiply__the__word_word_input__thunk_task.set_downstream(multiply__the__word_transform_task)

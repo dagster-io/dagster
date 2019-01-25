@@ -67,8 +67,8 @@ dagster-airflow uses Amazon S3 as a lake for this purpose.
 
 You will need to configure an Airflow [Connection](https://airflow.apache.org/howto/manage-connections.html)
 with credentials that Airflow can use to connect to AWS. By default, dagster-airflow will try to
-use the connection called `aws_default`, but we'll see later how you can edit this to be any
-value you like.
+use the connection whose `conn_id` is `aws_default`, but we'll see later how you can edit this to
+be any value you like.
 
 You'll also need to create an S3 bucket that dagster-airflow can use to store intermediate results.
 Make sure that the AWS user for which you've configured an Airflow connection has read and write
