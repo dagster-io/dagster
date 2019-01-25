@@ -184,7 +184,9 @@ export default class PipelineExecution extends React.Component<
               if (isExecuting) return;
               let config = {};
               try {
-                config = yaml.parse(currentSession.config);
+                // Note: parsing `` returns null rather than an empty object,
+                // which is preferable for representing empty config.
+                config = yaml.parse(currentSession.config) || {};
               } catch (err) {
                 alert(YAML_SYNTAX_INVALID);
                 return;
