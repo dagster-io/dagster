@@ -32,7 +32,6 @@ interface IPipelineExecutionProps {
   activeRun: PipelineExecutionPipelineRunFragment | null;
   sessions: { [name: string]: IExecutionSession };
   currentSession: IExecutionSession;
-  isExecuting: boolean;
   onSelectSession: (session: string) => void;
   onSaveSession: (session: string, changes: IExecutionSessionChanges) => void;
   onCreateSession: () => void;
@@ -115,16 +114,23 @@ export default class PipelineExecution extends React.Component<
   };
 
   render() {
-    const {
-      sessions,
-      pipeline,
-      activeRun,
-      isExecuting,
-      currentSession
-    } = this.props;
+    const { sessions, pipeline, activeRun, currentSession } = this.props;
 
     if (!currentSession) {
       return <span />;
+    }
+
+    let activeRunExecuting = false;
+    if (activeRun) {
+      const start = activeRun.logs.nodes.find(
+        l => l.__typename === "PipelineProcessStartEvent"
+      );
+      const end = activeRun.logs.nodes.find(
+        l =>
+          l.__typename === "PipelineSuccessEvent" ||
+          l.__typename === "PipelineFailureEvent"
+      );
+      activeRunExecuting = start !== null && end == null;
     }
 
     return (
@@ -175,7 +181,7 @@ export default class PipelineExecution extends React.Component<
             />
           </SessionSettingsFooter>
           <ExecutionStartButton
-            isExecuting={isExecuting}
+            executing={activeRunExecuting}
             onClick={this.props.onExecute}
           />
         </Split>

@@ -264,7 +264,6 @@ export default class PipelineExecutionContainer extends React.Component<
           return (
             <PipelineExecution
               activeRun={activeRun}
-              isExecuting={loading}
               pipeline={this.props.pipeline}
               sessions={this.props.data.sessions}
               currentSession={this.props.currentSession}
