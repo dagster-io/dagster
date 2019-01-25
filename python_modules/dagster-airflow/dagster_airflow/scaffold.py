@@ -67,6 +67,9 @@ import datetime
 from airflow import DAG
 from airflow.operators.dagster_plugin import DagsterOperator
 
+# Set your S3 connection id here, if you do not want to use the default `aws_default` connection
+S3_CONN_ID = 'aws_default'
+
 dag = DAG(
     dag_id='{pipeline_name}',
     description='{pipeline_description}',
@@ -115,7 +118,7 @@ def scaffold_airflow_dag(
         step_definitions='\n'.join(
             [
                 '{step_key}_task = DagsterOperator(step=\'{step_key}\', dag=dag, '
-                'image=\'{image}\', task_id=\'{step_key}\')'.format(
+                'image=\'{image}\', task_id=\'{step_key}\', s3_conn_id=S3_CONN_ID)'.format(
                     step_key=normalize_key(step.key), image=image
                 )
                 for step in execution_plan.topological_steps()

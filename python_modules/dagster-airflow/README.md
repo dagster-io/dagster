@@ -6,8 +6,9 @@ while defining them using the Dagster abstractions and running them in fully iso
 In order to schedule, run, and monitor Dagster pipelines using Airflow, you'll need to take a few
 extra steps after you've defined your pipelines in the ordinary way:
 1. Containerize your repository
-2. Install the dagster-airflow plugin
-3. Define your pipeline as an Airflow DAG
+2. Set up an S3 bucket for dagster-airflow
+3. Install the dagster-airflow plugin
+4. Define your pipeline as an Airflow DAG
 
 ## Containerizing your repository
 A Dagster repository must be containerized in order to be run using dagster-airflow.
@@ -53,6 +54,30 @@ which image to run. E.g., if you want your image to be called `dagster-airflow-d
 docker build -t dagster-airflow-demo-repository -f /path/to/Dockerfile .
 ```
 
+If you want your containerized pipeline to be available to Airflow DAGs running on other machines,
+you'll need to push your Docker image to a Docker registry so that remote instances of Docker can
+pull the image.
+
+For most production applications, you'll probably want to use a private Docker registry, rather
+than the public DockerHub, to store your containerized pipelines.
+
+## Setting up S3 for dagster-airflow
+We need a place to store intermediate results from execution of steps in your pipeline. By default,
+dagster-airflow uses Amazon S3 as a lake for this purpose.
+
+You will need to configure an Airflow [Connection](https://airflow.apache.org/howto/manage-connections.html)
+with credentials that Airflow can use to connect to AWS. By default, dagster-airflow will try to
+use the connection called `aws_default`, but we'll see later how you can edit this to be any
+value you like.
+
+You'll also need to create an S3 bucket that dagster-airflow can use to store intermediate results.
+Make sure that the AWS user for which you've configured an Airflow connection has read and write
+permissions on this bucket.
+
+Results will appear in this bucket prefixed by the `run_id` that Airflow generates each time a DAG
+is run (and passes to each operator in its `context` argument), so you can easily search for and
+examine the results produced by each step in any of your DAG runs.
+
 ## Installing the dagster-airflow plugin
 Airflow needs to know about our the custom `DagsterOperator` that we'll use to execute steps in
 containerized pipelines. We use Airflow's [plugin machinery](https://airflow.apache.org/plugins.html)
@@ -92,6 +117,11 @@ running:
 dagster-airflow scaffold demo_pipeline -e env.yml --install
 ```
 
+### Configuring your connection to Amazon S3
+
+### Setting up a custom Docker registry
+
+### Customizing your DAG
 Once you've scaffolded your DAG, you can make changes as your business logic requires to take 
 advantage of Airflow functionality that is external to the logical structure of your pipelines.
 
