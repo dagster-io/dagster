@@ -23,6 +23,12 @@ FROM python:3.7
 # repository require to run
 # RUN apt-get install some-package some-other-package
 
+# Set environment variables that you'd like to have available in the built image.
+# ENV IMPORTANT_OPTION=yes
+
+# If you would like to set secrets at build time (with --build-arg), set args
+# ARG super_secret
+
 # Install Dagit
 RUN pip install dagit
 
@@ -117,10 +123,6 @@ running:
 dagster-airflow scaffold demo_pipeline -e env.yml --install
 ```
 
-### Configuring your connection to Amazon S3
-
-### Setting up a custom Docker registry
-
 ### Customizing your DAG
 Once you've scaffolded your DAG, you can make changes as your business logic requires to take 
 advantage of Airflow functionality that is external to the logical structure of your pipelines.
@@ -128,6 +130,21 @@ advantage of Airflow functionality that is external to the logical structure of 
 For instance, you may want to add Sensors to your Airflow DAGs to change the way that scheduled
 DAG runs interact with their environment, or you may want to manually edit DAG args such as
 `start_date` or `email`.
+
+### Configuring your connection to Amazon S3
+If you want to use an Airflow connection other than `aws_default` to connect to S3, you'll need to
+edit the lines in the scaffolded definition that read:
+
+```
+# Set your S3 connection id here, if you do not want to use the default `aws_default` connection
+S3_CONN_ID = "aws_default"
+```
+
+Just change S3_CONN_ID to whatever you'd prefer, and the pipeline will use that connection to access
+S3.
+
+### Setting up a custom Docker registry
+
 
 #### An example Airflow DAG definition
 For example, consider the following Dagster pipeline definition (which should be familiar from the
