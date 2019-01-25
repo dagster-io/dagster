@@ -10,7 +10,7 @@ from dagster.core.execution import execute_externalized_plan
 from dagster.core.execution_plan.objects import StepTag
 from dagster.core.types.runtime import resolve_to_runtime_type
 
-from dagster.utils.test import get_temp_file_name
+from dagster.utils.test import get_temp_file_names
 
 
 def test_basic_pipeline_external_plan_execution():
@@ -28,7 +28,9 @@ def test_basic_pipeline_external_plan_execution():
         dependencies={'add_one': {'num': DependencyDefinition('return_one')}},
     )
 
-    with get_temp_file_name() as temp_path:
+    with get_temp_file_names(2) as temp_files:
+
+        temp_path, write_path = temp_files  # pylint: disable=W0632
 
         int_type = resolve_to_runtime_type(Int)
 
@@ -38,7 +40,10 @@ def test_basic_pipeline_external_plan_execution():
             pipeline,
             ['add_one.transform'],
             inputs_to_marshal={'add_one.transform': {'num': temp_path}},
+            outputs_to_marshal={'add_one.transform': [{'output': 'result', 'path': write_path}]},
         )
+
+        assert int_type.marshalling_strategy.unmarshal_value(write_path) == 6
 
     assert len(results) == 2
 
