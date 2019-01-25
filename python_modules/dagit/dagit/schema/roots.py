@@ -25,13 +25,13 @@ class DauphinQuery(dauphin.ObjectType):
     )
 
     configTypeOrError = dauphin.Field(
-        'ConfigTypeOrError',
+        dauphin.NonNull('ConfigTypeOrError'),
         pipelineName=dauphin.Argument(dauphin.NonNull(dauphin.String)),
         configTypeName=dauphin.Argument(dauphin.NonNull(dauphin.String)),
     )
 
     runtimeTypeOrError = dauphin.Field(
-        'RuntimeTypeOrError',
+        dauphin.NonNull('RuntimeTypeOrError'),
         pipelineName=dauphin.Argument(dauphin.NonNull(dauphin.String)),
         runtimeTypeName=dauphin.Argument(dauphin.NonNull(dauphin.String)),
     )
