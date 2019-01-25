@@ -11,8 +11,7 @@ interface ITypeExplorerContainerProps {
 }
 
 export default class TypeExplorerContainer extends React.Component<
-  ITypeExplorerContainerProps,
-  {}
+  ITypeExplorerContainerProps
 > {
   render() {
     return (
