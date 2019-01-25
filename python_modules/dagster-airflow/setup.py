@@ -40,7 +40,9 @@ def _do_setup(name='dagster-airflow'):
             # standard python 2/3 compatability things
             'enum34>=1.1.6',
             'future>=0.16.0',
+            'apache-airflow==1.10.2',
             'dagster>=0.2.0',
+            'docker==3.7.0',
         ],
     )
 
