@@ -36,6 +36,8 @@ from .definitions import (
     solids_in_topological_order,
 )
 
+from .definitions.utils import check_opt_two_dim_str_dict
+
 from .definitions.environment_configs import construct_environment_config
 
 from .execution_context import ExecutionContext, ReentrantInfo, RuntimeExecutionContext
@@ -508,6 +510,59 @@ class PipelineConfigEvaluationError(Exception):
         super(PipelineConfigEvaluationError, self).__init__(error_msg, *args, **kwargs)
 
 
+def execute_externalized_plan(
+    pipeline,
+    step_keys,
+    inputs_to_marshal=None,
+    outputs_to_marshal=None,
+    environment=None,
+    reentrant_info=None,
+):
+    check.inst_param(pipeline, 'pipeline', PipelineDefinition)
+    check.list_param(step_keys, 'step_keys', of_type=str)
+    check_opt_two_dim_str_dict(inputs_to_marshal, 'inputs_to_marshal', value_type=str)
+    check.opt_dict_param(outputs_to_marshal, 'outputs_to_marshal', key_type=str, value_type=list)
+    check.opt_dict_param(environment, 'environment')
+    check.opt_inst_param(reentrant_info, 'reentrant_info', ReentrantInfo)
+
+    execution_plan = create_execution_plan(pipeline, environment)
+
+    inputs = defaultdict(dict)
+
+    for step_key, input_dict in inputs_to_marshal.items():
+        for input_name, file_path in input_dict.items():
+            step = execution_plan.get_step_by_key(step_key)
+            step_input = step.step_input_dict[input_name]
+            input_type = step_input.runtime_type
+
+            check.invariant(input_type.marshalling_strategy)
+
+            input_value = input_type.marshalling_strategy.unmarshal_value(file_path)
+            inputs[step_key][input_name] = input_value
+
+    results = execute_plan(
+        pipeline,
+        execution_plan,
+        environment=environment,
+        subset_info=ExecutionPlanSubsetInfo(included_steps=step_keys, inputs=inputs),
+        reentrant_info=reentrant_info,
+    )
+
+    for result in results:
+        if not (result.success and result.step.key in outputs_to_marshal):
+            continue
+
+        for output in outputs_to_marshal[result.step.key]:
+            if output['output'] != result.success_data.output_name:
+                continue
+
+            path = output['path']
+            output_type = result.step.step_output_dict[result.success_data.output_name].runtime_type
+            output_type.marshalling_strategy.marshal_value(result.success_data.value, path)
+
+    return results
+
+
 def execute_plan(pipeline, execution_plan, environment=None, subset_info=None, reentrant_info=None):
     check.inst_param(pipeline, 'pipeline', PipelineDefinition)
     check.inst_param(execution_plan, 'execution_plan', ExecutionPlan)
@@ -516,7 +571,6 @@ def execute_plan(pipeline, execution_plan, environment=None, subset_info=None, r
     check.opt_inst_param(reentrant_info, 'reentrant_info', ReentrantInfo)
 
     typed_environment = create_typed_environment(pipeline, environment)
-
     with yield_context(pipeline, typed_environment, reentrant_info) as context:
         plan_to_execute = (
             create_subplan(
