@@ -65,7 +65,9 @@ you'll need to push your Docker image to a Docker registry so that remote instan
 pull the image.
 
 For most production applications, you'll probably want to use a private Docker registry, rather
-than the public DockerHub, to store your containerized pipelines.
+than the public DockerHub, to store your containerized pipelines. =
+
+We'll see later on how to set dagster-airflow up to pull images from the registry of your choice.
 
 ## Setting up S3 for dagster-airflow
 We need a place to store intermediate results from execution of steps in your pipeline. By default,
@@ -145,6 +147,7 @@ S3.
 
 ### Setting up a custom Docker registry
 
+**FIXME**
 
 #### An example Airflow DAG definition
 For example, consider the following Dagster pipeline definition (which should be familiar from the
@@ -254,9 +257,3 @@ multiply__the__word_transform_task.set_downstream(count__letters_transform_task)
 Now you can visualize and schedule this DAG in Airflow:
 
 ![Example DAG](example_dag.png)
-
-
-# TODO
-- Need to figure out how to scaffold an S3 hook so that the DagsterOperator has access to S3 for
-  persisting outputs
-- Need to figure out how to scaffold a Docker hook so that we can use a custom registry

@@ -143,3 +143,9 @@ def scaffold_airflow_dag(
 
     return formatted_dag_file
 
+
+## NEED TO CODEGEN TWO FILES
+# TODO
+# - Need to figure out how to scaffold an S3 hook so that the DagsterOperator has access to S3 for
+#   persisting outputs
+# - Need to figure out how to scaffold a Docker hook so that we can use a custom registry

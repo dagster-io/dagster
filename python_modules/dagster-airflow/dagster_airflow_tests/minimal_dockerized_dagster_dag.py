@@ -23,7 +23,7 @@ dag = DAG(
     default_args={
         "owner": "airflow",
         "depends_on_past": False,
-        "start_date": datetime.datetime(2019, 1, 25, 0, 54, 11, 547692),
+        "start_date": datetime.datetime(2019, 1, 25, 1, 46, 37, 664906),
         "email": ["airflow@example.com"],
         "email_on_failure": False,
         "email_on_retry": False,
