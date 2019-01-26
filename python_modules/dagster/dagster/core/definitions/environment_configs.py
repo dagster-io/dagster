@@ -160,6 +160,21 @@ class EnvironmentClassCreationData(
         )
 
 
+def define_context_cls(pipeline_def):
+    from dagster import PipelineDefinition
+
+    check.inst_param(pipeline_def, 'pipeline_def', PipelineDefinition)
+    pipeline_name = camelcase(pipeline_def.name)
+    return SystemNamedDict(
+        name='{pipeline_name}.Context'.format(pipeline_name=pipeline_name),
+        fields={
+            'context': define_maybe_optional_selector_field(
+                define_context_context_cls(pipeline_name, pipeline_def.context_definitions)
+            )
+        },
+    )
+
+
 def define_environment_cls(creation_data):
     check.inst_param(creation_data, 'creation_data', EnvironmentClassCreationData)
     pipeline_name = camelcase(creation_data.pipeline_name)
