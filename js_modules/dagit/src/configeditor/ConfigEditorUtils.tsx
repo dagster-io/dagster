@@ -87,7 +87,7 @@ interface ITypeConfig {
           key: string;
           name: string | null;
           ofType?: {
-            key: string
+            key: string;
           };
         };
       }>;

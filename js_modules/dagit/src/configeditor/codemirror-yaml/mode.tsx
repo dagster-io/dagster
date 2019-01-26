@@ -290,7 +290,7 @@ export type TypeConfig = {
           key: string;
           name: string | null;
           ofType?: {
-            key: string
+            key: string;
           };
         };
       }>;
@@ -417,7 +417,7 @@ function findAutocomplete(
         // ofType guaranteed to have value in the List case
         // better way to enforce this?
         if (parentTypeDef.configType.ofType) {
-          childTypeKey = parentTypeDef.configType.ofType.key
+          childTypeKey = parentTypeDef.configType.ofType.key;
           childEntriesUnique = false;
         }
       }
