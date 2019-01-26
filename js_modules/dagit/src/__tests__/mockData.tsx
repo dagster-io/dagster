@@ -5,50 +5,6 @@ import { TYPE_LIST_CONTAINER_QUERY } from "../typeexplorer/TypeListContainer";
 const MOCKS = [
   {
     request: {
-      operationName: "TypeListContainerQuery",
-      queryVariableName: "TYPE_LIST_CONTAINER_QUERY",
-      query: TYPE_LIST_CONTAINER_QUERY,
-      variables: { pipelineName: "pandas_hello_world" }
-    },
-    result: {
-      data: {
-        pipelineOrError: {
-          __typename: "Pipeline",
-          runtimeTypes: [
-            {
-              name: "PandasDataFrame",
-              description:
-                "Two-dimensional size-mutable, potentially heterogeneous\n    tabular data structure with labeled axes (rows and columns).\n    See http://pandas.pydata.org/",
-              __typename: "RegularRuntimeType"
-            }
-          ]
-        }
-      }
-    }
-  },
-
-  {
-    request: {
-      operationName: "TypeExplorerContainerQuery",
-      queryVariableName: "TYPE_EXPLORER_CONTAINER_QUERY",
-      query: TYPE_EXPLORER_CONTAINER_QUERY,
-      variables: {
-        pipelineName: "pandas_hello_world",
-        runtimeTypeName: "PandasDataFrame"
-      }
-    },
-    result: {
-      data: {
-        runtimeTypeOrError: {
-          __typename: "RegularRuntimeType",
-          name: "PandasDataFrame"
-        }
-      }
-    }
-  },
-
-  {
-    request: {
       operationName: "PipelineseContainerQuery",
       queryVariableName: "APP_QUERY",
       query: APP_QUERY,
@@ -70,35 +26,37 @@ const MOCKS = [
                   config: {
                     configType: {
                       key: "Dict.31",
+                      name: "Dict.31",
                       description:
                         "A configuration dictionary with typed fields",
                       isList: false,
                       isNullable: false,
+                      isSelector: false,
                       innerTypes: [
                         {
                           key: "String",
                           __typename: "RegularConfigType",
+                          name: "String",
                           description: "",
                           isList: false,
                           isNullable: false,
-                          innerTypes: [],
-                          name: "String"
+                          isSelector: false,
+                          innerTypes: []
                         }
                       ],
                       fields: [
                         {
                           name: "log_level",
                           description: null,
+                          isOptional: true,
                           configType: {
                             key: "String",
                             __typename: "RegularConfigType"
                           },
-                          isOptional: true,
                           __typename: "ConfigTypeField"
                         }
                       ],
-                      __typename: "CompositeConfigType",
-                      name: "Dict.31"
+                      __typename: "CompositeConfigType"
                     },
                     __typename: "ConfigTypeField"
                   },
@@ -226,35 +184,37 @@ const MOCKS = [
                   config: {
                     configType: {
                       key: "Dict.32",
+                      name: "Dict.32",
                       description:
                         "A configuration dictionary with typed fields",
                       isList: false,
                       isNullable: false,
+                      isSelector: false,
                       innerTypes: [
                         {
                           key: "String",
                           __typename: "RegularConfigType",
+                          name: "String",
                           description: "",
                           isList: false,
                           isNullable: false,
-                          innerTypes: [],
-                          name: "String"
+                          isSelector: false,
+                          innerTypes: []
                         }
                       ],
                       fields: [
                         {
                           name: "log_level",
                           description: null,
+                          isOptional: true,
                           configType: {
                             key: "String",
                             __typename: "RegularConfigType"
                           },
-                          isOptional: true,
                           __typename: "ConfigTypeField"
                         }
                       ],
-                      __typename: "CompositeConfigType",
-                      name: "Dict.32"
+                      __typename: "CompositeConfigType"
                     },
                     __typename: "ConfigTypeField"
                   },
@@ -372,6 +332,336 @@ const MOCKS = [
                 name: "PandasHelloWorld.Environment",
                 __typename: "CompositeConfigType"
               }
+            }
+          ]
+        }
+      }
+    }
+  },
+
+  {
+    request: {
+      operationName: "TypeExplorerContainerQuery",
+      queryVariableName: "TYPE_EXPLORER_CONTAINER_QUERY",
+      query: TYPE_EXPLORER_CONTAINER_QUERY,
+      variables: {
+        pipelineName: "pandas_hello_world",
+        runtimeTypeName: "PandasDataFrame"
+      }
+    },
+    result: {
+      data: {
+        runtimeTypeOrError: {
+          __typename: "RegularRuntimeType",
+          name: "PandasDataFrame",
+          description:
+            "Two-dimensional size-mutable, potentially heterogeneous\n    tabular data structure with labeled axes (rows and columns).\n    See http://pandas.pydata.org/",
+          inputSchemaType: {
+            key: "Selector.30",
+            name: "Selector.30",
+            description: null,
+            isList: false,
+            isNullable: false,
+            isSelector: true,
+            innerTypes: [
+              {
+                key: "Path",
+                __typename: "RegularConfigType",
+                name: "Path",
+                description: "",
+                isList: false,
+                isNullable: false,
+                isSelector: false,
+                innerTypes: []
+              },
+              {
+                key: "Dict.28",
+                __typename: "CompositeConfigType",
+                name: "Dict.28",
+                description: "A configuration dictionary with typed fields",
+                isList: false,
+                isNullable: false,
+                isSelector: false,
+                innerTypes: [{ key: "Path", __typename: "RegularConfigType" }],
+                fields: [
+                  {
+                    name: "path",
+                    description: null,
+                    isOptional: false,
+                    configType: {
+                      key: "Path",
+                      __typename: "RegularConfigType"
+                    },
+                    __typename: "ConfigTypeField"
+                  }
+                ]
+              },
+              {
+                key: "String",
+                __typename: "RegularConfigType",
+                name: "String",
+                description: "",
+                isList: false,
+                isNullable: false,
+                isSelector: false,
+                innerTypes: []
+              },
+              {
+                key: "Dict.29",
+                __typename: "CompositeConfigType",
+                name: "Dict.29",
+                description: "A configuration dictionary with typed fields",
+                isList: false,
+                isNullable: false,
+                isSelector: false,
+                innerTypes: [{ key: "Path", __typename: "RegularConfigType" }],
+                fields: [
+                  {
+                    name: "path",
+                    description: null,
+                    isOptional: false,
+                    configType: {
+                      key: "Path",
+                      __typename: "RegularConfigType"
+                    },
+                    __typename: "ConfigTypeField"
+                  }
+                ]
+              },
+              {
+                key: "Dict.27",
+                __typename: "CompositeConfigType",
+                name: "Dict.27",
+                description: "A configuration dictionary with typed fields",
+                isList: false,
+                isNullable: false,
+                isSelector: false,
+                innerTypes: [
+                  { key: "String", __typename: "RegularConfigType" },
+                  { key: "Path", __typename: "RegularConfigType" }
+                ],
+                fields: [
+                  {
+                    name: "path",
+                    description: null,
+                    isOptional: false,
+                    configType: {
+                      key: "Path",
+                      __typename: "RegularConfigType"
+                    },
+                    __typename: "ConfigTypeField"
+                  },
+                  {
+                    name: "sep",
+                    description: null,
+                    isOptional: true,
+                    configType: {
+                      key: "String",
+                      __typename: "RegularConfigType"
+                    },
+                    __typename: "ConfigTypeField"
+                  }
+                ]
+              }
+            ],
+            fields: [
+              {
+                name: "csv",
+                description: null,
+                isOptional: false,
+                configType: {
+                  key: "Dict.27",
+                  __typename: "CompositeConfigType"
+                },
+                __typename: "ConfigTypeField"
+              },
+              {
+                name: "parquet",
+                description: null,
+                isOptional: false,
+                configType: {
+                  key: "Dict.28",
+                  __typename: "CompositeConfigType"
+                },
+                __typename: "ConfigTypeField"
+              },
+              {
+                name: "table",
+                description: null,
+                isOptional: false,
+                configType: {
+                  key: "Dict.29",
+                  __typename: "CompositeConfigType"
+                },
+                __typename: "ConfigTypeField"
+              }
+            ],
+            __typename: "CompositeConfigType"
+          },
+          outputSchemaType: {
+            key: "Selector.26",
+            name: "Selector.26",
+            description: null,
+            isList: false,
+            isNullable: false,
+            isSelector: true,
+            innerTypes: [
+              {
+                key: "Dict.24",
+                __typename: "CompositeConfigType",
+                name: "Dict.24",
+                description: "A configuration dictionary with typed fields",
+                isList: false,
+                isNullable: false,
+                isSelector: false,
+                innerTypes: [{ key: "Path", __typename: "RegularConfigType" }],
+                fields: [
+                  {
+                    name: "path",
+                    description: null,
+                    isOptional: false,
+                    configType: {
+                      key: "Path",
+                      __typename: "RegularConfigType"
+                    },
+                    __typename: "ConfigTypeField"
+                  }
+                ]
+              },
+              {
+                key: "Path",
+                __typename: "RegularConfigType",
+                name: "Path",
+                description: "",
+                isList: false,
+                isNullable: false,
+                isSelector: false,
+                innerTypes: []
+              },
+              {
+                key: "String",
+                __typename: "RegularConfigType",
+                name: "String",
+                description: "",
+                isList: false,
+                isNullable: false,
+                isSelector: false,
+                innerTypes: []
+              },
+              {
+                key: "Dict.23",
+                __typename: "CompositeConfigType",
+                name: "Dict.23",
+                description: "A configuration dictionary with typed fields",
+                isList: false,
+                isNullable: false,
+                isSelector: false,
+                innerTypes: [
+                  { key: "String", __typename: "RegularConfigType" },
+                  { key: "Path", __typename: "RegularConfigType" }
+                ],
+                fields: [
+                  {
+                    name: "path",
+                    description: null,
+                    isOptional: false,
+                    configType: {
+                      key: "Path",
+                      __typename: "RegularConfigType"
+                    },
+                    __typename: "ConfigTypeField"
+                  },
+                  {
+                    name: "sep",
+                    description: null,
+                    isOptional: true,
+                    configType: {
+                      key: "String",
+                      __typename: "RegularConfigType"
+                    },
+                    __typename: "ConfigTypeField"
+                  }
+                ]
+              },
+              {
+                key: "Dict.25",
+                __typename: "CompositeConfigType",
+                name: "Dict.25",
+                description: "A configuration dictionary with typed fields",
+                isList: false,
+                isNullable: false,
+                isSelector: false,
+                innerTypes: [{ key: "Path", __typename: "RegularConfigType" }],
+                fields: [
+                  {
+                    name: "path",
+                    description: null,
+                    isOptional: false,
+                    configType: {
+                      key: "Path",
+                      __typename: "RegularConfigType"
+                    },
+                    __typename: "ConfigTypeField"
+                  }
+                ]
+              }
+            ],
+            fields: [
+              {
+                name: "csv",
+                description: null,
+                isOptional: false,
+                configType: {
+                  key: "Dict.23",
+                  __typename: "CompositeConfigType"
+                },
+                __typename: "ConfigTypeField"
+              },
+              {
+                name: "parquet",
+                description: null,
+                isOptional: false,
+                configType: {
+                  key: "Dict.24",
+                  __typename: "CompositeConfigType"
+                },
+                __typename: "ConfigTypeField"
+              },
+              {
+                name: "table",
+                description: null,
+                isOptional: false,
+                configType: {
+                  key: "Dict.25",
+                  __typename: "CompositeConfigType"
+                },
+                __typename: "ConfigTypeField"
+              }
+            ],
+            __typename: "CompositeConfigType"
+          }
+        }
+      }
+    }
+  },
+
+  {
+    request: {
+      operationName: "TypeListContainerQuery",
+      queryVariableName: "TYPE_LIST_CONTAINER_QUERY",
+      query: TYPE_LIST_CONTAINER_QUERY,
+      variables: { pipelineName: "pandas_hello_world" }
+    },
+    result: {
+      data: {
+        pipelineOrError: {
+          __typename: "Pipeline",
+          runtimeTypes: [
+            {
+              name: "PandasDataFrame",
+              description:
+                "Two-dimensional size-mutable, potentially heterogeneous\n    tabular data structure with labeled axes (rows and columns).\n    See http://pandas.pydata.org/",
+              __typename: "RegularRuntimeType"
             }
           ]
         }

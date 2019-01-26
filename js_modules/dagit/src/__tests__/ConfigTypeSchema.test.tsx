@@ -13,7 +13,6 @@ it("renders given a basic type", () => {
       typeAttributes: {
         isNamed: true
       },
-      isDict: false,
       isList: false,
       isSelector: false,
       isNullable: false,
@@ -34,7 +33,6 @@ it("renders given a complex type", () => {
       key: "Dict.4",
       name: "Dict.4",
       description: "",
-      isDict: true,
       typeAttributes: { isNamed: false },
       isList: false,
       isSelector: false,
@@ -42,7 +40,7 @@ it("renders given a complex type", () => {
       fields: [
         {
           name: "field_one",
-          type: {
+          configType: {
             key: "String",
             name: "String"
           },
@@ -50,7 +48,7 @@ it("renders given a complex type", () => {
         },
         {
           name: "field_two",
-          type: {
+          configType: {
             key: "String",
             name: "String"
           },
@@ -58,7 +56,7 @@ it("renders given a complex type", () => {
         },
         {
           name: "field_three",
-          type: {
+          configType: {
             key: "String",
             name: "String"
           },
@@ -66,7 +64,7 @@ it("renders given a complex type", () => {
         },
         {
           name: "nested_field",
-          type: {
+          configType: {
             key: "Dict.3",
             name: "Dict.3"
           },
@@ -78,7 +76,6 @@ it("renders given a complex type", () => {
           key: "String",
           name: "String",
           description: "",
-          isDict: false,
           isList: false,
           typeAttributes: { isNamed: true },
           isSelector: false,
@@ -89,7 +86,6 @@ it("renders given a complex type", () => {
           key: "Dict.3",
           name: "Dict.3",
           description: "",
-          isDict: true,
           isList: false,
           typeAttributes: { isNamed: false },
           isSelector: false,
@@ -115,7 +111,7 @@ it("renders given a complex type", () => {
           fields: [
             {
               name: "field_four_str",
-              type: {
+              configType: {
                 key: "String",
                 name: "String"
               },
@@ -123,7 +119,7 @@ it("renders given a complex type", () => {
             },
             {
               name: "field_five_int",
-              type: {
+              configType: {
                 key: "Int",
                 name: "Int"
               },
@@ -131,7 +127,7 @@ it("renders given a complex type", () => {
             },
             {
               name: "field_six_nullable_int_list",
-              type: {
+              configType: {
                 key: "List.Nullable.Int",
                 name: "List.Nullable.Int"
               },
@@ -143,7 +139,6 @@ it("renders given a complex type", () => {
           key: "Int",
           name: "Int",
           description: "",
-          isDict: false,
           isList: false,
           typeAttributes: { isNamed: true },
           isSelector: false,
@@ -154,14 +149,13 @@ it("renders given a complex type", () => {
           key: "List.Nullable.Int",
           name: "List.Nullable.Int",
           description: "",
-          isDict: false,
           isList: true,
           typeAttributes: { isNamed: false },
           isSelector: false,
           isNullable: false,
           innerTypes: [
             {
-              key: "Nullable.sInt",
+              key: "Nullable.Int",
               name: "Nullable.Int"
             },
             {
@@ -174,7 +168,6 @@ it("renders given a complex type", () => {
           key: "Nullable.Int",
           name: "Nullable.Int",
           description: "",
-          isDict: false,
           isList: false,
           typeAttributes: { isNamed: false },
           isSelector: false,

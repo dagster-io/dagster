@@ -17,11 +17,10 @@ interface ITypeListProps {
 function groupTypes(types: Array<TypeListFragment>) {
   const groups = {
     Custom: Array<TypeListFragment>(),
-    Generated: Array<TypeListFragment>(),
     "Built-in": Array<TypeListFragment>()
   };
   types.forEach(type => {
-    // if (type.isBuiltin) {
+    // TODO: Restore the "isBuiltin" type attribute
     if (false) {
       groups["Built-in"].push(type);
     } else {
