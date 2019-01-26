@@ -4,27 +4,50 @@
 // This file was automatically generated and should not be edited.
 
 // ====================================================
-// GraphQL fragment: StepMetadataProviderMessageFragment
+// GraphQL fragment: ConfigTypeInfoFragment
 // ====================================================
 
-export interface StepMetadataProviderMessageFragment_LogMessageEvent {
-  __typename: "LogMessageEvent" | "PipelineStartEvent" | "PipelineSuccessEvent" | "PipelineFailureEvent" | "PipelineProcessStartEvent" | "PipelineProcessStartedEvent";
-  message: string;
-  timestamp: string;
+export interface ConfigTypeInfoFragment_EnumConfigType_innerTypes {
+  key: string;
 }
 
-export interface StepMetadataProviderMessageFragment_ExecutionStepStartEvent_step {
+export interface ConfigTypeInfoFragment_EnumConfigType {
+  key: string;
+  name: string | null;
+  description: string | null;
+  isList: boolean;
+  isNullable: boolean;
+  isSelector: boolean;
+  innerTypes: ConfigTypeInfoFragment_EnumConfigType_innerTypes[];
+}
+
+export interface ConfigTypeInfoFragment_CompositeConfigType_innerTypes {
+  key: string;
+}
+
+export interface ConfigTypeInfoFragment_CompositeConfigType_fields_configType {
+  key: string;
+}
+
+export interface ConfigTypeInfoFragment_CompositeConfigType_fields {
   name: string;
+  description: string | null;
+  isOptional: boolean;
+  configType: ConfigTypeInfoFragment_CompositeConfigType_fields_configType;
 }
 
-export interface StepMetadataProviderMessageFragment_ExecutionStepStartEvent {
-  __typename: "ExecutionStepStartEvent" | "ExecutionStepSuccessEvent" | "ExecutionStepFailureEvent";
-  message: string;
-  timestamp: string;
-  step: StepMetadataProviderMessageFragment_ExecutionStepStartEvent_step;
+export interface ConfigTypeInfoFragment_CompositeConfigType {
+  key: string;
+  name: string | null;
+  description: string | null;
+  isList: boolean;
+  isNullable: boolean;
+  isSelector: boolean;
+  innerTypes: ConfigTypeInfoFragment_CompositeConfigType_innerTypes[];
+  fields: ConfigTypeInfoFragment_CompositeConfigType_fields[];
 }
 
-export type StepMetadataProviderMessageFragment = StepMetadataProviderMessageFragment_LogMessageEvent | StepMetadataProviderMessageFragment_ExecutionStepStartEvent;
+export type ConfigTypeInfoFragment = ConfigTypeInfoFragment_EnumConfigType | ConfigTypeInfoFragment_CompositeConfigType;
 
 /* tslint:disable */
 // This file was automatically generated and should not be edited.
@@ -69,11 +92,12 @@ export enum StepTag {
 }
 
 /**
- * 
+ * This type represents the fields necessary to identify a
+ *         pipeline or pipeline subset.
  */
-export interface PipelineExecutionParams {
-  pipelineName: string;
-  config?: any | null;
+export interface ExecutionSelector {
+  name: string;
+  solidSubset?: string[] | null;
 }
 
 //==============================================================

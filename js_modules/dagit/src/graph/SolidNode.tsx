@@ -41,7 +41,7 @@ export default class SolidNode extends React.Component<ISolidNodeProps> {
             value
           }
           configDefinition {
-            type {
+            configType {
               name
               description
             }
@@ -167,20 +167,21 @@ export default class SolidNode extends React.Component<ISolidNodeProps> {
               name !== DEFAULT_RESULT_NAME && (
                 <SVGMonospaceText text={`${name}:`} fill="#FFF" size={14} />
               )}
-            {showText && (
-              <SVGFlowLayoutRect
-                rx={4}
-                ry={4}
-                fill="#d6ecff"
-                stroke="#2491eb"
-                strokeWidth={1}
-                height={27}
-                spacing={0}
-                padding={4}
-              >
-                <SVGMonospaceText text={type.name} size={14} fill="#222" />
-              </SVGFlowLayoutRect>
-            )}
+            {showText &&
+              type.name && (
+                <SVGFlowLayoutRect
+                  rx={4}
+                  ry={4}
+                  fill="#d6ecff"
+                  stroke="#2491eb"
+                  strokeWidth={1}
+                  height={27}
+                  spacing={0}
+                  padding={4}
+                >
+                  <SVGMonospaceText text={type.name} size={14} fill="#222" />
+                </SVGFlowLayoutRect>
+              )}
           </SVGFlowLayoutRect>
         </g>
       );

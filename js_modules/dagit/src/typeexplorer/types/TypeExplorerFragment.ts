@@ -7,147 +7,248 @@
 // GraphQL fragment: TypeExplorerFragment
 // ====================================================
 
-export interface TypeExplorerFragment_RegularType_innerTypes_RegularType_innerTypes {
-  name: string;
+export interface TypeExplorerFragment_inputSchemaType_EnumConfigType_innerTypes_EnumConfigType_innerTypes {
+  key: string;
 }
 
-export interface TypeExplorerFragment_RegularType_innerTypes_RegularType_typeAttributes {
-  isNamed: boolean;
-}
-
-export interface TypeExplorerFragment_RegularType_innerTypes_RegularType {
-  name: string;
+export interface TypeExplorerFragment_inputSchemaType_EnumConfigType_innerTypes_EnumConfigType {
+  key: string;
+  name: string | null;
   description: string | null;
-  isDict: boolean;
   isList: boolean;
   isNullable: boolean;
-  innerTypes: TypeExplorerFragment_RegularType_innerTypes_RegularType_innerTypes[];
-  typeAttributes: TypeExplorerFragment_RegularType_innerTypes_RegularType_typeAttributes;
+  isSelector: boolean;
+  innerTypes: TypeExplorerFragment_inputSchemaType_EnumConfigType_innerTypes_EnumConfigType_innerTypes[];
 }
 
-export interface TypeExplorerFragment_RegularType_innerTypes_CompositeType_innerTypes {
-  name: string;
+export interface TypeExplorerFragment_inputSchemaType_EnumConfigType_innerTypes_CompositeConfigType_innerTypes {
+  key: string;
 }
 
-export interface TypeExplorerFragment_RegularType_innerTypes_CompositeType_typeAttributes {
-  isNamed: boolean;
+export interface TypeExplorerFragment_inputSchemaType_EnumConfigType_innerTypes_CompositeConfigType_fields_configType {
+  key: string;
 }
 
-export interface TypeExplorerFragment_RegularType_innerTypes_CompositeType_fields_type {
-  name: string;
-}
-
-export interface TypeExplorerFragment_RegularType_innerTypes_CompositeType_fields {
+export interface TypeExplorerFragment_inputSchemaType_EnumConfigType_innerTypes_CompositeConfigType_fields {
   name: string;
   description: string | null;
-  type: TypeExplorerFragment_RegularType_innerTypes_CompositeType_fields_type;
   isOptional: boolean;
+  configType: TypeExplorerFragment_inputSchemaType_EnumConfigType_innerTypes_CompositeConfigType_fields_configType;
 }
 
-export interface TypeExplorerFragment_RegularType_innerTypes_CompositeType {
-  name: string;
+export interface TypeExplorerFragment_inputSchemaType_EnumConfigType_innerTypes_CompositeConfigType {
+  key: string;
+  name: string | null;
   description: string | null;
-  isDict: boolean;
   isList: boolean;
   isNullable: boolean;
-  innerTypes: TypeExplorerFragment_RegularType_innerTypes_CompositeType_innerTypes[];
-  typeAttributes: TypeExplorerFragment_RegularType_innerTypes_CompositeType_typeAttributes;
-  fields: TypeExplorerFragment_RegularType_innerTypes_CompositeType_fields[];
+  isSelector: boolean;
+  innerTypes: TypeExplorerFragment_inputSchemaType_EnumConfigType_innerTypes_CompositeConfigType_innerTypes[];
+  fields: TypeExplorerFragment_inputSchemaType_EnumConfigType_innerTypes_CompositeConfigType_fields[];
 }
 
-export type TypeExplorerFragment_RegularType_innerTypes = TypeExplorerFragment_RegularType_innerTypes_RegularType | TypeExplorerFragment_RegularType_innerTypes_CompositeType;
+export type TypeExplorerFragment_inputSchemaType_EnumConfigType_innerTypes = TypeExplorerFragment_inputSchemaType_EnumConfigType_innerTypes_EnumConfigType | TypeExplorerFragment_inputSchemaType_EnumConfigType_innerTypes_CompositeConfigType;
 
-export interface TypeExplorerFragment_RegularType_typeAttributes {
-  isNamed: boolean;
-}
-
-export interface TypeExplorerFragment_RegularType {
-  name: string;
+export interface TypeExplorerFragment_inputSchemaType_EnumConfigType {
+  key: string;
+  name: string | null;
   description: string | null;
-  isDict: boolean;
   isList: boolean;
   isNullable: boolean;
-  innerTypes: TypeExplorerFragment_RegularType_innerTypes[];
-  typeAttributes: TypeExplorerFragment_RegularType_typeAttributes;
+  isSelector: boolean;
+  innerTypes: TypeExplorerFragment_inputSchemaType_EnumConfigType_innerTypes[];
 }
 
-export interface TypeExplorerFragment_CompositeType_innerTypes_RegularType_innerTypes {
-  name: string;
+export interface TypeExplorerFragment_inputSchemaType_CompositeConfigType_innerTypes_EnumConfigType_innerTypes {
+  key: string;
 }
 
-export interface TypeExplorerFragment_CompositeType_innerTypes_RegularType_typeAttributes {
-  isNamed: boolean;
-}
-
-export interface TypeExplorerFragment_CompositeType_innerTypes_RegularType {
-  name: string;
+export interface TypeExplorerFragment_inputSchemaType_CompositeConfigType_innerTypes_EnumConfigType {
+  key: string;
+  name: string | null;
   description: string | null;
-  isDict: boolean;
   isList: boolean;
   isNullable: boolean;
-  innerTypes: TypeExplorerFragment_CompositeType_innerTypes_RegularType_innerTypes[];
-  typeAttributes: TypeExplorerFragment_CompositeType_innerTypes_RegularType_typeAttributes;
+  isSelector: boolean;
+  innerTypes: TypeExplorerFragment_inputSchemaType_CompositeConfigType_innerTypes_EnumConfigType_innerTypes[];
 }
 
-export interface TypeExplorerFragment_CompositeType_innerTypes_CompositeType_innerTypes {
-  name: string;
+export interface TypeExplorerFragment_inputSchemaType_CompositeConfigType_innerTypes_CompositeConfigType_innerTypes {
+  key: string;
 }
 
-export interface TypeExplorerFragment_CompositeType_innerTypes_CompositeType_typeAttributes {
-  isNamed: boolean;
+export interface TypeExplorerFragment_inputSchemaType_CompositeConfigType_innerTypes_CompositeConfigType_fields_configType {
+  key: string;
 }
 
-export interface TypeExplorerFragment_CompositeType_innerTypes_CompositeType_fields_type {
-  name: string;
-}
-
-export interface TypeExplorerFragment_CompositeType_innerTypes_CompositeType_fields {
+export interface TypeExplorerFragment_inputSchemaType_CompositeConfigType_innerTypes_CompositeConfigType_fields {
   name: string;
   description: string | null;
-  type: TypeExplorerFragment_CompositeType_innerTypes_CompositeType_fields_type;
   isOptional: boolean;
+  configType: TypeExplorerFragment_inputSchemaType_CompositeConfigType_innerTypes_CompositeConfigType_fields_configType;
 }
 
-export interface TypeExplorerFragment_CompositeType_innerTypes_CompositeType {
-  name: string;
+export interface TypeExplorerFragment_inputSchemaType_CompositeConfigType_innerTypes_CompositeConfigType {
+  key: string;
+  name: string | null;
   description: string | null;
-  isDict: boolean;
   isList: boolean;
   isNullable: boolean;
-  innerTypes: TypeExplorerFragment_CompositeType_innerTypes_CompositeType_innerTypes[];
-  typeAttributes: TypeExplorerFragment_CompositeType_innerTypes_CompositeType_typeAttributes;
-  fields: TypeExplorerFragment_CompositeType_innerTypes_CompositeType_fields[];
+  isSelector: boolean;
+  innerTypes: TypeExplorerFragment_inputSchemaType_CompositeConfigType_innerTypes_CompositeConfigType_innerTypes[];
+  fields: TypeExplorerFragment_inputSchemaType_CompositeConfigType_innerTypes_CompositeConfigType_fields[];
 }
 
-export type TypeExplorerFragment_CompositeType_innerTypes = TypeExplorerFragment_CompositeType_innerTypes_RegularType | TypeExplorerFragment_CompositeType_innerTypes_CompositeType;
+export type TypeExplorerFragment_inputSchemaType_CompositeConfigType_innerTypes = TypeExplorerFragment_inputSchemaType_CompositeConfigType_innerTypes_EnumConfigType | TypeExplorerFragment_inputSchemaType_CompositeConfigType_innerTypes_CompositeConfigType;
 
-export interface TypeExplorerFragment_CompositeType_typeAttributes {
-  isNamed: boolean;
+export interface TypeExplorerFragment_inputSchemaType_CompositeConfigType_fields_configType {
+  key: string;
 }
 
-export interface TypeExplorerFragment_CompositeType_fields_type {
-  name: string;
-}
-
-export interface TypeExplorerFragment_CompositeType_fields {
+export interface TypeExplorerFragment_inputSchemaType_CompositeConfigType_fields {
   name: string;
   description: string | null;
-  type: TypeExplorerFragment_CompositeType_fields_type;
   isOptional: boolean;
+  configType: TypeExplorerFragment_inputSchemaType_CompositeConfigType_fields_configType;
 }
 
-export interface TypeExplorerFragment_CompositeType {
-  name: string;
+export interface TypeExplorerFragment_inputSchemaType_CompositeConfigType {
+  key: string;
+  name: string | null;
   description: string | null;
-  isDict: boolean;
   isList: boolean;
   isNullable: boolean;
-  innerTypes: TypeExplorerFragment_CompositeType_innerTypes[];
-  typeAttributes: TypeExplorerFragment_CompositeType_typeAttributes;
-  fields: TypeExplorerFragment_CompositeType_fields[];
+  isSelector: boolean;
+  innerTypes: TypeExplorerFragment_inputSchemaType_CompositeConfigType_innerTypes[];
+  fields: TypeExplorerFragment_inputSchemaType_CompositeConfigType_fields[];
 }
 
-export type TypeExplorerFragment = TypeExplorerFragment_RegularType | TypeExplorerFragment_CompositeType;
+export type TypeExplorerFragment_inputSchemaType = TypeExplorerFragment_inputSchemaType_EnumConfigType | TypeExplorerFragment_inputSchemaType_CompositeConfigType;
+
+export interface TypeExplorerFragment_outputSchemaType_EnumConfigType_innerTypes_EnumConfigType_innerTypes {
+  key: string;
+}
+
+export interface TypeExplorerFragment_outputSchemaType_EnumConfigType_innerTypes_EnumConfigType {
+  key: string;
+  name: string | null;
+  description: string | null;
+  isList: boolean;
+  isNullable: boolean;
+  isSelector: boolean;
+  innerTypes: TypeExplorerFragment_outputSchemaType_EnumConfigType_innerTypes_EnumConfigType_innerTypes[];
+}
+
+export interface TypeExplorerFragment_outputSchemaType_EnumConfigType_innerTypes_CompositeConfigType_innerTypes {
+  key: string;
+}
+
+export interface TypeExplorerFragment_outputSchemaType_EnumConfigType_innerTypes_CompositeConfigType_fields_configType {
+  key: string;
+}
+
+export interface TypeExplorerFragment_outputSchemaType_EnumConfigType_innerTypes_CompositeConfigType_fields {
+  name: string;
+  description: string | null;
+  isOptional: boolean;
+  configType: TypeExplorerFragment_outputSchemaType_EnumConfigType_innerTypes_CompositeConfigType_fields_configType;
+}
+
+export interface TypeExplorerFragment_outputSchemaType_EnumConfigType_innerTypes_CompositeConfigType {
+  key: string;
+  name: string | null;
+  description: string | null;
+  isList: boolean;
+  isNullable: boolean;
+  isSelector: boolean;
+  innerTypes: TypeExplorerFragment_outputSchemaType_EnumConfigType_innerTypes_CompositeConfigType_innerTypes[];
+  fields: TypeExplorerFragment_outputSchemaType_EnumConfigType_innerTypes_CompositeConfigType_fields[];
+}
+
+export type TypeExplorerFragment_outputSchemaType_EnumConfigType_innerTypes = TypeExplorerFragment_outputSchemaType_EnumConfigType_innerTypes_EnumConfigType | TypeExplorerFragment_outputSchemaType_EnumConfigType_innerTypes_CompositeConfigType;
+
+export interface TypeExplorerFragment_outputSchemaType_EnumConfigType {
+  key: string;
+  name: string | null;
+  description: string | null;
+  isList: boolean;
+  isNullable: boolean;
+  isSelector: boolean;
+  innerTypes: TypeExplorerFragment_outputSchemaType_EnumConfigType_innerTypes[];
+}
+
+export interface TypeExplorerFragment_outputSchemaType_CompositeConfigType_innerTypes_EnumConfigType_innerTypes {
+  key: string;
+}
+
+export interface TypeExplorerFragment_outputSchemaType_CompositeConfigType_innerTypes_EnumConfigType {
+  key: string;
+  name: string | null;
+  description: string | null;
+  isList: boolean;
+  isNullable: boolean;
+  isSelector: boolean;
+  innerTypes: TypeExplorerFragment_outputSchemaType_CompositeConfigType_innerTypes_EnumConfigType_innerTypes[];
+}
+
+export interface TypeExplorerFragment_outputSchemaType_CompositeConfigType_innerTypes_CompositeConfigType_innerTypes {
+  key: string;
+}
+
+export interface TypeExplorerFragment_outputSchemaType_CompositeConfigType_innerTypes_CompositeConfigType_fields_configType {
+  key: string;
+}
+
+export interface TypeExplorerFragment_outputSchemaType_CompositeConfigType_innerTypes_CompositeConfigType_fields {
+  name: string;
+  description: string | null;
+  isOptional: boolean;
+  configType: TypeExplorerFragment_outputSchemaType_CompositeConfigType_innerTypes_CompositeConfigType_fields_configType;
+}
+
+export interface TypeExplorerFragment_outputSchemaType_CompositeConfigType_innerTypes_CompositeConfigType {
+  key: string;
+  name: string | null;
+  description: string | null;
+  isList: boolean;
+  isNullable: boolean;
+  isSelector: boolean;
+  innerTypes: TypeExplorerFragment_outputSchemaType_CompositeConfigType_innerTypes_CompositeConfigType_innerTypes[];
+  fields: TypeExplorerFragment_outputSchemaType_CompositeConfigType_innerTypes_CompositeConfigType_fields[];
+}
+
+export type TypeExplorerFragment_outputSchemaType_CompositeConfigType_innerTypes = TypeExplorerFragment_outputSchemaType_CompositeConfigType_innerTypes_EnumConfigType | TypeExplorerFragment_outputSchemaType_CompositeConfigType_innerTypes_CompositeConfigType;
+
+export interface TypeExplorerFragment_outputSchemaType_CompositeConfigType_fields_configType {
+  key: string;
+}
+
+export interface TypeExplorerFragment_outputSchemaType_CompositeConfigType_fields {
+  name: string;
+  description: string | null;
+  isOptional: boolean;
+  configType: TypeExplorerFragment_outputSchemaType_CompositeConfigType_fields_configType;
+}
+
+export interface TypeExplorerFragment_outputSchemaType_CompositeConfigType {
+  key: string;
+  name: string | null;
+  description: string | null;
+  isList: boolean;
+  isNullable: boolean;
+  isSelector: boolean;
+  innerTypes: TypeExplorerFragment_outputSchemaType_CompositeConfigType_innerTypes[];
+  fields: TypeExplorerFragment_outputSchemaType_CompositeConfigType_fields[];
+}
+
+export type TypeExplorerFragment_outputSchemaType = TypeExplorerFragment_outputSchemaType_EnumConfigType | TypeExplorerFragment_outputSchemaType_CompositeConfigType;
+
+export interface TypeExplorerFragment {
+  name: string | null;
+  description: string | null;
+  inputSchemaType: TypeExplorerFragment_inputSchemaType | null;
+  outputSchemaType: TypeExplorerFragment_outputSchemaType | null;
+}
 
 /* tslint:disable */
 // This file was automatically generated and should not be edited.

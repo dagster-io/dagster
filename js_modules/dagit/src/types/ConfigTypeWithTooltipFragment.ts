@@ -4,39 +4,13 @@
 // This file was automatically generated and should not be edited.
 
 // ====================================================
-// GraphQL fragment: PipelineExecutionCodeEditorFragment
+// GraphQL fragment: ConfigTypeWithTooltipFragment
 // ====================================================
 
-export interface PipelineExecutionCodeEditorFragment_environmentType {
-  name: string;
-}
-
-export interface PipelineExecutionCodeEditorFragment_types_RegularType {
-  __typename: "RegularType";
-  name: string;
-}
-
-export interface PipelineExecutionCodeEditorFragment_types_CompositeType_fields_type {
-  name: string;
-}
-
-export interface PipelineExecutionCodeEditorFragment_types_CompositeType_fields {
-  name: string;
-  type: PipelineExecutionCodeEditorFragment_types_CompositeType_fields_type;
-}
-
-export interface PipelineExecutionCodeEditorFragment_types_CompositeType {
-  __typename: "CompositeType";
-  name: string;
-  fields: PipelineExecutionCodeEditorFragment_types_CompositeType_fields[];
-}
-
-export type PipelineExecutionCodeEditorFragment_types = PipelineExecutionCodeEditorFragment_types_RegularType | PipelineExecutionCodeEditorFragment_types_CompositeType;
-
-export interface PipelineExecutionCodeEditorFragment {
-  name: string;
-  environmentType: PipelineExecutionCodeEditorFragment_environmentType;
-  types: PipelineExecutionCodeEditorFragment_types[];
+export interface ConfigTypeWithTooltipFragment {
+  key: string;
+  name: string | null;
+  description: string | null;
 }
 
 /* tslint:disable */
@@ -82,11 +56,12 @@ export enum StepTag {
 }
 
 /**
- * 
+ * This type represents the fields necessary to identify a
+ *         pipeline or pipeline subset.
  */
-export interface PipelineExecutionParams {
-  pipelineName: string;
-  config?: any | null;
+export interface ExecutionSelector {
+  name: string;
+  solidSubset?: string[] | null;
 }
 
 //==============================================================

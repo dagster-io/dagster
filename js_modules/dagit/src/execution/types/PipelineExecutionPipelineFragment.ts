@@ -8,38 +8,41 @@
 // ====================================================
 
 export interface PipelineExecutionPipelineFragment_environmentType {
-  name: string;
+  key: string;
 }
 
-export interface PipelineExecutionPipelineFragment_types_RegularType {
-  __typename: "RegularType" | "EnumType";
-  name: string;
+export interface PipelineExecutionPipelineFragment_configTypes_EnumConfigType {
+  __typename: "EnumConfigType" | "RegularConfigType" | "ListConfigType" | "NullableConfigType";
+  key: string;
+  name: string | null;
   isSelector: boolean;
 }
 
-export interface PipelineExecutionPipelineFragment_types_CompositeType_fields_type {
-  name: string;
+export interface PipelineExecutionPipelineFragment_configTypes_CompositeConfigType_fields_configType {
+  key: string;
+  name: string | null;
 }
 
-export interface PipelineExecutionPipelineFragment_types_CompositeType_fields {
+export interface PipelineExecutionPipelineFragment_configTypes_CompositeConfigType_fields {
   name: string;
   isOptional: boolean;
-  type: PipelineExecutionPipelineFragment_types_CompositeType_fields_type;
+  configType: PipelineExecutionPipelineFragment_configTypes_CompositeConfigType_fields_configType;
 }
 
-export interface PipelineExecutionPipelineFragment_types_CompositeType {
-  __typename: "CompositeType";
-  name: string;
+export interface PipelineExecutionPipelineFragment_configTypes_CompositeConfigType {
+  __typename: "CompositeConfigType";
+  key: string;
+  name: string | null;
   isSelector: boolean;
-  fields: PipelineExecutionPipelineFragment_types_CompositeType_fields[];
+  fields: PipelineExecutionPipelineFragment_configTypes_CompositeConfigType_fields[];
 }
 
-export type PipelineExecutionPipelineFragment_types = PipelineExecutionPipelineFragment_types_RegularType | PipelineExecutionPipelineFragment_types_CompositeType;
+export type PipelineExecutionPipelineFragment_configTypes = PipelineExecutionPipelineFragment_configTypes_EnumConfigType | PipelineExecutionPipelineFragment_configTypes_CompositeConfigType;
 
 export interface PipelineExecutionPipelineFragment {
   name: string;
   environmentType: PipelineExecutionPipelineFragment_environmentType;
-  types: PipelineExecutionPipelineFragment_types[];
+  configTypes: PipelineExecutionPipelineFragment_configTypes[];
 }
 
 /* tslint:disable */

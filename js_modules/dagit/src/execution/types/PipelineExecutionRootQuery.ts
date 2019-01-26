@@ -85,39 +85,42 @@ export interface PipelineExecutionRootQuery_pipeline_runs {
 }
 
 export interface PipelineExecutionRootQuery_pipeline_environmentType {
-  name: string;
+  key: string;
 }
 
-export interface PipelineExecutionRootQuery_pipeline_types_RegularType {
-  __typename: "RegularType" | "EnumType";
-  name: string;
+export interface PipelineExecutionRootQuery_pipeline_configTypes_EnumConfigType {
+  __typename: "EnumConfigType" | "RegularConfigType" | "ListConfigType" | "NullableConfigType";
+  key: string;
+  name: string | null;
   isSelector: boolean;
 }
 
-export interface PipelineExecutionRootQuery_pipeline_types_CompositeType_fields_type {
-  name: string;
+export interface PipelineExecutionRootQuery_pipeline_configTypes_CompositeConfigType_fields_configType {
+  key: string;
+  name: string | null;
 }
 
-export interface PipelineExecutionRootQuery_pipeline_types_CompositeType_fields {
+export interface PipelineExecutionRootQuery_pipeline_configTypes_CompositeConfigType_fields {
   name: string;
   isOptional: boolean;
-  type: PipelineExecutionRootQuery_pipeline_types_CompositeType_fields_type;
+  configType: PipelineExecutionRootQuery_pipeline_configTypes_CompositeConfigType_fields_configType;
 }
 
-export interface PipelineExecutionRootQuery_pipeline_types_CompositeType {
-  __typename: "CompositeType";
-  name: string;
+export interface PipelineExecutionRootQuery_pipeline_configTypes_CompositeConfigType {
+  __typename: "CompositeConfigType";
+  key: string;
+  name: string | null;
   isSelector: boolean;
-  fields: PipelineExecutionRootQuery_pipeline_types_CompositeType_fields[];
+  fields: PipelineExecutionRootQuery_pipeline_configTypes_CompositeConfigType_fields[];
 }
 
-export type PipelineExecutionRootQuery_pipeline_types = PipelineExecutionRootQuery_pipeline_types_RegularType | PipelineExecutionRootQuery_pipeline_types_CompositeType;
+export type PipelineExecutionRootQuery_pipeline_configTypes = PipelineExecutionRootQuery_pipeline_configTypes_EnumConfigType | PipelineExecutionRootQuery_pipeline_configTypes_CompositeConfigType;
 
 export interface PipelineExecutionRootQuery_pipeline {
   name: string;
   runs: PipelineExecutionRootQuery_pipeline_runs[];
   environmentType: PipelineExecutionRootQuery_pipeline_environmentType;
-  types: PipelineExecutionRootQuery_pipeline_types[];
+  configTypes: PipelineExecutionRootQuery_pipeline_configTypes[];
 }
 
 export interface PipelineExecutionRootQuery {

@@ -7,14 +7,9 @@
 // GraphQL fragment: SolidTypeSignatureFragment
 // ====================================================
 
-export interface SolidTypeSignatureFragment_outputs_definition_type_typeAttributes {
-  isNamed: boolean;
-}
-
 export interface SolidTypeSignatureFragment_outputs_definition_type {
-  name: string;
+  name: string | null;
   description: string | null;
-  typeAttributes: SolidTypeSignatureFragment_outputs_definition_type_typeAttributes;
 }
 
 export interface SolidTypeSignatureFragment_outputs_definition {
@@ -26,14 +21,9 @@ export interface SolidTypeSignatureFragment_outputs {
   definition: SolidTypeSignatureFragment_outputs_definition;
 }
 
-export interface SolidTypeSignatureFragment_inputs_definition_type_typeAttributes {
-  isNamed: boolean;
-}
-
 export interface SolidTypeSignatureFragment_inputs_definition_type {
-  name: string;
+  name: string | null;
   description: string | null;
-  typeAttributes: SolidTypeSignatureFragment_inputs_definition_type_typeAttributes;
 }
 
 export interface SolidTypeSignatureFragment_inputs_definition {
