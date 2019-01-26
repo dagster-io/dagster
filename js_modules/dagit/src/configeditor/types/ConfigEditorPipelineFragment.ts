@@ -18,10 +18,28 @@ export interface ConfigEditorPipelineFragment_configTypes_EnumConfigType {
   isSelector: boolean;
 }
 
-export interface ConfigEditorPipelineFragment_configTypes_CompositeConfigType_fields_configType {
+export interface ConfigEditorPipelineFragment_configTypes_CompositeConfigType_fields_configType_EnumConfigType {
+  __typename: "EnumConfigType" | "CompositeConfigType" | "RegularConfigType" | "NullableConfigType";
   key: string;
   name: string | null;
+  isList: boolean;
+  isNullable: boolean;
 }
+
+export interface ConfigEditorPipelineFragment_configTypes_CompositeConfigType_fields_configType_ListConfigType_ofType {
+  key: string;
+}
+
+export interface ConfigEditorPipelineFragment_configTypes_CompositeConfigType_fields_configType_ListConfigType {
+  __typename: "ListConfigType";
+  key: string;
+  name: string | null;
+  isList: boolean;
+  isNullable: boolean;
+  ofType: ConfigEditorPipelineFragment_configTypes_CompositeConfigType_fields_configType_ListConfigType_ofType;
+}
+
+export type ConfigEditorPipelineFragment_configTypes_CompositeConfigType_fields_configType = ConfigEditorPipelineFragment_configTypes_CompositeConfigType_fields_configType_EnumConfigType | ConfigEditorPipelineFragment_configTypes_CompositeConfigType_fields_configType_ListConfigType;
 
 export interface ConfigEditorPipelineFragment_configTypes_CompositeConfigType_fields {
   name: string;

@@ -24,8 +24,16 @@ export const CONFIG_EDITOR_PIPELINE_FRAGMENT = gql`
           name
           isOptional
           configType {
+            __typename
             key
             name
+            isList
+            isNullable
+            ... on ListConfigType {
+              ofType {
+                key
+              }
+            }
           }
         }
       }
@@ -73,8 +81,14 @@ interface ITypeConfig {
         name: string;
         isOptional: boolean;
         configType: {
+          __typename: string;
+          isList: boolean;
+          isNullable: boolean;
           key: string;
           name: string | null;
+          ofType?: {
+            key: string
+          };
         };
       }>;
     };

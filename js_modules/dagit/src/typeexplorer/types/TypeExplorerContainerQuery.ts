@@ -258,7 +258,7 @@ export interface TypeExplorerContainerQuery_runtimeTypeOrError_RegularRuntimeTyp
 export type TypeExplorerContainerQuery_runtimeTypeOrError = TypeExplorerContainerQuery_runtimeTypeOrError_PipelineNotFoundError | TypeExplorerContainerQuery_runtimeTypeOrError_RegularRuntimeType;
 
 export interface TypeExplorerContainerQuery {
-  runtimeTypeOrError: TypeExplorerContainerQuery_runtimeTypeOrError | null;
+  runtimeTypeOrError: TypeExplorerContainerQuery_runtimeTypeOrError;
 }
 
 export interface TypeExplorerContainerQueryVariables {
