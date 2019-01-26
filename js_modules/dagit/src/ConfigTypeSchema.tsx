@@ -2,24 +2,29 @@ import * as React from "react";
 import gql from "graphql-tag";
 import styled from "styled-components";
 import { Colors } from "@blueprintjs/core";
-import TypeWithTooltip from "./TypeWithTooltip";
-import { TypeSchemaFragment } from "./types/TypeSchemaFragment";
-import { TypeInfoFragment } from "./types/TypeInfoFragment";
+import { ConfigTypeSchemaFragment } from "./types/ConfigTypeSchemaFragment";
+import { ConfigTypeInfoFragment } from "./types/ConfigTypeInfoFragment";
 
-interface ITypeSchemaProps {
-  type: TypeSchemaFragment;
+interface IConfigTypeSchemaProps {
+  type: ConfigTypeSchemaFragment;
 }
 
 function renderTypeRecursive(
-  type: TypeInfoFragment,
-  typeLookup: { [typeName: string]: TypeInfoFragment },
+  type: ConfigTypeInfoFragment,
+  typeLookup: { [typeName: string]: ConfigTypeInfoFragment },
   indent: string = ""
 ): React.ReactElement<HTMLElement> {
-  if (type.isDict && "fields" in type) {
+  if ("fields" in type) {
     const innerIndent = indent + "  ";
     return (
       <>
         {`{`}
+        {type.isSelector && (
+          <DictBlockComment
+            indent={innerIndent}
+            content={`One of the following:`}
+          />
+        )}
         {type.fields.map(fieldData => (
           <DictEntry key={fieldData.name}>
             <DictBlockComment
@@ -31,7 +36,7 @@ function renderTypeRecursive(
             {fieldData.isOptional && Optional}
             {`: `}
             {renderTypeRecursive(
-              typeLookup[fieldData.type.name],
+              typeLookup[fieldData.configType.key],
               typeLookup,
               innerIndent
             )}
@@ -42,13 +47,13 @@ function renderTypeRecursive(
     );
   }
   if (type.isList) {
-    const innerType = type.innerTypes[0].name;
+    const innerType = type.innerTypes[0].key;
     return (
       <>[{renderTypeRecursive(typeLookup[innerType], typeLookup, indent)}]</>
     );
   }
   if (type.isNullable) {
-    const innerType = type.innerTypes[0].name;
+    const innerType = type.innerTypes[0].key;
     return (
       <>
         {renderTypeRecursive(typeLookup[innerType], typeLookup, indent)}
@@ -56,41 +61,43 @@ function renderTypeRecursive(
       </>
     );
   }
-  return <TypeWithTooltip type={type} />;
+
+  return <span>{type.name || "Anonymous Type"}</span>;
 }
 
-export default class TypeSchema extends React.Component<ITypeSchemaProps> {
+export default class ConfigTypeSchema extends React.Component<
+  IConfigTypeSchemaProps
+> {
   static fragments = {
-    TypeSchemaFragment: gql`
-      fragment TypeInfoFragment on Type {
+    ConfigTypeSchemaFragment: gql`
+      fragment ConfigTypeInfoFragment on ConfigType {
+        key
         name
         description
-        isDict
         isList
         isNullable
+        isSelector
         innerTypes {
-          name
+          key
         }
-        ... on CompositeType {
+        ... on CompositeConfigType {
           fields {
             name
             description
-            type {
-              name
-            }
             isOptional
+            configType {
+              key
+            }
           }
         }
-        ...TypeWithTooltipFragment
       }
 
-      fragment TypeSchemaFragment on Type {
-        ...TypeInfoFragment
+      fragment ConfigTypeSchemaFragment on ConfigType {
+        ...ConfigTypeInfoFragment
         innerTypes {
-          ...TypeInfoFragment
+          ...ConfigTypeInfoFragment
         }
       }
-      ${TypeWithTooltip.fragments.TypeWithTooltipFragment}
     `
   };
 
@@ -99,7 +106,7 @@ export default class TypeSchema extends React.Component<ITypeSchemaProps> {
 
     const innerTypeLookup = {};
     for (const innerTypeData of type.innerTypes) {
-      innerTypeLookup[innerTypeData.name] = innerTypeData;
+      innerTypeLookup[innerTypeData.key] = innerTypeData;
     }
 
     return (
@@ -140,7 +147,7 @@ const DictBlockComment = ({
   indent: string;
   content: string | null;
 }) =>
-  content != null ? (
+  content != null && content != "" ? (
     <DictComment>{`${indent.replace(
       / /g,
       "\u00A0"
