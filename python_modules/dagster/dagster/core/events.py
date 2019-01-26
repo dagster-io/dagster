@@ -343,4 +343,3 @@ def construct_json_event_logger(json_path):
             ),
         ),
     )
-
