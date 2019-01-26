@@ -12,7 +12,6 @@ def create_schema():
         errors,
         execution,
         generic,
-        legacy_types,
         pipelines,
         roots,
         runtime_types,

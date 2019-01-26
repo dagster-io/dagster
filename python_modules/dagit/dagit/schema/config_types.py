@@ -100,6 +100,9 @@ class DauphinListConfigType(dauphin.ObjectType):
     def resolve_of_type(self, _info):
         return self._config_type.inner_type
 
+    def resolve_inner_types(self, _info):
+        return []
+
 
 class DauphinNullableConfigType(dauphin.ObjectType):
     def __init__(self, config_type):
@@ -112,6 +115,9 @@ class DauphinNullableConfigType(dauphin.ObjectType):
 
     def resolve_of_type(self, _info):
         return self._config_type.inner_type
+
+    def resolve_inner_types(self, _info):
+        return []
 
 
 class DauphinEnumConfigType(dauphin.ObjectType):

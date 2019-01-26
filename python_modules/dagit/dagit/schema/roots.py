@@ -18,12 +18,6 @@ class DauphinQuery(dauphin.ObjectType):
     pipelinesOrError = dauphin.NonNull('PipelinesOrError')
     pipelines = dauphin.Field(dauphin.NonNull('PipelineConnection'))
 
-    type = dauphin.Field(
-        'Type',
-        pipelineName=dauphin.NonNull(dauphin.String),
-        typeName=dauphin.Argument(dauphin.NonNull(dauphin.String)),
-    )
-
     configTypeOrError = dauphin.Field(
         'ConfigTypeOrError',
         pipelineName=dauphin.Argument(dauphin.NonNull(dauphin.String)),
