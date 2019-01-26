@@ -52,7 +52,7 @@ class DauphinPipeline(dauphin.ObjectType):
             for name, context in self._pipeline.context_definitions.items()
         ]
 
-    def resolve_environment_type(self, info):
+    def resolve_environment_type(self, _info):
         return to_dauphin_config_type(self._pipeline.environment_type)
 
     def resolve_config_types(self, _info):
@@ -76,7 +76,7 @@ class DauphinPipeline(dauphin.ObjectType):
     def get_dagster_pipeline(self):
         return self._pipeline
 
-    def get_type(self, info, typeName):
+    def get_type(self, _info, typeName):
         if self._pipeline.has_config_type(typeName):
             return to_dauphin_config_type(self._pipeline.config_type_named(typeName))
         elif self._pipeline.has_runtime_type(typeName):
@@ -317,7 +317,7 @@ class DauphinInputDefinition(dauphin.ObjectType):
             input_definition, 'input_definition', InputDefinition
         )
 
-    def resolve_type(self, info):
+    def resolve_type(self, _info):
         return to_dauphin_runtime_type(self._input_definition.runtime_type)
 
     def resolve_expectations(self, info):
@@ -353,7 +353,7 @@ class DauphinOutputDefinition(dauphin.ObjectType):
             output_definition, 'output_definition', OutputDefinition
         )
 
-    def resolve_type(self, info):
+    def resolve_type(self, _info):
         return to_dauphin_runtime_type(self._output_definition.runtime_type)
 
     def resolve_expectations(self, info):
