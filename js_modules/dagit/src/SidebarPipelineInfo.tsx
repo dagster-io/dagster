@@ -10,7 +10,7 @@ import {
   SectionItemHeader
 } from "./SidebarComponents";
 import Description from "./Description";
-import TypeSchema from "./TypeSchema";
+import ConfigTypeSchema from "./ConfigTypeSchema";
 import { SidebarPipelineInfoFragment } from "./types/SidebarPipelineInfoFragment";
 import { IconNames } from "@blueprintjs/icons";
 
@@ -32,23 +32,23 @@ export default class SidebarPipelineInfo extends React.Component<
           name
           description
           config {
-            type {
-              ...TypeSchemaFragment
+            configType {
+              ...ConfigTypeSchemaFragment
             }
           }
           resources {
             name
             description
             config {
-              type {
-                ...TypeSchemaFragment
+              configType {
+                ...ConfigTypeSchemaFragment
               }
             }
           }
         }
       }
 
-      ${TypeSchema.fragments.TypeSchemaFragment}
+      ${ConfigTypeSchema.fragments.ConfigTypeSchemaFragment}
     `
   };
 
@@ -71,7 +71,9 @@ export default class SidebarPipelineInfo extends React.Component<
               <Description
                 description={context.description || NO_DESCRIPTION}
               />
-              {context.config && <TypeSchema type={context.config.type} />}
+              {context.config && (
+                <ConfigTypeSchema type={context.config.configType} />
+              )}
               {context.resources.map(resource => (
                 <ContextResourceContainer key={resource.name}>
                   <Icon
@@ -87,7 +89,7 @@ export default class SidebarPipelineInfo extends React.Component<
                       description={resource.description || NO_DESCRIPTION}
                     />
                     {resource.config && (
-                      <TypeSchema type={resource.config.type} />
+                      <ConfigTypeSchema type={resource.config.configType} />
                     )}
                   </div>
                 </ContextResourceContainer>

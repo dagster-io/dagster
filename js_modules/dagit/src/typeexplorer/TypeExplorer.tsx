@@ -1,8 +1,7 @@
 import * as React from "react";
 import gql from "graphql-tag";
 import { Link } from "react-router-dom";
-import TypeWithTooltip from "../TypeWithTooltip";
-import TypeSchema from "../TypeSchema";
+import ConfigTypeSchema from "../ConfigTypeSchema";
 import { TypeExplorerFragment } from "./types/TypeExplorerFragment";
 import {
   SidebarSubhead,
@@ -17,25 +16,48 @@ interface ITypeExplorerProps {
 export default class TypeExplorer extends React.Component<ITypeExplorerProps> {
   static fragments = {
     TypeExplorerFragment: gql`
-      fragment TypeExplorerFragment on Type {
+      fragment TypeExplorerFragment on RuntimeType {
         name
-        ...TypeSchemaFragment
+        description
+        inputSchemaType {
+          ...ConfigTypeSchemaFragment
+        }
+        outputSchemaType {
+          ...ConfigTypeSchemaFragment
+        }
       }
 
-      ${TypeSchema.fragments.TypeSchemaFragment}
+      ${ConfigTypeSchema.fragments.ConfigTypeSchemaFragment}
     `
   };
 
   render() {
+    const {
+      name,
+      inputSchemaType,
+      outputSchemaType,
+      description
+    } = this.props.type;
+
     return (
       <div>
         <SidebarSubhead />
         <SidebarTitle>
-          <Link to="?types=true">Pipeline Types</Link> > {this.props.type.name}
+          <Link to="?types=true">Pipeline Types</Link> > {name}
         </SidebarTitle>
         <SidebarSection title={"Description"}>
-          <TypeSchema type={this.props.type} />
+          {description || "No Description Provided"}
         </SidebarSection>
+        {inputSchemaType && (
+          <SidebarSection title={"Input"}>
+            <ConfigTypeSchema type={inputSchemaType} />
+          </SidebarSection>
+        )}
+        {outputSchemaType && (
+          <SidebarSection title={"Output"}>
+            <ConfigTypeSchema type={outputSchemaType} />
+          </SidebarSection>
+        )}
       </div>
     );
   }

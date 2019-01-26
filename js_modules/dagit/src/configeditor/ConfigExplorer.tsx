@@ -2,7 +2,7 @@ import * as React from "react";
 import gql from "graphql-tag";
 import styled from "styled-components";
 import { H4, H5, Code } from "@blueprintjs/core";
-import TypeSchema from "../TypeSchema";
+import ConfigTypeSchema from "../ConfigTypeSchema";
 import Description from "../Description";
 import { ConfigExplorerFragment } from "./types/ConfigExplorerFragment";
 
@@ -20,8 +20,8 @@ export default class ConfigExplorer extends React.Component<
           name
           description
           config {
-            type {
-              ...TypeSchemaFragment
+            configType {
+              ...ConfigTypeSchemaFragment
             }
           }
         }
@@ -30,15 +30,15 @@ export default class ConfigExplorer extends React.Component<
             name
             description
             configDefinition {
-              type {
-                ...TypeSchemaFragment
+              configType {
+                ...ConfigTypeSchemaFragment
               }
             }
           }
         }
       }
 
-      ${TypeSchema.fragments.TypeSchemaFragment}
+      ${ConfigTypeSchema.fragments.ConfigTypeSchemaFragment}
     `
   };
 
@@ -51,7 +51,9 @@ export default class ConfigExplorer extends React.Component<
         <DescriptionWrapper>
           <Description description={context.description} />
         </DescriptionWrapper>
-        {context.config && <TypeSchema type={context.config.type} />}
+        {context.config && (
+          <ConfigTypeSchema type={context.config.configType} />
+        )}
       </div>
     ));
   }
@@ -66,7 +68,9 @@ export default class ConfigExplorer extends React.Component<
           <Description description={solid.definition.description} />
         </DescriptionWrapper>
         {solid.definition.configDefinition && (
-          <TypeSchema type={solid.definition.configDefinition.type} />
+          <ConfigTypeSchema
+            type={solid.definition.configDefinition.configType}
+          />
         )}
       </div>
     ));

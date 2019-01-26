@@ -4,6 +4,7 @@ from dagster import check
 from dagster.core.execution_plan.objects import ExecutionStep, ExecutionPlan, StepInput, StepOutput
 
 from dagit.schema import dauphin
+from .runtime_types import to_dauphin_runtime_type
 
 
 class DauphinExecutionPlan(dauphin.ObjectType):
@@ -26,7 +27,7 @@ class DauphinExecutionStepOutput(dauphin.ObjectType):
         name = 'ExecutionStepOutput'
 
     name = dauphin.NonNull(dauphin.String)
-    type = dauphin.Field(dauphin.NonNull('Type'))
+    type = dauphin.Field(dauphin.NonNull('RuntimeType'))
 
     def __init__(self, step_output):
         super(DauphinExecutionStepOutput, self).__init__()
@@ -35,8 +36,8 @@ class DauphinExecutionStepOutput(dauphin.ObjectType):
     def resolve_name(self, _info):
         return self._step_output.name
 
-    def resolve_type(self, info):
-        return info.schema.type_named('Type').to_dauphin_type(info, self._step_output.runtime_type)
+    def resolve_type(self, _info):
+        return to_dauphin_runtime_type(self._step_output.runtime_type)
 
 
 class DauphinExecutionStepInput(dauphin.ObjectType):
@@ -44,7 +45,7 @@ class DauphinExecutionStepInput(dauphin.ObjectType):
         name = 'ExecutionStepInput'
 
     name = dauphin.NonNull(dauphin.String)
-    type = dauphin.Field(dauphin.NonNull('Type'))
+    type = dauphin.Field(dauphin.NonNull('RuntimeType'))
     dependsOn = dauphin.Field(dauphin.NonNull('ExecutionStep'))
 
     def __init__(self, step_input):
@@ -54,8 +55,8 @@ class DauphinExecutionStepInput(dauphin.ObjectType):
     def resolve_name(self, _info):
         return self._step_input.name
 
-    def resolve_type(self, info):
-        return info.schema.type_named('Type').to_dauphin_type(info, self._step_input.runtime_type)
+    def resolve_type(self, _info):
+        return to_dauphin_runtime_type(self._step_input.runtime_type)
 
     def resolve_dependsOn(self, info):
         return info.schema.type_named('ExecutionStep')(self._step_input.prev_output_handle.step)

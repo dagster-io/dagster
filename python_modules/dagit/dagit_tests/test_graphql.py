@@ -97,7 +97,7 @@ fragment SolidFragment on Solid {
       name
       description
       type {
-        ...TypeWithTooltipFragment
+        ... RuntimeTypeWithTooltipFragment
         __typename
       }
       expectations {
@@ -125,7 +125,6 @@ fragment SolidFragment on Solid {
       name
       description
       type {
-        ...TypeWithTooltipFragment
         __typename
       }
       expectations {
@@ -145,13 +144,9 @@ fragment SolidFragment on Solid {
   __typename
 }
 
-fragment TypeWithTooltipFragment on Type {
+fragment RuntimeTypeWithTooltipFragment on RuntimeType {
   name
   description
-  typeAttributes {
-    isBuiltin
-    isSystemConfig
-  }
   __typename
 }
 
@@ -160,7 +155,7 @@ fragment SolidTypeSignatureFragment on Solid {
     definition {
       name
       type {
-        ...TypeWithTooltipFragment
+        ... RuntimeTypeWithTooltipFragment
         __typename
       }
       __typename
@@ -171,7 +166,7 @@ fragment SolidTypeSignatureFragment on Solid {
     definition {
       name
       type {
-        ...TypeWithTooltipFragment
+        ... RuntimeTypeWithTooltipFragment
         __typename
       }
       __typename
@@ -181,31 +176,29 @@ fragment SolidTypeSignatureFragment on Solid {
   __typename
 }
 
-fragment ConfigFieldFragment on TypeField {
-  type {
+fragment ConfigFieldFragment on ConfigTypeField {
+  configType {
     __typename
     name
     description
-    ... on CompositeType {
+    ... on CompositeConfigType {
       fields {
         name
         description
         isOptional
         defaultValue
-        type {
+        configType {
           name
           description
-          ...TypeWithTooltipFragment
-          ... on CompositeType {
+          ... on CompositeConfigType {
             fields {
               name
               description
               isOptional
               defaultValue
-              type {
+              configType {
                 name
                 description
-                ...TypeWithTooltipFragment
                 __typename
               }
               __typename
@@ -216,7 +209,6 @@ fragment ConfigFieldFragment on TypeField {
         }
         __typename
       }
-      ...TypeWithTooltipFragment
       __typename
     }
   }
@@ -404,20 +396,20 @@ query PipelineQuery($name: String! $solidSubset: [String!])
             solids {
                 name
             }
-            types {
-            __typename
-            name
-            ... on CompositeType {
-                fields {
+            configTypes {
+                __typename
                 name
-                type {
+                ... on CompositeConfigType {
+                    fields {
                     name
+                    configType {
+                        name
+                        __typename
+                    }
+                    __typename
+                    }
                     __typename
                 }
-                __typename
-                }
-                __typename
-            }
             }
         }
         ... on SolidNotFoundError {
@@ -434,13 +426,13 @@ query PipelineQuery($name: String! $solidSubset: [String!])
         solids {
             name
         }
-        types {
+        configTypes {
           __typename
           name
-          ... on CompositeType {
+          ... on CompositeConfigType {
             fields {
               name
-              type {
+              configType {
                 name
                 __typename
               }
@@ -459,7 +451,9 @@ def field_names_of(type_dict, typename):
 
 
 def types_dict_of_result(subset_result, top_key):
-    return {type_data['name']: type_data for type_data in subset_result.data[top_key]['types']}
+    return {
+        type_data['name']: type_data for type_data in subset_result.data[top_key]['configTypes']
+    }
 
 
 def test_pandas_hello_world_pipeline_subset():
@@ -490,10 +484,10 @@ def test_enum_query():
     ENUM_QUERY = '''{
   pipeline(params: { name:"pipeline_with_enum_config" }){
     name
-    types {
+    configTypes {
       __typename
       name
-      ... on EnumType {
+      ... on EnumConfigType {
         values
         {
           value
@@ -514,7 +508,7 @@ def test_enum_query():
 
     enum_type_data = None
 
-    for td in result.data['pipeline']['types']:
+    for td in result.data['pipeline']['configTypes']:
         if td['name'] == 'TestEnum':
             enum_type_data = td
             break
@@ -659,7 +653,7 @@ query PipelineQuery($config: PipelineConfig, $pipeline: ExecutionSelector!)
                         ... on EvaluationStackPathEntry {
                             field {
                                 name
-                                type {
+                                configType {
                                     name
                                 }
                             }
@@ -862,18 +856,17 @@ def define_more_complicated_nested_config():
 
 
 TYPE_RENDER_QUERY = '''
-fragment innerInfo on Type {
+fragment innerInfo on ConfigType {
   name
-  isDict
   isList
   isNullable
   innerTypes {
     name
   }
-  ... on CompositeType {
+  ... on CompositeConfigType {
     fields {
       name
-      type {
+      configType {
        name
       }
       isOptional
@@ -888,7 +881,7 @@ fragment innerInfo on Type {
       name
       definition {
         configDefinition {
-          type {
+          configType {
             ...innerInfo
             innerTypes {
               ...innerInfo
@@ -940,12 +933,12 @@ RESOURCE_QUERY = '''
         name
         description
         config {
-          type {
+          configType {
             name
-            ... on CompositeType {
+            ... on CompositeConfigType {
               fields {
                 name
-                type {
+                configType {
                   name
                 }
               }
@@ -1642,37 +1635,6 @@ def test_production_config_editor_query():
     assert result.data
 
 
-def test_single_type_query():
-    context_config_result = execute_dagster_graphql(
-        define_context(),
-        TYPE_QUERY,
-        variables={
-            'pipelineName': 'more_complicated_nested_config',
-            'typeName': 'MoreComplicatedNestedConfig.ContextConfig',
-        },
-    )
-
-    if context_config_result.errors:
-        raise Exception(context_config_result.errors)
-
-    assert not context_config_result.errors
-    assert context_config_result.data
-    assert context_config_result.data['type']['name'] == 'MoreComplicatedNestedConfig.ContextConfig'
-
-    int_result = execute_dagster_graphql(
-        define_context(),
-        TYPE_QUERY,
-        variables={'pipelineName': 'more_complicated_nested_config', 'typeName': 'Int'},
-    )
-
-    if int_result.errors:
-        raise Exception(int_result.errors)
-
-    assert not int_result.errors
-    assert int_result.data
-    assert int_result.data['type']['name'] == 'Int'
-
-
 MUTATION_QUERY = '''
 mutation ($config: PipelineConfig, $pipeline: ExecutionSelector!) {
     startPipelineExecution(
@@ -1887,24 +1849,6 @@ mutation ($pipeline: ExecutionSelector!, $config: PipelineConfig) {
 }
 '''
 
-TYPE_QUERY = '''
-query TypeQuery($pipelineName: String!, $typeName: String!) {
-    type(pipelineName: $pipelineName typeName: $typeName) {
-        __typename
-        name
-        ... on CompositeType {
-            fields {
-                __typename
-                name
-                type {
-                    __typename
-                    name
-                }
-            }
-        }
-    }
-}
-'''
 
 ALL_TYPES_QUERY = '''
 {
@@ -1912,13 +1856,17 @@ ALL_TYPES_QUERY = '''
     __typename
     ... on PipelineConnection {
       nodes {
-        types {
+        runtimeTypes {
           __typename
           name
-          ... on CompositeType {
+        }
+        configTypes {
+          __typename
+          name
+          ... on CompositeConfigType {
             fields {
               name
-              type {
+              configType {
                 name
                 __typename
               }

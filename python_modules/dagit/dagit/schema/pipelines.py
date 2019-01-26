@@ -17,7 +17,6 @@ from dagit.schema import dauphin
 
 from .config_types import to_dauphin_config_type
 from .runtime_types import to_dauphin_runtime_type
-from .legacy_types import all_types
 
 
 class DauphinPipeline(dauphin.ObjectType):
@@ -28,8 +27,7 @@ class DauphinPipeline(dauphin.ObjectType):
     description = dauphin.String()
     solids = dauphin.non_null_list('Solid')
     contexts = dauphin.non_null_list('PipelineContext')
-    environment_type = dauphin.NonNull('Type')
-    types = dauphin.non_null_list('Type')
+    environment_type = dauphin.NonNull('ConfigType')
     config_types = dauphin.non_null_list('ConfigType')
     runtime_types = dauphin.non_null_list('RuntimeType')
     runs = dauphin.non_null_list('PipelineRun')
@@ -54,17 +52,8 @@ class DauphinPipeline(dauphin.ObjectType):
             for name, context in self._pipeline.context_definitions.items()
         ]
 
-    def resolve_environment_type(self, info):
-        return info.schema.type_named('Type').to_dauphin_type(info, self._pipeline.environment_type)
-
-    def resolve_types(self, info):
-        return sorted(
-            [
-                info.schema.type_named('Type').to_dauphin_type(info, type_)
-                for type_ in all_types(self._pipeline)
-            ],
-            key=lambda type_: type_.name,
-        )
+    def resolve_environment_type(self, _info):
+        return to_dauphin_config_type(self._pipeline.environment_type)
 
     def resolve_config_types(self, _info):
         return sorted(
@@ -87,12 +76,12 @@ class DauphinPipeline(dauphin.ObjectType):
     def get_dagster_pipeline(self):
         return self._pipeline
 
-    def get_type(self, info, typeName):
-        to_dauphin_type = info.schema.type_named('Type').to_dauphin_type
+    def get_type(self, _info, typeName):
         if self._pipeline.has_config_type(typeName):
-            return to_dauphin_type(info, self._pipeline.config_type_named(typeName))
+            return to_dauphin_config_type(self._pipeline.config_type_named(typeName))
         elif self._pipeline.has_runtime_type(typeName):
-            return to_dauphin_type(info, self._pipeline.runtime_type_named(typeName))
+            return to_dauphin_runtime_type(self._pipeline.runtime_type_named(typeName))
+
         else:
             check.failed('Not a config type or runtime type')
 
@@ -115,11 +104,13 @@ class DauphinResource(dauphin.ObjectType):
 
     name = dauphin.NonNull(dauphin.String)
     description = dauphin.String()
-    config = dauphin.Field('TypeField')
+    config = dauphin.Field('ConfigTypeField')
 
     def resolve_config(self, info):
         return (
-            info.schema.type_named('TypeField')(name="config", field=self._resource.config_field)
+            info.schema.type_named('ConfigTypeField')(
+                name="config", field=self._resource.config_field
+            )
             if self._resource.config_field
             else None
         )
@@ -131,7 +122,7 @@ class DauphinPipelineContext(dauphin.ObjectType):
 
     name = dauphin.NonNull(dauphin.String)
     description = dauphin.String()
-    config = dauphin.Field('TypeField')
+    config = dauphin.Field('ConfigTypeField')
     resources = dauphin.non_null_list('Resource')
 
     def __init__(self, name, context):
@@ -140,7 +131,9 @@ class DauphinPipelineContext(dauphin.ObjectType):
 
     def resolve_config(self, info):
         return (
-            info.schema.type_named('TypeField')(name="config", field=self._context.config_field)
+            info.schema.type_named('ConfigTypeField')(
+                name="config", field=self._context.config_field
+            )
             if self._context.config_field
             else None
         )
@@ -263,7 +256,7 @@ class DauphinSolidDefinition(dauphin.ObjectType):
     metadata = dauphin.non_null_list('SolidMetadataItemDefinition')
     input_definitions = dauphin.non_null_list('InputDefinition')
     output_definitions = dauphin.non_null_list('OutputDefinition')
-    config_definition = dauphin.Field('TypeField')
+    config_definition = dauphin.Field('ConfigTypeField')
 
     # solids - ?
 
@@ -294,7 +287,9 @@ class DauphinSolidDefinition(dauphin.ObjectType):
 
     def resolve_config_definition(self, info):
         return (
-            info.schema.type_named('TypeField')(name="config", field=self._solid_def.config_field)
+            info.schema.type_named('ConfigTypeField')(
+                name="config", field=self._solid_def.config_field
+            )
             if self._solid_def.config_field
             else None
         )
@@ -307,7 +302,7 @@ class DauphinInputDefinition(dauphin.ObjectType):
     solid_definition = dauphin.NonNull('SolidDefinition')
     name = dauphin.NonNull(dauphin.String)
     description = dauphin.String()
-    type = dauphin.NonNull('Type')
+    type = dauphin.NonNull('RuntimeType')
     expectations = dauphin.non_null_list('Expectation')
 
     # inputs - ?
@@ -322,10 +317,8 @@ class DauphinInputDefinition(dauphin.ObjectType):
             input_definition, 'input_definition', InputDefinition
         )
 
-    def resolve_type(self, info):
-        return info.schema.type_named('Type').to_dauphin_type(
-            info, self._input_definition.runtime_type
-        )
+    def resolve_type(self, _info):
+        return to_dauphin_runtime_type(self._input_definition.runtime_type)
 
     def resolve_expectations(self, info):
         if self._input_definition.expectations:
@@ -345,7 +338,7 @@ class DauphinOutputDefinition(dauphin.ObjectType):
     solid_definition = dauphin.NonNull('SolidDefinition')
     name = dauphin.NonNull(dauphin.String)
     description = dauphin.String()
-    type = dauphin.NonNull('Type')
+    type = dauphin.NonNull('RuntimeType')
     expectations = dauphin.non_null_list('Expectation')
 
     # outputs - ?
@@ -360,10 +353,8 @@ class DauphinOutputDefinition(dauphin.ObjectType):
             output_definition, 'output_definition', OutputDefinition
         )
 
-    def resolve_type(self, info):
-        return info.schema.type_named('Type').to_dauphin_type(
-            info, self._output_definition.runtime_type
-        )
+    def resolve_type(self, _info):
+        return to_dauphin_runtime_type(self._output_definition.runtime_type)
 
     def resolve_expectations(self, info):
         if self._output_definition.expectations:

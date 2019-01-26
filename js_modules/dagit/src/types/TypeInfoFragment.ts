@@ -7,55 +7,45 @@
 // GraphQL fragment: TypeInfoFragment
 // ====================================================
 
-export interface TypeInfoFragment_RegularType_innerTypes {
-  name: string;
+export interface TypeInfoFragment_EnumConfigType_innerTypes {
+  key: string;
 }
 
-export interface TypeInfoFragment_RegularType_typeAttributes {
-  isNamed: boolean;
-}
-
-export interface TypeInfoFragment_RegularType {
-  name: string;
+export interface TypeInfoFragment_EnumConfigType {
+  key: string;
   description: string | null;
-  isDict: boolean;
   isList: boolean;
   isNullable: boolean;
-  innerTypes: TypeInfoFragment_RegularType_innerTypes[];
-  typeAttributes: TypeInfoFragment_RegularType_typeAttributes;
+  innerTypes: TypeInfoFragment_EnumConfigType_innerTypes[];
+  name: string | null;
 }
 
-export interface TypeInfoFragment_CompositeType_innerTypes {
-  name: string;
+export interface TypeInfoFragment_CompositeConfigType_innerTypes {
+  key: string;
 }
 
-export interface TypeInfoFragment_CompositeType_fields_type {
-  name: string;
+export interface TypeInfoFragment_CompositeConfigType_fields_configType {
+  key: string;
 }
 
-export interface TypeInfoFragment_CompositeType_fields {
+export interface TypeInfoFragment_CompositeConfigType_fields {
   name: string;
   description: string | null;
-  type: TypeInfoFragment_CompositeType_fields_type;
+  configType: TypeInfoFragment_CompositeConfigType_fields_configType;
   isOptional: boolean;
 }
 
-export interface TypeInfoFragment_CompositeType_typeAttributes {
-  isNamed: boolean;
-}
-
-export interface TypeInfoFragment_CompositeType {
-  name: string;
+export interface TypeInfoFragment_CompositeConfigType {
+  key: string;
   description: string | null;
-  isDict: boolean;
   isList: boolean;
   isNullable: boolean;
-  innerTypes: TypeInfoFragment_CompositeType_innerTypes[];
-  fields: TypeInfoFragment_CompositeType_fields[];
-  typeAttributes: TypeInfoFragment_CompositeType_typeAttributes;
+  innerTypes: TypeInfoFragment_CompositeConfigType_innerTypes[];
+  fields: TypeInfoFragment_CompositeConfigType_fields[];
+  name: string | null;
 }
 
-export type TypeInfoFragment = TypeInfoFragment_RegularType | TypeInfoFragment_CompositeType;
+export type TypeInfoFragment = TypeInfoFragment_EnumConfigType | TypeInfoFragment_CompositeConfigType;
 
 /* tslint:disable */
 // This file was automatically generated and should not be edited.

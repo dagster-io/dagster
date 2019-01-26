@@ -52,7 +52,7 @@ export default class PipelineExecution extends React.Component<
       fragment PipelineExecutionPipelineFragment on Pipeline {
         name
         environmentType {
-          name
+          key
         }
         ...ConfigEditorPipelineFragment
       }

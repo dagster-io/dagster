@@ -7,14 +7,9 @@
 // GraphQL fragment: SidebarTabbedContainerSolidFragment
 // ====================================================
 
-export interface SidebarTabbedContainerSolidFragment_outputs_definition_type_typeAttributes {
-  isNamed: boolean;
-}
-
 export interface SidebarTabbedContainerSolidFragment_outputs_definition_type {
-  name: string;
+  name: string | null;
   description: string | null;
-  typeAttributes: SidebarTabbedContainerSolidFragment_outputs_definition_type_typeAttributes;
 }
 
 export interface SidebarTabbedContainerSolidFragment_outputs_definition_expectations {
@@ -33,14 +28,9 @@ export interface SidebarTabbedContainerSolidFragment_outputs {
   definition: SidebarTabbedContainerSolidFragment_outputs_definition;
 }
 
-export interface SidebarTabbedContainerSolidFragment_inputs_definition_type_typeAttributes {
-  isNamed: boolean;
-}
-
 export interface SidebarTabbedContainerSolidFragment_inputs_definition_type {
-  name: string;
+  name: string | null;
   description: string | null;
-  typeAttributes: SidebarTabbedContainerSolidFragment_inputs_definition_type_typeAttributes;
 }
 
 export interface SidebarTabbedContainerSolidFragment_inputs_definition_expectations {
@@ -78,150 +68,126 @@ export interface SidebarTabbedContainerSolidFragment_definition_metadata {
   value: string;
 }
 
-export interface SidebarTabbedContainerSolidFragment_definition_configDefinition_type_RegularType_innerTypes_RegularType_innerTypes {
-  name: string;
+export interface SidebarTabbedContainerSolidFragment_definition_configDefinition_configType_EnumConfigType_innerTypes_EnumConfigType_innerTypes {
+  key: string;
 }
 
-export interface SidebarTabbedContainerSolidFragment_definition_configDefinition_type_RegularType_innerTypes_RegularType_typeAttributes {
-  isNamed: boolean;
-}
-
-export interface SidebarTabbedContainerSolidFragment_definition_configDefinition_type_RegularType_innerTypes_RegularType {
-  name: string;
+export interface SidebarTabbedContainerSolidFragment_definition_configDefinition_configType_EnumConfigType_innerTypes_EnumConfigType {
+  key: string;
+  name: string | null;
   description: string | null;
-  isDict: boolean;
   isList: boolean;
   isNullable: boolean;
-  innerTypes: SidebarTabbedContainerSolidFragment_definition_configDefinition_type_RegularType_innerTypes_RegularType_innerTypes[];
-  typeAttributes: SidebarTabbedContainerSolidFragment_definition_configDefinition_type_RegularType_innerTypes_RegularType_typeAttributes;
+  isSelector: boolean;
+  innerTypes: SidebarTabbedContainerSolidFragment_definition_configDefinition_configType_EnumConfigType_innerTypes_EnumConfigType_innerTypes[];
 }
 
-export interface SidebarTabbedContainerSolidFragment_definition_configDefinition_type_RegularType_innerTypes_CompositeType_innerTypes {
-  name: string;
+export interface SidebarTabbedContainerSolidFragment_definition_configDefinition_configType_EnumConfigType_innerTypes_CompositeConfigType_innerTypes {
+  key: string;
 }
 
-export interface SidebarTabbedContainerSolidFragment_definition_configDefinition_type_RegularType_innerTypes_CompositeType_typeAttributes {
-  isNamed: boolean;
+export interface SidebarTabbedContainerSolidFragment_definition_configDefinition_configType_EnumConfigType_innerTypes_CompositeConfigType_fields_configType {
+  key: string;
 }
 
-export interface SidebarTabbedContainerSolidFragment_definition_configDefinition_type_RegularType_innerTypes_CompositeType_fields_type {
-  name: string;
-}
-
-export interface SidebarTabbedContainerSolidFragment_definition_configDefinition_type_RegularType_innerTypes_CompositeType_fields {
+export interface SidebarTabbedContainerSolidFragment_definition_configDefinition_configType_EnumConfigType_innerTypes_CompositeConfigType_fields {
   name: string;
   description: string | null;
-  type: SidebarTabbedContainerSolidFragment_definition_configDefinition_type_RegularType_innerTypes_CompositeType_fields_type;
   isOptional: boolean;
+  configType: SidebarTabbedContainerSolidFragment_definition_configDefinition_configType_EnumConfigType_innerTypes_CompositeConfigType_fields_configType;
 }
 
-export interface SidebarTabbedContainerSolidFragment_definition_configDefinition_type_RegularType_innerTypes_CompositeType {
-  name: string;
+export interface SidebarTabbedContainerSolidFragment_definition_configDefinition_configType_EnumConfigType_innerTypes_CompositeConfigType {
+  key: string;
+  name: string | null;
   description: string | null;
-  isDict: boolean;
   isList: boolean;
   isNullable: boolean;
-  innerTypes: SidebarTabbedContainerSolidFragment_definition_configDefinition_type_RegularType_innerTypes_CompositeType_innerTypes[];
-  typeAttributes: SidebarTabbedContainerSolidFragment_definition_configDefinition_type_RegularType_innerTypes_CompositeType_typeAttributes;
-  fields: SidebarTabbedContainerSolidFragment_definition_configDefinition_type_RegularType_innerTypes_CompositeType_fields[];
+  isSelector: boolean;
+  innerTypes: SidebarTabbedContainerSolidFragment_definition_configDefinition_configType_EnumConfigType_innerTypes_CompositeConfigType_innerTypes[];
+  fields: SidebarTabbedContainerSolidFragment_definition_configDefinition_configType_EnumConfigType_innerTypes_CompositeConfigType_fields[];
 }
 
-export type SidebarTabbedContainerSolidFragment_definition_configDefinition_type_RegularType_innerTypes = SidebarTabbedContainerSolidFragment_definition_configDefinition_type_RegularType_innerTypes_RegularType | SidebarTabbedContainerSolidFragment_definition_configDefinition_type_RegularType_innerTypes_CompositeType;
+export type SidebarTabbedContainerSolidFragment_definition_configDefinition_configType_EnumConfigType_innerTypes = SidebarTabbedContainerSolidFragment_definition_configDefinition_configType_EnumConfigType_innerTypes_EnumConfigType | SidebarTabbedContainerSolidFragment_definition_configDefinition_configType_EnumConfigType_innerTypes_CompositeConfigType;
 
-export interface SidebarTabbedContainerSolidFragment_definition_configDefinition_type_RegularType_typeAttributes {
-  isNamed: boolean;
-}
-
-export interface SidebarTabbedContainerSolidFragment_definition_configDefinition_type_RegularType {
-  name: string;
+export interface SidebarTabbedContainerSolidFragment_definition_configDefinition_configType_EnumConfigType {
+  key: string;
+  name: string | null;
   description: string | null;
-  isDict: boolean;
   isList: boolean;
   isNullable: boolean;
-  innerTypes: SidebarTabbedContainerSolidFragment_definition_configDefinition_type_RegularType_innerTypes[];
-  typeAttributes: SidebarTabbedContainerSolidFragment_definition_configDefinition_type_RegularType_typeAttributes;
+  isSelector: boolean;
+  innerTypes: SidebarTabbedContainerSolidFragment_definition_configDefinition_configType_EnumConfigType_innerTypes[];
 }
 
-export interface SidebarTabbedContainerSolidFragment_definition_configDefinition_type_CompositeType_innerTypes_RegularType_innerTypes {
-  name: string;
+export interface SidebarTabbedContainerSolidFragment_definition_configDefinition_configType_CompositeConfigType_innerTypes_EnumConfigType_innerTypes {
+  key: string;
 }
 
-export interface SidebarTabbedContainerSolidFragment_definition_configDefinition_type_CompositeType_innerTypes_RegularType_typeAttributes {
-  isNamed: boolean;
-}
-
-export interface SidebarTabbedContainerSolidFragment_definition_configDefinition_type_CompositeType_innerTypes_RegularType {
-  name: string;
+export interface SidebarTabbedContainerSolidFragment_definition_configDefinition_configType_CompositeConfigType_innerTypes_EnumConfigType {
+  key: string;
+  name: string | null;
   description: string | null;
-  isDict: boolean;
   isList: boolean;
   isNullable: boolean;
-  innerTypes: SidebarTabbedContainerSolidFragment_definition_configDefinition_type_CompositeType_innerTypes_RegularType_innerTypes[];
-  typeAttributes: SidebarTabbedContainerSolidFragment_definition_configDefinition_type_CompositeType_innerTypes_RegularType_typeAttributes;
+  isSelector: boolean;
+  innerTypes: SidebarTabbedContainerSolidFragment_definition_configDefinition_configType_CompositeConfigType_innerTypes_EnumConfigType_innerTypes[];
 }
 
-export interface SidebarTabbedContainerSolidFragment_definition_configDefinition_type_CompositeType_innerTypes_CompositeType_innerTypes {
-  name: string;
+export interface SidebarTabbedContainerSolidFragment_definition_configDefinition_configType_CompositeConfigType_innerTypes_CompositeConfigType_innerTypes {
+  key: string;
 }
 
-export interface SidebarTabbedContainerSolidFragment_definition_configDefinition_type_CompositeType_innerTypes_CompositeType_typeAttributes {
-  isNamed: boolean;
+export interface SidebarTabbedContainerSolidFragment_definition_configDefinition_configType_CompositeConfigType_innerTypes_CompositeConfigType_fields_configType {
+  key: string;
 }
 
-export interface SidebarTabbedContainerSolidFragment_definition_configDefinition_type_CompositeType_innerTypes_CompositeType_fields_type {
-  name: string;
-}
-
-export interface SidebarTabbedContainerSolidFragment_definition_configDefinition_type_CompositeType_innerTypes_CompositeType_fields {
+export interface SidebarTabbedContainerSolidFragment_definition_configDefinition_configType_CompositeConfigType_innerTypes_CompositeConfigType_fields {
   name: string;
   description: string | null;
-  type: SidebarTabbedContainerSolidFragment_definition_configDefinition_type_CompositeType_innerTypes_CompositeType_fields_type;
   isOptional: boolean;
+  configType: SidebarTabbedContainerSolidFragment_definition_configDefinition_configType_CompositeConfigType_innerTypes_CompositeConfigType_fields_configType;
 }
 
-export interface SidebarTabbedContainerSolidFragment_definition_configDefinition_type_CompositeType_innerTypes_CompositeType {
-  name: string;
+export interface SidebarTabbedContainerSolidFragment_definition_configDefinition_configType_CompositeConfigType_innerTypes_CompositeConfigType {
+  key: string;
+  name: string | null;
   description: string | null;
-  isDict: boolean;
   isList: boolean;
   isNullable: boolean;
-  innerTypes: SidebarTabbedContainerSolidFragment_definition_configDefinition_type_CompositeType_innerTypes_CompositeType_innerTypes[];
-  typeAttributes: SidebarTabbedContainerSolidFragment_definition_configDefinition_type_CompositeType_innerTypes_CompositeType_typeAttributes;
-  fields: SidebarTabbedContainerSolidFragment_definition_configDefinition_type_CompositeType_innerTypes_CompositeType_fields[];
+  isSelector: boolean;
+  innerTypes: SidebarTabbedContainerSolidFragment_definition_configDefinition_configType_CompositeConfigType_innerTypes_CompositeConfigType_innerTypes[];
+  fields: SidebarTabbedContainerSolidFragment_definition_configDefinition_configType_CompositeConfigType_innerTypes_CompositeConfigType_fields[];
 }
 
-export type SidebarTabbedContainerSolidFragment_definition_configDefinition_type_CompositeType_innerTypes = SidebarTabbedContainerSolidFragment_definition_configDefinition_type_CompositeType_innerTypes_RegularType | SidebarTabbedContainerSolidFragment_definition_configDefinition_type_CompositeType_innerTypes_CompositeType;
+export type SidebarTabbedContainerSolidFragment_definition_configDefinition_configType_CompositeConfigType_innerTypes = SidebarTabbedContainerSolidFragment_definition_configDefinition_configType_CompositeConfigType_innerTypes_EnumConfigType | SidebarTabbedContainerSolidFragment_definition_configDefinition_configType_CompositeConfigType_innerTypes_CompositeConfigType;
 
-export interface SidebarTabbedContainerSolidFragment_definition_configDefinition_type_CompositeType_typeAttributes {
-  isNamed: boolean;
+export interface SidebarTabbedContainerSolidFragment_definition_configDefinition_configType_CompositeConfigType_fields_configType {
+  key: string;
 }
 
-export interface SidebarTabbedContainerSolidFragment_definition_configDefinition_type_CompositeType_fields_type {
-  name: string;
-}
-
-export interface SidebarTabbedContainerSolidFragment_definition_configDefinition_type_CompositeType_fields {
+export interface SidebarTabbedContainerSolidFragment_definition_configDefinition_configType_CompositeConfigType_fields {
   name: string;
   description: string | null;
-  type: SidebarTabbedContainerSolidFragment_definition_configDefinition_type_CompositeType_fields_type;
   isOptional: boolean;
+  configType: SidebarTabbedContainerSolidFragment_definition_configDefinition_configType_CompositeConfigType_fields_configType;
 }
 
-export interface SidebarTabbedContainerSolidFragment_definition_configDefinition_type_CompositeType {
-  name: string;
+export interface SidebarTabbedContainerSolidFragment_definition_configDefinition_configType_CompositeConfigType {
+  key: string;
+  name: string | null;
   description: string | null;
-  isDict: boolean;
   isList: boolean;
   isNullable: boolean;
-  innerTypes: SidebarTabbedContainerSolidFragment_definition_configDefinition_type_CompositeType_innerTypes[];
-  typeAttributes: SidebarTabbedContainerSolidFragment_definition_configDefinition_type_CompositeType_typeAttributes;
-  fields: SidebarTabbedContainerSolidFragment_definition_configDefinition_type_CompositeType_fields[];
+  isSelector: boolean;
+  innerTypes: SidebarTabbedContainerSolidFragment_definition_configDefinition_configType_CompositeConfigType_innerTypes[];
+  fields: SidebarTabbedContainerSolidFragment_definition_configDefinition_configType_CompositeConfigType_fields[];
 }
 
-export type SidebarTabbedContainerSolidFragment_definition_configDefinition_type = SidebarTabbedContainerSolidFragment_definition_configDefinition_type_RegularType | SidebarTabbedContainerSolidFragment_definition_configDefinition_type_CompositeType;
+export type SidebarTabbedContainerSolidFragment_definition_configDefinition_configType = SidebarTabbedContainerSolidFragment_definition_configDefinition_configType_EnumConfigType | SidebarTabbedContainerSolidFragment_definition_configDefinition_configType_CompositeConfigType;
 
 export interface SidebarTabbedContainerSolidFragment_definition_configDefinition {
-  type: SidebarTabbedContainerSolidFragment_definition_configDefinition_type;
+  configType: SidebarTabbedContainerSolidFragment_definition_configDefinition_configType;
 }
 
 export interface SidebarTabbedContainerSolidFragment_definition {

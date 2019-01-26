@@ -278,13 +278,14 @@ CodeMirror.defineMode("yaml", () => {
 });
 
 export type TypeConfig = {
-  rootTypeName: string;
+  rootTypeKey: string;
   types: {
-    [name: string]: {
+    [key: string]: {
       fields: Array<{
         name: string;
-        type: {
-          name: string;
+        configType: {
+          key: string;
+          name: string | null;
         };
       }>;
     };
@@ -393,21 +394,21 @@ function findAutocomplete(
   parents = parents.filter(({ indent }) => currentIndent > indent);
   const immediateParent = parents[parents.length - 1];
 
-  let available = typeConfig.types[typeConfig.rootTypeName].fields;
+  let available = typeConfig.types[typeConfig.rootTypeKey].fields;
 
   if (available && parents.length > 0) {
     for (const parent of parents) {
       const parentTypeDef = available.find(({ name }) => parent.key === name);
 
-      if (!parentTypeDef || !parentTypeDef.type.name) {
+      if (!parentTypeDef || !parentTypeDef.configType.name) {
         return [];
       }
 
-      let childTypeName = parentTypeDef.type.name;
+      let childTypeName = parentTypeDef.configType.name;
       let childEntiresUnique = true;
 
-      if (parentTypeDef.type.name.startsWith("List.")) {
-        childTypeName = parentTypeDef.type.name.substr(5);
+      if (parentTypeDef.configType.name.startsWith("List.")) {
+        childTypeName = parentTypeDef.configType.name.substr(5);
         childEntiresUnique = false;
       }
 
@@ -428,7 +429,9 @@ function findAutocomplete(
 
   return available.map(item => ({
     text: item.name,
-    hasChildren: item.type.name ? item.type.name in typeConfig.types : false
+    hasChildren: item.configType.name
+      ? item.configType.name in typeConfig.types
+      : false
   }));
 }
 

@@ -16,7 +16,7 @@ import {
   SectionItemContainer
 } from "./SidebarComponents";
 import Description from "./Description";
-import TypeSchema from "./TypeSchema";
+import ConfigTypeSchema from "./ConfigTypeSchema";
 import { SidebarSolidInfoFragment } from "./types/SidebarSolidInfoFragment";
 
 interface ISidebarSolidInfoProps {
@@ -39,8 +39,8 @@ export default class SidebarSolidInfo extends React.Component<
             value
           }
           configDefinition {
-            type {
-              ...TypeSchemaFragment
+            configType {
+              ...ConfigTypeSchemaFragment
             }
           }
         }
@@ -49,7 +49,7 @@ export default class SidebarSolidInfo extends React.Component<
             name
             description
             type {
-              ...TypeWithTooltipFragment
+              ...RuntimeTypeWithTooltipFragment
             }
             expectations {
               name
@@ -70,7 +70,7 @@ export default class SidebarSolidInfo extends React.Component<
             name
             description
             type {
-              ...TypeWithTooltipFragment
+              ...RuntimeTypeWithTooltipFragment
             }
             expectations {
               name
@@ -80,9 +80,9 @@ export default class SidebarSolidInfo extends React.Component<
         }
       }
 
-      ${TypeWithTooltip.fragments.TypeWithTooltipFragment}
+      ${TypeWithTooltip.fragments.RuntimeTypeWithTooltipFragment}
       ${SolidTypeSignature.fragments.SolidTypeSignatureFragment}
-      ${TypeSchema.fragments.TypeSchemaFragment}
+      ${ConfigTypeSchema.fragments.ConfigTypeSchemaFragment}
     `
   };
 
@@ -166,7 +166,9 @@ export default class SidebarSolidInfo extends React.Component<
         </SidebarSection>
         {solid.definition.configDefinition && (
           <SidebarSection title={"Config"}>
-            <TypeSchema type={solid.definition.configDefinition.type} />
+            <ConfigTypeSchema
+              type={solid.definition.configDefinition.configType}
+            />
           </SidebarSection>
         )}
         <SidebarSection title={"Inputs"}>{this.renderInputs()}</SidebarSection>

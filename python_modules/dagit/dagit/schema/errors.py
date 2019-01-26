@@ -16,6 +16,8 @@ from dagster.utils.error import SerializableErrorInfo
 
 from dagit.schema import dauphin
 
+from .config_types import to_dauphin_config_type
+
 
 class DauphinError(dauphin.Interface):
     class Meta:
@@ -116,7 +118,7 @@ class DauphinPipelineConfigValidationError(dauphin.Interface):
                 path=[],  # TODO: remove
                 stack=error.stack,
                 reason=error.reason,
-                field=info.schema.type_named('TypeField')(
+                field=info.schema.type_named('ConfigTypeField')(
                     name=error.error_data.field_name, field=error.error_data.field_def
                 ),
             )
@@ -147,11 +149,11 @@ class DauphinRuntimeMismatchConfigError(dauphin.ObjectType):
         name = 'RuntimeMismatchConfigError'
         interfaces = (DauphinPipelineConfigValidationError,)
 
-    type = dauphin.NonNull('Type')
+    type = dauphin.NonNull('ConfigType')
     value_rep = dauphin.Field(dauphin.String)
 
-    def resolve_type(self, info):
-        return info.schema.type_named('Type').to_dauphin_type(info, self.type)
+    def resolve_type(self, _info):
+        return to_dauphin_config_type(self.type)
 
 
 class DauphinMissingFieldConfigError(dauphin.ObjectType):
@@ -159,7 +161,7 @@ class DauphinMissingFieldConfigError(dauphin.ObjectType):
         name = 'MissingFieldConfigError'
         interfaces = (DauphinPipelineConfigValidationError,)
 
-    field = dauphin.NonNull('TypeField')
+    field = dauphin.NonNull('ConfigTypeField')
 
 
 class DauphinFieldNotDefinedConfigError(dauphin.ObjectType):
@@ -211,10 +213,10 @@ class DauphinEvaluationStackPathEntry(dauphin.ObjectType):
         self._field_name = field_name
         self._field_def = field_def
 
-    field = dauphin.NonNull('TypeField')
+    field = dauphin.NonNull('ConfigTypeField')
 
     def resolve_field(self, info):
-        return info.schema.type_named('TypeField')(
+        return info.schema.type_named('ConfigTypeField')(
             name=self._field_name, field=self._field_def
         )  # pylint: disable=E1101
 
