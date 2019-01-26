@@ -37,8 +37,7 @@ from .definitions import (
 )
 
 from .definitions.utils import check_opt_two_dim_str_dict
-
-from .definitions.environment_configs import construct_environment_config
+from .definitions.environment_configs import construct_environment_config, construct_context_config
 
 from .execution_context import ExecutionContext, ReentrantInfo, RuntimeExecutionContext
 
