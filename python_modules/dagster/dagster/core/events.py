@@ -8,6 +8,7 @@ from dagster.utils.error import serializable_error_info_from_exc_info, Serializa
 from dagster.utils.logging import (
     DEBUG,
     StructuredLoggerHandler,
+    JsonEventLoggerHandler,
     StructuredLoggerMessage,
     check_valid_level_param,
     construct_single_handler_logger,
@@ -155,7 +156,7 @@ class EventRecord(object):
             'message': self.message,
             'level': self.level,
             'user_message': self.user_message,
-            'event_type': str(self.event_type),
+            'event_type': self.event_type.value,
             'timestamp': self.timestamp,
             'error_info': self._error_info,
         }
@@ -321,3 +322,25 @@ def construct_event_logger(event_record_callback):
             lambda logger_message: event_record_callback(construct_event_record(logger_message))
         ),
     )
+
+
+def construct_json_event_logger(json_path):
+    '''Record a stream of event records to json'''
+    check.str_param(json_path, 'json_path')
+    return construct_single_handler_logger(
+        "json-event-record-logger",
+        DEBUG,
+        JsonEventLoggerHandler(
+            json_path,
+            lambda record: construct_event_record(
+                StructuredLoggerMessage(
+                    name=record.name,
+                    message=record.msg,
+                    level=record.levelno,
+                    meta=record.dagster_meta,
+                    record=record,
+                )
+            ),
+        ),
+    )
+

@@ -254,6 +254,14 @@ def get_run_id(reentrant_info):
         return str(uuid.uuid4())
 
 
+def get_event_callback(reentrant_info):
+    check.opt_inst_param(reentrant_info, 'reentrant_info', ReentrantInfo)
+    if reentrant_info and reentrant_info.event_callback:
+        return check.callable_param(reentrant_info.event_callback, 'event_callback')
+    else:
+        return None
+
+
 def merge_two_dicts(left, right):
     result = left.copy()
     result.update(right)
@@ -345,12 +353,16 @@ def yield_context(pipeline, environment, reentrant_info=None):
                 loggers=loggers,
                 resources=resources,
                 context_stack=get_context_stack(execution_context, reentrant_info),
+                event_callback=get_event_callback(reentrant_info),
+                environment_config=environment.original_config_dict,
             )
 
 
 def _create_loggers(reentrant_info, execution_context):
     if reentrant_info and reentrant_info.event_callback:
         return execution_context.loggers + [construct_event_logger(reentrant_info.event_callback)]
+    elif reentrant_info and reentrant_info.loggers:
+        return execution_context.loggers + reentrant_info.loggers
     else:
         return execution_context.loggers
 

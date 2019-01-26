@@ -302,6 +302,7 @@ def construct_environment_config(config_value):
         execution=ExecutionConfig(**config_value['execution']),
         expectations=ExpectationsConfig(**config_value['expectations']),
         context=construct_context_config(config_value['context']),
+        original_config_dict=config_value,
     )
 
 
