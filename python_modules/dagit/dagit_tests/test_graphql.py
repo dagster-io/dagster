@@ -1317,6 +1317,8 @@ query ConfigTypeQuery($pipelineName: String! $configTypeName: String!)
         }
         ... on CompositeConfigType {
             name
+            innerTypes { key name }
+            fields { name configType { key name } }
         }
         ... on EnumConfigType {
             name
@@ -1371,6 +1373,28 @@ def test_config_type_or_error_type_not_found():
     assert result.data['configTypeOrError']['__typename'] == 'ConfigTypeNotFoundError'
     assert result.data['configTypeOrError']['pipeline']['name'] == 'pandas_hello_world'
     assert result.data['configTypeOrError']['configTypeName'] == 'nope'
+
+
+def test_config_type_or_error_nested_complicated():
+    result = execute_dagster_graphql(
+        define_context(),
+        CONFIG_TYPE_QUERY,
+        {
+            'pipelineName': 'more_complicated_nested_config',
+            'configTypeName': (
+                'MoreComplicatedNestedConfig.SolidConfig.ASolidWithMultilayeredConfig'
+            ),
+        },
+    )
+
+    assert not result.errors
+    assert result.data
+    assert result.data['configTypeOrError']['__typename'] == 'CompositeConfigType'
+    assert (
+        result.data['configTypeOrError']['name']
+        == 'MoreComplicatedNestedConfig.SolidConfig.ASolidWithMultilayeredConfig'
+    )
+    assert len(result.data['configTypeOrError']['innerTypes']) == 6
 
 
 RUNTIME_TYPE_QUERY = '''
