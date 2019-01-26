@@ -3,6 +3,7 @@ import json
 
 from dagster import check
 
+from dagster.utils import merge_dicts
 from dagster.utils.error import serializable_error_info_from_exc_info, SerializableErrorInfo
 
 from dagster.utils.logging import (
@@ -91,12 +92,10 @@ class ExecutionEvents:
         )
 
     def pipeline_name(self):
-        return self.context.get_context_value('pipeline')
+        return self.context.get_tag('pipeline')
 
     def check_pipeline_in_context(self):
-        check.invariant(
-            self.context.has_context_value('pipeline'), 'Must have pipeline context value'
-        )
+        check.invariant(self.context.has_tag('pipeline'), 'Must have pipeline context value')
 
 
 EVENT_TYPE_VALUES = {item.value for item in EventType}
@@ -259,12 +258,6 @@ def construct_error_info(logger_message):
     return SerializableErrorInfo(message, stack)
 
 
-def merge_two_dicts(left, right):
-    result = left.copy()
-    result.update(right)
-    return result
-
-
 def is_pipeline_event_type(event_type):
     event_cls = EVENT_CLS_LOOKUP[event_type]
     return issubclass(event_cls, PipelineEventRecord)
@@ -284,7 +277,7 @@ def logger_to_kwargs(logger_message):
 
     event_cls = EVENT_CLS_LOOKUP[event_type]
     if issubclass(event_cls, PipelineEventRecord):
-        return merge_two_dicts(base_args, {'pipeline_name': logger_message.meta['pipeline']})
+        return merge_dicts(base_args, {'pipeline_name': logger_message.meta['pipeline']})
     elif issubclass(event_cls, ExecutionStepEventRecord):
         step_args = {
             'step_key': logger_message.meta['step_key'],
@@ -295,7 +288,7 @@ def logger_to_kwargs(logger_message):
         if event_cls == ExecutionStepSuccessRecord:
             step_args['millis'] = logger_message.meta['millis']
 
-        return merge_two_dicts(base_args, step_args)
+        return merge_dicts(base_args, step_args)
     else:
         return base_args
 

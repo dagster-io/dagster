@@ -312,6 +312,7 @@ def define_execution_config_cls(name):
 
 
 def construct_environment_config(config_value):
+    check.dict_param(config_value, 'config_value')
     return EnvironmentConfig(
         solids=construct_solid_dictionary(config_value['solids']),
         execution=ExecutionConfig(**config_value['execution']),

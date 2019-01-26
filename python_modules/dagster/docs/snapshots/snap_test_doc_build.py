@@ -765,8 +765,6 @@ snapshots['test_build_all_docs 4'] = '''
 <h2 id="R">R</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="apidocs/execution.html#dagster.ReentrantInfo">ReentrantInfo (class in dagster)</a>
-</li>
       <li><a href="apidocs/definitions.html#dagster.RepositoryDefinition">RepositoryDefinition (class in dagster)</a>
 </li>
       <li><a href="apidocs/definitions.html#dagster.ResourceDefinition">ResourceDefinition (class in dagster)</a>
@@ -775,10 +773,10 @@ snapshots['test_build_all_docs 4'] = '''
 </li>
       <li><a href="apidocs/definitions.html#dagster.ExpectationResult.result_context">result_context (dagster.ExpectationResult attribute)</a>
 </li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="apidocs/execution.html#dagster.PipelineExecutionResult.result_for_solid">result_for_solid() (dagster.PipelineExecutionResult method)</a>
 </li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="apidocs/execution.html#dagster.PipelineExecutionResult.result_list">result_list (dagster.PipelineExecutionResult attribute)</a>
 </li>
       <li><a href="apidocs/decorators.html#dagster.MultipleResults.results">results (dagster.MultipleResults attribute)</a>
@@ -2440,7 +2438,7 @@ def create_fileload_unittest_context(info):
     yield ExecutionContext(
         loggers=[define_colored_console_logger('dagster', log_level)],
         resources=resources,
-        context_stack={
+        tags={
             'data_source_run_id': data_source_run_id,
             'data_source': 'new_data',
             'pipeline_run_id': pipeline_run_id,
@@ -2506,7 +2504,7 @@ def create_fileload_unittest_context(info):
 
     yield ExecutionContext(
         loggers=[define_colored_console_logger('dagster', log_level)],
-        context_stack={
+        tags={
             'data_source_run_id': data_source_run_id,
             'data_source': 'new_data',
         },
@@ -3037,7 +3035,7 @@ After:
     yield ExecutionContext(
         loggers=[define_colored_console_logger('dagster', log_level)],
         resources=resources,
-        context_stack={
+        tags={
             'data_source_run_id': data_source_run_id,
             'data_source': 'new_data',
             'pipeline_run_id': pipeline_run_id,
@@ -20200,7 +20198,7 @@ snapshots['test_build_all_docs 52'] = '''
 <p>Executing pipelines and solids.</p>
 <dl class="function">
 <dt id="dagster.execute_pipeline">
-<code class="descclassname">dagster.</code><code class="descname">execute_pipeline</code><span class="sig-paren">(</span><em>pipeline</em>, <em>environment=None</em>, <em>throw_on_error=True</em>, <em>reentrant_info=None</em>, <em>solid_subset=None</em><span class="sig-paren">)</span><a class="headerlink" href="#dagster.execute_pipeline" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">dagster.</code><code class="descname">execute_pipeline</code><span class="sig-paren">(</span><em>pipeline</em>, <em>environment=None</em>, <em>throw_on_error=True</em>, <em>execution_metadata=None</em>, <em>solid_subset=None</em><span class="sig-paren">)</span><a class="headerlink" href="#dagster.execute_pipeline" title="Permalink to this definition">¶</a></dt>
 <dd><p>“Synchronous” version of <a class="reference internal" href="#dagster.execute_pipeline_iterator" title="dagster.execute_pipeline_iterator"><code class="xref py py-func docutils literal notranslate"><span class="pre">execute_pipeline_iterator()</span></code></a>.</p>
 <p>Note: throw_on_error is very useful in testing contexts when not testing for error conditions</p>
 <table class="docutils field-list" frame="void" rules="none">
@@ -20224,7 +20222,7 @@ the py:class:<cite>SolidExecutionResult</cite> in an error-state.</li>
 
 <dl class="function">
 <dt id="dagster.execute_pipeline_iterator">
-<code class="descclassname">dagster.</code><code class="descname">execute_pipeline_iterator</code><span class="sig-paren">(</span><em>pipeline</em>, <em>environment=None</em>, <em>throw_on_error=True</em>, <em>reentrant_info=None</em>, <em>solid_subset=None</em><span class="sig-paren">)</span><a class="headerlink" href="#dagster.execute_pipeline_iterator" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">dagster.</code><code class="descname">execute_pipeline_iterator</code><span class="sig-paren">(</span><em>pipeline</em>, <em>environment=None</em>, <em>throw_on_error=True</em>, <em>execution_metadata=None</em>, <em>solid_subset=None</em><span class="sig-paren">)</span><a class="headerlink" href="#dagster.execute_pipeline_iterator" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns iterator that yields <a class="reference internal" href="#dagster.SolidExecutionResult" title="dagster.SolidExecutionResult"><code class="xref py py-class docutils literal notranslate"><span class="pre">SolidExecutionResult</span></code></a> for each
 solid executed in the pipeline.</p>
 <p>This is intended to allow the caller to do things between each executed
@@ -20293,13 +20291,8 @@ node. For the ‘synchronous’ API, see <a class="reference internal" href="#da
 </dd></dl>
 
 <dl class="class">
-<dt id="dagster.ReentrantInfo">
-<em class="property">class </em><code class="descclassname">dagster.</code><code class="descname">ReentrantInfo</code><a class="headerlink" href="#dagster.ReentrantInfo" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="class">
 <dt id="dagster.SolidExecutionResult">
-<em class="property">class </em><code class="descclassname">dagster.</code><code class="descname">SolidExecutionResult</code><span class="sig-paren">(</span><em>context</em>, <em>solid</em>, <em>step_results_by_tag</em><span class="sig-paren">)</span><a class="headerlink" href="#dagster.SolidExecutionResult" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">dagster.</code><code class="descname">SolidExecutionResult</code><span class="sig-paren">(</span><em>context</em>, <em>solid</em>, <em>step_results_by_kind</em><span class="sig-paren">)</span><a class="headerlink" href="#dagster.SolidExecutionResult" title="Permalink to this definition">¶</a></dt>
 <dd><p>Execution result for one solid of the pipeline.</p>
 <dl class="attribute">
 <dt id="dagster.SolidExecutionResult.context">
@@ -20883,7 +20876,7 @@ snapshots['test_build_all_docs 55'] = '''
     <span class="k">yield</span> <span class="n">ExecutionContext</span><span class="p">(</span>
         <span class="n">loggers</span><span class="o">=</span><span class="p">[</span><span class="n">define_colored_console_logger</span><span class="p">(</span><span class="s1">&#39;dagster&#39;</span><span class="p">,</span> <span class="n">log_level</span><span class="p">)],</span>
         <span class="n">resources</span><span class="o">=</span><span class="n">resources</span><span class="p">,</span>
-        <span class="n">context_stack</span><span class="o">=</span><span class="p">{</span>
+        <span class="n">tags</span><span class="o">=</span><span class="p">{</span>
             <span class="s1">&#39;data_source_run_id&#39;</span><span class="p">:</span> <span class="n">data_source_run_id</span><span class="p">,</span>
             <span class="s1">&#39;data_source&#39;</span><span class="p">:</span> <span class="s1">&#39;new_data&#39;</span><span class="p">,</span>
             <span class="s1">&#39;pipeline_run_id&#39;</span><span class="p">:</span> <span class="n">pipeline_run_id</span><span class="p">,</span>
@@ -20941,7 +20934,7 @@ snapshots['test_build_all_docs 55'] = '''
 
     <span class="k">yield</span> <span class="n">ExecutionContext</span><span class="p">(</span>
         <span class="n">loggers</span><span class="o">=</span><span class="p">[</span><span class="n">define_colored_console_logger</span><span class="p">(</span><span class="s1">&#39;dagster&#39;</span><span class="p">,</span> <span class="n">log_level</span><span class="p">)],</span>
-        <span class="n">context_stack</span><span class="o">=</span><span class="p">{</span>
+        <span class="n">tags</span><span class="o">=</span><span class="p">{</span>
             <span class="s1">&#39;data_source_run_id&#39;</span><span class="p">:</span> <span class="n">data_source_run_id</span><span class="p">,</span>
             <span class="s1">&#39;data_source&#39;</span><span class="p">:</span> <span class="s1">&#39;new_data&#39;</span><span class="p">,</span>
         <span class="p">},</span>
@@ -21521,7 +21514,7 @@ Third, you do not have to name it. The net result is much nicer:</p>
 <div class="highlight-py notranslate"><div class="highlight"><pre><span></span>    <span class="k">yield</span> <span class="n">ExecutionContext</span><span class="p">(</span>
         <span class="n">loggers</span><span class="o">=</span><span class="p">[</span><span class="n">define_colored_console_logger</span><span class="p">(</span><span class="s1">&#39;dagster&#39;</span><span class="p">,</span> <span class="n">log_level</span><span class="p">)],</span>
         <span class="n">resources</span><span class="o">=</span><span class="n">resources</span><span class="p">,</span>
-        <span class="n">context_stack</span><span class="o">=</span><span class="p">{</span>
+        <span class="n">tags</span><span class="o">=</span><span class="p">{</span>
             <span class="s1">&#39;data_source_run_id&#39;</span><span class="p">:</span> <span class="n">data_source_run_id</span><span class="p">,</span>
             <span class="s1">&#39;data_source&#39;</span><span class="p">:</span> <span class="s1">&#39;new_data&#39;</span><span class="p">,</span>
             <span class="s1">&#39;pipeline_run_id&#39;</span><span class="p">:</span> <span class="n">pipeline_run_id</span><span class="p">,</span>

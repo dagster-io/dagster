@@ -1,5 +1,3 @@
-from collections import namedtuple
-
 from dagster import check
 
 from dagster.core.definitions import (
@@ -7,10 +5,11 @@ from dagster.core.definitions import (
     InputDefinition,
     OutputDefinition,
     Solid,
-    SolidOutputHandle,
 )
 
 from dagster.core.errors import DagsterInvariantViolationError
+
+from dagster.core.execution_context import ExecutionMetadata
 
 from .expectations import create_expectations_subplan, decorate_with_expectations
 
@@ -24,9 +23,10 @@ from .objects import (
     ExecutionStep,
     ExecutionValueSubPlan,
     ExecutionPlanSubsetInfo,
+    StepBuilderState,
     StepInput,
     StepOutputHandle,
-    StepTag,
+    StepKind,
 )
 
 from .transform import create_transform_step
@@ -43,51 +43,38 @@ def get_solid_user_config(execution_info, pipeline_solid):
     return solid_configs[name].config if name in solid_configs else None
 
 
-# This is the state that is built up during the execution plan build process.
-# steps is just a list of the steps that have been created
-# step_output_map maps logical solid outputs (solid_name, output_name) to particular
-# step outputs. This covers the case where a solid maps to multiple steps
-# and one wants to be able to attach to the logical output of a solid during execution
-StepBuilderState = namedtuple('StepBuilderState', 'steps step_output_map')
-
-
-class StepOutputMap(dict):
-    def __getitem__(self, key):
-        check.inst_param(key, 'key', SolidOutputHandle)
-        return dict.__getitem__(self, key)
-
-    def __setitem__(self, key, val):
-        check.inst_param(key, 'key', SolidOutputHandle)
-        check.inst_param(val, 'val', StepOutputHandle)
-        return dict.__setitem__(self, key, val)
-
-
-def create_execution_plan_core(execution_info):
+def create_execution_plan_core(execution_info, execution_metadata):
     check.inst_param(execution_info, 'execution_info', ExecutionPlanInfo)
+    check.inst_param(execution_metadata, 'execution_metadata', ExecutionMetadata)
 
-    state = StepBuilderState(steps=[], step_output_map=StepOutputMap())
+    state = StepBuilderState(
+        pipeline_name=execution_info.pipeline.name, initial_tags=execution_metadata.tags
+    )
 
-    for pipeline_solid in solids_in_topological_order(execution_info.pipeline):
+    for solid in solids_in_topological_order(execution_info.pipeline):
 
-        step_inputs = create_step_inputs(execution_info, state, pipeline_solid)
+        with state.push_tags(solid=solid.name, solid_definition=solid.definition.name):
+            step_inputs = create_step_inputs(execution_info, state, solid)
 
-        solid_transform_step = create_transform_step(
-            execution_info,
-            pipeline_solid,
-            step_inputs,
-            get_solid_user_config(execution_info, pipeline_solid),
-        )
-
-        state.steps.append(solid_transform_step)
-
-        for output_def in pipeline_solid.definition.output_defs:
-            subplan = create_subplan_for_output(
-                execution_info, pipeline_solid, solid_transform_step, output_def
+            solid_transform_step = create_transform_step(
+                execution_info,
+                state,
+                solid,
+                step_inputs,
+                get_solid_user_config(execution_info, solid),
             )
-            state.steps.extend(subplan.steps)
 
-            output_handle = pipeline_solid.output_handle(output_def.name)
-            state.step_output_map[output_handle] = subplan.terminal_step_output_handle
+            state.steps.append(solid_transform_step)
+
+            for output_def in solid.definition.output_defs:
+                with state.push_tags(output=output_def.name):
+                    subplan = create_subplan_for_output(
+                        execution_info, state, solid, solid_transform_step, output_def
+                    )
+                    state.steps.extend(subplan.steps)
+
+                    output_handle = solid.output_handle(output_def.name)
+                    state.step_output_map[output_handle] = subplan.terminal_step_output_handle
 
     return create_execution_plan_from_steps(state.steps)
 
@@ -115,29 +102,33 @@ def create_execution_plan_from_steps(steps):
     return ExecutionPlan(step_dict, deps)
 
 
-def create_subplan_for_input(execution_info, solid, prev_step_output_handle, input_def):
+def create_subplan_for_input(execution_info, state, solid, prev_step_output_handle, input_def):
     check.inst_param(execution_info, 'execution_info', ExecutionPlanInfo)
+    check.inst_param(state, 'state', StepBuilderState)
     check.inst_param(solid, 'solid', Solid)
     check.inst_param(prev_step_output_handle, 'prev_step_output_handle', StepOutputHandle)
     check.inst_param(input_def, 'input_def', InputDefinition)
 
     if execution_info.environment.expectations.evaluate and input_def.expectations:
         return create_expectations_subplan(
-            solid, input_def, prev_step_output_handle, tag=StepTag.INPUT_EXPECTATION
+            state, solid, input_def, prev_step_output_handle, kind=StepKind.INPUT_EXPECTATION
         )
     else:
         return ExecutionValueSubPlan.empty(prev_step_output_handle)
 
 
-def create_subplan_for_output(execution_info, solid, solid_transform_step, output_def):
+def create_subplan_for_output(execution_info, state, solid, solid_transform_step, output_def):
     check.inst_param(execution_info, 'execution_info', ExecutionPlanInfo)
+    check.inst_param(state, 'state', StepBuilderState)
     check.inst_param(solid, 'solid', Solid)
     check.inst_param(solid_transform_step, 'solid_transform_step', ExecutionStep)
     check.inst_param(output_def, 'output_def', OutputDefinition)
 
-    subplan = decorate_with_expectations(execution_info, solid, solid_transform_step, output_def)
+    subplan = decorate_with_expectations(
+        execution_info, state, solid, solid_transform_step, output_def
+    )
 
-    return decorate_with_output_materializations(execution_info, solid, output_def, subplan)
+    return decorate_with_output_materializations(execution_info, state, solid, output_def, subplan)
 
 
 def get_input_source_step_handle(execution_info, state, solid, input_def):
@@ -151,7 +142,7 @@ def get_input_source_step_handle(execution_info, state, solid, input_def):
     dependency_structure = execution_info.pipeline.dependency_structure
     if solid_config and input_def.name in solid_config.inputs:
         input_thunk_output_handle = create_input_thunk_execution_step(
-            execution_info, solid, input_def, solid_config.inputs[input_def.name]
+            execution_info, state, solid, input_def, solid_config.inputs[input_def.name]
         )
         state.steps.append(input_thunk_output_handle.step)
         return input_thunk_output_handle
@@ -180,20 +171,26 @@ def create_step_inputs(info, state, solid):
     step_inputs = []
 
     for input_def in solid.definition.input_defs:
-        prev_step_output_handle = get_input_source_step_handle(info, state, solid, input_def)
+        with state.push_tags(input=input_def.name):
+            prev_step_output_handle = get_input_source_step_handle(info, state, solid, input_def)
 
-        subplan = create_subplan_for_input(info, solid, prev_step_output_handle, input_def)
+            subplan = create_subplan_for_input(
+                info, state, solid, prev_step_output_handle, input_def
+            )
 
-        state.steps.extend(subplan.steps)
-        step_inputs.append(
-            StepInput(input_def.name, input_def.runtime_type, subplan.terminal_step_output_handle)
-        )
+            state.steps.extend(subplan.steps)
+            step_inputs.append(
+                StepInput(
+                    input_def.name, input_def.runtime_type, subplan.terminal_step_output_handle
+                )
+            )
 
     return step_inputs
 
 
-def create_subplan(execution_plan_info, execution_plan, subset_info):
+def create_subplan(execution_plan_info, state, execution_plan, subset_info):
     check.inst_param(execution_plan_info, 'execution_plan_info', ExecutionPlanInfo)
+    check.inst_param(state, 'state', StepBuilderState)
     check.inst_param(execution_plan, 'execution_plan', ExecutionPlan)
     check.inst_param(subset_info, 'subset_info', ExecutionPlanSubsetInfo)
 
@@ -204,20 +201,22 @@ def create_subplan(execution_plan_info, execution_plan, subset_info):
             # Not included in subset. Skip.
             continue
 
-        if step.key not in subset_info.inputs:
-            steps.append(step)
-        else:
-            steps.extend(_create_new_steps_for_input(step, subset_info))
+        with state.push_tags(**step.tags):
+            if step.key not in subset_info.inputs:
+                steps.append(step)
+            else:
+                steps.extend(_create_new_steps_for_input(state, step, subset_info))
 
     return create_execution_plan_from_steps(steps)
 
 
-def _create_new_steps_for_input(step, subset_info):
+def _create_new_steps_for_input(state, step, subset_info):
     new_steps = []
     new_step_inputs = []
     for step_input in step.step_inputs:
         if step_input.name in subset_info.inputs[step.key]:
             value_thunk_step_output_handle = create_value_thunk_step(
+                state,
                 step.solid,
                 step_input.runtime_type,
                 step.key + '.input.' + step_input.name + '.value',

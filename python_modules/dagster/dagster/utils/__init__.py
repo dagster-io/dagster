@@ -54,7 +54,7 @@ def pushd(path):
 
 def safe_isfile(path):
     '''"Backport of Python 3.8 os.path.isfile behavior.
-    
+
     This is intended to backport https://docs.python.org/dev/whatsnew/3.8.html#os-path. I'm not
     sure that there are other ways to provoke this behavior on Unix other than the null byte,
     but there are certainly other ways to do it on Windows. Afaict, we won't mask other
@@ -75,3 +75,12 @@ def mkdir_p(path):
             pass
         else:
             raise
+
+
+def merge_dicts(left, right):
+    check.dict_param(left, 'left')
+    check.dict_param(right, 'right')
+
+    result = left.copy()
+    result.update(right)
+    return result

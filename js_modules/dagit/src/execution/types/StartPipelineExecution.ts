@@ -70,7 +70,7 @@ export interface StartPipelineExecution_startPipelineExecution_StartPipelineExec
 export interface StartPipelineExecution_startPipelineExecution_StartPipelineExecutionSuccess_run_executionPlan_steps {
   name: string;
   solid: StartPipelineExecution_startPipelineExecution_StartPipelineExecutionSuccess_run_executionPlan_steps_solid;
-  tag: StepTag;
+  kind: StepKind;
 }
 
 export interface StartPipelineExecution_startPipelineExecution_StartPipelineExecutionSuccess_run_executionPlan {
@@ -146,7 +146,7 @@ export enum PipelineRunStatus {
   SUCCESS = "SUCCESS",
 }
 
-export enum StepTag {
+export enum StepKind {
   INPUT_EXPECTATION = "INPUT_EXPECTATION",
   INPUT_THUNK = "INPUT_THUNK",
   JOIN = "JOIN",

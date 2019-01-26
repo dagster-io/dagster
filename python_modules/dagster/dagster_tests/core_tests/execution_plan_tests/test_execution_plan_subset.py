@@ -4,7 +4,7 @@ from dagster import (
     OutputDefinition,
     PipelineDefinition,
     Result,
-    ReentrantInfo,
+    ExecutionMetadata,
     lambda_solid,
     solid,
     types,
@@ -21,6 +21,8 @@ from dagster.core.execution import (
 )
 
 from dagster.core.execution_plan.utility import VALUE_OUTPUT
+
+from dagster.core.execution_plan.objects import StepBuilderState
 
 
 def define_two_int_pipeline():
@@ -65,11 +67,12 @@ def test_create_subplan_source_step():
     pipeline_def = define_two_int_pipeline()
     typed_environment = create_typed_environment(pipeline_def, None)
     execution_plan = create_execution_plan(pipeline_def)
-    with yield_context(pipeline_def, typed_environment) as context:
+    with yield_context(pipeline_def, typed_environment, ExecutionMetadata()) as context:
         subplan = create_subplan(
             ExecutionPlanInfo(
                 context=context, pipeline=pipeline_def, environment=typed_environment
             ),
+            StepBuilderState(pipeline_name=pipeline_def.name),
             execution_plan,
             ExecutionPlanSubsetInfo(['return_one.transform']),
         )
@@ -85,11 +88,12 @@ def test_create_subplan_middle_step():
     pipeline_def = define_two_int_pipeline()
     typed_environment = create_typed_environment(pipeline_def, None)
     execution_plan = create_execution_plan(pipeline_def)
-    with yield_context(pipeline_def, typed_environment) as context:
+    with yield_context(pipeline_def, typed_environment, ExecutionMetadata()) as context:
         subplan = create_subplan(
             ExecutionPlanInfo(
                 context=context, pipeline=pipeline_def, environment=typed_environment
             ),
+            StepBuilderState(pipeline_name=pipeline_def.name),
             execution_plan,
             ExecutionPlanSubsetInfo(['add_one.transform'], {'add_one.transform': {'num': 2}}),
         )
@@ -165,16 +169,16 @@ def test_reentrant_execute_plan():
     called = {}
 
     @solid
-    def has_context_value(info):
-        assert info.context.has_context_value('foo')
-        assert info.context.get_context_value('foo') == 'bar'
+    def has_tag(info):
+        assert info.context.has_tag('foo')
+        assert info.context.get_tag('foo') == 'bar'
         called['yup'] = True
 
-    pipeline_def = PipelineDefinition(name='has_context_value_pipeline', solids=[has_context_value])
+    pipeline_def = PipelineDefinition(name='has_tag_pipeline', solids=[has_tag])
     execution_plan = create_execution_plan(pipeline_def)
 
     step_results = execute_plan(
-        pipeline_def, execution_plan, reentrant_info=ReentrantInfo(context_stack={'foo': 'bar'})
+        pipeline_def, execution_plan, execution_metadata=ExecutionMetadata(tags={'foo': 'bar'})
     )
 
     assert called['yup']

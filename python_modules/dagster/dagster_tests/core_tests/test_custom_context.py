@@ -136,13 +136,13 @@ def test_yield_context():
     @solid(inputs=[], outputs=[OutputDefinition()])
     def custom_context_transform(info):
         assert info.resources == {'field_one': 'value_two'}
-        assert info.context._context_stack['foo'] == 'bar'  # pylint: disable=W0212
+        assert info.context._tags['foo'] == 'bar'  # pylint: disable=W0212
         events.append('during')
 
     def _yield_context(info):
         events.append('before')
-        context_stack = {'foo': 'bar'}
-        context = ExecutionContext(resources=info.config, context_stack=context_stack)
+        tags = {'foo': 'bar'}
+        context = ExecutionContext(resources=info.config, tags=tags)
         yield context
         events.append('after')
 

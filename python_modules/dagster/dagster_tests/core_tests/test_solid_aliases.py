@@ -89,8 +89,8 @@ def test_aliased_solids_context():
 
     @solid
     def log_things(info):
-        solid_value = info.context.get_context_value('solid')
-        solid_def_value = info.context.get_context_value('solid_definition')
+        solid_value = info.context.get_tag('solid')
+        solid_def_value = info.context.get_tag('solid_definition')
         record[solid_def_value].add(solid_value)
 
     pipeline = PipelineDefinition(
@@ -104,4 +104,4 @@ def test_aliased_solids_context():
     result = execute_pipeline(pipeline)
     assert result.success
 
-    assert record == {'log_things': set(['log_a', 'log_b'])}
+    assert dict(record) == {'log_things': set(['log_a', 'log_b'])}

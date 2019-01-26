@@ -4,7 +4,7 @@ import uuid
 
 from graphql.execution.base import ResolveInfo
 
-from dagster import check
+from dagster import check, ExecutionMetadata
 from dagster.core.definitions.environment_configs import construct_environment_config
 from dagster.core.execution import (
     ExecutionSelector,
@@ -161,6 +161,7 @@ def get_execution_plan(info, selector, config):
                 create_execution_plan_with_typed_environment(
                     pipeline.get_dagster_pipeline(),
                     construct_environment_config(validated_config_either.value),
+                    ExecutionMetadata(),
                 ),
             )
         )
@@ -183,6 +184,7 @@ def start_pipeline_execution(info, selector, config):
             execution_plan = create_execution_plan_with_typed_environment(
                 pipeline.get_dagster_pipeline(),
                 construct_environment_config(validated_config_either.value),
+                ExecutionMetadata(),
             )
             run = pipeline_run_storage.create_run(new_run_id, selector, env_config, execution_plan)
             pipeline_run_storage.add_run(run)

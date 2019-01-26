@@ -8,9 +8,10 @@ from .objects import (
     ExecutionPlanInfo,
     ExecutionStep,
     ExecutionValueSubPlan,
+    StepBuilderState,
     StepInput,
     StepOutput,
-    StepTag,
+    StepKind,
 )
 
 from .utility import create_joining_subplan
@@ -40,8 +41,9 @@ def configs_for_output(solid, solid_config, output_def):
             yield output_spec
 
 
-def decorate_with_output_materializations(execution_info, solid, output_def, subplan):
+def decorate_with_output_materializations(execution_info, state, solid, output_def, subplan):
     check.inst_param(execution_info, 'execution_info', ExecutionPlanInfo)
+    check.inst_param(state, 'state', StepBuilderState)
     check.inst_param(solid, 'solid', Solid)
     check.inst_param(output_def, 'output_def', OutputDefinition)
     check.inst_param(subplan, 'subplan', ExecutionValueSubPlan)
@@ -71,13 +73,15 @@ def decorate_with_output_materializations(execution_info, solid, output_def, sub
                         name=MATERIALIZATION_THUNK_OUTPUT, runtime_type=output_def.runtime_type
                     )
                 ],
-                tag=StepTag.MATERIALIZATION_THUNK,
+                kind=StepKind.MATERIALIZATION_THUNK,
                 solid=solid,
                 compute_fn=_create_materialization_lambda(output_def.runtime_type, output_spec),
+                tags=state.get_tags(),
             )
         )
 
     return create_joining_subplan(
+        state,
         solid,
         '{solid}.materialization.output.{output}.join'.format(
             solid=solid.name, output=output_def.name

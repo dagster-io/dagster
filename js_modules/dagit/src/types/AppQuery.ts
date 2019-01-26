@@ -530,7 +530,7 @@ export enum PipelineRunStatus {
   SUCCESS = "SUCCESS",
 }
 
-export enum StepTag {
+export enum StepKind {
   INPUT_EXPECTATION = "INPUT_EXPECTATION",
   INPUT_THUNK = "INPUT_THUNK",
   JOIN = "JOIN",

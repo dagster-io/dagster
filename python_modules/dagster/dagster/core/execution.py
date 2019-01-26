@@ -19,12 +19,12 @@ from collections import defaultdict, namedtuple
 from contextlib import contextmanager
 import itertools
 import inspect
-import uuid
 
 from contextlib2 import ExitStack
 import six
 
 from dagster import check
+from dagster.utils import merge_dicts
 
 from .definitions import (
     DEFAULT_OUTPUT,
@@ -39,7 +39,7 @@ from .definitions import (
 from .definitions.utils import check_opt_two_dim_str_dict
 from .definitions.environment_configs import construct_environment_config, construct_context_config
 
-from .execution_context import ExecutionContext, ReentrantInfo, RuntimeExecutionContext
+from .execution_context import ExecutionContext, RuntimeExecutionContext, ExecutionMetadata
 
 from .errors import DagsterInvariantViolationError, DagsterUserCodeExecutionError
 
@@ -53,8 +53,9 @@ from .execution_plan.objects import (
     ExecutionPlan,
     ExecutionPlanInfo,
     ExecutionPlanSubsetInfo,
+    StepBuilderState,
     StepResult,
-    StepTag,
+    StepKind,
 )
 
 from .execution_plan.simple_engine import execute_plan_core
@@ -116,31 +117,31 @@ class SolidExecutionResult(object):
       solid (SolidDefinition): Solid for which this result is
     '''
 
-    def __init__(self, context, solid, step_results_by_tag):
+    def __init__(self, context, solid, step_results_by_kind):
         self.context = check.inst_param(context, 'context', RuntimeExecutionContext)
         self.solid = check.inst_param(solid, 'solid', Solid)
-        self.step_results_by_tag = check.dict_param(
-            step_results_by_tag, 'step_results_by_tag', key_type=StepTag, value_type=list
+        self.step_results_by_kind = check.dict_param(
+            step_results_by_kind, 'step_results_by_kind', key_type=StepKind, value_type=list
         )
 
     @property
     def transforms(self):
-        return self.step_results_by_tag.get(StepTag.TRANSFORM, [])
+        return self.step_results_by_kind.get(StepKind.TRANSFORM, [])
 
     @property
     def input_expectations(self):
-        return self.step_results_by_tag.get(StepTag.INPUT_EXPECTATION, [])
+        return self.step_results_by_kind.get(StepKind.INPUT_EXPECTATION, [])
 
     @property
     def output_expectations(self):
-        return self.step_results_by_tag.get(StepTag.OUTPUT_EXPECTATION, [])
+        return self.step_results_by_kind.get(StepKind.OUTPUT_EXPECTATION, [])
 
     @staticmethod
     def from_results(context, results):
         check.inst_param(context, 'context', RuntimeExecutionContext)
         results = check.list_param(results, 'results', StepResult)
         if results:
-            step_results_by_tag = defaultdict(list)
+            step_results_by_kind = defaultdict(list)
 
             solid = None
             for result in results:
@@ -149,12 +150,12 @@ class SolidExecutionResult(object):
                 check.invariant(result.step.solid is solid, 'Must all be from same solid')
 
             for result in results:
-                step_results_by_tag[result.tag].append(result)
+                step_results_by_kind[result.kind].append(result)
 
             return SolidExecutionResult(
                 context=context,
                 solid=results[0].step.solid,
-                step_results_by_tag=dict(step_results_by_tag),
+                step_results_by_kind=dict(step_results_by_kind),
             )
         else:
             check.failed("Cannot create SolidExecutionResult from empty list")
@@ -229,63 +230,57 @@ class SolidExecutionResult(object):
                 return result.failure_data.dagster_error
 
 
-def create_execution_plan(pipeline, env_config=None):
+def create_execution_plan(pipeline, env_config=None, execution_metadata=None):
     check.inst_param(pipeline, 'pipeline', PipelineDefinition)
     check.opt_dict_param(env_config, 'env_config', key_type=str)
+    execution_metadata = execution_metadata if execution_metadata else ExecutionMetadata()
 
     typed_environment = create_typed_environment(pipeline, env_config)
-    return create_execution_plan_with_typed_environment(pipeline, typed_environment)
+    return create_execution_plan_with_typed_environment(
+        pipeline, typed_environment, execution_metadata
+    )
 
 
-def create_execution_plan_with_typed_environment(pipeline, typed_environment):
+def create_execution_plan_with_typed_environment(pipeline, typed_environment, execution_metadata):
     check.inst_param(pipeline, 'pipeline', PipelineDefinition)
     check.inst_param(typed_environment, 'environment', EnvironmentConfig)
 
-    with yield_context(pipeline, typed_environment) as context:
-        return create_execution_plan_core(ExecutionPlanInfo(context, pipeline, typed_environment))
-
-
-def get_run_id(reentrant_info):
-    check.opt_inst_param(reentrant_info, 'reentrant_info', ReentrantInfo)
-    if reentrant_info and reentrant_info.run_id:
-        return reentrant_info.run_id
-    else:
-        return str(uuid.uuid4())
+    with yield_context(pipeline, typed_environment, execution_metadata) as context:
+        return create_execution_plan_core(
+            ExecutionPlanInfo(context, pipeline, typed_environment), execution_metadata
+        )
 
 
 def get_event_callback(reentrant_info):
-    check.opt_inst_param(reentrant_info, 'reentrant_info', ReentrantInfo)
+    check.opt_inst_param(reentrant_info, 'reentrant_info', ExecutionMetadata)
     if reentrant_info and reentrant_info.event_callback:
         return check.callable_param(reentrant_info.event_callback, 'event_callback')
     else:
         return None
 
 
-def merge_two_dicts(left, right):
-    result = left.copy()
-    result.update(right)
-    return result
+def get_tags(user_context_params, execution_metadata, pipeline):
+    check.inst_param(user_context_params, 'user_context_params', ExecutionContext)
+    check.opt_inst_param(execution_metadata, 'execution_metadata', ExecutionMetadata)
+    check.inst_param(pipeline, 'pipeline', PipelineDefinition)
 
+    base_tags = merge_dicts({'pipeline': pipeline.name}, user_context_params.tags)
 
-def get_context_stack(user_context_params, reentrant_info):
-    check.inst(user_context_params, ExecutionContext)
-    check.opt_inst_param(reentrant_info, 'reentrant_info', ReentrantInfo)
-
-    if reentrant_info and reentrant_info.context_stack:
-        user_keys = set(user_context_params.context_stack.keys())
-        reentrant_keys = set(reentrant_info.context_stack.keys())
-        if not user_keys.isdisjoint(reentrant_keys):
+    if execution_metadata and execution_metadata.tags:
+        user_keys = set(user_context_params.tags.keys())
+        provided_keys = set(execution_metadata.tags.keys())
+        if not user_keys.isdisjoint(provided_keys):
             raise DagsterInvariantViolationError(
                 (
-                    'You have specified re-entrant keys and user-defined keys '
+                    'You have specified tags and user-defined tags '
                     'that overlap. User keys: {user_keys}. Reentrant keys: '
-                    '{reentrant_keys}.'
-                ).format(user_keys=user_keys, reentrant_keys=reentrant_keys)
+                    '{provided_keys}.'
+                ).format(user_keys=user_keys, provided_keys=provided_keys)
             )
 
-        return merge_two_dicts(user_context_params.context_stack, reentrant_info.context_stack)
+        return merge_dicts(base_tags, execution_metadata.tags)
     else:
-        return user_context_params.context_stack
+        return base_tags
 
 
 ResourceCreationInfo = namedtuple('ResourceCreationInfo', 'config run_id')
@@ -324,18 +319,18 @@ def with_maybe_gen(thing_or_gen):
 
 
 @contextmanager
-def yield_context(pipeline, environment, reentrant_info=None):
+def yield_context(pipeline, environment, execution_metadata):
     check.inst_param(pipeline, 'pipeline', PipelineDefinition)
     check.inst_param(environment, 'environment', EnvironmentConfig)
-    check.opt_inst_param(reentrant_info, 'reentrant_info', ReentrantInfo)
+    check.inst_param(execution_metadata, 'execution_metadata', ExecutionMetadata)
 
     context_definition = pipeline.context_definitions[environment.context.name]
 
-    run_id = get_run_id(reentrant_info)
-
     ec_or_gen = context_definition.context_fn(
         ContextCreationExecutionInfo(
-            config=environment.context.config, pipeline_def=pipeline, run_id=run_id
+            config=environment.context.config,
+            pipeline_def=pipeline,
+            run_id=execution_metadata.run_id,
         )
     )
 
@@ -343,21 +338,24 @@ def yield_context(pipeline, environment, reentrant_info=None):
         check.inst(execution_context, ExecutionContext)
 
         with _create_resources(
-            pipeline, context_definition, environment, execution_context, run_id
+            pipeline, context_definition, environment, execution_context, execution_metadata.run_id
         ) as resources:
-            loggers = _create_loggers(reentrant_info, execution_context)
+            loggers = _create_loggers(execution_metadata, execution_context)
 
             yield RuntimeExecutionContext(
-                run_id=get_run_id(reentrant_info),
+                run_id=execution_metadata.run_id,
                 loggers=loggers,
                 resources=resources,
-                context_stack=get_context_stack(execution_context, reentrant_info),
-                event_callback=get_event_callback(reentrant_info),
+                tags=get_tags(execution_context, execution_metadata, pipeline),
+                event_callback=get_event_callback(execution_metadata),
                 environment_config=environment.original_config_dict,
             )
 
 
 def _create_loggers(reentrant_info, execution_context):
+    check.inst_param(reentrant_info, 'reentrant_info', ExecutionMetadata)
+    check.inst_param(execution_context, 'execution_context', ExecutionContext)
+
     if reentrant_info and reentrant_info.event_callback:
         return execution_context.loggers + [construct_event_logger(reentrant_info.event_callback)]
     elif reentrant_info and reentrant_info.loggers:
@@ -409,53 +407,56 @@ def get_resource_or_gen(context_definition, resource_name, environment, run_id):
     return resource_def.resource_fn(ResourceCreationInfo(resource_config, run_id))
 
 
-def _do_iterate_pipeline(pipeline, context, typed_environment, throw_on_error=True):
+def _do_iterate_pipeline(
+    pipeline, context, typed_environment, execution_metadata, throw_on_error=True
+):
     check.inst(context, RuntimeExecutionContext)
-    pipeline_success = True
-    with context.value('pipeline', pipeline.display_name):
-        context.events.pipeline_start()
 
-        execution_plan = create_execution_plan_core(
-            ExecutionPlanInfo(context, pipeline, typed_environment)
-        )
+    context.events.pipeline_start()
 
-        steps = list(execution_plan.topological_steps())
+    execution_plan = create_execution_plan_core(
+        ExecutionPlanInfo(context, pipeline, typed_environment), execution_metadata
+    )
 
-        if not steps:
-            context.debug(
-                'Pipeline {pipeline} has no nodes and no execution will happen'.format(
-                    pipeline=pipeline.display_name
-                )
-            )
-            context.events.pipeline_success()
-            return
+    steps = execution_plan.topological_steps()
 
+    if not steps:
         context.debug(
-            'About to execute the compute node graph in the following order {order}'.format(
-                order=[step.key for step in steps]
+            'Pipeline {pipeline} has no nodes and no execution will happen'.format(
+                pipeline=pipeline.display_name
             )
         )
+        context.events.pipeline_success()
+        return
 
-        check.invariant(len(steps[0].step_inputs) == 0)
+    context.debug(
+        'About to execute the compute node graph in the following order {order}'.format(
+            order=[step.key for step in steps]
+        )
+    )
 
-        for solid_result in _process_step_results(
-            context, pipeline, execute_plan_core(context, execution_plan)
-        ):
-            if throw_on_error and not solid_result.success:
-                solid_result.reraise_user_error()
+    check.invariant(len(steps[0].step_inputs) == 0)
 
-            if not solid_result.success:
-                pipeline_success = False
-            yield solid_result
+    pipeline_success = True
 
-        if pipeline_success:
-            context.events.pipeline_success()
-        else:
-            context.events.pipeline_failure()
+    for solid_result in _process_step_results(
+        context, pipeline, execute_plan_core(context, execution_plan)
+    ):
+        if throw_on_error and not solid_result.success:
+            solid_result.reraise_user_error()
+
+        if not solid_result.success:
+            pipeline_success = False
+        yield solid_result
+
+    if pipeline_success:
+        context.events.pipeline_success()
+    else:
+        context.events.pipeline_failure()
 
 
 def execute_pipeline_iterator(
-    pipeline, environment=None, throw_on_error=True, reentrant_info=None, solid_subset=None
+    pipeline, environment=None, throw_on_error=True, execution_metadata=None, solid_subset=None
 ):
     '''Returns iterator that yields :py:class:`SolidExecutionResult` for each
     solid executed in the pipeline.
@@ -470,15 +471,20 @@ def execute_pipeline_iterator(
     check.inst_param(pipeline, 'pipeline', PipelineDefinition)
     check.opt_dict_param(environment, 'environment')
     check.bool_param(throw_on_error, 'throw_on_error')
-    check.opt_inst_param(reentrant_info, 'reentrant_info', ReentrantInfo)
+    execution_metadata = execution_metadata if execution_metadata else ExecutionMetadata()
+    check.inst_param(execution_metadata, 'execution_metadata', ExecutionMetadata)
     check.opt_list_param(solid_subset, 'solid_subset', of_type=str)
 
     pipeline_to_execute = get_subset_pipeline(pipeline, solid_subset)
     typed_environment = create_typed_environment(pipeline_to_execute, environment)
 
-    with yield_context(pipeline_to_execute, typed_environment, reentrant_info) as context:
+    with yield_context(pipeline_to_execute, typed_environment, execution_metadata) as context:
         for solid_result in _do_iterate_pipeline(
-            pipeline_to_execute, context, typed_environment, throw_on_error
+            pipeline_to_execute,
+            context,
+            typed_environment,
+            execution_metadata=execution_metadata,
+            throw_on_error=throw_on_error,
         ):
             yield solid_result
 
@@ -527,14 +533,14 @@ def execute_externalized_plan(
     inputs_to_marshal=None,
     outputs_to_marshal=None,
     environment=None,
-    reentrant_info=None,
+    execution_metadata=None,
 ):
     check.inst_param(pipeline, 'pipeline', PipelineDefinition)
     check.list_param(step_keys, 'step_keys', of_type=str)
     check_opt_two_dim_str_dict(inputs_to_marshal, 'inputs_to_marshal', value_type=str)
     check.opt_dict_param(outputs_to_marshal, 'outputs_to_marshal', key_type=str, value_type=list)
     check.opt_dict_param(environment, 'environment')
-    check.opt_inst_param(reentrant_info, 'reentrant_info', ReentrantInfo)
+    check.opt_inst_param(execution_metadata, 'execution_metadata', ExecutionMetadata)
 
     execution_plan = create_execution_plan(pipeline, environment)
 
@@ -556,7 +562,7 @@ def execute_externalized_plan(
         execution_plan,
         environment=environment,
         subset_info=ExecutionPlanSubsetInfo(included_steps=step_keys, inputs=inputs),
-        reentrant_info=reentrant_info,
+        execution_metadata=execution_metadata,
     )
 
     for result in results:
@@ -574,20 +580,24 @@ def execute_externalized_plan(
     return results
 
 
-def execute_plan(pipeline, execution_plan, environment=None, subset_info=None, reentrant_info=None):
+def execute_plan(
+    pipeline, execution_plan, environment=None, subset_info=None, execution_metadata=None
+):
     check.inst_param(pipeline, 'pipeline', PipelineDefinition)
     check.inst_param(execution_plan, 'execution_plan', ExecutionPlan)
     check.opt_dict_param(environment, 'environment')
     check.opt_inst_param(subset_info, 'subset_info', ExecutionPlanSubsetInfo)
-    check.opt_inst_param(reentrant_info, 'reentrant_info', ReentrantInfo)
+    execution_metadata = execution_metadata if execution_metadata else ExecutionMetadata()
+    check.opt_inst_param(execution_metadata, 'execution_metadata', ExecutionMetadata)
 
     typed_environment = create_typed_environment(pipeline, environment)
-    with yield_context(pipeline, typed_environment, reentrant_info) as context:
+    with yield_context(pipeline, typed_environment, execution_metadata) as context:
         plan_to_execute = (
             create_subplan(
                 ExecutionPlanInfo(
                     context=context, pipeline=pipeline, environment=typed_environment
                 ),
+                StepBuilderState(pipeline_name=pipeline.name),
                 execution_plan,
                 subset_info,
             )
@@ -598,7 +608,7 @@ def execute_plan(pipeline, execution_plan, environment=None, subset_info=None, r
 
 
 def execute_pipeline(
-    pipeline, environment=None, throw_on_error=True, reentrant_info=None, solid_subset=None
+    pipeline, environment=None, throw_on_error=True, execution_metadata=None, solid_subset=None
 ):
     '''
     "Synchronous" version of :py:func:`execute_pipeline_iterator`.
@@ -620,13 +630,17 @@ def execute_pipeline(
     check.inst_param(pipeline, 'pipeline', PipelineDefinition)
     check.opt_dict_param(environment, 'environment')
     check.bool_param(throw_on_error, 'throw_on_error')
-    check.opt_inst_param(reentrant_info, 'reentrant_info', ReentrantInfo)
+    execution_metadata = execution_metadata if execution_metadata else ExecutionMetadata()
+    check.inst_param(execution_metadata, 'execution_metadata', ExecutionMetadata)
     check.opt_list_param(solid_subset, 'solid_subset', of_type=str)
 
     pipeline_to_execute = get_subset_pipeline(pipeline, solid_subset)
     typed_environment = create_typed_environment(pipeline_to_execute, environment)
-    return execute_reentrant_pipeline(
-        pipeline_to_execute, typed_environment, throw_on_error, reentrant_info
+    return execute_pipeline_with_metadata(
+        pipeline_to_execute,
+        typed_environment,
+        execution_metadata=execution_metadata,
+        throw_on_error=throw_on_error,
     )
 
 
@@ -670,16 +684,24 @@ def build_sub_pipeline(pipeline_def, solid_names):
     )
 
 
-def execute_reentrant_pipeline(pipeline, typed_environment, throw_on_error, reentrant_info):
+def execute_pipeline_with_metadata(pipeline, typed_environment, execution_metadata, throw_on_error):
     check.inst_param(pipeline, 'pipeline', PipelineDefinition)
     check.inst_param(typed_environment, 'typed_environment', EnvironmentConfig)
-    check.opt_inst_param(reentrant_info, 'reentrant_info', ReentrantInfo)
+    check.inst_param(execution_metadata, 'execution_metadata', ExecutionMetadata)
 
-    with yield_context(pipeline, typed_environment, reentrant_info) as context:
+    with yield_context(pipeline, typed_environment, execution_metadata) as context:
         return PipelineExecutionResult(
             pipeline,
             context,
-            list(_do_iterate_pipeline(pipeline, context, typed_environment, throw_on_error)),
+            list(
+                _do_iterate_pipeline(
+                    pipeline,
+                    context,
+                    typed_environment,
+                    execution_metadata=execution_metadata,
+                    throw_on_error=throw_on_error,
+                )
+            ),
         )
 
 

@@ -14,7 +14,7 @@ export interface PipelineRunExecutionPlanFragment_executionPlan_steps_solid {
 export interface PipelineRunExecutionPlanFragment_executionPlan_steps {
   name: string;
   solid: PipelineRunExecutionPlanFragment_executionPlan_steps_solid;
-  tag: StepTag;
+  kind: StepKind;
 }
 
 export interface PipelineRunExecutionPlanFragment_executionPlan {
@@ -57,7 +57,7 @@ export enum PipelineRunStatus {
   SUCCESS = "SUCCESS",
 }
 
-export enum StepTag {
+export enum StepKind {
   INPUT_EXPECTATION = "INPUT_EXPECTATION",
   INPUT_THUNK = "INPUT_THUNK",
   JOIN = "JOIN",
