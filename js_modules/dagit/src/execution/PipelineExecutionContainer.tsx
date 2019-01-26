@@ -4,6 +4,8 @@ import { ApolloClient } from "apollo-client";
 import { DataProxy } from "apollo-cache";
 import produce from "immer";
 import { Mutation, FetchResult } from "react-apollo";
+import * as yaml from "yaml";
+
 import {
   applyChangesToSession,
   applySelectSession,
@@ -25,6 +27,8 @@ import {
 } from "./types/StartPipelineExecution";
 import { PipelineRunLogsSubscription } from "./types/PipelineRunLogsSubscription";
 import { PipelineRunLogsUpdateFragment } from "./types/PipelineRunLogsUpdateFragment";
+
+const YAML_SYNTAX_INVALID = `The YAML you provided couldn't be parsed. Please fix the syntax errors and try again.`;
 
 interface IPipelineExecutionContainerProps {
   client: ApolloClient<any>;
@@ -223,6 +227,28 @@ export default class PipelineExecutionContainer extends React.Component<
     });
   };
 
+  buildExecutionVariables = () => {
+    const { currentSession, pipeline } = this.props;
+
+    let config = {};
+    try {
+      // Note: parsing `` returns null rather than an empty object,
+      // which is preferable for representing empty config.
+      config = yaml.parse(currentSession.config) || {};
+    } catch (err) {
+      alert(YAML_SYNTAX_INVALID);
+      return;
+    }
+
+    return {
+      config,
+      pipeline: {
+        name: pipeline.name,
+        solidSubset: currentSession.solidSubset
+      }
+    };
+  };
+
   render() {
     let activeRun: PipelineExecutionContainerFragment_runs | null = null;
     if (this.props.pipeline.runs.length > 0) {
@@ -238,7 +264,6 @@ export default class PipelineExecutionContainer extends React.Component<
           return (
             <PipelineExecution
               activeRun={activeRun}
-              isExecuting={loading}
               pipeline={this.props.pipeline}
               sessions={this.props.data.sessions}
               currentSession={this.props.currentSession}
@@ -246,17 +271,10 @@ export default class PipelineExecutionContainer extends React.Component<
               onSaveSession={this.handleSaveSession}
               onCreateSession={this.handleCreateSession}
               onRemoveSession={this.handleRemoveSession}
-              onExecute={config =>
-                startPipelineExecution({
-                  variables: {
-                    config,
-                    pipeline: {
-                      name: this.props.pipeline.name,
-                      solidSubset: this.props.currentSession.solidSubset
-                    }
-                  }
-                })
-              }
+              onExecute={() => {
+                const variables = this.buildExecutionVariables();
+                if (variables) startPipelineExecution({ variables });
+              }}
             />
           );
         }}

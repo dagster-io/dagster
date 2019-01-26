@@ -5,7 +5,7 @@ import ApolloClient from "apollo-client";
 import { ApolloProvider } from "react-apollo";
 import { SubscriptionClient } from "subscriptions-transport-ws";
 import { WebSocketLink } from "apollo-link-ws";
-import { WebsocketContext } from "./WebsocketStatus";
+import { WebsocketStatusProvider } from "./WebsocketStatus";
 import App from "./App";
 import ApiResultRenderer from "./ApiResultRenderer";
 import AppCache from "./AppCache";
@@ -35,11 +35,11 @@ if (process.env.REACT_APP_RENDER_API_RESULTS) {
   );
 } else {
   ReactDOM.render(
-    <WebsocketContext.Provider value={websocketClient}>
+    <WebsocketStatusProvider websocket={websocketClient}>
       <ApolloProvider client={client}>
         <App />
       </ApolloProvider>
-    </WebsocketContext.Provider>,
+    </WebsocketStatusProvider>,
     document.getElementById("root") as HTMLElement
   );
 }

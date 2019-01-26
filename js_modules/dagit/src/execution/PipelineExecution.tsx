@@ -1,15 +1,14 @@
 import * as React from "react";
 import gql from "graphql-tag";
 import styled from "styled-components";
-import * as yaml from "yaml";
-import { Icon, Colors } from "@blueprintjs/core";
-import { IconNames } from "@blueprintjs/icons";
+import { Colors } from "@blueprintjs/core";
 import { ApolloConsumer } from "react-apollo";
 
 import { PipelineRun, PipelineRunEmpty } from "./PipelineRun";
 import { ExecutionTabs, ExecutionTab } from "./ExecutionTabs";
 import { PanelDivider } from "../PanelDivider";
 import PipelineSolidSelector from "./PipelineSolidSelector";
+import ExecutionStartButton from "./ExecutionStartButton";
 import ConfigEditor from "../configeditor/ConfigEditor";
 import {
   IExecutionSession,
@@ -28,19 +27,16 @@ import { PipelineExecutionPipelineRunFragment } from "./types/PipelineExecutionP
 
 const CONFIRM_RESET_TO_SCAFFOLD = `Would you like to reset your config to a scaffold based on this subset of the pipeline?`;
 
-const YAML_SYNTAX_INVALID = `The YAML you provided couldn't be parsed. Please fix the syntax errors and try again.`;
-
 interface IPipelineExecutionProps {
   pipeline: PipelineExecutionPipelineFragment;
   activeRun: PipelineExecutionPipelineRunFragment | null;
   sessions: { [name: string]: IExecutionSession };
   currentSession: IExecutionSession;
-  isExecuting: boolean;
   onSelectSession: (session: string) => void;
   onSaveSession: (session: string, changes: IExecutionSessionChanges) => void;
   onCreateSession: () => void;
   onRemoveSession: (session: string) => void;
-  onExecute: (config: any) => void;
+  onExecute: () => void;
 }
 
 interface IPipelineExecutionState {
@@ -118,16 +114,23 @@ export default class PipelineExecution extends React.Component<
   };
 
   render() {
-    const {
-      sessions,
-      pipeline,
-      activeRun,
-      isExecuting,
-      currentSession
-    } = this.props;
+    const { sessions, pipeline, activeRun, currentSession } = this.props;
 
     if (!currentSession) {
       return <span />;
+    }
+
+    let activeRunExecuting = false;
+    if (activeRun) {
+      const start = activeRun.logs.nodes.find(
+        l => l.__typename === "PipelineProcessStartEvent"
+      );
+      const end = activeRun.logs.nodes.find(
+        l =>
+          l.__typename === "PipelineSuccessEvent" ||
+          l.__typename === "PipelineFailureEvent"
+      );
+      activeRunExecuting = start !== null && end == null;
     }
 
     return (
@@ -177,28 +180,10 @@ export default class PipelineExecution extends React.Component<
               onChange={this.onSolidSubsetChange}
             />
           </SessionSettingsFooter>
-          <IconWrapper
-            role="button"
-            disabled={isExecuting}
-            onClick={async event => {
-              if (isExecuting) return;
-              let config = {};
-              try {
-                // Note: parsing `` returns null rather than an empty object,
-                // which is preferable for representing empty config.
-                config = yaml.parse(currentSession.config) || {};
-              } catch (err) {
-                alert(YAML_SYNTAX_INVALID);
-                return;
-              }
-              this.props.onExecute(config);
-            }}
-          >
-            <Icon
-              icon={isExecuting ? IconNames.REFRESH : IconNames.PLAY}
-              iconSize={40}
-            />
-          </IconWrapper>
+          <ExecutionStartButton
+            executing={activeRunExecuting}
+            onClick={this.props.onExecute}
+          />
         </Split>
         <PanelDivider
           axis="horizontal"
@@ -224,31 +209,6 @@ const PipelineExecutionWrapper = styled.div`
   height: 100vh;
   position: absolute;
   padding-top: 50px;
-`;
-
-const IconWrapper = styled.div<{ disabled: boolean }>`
-  flex: 0 1 0;
-  width: 60px;
-  height: 60px;
-  border-radius: 30px;
-  background-color: ${Colors.GRAY5};
-  position: absolute;
-  top: 20px;
-  right: 20px;
-  justify-content: center;
-  align-items: center;
-  display: flex;
-  cursor: ${({ disabled }) => (disabled ? "normal" : "pointer")};
-  z-index: 2;
-
-  &:hover {
-    background-color: ${({ disabled }) =>
-      disabled ? Colors.GRAY5 : Colors.GRAY4};
-  }
-
-  &:active {
-    background-color: ${Colors.GRAY3};
-  }
 `;
 
 const SessionSettingsFooter = styled.div`

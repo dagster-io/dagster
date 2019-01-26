@@ -3,6 +3,10 @@ import { SubscriptionClient } from "subscriptions-transport-ws";
 import styled from "styled-components";
 import { Colors } from "@blueprintjs/core";
 
+export const WebsocketStatusContext = React.createContext<number>(
+  WebSocket.CONNECTING
+);
+
 const WS_EVENTS = [
   "connecting",
   "connected",
@@ -12,21 +16,17 @@ const WS_EVENTS = [
   "error"
 ];
 
-export const WebsocketContext = React.createContext<SubscriptionClient | null>(
-  null
-);
-
-interface IWebsocketStateDisplayProps {
+interface IWebsocketStatusProviderProps {
   websocket: SubscriptionClient;
 }
 
-interface IWebsocketStateDisplayState {
+interface IWebsocketStatusProviderState {
   status: number;
 }
 
-class WebsocketStateDisplay extends React.Component<
-  IWebsocketStateDisplayProps,
-  IWebsocketStateDisplayState
+export class WebsocketStatusProvider extends React.Component<
+  IWebsocketStatusProviderProps,
+  IWebsocketStatusProviderState
 > {
   state = {
     status: WebSocket.CONNECTING
@@ -48,24 +48,11 @@ class WebsocketStateDisplay extends React.Component<
   }
 
   render() {
-    switch (this.state.status) {
-      case WebSocket.CONNECTING:
-        return (
-          <Circle style={{ background: Colors.GREEN5 }} title="Connecting..." />
-        );
-      case WebSocket.OPEN:
-        return (
-          <Circle style={{ background: Colors.GREEN3 }} title="Connected" />
-        );
-      case WebSocket.CLOSING:
-        return (
-          <Circle style={{ background: Colors.GRAY3 }} title="Closing..." />
-        );
-      default:
-        return (
-          <Circle style={{ background: Colors.GRAY3 }} title="Disconnected" />
-        );
-    }
+    return (
+      <WebsocketStatusContext.Provider value={this.state.status}>
+        {this.props.children}
+      </WebsocketStatusContext.Provider>
+    );
   }
 }
 
@@ -78,12 +65,22 @@ const Circle = styled.div`
   margin: 5px;
 `;
 
-export default () => {
-  return (
-    <WebsocketContext.Consumer>
-      {websocket =>
-        websocket && <WebsocketStateDisplay websocket={websocket} />
-      }
-    </WebsocketContext.Consumer>
-  );
-};
+export default () => (
+  <WebsocketStatusContext.Consumer>
+    {status =>
+      ({
+        [WebSocket.CONNECTING]: (
+          <Circle style={{ background: Colors.GREEN5 }} title="Connecting..." />
+        ),
+        [WebSocket.OPEN]: (
+          <Circle style={{ background: Colors.GREEN3 }} title="Connected" />
+        ),
+        [WebSocket.CLOSING]: (
+          <Circle style={{ background: Colors.GRAY3 }} title="Closing..." />
+        )
+      }[status] || (
+        <Circle style={{ background: Colors.GRAY3 }} title="Disconnected" />
+      ))
+    }
+  </WebsocketStatusContext.Consumer>
+);
