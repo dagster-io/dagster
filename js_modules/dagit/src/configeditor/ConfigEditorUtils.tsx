@@ -12,17 +12,19 @@ export const CONFIG_EDITOR_PIPELINE_FRAGMENT = gql`
   fragment ConfigEditorPipelineFragment on Pipeline {
     name
     environmentType {
-      name
+      key
     }
-    types {
+    configTypes {
       __typename
+      key
       name
       isSelector
-      ... on CompositeType {
+      ... on CompositeConfigType {
         fields {
           name
           isOptional
-          type {
+          configType {
+            key
             name
           }
         }
@@ -63,15 +65,16 @@ export const CONFIG_EDITOR_CHECK_CONFIG_QUERY = gql`
 `;
 
 interface ITypeConfig {
-  rootTypeName: string;
+  rootTypeKey: string;
   types: {
-    [name: string]: {
+    [key: string]: {
       isSelector: boolean;
       fields: Array<{
         name: string;
         isOptional: boolean;
-        type: {
-          name: string;
+        configType: {
+          key: string;
+          name: string | null;
         };
       }>;
     };
@@ -79,17 +82,17 @@ interface ITypeConfig {
 }
 
 export function createTypeConfig({
-  types,
+  configTypes,
   environmentType
 }: ConfigEditorPipelineFragment): ITypeConfig {
   const result: ITypeConfig = {
     types: {},
-    rootTypeName: environmentType.name
+    rootTypeKey: environmentType.key
   };
 
-  for (const type of types) {
-    if (type.__typename === "CompositeType") {
-      result.types[type.name] = type;
+  for (const type of configTypes) {
+    if (type.__typename === "CompositeConfigType") {
+      result.types[type.key] = type;
     }
   }
 
@@ -172,7 +175,7 @@ export function scaffoldConfig(pipeline: ConfigEditorPipelineFragment): string {
       const fieldCommentDepth =
         commentDepth > 0 ? commentDepth + 2 : startComment ? 1 : 0;
 
-      const val = configPlaceholderFor(field.type.name, fieldCommentDepth);
+      const val = configPlaceholderFor(field.configType.key, fieldCommentDepth);
       if (!val || Object.keys(val).length == 0) return;
 
       if (fieldCommentDepth > 0) {
@@ -185,7 +188,7 @@ export function scaffoldConfig(pipeline: ConfigEditorPipelineFragment): string {
   };
 
   // Convert the top level to a YAML string
-  let obj = configPlaceholderFor(pipeline.environmentType.name, 0);
+  let obj = configPlaceholderFor(pipeline.environmentType.key, 0);
   let str = YAML.stringify(obj);
 
   // Comment lines containing the COMMENTED_X_ prefix. X indicates how
