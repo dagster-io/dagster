@@ -1273,6 +1273,9 @@ fragment configTypeFragment on ConfigType {
             description
         }
     }
+    ... on WrappingConfigType {
+        ofType { key }
+    }
   }
   ... on EnumConfigType {
     values {

@@ -98,7 +98,7 @@ class DauphinListConfigType(dauphin.ObjectType):
         interfaces = [DauphinConfigType, DauphinWrappingConfigType]
 
     def resolve_of_type(self, _info):
-        return self._config_type.inner_type
+        return to_dauphin_config_type(self._config_type.inner_type)
 
     def resolve_inner_types(self, _info):
         return _resolve_inner_types(self._config_type)
@@ -114,7 +114,7 @@ class DauphinNullableConfigType(dauphin.ObjectType):
         interfaces = [DauphinConfigType, DauphinWrappingConfigType]
 
     def resolve_of_type(self, _info):
-        return self._config_type.inner_type
+        return to_dauphin_config_type(self._config_type.inner_type)
 
     def resolve_inner_types(self, _info):
         return _resolve_inner_types(self._config_type)

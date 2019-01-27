@@ -284,8 +284,14 @@ export type TypeConfig = {
       fields: Array<{
         name: string;
         configType: {
+          __typename: string;
+          isList: boolean;
+          isNullable: boolean;
           key: string;
           name: string | null;
+          ofType?: {
+            key: string;
+          };
         };
       }>;
     };
@@ -400,26 +406,30 @@ function findAutocomplete(
     for (const parent of parents) {
       const parentTypeDef = available.find(({ name }) => parent.key === name);
 
-      if (!parentTypeDef || !parentTypeDef.configType.name) {
+      if (!parentTypeDef) {
         return [];
       }
 
-      let childTypeName = parentTypeDef.configType.name;
-      let childEntiresUnique = true;
+      let childTypeKey = parentTypeDef.configType.key;
+      let childEntriesUnique = true;
 
-      if (parentTypeDef.configType.name.startsWith("List.")) {
-        childTypeName = parentTypeDef.configType.name.substr(5);
-        childEntiresUnique = false;
+      if (parentTypeDef.configType.isList) {
+        // ofType guaranteed to have value in the List case
+        // better way to enforce this?
+        if (parentTypeDef.configType.ofType) {
+          childTypeKey = parentTypeDef.configType.ofType.key;
+          childEntriesUnique = false;
+        }
       }
 
-      let childType = typeConfig.types[childTypeName];
+      let childType = typeConfig.types[childTypeKey];
       available = childType && childType.fields;
       if (!available) {
-        console.warn(`No type config is available for ${childTypeName}`);
+        console.warn(`No type config is available for ${childTypeKey}`);
         return [];
       }
 
-      if (parent === immediateParent && childEntiresUnique) {
+      if (parent === immediateParent && childEntriesUnique) {
         available = available.filter(
           item => immediateParent.childKeys.indexOf(item.name) === -1
         );

@@ -95,10 +95,28 @@ export interface PipelineExecutionContainerFragment_configTypes_EnumConfigType {
   isSelector: boolean;
 }
 
-export interface PipelineExecutionContainerFragment_configTypes_CompositeConfigType_fields_configType {
+export interface PipelineExecutionContainerFragment_configTypes_CompositeConfigType_fields_configType_EnumConfigType {
+  __typename: "EnumConfigType" | "CompositeConfigType" | "RegularConfigType" | "NullableConfigType";
   key: string;
   name: string | null;
+  isList: boolean;
+  isNullable: boolean;
 }
+
+export interface PipelineExecutionContainerFragment_configTypes_CompositeConfigType_fields_configType_ListConfigType_ofType {
+  key: string;
+}
+
+export interface PipelineExecutionContainerFragment_configTypes_CompositeConfigType_fields_configType_ListConfigType {
+  __typename: "ListConfigType";
+  key: string;
+  name: string | null;
+  isList: boolean;
+  isNullable: boolean;
+  ofType: PipelineExecutionContainerFragment_configTypes_CompositeConfigType_fields_configType_ListConfigType_ofType;
+}
+
+export type PipelineExecutionContainerFragment_configTypes_CompositeConfigType_fields_configType = PipelineExecutionContainerFragment_configTypes_CompositeConfigType_fields_configType_EnumConfigType | PipelineExecutionContainerFragment_configTypes_CompositeConfigType_fields_configType_ListConfigType;
 
 export interface PipelineExecutionContainerFragment_configTypes_CompositeConfigType_fields {
   name: string;
