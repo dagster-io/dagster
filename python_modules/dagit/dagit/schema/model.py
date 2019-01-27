@@ -1,21 +1,26 @@
 from __future__ import absolute_import
+from collections import defaultdict, namedtuple
 import sys
 import uuid
+
 
 from graphql.execution.base import ResolveInfo
 
 from dagster import check, ExecutionMetadata
 from dagster.core.definitions.environment_configs import construct_environment_config
 from dagster.core.execution import (
+    ExecutionPlan,
     ExecutionSelector,
     create_execution_plan_with_typed_environment,
+    execute_externalized_plan,
     get_subset_pipeline,
 )
-from dagster.core.types.evaluator import evaluate_config_value
+from dagster.core.types.evaluator import evaluate_config_value, EvaluateValueResult
 
 from dagster.utils.error import serializable_error_info_from_exc_info
 
 from .config_types import to_dauphin_config_type
+from .pipelines import DauphinPipeline
 from .runtime_types import to_dauphin_runtime_type
 from .utils import EitherValue, EitherError
 
@@ -156,11 +161,11 @@ def get_execution_plan(info, selector, config):
     def create_plan(pipeline):
         config_or_error = _config_or_error_from_pipeline(info, pipeline, config)
         return config_or_error.chain(
-            lambda validated_config_either: info.schema.type_named('ExecutionPlan')(
+            lambda evaluate_value_result: info.schema.type_named('ExecutionPlan')(
                 pipeline,
                 create_execution_plan_with_typed_environment(
                     pipeline.get_dagster_pipeline(),
-                    construct_environment_config(validated_config_either.value),
+                    construct_environment_config(evaluate_value_result.value),
                     ExecutionMetadata(),
                 ),
             )
@@ -172,6 +177,178 @@ def get_execution_plan(info, selector, config):
     return pipeline_or_error.chain(create_plan).value()
 
 
+def _get_validated_inputs_output_start_subplan_execution(
+    subplan_execution_args, dauphin_pipeline, execution_plan, evaluate_value_result
+):
+    check.inst_param(subplan_execution_args, 'subplan_execution_args', SubPlanExecutionArgs)
+    check.inst_param(dauphin_pipeline, 'dauphin_pipeline', DauphinPipeline)
+    check.inst_param(execution_plan, 'execution_plan', ExecutionPlan)
+    check.inst_param(evaluate_value_result, 'evaluate_value_result', EvaluateValueResult)
+
+    inputs_to_marshal = defaultdict(dict)
+    outputs_to_marshal = defaultdict(list)
+
+    for step_execution in subplan_execution_args.step_executions:
+        step = execution_plan.get_step_by_key(step_execution.step_key)
+        for marshalled_input in step_execution.marshalled_inputs:
+            if not step.has_step_input(marshalled_input.input_name):
+                schema = subplan_execution_args.info.schema
+                return EitherError(
+                    schema.type_named('StartSubPlanExecutionInvalidInputError')(
+                        step=schema.type_named('ExecutionStep')(step),
+                        invalid_input_name=marshalled_input.input_name,
+                    )
+                )
+
+            inputs_to_marshal[step.key][marshalled_input.input_name] = marshalled_input.key
+
+        for marshalled_output in step_execution.marshalled_outputs:
+            if not step.has_step_output(marshalled_output.output_name):
+                schema = subplan_execution_args.info.schema
+                return EitherError(
+                    schema.type_named('StartSubPlanExecutionInvalidOutputError')(
+                        step=schema.type_named('ExecutionStep')(step),
+                        invalid_output_name=marshalled_output.output_name,
+                    )
+                )
+
+            outputs_to_marshal[step.key].append(
+                {'output': marshalled_output.output_name, 'path': marshalled_output.key}
+            )
+
+    _results = execute_externalized_plan(
+        pipeline=dauphin_pipeline.get_dagster_pipeline(),
+        execution_plan=execution_plan,
+        step_keys=subplan_execution_args.step_keys,
+        inputs_to_marshal=dict(inputs_to_marshal),
+        outputs_to_marshal=outputs_to_marshal,
+        environment=evaluate_value_result.value,
+        execution_metadata=subplan_execution_args.execution_metadata,
+    )
+
+    return subplan_execution_args.info.schema.type_named('StartSubPlanExecutionSuccess')(
+        pipeline=dauphin_pipeline
+    )
+
+
+def _execution_plan_or_error_from_step_keys(
+    subplan_execution_args, dauphin_pipeline, evaluate_value_result
+):
+    check.inst_param(subplan_execution_args, 'subplan_execution_args', SubPlanExecutionArgs)
+    check.inst_param(dauphin_pipeline, 'dauphin_pipeline', DauphinPipeline)
+    check.inst_param(evaluate_value_result, 'evaluate_value_result', EvaluateValueResult)
+
+    execution_plan = create_execution_plan_with_typed_environment(
+        dauphin_pipeline.get_dagster_pipeline(),
+        construct_environment_config(evaluate_value_result.value),
+        subplan_execution_args.execution_metadata,
+    )
+
+    invalid_keys = []
+    for step_key in subplan_execution_args.step_keys:
+        if not execution_plan.has_step(step_key):
+            invalid_keys.append(step_key)
+
+    if invalid_keys:
+        return EitherError(
+            subplan_execution_args.info.schema.type_named('StartSubPlanExecutionInvalidStepsError')(
+                invalid_step_keys=invalid_keys
+            )
+        )
+
+    else:
+        return EitherValue(execution_plan)
+
+
+def _get_execution_plan_start_subplan_execution(
+    subplan_execution_args, dauphin_pipeline, evaluate_value_result
+):
+    check.inst_param(subplan_execution_args, 'subplan_execution_args', SubPlanExecutionArgs)
+    check.inst_param(dauphin_pipeline, 'dauphin_pipeline', DauphinPipeline)
+    check.inst_param(evaluate_value_result, 'evaluate_value_result', EvaluateValueResult)
+
+    return (
+        _execution_plan_or_error_from_step_keys(
+            subplan_execution_args, dauphin_pipeline, evaluate_value_result
+        )
+        .chain(
+            lambda execution_plan: _get_validated_inputs_output_start_subplan_execution(
+                subplan_execution_args, dauphin_pipeline, execution_plan, evaluate_value_result
+            )
+        )
+        .value()
+    )
+
+
+def _get_validated_config_start_subplan_execution(subplan_execution_args, dauphin_pipeline):
+    check.inst_param(subplan_execution_args, 'subplan_execution_args', SubPlanExecutionArgs)
+    check.inst_param(dauphin_pipeline, 'dauphin_pipeline', DauphinPipeline)
+
+    info = subplan_execution_args.info
+    config_or_error = _config_or_error_from_pipeline(
+        info, dauphin_pipeline, subplan_execution_args.env_config
+    )
+    return config_or_error.chain(
+        lambda evaluate_value_result: _get_execution_plan_start_subplan_execution(
+            subplan_execution_args, dauphin_pipeline, evaluate_value_result
+        )
+    ).value()
+
+
+MarshalledInput = namedtuple('MarshalledInput', 'input_name key')
+MarshalledOutput = namedtuple('MarshalledOutput', 'output_name key')
+
+
+class StepExecution(namedtuple('_StepExecution', 'step_key marshalled_inputs marshalled_outputs')):
+    def __new__(cls, step_key, marshalled_inputs, marshalled_outputs):
+        return super(StepExecution, cls).__new__(
+            cls,
+            check.str_param(step_key, 'step_key'),
+            list(map(lambda inp: MarshalledInput(**inp), marshalled_inputs)),
+            list(map(lambda out: MarshalledOutput(**out), marshalled_outputs)),
+        )
+
+
+class SubPlanExecutionArgs(
+    namedtuple(
+        '_SubPlanExecutionArgs', 'info pipeline_name env_config step_executions execution_metadata'
+    )
+):
+    def __new__(cls, info, pipeline_name, env_config, step_executions, execution_metadata):
+        return super(SubPlanExecutionArgs, cls).__new__(
+            cls,
+            info=check.inst_param(info, 'info', ResolveInfo),
+            pipeline_name=check.str_param(pipeline_name, 'pipeline_name'),
+            env_config=check.opt_dict_param(env_config, 'env_config'),
+            step_executions=check.list_param(
+                step_executions, 'step_executions', of_type=StepExecution
+            ),
+            execution_metadata=check.inst_param(
+                execution_metadata, 'execution_metadata', ExecutionMetadata
+            ),
+        )
+
+    @property
+    def step_keys(self):
+        return [se.step_key for se in self.step_executions]
+
+
+def start_subplan_execution(subplan_execution_args):
+    check.inst_param(subplan_execution_args, 'subplan_execution_args', SubPlanExecutionArgs)
+
+    info = subplan_execution_args.info
+    pipeline_or_error = _pipeline_or_error_from_container(
+        info,
+        info.context.repository_container,
+        ExecutionSelector(subplan_execution_args.pipeline_name),
+    )
+    return pipeline_or_error.chain(
+        lambda dauphin_pipeline: _get_validated_config_start_subplan_execution(
+            subplan_execution_args, dauphin_pipeline
+        )
+    ).value()
+
+
 def start_pipeline_execution(info, selector, config):
     check.inst_param(info, 'info', ResolveInfo)
     check.inst_param(selector, 'selector', ExecutionSelector)
@@ -179,7 +356,7 @@ def start_pipeline_execution(info, selector, config):
     env_config = config
 
     def get_config_and_start_execution(pipeline):
-        def start_execution(validated_config_either):
+        def _start_execution(validated_config_either):
             new_run_id = str(uuid.uuid4())
             execution_plan = create_execution_plan_with_typed_environment(
                 pipeline.get_dagster_pipeline(),
@@ -197,7 +374,7 @@ def start_pipeline_execution(info, selector, config):
             )
 
         config_or_error = _config_or_error_from_pipeline(info, pipeline, env_config)
-        return config_or_error.chain(start_execution)
+        return config_or_error.chain(_start_execution)
 
     pipeline_or_error = _pipeline_or_error_from_container(
         info, info.context.repository_container, selector

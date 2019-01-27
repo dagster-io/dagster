@@ -1,5 +1,7 @@
 import uuid
 
+import pandas as pd
+
 from graphql import graphql, parse
 
 from dagster import (
@@ -26,7 +28,10 @@ from dagster import (
     solid,
 )
 
+from dagster.core.types.marshal import PickleMarshallingStrategy
+
 from dagster.utils import script_relative_path
+from dagster.utils.test import get_temp_file_name
 
 from dagster_pandas import DataFrame
 
@@ -1653,6 +1658,39 @@ def test_production_query():
     assert result.data
 
 
+ALL_TYPES_QUERY = '''
+{
+  pipelinesOrError {
+    __typename
+    ... on PipelineConnection {
+      nodes {
+        runtimeTypes {
+          __typename
+          name
+        }
+        configTypes {
+          __typename
+          name
+          ... on CompositeConfigType {
+            fields {
+              name
+              configType {
+                name
+                __typename
+              }
+              __typename
+            }
+            __typename
+          }
+        }
+        __typename
+      }
+    }
+  }
+}
+'''
+
+
 def test_production_config_editor_query():
     result = execute_dagster_graphql(define_context(), ALL_TYPES_QUERY)
     if result.errors:
@@ -1662,34 +1700,10 @@ def test_production_config_editor_query():
     assert result.data
 
 
-MUTATION_QUERY = '''
-mutation ($config: PipelineConfig, $pipeline: ExecutionSelector!) {
-    startPipelineExecution(
-        config: $config, pipeline: $pipeline
-    ) {
-        __typename
-        ... on StartPipelineExecutionSuccess {
-            run {
-                runId
-                pipeline { name }
-            }
-        }
-        ... on PipelineConfigValidationInvalid {
-            pipeline { name }
-            errors { message }
-        }
-        ... on PipelineNotFoundError {
-            pipelineName
-        }
-    }
-}
-'''
-
-
 def test_basic_start_pipeline_execution():
     result = execute_dagster_graphql(
         define_context(),
-        MUTATION_QUERY,
+        START_PIPELINE_EXECUTION_QUERY,
         variables={
             'pipeline': {'name': 'pandas_hello_world'},
             'config': pandas_hello_world_solids_config(),
@@ -1711,7 +1725,7 @@ def test_basic_start_pipeline_execution():
 def test_basic_start_pipeline_execution_config_failure():
     result = execute_dagster_graphql(
         define_context(),
-        MUTATION_QUERY,
+        START_PIPELINE_EXECUTION_QUERY,
         variables={
             'pipeline': {'name': 'pandas_hello_world'},
             'config': {'solids': {'sum_solid': {'inputs': {'num': {'csv': {'path': 384938439}}}}}},
@@ -1726,7 +1740,7 @@ def test_basic_start_pipeline_execution_config_failure():
 def test_basis_start_pipeline_not_found_error():
     result = execute_dagster_graphql(
         define_context(),
-        MUTATION_QUERY,
+        START_PIPELINE_EXECUTION_QUERY,
         variables={
             'pipeline': {'name': 'sjkdfkdjkf'},
             'config': {'solids': {'sum_solid': {'inputs': {'num': {'csv': {'path': 'test.csv'}}}}}},
@@ -1749,7 +1763,7 @@ def test_basic_start_pipeline_execution_and_subscribe():
 
     result = execute_dagster_graphql(
         context,
-        MUTATION_QUERY,
+        START_PIPELINE_EXECUTION_QUERY,
         variables={
             'pipeline': {'name': 'pandas_hello_world'},
             'config': {
@@ -1796,7 +1810,7 @@ def test_basic_sync_execution_no_config():
     context = define_context()
     result = execute_dagster_graphql(
         context,
-        SYNC_MUTATION_QUERY,
+        START_PIPELINE_EXECUTION_QUERY,
         variables={'pipeline': {'name': 'no_config_pipeline'}, 'config': None},
     )
 
@@ -1813,7 +1827,7 @@ def test_basic_sync_execution():
     context = define_context()
     result = execute_dagster_graphql(
         context,
-        SYNC_MUTATION_QUERY,
+        START_PIPELINE_EXECUTION_QUERY,
         variables={
             'config': pandas_hello_world_solids_config(),
             'pipeline': {'name': 'pandas_hello_world'},
@@ -1843,7 +1857,7 @@ def has_event_of_type(logs, message_type):
     return first_event_of_type(logs, message_type) is not None
 
 
-SYNC_MUTATION_QUERY = '''
+START_PIPELINE_EXECUTION_QUERY = '''
 mutation ($pipeline: ExecutionSelector!, $config: PipelineConfig) {
     startPipelineExecution(pipeline: $pipeline, config: $config) {
         __typename
@@ -1877,34 +1891,193 @@ mutation ($pipeline: ExecutionSelector!, $config: PipelineConfig) {
 '''
 
 
-ALL_TYPES_QUERY = '''
-{
-  pipelinesOrError {
-    __typename
-    ... on PipelineConnection {
-      nodes {
-        runtimeTypes {
-          __typename
-          name
-        }
-        configTypes {
-          __typename
-          name
-          ... on CompositeConfigType {
-            fields {
-              name
-              configType {
-                name
-                __typename
-              }
-              __typename
-            }
-            __typename
-          }
-        }
+def test_successful_start_subplan():
+    marshalling = PickleMarshallingStrategy()
+
+    with get_temp_file_name() as num_df_file:
+        with get_temp_file_name() as out_df_file:
+            num_df = pd.read_csv(script_relative_path('num.csv'))
+            marshalling.marshal_value(num_df, num_df_file)
+
+            result = execute_dagster_graphql(
+                define_context(),
+                START_EXECUTION_PLAN_QUERY,
+                variables={
+                    'pipelineName': 'pandas_hello_world',
+                    'config': pandas_hello_world_solids_config(),
+                    'stepExecutions': [
+                        {
+                            'stepKey': 'sum_solid.transform',
+                            'marshalledInputs': [{'inputName': 'num', 'key': num_df_file}],
+                            'marshalledOutputs': [{'outputName': 'result', 'key': out_df_file}],
+                        }
+                    ],
+                    'executionMetadata': {'runId': 'kdjkfjdfd'},
+                },
+            )
+
+            out_df = marshalling.unmarshal_value(out_df_file)
+            assert out_df.to_dict('list') == {'num1': [1, 3], 'num2': [2, 4], 'sum': [3, 7]}
+            if result.errors:
+                raise Exception(result.errors)
+
+
+def test_start_subplan_pipeline_not_found():
+    result = execute_dagster_graphql(
+        define_context(),
+        START_EXECUTION_PLAN_QUERY,
+        variables={
+            'pipelineName': 'nope',
+            'config': pandas_hello_world_solids_config(),
+            'stepExecutions': [{'stepKey': 'sum_solid.transform'}],
+            'executionMetadata': {'runId': 'kdjkfjdfd'},
+        },
+    )
+
+    if result.errors:
+        raise Exception(result.errors)
+
+    assert result.data['startSubPlanExecution']['__typename'] == 'PipelineNotFoundError'
+    assert result.data['startSubPlanExecution']['pipelineName'] == 'nope'
+
+
+def test_start_subplan_invalid_config():
+    result = execute_dagster_graphql(
+        define_context(),
+        START_EXECUTION_PLAN_QUERY,
+        variables={
+            'pipelineName': 'pandas_hello_world',
+            'config': {'solids': {'sum_solid': {'inputs': {'num': {'csv': {'path': 384938439}}}}}},
+            'stepExecutions': [{'stepKey': 'sum_solid.transform'}],
+            'executionMetadata': {'runId': 'kdjkfjdfd'},
+        },
+    )
+
+    assert not result.errors
+    assert result.data
+    assert result.data['startSubPlanExecution']['__typename'] == 'PipelineConfigValidationInvalid'
+
+
+def test_start_subplan_invalid_step_keys():
+    result = execute_dagster_graphql(
+        define_context(),
+        START_EXECUTION_PLAN_QUERY,
+        variables={
+            'pipelineName': 'pandas_hello_world',
+            'config': pandas_hello_world_solids_config(),
+            'stepExecutions': [{'stepKey': 'nope'}],
+            'executionMetadata': {'runId': 'kdjkfjdfd'},
+        },
+    )
+
+    if result.errors:
+        raise Exception(result.errors)
+
+    assert result.data
+    assert (
+        result.data['startSubPlanExecution']['__typename']
+        == 'StartSubPlanExecutionInvalidStepsError'
+    )
+
+    assert result.data['startSubPlanExecution']['invalidStepKeys'] == ['nope']
+
+
+def test_start_subplan_invalid_input_name():
+    result = execute_dagster_graphql(
+        define_context(),
+        START_EXECUTION_PLAN_QUERY,
+        variables={
+            'pipelineName': 'pandas_hello_world',
+            'config': pandas_hello_world_solids_config(),
+            'stepExecutions': [
+                {
+                    'stepKey': 'sum_solid.transform',
+                    'marshalledInputs': [{'inputName': 'nope', 'key': 'nope'}],
+                }
+            ],
+            'executionMetadata': {'runId': 'kdjkfjdfd'},
+        },
+    )
+
+    if result.errors:
+        raise Exception(result.errors)
+
+    assert result.data
+    assert (
+        result.data['startSubPlanExecution']['__typename']
+        == 'StartSubPlanExecutionInvalidInputError'
+    )
+
+    assert result.data['startSubPlanExecution']['step']['key'] == 'sum_solid.transform'
+    assert result.data['startSubPlanExecution']['invalidInputName'] == 'nope'
+
+
+def test_start_subplan_invalid_output_name():
+    result = execute_dagster_graphql(
+        define_context(),
+        START_EXECUTION_PLAN_QUERY,
+        variables={
+            'pipelineName': 'pandas_hello_world',
+            'config': pandas_hello_world_solids_config(),
+            'stepExecutions': [
+                {
+                    'stepKey': 'sum_solid.transform',
+                    'marshalledOutputs': [{'outputName': 'nope', 'key': 'nope'}],
+                }
+            ],
+            'executionMetadata': {'runId': 'kdjkfjdfd'},
+        },
+    )
+
+    if result.errors:
+        raise Exception(result.errors)
+
+    assert result.data
+    assert (
+        result.data['startSubPlanExecution']['__typename']
+        == 'StartSubPlanExecutionInvalidOutputError'
+    )
+
+    assert result.data['startSubPlanExecution']['step']['key'] == 'sum_solid.transform'
+    assert result.data['startSubPlanExecution']['invalidOutputName'] == 'nope'
+
+
+START_EXECUTION_PLAN_QUERY = '''
+mutation (
+    $pipelineName: String!
+    $config: PipelineConfig
+    $stepExecutions: [StepExecution!]!
+    $executionMetadata: ExecutionMetadata!
+) {
+    startSubPlanExecution(
+        pipelineName: $pipelineName
+        config: $config
+        stepExecutions: $stepExecutions
+        executionMetadata: $executionMetadata
+    ) {
         __typename
-      }
+        ... on StartSubPlanExecutionSuccess {
+            pipeline { name }
+        }
+        ... on PipelineNotFoundError {
+            pipelineName
+        }
+        ... on PipelineConfigValidationInvalid {
+            pipeline { name }
+            errors { message }
+        }
+        ... on StartSubPlanExecutionInvalidStepsError {
+            invalidStepKeys
+        }
+        ... on StartSubPlanExecutionInvalidInputError {
+            step { key }
+            invalidInputName
+        }
+        ... on StartSubPlanExecutionInvalidOutputError {
+            step { key }
+            invalidOutputName
+        }
     }
-  }
 }
+
 '''

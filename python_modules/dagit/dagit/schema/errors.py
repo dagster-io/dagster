@@ -292,6 +292,49 @@ class DauphinStartPipelineExecutionResult(dauphin.Union):
         )
 
 
+class DauphinStartSubPlanExecutionSuccess(dauphin.ObjectType):
+    class Meta:
+        name = 'StartSubPlanExecutionSuccess'
+
+    pipeline = dauphin.Field(dauphin.NonNull('Pipeline'))
+
+
+class DauphinStartSubPlanExecutionInvalidStepsError(dauphin.ObjectType):
+    class Meta:
+        name = 'StartSubPlanExecutionInvalidStepsError'
+
+    invalid_step_keys = dauphin.Field(dauphin.non_null_list(dauphin.String))
+
+
+class DauphinStartSubPlanExecutionInvalidInputError(dauphin.ObjectType):
+    class Meta:
+        name = 'StartSubPlanExecutionInvalidInputError'
+
+    step = dauphin.NonNull('ExecutionStep')
+    invalid_input_name = dauphin.NonNull(dauphin.String)
+
+
+class DauphinStartSubPlanExecutionInvalidOutputError(dauphin.ObjectType):
+    class Meta:
+        name = 'StartSubPlanExecutionInvalidOutputError'
+
+    step = dauphin.NonNull('ExecutionStep')
+    invalid_output_name = dauphin.NonNull(dauphin.String)
+
+
+class DauphinStartSubPlanExecutionResult(dauphin.Union):
+    class Meta:
+        name = 'StartSubPlanExecutionResult'
+        types = (
+            DauphinStartSubPlanExecutionSuccess,
+            DauphinPipelineNotFoundError,
+            DauphinPipelineConfigValidationInvalid,
+            DauphinStartSubPlanExecutionInvalidStepsError,
+            DauphinStartSubPlanExecutionInvalidInputError,
+            DauphinStartSubPlanExecutionInvalidOutputError,
+        )
+
+
 class DauphinConfigTypeNotFoundError(dauphin.ObjectType):
     class Meta:
         name = 'ConfigTypeNotFoundError'

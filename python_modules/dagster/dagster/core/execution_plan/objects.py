@@ -219,7 +219,12 @@ class ExecutionPlan(object):
         self.deps = check.dict_param(deps, 'deps', key_type=str, value_type=set)
         self.steps = list(step_dict.values())
 
+    def has_step(self, key):
+        check.str_param(key, 'key')
+        return key in self.step_dict
+
     def get_step_by_key(self, key):
+        check.str_param(key, 'key')
         return self.step_dict[key]
 
     def topological_steps(self):
