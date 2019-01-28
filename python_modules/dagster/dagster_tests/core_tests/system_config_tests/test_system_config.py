@@ -179,7 +179,7 @@ def test_provided_default_config():
     assert some_context_field.default_value == {
         'config': {'with_default_int': 23434},
         'resources': {},
-        'marshalling': {'file': {}},
+        'persistence': {'file': {}},
     }
 
     value = construct_environment_config(
@@ -423,7 +423,7 @@ def test_whole_environment():
     )
 
     assert isinstance(env, EnvironmentConfig)
-    assert env.context == ContextConfig('test', 1, marshalling={'file': {}})
+    assert env.context == ContextConfig('test', 1, persistence={'file': {}})
     assert env.solids == {'int_config_solid': SolidConfig(123)}
     assert env.expectations == ExpectationsConfig(evaluate=True)
 

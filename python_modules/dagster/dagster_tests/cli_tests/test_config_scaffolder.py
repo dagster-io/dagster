@@ -55,7 +55,7 @@ def test_basic_solids_config():
     default_context_config_type = context_config_type.fields['default'].config_type
 
     assert set(default_context_config_type.fields.keys()) == set(
-        ['config', 'resources', 'marshalling']
+        ['config', 'resources', 'persistence']
     )
 
     default_context_user_config_type = default_context_config_type.fields['config'].config_type
@@ -64,7 +64,7 @@ def test_basic_solids_config():
 
     assert scaffold_pipeline_config(pipeline_def, skip_optional=False) == {
         'context': {
-            'default': {'config': {'log_level': ''}, 'marshalling': {'file': {}}, 'resources': {}}
+            'default': {'config': {'log_level': ''}, 'persistence': {'file': {}}, 'resources': {}}
         },
         'solids': {'required_field_solid': {'config': {'required_int': 0}}},
         'expectations': {'evaluate': True},
@@ -94,12 +94,12 @@ def test_two_contexts():
         'context': {
             'context_one': {
                 'config': {'context_one_field': ''},
-                'marshalling': {'file': {}},
+                'persistence': {'file': {}},
                 'resources': {},
             },
             'context_two': {
                 'config': {'context_two_field': 0},
-                'marshalling': {'file': {}},
+                'persistence': {'file': {}},
                 'resources': {},
             },
         },

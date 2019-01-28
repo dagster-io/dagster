@@ -5,21 +5,21 @@ from dagster import check
 DEFAULT_CONTEXT_NAME = 'default'
 
 
-def _default_marshalling_config():
+def _default_persistence_config():
     return {'file': {}}
 
 
 # lifted from https://bit.ly/2HcQAuv
-class ContextConfig(namedtuple('_ContextConfig', 'name config resources marshalling')):
-    def __new__(cls, name=None, config=None, resources=None, marshalling=None):
+class ContextConfig(namedtuple('_ContextConfig', 'name config resources persistence')):
+    def __new__(cls, name=None, config=None, resources=None, persistence=None):
         return super(ContextConfig, cls).__new__(
             cls,
             check.opt_str_param(name, 'name', DEFAULT_CONTEXT_NAME),
             config,
             check.opt_dict_param(resources, 'resources', key_type=str),
-            _default_marshalling_config()
-            if marshalling is None
-            else check.dict_param(marshalling, 'marshalling', key_type=str),
+            _default_persistence_config()
+            if persistence is None
+            else check.dict_param(persistence, 'persistence', key_type=str),
         )
 
 

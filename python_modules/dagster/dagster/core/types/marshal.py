@@ -26,7 +26,7 @@ class PickleSerializationStrategy(SerializationStrategy):
 
 
 @six.add_metaclass(ABCMeta)
-class MarshallingPolicy:
+class PersistenceStrategy:
     @abstractmethod
     def marshal_value(self, serialization_strategy, key, value):
         pass
@@ -36,7 +36,7 @@ class MarshallingPolicy:
         pass
 
 
-class FileMarshallingPolicy(MarshallingPolicy):
+class FilePersistencePolicy(PersistenceStrategy):
     def marshal_value(self, serialization_strategy, key, value):
         check.inst_param(serialization_strategy, 'serialization_strategy', SerializationStrategy)
         check.str_param(key, 'key')

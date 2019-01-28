@@ -62,7 +62,7 @@ from .execution_plan.simple_engine import execute_plan_core
 from .system_config.objects import EnvironmentConfig
 
 from .types.evaluator import EvaluationError, evaluate_config_value, friendly_string_for_error
-from .types.marshal import FileMarshallingPolicy
+from .types.marshal import FilePersistencePolicy
 
 
 class PipelineExecutionResult(object):
@@ -320,15 +320,15 @@ def with_maybe_gen(thing_or_gen):
     check.invariant(stopped, 'Must yield one item. Yielded more than one item')
 
 
-def _create_marshalling_policy(marshalling_config):
-    check.dict_param(marshalling_config, 'marshalling_config', key_type=str)
+def _create_persistence_policy(persistence_config):
+    check.dict_param(persistence_config, 'persistence_config', key_type=str)
 
-    marshalling_key, _config_value = list(marshalling_config.items())[0]
+    persistence_key, _config_value = list(persistence_config.items())[0]
 
-    if marshalling_key == 'file':
-        return FileMarshallingPolicy()
+    if persistence_key == 'file':
+        return FilePersistencePolicy()
     else:
-        check.failed('Unsupported marshalling key: {}'.format(marshalling_key))
+        check.failed('Unsupported persistence key: {}'.format(persistence_key))
 
 
 @contextmanager
@@ -362,7 +362,7 @@ def yield_context(pipeline, environment, execution_metadata):
                 tags=get_tags(execution_context, execution_metadata, pipeline),
                 event_callback=get_event_callback(execution_metadata),
                 environment_config=environment.original_config_dict,
-                marshalling_policy=_create_marshalling_policy(environment.context.marshalling),
+                persistence_policy=_create_persistence_policy(environment.context.persistence),
             )
 
 
@@ -581,18 +581,6 @@ def execute_externalized_plan(
         return results
 
 
-# <<<<<<< HEAD
-#     results = execute_plan(
-#         pipeline,
-#         execution_plan,
-#         environment=environment,
-#         subset_info=ExecutionPlanSubsetInfo(included_steps=step_keys, inputs=inputs),
-#         execution_metadata=execution_metadata,
-#     )
-# =======
-# >>>>>>> Consolidated commit
-
-
 def _marshal_outputs(context, results, outputs_to_marshal):
     for result in results:
         if not (result.success and result.step.key in outputs_to_marshal):
@@ -604,7 +592,7 @@ def _marshal_outputs(context, results, outputs_to_marshal):
 
             path = output['path']
             output_type = result.step.step_output_dict[result.success_data.output_name].runtime_type
-            context.marshalling_policy.marshal_value(
+            context.persistence_policy.marshal_value(
                 output_type.serialization_strategy, path, result.success_data.value
             )
 
@@ -619,7 +607,7 @@ def _unmarshal_inputs(context, inputs_to_marshal, execution_plan):
 
             check.invariant(input_type.serialization_strategy)
 
-            input_value = context.marshalling_policy.unmarshal_value(
+            input_value = context.persistence_policy.unmarshal_value(
                 input_type.serialization_strategy, file_path
             )
             inputs[step_key][input_name] = input_value

@@ -63,7 +63,7 @@ def create_joining_subplan(state, solid, join_step_key, parallel_steps, parallel
 
     Currently the join step just does a passthrough with no computation. It remains
     to be seen if there should be any work or verification done in this step, especially
-    in multi-process environments that require marshalling between steps.
+    in multi-process environments that require persistence between steps.
     '''
     check.inst_param(state, 'state', StepBuilderState)
     check.inst_param(solid, 'solid', Solid)

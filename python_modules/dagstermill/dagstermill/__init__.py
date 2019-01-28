@@ -212,7 +212,7 @@ def unmarshal_value(runtime_type, value):
         return deserialize_from_file(runtime_type.serialization_strategy, value)
     else:
         check.failed(
-            'Unsupported type {name}: no marshalling strategy defined'.format(
+            'Unsupported type {name}: no persistence strategy defined'.format(
                 name=runtime_type.name
             )
         )

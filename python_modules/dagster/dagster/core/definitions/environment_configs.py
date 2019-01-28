@@ -80,9 +80,9 @@ def define_specific_context_config_cls(name, config_field, resources):
                 'resources': Field(
                     define_resource_dictionary_cls('{name}.Resources'.format(name=name), resources)
                 ),
-                'marshalling': Field(
+                'persistence': Field(
                     SystemNamedSelector(
-                        '{name}.Marshalling'.format(name=name), {'file': Field(Dict({}))}
+                        '{name}.Persistence'.format(name=name), {'file': Field(Dict({}))}
                     )
                 ),
             }
@@ -333,7 +333,7 @@ def construct_context_config(config_value):
         name=context_name,
         config=context_value.get('config'),
         resources=context_value['resources'],
-        marshalling=context_value['marshalling'],
+        persistence=context_value['persistence'],
     )
 
 
