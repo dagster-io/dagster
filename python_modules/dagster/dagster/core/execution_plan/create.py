@@ -21,7 +21,7 @@ from .objects import (
     ExecutionPlan,
     ExecutionPlanInfo,
     ExecutionStep,
-    ExecutionValueSubPlan,
+    ExecutionValueSubplan,
     ExecutionPlanSubsetInfo,
     StepBuilderState,
     StepInput,
@@ -114,7 +114,7 @@ def create_subplan_for_input(execution_info, state, solid, prev_step_output_hand
             state, solid, input_def, prev_step_output_handle, kind=StepKind.INPUT_EXPECTATION
         )
     else:
-        return ExecutionValueSubPlan.empty(prev_step_output_handle)
+        return ExecutionValueSubplan.empty(prev_step_output_handle)
 
 
 def create_subplan_for_output(execution_info, state, solid, solid_transform_step, output_def):

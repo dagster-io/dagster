@@ -26,3 +26,5 @@
         are configTypes and runtimeTypes fields on Pipeline. Top-level field type and types property on Pipeline has
         been eliminated.
       - StepTag has been renamed to StepKind
+      - Added startSubplanExecution to enable pipeline execution at step subset granularity
+      - Deprecated ExecutionStep.name in favor of ExecutionStep.key

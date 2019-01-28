@@ -6,7 +6,7 @@ from dagster import (
     PipelineDefinition,
     lambda_solid,
 )
-from dagster.core.execution import execute_externalized_plan
+from dagster.core.execution import execute_externalized_plan, create_execution_plan
 from dagster.core.execution_plan.objects import StepKind
 from dagster.core.types.runtime import resolve_to_runtime_type
 
@@ -36,8 +36,11 @@ def test_basic_pipeline_external_plan_execution():
 
         int_type.marshalling_strategy.marshal_value(5, temp_path)
 
+        execution_plan = create_execution_plan(pipeline)
+
         results = execute_externalized_plan(
             pipeline,
+            execution_plan,
             ['add_one.transform'],
             inputs_to_marshal={'add_one.transform': {'num': temp_path}},
             outputs_to_marshal={'add_one.transform': [{'output': 'result', 'path': write_path}]},

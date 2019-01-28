@@ -529,6 +529,7 @@ class PipelineConfigEvaluationError(Exception):
 
 def execute_externalized_plan(
     pipeline,
+    execution_plan,
     step_keys,
     inputs_to_marshal=None,
     outputs_to_marshal=None,
@@ -536,13 +537,12 @@ def execute_externalized_plan(
     execution_metadata=None,
 ):
     check.inst_param(pipeline, 'pipeline', PipelineDefinition)
+    check.inst_param(execution_plan, 'execution_plan', ExecutionPlan)
     check.list_param(step_keys, 'step_keys', of_type=str)
     check_opt_two_dim_str_dict(inputs_to_marshal, 'inputs_to_marshal', value_type=str)
     check.opt_dict_param(outputs_to_marshal, 'outputs_to_marshal', key_type=str, value_type=list)
     check.opt_dict_param(environment, 'environment')
     check.opt_inst_param(execution_metadata, 'execution_metadata', ExecutionMetadata)
-
-    execution_plan = create_execution_plan(pipeline, environment)
 
     inputs = defaultdict(dict)
 

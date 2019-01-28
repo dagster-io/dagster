@@ -19,7 +19,7 @@ class DauphinExecutionPlan(dauphin.ObjectType):
         self.execution_plan = check.inst_param(execution_plan, 'execution_plan', ExecutionPlan)
 
     def resolve_steps(self, _info):
-        return [DauphinExecutionStep(cn) for cn in self.execution_plan.topological_steps()]
+        return [DauphinExecutionStep(step) for step in self.execution_plan.topological_steps()]
 
 
 class DauphinExecutionStepOutput(dauphin.ObjectType):
@@ -111,7 +111,8 @@ class DauphinExecutionStep(dauphin.ObjectType):
     class Meta:
         name = 'ExecutionStep'
 
-    name = dauphin.NonNull(dauphin.String)
+    name = dauphin.Field(dauphin.NonNull(dauphin.String), deprecation_reason='Use key')
+    key = dauphin.NonNull(dauphin.String)
     inputs = dauphin.non_null_list('ExecutionStepInput')
     outputs = dauphin.non_null_list('ExecutionStepOutput')
     solid = dauphin.NonNull('Solid')
@@ -132,6 +133,9 @@ class DauphinExecutionStep(dauphin.ObjectType):
             info.schema.type_named('ExecutionStepOutput')(out)
             for out in self.execution_step.step_outputs
         ]
+
+    def resolve_key(self, _info):
+        return self.execution_step.key
 
     def resolve_name(self, _info):
         return self.execution_step.key
