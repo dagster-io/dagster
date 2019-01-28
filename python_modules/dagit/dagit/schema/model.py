@@ -177,7 +177,104 @@ def get_execution_plan(info, selector, config):
     return pipeline_or_error.chain(create_plan).value()
 
 
-def _get_validated_inputs_output_start_subplan_execution(
+MarshalledInput = namedtuple('MarshalledInput', 'input_name key')
+MarshalledOutput = namedtuple('MarshalledOutput', 'output_name key')
+
+
+class StepExecution(namedtuple('_StepExecution', 'step_key marshalled_inputs marshalled_outputs')):
+    def __new__(cls, step_key, marshalled_inputs, marshalled_outputs):
+        return super(StepExecution, cls).__new__(
+            cls,
+            check.str_param(step_key, 'step_key'),
+            list(map(lambda inp: MarshalledInput(**inp), marshalled_inputs)),
+            list(map(lambda out: MarshalledOutput(**out), marshalled_outputs)),
+        )
+
+
+class SubPlanExecutionArgs(
+    namedtuple(
+        '_SubPlanExecutionArgs', 'info pipeline_name env_config step_executions execution_metadata'
+    )
+):
+    def __new__(cls, info, pipeline_name, env_config, step_executions, execution_metadata):
+        return super(SubPlanExecutionArgs, cls).__new__(
+            cls,
+            info=check.inst_param(info, 'info', ResolveInfo),
+            pipeline_name=check.str_param(pipeline_name, 'pipeline_name'),
+            env_config=check.opt_dict_param(env_config, 'env_config'),
+            step_executions=check.list_param(
+                step_executions, 'step_executions', of_type=StepExecution
+            ),
+            execution_metadata=check.inst_param(
+                execution_metadata, 'execution_metadata', ExecutionMetadata
+            ),
+        )
+
+    @property
+    def step_keys(self):
+        return [se.step_key for se in self.step_executions]
+
+
+def start_subplan_execution(args):
+    check.inst_param(args, 'args', SubPlanExecutionArgs)
+
+    info = args.info
+
+    # this is a sequence of validations to valiadate inputs:
+    # validate_pipeline => validate_config => validate_execution_plan => execute_execution_plan
+    return (
+        _pipeline_or_error_from_container(
+            info, info.context.repository_container, ExecutionSelector(args.pipeline_name)
+        )
+        .chain(
+            lambda dauphin_pipeline: _config_or_error_from_pipeline(
+                info, dauphin_pipeline, args.env_config
+            )
+            .chain(
+                lambda evaluate_value_result: _execution_plan_or_error(
+                    args, dauphin_pipeline, evaluate_value_result
+                )
+                .chain(
+                    lambda execution_plan: _execute_subplan_or_error(
+                        args, dauphin_pipeline, execution_plan, evaluate_value_result
+                    )
+                )
+                .value()
+            )
+            .value()
+        )
+        .value()
+    )
+
+
+def _execution_plan_or_error(subplan_execution_args, dauphin_pipeline, evaluate_value_result):
+    check.inst_param(subplan_execution_args, 'subplan_execution_args', SubPlanExecutionArgs)
+    check.inst_param(dauphin_pipeline, 'dauphin_pipeline', DauphinPipeline)
+    check.inst_param(evaluate_value_result, 'evaluate_value_result', EvaluateValueResult)
+
+    execution_plan = create_execution_plan_with_typed_environment(
+        dauphin_pipeline.get_dagster_pipeline(),
+        construct_environment_config(evaluate_value_result.value),
+        subplan_execution_args.execution_metadata,
+    )
+
+    invalid_keys = []
+    for step_key in subplan_execution_args.step_keys:
+        if not execution_plan.has_step(step_key):
+            invalid_keys.append(step_key)
+
+    if invalid_keys:
+        return EitherError(
+            subplan_execution_args.info.schema.type_named('StartSubPlanExecutionInvalidStepsError')(
+                invalid_step_keys=invalid_keys
+            )
+        )
+
+    else:
+        return EitherValue(execution_plan)
+
+
+def _execute_subplan_or_error(
     subplan_execution_args, dauphin_pipeline, execution_plan, evaluate_value_result
 ):
     check.inst_param(subplan_execution_args, 'subplan_execution_args', SubPlanExecutionArgs)
@@ -226,127 +323,11 @@ def _get_validated_inputs_output_start_subplan_execution(
         execution_metadata=subplan_execution_args.execution_metadata,
     )
 
+    # TODO: Handle error conditions here
+
     return subplan_execution_args.info.schema.type_named('StartSubPlanExecutionSuccess')(
         pipeline=dauphin_pipeline
     )
-
-
-def _execution_plan_or_error_from_step_keys(
-    subplan_execution_args, dauphin_pipeline, evaluate_value_result
-):
-    check.inst_param(subplan_execution_args, 'subplan_execution_args', SubPlanExecutionArgs)
-    check.inst_param(dauphin_pipeline, 'dauphin_pipeline', DauphinPipeline)
-    check.inst_param(evaluate_value_result, 'evaluate_value_result', EvaluateValueResult)
-
-    execution_plan = create_execution_plan_with_typed_environment(
-        dauphin_pipeline.get_dagster_pipeline(),
-        construct_environment_config(evaluate_value_result.value),
-        subplan_execution_args.execution_metadata,
-    )
-
-    invalid_keys = []
-    for step_key in subplan_execution_args.step_keys:
-        if not execution_plan.has_step(step_key):
-            invalid_keys.append(step_key)
-
-    if invalid_keys:
-        return EitherError(
-            subplan_execution_args.info.schema.type_named('StartSubPlanExecutionInvalidStepsError')(
-                invalid_step_keys=invalid_keys
-            )
-        )
-
-    else:
-        return EitherValue(execution_plan)
-
-
-def _get_execution_plan_start_subplan_execution(
-    subplan_execution_args, dauphin_pipeline, evaluate_value_result
-):
-    check.inst_param(subplan_execution_args, 'subplan_execution_args', SubPlanExecutionArgs)
-    check.inst_param(dauphin_pipeline, 'dauphin_pipeline', DauphinPipeline)
-    check.inst_param(evaluate_value_result, 'evaluate_value_result', EvaluateValueResult)
-
-    return (
-        _execution_plan_or_error_from_step_keys(
-            subplan_execution_args, dauphin_pipeline, evaluate_value_result
-        )
-        .chain(
-            lambda execution_plan: _get_validated_inputs_output_start_subplan_execution(
-                subplan_execution_args, dauphin_pipeline, execution_plan, evaluate_value_result
-            )
-        )
-        .value()
-    )
-
-
-def _get_validated_config_start_subplan_execution(subplan_execution_args, dauphin_pipeline):
-    check.inst_param(subplan_execution_args, 'subplan_execution_args', SubPlanExecutionArgs)
-    check.inst_param(dauphin_pipeline, 'dauphin_pipeline', DauphinPipeline)
-
-    info = subplan_execution_args.info
-    config_or_error = _config_or_error_from_pipeline(
-        info, dauphin_pipeline, subplan_execution_args.env_config
-    )
-    return config_or_error.chain(
-        lambda evaluate_value_result: _get_execution_plan_start_subplan_execution(
-            subplan_execution_args, dauphin_pipeline, evaluate_value_result
-        )
-    ).value()
-
-
-MarshalledInput = namedtuple('MarshalledInput', 'input_name key')
-MarshalledOutput = namedtuple('MarshalledOutput', 'output_name key')
-
-
-class StepExecution(namedtuple('_StepExecution', 'step_key marshalled_inputs marshalled_outputs')):
-    def __new__(cls, step_key, marshalled_inputs, marshalled_outputs):
-        return super(StepExecution, cls).__new__(
-            cls,
-            check.str_param(step_key, 'step_key'),
-            list(map(lambda inp: MarshalledInput(**inp), marshalled_inputs)),
-            list(map(lambda out: MarshalledOutput(**out), marshalled_outputs)),
-        )
-
-
-class SubPlanExecutionArgs(
-    namedtuple(
-        '_SubPlanExecutionArgs', 'info pipeline_name env_config step_executions execution_metadata'
-    )
-):
-    def __new__(cls, info, pipeline_name, env_config, step_executions, execution_metadata):
-        return super(SubPlanExecutionArgs, cls).__new__(
-            cls,
-            info=check.inst_param(info, 'info', ResolveInfo),
-            pipeline_name=check.str_param(pipeline_name, 'pipeline_name'),
-            env_config=check.opt_dict_param(env_config, 'env_config'),
-            step_executions=check.list_param(
-                step_executions, 'step_executions', of_type=StepExecution
-            ),
-            execution_metadata=check.inst_param(
-                execution_metadata, 'execution_metadata', ExecutionMetadata
-            ),
-        )
-
-    @property
-    def step_keys(self):
-        return [se.step_key for se in self.step_executions]
-
-
-def start_subplan_execution(subplan_execution_args):
-    check.inst_param(subplan_execution_args, 'subplan_execution_args', SubPlanExecutionArgs)
-
-    info = subplan_execution_args.info
-    pipeline_or_error = _pipeline_or_error_from_container(
-        info,
-        info.context.repository_container,
-        ExecutionSelector(subplan_execution_args.pipeline_name),
-    )
-    return pipeline_or_error.chain(
-        lambda dauphin_pipeline: _get_validated_config_start_subplan_execution(
-            subplan_execution_args, dauphin_pipeline
-        )
-    ).value()
 
 
 def start_pipeline_execution(info, selector, config):
