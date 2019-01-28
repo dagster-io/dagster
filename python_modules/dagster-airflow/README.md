@@ -276,3 +276,7 @@ multiply__the__word_transform_task.set_downstream(count__letters_transform_task)
 Now you can visualize and schedule this DAG in Airflow:
 
 ![Example DAG](example_dag.png)
+
+Note that there is one Airflow task corresponding to each execution step in the pipeline, not to
+each solid. This means that 
+Note that we use a single operator, the DagsterOperator, for every execution step
