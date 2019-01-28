@@ -150,9 +150,9 @@ class DauphinExecutionMetadata(dauphin.InputObjectType):
         return ExecutionMetadata(run_id=self.runId, tags=tags)
 
 
-class DauphinStartSubPlanExecution(dauphin.Mutation):
+class DauphinStartSubplanExecution(dauphin.Mutation):
     class Meta:
-        name = 'StartSubPlanExecution'
+        name = 'StartSubplanExecution'
 
     class Arguments:
         pipelineName = dauphin.NonNull(dauphin.String)
@@ -160,11 +160,11 @@ class DauphinStartSubPlanExecution(dauphin.Mutation):
         stepExecutions = dauphin.non_null_list(DauphinStepExecution)
         executionMetadata = dauphin.Argument(dauphin.NonNull(DauphinExecutionMetadata))
 
-    Output = dauphin.NonNull('StartSubPlanExecutionResult')
+    Output = dauphin.NonNull('StartSubplanExecutionResult')
 
     def mutate(self, info, **kwargs):
         return model.start_subplan_execution(
-            model.SubPlanExecutionArgs(
+            model.SubplanExecutionArgs(
                 info,
                 kwargs['pipelineName'],
                 kwargs.get('config'),
@@ -188,7 +188,7 @@ class DauphinMutation(dauphin.ObjectType):
         name = 'Mutation'
 
     start_pipeline_execution = DauphinStartPipelineExecutionMutation.Field()
-    start_sub_plan_execution = DauphinStartSubPlanExecution.Field()
+    start_sub_plan_execution = DauphinStartSubplanExecution.Field()
 
 
 class DauphinSubscription(dauphin.ObjectType):

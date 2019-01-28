@@ -1937,8 +1937,8 @@ def test_start_subplan_pipeline_not_found():
     if result.errors:
         raise Exception(result.errors)
 
-    assert result.data['startSubPlanExecution']['__typename'] == 'PipelineNotFoundError'
-    assert result.data['startSubPlanExecution']['pipelineName'] == 'nope'
+    assert result.data['startSubplanExecution']['__typename'] == 'PipelineNotFoundError'
+    assert result.data['startSubplanExecution']['pipelineName'] == 'nope'
 
 
 def test_start_subplan_invalid_config():
@@ -1955,7 +1955,7 @@ def test_start_subplan_invalid_config():
 
     assert not result.errors
     assert result.data
-    assert result.data['startSubPlanExecution']['__typename'] == 'PipelineConfigValidationInvalid'
+    assert result.data['startSubplanExecution']['__typename'] == 'PipelineConfigValidationInvalid'
 
 
 def test_start_subplan_invalid_step_keys():
@@ -1975,11 +1975,11 @@ def test_start_subplan_invalid_step_keys():
 
     assert result.data
     assert (
-        result.data['startSubPlanExecution']['__typename']
-        == 'StartSubPlanExecutionInvalidStepsError'
+        result.data['startSubplanExecution']['__typename']
+        == 'StartSubplanExecutionInvalidStepsError'
     )
 
-    assert result.data['startSubPlanExecution']['invalidStepKeys'] == ['nope']
+    assert result.data['startSubplanExecution']['invalidStepKeys'] == ['nope']
 
 
 def test_start_subplan_invalid_input_name():
@@ -2004,12 +2004,12 @@ def test_start_subplan_invalid_input_name():
 
     assert result.data
     assert (
-        result.data['startSubPlanExecution']['__typename']
-        == 'StartSubPlanExecutionInvalidInputError'
+        result.data['startSubplanExecution']['__typename']
+        == 'StartSubplanExecutionInvalidInputError'
     )
 
-    assert result.data['startSubPlanExecution']['step']['key'] == 'sum_solid.transform'
-    assert result.data['startSubPlanExecution']['invalidInputName'] == 'nope'
+    assert result.data['startSubplanExecution']['step']['key'] == 'sum_solid.transform'
+    assert result.data['startSubplanExecution']['invalidInputName'] == 'nope'
 
 
 def test_start_subplan_invalid_output_name():
@@ -2034,12 +2034,12 @@ def test_start_subplan_invalid_output_name():
 
     assert result.data
     assert (
-        result.data['startSubPlanExecution']['__typename']
-        == 'StartSubPlanExecutionInvalidOutputError'
+        result.data['startSubplanExecution']['__typename']
+        == 'StartSubplanExecutionInvalidOutputError'
     )
 
-    assert result.data['startSubPlanExecution']['step']['key'] == 'sum_solid.transform'
-    assert result.data['startSubPlanExecution']['invalidOutputName'] == 'nope'
+    assert result.data['startSubplanExecution']['step']['key'] == 'sum_solid.transform'
+    assert result.data['startSubplanExecution']['invalidOutputName'] == 'nope'
 
 
 START_EXECUTION_PLAN_QUERY = '''
@@ -2049,14 +2049,14 @@ mutation (
     $stepExecutions: [StepExecution!]!
     $executionMetadata: ExecutionMetadata!
 ) {
-    startSubPlanExecution(
+    startSubplanExecution(
         pipelineName: $pipelineName
         config: $config
         stepExecutions: $stepExecutions
         executionMetadata: $executionMetadata
     ) {
         __typename
-        ... on StartSubPlanExecutionSuccess {
+        ... on StartSubplanExecutionSuccess {
             pipeline { name }
         }
         ... on PipelineNotFoundError {
@@ -2066,14 +2066,14 @@ mutation (
             pipeline { name }
             errors { message }
         }
-        ... on StartSubPlanExecutionInvalidStepsError {
+        ... on StartSubplanExecutionInvalidStepsError {
             invalidStepKeys
         }
-        ... on StartSubPlanExecutionInvalidInputError {
+        ... on StartSubplanExecutionInvalidInputError {
             step { key }
             invalidInputName
         }
-        ... on StartSubPlanExecutionInvalidOutputError {
+        ... on StartSubplanExecutionInvalidOutputError {
             step { key }
             invalidOutputName
         }

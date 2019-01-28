@@ -184,21 +184,21 @@ class ExecutionStep(
         return self.step_input_dict[name]
 
 
-class ExecutionValueSubPlan(
-    namedtuple('ExecutionValueSubPlan', 'steps terminal_step_output_handle')
+class ExecutionValueSubplan(
+    namedtuple('ExecutionValueSubplan', 'steps terminal_step_output_handle')
 ):
     '''
     A frequent pattern in the execution engine is to take a single value
     (e.g. an input or an output of a transform) and then flow that value
     value through a sequence of system-injected steps (e.g. expectations
     or materializations). This object captures that pattern. It contains
-    all of the steps that comprise that SubPlan and also a single output
+    all of the steps that comprise that Subplan and also a single output
     handle that points to output that further steps down the plan can
     depend on.
     '''
 
     def __new__(cls, steps, terminal_step_output_handle):
-        return super(ExecutionValueSubPlan, cls).__new__(
+        return super(ExecutionValueSubplan, cls).__new__(
             cls,
             check.list_param(steps, 'steps', of_type=ExecutionStep),
             check.inst_param(
@@ -208,7 +208,7 @@ class ExecutionValueSubPlan(
 
     @staticmethod
     def empty(terminal_step_output_handle):
-        return ExecutionValueSubPlan([], terminal_step_output_handle)
+        return ExecutionValueSubplan([], terminal_step_output_handle)
 
 
 class ExecutionPlan(object):

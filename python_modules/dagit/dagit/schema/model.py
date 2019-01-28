@@ -191,13 +191,13 @@ class StepExecution(namedtuple('_StepExecution', 'step_key marshalled_inputs mar
         )
 
 
-class SubPlanExecutionArgs(
+class SubplanExecutionArgs(
     namedtuple(
-        '_SubPlanExecutionArgs', 'info pipeline_name env_config step_executions execution_metadata'
+        '_SubplanExecutionArgs', 'info pipeline_name env_config step_executions execution_metadata'
     )
 ):
     def __new__(cls, info, pipeline_name, env_config, step_executions, execution_metadata):
-        return super(SubPlanExecutionArgs, cls).__new__(
+        return super(SubplanExecutionArgs, cls).__new__(
             cls,
             info=check.inst_param(info, 'info', ResolveInfo),
             pipeline_name=check.str_param(pipeline_name, 'pipeline_name'),
@@ -216,7 +216,7 @@ class SubPlanExecutionArgs(
 
 
 def start_subplan_execution(args):
-    check.inst_param(args, 'args', SubPlanExecutionArgs)
+    check.inst_param(args, 'args', SubplanExecutionArgs)
 
     info = args.info
 
@@ -248,7 +248,7 @@ def start_subplan_execution(args):
 
 
 def _execution_plan_or_error(subplan_execution_args, dauphin_pipeline, evaluate_value_result):
-    check.inst_param(subplan_execution_args, 'subplan_execution_args', SubPlanExecutionArgs)
+    check.inst_param(subplan_execution_args, 'subplan_execution_args', SubplanExecutionArgs)
     check.inst_param(dauphin_pipeline, 'dauphin_pipeline', DauphinPipeline)
     check.inst_param(evaluate_value_result, 'evaluate_value_result', EvaluateValueResult)
 
@@ -265,7 +265,7 @@ def _execution_plan_or_error(subplan_execution_args, dauphin_pipeline, evaluate_
 
     if invalid_keys:
         return EitherError(
-            subplan_execution_args.info.schema.type_named('StartSubPlanExecutionInvalidStepsError')(
+            subplan_execution_args.info.schema.type_named('StartSubplanExecutionInvalidStepsError')(
                 invalid_step_keys=invalid_keys
             )
         )
@@ -277,7 +277,7 @@ def _execution_plan_or_error(subplan_execution_args, dauphin_pipeline, evaluate_
 def _execute_subplan_or_error(
     subplan_execution_args, dauphin_pipeline, execution_plan, evaluate_value_result
 ):
-    check.inst_param(subplan_execution_args, 'subplan_execution_args', SubPlanExecutionArgs)
+    check.inst_param(subplan_execution_args, 'subplan_execution_args', SubplanExecutionArgs)
     check.inst_param(dauphin_pipeline, 'dauphin_pipeline', DauphinPipeline)
     check.inst_param(execution_plan, 'execution_plan', ExecutionPlan)
     check.inst_param(evaluate_value_result, 'evaluate_value_result', EvaluateValueResult)
@@ -291,7 +291,7 @@ def _execute_subplan_or_error(
             if not step.has_step_input(marshalled_input.input_name):
                 schema = subplan_execution_args.info.schema
                 return EitherError(
-                    schema.type_named('StartSubPlanExecutionInvalidInputError')(
+                    schema.type_named('StartSubplanExecutionInvalidInputError')(
                         step=schema.type_named('ExecutionStep')(step),
                         invalid_input_name=marshalled_input.input_name,
                     )
@@ -303,7 +303,7 @@ def _execute_subplan_or_error(
             if not step.has_step_output(marshalled_output.output_name):
                 schema = subplan_execution_args.info.schema
                 return EitherError(
-                    schema.type_named('StartSubPlanExecutionInvalidOutputError')(
+                    schema.type_named('StartSubplanExecutionInvalidOutputError')(
                         step=schema.type_named('ExecutionStep')(step),
                         invalid_output_name=marshalled_output.output_name,
                     )
@@ -325,7 +325,7 @@ def _execute_subplan_or_error(
 
     # TODO: Handle error conditions here
 
-    return subplan_execution_args.info.schema.type_named('StartSubPlanExecutionSuccess')(
+    return subplan_execution_args.info.schema.type_named('StartSubplanExecutionSuccess')(
         pipeline=dauphin_pipeline
     )
 

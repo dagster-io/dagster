@@ -292,46 +292,46 @@ class DauphinStartPipelineExecutionResult(dauphin.Union):
         )
 
 
-class DauphinStartSubPlanExecutionSuccess(dauphin.ObjectType):
+class DauphinStartSubplanExecutionSuccess(dauphin.ObjectType):
     class Meta:
-        name = 'StartSubPlanExecutionSuccess'
+        name = 'StartSubplanExecutionSuccess'
 
     pipeline = dauphin.Field(dauphin.NonNull('Pipeline'))
 
 
-class DauphinStartSubPlanExecutionInvalidStepsError(dauphin.ObjectType):
+class DauphinStartSubplanExecutionInvalidStepsError(dauphin.ObjectType):
     class Meta:
-        name = 'StartSubPlanExecutionInvalidStepsError'
+        name = 'StartSubplanExecutionInvalidStepsError'
 
     invalid_step_keys = dauphin.Field(dauphin.non_null_list(dauphin.String))
 
 
-class DauphinStartSubPlanExecutionInvalidInputError(dauphin.ObjectType):
+class DauphinStartSubplanExecutionInvalidInputError(dauphin.ObjectType):
     class Meta:
-        name = 'StartSubPlanExecutionInvalidInputError'
+        name = 'StartSubplanExecutionInvalidInputError'
 
     step = dauphin.NonNull('ExecutionStep')
     invalid_input_name = dauphin.NonNull(dauphin.String)
 
 
-class DauphinStartSubPlanExecutionInvalidOutputError(dauphin.ObjectType):
+class DauphinStartSubplanExecutionInvalidOutputError(dauphin.ObjectType):
     class Meta:
-        name = 'StartSubPlanExecutionInvalidOutputError'
+        name = 'StartSubplanExecutionInvalidOutputError'
 
     step = dauphin.NonNull('ExecutionStep')
     invalid_output_name = dauphin.NonNull(dauphin.String)
 
 
-class DauphinStartSubPlanExecutionResult(dauphin.Union):
+class DauphinStartSubplanExecutionResult(dauphin.Union):
     class Meta:
-        name = 'StartSubPlanExecutionResult'
+        name = 'StartSubplanExecutionResult'
         types = (
-            DauphinStartSubPlanExecutionSuccess,
+            DauphinStartSubplanExecutionSuccess,
             DauphinPipelineNotFoundError,
             DauphinPipelineConfigValidationInvalid,
-            DauphinStartSubPlanExecutionInvalidStepsError,
-            DauphinStartSubPlanExecutionInvalidInputError,
-            DauphinStartSubPlanExecutionInvalidOutputError,
+            DauphinStartSubplanExecutionInvalidStepsError,
+            DauphinStartSubplanExecutionInvalidInputError,
+            DauphinStartSubplanExecutionInvalidOutputError,
         )
 
 

@@ -3,7 +3,7 @@ from dagster.core.definitions import Result, Solid
 from dagster.core.types.runtime import RuntimeType
 
 from .objects import (
-    ExecutionValueSubPlan,
+    ExecutionValueSubplan,
     ExecutionStep,
     StepInput,
     StepOutput,
@@ -77,7 +77,7 @@ def create_joining_subplan(state, solid, join_step_key, parallel_steps, parallel
     join_step = create_join_step(state, solid, join_step_key, parallel_steps, parallel_step_output)
 
     output_name = join_step.step_outputs[0].name
-    return ExecutionValueSubPlan(
+    return ExecutionValueSubplan(
         parallel_steps + [join_step], StepOutputHandle(join_step, output_name)
     )
 

@@ -14,7 +14,7 @@ from dagster.core.errors import DagsterExpectationFailedError
 from .objects import (
     ExecutionPlanInfo,
     ExecutionStep,
-    ExecutionValueSubPlan,
+    ExecutionValueSubplan,
     StepInput,
     StepOutput,
     StepOutputHandle,
@@ -133,4 +133,4 @@ def decorate_with_expectations(execution_info, state, solid, transform_step, out
             kind=StepKind.OUTPUT_EXPECTATION,
         )
     else:
-        return ExecutionValueSubPlan.empty(StepOutputHandle(transform_step, output_def.name))
+        return ExecutionValueSubplan.empty(StepOutputHandle(transform_step, output_def.name))
