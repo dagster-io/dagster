@@ -188,7 +188,7 @@ class DauphinMutation(dauphin.ObjectType):
         name = 'Mutation'
 
     start_pipeline_execution = DauphinStartPipelineExecutionMutation.Field()
-    start_sub_plan_execution = DauphinStartSubplanExecution.Field()
+    start_subplan_execution = DauphinStartSubplanExecution.Field()
 
 
 class DauphinSubscription(dauphin.ObjectType):
