@@ -111,7 +111,7 @@ def scaffold_airflow_dag(
         printed_env_config=(
             format_file_contents(str(env_config), **BLACK_KWARGS)
             if BLACK
-            else FormatCode(str(env_config))
+            else FormatCode(str(env_config))[0]
         ),
         default_args=str(default_args),
         dag_kwargs=(
@@ -147,11 +147,14 @@ def scaffold_airflow_dag(
     )
 
     formatted_dag_file = (
-        format_file_contents(dag_file, **BLACK_KWARGS) if BLACK else FormatCode(dag_file)
+        format_file_contents(dag_file, **BLACK_KWARGS) if BLACK else FormatCode(dag_file)[0]
     )
 
     if output_path:
         with open(output_path, 'w') as fd:
+            import pdb
+
+            pdb.set_trace()
             fd.write(formatted_dag_file)
 
     return formatted_dag_file
