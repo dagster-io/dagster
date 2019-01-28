@@ -16,7 +16,7 @@ from airflow.utils.file import TemporaryDirectory
 from docker import APIClient, tls
 
 
-class ModifiedDockerOperator(BaseOperator):
+class DagsterOperator(BaseOperator):
     """
     Execute a command inside a docker container.
 
@@ -136,11 +136,12 @@ class ModifiedDockerOperator(BaseOperator):
         dns_search=None,
         auto_remove=False,
         shm_size=None,
+        step=None,
         *args,
         **kwargs
     ):
 
-        super(ModifiedDockerOperator, self).__init__(*args, **kwargs)
+        super(DagsterOperator, self).__init__(*args, **kwargs)
         self.api_version = api_version
         self.auto_remove = auto_remove
         self.command = command
@@ -180,6 +181,7 @@ class ModifiedDockerOperator(BaseOperator):
         )
 
     def execute(self, context):
+        return
         self.log.info('Starting docker container from image %s', self.image)
 
         tls_config = self.__get_tls_config()
@@ -266,4 +268,8 @@ class ModifiedDockerOperator(BaseOperator):
 
 class DagsterPlugin(AirflowPlugin):
     name = 'dagster_plugin'
-    operators = [ModifiedDockerOperator]
+    operators = [DagsterOperator]
+
+
+# https://stackoverflow.com/questions/43345991/how-to-get-the-jobid-for-the-airflow-dag-runs
+# https://airflow.apache.org/_modules/airflow/operators/python_operator.html - provide_context
