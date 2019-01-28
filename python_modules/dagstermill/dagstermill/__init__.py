@@ -61,16 +61,18 @@ class Manager:
         self.solid_def = self.repository_def.solid_def_named(solid_def_name)
         self.solid_def_name = check.str_param(solid_def_name, 'solid_def_name')
 
-    def define_out_of_pipeline_info(self, context_config={}):
-        check.str_param(self.solid_def_name, 'solid_def_name')  # it is not none
+    def define_out_of_pipeline_info(self, context_config):
+        check.str_param(self.solid_def_name, 'solid_def_name')
         solid = Solid(self.solid_def_name, self.solid_def)
         pipeline_def = PipelineDefinition([self.solid_def], name="Ephemeral Notebook Pipeline")
         from dagster.core.execution import create_typed_context
 
-        context_config = create_typed_context(pipeline_def, context_config)
+        typed_context = create_typed_context(
+            pipeline_def, {} if context_config is None else context_config
+        )
         from dagster.core.system_config.objects import EnvironmentConfig
 
-        dummy_environment_config = EnvironmentConfig(context=context_config)
+        dummy_environment_config = EnvironmentConfig(context=typed_context)
         with yield_context(pipeline_def, dummy_environment_config, ReentrantInfo("")) as context:
             self.info = TransformExecutionInfo(context, None, solid, pipeline_def)
         return self.info
@@ -308,7 +310,7 @@ def get_solid_definition():
     return check.inst_param(MANAGER_FOR_NOTEBOOK_INSTANCE.solid_def, "solid_def", SolidDefinition)
 
 
-def get_info(config={}):
+def get_info(config=None):
     if not MANAGER_FOR_NOTEBOOK_INSTANCE.populated_by_papermill:
         MANAGER_FOR_NOTEBOOK_INSTANCE.define_out_of_pipeline_info(config)
     return MANAGER_FOR_NOTEBOOK_INSTANCE.info
