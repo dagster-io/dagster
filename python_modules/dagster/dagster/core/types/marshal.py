@@ -28,22 +28,22 @@ class PickleSerializationStrategy(SerializationStrategy):
 @six.add_metaclass(ABCMeta)
 class PersistenceStrategy:
     @abstractmethod
-    def marshal_value(self, serialization_strategy, key, value):
+    def write_value(self, serialization_strategy, key, value):
         pass
 
     @abstractmethod
-    def unmarshal_value(self, serialization_strategy, key):
+    def read_write(self, serialization_strategy, key):
         pass
 
 
 class FilePersistencePolicy(PersistenceStrategy):
-    def marshal_value(self, serialization_strategy, key, value):
+    def write_value(self, serialization_strategy, key, value):
         check.inst_param(serialization_strategy, 'serialization_strategy', SerializationStrategy)
         check.str_param(key, 'key')
 
         return serialize_to_file(serialization_strategy, value, key)
 
-    def unmarshal_value(self, serialization_strategy, key):
+    def read_write(self, serialization_strategy, key):
         check.inst_param(serialization_strategy, 'serialization_strategy', SerializationStrategy)
         check.str_param(key, 'key')
         return deserialize_from_file(serialization_strategy, key)

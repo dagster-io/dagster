@@ -592,7 +592,7 @@ def _marshal_outputs(context, results, outputs_to_marshal):
 
             path = output['path']
             output_type = result.step.step_output_dict[result.success_data.output_name].runtime_type
-            context.persistence_policy.marshal_value(
+            context.persistence_policy.write_value(
                 output_type.serialization_strategy, path, result.success_data.value
             )
 
@@ -607,7 +607,7 @@ def _unmarshal_inputs(context, inputs_to_marshal, execution_plan):
 
             check.invariant(input_type.serialization_strategy)
 
-            input_value = context.persistence_policy.unmarshal_value(
+            input_value = context.persistence_policy.read_write(
                 input_type.serialization_strategy, file_path
             )
             inputs[step_key][input_name] = input_value

@@ -98,7 +98,7 @@ class Manager:
         runtime_type = self.solid_def.output_def_named(output_name).runtime_type
 
         out_file = os.path.join(self.marshal_dir, 'output-{}'.format(output_name))
-        pm.record(output_name, marshal_value(runtime_type, value, out_file))
+        pm.record(output_name, write_value(runtime_type, value, out_file))
 
     def populate_context(
         self, run_id, pipeline_def, marshal_dir, environment_config, output_log_path
@@ -162,7 +162,7 @@ def is_json_serializable(value):
         return False
 
 
-def marshal_value(runtime_type, value, target_file):
+def write_value(runtime_type, value, target_file):
     check.inst_param(runtime_type, 'runtime_type', RuntimeType)
     if runtime_type.is_scalar:
         return value
@@ -199,10 +199,10 @@ def populate_context(dm_context_data):
 def load_parameter(input_name, input_value):
     solid_def = MANAGER_FOR_NOTEBOOK_INSTANCE.solid_def
     input_def = solid_def.input_def_named(input_name)
-    return unmarshal_value(input_def.runtime_type, input_value)
+    return read_write(input_def.runtime_type, input_value)
 
 
-def unmarshal_value(runtime_type, value):
+def read_write(runtime_type, value):
     check.inst_param(runtime_type, 'runtime_type', RuntimeType)
     if runtime_type.is_scalar:
         return value
@@ -255,7 +255,7 @@ def get_papermill_parameters(transform_execution_info, inputs, output_log_path):
             input_name != "dm_context"
         ), "Dagstermill solids cannot have inputs named 'dm_context'"
         runtime_type = input_def_dict[input_name].runtime_type
-        parameter_value = marshal_value(
+        parameter_value = write_value(
             runtime_type, input_value, os.path.join(marshal_dir, 'input-{}'.format(input_name))
         )
         parameters[input_name] = parameter_value
@@ -408,9 +408,7 @@ def _dm_solid_transform(name, notebook_path):
             for output_def in info.solid_def.output_defs:
                 if output_def.name in output_nb.data:
 
-                    value = unmarshal_value(
-                        output_def.runtime_type, output_nb.data[output_def.name]
-                    )
+                    value = read_write(output_def.runtime_type, output_nb.data[output_def.name])
 
                     yield Result(value, output_def.name)
 
