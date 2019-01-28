@@ -152,9 +152,6 @@ def scaffold_airflow_dag(
 
     if output_path:
         with open(output_path, 'w') as fd:
-            import pdb
-
-            pdb.set_trace()
             fd.write(formatted_dag_file)
 
     return formatted_dag_file
