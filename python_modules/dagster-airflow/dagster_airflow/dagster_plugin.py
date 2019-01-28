@@ -13,10 +13,10 @@ from airflow.models import BaseOperator
 from airflow.plugins_manager import AirflowPlugin
 from airflow.utils.decorators import apply_defaults
 from airflow.utils.file import TemporaryDirectory
-from docker import APIClient, tls
+from docker import APIClient, from_env, tls
 
 
-class DagsterOperator(BaseOperator):
+class ModifiedDockerOperator(BaseOperator):
     """
     Execute a command inside a docker container.
 
@@ -141,7 +141,7 @@ class DagsterOperator(BaseOperator):
         **kwargs
     ):
 
-        super(DagsterOperator, self).__init__(*args, **kwargs)
+        super(ModifiedDockerOperator, self).__init__(*args, **kwargs)
         self.api_version = api_version
         self.auto_remove = auto_remove
         self.command = command
@@ -190,7 +190,7 @@ class DagsterOperator(BaseOperator):
             self.cli = self.get_hook().get_conn()
         else:
             try:
-                self.cli = docker.from_env().api
+                self.cli = from_env().api
             except:
                 self.cli = APIClient(
                     base_url=self.docker_url, version=self.api_version, tls=tls_config
@@ -266,6 +266,10 @@ class DagsterOperator(BaseOperator):
         return tls_config
 
 
+class DagsterOperator(ModifiedDockerOperator):
+    pass
+
+    
 class DagsterPlugin(AirflowPlugin):
     name = 'dagster_plugin'
     operators = [DagsterOperator]
