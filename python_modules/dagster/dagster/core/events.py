@@ -277,7 +277,7 @@ def logger_to_kwargs(logger_message):
 
     event_cls = EVENT_CLS_LOOKUP[event_type]
     if issubclass(event_cls, PipelineEventRecord):
-        return merge_dicts(base_args, {'pipeline_name': logger_message.meta['pipeline']})
+        return dict(base_args, pipeline_name=logger_message.meta['pipeline'])
     elif issubclass(event_cls, ExecutionStepEventRecord):
         step_args = {
             'step_key': logger_message.meta['step_key'],
