@@ -80,6 +80,25 @@ class StructuredLoggerMessage(
         )
 
 
+class JsonEventLoggerHandler(logging.Handler):
+    def __init__(self, json_path, construct_event_record):
+        super(JsonEventLoggerHandler, self).__init__()
+        self.json_path = check.str_param(json_path, 'json_path')
+        self.construct_event_record = construct_event_record
+
+    def emit(self, record):
+        try:
+            event_record = self.construct_event_record(record)
+            with open(self.json_path, 'a') as ff:
+                text_line = json.dumps(event_record.to_dict())
+                ff.write(text_line + '\n')
+
+        # Need to catch Exception here, so disabling lint
+        except Exception as e:  # pylint: disable=W0703
+            logging.critical('Error during logging!')
+            logging.exception(str(e))
+
+
 class StructuredLoggerHandler(logging.Handler):
     def __init__(self, callback):
         super(StructuredLoggerHandler, self).__init__()

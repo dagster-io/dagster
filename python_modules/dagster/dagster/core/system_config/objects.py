@@ -26,11 +26,16 @@ class SolidConfig(namedtuple('_SolidConfig', 'config inputs outputs')):
         )
 
 
-class EnvironmentConfig(namedtuple('_EnvironmentConfig', 'context solids expectations execution')):
-    def __new__(cls, solids=None, context=None, expectations=None, execution=None):
+class EnvironmentConfig(
+    namedtuple('_EnvironmentConfig', 'context solids expectations execution original_config_dict')
+):
+    def __new__(
+        cls, solids=None, context=None, expectations=None, execution=None, original_config_dict=None
+    ):
         check.opt_inst_param(context, 'context', ContextConfig)
         check.opt_inst_param(expectations, 'expectations', ExpectationsConfig)
         check.opt_inst_param(execution, 'execution', ExecutionConfig)
+        check.opt_dict_param(original_config_dict, 'original_config_dict')
 
         if context is None:
             context = ContextConfig()
@@ -47,6 +52,7 @@ class EnvironmentConfig(namedtuple('_EnvironmentConfig', 'context solids expecta
             solids=check.opt_dict_param(solids, 'solids', key_type=str, value_type=SolidConfig),
             expectations=expectations,
             execution=execution,
+            original_config_dict=original_config_dict,
         )
 
 

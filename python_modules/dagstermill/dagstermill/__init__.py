@@ -7,6 +7,7 @@ import os
 import uuid
 import copy
 import nbformat
+import subprocess
 
 import six
 
@@ -30,6 +31,12 @@ from dagster import (
 from dagster.core.definitions import TransformExecutionInfo
 from dagster.core.types.runtime import RuntimeType
 
+from dagster.core.definitions.dependency import Solid
+from dagster.core.events import construct_json_event_logger, EventRecord, EventType
+from dagster.core.definitions.environment_configs import construct_environment_config
+from dagster.core.execution import yield_context
+from dagster.core.execution_context import ReentrantInfo
+
 # magic incantation for syncing up notebooks to enclosing virtual environment.
 # I don't claim to understand it.
 # ipython kernel install --name "dagster" --user
@@ -47,11 +54,28 @@ class Manager:
         self.solid_def = None
         self.populated_by_papermill = False
         self.marshal_dir = None
+        self.info = None
 
     def declare_as_solid(self, repository_def, solid_def_name):
         self.repository_def = repository_def
         self.solid_def = self.repository_def.solid_def_named(solid_def_name)
         self.solid_def_name = check.str_param(solid_def_name, 'solid_def_name')
+
+    def define_out_of_pipeline_info(self, context_config):
+        check.str_param(self.solid_def_name, 'solid_def_name')
+        solid = Solid(self.solid_def_name, self.solid_def)
+        pipeline_def = PipelineDefinition([self.solid_def], name="Ephemeral Notebook Pipeline")
+        from dagster.core.execution import create_typed_context
+
+        typed_context = create_typed_context(
+            pipeline_def, {} if context_config is None else context_config
+        )
+        from dagster.core.system_config.objects import EnvironmentConfig
+
+        dummy_environment_config = EnvironmentConfig(context=typed_context)
+        with yield_context(pipeline_def, dummy_environment_config, ReentrantInfo("")) as context:
+            self.info = TransformExecutionInfo(context, None, solid, pipeline_def)
+        return self.info
 
     def get_pipeline(self, name):
         check.str_param(name, 'name')
@@ -72,10 +96,26 @@ class Manager:
         out_file = os.path.join(self.marshal_dir, 'output-{}'.format(output_name))
         pm.record(output_name, marshal_value(runtime_type, value, out_file))
 
-    def populate_context(self, solid_def, marshal_dir):
-        self.solid_def = solid_def
+    def populate_context(
+        self, run_id, pipeline_def, marshal_dir, environment_config, output_log_path
+    ):
+        check.invariant(pipeline_def.has_solid_def(self.solid_def_name))
         self.marshal_dir = marshal_dir
         self.populated_by_papermill = True
+        loggers = None
+        if output_log_path != 0:
+            event_logger = construct_json_event_logger(output_log_path)
+            loggers = [event_logger]
+        # do not include event_callback in ReentrantInfo,
+        # since that'll be taken care of by side-channel established by event_logger
+        reentrant_info = ReentrantInfo(run_id, context_stack=None, loggers=loggers)
+        solid = Solid(self.solid_def_name, self.solid_def)
+        typed_environment = construct_environment_config(environment_config)
+        with yield_context(pipeline_def, typed_environment, reentrant_info) as context:
+            solid_config = None
+            self.info = TransformExecutionInfo(context, solid_config, solid, pipeline_def)
+
+        return self.info
 
 
 class DagsterTranslator(pm.translators.PythonTranslator):
@@ -83,8 +123,14 @@ class DagsterTranslator(pm.translators.PythonTranslator):
     def codify(cls, parameters):
         assert "dm_context" in parameters
         content = '{}\n'.format(cls.comment('Parameters'))
+        content += "{}\n".format("import json")
         content += '{}\n'.format(
-            'dm.populate_context({dm_context})'.format(dm_context=parameters['dm_context'])
+            cls.assign(
+                'info',
+                'dm.populate_context(json.loads(\'{dm_context}\'))'.format(
+                    dm_context=parameters['dm_context']
+                ),
+            )
         )
 
         for name, val in parameters.items():
@@ -131,14 +177,17 @@ def yield_result(value, output_name='result'):
     return MANAGER_FOR_NOTEBOOK_INSTANCE.yield_result(value, output_name)
 
 
-def populate_context(dm_context):
-    dm_context_data = dm_context
+def populate_context(dm_context_data):
+    check.dict_param(dm_context_data, "dm_context_data")
     pipeline_def = MANAGER_FOR_NOTEBOOK_INSTANCE.get_pipeline(dm_context_data['pipeline_name'])
     check.inst(pipeline_def, PipelineDefinition)
-    solid_def_name = dm_context_data['solid_def_name']
-    check.invariant(pipeline_def.has_solid_def(solid_def_name))
-    solid_def = pipeline_def.solid_def_named(solid_def_name)
-    MANAGER_FOR_NOTEBOOK_INSTANCE.populate_context(solid_def, dm_context_data['marshal_dir'])
+    return MANAGER_FOR_NOTEBOOK_INSTANCE.populate_context(
+        dm_context_data['run_id'],
+        pipeline_def,
+        dm_context_data['marshal_dir'],
+        dm_context_data['environment_config'],
+        dm_context_data['output_log_path'],
+    )
 
 
 def load_parameter(input_name, input_value):
@@ -163,7 +212,7 @@ def unmarshal_value(runtime_type, value):
         )
 
 
-def get_papermill_parameters(transform_execution_info, inputs):
+def get_papermill_parameters(transform_execution_info, inputs, output_log_path):
     check.inst_param(transform_execution_info, 'transform_execution_info', TransformExecutionInfo)
     check.dict_param(inputs, 'inputs', key_type=six.string_types)
 
@@ -173,10 +222,17 @@ def get_papermill_parameters(transform_execution_info, inputs):
     if not os.path.exists(marshal_dir):
         os.makedirs(marshal_dir)
 
+    if not transform_execution_info.context.has_event_callback:
+        transform_execution_info.log.info("get_papermill_parameters.context has no event_callback!")
+        output_log_path = 0  # stands for null
+
     dm_context_dict = {
+        'run_id': run_id,
         'pipeline_name': transform_execution_info.pipeline_def.name,
         'solid_def_name': transform_execution_info.solid.definition.name,
         'marshal_dir': marshal_dir,
+        'environment_config': transform_execution_info.context.environment_config,
+        'output_log_path': output_log_path,
     }
 
     parameters = dict(dm_context=json.dumps(dm_context_dict))
@@ -211,7 +267,6 @@ def replace_parameters(info, nb, parameters):
     nb = copy.deepcopy(nb)
 
     # Generate parameter content based on the kernel_name
-
     param_content = DagsterTranslator.codify(parameters)
     # papermill method choosed translator based on kernel_name and language,
     # but we just call the DagsterTranslator
@@ -251,6 +306,16 @@ def replace_parameters(info, nb, parameters):
     return nb
 
 
+def get_solid_definition():
+    return check.inst_param(MANAGER_FOR_NOTEBOOK_INSTANCE.solid_def, "solid_def", SolidDefinition)
+
+
+def get_info(config=None):
+    if not MANAGER_FOR_NOTEBOOK_INSTANCE.populated_by_papermill:
+        MANAGER_FOR_NOTEBOOK_INSTANCE.define_out_of_pipeline_info(config)
+    return MANAGER_FOR_NOTEBOOK_INSTANCE.info
+
+
 def _dm_solid_transform(name, notebook_path):
     check.str_param(name, 'name')
     check.str_param(notebook_path, 'notebook_path')
@@ -268,15 +333,50 @@ def _dm_solid_transform(name, notebook_path):
             output_notebook_dir, '{prefix}-out.ipynb'.format(prefix=str(uuid.uuid4()))
         )
 
+        output_log_path = os.path.join(base_dir, 'run.log')
+
         try:
             nb = load_notebook_node(notebook_path)
-            nb_no_parameters = replace_parameters(info, nb, get_papermill_parameters(info, inputs))
+            nb_no_parameters = replace_parameters(
+                info, nb, get_papermill_parameters(info, inputs, output_log_path)
+            )
             intermediate_path = os.path.join(
                 output_notebook_dir, '{prefix}-inter.ipynb'.format(prefix=str(uuid.uuid4()))
             )
             write_ipynb(nb_no_parameters, intermediate_path)
 
-            _source_nb = pm.execute_notebook(intermediate_path, temp_path)
+            with open(output_log_path, 'a') as f:
+                f.close()
+
+            # info.log.info("Output log path is {}".format(output_log_path))
+            # info.log.info("info.context.event_callback {}".format(info.context.event_callback))
+
+            process = subprocess.Popen(["papermill", intermediate_path, temp_path])
+            # _source_nb = pm.execute_notebook(intermediate_path, temp_path)
+
+            while process.poll() is None:  # while subprocess alive
+                if info.context.event_callback:
+                    with open(output_log_path, 'r') as ff:
+                        current_time = os.path.getmtime(output_log_path)
+                        while process.poll() is None:
+                            new_time = os.path.getmtime(output_log_path)
+                            if new_time != current_time:
+                                line = ff.readline()
+                                if not line:
+                                    break
+                                event_record_dict = json.loads(line)
+
+                                event_record_dict['event_type'] = EventType(
+                                    event_record_dict['event_type']
+                                )
+                                info.context.event_callback(EventRecord(**event_record_dict))
+                                current_time = new_time
+
+            if process.returncode != 0:
+                # Throw event that is an execution error!
+                info.log.debug("There was an error in Papermill!")
+                info.log.debug(process.stderr)
+                exit()
 
             output_nb = pm.read_notebook(temp_path)
 

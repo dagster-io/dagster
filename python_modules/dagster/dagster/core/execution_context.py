@@ -63,7 +63,15 @@ class RuntimeExecutionContext:
             ExecutionContext.
     '''
 
-    def __init__(self, run_id, loggers=None, resources=None, context_stack=None):
+    def __init__(
+        self,
+        run_id,
+        loggers=None,
+        resources=None,
+        context_stack=None,
+        event_callback=None,
+        environment_config=None,
+    ):
 
         if loggers is None:
             loggers = [define_colored_console_logger('dagster')]
@@ -73,6 +81,10 @@ class RuntimeExecutionContext:
         self._run_id = check.str_param(run_id, 'run_id')
         self._context_stack = check.opt_dict_param(context_stack, 'context_stack')
         self.events = ExecutionEvents(self)
+
+        # For re-construction purposes later on
+        self._event_callback = check.opt_callable_param(event_callback, 'event_callback')
+        self._environment_config = environment_config
 
     def _log(self, method, orig_message, message_props):
         check.str_param(method, 'method')
@@ -218,12 +230,25 @@ class RuntimeExecutionContext:
     def run_id(self):
         return self._run_id
 
+    @property
+    def event_callback(self):
+        return self._event_callback
 
-class ReentrantInfo(namedtuple('_ReentrantInfo', 'run_id context_stack event_callback')):
-    def __new__(cls, run_id=None, context_stack=None, event_callback=None):
+    @property
+    def has_event_callback(self):
+        return self._event_callback is not None
+
+    @property
+    def environment_config(self):
+        return self._environment_config
+
+
+class ReentrantInfo(namedtuple('_ReentrantInfo', 'run_id context_stack event_callback loggers')):
+    def __new__(cls, run_id=None, context_stack=None, event_callback=None, loggers=None):
         return super(ReentrantInfo, cls).__new__(
             cls,
             run_id=check.opt_str_param(run_id, 'run_id'),
             context_stack=check.opt_dict_param(context_stack, 'context_stack'),
             event_callback=check.opt_callable_param(event_callback, 'event_callback'),
+            loggers=check.opt_list_param(loggers, 'loggers'),
         )
