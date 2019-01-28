@@ -562,14 +562,13 @@ jobs:
       TOXENV: py35
       AIRFLOW_HOME: "/home/circleci/airflow"
 
-  # https://github.com/dagster-io/dagster/issues/729     
-  # dagster-airflow-py27:
-  #   <<: *dagster-airflow-template
-  #   docker:
-  #     - image: circleci/python:2.7.15
-  #   environment:
-  #     TOXENV: py27
-  #     AIRFLOW_HOME: "/home/circleci/airflow"
+  dagster-airflow-py27:
+    <<: *dagster-airflow-template
+    docker:
+      - image: circleci/python:2.7.15
+    environment:
+      TOXENV: py27
+      AIRFLOW_HOME: "/home/circleci/airflow"
 
   dagma-py37:
     <<: *dagma-template
