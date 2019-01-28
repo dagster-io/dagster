@@ -1531,7 +1531,7 @@ query PipelineQuery($config: PipelineConfig, $pipeline: ExecutionSelector!) {
         solid {
           name
         }
-        tag
+        kind 
         inputs {
           name
           type {
@@ -1617,7 +1617,7 @@ def test_query_execution_plan():
 
     cn = get_named_thing(plan_data['steps'], 'sum_solid.transform')
 
-    assert cn['tag'] == 'TRANSFORM'
+    assert cn['kind'] == 'TRANSFORM'
     assert cn['solid']['name'] == 'sum_solid'
 
     assert get_nameset(cn['inputs']) == set(['num'])
@@ -1859,7 +1859,7 @@ mutation ($pipeline: ExecutionSelector!, $config: PipelineConfig) {
                             level
                         }
                         ... on ExecutionStepStartEvent {
-                            step { tag }
+                            step { kind }
                         }
                     }
                 }

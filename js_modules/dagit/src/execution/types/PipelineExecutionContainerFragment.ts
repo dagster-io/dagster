@@ -70,7 +70,7 @@ export interface PipelineExecutionContainerFragment_runs_executionPlan_steps_sol
 export interface PipelineExecutionContainerFragment_runs_executionPlan_steps {
   name: string;
   solid: PipelineExecutionContainerFragment_runs_executionPlan_steps_solid;
-  tag: StepTag;
+  kind: StepKind;
 }
 
 export interface PipelineExecutionContainerFragment_runs_executionPlan {
@@ -173,7 +173,7 @@ export enum PipelineRunStatus {
   SUCCESS = "SUCCESS",
 }
 
-export enum StepTag {
+export enum StepKind {
   INPUT_EXPECTATION = "INPUT_EXPECTATION",
   INPUT_THUNK = "INPUT_THUNK",
   JOIN = "JOIN",

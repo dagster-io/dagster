@@ -7,7 +7,7 @@ from dagster import (
     lambda_solid,
 )
 from dagster.core.execution import execute_externalized_plan
-from dagster.core.execution_plan.objects import StepTag
+from dagster.core.execution_plan.objects import StepKind
 from dagster.core.types.runtime import resolve_to_runtime_type
 
 from dagster.utils.test import get_temp_file_names
@@ -49,10 +49,10 @@ def test_basic_pipeline_external_plan_execution():
 
     thunk_step_result = results[0]
 
-    assert thunk_step_result.tag == StepTag.VALUE_THUNK
+    assert thunk_step_result.kind == StepKind.VALUE_THUNK
 
     transform_step_result = results[1]
-    assert transform_step_result.tag == StepTag.TRANSFORM
+    assert transform_step_result.kind == StepKind.TRANSFORM
     assert transform_step_result.success
     assert transform_step_result.success_data.output_name == 'result'
     assert transform_step_result.success_data.value == 6

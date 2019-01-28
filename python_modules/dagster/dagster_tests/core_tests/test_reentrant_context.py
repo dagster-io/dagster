@@ -5,7 +5,7 @@ from dagster import (
     ExecutionContext,
     PipelineContextDefinition,
     PipelineDefinition,
-    ReentrantInfo,
+    ExecutionMetadata,
     execute_pipeline,
     solid,
 )
@@ -14,72 +14,72 @@ from dagster import (
 def test_injected_run_id():
     run_id = 'kdjfkdjfkd'
     pipeline_def = PipelineDefinition(name='injected_run_id', solids=[])
-    result = execute_pipeline(pipeline_def, reentrant_info=ReentrantInfo(run_id=run_id))
+    result = execute_pipeline(pipeline_def, execution_metadata=ExecutionMetadata(run_id=run_id))
 
     assert result.success
     assert result.context.run_id == run_id
 
 
-def test_injected_context_stack():
+def test_injected_tags():
     called = {}
 
     @solid
-    def check_context_stack(info):
-        assert info.context.get_context_value('foo') == 'bar'
+    def check_tags(info):
+        assert info.context.get_tag('foo') == 'bar'
         called['yup'] = True
 
-    pipeline_def = PipelineDefinition(name='injected_run_id', solids=[check_context_stack])
+    pipeline_def = PipelineDefinition(name='injected_run_id', solids=[check_tags])
     result = execute_pipeline(
-        pipeline_def, reentrant_info=ReentrantInfo(context_stack={'foo': 'bar'})
+        pipeline_def, execution_metadata=ExecutionMetadata(tags={'foo': 'bar'})
     )
 
     assert result.success
     assert called['yup']
 
 
-def test_user_injected_context_stack():
+def test_user_injected_tags():
     called = {}
 
     @solid
-    def check_context_stack(info):
-        assert info.context.get_context_value('foo') == 'bar'
-        assert info.context.get_context_value('quux') == 'baaz'
+    def check_tags(info):
+        assert info.context.get_tag('foo') == 'bar'
+        assert info.context.get_tag('quux') == 'baaz'
         called['yup'] = True
 
     def _create_context(_info):
-        return ExecutionContext(context_stack={'quux': 'baaz'})
+        return ExecutionContext(tags={'quux': 'baaz'})
 
     pipeline_def = PipelineDefinition(
         name='injected_run_id',
-        solids=[check_context_stack],
+        solids=[check_tags],
         context_definitions={'default': PipelineContextDefinition(context_fn=_create_context)},
     )
 
     result = execute_pipeline(
-        pipeline_def, reentrant_info=ReentrantInfo(context_stack={'foo': 'bar'})
+        pipeline_def, execution_metadata=ExecutionMetadata(tags={'foo': 'bar'})
     )
 
     assert result.success
     assert called['yup']
 
 
-def test_user_injected_context_stack_collision():
+def test_user_injected_tags_collision():
     called = {}
 
     @solid
-    def check_context_stack(info):
-        assert info.context.get_context_value('foo') == 'bar'
-        assert info.context.get_context_value('quux') == 'baaz'
+    def check_tags(info):
+        assert info.context.get_tag('foo') == 'bar'
+        assert info.context.get_tag('quux') == 'baaz'
         called['yup'] = True
 
     def _create_context(_info):
-        return ExecutionContext(context_stack={'foo': 'baaz'})
+        return ExecutionContext(tags={'foo': 'baaz'})
 
     pipeline_def = PipelineDefinition(
         name='injected_run_id',
-        solids=[check_context_stack],
+        solids=[check_tags],
         context_definitions={'default': PipelineContextDefinition(context_fn=_create_context)},
     )
 
     with pytest.raises(DagsterInvariantViolationError, match='You have specified'):
-        execute_pipeline(pipeline_def, reentrant_info=ReentrantInfo(context_stack={'foo': 'bar'}))
+        execute_pipeline(pipeline_def, execution_metadata=ExecutionMetadata(tags={'foo': 'bar'}))

@@ -2,6 +2,7 @@ import pytest
 
 from dagster import (
     ExecutionContext,
+    ExecutionMetadata,
     PipelineContextDefinition,
     PipelineDefinition,
     check,
@@ -18,7 +19,7 @@ from dagster.core.execution_plan.create import (
     create_execution_plan_from_steps,
 )
 
-from dagster.core.execution_plan.objects import ExecutionStep, StepTag
+from dagster.core.execution_plan.objects import ExecutionStep, StepKind, StepBuilderState
 
 from dagster.core.execution_plan.simple_engine import execute_step
 
@@ -44,7 +45,8 @@ def test_compute_noop_node_core():
     environment = EnvironmentConfig()
 
     plan = create_execution_plan_core(
-        ExecutionPlanInfo(create_test_runtime_execution_context(), pipeline, environment)
+        ExecutionPlanInfo(create_test_runtime_execution_context(), pipeline, environment),
+        ExecutionMetadata(),
     )
 
     assert len(plan.steps) == 1
@@ -74,10 +76,32 @@ def test_duplicate_steps():
         create_execution_plan_from_steps(
             [
                 ExecutionStep(
-                    'same_name', [], [], lambda *args, **kwargs: None, StepTag.TRANSFORM, foo
+                    'same_name',
+                    [],
+                    [],
+                    lambda *args, **kwargs: None,
+                    StepKind.TRANSFORM,
+                    foo,
+                    StepBuilderState(
+                        pipeline_name='dummy',
+                        initial_tags=dict(
+                            pipeline='dummy', solid='dummy', solid_definition='dummy'
+                        ),
+                    ).get_tags(),
                 ),
                 ExecutionStep(
-                    'same_name', [], [], lambda *args, **kwargs: None, StepTag.TRANSFORM, foo
+                    'same_name',
+                    [],
+                    [],
+                    lambda *args, **kwargs: None,
+                    StepKind.TRANSFORM,
+                    foo,
+                    StepBuilderState(
+                        pipeline_name='dummy',
+                        initial_tags=dict(
+                            pipeline='dummy', solid='dummy', solid_definition='dummy'
+                        ),
+                    ).get_tags(),
                 ),
             ]
         )

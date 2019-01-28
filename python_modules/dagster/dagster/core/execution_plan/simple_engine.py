@@ -39,7 +39,7 @@ def _all_inputs_covered(step, results):
 
 
 def execute_plan_core(context, execution_plan):
-    check.inst_param(context, 'context', RuntimeExecutionContext)
+    check.inst_param(context, 'base_context', RuntimeExecutionContext)
     check.inst_param(execution_plan, 'execution_plan', ExecutionPlan)
     steps = list(execution_plan.topological_steps())
 
@@ -49,16 +49,17 @@ def execute_plan_core(context, execution_plan):
     )
 
     for step in steps:
+        context_for_step = context.for_step(step)
+
         if not _all_inputs_covered(step, intermediate_results):
             result_keys = set(intermediate_results.keys())
             expected_outputs = [ni.prev_output_handle for ni in step.step_inputs]
 
-            context.debug(
-                'Not all inputs covered for {step}. Not executing.'.format(step=step.key)
-                + '\nKeys in result: {result_keys}.'.format(result_keys=result_keys)
-                + '\nOutputs need for inputs {expected_outputs}'.format(
-                    expected_outputs=expected_outputs
-                )
+            context_for_step.debug(
+                (
+                    'Not all inputs covered for {step}. Not executing. Keys in result: '
+                    '{result_keys}. Outputs need for inputs {expected_outputs}'
+                ).format(expected_outputs=expected_outputs, step=step.key, result_keys=result_keys)
             )
             continue
 
@@ -68,7 +69,7 @@ def execute_plan_core(context, execution_plan):
             input_value = intermediate_results[prev_output_handle].success_data.value
             input_values[step_input.name] = input_value
 
-        for result in execute_step(step, context, input_values):
+        for result in execute_step(step, context_for_step, input_values):
             check.invariant(isinstance(result, StepResult))
             yield result
             if result.success:
@@ -94,7 +95,7 @@ def execute_step(step, context, inputs):
     except DagsterError as dagster_error:
         context.error(str(dagster_error))
         yield StepResult.failure_result(
-            step=step, tag=step.tag, failure_data=StepFailureData(dagster_error=dagster_error)
+            step=step, kind=step.kind, failure_data=StepFailureData(dagster_error=dagster_error)
         )
         return
 
@@ -155,7 +156,7 @@ def _create_step_result(step, result):
 
     return StepResult.success_result(
         step=step,
-        tag=step.tag,
+        kind=step.kind,
         success_data=StepSuccessData(output_name=result.output_name, value=coerced_value),
     )
 
@@ -181,20 +182,14 @@ def _get_evaluated_input(step, input_name, input_value):
 
 def _compute_result_list(step, context, evaluated_inputs):
     error_str = 'Error occured during step {key}'.format(key=step.key)
+    with _execution_step_error_boundary(context, step, error_str):
+        gen = step.compute_fn(context, step, evaluated_inputs)
 
-    def_name = step.solid.definition.name
+        if gen is None:
+            check.invariant(not step.step_outputs)
+            return
 
-    with context.values({'solid': step.solid.name, 'solid_definition': def_name}):
-        with _execution_step_error_boundary(context, step, error_str):
-            gen = step.compute_fn(context, step, evaluated_inputs)
-
-            if gen is None:
-                check.invariant(not step.step_outputs)
-                return
-
-            results = list(gen)
-
-        return results
+        return list(gen)
 
 
 @contextmanager

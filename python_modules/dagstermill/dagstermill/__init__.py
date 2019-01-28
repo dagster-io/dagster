@@ -2,12 +2,13 @@ from __future__ import absolute_import, division, print_function, unicode_litera
 from builtins import *  # pylint: disable=W0622,W0401
 
 import base64
+import copy
 import json
 import os
-import uuid
-import copy
-import nbformat
 import subprocess
+import uuid
+
+import nbformat
 
 import six
 
@@ -35,7 +36,7 @@ from dagster.core.definitions.dependency import Solid
 from dagster.core.events import construct_json_event_logger, EventRecord, EventType
 from dagster.core.definitions.environment_configs import construct_environment_config
 from dagster.core.execution import yield_context
-from dagster.core.execution_context import ReentrantInfo
+from dagster.core.execution_context import ExecutionMetadata
 
 # magic incantation for syncing up notebooks to enclosing virtual environment.
 # I don't claim to understand it.
@@ -73,7 +74,9 @@ class Manager:
         from dagster.core.system_config.objects import EnvironmentConfig
 
         dummy_environment_config = EnvironmentConfig(context=typed_context)
-        with yield_context(pipeline_def, dummy_environment_config, ReentrantInfo("")) as context:
+        with yield_context(
+            pipeline_def, dummy_environment_config, ExecutionMetadata(run_id='')
+        ) as context:
             self.info = TransformExecutionInfo(context, None, solid, pipeline_def)
         return self.info
 
@@ -99,19 +102,21 @@ class Manager:
     def populate_context(
         self, run_id, pipeline_def, marshal_dir, environment_config, output_log_path
     ):
+        check.dict_param(environment_config, 'environment_config')
         check.invariant(pipeline_def.has_solid_def(self.solid_def_name))
+
         self.marshal_dir = marshal_dir
         self.populated_by_papermill = True
         loggers = None
         if output_log_path != 0:
             event_logger = construct_json_event_logger(output_log_path)
             loggers = [event_logger]
-        # do not include event_callback in ReentrantInfo,
+        # do not include event_callback in ExecutionMetadata,
         # since that'll be taken care of by side-channel established by event_logger
-        reentrant_info = ReentrantInfo(run_id, context_stack=None, loggers=loggers)
+        execution_metadata = ExecutionMetadata(run_id, loggers=loggers)
         solid = Solid(self.solid_def_name, self.solid_def)
         typed_environment = construct_environment_config(environment_config)
-        with yield_context(pipeline_def, typed_environment, reentrant_info) as context:
+        with yield_context(pipeline_def, typed_environment, execution_metadata) as context:
             solid_config = None
             self.info = TransformExecutionInfo(context, solid_config, solid, pipeline_def)
 
@@ -214,6 +219,11 @@ def unmarshal_value(runtime_type, value):
 
 def get_papermill_parameters(transform_execution_info, inputs, output_log_path):
     check.inst_param(transform_execution_info, 'transform_execution_info', TransformExecutionInfo)
+    check.param_invariant(
+        isinstance(transform_execution_info.context.environment_config, dict),
+        'transform_execution_info',
+        'TransformExecutionInfo must have valid environment_config',
+    )
     check.dict_param(inputs, 'inputs', key_type=six.string_types)
 
     run_id = transform_execution_info.context.run_id
@@ -323,6 +333,12 @@ def _dm_solid_transform(name, notebook_path):
     do_cleanup = False  # for now
 
     def _t_fn(info, inputs):
+        check.param_invariant(
+            isinstance(info.context.environment_config, dict),
+            'info',
+            'TransformExecutionInfo must have valid environment_config',
+        )
+
         base_dir = '/tmp/dagstermill/{run_id}/'.format(run_id=info.context.run_id)
         output_notebook_dir = os.path.join(base_dir, 'output_notebooks/')
 
@@ -375,7 +391,7 @@ def _dm_solid_transform(name, notebook_path):
             if process.returncode != 0:
                 # Throw event that is an execution error!
                 info.log.debug("There was an error in Papermill!")
-                info.log.debug(process.stderr)
+                info.log.debug('stderr was None' if process.stderr is None else process.stderr)
                 exit()
 
             output_nb = pm.read_notebook(temp_path)
