@@ -183,7 +183,6 @@ class ModifiedDockerOperator(BaseOperator):
         )
 
     def execute(self, context):
-        return
         self.log.info('Starting docker container from image %s', self.image)
 
         tls_config = self.__get_tls_config()
