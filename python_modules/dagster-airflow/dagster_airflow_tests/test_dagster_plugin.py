@@ -51,6 +51,8 @@ def test_modified_docker_operator_bad_command(temp_dir):
         operator.execute({})
 
 
+# This is an artifact of the way that Circle sets up the remote Docker environment
+@pytest.mark.skip_on_circle
 def test_modified_docker_operator_url(temp_dir):
     try:
         docker_host = os.getenv('DOCKER_HOST')
