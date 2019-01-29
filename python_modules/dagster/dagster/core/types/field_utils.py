@@ -176,10 +176,10 @@ def NamedDict(name, fields, description=None, type_attributes=DEFAULT_TYPE_ATTRI
 def Dict(fields):
     class _Dict(_ConfigComposite):
         def __init__(self):
-            name = 'Dict.' + str(DictCounter.get_next_count())
+            key = 'Dict.' + str(DictCounter.get_next_count())
             super(_Dict, self).__init__(
-                name=name,
-                key=name,
+                # name=name,
+                key=key,
                 fields=fields,
                 description='A configuration dictionary with typed fields',
                 type_attributes=ConfigTypeAttributes(is_named=True, is_builtin=True),
