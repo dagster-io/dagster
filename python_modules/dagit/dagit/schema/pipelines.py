@@ -58,7 +58,7 @@ class DauphinPipeline(dauphin.ObjectType):
     def resolve_config_types(self, _info):
         return sorted(
             list(map(to_dauphin_config_type, self._pipeline.all_config_types())),
-            key=lambda config_type: config_type.name,
+            key=lambda config_type: config_type.key,
         )
 
     def resolve_runtime_types(self, _info):

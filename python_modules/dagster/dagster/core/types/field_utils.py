@@ -112,7 +112,6 @@ class FieldImpl:
 
 class _ConfigHasFields(ConfigType):
     def __init__(self, fields, *args, **kwargs):
-
         self.fields = check.dict_param(fields, 'fields', key_type=str, value_type=FieldImpl)
         super(_ConfigHasFields, self).__init__(*args, **kwargs)
 
@@ -178,7 +177,7 @@ def Dict(fields):
         def __init__(self):
             key = 'Dict.' + str(DictCounter.get_next_count())
             super(_Dict, self).__init__(
-                # name=name,
+                name=None,
                 key=key,
                 fields=fields,
                 description='A configuration dictionary with typed fields',
@@ -191,10 +190,10 @@ def Dict(fields):
 def Selector(fields):
     class _Selector(_ConfigSelector):
         def __init__(self):
-            name = 'Selector.' + str(DictCounter.get_next_count())
+            key = 'Selector.' + str(DictCounter.get_next_count())
             super(_Selector, self).__init__(
-                key=name,
-                name=name,
+                key=key,
+                name=None,
                 fields=fields,
                 # description='A configuration dictionary with typed fields',
                 type_attributes=ConfigTypeAttributes(is_named=True, is_builtin=True),
@@ -204,6 +203,8 @@ def Selector(fields):
 
 
 def NamedSelector(name, fields, description=None, type_attributes=DEFAULT_TYPE_ATTRIBUTES):
+    check.str_param(name, 'name')
+
     class _NamedSelector(_ConfigSelector):
         def __init__(self):
             super(_NamedSelector, self).__init__(
