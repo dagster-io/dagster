@@ -64,7 +64,7 @@
     "babel-plugin-graphql-tag": "^1.6.0",
     "jest": "^23.5.0",
     "prettier": "^1.14.0",
-    "react-scripts-ts": "3.1.0",
+    "react-scripts-ts": "2.16.0",
     "react-test-renderer": "^16.4.2",
     "ts-jest": "^23.1.4",
     "typescript": "^3.0.1",
