@@ -47,9 +47,7 @@ def test_modified_docker_operator_bad_command(temp_dir):
         host_tmp_dir=temp_dir,
         command='gargle bargle',
     )
-    with pytest.raises(
-        AirflowException, match='docker container failed: {\'Error\': None, \'StatusCode\': 2}'
-    ):
+    with pytest.raises(AirflowException, match='\'StatusCode\': 2}'):
         operator.execute({})
 
 
