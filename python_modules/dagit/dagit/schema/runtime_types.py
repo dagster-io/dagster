@@ -16,6 +16,7 @@ def to_dauphin_runtime_type(runtime_type):
         key=runtime_type.key,
         name=runtime_type.name,
         description=runtime_type.description,
+        is_builtin=runtime_type.is_builtin,
         is_nullable=runtime_type.is_nullable,
         is_list=runtime_type.is_list,
         input_schema_type=config_type_for_schema(runtime_type.input_schema),
@@ -47,6 +48,7 @@ class DauphinRuntimeType(dauphin.Interface):
 
     is_nullable = dauphin.NonNull(dauphin.Boolean)
     is_list = dauphin.NonNull(dauphin.Boolean)
+    is_builtin = dauphin.NonNull(dauphin.Boolean)
 
     input_schema_type = dauphin.Field(DauphinConfigType)
     output_schema_type = dauphin.Field(DauphinConfigType)
