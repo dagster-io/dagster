@@ -4,7 +4,7 @@ import sys
 
 from gevent import pywsgi
 from geventwebsocket.handler import WebSocketHandler
-from graphql import graphql
+from graphql import graphql, parse, execute
 from graphql.execution.executors.gevent import GeventExecutor as Executor
 from watchdog.events import FileSystemEventHandler
 from watchdog.observers import Observer
@@ -55,14 +55,6 @@ def execute_query_from_cli(repository_container, query, variables):
         pipeline_runs=pipeline_run_storage,
         execution_manager=execution_manager,
     )
-    # request_string="",  # type: Union[Document, str]
-    # root=None,  # type: Any
-    # context=None,  # type: Optional[Any]
-    # variables=None,  # type: Optional[Any]
-    # operation_name=None,  # type: Optional[Any]
-    # middleware=None,  # type: Optional[Any]
-    # backend=None,  # type: Optional[Any]
-    # **execute_options  # type: Any
 
     result = graphql(
         request_string=query,
@@ -72,7 +64,7 @@ def execute_query_from_cli(repository_container, query, variables):
         executor=Executor(),
     )
 
-    print(json.dumps(result.data))
+    print(json.dumps(result.to_dict()))
 
 
 @click.command(
