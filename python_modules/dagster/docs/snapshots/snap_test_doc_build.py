@@ -20490,7 +20490,7 @@ snapshots['test_build_all_docs 53'] = '''
 
 <dl class="class">
 <dt id="dagster.ConfigType">
-<em class="property">class </em><code class="descclassname">dagster.</code><code class="descname">ConfigType</code><span class="sig-paren">(</span><em>key</em>, <em>name</em>, <em>type_attributes=ConfigTypeAttributes(is_builtin=False</em>, <em>is_system_config=False</em>, <em>is_named=True)</em>, <em>description=None</em><span class="sig-paren">)</span><a class="headerlink" href="#dagster.ConfigType" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">dagster.</code><code class="descname">ConfigType</code><span class="sig-paren">(</span><em>key</em>, <em>name</em>, <em>type_attributes=ConfigTypeAttributes(is_builtin=False</em>, <em>is_system_config=False)</em>, <em>description=None</em><span class="sig-paren">)</span><a class="headerlink" href="#dagster.ConfigType" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="function">
@@ -20520,7 +20520,7 @@ snapshots['test_build_all_docs 53'] = '''
 
 <dl class="function">
 <dt id="dagster.NamedDict">
-<code class="descclassname">dagster.</code><code class="descname">NamedDict</code><span class="sig-paren">(</span><em>name</em>, <em>fields</em>, <em>description=None</em>, <em>type_attributes=ConfigTypeAttributes(is_builtin=False</em>, <em>is_system_config=False</em>, <em>is_named=True)</em><span class="sig-paren">)</span><a class="headerlink" href="#dagster.NamedDict" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">dagster.</code><code class="descname">NamedDict</code><span class="sig-paren">(</span><em>name</em>, <em>fields</em>, <em>description=None</em>, <em>type_attributes=ConfigTypeAttributes(is_builtin=False</em>, <em>is_system_config=False)</em><span class="sig-paren">)</span><a class="headerlink" href="#dagster.NamedDict" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="function">
