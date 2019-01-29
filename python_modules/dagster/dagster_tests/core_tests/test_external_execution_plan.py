@@ -6,9 +6,15 @@ from dagster import (
     PipelineDefinition,
     lambda_solid,
 )
-from dagster.core.execution import execute_externalized_plan, create_execution_plan
+from dagster.core.execution import (
+    execute_externalized_plan,
+    create_execution_plan,
+    ExecutionMetadata,
+)
 from dagster.core.execution_plan.objects import StepKind
 from dagster.core.types.runtime import resolve_to_runtime_type
+
+from dagster.core.types.marshal import serialize_to_file, deserialize_from_file
 
 from dagster.utils.test import get_temp_file_names
 
@@ -34,7 +40,7 @@ def test_basic_pipeline_external_plan_execution():
 
         int_type = resolve_to_runtime_type(Int)
 
-        int_type.marshalling_strategy.marshal_value(5, temp_path)
+        serialize_to_file(int_type.serialization_strategy, 5, temp_path)
 
         execution_plan = create_execution_plan(pipeline)
 
@@ -44,9 +50,10 @@ def test_basic_pipeline_external_plan_execution():
             ['add_one.transform'],
             inputs_to_marshal={'add_one.transform': {'num': temp_path}},
             outputs_to_marshal={'add_one.transform': [{'output': 'result', 'path': write_path}]},
+            execution_metadata=ExecutionMetadata(),
         )
 
-        assert int_type.marshalling_strategy.unmarshal_value(write_path) == 6
+        assert deserialize_from_file(int_type.serialization_strategy, write_path) == 6
 
     assert len(results) == 2
 

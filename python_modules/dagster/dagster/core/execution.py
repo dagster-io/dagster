@@ -20,6 +20,7 @@ from contextlib import contextmanager
 import itertools
 import inspect
 
+
 from contextlib2 import ExitStack
 import six
 
@@ -43,8 +44,6 @@ from .execution_context import ExecutionContext, RuntimeExecutionContext, Execut
 
 from .errors import DagsterInvariantViolationError, DagsterUserCodeExecutionError
 
-from .types.evaluator import EvaluationError, evaluate_config_value, friendly_string_for_error
-
 from .events import construct_event_logger
 
 from .execution_plan.create import create_execution_plan_core, create_subplan
@@ -61,6 +60,9 @@ from .execution_plan.objects import (
 from .execution_plan.simple_engine import execute_plan_core
 
 from .system_config.objects import EnvironmentConfig
+
+from .types.evaluator import EvaluationError, evaluate_config_value, friendly_string_for_error
+from .types.marshal import FilePersistencePolicy
 
 
 class PipelineExecutionResult(object):
@@ -318,6 +320,17 @@ def with_maybe_gen(thing_or_gen):
     check.invariant(stopped, 'Must yield one item. Yielded more than one item')
 
 
+def _create_persistence_policy(persistence_config):
+    check.dict_param(persistence_config, 'persistence_config', key_type=str)
+
+    persistence_key, _config_value = list(persistence_config.items())[0]
+
+    if persistence_key == 'file':
+        return FilePersistencePolicy()
+    else:
+        check.failed('Unsupported persistence key: {}'.format(persistence_key))
+
+
 @contextmanager
 def yield_context(pipeline, environment, execution_metadata):
     check.inst_param(pipeline, 'pipeline', PipelineDefinition)
@@ -349,6 +362,7 @@ def yield_context(pipeline, environment, execution_metadata):
                 tags=get_tags(execution_context, execution_metadata, pipeline),
                 event_callback=get_event_callback(execution_metadata),
                 environment_config=environment.original_config_dict,
+                persistence_policy=_create_persistence_policy(environment.context.persistence),
             )
 
 
@@ -544,27 +558,30 @@ def execute_externalized_plan(
     check.opt_dict_param(environment, 'environment')
     check.opt_inst_param(execution_metadata, 'execution_metadata', ExecutionMetadata)
 
-    inputs = defaultdict(dict)
+    typed_environment = create_typed_environment(pipeline, environment)
+    with yield_context(pipeline, typed_environment, execution_metadata) as context:
 
-    for step_key, input_dict in inputs_to_marshal.items():
-        for input_name, file_path in input_dict.items():
-            step = execution_plan.get_step_by_key(step_key)
-            step_input = step.step_input_dict[input_name]
-            input_type = step_input.runtime_type
+        execution_plan = create_execution_plan_core(
+            ExecutionPlanInfo(context, pipeline, typed_environment),
+            execution_metadata=execution_metadata,
+        )
 
-            check.invariant(input_type.marshalling_strategy)
+        inputs = _unmarshal_inputs(context, inputs_to_marshal, execution_plan)
 
-            input_value = input_type.marshalling_strategy.unmarshal_value(file_path)
-            inputs[step_key][input_name] = input_value
+        results = _do_execute_plan(
+            context,
+            pipeline,
+            execution_plan,
+            typed_environment,
+            ExecutionPlanSubsetInfo(included_steps=step_keys, inputs=inputs),
+        )
 
-    results = execute_plan(
-        pipeline,
-        execution_plan,
-        environment=environment,
-        subset_info=ExecutionPlanSubsetInfo(included_steps=step_keys, inputs=inputs),
-        execution_metadata=execution_metadata,
-    )
+        _marshal_outputs(context, results, outputs_to_marshal)
 
+        return results
+
+
+def _marshal_outputs(context, results, outputs_to_marshal):
     for result in results:
         if not (result.success and result.step.key in outputs_to_marshal):
             continue
@@ -575,9 +592,26 @@ def execute_externalized_plan(
 
             path = output['path']
             output_type = result.step.step_output_dict[result.success_data.output_name].runtime_type
-            output_type.marshalling_strategy.marshal_value(result.success_data.value, path)
+            context.persistence_policy.write_value(
+                output_type.serialization_strategy, path, result.success_data.value
+            )
 
-    return results
+
+def _unmarshal_inputs(context, inputs_to_marshal, execution_plan):
+    inputs = defaultdict(dict)
+    for step_key, input_dict in inputs_to_marshal.items():
+        for input_name, file_path in input_dict.items():
+            step = execution_plan.get_step_by_key(step_key)
+            step_input = step.step_input_dict[input_name]
+            input_type = step_input.runtime_type
+
+            check.invariant(input_type.serialization_strategy)
+
+            input_value = context.persistence_policy.read_value(
+                input_type.serialization_strategy, file_path
+            )
+            inputs[step_key][input_name] = input_value
+    return inputs
 
 
 def execute_plan(
@@ -592,19 +626,27 @@ def execute_plan(
 
     typed_environment = create_typed_environment(pipeline, environment)
     with yield_context(pipeline, typed_environment, execution_metadata) as context:
-        plan_to_execute = (
-            create_subplan(
-                ExecutionPlanInfo(
-                    context=context, pipeline=pipeline, environment=typed_environment
-                ),
-                StepBuilderState(pipeline_name=pipeline.name),
-                execution_plan,
-                subset_info,
-            )
-            if subset_info
-            else execution_plan
+        return _do_execute_plan(context, pipeline, execution_plan, typed_environment, subset_info)
+
+
+def _do_execute_plan(context, pipeline, execution_plan, typed_environment, subset_info):
+    check.inst_param(context, 'context', RuntimeExecutionContext)
+    check.inst_param(pipeline, 'pipeline', PipelineDefinition)
+    check.inst_param(execution_plan, 'execution_plan', ExecutionPlan)
+    check.inst_param(typed_environment, 'typed_environment', EnvironmentConfig)
+    check.opt_inst_param(subset_info, 'subset_info', ExecutionPlanSubsetInfo)
+
+    plan_to_execute = (
+        create_subplan(
+            ExecutionPlanInfo(context=context, pipeline=pipeline, environment=typed_environment),
+            StepBuilderState(pipeline.name),
+            execution_plan,
+            subset_info,
         )
-        return list(execute_plan_core(context, plan_to_execute))
+        if subset_info
+        else execution_plan
+    )
+    return list(execute_plan_core(context, plan_to_execute))
 
 
 def execute_pipeline(

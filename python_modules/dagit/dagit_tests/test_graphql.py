@@ -1,3 +1,4 @@
+import pickle
 import uuid
 
 import pandas as pd
@@ -27,8 +28,6 @@ from dagster import (
     lambda_solid,
     solid,
 )
-
-from dagster.core.types.marshal import PickleMarshallingStrategy
 
 from dagster.utils import script_relative_path
 from dagster.utils.test import get_temp_file_name
@@ -1892,12 +1891,13 @@ mutation ($pipeline: ExecutionSelector!, $config: PipelineConfig) {
 
 
 def test_successful_start_subplan():
-    marshalling = PickleMarshallingStrategy()
 
     with get_temp_file_name() as num_df_file:
         with get_temp_file_name() as out_df_file:
             num_df = pd.read_csv(script_relative_path('num.csv'))
-            marshalling.marshal_value(num_df, num_df_file)
+
+            with open(num_df_file, 'wb') as ff:
+                pickle.dump(num_df, ff)
 
             result = execute_dagster_graphql(
                 define_context(),
@@ -1916,7 +1916,8 @@ def test_successful_start_subplan():
                 },
             )
 
-            out_df = marshalling.unmarshal_value(out_df_file)
+            with open(out_df_file, 'rb') as ff:
+                out_df = pickle.load(ff)
             assert out_df.to_dict('list') == {'num1': [1, 3], 'num2': [2, 4], 'sum': [3, 7]}
             if result.errors:
                 raise Exception(result.errors)
