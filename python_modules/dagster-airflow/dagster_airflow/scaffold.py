@@ -7,7 +7,6 @@ plan.
 
 import os
 
-from contextlib import AbstractContextManager
 from copy import copy
 from datetime import datetime, timedelta
 from textwrap import TextWrapper
@@ -17,46 +16,20 @@ from six import StringIO
 
 from dagster import check, PipelineDefinition
 from dagster.core.execution import create_execution_plan
-from dagster.utils.indenting_printer import IndentingPrinter
 
+from .utils import IndentingBlockPrinter
 
-LINE_LENGTH = 100
 
 
 def normalize_key(key):
     return key.replace('_', '__').replace('.', '_')
 
 
-class ScaffoldPrinter(IndentingPrinter, AbstractContextManager):
-    def __init__(self, line_length=LINE_LENGTH):
-        self.io = StringIO()
-        self.line_length = line_length
-        self.printer = lambda x: self.io.write(x)
-        super(ScaffoldPrinter, self).__init__(indent_level=4, printer=self.printer)
 
-    def __exit__(self, _exception_type, _exception_value, _traceback):
-        self.io.close()
-
-    def block(self, text, prefix=''):
-        wrapper = TextWrapper(width=self.line_length, initial_indent=self.current_indent_str + prefix, break_long_words=False, break_on_hyphens=False)
-        # text_ = copy(text)
-        # wrapper = 
-        # while text:
-        #     line_length = self.line_length - self.current_indent
-        #     candidate_line = text_[:line_length]
-        #     candidate_line = candidate_line.split(' ')
-        #     if len(candidate_line) == 1:
-        #     else:
-
-        #     self.line()
-        #     text_ = text[self.line_length - self.current_indent:]
-
-    def read(self):
-        return self.io.getvalue()
 
 
 def _make_editable_scaffold(pipeline_name, pipeline_description, env_config, static_scaffold, start_date):
-    with ScaffoldPrinter() as printer:
+    with IndentingBlockPrinter() as printer:
         pass
         # printer.
     pass
