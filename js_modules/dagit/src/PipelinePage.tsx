@@ -18,8 +18,8 @@ import {
 } from "./types/PipelinePageFragment";
 
 export type IPipelinePageMatch = match<{
-  pipeline: string | null;
-  tab: string | null;
+  pipeline: string | undefined;
+  tab: string | undefined;
 }>;
 
 interface IPipelinePageProps {
@@ -39,7 +39,7 @@ const TABS = [
     render: (props: IPipelinePageTabProps) => (
       <Route
         path={`${props.match.url}/:solid?`}
-        render={({ match }: { match: match<{ solid: string | null }> }) => (
+        render={({ match }: { match: match<{ solid: string | undefined }> }) => (
           <PipelineExplorer
             history={props.history}
             pipeline={props.pipeline}
