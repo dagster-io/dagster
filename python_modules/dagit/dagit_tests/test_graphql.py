@@ -29,6 +29,7 @@ from dagster import (
     solid,
 )
 
+from dagster.core.types.config import ALL_CONFIG_BUILTINS
 from dagster.utils import script_relative_path
 from dagster.utils.test import get_temp_file_name
 
@@ -1248,11 +1249,45 @@ def test_pipeline_or_error_by_name():
     assert result.data['pipelineOrError']['name'] == 'pandas_hello_world_two'
 
 
+def pipeline_named(result, name):
+    for pipeline_data in result.data['pipelines']['nodes']:
+        if pipeline_data['name'] == name:
+            return pipeline_data
+    check.failed('Did not find')
+
+
+def has_config_type_with_key_prefix(pipeline_data, prefix):
+    for config_type_data in pipeline_data['configTypes']:
+        if config_type_data['key'].startswith(prefix):
+            return True
+
+    return False
+
+
+def has_config_type(pipeline_data, name):
+    for config_type_data in pipeline_data['configTypes']:
+        if config_type_data['name'] == name:
+            return True
+
+    return False
+
+
 def test_smoke_test_config_type_system():
     result = execute_dagster_graphql(define_context(), ALL_CONFIG_TYPES_QUERY)
 
     assert not result.errors
     assert result.data
+
+    pipeline_data = pipeline_named(result, 'more_complicated_nested_config')
+
+    assert pipeline_data
+
+    assert has_config_type_with_key_prefix(pipeline_data, 'Dict.')
+    assert not has_config_type_with_key_prefix(pipeline_data, 'List.')
+    assert not has_config_type_with_key_prefix(pipeline_data, 'Nullable.')
+
+    for builtin_config_type in ALL_CONFIG_BUILTINS:
+        assert has_config_type(pipeline_data, builtin_config_type.name)
 
 
 ALL_CONFIG_TYPES_QUERY = '''
