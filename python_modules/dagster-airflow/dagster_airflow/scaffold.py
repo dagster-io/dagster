@@ -28,7 +28,7 @@ DEFAULT_ARGS = {
     'email_on_failure': False,
     'email_on_retry': False,
     'retries': 1,
-    'retry_delay': datetime.timedelta(0, 300),
+    'retry_delay': timedelta(0, 300),
 }
 
 
@@ -44,7 +44,7 @@ def _is_py(path):
 
 def _bad_import(path):
     '''We need to make sure our relative import will work.'''
-    return '.' in os.path.basename(path[0])[:-3]
+    return '.' in os.path.basename(path)[:-3]
 
 
 def _make_editable_scaffold(
@@ -308,6 +308,13 @@ def scaffold_airflow_dag(pipeline, env_config, image, output_path=None, dag_kwar
 
         static_path, editable_path = output_path
     elif isinstance(output_path, string_types):
+        if not os.path.isabs(output_path):
+            raise Exception(
+                'Bad value for output_path: expected an absolute path, but got {path}.'.format(
+                    path=output_path
+                )
+            )
+
         if not os.path.isdir(output_path):
             raise Exception(
                 'Bad value for output_path: No directory found at {output_path}'.format(
@@ -331,8 +338,7 @@ def scaffold_airflow_dag(pipeline, env_config, image, output_path=None, dag_kwar
     execution_plan = create_execution_plan(pipeline, env_config)
 
     default_args = dict(
-        dict(DEFAULT_ARGS, start_date=datetime.datetime.utcnow()),
-        **(dag_kwargs.pop('default_args', {}))
+        dict(DEFAULT_ARGS, start_date=datetime.utcnow()), **(dag_kwargs.pop('default_args', {}))
     )
 
     editable_scaffold_module_name = os.path.basename(editable_path).split('.')[-1]
