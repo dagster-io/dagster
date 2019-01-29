@@ -31,6 +31,7 @@ class RuntimeType(object):
         self,
         key,
         name,
+        is_builtin=False,
         description=None,
         input_schema=None,
         output_schema=None,
@@ -57,6 +58,8 @@ class RuntimeType(object):
             SerializationStrategy,
             PickleSerializationStrategy(),
         )
+
+        self.is_builtin = check.bool_param(is_builtin, 'is_builtin')
 
     __cache = {}
 
@@ -110,7 +113,9 @@ class RuntimeType(object):
 class BuiltinScalarRuntimeType(RuntimeType):
     def __init__(self, *args, **kwargs):
         name = type(self).__name__
-        super(BuiltinScalarRuntimeType, self).__init__(key=name, name=name, *args, **kwargs)
+        super(BuiltinScalarRuntimeType, self).__init__(
+            key=name, name=name, is_builtin=True, *args, **kwargs
+        )
 
     @property
     def is_scalar(self):
@@ -344,3 +349,6 @@ def resolve_to_runtime_list(list_type):
 def resolve_to_runtime_nullable(nullable_type):
     check.inst_param(nullable_type, 'nullable_type', WrappingNullableType)
     return Nullable(resolve_to_runtime_type(nullable_type.inner_type))
+
+
+ALL_BUILTINS = set(_RUNTIME_MAP.values())

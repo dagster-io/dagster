@@ -47,6 +47,7 @@ class DauphinRuntimeType(dauphin.Interface):
 
     is_nullable = dauphin.NonNull(dauphin.Boolean)
     is_list = dauphin.NonNull(dauphin.Boolean)
+    is_builtin = dauphin.NonNull(dauphin.Boolean)
 
     input_schema_type = dauphin.Field(DauphinConfigType)
     output_schema_type = dauphin.Field(DauphinConfigType)
