@@ -8,5 +8,6 @@
 export interface TypeListFragment {
   __typename: "RegularRuntimeType" | "ListRuntimeType" | "NullableRuntimeType";
   name: string | null;
+  isBuiltin: boolean;
   description: string | null;
 }
