@@ -27,6 +27,32 @@ def test_modified_docker_operator_env(temp_dir):
     operator.execute({})
 
 
+def test_modified_docker_operator_xcom(temp_dir):
+    operator = ModifiedDockerOperator(
+        image='dagster-airflow-demo',
+        api_version='auto',
+        task_id='nonce',
+        host_tmp_dir=temp_dir,
+        xcom_push=True,
+        xcom_all=True,
+    )
+    assert b'Usage: dagit' in operator.execute({})
+
+
+def test_modified_docker_operator_bad_command(temp_dir):
+    operator = ModifiedDockerOperator(
+        image='dagster-airflow-demo',
+        api_version='auto',
+        task_id='nonce',
+        host_tmp_dir=temp_dir,
+        command='gargle bargle',
+    )
+    with pytest.raises(
+        AirflowException, match='docker container failed: {\'Error\': None, \'StatusCode\': 2}'
+    ):
+        operator.execute({})
+
+
 def test_modified_docker_operator_url(temp_dir):
     try:
         docker_host = os.getenv('DOCKER_HOST')
