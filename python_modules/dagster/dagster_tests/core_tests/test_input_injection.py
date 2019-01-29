@@ -62,9 +62,14 @@ def test_string_missing_inputs():
     with pytest.raises(PipelineConfigEvaluationError) as exc_info:
         execute_pipeline(pipeline)
 
-    assert 'Error 1: Missing required field "solids" at document config root.' in str(
-        exc_info.value
-    )
+    assert (
+        'Missing required field  "solids" at document config root. Expected: "{ context?: '
+        '{ default?: { config?: { log_level?: String } persistence?: { file?: { } } '
+        'resources?: { } } } execution?: { } expectations?: { evaluate?: Bool } solids: '
+        '{ str_as_input: { inputs: { string_input: { json: { path: Path } pickle: { '
+        'path: Path } value: String } } outputs?: [{ result?: { json: { path: Path } '
+        'pickle: { path: Path } } }] } } }'
+    ) in str(exc_info.value)
     assert 'yup' not in called
 
 

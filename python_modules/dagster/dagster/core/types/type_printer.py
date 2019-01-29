@@ -11,7 +11,10 @@ def print_type(config_type, print_fn=print, with_lines=True):
     check.inst_param(config_type, 'config_type', ConfigType)
     check.callable_param(print_fn, 'print_fn')
 
-    printer = IndentingPrinter(printer=print_fn)
+    if with_lines:
+        printer = IndentingPrinter(printer=print_fn)
+    else:
+        printer = IndentingPrinter(printer=print_fn, indent_level=0)
     _do_print(config_type, printer, with_lines=with_lines)
     printer.line('')
 
@@ -34,7 +37,7 @@ def _do_print(config_type, printer, with_lines=True):
                     printer.append(name + '?: ')
                 else:
                     printer.append(name + ': ')
-                _do_print(field.config_type, printer)
+                _do_print(field.config_type, printer, with_lines=with_lines)
                 line_break_fn('')
 
         printer.append('}')
@@ -57,4 +60,7 @@ def print_config_type_to_string(config_type, with_lines=True):
 
     print_type(config_type, _push, with_lines=with_lines)
 
-    return '\n'.join(prints)
+    if with_lines:
+        return '\n'.join(prints)
+    else:
+        return ' '.join(prints)
