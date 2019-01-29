@@ -281,19 +281,19 @@ def scaffold_airflow_dag(pipeline, env_config, image, output_path=None, dag_kwar
         )
     elif isinstance(output_path, tuple):
         if not len(output_path) == 2:
-            raise Exception(
+            check.failed(
                 'output_path must be a tuple(str, str), str, or None. Got a tuple with bad '
                 'length {length}'.format(length=len(output_path))
             )
 
         if not os.path.isabs(output_path[0]) or not os.path.isabs(output_path[1]):
-            raise Exception(
+            check.failed(
                 'Bad value for output_path: expected a tuple of absolute paths, but got '
                 '({path_0}, {path_1}).'.format(path_0=output_path[0], path_1=output_path[1])
             )
 
         if not _is_py(output_path[0]) or not _is_py(output_path[1]):
-            raise Exception(
+            check.failed(
                 'Bad value for output_path: expected a tuple of absolute paths to python files '
                 '(*.py), but got ({path_0}, {path_1}).'.format(
                     path_0=output_path[0], path_1=output_path[1]
@@ -301,7 +301,7 @@ def scaffold_airflow_dag(pipeline, env_config, image, output_path=None, dag_kwar
             )
 
         if _bad_import(output_path[0]) or _bad_import(output_path[1]):
-            raise Exception(
+            check.failed(
                 'Bad value for output_path: no dots permitted in filenames. Got: '
                 '({path_0}, {path_1}).'.format(path_0=output_path[0], path_1=output_path[1])
             )
@@ -309,14 +309,14 @@ def scaffold_airflow_dag(pipeline, env_config, image, output_path=None, dag_kwar
         static_path, editable_path = output_path
     elif isinstance(output_path, string_types):
         if not os.path.isabs(output_path):
-            raise Exception(
+            check.failed(
                 'Bad value for output_path: expected an absolute path, but got {path}.'.format(
                     path=output_path
                 )
             )
 
         if not os.path.isdir(output_path):
-            raise Exception(
+            check.failed(
                 'Bad value for output_path: No directory found at {output_path}'.format(
                     output_path=output_path
                 )
@@ -329,7 +329,7 @@ def scaffold_airflow_dag(pipeline, env_config, image, output_path=None, dag_kwar
             output_path, '{pipeline_name}_editable__scaffold.py'.format(pipeline_name=pipeline_name)
         )
     else:
-        raise Exception(
+        check.failed(
             'output_path must be a tuple(str, str), str, or None. Got: {type_}'.format(
                 type_=type(output_path)
             )
