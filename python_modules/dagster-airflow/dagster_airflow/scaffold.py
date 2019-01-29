@@ -270,6 +270,8 @@ def scaffold_airflow_dag(pipeline, env_config, image, output_path=None, dag_kwar
     dag_kwargs = check.opt_dict_param(dag_kwargs, 'dag_kwargs', key_type=str)
 
     pipeline_name = pipeline.name
+    pipeline_description = pipeline.description
+
     if output_path is None:
         static_path = os.path.join(
             os.getcwd(), '{pipeline_name}_static__scaffold.py'.format(pipeline_name=pipeline_name)
