@@ -500,8 +500,10 @@ def validate_list_value(list_type, config_value, stack):
         yield EvaluationError(
             stack=stack,
             reason=DagsterEvaluationErrorReason.RUNTIME_TYPE_MISMATCH,
-            message='Value for list type {type_name} must be a list got {value}'.format(
-                type_name=list_type.name, value=config_value
+            message='Value {value} {path_msg} must be list. Expected: {type_name}'.format(
+                path_msg=_get_friendly_path_msg(stack),
+                value=config_value,
+                type_name=print_config_type_to_string(list_type, with_lines=False),
             ),
             error_data=RuntimeMismatchErrorData(
                 config_type=list_type, value_rep=repr(config_value)

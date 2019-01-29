@@ -25654,14 +25654,14 @@ for taking the in-memory object flowed through your computation and materializin
 persistent store. Outputs are purely <em>optional</em> for any computation, whereas inputs <em>must</em> be provided
 for a computation to proceed. You will likely want outputs as for a pipeline to be useful it
 should produce some materialization that outlives the computation.</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="hll">
-</span><span class="nd">@output_selector_schema</span><span class="p">(</span>
-    <span class="n">Selector</span><span class="p">(</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="hll"><span class="nd">@output_selector_schema</span><span class="p">(</span>
+</span>    <span class="n">NamedSelector</span><span class="p">(</span>
+        <span class="s1">&#39;DataFrameOutputSchema&#39;</span><span class="p">,</span>
         <span class="p">{</span>
             <span class="s1">&#39;csv&#39;</span><span class="p">:</span> <span class="n">define_csv_dict_field</span><span class="p">(),</span>
             <span class="s1">&#39;parquet&#39;</span><span class="p">:</span> <span class="n">define_path_dict_field</span><span class="p">(),</span>
             <span class="s1">&#39;table&#39;</span><span class="p">:</span> <span class="n">define_path_dict_field</span><span class="p">(),</span>
-        <span class="p">}</span>
+        <span class="p">},</span>
     <span class="p">)</span>
 <span class="p">)</span>
 <span class="k">def</span> <span class="nf">dataframe_output_schema</span><span class="p">(</span><span class="n">file_type</span><span class="p">,</span> <span class="n">file_options</span><span class="p">,</span> <span class="n">pandas_df</span><span class="p">):</span>

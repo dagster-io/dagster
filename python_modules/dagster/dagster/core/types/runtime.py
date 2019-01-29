@@ -215,9 +215,9 @@ def _create_nullable_input_schema(inner_type):
 
 class NullableType(RuntimeType):
     def __init__(self, inner_type):
-        name = 'Nullable.' + inner_type.name
+        key = 'Nullable.' + inner_type.key
         super(NullableType, self).__init__(
-            key=name, name=name, input_schema=_create_nullable_input_schema(inner_type)
+            key=key, name=None, input_schema=_create_nullable_input_schema(inner_type)
         )
         self.inner_type = inner_type
 
@@ -252,9 +252,9 @@ def _create_list_input_schema(inner_type):
 
 class ListType(RuntimeType):
     def __init__(self, inner_type):
-        name = 'List.' + inner_type.name
+        key = 'List.' + inner_type.key
         super(ListType, self).__init__(
-            key=name, name=name, input_schema=_create_list_input_schema(inner_type)
+            key=key, name=None, input_schema=_create_list_input_schema(inner_type)
         )
         self.inner_type = inner_type
 

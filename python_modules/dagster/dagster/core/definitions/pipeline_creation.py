@@ -167,9 +167,13 @@ def construct_runtime_type_dictionary(solid_defs):
     for solid_def in solid_defs:
         for input_def in solid_def.input_defs:
             type_dict[input_def.runtime_type.name] = input_def.runtime_type
+            for inner_type in input_def.runtime_type.inner_types:
+                type_dict[inner_type.name] = inner_type
 
         for output_def in solid_def.output_defs:
             type_dict[output_def.runtime_type.name] = output_def.runtime_type
+            for inner_type in output_def.runtime_type.inner_types:
+                type_dict[inner_type.name] = inner_type
 
     return type_dict
 
