@@ -1,6 +1,6 @@
 from dagster import List, Nullable, Int, PipelineDefinition
 
-from dagster.core.types.runtime import resolve_to_runtime_type, ALL_BUILTINS
+from dagster.core.types.runtime import resolve_to_runtime_type, ALL_RUNTIME_BUILTINS
 
 
 def inner_type_key_set(runtime_type):
@@ -22,6 +22,6 @@ def test_inner_types():
 
 def test_builtins_available():
     pipeline = PipelineDefinition(name='test_builting_available', solids=[])
-    for builtin_type in ALL_BUILTINS:
+    for builtin_type in ALL_RUNTIME_BUILTINS:
         assert pipeline.has_runtime_type(builtin_type.name)
         assert pipeline.runtime_type_named(builtin_type.name).is_builtin

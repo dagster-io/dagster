@@ -211,7 +211,7 @@ def Nullable(inner_type):
             super(_Nullable, self).__init__(
                 key='Nullable.{inner_type}'.format(inner_type=inner_type.key),
                 name=None,
-                type_attributes=ConfigTypeAttributes(is_builtin=True, is_named=False),
+                type_attributes=ConfigTypeAttributes(is_builtin=True, is_named=True),
                 inner_type=inner_type,
             )
 
@@ -227,7 +227,7 @@ def List(inner_type):
                 key='List.{inner_type}'.format(inner_type=inner_type.key),
                 name=None,
                 description='List of {inner_type}'.format(inner_type=inner_type.name),
-                type_attributes=ConfigTypeAttributes(is_builtin=True, is_named=False),
+                type_attributes=ConfigTypeAttributes(is_builtin=True, is_named=True),
                 inner_type=inner_type,
             )
 
@@ -286,3 +286,5 @@ _CONFIG_MAP = {
     BuiltinEnum.PATH: Path.inst(),
     BuiltinEnum.STRING: String.inst(),
 }
+
+ALL_CONFIG_BUILTINS = set(_CONFIG_MAP.values())
