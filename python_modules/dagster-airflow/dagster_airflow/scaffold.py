@@ -96,9 +96,9 @@ def _make_editable_scaffold(
             'Arguments to be passed to the ``default_args`` parameter of the ``airflow.DAG`` '
             'constructor.You can override these with values of your choice.'
         )
-        printer.line('DEFAULT+ARGS = {{')
+        printer.line('DEFAULT_ARGS = {{')
         with printer.with_indent():
-            for key, value in default_args.items():
+            for key, value in sorted(default_args.items(), key=lambda x: x[0]):
                 printer.line('\'{key}\': {value_repr}'.format(key=key, value_repr=repr(value)))
         printer.line('}}')
         printer.blank_line()
