@@ -4,7 +4,7 @@ import sys
 
 from gevent import pywsgi
 from geventwebsocket.handler import WebSocketHandler
-from graphql import graphql, parse, execute
+from graphql import graphql
 from graphql.execution.executors.gevent import GeventExecutor as Executor
 from watchdog.events import FileSystemEventHandler
 from watchdog.observers import Observer
