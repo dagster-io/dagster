@@ -11,6 +11,7 @@ from dagster.utils import single_item
 from .config import ConfigType
 from .default_applier import apply_default_values
 from .field_utils import check_field_param
+from .type_printer import print_config_type_to_string
 
 
 class DagsterEvaluationErrorReason(Enum):
@@ -132,13 +133,15 @@ class EvaluationError(namedtuple('_EvaluationError', 'stack reason message error
 def friendly_string_for_error(error):
     type_in_context = error.stack.type_in_context
 
-    path_msg, path = _get_friendly_path_info(error)
+    path_msg, path = _get_friendly_path_info(error.stack)
 
     type_msg = _get_type_msg(error, type_in_context)
 
     if error.reason == DagsterEvaluationErrorReason.MISSING_REQUIRED_FIELD:
-        return 'Missing required field "{field_name}"{type_msg} {path_msg}'.format(
-            field_name=error.error_data.field_name, path_msg=path_msg, type_msg=type_msg
+        return 'Missing required field  "{field_name}" {path_msg} Expected: "{type_msg}"'.format(
+            field_name=error.error_data.field_name,
+            path_msg=path_msg,
+            type_msg=print_config_type_to_string(type_in_context, with_lines=False),
         )
     elif error.reason == DagsterEvaluationErrorReason.FIELD_NOT_DEFINED:
         return 'Undefined field "{field_name}"{type_msg} {path_msg}'.format(
@@ -173,13 +176,17 @@ def _get_type_msg(error, type_in_context):
         return ' on type "{type_name}"'.format(type_name=type_in_context.name)
 
 
-def _get_friendly_path_info(error):
-    if not error.stack.entries:
+def _get_friendly_path_msg(stack):
+    return _get_friendly_path_info(stack)[0]
+
+
+def _get_friendly_path_info(stack):
+    if not stack.entries:
         path = ''
         path_msg = 'at document config root.'
     else:
         comps = ['root']
-        for entry in error.stack.entries:
+        for entry in stack.entries:
             if isinstance(entry, EvaluationStackPathEntry):
                 comp = ':' + entry.field_name
                 comps.append(comp)
@@ -273,8 +280,10 @@ def _validate_config(config_type, config_value, stack):
             yield EvaluationError(
                 stack=stack,
                 reason=DagsterEvaluationErrorReason.RUNTIME_TYPE_MISMATCH,
-                message='Value {value} is not valid for type {type_name}'.format(
-                    value=config_value, type_name=config_type.name
+                message='Value "{value}" {path_msg} is not valid. Expected "{type_name}"'.format(
+                    path_msg=_get_friendly_path_msg(stack),
+                    value=config_value,
+                    type_name=config_type.name,
                 ),
                 error_data=RuntimeMismatchErrorData(
                     config_type=config_type, value_rep=repr(config_value)
@@ -413,9 +422,8 @@ def validate_selector_config_value(selector_type, config_value, stack):
 
         field_name, incoming_field_value = single_item(config_value)
         if field_name not in selector_type.fields:
-            yield create_field_not_defined_error(
-                selector_type, stack, set(selector_type.fields.keys()), field_name
-            )
+            print('calling ' + 'create_field_not_defined_error')
+            yield create_field_not_defined_error(selector_type, stack, field_name)
             return
 
     parent_field = selector_type.fields[field_name]
@@ -435,12 +443,16 @@ def validate_composite_config_value(composite_type, config_value, stack):
     check.param_invariant(composite_type.is_composite, 'composite_type')
     check.inst_param(stack, 'stack', EvaluationStack)
 
+    path_msg, _path = _get_friendly_path_info(stack)
+
     if config_value and not isinstance(config_value, dict):
         yield EvaluationError(
             stack=stack,
             reason=DagsterEvaluationErrorReason.RUNTIME_TYPE_MISMATCH,
-            message='Value for composite type {type_name} must be a dict got {value}'.format(
-                type_name=composite_type.name, value=config_value
+            message='Value {value} {path_msg} must be dict. Expected: "{type_name}".'.format(
+                path_msg=path_msg,
+                type_name=print_config_type_to_string(composite_type, with_lines=False),
+                value=config_value,
             ),
             error_data=RuntimeMismatchErrorData(
                 config_type=composite_type, value_rep=repr(config_value)
@@ -458,9 +470,7 @@ def validate_composite_config_value(composite_type, config_value, stack):
 
     for received_field in incoming_fields:
         if received_field not in defined_fields:
-            yield create_field_not_defined_error(
-                composite_type, stack, defined_fields, received_field
-            )
+            yield create_field_not_defined_error(composite_type, stack, received_field)
 
     for expected_field, field_def in fields.items():
         if expected_field in incoming_fields:
@@ -476,9 +486,7 @@ def validate_composite_config_value(composite_type, config_value, stack):
 
         else:
             check.invariant(not field_def.default_provided)
-            yield create_missing_required_field_error(
-                composite_type, stack, defined_fields, expected_field
-            )
+            yield create_missing_required_field_error(composite_type, stack, expected_field)
 
 
 ## Lists
@@ -492,8 +500,10 @@ def validate_list_value(list_type, config_value, stack):
         yield EvaluationError(
             stack=stack,
             reason=DagsterEvaluationErrorReason.RUNTIME_TYPE_MISMATCH,
-            message='Value for list type {type_name} must be a list got {value}'.format(
-                type_name=list_type.name, value=config_value
+            message='Value {value} {path_msg} must be list. Expected: {type_name}'.format(
+                path_msg=_get_friendly_path_msg(stack),
+                value=config_value,
+                type_name=print_config_type_to_string(list_type, with_lines=False),
             ),
             error_data=RuntimeMismatchErrorData(
                 config_type=list_type, value_rep=repr(config_value)
@@ -508,29 +518,30 @@ def validate_list_value(list_type, config_value, stack):
             yield error
 
 
-##
-
-
-def create_field_not_defined_error(config_type, stack, defined_fields, received_field):
+def create_field_not_defined_error(config_type, stack, received_field):
     check.param_invariant(config_type.has_fields, 'config_type')
     return EvaluationError(
         stack=stack,
         reason=DagsterEvaluationErrorReason.FIELD_NOT_DEFINED,
-        message='Field "{received}" is not defined on "{type_name}" Defined {defined}'.format(
-            type_name=config_type.name, defined=repr(defined_fields), received=received_field
+        message='Field "{received}" is not defined {path_msg} Expected: "{type_name}"'.format(
+            path_msg=_get_friendly_path_msg(stack),
+            type_name=print_config_type_to_string(config_type, with_lines=False),
+            received=received_field,
         ),
         error_data=FieldNotDefinedErrorData(field_name=received_field),
     )
 
 
-def create_missing_required_field_error(config_type, stack, defined_fields, expected_field):
+def create_missing_required_field_error(config_type, stack, expected_field):
     check.param_invariant(config_type.has_fields, 'config_type')
     return EvaluationError(
         stack=stack,
         reason=DagsterEvaluationErrorReason.MISSING_REQUIRED_FIELD,
-        message=(
-            'Missing required field "{expected}" on "{type_name}". ' 'Defined fields: {defined}'
-        ).format(expected=expected_field, type_name=config_type.name, defined=repr(defined_fields)),
+        message='Missing required field "{expected}" {path_msg} Expected: "{type_name}".'.format(
+            expected=expected_field,
+            path_msg=_get_friendly_path_msg(stack),
+            type_name=print_config_type_to_string(config_type, with_lines=False),
+        ),
         error_data=MissingFieldErrorData(
             field_name=expected_field, field_def=config_type.fields[expected_field]
         ),

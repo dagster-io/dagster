@@ -12,4 +12,4 @@ def test_materialization_schema_types():
 
     string_json_mat_schema = string_mat_schema.fields['json'].config_type
 
-    assert pipeline_def.config_type_named(string_json_mat_schema.name)
+    assert pipeline_def.config_type_keyed(string_json_mat_schema.key)

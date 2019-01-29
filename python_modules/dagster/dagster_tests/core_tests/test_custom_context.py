@@ -203,7 +203,11 @@ def test_invalid_context():
     environment_no_config_error = {'context': {'default': {'config': {}}}}
 
     with pytest.raises(
-        PipelineConfigEvaluationError, match='Missing required field "string_field"'
+        PipelineConfigEvaluationError,
+        match=(
+            'Error 1: Missing required field  "string_field" at path '
+            'root:context:default:config Expected: "{ string_field: String }"'
+        ),
     ):
         execute_pipeline(
             with_argful_context_pipeline,
@@ -215,7 +219,11 @@ def test_invalid_context():
 
     with pytest.raises(
         PipelineConfigEvaluationError,
-        match='Type failure at path "root:context:default:config:string_field"',
+        match=(
+            'Error 1: Type failure at path "root:context:default:config:string_field" '
+            'on type "String". Got "1". Value "1" at path '
+            'root:context:default:config:string_field is not valid. Expected "String".'
+        ),
     ):
         execute_pipeline(
             with_argful_context_pipeline,

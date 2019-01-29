@@ -97,7 +97,13 @@ def test_single_required_string_field_config_type():
         'string_field': 'value'
     }
 
-    with pytest.raises(DagsterEvaluateConfigValueError):
+    with pytest.raises(
+        DagsterEvaluateConfigValueError,
+        match=(
+            'Missing required field "string_field" at document config root. Expected: "{ '
+            'string_field: String }".'
+        ),
+    ):
         _validate(_single_required_string_config_dict(), {})
 
     with pytest.raises(DagsterEvaluateConfigValueError):
@@ -108,6 +114,19 @@ def test_single_required_string_field_config_type():
 
     with pytest.raises(DagsterEvaluateConfigValueError):
         _validate(_single_required_string_config_dict(), {'string_field': 1})
+
+
+def test_undefined_field_error():
+    with pytest.raises(
+        DagsterEvaluateConfigValueError,
+        match=(
+            'Field "extra" is not defined at document config root. Expected: "{ string_field: '
+            'String }"'
+        ),
+    ):
+        _validate(
+            _single_required_string_config_dict(), {'string_field': 'value', 'extra': 'extra'}
+        )
 
 
 def test_multiple_required_fields_passing():
@@ -205,14 +224,35 @@ def test_single_nested_config():
     }
 
 
-def test_single_nested_config_failures():
-    with pytest.raises(DagsterEvaluateConfigValueError):
+def test_single_nested_config_undefined_errors():
+    with pytest.raises(
+        DagsterEvaluateConfigValueError,
+        match='Value dkjfdk at path root:nested must be dict. Expected: "{ int_field: Int }".',
+    ):
         _validate(_single_nested_config(), {'nested': 'dkjfdk'})
 
-    with pytest.raises(DagsterEvaluateConfigValueError):
+    with pytest.raises(
+        DagsterEvaluateConfigValueError,
+        match='Value "dkjfdk" at path root:nested:int_field is not valid. Expected "Int"',
+    ):
         _validate(_single_nested_config(), {'nested': {'int_field': 'dkjfdk'}})
 
-    with pytest.raises(DagsterEvaluateConfigValueError):
+    with pytest.raises(
+        DagsterEvaluateConfigValueError,
+        match=(
+            'Field "not_a_field" is not defined at path root:nested Expected: '
+            '"{ int_field: Int }"'
+        ),
+    ):
+        _validate(_single_nested_config(), {'nested': {'int_field': 2, 'not_a_field': 1}})
+
+    with pytest.raises(
+        DagsterEvaluateConfigValueError,
+        match=(
+            'Value "{\'too_nested\': \'dkjfdk\'}" at path root:nested:int_field is not valid. '
+            'Expected "Int"'
+        ),
+    ):
         _validate(_single_nested_config(), {'nested': {'int_field': {'too_nested': 'dkjfdk'}}})
 
 
@@ -400,9 +440,13 @@ def test_no_env_missing_required_error_handling():
     assert mfe.reason == DagsterEvaluationErrorReason.MISSING_REQUIRED_FIELD
     assert len(pe.error_messages) == 1
 
-    assert 'Missing required field "solids"' in pe.message
-    assert 'at document config root' in pe.message
-    assert 'Missing required field "solids"' in pe.error_messages[0]
+    assert (
+        'Missing required field  "solids" at document config root. Expected: "{ context?: '
+        'NoEnvMissingRequiredError.ContextConfig execution?: '
+        'NoEnvMissingRequiredError.ExecutionConfig expectations?: '
+        'NoEnvMissingRequiredError.ExpectationsConfig solids: '
+        'NoEnvMissingRequiredError.SolidsConfigDictionary }"'
+    ) in pe.message
 
 
 def test_root_extra_field():
@@ -607,8 +651,10 @@ def test_multilevel_good_error_handling_solids():
     with pytest.raises(PipelineConfigEvaluationError) as pe_info:
         execute_pipeline(pipeline_def, environment={'solids': None})
 
-    pe = pe_info.value
-    assert 'Missing required field "good_error_handling" at path root:solids' in str(pe)
+    assert (
+        'Missing required field  "good_error_handling" at path root:solids Expected: '
+        '"{ good_error_handling: MultilevelGoodErrorHandling.SolidConfig.GoodErrorHandling }"'
+    ) in str(pe_info.value)
 
 
 def test_multilevel_good_error_handling_solid_name_solids():
@@ -623,8 +669,10 @@ def test_multilevel_good_error_handling_solid_name_solids():
     with pytest.raises(PipelineConfigEvaluationError) as pe_info:
         execute_pipeline(pipeline_def, environment={'solids': {'good_error_handling': {}}})
 
-    pe = pe_info.value
-    assert 'Missing required field "config" at path root:solids:good_error_handling' in str(pe)
+    assert (
+        'Missing required field  "config" at path root:solids:good_error_handling Expected: '
+        '"{ config: Int outputs?: [{ result?: Any.MaterializationSchema }] }"'
+    ) in str(pe_info.value)
 
 
 def test_multilevel_good_error_handling_config_solids_name_solids():

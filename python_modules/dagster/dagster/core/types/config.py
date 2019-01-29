@@ -209,8 +209,8 @@ def Nullable(inner_type):
     class _Nullable(ConfigNullable):
         def __init__(self):
             super(_Nullable, self).__init__(
-                key='Nullable.{inner_type}'.format(inner_type=inner_type.name),
-                name='Nullable.{inner_type}'.format(inner_type=inner_type.name),
+                key='Nullable.{inner_type}'.format(inner_type=inner_type.key),
+                name=None,
                 type_attributes=ConfigTypeAttributes(is_builtin=True, is_named=False),
                 inner_type=inner_type,
             )
@@ -224,8 +224,8 @@ def List(inner_type):
     class _List(ConfigList):
         def __init__(self):
             super(_List, self).__init__(
-                key='List.{inner_type}'.format(inner_type=inner_type.name),
-                name='List.{inner_type}'.format(inner_type=inner_type.name),
+                key='List.{inner_type}'.format(inner_type=inner_type.key),
+                name=None,
                 description='List of {inner_type}'.format(inner_type=inner_type.name),
                 type_attributes=ConfigTypeAttributes(is_builtin=True, is_named=False),
                 inner_type=inner_type,

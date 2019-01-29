@@ -132,7 +132,7 @@ def test_nested_error_one_field_not_defined():
     assert len(error.stack.entries) == 1
     stack_entry = error.stack.entries[0]
     assert stack_entry.field_name == 'level_one'
-    assert 'Dict' in stack_entry.field_def.config_type.name
+    assert 'Dict' in stack_entry.field_def.config_type.key
 
 
 def get_field_name_error(result, field_name):
@@ -417,7 +417,6 @@ def test_config_list_in_dict_error():
     stack_entry = error.stack.entries[0]
     assert isinstance(stack_entry, EvaluationStackPathEntry)
     assert stack_entry.field_name == 'nested_list'
-    assert stack_entry.field_def.config_type.name == 'List.Int'
     list_entry = error.stack.entries[1]
     assert isinstance(list_entry, EvaluationStackListItemEntry)
     assert list_entry.list_index == 1
