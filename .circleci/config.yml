@@ -727,7 +727,7 @@ jobs:
 
   nightly:
     docker:
-      - image: dagster/cci-test:3.7
+      - image: dagster/cci-test:3.7.2
 
     working_directory: ~/repo
 
