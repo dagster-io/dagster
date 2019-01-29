@@ -241,6 +241,4 @@ def construct_config_type_dictionary(solid_defs, context_definitions, environmen
         else:
             type_dict_by_key[config_type.key] = config_type
 
-    print(f'config type keys: {list(type_dict_by_key.keys()}')
-
     return type_dict_by_name, type_dict_by_key
