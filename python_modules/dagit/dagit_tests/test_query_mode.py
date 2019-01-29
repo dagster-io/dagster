@@ -34,3 +34,70 @@ def test_basic_variables():
     result = subprocess.check_output(['dagit', '-q', query, '-v', variables, '-y', repo_path])
     result_data = json.loads(result.decode())
     assert result_data['data']
+
+
+START_PIPELINE_EXECUTION_QUERY = '''
+mutation ($pipeline: ExecutionSelector!, $config: PipelineConfig) {
+    startPipelineExecution(pipeline: $pipeline, config: $config) {
+        __typename
+        ... on StartPipelineExecutionSuccess {
+            run {
+                runId
+                pipeline { name }
+                logs {
+                    nodes {
+                        __typename
+                        ... on MessageEvent {
+                            message
+                            level
+                        }
+                        ... on ExecutionStepStartEvent {
+                            step { kind }
+                        }
+                    }
+                }
+            }
+        }
+        ... on PipelineConfigValidationInvalid {
+            pipeline { name }
+            errors { message }
+        }
+        ... on PipelineNotFoundError {
+            pipelineName
+        }
+    }
+}
+'''
+
+
+def test_start_execution():
+    variables = '''
+ {{
+     "pipeline" : {{
+         "name" : "pandas_hello_world"
+    }},
+    "config" : {{
+        "solids" : {{
+            "sum_solid" : {{
+                "inputs" : {{
+                    "num" : {{
+                        "csv" : {{
+                            "path" : "{path}"
+                        }}
+                    }}
+                }}
+            }}
+        }}
+    }}
+ }}'''.format(
+        path=script_relative_path('./num.csv')
+    )
+
+    repo_path = script_relative_path('./repository.yml')
+
+    result = subprocess.check_output(
+        ['dagit', '-q', START_PIPELINE_EXECUTION_QUERY, '-v', variables, '-y', repo_path]
+    )
+    result_data = json.loads(result.decode())
+    print(result_data)
+    assert result_data['data']
