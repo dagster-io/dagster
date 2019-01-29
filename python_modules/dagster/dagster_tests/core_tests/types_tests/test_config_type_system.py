@@ -97,7 +97,13 @@ def test_single_required_string_field_config_type():
         'string_field': 'value'
     }
 
-    with pytest.raises(DagsterEvaluateConfigValueError):
+    with pytest.raises(
+        DagsterEvaluateConfigValueError,
+        match=(
+            'Missing required field "string_field" at path "". Expected: "{ string_field: '
+            'String }"'
+        ),
+    ) as exc_info:
         _validate(_single_required_string_config_dict(), {})
 
     with pytest.raises(DagsterEvaluateConfigValueError):
