@@ -185,7 +185,7 @@ jobs:
           at: /tmp/workspace
 
       # only block warnings for now
-      - run: pylint -j 0 python_modules/dagster/dagster python_modules/dagit/dagit python_modules/dagstermill/dagstermill python_modules/dagster-pandas/dagster_pandas python_modules/dagster-sqlalchemy/dagster_sqlalchemy --rcfile=python_modules/.pylintrc --disable=R,C
+      - run: pylint -j 0 python_modules/dagster/dagster python_modules/dagster/dagster_tests python_modules/dagit/dagit python_modules/dagit/dagit_tests python_modules/dagstermill/dagstermill python_modules/dagster-pandas/dagster_pandas python_modules/dagster-sqlalchemy/dagster_sqlalchemy --rcfile=python_modules/.pylintrc --disable=R,C
 
   dagit-py36: &dagit-template
     docker:

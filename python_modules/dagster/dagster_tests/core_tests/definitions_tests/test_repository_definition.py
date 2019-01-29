@@ -63,7 +63,7 @@ def test_repo_definition():
 
     pipelines = repo.get_all_pipelines()
 
-    assert set(['foo', 'bar']) == set([pipeline.name for pipeline in pipelines])
+    assert set(['foo', 'bar']) == {pipeline.name for pipeline in pipelines}
 
     assert repo.get_solid_def('foo_solid').name == 'foo_solid'
     assert repo.get_solid_def('bar_solid').name == 'bar_solid'

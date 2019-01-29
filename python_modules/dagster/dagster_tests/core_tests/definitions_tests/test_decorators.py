@@ -161,9 +161,13 @@ def test_solid_with_explicit_empty_outputs():
     with pytest.raises(DagsterInvariantViolationError) as exc_info:
         result = execute_single_solid_in_isolation(create_test_context(), hello_world)
 
-    assert 'Solid unexpectedly returned output foo of type <class \'str\'>. Solid is explicitly ' 'defined to return no results.' in str(
-        exc_info.value
-    ) or 'Solid unexpectedly returned output foo of type <type \'str\'>. Solid is explicitly ' 'defined to return no results.' in str(
+    assert (
+        'Solid unexpectedly returned output foo of type <class \'str\'>. Solid is explicitly '
+        'defined to return no results.'
+    ) in str(exc_info.value) or (
+        'Solid unexpectedly returned output foo of type <type \'str\'>. Solid is explicitly '
+        'defined to return no results.'
+    ) in str(
         exc_info.value
     )  # py2
 
