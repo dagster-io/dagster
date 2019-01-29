@@ -242,7 +242,7 @@ def solid(name=None, inputs=None, outputs=None, config_field=None, description=N
                 outputs=[OutputDefinition()],
             )
             def hello_world(info, foo):
-                info.context.info('log something')
+                info.log.info('log something')
                 return foo
 
             @solid(
@@ -319,16 +319,18 @@ def _create_solid_transform_wrapper(fn, input_defs, output_defs):
             elif result is not None:
                 if not output_defs:
                     raise DagsterInvariantViolationError(
-                        'Solid unexpectedly returned output {result} of type {type_}. Solid is '
-                        'explicitly defined to return no results.'.format(
-                            result=result, type_=type(result)
-                        )
+                        (
+                            'Solid unexpectedly returned output {result} of type {type_}. Solid is '
+                            'explicitly defined to return no results.'
+                        ).format(result=result, type_=type(result))
                     )
                 else:
                     raise DagsterInvariantViolationError(
-                        'Solid unexpectedly returned output {result} of type {type_}. Should be a '
-                        'MultipleResults object, or a generator, containing or yielding {n_results} '
-                        'results: {{{expected_results}}}.'.format(
+                        (
+                            'Solid unexpectedly returned output {result} of type {type_}. Should '
+                            'be a MultipleResults object, or a generator, containing or yielding '
+                            '{n_results} results: {{{expected_results}}}.'
+                        ).format(
                             result=result,
                             type_=type(result),
                             n_results=len(output_defs),

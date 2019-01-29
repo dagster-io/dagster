@@ -12,13 +12,13 @@ export interface SolidNodeFragment_definition_metadata {
   value: string;
 }
 
-export interface SolidNodeFragment_definition_configDefinition_type {
-  name: string;
+export interface SolidNodeFragment_definition_configDefinition_configType {
+  name: string | null;
   description: string | null;
 }
 
 export interface SolidNodeFragment_definition_configDefinition {
-  type: SolidNodeFragment_definition_configDefinition_type;
+  configType: SolidNodeFragment_definition_configDefinition_configType;
 }
 
 export interface SolidNodeFragment_definition {
@@ -27,7 +27,7 @@ export interface SolidNodeFragment_definition {
 }
 
 export interface SolidNodeFragment_inputs_definition_type {
-  name: string;
+  name: string | null;
 }
 
 export interface SolidNodeFragment_inputs_definition {
@@ -54,7 +54,7 @@ export interface SolidNodeFragment_inputs {
 }
 
 export interface SolidNodeFragment_outputs_definition_type {
-  name: string;
+  name: string | null;
 }
 
 export interface SolidNodeFragment_outputs_definition_expectations {
@@ -120,7 +120,7 @@ export enum PipelineRunStatus {
   SUCCESS = "SUCCESS",
 }
 
-export enum StepTag {
+export enum StepKind {
   INPUT_EXPECTATION = "INPUT_EXPECTATION",
   INPUT_THUNK = "INPUT_THUNK",
   JOIN = "JOIN",

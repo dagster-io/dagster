@@ -278,13 +278,20 @@ CodeMirror.defineMode("yaml", () => {
 });
 
 export type TypeConfig = {
-  rootTypeName: string;
+  rootTypeKey: string;
   types: {
-    [name: string]: {
+    [key: string]: {
       fields: Array<{
         name: string;
-        type: {
-          name: string;
+        configType: {
+          __typename: string;
+          isList: boolean;
+          isNullable: boolean;
+          key: string;
+          name: string | null;
+          ofType?: {
+            key: string;
+          };
         };
       }>;
     };
@@ -393,32 +400,36 @@ function findAutocomplete(
   parents = parents.filter(({ indent }) => currentIndent > indent);
   const immediateParent = parents[parents.length - 1];
 
-  let available = typeConfig.types[typeConfig.rootTypeName].fields;
+  let available = typeConfig.types[typeConfig.rootTypeKey].fields;
 
   if (available && parents.length > 0) {
     for (const parent of parents) {
       const parentTypeDef = available.find(({ name }) => parent.key === name);
 
-      if (!parentTypeDef || !parentTypeDef.type.name) {
+      if (!parentTypeDef) {
         return [];
       }
 
-      let childTypeName = parentTypeDef.type.name;
-      let childEntiresUnique = true;
+      let childTypeKey = parentTypeDef.configType.key;
+      let childEntriesUnique = true;
 
-      if (parentTypeDef.type.name.startsWith("List.")) {
-        childTypeName = parentTypeDef.type.name.substr(5);
-        childEntiresUnique = false;
+      if (parentTypeDef.configType.isList) {
+        // ofType guaranteed to have value in the List case
+        // better way to enforce this?
+        if (parentTypeDef.configType.ofType) {
+          childTypeKey = parentTypeDef.configType.ofType.key;
+          childEntriesUnique = false;
+        }
       }
 
-      let childType = typeConfig.types[childTypeName];
+      let childType = typeConfig.types[childTypeKey];
       available = childType && childType.fields;
       if (!available) {
-        console.warn(`No type config is available for ${childTypeName}`);
+        console.warn(`No type config is available for ${childTypeKey}`);
         return [];
       }
 
-      if (parent === immediateParent && childEntiresUnique) {
+      if (parent === immediateParent && childEntriesUnique) {
         available = available.filter(
           item => immediateParent.childKeys.indexOf(item.name) === -1
         );
@@ -428,7 +439,9 @@ function findAutocomplete(
 
   return available.map(item => ({
     text: item.name,
-    hasChildren: item.type.name ? item.type.name in typeConfig.types : false
+    hasChildren: item.configType.name
+      ? item.configType.name in typeConfig.types
+      : false
   }));
 }
 

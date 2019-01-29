@@ -12,13 +12,13 @@ export interface PipelineGraphFragment_solids_definition_metadata {
   value: string;
 }
 
-export interface PipelineGraphFragment_solids_definition_configDefinition_type {
-  name: string;
+export interface PipelineGraphFragment_solids_definition_configDefinition_configType {
+  name: string | null;
   description: string | null;
 }
 
 export interface PipelineGraphFragment_solids_definition_configDefinition {
-  type: PipelineGraphFragment_solids_definition_configDefinition_type;
+  configType: PipelineGraphFragment_solids_definition_configDefinition_configType;
 }
 
 export interface PipelineGraphFragment_solids_definition {
@@ -27,7 +27,7 @@ export interface PipelineGraphFragment_solids_definition {
 }
 
 export interface PipelineGraphFragment_solids_inputs_definition_type {
-  name: string;
+  name: string | null;
 }
 
 export interface PipelineGraphFragment_solids_inputs_definition {
@@ -54,7 +54,7 @@ export interface PipelineGraphFragment_solids_inputs {
 }
 
 export interface PipelineGraphFragment_solids_outputs_definition_type {
-  name: string;
+  name: string | null;
 }
 
 export interface PipelineGraphFragment_solids_outputs_definition_expectations {
@@ -125,7 +125,7 @@ export enum PipelineRunStatus {
   SUCCESS = "SUCCESS",
 }
 
-export enum StepTag {
+export enum StepKind {
   INPUT_EXPECTATION = "INPUT_EXPECTATION",
   INPUT_THUNK = "INPUT_THUNK",
   JOIN = "JOIN",

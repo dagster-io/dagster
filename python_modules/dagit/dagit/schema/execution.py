@@ -4,6 +4,7 @@ from dagster import check
 from dagster.core.execution_plan.objects import ExecutionStep, ExecutionPlan, StepInput, StepOutput
 
 from dagit.schema import dauphin
+from .runtime_types import to_dauphin_runtime_type
 
 
 class DauphinExecutionPlan(dauphin.ObjectType):
@@ -18,7 +19,7 @@ class DauphinExecutionPlan(dauphin.ObjectType):
         self.execution_plan = check.inst_param(execution_plan, 'execution_plan', ExecutionPlan)
 
     def resolve_steps(self, _info):
-        return [DauphinExecutionStep(cn) for cn in self.execution_plan.topological_steps()]
+        return [DauphinExecutionStep(step) for step in self.execution_plan.topological_steps()]
 
 
 class DauphinExecutionStepOutput(dauphin.ObjectType):
@@ -26,7 +27,7 @@ class DauphinExecutionStepOutput(dauphin.ObjectType):
         name = 'ExecutionStepOutput'
 
     name = dauphin.NonNull(dauphin.String)
-    type = dauphin.Field(dauphin.NonNull('Type'))
+    type = dauphin.Field(dauphin.NonNull('RuntimeType'))
 
     def __init__(self, step_output):
         super(DauphinExecutionStepOutput, self).__init__()
@@ -35,8 +36,8 @@ class DauphinExecutionStepOutput(dauphin.ObjectType):
     def resolve_name(self, _info):
         return self._step_output.name
 
-    def resolve_type(self, info):
-        return info.schema.type_named('Type').to_dauphin_type(info, self._step_output.runtime_type)
+    def resolve_type(self, _info):
+        return to_dauphin_runtime_type(self._step_output.runtime_type)
 
 
 class DauphinExecutionStepInput(dauphin.ObjectType):
@@ -44,7 +45,7 @@ class DauphinExecutionStepInput(dauphin.ObjectType):
         name = 'ExecutionStepInput'
 
     name = dauphin.NonNull(dauphin.String)
-    type = dauphin.Field(dauphin.NonNull('Type'))
+    type = dauphin.Field(dauphin.NonNull('RuntimeType'))
     dependsOn = dauphin.Field(dauphin.NonNull('ExecutionStep'))
 
     def __init__(self, step_input):
@@ -54,16 +55,16 @@ class DauphinExecutionStepInput(dauphin.ObjectType):
     def resolve_name(self, _info):
         return self._step_input.name
 
-    def resolve_type(self, info):
-        return info.schema.type_named('Type').to_dauphin_type(info, self._step_input.runtime_type)
+    def resolve_type(self, _info):
+        return to_dauphin_runtime_type(self._step_input.runtime_type)
 
     def resolve_dependsOn(self, info):
         return info.schema.type_named('ExecutionStep')(self._step_input.prev_output_handle.step)
 
 
-class DauphinStepTag(dauphin.Enum):
+class DauphinStepKind(dauphin.Enum):
     class Meta:
-        name = 'StepTag'
+        name = 'StepKind'
 
     TRANSFORM = 'TRANSFORM'
     INPUT_EXPECTATION = 'INPUT_EXPECTATION'
@@ -77,27 +78,27 @@ class DauphinStepTag(dauphin.Enum):
     def description(self):
         # self ends up being the internal class "EnumMeta" in dauphin
         # so we can't do a dictionary lookup which is awesome
-        if self == DauphinStepTag.TRANSFORM:
+        if self == DauphinStepKind.TRANSFORM:
             return 'This is the user-defined transform step'
-        elif self == DauphinStepTag.INPUT_EXPECTATION:
+        elif self == DauphinStepKind.INPUT_EXPECTATION:
             return 'Expectation defined on an input'
-        elif self == DauphinStepTag.OUTPUT_EXPECTATION:
+        elif self == DauphinStepKind.OUTPUT_EXPECTATION:
             return 'Expectation defined on an output'
-        elif self == DauphinStepTag.JOIN:
+        elif self == DauphinStepKind.JOIN:
             return (
                 'Sometimes we fan out compute on identical values (e.g. multiple expectations '
                 'in parallel). We synthesize these in a join step to consolidate to a single '
                 'output that the next computation can depend on.'
             )
-        elif self == DauphinStepTag.SERIALIZE:
+        elif self == DauphinStepKind.SERIALIZE:
             return (
                 'This is a special system-defined step to serialize an intermediate value if '
                 'the pipeline is configured to do that.'
             )
 
-        elif self == DauphinStepTag.INPUT_THUNK:
+        elif self == DauphinStepKind.INPUT_THUNK:
             return 'Special system-defined step to represent an input specified in the environment'
-        elif self == DauphinStepTag.MATERIALIZATION_THUNK:
+        elif self == DauphinStepKind.MATERIALIZATION_THUNK:
             return (
                 'Special system-defined step to represent an output materialization specified in '
                 'the environment'
@@ -110,11 +111,12 @@ class DauphinExecutionStep(dauphin.ObjectType):
     class Meta:
         name = 'ExecutionStep'
 
-    name = dauphin.NonNull(dauphin.String)
+    name = dauphin.Field(dauphin.NonNull(dauphin.String), deprecation_reason='Use key')
+    key = dauphin.NonNull(dauphin.String)
     inputs = dauphin.non_null_list('ExecutionStepInput')
     outputs = dauphin.non_null_list('ExecutionStepOutput')
     solid = dauphin.NonNull('Solid')
-    tag = dauphin.NonNull('StepTag')
+    kind = dauphin.NonNull('StepKind')
 
     def __init__(self, execution_step):
         super(DauphinExecutionStep, self).__init__()
@@ -132,11 +134,14 @@ class DauphinExecutionStep(dauphin.ObjectType):
             for out in self.execution_step.step_outputs
         ]
 
+    def resolve_key(self, _info):
+        return self.execution_step.key
+
     def resolve_name(self, _info):
         return self.execution_step.key
 
     def resolve_solid(self, info):
         return info.schema.type_named('Solid')(self.execution_step.solid)
 
-    def resolve_tag(self, _info):
-        return self.execution_step.tag
+    def resolve_kind(self, _info):
+        return self.execution_step.kind

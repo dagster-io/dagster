@@ -43,7 +43,7 @@ else:
             pass
 
         def enable(self):
-            print('Hot-reloading only supports Python 3+')
+            sys.stderr.write('Hot-reloading only supports Python 3+')
 
     reloader = ReloaderStub()
 

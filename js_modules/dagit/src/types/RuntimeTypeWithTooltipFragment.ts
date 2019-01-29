@@ -4,27 +4,13 @@
 // This file was automatically generated and should not be edited.
 
 // ====================================================
-// GraphQL fragment: StepMetadataProviderMessageFragment
+// GraphQL fragment: RuntimeTypeWithTooltipFragment
 // ====================================================
 
-export interface StepMetadataProviderMessageFragment_LogMessageEvent {
-  __typename: "LogMessageEvent" | "PipelineStartEvent" | "PipelineSuccessEvent" | "PipelineFailureEvent" | "PipelineProcessStartEvent" | "PipelineProcessStartedEvent";
-  message: string;
-  timestamp: string;
+export interface RuntimeTypeWithTooltipFragment {
+  name: string | null;
+  description: string | null;
 }
-
-export interface StepMetadataProviderMessageFragment_ExecutionStepStartEvent_step {
-  name: string;
-}
-
-export interface StepMetadataProviderMessageFragment_ExecutionStepStartEvent {
-  __typename: "ExecutionStepStartEvent" | "ExecutionStepSuccessEvent" | "ExecutionStepFailureEvent";
-  message: string;
-  timestamp: string;
-  step: StepMetadataProviderMessageFragment_ExecutionStepStartEvent_step;
-}
-
-export type StepMetadataProviderMessageFragment = StepMetadataProviderMessageFragment_LogMessageEvent | StepMetadataProviderMessageFragment_ExecutionStepStartEvent;
 
 /* tslint:disable */
 // This file was automatically generated and should not be edited.
@@ -58,7 +44,7 @@ export enum PipelineRunStatus {
   SUCCESS = "SUCCESS",
 }
 
-export enum StepTag {
+export enum StepKind {
   INPUT_EXPECTATION = "INPUT_EXPECTATION",
   INPUT_THUNK = "INPUT_THUNK",
   JOIN = "JOIN",
@@ -69,11 +55,12 @@ export enum StepTag {
 }
 
 /**
- * 
+ * This type represents the fields necessary to identify a
+ *         pipeline or pipeline subset.
  */
-export interface PipelineExecutionParams {
-  pipelineName: string;
-  config?: any | null;
+export interface ExecutionSelector {
+  name: string;
+  solidSubset?: string[] | null;
 }
 
 //==============================================================

@@ -1,16 +1,24 @@
+import json
 import os
 import sys
 
-import click
 from gevent import pywsgi
 from geventwebsocket.handler import WebSocketHandler
-from watchdog.observers import Observer
+from graphql import graphql
+from graphql.execution.executors.gevent import GeventExecutor as Executor
 from watchdog.events import FileSystemEventHandler
+from watchdog.observers import Observer
+import click
 
+
+from dagster import check
 from dagster.cli.dynamic_loader import repository_target_argument, load_target_info_from_cli_args
 
 from .app import create_app, RepositoryContainer
+from .pipeline_execution_manager import SynchronousExecutionManager
 from .pipeline_run_storage import PipelineRunStorage, LogFilePipelineRun, InMemoryPipelineRun
+from .schema import create_schema
+from .schema.context import DagsterGraphQLContext
 from .version import __version__
 
 
@@ -32,6 +40,31 @@ class ReloaderHandler(FileSystemEventHandler):
 REPO_TARGET_WARNING = (
     'Can only use ONE of --repository-yaml/-y, --python-file/-f, --module-name/-m.'
 )
+
+
+def execute_query_from_cli(repository_container, query, variables):
+    check.str_param(query, 'query')
+    check.opt_str_param(variables, 'variables')
+
+    create_pipeline_run = InMemoryPipelineRun
+    pipeline_run_storage = PipelineRunStorage(create_pipeline_run=create_pipeline_run)
+    execution_manager = SynchronousExecutionManager()
+
+    context = DagsterGraphQLContext(
+        repository_container=repository_container,
+        pipeline_runs=pipeline_run_storage,
+        execution_manager=execution_manager,
+    )
+
+    result = graphql(
+        request_string=query,
+        schema=create_schema(),
+        context=context,
+        variables=json.loads(variables) if variables else None,
+        executor=Executor(),
+    )
+
+    print(json.dumps(result.to_dict()))
 
 
 @click.command(
@@ -60,12 +93,25 @@ REPO_TARGET_WARNING = (
 @click.option('--sync', is_flag=True, help='Use the synchronous execution manager')
 @click.option('--log', is_flag=False, help='Record logs of pipeline runs')
 @click.option('--log-dir', help="Directory to record logs to", default='dagit_run_logs/')
+@click.option('--query', '-q', type=click.STRING)
+@click.option('--variables', '-v', type=click.STRING)
 @click.version_option(version=__version__)
-def ui(host, port, watch, sync, log, log_dir, **kwargs):
+def ui(host, port, watch, sync, log, log_dir, query, variables, **kwargs):
     repository_target_info = load_target_info_from_cli_args(kwargs)
 
     sys.path.append(os.getcwd())
     repository_container = RepositoryContainer(repository_target_info)
+
+    if query:
+        return execute_query_from_cli(repository_container, query, variables)
+    else:
+        if variables:
+            raise Exception('if you specify --variables/-v you need to specify --query/-q')
+
+    host_dagit_ui(log, log_dir, watch, repository_container, sync, host, port)
+
+
+def host_dagit_ui(log, log_dir, watch, repository_container, sync, host, port):
     if log:
 
         def create_pipeline_run(*args, **kwargs):

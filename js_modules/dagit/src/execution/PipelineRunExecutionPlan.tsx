@@ -25,7 +25,7 @@ export default class PipelineRunExecutionPlan extends React.Component<
             solid {
               name
             }
-            tag
+            kind
           }
         }
       }

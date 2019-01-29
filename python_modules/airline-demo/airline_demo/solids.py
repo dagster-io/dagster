@@ -107,10 +107,10 @@ def sql_solid(name, select_statement, materialization_strategy, table_name=None,
                 The table name of the newly materialized SQL select statement.
         '''
 
-        info.context.info(
+        info.log.info(
             'Executing sql statement:\n{sql_statement}'.format(sql_statement=sql_statement)
         )
-        info.context.resources.db_info.engine.execute(text(sql_statement))
+        info.resources.db_info.engine.execute(text(sql_statement))
         yield Result(value=table_name, output_name='result')
 
     return SolidDefinition(
@@ -161,7 +161,7 @@ def thunk_database_engine(info):
     threads. So in order to get a database engine into a Jupyter notebook, we need to serialize
     it and pass it along.
     """
-    return info.context.resources.db
+    return info.resources.db
 
 
 @solid(
@@ -218,10 +218,10 @@ def download_from_s3(info):
         target_path = file_.get('target_path') or key
 
         if target_path is None:
-            target_path = info.context.resources.tempfile.tempfile().name
+            target_path = info.resources.tempfile.tempfile().name
 
         if file_['skip_if_present'] and safe_isfile(target_path):
-            info.context.info(
+            info.log.info(
                 'Skipping download, file already present at {target_path}'.format(
                     target_path=target_path
                 )
@@ -230,7 +230,7 @@ def download_from_s3(info):
             if os.path.dirname(target_path):
                 mkdir_p(os.path.dirname(target_path))
 
-            info.context.resources.s3.download_file(bucket, key, target_path)
+            info.resources.s3.download_file(bucket, key, target_path)
         results.append(target_path)
     return results
 
@@ -274,7 +274,7 @@ def upload_to_s3(info, file_path):
     key = info.config['key']
 
     with open(file_path, 'rb') as fd:
-        info.context.resources.s3.put_object(
+        info.resources.s3.put_object(
             Bucket=bucket, Body=fd, Key=key, **(info.config.get('kwargs') or {})
         )
     yield Result(bucket, 'bucket')
@@ -356,7 +356,7 @@ def unzip_file(
                     zip_ref.extract(archive_member, destination_dir)
                 else:
                     if is_file:
-                        info.context.info(
+                        info.log.info(
                             'Skipping unarchive of {archive_member} from {archive_path}, '
                             'file already present at {target_path}'.format(
                                 archive_member=archive_member,
@@ -365,7 +365,7 @@ def unzip_file(
                             )
                         )
                     if is_dir:
-                        info.context.info(
+                        info.log.info(
                             'Skipping unarchive of {archive_member} from {archive_path}, '
                             'directory already present at {target_path}'.format(
                                 archive_member=archive_member,
@@ -377,7 +377,7 @@ def unzip_file(
                 if not (info.config['skip_if_present'] and is_dir):
                     zip_ref.extractall(destination_dir)
                 else:
-                    info.context.info(
+                    info.log.info(
                         'Skipping unarchive of {archive_path}, directory already present '
                         'at {target_path}'.format(
                             archive_path=archive_path, target_path=target_path
@@ -394,7 +394,7 @@ def unzip_file(
 )
 def ingest_csv_to_spark(info, input_csv):
     data_frame = (
-        info.context.resources.spark.read.format('csv')
+        info.resources.spark.read.format('csv')
         .options(
             header='true',
             # inferSchema='true',
@@ -476,7 +476,7 @@ def normalize_weather_na_values(_info, data_frame):
     config_field=Field(Dict(fields={'table_name': Field(String, description='')})),
 )
 def load_data_to_database_from_spark(info, data_frame):
-    info.context.resources.db_info.load_table(data_frame, info.config['table_name'])
+    info.resources.db_info.load_table(data_frame, info.config['table_name'])
     return data_frame
 
 

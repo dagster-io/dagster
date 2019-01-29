@@ -765,8 +765,6 @@ snapshots['test_build_all_docs 4'] = '''
 <h2 id="R">R</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="apidocs/execution.html#dagster.ReentrantInfo">ReentrantInfo (class in dagster)</a>
-</li>
       <li><a href="apidocs/definitions.html#dagster.RepositoryDefinition">RepositoryDefinition (class in dagster)</a>
 </li>
       <li><a href="apidocs/definitions.html#dagster.ResourceDefinition">ResourceDefinition (class in dagster)</a>
@@ -775,10 +773,10 @@ snapshots['test_build_all_docs 4'] = '''
 </li>
       <li><a href="apidocs/definitions.html#dagster.ExpectationResult.result_context">result_context (dagster.ExpectationResult attribute)</a>
 </li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="apidocs/execution.html#dagster.PipelineExecutionResult.result_for_solid">result_for_solid() (dagster.PipelineExecutionResult method)</a>
 </li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="apidocs/execution.html#dagster.PipelineExecutionResult.result_list">result_list (dagster.PipelineExecutionResult attribute)</a>
 </li>
       <li><a href="apidocs/decorators.html#dagster.MultipleResults.results">results (dagster.MultipleResults attribute)</a>
@@ -2440,7 +2438,7 @@ def create_fileload_unittest_context(info):
     yield ExecutionContext(
         loggers=[define_colored_console_logger('dagster', log_level)],
         resources=resources,
-        context_stack={
+        tags={
             'data_source_run_id': data_source_run_id,
             'data_source': 'new_data',
             'pipeline_run_id': pipeline_run_id,
@@ -2506,7 +2504,7 @@ def create_fileload_unittest_context(info):
 
     yield ExecutionContext(
         loggers=[define_colored_console_logger('dagster', log_level)],
-        context_stack={
+        tags={
             'data_source_run_id': data_source_run_id,
             'data_source': 'new_data',
         },
@@ -3037,7 +3035,7 @@ After:
     yield ExecutionContext(
         loggers=[define_colored_console_logger('dagster', log_level)],
         resources=resources,
-        context_stack={
+        tags={
             'data_source_run_id': data_source_run_id,
             'data_source': 'new_data',
             'pipeline_run_id': pipeline_run_id,
@@ -3295,17 +3293,18 @@ snapshots['test_build_all_docs 25'] = '''Execution Context
 =================
 
 One of the most important objects in the system is the execution context. The execution
-context is threaded throughout the entire computation (via the ``info`` object passed to
-user code) and contains handles to logging facilities and external resources. Interactions
-with logging systems, databases, and external clusters (e.g. a Spark cluster) should
-be managed through the context. 
+context, the logger, and the resources are threaded throughout the entire computation (
+via the ``info`` object passed to user code) and contains handles to logging facilities
+and external resources. Interactions with logging systems, databases, and external
+clusters (e.g. a Spark cluster) should be managed through these properties of the 
+info object.
 
 This provides a powerful layer of indirection that allows a solid to abstract
-away its surrounding environment. Using an execution context allows the system and pipeline
-infrastructure to provide different implementations for different environments,
-giving the engineer the opportunity to design pipelines that can be executed
-on your local machine or your CI/CD pipeline as readily as your production
-cluster environment.
+away its surrounding environment. Using an execution context allows the system and
+pipeline infrastructure to provide different implementations for different
+environments, giving the engineer the opportunity to design pipelines that
+can be executed on your local machine or your CI/CD pipeline as readily as
+your production cluster environment.
 
 Logging
 ~~~~~~~
@@ -4003,8 +4002,8 @@ with swappable config.
 snapshots['test_build_all_docs 33'] = '''Resources
 =========
 
-We've already learned about logging through the execution context. We can also use the execution
-context to manage pipelines' access to resources like the file system, databases, or cloud services.
+We've already learned about logging through the info object. We can also use the info object
+to manage pipelines' access to resources like the file system, databases, or cloud services.
 In general, interactions with features of the external environment like these should be modeled
 as resources.
 
@@ -19107,7 +19106,7 @@ multiple outputs. Useful for solids that have multiple outputs.</li>
     <span class="n">outputs</span><span class="o">=</span><span class="p">[</span><span class="n">OutputDefinition</span><span class="p">()],</span>
 <span class="p">)</span>
 <span class="k">def</span> <span class="nf">hello_world</span><span class="p">(</span><span class="n">info</span><span class="p">,</span> <span class="n">foo</span><span class="p">):</span>
-    <span class="n">info</span><span class="o">.</span><span class="n">context</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;log something&#39;</span><span class="p">)</span>
+    <span class="n">info</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;log something&#39;</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">foo</span>
 
 <span class="nd">@solid</span><span class="p">(</span>
@@ -20199,7 +20198,7 @@ snapshots['test_build_all_docs 52'] = '''
 <p>Executing pipelines and solids.</p>
 <dl class="function">
 <dt id="dagster.execute_pipeline">
-<code class="descclassname">dagster.</code><code class="descname">execute_pipeline</code><span class="sig-paren">(</span><em>pipeline</em>, <em>environment=None</em>, <em>throw_on_error=True</em>, <em>reentrant_info=None</em>, <em>solid_subset=None</em><span class="sig-paren">)</span><a class="headerlink" href="#dagster.execute_pipeline" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">dagster.</code><code class="descname">execute_pipeline</code><span class="sig-paren">(</span><em>pipeline</em>, <em>environment=None</em>, <em>throw_on_error=True</em>, <em>execution_metadata=None</em>, <em>solid_subset=None</em><span class="sig-paren">)</span><a class="headerlink" href="#dagster.execute_pipeline" title="Permalink to this definition">¶</a></dt>
 <dd><p>“Synchronous” version of <a class="reference internal" href="#dagster.execute_pipeline_iterator" title="dagster.execute_pipeline_iterator"><code class="xref py py-func docutils literal notranslate"><span class="pre">execute_pipeline_iterator()</span></code></a>.</p>
 <p>Note: throw_on_error is very useful in testing contexts when not testing for error conditions</p>
 <table class="docutils field-list" frame="void" rules="none">
@@ -20223,7 +20222,7 @@ the py:class:<cite>SolidExecutionResult</cite> in an error-state.</li>
 
 <dl class="function">
 <dt id="dagster.execute_pipeline_iterator">
-<code class="descclassname">dagster.</code><code class="descname">execute_pipeline_iterator</code><span class="sig-paren">(</span><em>pipeline</em>, <em>environment=None</em>, <em>throw_on_error=True</em>, <em>reentrant_info=None</em>, <em>solid_subset=None</em><span class="sig-paren">)</span><a class="headerlink" href="#dagster.execute_pipeline_iterator" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">dagster.</code><code class="descname">execute_pipeline_iterator</code><span class="sig-paren">(</span><em>pipeline</em>, <em>environment=None</em>, <em>throw_on_error=True</em>, <em>execution_metadata=None</em>, <em>solid_subset=None</em><span class="sig-paren">)</span><a class="headerlink" href="#dagster.execute_pipeline_iterator" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns iterator that yields <a class="reference internal" href="#dagster.SolidExecutionResult" title="dagster.SolidExecutionResult"><code class="xref py py-class docutils literal notranslate"><span class="pre">SolidExecutionResult</span></code></a> for each
 solid executed in the pipeline.</p>
 <p>This is intended to allow the caller to do things between each executed
@@ -20292,13 +20291,8 @@ node. For the ‘synchronous’ API, see <a class="reference internal" href="#da
 </dd></dl>
 
 <dl class="class">
-<dt id="dagster.ReentrantInfo">
-<em class="property">class </em><code class="descclassname">dagster.</code><code class="descname">ReentrantInfo</code><a class="headerlink" href="#dagster.ReentrantInfo" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="class">
 <dt id="dagster.SolidExecutionResult">
-<em class="property">class </em><code class="descclassname">dagster.</code><code class="descname">SolidExecutionResult</code><span class="sig-paren">(</span><em>context</em>, <em>solid</em>, <em>step_results_by_tag</em><span class="sig-paren">)</span><a class="headerlink" href="#dagster.SolidExecutionResult" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">dagster.</code><code class="descname">SolidExecutionResult</code><span class="sig-paren">(</span><em>context</em>, <em>solid</em>, <em>step_results_by_kind</em><span class="sig-paren">)</span><a class="headerlink" href="#dagster.SolidExecutionResult" title="Permalink to this definition">¶</a></dt>
 <dd><p>Execution result for one solid of the pipeline.</p>
 <dl class="attribute">
 <dt id="dagster.SolidExecutionResult.context">
@@ -20496,7 +20490,7 @@ snapshots['test_build_all_docs 53'] = '''
 
 <dl class="class">
 <dt id="dagster.ConfigType">
-<em class="property">class </em><code class="descclassname">dagster.</code><code class="descname">ConfigType</code><span class="sig-paren">(</span><em>name=None</em>, <em>type_attributes=ConfigTypeAttributes(is_builtin=False</em>, <em>is_system_config=False</em>, <em>is_named=True)</em>, <em>description=None</em><span class="sig-paren">)</span><a class="headerlink" href="#dagster.ConfigType" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">dagster.</code><code class="descname">ConfigType</code><span class="sig-paren">(</span><em>key</em>, <em>name</em>, <em>type_attributes=ConfigTypeAttributes(is_builtin=False</em>, <em>is_system_config=False</em>, <em>is_named=True)</em>, <em>description=None</em><span class="sig-paren">)</span><a class="headerlink" href="#dagster.ConfigType" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="function">
@@ -20551,12 +20545,12 @@ snapshots['test_build_all_docs 53'] = '''
 
 <dl class="class">
 <dt id="dagster.PythonObjectType">
-<em class="property">class </em><code class="descclassname">dagster.</code><code class="descname">PythonObjectType</code><span class="sig-paren">(</span><em>python_type</em>, <em>*args</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#dagster.PythonObjectType" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">dagster.</code><code class="descname">PythonObjectType</code><span class="sig-paren">(</span><em>python_type</em>, <em>key=None</em>, <em>name=None</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#dagster.PythonObjectType" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="class">
 <dt id="dagster.RuntimeType">
-<em class="property">class </em><code class="descclassname">dagster.</code><code class="descname">RuntimeType</code><span class="sig-paren">(</span><em>name=None</em>, <em>description=None</em>, <em>input_schema=None</em>, <em>output_schema=None</em>, <em>marshalling_strategy=None</em><span class="sig-paren">)</span><a class="headerlink" href="#dagster.RuntimeType" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">dagster.</code><code class="descname">RuntimeType</code><span class="sig-paren">(</span><em>key</em>, <em>name</em>, <em>description=None</em>, <em>input_schema=None</em>, <em>output_schema=None</em>, <em>marshalling_strategy=None</em><span class="sig-paren">)</span><a class="headerlink" href="#dagster.RuntimeType" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="attribute">
@@ -20882,7 +20876,7 @@ snapshots['test_build_all_docs 55'] = '''
     <span class="k">yield</span> <span class="n">ExecutionContext</span><span class="p">(</span>
         <span class="n">loggers</span><span class="o">=</span><span class="p">[</span><span class="n">define_colored_console_logger</span><span class="p">(</span><span class="s1">&#39;dagster&#39;</span><span class="p">,</span> <span class="n">log_level</span><span class="p">)],</span>
         <span class="n">resources</span><span class="o">=</span><span class="n">resources</span><span class="p">,</span>
-        <span class="n">context_stack</span><span class="o">=</span><span class="p">{</span>
+        <span class="n">tags</span><span class="o">=</span><span class="p">{</span>
             <span class="s1">&#39;data_source_run_id&#39;</span><span class="p">:</span> <span class="n">data_source_run_id</span><span class="p">,</span>
             <span class="s1">&#39;data_source&#39;</span><span class="p">:</span> <span class="s1">&#39;new_data&#39;</span><span class="p">,</span>
             <span class="s1">&#39;pipeline_run_id&#39;</span><span class="p">:</span> <span class="n">pipeline_run_id</span><span class="p">,</span>
@@ -20940,7 +20934,7 @@ snapshots['test_build_all_docs 55'] = '''
 
     <span class="k">yield</span> <span class="n">ExecutionContext</span><span class="p">(</span>
         <span class="n">loggers</span><span class="o">=</span><span class="p">[</span><span class="n">define_colored_console_logger</span><span class="p">(</span><span class="s1">&#39;dagster&#39;</span><span class="p">,</span> <span class="n">log_level</span><span class="p">)],</span>
-        <span class="n">context_stack</span><span class="o">=</span><span class="p">{</span>
+        <span class="n">tags</span><span class="o">=</span><span class="p">{</span>
             <span class="s1">&#39;data_source_run_id&#39;</span><span class="p">:</span> <span class="n">data_source_run_id</span><span class="p">,</span>
             <span class="s1">&#39;data_source&#39;</span><span class="p">:</span> <span class="s1">&#39;new_data&#39;</span><span class="p">,</span>
         <span class="p">},</span>
@@ -21520,7 +21514,7 @@ Third, you do not have to name it. The net result is much nicer:</p>
 <div class="highlight-py notranslate"><div class="highlight"><pre><span></span>    <span class="k">yield</span> <span class="n">ExecutionContext</span><span class="p">(</span>
         <span class="n">loggers</span><span class="o">=</span><span class="p">[</span><span class="n">define_colored_console_logger</span><span class="p">(</span><span class="s1">&#39;dagster&#39;</span><span class="p">,</span> <span class="n">log_level</span><span class="p">)],</span>
         <span class="n">resources</span><span class="o">=</span><span class="n">resources</span><span class="p">,</span>
-        <span class="n">context_stack</span><span class="o">=</span><span class="p">{</span>
+        <span class="n">tags</span><span class="o">=</span><span class="p">{</span>
             <span class="s1">&#39;data_source_run_id&#39;</span><span class="p">:</span> <span class="n">data_source_run_id</span><span class="p">,</span>
             <span class="s1">&#39;data_source&#39;</span><span class="p">:</span> <span class="s1">&#39;new_data&#39;</span><span class="p">,</span>
             <span class="s1">&#39;pipeline_run_id&#39;</span><span class="p">:</span> <span class="n">pipeline_run_id</span><span class="p">,</span>
@@ -22661,16 +22655,17 @@ snapshots['test_build_all_docs 60'] = '''
   <div class="section" id="execution-context">
 <h1>Execution Context<a class="headerlink" href="#execution-context" title="Permalink to this headline">¶</a></h1>
 <p>One of the most important objects in the system is the execution context. The execution
-context is threaded throughout the entire computation (via the <code class="docutils literal notranslate"><span class="pre">info</span></code> object passed to
-user code) and contains handles to logging facilities and external resources. Interactions
-with logging systems, databases, and external clusters (e.g. a Spark cluster) should
-be managed through the context.</p>
+context, the logger, and the resources are threaded throughout the entire computation (
+via the <code class="docutils literal notranslate"><span class="pre">info</span></code> object passed to user code) and contains handles to logging facilities
+and external resources. Interactions with logging systems, databases, and external
+clusters (e.g. a Spark cluster) should be managed through these properties of the
+info object.</p>
 <p>This provides a powerful layer of indirection that allows a solid to abstract
-away its surrounding environment. Using an execution context allows the system and pipeline
-infrastructure to provide different implementations for different environments,
-giving the engineer the opportunity to design pipelines that can be executed
-on your local machine or your CI/CD pipeline as readily as your production
-cluster environment.</p>
+away its surrounding environment. Using an execution context allows the system and
+pipeline infrastructure to provide different implementations for different
+environments, giving the engineer the opportunity to design pipelines that
+can be executed on your local machine or your CI/CD pipeline as readily as
+your production cluster environment.</p>
 <div class="section" id="logging">
 <h2>Logging<a class="headerlink" href="#logging" title="Permalink to this headline">¶</a></h2>
 <p>One of the most basic pipeline-level facilities is logging.</p>
@@ -22681,13 +22676,13 @@ cluster environment.</p>
 
 <span class="nd">@solid</span>
 <span class="k">def</span> <span class="nf">debug_message</span><span class="p">(</span><span class="n">info</span><span class="p">):</span>
-    <span class="n">info</span><span class="o">.</span><span class="n">context</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;A debug message.&#39;</span><span class="p">)</span>
+    <span class="n">info</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;A debug message.&#39;</span><span class="p">)</span>
     <span class="k">return</span> <span class="s1">&#39;foo&#39;</span>
 
 
 <span class="nd">@solid</span>
 <span class="k">def</span> <span class="nf">error_message</span><span class="p">(</span><span class="n">info</span><span class="p">):</span>
-    <span class="n">info</span><span class="o">.</span><span class="n">context</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s1">&#39;An error occurred.&#39;</span><span class="p">)</span>
+    <span class="n">info</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s1">&#39;An error occurred.&#39;</span><span class="p">)</span>
 
 
 <span class="k">def</span> <span class="nf">define_execution_context_pipeline_step_one</span><span class="p">():</span>
@@ -24055,18 +24050,18 @@ happened during the computation.</p>
 42</pre></div></td><td class="code"><div class="highlight"><pre><span></span>
 <span class="nd">@solid</span><span class="p">(</span><span class="n">inputs</span><span class="o">=</span><span class="p">[</span><span class="n">InputDefinition</span><span class="p">(</span><span class="s1">&#39;num&#39;</span><span class="p">,</span> <span class="n">dagster_type</span><span class="o">=</span><span class="n">Int</span><span class="p">)])</span>
 <span class="k">def</span> <span class="nf">log_num</span><span class="p">(</span><span class="n">info</span><span class="p">,</span> <span class="n">num</span><span class="p">):</span>
-    <span class="n">info</span><span class="o">.</span><span class="n">context</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;num </span><span class="si">{num}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">num</span><span class="o">=</span><span class="n">num</span><span class="p">))</span>
+    <span class="n">info</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;num </span><span class="si">{num}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">num</span><span class="o">=</span><span class="n">num</span><span class="p">))</span>
     <span class="k">return</span> <span class="n">num</span>
 
 
 <span class="nd">@solid</span><span class="p">(</span><span class="n">inputs</span><span class="o">=</span><span class="p">[</span><span class="n">InputDefinition</span><span class="p">(</span><span class="s1">&#39;num&#39;</span><span class="p">,</span> <span class="n">dagster_type</span><span class="o">=</span><span class="n">Int</span><span class="p">)])</span>
 <span class="k">def</span> <span class="nf">log_num_squared</span><span class="p">(</span><span class="n">info</span><span class="p">,</span> <span class="n">num</span><span class="p">):</span>
-    <span class="n">info</span><span class="o">.</span><span class="n">context</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
-        <span class="s1">&#39;num_squared </span><span class="si">{num_squared}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">num_squared</span><span class="o">=</span><span class="n">num</span> <span class="o">*</span> <span class="n">num</span><span class="p">)</span>
-    <span class="p">)</span>
+    <span class="n">info</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;num_squared </span><span class="si">{num_squared}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">num_squared</span><span class="o">=</span><span class="n">num</span> <span class="o">*</span> <span class="n">num</span><span class="p">))</span>
     <span class="k">return</span> <span class="n">num</span> <span class="o">*</span> <span class="n">num</span>
 
 
+<span class="k">def</span> <span class="nf">define_multiple_outputs_step_one_pipeline</span><span class="p">():</span>
+    <span class="k">return</span> <span class="n">PipelineDefinition</span><span class="p">(</span>
 <span class="nd">@solid</span><span class="p">(</span>
     <span class="n">outputs</span><span class="o">=</span><span class="p">[</span>
         <span class="n">OutputDefinition</span><span class="p">(</span><span class="n">dagster_type</span><span class="o">=</span><span class="n">Int</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;out_one&#39;</span><span class="p">),</span>
@@ -24076,8 +24071,6 @@ happened during the computation.</p>
 <span class="k">def</span> <span class="nf">return_dict_results</span><span class="p">(</span><span class="n">_info</span><span class="p">):</span>
     <span class="k">return</span> <span class="n">MultipleResults</span><span class="o">.</span><span class="n">from_dict</span><span class="p">({</span><span class="s1">&#39;out_one&#39;</span><span class="p">:</span> <span class="mi">23</span><span class="p">,</span> <span class="s1">&#39;out_two&#39;</span><span class="p">:</span> <span class="mi">45</span><span class="p">})</span>
 
-
-<span class="k">def</span> <span class="nf">define_multiple_outputs_step_one_pipeline</span><span class="p">():</span>
     <span class="k">return</span> <span class="n">PipelineDefinition</span><span class="p">(</span>
         <span class="n">name</span><span class="o">=</span><span class="s1">&#39;multiple_outputs_step_one_pipeline&#39;</span><span class="p">,</span>
         <span class="n">solids</span><span class="o">=</span><span class="p">[</span><span class="n">return_dict_results</span><span class="p">,</span> <span class="n">log_num</span><span class="p">,</span> <span class="n">log_num_squared</span><span class="p">],</span>
@@ -24094,6 +24087,8 @@ happened during the computation.</p>
             <span class="p">},</span>
         <span class="p">},</span>
     <span class="p">)</span>
+
+
 </pre></div>
 </td></tr></table></div>
 </div>
@@ -24216,8 +24211,6 @@ and then execute that pipeline.</p>
     <span class="k">else</span><span class="p">:</span>
         <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s1">&#39;invalid config&#39;</span><span class="p">)</span>
 
-
-<span class="k">def</span> <span class="nf">define_multiple_outputs_step_two_pipeline</span><span class="p">():</span>
     <span class="k">return</span> <span class="n">PipelineDefinition</span><span class="p">(</span>
         <span class="n">name</span><span class="o">=</span><span class="s1">&#39;multiple_outputs_step_two_pipeline&#39;</span><span class="p">,</span>
         <span class="n">solids</span><span class="o">=</span><span class="p">[</span><span class="n">yield_outputs</span><span class="p">,</span> <span class="n">log_num</span><span class="p">,</span> <span class="n">log_num_squared</span><span class="p">],</span>
@@ -24230,6 +24223,8 @@ and then execute that pipeline.</p>
             <span class="p">},</span>
         <span class="p">},</span>
     <span class="p">)</span>
+
+
 </pre></div>
 </td></tr></table></div>
 </div>
@@ -24943,8 +24938,8 @@ snapshots['test_build_all_docs 68'] = '''
             
   <div class="section" id="resources">
 <h1>Resources<a class="headerlink" href="#resources" title="Permalink to this headline">¶</a></h1>
-<p>We’ve already learned about logging through the execution context. We can also use the execution
-context to manage pipelines’ access to resources like the file system, databases, or cloud services.
+<p>We’ve already learned about logging through the info object. We can also use the info object
+to manage pipelines’ access to resources like the file system, databases, or cloud services.
 In general, interactions with features of the external environment like these should be modeled
 as resources.</p>
 <p>Let’s imagine that we are using a key value store offered by a cloud service that has a python API.
@@ -24959,8 +24954,8 @@ We are going to record the results of computations in that key value store.</p>
         <span class="c1"># create credential and store it</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">conn</span> <span class="o">=</span> <span class="n">PublicCloudConn</span><span class="p">(</span><span class="n">username</span><span class="p">,</span> <span class="n">password</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">record_value</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">context</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
-        <span class="n">context</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+    <span class="k">def</span> <span class="nf">record_value</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">log</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
             <span class="s1">&#39;Setting key=</span><span class="si">{key}</span><span class="s1"> value=</span><span class="si">{value}</span><span class="s1"> in cloud&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
                 <span class="n">key</span><span class="o">=</span><span class="n">key</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="n">value</span>
             <span class="p">)</span>
@@ -24993,7 +24988,7 @@ key of the <code class="docutils literal notranslate"><span class="pre">info</sp
 <span class="p">)</span>
 <span class="k">def</span> <span class="nf">add_ints</span><span class="p">(</span><span class="n">info</span><span class="p">,</span> <span class="n">num_one</span><span class="p">,</span> <span class="n">num_two</span><span class="p">):</span>
     <span class="n">sum_ints</span> <span class="o">=</span> <span class="n">num_one</span> <span class="o">+</span> <span class="n">num_two</span>
-    <span class="n">info</span><span class="o">.</span><span class="n">context</span><span class="o">.</span><span class="n">resources</span><span class="o">.</span><span class="n">store</span><span class="o">.</span><span class="n">record_value</span><span class="p">(</span><span class="n">info</span><span class="o">.</span><span class="n">context</span><span class="p">,</span> <span class="s1">&#39;add&#39;</span><span class="p">,</span> <span class="n">sum_ints</span><span class="p">)</span>
+    <span class="n">info</span><span class="o">.</span><span class="n">resources</span><span class="o">.</span><span class="n">store</span><span class="o">.</span><span class="n">record_value</span><span class="p">(</span><span class="n">info</span><span class="o">.</span><span class="n">log</span><span class="p">,</span> <span class="s1">&#39;add&#39;</span><span class="p">,</span> <span class="n">sum_ints</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">sum_ints</span>
 
 
@@ -25058,8 +25053,8 @@ in testing contexts but does not touch the public cloud:</p>
     <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">values</span> <span class="o">=</span> <span class="p">{}</span>
 
-    <span class="k">def</span> <span class="nf">record_value</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">context</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
-        <span class="n">context</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+    <span class="k">def</span> <span class="nf">record_value</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">log</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
             <span class="s1">&#39;Setting key=</span><span class="si">{key}</span><span class="s1"> value=</span><span class="si">{value}</span><span class="s1"> in memory&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
                 <span class="n">key</span><span class="o">=</span><span class="n">key</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="n">value</span>
             <span class="p">)</span>

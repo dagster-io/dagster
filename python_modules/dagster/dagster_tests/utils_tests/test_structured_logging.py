@@ -34,15 +34,16 @@ def test_construct_event_record():
         messages.append(construct_event_record(logger_message))
 
     logger = define_structured_logger('some_name', _append_message, level=DEBUG)
-    context = create_test_runtime_execution_context(loggers=[logger])
+    context = create_test_runtime_execution_context(
+        loggers=[logger], tags={'pipeline': 'some_pipeline'}
+    )
     context.info('random message')
 
     assert len(messages) == 1
     message = messages[0]
     assert isinstance(message, LogMessageRecord)
 
-    with context.value('pipeline', 'some_pipeline'):
-        context.events.pipeline_start()
+    context.events.pipeline_start()
 
     assert len(messages) == 2
     pipeline_start = messages[1]

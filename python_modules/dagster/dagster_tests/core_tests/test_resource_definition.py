@@ -20,7 +20,7 @@ def test_basic_resource():
     @solid
     def a_solid(info):
         called['yup'] = True
-        assert info.context.resources.a_string == 'foo'
+        assert info.resources.a_string == 'foo'
 
     pipeline_def = PipelineDefinition(
         name='with_a_resource',
@@ -44,7 +44,7 @@ def test_yield_resource():
     @solid
     def a_solid(info):
         called['yup'] = True
-        assert info.context.resources.a_string == 'foo'
+        assert info.resources.a_string == 'foo'
 
     def _do_resource(info):
         yield info.config
@@ -75,8 +75,8 @@ def test_yield_multiple_resources():
     @solid
     def a_solid(info):
         called['yup'] = True
-        assert info.context.resources.string_one == 'foo'
-        assert info.context.resources.string_two == 'bar'
+        assert info.resources.string_one == 'foo'
+        assert info.resources.string_two == 'bar'
 
     def _do_resource(info):
         saw.append('before yield ' + info.config)
@@ -124,8 +124,8 @@ def test_resource_decorator():
     @solid
     def a_solid(info):
         called['yup'] = True
-        assert info.context.resources.string_one == 'foo'
-        assert info.context.resources.string_two == 'bar'
+        assert info.resources.string_one == 'foo'
+        assert info.resources.string_two == 'bar'
 
     @resource(Field(String))
     def yielding_string_resource(info):
@@ -175,8 +175,8 @@ def test_mixed_multiple_resources():
     @solid
     def a_solid(info):
         called['yup'] = True
-        assert info.context.resources.returned_string == 'foo'
-        assert info.context.resources.yielded_string == 'bar'
+        assert info.resources.returned_string == 'foo'
+        assert info.resources.yielded_string == 'bar'
 
     def _do_yield_resource(info):
         saw.append('before yield ' + info.config)
@@ -235,7 +235,7 @@ def test_none_resource():
 
     @solid
     def solid_test_null(info):
-        assert info.context.resources.test_null is None
+        assert info.resources.test_null is None
         called['yup'] = True
 
     pipeline = PipelineDefinition(
@@ -259,7 +259,7 @@ def test_string_resource():
 
     @solid
     def solid_test_string(info):
-        assert info.context.resources.test_string == 'foo'
+        assert info.resources.test_string == 'foo'
         called['yup'] = True
 
     pipeline = PipelineDefinition(

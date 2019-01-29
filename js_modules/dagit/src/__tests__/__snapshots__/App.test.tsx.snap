@@ -78,16 +78,14 @@ Array [
           className="sc-gGBfsJ dcezdH"
         >
           <a
-            active={true}
-            className="sc-jnlKLf fVJFdk"
+            className="active sc-jnlKLf bxMOPb"
             href="/pandas_hello_world/explore"
             onClick={[Function]}
           >
             Explore
           </a>
           <a
-            active={false}
-            className="sc-jnlKLf kLRuUZ"
+            className="sc-jnlKLf bxMOPb"
             href="/pandas_hello_world/execute"
             onClick={[Function]}
           >
@@ -99,6 +97,15 @@ Array [
     <div
       className="bp3-navbar-group bp3-align-right"
     >
+      <div
+        className="sc-htpNat eBXEsV"
+        style={
+          Object {
+            "background": "#3DCC91",
+          }
+        }
+        title="Connecting..."
+      />
       <span
         className="sc-bxivhb cvIdVt"
       />
@@ -243,88 +250,6 @@ Array [
                   strokeWidth={1}
                   width={350}
                   x={100}
-                  y={130}
-                />
-                <text
-                  dominantBaseline="hanging"
-                  fill="#222"
-                  style={
-                    Object {
-                      "font": "30px \\"Source Code Pro\\", monospace",
-                      "pointerEvents": "none",
-                    }
-                  }
-                  width={167.4}
-                  x={112}
-                  y={151}
-                >
-                  sum_solid
-                </text>
-                <g
-                  onMouseEnter={[Function]}
-                  onMouseLeave={[Function]}
-                >
-                  <title>
-                    num: PandasDataFrame
-                  </title>
-                  <rect
-                    fill="#00B3A4"
-                    height={36}
-                    stroke="#979797"
-                    strokeWidth={1}
-                    width={30}
-                    x={100}
-                    y={100}
-                  />
-                  <ellipse
-                    cx={115}
-                    cy={118}
-                    fill="rgba(0, 0, 0, 0.3)"
-                    rx={7}
-                    ry={7}
-                    stroke="white"
-                    strokeWidth={1.5}
-                  />
-                </g>
-                <g
-                  onMouseEnter={[Function]}
-                  onMouseLeave={[Function]}
-                >
-                  <title>
-                    result: PandasDataFrame
-                  </title>
-                  <rect
-                    fill="#137CBD"
-                    height={36}
-                    stroke="#979797"
-                    strokeWidth={1}
-                    width={30}
-                    x={100}
-                    y={196}
-                  />
-                  <ellipse
-                    cx={115}
-                    cy={214}
-                    fill="rgba(0, 0, 0, 0.3)"
-                    rx={7}
-                    ry={7}
-                    stroke="white"
-                    strokeWidth={1.5}
-                  />
-                </g>
-              </g>
-              <g
-                onClick={[Function]}
-                onDoubleClick={[Function]}
-                opacity={1}
-              >
-                <rect
-                  fill="#DBE6EE"
-                  height={72}
-                  stroke="#979797"
-                  strokeWidth={1}
-                  width={350}
-                  x={100}
                   y={312}
                 />
                 <text
@@ -387,6 +312,88 @@ Array [
                   <ellipse
                     cx={115}
                     cy={396}
+                    fill="rgba(0, 0, 0, 0.3)"
+                    rx={7}
+                    ry={7}
+                    stroke="white"
+                    strokeWidth={1.5}
+                  />
+                </g>
+              </g>
+              <g
+                onClick={[Function]}
+                onDoubleClick={[Function]}
+                opacity={1}
+              >
+                <rect
+                  fill="#DBE6EE"
+                  height={72}
+                  stroke="#979797"
+                  strokeWidth={1}
+                  width={350}
+                  x={100}
+                  y={130}
+                />
+                <text
+                  dominantBaseline="hanging"
+                  fill="#222"
+                  style={
+                    Object {
+                      "font": "30px \\"Source Code Pro\\", monospace",
+                      "pointerEvents": "none",
+                    }
+                  }
+                  width={167.4}
+                  x={112}
+                  y={151}
+                >
+                  sum_solid
+                </text>
+                <g
+                  onMouseEnter={[Function]}
+                  onMouseLeave={[Function]}
+                >
+                  <title>
+                    num: PandasDataFrame
+                  </title>
+                  <rect
+                    fill="#00B3A4"
+                    height={36}
+                    stroke="#979797"
+                    strokeWidth={1}
+                    width={30}
+                    x={100}
+                    y={100}
+                  />
+                  <ellipse
+                    cx={115}
+                    cy={118}
+                    fill="rgba(0, 0, 0, 0.3)"
+                    rx={7}
+                    ry={7}
+                    stroke="white"
+                    strokeWidth={1.5}
+                  />
+                </g>
+                <g
+                  onMouseEnter={[Function]}
+                  onMouseLeave={[Function]}
+                >
+                  <title>
+                    result: PandasDataFrame
+                  </title>
+                  <rect
+                    fill="#137CBD"
+                    height={36}
+                    stroke="#979797"
+                    strokeWidth={1}
+                    width={30}
+                    x={100}
+                    y={196}
+                  />
+                  <ellipse
+                    cx={115}
+                    cy={214}
                     fill="rgba(0, 0, 0, 0.3)"
                     rx={7}
                     ry={7}
@@ -490,10 +497,10 @@ Array [
       </div>
       <div>
         <div
-          className="sc-dxgOiQ bFbAkT"
+          className="sc-kpOJdX hsfQly"
         />
         <h3
-          className="sc-kGXeez kzQKcV"
+          className="sc-kgoBCf jvFlSO"
         >
           <a
             href="/pandas_hello_world/load_num_csv?types=true"
@@ -506,12 +513,12 @@ Array [
         </h3>
         <div>
           <div
-            className="sc-jKJlTe fDhhMf"
+            className="sc-ckVGcZ ivCHlt"
             onClick={[Function]}
           >
             Description
             <span
-              className="bp3-icon bp3-icon-chevron-down sc-kgoBCf cTiUnf"
+              className="bp3-icon bp3-icon-chevron-down sc-chPdSV bkNYct"
               icon="chevron-down"
             >
               <svg
@@ -551,27 +558,348 @@ Array [
               }
             >
               <div
-                className="sc-eNQAEJ iwPNJP"
+                className="sc-jKJlTe cUANWU"
+              >
+                Two-dimensional size-mutable, potentially heterogeneous
+    tabular data structure with labeled axes (rows and columns).
+    See http://pandas.pydata.org/
+              </div>
+            </div>
+          </div>
+        </div>
+        <div>
+          <div
+            className="sc-ckVGcZ ivCHlt"
+            onClick={[Function]}
+          >
+            Input
+            <span
+              className="bp3-icon bp3-icon-chevron-down sc-chPdSV bkNYct"
+              icon="chevron-down"
+            >
+              <svg
+                data-icon="chevron-down"
+                height={16}
+                viewBox="0 0 16 16"
+                width={16}
+              >
+                <desc>
+                  chevron-down
+                </desc>
+                <path
+                  d="M12 5c-.28 0-.53.11-.71.29L8 8.59l-3.29-3.3a1.003 1.003 0 0 0-1.42 1.42l4 4c.18.18.43.29.71.29s.53-.11.71-.29l4-4A1.003 1.003 0 0 0 12 5z"
+                  fillRule="evenodd"
+                />
+              </svg>
+            </span>
+          </div>
+          <div
+            className="bp3-collapse"
+            style={
+              Object {
+                "height": "auto",
+                "overflowY": "visible",
+                "transition": "none",
+              }
+            }
+          >
+            <div
+              aria-hidden={false}
+              className="bp3-collapse-body"
+              style={
+                Object {
+                  "transform": "translateY(0)",
+                  "transition": "none",
+                }
+              }
+            >
+              <div
+                className="sc-jKJlTe cUANWU"
               >
                 <code
-                  className="sc-jzJRlG kspdlD"
+                  className="sc-fjdhpX gmxIae"
                 >
+                  {
                   <div
-                    className="sc-chPdSV cKsbum"
+                    className="sc-kAzzGY cIGgWz"
                   >
-                    /* Two-dimensional size-mutable, potentially heterogeneous
-    tabular data structure with labeled axes (rows and columns). See http://pandas.pydata.org/ */
+                      /* One of the following: */
                   </div>
-                  <a
-                    href="/?typeExplorer=PandasDataFrame"
-                    onClick={[Function]}
+                  <div
+                    className="sc-jzJRlG enxKql"
                   >
-                    <code
-                      className="sc-fjdhpX bDXufr"
+                      
+                    <span
+                      className="sc-cSHVUG jNKSEl"
                     >
-                      PandasDataFrame
-                    </code>
-                  </a>
+                      csv
+                    </span>
+                    : 
+                    {
+                    <div
+                      className="sc-jzJRlG enxKql"
+                    >
+                          
+                      <span
+                        className="sc-cSHVUG jNKSEl"
+                      >
+                        path
+                      </span>
+                      : 
+                      <span>
+                        Path
+                      </span>
+                    </div>
+                    <div
+                      className="sc-jzJRlG enxKql"
+                    >
+                          
+                      <span
+                        className="sc-cSHVUG jNKSEl"
+                      >
+                        sep
+                      </span>
+                      <span
+                        style={
+                          Object {
+                            "color": "#BF7326",
+                            "fontWeight": 500,
+                          }
+                        }
+                      >
+                        ?
+                      </span>
+                      : 
+                      <span>
+                        String
+                      </span>
+                    </div>
+                      }
+                  </div>
+                  <div
+                    className="sc-jzJRlG enxKql"
+                  >
+                      
+                    <span
+                      className="sc-cSHVUG jNKSEl"
+                    >
+                      parquet
+                    </span>
+                    : 
+                    {
+                    <div
+                      className="sc-jzJRlG enxKql"
+                    >
+                          
+                      <span
+                        className="sc-cSHVUG jNKSEl"
+                      >
+                        path
+                      </span>
+                      : 
+                      <span>
+                        Path
+                      </span>
+                    </div>
+                      }
+                  </div>
+                  <div
+                    className="sc-jzJRlG enxKql"
+                  >
+                      
+                    <span
+                      className="sc-cSHVUG jNKSEl"
+                    >
+                      table
+                    </span>
+                    : 
+                    {
+                    <div
+                      className="sc-jzJRlG enxKql"
+                    >
+                          
+                      <span
+                        className="sc-cSHVUG jNKSEl"
+                      >
+                        path
+                      </span>
+                      : 
+                      <span>
+                        Path
+                      </span>
+                    </div>
+                      }
+                  </div>
+                  }
+                </code>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div>
+          <div
+            className="sc-ckVGcZ ivCHlt"
+            onClick={[Function]}
+          >
+            Output
+            <span
+              className="bp3-icon bp3-icon-chevron-down sc-chPdSV bkNYct"
+              icon="chevron-down"
+            >
+              <svg
+                data-icon="chevron-down"
+                height={16}
+                viewBox="0 0 16 16"
+                width={16}
+              >
+                <desc>
+                  chevron-down
+                </desc>
+                <path
+                  d="M12 5c-.28 0-.53.11-.71.29L8 8.59l-3.29-3.3a1.003 1.003 0 0 0-1.42 1.42l4 4c.18.18.43.29.71.29s.53-.11.71-.29l4-4A1.003 1.003 0 0 0 12 5z"
+                  fillRule="evenodd"
+                />
+              </svg>
+            </span>
+          </div>
+          <div
+            className="bp3-collapse"
+            style={
+              Object {
+                "height": "auto",
+                "overflowY": "visible",
+                "transition": "none",
+              }
+            }
+          >
+            <div
+              aria-hidden={false}
+              className="bp3-collapse-body"
+              style={
+                Object {
+                  "transform": "translateY(0)",
+                  "transition": "none",
+                }
+              }
+            >
+              <div
+                className="sc-jKJlTe cUANWU"
+              >
+                <code
+                  className="sc-fjdhpX gmxIae"
+                >
+                  {
+                  <div
+                    className="sc-kAzzGY cIGgWz"
+                  >
+                      /* One of the following: */
+                  </div>
+                  <div
+                    className="sc-jzJRlG enxKql"
+                  >
+                      
+                    <span
+                      className="sc-cSHVUG jNKSEl"
+                    >
+                      csv
+                    </span>
+                    : 
+                    {
+                    <div
+                      className="sc-jzJRlG enxKql"
+                    >
+                          
+                      <span
+                        className="sc-cSHVUG jNKSEl"
+                      >
+                        path
+                      </span>
+                      : 
+                      <span>
+                        Path
+                      </span>
+                    </div>
+                    <div
+                      className="sc-jzJRlG enxKql"
+                    >
+                          
+                      <span
+                        className="sc-cSHVUG jNKSEl"
+                      >
+                        sep
+                      </span>
+                      <span
+                        style={
+                          Object {
+                            "color": "#BF7326",
+                            "fontWeight": 500,
+                          }
+                        }
+                      >
+                        ?
+                      </span>
+                      : 
+                      <span>
+                        String
+                      </span>
+                    </div>
+                      }
+                  </div>
+                  <div
+                    className="sc-jzJRlG enxKql"
+                  >
+                      
+                    <span
+                      className="sc-cSHVUG jNKSEl"
+                    >
+                      parquet
+                    </span>
+                    : 
+                    {
+                    <div
+                      className="sc-jzJRlG enxKql"
+                    >
+                          
+                      <span
+                        className="sc-cSHVUG jNKSEl"
+                      >
+                        path
+                      </span>
+                      : 
+                      <span>
+                        Path
+                      </span>
+                    </div>
+                      }
+                  </div>
+                  <div
+                    className="sc-jzJRlG enxKql"
+                  >
+                      
+                    <span
+                      className="sc-cSHVUG jNKSEl"
+                    >
+                      table
+                    </span>
+                    : 
+                    {
+                    <div
+                      className="sc-jzJRlG enxKql"
+                    >
+                          
+                      <span
+                        className="sc-cSHVUG jNKSEl"
+                      >
+                        path
+                      </span>
+                      : 
+                      <span>
+                        Path
+                      </span>
+                    </div>
+                      }
+                  </div>
+                  }
                 </code>
               </div>
             </div>
@@ -659,6 +987,15 @@ Array [
     <div
       className="bp3-navbar-group bp3-align-right"
     >
+      <div
+        className="sc-htpNat eBXEsV"
+        style={
+          Object {
+            "background": "#3DCC91",
+          }
+        }
+        title="Connecting..."
+      />
       <span
         className="sc-bxivhb cvIdVt"
       />
@@ -757,16 +1094,14 @@ Array [
           className="sc-gGBfsJ dcezdH"
         >
           <a
-            active={true}
-            className="sc-jnlKLf fVJFdk"
+            className="active sc-jnlKLf bxMOPb"
             href="/pandas_hello_world/explore"
             onClick={[Function]}
           >
             Explore
           </a>
           <a
-            active={false}
-            className="sc-jnlKLf kLRuUZ"
+            className="sc-jnlKLf bxMOPb"
             href="/pandas_hello_world/execute"
             onClick={[Function]}
           >
@@ -778,6 +1113,15 @@ Array [
     <div
       className="bp3-navbar-group bp3-align-right"
     >
+      <div
+        className="sc-htpNat eBXEsV"
+        style={
+          Object {
+            "background": "#3DCC91",
+          }
+        }
+        title="Connecting..."
+      />
       <span
         className="sc-bxivhb cvIdVt"
       />
@@ -922,88 +1266,6 @@ Array [
                   strokeWidth={1}
                   width={350}
                   x={100}
-                  y={130}
-                />
-                <text
-                  dominantBaseline="hanging"
-                  fill="#222"
-                  style={
-                    Object {
-                      "font": "30px \\"Source Code Pro\\", monospace",
-                      "pointerEvents": "none",
-                    }
-                  }
-                  width={167.4}
-                  x={112}
-                  y={151}
-                >
-                  sum_solid
-                </text>
-                <g
-                  onMouseEnter={[Function]}
-                  onMouseLeave={[Function]}
-                >
-                  <title>
-                    num: PandasDataFrame
-                  </title>
-                  <rect
-                    fill="#00B3A4"
-                    height={36}
-                    stroke="#979797"
-                    strokeWidth={1}
-                    width={30}
-                    x={100}
-                    y={100}
-                  />
-                  <ellipse
-                    cx={115}
-                    cy={118}
-                    fill="rgba(0, 0, 0, 0.3)"
-                    rx={7}
-                    ry={7}
-                    stroke="white"
-                    strokeWidth={1.5}
-                  />
-                </g>
-                <g
-                  onMouseEnter={[Function]}
-                  onMouseLeave={[Function]}
-                >
-                  <title>
-                    result: PandasDataFrame
-                  </title>
-                  <rect
-                    fill="#137CBD"
-                    height={36}
-                    stroke="#979797"
-                    strokeWidth={1}
-                    width={30}
-                    x={100}
-                    y={196}
-                  />
-                  <ellipse
-                    cx={115}
-                    cy={214}
-                    fill="rgba(0, 0, 0, 0.3)"
-                    rx={7}
-                    ry={7}
-                    stroke="white"
-                    strokeWidth={1.5}
-                  />
-                </g>
-              </g>
-              <g
-                onClick={[Function]}
-                onDoubleClick={[Function]}
-                opacity={1}
-              >
-                <rect
-                  fill="#DBE6EE"
-                  height={72}
-                  stroke="#979797"
-                  strokeWidth={1}
-                  width={350}
-                  x={100}
                   y={312}
                 />
                 <text
@@ -1066,6 +1328,88 @@ Array [
                   <ellipse
                     cx={115}
                     cy={396}
+                    fill="rgba(0, 0, 0, 0.3)"
+                    rx={7}
+                    ry={7}
+                    stroke="white"
+                    strokeWidth={1.5}
+                  />
+                </g>
+              </g>
+              <g
+                onClick={[Function]}
+                onDoubleClick={[Function]}
+                opacity={1}
+              >
+                <rect
+                  fill="#DBE6EE"
+                  height={72}
+                  stroke="#979797"
+                  strokeWidth={1}
+                  width={350}
+                  x={100}
+                  y={130}
+                />
+                <text
+                  dominantBaseline="hanging"
+                  fill="#222"
+                  style={
+                    Object {
+                      "font": "30px \\"Source Code Pro\\", monospace",
+                      "pointerEvents": "none",
+                    }
+                  }
+                  width={167.4}
+                  x={112}
+                  y={151}
+                >
+                  sum_solid
+                </text>
+                <g
+                  onMouseEnter={[Function]}
+                  onMouseLeave={[Function]}
+                >
+                  <title>
+                    num: PandasDataFrame
+                  </title>
+                  <rect
+                    fill="#00B3A4"
+                    height={36}
+                    stroke="#979797"
+                    strokeWidth={1}
+                    width={30}
+                    x={100}
+                    y={100}
+                  />
+                  <ellipse
+                    cx={115}
+                    cy={118}
+                    fill="rgba(0, 0, 0, 0.3)"
+                    rx={7}
+                    ry={7}
+                    stroke="white"
+                    strokeWidth={1.5}
+                  />
+                </g>
+                <g
+                  onMouseEnter={[Function]}
+                  onMouseLeave={[Function]}
+                >
+                  <title>
+                    result: PandasDataFrame
+                  </title>
+                  <rect
+                    fill="#137CBD"
+                    height={36}
+                    stroke="#979797"
+                    strokeWidth={1}
+                    width={30}
+                    x={100}
+                    y={196}
+                  />
+                  <ellipse
+                    cx={115}
+                    cy={214}
                     fill="rgba(0, 0, 0, 0.3)"
                     rx={7}
                     ry={7}
@@ -1169,23 +1513,23 @@ Array [
       </div>
       <div>
         <div
-          className="sc-dxgOiQ bFbAkT"
+          className="sc-kpOJdX hsfQly"
         >
           Pipeline
         </div>
         <h3
-          className="sc-kGXeez kzQKcV"
+          className="sc-kgoBCf jvFlSO"
         >
           pandas_hello_world
         </h3>
         <div>
           <div
-            className="sc-jKJlTe fDhhMf"
+            className="sc-ckVGcZ ivCHlt"
             onClick={[Function]}
           >
             Description
             <span
-              className="bp3-icon bp3-icon-chevron-down sc-kgoBCf cTiUnf"
+              className="bp3-icon bp3-icon-chevron-down sc-chPdSV bkNYct"
               icon="chevron-down"
             >
               <svg
@@ -1225,19 +1569,19 @@ Array [
               }
             >
               <div
-                className="sc-eNQAEJ iwPNJP"
+                className="sc-jKJlTe cUANWU"
               />
             </div>
           </div>
         </div>
         <div>
           <div
-            className="sc-jKJlTe fDhhMf"
+            className="sc-ckVGcZ ivCHlt"
             onClick={[Function]}
           >
             Contexts
             <span
-              className="bp3-icon bp3-icon-chevron-down sc-kgoBCf cTiUnf"
+              className="bp3-icon bp3-icon-chevron-down sc-chPdSV bkNYct"
               icon="chevron-down"
             >
               <svg
@@ -1277,31 +1621,31 @@ Array [
               }
             >
               <div
-                className="sc-eNQAEJ iwPNJP"
+                className="sc-jKJlTe cUANWU"
               >
                 <div
-                  className="sc-ckVGcZ hZjvuH"
+                  className="sc-dxgOiQ ingvtt"
                 >
                   <h4
-                    className="sc-kpOJdX iqPirb"
+                    className="sc-kGXeez gDKGbQ"
                   >
                     default
                   </h4>
                   <code
-                    className="sc-jzJRlG kspdlD"
+                    className="sc-fjdhpX gmxIae"
                   >
                     <div
-                      className="sc-chPdSV cKsbum"
+                      className="sc-kAzzGY cIGgWz"
                     >
                       /* A configuration dictionary with typed fields */
                     </div>
                     {
                     <div
-                      className="sc-cSHVUG CAuLq"
+                      className="sc-jzJRlG enxKql"
                     >
                         
                       <span
-                        className="sc-kAzzGY kRQObZ"
+                        className="sc-cSHVUG jNKSEl"
                       >
                         log_level
                       </span>
@@ -1316,16 +1660,9 @@ Array [
                         ?
                       </span>
                       : 
-                      <a
-                        href="/?typeExplorer=String"
-                        onClick={[Function]}
-                      >
-                        <code
-                          className="sc-fjdhpX bDXufr"
-                        >
-                          String
-                        </code>
-                      </a>
+                      <span>
+                        String
+                      </span>
                     </div>
                     }
                   </code>
@@ -1418,16 +1755,14 @@ Array [
           className="sc-gGBfsJ dcezdH"
         >
           <a
-            active={true}
-            className="sc-jnlKLf fVJFdk"
+            className="active sc-jnlKLf bxMOPb"
             href="/pandas_hello_world/explore"
             onClick={[Function]}
           >
             Explore
           </a>
           <a
-            active={false}
-            className="sc-jnlKLf kLRuUZ"
+            className="sc-jnlKLf bxMOPb"
             href="/pandas_hello_world/execute"
             onClick={[Function]}
           >
@@ -1439,6 +1774,15 @@ Array [
     <div
       className="bp3-navbar-group bp3-align-right"
     >
+      <div
+        className="sc-htpNat eBXEsV"
+        style={
+          Object {
+            "background": "#3DCC91",
+          }
+        }
+        title="Connecting..."
+      />
       <span
         className="sc-bxivhb cvIdVt"
       />
@@ -1583,88 +1927,6 @@ Array [
                   strokeWidth={1}
                   width={350}
                   x={100}
-                  y={130}
-                />
-                <text
-                  dominantBaseline="hanging"
-                  fill="#222"
-                  style={
-                    Object {
-                      "font": "30px \\"Source Code Pro\\", monospace",
-                      "pointerEvents": "none",
-                    }
-                  }
-                  width={167.4}
-                  x={112}
-                  y={151}
-                >
-                  sum_solid
-                </text>
-                <g
-                  onMouseEnter={[Function]}
-                  onMouseLeave={[Function]}
-                >
-                  <title>
-                    num: PandasDataFrame
-                  </title>
-                  <rect
-                    fill="#00B3A4"
-                    height={36}
-                    stroke="#979797"
-                    strokeWidth={1}
-                    width={30}
-                    x={100}
-                    y={100}
-                  />
-                  <ellipse
-                    cx={115}
-                    cy={118}
-                    fill="rgba(0, 0, 0, 0.3)"
-                    rx={7}
-                    ry={7}
-                    stroke="white"
-                    strokeWidth={1.5}
-                  />
-                </g>
-                <g
-                  onMouseEnter={[Function]}
-                  onMouseLeave={[Function]}
-                >
-                  <title>
-                    result: PandasDataFrame
-                  </title>
-                  <rect
-                    fill="#137CBD"
-                    height={36}
-                    stroke="#979797"
-                    strokeWidth={1}
-                    width={30}
-                    x={100}
-                    y={196}
-                  />
-                  <ellipse
-                    cx={115}
-                    cy={214}
-                    fill="rgba(0, 0, 0, 0.3)"
-                    rx={7}
-                    ry={7}
-                    stroke="white"
-                    strokeWidth={1.5}
-                  />
-                </g>
-              </g>
-              <g
-                onClick={[Function]}
-                onDoubleClick={[Function]}
-                opacity={1}
-              >
-                <rect
-                  fill="#DBE6EE"
-                  height={72}
-                  stroke="#979797"
-                  strokeWidth={1}
-                  width={350}
-                  x={100}
                   y={312}
                 />
                 <text
@@ -1727,6 +1989,88 @@ Array [
                   <ellipse
                     cx={115}
                     cy={396}
+                    fill="rgba(0, 0, 0, 0.3)"
+                    rx={7}
+                    ry={7}
+                    stroke="white"
+                    strokeWidth={1.5}
+                  />
+                </g>
+              </g>
+              <g
+                onClick={[Function]}
+                onDoubleClick={[Function]}
+                opacity={1}
+              >
+                <rect
+                  fill="#DBE6EE"
+                  height={72}
+                  stroke="#979797"
+                  strokeWidth={1}
+                  width={350}
+                  x={100}
+                  y={130}
+                />
+                <text
+                  dominantBaseline="hanging"
+                  fill="#222"
+                  style={
+                    Object {
+                      "font": "30px \\"Source Code Pro\\", monospace",
+                      "pointerEvents": "none",
+                    }
+                  }
+                  width={167.4}
+                  x={112}
+                  y={151}
+                >
+                  sum_solid
+                </text>
+                <g
+                  onMouseEnter={[Function]}
+                  onMouseLeave={[Function]}
+                >
+                  <title>
+                    num: PandasDataFrame
+                  </title>
+                  <rect
+                    fill="#00B3A4"
+                    height={36}
+                    stroke="#979797"
+                    strokeWidth={1}
+                    width={30}
+                    x={100}
+                    y={100}
+                  />
+                  <ellipse
+                    cx={115}
+                    cy={118}
+                    fill="rgba(0, 0, 0, 0.3)"
+                    rx={7}
+                    ry={7}
+                    stroke="white"
+                    strokeWidth={1.5}
+                  />
+                </g>
+                <g
+                  onMouseEnter={[Function]}
+                  onMouseLeave={[Function]}
+                >
+                  <title>
+                    result: PandasDataFrame
+                  </title>
+                  <rect
+                    fill="#137CBD"
+                    height={36}
+                    stroke="#979797"
+                    strokeWidth={1}
+                    width={30}
+                    x={100}
+                    y={196}
+                  />
+                  <ellipse
+                    cx={115}
+                    cy={214}
                     fill="rgba(0, 0, 0, 0.3)"
                     rx={7}
                     ry={7}
@@ -1830,23 +2174,23 @@ Array [
       </div>
       <div>
         <div
-          className="sc-dxgOiQ bFbAkT"
+          className="sc-kpOJdX hsfQly"
         >
           Pipeline
         </div>
         <h3
-          className="sc-kGXeez kzQKcV"
+          className="sc-kgoBCf jvFlSO"
         >
           pandas_hello_world
         </h3>
         <div>
           <div
-            className="sc-jKJlTe fDhhMf"
+            className="sc-ckVGcZ ivCHlt"
             onClick={[Function]}
           >
             Description
             <span
-              className="bp3-icon bp3-icon-chevron-down sc-kgoBCf cTiUnf"
+              className="bp3-icon bp3-icon-chevron-down sc-chPdSV bkNYct"
               icon="chevron-down"
             >
               <svg
@@ -1886,19 +2230,19 @@ Array [
               }
             >
               <div
-                className="sc-eNQAEJ iwPNJP"
+                className="sc-jKJlTe cUANWU"
               />
             </div>
           </div>
         </div>
         <div>
           <div
-            className="sc-jKJlTe fDhhMf"
+            className="sc-ckVGcZ ivCHlt"
             onClick={[Function]}
           >
             Contexts
             <span
-              className="bp3-icon bp3-icon-chevron-down sc-kgoBCf cTiUnf"
+              className="bp3-icon bp3-icon-chevron-down sc-chPdSV bkNYct"
               icon="chevron-down"
             >
               <svg
@@ -1938,31 +2282,31 @@ Array [
               }
             >
               <div
-                className="sc-eNQAEJ iwPNJP"
+                className="sc-jKJlTe cUANWU"
               >
                 <div
-                  className="sc-ckVGcZ hZjvuH"
+                  className="sc-dxgOiQ ingvtt"
                 >
                   <h4
-                    className="sc-kpOJdX iqPirb"
+                    className="sc-kGXeez gDKGbQ"
                   >
                     default
                   </h4>
                   <code
-                    className="sc-jzJRlG kspdlD"
+                    className="sc-fjdhpX gmxIae"
                   >
                     <div
-                      className="sc-chPdSV cKsbum"
+                      className="sc-kAzzGY cIGgWz"
                     >
                       /* A configuration dictionary with typed fields */
                     </div>
                     {
                     <div
-                      className="sc-cSHVUG CAuLq"
+                      className="sc-jzJRlG enxKql"
                     >
                         
                       <span
-                        className="sc-kAzzGY kRQObZ"
+                        className="sc-cSHVUG jNKSEl"
                       >
                         log_level
                       </span>
@@ -1977,16 +2321,9 @@ Array [
                         ?
                       </span>
                       : 
-                      <a
-                        href="/?typeExplorer=String"
-                        onClick={[Function]}
-                      >
-                        <code
-                          className="sc-fjdhpX bDXufr"
-                        >
-                          String
-                        </code>
-                      </a>
+                      <span>
+                        String
+                      </span>
                     </div>
                     }
                   </code>
@@ -2079,16 +2416,14 @@ Array [
           className="sc-gGBfsJ dcezdH"
         >
           <a
-            active={true}
-            className="sc-jnlKLf fVJFdk"
+            className="active sc-jnlKLf bxMOPb"
             href="/pandas_hello_world/explore"
             onClick={[Function]}
           >
             Explore
           </a>
           <a
-            active={false}
-            className="sc-jnlKLf kLRuUZ"
+            className="sc-jnlKLf bxMOPb"
             href="/pandas_hello_world/execute"
             onClick={[Function]}
           >
@@ -2100,6 +2435,15 @@ Array [
     <div
       className="bp3-navbar-group bp3-align-right"
     >
+      <div
+        className="sc-htpNat eBXEsV"
+        style={
+          Object {
+            "background": "#3DCC91",
+          }
+        }
+        title="Connecting..."
+      />
       <span
         className="sc-bxivhb cvIdVt"
       />
@@ -2244,88 +2588,6 @@ Array [
                   strokeWidth={1}
                   width={350}
                   x={100}
-                  y={130}
-                />
-                <text
-                  dominantBaseline="hanging"
-                  fill="#222"
-                  style={
-                    Object {
-                      "font": "30px \\"Source Code Pro\\", monospace",
-                      "pointerEvents": "none",
-                    }
-                  }
-                  width={167.4}
-                  x={112}
-                  y={151}
-                >
-                  sum_solid
-                </text>
-                <g
-                  onMouseEnter={[Function]}
-                  onMouseLeave={[Function]}
-                >
-                  <title>
-                    num: PandasDataFrame
-                  </title>
-                  <rect
-                    fill="#00B3A4"
-                    height={36}
-                    stroke="#979797"
-                    strokeWidth={1}
-                    width={30}
-                    x={100}
-                    y={100}
-                  />
-                  <ellipse
-                    cx={115}
-                    cy={118}
-                    fill="rgba(0, 0, 0, 0.3)"
-                    rx={7}
-                    ry={7}
-                    stroke="white"
-                    strokeWidth={1.5}
-                  />
-                </g>
-                <g
-                  onMouseEnter={[Function]}
-                  onMouseLeave={[Function]}
-                >
-                  <title>
-                    result: PandasDataFrame
-                  </title>
-                  <rect
-                    fill="#137CBD"
-                    height={36}
-                    stroke="#979797"
-                    strokeWidth={1}
-                    width={30}
-                    x={100}
-                    y={196}
-                  />
-                  <ellipse
-                    cx={115}
-                    cy={214}
-                    fill="rgba(0, 0, 0, 0.3)"
-                    rx={7}
-                    ry={7}
-                    stroke="white"
-                    strokeWidth={1.5}
-                  />
-                </g>
-              </g>
-              <g
-                onClick={[Function]}
-                onDoubleClick={[Function]}
-                opacity={1}
-              >
-                <rect
-                  fill="#DBE6EE"
-                  height={72}
-                  stroke="#979797"
-                  strokeWidth={1}
-                  width={350}
-                  x={100}
                   y={312}
                 />
                 <text
@@ -2388,6 +2650,88 @@ Array [
                   <ellipse
                     cx={115}
                     cy={396}
+                    fill="rgba(0, 0, 0, 0.3)"
+                    rx={7}
+                    ry={7}
+                    stroke="white"
+                    strokeWidth={1.5}
+                  />
+                </g>
+              </g>
+              <g
+                onClick={[Function]}
+                onDoubleClick={[Function]}
+                opacity={1}
+              >
+                <rect
+                  fill="#DBE6EE"
+                  height={72}
+                  stroke="#979797"
+                  strokeWidth={1}
+                  width={350}
+                  x={100}
+                  y={130}
+                />
+                <text
+                  dominantBaseline="hanging"
+                  fill="#222"
+                  style={
+                    Object {
+                      "font": "30px \\"Source Code Pro\\", monospace",
+                      "pointerEvents": "none",
+                    }
+                  }
+                  width={167.4}
+                  x={112}
+                  y={151}
+                >
+                  sum_solid
+                </text>
+                <g
+                  onMouseEnter={[Function]}
+                  onMouseLeave={[Function]}
+                >
+                  <title>
+                    num: PandasDataFrame
+                  </title>
+                  <rect
+                    fill="#00B3A4"
+                    height={36}
+                    stroke="#979797"
+                    strokeWidth={1}
+                    width={30}
+                    x={100}
+                    y={100}
+                  />
+                  <ellipse
+                    cx={115}
+                    cy={118}
+                    fill="rgba(0, 0, 0, 0.3)"
+                    rx={7}
+                    ry={7}
+                    stroke="white"
+                    strokeWidth={1.5}
+                  />
+                </g>
+                <g
+                  onMouseEnter={[Function]}
+                  onMouseLeave={[Function]}
+                >
+                  <title>
+                    result: PandasDataFrame
+                  </title>
+                  <rect
+                    fill="#137CBD"
+                    height={36}
+                    stroke="#979797"
+                    strokeWidth={1}
+                    width={30}
+                    x={100}
+                    y={196}
+                  />
+                  <ellipse
+                    cx={115}
+                    cy={214}
                     fill="rgba(0, 0, 0, 0.3)"
                     rx={7}
                     ry={7}
@@ -2490,21 +2834,21 @@ Array [
         </a>
       </div>
       <div
-        className="sc-dxgOiQ bFbAkT"
+        className="sc-kpOJdX hsfQly"
       />
       <h3
-        className="sc-kGXeez kzQKcV"
+        className="sc-kgoBCf jvFlSO"
       >
         Pipeline Types
       </h3>
       <div>
         <div
-          className="sc-jKJlTe fDhhMf"
+          className="sc-ckVGcZ ivCHlt"
           onClick={[Function]}
         >
           Custom
           <span
-            className="bp3-icon bp3-icon-chevron-down sc-kgoBCf cTiUnf"
+            className="bp3-icon bp3-icon-chevron-down sc-chPdSV bkNYct"
             icon="chevron-down"
           >
             <svg
@@ -2544,7 +2888,7 @@ Array [
             }
           >
             <div
-              className="sc-eNQAEJ iwPNJP"
+              className="sc-jKJlTe cUANWU"
             >
               <ul
                 className="bp3-list"
@@ -2557,79 +2901,9 @@ Array [
                     onClick={[Function]}
                   >
                     <code
-                      className="sc-fjdhpX bDXufr"
+                      className="sc-eNQAEJ fIDgkI"
                     >
                       PandasDataFrame
-                    </code>
-                  </a>
-                </li>
-                <li
-                  className="sc-hMqMXs fBSDvM"
-                >
-                  <a
-                    href="/?typeExplorer=PandasDataFrameInputSchema"
-                    onClick={[Function]}
-                  >
-                    <code
-                      className="sc-fjdhpX bDXufr"
-                    >
-                      PandasDataFrameInputSchema
-                    </code>
-                  </a>
-                </li>
-                <li
-                  className="sc-hMqMXs fBSDvM"
-                >
-                  <a
-                    href="/?typeExplorer=PandasDataFrameOutputConfigSchema"
-                    onClick={[Function]}
-                  >
-                    <code
-                      className="sc-fjdhpX bDXufr"
-                    >
-                      PandasDataFrameOutputConfigSchema
-                    </code>
-                  </a>
-                </li>
-                <li
-                  className="sc-hMqMXs fBSDvM"
-                >
-                  <a
-                    href="/?typeExplorer=PandasHelloWorld.SumSolid.Inputs"
-                    onClick={[Function]}
-                  >
-                    <code
-                      className="sc-fjdhpX bDXufr"
-                    >
-                      PandasHelloWorld.SumSolid.Inputs
-                    </code>
-                  </a>
-                </li>
-                <li
-                  className="sc-hMqMXs fBSDvM"
-                >
-                  <a
-                    href="/?typeExplorer=PandasHelloWorld.SumSolid.Outputs"
-                    onClick={[Function]}
-                  >
-                    <code
-                      className="sc-fjdhpX bDXufr"
-                    >
-                      PandasHelloWorld.SumSolid.Outputs
-                    </code>
-                  </a>
-                </li>
-                <li
-                  className="sc-hMqMXs fBSDvM"
-                >
-                  <a
-                    href="/?typeExplorer=PandasHelloWorld.SumSqSolid.Outputs"
-                    onClick={[Function]}
-                  >
-                    <code
-                      className="sc-fjdhpX bDXufr"
-                    >
-                      PandasHelloWorld.SumSqSolid.Outputs
                     </code>
                   </a>
                 </li>
@@ -2640,60 +2914,12 @@ Array [
       </div>
       <div>
         <div
-          className="sc-jKJlTe fDhhMf"
-          onClick={[Function]}
-        >
-          Generated
-          <span
-            className="bp3-icon bp3-icon-chevron-up sc-kgoBCf cTiUnf"
-            icon="chevron-up"
-          >
-            <svg
-              data-icon="chevron-up"
-              height={16}
-              viewBox="0 0 16 16"
-              width={16}
-            >
-              <desc>
-                chevron-up
-              </desc>
-              <path
-                d="M12.71 9.29l-4-4C8.53 5.11 8.28 5 8 5s-.53.11-.71.29l-4 4a1.003 1.003 0 0 0 1.42 1.42L8 7.41l3.29 3.29c.18.19.43.3.71.3a1.003 1.003 0 0 0 .71-1.71z"
-                fillRule="evenodd"
-              />
-            </svg>
-          </span>
-        </div>
-        <div
-          className="bp3-collapse"
-          style={
-            Object {
-              "height": undefined,
-              "overflowY": undefined,
-              "transition": undefined,
-            }
-          }
-        >
-          <div
-            aria-hidden={false}
-            className="bp3-collapse-body"
-            style={
-              Object {
-                "transform": "translateY(-undefinedpx)",
-                "transition": undefined,
-              }
-            }
-          />
-        </div>
-      </div>
-      <div>
-        <div
-          className="sc-jKJlTe fDhhMf"
+          className="sc-ckVGcZ ivCHlt"
           onClick={[Function]}
         >
           Built-in
           <span
-            className="bp3-icon bp3-icon-chevron-up sc-kgoBCf cTiUnf"
+            className="bp3-icon bp3-icon-chevron-up sc-chPdSV bkNYct"
             icon="chevron-up"
           >
             <svg
@@ -2818,6 +3044,15 @@ Array [
     <div
       className="bp3-navbar-group bp3-align-right"
     >
+      <div
+        className="sc-htpNat eBXEsV"
+        style={
+          Object {
+            "background": "#3DCC91",
+          }
+        }
+        title="Connecting..."
+      />
       <span
         className="sc-bxivhb cvIdVt"
       />

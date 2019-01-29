@@ -1,5 +1,7 @@
 import uuid
 
+import pandas as pd
+
 from graphql import graphql, parse
 
 from dagster import (
@@ -26,7 +28,10 @@ from dagster import (
     solid,
 )
 
+from dagster.core.types.marshal import PickleMarshallingStrategy
+
 from dagster.utils import script_relative_path
+from dagster.utils.test import get_temp_file_name
 
 from dagster_pandas import DataFrame
 
@@ -97,7 +102,7 @@ fragment SolidFragment on Solid {
       name
       description
       type {
-        ...TypeWithTooltipFragment
+        ... RuntimeTypeWithTooltipFragment
         __typename
       }
       expectations {
@@ -125,7 +130,6 @@ fragment SolidFragment on Solid {
       name
       description
       type {
-        ...TypeWithTooltipFragment
         __typename
       }
       expectations {
@@ -145,13 +149,9 @@ fragment SolidFragment on Solid {
   __typename
 }
 
-fragment TypeWithTooltipFragment on Type {
+fragment RuntimeTypeWithTooltipFragment on RuntimeType {
   name
   description
-  typeAttributes {
-    isBuiltin
-    isSystemConfig
-  }
   __typename
 }
 
@@ -160,7 +160,7 @@ fragment SolidTypeSignatureFragment on Solid {
     definition {
       name
       type {
-        ...TypeWithTooltipFragment
+        ... RuntimeTypeWithTooltipFragment
         __typename
       }
       __typename
@@ -171,7 +171,7 @@ fragment SolidTypeSignatureFragment on Solid {
     definition {
       name
       type {
-        ...TypeWithTooltipFragment
+        ... RuntimeTypeWithTooltipFragment
         __typename
       }
       __typename
@@ -181,31 +181,29 @@ fragment SolidTypeSignatureFragment on Solid {
   __typename
 }
 
-fragment ConfigFieldFragment on TypeField {
-  type {
+fragment ConfigFieldFragment on ConfigTypeField {
+  configType {
     __typename
     name
     description
-    ... on CompositeType {
+    ... on CompositeConfigType {
       fields {
         name
         description
         isOptional
         defaultValue
-        type {
+        configType {
           name
           description
-          ...TypeWithTooltipFragment
-          ... on CompositeType {
+          ... on CompositeConfigType {
             fields {
               name
               description
               isOptional
               defaultValue
-              type {
+              configType {
                 name
                 description
-                ...TypeWithTooltipFragment
                 __typename
               }
               __typename
@@ -216,7 +214,6 @@ fragment ConfigFieldFragment on TypeField {
         }
         __typename
       }
-      ...TypeWithTooltipFragment
       __typename
     }
   }
@@ -404,20 +401,20 @@ query PipelineQuery($name: String! $solidSubset: [String!])
             solids {
                 name
             }
-            types {
-            __typename
-            name
-            ... on CompositeType {
-                fields {
+            configTypes {
+                __typename
                 name
-                type {
+                ... on CompositeConfigType {
+                    fields {
                     name
+                    configType {
+                        name
+                        __typename
+                    }
+                    __typename
+                    }
                     __typename
                 }
-                __typename
-                }
-                __typename
-            }
             }
         }
         ... on SolidNotFoundError {
@@ -434,13 +431,13 @@ query PipelineQuery($name: String! $solidSubset: [String!])
         solids {
             name
         }
-        types {
+        configTypes {
           __typename
           name
-          ... on CompositeType {
+          ... on CompositeConfigType {
             fields {
               name
-              type {
+              configType {
                 name
                 __typename
               }
@@ -459,7 +456,9 @@ def field_names_of(type_dict, typename):
 
 
 def types_dict_of_result(subset_result, top_key):
-    return {type_data['name']: type_data for type_data in subset_result.data[top_key]['types']}
+    return {
+        type_data['name']: type_data for type_data in subset_result.data[top_key]['configTypes']
+    }
 
 
 def test_pandas_hello_world_pipeline_subset():
@@ -490,10 +489,10 @@ def test_enum_query():
     ENUM_QUERY = '''{
   pipeline(params: { name:"pipeline_with_enum_config" }){
     name
-    types {
+    configTypes {
       __typename
       name
-      ... on EnumType {
+      ... on EnumConfigType {
         values
         {
           value
@@ -514,7 +513,7 @@ def test_enum_query():
 
     enum_type_data = None
 
-    for td in result.data['pipeline']['types']:
+    for td in result.data['pipeline']['configTypes']:
         if td['name'] == 'TestEnum':
             enum_type_data = td
             break
@@ -659,7 +658,7 @@ query PipelineQuery($config: PipelineConfig, $pipeline: ExecutionSelector!)
                         ... on EvaluationStackPathEntry {
                             field {
                                 name
-                                type {
+                                configType {
                                     name
                                 }
                             }
@@ -862,18 +861,17 @@ def define_more_complicated_nested_config():
 
 
 TYPE_RENDER_QUERY = '''
-fragment innerInfo on Type {
+fragment innerInfo on ConfigType {
   name
-  isDict
   isList
   isNullable
   innerTypes {
     name
   }
-  ... on CompositeType {
+  ... on CompositeConfigType {
     fields {
       name
-      type {
+      configType {
        name
       }
       isOptional
@@ -888,7 +886,7 @@ fragment innerInfo on Type {
       name
       definition {
         configDefinition {
-          type {
+          configType {
             ...innerInfo
             innerTypes {
               ...innerInfo
@@ -940,12 +938,12 @@ RESOURCE_QUERY = '''
         name
         description
         config {
-          type {
+          configType {
             name
-            ... on CompositeType {
+            ... on CompositeConfigType {
               fields {
                 name
-                type {
+                configType {
                   name
                 }
               }
@@ -1251,6 +1249,282 @@ def test_pipeline_or_error_by_name():
     assert result.data['pipelineOrError']['name'] == 'pandas_hello_world_two'
 
 
+def test_smoke_test_config_type_system():
+    result = execute_dagster_graphql(define_context(), ALL_CONFIG_TYPES_QUERY)
+
+    assert not result.errors
+    assert result.data
+
+
+ALL_CONFIG_TYPES_QUERY = '''
+fragment configTypeFragment on ConfigType {
+  __typename
+  key
+  name
+  description
+  isNullable
+  isList
+  isSelector
+  isBuiltin
+  isSystemGenerated
+  innerTypes {
+    key
+    name
+    description
+    ... on CompositeConfigType {
+        fields {
+            name
+            isOptional
+            description
+        }
+    }
+    ... on WrappingConfigType {
+        ofType { key }
+    }
+  }
+  ... on EnumConfigType {
+    values {
+      value
+      description
+    }
+  }
+  ... on CompositeConfigType {
+    fields {
+      name
+      isOptional
+      description
+    }
+  }
+  ... on WrappingConfigType {
+    ofType { key }
+  }
+}
+
+{
+ 	pipelines {
+    nodes {
+      name
+      configTypes {
+        ...configTypeFragment
+      }
+    }
+  } 
+}
+'''
+
+CONFIG_TYPE_QUERY = '''
+query ConfigTypeQuery($pipelineName: String! $configTypeName: String!)
+{
+    configTypeOrError(
+        pipelineName: $pipelineName
+        configTypeName: $configTypeName
+    ) {
+        __typename
+        ... on RegularConfigType {
+            name
+        }
+        ... on CompositeConfigType {
+            name
+            innerTypes { key name }
+            fields { name configType { key name } }
+        }
+        ... on EnumConfigType {
+            name
+        }
+        ... on PipelineNotFoundError {
+            pipelineName
+        }
+        ... on ConfigTypeNotFoundError {
+            pipeline { name }
+            configTypeName
+        }
+    }
+}
+'''
+
+
+def test_config_type_or_error_query_success():
+    result = execute_dagster_graphql(
+        define_context(),
+        CONFIG_TYPE_QUERY,
+        {'pipelineName': 'pandas_hello_world', 'configTypeName': 'PandasHelloWorld.Environment'},
+    )
+
+    assert not result.errors
+    assert result.data
+    assert result.data['configTypeOrError']['__typename'] == 'CompositeConfigType'
+    assert result.data['configTypeOrError']['name'] == 'PandasHelloWorld.Environment'
+
+
+def test_config_type_or_error_pipeline_not_found():
+    result = execute_dagster_graphql(
+        define_context(),
+        CONFIG_TYPE_QUERY,
+        {'pipelineName': 'nope', 'configTypeName': 'PandasHelloWorld.Environment'},
+    )
+
+    assert not result.errors
+    assert result.data
+    assert result.data['configTypeOrError']['__typename'] == 'PipelineNotFoundError'
+    assert result.data['configTypeOrError']['pipelineName'] == 'nope'
+
+
+def test_config_type_or_error_type_not_found():
+    result = execute_dagster_graphql(
+        define_context(),
+        CONFIG_TYPE_QUERY,
+        {'pipelineName': 'pandas_hello_world', 'configTypeName': 'nope'},
+    )
+
+    assert not result.errors
+    assert result.data
+    assert result.data['configTypeOrError']['__typename'] == 'ConfigTypeNotFoundError'
+    assert result.data['configTypeOrError']['pipeline']['name'] == 'pandas_hello_world'
+    assert result.data['configTypeOrError']['configTypeName'] == 'nope'
+
+
+def test_config_type_or_error_nested_complicated():
+    result = execute_dagster_graphql(
+        define_context(),
+        CONFIG_TYPE_QUERY,
+        {
+            'pipelineName': 'more_complicated_nested_config',
+            'configTypeName': (
+                'MoreComplicatedNestedConfig.SolidConfig.ASolidWithMultilayeredConfig'
+            ),
+        },
+    )
+
+    assert not result.errors
+    assert result.data
+    assert result.data['configTypeOrError']['__typename'] == 'CompositeConfigType'
+    assert (
+        result.data['configTypeOrError']['name']
+        == 'MoreComplicatedNestedConfig.SolidConfig.ASolidWithMultilayeredConfig'
+    )
+    assert len(result.data['configTypeOrError']['innerTypes']) == 6
+
+
+RUNTIME_TYPE_QUERY = '''
+query RuntimeTypeQuery($pipelineName: String! $runtimeTypeName: String!)
+{
+    runtimeTypeOrError(
+        pipelineName: $pipelineName
+        runtimeTypeName: $runtimeTypeName
+    ) {
+        __typename
+        ... on RegularRuntimeType {
+            name
+        }
+        ... on PipelineNotFoundError {
+            pipelineName
+        }
+        ... on RuntimeTypeNotFoundError {
+            pipeline { name }
+            runtimeTypeName
+        }
+    }
+}
+'''
+
+
+def test_runtime_type_query_works():
+    result = execute_dagster_graphql(
+        define_context(),
+        RUNTIME_TYPE_QUERY,
+        {'pipelineName': 'pandas_hello_world', 'runtimeTypeName': 'PandasDataFrame'},
+    )
+
+    assert not result.errors
+    assert result.data
+    assert result.data['runtimeTypeOrError']['__typename'] == 'RegularRuntimeType'
+    assert result.data['runtimeTypeOrError']['name'] == 'PandasDataFrame'
+
+
+def test_runtime_type_or_error_pipeline_not_found():
+    result = execute_dagster_graphql(
+        define_context(), RUNTIME_TYPE_QUERY, {'pipelineName': 'nope', 'runtimeTypeName': 'nope'}
+    )
+
+    assert not result.errors
+    assert result.data
+    assert result.data['runtimeTypeOrError']['__typename'] == 'PipelineNotFoundError'
+    assert result.data['runtimeTypeOrError']['pipelineName'] == 'nope'
+
+
+def test_runtime_type_or_error_type_not_found():
+    result = execute_dagster_graphql(
+        define_context(),
+        RUNTIME_TYPE_QUERY,
+        {'pipelineName': 'pandas_hello_world', 'runtimeTypeName': 'nope'},
+    )
+
+    assert not result.errors
+    assert result.data
+    assert result.data['runtimeTypeOrError']['__typename'] == 'RuntimeTypeNotFoundError'
+    assert result.data['runtimeTypeOrError']['pipeline']['name'] == 'pandas_hello_world'
+    assert result.data['runtimeTypeOrError']['runtimeTypeName'] == 'nope'
+
+
+def test_smoke_test_runtime_type_system():
+    result = execute_dagster_graphql(define_context(), ALL_RUNTIME_TYPES_QUERY)
+
+    assert not result.errors
+    assert result.data
+
+
+ALL_RUNTIME_TYPES_QUERY = '''
+fragment schemaTypeFragment on ConfigType {
+  key
+  name
+  ... on CompositeConfigType {
+    fields {
+      name
+      configType {
+        key
+        name
+      }
+    }
+    innerTypes {
+      key
+      name
+    }
+  }
+}
+fragment runtimeTypeFragment on RuntimeType {
+    key
+    name
+    isNullable
+    isList
+    description
+    inputSchemaType {
+        ...schemaTypeFragment
+    }
+    outputSchemaType {
+        ...schemaTypeFragment
+    }
+    innerTypes {
+        key
+    }
+    ... on WrappingRuntimeType {
+        ofType {
+            key
+        }
+    }
+}
+
+{
+ 	pipelines {
+    nodes {
+      name
+      runtimeTypes {
+        ...runtimeTypeFragment
+      }
+    }
+  }
+}
+'''
+
 EXECUTION_PLAN_QUERY = '''
 query PipelineQuery($config: PipelineConfig, $pipeline: ExecutionSelector!) {
   executionPlan(config: $config, pipeline: $pipeline) {
@@ -1262,7 +1536,7 @@ query PipelineQuery($config: PipelineConfig, $pipeline: ExecutionSelector!) {
         solid {
           name
         }
-        tag
+        kind 
         inputs {
           name
           type {
@@ -1348,7 +1622,7 @@ def test_query_execution_plan():
 
     cn = get_named_thing(plan_data['steps'], 'sum_solid.transform')
 
-    assert cn['tag'] == 'TRANSFORM'
+    assert cn['kind'] == 'TRANSFORM'
     assert cn['solid']['name'] == 'sum_solid'
 
     assert get_nameset(cn['inputs']) == set(['num'])
@@ -1384,6 +1658,39 @@ def test_production_query():
     assert result.data
 
 
+ALL_TYPES_QUERY = '''
+{
+  pipelinesOrError {
+    __typename
+    ... on PipelineConnection {
+      nodes {
+        runtimeTypes {
+          __typename
+          name
+        }
+        configTypes {
+          __typename
+          name
+          ... on CompositeConfigType {
+            fields {
+              name
+              configType {
+                name
+                __typename
+              }
+              __typename
+            }
+            __typename
+          }
+        }
+        __typename
+      }
+    }
+  }
+}
+'''
+
+
 def test_production_config_editor_query():
     result = execute_dagster_graphql(define_context(), ALL_TYPES_QUERY)
     if result.errors:
@@ -1393,65 +1700,10 @@ def test_production_config_editor_query():
     assert result.data
 
 
-def test_single_type_query():
-    context_config_result = execute_dagster_graphql(
-        define_context(),
-        TYPE_QUERY,
-        variables={
-            'pipelineName': 'more_complicated_nested_config',
-            'typeName': 'MoreComplicatedNestedConfig.ContextConfig',
-        },
-    )
-
-    if context_config_result.errors:
-        raise Exception(context_config_result.errors)
-
-    assert not context_config_result.errors
-    assert context_config_result.data
-    assert context_config_result.data['type']['name'] == 'MoreComplicatedNestedConfig.ContextConfig'
-
-    int_result = execute_dagster_graphql(
-        define_context(),
-        TYPE_QUERY,
-        variables={'pipelineName': 'more_complicated_nested_config', 'typeName': 'Int'},
-    )
-
-    if int_result.errors:
-        raise Exception(int_result.errors)
-
-    assert not int_result.errors
-    assert int_result.data
-    assert int_result.data['type']['name'] == 'Int'
-
-
-MUTATION_QUERY = '''
-mutation ($config: PipelineConfig, $pipeline: ExecutionSelector!) {
-    startPipelineExecution(
-        config: $config, pipeline: $pipeline
-    ) {
-        __typename
-        ... on StartPipelineExecutionSuccess {
-            run {
-                runId
-                pipeline { name }
-            }
-        }
-        ... on PipelineConfigValidationInvalid {
-            pipeline { name }
-            errors { message }
-        }
-        ... on PipelineNotFoundError {
-            pipelineName
-        }
-    }
-}
-'''
-
-
 def test_basic_start_pipeline_execution():
     result = execute_dagster_graphql(
         define_context(),
-        MUTATION_QUERY,
+        START_PIPELINE_EXECUTION_QUERY,
         variables={
             'pipeline': {'name': 'pandas_hello_world'},
             'config': pandas_hello_world_solids_config(),
@@ -1473,7 +1725,7 @@ def test_basic_start_pipeline_execution():
 def test_basic_start_pipeline_execution_config_failure():
     result = execute_dagster_graphql(
         define_context(),
-        MUTATION_QUERY,
+        START_PIPELINE_EXECUTION_QUERY,
         variables={
             'pipeline': {'name': 'pandas_hello_world'},
             'config': {'solids': {'sum_solid': {'inputs': {'num': {'csv': {'path': 384938439}}}}}},
@@ -1488,7 +1740,7 @@ def test_basic_start_pipeline_execution_config_failure():
 def test_basis_start_pipeline_not_found_error():
     result = execute_dagster_graphql(
         define_context(),
-        MUTATION_QUERY,
+        START_PIPELINE_EXECUTION_QUERY,
         variables={
             'pipeline': {'name': 'sjkdfkdjkf'},
             'config': {'solids': {'sum_solid': {'inputs': {'num': {'csv': {'path': 'test.csv'}}}}}},
@@ -1511,7 +1763,7 @@ def test_basic_start_pipeline_execution_and_subscribe():
 
     result = execute_dagster_graphql(
         context,
-        MUTATION_QUERY,
+        START_PIPELINE_EXECUTION_QUERY,
         variables={
             'pipeline': {'name': 'pandas_hello_world'},
             'config': {
@@ -1558,7 +1810,7 @@ def test_basic_sync_execution_no_config():
     context = define_context()
     result = execute_dagster_graphql(
         context,
-        SYNC_MUTATION_QUERY,
+        START_PIPELINE_EXECUTION_QUERY,
         variables={'pipeline': {'name': 'no_config_pipeline'}, 'config': None},
     )
 
@@ -1575,7 +1827,7 @@ def test_basic_sync_execution():
     context = define_context()
     result = execute_dagster_graphql(
         context,
-        SYNC_MUTATION_QUERY,
+        START_PIPELINE_EXECUTION_QUERY,
         variables={
             'config': pandas_hello_world_solids_config(),
             'pipeline': {'name': 'pandas_hello_world'},
@@ -1605,7 +1857,7 @@ def has_event_of_type(logs, message_type):
     return first_event_of_type(logs, message_type) is not None
 
 
-SYNC_MUTATION_QUERY = '''
+START_PIPELINE_EXECUTION_QUERY = '''
 mutation ($pipeline: ExecutionSelector!, $config: PipelineConfig) {
     startPipelineExecution(pipeline: $pipeline, config: $config) {
         __typename
@@ -1621,7 +1873,7 @@ mutation ($pipeline: ExecutionSelector!, $config: PipelineConfig) {
                             level
                         }
                         ... on ExecutionStepStartEvent {
-                            step { tag }
+                            step { kind }
                         }
                     }
                 }
@@ -1638,49 +1890,194 @@ mutation ($pipeline: ExecutionSelector!, $config: PipelineConfig) {
 }
 '''
 
-TYPE_QUERY = '''
-query TypeQuery($pipelineName: String!, $typeName: String!) {
-    type(pipelineName: $pipelineName typeName: $typeName) {
-        __typename
-        name
-        ... on CompositeType {
-            fields {
-                __typename
-                name
-                type {
-                    __typename
-                    name
-                }
-            }
-        }
-    }
-}
-'''
 
-ALL_TYPES_QUERY = '''
-{
-  pipelinesOrError {
-    __typename
-    ... on PipelineConnection {
-      nodes {
-        types {
-          __typename
-          name
-          ... on CompositeType {
-            fields {
-              name
-              type {
-                name
-                __typename
-              }
-              __typename
-            }
-            __typename
-          }
-        }
+def test_successful_start_subplan():
+    marshalling = PickleMarshallingStrategy()
+
+    with get_temp_file_name() as num_df_file:
+        with get_temp_file_name() as out_df_file:
+            num_df = pd.read_csv(script_relative_path('num.csv'))
+            marshalling.marshal_value(num_df, num_df_file)
+
+            result = execute_dagster_graphql(
+                define_context(),
+                START_EXECUTION_PLAN_QUERY,
+                variables={
+                    'pipelineName': 'pandas_hello_world',
+                    'config': pandas_hello_world_solids_config(),
+                    'stepExecutions': [
+                        {
+                            'stepKey': 'sum_solid.transform',
+                            'marshalledInputs': [{'inputName': 'num', 'key': num_df_file}],
+                            'marshalledOutputs': [{'outputName': 'result', 'key': out_df_file}],
+                        }
+                    ],
+                    'executionMetadata': {'runId': 'kdjkfjdfd'},
+                },
+            )
+
+            out_df = marshalling.unmarshal_value(out_df_file)
+            assert out_df.to_dict('list') == {'num1': [1, 3], 'num2': [2, 4], 'sum': [3, 7]}
+            if result.errors:
+                raise Exception(result.errors)
+
+
+def test_start_subplan_pipeline_not_found():
+    result = execute_dagster_graphql(
+        define_context(),
+        START_EXECUTION_PLAN_QUERY,
+        variables={
+            'pipelineName': 'nope',
+            'config': pandas_hello_world_solids_config(),
+            'stepExecutions': [{'stepKey': 'sum_solid.transform'}],
+            'executionMetadata': {'runId': 'kdjkfjdfd'},
+        },
+    )
+
+    if result.errors:
+        raise Exception(result.errors)
+
+    assert result.data['startSubplanExecution']['__typename'] == 'PipelineNotFoundError'
+    assert result.data['startSubplanExecution']['pipelineName'] == 'nope'
+
+
+def test_start_subplan_invalid_config():
+    result = execute_dagster_graphql(
+        define_context(),
+        START_EXECUTION_PLAN_QUERY,
+        variables={
+            'pipelineName': 'pandas_hello_world',
+            'config': {'solids': {'sum_solid': {'inputs': {'num': {'csv': {'path': 384938439}}}}}},
+            'stepExecutions': [{'stepKey': 'sum_solid.transform'}],
+            'executionMetadata': {'runId': 'kdjkfjdfd'},
+        },
+    )
+
+    assert not result.errors
+    assert result.data
+    assert result.data['startSubplanExecution']['__typename'] == 'PipelineConfigValidationInvalid'
+
+
+def test_start_subplan_invalid_step_keys():
+    result = execute_dagster_graphql(
+        define_context(),
+        START_EXECUTION_PLAN_QUERY,
+        variables={
+            'pipelineName': 'pandas_hello_world',
+            'config': pandas_hello_world_solids_config(),
+            'stepExecutions': [{'stepKey': 'nope'}],
+            'executionMetadata': {'runId': 'kdjkfjdfd'},
+        },
+    )
+
+    if result.errors:
+        raise Exception(result.errors)
+
+    assert result.data
+    assert (
+        result.data['startSubplanExecution']['__typename']
+        == 'StartSubplanExecutionInvalidStepsError'
+    )
+
+    assert result.data['startSubplanExecution']['invalidStepKeys'] == ['nope']
+
+
+def test_start_subplan_invalid_input_name():
+    result = execute_dagster_graphql(
+        define_context(),
+        START_EXECUTION_PLAN_QUERY,
+        variables={
+            'pipelineName': 'pandas_hello_world',
+            'config': pandas_hello_world_solids_config(),
+            'stepExecutions': [
+                {
+                    'stepKey': 'sum_solid.transform',
+                    'marshalledInputs': [{'inputName': 'nope', 'key': 'nope'}],
+                }
+            ],
+            'executionMetadata': {'runId': 'kdjkfjdfd'},
+        },
+    )
+
+    if result.errors:
+        raise Exception(result.errors)
+
+    assert result.data
+    assert (
+        result.data['startSubplanExecution']['__typename']
+        == 'StartSubplanExecutionInvalidInputError'
+    )
+
+    assert result.data['startSubplanExecution']['step']['key'] == 'sum_solid.transform'
+    assert result.data['startSubplanExecution']['invalidInputName'] == 'nope'
+
+
+def test_start_subplan_invalid_output_name():
+    result = execute_dagster_graphql(
+        define_context(),
+        START_EXECUTION_PLAN_QUERY,
+        variables={
+            'pipelineName': 'pandas_hello_world',
+            'config': pandas_hello_world_solids_config(),
+            'stepExecutions': [
+                {
+                    'stepKey': 'sum_solid.transform',
+                    'marshalledOutputs': [{'outputName': 'nope', 'key': 'nope'}],
+                }
+            ],
+            'executionMetadata': {'runId': 'kdjkfjdfd'},
+        },
+    )
+
+    if result.errors:
+        raise Exception(result.errors)
+
+    assert result.data
+    assert (
+        result.data['startSubplanExecution']['__typename']
+        == 'StartSubplanExecutionInvalidOutputError'
+    )
+
+    assert result.data['startSubplanExecution']['step']['key'] == 'sum_solid.transform'
+    assert result.data['startSubplanExecution']['invalidOutputName'] == 'nope'
+
+
+START_EXECUTION_PLAN_QUERY = '''
+mutation (
+    $pipelineName: String!
+    $config: PipelineConfig
+    $stepExecutions: [StepExecution!]!
+    $executionMetadata: ExecutionMetadata!
+) {
+    startSubplanExecution(
+        pipelineName: $pipelineName
+        config: $config
+        stepExecutions: $stepExecutions
+        executionMetadata: $executionMetadata
+    ) {
         __typename
-      }
+        ... on StartSubplanExecutionSuccess {
+            pipeline { name }
+        }
+        ... on PipelineNotFoundError {
+            pipelineName
+        }
+        ... on PipelineConfigValidationInvalid {
+            pipeline { name }
+            errors { message }
+        }
+        ... on StartSubplanExecutionInvalidStepsError {
+            invalidStepKeys
+        }
+        ... on StartSubplanExecutionInvalidInputError {
+            step { key }
+            invalidInputName
+        }
+        ... on StartSubplanExecutionInvalidOutputError {
+            step { key }
+            invalidOutputName
+        }
     }
-  }
 }
+
 '''

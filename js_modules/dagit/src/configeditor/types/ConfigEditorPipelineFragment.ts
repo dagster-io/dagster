@@ -8,38 +8,59 @@
 // ====================================================
 
 export interface ConfigEditorPipelineFragment_environmentType {
-  name: string;
+  key: string;
 }
 
-export interface ConfigEditorPipelineFragment_types_RegularType {
-  __typename: "RegularType" | "EnumType";
-  name: string;
+export interface ConfigEditorPipelineFragment_configTypes_EnumConfigType {
+  __typename: "EnumConfigType" | "RegularConfigType" | "ListConfigType" | "NullableConfigType";
+  key: string;
+  name: string | null;
   isSelector: boolean;
 }
 
-export interface ConfigEditorPipelineFragment_types_CompositeType_fields_type {
-  name: string;
+export interface ConfigEditorPipelineFragment_configTypes_CompositeConfigType_fields_configType_EnumConfigType {
+  __typename: "EnumConfigType" | "CompositeConfigType" | "RegularConfigType" | "NullableConfigType";
+  key: string;
+  name: string | null;
+  isList: boolean;
+  isNullable: boolean;
 }
 
-export interface ConfigEditorPipelineFragment_types_CompositeType_fields {
+export interface ConfigEditorPipelineFragment_configTypes_CompositeConfigType_fields_configType_ListConfigType_ofType {
+  key: string;
+}
+
+export interface ConfigEditorPipelineFragment_configTypes_CompositeConfigType_fields_configType_ListConfigType {
+  __typename: "ListConfigType";
+  key: string;
+  name: string | null;
+  isList: boolean;
+  isNullable: boolean;
+  ofType: ConfigEditorPipelineFragment_configTypes_CompositeConfigType_fields_configType_ListConfigType_ofType;
+}
+
+export type ConfigEditorPipelineFragment_configTypes_CompositeConfigType_fields_configType = ConfigEditorPipelineFragment_configTypes_CompositeConfigType_fields_configType_EnumConfigType | ConfigEditorPipelineFragment_configTypes_CompositeConfigType_fields_configType_ListConfigType;
+
+export interface ConfigEditorPipelineFragment_configTypes_CompositeConfigType_fields {
   name: string;
   isOptional: boolean;
-  type: ConfigEditorPipelineFragment_types_CompositeType_fields_type;
+  configType: ConfigEditorPipelineFragment_configTypes_CompositeConfigType_fields_configType;
 }
 
-export interface ConfigEditorPipelineFragment_types_CompositeType {
-  __typename: "CompositeType";
-  name: string;
+export interface ConfigEditorPipelineFragment_configTypes_CompositeConfigType {
+  __typename: "CompositeConfigType";
+  key: string;
+  name: string | null;
   isSelector: boolean;
-  fields: ConfigEditorPipelineFragment_types_CompositeType_fields[];
+  fields: ConfigEditorPipelineFragment_configTypes_CompositeConfigType_fields[];
 }
 
-export type ConfigEditorPipelineFragment_types = ConfigEditorPipelineFragment_types_RegularType | ConfigEditorPipelineFragment_types_CompositeType;
+export type ConfigEditorPipelineFragment_configTypes = ConfigEditorPipelineFragment_configTypes_EnumConfigType | ConfigEditorPipelineFragment_configTypes_CompositeConfigType;
 
 export interface ConfigEditorPipelineFragment {
   name: string;
   environmentType: ConfigEditorPipelineFragment_environmentType;
-  types: ConfigEditorPipelineFragment_types[];
+  configTypes: ConfigEditorPipelineFragment_configTypes[];
 }
 
 /* tslint:disable */
@@ -74,7 +95,7 @@ export enum PipelineRunStatus {
   SUCCESS = "SUCCESS",
 }
 
-export enum StepTag {
+export enum StepKind {
   INPUT_EXPECTATION = "INPUT_EXPECTATION",
   INPUT_THUNK = "INPUT_THUNK",
   JOIN = "JOIN",

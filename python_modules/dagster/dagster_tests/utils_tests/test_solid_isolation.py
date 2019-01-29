@@ -98,7 +98,7 @@ def test_single_solid_with_context_config():
 
     @solid
     def check_context_config_for_two(info):
-        assert info.context.resources == 2
+        assert info.resources == 2
         ran['check_context_config_for_two'] += 1
 
     pipeline_def = PipelineDefinition(

@@ -62,6 +62,16 @@ workflows:
           context: coveralls
       - dagster-ge-py27:
           context: coveralls
+      # see: https://github.com/apache/airflow/pull/3723
+      # - dagster-airflow-py37:
+      #     context: coveralls
+      - dagster-airflow-py36:
+          context: coveralls
+      - dagster-airflow-py35:
+          context: coveralls
+      # https://github.com/dagster-io/dagster/issues/729
+      # - dagster-airflow-py27:
+      #     context: coveralls
       - dagma-py37:
           context: coveralls
       - dagma-py36:
@@ -104,6 +114,12 @@ workflows:
             - dagster-ge-py36
             - dagster-ge-py35
             - dagster-ge-py27
+            # https://github.com/apache/airflow/pull/3723
+            # - dagster-airflow-py37
+            - dagster-airflow-py36
+            - dagster-airflow-py35
+            # https://github.com/dagster-io/dagster/issues/729
+            # - dagster-airflow-py27
             - dagma-py37
             - dagma-py36
             - dagma-py35
@@ -139,7 +155,7 @@ jobs:
 
       - run:
           name: Format
-          command: black python_modules --line-length 100 -S --fast --check --exclude "build/|buck-out/|dist/|_build/|\.eggs/|\.git/|\.hg/|\.mypy_cache/|\.nox/|\.tox/|\.venv/|python_modules/dagster/dagster/tutorials/|python_modules/dagster/docs/snapshots/"
+          command: black python_modules --line-length 100 -S --fast --check --exclude "build/|buck-out/|dist/|_build/|\.eggs/|\.git/|\.hg/|\.mypy_cache/|\.nox/|\.tox/|\.venv/|python_modules/dagster/dagster/tutorials/|snapshots/"
 
       - run:
           name: Format
@@ -337,6 +353,46 @@ jobs:
           paths:
             - .coverage*
 
+  dagster-airflow-py36: &dagster-airflow-template
+    docker:
+      - image: circleci/python:3.6.6
+    environment:
+      TOXENV: py36
+      AIRFLOW_HOME: "/home/circleci/airflow"
+    working_directory: ~/repo
+    steps:
+      - checkout
+      - setup_remote_docker:
+          docker_layer_caching: true
+      - run:
+          name: Build Dockerfile
+          command: |
+            pushd python_modules/dagster-airflow/dagster_airflow_tests/test_project
+            . build.sh
+            popd
+      - run:
+          name: Install Dependencies
+          command: |
+            sudo pip install -U 'pip<19.0' # see: https://github.com/pypa/pip/issues/6163
+            sudo pip install tox
+      - run:
+          name: Setup AIRFLOW_HOME
+          command: |
+            mkdir -p /home/circleci/airflow
+      - run:
+          name: Run Dagster Tests
+          command: |
+            pushd python_modules/dagster-airflow
+            tox -e $TOXENV
+            popd
+      - run:
+          command: |
+            mv python_modules/dagster-airflow/.coverage python_modules/.coverage.dagster-airflow.${CIRCLE_BUILD_NUM}
+      - persist_to_workspace:
+          root: python_modules/
+          paths:
+            - .coverage*
+
   dagma-py36: &dagma-template
     docker:
       - image: circleci/python:3.6.6
@@ -488,6 +544,31 @@ jobs:
       - image: circleci/python:2.7.15
     environment:
       TOXENV: py27
+
+  # https://github.com/apache/airflow/pull/3723
+  # dagster-airflow-py37:
+  #   <<: *dagster-airflow-template
+  #   docker:
+  #     - image: circleci/python:3.7.2
+  #   environment:
+  #     TOXENV: py37
+  #     AIRFLOW_HOME: "/home/circleci/airflow"
+
+  dagster-airflow-py35:
+    <<: *dagster-airflow-template
+    docker:
+      - image: circleci/python:3.5.6
+    environment:
+      TOXENV: py35
+      AIRFLOW_HOME: "/home/circleci/airflow"
+
+  dagster-airflow-py27:
+    <<: *dagster-airflow-template
+    docker:
+      - image: circleci/python:2.7.15
+    environment:
+      TOXENV: py27
+      AIRFLOW_HOME: "/home/circleci/airflow"
 
   dagma-py37:
     <<: *dagma-template

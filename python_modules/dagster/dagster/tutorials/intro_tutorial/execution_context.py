@@ -3,13 +3,13 @@ from dagster import PipelineDefinition, execute_pipeline, solid
 
 @solid
 def debug_message(info):
-    info.context.debug('A debug message.')
+    info.log.debug('A debug message.')
     return 'foo'
 
 
 @solid
 def error_message(info):
-    info.context.error('An error occurred.')
+    info.log.error('An error occurred.')
 
 
 def define_execution_context_pipeline_step_one():

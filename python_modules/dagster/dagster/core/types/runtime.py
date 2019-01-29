@@ -13,7 +13,7 @@ from .config import Nullable as ConfigNullable
 
 from .config_schema import InputSchema, OutputSchema
 
-from .marshal import MarshallingStrategy
+from .marshal import MarshallingStrategy, PickleMarshallingStrategy
 from .dagster_type import check_dagster_type_param
 from .wrapping import WrappingListType, WrappingNullableType
 
@@ -29,7 +29,8 @@ def check_opt_config_cls_param(config_cls, param_name):
 class RuntimeType(object):
     def __init__(
         self,
-        name=None,
+        key,
+        name,
         description=None,
         input_schema=None,
         output_schema=None,
@@ -45,12 +46,16 @@ class RuntimeType(object):
                 )
             )
 
-        self.name = check.opt_str_param(name, 'name', type(self).__name__)
+        self.key = check.str_param(key, 'key')
+        self.name = check.opt_str_param(name, 'name')
         self.description = check.opt_str_param(description, 'description')
         self.input_schema = check.opt_inst_param(input_schema, 'input_schema', InputSchema)
         self.output_schema = check.opt_inst_param(output_schema, 'output_schema', OutputSchema)
         self.marshalling_strategy = check.opt_inst_param(
-            marshalling_strategy, 'marshalling_strategy', MarshallingStrategy
+            marshalling_strategy,
+            'marshalling_strategy',
+            MarshallingStrategy,
+            PickleMarshallingStrategy(),
         )
 
     __cache = {}
@@ -58,7 +63,7 @@ class RuntimeType(object):
     @classmethod
     def inst(cls):
         if cls not in RuntimeType.__cache:
-            RuntimeType.__cache[cls] = cls()
+            RuntimeType.__cache[cls] = cls()  # pylint: disable=E1120
         return RuntimeType.__cache[cls]
 
     @staticmethod
@@ -97,8 +102,16 @@ class RuntimeType(object):
     def is_nullable(self):
         return False
 
+    @property
+    def inner_types(self):
+        return []
+
 
 class BuiltinScalarRuntimeType(RuntimeType):
+    def __init__(self, *args, **kwargs):
+        name = type(self).__name__
+        super(BuiltinScalarRuntimeType, self).__init__(key=name, name=name, *args, **kwargs)
+
     @property
     def is_scalar(self):
         return True
@@ -136,7 +149,7 @@ class Path(BuiltinScalarRuntimeType):
         return self.throw_if_not_string(value)
 
 
-class Float(RuntimeType):
+class Float(BuiltinScalarRuntimeType):
     def __init__(self):
         super(Float, self).__init__(
             input_schema=BuiltinSchemas.FLOAT_INPUT, output_schema=BuiltinSchemas.FLOAT_OUTPUT
@@ -146,7 +159,7 @@ class Float(RuntimeType):
         return self.throw_if_false(lambda v: isinstance(v, float), value)
 
 
-class Bool(RuntimeType):
+class Bool(BuiltinScalarRuntimeType):
     def __init__(self):
         super(Bool, self).__init__(
             input_schema=BuiltinSchemas.BOOL_INPUT, output_schema=BuiltinSchemas.BOOL_OUTPUT
@@ -159,7 +172,10 @@ class Bool(RuntimeType):
 class Any(RuntimeType):
     def __init__(self):
         super(Any, self).__init__(
-            input_schema=BuiltinSchemas.ANY_INPUT, output_schema=BuiltinSchemas.ANY_OUTPUT
+            key='Any',
+            name='Any',
+            input_schema=BuiltinSchemas.ANY_INPUT,
+            output_schema=BuiltinSchemas.ANY_OUTPUT,
         )
 
     @property
@@ -168,8 +184,10 @@ class Any(RuntimeType):
 
 
 class PythonObjectType(RuntimeType):
-    def __init__(self, python_type, *args, **kwargs):
-        super(PythonObjectType, self).__init__(*args, **kwargs)
+    def __init__(self, python_type, key=None, name=None, **kwargs):
+        name = check.opt_str_param(name, 'name', type(self).__name__)
+        key = check.opt_str_param(key, 'key', name)
+        super(PythonObjectType, self).__init__(key=key, name=name, **kwargs)
         self.python_type = check.type_param(python_type, 'python_type')
 
     def coerce_runtime_value(self, value):
@@ -197,9 +215,9 @@ def _create_nullable_input_schema(inner_type):
 
 class NullableType(RuntimeType):
     def __init__(self, inner_type):
+        name = 'Nullable.' + inner_type.name
         super(NullableType, self).__init__(
-            name='Nullable.' + inner_type.name,
-            input_schema=_create_nullable_input_schema(inner_type),
+            key=name, name=name, input_schema=_create_nullable_input_schema(inner_type)
         )
         self.inner_type = inner_type
 
@@ -209,6 +227,10 @@ class NullableType(RuntimeType):
     @property
     def is_nullable(self):
         return True
+
+    @property
+    def inner_types(self):
+        return [self.inner_type] + self.inner_type.inner_types
 
 
 def _create_list_input_schema(inner_type):
@@ -230,8 +252,9 @@ def _create_list_input_schema(inner_type):
 
 class ListType(RuntimeType):
     def __init__(self, inner_type):
+        name = 'List.' + inner_type.name
         super(ListType, self).__init__(
-            name='List.' + inner_type.name, input_schema=_create_list_input_schema(inner_type)
+            key=name, name=name, input_schema=_create_list_input_schema(inner_type)
         )
         self.inner_type = inner_type
 
@@ -242,6 +265,10 @@ class ListType(RuntimeType):
     @property
     def is_list(self):
         return True
+
+    @property
+    def inner_types(self):
+        return [self.inner_type] + self.inner_type.inner_types
 
 
 def Nullable(inner_type):
@@ -265,6 +292,11 @@ def List(inner_type):
 
 
 class Stringish(RuntimeType):
+    def __init__(self, key=None, name=None, **kwargs):
+        name = check.opt_str_param(name, 'name', type(self).__name__)
+        key = check.opt_str_param(key, 'key', name)
+        super(Stringish, self).__init__(key=key, name=name, **kwargs)
+
     def is_scalar(self):
         return True
 

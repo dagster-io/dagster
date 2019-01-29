@@ -12,13 +12,13 @@ export interface PipelineSolidSelectorQuery_pipeline_solids_definition_metadata 
   value: string;
 }
 
-export interface PipelineSolidSelectorQuery_pipeline_solids_definition_configDefinition_type {
-  name: string;
+export interface PipelineSolidSelectorQuery_pipeline_solids_definition_configDefinition_configType {
+  name: string | null;
   description: string | null;
 }
 
 export interface PipelineSolidSelectorQuery_pipeline_solids_definition_configDefinition {
-  type: PipelineSolidSelectorQuery_pipeline_solids_definition_configDefinition_type;
+  configType: PipelineSolidSelectorQuery_pipeline_solids_definition_configDefinition_configType;
 }
 
 export interface PipelineSolidSelectorQuery_pipeline_solids_definition {
@@ -27,7 +27,7 @@ export interface PipelineSolidSelectorQuery_pipeline_solids_definition {
 }
 
 export interface PipelineSolidSelectorQuery_pipeline_solids_inputs_definition_type {
-  name: string;
+  name: string | null;
 }
 
 export interface PipelineSolidSelectorQuery_pipeline_solids_inputs_definition {
@@ -54,7 +54,7 @@ export interface PipelineSolidSelectorQuery_pipeline_solids_inputs {
 }
 
 export interface PipelineSolidSelectorQuery_pipeline_solids_outputs_definition_type {
-  name: string;
+  name: string | null;
 }
 
 export interface PipelineSolidSelectorQuery_pipeline_solids_outputs_definition_expectations {
@@ -133,7 +133,7 @@ export enum PipelineRunStatus {
   SUCCESS = "SUCCESS",
 }
 
-export enum StepTag {
+export enum StepKind {
   INPUT_EXPECTATION = "INPUT_EXPECTATION",
   INPUT_THUNK = "INPUT_THUNK",
   JOIN = "JOIN",

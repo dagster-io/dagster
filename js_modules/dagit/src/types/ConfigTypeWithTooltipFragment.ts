@@ -4,27 +4,14 @@
 // This file was automatically generated and should not be edited.
 
 // ====================================================
-// GraphQL fragment: PipelineRunExecutionPlanPipelineRunEventFragment
+// GraphQL fragment: ConfigTypeWithTooltipFragment
 // ====================================================
 
-export interface PipelineRunExecutionPlanPipelineRunEventFragment_LogMessageEvent {
-  __typename: "LogMessageEvent" | "PipelineStartEvent" | "PipelineSuccessEvent" | "PipelineFailureEvent";
-  message: string;
-  timestamp: string;
+export interface ConfigTypeWithTooltipFragment {
+  key: string;
+  name: string | null;
+  description: string | null;
 }
-
-export interface PipelineRunExecutionPlanPipelineRunEventFragment_ExecutionStepStartEvent_step {
-  name: string;
-}
-
-export interface PipelineRunExecutionPlanPipelineRunEventFragment_ExecutionStepStartEvent {
-  __typename: "ExecutionStepStartEvent" | "ExecutionStepSuccessEvent" | "ExecutionStepFailureEvent";
-  message: string;
-  timestamp: string;
-  step: PipelineRunExecutionPlanPipelineRunEventFragment_ExecutionStepStartEvent_step;
-}
-
-export type PipelineRunExecutionPlanPipelineRunEventFragment = PipelineRunExecutionPlanPipelineRunEventFragment_LogMessageEvent | PipelineRunExecutionPlanPipelineRunEventFragment_ExecutionStepStartEvent;
 
 /* tslint:disable */
 // This file was automatically generated and should not be edited.
@@ -32,6 +19,13 @@ export type PipelineRunExecutionPlanPipelineRunEventFragment = PipelineRunExecut
 //==============================================================
 // START Enums and Input Objects
 //==============================================================
+
+export enum EvaluationErrorReason {
+  FIELD_NOT_DEFINED = "FIELD_NOT_DEFINED",
+  MISSING_REQUIRED_FIELD = "MISSING_REQUIRED_FIELD",
+  RUNTIME_TYPE_MISMATCH = "RUNTIME_TYPE_MISMATCH",
+  SELECTOR_FIELD_ERROR = "SELECTOR_FIELD_ERROR",
+}
 
 export enum LogLevel {
   CRITICAL = "CRITICAL",
@@ -53,18 +47,21 @@ export enum PipelineRunStatus {
 
 export enum StepTag {
   INPUT_EXPECTATION = "INPUT_EXPECTATION",
+  INPUT_THUNK = "INPUT_THUNK",
   JOIN = "JOIN",
+  MATERIALIZATION_THUNK = "MATERIALIZATION_THUNK",
   OUTPUT_EXPECTATION = "OUTPUT_EXPECTATION",
   SERIALIZE = "SERIALIZE",
   TRANSFORM = "TRANSFORM",
 }
 
 /**
- * 
+ * This type represents the fields necessary to identify a
+ *         pipeline or pipeline subset.
  */
-export interface PipelineExecutionParams {
-  pipelineName: string;
-  config?: any | null;
+export interface ExecutionSelector {
+  name: string;
+  solidSubset?: string[] | null;
 }
 
 //==============================================================

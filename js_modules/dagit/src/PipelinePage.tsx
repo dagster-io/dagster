@@ -139,7 +139,7 @@ export default class PipelinePage extends React.Component<IPipelinePageProps> {
                   <Tab
                     key={slug}
                     to={`/${selectedPipeline.name}/${slug}`}
-                    active={selectedTab.slug === slug}
+                    className={selectedTab.slug === slug ? "active" : ""}
                   >
                     {title}
                   </Tab>
@@ -167,10 +167,10 @@ const Tabs = styled.div`
   justify-content: center;
 `;
 
-const Tab = styled(Link)<{ active: boolean }>`
-  color: ${p => (p.active ? Colors.COBALT3 : Colors.GRAY2)}
+const Tab = styled(Link)`
+  color: ${Colors.GRAY2}
   border-top: 3px solid transparent;
-  border-bottom: 3px solid ${p => (p.active ? Colors.COBALT3 : "transparent")}
+  border-bottom: 3px solid transparent;
   text-decoration: none;
   white-space: nowrap;
   min-width: 40px;
@@ -179,4 +179,8 @@ const Tab = styled(Link)<{ active: boolean }>`
   height: 50px;
   align-items: center;
   outline: 0;
+  &.active {
+    color: ${Colors.COBALT3};
+    border-bottom: 3px solid ${Colors.COBALT3};
+  }
 `;

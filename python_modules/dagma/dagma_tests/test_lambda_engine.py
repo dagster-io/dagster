@@ -18,7 +18,7 @@ from dagster import (
     lambda_solid,
     PipelineContextDefinition,
     PipelineDefinition,
-    ReentrantInfo,
+    ExecutionMetadata,
     ResourceDefinition,
 )
 from dagster.core.execution import (
@@ -96,14 +96,12 @@ TEST_ENVIRONMENT = {
 def run_test_pipeline(pipeline):
     typed_environment = create_typed_environment(pipeline, TEST_ENVIRONMENT)
 
-    reentrant_info = ReentrantInfo(run_id=str(uuid.uuid4()))
-    with yield_context(pipeline, typed_environment, reentrant_info) as context:
+    execution_metadata = ExecutionMetadata(run_id=str(uuid.uuid4()))
+    with yield_context(pipeline, typed_environment, execution_metadata) as context:
         execution_plan = create_execution_plan_core(
             ExecutionPlanInfo(context, pipeline, typed_environment)
         )
-        with context.value('pipeline', pipeline.display_name):
-            results = execute_plan(context, execution_plan)
-            return results
+        return execute_plan(context, execution_plan)
 
 
 @pytest.mark.skip('Skipping pending pickling issues in lambda engine. Issue #491')

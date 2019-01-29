@@ -8,10 +8,10 @@ import time
 
 import gevent
 
-from dagster import check, ReentrantInfo, PipelineDefinition
+from dagster import check, ExecutionMetadata, PipelineDefinition
 from dagster.core.execution import (
     create_typed_environment,
-    execute_reentrant_pipeline,
+    execute_pipeline_with_metadata,
     get_subset_pipeline,
 )
 from dagster.core.events import PipelineEventRecord, EventType
@@ -90,13 +90,13 @@ class SynchronousExecutionManager(PipelineExecutionManager):
     def execute_pipeline(self, repository_container, pipeline, pipeline_run):
         check.inst_param(pipeline, 'pipeline', PipelineDefinition)
         try:
-            return execute_reentrant_pipeline(
+            return execute_pipeline_with_metadata(
                 pipeline,
                 create_typed_environment(pipeline, pipeline_run.config),
-                throw_on_error=False,
-                reentrant_info=ReentrantInfo(
+                execution_metadata=ExecutionMetadata(
                     pipeline_run.run_id, event_callback=pipeline_run.handle_new_event
                 ),
+                throw_on_error=False,
             )
         except:  # pylint: disable=W0702
             pipeline_run.handle_new_event(
@@ -253,7 +253,7 @@ def execute_pipeline_through_queue(
 
     message_queue.put(ProcessStartedSentinel(os.getpid()))
 
-    reentrant_info = ReentrantInfo(run_id, event_callback=message_queue.put)
+    execution_metadata = ExecutionMetadata(run_id, event_callback=message_queue.put)
 
     from .app import RepositoryContainer
 
@@ -274,8 +274,8 @@ def execute_pipeline_through_queue(
     )
 
     try:
-        result = execute_reentrant_pipeline(
-            pipeline, typed_environment, throw_on_error=False, reentrant_info=reentrant_info
+        result = execute_pipeline_with_metadata(
+            pipeline, typed_environment, execution_metadata=execution_metadata, throw_on_error=False
         )
         return result
     except:  # pylint: disable=W0702

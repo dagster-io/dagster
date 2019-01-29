@@ -2,7 +2,11 @@ from toposort import toposort_flatten
 
 from dagster import check
 
-from .environment_configs import EnvironmentClassCreationData, define_environment_cls
+from .environment_configs import (
+    EnvironmentClassCreationData,
+    define_environment_cls,
+    define_context_cls,
+)
 
 from .context import PipelineContextDefinition, default_pipeline_context_definitions
 
@@ -102,6 +106,9 @@ class PipelineDefinition(object):
             )
         )
         self.environment_type = self.environment_cls.inst()
+
+        self.context_cls = define_context_cls(self)
+        self.context_type = self.context_cls.inst()
 
         self._config_type_dict = construct_config_type_dictionary(
             solids, self.context_definitions, self.environment_type

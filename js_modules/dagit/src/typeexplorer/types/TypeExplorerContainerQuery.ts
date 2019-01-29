@@ -7,155 +7,263 @@
 // GraphQL query operation: TypeExplorerContainerQuery
 // ====================================================
 
-export interface TypeExplorerContainerQuery_type_RegularType_innerTypes_RegularType_innerTypes {
-  name: string;
+export interface TypeExplorerContainerQuery_runtimeTypeOrError_PipelineNotFoundError {
+  __typename: "PipelineNotFoundError" | "RuntimeTypeNotFoundError";
 }
 
-export interface TypeExplorerContainerQuery_type_RegularType_innerTypes_RegularType_typeAttributes {
-  isNamed: boolean;
+export interface TypeExplorerContainerQuery_runtimeTypeOrError_RegularRuntimeType_inputSchemaType_EnumConfigType_innerTypes_EnumConfigType_innerTypes {
+  key: string;
 }
 
-export interface TypeExplorerContainerQuery_type_RegularType_innerTypes_RegularType {
-  name: string;
+export interface TypeExplorerContainerQuery_runtimeTypeOrError_RegularRuntimeType_inputSchemaType_EnumConfigType_innerTypes_EnumConfigType {
+  key: string;
+  name: string | null;
   description: string | null;
-  isDict: boolean;
   isList: boolean;
   isNullable: boolean;
-  innerTypes: TypeExplorerContainerQuery_type_RegularType_innerTypes_RegularType_innerTypes[];
-  typeAttributes: TypeExplorerContainerQuery_type_RegularType_innerTypes_RegularType_typeAttributes;
+  isSelector: boolean;
+  innerTypes: TypeExplorerContainerQuery_runtimeTypeOrError_RegularRuntimeType_inputSchemaType_EnumConfigType_innerTypes_EnumConfigType_innerTypes[];
 }
 
-export interface TypeExplorerContainerQuery_type_RegularType_innerTypes_CompositeType_innerTypes {
-  name: string;
+export interface TypeExplorerContainerQuery_runtimeTypeOrError_RegularRuntimeType_inputSchemaType_EnumConfigType_innerTypes_CompositeConfigType_innerTypes {
+  key: string;
 }
 
-export interface TypeExplorerContainerQuery_type_RegularType_innerTypes_CompositeType_typeAttributes {
-  isNamed: boolean;
+export interface TypeExplorerContainerQuery_runtimeTypeOrError_RegularRuntimeType_inputSchemaType_EnumConfigType_innerTypes_CompositeConfigType_fields_configType {
+  key: string;
 }
 
-export interface TypeExplorerContainerQuery_type_RegularType_innerTypes_CompositeType_fields_type {
-  name: string;
-}
-
-export interface TypeExplorerContainerQuery_type_RegularType_innerTypes_CompositeType_fields {
+export interface TypeExplorerContainerQuery_runtimeTypeOrError_RegularRuntimeType_inputSchemaType_EnumConfigType_innerTypes_CompositeConfigType_fields {
   name: string;
   description: string | null;
-  type: TypeExplorerContainerQuery_type_RegularType_innerTypes_CompositeType_fields_type;
   isOptional: boolean;
+  configType: TypeExplorerContainerQuery_runtimeTypeOrError_RegularRuntimeType_inputSchemaType_EnumConfigType_innerTypes_CompositeConfigType_fields_configType;
 }
 
-export interface TypeExplorerContainerQuery_type_RegularType_innerTypes_CompositeType {
-  name: string;
+export interface TypeExplorerContainerQuery_runtimeTypeOrError_RegularRuntimeType_inputSchemaType_EnumConfigType_innerTypes_CompositeConfigType {
+  key: string;
+  name: string | null;
   description: string | null;
-  isDict: boolean;
   isList: boolean;
   isNullable: boolean;
-  innerTypes: TypeExplorerContainerQuery_type_RegularType_innerTypes_CompositeType_innerTypes[];
-  typeAttributes: TypeExplorerContainerQuery_type_RegularType_innerTypes_CompositeType_typeAttributes;
-  fields: TypeExplorerContainerQuery_type_RegularType_innerTypes_CompositeType_fields[];
+  isSelector: boolean;
+  innerTypes: TypeExplorerContainerQuery_runtimeTypeOrError_RegularRuntimeType_inputSchemaType_EnumConfigType_innerTypes_CompositeConfigType_innerTypes[];
+  fields: TypeExplorerContainerQuery_runtimeTypeOrError_RegularRuntimeType_inputSchemaType_EnumConfigType_innerTypes_CompositeConfigType_fields[];
 }
 
-export type TypeExplorerContainerQuery_type_RegularType_innerTypes = TypeExplorerContainerQuery_type_RegularType_innerTypes_RegularType | TypeExplorerContainerQuery_type_RegularType_innerTypes_CompositeType;
+export type TypeExplorerContainerQuery_runtimeTypeOrError_RegularRuntimeType_inputSchemaType_EnumConfigType_innerTypes = TypeExplorerContainerQuery_runtimeTypeOrError_RegularRuntimeType_inputSchemaType_EnumConfigType_innerTypes_EnumConfigType | TypeExplorerContainerQuery_runtimeTypeOrError_RegularRuntimeType_inputSchemaType_EnumConfigType_innerTypes_CompositeConfigType;
 
-export interface TypeExplorerContainerQuery_type_RegularType_typeAttributes {
-  isNamed: boolean;
-}
-
-export interface TypeExplorerContainerQuery_type_RegularType {
-  name: string;
+export interface TypeExplorerContainerQuery_runtimeTypeOrError_RegularRuntimeType_inputSchemaType_EnumConfigType {
+  key: string;
+  name: string | null;
   description: string | null;
-  isDict: boolean;
   isList: boolean;
   isNullable: boolean;
-  innerTypes: TypeExplorerContainerQuery_type_RegularType_innerTypes[];
-  typeAttributes: TypeExplorerContainerQuery_type_RegularType_typeAttributes;
+  isSelector: boolean;
+  innerTypes: TypeExplorerContainerQuery_runtimeTypeOrError_RegularRuntimeType_inputSchemaType_EnumConfigType_innerTypes[];
 }
 
-export interface TypeExplorerContainerQuery_type_CompositeType_innerTypes_RegularType_innerTypes {
-  name: string;
+export interface TypeExplorerContainerQuery_runtimeTypeOrError_RegularRuntimeType_inputSchemaType_CompositeConfigType_innerTypes_EnumConfigType_innerTypes {
+  key: string;
 }
 
-export interface TypeExplorerContainerQuery_type_CompositeType_innerTypes_RegularType_typeAttributes {
-  isNamed: boolean;
-}
-
-export interface TypeExplorerContainerQuery_type_CompositeType_innerTypes_RegularType {
-  name: string;
+export interface TypeExplorerContainerQuery_runtimeTypeOrError_RegularRuntimeType_inputSchemaType_CompositeConfigType_innerTypes_EnumConfigType {
+  key: string;
+  name: string | null;
   description: string | null;
-  isDict: boolean;
   isList: boolean;
   isNullable: boolean;
-  innerTypes: TypeExplorerContainerQuery_type_CompositeType_innerTypes_RegularType_innerTypes[];
-  typeAttributes: TypeExplorerContainerQuery_type_CompositeType_innerTypes_RegularType_typeAttributes;
+  isSelector: boolean;
+  innerTypes: TypeExplorerContainerQuery_runtimeTypeOrError_RegularRuntimeType_inputSchemaType_CompositeConfigType_innerTypes_EnumConfigType_innerTypes[];
 }
 
-export interface TypeExplorerContainerQuery_type_CompositeType_innerTypes_CompositeType_innerTypes {
-  name: string;
+export interface TypeExplorerContainerQuery_runtimeTypeOrError_RegularRuntimeType_inputSchemaType_CompositeConfigType_innerTypes_CompositeConfigType_innerTypes {
+  key: string;
 }
 
-export interface TypeExplorerContainerQuery_type_CompositeType_innerTypes_CompositeType_typeAttributes {
-  isNamed: boolean;
+export interface TypeExplorerContainerQuery_runtimeTypeOrError_RegularRuntimeType_inputSchemaType_CompositeConfigType_innerTypes_CompositeConfigType_fields_configType {
+  key: string;
 }
 
-export interface TypeExplorerContainerQuery_type_CompositeType_innerTypes_CompositeType_fields_type {
-  name: string;
-}
-
-export interface TypeExplorerContainerQuery_type_CompositeType_innerTypes_CompositeType_fields {
+export interface TypeExplorerContainerQuery_runtimeTypeOrError_RegularRuntimeType_inputSchemaType_CompositeConfigType_innerTypes_CompositeConfigType_fields {
   name: string;
   description: string | null;
-  type: TypeExplorerContainerQuery_type_CompositeType_innerTypes_CompositeType_fields_type;
   isOptional: boolean;
+  configType: TypeExplorerContainerQuery_runtimeTypeOrError_RegularRuntimeType_inputSchemaType_CompositeConfigType_innerTypes_CompositeConfigType_fields_configType;
 }
 
-export interface TypeExplorerContainerQuery_type_CompositeType_innerTypes_CompositeType {
-  name: string;
+export interface TypeExplorerContainerQuery_runtimeTypeOrError_RegularRuntimeType_inputSchemaType_CompositeConfigType_innerTypes_CompositeConfigType {
+  key: string;
+  name: string | null;
   description: string | null;
-  isDict: boolean;
   isList: boolean;
   isNullable: boolean;
-  innerTypes: TypeExplorerContainerQuery_type_CompositeType_innerTypes_CompositeType_innerTypes[];
-  typeAttributes: TypeExplorerContainerQuery_type_CompositeType_innerTypes_CompositeType_typeAttributes;
-  fields: TypeExplorerContainerQuery_type_CompositeType_innerTypes_CompositeType_fields[];
+  isSelector: boolean;
+  innerTypes: TypeExplorerContainerQuery_runtimeTypeOrError_RegularRuntimeType_inputSchemaType_CompositeConfigType_innerTypes_CompositeConfigType_innerTypes[];
+  fields: TypeExplorerContainerQuery_runtimeTypeOrError_RegularRuntimeType_inputSchemaType_CompositeConfigType_innerTypes_CompositeConfigType_fields[];
 }
 
-export type TypeExplorerContainerQuery_type_CompositeType_innerTypes = TypeExplorerContainerQuery_type_CompositeType_innerTypes_RegularType | TypeExplorerContainerQuery_type_CompositeType_innerTypes_CompositeType;
+export type TypeExplorerContainerQuery_runtimeTypeOrError_RegularRuntimeType_inputSchemaType_CompositeConfigType_innerTypes = TypeExplorerContainerQuery_runtimeTypeOrError_RegularRuntimeType_inputSchemaType_CompositeConfigType_innerTypes_EnumConfigType | TypeExplorerContainerQuery_runtimeTypeOrError_RegularRuntimeType_inputSchemaType_CompositeConfigType_innerTypes_CompositeConfigType;
 
-export interface TypeExplorerContainerQuery_type_CompositeType_typeAttributes {
-  isNamed: boolean;
+export interface TypeExplorerContainerQuery_runtimeTypeOrError_RegularRuntimeType_inputSchemaType_CompositeConfigType_fields_configType {
+  key: string;
 }
 
-export interface TypeExplorerContainerQuery_type_CompositeType_fields_type {
-  name: string;
-}
-
-export interface TypeExplorerContainerQuery_type_CompositeType_fields {
+export interface TypeExplorerContainerQuery_runtimeTypeOrError_RegularRuntimeType_inputSchemaType_CompositeConfigType_fields {
   name: string;
   description: string | null;
-  type: TypeExplorerContainerQuery_type_CompositeType_fields_type;
   isOptional: boolean;
+  configType: TypeExplorerContainerQuery_runtimeTypeOrError_RegularRuntimeType_inputSchemaType_CompositeConfigType_fields_configType;
 }
 
-export interface TypeExplorerContainerQuery_type_CompositeType {
-  name: string;
+export interface TypeExplorerContainerQuery_runtimeTypeOrError_RegularRuntimeType_inputSchemaType_CompositeConfigType {
+  key: string;
+  name: string | null;
   description: string | null;
-  isDict: boolean;
   isList: boolean;
   isNullable: boolean;
-  innerTypes: TypeExplorerContainerQuery_type_CompositeType_innerTypes[];
-  typeAttributes: TypeExplorerContainerQuery_type_CompositeType_typeAttributes;
-  fields: TypeExplorerContainerQuery_type_CompositeType_fields[];
+  isSelector: boolean;
+  innerTypes: TypeExplorerContainerQuery_runtimeTypeOrError_RegularRuntimeType_inputSchemaType_CompositeConfigType_innerTypes[];
+  fields: TypeExplorerContainerQuery_runtimeTypeOrError_RegularRuntimeType_inputSchemaType_CompositeConfigType_fields[];
 }
 
-export type TypeExplorerContainerQuery_type = TypeExplorerContainerQuery_type_RegularType | TypeExplorerContainerQuery_type_CompositeType;
+export type TypeExplorerContainerQuery_runtimeTypeOrError_RegularRuntimeType_inputSchemaType = TypeExplorerContainerQuery_runtimeTypeOrError_RegularRuntimeType_inputSchemaType_EnumConfigType | TypeExplorerContainerQuery_runtimeTypeOrError_RegularRuntimeType_inputSchemaType_CompositeConfigType;
+
+export interface TypeExplorerContainerQuery_runtimeTypeOrError_RegularRuntimeType_outputSchemaType_EnumConfigType_innerTypes_EnumConfigType_innerTypes {
+  key: string;
+}
+
+export interface TypeExplorerContainerQuery_runtimeTypeOrError_RegularRuntimeType_outputSchemaType_EnumConfigType_innerTypes_EnumConfigType {
+  key: string;
+  name: string | null;
+  description: string | null;
+  isList: boolean;
+  isNullable: boolean;
+  isSelector: boolean;
+  innerTypes: TypeExplorerContainerQuery_runtimeTypeOrError_RegularRuntimeType_outputSchemaType_EnumConfigType_innerTypes_EnumConfigType_innerTypes[];
+}
+
+export interface TypeExplorerContainerQuery_runtimeTypeOrError_RegularRuntimeType_outputSchemaType_EnumConfigType_innerTypes_CompositeConfigType_innerTypes {
+  key: string;
+}
+
+export interface TypeExplorerContainerQuery_runtimeTypeOrError_RegularRuntimeType_outputSchemaType_EnumConfigType_innerTypes_CompositeConfigType_fields_configType {
+  key: string;
+}
+
+export interface TypeExplorerContainerQuery_runtimeTypeOrError_RegularRuntimeType_outputSchemaType_EnumConfigType_innerTypes_CompositeConfigType_fields {
+  name: string;
+  description: string | null;
+  isOptional: boolean;
+  configType: TypeExplorerContainerQuery_runtimeTypeOrError_RegularRuntimeType_outputSchemaType_EnumConfigType_innerTypes_CompositeConfigType_fields_configType;
+}
+
+export interface TypeExplorerContainerQuery_runtimeTypeOrError_RegularRuntimeType_outputSchemaType_EnumConfigType_innerTypes_CompositeConfigType {
+  key: string;
+  name: string | null;
+  description: string | null;
+  isList: boolean;
+  isNullable: boolean;
+  isSelector: boolean;
+  innerTypes: TypeExplorerContainerQuery_runtimeTypeOrError_RegularRuntimeType_outputSchemaType_EnumConfigType_innerTypes_CompositeConfigType_innerTypes[];
+  fields: TypeExplorerContainerQuery_runtimeTypeOrError_RegularRuntimeType_outputSchemaType_EnumConfigType_innerTypes_CompositeConfigType_fields[];
+}
+
+export type TypeExplorerContainerQuery_runtimeTypeOrError_RegularRuntimeType_outputSchemaType_EnumConfigType_innerTypes = TypeExplorerContainerQuery_runtimeTypeOrError_RegularRuntimeType_outputSchemaType_EnumConfigType_innerTypes_EnumConfigType | TypeExplorerContainerQuery_runtimeTypeOrError_RegularRuntimeType_outputSchemaType_EnumConfigType_innerTypes_CompositeConfigType;
+
+export interface TypeExplorerContainerQuery_runtimeTypeOrError_RegularRuntimeType_outputSchemaType_EnumConfigType {
+  key: string;
+  name: string | null;
+  description: string | null;
+  isList: boolean;
+  isNullable: boolean;
+  isSelector: boolean;
+  innerTypes: TypeExplorerContainerQuery_runtimeTypeOrError_RegularRuntimeType_outputSchemaType_EnumConfigType_innerTypes[];
+}
+
+export interface TypeExplorerContainerQuery_runtimeTypeOrError_RegularRuntimeType_outputSchemaType_CompositeConfigType_innerTypes_EnumConfigType_innerTypes {
+  key: string;
+}
+
+export interface TypeExplorerContainerQuery_runtimeTypeOrError_RegularRuntimeType_outputSchemaType_CompositeConfigType_innerTypes_EnumConfigType {
+  key: string;
+  name: string | null;
+  description: string | null;
+  isList: boolean;
+  isNullable: boolean;
+  isSelector: boolean;
+  innerTypes: TypeExplorerContainerQuery_runtimeTypeOrError_RegularRuntimeType_outputSchemaType_CompositeConfigType_innerTypes_EnumConfigType_innerTypes[];
+}
+
+export interface TypeExplorerContainerQuery_runtimeTypeOrError_RegularRuntimeType_outputSchemaType_CompositeConfigType_innerTypes_CompositeConfigType_innerTypes {
+  key: string;
+}
+
+export interface TypeExplorerContainerQuery_runtimeTypeOrError_RegularRuntimeType_outputSchemaType_CompositeConfigType_innerTypes_CompositeConfigType_fields_configType {
+  key: string;
+}
+
+export interface TypeExplorerContainerQuery_runtimeTypeOrError_RegularRuntimeType_outputSchemaType_CompositeConfigType_innerTypes_CompositeConfigType_fields {
+  name: string;
+  description: string | null;
+  isOptional: boolean;
+  configType: TypeExplorerContainerQuery_runtimeTypeOrError_RegularRuntimeType_outputSchemaType_CompositeConfigType_innerTypes_CompositeConfigType_fields_configType;
+}
+
+export interface TypeExplorerContainerQuery_runtimeTypeOrError_RegularRuntimeType_outputSchemaType_CompositeConfigType_innerTypes_CompositeConfigType {
+  key: string;
+  name: string | null;
+  description: string | null;
+  isList: boolean;
+  isNullable: boolean;
+  isSelector: boolean;
+  innerTypes: TypeExplorerContainerQuery_runtimeTypeOrError_RegularRuntimeType_outputSchemaType_CompositeConfigType_innerTypes_CompositeConfigType_innerTypes[];
+  fields: TypeExplorerContainerQuery_runtimeTypeOrError_RegularRuntimeType_outputSchemaType_CompositeConfigType_innerTypes_CompositeConfigType_fields[];
+}
+
+export type TypeExplorerContainerQuery_runtimeTypeOrError_RegularRuntimeType_outputSchemaType_CompositeConfigType_innerTypes = TypeExplorerContainerQuery_runtimeTypeOrError_RegularRuntimeType_outputSchemaType_CompositeConfigType_innerTypes_EnumConfigType | TypeExplorerContainerQuery_runtimeTypeOrError_RegularRuntimeType_outputSchemaType_CompositeConfigType_innerTypes_CompositeConfigType;
+
+export interface TypeExplorerContainerQuery_runtimeTypeOrError_RegularRuntimeType_outputSchemaType_CompositeConfigType_fields_configType {
+  key: string;
+}
+
+export interface TypeExplorerContainerQuery_runtimeTypeOrError_RegularRuntimeType_outputSchemaType_CompositeConfigType_fields {
+  name: string;
+  description: string | null;
+  isOptional: boolean;
+  configType: TypeExplorerContainerQuery_runtimeTypeOrError_RegularRuntimeType_outputSchemaType_CompositeConfigType_fields_configType;
+}
+
+export interface TypeExplorerContainerQuery_runtimeTypeOrError_RegularRuntimeType_outputSchemaType_CompositeConfigType {
+  key: string;
+  name: string | null;
+  description: string | null;
+  isList: boolean;
+  isNullable: boolean;
+  isSelector: boolean;
+  innerTypes: TypeExplorerContainerQuery_runtimeTypeOrError_RegularRuntimeType_outputSchemaType_CompositeConfigType_innerTypes[];
+  fields: TypeExplorerContainerQuery_runtimeTypeOrError_RegularRuntimeType_outputSchemaType_CompositeConfigType_fields[];
+}
+
+export type TypeExplorerContainerQuery_runtimeTypeOrError_RegularRuntimeType_outputSchemaType = TypeExplorerContainerQuery_runtimeTypeOrError_RegularRuntimeType_outputSchemaType_EnumConfigType | TypeExplorerContainerQuery_runtimeTypeOrError_RegularRuntimeType_outputSchemaType_CompositeConfigType;
+
+export interface TypeExplorerContainerQuery_runtimeTypeOrError_RegularRuntimeType {
+  __typename: "RegularRuntimeType";
+  name: string | null;
+  description: string | null;
+  inputSchemaType: TypeExplorerContainerQuery_runtimeTypeOrError_RegularRuntimeType_inputSchemaType | null;
+  outputSchemaType: TypeExplorerContainerQuery_runtimeTypeOrError_RegularRuntimeType_outputSchemaType | null;
+}
+
+export type TypeExplorerContainerQuery_runtimeTypeOrError = TypeExplorerContainerQuery_runtimeTypeOrError_PipelineNotFoundError | TypeExplorerContainerQuery_runtimeTypeOrError_RegularRuntimeType;
 
 export interface TypeExplorerContainerQuery {
-  type: TypeExplorerContainerQuery_type | null;
+  runtimeTypeOrError: TypeExplorerContainerQuery_runtimeTypeOrError;
 }
 
 export interface TypeExplorerContainerQueryVariables {
   pipelineName: string;
-  typeName: string;
+  runtimeTypeName: string;
 }
 
 /* tslint:disable */
@@ -190,7 +298,7 @@ export enum PipelineRunStatus {
   SUCCESS = "SUCCESS",
 }
 
-export enum StepTag {
+export enum StepKind {
   INPUT_EXPECTATION = "INPUT_EXPECTATION",
   INPUT_THUNK = "INPUT_THUNK",
   JOIN = "JOIN",

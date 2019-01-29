@@ -12,150 +12,126 @@ export interface PipelineExplorerSolidFragment_definition_metadata {
   value: string;
 }
 
-export interface PipelineExplorerSolidFragment_definition_configDefinition_type_RegularType_innerTypes_RegularType_innerTypes {
-  name: string;
+export interface PipelineExplorerSolidFragment_definition_configDefinition_configType_EnumConfigType_innerTypes_EnumConfigType_innerTypes {
+  key: string;
 }
 
-export interface PipelineExplorerSolidFragment_definition_configDefinition_type_RegularType_innerTypes_RegularType_typeAttributes {
-  isNamed: boolean;
-}
-
-export interface PipelineExplorerSolidFragment_definition_configDefinition_type_RegularType_innerTypes_RegularType {
-  name: string;
+export interface PipelineExplorerSolidFragment_definition_configDefinition_configType_EnumConfigType_innerTypes_EnumConfigType {
+  key: string;
+  name: string | null;
   description: string | null;
-  isDict: boolean;
   isList: boolean;
   isNullable: boolean;
-  innerTypes: PipelineExplorerSolidFragment_definition_configDefinition_type_RegularType_innerTypes_RegularType_innerTypes[];
-  typeAttributes: PipelineExplorerSolidFragment_definition_configDefinition_type_RegularType_innerTypes_RegularType_typeAttributes;
+  isSelector: boolean;
+  innerTypes: PipelineExplorerSolidFragment_definition_configDefinition_configType_EnumConfigType_innerTypes_EnumConfigType_innerTypes[];
 }
 
-export interface PipelineExplorerSolidFragment_definition_configDefinition_type_RegularType_innerTypes_CompositeType_innerTypes {
-  name: string;
+export interface PipelineExplorerSolidFragment_definition_configDefinition_configType_EnumConfigType_innerTypes_CompositeConfigType_innerTypes {
+  key: string;
 }
 
-export interface PipelineExplorerSolidFragment_definition_configDefinition_type_RegularType_innerTypes_CompositeType_typeAttributes {
-  isNamed: boolean;
+export interface PipelineExplorerSolidFragment_definition_configDefinition_configType_EnumConfigType_innerTypes_CompositeConfigType_fields_configType {
+  key: string;
 }
 
-export interface PipelineExplorerSolidFragment_definition_configDefinition_type_RegularType_innerTypes_CompositeType_fields_type {
-  name: string;
-}
-
-export interface PipelineExplorerSolidFragment_definition_configDefinition_type_RegularType_innerTypes_CompositeType_fields {
+export interface PipelineExplorerSolidFragment_definition_configDefinition_configType_EnumConfigType_innerTypes_CompositeConfigType_fields {
   name: string;
   description: string | null;
-  type: PipelineExplorerSolidFragment_definition_configDefinition_type_RegularType_innerTypes_CompositeType_fields_type;
   isOptional: boolean;
+  configType: PipelineExplorerSolidFragment_definition_configDefinition_configType_EnumConfigType_innerTypes_CompositeConfigType_fields_configType;
 }
 
-export interface PipelineExplorerSolidFragment_definition_configDefinition_type_RegularType_innerTypes_CompositeType {
-  name: string;
+export interface PipelineExplorerSolidFragment_definition_configDefinition_configType_EnumConfigType_innerTypes_CompositeConfigType {
+  key: string;
+  name: string | null;
   description: string | null;
-  isDict: boolean;
   isList: boolean;
   isNullable: boolean;
-  innerTypes: PipelineExplorerSolidFragment_definition_configDefinition_type_RegularType_innerTypes_CompositeType_innerTypes[];
-  typeAttributes: PipelineExplorerSolidFragment_definition_configDefinition_type_RegularType_innerTypes_CompositeType_typeAttributes;
-  fields: PipelineExplorerSolidFragment_definition_configDefinition_type_RegularType_innerTypes_CompositeType_fields[];
+  isSelector: boolean;
+  innerTypes: PipelineExplorerSolidFragment_definition_configDefinition_configType_EnumConfigType_innerTypes_CompositeConfigType_innerTypes[];
+  fields: PipelineExplorerSolidFragment_definition_configDefinition_configType_EnumConfigType_innerTypes_CompositeConfigType_fields[];
 }
 
-export type PipelineExplorerSolidFragment_definition_configDefinition_type_RegularType_innerTypes = PipelineExplorerSolidFragment_definition_configDefinition_type_RegularType_innerTypes_RegularType | PipelineExplorerSolidFragment_definition_configDefinition_type_RegularType_innerTypes_CompositeType;
+export type PipelineExplorerSolidFragment_definition_configDefinition_configType_EnumConfigType_innerTypes = PipelineExplorerSolidFragment_definition_configDefinition_configType_EnumConfigType_innerTypes_EnumConfigType | PipelineExplorerSolidFragment_definition_configDefinition_configType_EnumConfigType_innerTypes_CompositeConfigType;
 
-export interface PipelineExplorerSolidFragment_definition_configDefinition_type_RegularType_typeAttributes {
-  isNamed: boolean;
-}
-
-export interface PipelineExplorerSolidFragment_definition_configDefinition_type_RegularType {
-  name: string;
+export interface PipelineExplorerSolidFragment_definition_configDefinition_configType_EnumConfigType {
+  name: string | null;
   description: string | null;
-  isDict: boolean;
+  key: string;
   isList: boolean;
   isNullable: boolean;
-  innerTypes: PipelineExplorerSolidFragment_definition_configDefinition_type_RegularType_innerTypes[];
-  typeAttributes: PipelineExplorerSolidFragment_definition_configDefinition_type_RegularType_typeAttributes;
+  isSelector: boolean;
+  innerTypes: PipelineExplorerSolidFragment_definition_configDefinition_configType_EnumConfigType_innerTypes[];
 }
 
-export interface PipelineExplorerSolidFragment_definition_configDefinition_type_CompositeType_innerTypes_RegularType_innerTypes {
-  name: string;
+export interface PipelineExplorerSolidFragment_definition_configDefinition_configType_CompositeConfigType_innerTypes_EnumConfigType_innerTypes {
+  key: string;
 }
 
-export interface PipelineExplorerSolidFragment_definition_configDefinition_type_CompositeType_innerTypes_RegularType_typeAttributes {
-  isNamed: boolean;
-}
-
-export interface PipelineExplorerSolidFragment_definition_configDefinition_type_CompositeType_innerTypes_RegularType {
-  name: string;
+export interface PipelineExplorerSolidFragment_definition_configDefinition_configType_CompositeConfigType_innerTypes_EnumConfigType {
+  key: string;
+  name: string | null;
   description: string | null;
-  isDict: boolean;
   isList: boolean;
   isNullable: boolean;
-  innerTypes: PipelineExplorerSolidFragment_definition_configDefinition_type_CompositeType_innerTypes_RegularType_innerTypes[];
-  typeAttributes: PipelineExplorerSolidFragment_definition_configDefinition_type_CompositeType_innerTypes_RegularType_typeAttributes;
+  isSelector: boolean;
+  innerTypes: PipelineExplorerSolidFragment_definition_configDefinition_configType_CompositeConfigType_innerTypes_EnumConfigType_innerTypes[];
 }
 
-export interface PipelineExplorerSolidFragment_definition_configDefinition_type_CompositeType_innerTypes_CompositeType_innerTypes {
-  name: string;
+export interface PipelineExplorerSolidFragment_definition_configDefinition_configType_CompositeConfigType_innerTypes_CompositeConfigType_innerTypes {
+  key: string;
 }
 
-export interface PipelineExplorerSolidFragment_definition_configDefinition_type_CompositeType_innerTypes_CompositeType_typeAttributes {
-  isNamed: boolean;
+export interface PipelineExplorerSolidFragment_definition_configDefinition_configType_CompositeConfigType_innerTypes_CompositeConfigType_fields_configType {
+  key: string;
 }
 
-export interface PipelineExplorerSolidFragment_definition_configDefinition_type_CompositeType_innerTypes_CompositeType_fields_type {
-  name: string;
-}
-
-export interface PipelineExplorerSolidFragment_definition_configDefinition_type_CompositeType_innerTypes_CompositeType_fields {
+export interface PipelineExplorerSolidFragment_definition_configDefinition_configType_CompositeConfigType_innerTypes_CompositeConfigType_fields {
   name: string;
   description: string | null;
-  type: PipelineExplorerSolidFragment_definition_configDefinition_type_CompositeType_innerTypes_CompositeType_fields_type;
   isOptional: boolean;
+  configType: PipelineExplorerSolidFragment_definition_configDefinition_configType_CompositeConfigType_innerTypes_CompositeConfigType_fields_configType;
 }
 
-export interface PipelineExplorerSolidFragment_definition_configDefinition_type_CompositeType_innerTypes_CompositeType {
-  name: string;
+export interface PipelineExplorerSolidFragment_definition_configDefinition_configType_CompositeConfigType_innerTypes_CompositeConfigType {
+  key: string;
+  name: string | null;
   description: string | null;
-  isDict: boolean;
   isList: boolean;
   isNullable: boolean;
-  innerTypes: PipelineExplorerSolidFragment_definition_configDefinition_type_CompositeType_innerTypes_CompositeType_innerTypes[];
-  typeAttributes: PipelineExplorerSolidFragment_definition_configDefinition_type_CompositeType_innerTypes_CompositeType_typeAttributes;
-  fields: PipelineExplorerSolidFragment_definition_configDefinition_type_CompositeType_innerTypes_CompositeType_fields[];
+  isSelector: boolean;
+  innerTypes: PipelineExplorerSolidFragment_definition_configDefinition_configType_CompositeConfigType_innerTypes_CompositeConfigType_innerTypes[];
+  fields: PipelineExplorerSolidFragment_definition_configDefinition_configType_CompositeConfigType_innerTypes_CompositeConfigType_fields[];
 }
 
-export type PipelineExplorerSolidFragment_definition_configDefinition_type_CompositeType_innerTypes = PipelineExplorerSolidFragment_definition_configDefinition_type_CompositeType_innerTypes_RegularType | PipelineExplorerSolidFragment_definition_configDefinition_type_CompositeType_innerTypes_CompositeType;
+export type PipelineExplorerSolidFragment_definition_configDefinition_configType_CompositeConfigType_innerTypes = PipelineExplorerSolidFragment_definition_configDefinition_configType_CompositeConfigType_innerTypes_EnumConfigType | PipelineExplorerSolidFragment_definition_configDefinition_configType_CompositeConfigType_innerTypes_CompositeConfigType;
 
-export interface PipelineExplorerSolidFragment_definition_configDefinition_type_CompositeType_typeAttributes {
-  isNamed: boolean;
+export interface PipelineExplorerSolidFragment_definition_configDefinition_configType_CompositeConfigType_fields_configType {
+  key: string;
 }
 
-export interface PipelineExplorerSolidFragment_definition_configDefinition_type_CompositeType_fields_type {
-  name: string;
-}
-
-export interface PipelineExplorerSolidFragment_definition_configDefinition_type_CompositeType_fields {
+export interface PipelineExplorerSolidFragment_definition_configDefinition_configType_CompositeConfigType_fields {
   name: string;
   description: string | null;
-  type: PipelineExplorerSolidFragment_definition_configDefinition_type_CompositeType_fields_type;
   isOptional: boolean;
+  configType: PipelineExplorerSolidFragment_definition_configDefinition_configType_CompositeConfigType_fields_configType;
 }
 
-export interface PipelineExplorerSolidFragment_definition_configDefinition_type_CompositeType {
-  name: string;
+export interface PipelineExplorerSolidFragment_definition_configDefinition_configType_CompositeConfigType {
+  name: string | null;
   description: string | null;
-  isDict: boolean;
+  key: string;
   isList: boolean;
   isNullable: boolean;
-  innerTypes: PipelineExplorerSolidFragment_definition_configDefinition_type_CompositeType_innerTypes[];
-  typeAttributes: PipelineExplorerSolidFragment_definition_configDefinition_type_CompositeType_typeAttributes;
-  fields: PipelineExplorerSolidFragment_definition_configDefinition_type_CompositeType_fields[];
+  isSelector: boolean;
+  innerTypes: PipelineExplorerSolidFragment_definition_configDefinition_configType_CompositeConfigType_innerTypes[];
+  fields: PipelineExplorerSolidFragment_definition_configDefinition_configType_CompositeConfigType_fields[];
 }
 
-export type PipelineExplorerSolidFragment_definition_configDefinition_type = PipelineExplorerSolidFragment_definition_configDefinition_type_RegularType | PipelineExplorerSolidFragment_definition_configDefinition_type_CompositeType;
+export type PipelineExplorerSolidFragment_definition_configDefinition_configType = PipelineExplorerSolidFragment_definition_configDefinition_configType_EnumConfigType | PipelineExplorerSolidFragment_definition_configDefinition_configType_CompositeConfigType;
 
 export interface PipelineExplorerSolidFragment_definition_configDefinition {
-  type: PipelineExplorerSolidFragment_definition_configDefinition_type;
+  configType: PipelineExplorerSolidFragment_definition_configDefinition_configType;
 }
 
 export interface PipelineExplorerSolidFragment_definition {
@@ -164,14 +140,9 @@ export interface PipelineExplorerSolidFragment_definition {
   description: string | null;
 }
 
-export interface PipelineExplorerSolidFragment_inputs_definition_type_typeAttributes {
-  isNamed: boolean;
-}
-
 export interface PipelineExplorerSolidFragment_inputs_definition_type {
-  name: string;
+  name: string | null;
   description: string | null;
-  typeAttributes: PipelineExplorerSolidFragment_inputs_definition_type_typeAttributes;
 }
 
 export interface PipelineExplorerSolidFragment_inputs_definition_expectations {
@@ -204,14 +175,9 @@ export interface PipelineExplorerSolidFragment_inputs {
   dependsOn: PipelineExplorerSolidFragment_inputs_dependsOn | null;
 }
 
-export interface PipelineExplorerSolidFragment_outputs_definition_type_typeAttributes {
-  isNamed: boolean;
-}
-
 export interface PipelineExplorerSolidFragment_outputs_definition_type {
-  name: string;
+  name: string | null;
   description: string | null;
-  typeAttributes: PipelineExplorerSolidFragment_outputs_definition_type_typeAttributes;
 }
 
 export interface PipelineExplorerSolidFragment_outputs_definition_expectations {
@@ -278,7 +244,7 @@ export enum PipelineRunStatus {
   SUCCESS = "SUCCESS",
 }
 
-export enum StepTag {
+export enum StepKind {
   INPUT_EXPECTATION = "INPUT_EXPECTATION",
   INPUT_THUNK = "INPUT_THUNK",
   JOIN = "JOIN",

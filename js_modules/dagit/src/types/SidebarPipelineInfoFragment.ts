@@ -7,296 +7,248 @@
 // GraphQL fragment: SidebarPipelineInfoFragment
 // ====================================================
 
-export interface SidebarPipelineInfoFragment_contexts_config_type_RegularType_innerTypes_RegularType_innerTypes {
-  name: string;
+export interface SidebarPipelineInfoFragment_contexts_config_configType_EnumConfigType_innerTypes_EnumConfigType_innerTypes {
+  key: string;
 }
 
-export interface SidebarPipelineInfoFragment_contexts_config_type_RegularType_innerTypes_RegularType_typeAttributes {
-  isNamed: boolean;
-}
-
-export interface SidebarPipelineInfoFragment_contexts_config_type_RegularType_innerTypes_RegularType {
-  name: string;
+export interface SidebarPipelineInfoFragment_contexts_config_configType_EnumConfigType_innerTypes_EnumConfigType {
+  key: string;
+  name: string | null;
   description: string | null;
-  isDict: boolean;
   isList: boolean;
   isNullable: boolean;
-  innerTypes: SidebarPipelineInfoFragment_contexts_config_type_RegularType_innerTypes_RegularType_innerTypes[];
-  typeAttributes: SidebarPipelineInfoFragment_contexts_config_type_RegularType_innerTypes_RegularType_typeAttributes;
+  isSelector: boolean;
+  innerTypes: SidebarPipelineInfoFragment_contexts_config_configType_EnumConfigType_innerTypes_EnumConfigType_innerTypes[];
 }
 
-export interface SidebarPipelineInfoFragment_contexts_config_type_RegularType_innerTypes_CompositeType_innerTypes {
-  name: string;
+export interface SidebarPipelineInfoFragment_contexts_config_configType_EnumConfigType_innerTypes_CompositeConfigType_innerTypes {
+  key: string;
 }
 
-export interface SidebarPipelineInfoFragment_contexts_config_type_RegularType_innerTypes_CompositeType_typeAttributes {
-  isNamed: boolean;
+export interface SidebarPipelineInfoFragment_contexts_config_configType_EnumConfigType_innerTypes_CompositeConfigType_fields_configType {
+  key: string;
 }
 
-export interface SidebarPipelineInfoFragment_contexts_config_type_RegularType_innerTypes_CompositeType_fields_type {
-  name: string;
-}
-
-export interface SidebarPipelineInfoFragment_contexts_config_type_RegularType_innerTypes_CompositeType_fields {
+export interface SidebarPipelineInfoFragment_contexts_config_configType_EnumConfigType_innerTypes_CompositeConfigType_fields {
   name: string;
   description: string | null;
-  type: SidebarPipelineInfoFragment_contexts_config_type_RegularType_innerTypes_CompositeType_fields_type;
   isOptional: boolean;
+  configType: SidebarPipelineInfoFragment_contexts_config_configType_EnumConfigType_innerTypes_CompositeConfigType_fields_configType;
 }
 
-export interface SidebarPipelineInfoFragment_contexts_config_type_RegularType_innerTypes_CompositeType {
-  name: string;
+export interface SidebarPipelineInfoFragment_contexts_config_configType_EnumConfigType_innerTypes_CompositeConfigType {
+  key: string;
+  name: string | null;
   description: string | null;
-  isDict: boolean;
   isList: boolean;
   isNullable: boolean;
-  innerTypes: SidebarPipelineInfoFragment_contexts_config_type_RegularType_innerTypes_CompositeType_innerTypes[];
-  typeAttributes: SidebarPipelineInfoFragment_contexts_config_type_RegularType_innerTypes_CompositeType_typeAttributes;
-  fields: SidebarPipelineInfoFragment_contexts_config_type_RegularType_innerTypes_CompositeType_fields[];
+  isSelector: boolean;
+  innerTypes: SidebarPipelineInfoFragment_contexts_config_configType_EnumConfigType_innerTypes_CompositeConfigType_innerTypes[];
+  fields: SidebarPipelineInfoFragment_contexts_config_configType_EnumConfigType_innerTypes_CompositeConfigType_fields[];
 }
 
-export type SidebarPipelineInfoFragment_contexts_config_type_RegularType_innerTypes = SidebarPipelineInfoFragment_contexts_config_type_RegularType_innerTypes_RegularType | SidebarPipelineInfoFragment_contexts_config_type_RegularType_innerTypes_CompositeType;
+export type SidebarPipelineInfoFragment_contexts_config_configType_EnumConfigType_innerTypes = SidebarPipelineInfoFragment_contexts_config_configType_EnumConfigType_innerTypes_EnumConfigType | SidebarPipelineInfoFragment_contexts_config_configType_EnumConfigType_innerTypes_CompositeConfigType;
 
-export interface SidebarPipelineInfoFragment_contexts_config_type_RegularType_typeAttributes {
-  isNamed: boolean;
-}
-
-export interface SidebarPipelineInfoFragment_contexts_config_type_RegularType {
-  name: string;
+export interface SidebarPipelineInfoFragment_contexts_config_configType_EnumConfigType {
+  key: string;
+  name: string | null;
   description: string | null;
-  isDict: boolean;
   isList: boolean;
   isNullable: boolean;
-  innerTypes: SidebarPipelineInfoFragment_contexts_config_type_RegularType_innerTypes[];
-  typeAttributes: SidebarPipelineInfoFragment_contexts_config_type_RegularType_typeAttributes;
+  isSelector: boolean;
+  innerTypes: SidebarPipelineInfoFragment_contexts_config_configType_EnumConfigType_innerTypes[];
 }
 
-export interface SidebarPipelineInfoFragment_contexts_config_type_CompositeType_innerTypes_RegularType_innerTypes {
-  name: string;
+export interface SidebarPipelineInfoFragment_contexts_config_configType_CompositeConfigType_innerTypes_EnumConfigType_innerTypes {
+  key: string;
 }
 
-export interface SidebarPipelineInfoFragment_contexts_config_type_CompositeType_innerTypes_RegularType_typeAttributes {
-  isNamed: boolean;
-}
-
-export interface SidebarPipelineInfoFragment_contexts_config_type_CompositeType_innerTypes_RegularType {
-  name: string;
+export interface SidebarPipelineInfoFragment_contexts_config_configType_CompositeConfigType_innerTypes_EnumConfigType {
+  key: string;
+  name: string | null;
   description: string | null;
-  isDict: boolean;
   isList: boolean;
   isNullable: boolean;
-  innerTypes: SidebarPipelineInfoFragment_contexts_config_type_CompositeType_innerTypes_RegularType_innerTypes[];
-  typeAttributes: SidebarPipelineInfoFragment_contexts_config_type_CompositeType_innerTypes_RegularType_typeAttributes;
+  isSelector: boolean;
+  innerTypes: SidebarPipelineInfoFragment_contexts_config_configType_CompositeConfigType_innerTypes_EnumConfigType_innerTypes[];
 }
 
-export interface SidebarPipelineInfoFragment_contexts_config_type_CompositeType_innerTypes_CompositeType_innerTypes {
-  name: string;
+export interface SidebarPipelineInfoFragment_contexts_config_configType_CompositeConfigType_innerTypes_CompositeConfigType_innerTypes {
+  key: string;
 }
 
-export interface SidebarPipelineInfoFragment_contexts_config_type_CompositeType_innerTypes_CompositeType_typeAttributes {
-  isNamed: boolean;
+export interface SidebarPipelineInfoFragment_contexts_config_configType_CompositeConfigType_innerTypes_CompositeConfigType_fields_configType {
+  key: string;
 }
 
-export interface SidebarPipelineInfoFragment_contexts_config_type_CompositeType_innerTypes_CompositeType_fields_type {
-  name: string;
-}
-
-export interface SidebarPipelineInfoFragment_contexts_config_type_CompositeType_innerTypes_CompositeType_fields {
+export interface SidebarPipelineInfoFragment_contexts_config_configType_CompositeConfigType_innerTypes_CompositeConfigType_fields {
   name: string;
   description: string | null;
-  type: SidebarPipelineInfoFragment_contexts_config_type_CompositeType_innerTypes_CompositeType_fields_type;
   isOptional: boolean;
+  configType: SidebarPipelineInfoFragment_contexts_config_configType_CompositeConfigType_innerTypes_CompositeConfigType_fields_configType;
 }
 
-export interface SidebarPipelineInfoFragment_contexts_config_type_CompositeType_innerTypes_CompositeType {
-  name: string;
+export interface SidebarPipelineInfoFragment_contexts_config_configType_CompositeConfigType_innerTypes_CompositeConfigType {
+  key: string;
+  name: string | null;
   description: string | null;
-  isDict: boolean;
   isList: boolean;
   isNullable: boolean;
-  innerTypes: SidebarPipelineInfoFragment_contexts_config_type_CompositeType_innerTypes_CompositeType_innerTypes[];
-  typeAttributes: SidebarPipelineInfoFragment_contexts_config_type_CompositeType_innerTypes_CompositeType_typeAttributes;
-  fields: SidebarPipelineInfoFragment_contexts_config_type_CompositeType_innerTypes_CompositeType_fields[];
+  isSelector: boolean;
+  innerTypes: SidebarPipelineInfoFragment_contexts_config_configType_CompositeConfigType_innerTypes_CompositeConfigType_innerTypes[];
+  fields: SidebarPipelineInfoFragment_contexts_config_configType_CompositeConfigType_innerTypes_CompositeConfigType_fields[];
 }
 
-export type SidebarPipelineInfoFragment_contexts_config_type_CompositeType_innerTypes = SidebarPipelineInfoFragment_contexts_config_type_CompositeType_innerTypes_RegularType | SidebarPipelineInfoFragment_contexts_config_type_CompositeType_innerTypes_CompositeType;
+export type SidebarPipelineInfoFragment_contexts_config_configType_CompositeConfigType_innerTypes = SidebarPipelineInfoFragment_contexts_config_configType_CompositeConfigType_innerTypes_EnumConfigType | SidebarPipelineInfoFragment_contexts_config_configType_CompositeConfigType_innerTypes_CompositeConfigType;
 
-export interface SidebarPipelineInfoFragment_contexts_config_type_CompositeType_typeAttributes {
-  isNamed: boolean;
+export interface SidebarPipelineInfoFragment_contexts_config_configType_CompositeConfigType_fields_configType {
+  key: string;
 }
 
-export interface SidebarPipelineInfoFragment_contexts_config_type_CompositeType_fields_type {
-  name: string;
-}
-
-export interface SidebarPipelineInfoFragment_contexts_config_type_CompositeType_fields {
+export interface SidebarPipelineInfoFragment_contexts_config_configType_CompositeConfigType_fields {
   name: string;
   description: string | null;
-  type: SidebarPipelineInfoFragment_contexts_config_type_CompositeType_fields_type;
   isOptional: boolean;
+  configType: SidebarPipelineInfoFragment_contexts_config_configType_CompositeConfigType_fields_configType;
 }
 
-export interface SidebarPipelineInfoFragment_contexts_config_type_CompositeType {
-  name: string;
+export interface SidebarPipelineInfoFragment_contexts_config_configType_CompositeConfigType {
+  key: string;
+  name: string | null;
   description: string | null;
-  isDict: boolean;
   isList: boolean;
   isNullable: boolean;
-  innerTypes: SidebarPipelineInfoFragment_contexts_config_type_CompositeType_innerTypes[];
-  typeAttributes: SidebarPipelineInfoFragment_contexts_config_type_CompositeType_typeAttributes;
-  fields: SidebarPipelineInfoFragment_contexts_config_type_CompositeType_fields[];
+  isSelector: boolean;
+  innerTypes: SidebarPipelineInfoFragment_contexts_config_configType_CompositeConfigType_innerTypes[];
+  fields: SidebarPipelineInfoFragment_contexts_config_configType_CompositeConfigType_fields[];
 }
 
-export type SidebarPipelineInfoFragment_contexts_config_type = SidebarPipelineInfoFragment_contexts_config_type_RegularType | SidebarPipelineInfoFragment_contexts_config_type_CompositeType;
+export type SidebarPipelineInfoFragment_contexts_config_configType = SidebarPipelineInfoFragment_contexts_config_configType_EnumConfigType | SidebarPipelineInfoFragment_contexts_config_configType_CompositeConfigType;
 
 export interface SidebarPipelineInfoFragment_contexts_config {
-  type: SidebarPipelineInfoFragment_contexts_config_type;
+  configType: SidebarPipelineInfoFragment_contexts_config_configType;
 }
 
-export interface SidebarPipelineInfoFragment_contexts_resources_config_type_RegularType_innerTypes_RegularType_innerTypes {
-  name: string;
+export interface SidebarPipelineInfoFragment_contexts_resources_config_configType_EnumConfigType_innerTypes_EnumConfigType_innerTypes {
+  key: string;
 }
 
-export interface SidebarPipelineInfoFragment_contexts_resources_config_type_RegularType_innerTypes_RegularType_typeAttributes {
-  isNamed: boolean;
-}
-
-export interface SidebarPipelineInfoFragment_contexts_resources_config_type_RegularType_innerTypes_RegularType {
-  name: string;
+export interface SidebarPipelineInfoFragment_contexts_resources_config_configType_EnumConfigType_innerTypes_EnumConfigType {
+  key: string;
+  name: string | null;
   description: string | null;
-  isDict: boolean;
   isList: boolean;
   isNullable: boolean;
-  innerTypes: SidebarPipelineInfoFragment_contexts_resources_config_type_RegularType_innerTypes_RegularType_innerTypes[];
-  typeAttributes: SidebarPipelineInfoFragment_contexts_resources_config_type_RegularType_innerTypes_RegularType_typeAttributes;
+  isSelector: boolean;
+  innerTypes: SidebarPipelineInfoFragment_contexts_resources_config_configType_EnumConfigType_innerTypes_EnumConfigType_innerTypes[];
 }
 
-export interface SidebarPipelineInfoFragment_contexts_resources_config_type_RegularType_innerTypes_CompositeType_innerTypes {
-  name: string;
+export interface SidebarPipelineInfoFragment_contexts_resources_config_configType_EnumConfigType_innerTypes_CompositeConfigType_innerTypes {
+  key: string;
 }
 
-export interface SidebarPipelineInfoFragment_contexts_resources_config_type_RegularType_innerTypes_CompositeType_typeAttributes {
-  isNamed: boolean;
+export interface SidebarPipelineInfoFragment_contexts_resources_config_configType_EnumConfigType_innerTypes_CompositeConfigType_fields_configType {
+  key: string;
 }
 
-export interface SidebarPipelineInfoFragment_contexts_resources_config_type_RegularType_innerTypes_CompositeType_fields_type {
-  name: string;
-}
-
-export interface SidebarPipelineInfoFragment_contexts_resources_config_type_RegularType_innerTypes_CompositeType_fields {
+export interface SidebarPipelineInfoFragment_contexts_resources_config_configType_EnumConfigType_innerTypes_CompositeConfigType_fields {
   name: string;
   description: string | null;
-  type: SidebarPipelineInfoFragment_contexts_resources_config_type_RegularType_innerTypes_CompositeType_fields_type;
   isOptional: boolean;
+  configType: SidebarPipelineInfoFragment_contexts_resources_config_configType_EnumConfigType_innerTypes_CompositeConfigType_fields_configType;
 }
 
-export interface SidebarPipelineInfoFragment_contexts_resources_config_type_RegularType_innerTypes_CompositeType {
-  name: string;
+export interface SidebarPipelineInfoFragment_contexts_resources_config_configType_EnumConfigType_innerTypes_CompositeConfigType {
+  key: string;
+  name: string | null;
   description: string | null;
-  isDict: boolean;
   isList: boolean;
   isNullable: boolean;
-  innerTypes: SidebarPipelineInfoFragment_contexts_resources_config_type_RegularType_innerTypes_CompositeType_innerTypes[];
-  typeAttributes: SidebarPipelineInfoFragment_contexts_resources_config_type_RegularType_innerTypes_CompositeType_typeAttributes;
-  fields: SidebarPipelineInfoFragment_contexts_resources_config_type_RegularType_innerTypes_CompositeType_fields[];
+  isSelector: boolean;
+  innerTypes: SidebarPipelineInfoFragment_contexts_resources_config_configType_EnumConfigType_innerTypes_CompositeConfigType_innerTypes[];
+  fields: SidebarPipelineInfoFragment_contexts_resources_config_configType_EnumConfigType_innerTypes_CompositeConfigType_fields[];
 }
 
-export type SidebarPipelineInfoFragment_contexts_resources_config_type_RegularType_innerTypes = SidebarPipelineInfoFragment_contexts_resources_config_type_RegularType_innerTypes_RegularType | SidebarPipelineInfoFragment_contexts_resources_config_type_RegularType_innerTypes_CompositeType;
+export type SidebarPipelineInfoFragment_contexts_resources_config_configType_EnumConfigType_innerTypes = SidebarPipelineInfoFragment_contexts_resources_config_configType_EnumConfigType_innerTypes_EnumConfigType | SidebarPipelineInfoFragment_contexts_resources_config_configType_EnumConfigType_innerTypes_CompositeConfigType;
 
-export interface SidebarPipelineInfoFragment_contexts_resources_config_type_RegularType_typeAttributes {
-  isNamed: boolean;
-}
-
-export interface SidebarPipelineInfoFragment_contexts_resources_config_type_RegularType {
-  name: string;
+export interface SidebarPipelineInfoFragment_contexts_resources_config_configType_EnumConfigType {
+  key: string;
+  name: string | null;
   description: string | null;
-  isDict: boolean;
   isList: boolean;
   isNullable: boolean;
-  innerTypes: SidebarPipelineInfoFragment_contexts_resources_config_type_RegularType_innerTypes[];
-  typeAttributes: SidebarPipelineInfoFragment_contexts_resources_config_type_RegularType_typeAttributes;
+  isSelector: boolean;
+  innerTypes: SidebarPipelineInfoFragment_contexts_resources_config_configType_EnumConfigType_innerTypes[];
 }
 
-export interface SidebarPipelineInfoFragment_contexts_resources_config_type_CompositeType_innerTypes_RegularType_innerTypes {
-  name: string;
+export interface SidebarPipelineInfoFragment_contexts_resources_config_configType_CompositeConfigType_innerTypes_EnumConfigType_innerTypes {
+  key: string;
 }
 
-export interface SidebarPipelineInfoFragment_contexts_resources_config_type_CompositeType_innerTypes_RegularType_typeAttributes {
-  isNamed: boolean;
-}
-
-export interface SidebarPipelineInfoFragment_contexts_resources_config_type_CompositeType_innerTypes_RegularType {
-  name: string;
+export interface SidebarPipelineInfoFragment_contexts_resources_config_configType_CompositeConfigType_innerTypes_EnumConfigType {
+  key: string;
+  name: string | null;
   description: string | null;
-  isDict: boolean;
   isList: boolean;
   isNullable: boolean;
-  innerTypes: SidebarPipelineInfoFragment_contexts_resources_config_type_CompositeType_innerTypes_RegularType_innerTypes[];
-  typeAttributes: SidebarPipelineInfoFragment_contexts_resources_config_type_CompositeType_innerTypes_RegularType_typeAttributes;
+  isSelector: boolean;
+  innerTypes: SidebarPipelineInfoFragment_contexts_resources_config_configType_CompositeConfigType_innerTypes_EnumConfigType_innerTypes[];
 }
 
-export interface SidebarPipelineInfoFragment_contexts_resources_config_type_CompositeType_innerTypes_CompositeType_innerTypes {
-  name: string;
+export interface SidebarPipelineInfoFragment_contexts_resources_config_configType_CompositeConfigType_innerTypes_CompositeConfigType_innerTypes {
+  key: string;
 }
 
-export interface SidebarPipelineInfoFragment_contexts_resources_config_type_CompositeType_innerTypes_CompositeType_typeAttributes {
-  isNamed: boolean;
+export interface SidebarPipelineInfoFragment_contexts_resources_config_configType_CompositeConfigType_innerTypes_CompositeConfigType_fields_configType {
+  key: string;
 }
 
-export interface SidebarPipelineInfoFragment_contexts_resources_config_type_CompositeType_innerTypes_CompositeType_fields_type {
-  name: string;
-}
-
-export interface SidebarPipelineInfoFragment_contexts_resources_config_type_CompositeType_innerTypes_CompositeType_fields {
+export interface SidebarPipelineInfoFragment_contexts_resources_config_configType_CompositeConfigType_innerTypes_CompositeConfigType_fields {
   name: string;
   description: string | null;
-  type: SidebarPipelineInfoFragment_contexts_resources_config_type_CompositeType_innerTypes_CompositeType_fields_type;
   isOptional: boolean;
+  configType: SidebarPipelineInfoFragment_contexts_resources_config_configType_CompositeConfigType_innerTypes_CompositeConfigType_fields_configType;
 }
 
-export interface SidebarPipelineInfoFragment_contexts_resources_config_type_CompositeType_innerTypes_CompositeType {
-  name: string;
+export interface SidebarPipelineInfoFragment_contexts_resources_config_configType_CompositeConfigType_innerTypes_CompositeConfigType {
+  key: string;
+  name: string | null;
   description: string | null;
-  isDict: boolean;
   isList: boolean;
   isNullable: boolean;
-  innerTypes: SidebarPipelineInfoFragment_contexts_resources_config_type_CompositeType_innerTypes_CompositeType_innerTypes[];
-  typeAttributes: SidebarPipelineInfoFragment_contexts_resources_config_type_CompositeType_innerTypes_CompositeType_typeAttributes;
-  fields: SidebarPipelineInfoFragment_contexts_resources_config_type_CompositeType_innerTypes_CompositeType_fields[];
+  isSelector: boolean;
+  innerTypes: SidebarPipelineInfoFragment_contexts_resources_config_configType_CompositeConfigType_innerTypes_CompositeConfigType_innerTypes[];
+  fields: SidebarPipelineInfoFragment_contexts_resources_config_configType_CompositeConfigType_innerTypes_CompositeConfigType_fields[];
 }
 
-export type SidebarPipelineInfoFragment_contexts_resources_config_type_CompositeType_innerTypes = SidebarPipelineInfoFragment_contexts_resources_config_type_CompositeType_innerTypes_RegularType | SidebarPipelineInfoFragment_contexts_resources_config_type_CompositeType_innerTypes_CompositeType;
+export type SidebarPipelineInfoFragment_contexts_resources_config_configType_CompositeConfigType_innerTypes = SidebarPipelineInfoFragment_contexts_resources_config_configType_CompositeConfigType_innerTypes_EnumConfigType | SidebarPipelineInfoFragment_contexts_resources_config_configType_CompositeConfigType_innerTypes_CompositeConfigType;
 
-export interface SidebarPipelineInfoFragment_contexts_resources_config_type_CompositeType_typeAttributes {
-  isNamed: boolean;
+export interface SidebarPipelineInfoFragment_contexts_resources_config_configType_CompositeConfigType_fields_configType {
+  key: string;
 }
 
-export interface SidebarPipelineInfoFragment_contexts_resources_config_type_CompositeType_fields_type {
-  name: string;
-}
-
-export interface SidebarPipelineInfoFragment_contexts_resources_config_type_CompositeType_fields {
+export interface SidebarPipelineInfoFragment_contexts_resources_config_configType_CompositeConfigType_fields {
   name: string;
   description: string | null;
-  type: SidebarPipelineInfoFragment_contexts_resources_config_type_CompositeType_fields_type;
   isOptional: boolean;
+  configType: SidebarPipelineInfoFragment_contexts_resources_config_configType_CompositeConfigType_fields_configType;
 }
 
-export interface SidebarPipelineInfoFragment_contexts_resources_config_type_CompositeType {
-  name: string;
+export interface SidebarPipelineInfoFragment_contexts_resources_config_configType_CompositeConfigType {
+  key: string;
+  name: string | null;
   description: string | null;
-  isDict: boolean;
   isList: boolean;
   isNullable: boolean;
-  innerTypes: SidebarPipelineInfoFragment_contexts_resources_config_type_CompositeType_innerTypes[];
-  typeAttributes: SidebarPipelineInfoFragment_contexts_resources_config_type_CompositeType_typeAttributes;
-  fields: SidebarPipelineInfoFragment_contexts_resources_config_type_CompositeType_fields[];
+  isSelector: boolean;
+  innerTypes: SidebarPipelineInfoFragment_contexts_resources_config_configType_CompositeConfigType_innerTypes[];
+  fields: SidebarPipelineInfoFragment_contexts_resources_config_configType_CompositeConfigType_fields[];
 }
 
-export type SidebarPipelineInfoFragment_contexts_resources_config_type = SidebarPipelineInfoFragment_contexts_resources_config_type_RegularType | SidebarPipelineInfoFragment_contexts_resources_config_type_CompositeType;
+export type SidebarPipelineInfoFragment_contexts_resources_config_configType = SidebarPipelineInfoFragment_contexts_resources_config_configType_EnumConfigType | SidebarPipelineInfoFragment_contexts_resources_config_configType_CompositeConfigType;
 
 export interface SidebarPipelineInfoFragment_contexts_resources_config {
-  type: SidebarPipelineInfoFragment_contexts_resources_config_type;
+  configType: SidebarPipelineInfoFragment_contexts_resources_config_configType;
 }
 
 export interface SidebarPipelineInfoFragment_contexts_resources {
@@ -350,7 +302,7 @@ export enum PipelineRunStatus {
   SUCCESS = "SUCCESS",
 }
 
-export enum StepTag {
+export enum StepKind {
   INPUT_EXPECTATION = "INPUT_EXPECTATION",
   INPUT_THUNK = "INPUT_THUNK",
   JOIN = "JOIN",

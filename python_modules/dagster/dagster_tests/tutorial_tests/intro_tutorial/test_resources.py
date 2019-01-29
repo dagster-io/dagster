@@ -2,7 +2,7 @@ import runpy
 import sys
 import warnings
 
-from dagster import execute_pipeline, ReentrantInfo
+from dagster import execute_pipeline, ExecutionMetadata
 from dagster.tutorials.intro_tutorial.resources import define_resource_test_pipeline
 
 
@@ -26,7 +26,7 @@ def test_run_local():
             'context': {'local': {}},
             'solids': {'add_ints': {'inputs': {'num_one': {'value': 2}, 'num_two': {'value': 3}}}},
         },
-        reentrant_info=ReentrantInfo(event_callback=_event_callback),
+        execution_metadata=ExecutionMetadata(event_callback=_event_callback),
     )
 
     assert result.success
@@ -54,7 +54,7 @@ def test_run_cloud():
             },
             'solids': {'add_ints': {'inputs': {'num_one': {'value': 2}, 'num_two': {'value': 6}}}},
         },
-        reentrant_info=ReentrantInfo(event_callback=_event_callback),
+        execution_metadata=ExecutionMetadata(event_callback=_event_callback),
     )
 
     assert result.success

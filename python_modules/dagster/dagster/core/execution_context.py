@@ -4,14 +4,12 @@ import logging
 import uuid
 
 from collections import namedtuple
-from contextlib import contextmanager
 
 from dagster import check
+from dagster.utils import merge_dicts
 from dagster.utils.logging import CompositeLogger, INFO, define_colored_console_logger
 
 from .events import ExecutionEvents
-
-Metric = namedtuple('Metric', 'context_dict metric_name value')
 
 
 def _kv_message(all_items):
@@ -23,13 +21,13 @@ def _kv_message(all_items):
 DAGSTER_META_KEY = 'dagster_meta'
 
 
-class ExecutionContext(namedtuple('_ExecutionContext', 'loggers resources context_stack')):
-    def __new__(cls, loggers=None, resources=None, context_stack=None):
+class ExecutionContext(namedtuple('_ExecutionContext', 'loggers resources tags')):
+    def __new__(cls, loggers=None, resources=None, tags=None):
         return super(ExecutionContext, cls).__new__(
             cls,
             loggers=check.opt_list_param(loggers, 'loggers', logging.Logger),
             resources=resources,
-            context_stack=check.opt_dict_param(context_stack, 'context_stack'),
+            tags=check.opt_dict_param(tags, 'tags'),
         )
 
     @staticmethod
@@ -63,7 +61,15 @@ class RuntimeExecutionContext:
             ExecutionContext.
     '''
 
-    def __init__(self, run_id, loggers=None, resources=None, context_stack=None):
+    def __init__(
+        self,
+        run_id,
+        loggers=None,
+        resources=None,
+        event_callback=None,
+        environment_config=None,
+        tags=None,
+    ):
 
         if loggers is None:
             loggers = [define_colored_console_logger('dagster')]
@@ -71,8 +77,22 @@ class RuntimeExecutionContext:
         self._logger = CompositeLogger(loggers=loggers)
         self.resources = resources
         self._run_id = check.str_param(run_id, 'run_id')
-        self._context_stack = check.opt_dict_param(context_stack, 'context_stack')
+        self._tags = check.opt_dict_param(tags, 'tags')
         self.events = ExecutionEvents(self)
+
+        # For re-construction purposes later on
+        self._event_callback = check.opt_callable_param(event_callback, 'event_callback')
+        self._environment_config = environment_config
+
+    def for_step(self, step):
+        return RuntimeExecutionContext(
+            run_id=self.run_id,
+            loggers=self._logger.loggers,
+            resources=self.resources,
+            tags=merge_dicts(step.tags, self._tags),
+            environment_config=self.environment_config,
+            event_callback=self.event_callback,
+        )
 
     def _log(self, method, orig_message, message_props):
         check.str_param(method, 'method')
@@ -101,7 +121,7 @@ class RuntimeExecutionContext:
         # We first generate all props for the purpose of producing the semi-structured
         # log message via _kv_messsage
         all_props = dict(
-            itertools.chain(synth_props.items(), self._context_stack.items(), message_props.items())
+            itertools.chain(synth_props.items(), self._tags.items(), message_props.items())
         )
 
         message_with_structured_props = _kv_message(all_props.items())
@@ -162,68 +182,40 @@ class RuntimeExecutionContext:
         See debug()'''
         return self._log('critical', msg, kwargs)
 
-    def has_context_value(self, key):
+    def has_tag(self, key):
         check.str_param(key, 'key')
-        return key in self._context_stack
+        return key in self._tags
 
-    def get_context_value(self, key):
+    def get_tag(self, key):
         check.str_param(key, 'key')
-        return self._context_stack[key]
-
-    # FIXME: Actually make this work
-    # def exception(self, e):
-    #     check.inst_param(e, 'e', Exception)
-
-    #     # this is pretty lame right. should embellish with more data (stack trace?)
-    #     return self._log('error', str(e))
-
-    @contextmanager
-    def value(self, key, value):
-        '''
-        Adds a context value to the Execution for a particular scope, using the
-        python contextmanager abstraction. This allows the user to add scoped metadata
-        just like the framework does (for things such as solid name).
-
-        Examples:
-
-        .. code-block:: python
-
-            with context.value('some_key', 'some_value):
-                context.info('msg with some_key context value')
-
-            context.info('msg without some_key context value')
-
-        '''
-
-        check.str_param(key, 'key')
-        check.not_none_param(value, 'value')
-        with self.values({key: value}):
-            yield
-
-    @contextmanager
-    def values(self, ddict):
-        check.dict_param(ddict, 'ddict')
-
-        for key, value in ddict.items():
-            check.invariant(not key in self._context_stack, 'Should not be in context')
-            self._context_stack[key] = value
-
-        try:
-            yield
-        finally:
-            for key in ddict.keys():
-                self._context_stack.pop(key)
+        return self._tags[key]
 
     @property
     def run_id(self):
         return self._run_id
 
+    @property
+    def event_callback(self):
+        return self._event_callback
 
-class ReentrantInfo(namedtuple('_ReentrantInfo', 'run_id context_stack event_callback')):
-    def __new__(cls, run_id=None, context_stack=None, event_callback=None):
-        return super(ReentrantInfo, cls).__new__(
+    @property
+    def has_event_callback(self):
+        return self._event_callback is not None
+
+    @property
+    def environment_config(self):
+        return self._environment_config
+
+
+# class ReentrantInfo(namedtuple('_ReentrantInfo', 'run_id context_stack event_callback loggers')):
+#     def __new__(cls, run_id=None, context_stack=None, event_callback=None, loggers=None):
+#         return super(ReentrantInfo, cls).__new__(
+class ExecutionMetadata(namedtuple('_ExecutionMetadata', 'run_id tags event_callback loggers')):
+    def __new__(cls, run_id=None, tags=None, event_callback=None, loggers=None):
+        return super(ExecutionMetadata, cls).__new__(
             cls,
-            run_id=check.opt_str_param(run_id, 'run_id'),
-            context_stack=check.opt_dict_param(context_stack, 'context_stack'),
+            run_id=check.str_param(run_id, 'run_id') if run_id else str(uuid.uuid4()),
+            tags=check.opt_dict_param(tags, 'tags', key_type=str, value_type=str),
             event_callback=check.opt_callable_param(event_callback, 'event_callback'),
+            loggers=check.opt_list_param(loggers, 'loggers'),
         )

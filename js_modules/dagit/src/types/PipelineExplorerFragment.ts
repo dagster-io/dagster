@@ -7,296 +7,248 @@
 // GraphQL fragment: PipelineExplorerFragment
 // ====================================================
 
-export interface PipelineExplorerFragment_contexts_config_type_RegularType_innerTypes_RegularType_innerTypes {
-  name: string;
+export interface PipelineExplorerFragment_contexts_config_configType_EnumConfigType_innerTypes_EnumConfigType_innerTypes {
+  key: string;
 }
 
-export interface PipelineExplorerFragment_contexts_config_type_RegularType_innerTypes_RegularType_typeAttributes {
-  isNamed: boolean;
-}
-
-export interface PipelineExplorerFragment_contexts_config_type_RegularType_innerTypes_RegularType {
-  name: string;
+export interface PipelineExplorerFragment_contexts_config_configType_EnumConfigType_innerTypes_EnumConfigType {
+  key: string;
+  name: string | null;
   description: string | null;
-  isDict: boolean;
   isList: boolean;
   isNullable: boolean;
-  innerTypes: PipelineExplorerFragment_contexts_config_type_RegularType_innerTypes_RegularType_innerTypes[];
-  typeAttributes: PipelineExplorerFragment_contexts_config_type_RegularType_innerTypes_RegularType_typeAttributes;
+  isSelector: boolean;
+  innerTypes: PipelineExplorerFragment_contexts_config_configType_EnumConfigType_innerTypes_EnumConfigType_innerTypes[];
 }
 
-export interface PipelineExplorerFragment_contexts_config_type_RegularType_innerTypes_CompositeType_innerTypes {
-  name: string;
+export interface PipelineExplorerFragment_contexts_config_configType_EnumConfigType_innerTypes_CompositeConfigType_innerTypes {
+  key: string;
 }
 
-export interface PipelineExplorerFragment_contexts_config_type_RegularType_innerTypes_CompositeType_typeAttributes {
-  isNamed: boolean;
+export interface PipelineExplorerFragment_contexts_config_configType_EnumConfigType_innerTypes_CompositeConfigType_fields_configType {
+  key: string;
 }
 
-export interface PipelineExplorerFragment_contexts_config_type_RegularType_innerTypes_CompositeType_fields_type {
-  name: string;
-}
-
-export interface PipelineExplorerFragment_contexts_config_type_RegularType_innerTypes_CompositeType_fields {
+export interface PipelineExplorerFragment_contexts_config_configType_EnumConfigType_innerTypes_CompositeConfigType_fields {
   name: string;
   description: string | null;
-  type: PipelineExplorerFragment_contexts_config_type_RegularType_innerTypes_CompositeType_fields_type;
   isOptional: boolean;
+  configType: PipelineExplorerFragment_contexts_config_configType_EnumConfigType_innerTypes_CompositeConfigType_fields_configType;
 }
 
-export interface PipelineExplorerFragment_contexts_config_type_RegularType_innerTypes_CompositeType {
-  name: string;
+export interface PipelineExplorerFragment_contexts_config_configType_EnumConfigType_innerTypes_CompositeConfigType {
+  key: string;
+  name: string | null;
   description: string | null;
-  isDict: boolean;
   isList: boolean;
   isNullable: boolean;
-  innerTypes: PipelineExplorerFragment_contexts_config_type_RegularType_innerTypes_CompositeType_innerTypes[];
-  typeAttributes: PipelineExplorerFragment_contexts_config_type_RegularType_innerTypes_CompositeType_typeAttributes;
-  fields: PipelineExplorerFragment_contexts_config_type_RegularType_innerTypes_CompositeType_fields[];
+  isSelector: boolean;
+  innerTypes: PipelineExplorerFragment_contexts_config_configType_EnumConfigType_innerTypes_CompositeConfigType_innerTypes[];
+  fields: PipelineExplorerFragment_contexts_config_configType_EnumConfigType_innerTypes_CompositeConfigType_fields[];
 }
 
-export type PipelineExplorerFragment_contexts_config_type_RegularType_innerTypes = PipelineExplorerFragment_contexts_config_type_RegularType_innerTypes_RegularType | PipelineExplorerFragment_contexts_config_type_RegularType_innerTypes_CompositeType;
+export type PipelineExplorerFragment_contexts_config_configType_EnumConfigType_innerTypes = PipelineExplorerFragment_contexts_config_configType_EnumConfigType_innerTypes_EnumConfigType | PipelineExplorerFragment_contexts_config_configType_EnumConfigType_innerTypes_CompositeConfigType;
 
-export interface PipelineExplorerFragment_contexts_config_type_RegularType_typeAttributes {
-  isNamed: boolean;
-}
-
-export interface PipelineExplorerFragment_contexts_config_type_RegularType {
-  name: string;
+export interface PipelineExplorerFragment_contexts_config_configType_EnumConfigType {
+  key: string;
+  name: string | null;
   description: string | null;
-  isDict: boolean;
   isList: boolean;
   isNullable: boolean;
-  innerTypes: PipelineExplorerFragment_contexts_config_type_RegularType_innerTypes[];
-  typeAttributes: PipelineExplorerFragment_contexts_config_type_RegularType_typeAttributes;
+  isSelector: boolean;
+  innerTypes: PipelineExplorerFragment_contexts_config_configType_EnumConfigType_innerTypes[];
 }
 
-export interface PipelineExplorerFragment_contexts_config_type_CompositeType_innerTypes_RegularType_innerTypes {
-  name: string;
+export interface PipelineExplorerFragment_contexts_config_configType_CompositeConfigType_innerTypes_EnumConfigType_innerTypes {
+  key: string;
 }
 
-export interface PipelineExplorerFragment_contexts_config_type_CompositeType_innerTypes_RegularType_typeAttributes {
-  isNamed: boolean;
-}
-
-export interface PipelineExplorerFragment_contexts_config_type_CompositeType_innerTypes_RegularType {
-  name: string;
+export interface PipelineExplorerFragment_contexts_config_configType_CompositeConfigType_innerTypes_EnumConfigType {
+  key: string;
+  name: string | null;
   description: string | null;
-  isDict: boolean;
   isList: boolean;
   isNullable: boolean;
-  innerTypes: PipelineExplorerFragment_contexts_config_type_CompositeType_innerTypes_RegularType_innerTypes[];
-  typeAttributes: PipelineExplorerFragment_contexts_config_type_CompositeType_innerTypes_RegularType_typeAttributes;
+  isSelector: boolean;
+  innerTypes: PipelineExplorerFragment_contexts_config_configType_CompositeConfigType_innerTypes_EnumConfigType_innerTypes[];
 }
 
-export interface PipelineExplorerFragment_contexts_config_type_CompositeType_innerTypes_CompositeType_innerTypes {
-  name: string;
+export interface PipelineExplorerFragment_contexts_config_configType_CompositeConfigType_innerTypes_CompositeConfigType_innerTypes {
+  key: string;
 }
 
-export interface PipelineExplorerFragment_contexts_config_type_CompositeType_innerTypes_CompositeType_typeAttributes {
-  isNamed: boolean;
+export interface PipelineExplorerFragment_contexts_config_configType_CompositeConfigType_innerTypes_CompositeConfigType_fields_configType {
+  key: string;
 }
 
-export interface PipelineExplorerFragment_contexts_config_type_CompositeType_innerTypes_CompositeType_fields_type {
-  name: string;
-}
-
-export interface PipelineExplorerFragment_contexts_config_type_CompositeType_innerTypes_CompositeType_fields {
+export interface PipelineExplorerFragment_contexts_config_configType_CompositeConfigType_innerTypes_CompositeConfigType_fields {
   name: string;
   description: string | null;
-  type: PipelineExplorerFragment_contexts_config_type_CompositeType_innerTypes_CompositeType_fields_type;
   isOptional: boolean;
+  configType: PipelineExplorerFragment_contexts_config_configType_CompositeConfigType_innerTypes_CompositeConfigType_fields_configType;
 }
 
-export interface PipelineExplorerFragment_contexts_config_type_CompositeType_innerTypes_CompositeType {
-  name: string;
+export interface PipelineExplorerFragment_contexts_config_configType_CompositeConfigType_innerTypes_CompositeConfigType {
+  key: string;
+  name: string | null;
   description: string | null;
-  isDict: boolean;
   isList: boolean;
   isNullable: boolean;
-  innerTypes: PipelineExplorerFragment_contexts_config_type_CompositeType_innerTypes_CompositeType_innerTypes[];
-  typeAttributes: PipelineExplorerFragment_contexts_config_type_CompositeType_innerTypes_CompositeType_typeAttributes;
-  fields: PipelineExplorerFragment_contexts_config_type_CompositeType_innerTypes_CompositeType_fields[];
+  isSelector: boolean;
+  innerTypes: PipelineExplorerFragment_contexts_config_configType_CompositeConfigType_innerTypes_CompositeConfigType_innerTypes[];
+  fields: PipelineExplorerFragment_contexts_config_configType_CompositeConfigType_innerTypes_CompositeConfigType_fields[];
 }
 
-export type PipelineExplorerFragment_contexts_config_type_CompositeType_innerTypes = PipelineExplorerFragment_contexts_config_type_CompositeType_innerTypes_RegularType | PipelineExplorerFragment_contexts_config_type_CompositeType_innerTypes_CompositeType;
+export type PipelineExplorerFragment_contexts_config_configType_CompositeConfigType_innerTypes = PipelineExplorerFragment_contexts_config_configType_CompositeConfigType_innerTypes_EnumConfigType | PipelineExplorerFragment_contexts_config_configType_CompositeConfigType_innerTypes_CompositeConfigType;
 
-export interface PipelineExplorerFragment_contexts_config_type_CompositeType_typeAttributes {
-  isNamed: boolean;
+export interface PipelineExplorerFragment_contexts_config_configType_CompositeConfigType_fields_configType {
+  key: string;
 }
 
-export interface PipelineExplorerFragment_contexts_config_type_CompositeType_fields_type {
-  name: string;
-}
-
-export interface PipelineExplorerFragment_contexts_config_type_CompositeType_fields {
+export interface PipelineExplorerFragment_contexts_config_configType_CompositeConfigType_fields {
   name: string;
   description: string | null;
-  type: PipelineExplorerFragment_contexts_config_type_CompositeType_fields_type;
   isOptional: boolean;
+  configType: PipelineExplorerFragment_contexts_config_configType_CompositeConfigType_fields_configType;
 }
 
-export interface PipelineExplorerFragment_contexts_config_type_CompositeType {
-  name: string;
+export interface PipelineExplorerFragment_contexts_config_configType_CompositeConfigType {
+  key: string;
+  name: string | null;
   description: string | null;
-  isDict: boolean;
   isList: boolean;
   isNullable: boolean;
-  innerTypes: PipelineExplorerFragment_contexts_config_type_CompositeType_innerTypes[];
-  typeAttributes: PipelineExplorerFragment_contexts_config_type_CompositeType_typeAttributes;
-  fields: PipelineExplorerFragment_contexts_config_type_CompositeType_fields[];
+  isSelector: boolean;
+  innerTypes: PipelineExplorerFragment_contexts_config_configType_CompositeConfigType_innerTypes[];
+  fields: PipelineExplorerFragment_contexts_config_configType_CompositeConfigType_fields[];
 }
 
-export type PipelineExplorerFragment_contexts_config_type = PipelineExplorerFragment_contexts_config_type_RegularType | PipelineExplorerFragment_contexts_config_type_CompositeType;
+export type PipelineExplorerFragment_contexts_config_configType = PipelineExplorerFragment_contexts_config_configType_EnumConfigType | PipelineExplorerFragment_contexts_config_configType_CompositeConfigType;
 
 export interface PipelineExplorerFragment_contexts_config {
-  type: PipelineExplorerFragment_contexts_config_type;
+  configType: PipelineExplorerFragment_contexts_config_configType;
 }
 
-export interface PipelineExplorerFragment_contexts_resources_config_type_RegularType_innerTypes_RegularType_innerTypes {
-  name: string;
+export interface PipelineExplorerFragment_contexts_resources_config_configType_EnumConfigType_innerTypes_EnumConfigType_innerTypes {
+  key: string;
 }
 
-export interface PipelineExplorerFragment_contexts_resources_config_type_RegularType_innerTypes_RegularType_typeAttributes {
-  isNamed: boolean;
-}
-
-export interface PipelineExplorerFragment_contexts_resources_config_type_RegularType_innerTypes_RegularType {
-  name: string;
+export interface PipelineExplorerFragment_contexts_resources_config_configType_EnumConfigType_innerTypes_EnumConfigType {
+  key: string;
+  name: string | null;
   description: string | null;
-  isDict: boolean;
   isList: boolean;
   isNullable: boolean;
-  innerTypes: PipelineExplorerFragment_contexts_resources_config_type_RegularType_innerTypes_RegularType_innerTypes[];
-  typeAttributes: PipelineExplorerFragment_contexts_resources_config_type_RegularType_innerTypes_RegularType_typeAttributes;
+  isSelector: boolean;
+  innerTypes: PipelineExplorerFragment_contexts_resources_config_configType_EnumConfigType_innerTypes_EnumConfigType_innerTypes[];
 }
 
-export interface PipelineExplorerFragment_contexts_resources_config_type_RegularType_innerTypes_CompositeType_innerTypes {
-  name: string;
+export interface PipelineExplorerFragment_contexts_resources_config_configType_EnumConfigType_innerTypes_CompositeConfigType_innerTypes {
+  key: string;
 }
 
-export interface PipelineExplorerFragment_contexts_resources_config_type_RegularType_innerTypes_CompositeType_typeAttributes {
-  isNamed: boolean;
+export interface PipelineExplorerFragment_contexts_resources_config_configType_EnumConfigType_innerTypes_CompositeConfigType_fields_configType {
+  key: string;
 }
 
-export interface PipelineExplorerFragment_contexts_resources_config_type_RegularType_innerTypes_CompositeType_fields_type {
-  name: string;
-}
-
-export interface PipelineExplorerFragment_contexts_resources_config_type_RegularType_innerTypes_CompositeType_fields {
+export interface PipelineExplorerFragment_contexts_resources_config_configType_EnumConfigType_innerTypes_CompositeConfigType_fields {
   name: string;
   description: string | null;
-  type: PipelineExplorerFragment_contexts_resources_config_type_RegularType_innerTypes_CompositeType_fields_type;
   isOptional: boolean;
+  configType: PipelineExplorerFragment_contexts_resources_config_configType_EnumConfigType_innerTypes_CompositeConfigType_fields_configType;
 }
 
-export interface PipelineExplorerFragment_contexts_resources_config_type_RegularType_innerTypes_CompositeType {
-  name: string;
+export interface PipelineExplorerFragment_contexts_resources_config_configType_EnumConfigType_innerTypes_CompositeConfigType {
+  key: string;
+  name: string | null;
   description: string | null;
-  isDict: boolean;
   isList: boolean;
   isNullable: boolean;
-  innerTypes: PipelineExplorerFragment_contexts_resources_config_type_RegularType_innerTypes_CompositeType_innerTypes[];
-  typeAttributes: PipelineExplorerFragment_contexts_resources_config_type_RegularType_innerTypes_CompositeType_typeAttributes;
-  fields: PipelineExplorerFragment_contexts_resources_config_type_RegularType_innerTypes_CompositeType_fields[];
+  isSelector: boolean;
+  innerTypes: PipelineExplorerFragment_contexts_resources_config_configType_EnumConfigType_innerTypes_CompositeConfigType_innerTypes[];
+  fields: PipelineExplorerFragment_contexts_resources_config_configType_EnumConfigType_innerTypes_CompositeConfigType_fields[];
 }
 
-export type PipelineExplorerFragment_contexts_resources_config_type_RegularType_innerTypes = PipelineExplorerFragment_contexts_resources_config_type_RegularType_innerTypes_RegularType | PipelineExplorerFragment_contexts_resources_config_type_RegularType_innerTypes_CompositeType;
+export type PipelineExplorerFragment_contexts_resources_config_configType_EnumConfigType_innerTypes = PipelineExplorerFragment_contexts_resources_config_configType_EnumConfigType_innerTypes_EnumConfigType | PipelineExplorerFragment_contexts_resources_config_configType_EnumConfigType_innerTypes_CompositeConfigType;
 
-export interface PipelineExplorerFragment_contexts_resources_config_type_RegularType_typeAttributes {
-  isNamed: boolean;
-}
-
-export interface PipelineExplorerFragment_contexts_resources_config_type_RegularType {
-  name: string;
+export interface PipelineExplorerFragment_contexts_resources_config_configType_EnumConfigType {
+  key: string;
+  name: string | null;
   description: string | null;
-  isDict: boolean;
   isList: boolean;
   isNullable: boolean;
-  innerTypes: PipelineExplorerFragment_contexts_resources_config_type_RegularType_innerTypes[];
-  typeAttributes: PipelineExplorerFragment_contexts_resources_config_type_RegularType_typeAttributes;
+  isSelector: boolean;
+  innerTypes: PipelineExplorerFragment_contexts_resources_config_configType_EnumConfigType_innerTypes[];
 }
 
-export interface PipelineExplorerFragment_contexts_resources_config_type_CompositeType_innerTypes_RegularType_innerTypes {
-  name: string;
+export interface PipelineExplorerFragment_contexts_resources_config_configType_CompositeConfigType_innerTypes_EnumConfigType_innerTypes {
+  key: string;
 }
 
-export interface PipelineExplorerFragment_contexts_resources_config_type_CompositeType_innerTypes_RegularType_typeAttributes {
-  isNamed: boolean;
-}
-
-export interface PipelineExplorerFragment_contexts_resources_config_type_CompositeType_innerTypes_RegularType {
-  name: string;
+export interface PipelineExplorerFragment_contexts_resources_config_configType_CompositeConfigType_innerTypes_EnumConfigType {
+  key: string;
+  name: string | null;
   description: string | null;
-  isDict: boolean;
   isList: boolean;
   isNullable: boolean;
-  innerTypes: PipelineExplorerFragment_contexts_resources_config_type_CompositeType_innerTypes_RegularType_innerTypes[];
-  typeAttributes: PipelineExplorerFragment_contexts_resources_config_type_CompositeType_innerTypes_RegularType_typeAttributes;
+  isSelector: boolean;
+  innerTypes: PipelineExplorerFragment_contexts_resources_config_configType_CompositeConfigType_innerTypes_EnumConfigType_innerTypes[];
 }
 
-export interface PipelineExplorerFragment_contexts_resources_config_type_CompositeType_innerTypes_CompositeType_innerTypes {
-  name: string;
+export interface PipelineExplorerFragment_contexts_resources_config_configType_CompositeConfigType_innerTypes_CompositeConfigType_innerTypes {
+  key: string;
 }
 
-export interface PipelineExplorerFragment_contexts_resources_config_type_CompositeType_innerTypes_CompositeType_typeAttributes {
-  isNamed: boolean;
+export interface PipelineExplorerFragment_contexts_resources_config_configType_CompositeConfigType_innerTypes_CompositeConfigType_fields_configType {
+  key: string;
 }
 
-export interface PipelineExplorerFragment_contexts_resources_config_type_CompositeType_innerTypes_CompositeType_fields_type {
-  name: string;
-}
-
-export interface PipelineExplorerFragment_contexts_resources_config_type_CompositeType_innerTypes_CompositeType_fields {
+export interface PipelineExplorerFragment_contexts_resources_config_configType_CompositeConfigType_innerTypes_CompositeConfigType_fields {
   name: string;
   description: string | null;
-  type: PipelineExplorerFragment_contexts_resources_config_type_CompositeType_innerTypes_CompositeType_fields_type;
   isOptional: boolean;
+  configType: PipelineExplorerFragment_contexts_resources_config_configType_CompositeConfigType_innerTypes_CompositeConfigType_fields_configType;
 }
 
-export interface PipelineExplorerFragment_contexts_resources_config_type_CompositeType_innerTypes_CompositeType {
-  name: string;
+export interface PipelineExplorerFragment_contexts_resources_config_configType_CompositeConfigType_innerTypes_CompositeConfigType {
+  key: string;
+  name: string | null;
   description: string | null;
-  isDict: boolean;
   isList: boolean;
   isNullable: boolean;
-  innerTypes: PipelineExplorerFragment_contexts_resources_config_type_CompositeType_innerTypes_CompositeType_innerTypes[];
-  typeAttributes: PipelineExplorerFragment_contexts_resources_config_type_CompositeType_innerTypes_CompositeType_typeAttributes;
-  fields: PipelineExplorerFragment_contexts_resources_config_type_CompositeType_innerTypes_CompositeType_fields[];
+  isSelector: boolean;
+  innerTypes: PipelineExplorerFragment_contexts_resources_config_configType_CompositeConfigType_innerTypes_CompositeConfigType_innerTypes[];
+  fields: PipelineExplorerFragment_contexts_resources_config_configType_CompositeConfigType_innerTypes_CompositeConfigType_fields[];
 }
 
-export type PipelineExplorerFragment_contexts_resources_config_type_CompositeType_innerTypes = PipelineExplorerFragment_contexts_resources_config_type_CompositeType_innerTypes_RegularType | PipelineExplorerFragment_contexts_resources_config_type_CompositeType_innerTypes_CompositeType;
+export type PipelineExplorerFragment_contexts_resources_config_configType_CompositeConfigType_innerTypes = PipelineExplorerFragment_contexts_resources_config_configType_CompositeConfigType_innerTypes_EnumConfigType | PipelineExplorerFragment_contexts_resources_config_configType_CompositeConfigType_innerTypes_CompositeConfigType;
 
-export interface PipelineExplorerFragment_contexts_resources_config_type_CompositeType_typeAttributes {
-  isNamed: boolean;
+export interface PipelineExplorerFragment_contexts_resources_config_configType_CompositeConfigType_fields_configType {
+  key: string;
 }
 
-export interface PipelineExplorerFragment_contexts_resources_config_type_CompositeType_fields_type {
-  name: string;
-}
-
-export interface PipelineExplorerFragment_contexts_resources_config_type_CompositeType_fields {
+export interface PipelineExplorerFragment_contexts_resources_config_configType_CompositeConfigType_fields {
   name: string;
   description: string | null;
-  type: PipelineExplorerFragment_contexts_resources_config_type_CompositeType_fields_type;
   isOptional: boolean;
+  configType: PipelineExplorerFragment_contexts_resources_config_configType_CompositeConfigType_fields_configType;
 }
 
-export interface PipelineExplorerFragment_contexts_resources_config_type_CompositeType {
-  name: string;
+export interface PipelineExplorerFragment_contexts_resources_config_configType_CompositeConfigType {
+  key: string;
+  name: string | null;
   description: string | null;
-  isDict: boolean;
   isList: boolean;
   isNullable: boolean;
-  innerTypes: PipelineExplorerFragment_contexts_resources_config_type_CompositeType_innerTypes[];
-  typeAttributes: PipelineExplorerFragment_contexts_resources_config_type_CompositeType_typeAttributes;
-  fields: PipelineExplorerFragment_contexts_resources_config_type_CompositeType_fields[];
+  isSelector: boolean;
+  innerTypes: PipelineExplorerFragment_contexts_resources_config_configType_CompositeConfigType_innerTypes[];
+  fields: PipelineExplorerFragment_contexts_resources_config_configType_CompositeConfigType_fields[];
 }
 
-export type PipelineExplorerFragment_contexts_resources_config_type = PipelineExplorerFragment_contexts_resources_config_type_RegularType | PipelineExplorerFragment_contexts_resources_config_type_CompositeType;
+export type PipelineExplorerFragment_contexts_resources_config_configType = PipelineExplorerFragment_contexts_resources_config_configType_EnumConfigType | PipelineExplorerFragment_contexts_resources_config_configType_CompositeConfigType;
 
 export interface PipelineExplorerFragment_contexts_resources_config {
-  type: PipelineExplorerFragment_contexts_resources_config_type;
+  configType: PipelineExplorerFragment_contexts_resources_config_configType;
 }
 
 export interface PipelineExplorerFragment_contexts_resources {
@@ -317,13 +269,13 @@ export interface PipelineExplorerFragment_solids_definition_metadata {
   value: string;
 }
 
-export interface PipelineExplorerFragment_solids_definition_configDefinition_type {
-  name: string;
+export interface PipelineExplorerFragment_solids_definition_configDefinition_configType {
+  name: string | null;
   description: string | null;
 }
 
 export interface PipelineExplorerFragment_solids_definition_configDefinition {
-  type: PipelineExplorerFragment_solids_definition_configDefinition_type;
+  configType: PipelineExplorerFragment_solids_definition_configDefinition_configType;
 }
 
 export interface PipelineExplorerFragment_solids_definition {
@@ -332,7 +284,7 @@ export interface PipelineExplorerFragment_solids_definition {
 }
 
 export interface PipelineExplorerFragment_solids_inputs_definition_type {
-  name: string;
+  name: string | null;
 }
 
 export interface PipelineExplorerFragment_solids_inputs_definition {
@@ -359,7 +311,7 @@ export interface PipelineExplorerFragment_solids_inputs {
 }
 
 export interface PipelineExplorerFragment_solids_outputs_definition_type {
-  name: string;
+  name: string | null;
 }
 
 export interface PipelineExplorerFragment_solids_outputs_definition_expectations {
@@ -394,7 +346,7 @@ export interface PipelineExplorerFragment_solids {
 }
 
 export interface PipelineExplorerFragment_environmentType {
-  name: string;
+  name: string | null;
 }
 
 export interface PipelineExplorerFragment {
@@ -437,7 +389,7 @@ export enum PipelineRunStatus {
   SUCCESS = "SUCCESS",
 }
 
-export enum StepTag {
+export enum StepKind {
   INPUT_EXPECTATION = "INPUT_EXPECTATION",
   INPUT_THUNK = "INPUT_THUNK",
   JOIN = "JOIN",

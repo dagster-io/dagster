@@ -51,7 +51,7 @@ def create_fileload_unittest_context(info):
     yield ExecutionContext(
         loggers=[define_colored_console_logger('dagster', log_level)],
         resources=resources,
-        context_stack={
+        tags={
             'data_source_run_id': data_source_run_id,
             'data_source': 'new_data',
             'pipeline_run_id': pipeline_run_id,
@@ -117,7 +117,7 @@ def create_fileload_unittest_context(info):
 
     yield ExecutionContext(
         loggers=[define_colored_console_logger('dagster', log_level)],
-        context_stack={
+        tags={
             'data_source_run_id': data_source_run_id,
             'data_source': 'new_data',
         },

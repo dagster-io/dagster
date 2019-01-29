@@ -20,7 +20,7 @@ export default class SolidTypeSignature extends React.Component<
           definition {
             name
             type {
-              ...TypeWithTooltipFragment
+              ...RuntimeTypeWithTooltipFragment
             }
           }
         }
@@ -28,13 +28,13 @@ export default class SolidTypeSignature extends React.Component<
           definition {
             name
             type {
-              ...TypeWithTooltipFragment
+              ...RuntimeTypeWithTooltipFragment
             }
           }
         }
       }
 
-      ${TypeWithTooltip.fragments.TypeWithTooltipFragment}
+      ${TypeWithTooltip.fragments.RuntimeTypeWithTooltipFragment}
     `
   };
 

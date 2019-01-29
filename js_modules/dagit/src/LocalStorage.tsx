@@ -10,7 +10,7 @@ export interface IStorageData {
 export interface IExecutionSessionPlan {
   steps: Array<{
     name: string;
-    tag: string;
+    kind: string;
     solid: {
       name: string;
     };
