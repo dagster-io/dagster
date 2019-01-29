@@ -113,7 +113,6 @@ class ModifiedDockerOperator(BaseOperator):
     def __init__(
         self,
         image,
-        *args,
         api_version=None,
         command=None,
         cpus=1.0,
@@ -140,6 +139,7 @@ class ModifiedDockerOperator(BaseOperator):
         auto_remove=False,
         shm_size=None,
         step=None,
+        *args,
         **kwargs
     ):
 
