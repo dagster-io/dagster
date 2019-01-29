@@ -373,6 +373,7 @@ jobs:
           command: |
             sudo pip install -U 'pip<19.0' # see: https://github.com/pypa/pip/issues/6163
             sudo pip install tox
+            sudo pip install tox-virtualenv-no-download
       - run:
           name: Setup AIRFLOW_HOME
           command: |
