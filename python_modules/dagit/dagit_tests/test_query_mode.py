@@ -11,7 +11,7 @@ def test_basic_introspection():
 
     result = subprocess.check_output(['dagit', '-q', query, '-y', repo_path])
 
-    result_data = json.loads(result)
+    result_data = json.loads(result.decode())
     assert result_data['data']
 
 
@@ -22,7 +22,7 @@ def test_basic_pipelines():
 
     result = subprocess.check_output(['dagit', '-q', query, '-y', repo_path])
 
-    result_data = json.loads(result)
+    result_data = json.loads(result.decode())
     assert result_data['data']
 
 
@@ -32,5 +32,5 @@ def test_basic_variables():
     repo_path = script_relative_path('./repository.yml')
 
     result = subprocess.check_output(['dagit', '-q', query, '-v', variables, '-y', repo_path])
-    result_data = json.loads(result)
+    result_data = json.loads(result.decode())
     assert result_data['data']
