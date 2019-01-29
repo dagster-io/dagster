@@ -198,10 +198,10 @@ def _make_static_scaffold(pipeline_name, env_config, execution_plan, image, edit
 
             printer.line('{step_key}_task = DagsterOperator('.format(step_key=step_key))
             with printer.with_indent():
-                printer.line('step=\'{step_key}\',')
+                printer.line('step=\'{step_key}\','.format(step_key=step_key))
                 printer.line('dag=dag,')
-                printer.line('image=\'{image}\',')
-                printer.line('task_id=\'{step_key}\',')
+                printer.line('image=\'{image}\','.format(image=image))
+                printer.line('task_id=\'{step_key}\','.format(step_key=step_key))
                 printer.line('s3_conn_id=S3_CONN_ID,')
             printer.line(')')
             printer.blank_line()
@@ -213,7 +213,7 @@ def _make_static_scaffold(pipeline_name, env_config, execution_plan, image, edit
                 printer.line('{prev_step_key}_task.set_downstream({step_key}_task)'.format(
                     prev_step_key=prev_step_key, step_key=step_key
                 ))
-        
+
         return printer.read()
 
 
