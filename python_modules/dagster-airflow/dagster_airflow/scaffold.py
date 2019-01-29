@@ -9,10 +9,6 @@ from airflow import DAG
 from dagster import check, PipelineDefinition
 from dagster.core.execution import create_execution_plan
 
-from .storage import Storage
-
-# Use a shared Storage for s3 access
-# need to pass requirements to and from each step
 
 
 def normalize_key(key):
@@ -80,7 +76,7 @@ dag = DAG(
 
 
 def scaffold_airflow_dag(
-    pipeline, env_config, image, output_path=None, storage=Storage, **dag_kwargs
+    pipeline, env_config, image, output_path=None, **dag_kwargs
 ):
     check.inst_param(pipeline, 'pipeline', PipelineDefinition)
     check.opt_dict_param(env_config, 'env_config', key_type=str)
