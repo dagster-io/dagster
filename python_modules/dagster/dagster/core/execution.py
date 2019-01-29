@@ -607,7 +607,7 @@ def _unmarshal_inputs(context, inputs_to_marshal, execution_plan):
 
             check.invariant(input_type.serialization_strategy)
 
-            input_value = context.persistence_policy.read_write(
+            input_value = context.persistence_policy.read_value(
                 input_type.serialization_strategy, file_path
             )
             inputs[step_key][input_name] = input_value

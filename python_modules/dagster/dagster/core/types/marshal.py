@@ -32,7 +32,7 @@ class PersistenceStrategy:
         pass
 
     @abstractmethod
-    def read_write(self, serialization_strategy, key):
+    def read_value(self, serialization_strategy, key):
         pass
 
 
@@ -43,7 +43,7 @@ class FilePersistencePolicy(PersistenceStrategy):
 
         return serialize_to_file(serialization_strategy, value, key)
 
-    def read_write(self, serialization_strategy, key):
+    def read_value(self, serialization_strategy, key):
         check.inst_param(serialization_strategy, 'serialization_strategy', SerializationStrategy)
         check.str_param(key, 'key')
         return deserialize_from_file(serialization_strategy, key)

@@ -199,10 +199,10 @@ def populate_context(dm_context_data):
 def load_parameter(input_name, input_value):
     solid_def = MANAGER_FOR_NOTEBOOK_INSTANCE.solid_def
     input_def = solid_def.input_def_named(input_name)
-    return read_write(input_def.runtime_type, input_value)
+    return read_value(input_def.runtime_type, input_value)
 
 
-def read_write(runtime_type, value):
+def read_value(runtime_type, value):
     check.inst_param(runtime_type, 'runtime_type', RuntimeType)
     if runtime_type.is_scalar:
         return value
@@ -408,7 +408,7 @@ def _dm_solid_transform(name, notebook_path):
             for output_def in info.solid_def.output_defs:
                 if output_def.name in output_nb.data:
 
-                    value = read_write(output_def.runtime_type, output_nb.data[output_def.name])
+                    value = read_value(output_def.runtime_type, output_nb.data[output_def.name])
 
                     yield Result(value, output_def.name)
 
