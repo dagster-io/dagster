@@ -442,10 +442,10 @@ def test_no_env_missing_required_error_handling():
 
     assert (
         'Missing required field  "solids" at document config root. Expected: "{ context?: '
-        '{ default?: { config?: { log_level?: String } persistence?: { file?: { } } '
-        'resources?: { } } } execution?: { } expectations?: { evaluate?: Bool } solids: '
-        '{ required_int_solid: { config: Int outputs?: [{ result?: { json: { path: Path } '
-        'pickle: { path: Path } } }] } } }'
+        'NoEnvMissingRequiredError.ContextConfig execution?: '
+        'NoEnvMissingRequiredError.ExecutionConfig expectations?: '
+        'NoEnvMissingRequiredError.ExpectationsConfig solids: '
+        'NoEnvMissingRequiredError.SolidsConfigDictionary }"'
     ) in pe.message
 
 
@@ -652,9 +652,8 @@ def test_multilevel_good_error_handling_solids():
         execute_pipeline(pipeline_def, environment={'solids': None})
 
     assert (
-        'Missing required field  "good_error_handling" at path root:solids Expected: "{ '
-        'good_error_handling: { config: Int outputs?: [{ result?: { json: { path: Path } '
-        'pickle: { path: Path } } }] } }'
+        'Missing required field  "good_error_handling" at path root:solids Expected: '
+        '"{ good_error_handling: MultilevelGoodErrorHandling.SolidConfig.GoodErrorHandling }"'
     ) in str(pe_info.value)
 
 
@@ -672,8 +671,7 @@ def test_multilevel_good_error_handling_solid_name_solids():
 
     assert (
         'Missing required field  "config" at path root:solids:good_error_handling Expected: '
-        '"{ config: Int outputs?: [{ result?: { json: { path: Path } pickle: { path: Path '
-        '} } }] }'
+        '"{ config: Int outputs?: [{ result?: Any.MaterializationSchema }] }"'
     ) in str(pe_info.value)
 
 

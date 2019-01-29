@@ -63,13 +63,12 @@ def test_string_missing_inputs():
         execute_pipeline(pipeline)
 
     assert (
-        'Missing required field  "solids" at document config root. Expected: "{ context?: '
-        '{ default?: { config?: { log_level?: String } persistence?: { file?: { } } '
-        'resources?: { } } } execution?: { } expectations?: { evaluate?: Bool } solids: '
-        '{ str_as_input: { inputs: { string_input: { json: { path: Path } pickle: { '
-        'path: Path } value: String } } outputs?: [{ result?: { json: { path: Path } '
-        'pickle: { path: Path } } }] } } }'
+        'Missing required field  "solids" at document config root. Expected: "{ '
+        'context?: MissingInputs.ContextConfig execution?: '
+        'MissingInputs.ExecutionConfig expectations?: MissingInputs.ExpectationsConfig '
+        'solids: MissingInputs.SolidsConfigDictionary }"'
     ) in str(exc_info.value)
+
     assert 'yup' not in called
 
 

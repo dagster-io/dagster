@@ -109,7 +109,12 @@ def test_dataframe_csv_missing_inputs():
     with pytest.raises(PipelineConfigEvaluationError) as exc_info:
         execute_pipeline(pipeline)
 
-    assert 'Error 1: Missing required field "solids" at document config root' in str(exc_info.value)
+    assert (
+        'Missing required field  "solids" at document config root. Expected: "{ context?: '
+        'MissingInputs.ContextConfig execution?: MissingInputs.ExecutionConfig '
+        'expectations?: MissingInputs.ExpectationsConfig solids: '
+        'MissingInputs.SolidsConfigDictionary }"'
+    ) in str(exc_info.value)
 
     assert 'yup' not in called
 
