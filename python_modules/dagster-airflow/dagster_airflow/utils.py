@@ -1,6 +1,5 @@
 '''Utilities to support dagster-airflow'''
 
-from contextlib import AbstractContextManager
 from textwrap import TextWrapper
 
 from six import StringIO
@@ -11,7 +10,7 @@ from dagster.utils.indenting_printer import IndentingPrinter
 LINE_LENGTH = 100
 
 
-class IndentingBlockPrinter(IndentingPrinter, AbstractContextManager):
+class IndentingBlockPrinter(IndentingPrinter):
     '''Subclass of IndentingPrinter wrapping a StringIO.'''
 
     def __init__(self, line_length=LINE_LENGTH):
@@ -19,6 +18,9 @@ class IndentingBlockPrinter(IndentingPrinter, AbstractContextManager):
         self.line_length = line_length
         self.printer = lambda x: self.buffer.write(x + '\n')
         super(IndentingBlockPrinter, self).__init__(indent_level=4, printer=self.printer)
+
+    def __enter__(self):
+        return self
 
     def __exit__(self, _exception_type, _exception_value, _traceback):
         self.buffer.close()
