@@ -1414,6 +1414,7 @@ query RuntimeTypeQuery($pipelineName: String! $runtimeTypeName: String!)
         __typename
         ... on RegularRuntimeType {
             name
+            isBuiltin
         }
         ... on PipelineNotFoundError {
             pipelineName
@@ -1438,6 +1439,20 @@ def test_runtime_type_query_works():
     assert result.data
     assert result.data['runtimeTypeOrError']['__typename'] == 'RegularRuntimeType'
     assert result.data['runtimeTypeOrError']['name'] == 'PandasDataFrame'
+
+
+def test_runtime_type_builtin_query():
+    result = execute_dagster_graphql(
+        define_context(),
+        RUNTIME_TYPE_QUERY,
+        {'pipelineName': 'pandas_hello_world', 'runtimeTypeName': 'Int'},
+    )
+
+    assert not result.errors
+    assert result.data
+    assert result.data['runtimeTypeOrError']['__typename'] == 'RegularRuntimeType'
+    assert result.data['runtimeTypeOrError']['name'] == 'Int'
+    assert result.data['runtimeTypeOrError']['isBuiltin']
 
 
 def test_runtime_type_or_error_pipeline_not_found():

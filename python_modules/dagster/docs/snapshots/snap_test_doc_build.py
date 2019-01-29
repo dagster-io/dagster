@@ -20550,7 +20550,7 @@ snapshots['test_build_all_docs 53'] = '''
 
 <dl class="class">
 <dt id="dagster.RuntimeType">
-<em class="property">class </em><code class="descclassname">dagster.</code><code class="descname">RuntimeType</code><span class="sig-paren">(</span><em>key</em>, <em>name</em>, <em>description=None</em>, <em>input_schema=None</em>, <em>output_schema=None</em>, <em>serialization_strategy=None</em><span class="sig-paren">)</span><a class="headerlink" href="#dagster.RuntimeType" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">dagster.</code><code class="descname">RuntimeType</code><span class="sig-paren">(</span><em>key</em>, <em>name</em>, <em>is_builtin=False</em>, <em>description=None</em>, <em>input_schema=None</em>, <em>output_schema=None</em>, <em>serialization_strategy=None</em><span class="sig-paren">)</span><a class="headerlink" href="#dagster.RuntimeType" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="attribute">

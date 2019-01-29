@@ -187,7 +187,7 @@ class PipelineDefinition(object):
 
     @property
     def solid_defs(self):
-        return list(set([solid.definition for solid in self.solids]))
+        return list({solid.definition for solid in self.solids})
 
     def solid_def_named(self, name):
         check.str_param(name, 'name')

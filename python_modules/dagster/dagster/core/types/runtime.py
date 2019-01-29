@@ -181,6 +181,7 @@ class Any(RuntimeType):
             name='Any',
             input_schema=BuiltinSchemas.ANY_INPUT,
             output_schema=BuiltinSchemas.ANY_OUTPUT,
+            is_builtin=True,
         )
 
     @property
