@@ -278,7 +278,6 @@ def test_wrong_solid_name():
 
 def fail_me():
     assert False
-    return None
 
 
 def test_multiple_context():

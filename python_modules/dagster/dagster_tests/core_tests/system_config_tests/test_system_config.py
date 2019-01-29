@@ -48,7 +48,7 @@ from dagster.core.test_utils import throwing_evaluate_config_value
 def create_creation_data(pipeline_def):
     return EnvironmentClassCreationData(
         pipeline_def.name,
-        list(pipeline_def._solid_dict.values()),
+        pipeline_def.solids,
         pipeline_def.context_definitions,
         pipeline_def.dependency_structure,
     )

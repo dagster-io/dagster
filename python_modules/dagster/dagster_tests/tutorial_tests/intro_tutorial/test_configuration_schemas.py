@@ -1,24 +1,23 @@
 import pytest
 
-from dagster import DagsterInvariantViolationError, execute_pipeline, PipelineConfigEvaluationError
+from dagster import execute_pipeline, PipelineConfigEvaluationError
 from dagster.tutorials.intro_tutorial.configuration_schemas import (
     define_demo_configuration_schema_pipeline,
     define_demo_configuration_schema_repo,
     define_typed_demo_configuration_schema_pipeline,
-    define_typed_demo_configuration_schema_error_pipeline,
 )
 from dagster.utils import script_relative_path
 from dagster.utils.yaml_utils import load_yaml_from_path
 
 
+def intro_tutorial_path(path):
+    return script_relative_path('../../../dagster/tutorials/intro_tutorial/{}'.format(path))
+
+
 def test_demo_configuration_schema_pipeline_correct_yaml():
     result = execute_pipeline(
         define_demo_configuration_schema_pipeline(),
-        load_yaml_from_path(
-            script_relative_path(
-                '../../../dagster/tutorials/intro_tutorial/configuration_schemas.yml'
-            )
-        ),
+        load_yaml_from_path(intro_tutorial_path('configuration_schemas.yml')),
     )
     assert result.success
     assert len(result.result_list) == 2
@@ -34,11 +33,7 @@ def test_demo_configuration_schema_pipeline_runtime_error():
     with pytest.raises(TypeError):
         execute_pipeline(
             define_demo_configuration_schema_pipeline(),
-            load_yaml_from_path(
-                script_relative_path(
-                    '../../../dagster/tutorials/intro_tutorial/configuration_schemas_runtime_error.yml'
-                )
-            ),
+            load_yaml_from_path(intro_tutorial_path('configuration_schemas_runtime_error.yml')),
         )
 
 
@@ -49,22 +44,14 @@ def test_demo_configuration_schema_pipeline_wrong_field():
     ):
         execute_pipeline(
             define_demo_configuration_schema_pipeline(),
-            load_yaml_from_path(
-                script_relative_path(
-                    '../../../dagster/tutorials/intro_tutorial/configuration_schemas_wrong_field.yml'
-                )
-            ),
+            load_yaml_from_path(intro_tutorial_path('configuration_schemas_wrong_field.yml')),
         )
 
 
 def test_typed_demo_configuration_schema_pipeline_correct_yaml():
     result = execute_pipeline(
         define_typed_demo_configuration_schema_pipeline(),
-        load_yaml_from_path(
-            script_relative_path(
-                '../../../dagster/tutorials/intro_tutorial/configuration_schemas_typed.yml'
-            )
-        ),
+        load_yaml_from_path(intro_tutorial_path('configuration_schemas_typed.yml')),
     )
     assert result.success
     assert len(result.result_list) == 2

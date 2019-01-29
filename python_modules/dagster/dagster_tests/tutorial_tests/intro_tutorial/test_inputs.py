@@ -43,7 +43,7 @@ def test_hello_typed_bad_structure():
         PipelineConfigEvaluationError,
         match=('Value for selector type String.InputSchema must be a dict got '),
     ):
-        result = execute_pipeline(
+        execute_pipeline(
             define_hello_typed_inputs_pipeline(),
             {'solids': {'add_hello_to_word_typed': {'inputs': {'word': {'Foobar Baz'}}}}},
         )

@@ -1197,9 +1197,9 @@ def test_pipelines():
     assert not result.errors
     assert result.data
 
-    assert set([p['name'] for p in result.data['pipelines']['nodes']]) == set(
-        [p.name for p in define_repository().get_all_pipelines()]
-    )
+    assert {p['name'] for p in result.data['pipelines']['nodes']} == {
+        p.name for p in define_repository().get_all_pipelines()
+    }
 
 
 def test_pipelines_or_error():
@@ -1209,9 +1209,9 @@ def test_pipelines_or_error():
     assert not result.errors
     assert result.data
 
-    assert set([p['name'] for p in result.data['pipelinesOrError']['nodes']]) == set(
-        [p.name for p in define_repository().get_all_pipelines()]
-    )
+    assert {p['name'] for p in result.data['pipelinesOrError']['nodes']} == {
+        p.name for p in define_repository().get_all_pipelines()
+    }
 
 
 def test_pipeline_by_name():
@@ -1636,7 +1636,7 @@ def test_query_execution_plan():
 
 
 def get_nameset(llist):
-    return set([item['name'] for item in llist])
+    return {item['name'] for item in llist}
 
 
 def get_named_thing(llist, name):
