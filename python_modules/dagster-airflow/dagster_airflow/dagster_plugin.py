@@ -61,7 +61,7 @@ class ModifiedDockerOperator(BaseOperator):
     :type force_pull: bool
     :param mem_limit: Maximum amount of memory the container can use.
         Either a float value, which represents the limit in bytes,
-        or a string like ``128m`` or ``1g``.
+        or a string like ```128m`` or ``1g``.
     :param host_tmp_dir: Specify the location of the temporary directory on the host which will
         be mapped to tmp_dir. If not provided defaults to using the standard system temp directory.
     :type host_tmp_dir: str
