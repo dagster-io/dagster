@@ -10,8 +10,10 @@ from dagster.utils.indenting_printer import IndentingPrinter
 
 LINE_LENGTH = 100
 
+
 class IndentingBlockPrinter(IndentingPrinter, AbstractContextManager):
     '''Subclass of IndentingPrinter wrapping a StringIO.'''
+
     def __init__(self, line_length=LINE_LENGTH):
         self.buffer = StringIO()
         self.line_length = line_length
@@ -28,7 +30,7 @@ class IndentingBlockPrinter(IndentingPrinter, AbstractContextManager):
             initial_indent=prefix,
             subsequent_indent=prefix,
             break_long_words=False,
-            break_on_hyphens=False
+            break_on_hyphens=False,
         )
         for line in wrapper.wrap(text):
             self.line(line)
