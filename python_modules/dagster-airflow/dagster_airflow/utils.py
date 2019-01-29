@@ -33,6 +33,9 @@ class IndentingBlockPrinter(IndentingPrinter, AbstractContextManager):
         for line in wrapper.wrap(text):
             self.line(line)
 
+    def comment(self, text):
+        self.block(text, prefix='# ')
+
     def read(self):
         '''Get the value of the backing StringIO.'''
         return self.buffer.getvalue()
