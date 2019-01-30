@@ -148,6 +148,8 @@ dagster-airflow scaffold demo_pipeline -e env.yml --install
 Once you've scaffolded your DAG, you can make changes as your business logic requires to take 
 advantage of Airflow functionality that is external to the logical structure of your pipelines.
 
+FIXME discuss SubDAGs and structure.
+
 For instance, you may want to add Sensors to your Airflow DAGs to change the way that scheduled
 DAG runs interact with their environment, or you may want to manually edit DAG args such as
 `start_date` or `email`.

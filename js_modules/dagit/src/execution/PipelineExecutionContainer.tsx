@@ -4,6 +4,7 @@ import { ApolloClient } from "apollo-client";
 import { DataProxy } from "apollo-cache";
 import produce from "immer";
 import { Mutation, FetchResult } from "react-apollo";
+import { PipelineRunStatus } from "../types/globalTypes";
 import * as yaml from "yaml";
 
 import {
@@ -18,8 +19,7 @@ import {
 import PipelineExecution from "./PipelineExecution";
 import {
   PipelineExecutionContainerFragment,
-  PipelineExecutionContainerFragment_runs,
-  PipelineRunStatus
+  PipelineExecutionContainerFragment_runs
 } from "./types/PipelineExecutionContainerFragment";
 import {
   StartPipelineExecution,

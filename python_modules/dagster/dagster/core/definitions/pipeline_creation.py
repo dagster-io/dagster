@@ -3,6 +3,8 @@ from dagster import check
 
 from dagster.core.types import config
 from dagster.core.types.iterate_types import iterate_config_types
+from dagster.core.types.config import ALL_CONFIG_BUILTINS
+from dagster.core.types.runtime import ALL_RUNTIME_BUILTINS
 from dagster.core.errors import DagsterInvalidDefinitionError
 
 from .context import PipelineContextDefinition
@@ -163,13 +165,17 @@ def _gather_all_config_types(solid_defs, context_definitions, environment_type):
 
 
 def construct_runtime_type_dictionary(solid_defs):
-    type_dict = {}
+    type_dict = {t.name: t for t in ALL_RUNTIME_BUILTINS}
     for solid_def in solid_defs:
         for input_def in solid_def.input_defs:
             type_dict[input_def.runtime_type.name] = input_def.runtime_type
+            for inner_type in input_def.runtime_type.inner_types:
+                type_dict[inner_type.name] = inner_type
 
         for output_def in solid_def.output_defs:
             type_dict[output_def.runtime_type.name] = output_def.runtime_type
+            for inner_type in output_def.runtime_type.inner_types:
+                type_dict[inner_type.name] = inner_type
 
     return type_dict
 
@@ -195,22 +201,44 @@ def construct_config_type_dictionary(solid_defs, context_definitions, environmen
     )
     check.inst_param(environment_type, 'environment_type', config.ConfigType)
 
-    type_dict = {}
+    type_dict_by_name = {t.name: t for t in ALL_CONFIG_BUILTINS}
+    type_dict_by_key = {t.key: t for t in ALL_CONFIG_BUILTINS}
     all_types = list(
         _gather_all_config_types(solid_defs, context_definitions, environment_type)
     ) + list(_gather_all_schemas(solid_defs))
     for config_type in all_types:
         name = config_type.name
-        if name in type_dict:
-            if type(config_type) is not type(type_dict[name]):
+        if name and name in type_dict_by_name:
+            if type(config_type) is not type(type_dict_by_name[name]):
                 raise DagsterInvalidDefinitionError(
                     (
                         'Type names must be unique. You have construct two instances of types '
                         'with the same name {name} but have different instances. Instance one '
                         '{inst_one}. Instance two {inst_two}'
-                    ).format(name=name, inst_one=type(config_type), inst_two=type(type_dict[name]))
+                    ).format(
+                        name=name,
+                        inst_one=type(config_type),
+                        inst_two=type(type_dict_by_name[name]),
+                    )
                 )
         else:
-            type_dict[config_type.name] = config_type
+            type_dict_by_name[config_type.name] = config_type
 
-    return type_dict
+        key = config_type.key
+
+        if key in type_dict_by_key:
+            if type(config_type) is not type(type_dict_by_key[key]):
+                raise DagsterInvalidDefinitionError(
+                    (
+                        'Type names must be unique. You have construct two instances of types '
+                        'with the same key {key} but have different instances. Instance one '
+                        '{inst_one}. Instance two {inst_two}'
+                    ).format(
+                        key=key, inst_one=type(config_type), inst_two=type(type_dict_by_key[key])
+                    )
+                )
+
+        else:
+            type_dict_by_key[config_type.key] = config_type
+
+    return type_dict_by_name, type_dict_by_key

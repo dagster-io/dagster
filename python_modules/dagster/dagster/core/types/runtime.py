@@ -13,7 +13,7 @@ from .config import Nullable as ConfigNullable
 
 from .config_schema import InputSchema, OutputSchema
 
-from .marshal import MarshallingStrategy, PickleMarshallingStrategy
+from .marshal import SerializationStrategy, PickleSerializationStrategy
 from .dagster_type import check_dagster_type_param
 from .wrapping import WrappingListType, WrappingNullableType
 
@@ -31,10 +31,11 @@ class RuntimeType(object):
         self,
         key,
         name,
+        is_builtin=False,
         description=None,
         input_schema=None,
         output_schema=None,
-        marshalling_strategy=None,
+        serialization_strategy=None,
     ):
 
         type_obj = type(self)
@@ -51,12 +52,14 @@ class RuntimeType(object):
         self.description = check.opt_str_param(description, 'description')
         self.input_schema = check.opt_inst_param(input_schema, 'input_schema', InputSchema)
         self.output_schema = check.opt_inst_param(output_schema, 'output_schema', OutputSchema)
-        self.marshalling_strategy = check.opt_inst_param(
-            marshalling_strategy,
-            'marshalling_strategy',
-            MarshallingStrategy,
-            PickleMarshallingStrategy(),
+        self.serialization_strategy = check.opt_inst_param(
+            serialization_strategy,
+            'serialization_strategy',
+            SerializationStrategy,
+            PickleSerializationStrategy(),
         )
+
+        self.is_builtin = check.bool_param(is_builtin, 'is_builtin')
 
     __cache = {}
 
@@ -110,7 +113,9 @@ class RuntimeType(object):
 class BuiltinScalarRuntimeType(RuntimeType):
     def __init__(self, *args, **kwargs):
         name = type(self).__name__
-        super(BuiltinScalarRuntimeType, self).__init__(key=name, name=name, *args, **kwargs)
+        super(BuiltinScalarRuntimeType, self).__init__(
+            key=name, name=name, is_builtin=True, *args, **kwargs
+        )
 
     @property
     def is_scalar(self):
@@ -176,6 +181,7 @@ class Any(RuntimeType):
             name='Any',
             input_schema=BuiltinSchemas.ANY_INPUT,
             output_schema=BuiltinSchemas.ANY_OUTPUT,
+            is_builtin=True,
         )
 
     @property
@@ -215,9 +221,9 @@ def _create_nullable_input_schema(inner_type):
 
 class NullableType(RuntimeType):
     def __init__(self, inner_type):
-        name = 'Nullable.' + inner_type.name
+        key = 'Nullable.' + inner_type.key
         super(NullableType, self).__init__(
-            key=name, name=name, input_schema=_create_nullable_input_schema(inner_type)
+            key=key, name=None, input_schema=_create_nullable_input_schema(inner_type)
         )
         self.inner_type = inner_type
 
@@ -252,9 +258,9 @@ def _create_list_input_schema(inner_type):
 
 class ListType(RuntimeType):
     def __init__(self, inner_type):
-        name = 'List.' + inner_type.name
+        key = 'List.' + inner_type.key
         super(ListType, self).__init__(
-            key=name, name=name, input_schema=_create_list_input_schema(inner_type)
+            key=key, name=None, input_schema=_create_list_input_schema(inner_type)
         )
         self.inner_type = inner_type
 
@@ -344,3 +350,6 @@ def resolve_to_runtime_list(list_type):
 def resolve_to_runtime_nullable(nullable_type):
     check.inst_param(nullable_type, 'nullable_type', WrappingNullableType)
     return Nullable(resolve_to_runtime_type(nullable_type.inner_type))
+
+
+ALL_RUNTIME_BUILTINS = set(_RUNTIME_MAP.values())

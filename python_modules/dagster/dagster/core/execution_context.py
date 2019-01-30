@@ -10,6 +10,7 @@ from dagster.utils import merge_dicts
 from dagster.utils.logging import CompositeLogger, INFO, define_colored_console_logger
 
 from .events import ExecutionEvents
+from .types.marshal import PersistenceStrategy
 
 
 def _kv_message(all_items):
@@ -69,6 +70,7 @@ class RuntimeExecutionContext:
         event_callback=None,
         environment_config=None,
         tags=None,
+        persistence_policy=None,
     ):
 
         if loggers is None:
@@ -83,6 +85,9 @@ class RuntimeExecutionContext:
         # For re-construction purposes later on
         self._event_callback = check.opt_callable_param(event_callback, 'event_callback')
         self._environment_config = environment_config
+        self.persistence_policy = check.opt_inst_param(
+            persistence_policy, 'persistence_policy', PersistenceStrategy
+        )
 
     def for_step(self, step):
         return RuntimeExecutionContext(
@@ -92,6 +97,7 @@ class RuntimeExecutionContext:
             tags=merge_dicts(step.tags, self._tags),
             environment_config=self.environment_config,
             event_callback=self.event_callback,
+            persistence_policy=self.persistence_policy,
         )
 
     def _log(self, method, orig_message, message_props):
@@ -207,9 +213,6 @@ class RuntimeExecutionContext:
         return self._environment_config
 
 
-# class ReentrantInfo(namedtuple('_ReentrantInfo', 'run_id context_stack event_callback loggers')):
-#     def __new__(cls, run_id=None, context_stack=None, event_callback=None, loggers=None):
-#         return super(ReentrantInfo, cls).__new__(
 class ExecutionMetadata(namedtuple('_ExecutionMetadata', 'run_id tags event_callback loggers')):
     def __new__(cls, run_id=None, tags=None, event_callback=None, loggers=None):
         return super(ExecutionMetadata, cls).__new__(

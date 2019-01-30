@@ -20475,7 +20475,7 @@ snapshots['test_build_all_docs 53'] = '''
 
 <dl class="function">
 <dt id="dagster.as_dagster_type">
-<code class="descclassname">dagster.</code><code class="descname">as_dagster_type</code><span class="sig-paren">(</span><em>existing_type</em>, <em>name=None</em>, <em>description=None</em>, <em>input_schema=None</em>, <em>output_schema=None</em>, <em>marshalling_strategy=None</em><span class="sig-paren">)</span><a class="headerlink" href="#dagster.as_dagster_type" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">dagster.</code><code class="descname">as_dagster_type</code><span class="sig-paren">(</span><em>existing_type</em>, <em>name=None</em>, <em>description=None</em>, <em>input_schema=None</em>, <em>output_schema=None</em>, <em>serialization_strategy=None</em><span class="sig-paren">)</span><a class="headerlink" href="#dagster.as_dagster_type" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="attribute">
@@ -20490,7 +20490,7 @@ snapshots['test_build_all_docs 53'] = '''
 
 <dl class="class">
 <dt id="dagster.ConfigType">
-<em class="property">class </em><code class="descclassname">dagster.</code><code class="descname">ConfigType</code><span class="sig-paren">(</span><em>key</em>, <em>name</em>, <em>type_attributes=ConfigTypeAttributes(is_builtin=False</em>, <em>is_system_config=False</em>, <em>is_named=True)</em>, <em>description=None</em><span class="sig-paren">)</span><a class="headerlink" href="#dagster.ConfigType" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">dagster.</code><code class="descname">ConfigType</code><span class="sig-paren">(</span><em>key</em>, <em>name</em>, <em>type_attributes=ConfigTypeAttributes(is_builtin=False</em>, <em>is_system_config=False)</em>, <em>description=None</em><span class="sig-paren">)</span><a class="headerlink" href="#dagster.ConfigType" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="function">
@@ -20520,7 +20520,7 @@ snapshots['test_build_all_docs 53'] = '''
 
 <dl class="function">
 <dt id="dagster.NamedDict">
-<code class="descclassname">dagster.</code><code class="descname">NamedDict</code><span class="sig-paren">(</span><em>name</em>, <em>fields</em>, <em>description=None</em>, <em>type_attributes=ConfigTypeAttributes(is_builtin=False</em>, <em>is_system_config=False</em>, <em>is_named=True)</em><span class="sig-paren">)</span><a class="headerlink" href="#dagster.NamedDict" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">dagster.</code><code class="descname">NamedDict</code><span class="sig-paren">(</span><em>name</em>, <em>fields</em>, <em>description=None</em>, <em>type_attributes=ConfigTypeAttributes(is_builtin=False</em>, <em>is_system_config=False)</em><span class="sig-paren">)</span><a class="headerlink" href="#dagster.NamedDict" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="function">
@@ -20550,7 +20550,7 @@ snapshots['test_build_all_docs 53'] = '''
 
 <dl class="class">
 <dt id="dagster.RuntimeType">
-<em class="property">class </em><code class="descclassname">dagster.</code><code class="descname">RuntimeType</code><span class="sig-paren">(</span><em>key</em>, <em>name</em>, <em>description=None</em>, <em>input_schema=None</em>, <em>output_schema=None</em>, <em>marshalling_strategy=None</em><span class="sig-paren">)</span><a class="headerlink" href="#dagster.RuntimeType" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">dagster.</code><code class="descname">RuntimeType</code><span class="sig-paren">(</span><em>key</em>, <em>name</em>, <em>is_builtin=False</em>, <em>description=None</em>, <em>input_schema=None</em>, <em>output_schema=None</em>, <em>serialization_strategy=None</em><span class="sig-paren">)</span><a class="headerlink" href="#dagster.RuntimeType" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="attribute">
@@ -25522,14 +25522,14 @@ in the dagster-pandas library, building it step by step along the way.</p>
 <div class="section" id="basic-typing">
 <h2>Basic Typing<a class="headerlink" href="#basic-typing" title="Permalink to this headline">¶</a></h2>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+        <span class="p">)</span>
+
 
 <span class="n">DataFrame</span> <span class="o">=</span> <span class="n">as_dagster_type</span><span class="p">(</span>
     <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span>
     <span class="n">name</span><span class="o">=</span><span class="s1">&#39;PandasDataFrame&#39;</span><span class="p">,</span>
     <span class="n">description</span><span class="o">=</span><span class="s1">&#39;&#39;&#39;Two-dimensional size-mutable, potentially heterogeneous</span>
-<span class="s1">    tabular data structure with labeled axes (rows and columns).</span>
-<span class="s1">    See http://pandas.pydata.org/&#39;&#39;&#39;</span><span class="p">,</span>
-<span class="p">)</span>
+<span class="s1">    input_schema=dataframe_input_schema,</span>
 </pre></div>
 </div>
 <p>What this code doing is annotating/registering an existing type as a dagster type. Now one can
@@ -25603,13 +25603,15 @@ values have been applied.</p>
 API that removes some boilerplate around manipulating the config_value dictionary. Instead, the
 user-provided function takes the unpacked key and value of config_value directly, since in the
 case of a selector, the config_value dictionary has only 1 (key, value) pair.</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="nd">@input_selector_schema</span><span class="p">(</span>
-    <span class="n">Selector</span><span class="p">(</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>
+<span class="nd">@input_selector_schema</span><span class="p">(</span>
+    <span class="n">NamedSelector</span><span class="p">(</span>
+        <span class="s1">&#39;DataFrameInputSchema&#39;</span><span class="p">,</span>
         <span class="p">{</span>
             <span class="s1">&#39;csv&#39;</span><span class="p">:</span> <span class="n">define_csv_dict_field</span><span class="p">(),</span>
             <span class="s1">&#39;parquet&#39;</span><span class="p">:</span> <span class="n">define_path_dict_field</span><span class="p">(),</span>
             <span class="s1">&#39;table&#39;</span><span class="p">:</span> <span class="n">define_path_dict_field</span><span class="p">(),</span>
-        <span class="p">}</span>
+        <span class="p">},</span>
     <span class="p">)</span>
 <span class="p">)</span>
 <span class="k">def</span> <span class="nf">dataframe_input_schema</span><span class="p">(</span><span class="n">file_type</span><span class="p">,</span> <span class="n">file_options</span><span class="p">):</span>
@@ -25626,21 +25628,19 @@ case of a selector, the config_value dictionary has only 1 (key, value) pair.</p
         <span class="k">return</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_table</span><span class="p">(</span><span class="n">file_options</span><span class="p">[</span><span class="s1">&#39;path&#39;</span><span class="p">])</span>
     <span class="k">else</span><span class="p">:</span>
         <span class="k">raise</span> <span class="n">DagsterInvariantViolationError</span><span class="p">(</span>
-            <span class="s1">&#39;Unsupported file_type </span><span class="si">{file_type}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">file_type</span><span class="o">=</span><span class="n">file_type</span><span class="p">)</span>
-        <span class="p">)</span>
 </pre></div>
 </div>
 <p>You’ll note that we no longer need to manipulate the <code class="docutils literal notranslate"><span class="pre">config_value</span></code> dictionary. It grabs
 that key and value for you and calls the provided function.</p>
 <p>Finally insert this into the original declaration:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">DataFrame</span> <span class="o">=</span> <span class="n">as_dagster_type</span><span class="p">(</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>
+
+<span class="n">DataFrame</span> <span class="o">=</span> <span class="n">as_dagster_type</span><span class="p">(</span>
     <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span>
     <span class="n">name</span><span class="o">=</span><span class="s1">&#39;PandasDataFrame&#39;</span><span class="p">,</span>
     <span class="n">description</span><span class="o">=</span><span class="s1">&#39;&#39;&#39;Two-dimensional size-mutable, potentially heterogeneous</span>
-<span class="s1">    tabular data structure with labeled axes (rows and columns).</span>
-<span class="s1">    See http://pandas.pydata.org/&#39;&#39;&#39;</span><span class="p">,</span>
-<span class="hll">    <span class="n">input_schema</span><span class="o">=</span><span class="n">dataframe_input_schema</span><span class="p">,</span>
-</span><span class="p">)</span>
+<span class="hll"><span class="s1">    tabular data structure with labeled axes (rows and columns).</span>
+</span><span class="s1">    input_schema=dataframe_input_schema,</span>
 </pre></div>
 </div>
 <p>Now if you run a pipeline with this solid from dagit you will be able to provide sources for
@@ -25655,12 +25655,13 @@ persistent store. Outputs are purely <em>optional</em> for any computation, wher
 for a computation to proceed. You will likely want outputs as for a pipeline to be useful it
 should produce some materialization that outlives the computation.</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="hll"><span class="nd">@output_selector_schema</span><span class="p">(</span>
-</span>    <span class="n">Selector</span><span class="p">(</span>
+</span>    <span class="n">NamedSelector</span><span class="p">(</span>
+        <span class="s1">&#39;DataFrameOutputSchema&#39;</span><span class="p">,</span>
         <span class="p">{</span>
             <span class="s1">&#39;csv&#39;</span><span class="p">:</span> <span class="n">define_csv_dict_field</span><span class="p">(),</span>
             <span class="s1">&#39;parquet&#39;</span><span class="p">:</span> <span class="n">define_path_dict_field</span><span class="p">(),</span>
             <span class="s1">&#39;table&#39;</span><span class="p">:</span> <span class="n">define_path_dict_field</span><span class="p">(),</span>
-        <span class="p">}</span>
+        <span class="p">},</span>
     <span class="p">)</span>
 <span class="p">)</span>
 <span class="k">def</span> <span class="nf">dataframe_output_schema</span><span class="p">(</span><span class="n">file_type</span><span class="p">,</span> <span class="n">file_options</span><span class="p">,</span> <span class="n">pandas_df</span><span class="p">):</span>
@@ -25677,7 +25678,6 @@ should produce some materialization that outlives the computation.</p>
     <span class="k">elif</span> <span class="n">file_type</span> <span class="o">==</span> <span class="s1">&#39;table&#39;</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">pandas_df</span><span class="o">.</span><span class="n">to_csv</span><span class="p">(</span><span class="n">file_options</span><span class="p">[</span><span class="s1">&#39;path&#39;</span><span class="p">],</span> <span class="n">sep</span><span class="o">=</span><span class="s1">&#39;</span><span class="se">\\t</span><span class="s1">&#39;</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
     <span class="k">else</span><span class="p">:</span>
-        <span class="n">check</span><span class="o">.</span><span class="n">failed</span><span class="p">(</span><span class="s1">&#39;Unsupported file_type </span><span class="si">{file_type}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">file_type</span><span class="o">=</span><span class="n">file_type</span><span class="p">))</span>
 </pre></div>
 </div>
 <p>This has a similar aesthetic to an input schema but performs a different function. Notice that
@@ -25685,15 +25685,15 @@ it takes a third argument, <cite>pandas_df</cite> (it can be named anything), th
 outputted from the solid in question. It then takes the configuration data as “instructions” as to
 how to materialize the value.</p>
 <p>One connects the output schema to the type as follows:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">DataFrame</span> <span class="o">=</span> <span class="n">as_dagster_type</span><span class="p">(</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>
+
+<span class="n">DataFrame</span> <span class="o">=</span> <span class="n">as_dagster_type</span><span class="p">(</span>
     <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span>
     <span class="n">name</span><span class="o">=</span><span class="s1">&#39;PandasDataFrame&#39;</span><span class="p">,</span>
     <span class="n">description</span><span class="o">=</span><span class="s1">&#39;&#39;&#39;Two-dimensional size-mutable, potentially heterogeneous</span>
 <span class="s1">    tabular data structure with labeled axes (rows and columns).</span>
-<span class="s1">    See http://pandas.pydata.org/&#39;&#39;&#39;</span><span class="p">,</span>
-    <span class="n">input_schema</span><span class="o">=</span><span class="n">dataframe_input_schema</span><span class="p">,</span>
-<span class="hll">    <span class="n">output_schema</span><span class="o">=</span><span class="n">dataframe_output_schema</span><span class="p">,</span>
-</span><span class="p">)</span>
+<span class="hll"><span class="s1">    See http://pandas.pydata.org/&#39;&#39;&#39;</span><span class="p">,</span>
+</span>    <span class="n">input_schema</span><span class="o">=</span><span class="n">dataframe_input_schema</span><span class="p">,</span>
 </pre></div>
 </div>
 <p>Now we can provide a list of materializations to a given execution.</p>

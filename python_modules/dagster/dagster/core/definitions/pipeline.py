@@ -110,7 +110,10 @@ class PipelineDefinition(object):
         self.context_cls = define_context_cls(self)
         self.context_type = self.context_cls.inst()
 
-        self._config_type_dict = construct_config_type_dictionary(
+        (
+            self._config_type_dict_by_name,
+            self._config_type_dict_by_key,
+        ) = construct_config_type_dictionary(
             solids, self.context_definitions, self.environment_type
         )
 
@@ -161,11 +164,15 @@ class PipelineDefinition(object):
 
     def has_config_type(self, name):
         check.str_param(name, 'name')
-        return name in self._config_type_dict
+        return name in self._config_type_dict_by_name
 
     def config_type_named(self, name):
         check.str_param(name, 'name')
-        return self._config_type_dict[name]
+        return self._config_type_dict_by_name[name]
+
+    def config_type_keyed(self, key):
+        check.str_param(key, 'key')
+        return self._config_type_dict_by_key[key]
 
     def has_runtime_type(self, name):
         check.str_param(name, 'name')
@@ -176,7 +183,7 @@ class PipelineDefinition(object):
         return self._runtime_type_dict[name]
 
     def all_config_types(self):
-        return self._config_type_dict.values()
+        return self._config_type_dict_by_key.values()
 
     def has_context(self, name):
         check.str_param(name, 'name')
@@ -187,7 +194,7 @@ class PipelineDefinition(object):
 
     @property
     def solid_defs(self):
-        return list(set([solid.definition for solid in self.solids]))
+        return list({solid.definition for solid in self.solids})
 
     def solid_def_named(self, name):
         check.str_param(name, 'name')

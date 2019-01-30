@@ -561,6 +561,29 @@ def test_opt_tuple_param():
         assert check.tuple_param('kdjfkd', 'something')
 
 
+def test_opt_type_param():
+    class Foo(object):
+        pass
+
+    assert check.opt_type_param(int, 'foo')
+    assert check.opt_type_param(Foo, 'foo')
+
+    assert check.opt_type_param(None, 'foo') is None
+    assert check.opt_type_param(None, 'foo', Foo) is Foo
+
+    with pytest.raises(CheckError):
+        check.opt_type_param(check, 'foo')
+
+    with pytest.raises(CheckError):
+        check.opt_type_param(234, 'foo')
+
+    with pytest.raises(CheckError):
+        check.opt_type_param('bar', 'foo')
+
+    with pytest.raises(CheckError):
+        check.opt_type_param(Foo(), 'foo')
+
+
 def test_type_param():
     class Bar(object):
         pass

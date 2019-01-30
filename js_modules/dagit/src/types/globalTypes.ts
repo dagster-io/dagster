@@ -1,18 +1,3 @@
-
-
-/* tslint:disable */
-// This file was automatically generated and should not be edited.
-
-// ====================================================
-// GraphQL fragment: ConfigTypeWithTooltipFragment
-// ====================================================
-
-export interface ConfigTypeWithTooltipFragment {
-  key: string;
-  name: string | null;
-  description: string | null;
-}
-
 /* tslint:disable */
 // This file was automatically generated and should not be edited.
 
@@ -45,7 +30,7 @@ export enum PipelineRunStatus {
   SUCCESS = "SUCCESS",
 }
 
-export enum StepTag {
+export enum StepKind {
   INPUT_EXPECTATION = "INPUT_EXPECTATION",
   INPUT_THUNK = "INPUT_THUNK",
   JOIN = "JOIN",

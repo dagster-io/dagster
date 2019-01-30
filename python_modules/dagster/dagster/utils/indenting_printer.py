@@ -35,7 +35,7 @@ class IndentingPrinter(object):
         self.current_indent += self.indent_level
 
     def decrease_indent(self):
-        if self.current_indent <= 0:
+        if self.indent_level and self.current_indent <= 0:
             raise Exception('indent cannot be negative')
         self.current_indent -= self.indent_level
 

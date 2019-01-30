@@ -2897,6 +2897,62 @@ Array [
                   className="sc-hMqMXs fBSDvM"
                 >
                   <a
+                    href="/?typeExplorer=Any"
+                    onClick={[Function]}
+                  >
+                    <code
+                      className="sc-eNQAEJ fIDgkI"
+                    >
+                      Any
+                    </code>
+                  </a>
+                </li>
+                <li
+                  className="sc-hMqMXs fBSDvM"
+                >
+                  <a
+                    href="/?typeExplorer=Bool"
+                    onClick={[Function]}
+                  >
+                    <code
+                      className="sc-eNQAEJ fIDgkI"
+                    >
+                      Bool
+                    </code>
+                  </a>
+                </li>
+                <li
+                  className="sc-hMqMXs fBSDvM"
+                >
+                  <a
+                    href="/?typeExplorer=Float"
+                    onClick={[Function]}
+                  >
+                    <code
+                      className="sc-eNQAEJ fIDgkI"
+                    >
+                      Float
+                    </code>
+                  </a>
+                </li>
+                <li
+                  className="sc-hMqMXs fBSDvM"
+                >
+                  <a
+                    href="/?typeExplorer=Int"
+                    onClick={[Function]}
+                  >
+                    <code
+                      className="sc-eNQAEJ fIDgkI"
+                    >
+                      Int
+                    </code>
+                  </a>
+                </li>
+                <li
+                  className="sc-hMqMXs fBSDvM"
+                >
+                  <a
                     href="/?typeExplorer=PandasDataFrame"
                     onClick={[Function]}
                   >
@@ -2904,6 +2960,34 @@ Array [
                       className="sc-eNQAEJ fIDgkI"
                     >
                       PandasDataFrame
+                    </code>
+                  </a>
+                </li>
+                <li
+                  className="sc-hMqMXs fBSDvM"
+                >
+                  <a
+                    href="/?typeExplorer=Path"
+                    onClick={[Function]}
+                  >
+                    <code
+                      className="sc-eNQAEJ fIDgkI"
+                    >
+                      Path
+                    </code>
+                  </a>
+                </li>
+                <li
+                  className="sc-hMqMXs fBSDvM"
+                >
+                  <a
+                    href="/?typeExplorer=String"
+                    onClick={[Function]}
+                  >
+                    <code
+                      className="sc-eNQAEJ fIDgkI"
+                    >
+                      String
                     </code>
                   </a>
                 </li>

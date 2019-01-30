@@ -9,7 +9,7 @@ from dagster import (
     input_selector_schema,
     output_selector_schema,
     Path,
-    Selector,
+    NamedSelector,
     String,
 )
 
@@ -25,12 +25,13 @@ def define_csv_dict_field():
 
 
 @output_selector_schema(
-    Selector(
+    NamedSelector(
+        'DataFrameOutputSchema',
         {
             'csv': define_csv_dict_field(),
             'parquet': define_path_dict_field(),
             'table': define_path_dict_field(),
-        }
+        },
     )
 )
 def dataframe_output_schema(file_type, file_options, pandas_df):
@@ -51,12 +52,13 @@ def dataframe_output_schema(file_type, file_options, pandas_df):
 
 
 @input_selector_schema(
-    Selector(
+    NamedSelector(
+        'DataFrameInputSchema',
         {
             'csv': define_csv_dict_field(),
             'parquet': define_path_dict_field(),
             'table': define_path_dict_field(),
-        }
+        },
     )
 )
 def dataframe_input_schema(file_type, file_options):

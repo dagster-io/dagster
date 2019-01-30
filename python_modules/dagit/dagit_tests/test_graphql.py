@@ -1,3 +1,4 @@
+import pickle
 import uuid
 
 import pandas as pd
@@ -28,8 +29,7 @@ from dagster import (
     solid,
 )
 
-from dagster.core.types.marshal import PickleMarshallingStrategy
-
+from dagster.core.types.config import ALL_CONFIG_BUILTINS
 from dagster.utils import script_relative_path
 from dagster.utils.test import get_temp_file_name
 
@@ -1198,9 +1198,9 @@ def test_pipelines():
     assert not result.errors
     assert result.data
 
-    assert set([p['name'] for p in result.data['pipelines']['nodes']]) == set(
-        [p.name for p in define_repository().get_all_pipelines()]
-    )
+    assert {p['name'] for p in result.data['pipelines']['nodes']} == {
+        p.name for p in define_repository().get_all_pipelines()
+    }
 
 
 def test_pipelines_or_error():
@@ -1210,9 +1210,9 @@ def test_pipelines_or_error():
     assert not result.errors
     assert result.data
 
-    assert set([p['name'] for p in result.data['pipelinesOrError']['nodes']]) == set(
-        [p.name for p in define_repository().get_all_pipelines()]
-    )
+    assert {p['name'] for p in result.data['pipelinesOrError']['nodes']} == {
+        p.name for p in define_repository().get_all_pipelines()
+    }
 
 
 def test_pipeline_by_name():
@@ -1249,11 +1249,45 @@ def test_pipeline_or_error_by_name():
     assert result.data['pipelineOrError']['name'] == 'pandas_hello_world_two'
 
 
+def pipeline_named(result, name):
+    for pipeline_data in result.data['pipelines']['nodes']:
+        if pipeline_data['name'] == name:
+            return pipeline_data
+    check.failed('Did not find')
+
+
+def has_config_type_with_key_prefix(pipeline_data, prefix):
+    for config_type_data in pipeline_data['configTypes']:
+        if config_type_data['key'].startswith(prefix):
+            return True
+
+    return False
+
+
+def has_config_type(pipeline_data, name):
+    for config_type_data in pipeline_data['configTypes']:
+        if config_type_data['name'] == name:
+            return True
+
+    return False
+
+
 def test_smoke_test_config_type_system():
     result = execute_dagster_graphql(define_context(), ALL_CONFIG_TYPES_QUERY)
 
     assert not result.errors
     assert result.data
+
+    pipeline_data = pipeline_named(result, 'more_complicated_nested_config')
+
+    assert pipeline_data
+
+    assert has_config_type_with_key_prefix(pipeline_data, 'Dict.')
+    assert not has_config_type_with_key_prefix(pipeline_data, 'List.')
+    assert not has_config_type_with_key_prefix(pipeline_data, 'Nullable.')
+
+    for builtin_config_type in ALL_CONFIG_BUILTINS:
+        assert has_config_type(pipeline_data, builtin_config_type.name)
 
 
 ALL_CONFIG_TYPES_QUERY = '''
@@ -1415,6 +1449,7 @@ query RuntimeTypeQuery($pipelineName: String! $runtimeTypeName: String!)
         __typename
         ... on RegularRuntimeType {
             name
+            isBuiltin
         }
         ... on PipelineNotFoundError {
             pipelineName
@@ -1439,6 +1474,20 @@ def test_runtime_type_query_works():
     assert result.data
     assert result.data['runtimeTypeOrError']['__typename'] == 'RegularRuntimeType'
     assert result.data['runtimeTypeOrError']['name'] == 'PandasDataFrame'
+
+
+def test_runtime_type_builtin_query():
+    result = execute_dagster_graphql(
+        define_context(),
+        RUNTIME_TYPE_QUERY,
+        {'pipelineName': 'pandas_hello_world', 'runtimeTypeName': 'Int'},
+    )
+
+    assert not result.errors
+    assert result.data
+    assert result.data['runtimeTypeOrError']['__typename'] == 'RegularRuntimeType'
+    assert result.data['runtimeTypeOrError']['name'] == 'Int'
+    assert result.data['runtimeTypeOrError']['isBuiltin']
 
 
 def test_runtime_type_or_error_pipeline_not_found():
@@ -1637,7 +1686,7 @@ def test_query_execution_plan():
 
 
 def get_nameset(llist):
-    return set([item['name'] for item in llist])
+    return {item['name'] for item in llist}
 
 
 def get_named_thing(llist, name):
@@ -1892,12 +1941,13 @@ mutation ($pipeline: ExecutionSelector!, $config: PipelineConfig) {
 
 
 def test_successful_start_subplan():
-    marshalling = PickleMarshallingStrategy()
 
     with get_temp_file_name() as num_df_file:
         with get_temp_file_name() as out_df_file:
             num_df = pd.read_csv(script_relative_path('num.csv'))
-            marshalling.marshal_value(num_df, num_df_file)
+
+            with open(num_df_file, 'wb') as ff:
+                pickle.dump(num_df, ff)
 
             result = execute_dagster_graphql(
                 define_context(),
@@ -1916,7 +1966,8 @@ def test_successful_start_subplan():
                 },
             )
 
-            out_df = marshalling.unmarshal_value(out_df_file)
+            with open(out_df_file, 'rb') as ff:
+                out_df = pickle.load(ff)
             assert out_df.to_dict('list') == {'num1': [1, 3], 'num2': [2, 4], 'sum': [3, 7]}
             if result.errors:
                 raise Exception(result.errors)

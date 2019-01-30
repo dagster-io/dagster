@@ -7,15 +7,12 @@ from dagster import check
 from .builtin_enum import BuiltinEnum
 
 
-class ConfigTypeAttributes(
-    namedtuple('_ConfigTypeAttributes', 'is_builtin is_system_config is_named')
-):
-    def __new__(cls, is_builtin=False, is_system_config=False, is_named=True):
+class ConfigTypeAttributes(namedtuple('_ConfigTypeAttributes', 'is_builtin is_system_config')):
+    def __new__(cls, is_builtin=False, is_system_config=False):
         return super(ConfigTypeAttributes, cls).__new__(
             cls,
             is_builtin=check.bool_param(is_builtin, 'is_builtin'),
             is_system_config=check.bool_param(is_system_config, 'is_system_config'),
-            is_named=check.bool_param(is_named, 'is_named'),
         )
 
 
@@ -60,10 +57,6 @@ class ConfigType(object):
     @property
     def is_builtin(self):
         return self.type_attributes.is_builtin
-
-    @property
-    def is_named(self):
-        return self.type_attributes.is_named
 
     @property
     def has_fields(self):
@@ -209,9 +202,9 @@ def Nullable(inner_type):
     class _Nullable(ConfigNullable):
         def __init__(self):
             super(_Nullable, self).__init__(
-                key='Nullable.{inner_type}'.format(inner_type=inner_type.name),
-                name='Nullable.{inner_type}'.format(inner_type=inner_type.name),
-                type_attributes=ConfigTypeAttributes(is_builtin=True, is_named=False),
+                key='Nullable.{inner_type}'.format(inner_type=inner_type.key),
+                name=None,
+                type_attributes=ConfigTypeAttributes(is_builtin=True),
                 inner_type=inner_type,
             )
 
@@ -224,10 +217,10 @@ def List(inner_type):
     class _List(ConfigList):
         def __init__(self):
             super(_List, self).__init__(
-                key='List.{inner_type}'.format(inner_type=inner_type.name),
-                name='List.{inner_type}'.format(inner_type=inner_type.name),
+                key='List.{inner_type}'.format(inner_type=inner_type.key),
+                name=None,
                 description='List of {inner_type}'.format(inner_type=inner_type.name),
-                type_attributes=ConfigTypeAttributes(is_builtin=True, is_named=False),
+                type_attributes=ConfigTypeAttributes(is_builtin=True),
                 inner_type=inner_type,
             )
 
@@ -286,3 +279,5 @@ _CONFIG_MAP = {
     BuiltinEnum.PATH: Path.inst(),
     BuiltinEnum.STRING: String.inst(),
 }
+
+ALL_CONFIG_BUILTINS = set(_CONFIG_MAP.values())

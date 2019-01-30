@@ -10,6 +10,7 @@
       - #598: Correctly display input and output schemas for types in dagit
       - #670: Internal system error "dagster.check.CheckError: Invariant failed. Description: Should not be in context" raised when user throwing error during transform. Now the appropriate user error should be raised.
       - #672: Dagit sometimes hangs (TypeError: unsupported operand type(s) for -: 'float' and 'NoneType' in console log)
+      - #575: Improve error messaging by masking anonymous type names
 
    - API Additions and Changes
       - New decorated-based @resource API as a more concise alternative to ResourceDefinition
@@ -28,3 +29,4 @@
       - StepTag has been renamed to StepKind
       - Added startSubplanExecution to enable pipeline execution at step subset granularity
       - Deprecated ExecutionStep.name in favor of ExecutionStep.key
+      - Added isBuiltin to RuntimeType

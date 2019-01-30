@@ -3,8 +3,6 @@ from dagster.tutorials.intro_tutorial.hello_dag import define_hello_dag_pipeline
 from dagster.tutorials.utils import check_cli_execute_file_pipeline
 from dagster.utils import script_relative_path
 
-from dagster.tutorials.intro_tutorial.hello_dag import define_hello_dag_pipeline
-
 
 def test_intro_tutorial_hello_dag():
     pipeline = define_hello_dag_pipeline()
