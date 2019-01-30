@@ -40,7 +40,100 @@ def make_dag(dag_id, dag_description, dag_kwargs, s3_conn_id, modified_docker_op
         image='dagster-airflow-demo',
         task_id='multiply__the__word_word_input__thunk',
         s3_conn_id=s3_conn_id,
-        command=,
+        command='-q 
+        mutation {{
+          startSubplanExecution(
+            config: {config},
+            executionMetadata: {{
+              runId: "testRun", # FIXME
+            }},
+            pipelineName: "{pipeline_name}",
+            stepExecutions: [
+              {{
+                stepKey: "{step_key}"}}
+              }}
+            ],
+            marshalledInputs: {marshalled_inputs}
+            marshalledOutputs: {marshalled_outputs}
+          ) {
+            __typename
+            ... on StartSubplanExecutionSuccess {
+              pipeline {
+                name
+                description
+                solids {
+                  name
+                }
+              },
+            }
+            ... on PipelineConfigValidationInvalid {
+                pipeline {
+                    name
+                }
+                errors {
+                    message
+                    path
+                    stack {
+                    entries {
+                        __typename
+                        ... on EvaluationStackPathEntry {
+                        field {
+                            name
+                            description
+                            configType {
+                            key
+                            name
+                            description
+                            }
+                            defaultValue
+                            isOptional
+                        }
+                        }
+                    }
+                    }
+                    reason
+                }
+                }
+                ... on StartSubplanExecutionInvalidStepsError {
+                invalidStepKeys
+                }
+                ... on StartSubplanExecutionInvalidOutputError {
+                step {
+                    key
+                    inputs {
+                    name
+                    type {
+                        key
+                        name
+                    }
+                    }
+                    outputs {
+                    name
+                    type {
+                        key
+                        name
+                    }
+                    }
+                    solid {
+                    name
+                    definition {
+                        name
+                    }
+                    inputs {
+                        solid {
+                        name
+                        }
+                        definition {
+                        name              
+                        }
+                    }
+                    }
+                    kind
+                }
+                }
+            }
+            }
+',
     )
 
     multiply__the__word_transform_task = DagsterOperator(
@@ -50,7 +143,100 @@ def make_dag(dag_id, dag_description, dag_kwargs, s3_conn_id, modified_docker_op
         image='dagster-airflow-demo',
         task_id='multiply__the__word_transform',
         s3_conn_id=s3_conn_id,
-        command=,
+        command='-q 
+        mutation {{
+          startSubplanExecution(
+            config: {config},
+            executionMetadata: {{
+              runId: "testRun", # FIXME
+            }},
+            pipelineName: "{pipeline_name}",
+            stepExecutions: [
+              {{
+                stepKey: "{step_key}"}}
+              }}
+            ],
+            marshalledInputs: {marshalled_inputs}
+            marshalledOutputs: {marshalled_outputs}
+          ) {
+            __typename
+            ... on StartSubplanExecutionSuccess {
+              pipeline {
+                name
+                description
+                solids {
+                  name
+                }
+              },
+            }
+            ... on PipelineConfigValidationInvalid {
+                pipeline {
+                    name
+                }
+                errors {
+                    message
+                    path
+                    stack {
+                    entries {
+                        __typename
+                        ... on EvaluationStackPathEntry {
+                        field {
+                            name
+                            description
+                            configType {
+                            key
+                            name
+                            description
+                            }
+                            defaultValue
+                            isOptional
+                        }
+                        }
+                    }
+                    }
+                    reason
+                }
+                }
+                ... on StartSubplanExecutionInvalidStepsError {
+                invalidStepKeys
+                }
+                ... on StartSubplanExecutionInvalidOutputError {
+                step {
+                    key
+                    inputs {
+                    name
+                    type {
+                        key
+                        name
+                    }
+                    }
+                    outputs {
+                    name
+                    type {
+                        key
+                        name
+                    }
+                    }
+                    solid {
+                    name
+                    definition {
+                        name
+                    }
+                    inputs {
+                        solid {
+                        name
+                        }
+                        definition {
+                        name              
+                        }
+                    }
+                    }
+                    kind
+                }
+                }
+            }
+            }
+',
     )
 
     count__letters_transform_task = DagsterOperator(
@@ -60,7 +246,100 @@ def make_dag(dag_id, dag_description, dag_kwargs, s3_conn_id, modified_docker_op
         image='dagster-airflow-demo',
         task_id='count__letters_transform',
         s3_conn_id=s3_conn_id,
-        command=,
+        command='-q 
+        mutation {{
+          startSubplanExecution(
+            config: {config},
+            executionMetadata: {{
+              runId: "testRun", # FIXME
+            }},
+            pipelineName: "{pipeline_name}",
+            stepExecutions: [
+              {{
+                stepKey: "{step_key}"}}
+              }}
+            ],
+            marshalledInputs: {marshalled_inputs}
+            marshalledOutputs: {marshalled_outputs}
+          ) {
+            __typename
+            ... on StartSubplanExecutionSuccess {
+              pipeline {
+                name
+                description
+                solids {
+                  name
+                }
+              },
+            }
+            ... on PipelineConfigValidationInvalid {
+                pipeline {
+                    name
+                }
+                errors {
+                    message
+                    path
+                    stack {
+                    entries {
+                        __typename
+                        ... on EvaluationStackPathEntry {
+                        field {
+                            name
+                            description
+                            configType {
+                            key
+                            name
+                            description
+                            }
+                            defaultValue
+                            isOptional
+                        }
+                        }
+                    }
+                    }
+                    reason
+                }
+                }
+                ... on StartSubplanExecutionInvalidStepsError {
+                invalidStepKeys
+                }
+                ... on StartSubplanExecutionInvalidOutputError {
+                step {
+                    key
+                    inputs {
+                    name
+                    type {
+                        key
+                        name
+                    }
+                    }
+                    outputs {
+                    name
+                    type {
+                        key
+                        name
+                    }
+                    }
+                    solid {
+                    name
+                    definition {
+                        name
+                    }
+                    inputs {
+                        solid {
+                        name
+                        }
+                        definition {
+                        name              
+                        }
+                    }
+                    }
+                    kind
+                }
+                }
+            }
+            }
+',
     )
 
     multiply__the__word_word_input__thunk_task.set_downstream(multiply__the__word_transform_task)
