@@ -45,6 +45,108 @@ def _bad_import(path):
     return '.' in os.path.basename(path)[:-3]
 
 
+def _make_query_for_step(step):
+    marshalled_inputs = """[{
+            inputName: "word",
+            key: "word.txt"
+          }]"""
+    marshalled_outputs = """[{outputName: "input_thunk_output", key: "multiply__the__word_word_input__thunk___input_thunk_output"}]
+    }]"""
+    return """
+        mutation {{
+          startSubplanExecution(
+            config: {config},
+            executionMetadata: {{
+              runId: "testRun", # FIXME
+            }},
+            pipelineName: "{pipeline_name}",
+            stepExecutions: [
+              {{
+                stepKey: "{step_key}"}}
+              }}
+            ],
+            marshalledInputs: {marshalled_inputs}
+            marshalledOutputs: {marshalled_outputs}
+          ) {
+            __typename
+            ... on StartSubplanExecutionSuccess {
+              pipeline {
+                name
+                description
+                solids {
+                  name
+                }
+              },
+            }
+            ... on PipelineConfigValidationInvalid {
+                pipeline {
+                    name
+                }
+                errors {
+                    message
+                    path
+                    stack {
+                    entries {
+                        __typename
+                        ... on EvaluationStackPathEntry {
+                        field {
+                            name
+                            description
+                            configType {
+                            key
+                            name
+                            description
+                            }
+                            defaultValue
+                            isOptional
+                        }
+                        }
+                    }
+                    }
+                    reason
+                }
+                }
+                ... on StartSubplanExecutionInvalidStepsError {
+                invalidStepKeys
+                }
+                ... on StartSubplanExecutionInvalidOutputError {
+                step {
+                    key
+                    inputs {
+                    name
+                    type {
+                        key
+                        name
+                    }
+                    }
+                    outputs {
+                    name
+                    type {
+                        key
+                        name
+                    }
+                    }
+                    solid {
+                    name
+                    definition {
+                        name
+                    }
+                    inputs {
+                        solid {
+                        name
+                        }
+                        definition {
+                        name              
+                        }
+                    }
+                    }
+                    kind
+                }
+                }
+            }
+            }
+"""
+
 def _make_editable_scaffold(
     pipeline_name, pipeline_description, env_config, static_scaffold, default_args
 ):
@@ -218,6 +320,8 @@ def _make_static_scaffold(pipeline_name, env_config, execution_plan, image, edit
                 step_key = step.key
                 airflow_step_key = _normalize_key(step_key)
 
+                query = _make_query_for_step(step)
+
                 printer.line(
                     '{airflow_step_key}_task = DagsterOperator('.format(
                         airflow_step_key=airflow_step_key
@@ -232,7 +336,7 @@ def _make_static_scaffold(pipeline_name, env_config, execution_plan, image, edit
                         'task_id=\'{airflow_step_key}\','.format(airflow_step_key=airflow_step_key)
                     )
                     printer.line('s3_conn_id=s3_conn_id,')
-                    printer.line('command=,')
+                    printer.line('command=\'-q {query}\','.format(query=query))
                 printer.line(')')
                 printer.blank_line()
 
