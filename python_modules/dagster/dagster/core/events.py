@@ -28,6 +28,8 @@ class EventType(Enum):
     EXECUTION_PLAN_STEP_START = 'EXECUTION_PLAN_STEP_START'
     EXECUTION_PLAN_STEP_FAILURE = 'EXECUTION_PLAN_STEP_FAILURE'
 
+    STEP_MATERIALIAZATION = 'STEP_MATERIALIZATION'
+
     UNCATEGORIZED = 'UNCATEGORIZED'
 
 
@@ -89,6 +91,16 @@ class ExecutionEvents:
             step_key=step_key,
             # We really need a better serialization story here
             error_info=json.dumps(serializable_error_info_from_exc_info(exc_info)),
+        )
+
+    def step_materialization(self, step_key, materialization_name, materialization_loc):
+        check.str_param(step_key, 'step_key')
+        self.context.info(
+            'Step {step_key} produced materialization of {name} at {loc}'.format(
+                step_key, materialization_name, materialization_loc
+            ),
+            event_type=EventType.STEP_MATERIALIAZATION.value,
+            step_key=step_key,
         )
 
     def pipeline_name(self):
@@ -234,6 +246,27 @@ class LogMessageRecord(EventRecord):
     pass
 
 
+class StepMaterializationRecord(ExecutionStepEventRecord):
+    def __init__(self, materialization_name, materialization_loc, **kwargs):
+        super(StepMaterializationRecord, self).__init__(**kwargs)
+        self._name = check.str_param(materialization_name, 'materialization_name')
+        self._loc = check.str_param(materialization_loc, 'materialization_loc')
+
+    @property
+    def name(self):
+        return self._name
+
+    @property
+    def loc(self):
+        return self._loc
+
+    def to_dict(self):
+        orig = super(StepMaterializationRecord, self).to_dict()
+        orig['name'] = self.name
+        orig['loc'] = self.loc
+        return orig
+
+
 EVENT_CLS_LOOKUP = {
     EventType.EXECUTION_PLAN_STEP_FAILURE: ExecutionStepEventRecord,
     EventType.EXECUTION_PLAN_STEP_START: ExecutionStepEventRecord,
@@ -242,6 +275,7 @@ EVENT_CLS_LOOKUP = {
     EventType.PIPELINE_START: PipelineEventRecord,
     EventType.PIPELINE_SUCCESS: PipelineEventRecord,
     EventType.UNCATEGORIZED: LogMessageRecord,
+    EventType.STEP_MATERIALIAZATION: StepMaterializationRecord,
 }
 
 PIPELINE_EVENTS = {EventType.PIPELINE_FAILURE, EventType.PIPELINE_START, EventType.PIPELINE_SUCCESS}

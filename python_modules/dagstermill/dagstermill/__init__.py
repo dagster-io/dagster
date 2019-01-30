@@ -390,10 +390,10 @@ def _dm_solid_transform(name, notebook_path):
                                 current_time = new_time
 
             if process.returncode != 0:
-                # Throw event that is an execution error!
-                info.log.debug("There was an error in Papermill!")
-                info.log.debug('stderr was None' if process.stderr is None else process.stderr)
-                exit()
+                raise DagstermillError(
+                    "There wsas an error when Papermill tried to execute the notebook. "
+                    "The process stderr is {stderr}".format(stderr=process.stderr)
+                )
 
             output_nb = pm.read_notebook(temp_path)
 
@@ -403,7 +403,12 @@ def _dm_solid_transform(name, notebook_path):
                 )
             )
 
-            info.log.info("Output notebook path is {}".format(output_notebook_dir))
+            info.log.debug("Output notebook path is {}".format(output_notebook_dir))
+            info.context.events.step_materialization(
+                "fake_step_key",
+                "{name} (notebook solid)".format(name=info.context.solid.name),
+                output_notebook_dir,
+            )
 
             for output_def in info.solid_def.output_defs:
                 if output_def.name in output_nb.data:

@@ -110,7 +110,7 @@ class DauphinLogMessageConnection(dauphin.ObjectType):
         )
 
 
-class DaupinPipelineRunLogsSubscriptionPayload(dauphin.ObjectType):
+class DauphinPipelineRunLogsSubscriptionPayload(dauphin.ObjectType):
     class Meta:
         name = 'PipelineRunLogsSubscriptionPayload'
 
@@ -255,6 +255,12 @@ class DauphinPipelineRunEvent(dauphin.Union):
                 ),
                 error=info.schema.type_named('PythonError')(event.error_info),
                 **basic_params
+            )
+        elif event.event_type == EventType.STEP_MATERIALIAZATION:
+            return info.schema.type_named('StepMaterializationEvent')(
+                step=info.schema.type_named('ExecutionStep')(
+                    pipeline_run.execution_plan.get_step_by_key(event.step_key)
+                )
             )
         else:
             return info.schema.type_named('LogMessageEvent')(**basic_params)
