@@ -4,15 +4,15 @@ import pytest
 
 from airflow.exceptions import AirflowException
 
-from dagster_airflow.dagster_plugin import ModifiedDockerOperator
+from dagster_airflow.dagster_plugin import DagsterOperator
 
 
 def test_init_modified_docker_operator():
-    ModifiedDockerOperator(image='dagster-airflow-demo', api_version='auto', task_id='nonce')
+    DagsterOperator(image='dagster-airflow-demo', api_version='auto', task_id='nonce')
 
 
 def test_modified_docker_operator_bad_docker_conn():
-    operator = ModifiedDockerOperator(
+    operator = DagsterOperator(
         image='dagster-airflow-demo', api_version='auto', task_id='nonce', docker_conn_id='foo_conn'
     )
 
@@ -21,14 +21,14 @@ def test_modified_docker_operator_bad_docker_conn():
 
 
 def test_modified_docker_operator_env(temp_dir):
-    operator = ModifiedDockerOperator(
+    operator = DagsterOperator(
         image='dagster-airflow-demo', api_version='auto', task_id='nonce', host_tmp_dir=temp_dir
     )
     operator.execute({})
 
 
 def test_modified_docker_operator_xcom(temp_dir):
-    operator = ModifiedDockerOperator(
+    operator = DagsterOperator(
         image='dagster-airflow-demo',
         api_version='auto',
         task_id='nonce',
@@ -40,7 +40,7 @@ def test_modified_docker_operator_xcom(temp_dir):
 
 
 def test_modified_docker_operator_bad_command(temp_dir):
-    operator = ModifiedDockerOperator(
+    operator = DagsterOperator(
         image='dagster-airflow-demo',
         api_version='auto',
         task_id='nonce',
@@ -63,7 +63,7 @@ def test_modified_docker_operator_url(temp_dir):
         os.environ['DOCKER_TLS_VERIFY'] = 'bargle'
         os.environ['DOCKER_CERT_PATH'] = 'farfle'
 
-        operator = ModifiedDockerOperator(
+        operator = DagsterOperator(
             image='dagster-airflow-demo',
             api_version='auto',
             task_id='nonce',
