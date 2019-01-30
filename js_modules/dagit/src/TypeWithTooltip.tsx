@@ -6,6 +6,7 @@ import { Link } from "react-router-dom";
 interface ITypeWithTooltipProps {
   type: {
     name: string | null;
+    displayName: string;
     description: string | null;
   };
 }
@@ -17,19 +18,23 @@ export default class TypeWithTooltip extends React.Component<
     RuntimeTypeWithTooltipFragment: gql`
       fragment RuntimeTypeWithTooltipFragment on RuntimeType {
         name
+        displayName
         description
       }
     `
   };
 
   render() {
-    const { name } = this.props.type;
-    const search = `?typeExplorer=${name}`;
+    const { name, displayName } = this.props.type;
+    const search = `?typeExplorer=${displayName}`;
 
-    return (
+    // TODO: link to most inner type
+    return name ? (
       <Link to={{ search }}>
-        <TypeName>{name || "Unnamed Type"}</TypeName>
+        <TypeName>{displayName}</TypeName>
       </Link>
+    ) : (
+      <TypeName>{displayName}</TypeName>
     );
   }
 }

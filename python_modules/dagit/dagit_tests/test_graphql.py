@@ -1460,6 +1460,7 @@ query RuntimeTypeQuery($pipelineName: String! $runtimeTypeName: String!)
         __typename
         ... on RegularRuntimeType {
             name
+            displayName
             isBuiltin
         }
         ... on PipelineNotFoundError {
@@ -1554,6 +1555,7 @@ fragment schemaTypeFragment on ConfigType {
 fragment runtimeTypeFragment on RuntimeType {
     key
     name
+    displayName
     isNullable
     isList
     description
