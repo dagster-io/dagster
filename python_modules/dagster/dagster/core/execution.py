@@ -46,7 +46,7 @@ from .execution_context import ExecutionContext, RuntimeExecutionContext, Execut
 from .errors import (
     DagsterInvariantViolationError,
     DagsterUnmarshalInputError,
-    ExecuteStepExecutionError,
+    DagsterExecutionStepExecutionError,
 )
 
 from .events import construct_event_logger
@@ -222,7 +222,9 @@ class SolidExecutionResult(object):
                 self.input_expectations, self.output_expectations, self.transforms
             ):
                 if not result.success:
-                    if isinstance(result.failure_data.dagster_error, ExecuteStepExecutionError):
+                    if isinstance(
+                        result.failure_data.dagster_error, DagsterExecutionStepExecutionError
+                    ):
                         six.reraise(*result.failure_data.dagster_error.original_exc_info)
                     else:
                         raise result.failure_data.dagster_error
@@ -607,6 +609,16 @@ def _unmarshal_inputs(context, inputs_to_marshal, execution_plan):
     for step_key, input_dict in inputs_to_marshal.items():
         for input_name, file_path in input_dict.items():
             step = execution_plan.get_step_by_key(step_key)
+            if input_name not in step.step_input_dict:
+                raise DagsterUnmarshalInputError(
+                    'Input {input_name} does not exist in execution step {key}'.format(
+                        input_name=input_name, key=step.key
+                    ),
+                    original_exc_info=sys.exc_info(),
+                    input_name=input_name,
+                    step_key=step.key,
+                )
+
             step_input = step.step_input_dict[input_name]
             input_type = step_input.runtime_type
 
@@ -616,13 +628,14 @@ def _unmarshal_inputs(context, inputs_to_marshal, execution_plan):
                 input_value = context.persistence_policy.read_value(
                     input_type.serialization_strategy, file_path
                 )
-            except Exception as e:
+            except Exception as e:  # pylint: disable=broad-except
                 raise_from(
                     DagsterUnmarshalInputError(
                         'Error during the marshalling of input {}'.format(input_name),
                         user_exception=e,
                         original_exc_info=sys.exc_info(),
                         input_name=input_name,
+                        step_key=step.key,
                     ),
                     e,
                 )

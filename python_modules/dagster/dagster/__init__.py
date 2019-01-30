@@ -36,7 +36,7 @@ from dagster.core.errors import (
     DagsterInvariantViolationError,
     DagsterRuntimeCoercionError,
     DagsterTypeError,
-    ExecuteStepExecutionError,
+    DagsterExecutionStepExecutionError,
 )
 
 
@@ -107,8 +107,7 @@ __all__ = [
     'DagsterInvariantViolationError',
     'DagsterRuntimeCoercionError',
     'DagsterTypeError',
-    'DagsterUserCodeExecutionError',
-    'PipelineConfigEvaluationError',
+    'DagsterExecutionStepExecutionError',
     # Utilities
     'execute_solid',
     'execute_solids',

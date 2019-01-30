@@ -76,7 +76,26 @@ def test_basic_pipeline_external_plan_execution():
     assert transform_step_result.success_data.value == 6
 
 
-def test_external_execution_marshal_error():
+def test_external_execution_marshal_wrong_input_error():
+    pipeline = define_inty_pipeline()
+
+    execution_plan = create_execution_plan(pipeline)
+
+    with pytest.raises(DagsterUnmarshalInputError) as exc_info:
+        execute_externalized_plan(
+            pipeline,
+            execution_plan,
+            ['add_one.transform'],
+            inputs_to_marshal={'add_one.transform': {'nope': 'nope'}},
+            execution_metadata=ExecutionMetadata(),
+        )
+
+    assert str(exc_info.value) == 'Input nope does not exist in execution step add_one.transform'
+    assert exc_info.value.input_name == 'nope'
+    assert exc_info.value.step_key == 'add_one.transform'
+
+
+def test_external_execution_marshal_code_error():
     pipeline = define_inty_pipeline()
 
     execution_plan = create_execution_plan(pipeline)
@@ -92,3 +111,4 @@ def test_external_execution_marshal_error():
 
     assert str(exc_info.value) == 'Error during the marshalling of input num'
     assert exc_info.value.input_name == 'num'
+    assert exc_info.value.step_key == 'add_one.transform'

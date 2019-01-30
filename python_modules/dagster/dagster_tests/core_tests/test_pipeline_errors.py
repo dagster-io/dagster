@@ -16,7 +16,7 @@ from dagster import (
 )
 
 from dagster.core.test_utils import execute_single_solid_in_isolation, single_output_transform
-from dagster.core.errors import ExecuteStepExecutionError
+from dagster.core.errors import DagsterExecutionStepExecutionError
 
 
 def silencing_default_context():
@@ -89,7 +89,7 @@ def test_failure_midstream():
     assert pipeline_result.result_for_solid('B').success
     assert not pipeline_result.result_for_solid('C').success
     assert isinstance(
-        pipeline_result.result_for_solid('C').dagster_error, ExecuteStepExecutionError
+        pipeline_result.result_for_solid('C').dagster_error, DagsterExecutionStepExecutionError
     )
 
 
