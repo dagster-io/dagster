@@ -11,12 +11,10 @@ import { SidebarTabbedContainerPipelineFragment } from "./types/SidebarTabbedCon
 import { SidebarTabbedContainerSolidFragment } from "./types/SidebarTabbedContainerSolidFragment";
 
 interface ISidebarTabbedContainerProps {
-  types: string | undefined;
-  typeExplorer: string | undefined;
+  types?: string;
+  typeExplorer?: string;
   pipeline: SidebarTabbedContainerPipelineFragment;
-  solid: SidebarTabbedContainerSolidFragment | undefined;
-  configCode: string;
-  onConfigChange: (newValue: string) => void;
+  solid?: SidebarTabbedContainerSolidFragment;
 }
 
 interface ITabInfo {

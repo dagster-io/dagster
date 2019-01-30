@@ -140,11 +140,10 @@ export async function checkConfig(
     ({ message, reason, stack }) => ({
       message: message,
       reason: reason,
-      path: stack.entries.map(
-        entry =>
-          entry.__typename === "EvaluationStackPathEntry"
-            ? entry.field.name
-            : `${entry.listIndex}`
+      path: stack.entries.map(entry =>
+        entry.__typename === "EvaluationStackPathEntry"
+          ? entry.field.name
+          : `${entry.listIndex}`
       )
     })
   );
@@ -184,20 +183,25 @@ export function scaffoldConfig(pipeline: ConfigEditorPipelineFragment): string {
     if (!type) return null;
 
     const result = {};
-    type.fields.filter(f => !f.isOptional).forEach((field, idx) => {
-      const startComment = type.isSelector && idx > 0;
-      const fieldCommentDepth =
-        commentDepth > 0 ? commentDepth + 2 : startComment ? 1 : 0;
+    type.fields
+      .filter(f => !f.isOptional)
+      .forEach((field, idx) => {
+        const startComment = type.isSelector && idx > 0;
+        const fieldCommentDepth =
+          commentDepth > 0 ? commentDepth + 2 : startComment ? 1 : 0;
 
-      const val = configPlaceholderFor(field.configType.key, fieldCommentDepth);
-      if (!val || Object.keys(val).length == 0) return;
+        const val = configPlaceholderFor(
+          field.configType.key,
+          fieldCommentDepth
+        );
+        if (!val || Object.keys(val).length == 0) return;
 
-      if (fieldCommentDepth > 0) {
-        result[`COMMENTED_${fieldCommentDepth}_${field.name}`] = val;
-      } else {
-        result[field.name] = val;
-      }
-    });
+        if (fieldCommentDepth > 0) {
+          result[`COMMENTED_${fieldCommentDepth}_${field.name}`] = val;
+        } else {
+          result[field.name] = val;
+        }
+      });
     return result;
   };
 
