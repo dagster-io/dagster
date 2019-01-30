@@ -19,6 +19,12 @@ export const CONFIG_EDITOR_PIPELINE_FRAGMENT = gql`
       key
       name
       isSelector
+      ... on EnumConfigType {
+        values {
+          value
+          description
+        }
+      }
       ... on CompositeConfigType {
         fields {
           name
@@ -72,47 +78,6 @@ export const CONFIG_EDITOR_CHECK_CONFIG_QUERY = gql`
   }
 `;
 
-interface ITypeConfig {
-  rootTypeKey: string;
-  types: {
-    [key: string]: {
-      isSelector: boolean;
-      fields: Array<{
-        name: string;
-        isOptional: boolean;
-        configType: {
-          __typename: string;
-          isList: boolean;
-          isNullable: boolean;
-          key: string;
-          name: string | null;
-          ofType?: {
-            key: string;
-          };
-        };
-      }>;
-    };
-  };
-}
-
-export function createTypeConfig({
-  configTypes,
-  environmentType
-}: ConfigEditorPipelineFragment): ITypeConfig {
-  const result: ITypeConfig = {
-    types: {},
-    rootTypeKey: environmentType.key
-  };
-
-  for (const type of configTypes) {
-    if (type.__typename === "CompositeConfigType") {
-      result.types[type.key] = type;
-    }
-  }
-
-  return result;
-}
-
 export async function checkConfig(
   client: ApolloClient<any>,
   config: any,
@@ -163,8 +128,6 @@ export async function checkConfig(
 }
 
 export function scaffoldConfig(pipeline: ConfigEditorPipelineFragment): string {
-  const { types } = createTypeConfig(pipeline);
-
   const placeholders = {
     Path: "/path/to/file",
     String: "value",
@@ -180,8 +143,8 @@ export function scaffoldConfig(pipeline: ConfigEditorPipelineFragment): string {
       return placeholders[typeName];
     }
 
-    const type = types[typeName];
-    if (!type) return null;
+    const type = pipeline.configTypes.find(t => t.name === typeName);
+    if (!type || type.__typename !== "CompositeConfigType") return null;
 
     const result = {};
     type.fields.filter(f => !f.isOptional).forEach((field, idx) => {

@@ -1,6 +1,7 @@
 import * as CodeMirror from "codemirror";
 import "codemirror/addon/hint/show-hint";
 import * as yaml from "yaml";
+import { ConfigEditorPipelineFragment } from "../types/ConfigEditorPipelineFragment";
 
 interface IParseStateParent {
   key: string;
@@ -277,27 +278,6 @@ CodeMirror.defineMode("yaml", () => {
   };
 });
 
-export type TypeConfig = {
-  rootTypeKey: string;
-  types: {
-    [key: string]: {
-      fields: Array<{
-        name: string;
-        configType: {
-          __typename: string;
-          isList: boolean;
-          isNullable: boolean;
-          key: string;
-          name: string | null;
-          ofType?: {
-            key: string;
-          };
-        };
-      }>;
-    };
-  };
-};
-
 // TODO
 // Uniquity of keys
 // add colon
@@ -325,7 +305,7 @@ type CodemirrorToken = {
 
 type FoundHint = {
   text: string;
-  hasChildren: boolean;
+  displayText: string;
 };
 
 CodeMirror.registerHelper(
@@ -333,13 +313,14 @@ CodeMirror.registerHelper(
   "yaml",
   (
     editor: any,
-    options: { typeConfig: TypeConfig }
+    options: { pipeline: ConfigEditorPipelineFragment }
   ): { list: Array<CodemirrorHint> } => {
     const cur = editor.getCursor();
     const token: CodemirrorToken = editor.getTokenAt(cur);
-    let searchString;
-    let start;
-    if (token.type === "whitespace") {
+
+    let searchString: string;
+    let start: number;
+    if (token.type === "whitespace" || token.string.startsWith(":")) {
       searchString = "";
       start = token.end;
     } else {
@@ -347,102 +328,109 @@ CodeMirror.registerHelper(
       start = token.start;
     }
 
-    let list: Array<FoundHint> = findAutocomplete(
-      options.typeConfig,
+    // Takes the pipeline and the YAML tokenizer state and returns the
+    // pipeline type in scope and available (yet-to-be-used) fields
+    // if it is a composite type.
+    const context = findAutocompletionContext(
+      options.pipeline,
       token.state.parents,
       start
     );
 
-    return {
-      list: processToHint(list, searchString, start, token.end, cur.line)
-    };
+    const shouldAddTrailingNewline = (type: { __typename: string }) =>
+      type.__typename === "ListConfigType" ||
+      type.__typename == "CompositeConfigType";
+
+    const buildSuggestion = (display: string, replacement: string) => ({
+      text: replacement,
+      displayText: display,
+      from: { line: cur.line, ch: start },
+      to: { line: cur.line, ch: token.end }
+    });
+
+    // Completion of composite field keys
+    if (context && context.availableFields.length) {
+      return {
+        list: context.availableFields
+          .filter(field => field.name.startsWith(searchString))
+          .map(field =>
+            buildSuggestion(
+              field.name,
+              shouldAddTrailingNewline(field.configType)
+                ? `${field.name}:\n${" ".repeat(start + 2)}`
+                : `${field.name}: `
+            )
+          )
+      };
+    }
+
+    // Completion of enum field values
+    if (context && context.type.__typename === "EnumConfigType") {
+      if (searchString.startsWith('"')) {
+        searchString = searchString.substr(1);
+      }
+      return {
+        list: context.type.values
+          .filter(val => val.value.startsWith(searchString))
+          .map(val => buildSuggestion(val.value, `"${val.value}"`))
+      };
+    }
+
+    return { list: [] };
   }
 );
 
-function processToHint(
-  list: Array<FoundHint>,
-  tokenString: string,
-  tokenStart: number,
-  tokenEnd: number,
-  line: number
-): Array<CodemirrorHint> {
-  const result: Array<CodemirrorHint> = [];
-  for (const hint of list) {
-    if (hint.text.startsWith(tokenString)) {
-      let text;
-      if (hint.hasChildren) {
-        text = `${hint.text}:\n${" ".repeat(tokenStart + 2)}`;
-      } else {
-        text = `${hint.text}: `;
-      }
-      result.push({
-        displayText: hint.text,
-        text: text,
-        from: {
-          line: line,
-          ch: tokenStart
-        },
-        to: {
-          line: line,
-          ch: tokenEnd
-        }
-      });
-    }
-  }
-  return result;
-}
-
-function findAutocomplete(
-  typeConfig: TypeConfig,
+function findAutocompletionContext(
+  pipeline: ConfigEditorPipelineFragment,
   parents: IParseStateParent[],
   currentIndent: number
-): FoundHint[] {
+) {
   parents = parents.filter(({ indent }) => currentIndent > indent);
   const immediateParent = parents[parents.length - 1];
 
-  let available = typeConfig.types[typeConfig.rootTypeKey].fields;
+  let type = pipeline.configTypes.find(
+    t => t.key === pipeline.environmentType.key
+  );
+  if (!type || type.__typename !== "CompositeConfigType") {
+    return null;
+  }
+
+  let available = type.fields;
 
   if (available && parents.length > 0) {
     for (const parent of parents) {
       const parentTypeDef = available.find(({ name }) => parent.key === name);
 
       if (!parentTypeDef) {
-        return [];
+        return null;
       }
 
       let childTypeKey = parentTypeDef.configType.key;
       let childEntriesUnique = true;
 
-      if (parentTypeDef.configType.isList) {
-        // ofType guaranteed to have value in the List case
-        // better way to enforce this?
-        if (parentTypeDef.configType.ofType) {
-          childTypeKey = parentTypeDef.configType.ofType.key;
-          childEntriesUnique = false;
-        }
+      if (parentTypeDef.configType.__typename === "ListConfigType") {
+        childTypeKey = parentTypeDef.configType.ofType.key;
+        childEntriesUnique = false;
       }
 
-      let childType = typeConfig.types[childTypeKey];
-      available = childType && childType.fields;
-      if (!available) {
-        console.warn(`No type config is available for ${childTypeKey}`);
-        return [];
+      type = pipeline.configTypes.find(t => t.key === childTypeKey);
+      if (!type) {
+        return null;
       }
 
-      if (parent === immediateParent && childEntriesUnique) {
-        available = available.filter(
+      if (type.__typename !== "CompositeConfigType") {
+        available = [];
+      } else if (parent === immediateParent && childEntriesUnique) {
+        available = type.fields.filter(
           item => immediateParent.childKeys.indexOf(item.name) === -1
         );
+      } else {
+        available = type.fields;
       }
     }
   }
 
-  return available.map(item => ({
-    text: item.name,
-    hasChildren: item.configType.name
-      ? item.configType.name in typeConfig.types
-      : false
-  }));
+  return { type, availableFields: available };
 }
 
 type CodemirrorLintError = {
