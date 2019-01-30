@@ -77,7 +77,7 @@
     "eject": "react-scripts-ts eject",
     "prettier": "prettier --write \"./src/**/*.tsx\"",
     "test": "npm run ts && npm run jest && npm run check-prettier",
-    "jest": "jest",
+    "jest": "jest -w 1",
     "check-prettier": "prettier --list-different \"./src/**/*.tsx\"",
     "ts": "tsc -p .",
     "download-schema": "apollo schema:download --endpoint $REACT_APP_GRAPHQL_URI ./src/schema.json",
