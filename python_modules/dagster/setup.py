@@ -55,7 +55,7 @@ def _do_setup(name='dagster'):
             # standard python 2/3 compatability things
             'enum34>=1.1.6',
             'future>=0.16.0',
-            'funcsigs>=1.0.2',
+            'funcsigs==1.0.0',
             'contextlib2>=0.5.5',
             # cli
             'click>=6.7',
