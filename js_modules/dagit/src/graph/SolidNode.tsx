@@ -6,7 +6,8 @@ import { IFullSolidLayout, ILayout } from "./getFullSolidLayout";
 import {
   SolidNodeFragment,
   SolidNodeFragment_inputs,
-  SolidNodeFragment_outputs
+  SolidNodeFragment_outputs,
+  SolidNodeFragment_inputs_dependsOn
 } from "./types/SolidNodeFragment";
 import {
   SVGEllipseInRect,
@@ -117,15 +118,22 @@ export default class SolidNode extends React.Component<ISolidNodeProps> {
       const showText = width == 0 && !this.props.minified;
       const { name, type } = item.definition;
 
-      const connected =
-        "dependsOn" in item
-          ? item.dependsOn && [item.dependsOn]
-          : item.dependedBy;
+      const connections: Array<{ a: string; b: string }> = [];
 
-      const connections = (connected || []).map(other => ({
-        a: other.solid.name,
-        b: this.props.solid.name
-      }));
+      if ("dependsOn" in item && item.dependsOn) {
+        connections.push({
+          a: item.dependsOn.solid.name,
+          b: this.props.solid.name
+        });
+      }
+      if ("dependedBy" in item) {
+        connections.push(
+          ...item.dependedBy.map(o => ({
+            a: o.solid.name,
+            b: this.props.solid.name
+          }))
+        );
+      }
 
       const highlighted = connections.some(
         ({ a, b }) =>
@@ -163,25 +171,23 @@ export default class SolidNode extends React.Component<ISolidNodeProps> {
               stroke="white"
               strokeWidth={1.5}
             />
-            {showText &&
-              name !== DEFAULT_RESULT_NAME && (
-                <SVGMonospaceText text={`${name}:`} fill="#FFF" size={14} />
-              )}
-            {showText &&
-              type.name && (
-                <SVGFlowLayoutRect
-                  rx={4}
-                  ry={4}
-                  fill="#d6ecff"
-                  stroke="#2491eb"
-                  strokeWidth={1}
-                  height={27}
-                  spacing={0}
-                  padding={4}
-                >
-                  <SVGMonospaceText text={type.name} size={14} fill="#222" />
-                </SVGFlowLayoutRect>
-              )}
+            {showText && name !== DEFAULT_RESULT_NAME && (
+              <SVGMonospaceText text={`${name}:`} fill="#FFF" size={14} />
+            )}
+            {showText && type.name && (
+              <SVGFlowLayoutRect
+                rx={4}
+                ry={4}
+                fill="#d6ecff"
+                stroke="#2491eb"
+                strokeWidth={1}
+                height={27}
+                spacing={0}
+                padding={4}
+              >
+                <SVGMonospaceText text={type.name} size={14} fill="#222" />
+              </SVGFlowLayoutRect>
+            )}
           </SVGFlowLayoutRect>
         </g>
       );
@@ -243,17 +249,16 @@ export default class SolidNode extends React.Component<ISolidNodeProps> {
         {configDefinition && (
           <SolidConfigPort x={x + width - 33} y={y - 13} minified={minified} />
         )}
-        {kind &&
-          kind.value && (
-            <SolidTags
-              x={x}
-              y={y + height}
-              width={width + 5}
-              minified={minified}
-              tags={[kind.value]}
-              onTagClicked={this.handleKindClicked}
-            />
-          )}
+        {kind && kind.value && (
+          <SolidTags
+            x={x}
+            y={y + height}
+            width={width + 5}
+            minified={minified}
+            tags={[kind.value]}
+            onTagClicked={this.handleKindClicked}
+          />
+        )}
       </g>
     );
   }

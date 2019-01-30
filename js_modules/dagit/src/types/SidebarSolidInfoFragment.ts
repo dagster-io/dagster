@@ -1,5 +1,3 @@
-
-
 /* tslint:disable */
 // This file was automatically generated and should not be edited.
 
@@ -8,16 +6,19 @@
 // ====================================================
 
 export interface SidebarSolidInfoFragment_outputs_definition_type {
+  __typename: "RegularRuntimeType" | "ListRuntimeType" | "NullableRuntimeType";
   name: string | null;
   description: string | null;
 }
 
 export interface SidebarSolidInfoFragment_outputs_definition_expectations {
+  __typename: "Expectation";
   name: string;
   description: string | null;
 }
 
 export interface SidebarSolidInfoFragment_outputs_definition {
+  __typename: "OutputDefinition";
   name: string;
   type: SidebarSolidInfoFragment_outputs_definition_type;
   description: string | null;
@@ -25,20 +26,24 @@ export interface SidebarSolidInfoFragment_outputs_definition {
 }
 
 export interface SidebarSolidInfoFragment_outputs {
+  __typename: "Output";
   definition: SidebarSolidInfoFragment_outputs_definition;
 }
 
 export interface SidebarSolidInfoFragment_inputs_definition_type {
+  __typename: "RegularRuntimeType" | "ListRuntimeType" | "NullableRuntimeType";
   name: string | null;
   description: string | null;
 }
 
 export interface SidebarSolidInfoFragment_inputs_definition_expectations {
+  __typename: "Expectation";
   name: string;
   description: string | null;
 }
 
 export interface SidebarSolidInfoFragment_inputs_definition {
+  __typename: "InputDefinition";
   name: string;
   type: SidebarSolidInfoFragment_inputs_definition_type;
   description: string | null;
@@ -46,33 +51,40 @@ export interface SidebarSolidInfoFragment_inputs_definition {
 }
 
 export interface SidebarSolidInfoFragment_inputs_dependsOn_definition {
+  __typename: "OutputDefinition";
   name: string;
 }
 
 export interface SidebarSolidInfoFragment_inputs_dependsOn_solid {
+  __typename: "Solid";
   name: string;
 }
 
 export interface SidebarSolidInfoFragment_inputs_dependsOn {
+  __typename: "Output";
   definition: SidebarSolidInfoFragment_inputs_dependsOn_definition;
   solid: SidebarSolidInfoFragment_inputs_dependsOn_solid;
 }
 
 export interface SidebarSolidInfoFragment_inputs {
+  __typename: "Input";
   definition: SidebarSolidInfoFragment_inputs_definition;
   dependsOn: SidebarSolidInfoFragment_inputs_dependsOn | null;
 }
 
 export interface SidebarSolidInfoFragment_definition_metadata {
+  __typename: "SolidMetadataItemDefinition";
   key: string;
   value: string;
 }
 
 export interface SidebarSolidInfoFragment_definition_configDefinition_configType_EnumConfigType_innerTypes_EnumConfigType_innerTypes {
+  __typename: "EnumConfigType" | "CompositeConfigType" | "RegularConfigType" | "ListConfigType" | "NullableConfigType";
   key: string;
 }
 
 export interface SidebarSolidInfoFragment_definition_configDefinition_configType_EnumConfigType_innerTypes_EnumConfigType {
+  __typename: "EnumConfigType" | "RegularConfigType" | "ListConfigType" | "NullableConfigType";
   key: string;
   name: string | null;
   description: string | null;
@@ -83,14 +95,17 @@ export interface SidebarSolidInfoFragment_definition_configDefinition_configType
 }
 
 export interface SidebarSolidInfoFragment_definition_configDefinition_configType_EnumConfigType_innerTypes_CompositeConfigType_innerTypes {
+  __typename: "EnumConfigType" | "CompositeConfigType" | "RegularConfigType" | "ListConfigType" | "NullableConfigType";
   key: string;
 }
 
 export interface SidebarSolidInfoFragment_definition_configDefinition_configType_EnumConfigType_innerTypes_CompositeConfigType_fields_configType {
+  __typename: "EnumConfigType" | "CompositeConfigType" | "RegularConfigType" | "ListConfigType" | "NullableConfigType";
   key: string;
 }
 
 export interface SidebarSolidInfoFragment_definition_configDefinition_configType_EnumConfigType_innerTypes_CompositeConfigType_fields {
+  __typename: "ConfigTypeField";
   name: string;
   description: string | null;
   isOptional: boolean;
@@ -98,6 +113,7 @@ export interface SidebarSolidInfoFragment_definition_configDefinition_configType
 }
 
 export interface SidebarSolidInfoFragment_definition_configDefinition_configType_EnumConfigType_innerTypes_CompositeConfigType {
+  __typename: "CompositeConfigType";
   key: string;
   name: string | null;
   description: string | null;
@@ -111,6 +127,7 @@ export interface SidebarSolidInfoFragment_definition_configDefinition_configType
 export type SidebarSolidInfoFragment_definition_configDefinition_configType_EnumConfigType_innerTypes = SidebarSolidInfoFragment_definition_configDefinition_configType_EnumConfigType_innerTypes_EnumConfigType | SidebarSolidInfoFragment_definition_configDefinition_configType_EnumConfigType_innerTypes_CompositeConfigType;
 
 export interface SidebarSolidInfoFragment_definition_configDefinition_configType_EnumConfigType {
+  __typename: "EnumConfigType" | "RegularConfigType" | "ListConfigType" | "NullableConfigType";
   key: string;
   name: string | null;
   description: string | null;
@@ -121,10 +138,12 @@ export interface SidebarSolidInfoFragment_definition_configDefinition_configType
 }
 
 export interface SidebarSolidInfoFragment_definition_configDefinition_configType_CompositeConfigType_innerTypes_EnumConfigType_innerTypes {
+  __typename: "EnumConfigType" | "CompositeConfigType" | "RegularConfigType" | "ListConfigType" | "NullableConfigType";
   key: string;
 }
 
 export interface SidebarSolidInfoFragment_definition_configDefinition_configType_CompositeConfigType_innerTypes_EnumConfigType {
+  __typename: "EnumConfigType" | "RegularConfigType" | "ListConfigType" | "NullableConfigType";
   key: string;
   name: string | null;
   description: string | null;
@@ -135,14 +154,17 @@ export interface SidebarSolidInfoFragment_definition_configDefinition_configType
 }
 
 export interface SidebarSolidInfoFragment_definition_configDefinition_configType_CompositeConfigType_innerTypes_CompositeConfigType_innerTypes {
+  __typename: "EnumConfigType" | "CompositeConfigType" | "RegularConfigType" | "ListConfigType" | "NullableConfigType";
   key: string;
 }
 
 export interface SidebarSolidInfoFragment_definition_configDefinition_configType_CompositeConfigType_innerTypes_CompositeConfigType_fields_configType {
+  __typename: "EnumConfigType" | "CompositeConfigType" | "RegularConfigType" | "ListConfigType" | "NullableConfigType";
   key: string;
 }
 
 export interface SidebarSolidInfoFragment_definition_configDefinition_configType_CompositeConfigType_innerTypes_CompositeConfigType_fields {
+  __typename: "ConfigTypeField";
   name: string;
   description: string | null;
   isOptional: boolean;
@@ -150,6 +172,7 @@ export interface SidebarSolidInfoFragment_definition_configDefinition_configType
 }
 
 export interface SidebarSolidInfoFragment_definition_configDefinition_configType_CompositeConfigType_innerTypes_CompositeConfigType {
+  __typename: "CompositeConfigType";
   key: string;
   name: string | null;
   description: string | null;
@@ -163,10 +186,12 @@ export interface SidebarSolidInfoFragment_definition_configDefinition_configType
 export type SidebarSolidInfoFragment_definition_configDefinition_configType_CompositeConfigType_innerTypes = SidebarSolidInfoFragment_definition_configDefinition_configType_CompositeConfigType_innerTypes_EnumConfigType | SidebarSolidInfoFragment_definition_configDefinition_configType_CompositeConfigType_innerTypes_CompositeConfigType;
 
 export interface SidebarSolidInfoFragment_definition_configDefinition_configType_CompositeConfigType_fields_configType {
+  __typename: "EnumConfigType" | "CompositeConfigType" | "RegularConfigType" | "ListConfigType" | "NullableConfigType";
   key: string;
 }
 
 export interface SidebarSolidInfoFragment_definition_configDefinition_configType_CompositeConfigType_fields {
+  __typename: "ConfigTypeField";
   name: string;
   description: string | null;
   isOptional: boolean;
@@ -174,6 +199,7 @@ export interface SidebarSolidInfoFragment_definition_configDefinition_configType
 }
 
 export interface SidebarSolidInfoFragment_definition_configDefinition_configType_CompositeConfigType {
+  __typename: "CompositeConfigType";
   key: string;
   name: string | null;
   description: string | null;
@@ -187,73 +213,21 @@ export interface SidebarSolidInfoFragment_definition_configDefinition_configType
 export type SidebarSolidInfoFragment_definition_configDefinition_configType = SidebarSolidInfoFragment_definition_configDefinition_configType_EnumConfigType | SidebarSolidInfoFragment_definition_configDefinition_configType_CompositeConfigType;
 
 export interface SidebarSolidInfoFragment_definition_configDefinition {
+  __typename: "ConfigTypeField";
   configType: SidebarSolidInfoFragment_definition_configDefinition_configType;
 }
 
 export interface SidebarSolidInfoFragment_definition {
+  __typename: "SolidDefinition";
   description: string | null;
   metadata: SidebarSolidInfoFragment_definition_metadata[];
   configDefinition: SidebarSolidInfoFragment_definition_configDefinition | null;
 }
 
 export interface SidebarSolidInfoFragment {
+  __typename: "Solid";
   outputs: SidebarSolidInfoFragment_outputs[];
   inputs: SidebarSolidInfoFragment_inputs[];
   name: string;
   definition: SidebarSolidInfoFragment_definition;
 }
-
-/* tslint:disable */
-// This file was automatically generated and should not be edited.
-
-//==============================================================
-// START Enums and Input Objects
-//==============================================================
-
-export enum EvaluationErrorReason {
-  FIELD_NOT_DEFINED = "FIELD_NOT_DEFINED",
-  MISSING_REQUIRED_FIELD = "MISSING_REQUIRED_FIELD",
-  RUNTIME_TYPE_MISMATCH = "RUNTIME_TYPE_MISMATCH",
-  SELECTOR_FIELD_ERROR = "SELECTOR_FIELD_ERROR",
-}
-
-export enum LogLevel {
-  CRITICAL = "CRITICAL",
-  DEBUG = "DEBUG",
-  ERROR = "ERROR",
-  INFO = "INFO",
-  WARNING = "WARNING",
-}
-
-/**
- * An enumeration.
- */
-export enum PipelineRunStatus {
-  FAILURE = "FAILURE",
-  NOT_STARTED = "NOT_STARTED",
-  STARTED = "STARTED",
-  SUCCESS = "SUCCESS",
-}
-
-export enum StepKind {
-  INPUT_EXPECTATION = "INPUT_EXPECTATION",
-  INPUT_THUNK = "INPUT_THUNK",
-  JOIN = "JOIN",
-  MATERIALIZATION_THUNK = "MATERIALIZATION_THUNK",
-  OUTPUT_EXPECTATION = "OUTPUT_EXPECTATION",
-  SERIALIZE = "SERIALIZE",
-  TRANSFORM = "TRANSFORM",
-}
-
-/**
- * This type represents the fields necessary to identify a
- *         pipeline or pipeline subset.
- */
-export interface ExecutionSelector {
-  name: string;
-  solidSubset?: string[] | null;
-}
-
-//==============================================================
-// END Enums and Input Objects
-//==============================================================

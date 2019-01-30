@@ -1,5 +1,3 @@
-
-
 /* tslint:disable */
 // This file was automatically generated and should not be edited.
 
@@ -8,10 +6,12 @@
 // ====================================================
 
 export interface PipelineExplorerFragment_contexts_config_configType_EnumConfigType_innerTypes_EnumConfigType_innerTypes {
+  __typename: "EnumConfigType" | "CompositeConfigType" | "RegularConfigType" | "ListConfigType" | "NullableConfigType";
   key: string;
 }
 
 export interface PipelineExplorerFragment_contexts_config_configType_EnumConfigType_innerTypes_EnumConfigType {
+  __typename: "EnumConfigType" | "RegularConfigType" | "ListConfigType" | "NullableConfigType";
   key: string;
   name: string | null;
   description: string | null;
@@ -22,14 +22,17 @@ export interface PipelineExplorerFragment_contexts_config_configType_EnumConfigT
 }
 
 export interface PipelineExplorerFragment_contexts_config_configType_EnumConfigType_innerTypes_CompositeConfigType_innerTypes {
+  __typename: "EnumConfigType" | "CompositeConfigType" | "RegularConfigType" | "ListConfigType" | "NullableConfigType";
   key: string;
 }
 
 export interface PipelineExplorerFragment_contexts_config_configType_EnumConfigType_innerTypes_CompositeConfigType_fields_configType {
+  __typename: "EnumConfigType" | "CompositeConfigType" | "RegularConfigType" | "ListConfigType" | "NullableConfigType";
   key: string;
 }
 
 export interface PipelineExplorerFragment_contexts_config_configType_EnumConfigType_innerTypes_CompositeConfigType_fields {
+  __typename: "ConfigTypeField";
   name: string;
   description: string | null;
   isOptional: boolean;
@@ -37,6 +40,7 @@ export interface PipelineExplorerFragment_contexts_config_configType_EnumConfigT
 }
 
 export interface PipelineExplorerFragment_contexts_config_configType_EnumConfigType_innerTypes_CompositeConfigType {
+  __typename: "CompositeConfigType";
   key: string;
   name: string | null;
   description: string | null;
@@ -50,6 +54,7 @@ export interface PipelineExplorerFragment_contexts_config_configType_EnumConfigT
 export type PipelineExplorerFragment_contexts_config_configType_EnumConfigType_innerTypes = PipelineExplorerFragment_contexts_config_configType_EnumConfigType_innerTypes_EnumConfigType | PipelineExplorerFragment_contexts_config_configType_EnumConfigType_innerTypes_CompositeConfigType;
 
 export interface PipelineExplorerFragment_contexts_config_configType_EnumConfigType {
+  __typename: "EnumConfigType" | "RegularConfigType" | "ListConfigType" | "NullableConfigType";
   key: string;
   name: string | null;
   description: string | null;
@@ -60,10 +65,12 @@ export interface PipelineExplorerFragment_contexts_config_configType_EnumConfigT
 }
 
 export interface PipelineExplorerFragment_contexts_config_configType_CompositeConfigType_innerTypes_EnumConfigType_innerTypes {
+  __typename: "EnumConfigType" | "CompositeConfigType" | "RegularConfigType" | "ListConfigType" | "NullableConfigType";
   key: string;
 }
 
 export interface PipelineExplorerFragment_contexts_config_configType_CompositeConfigType_innerTypes_EnumConfigType {
+  __typename: "EnumConfigType" | "RegularConfigType" | "ListConfigType" | "NullableConfigType";
   key: string;
   name: string | null;
   description: string | null;
@@ -74,14 +81,17 @@ export interface PipelineExplorerFragment_contexts_config_configType_CompositeCo
 }
 
 export interface PipelineExplorerFragment_contexts_config_configType_CompositeConfigType_innerTypes_CompositeConfigType_innerTypes {
+  __typename: "EnumConfigType" | "CompositeConfigType" | "RegularConfigType" | "ListConfigType" | "NullableConfigType";
   key: string;
 }
 
 export interface PipelineExplorerFragment_contexts_config_configType_CompositeConfigType_innerTypes_CompositeConfigType_fields_configType {
+  __typename: "EnumConfigType" | "CompositeConfigType" | "RegularConfigType" | "ListConfigType" | "NullableConfigType";
   key: string;
 }
 
 export interface PipelineExplorerFragment_contexts_config_configType_CompositeConfigType_innerTypes_CompositeConfigType_fields {
+  __typename: "ConfigTypeField";
   name: string;
   description: string | null;
   isOptional: boolean;
@@ -89,6 +99,7 @@ export interface PipelineExplorerFragment_contexts_config_configType_CompositeCo
 }
 
 export interface PipelineExplorerFragment_contexts_config_configType_CompositeConfigType_innerTypes_CompositeConfigType {
+  __typename: "CompositeConfigType";
   key: string;
   name: string | null;
   description: string | null;
@@ -102,10 +113,12 @@ export interface PipelineExplorerFragment_contexts_config_configType_CompositeCo
 export type PipelineExplorerFragment_contexts_config_configType_CompositeConfigType_innerTypes = PipelineExplorerFragment_contexts_config_configType_CompositeConfigType_innerTypes_EnumConfigType | PipelineExplorerFragment_contexts_config_configType_CompositeConfigType_innerTypes_CompositeConfigType;
 
 export interface PipelineExplorerFragment_contexts_config_configType_CompositeConfigType_fields_configType {
+  __typename: "EnumConfigType" | "CompositeConfigType" | "RegularConfigType" | "ListConfigType" | "NullableConfigType";
   key: string;
 }
 
 export interface PipelineExplorerFragment_contexts_config_configType_CompositeConfigType_fields {
+  __typename: "ConfigTypeField";
   name: string;
   description: string | null;
   isOptional: boolean;
@@ -113,6 +126,7 @@ export interface PipelineExplorerFragment_contexts_config_configType_CompositeCo
 }
 
 export interface PipelineExplorerFragment_contexts_config_configType_CompositeConfigType {
+  __typename: "CompositeConfigType";
   key: string;
   name: string | null;
   description: string | null;
@@ -126,14 +140,17 @@ export interface PipelineExplorerFragment_contexts_config_configType_CompositeCo
 export type PipelineExplorerFragment_contexts_config_configType = PipelineExplorerFragment_contexts_config_configType_EnumConfigType | PipelineExplorerFragment_contexts_config_configType_CompositeConfigType;
 
 export interface PipelineExplorerFragment_contexts_config {
+  __typename: "ConfigTypeField";
   configType: PipelineExplorerFragment_contexts_config_configType;
 }
 
 export interface PipelineExplorerFragment_contexts_resources_config_configType_EnumConfigType_innerTypes_EnumConfigType_innerTypes {
+  __typename: "EnumConfigType" | "CompositeConfigType" | "RegularConfigType" | "ListConfigType" | "NullableConfigType";
   key: string;
 }
 
 export interface PipelineExplorerFragment_contexts_resources_config_configType_EnumConfigType_innerTypes_EnumConfigType {
+  __typename: "EnumConfigType" | "RegularConfigType" | "ListConfigType" | "NullableConfigType";
   key: string;
   name: string | null;
   description: string | null;
@@ -144,14 +161,17 @@ export interface PipelineExplorerFragment_contexts_resources_config_configType_E
 }
 
 export interface PipelineExplorerFragment_contexts_resources_config_configType_EnumConfigType_innerTypes_CompositeConfigType_innerTypes {
+  __typename: "EnumConfigType" | "CompositeConfigType" | "RegularConfigType" | "ListConfigType" | "NullableConfigType";
   key: string;
 }
 
 export interface PipelineExplorerFragment_contexts_resources_config_configType_EnumConfigType_innerTypes_CompositeConfigType_fields_configType {
+  __typename: "EnumConfigType" | "CompositeConfigType" | "RegularConfigType" | "ListConfigType" | "NullableConfigType";
   key: string;
 }
 
 export interface PipelineExplorerFragment_contexts_resources_config_configType_EnumConfigType_innerTypes_CompositeConfigType_fields {
+  __typename: "ConfigTypeField";
   name: string;
   description: string | null;
   isOptional: boolean;
@@ -159,6 +179,7 @@ export interface PipelineExplorerFragment_contexts_resources_config_configType_E
 }
 
 export interface PipelineExplorerFragment_contexts_resources_config_configType_EnumConfigType_innerTypes_CompositeConfigType {
+  __typename: "CompositeConfigType";
   key: string;
   name: string | null;
   description: string | null;
@@ -172,6 +193,7 @@ export interface PipelineExplorerFragment_contexts_resources_config_configType_E
 export type PipelineExplorerFragment_contexts_resources_config_configType_EnumConfigType_innerTypes = PipelineExplorerFragment_contexts_resources_config_configType_EnumConfigType_innerTypes_EnumConfigType | PipelineExplorerFragment_contexts_resources_config_configType_EnumConfigType_innerTypes_CompositeConfigType;
 
 export interface PipelineExplorerFragment_contexts_resources_config_configType_EnumConfigType {
+  __typename: "EnumConfigType" | "RegularConfigType" | "ListConfigType" | "NullableConfigType";
   key: string;
   name: string | null;
   description: string | null;
@@ -182,10 +204,12 @@ export interface PipelineExplorerFragment_contexts_resources_config_configType_E
 }
 
 export interface PipelineExplorerFragment_contexts_resources_config_configType_CompositeConfigType_innerTypes_EnumConfigType_innerTypes {
+  __typename: "EnumConfigType" | "CompositeConfigType" | "RegularConfigType" | "ListConfigType" | "NullableConfigType";
   key: string;
 }
 
 export interface PipelineExplorerFragment_contexts_resources_config_configType_CompositeConfigType_innerTypes_EnumConfigType {
+  __typename: "EnumConfigType" | "RegularConfigType" | "ListConfigType" | "NullableConfigType";
   key: string;
   name: string | null;
   description: string | null;
@@ -196,14 +220,17 @@ export interface PipelineExplorerFragment_contexts_resources_config_configType_C
 }
 
 export interface PipelineExplorerFragment_contexts_resources_config_configType_CompositeConfigType_innerTypes_CompositeConfigType_innerTypes {
+  __typename: "EnumConfigType" | "CompositeConfigType" | "RegularConfigType" | "ListConfigType" | "NullableConfigType";
   key: string;
 }
 
 export interface PipelineExplorerFragment_contexts_resources_config_configType_CompositeConfigType_innerTypes_CompositeConfigType_fields_configType {
+  __typename: "EnumConfigType" | "CompositeConfigType" | "RegularConfigType" | "ListConfigType" | "NullableConfigType";
   key: string;
 }
 
 export interface PipelineExplorerFragment_contexts_resources_config_configType_CompositeConfigType_innerTypes_CompositeConfigType_fields {
+  __typename: "ConfigTypeField";
   name: string;
   description: string | null;
   isOptional: boolean;
@@ -211,6 +238,7 @@ export interface PipelineExplorerFragment_contexts_resources_config_configType_C
 }
 
 export interface PipelineExplorerFragment_contexts_resources_config_configType_CompositeConfigType_innerTypes_CompositeConfigType {
+  __typename: "CompositeConfigType";
   key: string;
   name: string | null;
   description: string | null;
@@ -224,10 +252,12 @@ export interface PipelineExplorerFragment_contexts_resources_config_configType_C
 export type PipelineExplorerFragment_contexts_resources_config_configType_CompositeConfigType_innerTypes = PipelineExplorerFragment_contexts_resources_config_configType_CompositeConfigType_innerTypes_EnumConfigType | PipelineExplorerFragment_contexts_resources_config_configType_CompositeConfigType_innerTypes_CompositeConfigType;
 
 export interface PipelineExplorerFragment_contexts_resources_config_configType_CompositeConfigType_fields_configType {
+  __typename: "EnumConfigType" | "CompositeConfigType" | "RegularConfigType" | "ListConfigType" | "NullableConfigType";
   key: string;
 }
 
 export interface PipelineExplorerFragment_contexts_resources_config_configType_CompositeConfigType_fields {
+  __typename: "ConfigTypeField";
   name: string;
   description: string | null;
   isOptional: boolean;
@@ -235,6 +265,7 @@ export interface PipelineExplorerFragment_contexts_resources_config_configType_C
 }
 
 export interface PipelineExplorerFragment_contexts_resources_config_configType_CompositeConfigType {
+  __typename: "CompositeConfigType";
   key: string;
   name: string | null;
   description: string | null;
@@ -248,16 +279,19 @@ export interface PipelineExplorerFragment_contexts_resources_config_configType_C
 export type PipelineExplorerFragment_contexts_resources_config_configType = PipelineExplorerFragment_contexts_resources_config_configType_EnumConfigType | PipelineExplorerFragment_contexts_resources_config_configType_CompositeConfigType;
 
 export interface PipelineExplorerFragment_contexts_resources_config {
+  __typename: "ConfigTypeField";
   configType: PipelineExplorerFragment_contexts_resources_config_configType;
 }
 
 export interface PipelineExplorerFragment_contexts_resources {
+  __typename: "Resource";
   name: string;
   description: string | null;
   config: PipelineExplorerFragment_contexts_resources_config | null;
 }
 
 export interface PipelineExplorerFragment_contexts {
+  __typename: "PipelineContext";
   name: string;
   description: string | null;
   config: PipelineExplorerFragment_contexts_config | null;
@@ -265,80 +299,97 @@ export interface PipelineExplorerFragment_contexts {
 }
 
 export interface PipelineExplorerFragment_solids_definition_metadata {
+  __typename: "SolidMetadataItemDefinition";
   key: string;
   value: string;
 }
 
 export interface PipelineExplorerFragment_solids_definition_configDefinition_configType {
+  __typename: "EnumConfigType" | "CompositeConfigType" | "RegularConfigType" | "ListConfigType" | "NullableConfigType";
   name: string | null;
   description: string | null;
 }
 
 export interface PipelineExplorerFragment_solids_definition_configDefinition {
+  __typename: "ConfigTypeField";
   configType: PipelineExplorerFragment_solids_definition_configDefinition_configType;
 }
 
 export interface PipelineExplorerFragment_solids_definition {
+  __typename: "SolidDefinition";
   metadata: PipelineExplorerFragment_solids_definition_metadata[];
   configDefinition: PipelineExplorerFragment_solids_definition_configDefinition | null;
 }
 
 export interface PipelineExplorerFragment_solids_inputs_definition_type {
+  __typename: "RegularRuntimeType" | "ListRuntimeType" | "NullableRuntimeType";
   name: string | null;
 }
 
 export interface PipelineExplorerFragment_solids_inputs_definition {
+  __typename: "InputDefinition";
   name: string;
   type: PipelineExplorerFragment_solids_inputs_definition_type;
 }
 
 export interface PipelineExplorerFragment_solids_inputs_dependsOn_definition {
+  __typename: "OutputDefinition";
   name: string;
 }
 
 export interface PipelineExplorerFragment_solids_inputs_dependsOn_solid {
+  __typename: "Solid";
   name: string;
 }
 
 export interface PipelineExplorerFragment_solids_inputs_dependsOn {
+  __typename: "Output";
   definition: PipelineExplorerFragment_solids_inputs_dependsOn_definition;
   solid: PipelineExplorerFragment_solids_inputs_dependsOn_solid;
 }
 
 export interface PipelineExplorerFragment_solids_inputs {
+  __typename: "Input";
   definition: PipelineExplorerFragment_solids_inputs_definition;
   dependsOn: PipelineExplorerFragment_solids_inputs_dependsOn | null;
 }
 
 export interface PipelineExplorerFragment_solids_outputs_definition_type {
+  __typename: "RegularRuntimeType" | "ListRuntimeType" | "NullableRuntimeType";
   name: string | null;
 }
 
 export interface PipelineExplorerFragment_solids_outputs_definition_expectations {
+  __typename: "Expectation";
   name: string;
   description: string | null;
 }
 
 export interface PipelineExplorerFragment_solids_outputs_definition {
+  __typename: "OutputDefinition";
   name: string;
   type: PipelineExplorerFragment_solids_outputs_definition_type;
   expectations: PipelineExplorerFragment_solids_outputs_definition_expectations[];
 }
 
 export interface PipelineExplorerFragment_solids_outputs_dependedBy_solid {
+  __typename: "Solid";
   name: string;
 }
 
 export interface PipelineExplorerFragment_solids_outputs_dependedBy {
+  __typename: "Input";
   solid: PipelineExplorerFragment_solids_outputs_dependedBy_solid;
 }
 
 export interface PipelineExplorerFragment_solids_outputs {
+  __typename: "Output";
   definition: PipelineExplorerFragment_solids_outputs_definition;
   dependedBy: PipelineExplorerFragment_solids_outputs_dependedBy[];
 }
 
 export interface PipelineExplorerFragment_solids {
+  __typename: "Solid";
   name: string;
   definition: PipelineExplorerFragment_solids_definition;
   inputs: PipelineExplorerFragment_solids_inputs[];
@@ -346,68 +397,15 @@ export interface PipelineExplorerFragment_solids {
 }
 
 export interface PipelineExplorerFragment_environmentType {
+  __typename: "EnumConfigType" | "CompositeConfigType" | "RegularConfigType" | "ListConfigType" | "NullableConfigType";
   name: string | null;
 }
 
 export interface PipelineExplorerFragment {
+  __typename: "Pipeline";
   name: string;
   description: string | null;
   contexts: PipelineExplorerFragment_contexts[];
   solids: PipelineExplorerFragment_solids[];
   environmentType: PipelineExplorerFragment_environmentType;
 }
-
-/* tslint:disable */
-// This file was automatically generated and should not be edited.
-
-//==============================================================
-// START Enums and Input Objects
-//==============================================================
-
-export enum EvaluationErrorReason {
-  FIELD_NOT_DEFINED = "FIELD_NOT_DEFINED",
-  MISSING_REQUIRED_FIELD = "MISSING_REQUIRED_FIELD",
-  RUNTIME_TYPE_MISMATCH = "RUNTIME_TYPE_MISMATCH",
-  SELECTOR_FIELD_ERROR = "SELECTOR_FIELD_ERROR",
-}
-
-export enum LogLevel {
-  CRITICAL = "CRITICAL",
-  DEBUG = "DEBUG",
-  ERROR = "ERROR",
-  INFO = "INFO",
-  WARNING = "WARNING",
-}
-
-/**
- * An enumeration.
- */
-export enum PipelineRunStatus {
-  FAILURE = "FAILURE",
-  NOT_STARTED = "NOT_STARTED",
-  STARTED = "STARTED",
-  SUCCESS = "SUCCESS",
-}
-
-export enum StepKind {
-  INPUT_EXPECTATION = "INPUT_EXPECTATION",
-  INPUT_THUNK = "INPUT_THUNK",
-  JOIN = "JOIN",
-  MATERIALIZATION_THUNK = "MATERIALIZATION_THUNK",
-  OUTPUT_EXPECTATION = "OUTPUT_EXPECTATION",
-  SERIALIZE = "SERIALIZE",
-  TRANSFORM = "TRANSFORM",
-}
-
-/**
- * This type represents the fields necessary to identify a
- *         pipeline or pipeline subset.
- */
-export interface ExecutionSelector {
-  name: string;
-  solidSubset?: string[] | null;
-}
-
-//==============================================================
-// END Enums and Input Objects
-//==============================================================
