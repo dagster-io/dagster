@@ -281,15 +281,105 @@ def upload_to_s3(info, file_path):
     yield Result(key, 'key')
 
 
+from collections import namedtuple
+from dagster import as_dagster_type, Sequence, lambda_solid
+
+ArchiveMemberPathTuple = as_dagster_type(namedtuple('ArchiveMemberPathTuple', 'path member'))
+
+
+@solid(
+    inputs=[
+        InputDefinition('archive_paths', List(Path)),
+        InputDefinition('archive_members', List(Path)),
+    ],
+    outputs=[OutputDefinition(Sequence)],
+)
+def combine_members_and_path(info, archive_paths, archive_members):
+    # print(
+    #     '************* Got \n paths: \n{} \n members: \n{} ****************'.format(
+    #         archive_paths, archive_members
+    #     )
+    # )
+
+    def yield_tuples():
+        for path, member in zip(archive_paths, archive_members):
+            info.log.info('Iterating with path: {path} member: {member}', path=path, member=member)
+            yield ArchiveMemberPathTuple(path, member)
+
+    return Sequence(yield_tuples)
+
+    # return Sequence(lambda: map(ArchiveMemberPathTuple, zip(archive_paths, archive_members)))
+
+
+@solid(
+    inputs=[InputDefinition('archive_path_member_tuple', ArchiveMemberPathTuple)],
+    config_field=Field(
+        Dict(
+            fields={
+                'skip_if_present': Field(
+                    Bool,
+                    description='If True, and a file already exists at the path to which the '
+                    'archive member would be unzipped, then the solid will no-op',
+                    default_value=False,
+                    is_optional=True,
+                )
+            }
+        )
+    ),
+    outputs=[
+        OutputDefinition(FileExistsAtPath, description='The path to the unzipped archive member.')
+    ],
+)
+def unzip_single_file(info, archive_path_member_tuple):
+    # print("******************************** UNZIP_SINGLE_FILE ***********************")
+    archive_path, archive_member = archive_path_member_tuple
+    destination_dir = os.path.dirname(archive_path)
+    target_path = None
+    with zipfile.ZipFile(archive_path, 'r') as zip_ref:
+        if archive_member is not None:
+            target_path = os.path.join(destination_dir, archive_member)
+            is_file = safe_isfile(target_path)
+            is_dir = os.path.isdir(target_path)
+            if not (info.config['skip_if_present'] and (is_file or is_dir)):
+                zip_ref.extract(archive_member, destination_dir)
+            else:
+                if is_file:
+                    info.log.info(
+                        'Skipping unarchive of {archive_member} from {archive_path}, '
+                        'file already present at {target_path}'.format(
+                            archive_member=archive_member,
+                            archive_path=archive_path,
+                            target_path=target_path,
+                        )
+                    )
+                if is_dir:
+                    info.log.info(
+                        'Skipping unarchive of {archive_member} from {archive_path}, '
+                        'directory already present at {target_path}'.format(
+                            archive_member=archive_member,
+                            archive_path=archive_path,
+                            target_path=target_path,
+                        )
+                    )
+        else:
+            if not (info.config['skip_if_present'] and is_dir):
+                zip_ref.extractall(destination_dir)
+            else:
+                info.log.info(
+                    'Skipping unarchive of {archive_path}, directory already present '
+                    'at {target_path}'.format(archive_path=archive_path, target_path=target_path)
+                )
+    return target_path
+
+
+@solid(inputs=[InputDefinition('sequence', Sequence)])
+def do_fan_in(info, sequence):
+    for item in sequence.items():
+        info.log.info('Did stuff: {}'.format(item))
+
+
 @solid(
     name='unzip_file',
-    # config_field=Field(
-    #     ConfigDictionary(name='UnzipFileConfigType', fields={
-    #         'archive_path': Field(String, description=''),
-    #         'archive_member': Field(String, description=''),
-    #         'destination_dir': Field(String, description=''),
-    #     })
-    # ),
     inputs=[
         InputDefinition('archive_paths', List(Path), description='The path to the archive.'),
         InputDefinition(

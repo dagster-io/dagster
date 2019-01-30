@@ -10,6 +10,8 @@ from dagster import (
     DependencyDefinition,
     Dict,
     ExecutionContext,
+    FaninDependencyDefinition,
+    FanoutDependencyDefinition,
     Field,
     PipelineContextDefinition,
     PipelineDefinition,
@@ -22,9 +24,11 @@ from dagster import (
 from .solids import (
     average_sfo_outbound_avg_delays_by_destination,
     canonicalize_column_names,
+    combine_members_and_path,
     delays_by_geography,
     delays_vs_fares,
     delays_vs_fares_nb,
+    do_fan_in,
     download_from_s3,
     eastbound_delays,
     ingest_csv_to_spark,
@@ -39,6 +43,7 @@ from .solids import (
     tickets_with_destination,
     union_spark_data_frames,
     unzip_file,
+    unzip_single_file,
     upload_to_s3,
     westbound_delays,
 )
@@ -259,6 +264,25 @@ def define_airline_demo_download_pipeline():
     )
 
 
+def define_seq_airline_demo_download_pipeline():
+    solids = [download_from_s3, combine_members_and_path, unzip_single_file, do_fan_in]
+    dependencies = {
+        SolidInstance('download_from_s3', alias='download_archives'): {},
+        'combine_members_and_path': {'archive_paths': DependencyDefinition('download_archives')},
+        'unzip_single_file': {
+            'archive_path_member_tuple': FanoutDependencyDefinition('combine_members_and_path')
+        },
+        'do_fan_in': {'sequence': FaninDependencyDefinition('unzip_single_file')},
+    }
+
+    return PipelineDefinition(
+        name='airline_seq_demo_download_pipeline',
+        context_definitions=CONTEXT_DEFINITIONS,
+        solids=solids,
+        dependencies=dependencies,
+    )
+
+
 def define_airline_demo_ingest_pipeline():
     solids = [
         canonicalize_column_names,
@@ -420,6 +444,7 @@ def define_repo():
     return RepositoryDefinition(
         name='airline_demo_repo',
         pipeline_dict={
+            'airline_seq_demo_download_pipeline': define_seq_airline_demo_download_pipeline,
             'airline_demo_download_pipeline': define_airline_demo_download_pipeline,
             'airline_demo_ingest_pipeline': define_airline_demo_ingest_pipeline,
             'airline_demo_warehouse_pipeline': define_airline_demo_warehouse_pipeline,

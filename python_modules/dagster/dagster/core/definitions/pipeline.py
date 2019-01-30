@@ -91,7 +91,7 @@ class PipelineDefinition(object):
         )
 
         self.dependency_structure, self._solid_dict = create_execution_structure(
-            solids, self.dependencies
+            self.name, solids, self.dependencies
         )
 
         self._solids = _solids_in_topological_order(self.dependency_structure, self._solid_dict)

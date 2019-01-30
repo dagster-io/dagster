@@ -11,7 +11,23 @@ from airline_demo.pipelines import (
     define_airline_demo_download_pipeline,
     define_airline_demo_ingest_pipeline,
     define_airline_demo_warehouse_pipeline,
+    define_seq_airline_demo_download_pipeline,
 )
+
+
+@pytest.mark.nettest
+@pytest.mark.slow
+def test_pipeline_seq_download():
+    config_object = load_yaml_from_glob_list(
+        [
+            script_relative_path('../../environments/local_base.yml'),
+            script_relative_path('../../environments/local_seq_fast_download.yml'),
+        ]
+    )
+
+    result = execute_pipeline(define_seq_airline_demo_download_pipeline(), config_object)
+
+    assert result.success
 
 
 @pytest.mark.nettest

@@ -46,7 +46,7 @@ class SolidAliasMapper:
         return self.solid_uses.get(solid_def_name)
 
 
-def create_execution_structure(solids, dependencies_dict):
+def create_execution_structure(pipeline_name, solids, dependencies_dict):
     mapper = SolidAliasMapper(dependencies_dict)
 
     pipeline_solids = []
@@ -74,7 +74,7 @@ def create_execution_structure(solids, dependencies_dict):
     pipeline_solid_dict = {ps.name: ps for ps in pipeline_solids}
 
     _validate_dependencies(
-        mapper.aliased_dependencies_dict, pipeline_solid_dict, mapper.alias_lookup
+        pipeline_name, mapper.aliased_dependencies_dict, pipeline_solid_dict, mapper.alias_lookup
     )
 
     dependency_structure = DependencyStructure.from_definitions(
@@ -84,7 +84,7 @@ def create_execution_structure(solids, dependencies_dict):
     return dependency_structure, pipeline_solid_dict
 
 
-def _validate_dependencies(dependencies, solid_dict, alias_lookup):
+def _validate_dependencies(pipeline_name, dependencies, solid_dict, alias_lookup):
     for from_solid, dep_by_input in dependencies.items():
         for from_input, dep in dep_by_input.items():
             if from_solid == dep.solid:
@@ -106,8 +106,10 @@ def _validate_dependencies(dependencies, solid_dict, alias_lookup):
                     raise DagsterInvalidDefinitionError(
                         (
                             'Solid {aliased_solid} (aliased by {from_solid} in dependency '
-                            'dictionary) not found in solid list'
-                        ).format(aliased_solid=aliased_solid, from_solid=from_solid)
+                            'dictionary) not found in solid list in pipeline {name}'
+                        ).format(
+                            aliased_solid=aliased_solid, from_solid=from_solid, name=pipeline_name
+                        )
                     )
             if not solid_dict[from_solid].definition.has_input(from_input):
                 input_list = [
