@@ -181,7 +181,7 @@ def Dict(fields):
                 key=key,
                 fields=fields,
                 description='A configuration dictionary with typed fields',
-                type_attributes=ConfigTypeAttributes(is_named=True, is_builtin=True),
+                type_attributes=ConfigTypeAttributes(is_builtin=True),
             )
 
     return _Dict
@@ -196,7 +196,7 @@ def Selector(fields):
                 name=None,
                 fields=fields,
                 # description='A configuration dictionary with typed fields',
-                type_attributes=ConfigTypeAttributes(is_named=True, is_builtin=True),
+                type_attributes=ConfigTypeAttributes(is_builtin=True),
             )
 
     return _Selector

@@ -183,7 +183,7 @@ class PipelineDefinition(object):
         return self._runtime_type_dict[name]
 
     def all_config_types(self):
-        return self._config_type_dict_by_name.values()
+        return self._config_type_dict_by_key.values()
 
     def has_context(self, name):
         check.str_param(name, 'name')

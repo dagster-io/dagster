@@ -1,83 +1,92 @@
-
-
 /* tslint:disable */
 // This file was automatically generated and should not be edited.
+
+import { ExecutionSelector, PipelineRunStatus, LogLevel, StepKind } from "./../../types/globalTypes";
 
 // ====================================================
 // GraphQL mutation operation: StartPipelineExecution
 // ====================================================
 
 export interface StartPipelineExecution_startPipelineExecution_StartPipelineExecutionSuccess_run_logs_nodes_LogMessageEvent {
+  __typename: "LogMessageEvent" | "PipelineStartEvent" | "PipelineSuccessEvent" | "PipelineFailureEvent" | "PipelineProcessStartEvent";
   message: string;
   timestamp: string;
   level: LogLevel;
-  __typename: "LogMessageEvent" | "PipelineStartEvent" | "PipelineSuccessEvent" | "PipelineFailureEvent" | "PipelineProcessStartEvent";
 }
 
 export interface StartPipelineExecution_startPipelineExecution_StartPipelineExecutionSuccess_run_logs_nodes_ExecutionStepFailureEvent_step {
+  __typename: "ExecutionStep";
   name: string;
 }
 
 export interface StartPipelineExecution_startPipelineExecution_StartPipelineExecutionSuccess_run_logs_nodes_ExecutionStepFailureEvent_error {
+  __typename: "PythonError";
   stack: string[];
   message: string;
 }
 
 export interface StartPipelineExecution_startPipelineExecution_StartPipelineExecutionSuccess_run_logs_nodes_ExecutionStepFailureEvent {
+  __typename: "ExecutionStepFailureEvent";
   message: string;
   timestamp: string;
   level: LogLevel;
-  __typename: "ExecutionStepFailureEvent";
   step: StartPipelineExecution_startPipelineExecution_StartPipelineExecutionSuccess_run_logs_nodes_ExecutionStepFailureEvent_step;
   error: StartPipelineExecution_startPipelineExecution_StartPipelineExecutionSuccess_run_logs_nodes_ExecutionStepFailureEvent_error;
 }
 
 export interface StartPipelineExecution_startPipelineExecution_StartPipelineExecutionSuccess_run_logs_nodes_PipelineProcessStartedEvent {
+  __typename: "PipelineProcessStartedEvent";
   message: string;
   timestamp: string;
   level: LogLevel;
-  __typename: "PipelineProcessStartedEvent";
   processId: number;
 }
 
 export interface StartPipelineExecution_startPipelineExecution_StartPipelineExecutionSuccess_run_logs_nodes_ExecutionStepStartEvent_step {
+  __typename: "ExecutionStep";
   name: string;
 }
 
 export interface StartPipelineExecution_startPipelineExecution_StartPipelineExecutionSuccess_run_logs_nodes_ExecutionStepStartEvent {
+  __typename: "ExecutionStepStartEvent" | "ExecutionStepSuccessEvent";
   message: string;
   timestamp: string;
   level: LogLevel;
-  __typename: "ExecutionStepStartEvent" | "ExecutionStepSuccessEvent";
   step: StartPipelineExecution_startPipelineExecution_StartPipelineExecutionSuccess_run_logs_nodes_ExecutionStepStartEvent_step;
 }
 
 export type StartPipelineExecution_startPipelineExecution_StartPipelineExecutionSuccess_run_logs_nodes = StartPipelineExecution_startPipelineExecution_StartPipelineExecutionSuccess_run_logs_nodes_LogMessageEvent | StartPipelineExecution_startPipelineExecution_StartPipelineExecutionSuccess_run_logs_nodes_ExecutionStepFailureEvent | StartPipelineExecution_startPipelineExecution_StartPipelineExecutionSuccess_run_logs_nodes_PipelineProcessStartedEvent | StartPipelineExecution_startPipelineExecution_StartPipelineExecutionSuccess_run_logs_nodes_ExecutionStepStartEvent;
 
 export interface StartPipelineExecution_startPipelineExecution_StartPipelineExecutionSuccess_run_logs_pageInfo {
+  __typename: "PageInfo";
   lastCursor: any | null;
 }
 
 export interface StartPipelineExecution_startPipelineExecution_StartPipelineExecutionSuccess_run_logs {
+  __typename: "LogMessageConnection";
   nodes: StartPipelineExecution_startPipelineExecution_StartPipelineExecutionSuccess_run_logs_nodes[];
   pageInfo: StartPipelineExecution_startPipelineExecution_StartPipelineExecutionSuccess_run_logs_pageInfo;
 }
 
 export interface StartPipelineExecution_startPipelineExecution_StartPipelineExecutionSuccess_run_executionPlan_steps_solid {
+  __typename: "Solid";
   name: string;
 }
 
 export interface StartPipelineExecution_startPipelineExecution_StartPipelineExecutionSuccess_run_executionPlan_steps {
+  __typename: "ExecutionStep";
   name: string;
   solid: StartPipelineExecution_startPipelineExecution_StartPipelineExecutionSuccess_run_executionPlan_steps_solid;
   kind: StepKind;
 }
 
 export interface StartPipelineExecution_startPipelineExecution_StartPipelineExecutionSuccess_run_executionPlan {
+  __typename: "ExecutionPlan";
   steps: StartPipelineExecution_startPipelineExecution_StartPipelineExecutionSuccess_run_executionPlan_steps[];
 }
 
 export interface StartPipelineExecution_startPipelineExecution_StartPipelineExecutionSuccess_run {
+  __typename: "PipelineRun";
   runId: string;
   status: PipelineRunStatus;
   logs: StartPipelineExecution_startPipelineExecution_StartPipelineExecutionSuccess_run_logs;
@@ -95,6 +104,7 @@ export interface StartPipelineExecution_startPipelineExecution_PipelineNotFoundE
 }
 
 export interface StartPipelineExecution_startPipelineExecution_PipelineConfigValidationInvalid_errors {
+  __typename: "FieldNotDefinedConfigError" | "MissingFieldConfigError" | "RuntimeMismatchConfigError" | "SelectorTypeConfigError";
   message: string;
 }
 
@@ -113,58 +123,3 @@ export interface StartPipelineExecutionVariables {
   pipeline: ExecutionSelector;
   config: any;
 }
-
-/* tslint:disable */
-// This file was automatically generated and should not be edited.
-
-//==============================================================
-// START Enums and Input Objects
-//==============================================================
-
-export enum EvaluationErrorReason {
-  FIELD_NOT_DEFINED = "FIELD_NOT_DEFINED",
-  MISSING_REQUIRED_FIELD = "MISSING_REQUIRED_FIELD",
-  RUNTIME_TYPE_MISMATCH = "RUNTIME_TYPE_MISMATCH",
-  SELECTOR_FIELD_ERROR = "SELECTOR_FIELD_ERROR",
-}
-
-export enum LogLevel {
-  CRITICAL = "CRITICAL",
-  DEBUG = "DEBUG",
-  ERROR = "ERROR",
-  INFO = "INFO",
-  WARNING = "WARNING",
-}
-
-/**
- * An enumeration.
- */
-export enum PipelineRunStatus {
-  FAILURE = "FAILURE",
-  NOT_STARTED = "NOT_STARTED",
-  STARTED = "STARTED",
-  SUCCESS = "SUCCESS",
-}
-
-export enum StepKind {
-  INPUT_EXPECTATION = "INPUT_EXPECTATION",
-  INPUT_THUNK = "INPUT_THUNK",
-  JOIN = "JOIN",
-  MATERIALIZATION_THUNK = "MATERIALIZATION_THUNK",
-  OUTPUT_EXPECTATION = "OUTPUT_EXPECTATION",
-  SERIALIZE = "SERIALIZE",
-  TRANSFORM = "TRANSFORM",
-}
-
-/**
- * This type represents the fields necessary to identify a
- *         pipeline or pipeline subset.
- */
-export interface ExecutionSelector {
-  name: string;
-  solidSubset?: string[] | null;
-}
-
-//==============================================================
-// END Enums and Input Objects
-//==============================================================

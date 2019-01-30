@@ -1,5 +1,3 @@
-
-
 /* tslint:disable */
 // This file was automatically generated and should not be edited.
 
@@ -8,80 +6,97 @@
 // ====================================================
 
 export interface PipelineGraphFragment_solids_definition_metadata {
+  __typename: "SolidMetadataItemDefinition";
   key: string;
   value: string;
 }
 
 export interface PipelineGraphFragment_solids_definition_configDefinition_configType {
+  __typename: "EnumConfigType" | "CompositeConfigType" | "RegularConfigType" | "ListConfigType" | "NullableConfigType";
   name: string | null;
   description: string | null;
 }
 
 export interface PipelineGraphFragment_solids_definition_configDefinition {
+  __typename: "ConfigTypeField";
   configType: PipelineGraphFragment_solids_definition_configDefinition_configType;
 }
 
 export interface PipelineGraphFragment_solids_definition {
+  __typename: "SolidDefinition";
   metadata: PipelineGraphFragment_solids_definition_metadata[];
   configDefinition: PipelineGraphFragment_solids_definition_configDefinition | null;
 }
 
 export interface PipelineGraphFragment_solids_inputs_definition_type {
+  __typename: "RegularRuntimeType" | "ListRuntimeType" | "NullableRuntimeType";
   name: string | null;
 }
 
 export interface PipelineGraphFragment_solids_inputs_definition {
+  __typename: "InputDefinition";
   name: string;
   type: PipelineGraphFragment_solids_inputs_definition_type;
 }
 
 export interface PipelineGraphFragment_solids_inputs_dependsOn_definition {
+  __typename: "OutputDefinition";
   name: string;
 }
 
 export interface PipelineGraphFragment_solids_inputs_dependsOn_solid {
+  __typename: "Solid";
   name: string;
 }
 
 export interface PipelineGraphFragment_solids_inputs_dependsOn {
+  __typename: "Output";
   definition: PipelineGraphFragment_solids_inputs_dependsOn_definition;
   solid: PipelineGraphFragment_solids_inputs_dependsOn_solid;
 }
 
 export interface PipelineGraphFragment_solids_inputs {
+  __typename: "Input";
   definition: PipelineGraphFragment_solids_inputs_definition;
   dependsOn: PipelineGraphFragment_solids_inputs_dependsOn | null;
 }
 
 export interface PipelineGraphFragment_solids_outputs_definition_type {
+  __typename: "RegularRuntimeType" | "ListRuntimeType" | "NullableRuntimeType";
   name: string | null;
 }
 
 export interface PipelineGraphFragment_solids_outputs_definition_expectations {
+  __typename: "Expectation";
   name: string;
   description: string | null;
 }
 
 export interface PipelineGraphFragment_solids_outputs_definition {
+  __typename: "OutputDefinition";
   name: string;
   type: PipelineGraphFragment_solids_outputs_definition_type;
   expectations: PipelineGraphFragment_solids_outputs_definition_expectations[];
 }
 
 export interface PipelineGraphFragment_solids_outputs_dependedBy_solid {
+  __typename: "Solid";
   name: string;
 }
 
 export interface PipelineGraphFragment_solids_outputs_dependedBy {
+  __typename: "Input";
   solid: PipelineGraphFragment_solids_outputs_dependedBy_solid;
 }
 
 export interface PipelineGraphFragment_solids_outputs {
+  __typename: "Output";
   definition: PipelineGraphFragment_solids_outputs_definition;
   dependedBy: PipelineGraphFragment_solids_outputs_dependedBy[];
 }
 
 export interface PipelineGraphFragment_solids {
+  __typename: "Solid";
   name: string;
   definition: PipelineGraphFragment_solids_definition;
   inputs: PipelineGraphFragment_solids_inputs[];
@@ -89,61 +104,7 @@ export interface PipelineGraphFragment_solids {
 }
 
 export interface PipelineGraphFragment {
+  __typename: "Pipeline";
   name: string;
   solids: PipelineGraphFragment_solids[];
 }
-
-/* tslint:disable */
-// This file was automatically generated and should not be edited.
-
-//==============================================================
-// START Enums and Input Objects
-//==============================================================
-
-export enum EvaluationErrorReason {
-  FIELD_NOT_DEFINED = "FIELD_NOT_DEFINED",
-  MISSING_REQUIRED_FIELD = "MISSING_REQUIRED_FIELD",
-  RUNTIME_TYPE_MISMATCH = "RUNTIME_TYPE_MISMATCH",
-  SELECTOR_FIELD_ERROR = "SELECTOR_FIELD_ERROR",
-}
-
-export enum LogLevel {
-  CRITICAL = "CRITICAL",
-  DEBUG = "DEBUG",
-  ERROR = "ERROR",
-  INFO = "INFO",
-  WARNING = "WARNING",
-}
-
-/**
- * An enumeration.
- */
-export enum PipelineRunStatus {
-  FAILURE = "FAILURE",
-  NOT_STARTED = "NOT_STARTED",
-  STARTED = "STARTED",
-  SUCCESS = "SUCCESS",
-}
-
-export enum StepKind {
-  INPUT_EXPECTATION = "INPUT_EXPECTATION",
-  INPUT_THUNK = "INPUT_THUNK",
-  JOIN = "JOIN",
-  MATERIALIZATION_THUNK = "MATERIALIZATION_THUNK",
-  OUTPUT_EXPECTATION = "OUTPUT_EXPECTATION",
-  SERIALIZE = "SERIALIZE",
-  TRANSFORM = "TRANSFORM",
-}
-
-/**
- * This type represents the fields necessary to identify a
- *         pipeline or pipeline subset.
- */
-export interface ExecutionSelector {
-  name: string;
-  solidSubset?: string[] | null;
-}
-
-//==============================================================
-// END Enums and Input Objects
-//==============================================================

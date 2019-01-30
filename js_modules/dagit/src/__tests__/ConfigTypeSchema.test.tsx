@@ -3,188 +3,165 @@ import * as TestRenderer from "react-test-renderer";
 import { BrowserRouter } from "react-router-dom";
 
 import ConfigTypeSchema from "../ConfigTypeSchema";
+import { ConfigTypeSchemaFragment } from "../types/ConfigTypeSchemaFragment";
 
 it("renders given a basic type", () => {
-  let intConfigData = {
-    configType: {
-      key: "Int",
-      name: "Int",
-      description: "An int",
-      typeAttributes: {
-        isNamed: true
-      },
-      isList: false,
-      isSelector: false,
-      isNullable: false,
-      innerTypes: []
-    }
+  const intConfigData: ConfigTypeSchemaFragment = {
+    __typename: "RegularConfigType",
+    key: "Int",
+    name: "Int",
+    description: "An int",
+    isList: false,
+    isSelector: false,
+    isNullable: false,
+    innerTypes: []
   };
   const component = TestRenderer.create(
     <BrowserRouter>
-      <ConfigTypeSchema type={intConfigData.configType} />
+      <ConfigTypeSchema type={intConfigData} />
     </BrowserRouter>
   );
   expect(component.toJSON()).toMatchSnapshot();
 });
 
 it("renders given a complex type", () => {
-  let complexConfigData = {
-    configType: {
-      key: "Dict.4",
-      name: "Dict.4",
-      description: "",
-      typeAttributes: { isNamed: false },
-      isList: false,
-      isSelector: false,
-      isNullable: false,
-      fields: [
-        {
-          name: "field_one",
-          configType: {
-            key: "String",
-            name: "String"
+  let complexConfigData: ConfigTypeSchemaFragment = {
+    __typename: "CompositeConfigType",
+    key: "Dict.4",
+    name: "Dict.4",
+    description: "",
+    isList: false,
+    isSelector: false,
+    isNullable: false,
+    fields: [
+      {
+        __typename: "ConfigTypeField",
+        description: "",
+        name: "field_one",
+        configType: {
+          __typename: "RegularConfigType",
+          key: "String"
+        },
+        isOptional: false
+      },
+      {
+        __typename: "ConfigTypeField",
+        description: "",
+        name: "field_two",
+        configType: {
+          __typename: "RegularConfigType",
+          key: "String"
+        },
+        isOptional: false
+      },
+      {
+        __typename: "ConfigTypeField",
+        description: "",
+        name: "field_three",
+        configType: {
+          __typename: "RegularConfigType",
+          key: "String"
+        },
+        isOptional: false
+      },
+      {
+        __typename: "ConfigTypeField",
+        description: "",
+        name: "nested_field",
+        configType: {
+          __typename: "CompositeConfigType",
+          key: "Dict.3"
+        },
+        isOptional: false
+      }
+    ],
+    innerTypes: [
+      {
+        __typename: "RegularConfigType",
+        key: "String",
+        name: "String",
+        description: "",
+        isList: false,
+        isSelector: false,
+        isNullable: false,
+        innerTypes: []
+      },
+      {
+        __typename: "RegularConfigType",
+        key: "Dict.3",
+        name: "Dict.3",
+        description: "",
+        isList: false,
+        isSelector: false,
+        isNullable: false,
+        innerTypes: [
+          {
+            __typename: "RegularConfigType",
+            key: "String"
           },
-          isOptional: false
-        },
-        {
-          name: "field_two",
-          configType: {
-            key: "String",
-            name: "String"
+          {
+            __typename: "RegularConfigType",
+            key: "Int"
           },
-          isOptional: false
-        },
-        {
-          name: "field_three",
-          configType: {
-            key: "String",
-            name: "String"
+          {
+            __typename: "ListConfigType",
+            key: "List.Nullable.Int"
           },
-          isOptional: false
-        },
-        {
-          name: "nested_field",
-          configType: {
-            key: "Dict.3",
-            name: "Dict.3"
+          {
+            __typename: "NullableConfigType",
+            key: "Nullable.Int"
+          }
+        ]
+      },
+      {
+        __typename: "RegularConfigType",
+        key: "Int",
+        name: "Int",
+        description: "",
+        isList: false,
+        isSelector: false,
+        isNullable: false,
+        innerTypes: []
+      },
+      {
+        __typename: "ListConfigType",
+        key: "List.Nullable.Int",
+        name: "List.Nullable.Int",
+        description: "",
+        isList: true,
+        isSelector: false,
+        isNullable: false,
+        innerTypes: [
+          {
+            __typename: "NullableConfigType",
+            key: "Nullable.Int"
           },
-          isOptional: false
-        }
-      ],
-      innerTypes: [
-        {
-          key: "String",
-          name: "String",
-          description: "",
-          isList: false,
-          typeAttributes: { isNamed: true },
-          isSelector: false,
-          isNullable: false,
-          innerTypes: []
-        },
-        {
-          key: "Dict.3",
-          name: "Dict.3",
-          description: "",
-          isList: false,
-          typeAttributes: { isNamed: false },
-          isSelector: false,
-          isNullable: false,
-          innerTypes: [
-            {
-              key: "String",
-              name: "String"
-            },
-            {
-              key: "Int",
-              name: "Int"
-            },
-            {
-              key: "List.Nullable.Int",
-              name: "List.Nullable.Int"
-            },
-            {
-              key: "Nullable.Int",
-              name: "Nullable.Int"
-            }
-          ],
-          fields: [
-            {
-              name: "field_four_str",
-              configType: {
-                key: "String",
-                name: "String"
-              },
-              isOptional: false
-            },
-            {
-              name: "field_five_int",
-              configType: {
-                key: "Int",
-                name: "Int"
-              },
-              isOptional: false
-            },
-            {
-              name: "field_six_nullable_int_list",
-              configType: {
-                key: "List.Nullable.Int",
-                name: "List.Nullable.Int"
-              },
-              isOptional: true
-            }
-          ]
-        },
-        {
-          key: "Int",
-          name: "Int",
-          description: "",
-          isList: false,
-          typeAttributes: { isNamed: true },
-          isSelector: false,
-          isNullable: false,
-          innerTypes: []
-        },
-        {
-          key: "List.Nullable.Int",
-          name: "List.Nullable.Int",
-          description: "",
-          isList: true,
-          typeAttributes: { isNamed: false },
-          isSelector: false,
-          isNullable: false,
-          innerTypes: [
-            {
-              key: "Nullable.Int",
-              name: "Nullable.Int"
-            },
-            {
-              key: "Int",
-              name: "Int"
-            }
-          ]
-        },
-        {
-          key: "Nullable.Int",
-          name: "Nullable.Int",
-          description: "",
-          isList: false,
-          typeAttributes: { isNamed: false },
-          isSelector: false,
-          isNullable: true,
-          innerTypes: [
-            {
-              key: "Int",
-              name: "Int"
-            }
-          ]
-        }
-      ]
-    }
+          {
+            __typename: "RegularConfigType",
+            key: "Int"
+          }
+        ]
+      },
+      {
+        __typename: "NullableConfigType",
+        key: "Nullable.Int",
+        name: "Nullable.Int",
+        description: "",
+        isList: false,
+        isSelector: false,
+        isNullable: true,
+        innerTypes: [
+          {
+            __typename: "RegularConfigType",
+            key: "Int"
+          }
+        ]
+      }
+    ]
   };
   const component = TestRenderer.create(
     <BrowserRouter>
-      <ConfigTypeSchema type={complexConfigData.configType} />
+      <ConfigTypeSchema type={complexConfigData} />
     </BrowserRouter>
   );
   expect(component.toJSON()).toMatchSnapshot();
