@@ -7,13 +7,10 @@ plan.
 
 import os
 
-from copy import copy
 from datetime import datetime, timedelta
-from pprint import pformat
-from textwrap import TextWrapper
 
-from airflow import DAG
 from six import StringIO, string_types
+from yaml import dump
 
 from dagster import check, PipelineDefinition
 from dagster.core.execution import create_execution_plan
@@ -70,7 +67,8 @@ def _make_editable_scaffold(
         printer.blank_line()
 
         with printer.with_indent():
-            printer.block(pformat(env_config))
+            for line in dump(env_config).split('\n'):
+                printer.line(line)
         printer.blank_line()
 
         printer.block(
@@ -96,25 +94,25 @@ def _make_editable_scaffold(
             'Arguments to be passed to the ``default_args`` parameter of the ``airflow.DAG`` '
             'constructor.You can override these with values of your choice.'
         )
-        printer.line('DEFAULT_ARGS = {{')
+        printer.line('DEFAULT_ARGS = {')
         with printer.with_indent():
             for key, value in sorted(default_args.items(), key=lambda x: x[0]):
-                printer.line('\'{key}\': {value_repr}'.format(key=key, value_repr=repr(value)))
-        printer.line('}}')
+                printer.line('\'{key}\': {value_repr},'.format(key=key, value_repr=repr(value)))
+        printer.line('}')
         printer.blank_line()
 
         printer.comment(
             'Any additional keyword arguments to be passed to the ``airflow.DAG`` constructor. '
             'You can override these with values of your choice.'
         )
-        printer.line('DAG_KWARGS = {{}}')
+        printer.line('DAG_KWARGS = {}')
         printer.blank_line()
 
         printer.comment(
             'Any additional keyword arguments to be passed to the ``ModifiedDockerOperator`` '
             'constructor. You can override these with values of your choice.'
         )
-        printer.line('MODIFIED_DOCKER_OPERATOR_KWARGS = {{}}')
+        printer.line('MODIFIED_DOCKER_OPERATOR_KWARGS = {}')
         printer.blank_line()
 
         printer.comment(
@@ -205,30 +203,32 @@ def _make_static_scaffold(pipeline_name, env_config, execution_plan, image, edit
                 printer.line('description=dag_description,')
                 printer.line('**dag_kwargs,')
             printer.line(')')
-        printer.blank_line()
-
-        for step in execution_plan.topological_steps():
-            step_key = _normalize_key(step.key)
-
-            printer.line('{step_key}_task = DagsterOperator('.format(step_key=step_key))
-            with printer.with_indent():
-                printer.line('step=\'{step_key}\','.format(step_key=step_key))
-                printer.line('dag=dag,')
-                printer.line('image=\'{image}\','.format(image=image))
-                printer.line('task_id=\'{step_key}\','.format(step_key=step_key))
-                printer.line('s3_conn_id=S3_CONN_ID,')
-            printer.line(')')
             printer.blank_line()
 
-        for step in execution_plan.topological_steps():
-            for step_input in step.step_inputs:
-                prev_step_key = _normalize_key(step_input.prev_output_handle.step.key)
+            for step in execution_plan.topological_steps():
                 step_key = _normalize_key(step.key)
-                printer.line(
-                    '{prev_step_key}_task.set_downstream({step_key}_task)'.format(
-                        prev_step_key=prev_step_key, step_key=step_key
+
+                printer.line('{step_key}_task = DagsterOperator('.format(step_key=step_key))
+                with printer.with_indent():
+                    printer.line('step=\'{step_key}\','.format(step_key=step_key))
+                    printer.line('dag=dag,')
+                    printer.line('image=\'{image}\','.format(image=image))
+                    printer.line('task_id=\'{step_key}\','.format(step_key=step_key))
+                    printer.line('s3_conn_id=S3_CONN_ID,')
+                printer.line(')')
+                printer.blank_line()
+
+            for step in execution_plan.topological_steps():
+                for step_input in step.step_inputs:
+                    prev_step_key = _normalize_key(step_input.prev_output_handle.step.key)
+                    step_key = _normalize_key(step.key)
+                    printer.line(
+                        '{prev_step_key}_task.set_downstream({step_key}_task)'.format(
+                            prev_step_key=prev_step_key, step_key=step_key
+                        )
                     )
-                )
+            printer.blank_line()
+            printer.line('return dag')
 
         return printer.read()
 
@@ -341,8 +341,8 @@ def scaffold_airflow_dag(pipeline, env_config, image, output_path=None, dag_kwar
         dict(DEFAULT_ARGS, start_date=datetime.utcnow()), **(dag_kwargs.pop('default_args', {}))
     )
 
-    editable_scaffold_module_name = os.path.basename(editable_path).split('.')[-1]
-    static_scaffold_module_name = os.path.basename(static_path).split('.')[-1]
+    editable_scaffold_module_name = os.path.basename(editable_path).split('.')[-2]
+    static_scaffold_module_name = os.path.basename(static_path).split('.')[-2]
 
     static_scaffold = _make_static_scaffold(
         pipeline_name=pipeline_name,
