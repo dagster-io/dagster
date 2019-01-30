@@ -147,6 +147,7 @@ def _make_query_for_step(step):
             }
 """
 
+
 def _make_editable_scaffold(
     pipeline_name, pipeline_description, env_config, static_scaffold, default_args
 ):
