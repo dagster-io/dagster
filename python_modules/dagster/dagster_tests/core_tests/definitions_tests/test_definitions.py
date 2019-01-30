@@ -74,7 +74,7 @@ def test_mapper_errors():
                 }
             },
         )
-    assert (
-        str(excinfo_2.value)
-        == 'Solid solid_b (aliased by solid_c in dependency dictionary) not found in solid list'
+    assert str(excinfo_2.value) == (
+        'Solid solid_b (aliased by solid_c in dependency dictionary) not found in solid '
+        'list in pipeline <<unnamed>>'
     )
