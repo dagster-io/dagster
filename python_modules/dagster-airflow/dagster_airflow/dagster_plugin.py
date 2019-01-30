@@ -113,7 +113,6 @@ class ModifiedDockerOperator(BaseOperator):
     def __init__(
         self,
         image,
-        *args,
         api_version=None,
         command=None,
         cpus=1.0,
@@ -140,6 +139,7 @@ class ModifiedDockerOperator(BaseOperator):
         auto_remove=False,
         shm_size=None,
         step=None,
+        *args,
         **kwargs
     ):
 
@@ -183,7 +183,6 @@ class ModifiedDockerOperator(BaseOperator):
         )
 
     def execute(self, context):
-        return
         self.log.info('Starting docker container from image %s', self.image)
 
         tls_config = self.__get_tls_config()

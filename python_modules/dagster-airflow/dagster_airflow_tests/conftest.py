@@ -2,11 +2,13 @@ import errno
 import os
 import shutil
 import subprocess
+import tempfile
+import uuid
 
 import docker
 import pytest
 
-from dagster.utils import script_relative_path
+from dagster.utils import mkdir_p, script_relative_path
 
 
 def mkdir_p(path):
@@ -26,6 +28,14 @@ def airflow_home():
     airflow_home_dir = os.path.abspath(os.path.expanduser(airflow_home_dir))
 
     return airflow_home_dir
+
+
+@pytest.fixture(scope='module')
+def temp_dir():
+    dir_path = os.path.join('/tmp', str(uuid.uuid4()))
+    mkdir_p(dir_path)
+    yield dir_path
+    shutil.rmtree(dir_path)
 
 
 @pytest.fixture(scope='module')
