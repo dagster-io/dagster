@@ -138,7 +138,6 @@ class ModifiedDockerOperator(BaseOperator):
         dns_search=None,
         auto_remove=False,
         shm_size=None,
-        step=None,
         *args,
         **kwargs
     ):
@@ -268,7 +267,10 @@ class ModifiedDockerOperator(BaseOperator):
 
 
 class DagsterOperator(ModifiedDockerOperator):
-    pass
+    def __init__(self, step=None, config=None, *args, **kwargs):
+        self.step = step
+        self.config = config
+        super(DagsterOperator, self).__init__(*args, **kwargs)
 
 
 class DagsterPlugin(AirflowPlugin):

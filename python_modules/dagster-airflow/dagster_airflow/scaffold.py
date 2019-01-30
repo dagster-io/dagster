@@ -8,6 +8,7 @@ plan.
 import os
 
 from datetime import datetime, timedelta
+from pprint import pformat
 
 from six import StringIO, string_types
 from yaml import dump
@@ -174,7 +175,8 @@ def _make_static_scaffold(pipeline_name, env_config, execution_plan, image, edit
         printer.blank_line()
 
         with printer.with_indent():
-            printer.block(pformat(env_config))
+            for line in dump(env_config).split('\n'):
+                printer.line(line)
         printer.blank_line()
 
         printer.block(
@@ -193,6 +195,13 @@ def _make_static_scaffold(pipeline_name, env_config, execution_plan, image, edit
         printer.blank_line()
         printer.blank_line()
 
+        printer.line('CONFIG = \\')
+        with printer.with_indent():
+            for line in pformat(env_config).split('\n'):
+                printer.line(line)
+        printer.blank_line()
+        printer.blank_line()
+
         printer.line(
             'def make_dag(dag_id, dag_description, dag_kwargs, s3_conn_id, modified_docker_operator_kwargs):'
         )
@@ -206,26 +215,35 @@ def _make_static_scaffold(pipeline_name, env_config, execution_plan, image, edit
             printer.blank_line()
 
             for step in execution_plan.topological_steps():
-                step_key = _normalize_key(step.key)
+                step_key = step.key
+                airflow_step_key = _normalize_key(step_key)
 
-                printer.line('{step_key}_task = DagsterOperator('.format(step_key=step_key))
+                printer.line(
+                    '{airflow_step_key}_task = DagsterOperator('.format(
+                        airflow_step_key=airflow_step_key
+                    )
+                )
                 with printer.with_indent():
                     printer.line('step=\'{step_key}\','.format(step_key=step_key))
+                    printer.line('config=CONFIG,')
                     printer.line('dag=dag,')
                     printer.line('image=\'{image}\','.format(image=image))
-                    printer.line('task_id=\'{step_key}\','.format(step_key=step_key))
-                    printer.line('s3_conn_id=S3_CONN_ID,')
+                    printer.line(
+                        'task_id=\'{airflow_step_key}\','.format(airflow_step_key=airflow_step_key)
+                    )
+                    printer.line('s3_conn_id=s3_conn_id,')
                     printer.line('command=,')
                 printer.line(')')
                 printer.blank_line()
 
             for step in execution_plan.topological_steps():
                 for step_input in step.step_inputs:
-                    prev_step_key = _normalize_key(step_input.prev_output_handle.step.key)
-                    step_key = _normalize_key(step.key)
+                    prev_airflow_step_key = _normalize_key(step_input.prev_output_handle.step.key)
+                    airflow_step_key = _normalize_key(step.key)
                     printer.line(
-                        '{prev_step_key}_task.set_downstream({step_key}_task)'.format(
-                            prev_step_key=prev_step_key, step_key=step_key
+                        '{prev_airflow_step_key}_task.set_downstream({airflow_step_key}_task)'.format(
+                            prev_airflow_step_key=prev_airflow_step_key,
+                            airflow_step_key=airflow_step_key,
                         )
                     )
             printer.blank_line()
