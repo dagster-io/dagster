@@ -1,2 +1,2 @@
-dagit
-dagster
+git+https://github.com/dagster-io/dagster.git#egg=dagit&subdirectory=python_modules/dagit
+git+https://github.com/dagster-io/dagster.git#egg=dagster&subdirectory=python_modules/dagster

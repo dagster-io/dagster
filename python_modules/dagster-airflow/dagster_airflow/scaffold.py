@@ -215,6 +215,7 @@ def _make_static_scaffold(pipeline_name, env_config, execution_plan, image, edit
                     printer.line('image=\'{image}\','.format(image=image))
                     printer.line('task_id=\'{step_key}\','.format(step_key=step_key))
                     printer.line('s3_conn_id=S3_CONN_ID,')
+                    printer.line('command=,')
                 printer.line(')')
                 printer.blank_line()
 

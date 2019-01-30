@@ -6,8 +6,6 @@ RUN pip install -r requirements.txt
 
 ADD . .
 
-ENTRYPOINT [ "dagit" ]
-
-CMD [ "--help" ]
+ENTRYPOINT [ "dagit", "--no-watch" ]
 
 EXPOSE 3000
