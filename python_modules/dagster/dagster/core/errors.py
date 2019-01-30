@@ -35,7 +35,7 @@ class DagsterTypeError(DagsterUserError):
     '''Indicates an error in the solid type system (e.g. mismatched arguments)'''
 
 
-class DagsterUserCodeExecutionError(DagsterUserError):
+class DagsterUserCodeExecutionErrorBase(DagsterUserError):
     '''Indicates that user space code has raised an error'''
 
     def __init__(self, *args, **kwargs):
@@ -43,12 +43,28 @@ class DagsterUserCodeExecutionError(DagsterUserError):
         # callsite inside of the exception handler. this will allow consuming
         # code to *re-raise* the user error in it's original format
         # for cleaner error reporting that does not have framework code in it
-        user_exception = kwargs.pop('user_exception', None)
-        original_exc_info = kwargs.pop('original_exc_info', None)
-        super(DagsterUserCodeExecutionError, self).__init__(*args, **kwargs)
+        user_exception = check.opt_inst_param(
+            kwargs.pop('user_exception', None), 'user_exception', Exception
+        )
+        original_exc_info = check.opt_tuple_param(
+            kwargs.pop('original_exc_info', None), 'original_exc_info'
+        )
+        super(DagsterUserCodeExecutionErrorBase, self).__init__(*args, **kwargs)
 
         self.user_exception = check.opt_inst_param(user_exception, 'user_exception', Exception)
         self.original_exc_info = original_exc_info
+
+
+class DagsterUnmarshalInputError(DagsterUserCodeExecutionErrorBase):
+    '''Indicates an error doing marshalling a specific input'''
+
+    def __init__(self, *args, **kwargs):
+        self.input_name = check.str_param(kwargs.pop('input_name'), 'input_name')
+        super(DagsterUnmarshalInputError, self).__init__(*args, **kwargs)
+
+
+class ExecuteStepExecutionError(DagsterUserCodeExecutionErrorBase):
+    pass
 
 
 class DagsterExpectationFailedError(DagsterError):

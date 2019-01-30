@@ -1,3 +1,5 @@
+import pytest
+
 from dagster import (
     DependencyDefinition,
     InputDefinition,
@@ -6,6 +8,7 @@ from dagster import (
     PipelineDefinition,
     lambda_solid,
 )
+from dagster.core.errors import DagsterUnmarshalInputError
 from dagster.core.execution import (
     execute_externalized_plan,
     create_execution_plan,
@@ -19,7 +22,7 @@ from dagster.core.types.marshal import serialize_to_file, deserialize_from_file
 from dagster.utils.test import get_temp_file_names
 
 
-def test_basic_pipeline_external_plan_execution():
+def define_inty_pipeline():
     @lambda_solid
     def return_one():
         return 1
@@ -33,6 +36,11 @@ def test_basic_pipeline_external_plan_execution():
         solids=[return_one, add_one],
         dependencies={'add_one': {'num': DependencyDefinition('return_one')}},
     )
+    return pipeline
+
+
+def test_basic_pipeline_external_plan_execution():
+    pipeline = define_inty_pipeline()
 
     with get_temp_file_names(2) as temp_files:
 
@@ -66,3 +74,21 @@ def test_basic_pipeline_external_plan_execution():
     assert transform_step_result.success
     assert transform_step_result.success_data.output_name == 'result'
     assert transform_step_result.success_data.value == 6
+
+
+def test_external_execution_marshal_error():
+    pipeline = define_inty_pipeline()
+
+    execution_plan = create_execution_plan(pipeline)
+
+    with pytest.raises(DagsterUnmarshalInputError) as exc_info:
+        execute_externalized_plan(
+            pipeline,
+            execution_plan,
+            ['add_one.transform'],
+            inputs_to_marshal={'add_one.transform': {'num': 'nope'}},
+            execution_metadata=ExecutionMetadata(),
+        )
+
+    assert str(exc_info.value) == 'Error during the marshalling of input num'
+    assert exc_info.value.input_name == 'num'

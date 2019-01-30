@@ -17,10 +17,11 @@ will not invoke *any* outputs (and their APIs don't allow the user to).
 
 from collections import defaultdict, namedtuple
 from contextlib import contextmanager
-import itertools
 import inspect
+import itertools
+import sys
 
-
+from future.utils import raise_from
 from contextlib2 import ExitStack
 import six
 
@@ -42,7 +43,11 @@ from .definitions.environment_configs import construct_environment_config, const
 
 from .execution_context import ExecutionContext, RuntimeExecutionContext, ExecutionMetadata
 
-from .errors import DagsterInvariantViolationError, DagsterUserCodeExecutionError
+from .errors import (
+    DagsterInvariantViolationError,
+    DagsterUnmarshalInputError,
+    ExecuteStepExecutionError,
+)
 
 from .events import construct_event_logger
 
@@ -217,7 +222,7 @@ class SolidExecutionResult(object):
                 self.input_expectations, self.output_expectations, self.transforms
             ):
                 if not result.success:
-                    if isinstance(result.failure_data.dagster_error, DagsterUserCodeExecutionError):
+                    if isinstance(result.failure_data.dagster_error, ExecuteStepExecutionError):
                         six.reraise(*result.failure_data.dagster_error.original_exc_info)
                     else:
                         raise result.failure_data.dagster_error
@@ -607,9 +612,21 @@ def _unmarshal_inputs(context, inputs_to_marshal, execution_plan):
 
             check.invariant(input_type.serialization_strategy)
 
-            input_value = context.persistence_policy.read_value(
-                input_type.serialization_strategy, file_path
-            )
+            try:
+                input_value = context.persistence_policy.read_value(
+                    input_type.serialization_strategy, file_path
+                )
+            except Exception as e:
+                raise_from(
+                    DagsterUnmarshalInputError(
+                        'Error during the marshalling of input {}'.format(input_name),
+                        user_exception=e,
+                        original_exc_info=sys.exc_info(),
+                        input_name=input_name,
+                    ),
+                    e,
+                )
+
             inputs[step_key][input_name] = input_value
     return inputs
 

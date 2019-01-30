@@ -36,7 +36,7 @@ from dagster.core.errors import (
     DagsterInvariantViolationError,
     DagsterRuntimeCoercionError,
     DagsterTypeError,
-    DagsterUserCodeExecutionError,
+    ExecuteStepExecutionError,
 )
 
 

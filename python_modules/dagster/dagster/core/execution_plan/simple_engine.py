@@ -15,7 +15,7 @@ from dagster.core.errors import (
     DagsterError,
     DagsterInvariantViolationError,
     DagsterRuntimeCoercionError,
-    DagsterUserCodeExecutionError,
+    ExecuteStepExecutionError,
     DagsterTypeError,
 )
 
@@ -221,7 +221,7 @@ def _execution_step_error_boundary(context, step, msg, **kwargs):
             raise e
         else:
             raise_from(
-                DagsterUserCodeExecutionError(
+                ExecuteStepExecutionError(
                     msg.format(**kwargs), user_exception=e, original_exc_info=sys.exc_info()
                 ),
                 e,

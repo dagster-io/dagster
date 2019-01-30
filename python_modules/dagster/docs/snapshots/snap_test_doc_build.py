@@ -551,14 +551,12 @@ snapshots['test_build_all_docs 4'] = '''
 </li>
       <li><a href="apidocs/errors.html#dagster.DagsterTypeError">DagsterTypeError</a>
 </li>
-      <li><a href="apidocs/errors.html#dagster.DagsterUserCodeExecutionError">DagsterUserCodeExecutionError</a>
-</li>
       <li><a href="apidocs/definitions.html#dagster.PipelineDefinition.dependencies">dependencies (dagster.PipelineDefinition attribute)</a>
+</li>
+      <li><a href="apidocs/definitions.html#dagster.PipelineDefinition.dependency_structure">dependency_structure (dagster.PipelineDefinition attribute)</a>
 </li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="apidocs/definitions.html#dagster.PipelineDefinition.dependency_structure">dependency_structure (dagster.PipelineDefinition attribute)</a>
-</li>
       <li><a href="apidocs/definitions.html#dagster.DependencyDefinition">DependencyDefinition (class in dagster)</a>
 </li>
       <li><a href="apidocs/definitions.html#dagster.DependencyDefinition.description">description (dagster.DependencyDefinition attribute)</a>
@@ -20051,12 +20049,6 @@ at runtime.</p>
 <dt id="dagster.DagsterTypeError">
 <em class="property">exception </em><code class="descclassname">dagster.</code><code class="descname">DagsterTypeError</code><a class="headerlink" href="#dagster.DagsterTypeError" title="Permalink to this definition">¶</a></dt>
 <dd><p>Indicates an error in the solid type system (e.g. mismatched arguments)</p>
-</dd></dl>
-
-<dl class="exception">
-<dt id="dagster.DagsterUserCodeExecutionError">
-<em class="property">exception </em><code class="descclassname">dagster.</code><code class="descname">DagsterUserCodeExecutionError</code><span class="sig-paren">(</span><em>*args</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#dagster.DagsterUserCodeExecutionError" title="Permalink to this definition">¶</a></dt>
-<dd><p>Indicates that user space code has raised an error</p>
 </dd></dl>
 
 <dl class="exception">
