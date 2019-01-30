@@ -352,4 +352,4 @@ def resolve_to_runtime_nullable(nullable_type):
     return Nullable(resolve_to_runtime_type(nullable_type.inner_type))
 
 
-ALL_BUILTINS = set(_RUNTIME_MAP.values())
+ALL_RUNTIME_BUILTINS = set(_RUNTIME_MAP.values())

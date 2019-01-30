@@ -3,7 +3,8 @@ from dagster import check
 
 from dagster.core.types import config
 from dagster.core.types.iterate_types import iterate_config_types
-from dagster.core.types.runtime import ALL_BUILTINS
+from dagster.core.types.config import ALL_CONFIG_BUILTINS
+from dagster.core.types.runtime import ALL_RUNTIME_BUILTINS
 from dagster.core.errors import DagsterInvalidDefinitionError
 
 from .context import PipelineContextDefinition
@@ -164,7 +165,7 @@ def _gather_all_config_types(solid_defs, context_definitions, environment_type):
 
 
 def construct_runtime_type_dictionary(solid_defs):
-    type_dict = {t.name: t for t in ALL_BUILTINS}
+    type_dict = {t.name: t for t in ALL_RUNTIME_BUILTINS}
     for solid_def in solid_defs:
         for input_def in solid_def.input_defs:
             type_dict[input_def.runtime_type.name] = input_def.runtime_type
@@ -200,8 +201,8 @@ def construct_config_type_dictionary(solid_defs, context_definitions, environmen
     )
     check.inst_param(environment_type, 'environment_type', config.ConfigType)
 
-    type_dict_by_name = {}
-    type_dict_by_key = {}
+    type_dict_by_name = {t.name: t for t in ALL_CONFIG_BUILTINS}
+    type_dict_by_key = {t.key: t for t in ALL_CONFIG_BUILTINS}
     all_types = list(
         _gather_all_config_types(solid_defs, context_definitions, environment_type)
     ) + list(_gather_all_schemas(solid_defs))
