@@ -20,8 +20,7 @@ function groupTypes(types: Array<TypeListFragment>) {
     "Built-in": Array<TypeListFragment>()
   };
   types.forEach(type => {
-    // TODO: Restore the "isBuiltin" type attribute
-    if (false) {
+    if (type.isBuiltin) {
       groups["Built-in"].push(type);
     } else {
       groups["Custom"].push(type);
@@ -35,6 +34,7 @@ export default class TypeList extends React.Component<ITypeListProps, {}> {
     TypeListFragment: gql`
       fragment TypeListFragment on RuntimeType {
         name
+        isBuiltin
         ...RuntimeTypeWithTooltipFragment
       }
 
