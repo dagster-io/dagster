@@ -39,7 +39,11 @@ const TABS = [
     render: (props: IPipelinePageTabProps) => (
       <Route
         path={`${props.match.url}/:solid?`}
-        render={({ match }: { match: match<{ solid: string | undefined }> }) => (
+        render={({
+          match
+        }: {
+          match: match<{ solid: string | undefined }>;
+        }) => (
           <PipelineExplorer
             history={props.history}
             pipeline={props.pipeline}

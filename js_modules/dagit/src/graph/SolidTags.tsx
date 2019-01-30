@@ -11,7 +11,7 @@ export interface ISolidTagsProps {
   width: number;
   minified: boolean;
   tags: string[];
-  onTagClicked: ((e: React.MouseEvent, tag: string) => void);
+  onTagClicked: (e: React.MouseEvent, tag: string) => void;
 }
 
 function hueForTag(text = "") {

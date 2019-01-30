@@ -55,17 +55,16 @@ export class ExecutionTab extends React.Component<
         ) : (
           title
         )}
-        {!editing &&
-          onRemove && (
-            <RemoveButton
-              onClick={e => {
-                e.stopPropagation();
-                onRemove();
-              }}
-            >
-              <Icon icon={IconNames.CROSS} />
-            </RemoveButton>
-          )}
+        {!editing && onRemove && (
+          <RemoveButton
+            onClick={e => {
+              e.stopPropagation();
+              onRemove();
+            }}
+          >
+            <Icon icon={IconNames.CROSS} />
+          </RemoveButton>
+        )}
       </ExecutionTabContainer>
     );
   }
