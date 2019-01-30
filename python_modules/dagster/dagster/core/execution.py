@@ -45,6 +45,7 @@ from .execution_context import ExecutionContext, RuntimeExecutionContext, Execut
 
 from .errors import (
     DagsterInvariantViolationError,
+    DagsterUnmarshalInputNotFoundError,
     DagsterUnmarshalInputError,
     DagsterExecutionStepExecutionError,
 )
@@ -610,11 +611,10 @@ def _unmarshal_inputs(context, inputs_to_marshal, execution_plan):
         for input_name, file_path in input_dict.items():
             step = execution_plan.get_step_by_key(step_key)
             if input_name not in step.step_input_dict:
-                raise DagsterUnmarshalInputError(
+                raise DagsterUnmarshalInputNotFoundError(
                     'Input {input_name} does not exist in execution step {key}'.format(
                         input_name=input_name, key=step.key
                     ),
-                    original_exc_info=sys.exc_info(),
                     input_name=input_name,
                     step_key=step.key,
                 )

@@ -55,6 +55,13 @@ class DagsterUserCodeExecutionErrorBase(DagsterUserError):
         self.original_exc_info = original_exc_info
 
 
+class DagsterUnmarshalInputNotFoundError(DagsterUserError):
+    def __init__(self, *args, **kwargs):
+        self.input_name = check.str_param(kwargs.pop('input_name'), 'input_name')
+        self.step_key = check.str_param(kwargs.pop('step_key'), 'step_key')
+        super(DagsterUnmarshalInputNotFoundError, self).__init__(*args, **kwargs)
+
+
 class DagsterUnmarshalInputError(DagsterUserCodeExecutionErrorBase):
     '''Indicates an error doing marshalling a specific input'''
 

@@ -8,7 +8,7 @@ from dagster import (
     PipelineDefinition,
     lambda_solid,
 )
-from dagster.core.errors import DagsterUnmarshalInputError
+from dagster.core.errors import DagsterUnmarshalInputError, DagsterUnmarshalInputNotFoundError
 from dagster.core.execution import (
     execute_externalized_plan,
     create_execution_plan,
@@ -81,7 +81,7 @@ def test_external_execution_marshal_wrong_input_error():
 
     execution_plan = create_execution_plan(pipeline)
 
-    with pytest.raises(DagsterUnmarshalInputError) as exc_info:
+    with pytest.raises(DagsterUnmarshalInputNotFoundError) as exc_info:
         execute_externalized_plan(
             pipeline,
             execution_plan,
