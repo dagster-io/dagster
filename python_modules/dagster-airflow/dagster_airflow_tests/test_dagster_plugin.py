@@ -13,7 +13,11 @@ def test_init_modified_docker_operator():
 
 def test_modified_docker_operator_bad_docker_conn():
     operator = DagsterOperator(
-        image='dagster-airflow-demo', api_version='auto', task_id='nonce', docker_conn_id='foo_conn'
+        image='dagster-airflow-demo',
+        api_version='auto',
+        task_id='nonce',
+        docker_conn_id='foo_conn',
+        command='--help',
     )
 
     with pytest.raises(AirflowException, match='The conn_id `foo_conn` isn\'t defined'):
@@ -22,7 +26,11 @@ def test_modified_docker_operator_bad_docker_conn():
 
 def test_modified_docker_operator_env(temp_dir):
     operator = DagsterOperator(
-        image='dagster-airflow-demo', api_version='auto', task_id='nonce', host_tmp_dir=temp_dir
+        image='dagster-airflow-demo',
+        api_version='auto',
+        task_id='nonce',
+        host_tmp_dir=temp_dir,
+        command='--help',
     )
     operator.execute({})
 
@@ -35,6 +43,7 @@ def test_modified_docker_operator_xcom(temp_dir):
         host_tmp_dir=temp_dir,
         xcom_push=True,
         xcom_all=True,
+        command='--help',
     )
     assert b'Usage: dagit' in operator.execute({})
 
@@ -71,6 +80,7 @@ def test_modified_docker_operator_url(temp_dir):
             tls_hostname=docker_host if docker_tls_verify else False,
             tls_ca_cert=docker_cert_path,
             host_tmp_dir=temp_dir,
+            command='--help',
         )
 
         operator.execute({})
