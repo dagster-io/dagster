@@ -2106,6 +2106,87 @@ def test_start_subplan_invalid_output_name():
     assert result.data['startSubplanExecution']['invalidOutputName'] == 'nope'
 
 
+def test_start_subplan_invalid_input_path():
+
+    result = execute_dagster_graphql(
+        define_context(),
+        START_EXECUTION_PLAN_QUERY,
+        variables={
+            'pipelineName': 'pandas_hello_world',
+            'config': pandas_hello_world_solids_config(),
+            'stepExecutions': [
+                {
+                    'stepKey': 'sum_solid.transform',
+                    'marshalledInputs': [{'inputName': 'num', 'key': str(uuid.uuid4())}],
+                }
+            ],
+            'executionMetadata': {'runId': 'kdjkfjdfd'},
+        },
+    )
+
+    assert not result.errors
+    assert result.data
+    assert result.data['startSubplanExecution']['__typename'] == 'PythonError'
+    assert 'No such file or directory:' in result.data['startSubplanExecution']['message']
+
+
+def test_start_subplan_invalid_output_path():
+    with get_temp_file_name() as num_df_file:
+        num_df = pd.read_csv(script_relative_path('num.csv'))
+
+        with open(num_df_file, 'wb') as ff:
+            pickle.dump(num_df, ff)
+
+        result = execute_dagster_graphql(
+            define_context(),
+            START_EXECUTION_PLAN_QUERY,
+            variables={
+                'pipelineName': 'pandas_hello_world',
+                'config': pandas_hello_world_solids_config(),
+                'stepExecutions': [
+                    {
+                        'stepKey': 'sum_solid.transform',
+                        'marshalledInputs': [{'inputName': 'num', 'key': num_df_file}],
+                        'marshalledOutputs': [
+                            {
+                                'outputName': 'result',
+                                # guaranteed to not exist
+                                'key': '{}/{}'.format(str(uuid.uuid4()), str(uuid.uuid4())),
+                            }
+                        ],
+                    }
+                ],
+                'executionMetadata': {'runId': 'kdjkfjdfd'},
+            },
+        )
+
+        assert not result.errors
+        assert result.data
+        assert result.data['startSubplanExecution']['__typename'] == 'PythonError'
+        assert 'No such file or directory:' in result.data['startSubplanExecution']['message']
+
+
+def test_invalid_subplan_missing_inputs():
+    result = execute_dagster_graphql(
+        define_context(),
+        START_EXECUTION_PLAN_QUERY,
+        variables={
+            'pipelineName': 'pandas_hello_world',
+            'config': pandas_hello_world_solids_config(),
+            'stepExecutions': [{'stepKey': 'sum_solid.transform'}],
+            'executionMetadata': {'runId': 'kdjkfjdfd'},
+        },
+    )
+
+    if result.errors:
+        raise Exception(result.errors)
+
+    assert not result.errors
+    assert result.data
+    assert result.data['startSubplanExecution']['__typename'] == 'InvalidSubplanExecutionError'
+    assert result.data['startSubplanExecution']['step']['key'] == 'sum_solid.transform'
+
+
 START_EXECUTION_PLAN_QUERY = '''
 mutation (
     $pipelineName: String!
@@ -2140,6 +2221,13 @@ mutation (
         ... on StartSubplanExecutionInvalidOutputError {
             step { key }
             invalidOutputName
+        }
+        ... on InvalidSubplanExecutionError {
+            step { key }
+            missingInputName
+        }
+        ... on PythonError {
+            message
         }
     }
 }

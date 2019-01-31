@@ -7,7 +7,7 @@ from dagster.core.definitions import (
     Solid,
 )
 
-from dagster.core.errors import DagsterInvariantViolationError
+from dagster.core.errors import DagsterInvariantViolationError, DagsterInvalidSubplanExecutionError
 
 from dagster.core.execution_context import ExecutionMetadata
 
@@ -207,7 +207,37 @@ def create_subplan(execution_plan_info, state, execution_plan, subset_info):
             else:
                 steps.extend(_create_new_steps_for_input(state, step, subset_info))
 
-    return create_execution_plan_from_steps(steps)
+    new_plan = create_execution_plan_from_steps(steps)
+
+    for step in new_plan.steps:
+        for step_input in step.step_inputs:
+            if new_plan.has_step(step_input.prev_output_handle.step.key):
+                # step in is in the new plan, we're fine
+                continue
+
+            # Now check to see if the input is provided
+
+            if not (
+                step.key in subset_info.inputs and step_input.name in subset_info.inputs[step.key]
+            ):
+                raise DagsterInvalidSubplanExecutionError(
+                    (
+                        'You have specified a subset execution on pipeline {pipeline_name} '
+                        'with step_keys {step_keys}. You have failed to provide the required input '
+                        '{input_name} for step {step_key}.'
+                    ).format(
+                        pipeline_name=execution_plan_info.pipeline.name,
+                        step_keys=list(subset_info.subset),
+                        input_name=step_input.name,
+                        step_key=step.key,
+                    ),
+                    pipeline_name=execution_plan_info.pipeline.name,
+                    step_keys=list(subset_info.subset),
+                    input_name=step_input.name,
+                    step_key=step.key,
+                )
+
+    return new_plan
 
 
 def _create_new_steps_for_input(state, step, subset_info):
