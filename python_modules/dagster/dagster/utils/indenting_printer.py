@@ -5,8 +5,8 @@ from dagster import check
 
 
 class IndentingPrinter(object):
-    def __init__(self, indent_level=2, printer=print):
-        self.current_indent = 0
+    def __init__(self, indent_level=2, printer=print, current_indent=0):
+        self.current_indent = current_indent
         self.indent_level = check.int_param(indent_level, 'indent_level')
         self.printer = check.callable_param(printer, 'printer')
 

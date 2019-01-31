@@ -8,9 +8,8 @@ plan.
 import os
 
 from datetime import datetime, timedelta
-from pprint import pformat
 
-from six import StringIO, string_types
+from six import string_types
 from yaml import dump
 
 from dagster import check, PipelineDefinition
@@ -45,107 +44,237 @@ def _bad_import(path):
     return '.' in os.path.basename(path)[:-3]
 
 
-def _make_query_for_step(step):
-    marshalled_inputs = """[{
-            inputName: "word",
-            key: "word.txt"
-          }]"""
-    marshalled_outputs = """[{outputName: "input_thunk_output", key: "multiply__the__word_word_input__thunk___input_thunk_output"}]
-    }]"""
-    return """
-        mutation {{
-          startSubplanExecution(
-            config: {config},
-            executionMetadata: {{
-              runId: "testRun", # FIXME
-            }},
-            pipelineName: "{pipeline_name}",
-            stepExecutions: [
-              {{
-                stepKey: "{step_key}"}}
-              }}
-            ],
-            marshalledInputs: {marshalled_inputs}
-            marshalledOutputs: {marshalled_outputs}
-          ) {
-            __typename
-            ... on StartSubplanExecutionSuccess {
-              pipeline {
-                name
-                description
-                solids {
-                  name
-                }
-              },
-            }
-            ... on PipelineConfigValidationInvalid {
-                pipeline {
-                    name
-                }
-                errors {
-                    message
-                    path
-                    stack {
-                    entries {
-                        __typename
-                        ... on EvaluationStackPathEntry {
-                        field {
-                            name
-                            description
-                            configType {
-                            key
-                            name
-                            description
-                            }
-                            defaultValue
-                            isOptional
-                        }
-                        }
-                    }
-                    }
-                    reason
-                }
-                }
-                ... on StartSubplanExecutionInvalidStepsError {
-                invalidStepKeys
-                }
-                ... on StartSubplanExecutionInvalidOutputError {
-                step {
-                    key
-                    inputs {
-                    name
-                    type {
-                        key
-                        name
-                    }
-                    }
-                    outputs {
-                    name
-                    type {
-                        key
-                        name
-                    }
-                    }
-                    solid {
-                    name
-                    definition {
-                        name
-                    }
-                    inputs {
-                        solid {
-                        name
-                        }
-                        definition {
-                        name              
-                        }
-                    }
-                    }
-                    kind
-                }
-                }
-            }
-            }
-"""
+def _split_lines(lines):
+    '''Fancy utility adds a trailing comma to the last line of output.'''
+    return (lines.strip('\n') + ',').split('\n')
+
+
+def _key_for_marshalled_result(step_key, result_name):
+    '''Standardizes keys for marshalled inputs and outputs.'''
+    return _normalize_key(step_key) + '___' + _normalize_key(result_name) + '.pickle'
+
+
+def _scaffold_marshalled_inputs_for_step(step):
+    '''Generate the marshalled input block for our scaffolding.'''
+    printer = IndentingBlockPrinter(indent_level=2)
+    printer.line('[')
+    with printer.with_indent():
+        for step_input in step.step_inputs:
+            printer.line('{{')
+            with printer.with_indent():
+                printer.line('inputName: "{input_name}",'.format(input_name=step_input.name))
+                printer.line(
+                    'key: "{key}"'.format(
+                        key=_key_for_marshalled_result(
+                            step_input.prev_output_handle.step.key,
+                            step_input.prev_output_handle.output_name,
+                        )
+                    )
+                )
+            printer.line('}}')
+    printer.line(']')
+
+    return printer.read()
+
+
+def _scaffold_marshalled_outputs_for_step(step):
+    '''Generate the marshalled output block for our scaffolding.'''
+    printer = IndentingBlockPrinter(indent_level=2)
+    printer.line('[')
+    with printer.with_indent():
+        for step_output in step.step_outputs:
+            printer.line('{{')
+            with printer.with_indent():
+                printer.line('outputName: "{output_name}",'.format(output_name=step_output.name))
+                printer.line(
+                    'key: "{key}"'.format(
+                        key=_key_for_marshalled_result(step.key, step_output.name)
+                    )
+                )
+            printer.line('}}')
+    printer.line(']')
+
+    return printer.read()
+
+
+def _format_config(config):
+    '''This recursive descent thing formats a config dict for GraphQL.'''
+
+    def _format_config_subdict(config, current_indent=0):
+        check.dict_param(config, 'config', key_type=str)
+
+        printer = IndentingBlockPrinter(indent_level=2, current_indent=current_indent)
+        printer.line('{')
+
+        n_elements = len(config)
+        for i, key in enumerate(sorted(config, key=lambda x: x[0])):
+            value = config[key]
+            with printer.with_indent():
+                formatted_value = _format_config_item(
+                    value, current_indent=printer.current_indent
+                ).lstrip(' ').rstrip('\n')
+                printer.line(
+                    '{key}: {formatted_value}{comma}'.format(
+                        key=key,
+                        formatted_value=formatted_value,
+                        comma=',' if i != n_elements - 1 else '',
+                    )
+                )
+        printer.line('}')
+
+        return printer.read()
+
+    def _format_config_sublist(config, current_indent=0):
+        printer = IndentingBlockPrinter(indent_level=2, current_indent=current_indent)
+        printer.line('[')
+
+        n_elements = len(config)
+        for i in range(len(config)):
+            value = config[i]
+            with printer.with_indent():
+                formatted_value = _format_config_item(
+                    value, current_indent=printer.current_indent
+                ).lstrip(' ').rstrip('\n')
+                printer.line('{formatted_value}{comma}'.format(
+                    formatted_value=formatted_value,
+                    comma=',' if i != n_elements - 1 else '',
+                ))
+        printer.line(']')
+
+        return printer.read()
+
+    def _format_config_item(config, current_indent=0):
+        printer = IndentingBlockPrinter(indent_level=2, current_indent=current_indent)
+
+        if isinstance(config, dict):
+            return _format_config_subdict(config, printer.current_indent)
+        elif isinstance(config, list):
+            return _format_config_sublist(config, printer.current_indent)
+        else:
+            return repr(config).replace('\'', '"')
+
+        return printer.read()
+
+    check.dict_param(config, 'config', key_type=str)
+    if not isinstance(config, dict):
+        check.failed('Expected a dict to format as config, got: {item}'.format(item=repr(config)))
+
+    return _format_config_subdict(config)
+
+
+def _scaffold_query_for_step(pipeline_name, step):
+    marshalled_inputs = _scaffold_marshalled_inputs_for_step(step)
+    marshalled_outputs = _scaffold_marshalled_outputs_for_step(step)
+
+    printer = IndentingBlockPrinter(indent_level=2)
+
+    printer.line('mutation {{')
+    with printer.with_indent():
+        printer.line('startSubplanExecution(')
+        with printer.with_indent():
+            printer.line('config: {config},')
+            printer.line('executionMetadata: {{')
+            with printer.with_indent():
+                printer.line('runId: "testRun"')  # FIXME need to see if we can thread this through
+            printer.line('}},')
+            printer.line('pipelineName: "{pipeline_name}",'.format(pipeline_name=pipeline_name))
+            printer.line('stepExecutions: [')
+            with printer.with_indent():
+                printer.line('{{')
+                with printer.with_indent():
+                    printer.line('stepKey: "{step_key}"'.format(step_key=step.key))
+                printer.line('}}')
+            printer.line('],')
+            printer.line('marshalledInputs: ')
+            for line in (marshalled_inputs.strip('\n') + ',').split('\n'):
+                printer.line(line)
+            printer.line('marshalledOutputs: ')
+            for line in (marshalled_outputs.strip('\n') + ',').split('\n'):
+                printer.line(line)
+        printer.line(') {{')
+        with printer.with_indent():
+            printer.line('__typename')
+        printer.line('}}')
+
+    return printer.read()
+
+    # __typename
+    # ... on StartSubplanExecutionSuccess {
+    #   pipeline {
+    #     name
+    #     description
+    #     solids {
+    #       name
+    #     }
+    #   },
+    # }
+    # ... on PipelineConfigValidationInvalid {
+    #     pipeline {
+    #         name
+    #     }
+    #     errors {
+    #         message
+    #         path
+    #         stack {
+    #         entries {
+    #             __typename
+    #             ... on EvaluationStackPathEntry {
+    #             field {
+    #                 name
+    #                 description
+    #                 configType {
+    #                 key
+    #                 name
+    #                 description
+    #                 }
+    #                 defaultValue
+    #                 isOptional
+    #             }
+    #             }
+    #         }
+    #         }
+    #         reason
+    #     }
+    #     }
+    #     ... on StartSubplanExecutionInvalidStepsError {
+    #     invalidStepKeys
+    #     }
+    #     ... on StartSubplanExecutionInvalidOutputError {
+    #     step {
+    #         key
+    #         inputs {
+    #         name
+    #         type {
+    #             key
+    #             name
+    #         }
+    #         }
+    #         outputs {
+    #         name
+    #         type {
+    #             key
+    #             name
+    #         }
+    #         }
+    #         solid {
+    #         name
+    #         definition {
+    #             name
+    #         }
+    #         inputs {
+    #             solid {
+    #             name
+    #             }
+    #             definition {
+    #             name
+    #             }
+    #         }
+    #         }
+    #         kind
+    #     }
+    #     }
+    # }
+    # }
 
 
 def _make_editable_scaffold(
@@ -300,7 +429,7 @@ def _make_static_scaffold(pipeline_name, env_config, execution_plan, image, edit
 
         printer.line('CONFIG = \\')
         with printer.with_indent():
-            for line in pformat(env_config).split('\n'):
+            for line in _format_config(env_config).split('\n'):
                 printer.line(line)
         printer.blank_line()
         printer.blank_line()
@@ -321,7 +450,7 @@ def _make_static_scaffold(pipeline_name, env_config, execution_plan, image, edit
                 step_key = step.key
                 airflow_step_key = _normalize_key(step_key)
 
-                query = _make_query_for_step(step)
+                query = _scaffold_query_for_step(pipeline_name, step)
 
                 printer.line(
                     '{airflow_step_key}_task = DagsterOperator('.format(
@@ -337,7 +466,12 @@ def _make_static_scaffold(pipeline_name, env_config, execution_plan, image, edit
                         'task_id=\'{airflow_step_key}\','.format(airflow_step_key=airflow_step_key)
                     )
                     printer.line('s3_conn_id=s3_conn_id,')
-                    printer.line('command=\'-q {query}\','.format(query=query))
+                    printer.line('command=\'\'\'-q \'')
+                    with printer.with_indent():
+                        for line in query.split('\n')[:-1]:
+                            printer.line(line)
+                        printer.line('\'')
+                    printer.line('\'\'\'.format(config=CONFIG),')
                 printer.line(')')
                 printer.blank_line()
 
