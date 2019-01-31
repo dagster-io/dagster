@@ -194,8 +194,8 @@ class DauphinStepMaterializationEvent(dauphin.ObjectType):
         name = 'StepMaterializationEvent'
         interfaces = (DauphinMessageEvent, DauphinExecutionStepEvent)
 
-    file_name = dauphin.String()
-    file_location = dauphin.String()
+    file_name = dauphin.NonNull(dauphin.String)
+    file_location = dauphin.NonNull(dauphin.String)
 
 
 # Should be a union of all possible events

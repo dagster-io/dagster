@@ -74,12 +74,10 @@ function extractMetadataFromLogs(
         });
       } else if (log.__typename === "StepMaterializationEvent") {
         metadata.steps[name] = produce(metadata.steps[name] || {}, step => {
-          if (log.fileLocation && log.fileName) {
-            step.materializations.push({
-              fileLocation: log.fileLocation,
-              fileName: log.fileName
-            });
-          }
+          step.materializations.push({
+            fileLocation: log.fileLocation,
+            fileName: log.fileName
+          });
         });
       } else if (log.__typename === "ExecutionStepFailureEvent") {
         metadata.steps[name] = produce(metadata.steps[name] || {}, step => {
