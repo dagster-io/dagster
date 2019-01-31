@@ -448,6 +448,8 @@ def _execute_subplan_or_error(
                 {'output': marshalled_output.output_name, 'path': marshalled_output.key}
             )
 
+    schema = subplan_execution_args.info.schema
+
     try:
         _results = execute_externalized_plan(
             pipeline=dauphin_pipeline.get_dagster_pipeline(),
@@ -461,8 +463,18 @@ def _execute_subplan_or_error(
 
     except DagsterUserCodeExecutionError as ducee:
         return EitherError(
-            subplan_execution_args.info.schema.type_named('PythonError')(
+            schema.type_named('PythonError')(
                 serializable_error_info_from_exc_info(ducee.original_exc_info)
+            )
+        )
+
+    except DagsterInvalidSubplanExecutionError as invalid_subplan_error:
+        return EitherError(
+            schema.type_named('InvalidSubplanExecutionError')(
+                step=schema.type_named('ExecutionStep')(
+                    execution_plan.get_step_by_key(invalid_subplan_error.step_key)
+                ),
+                missing_input_name=invalid_subplan_error.input_name,
             )
         )
 

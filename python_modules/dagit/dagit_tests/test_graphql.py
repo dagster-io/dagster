@@ -2127,6 +2127,10 @@ def test_start_subplan_invalid_input_path():
     assert not result.errors
     assert result.data
     assert result.data['startSubplanExecution']['__typename'] == 'PythonError'
+    assert (
+        'FileNotFoundError: [Errno 2] No such file or directory:'
+        in result.data['startSubplanExecution']['message']
+    )
 
 
 def test_start_subplan_invalid_output_path():
@@ -2162,6 +2166,10 @@ def test_start_subplan_invalid_output_path():
         assert not result.errors
         assert result.data
         assert result.data['startSubplanExecution']['__typename'] == 'PythonError'
+        assert (
+            'FileNotFoundError: [Errno 2] No such file or directory:'
+            in result.data['startSubplanExecution']['message']
+        )
 
 
 def test_invalid_subplan_missing_inputs():
@@ -2181,6 +2189,8 @@ def test_invalid_subplan_missing_inputs():
 
     assert not result.errors
     assert result.data
+    assert result.data['startSubplanExecution']['__typename'] == 'InvalidSubplanExecutionError'
+    assert result.data['startSubplanExecution']['step']['key'] == 'sum_solid.transform'
 
 
 START_EXECUTION_PLAN_QUERY = '''
@@ -2217,6 +2227,13 @@ mutation (
         ... on StartSubplanExecutionInvalidOutputError {
             step { key }
             invalidOutputName
+        }
+        ... on InvalidSubplanExecutionError {
+            step { key }
+            missingInputName
+        }
+        ... on PythonError {
+            message
         }
     }
 }

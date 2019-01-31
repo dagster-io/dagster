@@ -322,10 +322,19 @@ class DauphinStartSubplanExecutionInvalidOutputError(dauphin.ObjectType):
     invalid_output_name = dauphin.NonNull(dauphin.String)
 
 
+class DauphinInvalidSubplanExecutionError(dauphin.ObjectType):
+    class Meta:
+        name = 'InvalidSubplanExecutionError'
+
+    step = dauphin.NonNull('ExecutionStep')
+    missing_input_name = dauphin.NonNull(dauphin.String)
+
+
 class DauphinStartSubplanExecutionResult(dauphin.Union):
     class Meta:
         name = 'StartSubplanExecutionResult'
         types = (
+            DauphinInvalidSubplanExecutionError,
             DauphinPipelineConfigValidationInvalid,
             DauphinPipelineNotFoundError,
             DauphinPythonError,
