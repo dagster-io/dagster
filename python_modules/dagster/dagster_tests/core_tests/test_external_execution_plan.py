@@ -15,6 +15,7 @@ from dagster.core.errors import (
     DagsterMarshalOutputNotFoundError,
     DagsterUnmarshalInputError,
     DagsterUnmarshalInputNotFoundError,
+    DagsterExecutionStepExecutionError,
 )
 from dagster.core.execution import (
     execute_externalized_plan,
@@ -38,9 +39,13 @@ def define_inty_pipeline():
     def add_one(num):
         return num + 1
 
+    @lambda_solid
+    def user_throw_exception():
+        raise Exception('whoops')
+
     pipeline = PipelineDefinition(
         name='basic_external_plan_execution',
-        solids=[return_one, add_one],
+        solids=[return_one, add_one, user_throw_exception],
         dependencies={'add_one': {'num': DependencyDefinition('return_one')}},
     )
     return pipeline
@@ -192,7 +197,43 @@ def test_external_execution_output_code_error():
     assert exc_info.value.step_key == 'add_one.transform'
 
 
-def test_external_execution_unsatsified_input_error():
+def test_external_execution_output_code_error_throw_on_user_error():
+    pipeline = define_inty_pipeline()
+
+    execution_plan = create_execution_plan(pipeline)
+
+    with pytest.raises(Exception) as exc_info:
+        execute_externalized_plan(
+            pipeline,
+            execution_plan,
+            ['user_throw_exception.transform'],
+            execution_metadata=ExecutionMetadata(),
+            throw_on_user_error=True,
+        )
+
+    assert str(exc_info.value) == 'whoops'
+
+
+def test_external_execution_output_code_error_no_throw_on_user_error():
+    pipeline = define_inty_pipeline()
+
+    execution_plan = create_execution_plan(pipeline)
+
+    results = execute_externalized_plan(
+        pipeline,
+        execution_plan,
+        ['user_throw_exception.transform'],
+        execution_metadata=ExecutionMetadata(),
+        throw_on_user_error=False,
+    )
+
+    assert len(results) == 1
+    step_result = results[0]
+    assert isinstance(step_result.failure_data.dagster_error, DagsterExecutionStepExecutionError)
+    assert str(step_result.failure_data.dagster_error.user_exception) == 'whoops'
+
+
+def test_external_execution_unsatisfied_input_error():
     pipeline = define_inty_pipeline()
 
     execution_plan = create_execution_plan(pipeline)

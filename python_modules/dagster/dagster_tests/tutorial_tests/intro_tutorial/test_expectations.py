@@ -34,7 +34,7 @@ def test_intro_tutorial_expectations_step_two_fails_soft():
     result = execute_pipeline(
         define_expectations_tutorial_pipeline(),
         define_failing_environment_config(),
-        throw_on_error=False,
+        throw_on_user_error=False,
     )
 
     assert not result.success

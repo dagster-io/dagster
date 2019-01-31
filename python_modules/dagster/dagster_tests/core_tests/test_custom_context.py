@@ -178,7 +178,9 @@ def test_invalid_context():
         PipelineConfigEvaluationError, match='Undefined field "not_found" at path root:context'
     ):
         execute_pipeline(
-            default_context_pipeline, environment=environment_context_not_found, throw_on_error=True
+            default_context_pipeline,
+            environment=environment_context_not_found,
+            throw_on_user_error=True,
         )
 
     environment_field_name_mismatch = {'context': {'default': {'config': {'unexpected': 'value'}}}}
@@ -187,7 +189,7 @@ def test_invalid_context():
         execute_pipeline(
             default_context_pipeline,
             environment=environment_field_name_mismatch,
-            throw_on_error=True,
+            throw_on_user_error=True,
         )
 
     with_argful_context_pipeline = PipelineDefinition(
@@ -212,7 +214,7 @@ def test_invalid_context():
         execute_pipeline(
             with_argful_context_pipeline,
             environment=environment_no_config_error,
-            throw_on_error=True,
+            throw_on_user_error=True,
         )
 
     environment_type_mismatch_error = {'context': {'default': {'config': {'string_field': 1}}}}
@@ -228,5 +230,5 @@ def test_invalid_context():
         execute_pipeline(
             with_argful_context_pipeline,
             environment=environment_type_mismatch_error,
-            throw_on_error=True,
+            throw_on_user_error=True,
         )

@@ -15,7 +15,7 @@ from dagster.core.execution_context import ExecutionContext
 
 
 def execute_single_solid_in_isolation(
-    context_params, solid_def, environment=None, throw_on_error=True
+    context_params, solid_def, environment=None, throw_on_user_error=True
 ):
     '''
     Deprecated.
@@ -27,7 +27,7 @@ def execute_single_solid_in_isolation(
     check.inst_param(context_params, 'context_params', ExecutionContext)
     check.inst_param(solid_def, 'solid_def', SolidDefinition)
     environment = check.opt_dict_param(environment, 'environment')
-    check.bool_param(throw_on_error, 'throw_on_error')
+    check.bool_param(throw_on_user_error, 'throw_on_user_error')
 
     single_solid_environment = {
         'expectations': environment.get('expectations'),
@@ -45,6 +45,7 @@ def execute_single_solid_in_isolation(
             ),
         ),
         environment=single_solid_environment,
+        throw_on_user_error=throw_on_user_error,
     )
 
     return pipeline_result
