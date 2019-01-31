@@ -11,6 +11,8 @@ milestones in the framework's capability.
 
 Breaking API changes should be recorded in `CHANGELOG.rst`.
 
+You must have wheel and twine installed.
+
 ## Releasing a new version
 
 Our release automation tools are contained in `bin/publish.py`. These tools are smart enough to
@@ -50,8 +52,7 @@ Credentials must be available to twine in order to publish to PyPI. The best way
 with a `~/.pypirc` file in the following format:
 
     [distutils]
-    index-servers =
-    pypi
+    index-servers = pypi
 
     [pypi]
     repository: https://upload.pypi.org/legacy/

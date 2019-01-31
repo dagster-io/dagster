@@ -62,10 +62,12 @@ def pushd_module(module_name):
 
 def publish_module(module, nightly=False, additional_steps=''):
     with pushd_module(module) as cwd:
+        command = PUBLISH_COMMAND.format(
+            additional_steps=additional_steps, nightly=' --nightly' if nightly else ''
+        )
+        print('About to run command: {}'.format(command))
         process = subprocess.Popen(
-            PUBLISH_COMMAND.format(
-                additional_steps=additional_steps, nightly=' --nightly' if nightly else ''
-            ),
+            command,
             stderr=subprocess.PIPE,
             cwd=cwd,
             shell=True,
