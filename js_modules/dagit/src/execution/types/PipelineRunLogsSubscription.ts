@@ -78,6 +78,7 @@ export interface PipelineRunLogsSubscription_pipelineRunLogs_messages_StepMateri
   level: LogLevel;
   step: PipelineRunLogsSubscription_pipelineRunLogs_messages_StepMaterializationEvent_step;
   fileLocation: string | null;
+  fileName: string | null;
 }
 
 export interface PipelineRunLogsSubscription_pipelineRunLogs_messages_ExecutionStepStartEvent_run {

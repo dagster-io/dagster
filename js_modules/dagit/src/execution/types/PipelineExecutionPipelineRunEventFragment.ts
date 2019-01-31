@@ -54,6 +54,7 @@ export interface PipelineExecutionPipelineRunEventFragment_StepMaterializationEv
   level: LogLevel;
   step: PipelineExecutionPipelineRunEventFragment_StepMaterializationEvent_step;
   fileLocation: string | null;
+  fileName: string | null;
 }
 
 export interface PipelineExecutionPipelineRunEventFragment_ExecutionStepStartEvent_step {

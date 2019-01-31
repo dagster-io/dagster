@@ -11,12 +11,17 @@ export enum IStepState {
   FAILED = "failed"
 }
 
+export interface IStepMaterialization {
+  fileName: string;
+  fileLocation: string;
+}
+
 export interface IStepMetadata {
   state: IStepState;
   start?: number;
   elapsed?: number;
   transitionedAt: number;
-  materializations: { fileLocation: string }[];
+  materializations: IStepMaterialization[];
 }
 
 export interface IRunMetadataDict {
@@ -69,8 +74,11 @@ function extractMetadataFromLogs(
         });
       } else if (log.__typename === "StepMaterializationEvent") {
         metadata.steps[name] = produce(metadata.steps[name] || {}, step => {
-          if (log.fileLocation) {
-            step.materializations.push({ fileLocation: log.fileLocation });
+          if (log.fileLocation && log.fileName) {
+            step.materializations.push({
+              fileLocation: log.fileLocation,
+              fileName: log.fileName
+            });
           }
         });
       } else if (log.__typename === "ExecutionStepFailureEvent") {
@@ -111,6 +119,7 @@ export default class RunMetadataProvider extends React.Component<
             name
           }
           fileLocation
+          fileName
         }
         ... on ExecutionStepEvent {
           step {

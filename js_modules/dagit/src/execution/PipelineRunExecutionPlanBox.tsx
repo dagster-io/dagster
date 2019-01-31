@@ -1,7 +1,7 @@
 import * as React from "react";
 import styled from "styled-components";
 import { Colors, Spinner, Intent } from "@blueprintjs/core";
-import { IStepState } from "./RunMetadataProvider";
+import { IStepState, IStepMaterialization } from "./RunMetadataProvider";
 
 interface IExecutionPlanBoxProps {
   state: IStepState;
@@ -9,7 +9,7 @@ interface IExecutionPlanBoxProps {
   start: number | undefined;
   elapsed: number | undefined;
   delay: number;
-  materializations: { fileLocation: string }[];
+  materializations: IStepMaterialization[];
   onShowStateDetails: (stepName: string) => void;
   onApplyStepFilter: (stepName: string) => void;
 }
@@ -128,12 +128,13 @@ export class ExecutionPlanBox extends React.Component<
           <ExecutionPlanBoxName>{name}</ExecutionPlanBoxName>
           {elapsed !== undefined && <ExecutionTime elapsed={elapsed} />}
         </ExecutionPlanBoxContainer>
-        {(materializations || []).map(({ fileLocation }) => (
+        {(materializations || []).map(({ fileLocation, fileName }) => (
           <MaterializationLink
+            key={fileLocation}
             href={fileLocationToHref(fileLocation)}
             target="__blank"
           >
-            {FileIcon} {fileLocation.split("/").pop()}
+            {FileIcon} {fileName}
           </MaterializationLink>
         ))}
       </>
