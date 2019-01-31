@@ -10,11 +10,25 @@ export interface PipelineExecutionPipelineFragment_environmentType {
   key: string;
 }
 
-export interface PipelineExecutionPipelineFragment_configTypes_EnumConfigType {
-  __typename: "EnumConfigType" | "RegularConfigType" | "ListConfigType" | "NullableConfigType";
+export interface PipelineExecutionPipelineFragment_configTypes_RegularConfigType {
+  __typename: "RegularConfigType" | "ListConfigType" | "NullableConfigType";
   key: string;
   name: string | null;
   isSelector: boolean;
+}
+
+export interface PipelineExecutionPipelineFragment_configTypes_EnumConfigType_values {
+  __typename: "EnumConfigValue";
+  value: string;
+  description: string | null;
+}
+
+export interface PipelineExecutionPipelineFragment_configTypes_EnumConfigType {
+  __typename: "EnumConfigType";
+  key: string;
+  name: string | null;
+  isSelector: boolean;
+  values: PipelineExecutionPipelineFragment_configTypes_EnumConfigType_values[];
 }
 
 export interface PipelineExecutionPipelineFragment_configTypes_CompositeConfigType_fields_configType_EnumConfigType {
@@ -56,7 +70,7 @@ export interface PipelineExecutionPipelineFragment_configTypes_CompositeConfigTy
   fields: PipelineExecutionPipelineFragment_configTypes_CompositeConfigType_fields[];
 }
 
-export type PipelineExecutionPipelineFragment_configTypes = PipelineExecutionPipelineFragment_configTypes_EnumConfigType | PipelineExecutionPipelineFragment_configTypes_CompositeConfigType;
+export type PipelineExecutionPipelineFragment_configTypes = PipelineExecutionPipelineFragment_configTypes_RegularConfigType | PipelineExecutionPipelineFragment_configTypes_EnumConfigType | PipelineExecutionPipelineFragment_configTypes_CompositeConfigType;
 
 export interface PipelineExecutionPipelineFragment {
   __typename: "Pipeline";

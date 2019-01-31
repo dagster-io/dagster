@@ -330,7 +330,14 @@ def define_scalar_output_pipeline():
 def define_pipeline_with_enum_config():
     @solid(
         config_field=Field(
-            Enum('TestEnum', [EnumValue(config_value='ENUM_VALUE', description='An enum value.')])
+            Enum(
+                'TestEnum',
+                [
+                    EnumValue(config_value='ENUM_VALUE_ONE', description='An enum value.'),
+                    EnumValue(config_value='ENUM_VALUE_TWO', description='An enum value.'),
+                    EnumValue(config_value='ENUM_VALUE_THREE', description='An enum value.'),
+                ],
+            )
         )
     )
     def takes_an_enum(_info):
@@ -520,7 +527,11 @@ def test_enum_query():
 
     assert enum_type_data
     assert enum_type_data['name'] == 'TestEnum'
-    assert enum_type_data['values'] == [{'value': 'ENUM_VALUE', 'description': 'An enum value.'}]
+    assert enum_type_data['values'] == [
+        {'value': 'ENUM_VALUE_ONE', 'description': 'An enum value.'},
+        {'value': 'ENUM_VALUE_TWO', 'description': 'An enum value.'},
+        {'value': 'ENUM_VALUE_THREE', 'description': 'An enum value.'},
+    ]
 
 
 def do_test_subset(query, top_key):
@@ -1449,6 +1460,7 @@ query RuntimeTypeQuery($pipelineName: String! $runtimeTypeName: String!)
         __typename
         ... on RegularRuntimeType {
             name
+            displayName
             isBuiltin
         }
         ... on PipelineNotFoundError {
@@ -1543,6 +1555,7 @@ fragment schemaTypeFragment on ConfigType {
 fragment runtimeTypeFragment on RuntimeType {
     key
     name
+    displayName
     isNullable
     isList
     description

@@ -98,11 +98,25 @@ export interface PipelineExecutionRootQuery_pipeline_environmentType {
   key: string;
 }
 
-export interface PipelineExecutionRootQuery_pipeline_configTypes_EnumConfigType {
-  __typename: "EnumConfigType" | "RegularConfigType" | "ListConfigType" | "NullableConfigType";
+export interface PipelineExecutionRootQuery_pipeline_configTypes_RegularConfigType {
+  __typename: "RegularConfigType" | "ListConfigType" | "NullableConfigType";
   key: string;
   name: string | null;
   isSelector: boolean;
+}
+
+export interface PipelineExecutionRootQuery_pipeline_configTypes_EnumConfigType_values {
+  __typename: "EnumConfigValue";
+  value: string;
+  description: string | null;
+}
+
+export interface PipelineExecutionRootQuery_pipeline_configTypes_EnumConfigType {
+  __typename: "EnumConfigType";
+  key: string;
+  name: string | null;
+  isSelector: boolean;
+  values: PipelineExecutionRootQuery_pipeline_configTypes_EnumConfigType_values[];
 }
 
 export interface PipelineExecutionRootQuery_pipeline_configTypes_CompositeConfigType_fields_configType_EnumConfigType {
@@ -144,7 +158,7 @@ export interface PipelineExecutionRootQuery_pipeline_configTypes_CompositeConfig
   fields: PipelineExecutionRootQuery_pipeline_configTypes_CompositeConfigType_fields[];
 }
 
-export type PipelineExecutionRootQuery_pipeline_configTypes = PipelineExecutionRootQuery_pipeline_configTypes_EnumConfigType | PipelineExecutionRootQuery_pipeline_configTypes_CompositeConfigType;
+export type PipelineExecutionRootQuery_pipeline_configTypes = PipelineExecutionRootQuery_pipeline_configTypes_RegularConfigType | PipelineExecutionRootQuery_pipeline_configTypes_EnumConfigType | PipelineExecutionRootQuery_pipeline_configTypes_CompositeConfigType;
 
 export interface PipelineExecutionRootQuery_pipeline {
   __typename: "Pipeline";

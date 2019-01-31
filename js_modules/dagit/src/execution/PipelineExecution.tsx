@@ -17,7 +17,6 @@ import {
 } from "../LocalStorage";
 import {
   CONFIG_EDITOR_PIPELINE_FRAGMENT,
-  createTypeConfig,
   scaffoldConfig,
   checkConfig
 } from "../configeditor/ConfigEditorUtils";
@@ -163,7 +162,7 @@ export default class PipelineExecution extends React.Component<
               <ConfigEditor
                 configCode={currentSession.config}
                 onConfigChange={this.onConfigChange}
-                typeConfig={createTypeConfig(pipeline)}
+                pipeline={pipeline}
                 checkConfig={json =>
                   checkConfig(client, json, {
                     name: pipeline.name,

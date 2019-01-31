@@ -6,6 +6,8 @@ RUN pip install -r requirements.txt
 
 ADD . .
 
-ENTRYPOINT [ "dagster" ]
+ENTRYPOINT [ "dagit" ]
+
+CMD [ "--help" ]
 
 EXPOSE 3000

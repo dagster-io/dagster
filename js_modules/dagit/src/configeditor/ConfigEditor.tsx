@@ -17,15 +17,13 @@ import "./codemirror-yaml/lint"; // Patch lint
 import "codemirror/addon/lint/lint.css";
 import "codemirror/keymap/sublime";
 import { Controlled as CodeMirrorReact } from "react-codemirror2";
+import { ConfigEditorPipelineFragment } from "./types/ConfigEditorPipelineFragment";
 import "./codemirror-yaml/mode";
-import {
-  TypeConfig as YamlModeTypeConfig,
-  LintJson as YamlModeLintJson
-} from "./codemirror-yaml/mode";
+import { LintJson as YamlModeLintJson } from "./codemirror-yaml/mode";
 import { debounce } from "../Util";
 
 interface IConfigEditorProps {
-  typeConfig: YamlModeTypeConfig;
+  pipeline: ConfigEditorPipelineFragment;
   checkConfig: YamlModeLintJson;
   configCode: string;
   onConfigChange: (newValue: string) => void;
@@ -58,7 +56,7 @@ export default class ConfigEditor extends React.Component<IConfigEditorProps> {
             hintOptions: {
               completeSingle: false,
               closeOnUnfocus: false,
-              typeConfig: this.props.typeConfig
+              pipeline: this.props.pipeline
             },
             keyMap: "sublime",
             extraKeys: {

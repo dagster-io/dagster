@@ -74,6 +74,10 @@ class RuntimeType(object):
         check.inst_param(builtin_enum, 'builtin_enum', BuiltinEnum)
         return _RUNTIME_MAP[builtin_enum]
 
+    @property
+    def display_name(self):
+        return self.name
+
     def coerce_runtime_value(self, value):
         return value
 
@@ -227,6 +231,10 @@ class NullableType(RuntimeType):
         )
         self.inner_type = inner_type
 
+    @property
+    def display_name(self):
+        return self.inner_type.display_name + '?'
+
     def coerce_runtime_value(self, value):
         return None if value is None else self.inner_type.coerce_runtime_value(value)
 
@@ -263,6 +271,10 @@ class ListType(RuntimeType):
             key=key, name=None, input_schema=_create_list_input_schema(inner_type)
         )
         self.inner_type = inner_type
+
+    @property
+    def display_name(self):
+        return '[' + self.inner_type.display_name + ']'
 
     def coerce_runtime_value(self, value):
         value = self.throw_if_false(lambda v: isinstance(value, list), value)

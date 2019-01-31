@@ -9,3 +9,15 @@ generate-types: download-schema
 
 ts:
 	yarn run ts
+
+prettier:
+	yarn run prettier
+
+test:
+	yarn run test
+
+update-snaphost:
+	yarn run jest -u
+
+jest:
+	yarn run jest

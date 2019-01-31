@@ -12,6 +12,8 @@ export interface TypeListContainerQuery_pipelineOrError_PythonError {
 export interface TypeListContainerQuery_pipelineOrError_Pipeline_runtimeTypes {
   __typename: "RegularRuntimeType" | "ListRuntimeType" | "NullableRuntimeType";
   name: string | null;
+  isBuiltin: boolean;
+  displayName: string;
   description: string | null;
 }
 
