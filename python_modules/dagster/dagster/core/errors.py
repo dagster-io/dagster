@@ -43,9 +43,7 @@ class DagsterUserCodeExecutionError(DagsterUserError):
         # callsite inside of the exception handler. this will allow consuming
         # code to *re-raise* the user error in it's original format
         # for cleaner error reporting that does not have framework code in it
-        user_exception = check.opt_inst_param(
-            kwargs.pop('user_exception', None), 'user_exception', Exception
-        )
+        user_exception = check.inst_param(kwargs.pop('user_exception'), 'user_exception', Exception)
         original_exc_info = check.opt_tuple_param(
             kwargs.pop('original_exc_info', None), 'original_exc_info'
         )
@@ -77,11 +75,20 @@ class DagsterUnmarshalInputError(DagsterUserCodeExecutionError):
         super(DagsterUnmarshalInputError, self).__init__(*args, **kwargs)
 
 
-class DagsterMarshalOutputNotFoundError(DagsterUserCodeExecutionError):
+class DagsterMarshalOutputNotFoundError(DagsterUserError):
     def __init__(self, *args, **kwargs):
         self.output_name = check.str_param(kwargs.pop('output_name'), 'output_name')
         self.step_key = check.str_param(kwargs.pop('step_key'), 'step_key')
         super(DagsterMarshalOutputNotFoundError, self).__init__(*args, **kwargs)
+
+
+class DagsterMarshalOutputError(DagsterUserCodeExecutionError):
+    '''Indicates an error doing marshalling on a specific output'''
+
+    def __init__(self, *args, **kwargs):
+        self.output_name = check.str_param(kwargs.pop('output_name'), 'output_name')
+        self.step_key = check.str_param(kwargs.pop('step_key'), 'step_key')
+        super(DagsterMarshalOutputError, self).__init__(*args, **kwargs)
 
 
 class DagsterExecutionStepExecutionError(DagsterUserCodeExecutionError):

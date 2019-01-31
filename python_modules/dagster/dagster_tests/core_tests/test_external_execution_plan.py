@@ -13,6 +13,7 @@ from dagster.core.errors import (
     DagsterUnmarshalInputError,
     DagsterUnmarshalInputNotFoundError,
     DagsterMarshalOutputNotFoundError,
+    DagsterMarshalOutputError,
 )
 from dagster.core.execution import (
     execute_externalized_plan,
@@ -117,6 +118,27 @@ def test_external_execution_step_for_input_missing():
     assert exc_info.value.step_key == 'nope'
 
 
+def test_external_execution_input_marshal_code_error():
+    pipeline = define_inty_pipeline()
+
+    execution_plan = create_execution_plan(pipeline)
+
+    with pytest.raises(DagsterUnmarshalInputError) as exc_info:
+        execute_externalized_plan(
+            pipeline,
+            execution_plan,
+            ['add_one.transform'],
+            inputs_to_marshal={'add_one.transform': {'num': 'nope'}},
+            execution_metadata=ExecutionMetadata(),
+        )
+
+    assert (
+        str(exc_info.value) == 'Error during the marshalling of input num in step add_one.transform'
+    )
+    assert exc_info.value.input_name == 'num'
+    assert exc_info.value.step_key == 'add_one.transform'
+
+
 def test_external_execution_step_for_output_missing():
     pipeline = define_inty_pipeline()
 
@@ -147,20 +169,23 @@ def test_external_execution_output_missing():
         )
 
 
-def test_external_execution_marshal_code_error():
+def test_external_execution_output_code_error():
     pipeline = define_inty_pipeline()
 
     execution_plan = create_execution_plan(pipeline)
 
-    with pytest.raises(DagsterUnmarshalInputError) as exc_info:
+    with pytest.raises(DagsterMarshalOutputError) as exc_info:
         execute_externalized_plan(
             pipeline,
             execution_plan,
-            ['add_one.transform'],
-            inputs_to_marshal={'add_one.transform': {'num': 'nope'}},
+            ['return_one.transform', 'add_one.transform'],
+            outputs_to_marshal={'add_one.transform': [{'output': 'result', 'path': 23434}]},
             execution_metadata=ExecutionMetadata(),
         )
 
-    assert str(exc_info.value) == 'Error during the marshalling of input num'
-    assert exc_info.value.input_name == 'num'
+    assert (
+        str(exc_info.value)
+        == 'Error during the marshalling of output result in step add_one.transform'
+    )
+    assert exc_info.value.output_name == 'result'
     assert exc_info.value.step_key == 'add_one.transform'
