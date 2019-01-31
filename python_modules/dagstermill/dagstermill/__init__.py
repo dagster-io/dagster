@@ -362,11 +362,7 @@ def _dm_solid_transform(name, notebook_path):
             with open(output_log_path, 'a') as f:
                 f.close()
 
-            # info.log.info("Output log path is {}".format(output_log_path))
-            # info.log.info("info.context.event_callback {}".format(info.context.event_callback))
-
             process = subprocess.Popen(["papermill", intermediate_path, temp_path])
-            # _source_nb = pm.execute_notebook(intermediate_path, temp_path)
 
             while process.poll() is None:  # while subprocess alive
                 if info.context.event_callback:
@@ -400,12 +396,8 @@ def _dm_solid_transform(name, notebook_path):
                 )
             )
 
-            info.log.debug("Output notebook directory is {}".format(output_notebook_dir))
-
             info.context.events.step_materialization(
-                info.step.key,
-                "{name} (notebook solid)".format(name=info.step.solid.name),
-                temp_path,
+                info.step.key, "{name} output notebook".format(name=info.step.solid.name), temp_path
             )
 
             for output_def in info.solid_def.output_defs:
