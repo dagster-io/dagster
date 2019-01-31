@@ -1,4 +1,5 @@
 import datetime
+import subprocess
 
 from dagster.utils import load_yaml_from_path, script_relative_path
 
@@ -22,6 +23,10 @@ def test_unit_run_airflow_dag_steps(airflow_test, dags_path):
         dag_kwargs={'default_args': {'start_date': datetime.datetime(1900, 1, 1)}},
     )
 
+    # Ensure that the scaffolded files parse correctly
+    subprocess.check_output(
+        ['python', script_relative_path('test_project/demo_pipeline_editable__scaffold.py')]
+    )
     # shutil.copyfile(
     #     script_relative_path(DAG_DEFINITION_FILENAME),
     #     os.path.abspath(os.path.join(dags_path, DAG_DEFINITION_FILENAME)),
