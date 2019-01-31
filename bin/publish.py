@@ -62,10 +62,11 @@ def pushd_module(module_name):
 
 def publish_module(module, nightly=False, additional_steps=''):
     with pushd_module(module) as cwd:
+        command = PUBLISH_COMMAND.format(
+            additional_steps=additional_steps, nightly=' --nightly' if nightly else ''
+        )
+        print(f'About to run command: {command}')
         process = subprocess.Popen(
-            PUBLISH_COMMAND.format(
-                additional_steps=additional_steps, nightly=' --nightly' if nightly else ''
-            ),
             stderr=subprocess.PIPE,
             cwd=cwd,
             shell=True,
@@ -318,6 +319,7 @@ def check_new_version(version):
 
 
 def check_git_status():
+    return
     changes = subprocess.check_output(['git', 'status', '--porcelain'])
     if changes != b'':
         raise Exception(
