@@ -400,12 +400,12 @@ def _dm_solid_transform(name, notebook_path):
                 )
             )
 
-            info.log.debug("Output notebook path is {}".format(output_notebook_dir))
+            info.log.debug("Output notebook directory is {}".format(output_notebook_dir))
 
             info.context.events.step_materialization(
                 info.step.key,
                 "{name} (notebook solid)".format(name=info.step.solid.name),
-                output_notebook_dir,
+                temp_path,
             )
 
             for output_def in info.solid_def.output_defs:
