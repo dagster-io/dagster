@@ -273,6 +273,7 @@ class DauphinPipelineRunEvent(dauphin.Union):
                 ),
                 file_name=event.file_name,
                 file_location=event.file_location,
+                **basic_params
             )
         else:
             return info.schema.type_named('LogMessageEvent')(**basic_params)
