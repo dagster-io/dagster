@@ -546,24 +546,18 @@ jobs:
   # https://github.com/apache/airflow/pull/3723
   # dagster-airflow-py37:
   #   <<: *dagster-airflow-template
-  #   docker:
-  #     - image: circleci/python:3.7.2
   #   environment:
   #     TOXENV: py37
   #     AIRFLOW_HOME: "/home/circleci/airflow"
 
   dagster-airflow-py35:
     <<: *dagster-airflow-template
-    docker:
-      - image: circleci/python:3.5.6
     environment:
       TOXENV: py35
       AIRFLOW_HOME: "/home/circleci/airflow"
 
   dagster-airflow-py27:
     <<: *dagster-airflow-template
-    docker:
-      - image: circleci/python:2.7.15
     environment:
       TOXENV: py27
       AIRFLOW_HOME: "/home/circleci/airflow"
