@@ -5,7 +5,8 @@
       - Dagit: Execute tab now supports partial pipeline execution via a solid selector in the bottom left.
       - Dagstermill has a dramatically improved parameter passing experience and scaffolding and is ready for broader consumption.
       - Dagit: Dagit execute button is redesigned, indicates running state, and is unpressable when the dagit process is dead.
-   
+      - Dagit: The config editor now offers autocompletion for enum values.
+
    - Bug fixes
       - #598: Correctly display input and output schemas for types in dagit
       - #670: Internal system error "dagster.check.CheckError: Invariant failed. Description: Should not be in context" raised when user throwing error during transform. Now the appropriate user error should be raised.
