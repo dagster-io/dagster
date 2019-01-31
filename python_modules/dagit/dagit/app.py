@@ -2,9 +2,11 @@ from __future__ import absolute_import
 
 import os
 import sys
+import subprocess
+from shlex import quote
 
 import nbformat
-from flask import Flask, send_file, send_from_directory
+from flask import Flask, send_file, send_from_directory, request
 from flask_cors import CORS
 from flask_graphql import GraphQLView
 from flask_sockets import Sockets
@@ -102,19 +104,35 @@ make rebuild_dagit</pre>'''
         return text, 500
 
 
-def notebook_view(_path):
+def notebook_view():
     # This currently provides open access to your file system - the very least we can
     # do is limit it to notebook files until we create a more permanent solution.
-    if not _path.endswith(".ipynb"):
+    path = request.args.get('path')
+    if not path.endswith(".ipynb"):
         return "Invalid Path", 400
 
-    with open(os.path.join('/', _path)) as f:
+    with open(os.path.join('/', path)) as f:
         read_data = f.read()
         notebook = nbformat.reads(read_data, as_version=4)
         html_exporter = HTMLExporter()
         html_exporter.template_file = 'basic'
         (body, resources) = html_exporter.from_notebook_node(notebook)
         return "<style>" + resources['inlining']['css'][0] + "</style>" + body, 200
+
+
+def open_file_view():
+    path = request.args.get('path')
+
+    if os.name == 'nt':  # For Windows
+        os.startfile(path, 'open')  # pylint:disable=no-member
+        return "Success", 200
+
+    open_cmd = 'open' if sys.platform.startswith('darwin') else 'xdg-open'
+    (exitcode, output) = subprocess.getstatusoutput(open_cmd + ' ' + quote(path))
+    if exitcode == 0:
+        return "Success", 200
+    else:
+        return output, 400
 
 
 def create_app(repository_container, pipeline_runs, use_synchronous_execution_manager=False):
@@ -151,7 +169,12 @@ def create_app(repository_container, pipeline_runs, use_synchronous_execution_ma
     sockets.add_url_rule(
         '/graphql', 'graphql', dagster_graphql_subscription_view(subscription_server, context)
     )
-    app.add_url_rule('/notebook/<path:_path>', 'notebook', notebook_view)
+
+    # these routes are specifically for the Dagit UI and are not part of the graphql
+    # API that we want other people to consume, so they're separate for now.
+    app.add_url_rule('/dagit/notebook', 'notebook', notebook_view)
+    app.add_url_rule('/dagit/open', 'open', open_file_view)
+
     app.add_url_rule('/static/<path:path>/<string:file>', 'static_view', static_view)
     app.add_url_rule('/<path:_path>', 'index_catchall', index_view)
     app.add_url_rule('/', 'index', index_view, defaults={'_path': ''})

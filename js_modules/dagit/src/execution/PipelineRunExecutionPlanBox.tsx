@@ -2,6 +2,7 @@ import * as React from "react";
 import styled from "styled-components";
 import { Colors, Spinner, Intent } from "@blueprintjs/core";
 import { IStepState, IStepMaterialization } from "./RunMetadataProvider";
+import { ROOT_SERVER_URI } from "../Util";
 
 interface IExecutionPlanBoxProps {
   state: IStepState;
@@ -87,6 +88,27 @@ export class ExecutionPlanBox extends React.Component<
     this.setState({ v: this.state.v + 1 });
   };
 
+  onOpenFileLink = async (event: React.MouseEvent<HTMLAnchorElement>) => {
+    const url = event.currentTarget.href;
+
+    // If the file's location is a path, tell dagit to open it on the machine.
+    if (url.startsWith("file://")) {
+      event.preventDefault();
+
+      const path = url.replace("file://", "");
+      const result = await fetch(
+        `${ROOT_SERVER_URI}/dagit/open?path=${encodeURIComponent(path)}`
+      );
+
+      if (result.status !== 200) {
+        const error = await result.text();
+        alert(`Dagit was unable to open the file.\n\n${error}`);
+      }
+    } else {
+      // If the file's location is a URL, allow the browser to open it normally.
+    }
+  };
+
   render() {
     const {
       state,
@@ -128,13 +150,15 @@ export class ExecutionPlanBox extends React.Component<
           <ExecutionPlanBoxName>{name}</ExecutionPlanBoxName>
           {elapsed !== undefined && <ExecutionTime elapsed={elapsed} />}
         </ExecutionPlanBoxContainer>
-        {(materializations || []).map(({ fileLocation, fileName }) => (
+        {(materializations || []).map(mat => (
           <MaterializationLink
-            key={fileLocation}
-            href={fileLocationToHref(fileLocation)}
+            onClick={this.onOpenFileLink}
+            href={fileLocationToHref(mat.fileLocation)}
+            key={mat.fileLocation}
+            title={mat.fileLocation}
             target="__blank"
           >
-            {FileIcon} {fileName}
+            {FileIcon} {mat.fileName}
           </MaterializationLink>
         ))}
       </>
@@ -150,6 +174,9 @@ const MaterializationLink = styled.a`
   padding-left: 23px;
   display: inline-flex;
   font-size: 12px;
+  &:hover {
+    color: ${Colors.WHITE};
+  }
 `;
 
 const ExeuctionStateWrap = styled.div`
@@ -268,7 +295,7 @@ const ExecutionPlanBoxContainer = styled.div<{ state: IStepState }>`
 
 const FileIcon = (
   <svg width="20px" height="14px" viewBox="-100 0 350 242" version="1.1">
-    <g stroke="none" strokeWidth="1" fill="none" fill-rule="evenodd">
+    <g stroke="none" strokeWidth="1" fill="none" fillRule="evenodd">
       <path
         d="M-100,96 L0,96"
         stroke={Colors.GRAY3}
