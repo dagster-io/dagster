@@ -189,6 +189,15 @@ class DauphinExecutionStepFailureEvent(dauphin.ObjectType):
     error = dauphin.NonNull('PythonError')
 
 
+class DauphinStepMaterializationEvent(dauphin.ObjectType):
+    class Meta:
+        name = 'StepMaterializationEvent'
+        interfaces = (DauphinMessageEvent, DauphinExecutionStepEvent)
+
+    file_name = dauphin.String()
+    file_location = dauphin.String()
+
+
 # Should be a union of all possible events
 class DauphinPipelineRunEvent(dauphin.Union):
     class Meta:
@@ -203,6 +212,7 @@ class DauphinPipelineRunEvent(dauphin.Union):
             DauphinExecutionStepFailureEvent,
             DauphinPipelineProcessStartEvent,
             DauphinPipelineProcessStartedEvent,
+            DauphinStepMaterializationEvent,
         )
 
     @staticmethod
@@ -260,7 +270,9 @@ class DauphinPipelineRunEvent(dauphin.Union):
             return info.schema.type_named('StepMaterializationEvent')(
                 step=info.schema.type_named('ExecutionStep')(
                     pipeline_run.execution_plan.get_step_by_key(event.step_key)
-                )
+                ),
+                file_name=event.file_name,
+                file_location=event.file_location,
             )
         else:
             return info.schema.type_named('LogMessageEvent')(**basic_params)

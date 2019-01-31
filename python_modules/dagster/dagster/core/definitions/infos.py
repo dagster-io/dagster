@@ -58,7 +58,7 @@ class ExpectationExecutionInfo(
 
 
 class TransformExecutionInfo(
-    namedtuple('_TransformExecutionInfo', 'context config solid pipeline_def resources log')
+    namedtuple('_TransformExecutionInfo', 'context config step pipeline_def resources log')
 ):
     '''An instance of TransformExecutionInfo is passed every solid transform function.
 
@@ -68,12 +68,16 @@ class TransformExecutionInfo(
         config (Any): Config object for current solid
     '''
 
-    def __new__(cls, context, config, solid, pipeline_def):
+    def __new__(cls, context, config, step, pipeline_def):
+        from dagster.core.execution_plan.objects import ExecutionStep
+
         return super(TransformExecutionInfo, cls).__new__(
             cls,
             check.inst_param(context, 'context', RuntimeExecutionContext),
             config,
-            check.inst_param(solid, 'solid', Solid),
+            check.opt_inst_param(step, 'step', ExecutionStep),
+            # step can be None if TransformExecutionInfo is being reconstructed
+            # out-of-pipeline execution
             check.inst_param(pipeline_def, 'pipeline_def', PipelineDefinition),
             context.resources,
             DagsterLog(context),
@@ -81,4 +85,4 @@ class TransformExecutionInfo(
 
     @property
     def solid_def(self):
-        return self.solid.definition
+        return self.step.solid.definition

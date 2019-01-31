@@ -78,7 +78,7 @@ class Manager:
         with yield_context(
             pipeline_def, dummy_environment_config, ExecutionMetadata(run_id='')
         ) as context:
-            self.info = TransformExecutionInfo(context, None, solid, pipeline_def)
+            self.info = TransformExecutionInfo(context, None, None, pipeline_def)
         return self.info
 
     def get_pipeline(self, name):
@@ -115,11 +115,9 @@ class Manager:
         # do not include event_callback in ExecutionMetadata,
         # since that'll be taken care of by side-channel established by event_logger
         execution_metadata = ExecutionMetadata(run_id, loggers=loggers)
-        solid = Solid(self.solid_def_name, self.solid_def)
         typed_environment = construct_environment_config(environment_config)
         with yield_context(pipeline_def, typed_environment, execution_metadata) as context:
-            solid_config = None
-            self.info = TransformExecutionInfo(context, solid_config, solid, pipeline_def)
+            self.info = TransformExecutionInfo(context, None, None, pipeline_def)
 
         return self.info
 
@@ -240,7 +238,6 @@ def get_papermill_parameters(transform_execution_info, inputs, output_log_path):
     dm_context_dict = {
         'run_id': run_id,
         'pipeline_name': transform_execution_info.pipeline_def.name,
-        'solid_def_name': transform_execution_info.solid.definition.name,
         'marshal_dir': marshal_dir,
         'environment_config': transform_execution_info.context.environment_config,
         'output_log_path': output_log_path,
@@ -404,9 +401,10 @@ def _dm_solid_transform(name, notebook_path):
             )
 
             info.log.debug("Output notebook path is {}".format(output_notebook_dir))
+
             info.context.events.step_materialization(
-                "fake_step_key",
-                "{name} (notebook solid)".format(name=info.context.solid.name),
+                info.step.key,
+                "{name} (notebook solid)".format(name=info.step.solid.name),
                 output_notebook_dir,
             )
 
