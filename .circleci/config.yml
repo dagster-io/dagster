@@ -352,8 +352,8 @@ jobs:
             - .coverage*
 
   dagster-airflow-py36: &dagster-airflow-template
-    docker:
-      - image: circleci/python:3.6.6
+    machine:
+      docker_layer_caching: true
     environment:
       TOXENV: py36
       AIRFLOW_HOME: "/home/circleci/airflow"
