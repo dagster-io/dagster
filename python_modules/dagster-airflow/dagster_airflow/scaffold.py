@@ -51,7 +51,9 @@ def _split_lines(lines):
 
 def _key_for_marshalled_result(step_key, result_name):
     '''Standardizes keys for marshalled inputs and outputs.'''
-    return _normalize_key(step_key) + '___' + _normalize_key(result_name) + '.pickle'
+    return (
+        '/tmp/results/' + _normalize_key(step_key) + '___' + _normalize_key(result_name) + '.pickle'
+    )
 
 
 def _scaffold_marshalled_inputs_for_step(step):

@@ -88,7 +88,7 @@ def make_dag(
                 [
                   {{
                     outputName: "input_thunk_output",
-                    key: "multiply__the__word_word_input__thunk___input__thunk__output.pickle"
+                    key: "/tmp/results/multiply__the__word_word_input__thunk___input__thunk__output.pickle"
                   }}
                 ],
               ) {{
@@ -124,14 +124,14 @@ def make_dag(
                 [
                   {{
                     inputName: "word",
-                    key: "multiply__the__word_word_input__thunk___input__thunk__output.pickle"
+                    key: "/tmp/results/multiply__the__word_word_input__thunk___input__thunk__output.pickle"
                   }}
                 ],
                 marshalledOutputs: 
                 [
                   {{
                     outputName: "result",
-                    key: "multiply__the__word_transform___result.pickle"
+                    key: "/tmp/results/multiply__the__word_transform___result.pickle"
                   }}
                 ],
               ) {{
@@ -167,14 +167,14 @@ def make_dag(
                 [
                   {{
                     inputName: "word",
-                    key: "multiply__the__word_transform___result.pickle"
+                    key: "/tmp/results/multiply__the__word_transform___result.pickle"
                   }}
                 ],
                 marshalledOutputs: 
                 [
                   {{
                     outputName: "result",
-                    key: "count__letters_transform___result.pickle"
+                    key: "/tmp/results/count__letters_transform___result.pickle"
                   }}
                 ],
               ) {{
