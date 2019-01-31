@@ -10,10 +10,11 @@ from dagster import (
 )
 from dagster.core.errors import (
     DagsterExecutionStepNotFoundError,
+    DagsterInvalidSubplanExecutionError,
+    DagsterMarshalOutputError,
+    DagsterMarshalOutputNotFoundError,
     DagsterUnmarshalInputError,
     DagsterUnmarshalInputNotFoundError,
-    DagsterMarshalOutputNotFoundError,
-    DagsterMarshalOutputError,
 )
 from dagster.core.execution import (
     execute_externalized_plan,
@@ -189,3 +190,25 @@ def test_external_execution_output_code_error():
     )
     assert exc_info.value.output_name == 'result'
     assert exc_info.value.step_key == 'add_one.transform'
+
+
+def test_external_execution_unsatsified_input_error():
+    pipeline = define_inty_pipeline()
+
+    execution_plan = create_execution_plan(pipeline)
+
+    with pytest.raises(DagsterInvalidSubplanExecutionError) as exc_info:
+        execute_externalized_plan(
+            pipeline, execution_plan, ['add_one.transform'], execution_metadata=ExecutionMetadata()
+        )
+
+    assert exc_info.value.pipeline_name == 'basic_external_plan_execution'
+    assert exc_info.value.step_keys == ['add_one.transform']
+    assert exc_info.value.step_key == 'add_one.transform'
+    assert exc_info.value.input_name == 'num'
+
+    assert str(exc_info.value) == (
+        "You have specified a subset execution on pipeline basic_external_plan_execution with "
+        "step_keys ['add_one.transform']. You have failed to provide the required input num for "
+        "step add_one.transform."
+    )

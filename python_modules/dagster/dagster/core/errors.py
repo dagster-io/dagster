@@ -95,6 +95,16 @@ class DagsterExecutionStepExecutionError(DagsterUserCodeExecutionError):
     pass
 
 
+class DagsterInvalidSubplanExecutionError(DagsterUserError):
+    def __init__(self, *args, **kwargs):
+        self.pipeline_name = check.str_param(kwargs.pop('pipeline_name'), 'pipeline_name')
+        self.step_keys = check.list_param(kwargs.pop('step_keys'), 'step_keys', of_type=str)
+        self.input_name = check.str_param(kwargs.pop('input_name'), 'input_name')
+        self.step_key = check.str_param(kwargs.pop('step_key'), 'step_key')
+
+        super(DagsterInvalidSubplanExecutionError, self).__init__(*args, **kwargs)
+
+
 class DagsterExpectationFailedError(DagsterError):
     '''Thrown with pipeline configured to throw on expectation failure'''
 
