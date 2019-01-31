@@ -36,8 +36,33 @@ class DagsterTypeError(DagsterUserError):
 
 
 class DagsterUserCodeExecutionError(DagsterUserError):
-    '''This is base c
-    '''Indicates that user space code has raised an error'''
+    '''
+    This is base class for any exception that is meant to wrap an Exception
+    thrown by user code. It wraps that existing user code. The original_exc_info
+    argument to the ctor is meant to be a sys.exc_info at the site of constructor.
+
+    Example:
+
+    output_type = step.step_output_dict[output_name].runtime_type
+    try:
+        context.persistence_policy.write_value(
+            output_type.serialization_strategy, output['path'], result.success_data.value
+        )
+    except Exception as e:  # pylint: disable=broad-except
+        raise_from(
+            DagsterMarshalOutputError(
+                'Error during the marshalling of output {output_name} in step {step_key}'.format(
+                    output_name=output_name, step_key=step.key
+                ),
+                user_exception=e,
+                original_exc_info=sys.exc_info(),
+                output_name=output_name,
+                step_key=step.key,
+            ),
+            e,
+        )
+
+    '''
 
     def __init__(self, *args, **kwargs):
         # original_exc_info should be gotten from a sys.exc_info() call at the
@@ -71,6 +96,7 @@ class DagsterUnmarshalInputNotFoundError(DagsterUserError):
     This error is when the user specifies an input to be marshalled and that
     input does not exist on the step specified.
     '''
+
     def __init__(self, *args, **kwargs):
         self.input_name = check.str_param(kwargs.pop('input_name'), 'input_name')
         self.step_key = check.str_param(kwargs.pop('step_key'), 'step_key')
@@ -87,6 +113,8 @@ class DagsterUnmarshalInputError(DagsterUserCodeExecutionError):
 
 
 class DagsterMarshalOutputNotFoundError(DagsterUserError):
+    '''Throw if user tries to marshal an output that does not exist on the step'''
+
     def __init__(self, *args, **kwargs):
         self.output_name = check.str_param(kwargs.pop('output_name'), 'output_name')
         self.step_key = check.str_param(kwargs.pop('step_key'), 'step_key')
@@ -103,10 +131,15 @@ class DagsterMarshalOutputError(DagsterUserCodeExecutionError):
 
 
 class DagsterExecutionStepExecutionError(DagsterUserCodeExecutionError):
-    pass
+    '''Indicates an error occured during the body of execution step execution'''
 
 
 class DagsterInvalidSubplanExecutionError(DagsterUserError):
+    '''Indicates that user has attempted to construct an execution subplan
+    that cannot be executed. This is typically because the user needs to specify additional
+    inputs that hitherto were satisified by dependencies.
+    '''
+
     def __init__(self, *args, **kwargs):
         self.pipeline_name = check.str_param(kwargs.pop('pipeline_name'), 'pipeline_name')
         self.step_keys = check.list_param(kwargs.pop('step_keys'), 'step_keys', of_type=str)

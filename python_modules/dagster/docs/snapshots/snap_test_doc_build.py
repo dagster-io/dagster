@@ -20056,7 +20056,43 @@ at runtime.</p>
 <dl class="exception">
 <dt id="dagster.DagsterUserCodeExecutionError">
 <em class="property">exception </em><code class="descclassname">dagster.</code><code class="descname">DagsterUserCodeExecutionError</code><span class="sig-paren">(</span><em>*args</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#dagster.DagsterUserCodeExecutionError" title="Permalink to this definition">¶</a></dt>
-<dd><p>Indicates that user space code has raised an error</p>
+<dd><p>This is base class for any exception that is meant to wrap an Exception
+thrown by user code. It wraps that existing user code. The original_exc_info
+argument to the ctor is meant to be a sys.exc_info at the site of constructor.</p>
+<p>Example:</p>
+<p>output_type = step.step_output_dict[output_name].runtime_type
+try:</p>
+<blockquote>
+<div><dl class="docutils">
+<dt>context.persistence_policy.write_value(</dt>
+<dd>output_type.serialization_strategy, output[‘path’], result.success_data.value</dd>
+</dl>
+<p>)</p>
+</div></blockquote>
+<dl class="docutils">
+<dt>except Exception as e:  # pylint: disable=broad-except</dt>
+<dd><dl class="first docutils">
+<dt>raise_from(</dt>
+<dd><dl class="first docutils">
+<dt>DagsterMarshalOutputError(</dt>
+<dd><dl class="first docutils">
+<dt>‘Error during the marshalling of output {output_name} in step {step_key}’.format(</dt>
+<dd>output_name=output_name, step_key=step.key</dd>
+</dl>
+<p class="last">),
+user_exception=e,
+original_exc_info=sys.exc_info(),
+output_name=output_name,
+step_key=step.key,</p>
+</dd>
+</dl>
+<p class="last">),
+e,</p>
+</dd>
+</dl>
+<p class="last">)</p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="exception">
