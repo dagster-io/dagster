@@ -110,9 +110,11 @@ def _format_config(config):
         for i, key in enumerate(sorted(config, key=lambda x: x[0])):
             value = config[key]
             with printer.with_indent():
-                formatted_value = _format_config_item(
-                    value, current_indent=printer.current_indent
-                ).lstrip(' ').rstrip('\n')
+                formatted_value = (
+                    _format_config_item(value, current_indent=printer.current_indent)
+                    .lstrip(' ')
+                    .rstrip('\n')
+                )
                 printer.line(
                     '{key}: {formatted_value}{comma}'.format(
                         key=key,
@@ -132,13 +134,16 @@ def _format_config(config):
         for i in range(len(config)):
             value = config[i]
             with printer.with_indent():
-                formatted_value = _format_config_item(
-                    value, current_indent=printer.current_indent
-                ).lstrip(' ').rstrip('\n')
-                printer.line('{formatted_value}{comma}'.format(
-                    formatted_value=formatted_value,
-                    comma=',' if i != n_elements - 1 else '',
-                ))
+                formatted_value = (
+                    _format_config_item(value, current_indent=printer.current_indent)
+                    .lstrip(' ')
+                    .rstrip('\n')
+                )
+                printer.line(
+                    '{formatted_value}{comma}'.format(
+                        formatted_value=formatted_value, comma=',' if i != n_elements - 1 else ''
+                    )
+                )
         printer.line(']')
 
         return printer.read()
