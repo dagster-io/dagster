@@ -326,12 +326,13 @@ class DauphinStartSubplanExecutionResult(dauphin.Union):
     class Meta:
         name = 'StartSubplanExecutionResult'
         types = (
-            DauphinStartSubplanExecutionSuccess,
-            DauphinPipelineNotFoundError,
             DauphinPipelineConfigValidationInvalid,
-            DauphinStartSubplanExecutionInvalidStepsError,
+            DauphinPipelineNotFoundError,
+            DauphinPythonError,
             DauphinStartSubplanExecutionInvalidInputError,
             DauphinStartSubplanExecutionInvalidOutputError,
+            DauphinStartSubplanExecutionInvalidStepsError,
+            DauphinStartSubplanExecutionSuccess,
         )
 
 

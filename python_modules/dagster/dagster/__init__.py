@@ -31,12 +31,14 @@ from dagster.core.definitions.resource import ResourceDefinition, resource
 from dagster.core.definitions.decorators import MultipleResults, lambda_solid, solid
 
 from dagster.core.errors import (
+    DagsterExecutionStepExecutionError,
     DagsterExpectationFailedError,
     DagsterInvalidDefinitionError,
+    DagsterInvalidSubplanExecutionError,
     DagsterInvariantViolationError,
     DagsterRuntimeCoercionError,
     DagsterTypeError,
-    DagsterExecutionStepExecutionError,
+    DagsterUserCodeExecutionError,
 )
 
 
@@ -102,12 +104,14 @@ __all__ = [
     'SolidExecutionResult',
     # Errors
     'DagsterEvaluateConfigValueError',
+    'DagsterExecutionStepExecutionError',
     'DagsterExpectationFailedError',
     'DagsterInvalidDefinitionError',
+    'DagsterInvalidSubplanExecutionError',
     'DagsterInvariantViolationError',
     'DagsterRuntimeCoercionError',
     'DagsterTypeError',
-    'DagsterExecutionStepExecutionError',
+    'DagsterUserCodeExecutionError',
     # Utilities
     'execute_solid',
     'execute_solids',

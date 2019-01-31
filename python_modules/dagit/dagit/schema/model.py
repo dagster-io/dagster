@@ -6,7 +6,12 @@ import uuid
 
 from graphql.execution.base import ResolveInfo
 
-from dagster import check, ExecutionMetadata
+from dagster import (
+    DagsterInvalidSubplanExecutionError,
+    DagsterUserCodeExecutionError,
+    ExecutionMetadata,
+    check,
+)
 from dagster.core.definitions.environment_configs import construct_environment_config
 from dagster.core.execution import (
     ExecutionPlan,
@@ -443,15 +448,23 @@ def _execute_subplan_or_error(
                 {'output': marshalled_output.output_name, 'path': marshalled_output.key}
             )
 
-    _results = execute_externalized_plan(
-        pipeline=dauphin_pipeline.get_dagster_pipeline(),
-        execution_plan=execution_plan,
-        step_keys=subplan_execution_args.step_keys,
-        inputs_to_marshal=dict(inputs_to_marshal),
-        outputs_to_marshal=outputs_to_marshal,
-        environment=evaluate_value_result.value,
-        execution_metadata=subplan_execution_args.execution_metadata,
-    )
+    try:
+        _results = execute_externalized_plan(
+            pipeline=dauphin_pipeline.get_dagster_pipeline(),
+            execution_plan=execution_plan,
+            step_keys=subplan_execution_args.step_keys,
+            inputs_to_marshal=dict(inputs_to_marshal),
+            outputs_to_marshal=outputs_to_marshal,
+            environment=evaluate_value_result.value,
+            execution_metadata=subplan_execution_args.execution_metadata,
+        )
+
+    except DagsterUserCodeExecutionError as ducee:
+        return EitherError(
+            subplan_execution_args.info.schema.type_named('PythonError')(
+                serializable_error_info_from_exc_info(ducee.original_exc_info)
+            )
+        )
 
     # TODO: Handle error conditions here
 
