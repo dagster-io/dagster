@@ -21,9 +21,28 @@ from airflow.operators.dagster_plugin import DagsterOperator
 
 
 CONFIG = \
-    {'context': {'default': {'config': {'log_level': 'DEBUG'}}},
-     'solids': {'multiply_the_word': {'config': {'factor': 2},
-                                      'inputs': {'word': {'value': 'bar'}}}}}
+    {
+      context: {
+        default: {
+          config: {
+            log_level: "DEBUG"
+          }
+        }
+      },
+      solids: {
+        multiply_the_word: {
+          config: {
+            factor: 2
+          },
+          inputs: {
+            word: {
+              value: "bar"
+            }
+          }
+        }
+      }
+    }
+    
 
 
 def make_dag(dag_id, dag_description, dag_kwargs, s3_conn_id, modified_docker_operator_kwargs):
@@ -40,100 +59,34 @@ def make_dag(dag_id, dag_description, dag_kwargs, s3_conn_id, modified_docker_op
         image='dagster-airflow-demo',
         task_id='multiply__the__word_word_input__thunk',
         s3_conn_id=s3_conn_id,
-        command='-q 
-        mutation {{
-          startSubplanExecution(
-            config: {config},
-            executionMetadata: {{
-              runId: "testRun", # FIXME
-            }},
-            pipelineName: "{pipeline_name}",
-            stepExecutions: [
-              {{
-                stepKey: "{step_key}"}}
+        command='''-q '
+            mutation {{
+              startSubplanExecution(
+                config: {config},
+                executionMetadata: {{
+                  runId: "testRun"
+                }},
+                pipelineName: "demo_pipeline",
+                stepExecutions: [
+                  {{
+                    stepKey: "multiply_the_word.word.input_thunk"
+                  }}
+                ],
+                marshalledInputs: 
+                [
+                ],
+                marshalledOutputs: 
+                [
+                  {{
+                    outputName: "input_thunk_output",
+                    key: "multiply__the__word_word_input__thunk___input__thunk__output.pickle"
+                  }}
+                ],
+              ) {{
+                __typename
               }}
-            ],
-            marshalledInputs: {marshalled_inputs}
-            marshalledOutputs: {marshalled_outputs}
-          ) {
-            __typename
-            ... on StartSubplanExecutionSuccess {
-              pipeline {
-                name
-                description
-                solids {
-                  name
-                }
-              },
-            }
-            ... on PipelineConfigValidationInvalid {
-                pipeline {
-                    name
-                }
-                errors {
-                    message
-                    path
-                    stack {
-                    entries {
-                        __typename
-                        ... on EvaluationStackPathEntry {
-                        field {
-                            name
-                            description
-                            configType {
-                            key
-                            name
-                            description
-                            }
-                            defaultValue
-                            isOptional
-                        }
-                        }
-                    }
-                    }
-                    reason
-                }
-                }
-                ... on StartSubplanExecutionInvalidStepsError {
-                invalidStepKeys
-                }
-                ... on StartSubplanExecutionInvalidOutputError {
-                step {
-                    key
-                    inputs {
-                    name
-                    type {
-                        key
-                        name
-                    }
-                    }
-                    outputs {
-                    name
-                    type {
-                        key
-                        name
-                    }
-                    }
-                    solid {
-                    name
-                    definition {
-                        name
-                    }
-                    inputs {
-                        solid {
-                        name
-                        }
-                        definition {
-                        name              
-                        }
-                    }
-                    }
-                    kind
-                }
-                }
-            }
-            }
-',
+            '
+        '''.format(config=CONFIG),
     )
 
     multiply__the__word_transform_task = DagsterOperator(
@@ -143,100 +96,38 @@ def make_dag(dag_id, dag_description, dag_kwargs, s3_conn_id, modified_docker_op
         image='dagster-airflow-demo',
         task_id='multiply__the__word_transform',
         s3_conn_id=s3_conn_id,
-        command='-q 
-        mutation {{
-          startSubplanExecution(
-            config: {config},
-            executionMetadata: {{
-              runId: "testRun", # FIXME
-            }},
-            pipelineName: "{pipeline_name}",
-            stepExecutions: [
-              {{
-                stepKey: "{step_key}"}}
+        command='''-q '
+            mutation {{
+              startSubplanExecution(
+                config: {config},
+                executionMetadata: {{
+                  runId: "testRun"
+                }},
+                pipelineName: "demo_pipeline",
+                stepExecutions: [
+                  {{
+                    stepKey: "multiply_the_word.transform"
+                  }}
+                ],
+                marshalledInputs: 
+                [
+                  {{
+                    inputName: "word",
+                    key: "multiply__the__word_word_input__thunk___input__thunk__output.pickle"
+                  }}
+                ],
+                marshalledOutputs: 
+                [
+                  {{
+                    outputName: "result",
+                    key: "multiply__the__word_transform___result.pickle"
+                  }}
+                ],
+              ) {{
+                __typename
               }}
-            ],
-            marshalledInputs: {marshalled_inputs}
-            marshalledOutputs: {marshalled_outputs}
-          ) {
-            __typename
-            ... on StartSubplanExecutionSuccess {
-              pipeline {
-                name
-                description
-                solids {
-                  name
-                }
-              },
-            }
-            ... on PipelineConfigValidationInvalid {
-                pipeline {
-                    name
-                }
-                errors {
-                    message
-                    path
-                    stack {
-                    entries {
-                        __typename
-                        ... on EvaluationStackPathEntry {
-                        field {
-                            name
-                            description
-                            configType {
-                            key
-                            name
-                            description
-                            }
-                            defaultValue
-                            isOptional
-                        }
-                        }
-                    }
-                    }
-                    reason
-                }
-                }
-                ... on StartSubplanExecutionInvalidStepsError {
-                invalidStepKeys
-                }
-                ... on StartSubplanExecutionInvalidOutputError {
-                step {
-                    key
-                    inputs {
-                    name
-                    type {
-                        key
-                        name
-                    }
-                    }
-                    outputs {
-                    name
-                    type {
-                        key
-                        name
-                    }
-                    }
-                    solid {
-                    name
-                    definition {
-                        name
-                    }
-                    inputs {
-                        solid {
-                        name
-                        }
-                        definition {
-                        name              
-                        }
-                    }
-                    }
-                    kind
-                }
-                }
-            }
-            }
-',
+            '
+        '''.format(config=CONFIG),
     )
 
     count__letters_transform_task = DagsterOperator(
@@ -246,100 +137,38 @@ def make_dag(dag_id, dag_description, dag_kwargs, s3_conn_id, modified_docker_op
         image='dagster-airflow-demo',
         task_id='count__letters_transform',
         s3_conn_id=s3_conn_id,
-        command='-q 
-        mutation {{
-          startSubplanExecution(
-            config: {config},
-            executionMetadata: {{
-              runId: "testRun", # FIXME
-            }},
-            pipelineName: "{pipeline_name}",
-            stepExecutions: [
-              {{
-                stepKey: "{step_key}"}}
+        command='''-q '
+            mutation {{
+              startSubplanExecution(
+                config: {config},
+                executionMetadata: {{
+                  runId: "testRun"
+                }},
+                pipelineName: "demo_pipeline",
+                stepExecutions: [
+                  {{
+                    stepKey: "count_letters.transform"
+                  }}
+                ],
+                marshalledInputs: 
+                [
+                  {{
+                    inputName: "word",
+                    key: "multiply__the__word_transform___result.pickle"
+                  }}
+                ],
+                marshalledOutputs: 
+                [
+                  {{
+                    outputName: "result",
+                    key: "count__letters_transform___result.pickle"
+                  }}
+                ],
+              ) {{
+                __typename
               }}
-            ],
-            marshalledInputs: {marshalled_inputs}
-            marshalledOutputs: {marshalled_outputs}
-          ) {
-            __typename
-            ... on StartSubplanExecutionSuccess {
-              pipeline {
-                name
-                description
-                solids {
-                  name
-                }
-              },
-            }
-            ... on PipelineConfigValidationInvalid {
-                pipeline {
-                    name
-                }
-                errors {
-                    message
-                    path
-                    stack {
-                    entries {
-                        __typename
-                        ... on EvaluationStackPathEntry {
-                        field {
-                            name
-                            description
-                            configType {
-                            key
-                            name
-                            description
-                            }
-                            defaultValue
-                            isOptional
-                        }
-                        }
-                    }
-                    }
-                    reason
-                }
-                }
-                ... on StartSubplanExecutionInvalidStepsError {
-                invalidStepKeys
-                }
-                ... on StartSubplanExecutionInvalidOutputError {
-                step {
-                    key
-                    inputs {
-                    name
-                    type {
-                        key
-                        name
-                    }
-                    }
-                    outputs {
-                    name
-                    type {
-                        key
-                        name
-                    }
-                    }
-                    solid {
-                    name
-                    definition {
-                        name
-                    }
-                    inputs {
-                        solid {
-                        name
-                        }
-                        definition {
-                        name              
-                        }
-                    }
-                    }
-                    kind
-                }
-                }
-            }
-            }
-',
+            '
+        '''.format(config=CONFIG),
     )
 
     multiply__the__word_word_input__thunk_task.set_downstream(multiply__the__word_transform_task)
