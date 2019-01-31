@@ -47,7 +47,9 @@ from .errors import (
     DagsterInvariantViolationError,
     DagsterUnmarshalInputNotFoundError,
     DagsterUnmarshalInputError,
+    DagsterMarshalOutputNotFoundError,
     DagsterExecutionStepExecutionError,
+    DagsterExecutionStepNotFoundError,
 )
 
 from .events import construct_event_logger
@@ -574,6 +576,10 @@ def execute_externalized_plan(
             execution_metadata=execution_metadata,
         )
 
+        _check_inputs_to_marshal(execution_plan, inputs_to_marshal)
+
+        _check_outputs_to_marshal(execution_plan, outputs_to_marshal)
+
         inputs = _unmarshal_inputs(context, inputs_to_marshal, execution_plan)
 
         results = _do_execute_plan(
@@ -589,35 +595,69 @@ def execute_externalized_plan(
         return results
 
 
+def _check_outputs_to_marshal(execution_plan, outputs_to_marshal):
+    if outputs_to_marshal:
+        for step_key, outputs_for_step in outputs_to_marshal.items():
+            if not execution_plan.has_step(step_key):
+                raise DagsterExecutionStepNotFoundError(step_key=step_key)
+            step = execution_plan.get_step_by_key(step_key)
+            for output in outputs_for_step:
+                check.param_invariant(
+                    set(output.keys()) == set(['output', 'path']),
+                    'outputs_to_marshal',
+                    'Output must be a dict with keys "output" and "path"',
+                )
+
+                output_name = output['output']
+                if not step.has_step_output(output_name):
+                    raise DagsterMarshalOutputNotFoundError(
+                        'Execution step {step_key} does not have output {output}'.format(
+                            step_key=step_key, output=output_name
+                        ),
+                        step_key=step_key,
+                        output_name=output_name,
+                    )
+
+
+def _check_inputs_to_marshal(execution_plan, inputs_to_marshal):
+    if inputs_to_marshal:
+        for step_key, input_dict in inputs_to_marshal.items():
+            if not execution_plan.has_step(step_key):
+                raise DagsterExecutionStepNotFoundError(step_key=step_key)
+            step = execution_plan.get_step_by_key(step_key)
+            for input_name in input_dict.keys():
+                if input_name not in step.step_input_dict:
+                    raise DagsterUnmarshalInputNotFoundError(
+                        'Input {input_name} does not exist in execution step {key}'.format(
+                            input_name=input_name, key=step.key
+                        ),
+                        input_name=input_name,
+                        step_key=step.key,
+                    )
+
+
 def _marshal_outputs(context, results, outputs_to_marshal):
     for result in results:
-        if not (result.success and result.step.key in outputs_to_marshal):
+        step = result.step
+        if not (result.success and step.key in outputs_to_marshal):
             continue
 
-        for output in outputs_to_marshal[result.step.key]:
+        for output in outputs_to_marshal[step.key]:
             if output['output'] != result.success_data.output_name:
                 continue
 
-            path = output['path']
-            output_type = result.step.step_output_dict[result.success_data.output_name].runtime_type
+            output_type = step.step_output_dict[result.success_data.output_name].runtime_type
             context.persistence_policy.write_value(
-                output_type.serialization_strategy, path, result.success_data.value
+                output_type.serialization_strategy, output['path'], result.success_data.value
             )
 
 
 def _unmarshal_inputs(context, inputs_to_marshal, execution_plan):
     inputs = defaultdict(dict)
     for step_key, input_dict in inputs_to_marshal.items():
+        step = execution_plan.get_step_by_key(step_key)
         for input_name, file_path in input_dict.items():
-            step = execution_plan.get_step_by_key(step_key)
-            if input_name not in step.step_input_dict:
-                raise DagsterUnmarshalInputNotFoundError(
-                    'Input {input_name} does not exist in execution step {key}'.format(
-                        input_name=input_name, key=step.key
-                    ),
-                    input_name=input_name,
-                    step_key=step.key,
-                )
+            check.invariant(input_name in step.step_input_dict, 'Previously checked')
 
             step_input = step.step_input_dict[input_name]
             input_type = step_input.runtime_type

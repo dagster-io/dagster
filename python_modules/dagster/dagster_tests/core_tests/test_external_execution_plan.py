@@ -8,7 +8,12 @@ from dagster import (
     PipelineDefinition,
     lambda_solid,
 )
-from dagster.core.errors import DagsterUnmarshalInputError, DagsterUnmarshalInputNotFoundError
+from dagster.core.errors import (
+    DagsterExecutionStepNotFoundError,
+    DagsterUnmarshalInputError,
+    DagsterUnmarshalInputNotFoundError,
+    DagsterMarshalOutputNotFoundError,
+)
 from dagster.core.execution import (
     execute_externalized_plan,
     create_execution_plan,
@@ -93,6 +98,53 @@ def test_external_execution_marshal_wrong_input_error():
     assert str(exc_info.value) == 'Input nope does not exist in execution step add_one.transform'
     assert exc_info.value.input_name == 'nope'
     assert exc_info.value.step_key == 'add_one.transform'
+
+
+def test_external_execution_step_for_input_missing():
+    pipeline = define_inty_pipeline()
+
+    execution_plan = create_execution_plan(pipeline)
+
+    with pytest.raises(DagsterExecutionStepNotFoundError) as exc_info:
+        execute_externalized_plan(
+            pipeline,
+            execution_plan,
+            ['add_one.transform'],
+            inputs_to_marshal={'nope': {'nope': 'nope'}},
+            execution_metadata=ExecutionMetadata(),
+        )
+
+    assert exc_info.value.step_key == 'nope'
+
+
+def test_external_execution_step_for_output_missing():
+    pipeline = define_inty_pipeline()
+
+    execution_plan = create_execution_plan(pipeline)
+
+    with pytest.raises(DagsterExecutionStepNotFoundError):
+        execute_externalized_plan(
+            pipeline,
+            execution_plan,
+            ['add_one.transform'],
+            outputs_to_marshal={'nope': [{'output': 'nope', 'path': 'nope'}]},
+            execution_metadata=ExecutionMetadata(),
+        )
+
+
+def test_external_execution_output_missing():
+    pipeline = define_inty_pipeline()
+
+    execution_plan = create_execution_plan(pipeline)
+
+    with pytest.raises(DagsterMarshalOutputNotFoundError):
+        execute_externalized_plan(
+            pipeline,
+            execution_plan,
+            ['add_one.transform'],
+            outputs_to_marshal={'add_one.transform': [{'output': 'nope', 'path': 'nope'}]},
+            execution_metadata=ExecutionMetadata(),
+        )
 
 
 def test_external_execution_marshal_code_error():

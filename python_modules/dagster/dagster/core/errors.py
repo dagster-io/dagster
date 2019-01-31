@@ -35,7 +35,7 @@ class DagsterTypeError(DagsterUserError):
     '''Indicates an error in the solid type system (e.g. mismatched arguments)'''
 
 
-class DagsterUserCodeExecutionErrorBase(DagsterUserError):
+class DagsterUserCodeExecutionError(DagsterUserError):
     '''Indicates that user space code has raised an error'''
 
     def __init__(self, *args, **kwargs):
@@ -49,10 +49,16 @@ class DagsterUserCodeExecutionErrorBase(DagsterUserError):
         original_exc_info = check.opt_tuple_param(
             kwargs.pop('original_exc_info', None), 'original_exc_info'
         )
-        super(DagsterUserCodeExecutionErrorBase, self).__init__(*args, **kwargs)
+        super(DagsterUserCodeExecutionError, self).__init__(*args, **kwargs)
 
         self.user_exception = check.opt_inst_param(user_exception, 'user_exception', Exception)
         self.original_exc_info = original_exc_info
+
+
+class DagsterExecutionStepNotFoundError(DagsterUserError):
+    def __init__(self, *args, **kwargs):
+        self.step_key = check.str_param(kwargs.pop('step_key'), 'step_key')
+        super(DagsterExecutionStepNotFoundError, self).__init__(*args, **kwargs)
 
 
 class DagsterUnmarshalInputNotFoundError(DagsterUserError):
@@ -62,7 +68,7 @@ class DagsterUnmarshalInputNotFoundError(DagsterUserError):
         super(DagsterUnmarshalInputNotFoundError, self).__init__(*args, **kwargs)
 
 
-class DagsterUnmarshalInputError(DagsterUserCodeExecutionErrorBase):
+class DagsterUnmarshalInputError(DagsterUserCodeExecutionError):
     '''Indicates an error doing marshalling a specific input'''
 
     def __init__(self, *args, **kwargs):
@@ -71,7 +77,14 @@ class DagsterUnmarshalInputError(DagsterUserCodeExecutionErrorBase):
         super(DagsterUnmarshalInputError, self).__init__(*args, **kwargs)
 
 
-class DagsterExecutionStepExecutionError(DagsterUserCodeExecutionErrorBase):
+class DagsterMarshalOutputNotFoundError(DagsterUserCodeExecutionError):
+    def __init__(self, *args, **kwargs):
+        self.output_name = check.str_param(kwargs.pop('output_name'), 'output_name')
+        self.step_key = check.str_param(kwargs.pop('step_key'), 'step_key')
+        super(DagsterMarshalOutputNotFoundError, self).__init__(*args, **kwargs)
+
+
+class DagsterExecutionStepExecutionError(DagsterUserCodeExecutionError):
     pass
 
 
