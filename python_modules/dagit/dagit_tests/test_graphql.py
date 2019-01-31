@@ -2127,10 +2127,7 @@ def test_start_subplan_invalid_input_path():
     assert not result.errors
     assert result.data
     assert result.data['startSubplanExecution']['__typename'] == 'PythonError'
-    assert (
-        'FileNotFoundError: [Errno 2] No such file or directory:'
-        in result.data['startSubplanExecution']['message']
-    )
+    assert 'No such file or directory:' in result.data['startSubplanExecution']['message']
 
 
 def test_start_subplan_invalid_output_path():
@@ -2166,10 +2163,7 @@ def test_start_subplan_invalid_output_path():
         assert not result.errors
         assert result.data
         assert result.data['startSubplanExecution']['__typename'] == 'PythonError'
-        assert (
-            'FileNotFoundError: [Errno 2] No such file or directory:'
-            in result.data['startSubplanExecution']['message']
-        )
+        assert 'No such file or directory:' in result.data['startSubplanExecution']['message']
 
 
 def test_invalid_subplan_missing_inputs():
