@@ -306,7 +306,7 @@ def _make_editable_scaffold(
         printer.line('S3_CONN_ID = \'aws_default\'')
         printer.blank_line()
 
-        printer.comment('Set the host directory to mount into / on the containers.')
+        printer.comment('Set the host directory to mount into /tmp/results on the containers.')
         printer.line('HOST_TMP_DIR = \'/tmp/results\'')
         printer.blank_line()
 
@@ -393,7 +393,7 @@ def _make_static_scaffold(pipeline_name, env_config, execution_plan, image, edit
                     printer.line('step=\'{step_key}\','.format(step_key=step_key))
                     printer.line('config=CONFIG,')
                     printer.line('dag=dag,')
-                    printer.line('tmp_dir=\'/\',')
+                    printer.line('tmp_dir=\'/tmp/results\',')
                     printer.line('host_tmp_dir=host_tmp_dir,')
                     printer.line('image=\'{image}\','.format(image=image))
                     printer.line(

@@ -49,4 +49,4 @@ def test_unit_run_airflow_dag_steps(airflow_test, dags_path):
 
     for step in execution_plan.topological_steps():
         task_id = _normalize_key(step.key)
-        # res = subprocess.check_output(['airflow', 'test', pipeline_name, task_id, execution_date])
+        res = subprocess.check_output(['airflow', 'test', pipeline_name, task_id, execution_date])
