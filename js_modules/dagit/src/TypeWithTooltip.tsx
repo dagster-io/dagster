@@ -26,16 +26,18 @@ export default class TypeWithTooltip extends React.Component<
 
   render() {
     const { name, displayName } = this.props.type;
-    const search = `?typeExplorer=${displayName}`;
 
     // TODO: link to most inner type
-    return name ? (
-      <Link to={{ search }}>
-        <TypeName>{displayName}</TypeName>
-      </Link>
-    ) : (
-      <TypeName>{displayName}</TypeName>
-    );
+    if (name) {
+      const search = `?typeExplorer=${displayName}`;
+      return (
+        <Link to={{ search }}>
+          <TypeName>{displayName}</TypeName>
+        </Link>
+      );
+    } else {
+      return <TypeName>{displayName}</TypeName>;
+    }
   }
 }
 
