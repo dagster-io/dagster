@@ -20,7 +20,7 @@ from airflow import DAG
 from airflow.operators.dagster_plugin import DagsterOperator
 
 
-CONFIG = \
+CONFIG = '''
     {
       context: {
         default: {
@@ -42,7 +42,7 @@ CONFIG = \
         }
       }
     }
-    
+'''
 
 
 def make_dag(dag_id, dag_description, dag_kwargs, s3_conn_id, modified_docker_operator_kwargs):

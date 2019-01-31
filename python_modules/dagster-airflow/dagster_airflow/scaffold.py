@@ -427,10 +427,11 @@ def _make_static_scaffold(pipeline_name, env_config, execution_plan, image, edit
         printer.blank_line()
         printer.blank_line()
 
-        printer.line('CONFIG = \\')
+        printer.line('CONFIG = \'\'\'')
         with printer.with_indent():
-            for line in _format_config(env_config).split('\n'):
+            for line in _format_config(env_config).strip('\n').split('\n'):
                 printer.line(line)
+        printer.line('\'\'\'')
         printer.blank_line()
         printer.blank_line()
 
