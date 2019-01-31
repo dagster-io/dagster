@@ -8,5 +8,6 @@
 export interface RuntimeTypeWithTooltipFragment {
   __typename: "RegularRuntimeType" | "ListRuntimeType" | "NullableRuntimeType";
   name: string | null;
+  displayName: string;
   description: string | null;
 }

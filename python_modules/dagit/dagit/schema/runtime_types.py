@@ -15,6 +15,7 @@ def to_dauphin_runtime_type(runtime_type):
     base_args = dict(
         key=runtime_type.key,
         name=runtime_type.name,
+        display_name=runtime_type.display_name,
         description=runtime_type.description,
         is_builtin=runtime_type.is_builtin,
         is_nullable=runtime_type.is_nullable,
@@ -44,6 +45,7 @@ class DauphinRuntimeType(dauphin.Interface):
 
     key = dauphin.NonNull(dauphin.String)
     name = dauphin.String()
+    display_name = dauphin.NonNull(dauphin.String)
     description = dauphin.String()
 
     is_nullable = dauphin.NonNull(dauphin.Boolean)

@@ -8,6 +8,7 @@
 export interface SolidTypeSignatureFragment_outputs_definition_type {
   __typename: "RegularRuntimeType" | "ListRuntimeType" | "NullableRuntimeType";
   name: string | null;
+  displayName: string;
   description: string | null;
 }
 
@@ -25,6 +26,7 @@ export interface SolidTypeSignatureFragment_outputs {
 export interface SolidTypeSignatureFragment_inputs_definition_type {
   __typename: "RegularRuntimeType" | "ListRuntimeType" | "NullableRuntimeType";
   name: string | null;
+  displayName: string;
   description: string | null;
 }
 

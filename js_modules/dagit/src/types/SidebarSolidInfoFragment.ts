@@ -8,6 +8,7 @@
 export interface SidebarSolidInfoFragment_outputs_definition_type {
   __typename: "RegularRuntimeType" | "ListRuntimeType" | "NullableRuntimeType";
   name: string | null;
+  displayName: string;
   description: string | null;
 }
 
@@ -33,6 +34,7 @@ export interface SidebarSolidInfoFragment_outputs {
 export interface SidebarSolidInfoFragment_inputs_definition_type {
   __typename: "RegularRuntimeType" | "ListRuntimeType" | "NullableRuntimeType";
   name: string | null;
+  displayName: string;
   description: string | null;
 }
 
