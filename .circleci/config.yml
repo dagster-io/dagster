@@ -360,8 +360,6 @@ jobs:
     working_directory: ~/repo
     steps:
       - checkout
-      - setup_remote_docker:
-          docker_layer_caching: true
       - run:
           name: Build Dockerfile
           command: |
