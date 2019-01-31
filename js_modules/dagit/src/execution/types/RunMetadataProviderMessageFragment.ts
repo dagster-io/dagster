@@ -28,8 +28,8 @@ export interface RunMetadataProviderMessageFragment_StepMaterializationEvent {
   message: string;
   timestamp: string;
   step: RunMetadataProviderMessageFragment_StepMaterializationEvent_step;
-  fileLocation: string | null;
-  fileName: string | null;
+  fileLocation: string;
+  fileName: string;
 }
 
 export interface RunMetadataProviderMessageFragment_ExecutionStepStartEvent_step {

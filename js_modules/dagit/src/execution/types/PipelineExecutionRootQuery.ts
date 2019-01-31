@@ -53,8 +53,8 @@ export interface PipelineExecutionRootQuery_pipeline_runs_logs_nodes_StepMateria
   timestamp: string;
   level: LogLevel;
   step: PipelineExecutionRootQuery_pipeline_runs_logs_nodes_StepMaterializationEvent_step;
-  fileLocation: string | null;
-  fileName: string | null;
+  fileLocation: string;
+  fileName: string;
 }
 
 export interface PipelineExecutionRootQuery_pipeline_runs_logs_nodes_ExecutionStepStartEvent_step {
