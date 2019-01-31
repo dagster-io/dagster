@@ -36,6 +36,7 @@ class DagsterTypeError(DagsterUserError):
 
 
 class DagsterUserCodeExecutionError(DagsterUserError):
+    '''This is base c
     '''Indicates that user space code has raised an error'''
 
     def __init__(self, *args, **kwargs):
@@ -54,12 +55,22 @@ class DagsterUserCodeExecutionError(DagsterUserError):
 
 
 class DagsterExecutionStepNotFoundError(DagsterUserError):
+    '''
+    Generic exception used whenever a user an execution step is specified in an
+    api that is consumed by higher level infrastructure (e.g. airflow integration)
+    or that needs to be translated into a specific in the GraphQL domain.
+    '''
+
     def __init__(self, *args, **kwargs):
         self.step_key = check.str_param(kwargs.pop('step_key'), 'step_key')
         super(DagsterExecutionStepNotFoundError, self).__init__(*args, **kwargs)
 
 
 class DagsterUnmarshalInputNotFoundError(DagsterUserError):
+    '''
+    This error is when the user specifies an input to be marshalled and that
+    input does not exist on the step specified.
+    '''
     def __init__(self, *args, **kwargs):
         self.input_name = check.str_param(kwargs.pop('input_name'), 'input_name')
         self.step_key = check.str_param(kwargs.pop('step_key'), 'step_key')
