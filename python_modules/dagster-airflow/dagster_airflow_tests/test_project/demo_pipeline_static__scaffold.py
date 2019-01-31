@@ -45,7 +45,14 @@ CONFIG = '''
 '''
 
 
-def make_dag(dag_id, dag_description, dag_kwargs, s3_conn_id, modified_docker_operator_kwargs):
+def make_dag(
+    dag_id,
+    dag_description,
+    dag_kwargs,
+    s3_conn_id,
+    modified_docker_operator_kwargs,
+    host_tmp_dir
+):
     dag = DAG(
         dag_id=dag_id,
         description=dag_description,
@@ -56,6 +63,8 @@ def make_dag(dag_id, dag_description, dag_kwargs, s3_conn_id, modified_docker_op
         step='multiply_the_word.word.input_thunk',
         config=CONFIG,
         dag=dag,
+        tmp_dir='/',
+        host_tmp_dir=host_tmp_dir,
         image='dagster-airflow-demo',
         task_id='multiply__the__word_word_input__thunk',
         s3_conn_id=s3_conn_id,
@@ -93,6 +102,8 @@ def make_dag(dag_id, dag_description, dag_kwargs, s3_conn_id, modified_docker_op
         step='multiply_the_word.transform',
         config=CONFIG,
         dag=dag,
+        tmp_dir='/',
+        host_tmp_dir=host_tmp_dir,
         image='dagster-airflow-demo',
         task_id='multiply__the__word_transform',
         s3_conn_id=s3_conn_id,
@@ -134,6 +145,8 @@ def make_dag(dag_id, dag_description, dag_kwargs, s3_conn_id, modified_docker_op
         step='count_letters.transform',
         config=CONFIG,
         dag=dag,
+        tmp_dir='/',
+        host_tmp_dir=host_tmp_dir,
         image='dagster-airflow-demo',
         task_id='count__letters_transform',
         s3_conn_id=s3_conn_id,

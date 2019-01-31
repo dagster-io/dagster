@@ -158,8 +158,6 @@ def _format_config(config):
         else:
             return repr(config).replace('\'', '"')
 
-        return printer.read()
-
     check.dict_param(config, 'config', key_type=str)
     if not isinstance(config, dict):
         check.failed('Expected a dict to format as config, got: {item}'.format(item=repr(config)))
@@ -202,84 +200,6 @@ def _scaffold_query_for_step(pipeline_name, step):
         printer.line('}}')
 
     return printer.read()
-
-    # __typename
-    # ... on StartSubplanExecutionSuccess {
-    #   pipeline {
-    #     name
-    #     description
-    #     solids {
-    #       name
-    #     }
-    #   },
-    # }
-    # ... on PipelineConfigValidationInvalid {
-    #     pipeline {
-    #         name
-    #     }
-    #     errors {
-    #         message
-    #         path
-    #         stack {
-    #         entries {
-    #             __typename
-    #             ... on EvaluationStackPathEntry {
-    #             field {
-    #                 name
-    #                 description
-    #                 configType {
-    #                 key
-    #                 name
-    #                 description
-    #                 }
-    #                 defaultValue
-    #                 isOptional
-    #             }
-    #             }
-    #         }
-    #         }
-    #         reason
-    #     }
-    #     }
-    #     ... on StartSubplanExecutionInvalidStepsError {
-    #     invalidStepKeys
-    #     }
-    #     ... on StartSubplanExecutionInvalidOutputError {
-    #     step {
-    #         key
-    #         inputs {
-    #         name
-    #         type {
-    #             key
-    #             name
-    #         }
-    #         }
-    #         outputs {
-    #         name
-    #         type {
-    #             key
-    #             name
-    #         }
-    #         }
-    #         solid {
-    #         name
-    #         definition {
-    #             name
-    #         }
-    #         inputs {
-    #             solid {
-    #             name
-    #             }
-    #             definition {
-    #             name
-    #             }
-    #         }
-    #         }
-    #         kind
-    #     }
-    #     }
-    # }
-    # }
 
 
 def _make_editable_scaffold(
@@ -384,6 +304,10 @@ def _make_editable_scaffold(
         printer.line('S3_CONN_ID = \'aws_default\'')
         printer.blank_line()
 
+        printer.comment('Set the host directory to mount into / on the containers.')
+        printer.line('HOST_TMP_DIR = \'/tmp/results\'')
+        printer.blank_line()
+
         printer.line('dag = make_dag(')
         with printer.with_indent():
             printer.line('dag_id=DAG_ID,')
@@ -391,6 +315,7 @@ def _make_editable_scaffold(
             printer.line('dag_kwargs=dict(default_args=DEFAULT_ARGS, **DAG_KWARGS),')
             printer.line('s3_conn_id=S3_CONN_ID,')
             printer.line('modified_docker_operator_kwargs=MODIFIED_DOCKER_OPERATOR_KWARGS,')
+            printer.line('host_tmp_dir=HOST_TMP_DIR,')
         printer.line(')')
 
         return printer.read()
@@ -433,9 +358,15 @@ def _make_static_scaffold(pipeline_name, env_config, execution_plan, image, edit
         printer.blank_line()
         printer.blank_line()
 
-        printer.line(
-            'def make_dag(dag_id, dag_description, dag_kwargs, s3_conn_id, modified_docker_operator_kwargs):'
-        )
+        printer.line('def make_dag(')
+        with printer.with_indent():
+            printer.line('dag_id,')
+            printer.line('dag_description,')
+            printer.line('dag_kwargs,')
+            printer.line('s3_conn_id,')
+            printer.line('modified_docker_operator_kwargs,')
+            printer.line('host_tmp_dir')
+        printer.line('):')
         with printer.with_indent():
             printer.line('dag = DAG(')
             with printer.with_indent():
@@ -460,6 +391,8 @@ def _make_static_scaffold(pipeline_name, env_config, execution_plan, image, edit
                     printer.line('step=\'{step_key}\','.format(step_key=step_key))
                     printer.line('config=CONFIG,')
                     printer.line('dag=dag,')
+                    printer.line('tmp_dir=\'/\',')
+                    printer.line('host_tmp_dir=host_tmp_dir,')
                     printer.line('image=\'{image}\','.format(image=image))
                     printer.line(
                         'task_id=\'{airflow_step_key}\','.format(airflow_step_key=airflow_step_key)

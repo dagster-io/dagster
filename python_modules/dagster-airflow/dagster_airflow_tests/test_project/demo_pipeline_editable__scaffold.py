@@ -56,10 +56,14 @@ MODIFIED_DOCKER_OPERATOR_KWARGS = {}
 # Set your S3 connection id here, if you do not want to use the default ``aws_default`` connection.
 S3_CONN_ID = 'aws_default'
 
+# Set the host directory to mount into / on the containers.
+HOST_TMP_DIR = '/tmp/results'
+
 dag = make_dag(
     dag_id=DAG_ID,
     dag_description=DAG_DESCRIPTION,
     dag_kwargs=dict(default_args=DEFAULT_ARGS, **DAG_KWARGS),
     s3_conn_id=S3_CONN_ID,
     modified_docker_operator_kwargs=MODIFIED_DOCKER_OPERATOR_KWARGS,
+    host_tmp_dir=HOST_TMP_DIR,
 )

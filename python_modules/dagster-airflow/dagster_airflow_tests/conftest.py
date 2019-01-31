@@ -65,7 +65,12 @@ def plugins_path(airflow_home):
 
 
 @pytest.fixture(scope='module')
-def airflow_test(airflow_home, docker_client, dags_path, plugins_path):
+def host_tmp_dir():
+    mkdir_p('/tmp/results')
+
+
+@pytest.fixture(scope='module')
+def airflow_test(airflow_home, docker_client, dags_path, plugins_path, host_tmp_dir):
 
     plugin_definition_filename = 'dagster_plugin.py'
     shutil.copyfile(

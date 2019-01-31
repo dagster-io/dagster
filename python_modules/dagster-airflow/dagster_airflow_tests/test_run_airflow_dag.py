@@ -1,9 +1,13 @@
 import datetime
+import os
+import shutil
 import subprocess
 
+from dagster.core.execution import create_execution_plan
 from dagster.utils import load_yaml_from_path, script_relative_path
 
 from dagster_airflow import scaffold_airflow_dag
+from dagster_airflow.scaffold import _normalize_key
 
 from .test_project.dagster_airflow_demo import define_demo_execution_pipeline
 
@@ -27,17 +31,22 @@ def test_unit_run_airflow_dag_steps(airflow_test, dags_path):
     subprocess.check_output(
         ['python', script_relative_path('test_project/demo_pipeline_editable__scaffold.py')]
     )
-    # shutil.copyfile(
-    #     script_relative_path(DAG_DEFINITION_FILENAME),
-    #     os.path.abspath(os.path.join(dags_path, DAG_DEFINITION_FILENAME)),
-    # )
 
-    # task_id = 'minimal_dockerized_dagster_airflow_node'
-    # execution_date = datetime.datetime.utcnow().strftime('%Y-%m-%d')
+    shutil.copyfile(
+        script_relative_path(static_path),
+        os.path.abspath(os.path.join(dags_path, os.path.basename(static_path))),
+    )
 
-    # pipeline_name = pipeline.name
+    shutil.copyfile(
+        script_relative_path(editable_path),
+        os.path.abspath(os.path.join(dags_path, os.path.basename(editable_path))),
+    )
 
-    # # for step in
-    # # res = subprocess.check_output(
-    # #     ['airflow', 'test', pipeline_name, task_id, execution_date]
-    # # )
+    execution_date = datetime.datetime.utcnow().strftime('%Y-%m-%d')
+    pipeline_name = pipeline.name
+
+    execution_plan = create_execution_plan(pipeline, env_config)
+
+    for step in execution_plan.topological_steps():
+        task_id = _normalize_key(step.key)
+        # res = subprocess.check_output(['airflow', 'test', pipeline_name, task_id, execution_date])
