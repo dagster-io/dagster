@@ -203,42 +203,45 @@ class ModifiedDockerOperator(BaseOperator):
                 if 'status' in output:
                     self.log.info("%s", output['status'])
 
-        with TemporaryDirectory(prefix='airflowtmp', dir=self.host_tmp_dir) as host_tmp_dir:
-            self.environment['AIRFLOW_TMP_DIR'] = self.tmp_dir
-            self.volumes.append('{0}:{1}'.format(host_tmp_dir, self.tmp_dir))
+        # FIXME: need to figure out what to do here. We probably want to provide some knobs to
+        # govern whether intermediate result materializations get cleaned up or not -- but we need
+        # them for follow-on step executions and we can't rely on xcom, probably.
+        # with TemporaryDirectory(prefix='airflowtmp', dir=self.host_tmp_dir) as host_tmp_dir:
+        self.environment['AIRFLOW_TMP_DIR'] = self.tmp_dir
+        self.volumes.append('{0}:{1}'.format(self.host_tmp_dir, self.tmp_dir))
 
-            self.container = self.cli.create_container(
-                command=self.get_command(),
-                environment=self.environment,
-                host_config=self.cli.create_host_config(
-                    auto_remove=self.auto_remove,
-                    binds=self.volumes,
-                    network_mode=self.network_mode,
-                    shm_size=self.shm_size,
-                    dns=self.dns,
-                    dns_search=self.dns_search,
-                    cpu_shares=int(round(self.cpus * 1024)),
-                    mem_limit=self.mem_limit,
-                ),
-                image=self.image,
-                user=self.user,
-                working_dir=self.working_dir,
-            )
-            self.cli.start(self.container['Id'])
+        self.container = self.cli.create_container(
+            command=self.get_command(),
+            environment=self.environment,
+            host_config=self.cli.create_host_config(
+                auto_remove=self.auto_remove,
+                binds=self.volumes,
+                network_mode=self.network_mode,
+                shm_size=self.shm_size,
+                dns=self.dns,
+                dns_search=self.dns_search,
+                cpu_shares=int(round(self.cpus * 1024)),
+                mem_limit=self.mem_limit,
+            ),
+            image=self.image,
+            user=self.user,
+            working_dir=self.working_dir,
+        )
+        self.cli.start(self.container['Id'])
 
-            line = ''
-            for line in self.cli.logs(container=self.container['Id'], stream=True):
-                line = line.strip()
-                if hasattr(line, 'decode'):
-                    line = line.decode('utf-8')
-                self.log.info(line)
+        line = ''
+        for line in self.cli.logs(container=self.container['Id'], stream=True):
+            line = line.strip()
+            if hasattr(line, 'decode'):
+                line = line.decode('utf-8')
+            self.log.info(line)
 
-            result = self.cli.wait(self.container['Id'])
-            if result['StatusCode'] != 0:
-                raise AirflowException('docker container failed: ' + repr(result))
+        result = self.cli.wait(self.container['Id'])
+        if result['StatusCode'] != 0:
+            raise AirflowException('docker container failed: ' + repr(result))
 
-            if self.xcom_push_flag:
-                return self.cli.logs(container=self.container['Id']) if self.xcom_all else str(line)
+        if self.xcom_push_flag:
+            return self.cli.logs(container=self.container['Id']) if self.xcom_all else str(line)
 
     def get_command(self):
         if self.command is not None and self.command.strip().find('[') == 0:

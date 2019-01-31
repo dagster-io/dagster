@@ -7,7 +7,7 @@ from dagster.core.execution import create_execution_plan
 from dagster.utils import load_yaml_from_path, script_relative_path
 
 from dagster_airflow import scaffold_airflow_dag
-from dagster_airflow.scaffold import _normalize_key
+from dagster_airflow.scaffold import _key_for_marshalled_result, _normalize_key
 
 from .test_project.dagster_airflow_demo import define_demo_execution_pipeline
 
@@ -50,3 +50,10 @@ def test_unit_run_airflow_dag_steps(airflow_test, dags_path):
     for step in execution_plan.topological_steps():
         task_id = _normalize_key(step.key)
         res = subprocess.check_output(['airflow', 'test', pipeline_name, task_id, execution_date])
+
+        assert 'EXECUTION_PLAN_STEP_SUCCESS' in str(res)
+
+        for step_output in step.step_outputs:
+            assert 'for output {output_name}'.format(output_name=step_output.name) in str(res)
+
+            assert os.path.isfile(_key_for_marshalled_result(step.key, step_output.name))

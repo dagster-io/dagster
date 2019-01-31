@@ -79,23 +79,29 @@ def make_dag(
                 stepExecutions: [
                   {{
                     stepKey: "multiply_the_word.word.input_thunk"
-                  }}
-                ],
-                marshalledInputs: 
-                [
-                ],
-                marshalledOutputs: 
-                [
-                  {{
-                    outputName: "input_thunk_output",
-                    key: "/tmp/results/multiply__the__word_word_input__thunk___input__thunk__output.pickle"
+                    marshalledInputs: 
+                    [
+                    ],
+                    marshalledOutputs: 
+                    [
+                      {{
+                        outputName: "input_thunk_output",
+                        key: "/tmp/results/multiply__the__word_word_input__thunk___input__thunk__output.pickle"
+                      }}
+                    ],
                   }}
                 ],
               ) {{
                 __typename
+                ... on StartSubplanExecutionSuccess {{
+                  pipeline {{
+                    name
+                  }}
+                }}
               }}
+            }}
             '
-        '''.format(config=CONFIG),
+        '''.format(config=CONFIG.strip('\n')),
     )
 
     multiply__the__word_transform_task = DagsterOperator(
@@ -118,27 +124,33 @@ def make_dag(
                 stepExecutions: [
                   {{
                     stepKey: "multiply_the_word.transform"
-                  }}
-                ],
-                marshalledInputs: 
-                [
-                  {{
-                    inputName: "word",
-                    key: "/tmp/results/multiply__the__word_word_input__thunk___input__thunk__output.pickle"
-                  }}
-                ],
-                marshalledOutputs: 
-                [
-                  {{
-                    outputName: "result",
-                    key: "/tmp/results/multiply__the__word_transform___result.pickle"
+                    marshalledInputs: 
+                    [
+                      {{
+                        inputName: "word",
+                        key: "/tmp/results/multiply__the__word_word_input__thunk___input__thunk__output.pickle"
+                      }}
+                    ],
+                    marshalledOutputs: 
+                    [
+                      {{
+                        outputName: "result",
+                        key: "/tmp/results/multiply__the__word_transform___result.pickle"
+                      }}
+                    ],
                   }}
                 ],
               ) {{
                 __typename
+                ... on StartSubplanExecutionSuccess {{
+                  pipeline {{
+                    name
+                  }}
+                }}
               }}
+            }}
             '
-        '''.format(config=CONFIG),
+        '''.format(config=CONFIG.strip('\n')),
     )
 
     count__letters_transform_task = DagsterOperator(
@@ -161,27 +173,33 @@ def make_dag(
                 stepExecutions: [
                   {{
                     stepKey: "count_letters.transform"
-                  }}
-                ],
-                marshalledInputs: 
-                [
-                  {{
-                    inputName: "word",
-                    key: "/tmp/results/multiply__the__word_transform___result.pickle"
-                  }}
-                ],
-                marshalledOutputs: 
-                [
-                  {{
-                    outputName: "result",
-                    key: "/tmp/results/count__letters_transform___result.pickle"
+                    marshalledInputs: 
+                    [
+                      {{
+                        inputName: "word",
+                        key: "/tmp/results/multiply__the__word_transform___result.pickle"
+                      }}
+                    ],
+                    marshalledOutputs: 
+                    [
+                      {{
+                        outputName: "result",
+                        key: "/tmp/results/count__letters_transform___result.pickle"
+                      }}
+                    ],
                   }}
                 ],
               ) {{
                 __typename
+                ... on StartSubplanExecutionSuccess {{
+                  pipeline {{
+                    name
+                  }}
+                }}
               }}
+            }}
             '
-        '''.format(config=CONFIG),
+        '''.format(config=CONFIG.strip('\n')),
     )
 
     multiply__the__word_word_input__thunk_task.set_downstream(multiply__the__word_transform_task)

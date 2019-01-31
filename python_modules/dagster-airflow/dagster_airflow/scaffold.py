@@ -188,20 +188,97 @@ def _scaffold_query_for_step(pipeline_name, step):
                 printer.line('{{')
                 with printer.with_indent():
                     printer.line('stepKey: "{step_key}"'.format(step_key=step.key))
+                    printer.line('marshalledInputs: ')
+                    for line in (marshalled_inputs.strip('\n') + ',').split('\n'):
+                        printer.line(line)
+                    printer.line('marshalledOutputs: ')
+                    for line in (marshalled_outputs.strip('\n') + ',').split('\n'):
+                        printer.line(line)
                 printer.line('}}')
             printer.line('],')
-            printer.line('marshalledInputs: ')
-            for line in (marshalled_inputs.strip('\n') + ',').split('\n'):
-                printer.line(line)
-            printer.line('marshalledOutputs: ')
-            for line in (marshalled_outputs.strip('\n') + ',').split('\n'):
-                printer.line(line)
         printer.line(') {{')
         with printer.with_indent():
             printer.line('__typename')
+            printer.line('... on StartSubplanExecutionSuccess {{')
+            with printer.with_indent():
+                printer.line('pipeline {{')
+                with printer.with_indent():
+                    printer.line('name')
+                printer.line('}}')
+            printer.line('}}')
         printer.line('}}')
+    printer.line('}}')
+    # FIXME need to support comprehensive error handling here
 
+    # ... on PipelineConfigValidationInvalid {
+    #     pipeline {
+    #         name
+    #     }
+    #     errors {
+    #         message
+    #         path
+    #         stack {
+    #         entries {
+    #             __typename
+    #             ... on EvaluationStackPathEntry {
+    #             field {
+    #                 name
+    #                 description
+    #                 configType {
+    #                 key
+    #                 name
+    #                 description
+    #                 }
+    #                 defaultValue
+    #                 isOptional
+    #             }
+    #             }
+    #         }
+    #         }
+    #         reason
+    #     }
+    #     }
+    #     ... on StartSubplanExecutionInvalidStepsError {
+    #     invalidStepKeys
+    #     }
+    #     ... on StartSubplanExecutionInvalidOutputError {
+    #     step {
+    #         key
+    #         inputs {
+    #         name
+    #         type {
+    #             key
+    #             name
+    #         }
+    #         }
+    #         outputs {
+    #         name
+    #         type {
+    #             key
+    #             name
+    #         }
+    #         }
+    #         solid {
+    #         name
+    #         definition {
+    #             name
+    #         }
+    #         inputs {
+    #             solid {
+    #             name
+    #             }
+    #             definition {
+    #             name
+    #             }
+    #         }
+    #         }
+    #         kind
+    #     }
+    #     }
+    # }
+    # }
     return printer.read()
+
 
 
 def _make_editable_scaffold(
@@ -405,7 +482,7 @@ def _make_static_scaffold(pipeline_name, env_config, execution_plan, image, edit
                         for line in query.split('\n')[:-1]:
                             printer.line(line)
                         printer.line('\'')
-                    printer.line('\'\'\'.format(config=CONFIG),')
+                    printer.line('\'\'\'.format(config=CONFIG.strip(\'\\n\')),')
                 printer.line(')')
                 printer.blank_line()
 
