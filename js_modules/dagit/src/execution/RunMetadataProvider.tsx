@@ -16,6 +16,7 @@ export interface IStepMetadata {
   start?: number;
   elapsed?: number;
   transitionedAt: number;
+  materializations: { fileLocation: string }[];
 }
 
 export interface IRunMetadataDict {
@@ -55,7 +56,8 @@ function extractMetadataFromLogs(
         metadata.steps[name] = {
           state: IStepState.RUNNING,
           start: timestamp,
-          transitionedAt: timestamp
+          transitionedAt: timestamp,
+          materializations: []
         };
       } else if (log.__typename === "ExecutionStepSuccessEvent") {
         metadata.steps[name] = produce(metadata.steps[name] || {}, step => {
@@ -63,6 +65,12 @@ function extractMetadataFromLogs(
           if (step.start) {
             step.transitionedAt = timestamp;
             step.elapsed = timestamp - step.start;
+          }
+        });
+      } else if (log.__typename === "StepMaterializationEvent") {
+        metadata.steps[name] = produce(metadata.steps[name] || {}, step => {
+          if (log.fileLocation) {
+            step.materializations.push({ fileLocation: log.fileLocation });
           }
         });
       } else if (log.__typename === "ExecutionStepFailureEvent") {
@@ -97,6 +105,12 @@ export default class RunMetadataProvider extends React.Component<
         }
         ... on PipelineProcessStartedEvent {
           processId
+        }
+        ... on StepMaterializationEvent {
+          step {
+            name
+          }
+          fileLocation
         }
         ... on ExecutionStepEvent {
           step {

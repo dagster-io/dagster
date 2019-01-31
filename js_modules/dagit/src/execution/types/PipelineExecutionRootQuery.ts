@@ -42,6 +42,20 @@ export interface PipelineExecutionRootQuery_pipeline_runs_logs_nodes_PipelinePro
   processId: number;
 }
 
+export interface PipelineExecutionRootQuery_pipeline_runs_logs_nodes_StepMaterializationEvent_step {
+  __typename: "ExecutionStep";
+  name: string;
+}
+
+export interface PipelineExecutionRootQuery_pipeline_runs_logs_nodes_StepMaterializationEvent {
+  __typename: "StepMaterializationEvent";
+  message: string;
+  timestamp: string;
+  level: LogLevel;
+  step: PipelineExecutionRootQuery_pipeline_runs_logs_nodes_StepMaterializationEvent_step;
+  fileLocation: string | null;
+}
+
 export interface PipelineExecutionRootQuery_pipeline_runs_logs_nodes_ExecutionStepStartEvent_step {
   __typename: "ExecutionStep";
   name: string;
@@ -55,7 +69,7 @@ export interface PipelineExecutionRootQuery_pipeline_runs_logs_nodes_ExecutionSt
   step: PipelineExecutionRootQuery_pipeline_runs_logs_nodes_ExecutionStepStartEvent_step;
 }
 
-export type PipelineExecutionRootQuery_pipeline_runs_logs_nodes = PipelineExecutionRootQuery_pipeline_runs_logs_nodes_LogMessageEvent | PipelineExecutionRootQuery_pipeline_runs_logs_nodes_ExecutionStepFailureEvent | PipelineExecutionRootQuery_pipeline_runs_logs_nodes_PipelineProcessStartedEvent | PipelineExecutionRootQuery_pipeline_runs_logs_nodes_ExecutionStepStartEvent;
+export type PipelineExecutionRootQuery_pipeline_runs_logs_nodes = PipelineExecutionRootQuery_pipeline_runs_logs_nodes_LogMessageEvent | PipelineExecutionRootQuery_pipeline_runs_logs_nodes_ExecutionStepFailureEvent | PipelineExecutionRootQuery_pipeline_runs_logs_nodes_PipelineProcessStartedEvent | PipelineExecutionRootQuery_pipeline_runs_logs_nodes_StepMaterializationEvent | PipelineExecutionRootQuery_pipeline_runs_logs_nodes_ExecutionStepStartEvent;
 
 export interface PipelineExecutionRootQuery_pipeline_runs_logs_pageInfo {
   __typename: "PageInfo";

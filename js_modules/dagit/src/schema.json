@@ -2014,6 +2014,11 @@
             "kind": "OBJECT",
             "name": "PipelineProcessStartedEvent",
             "ofType": null
+          },
+          {
+            "kind": "OBJECT",
+            "name": "StepMaterializationEvent",
+            "ofType": null
           }
         ]
       },
@@ -2215,6 +2220,11 @@
           {
             "kind": "OBJECT",
             "name": "PipelineProcessStartedEvent",
+            "ofType": null
+          },
+          {
+            "kind": "OBJECT",
+            "name": "StepMaterializationEvent",
             "ofType": null
           }
         ]
@@ -2760,6 +2770,11 @@
           {
             "kind": "OBJECT",
             "name": "ExecutionStepFailureEvent",
+            "ofType": null
+          },
+          {
+            "kind": "OBJECT",
+            "name": "StepMaterializationEvent",
             "ofType": null
           }
         ]
@@ -3623,6 +3638,132 @@
         "fields": null,
         "inputFields": null,
         "interfaces": null,
+        "enumValues": null,
+        "possibleTypes": null
+      },
+      {
+        "kind": "OBJECT",
+        "name": "StepMaterializationEvent",
+        "description": null,
+        "fields": [
+          {
+            "name": "run",
+            "description": null,
+            "args": [],
+            "type": {
+              "kind": "NON_NULL",
+              "name": null,
+              "ofType": {
+                "kind": "OBJECT",
+                "name": "PipelineRun",
+                "ofType": null
+              }
+            },
+            "isDeprecated": false,
+            "deprecationReason": null
+          },
+          {
+            "name": "message",
+            "description": null,
+            "args": [],
+            "type": {
+              "kind": "NON_NULL",
+              "name": null,
+              "ofType": {
+                "kind": "SCALAR",
+                "name": "String",
+                "ofType": null
+              }
+            },
+            "isDeprecated": false,
+            "deprecationReason": null
+          },
+          {
+            "name": "timestamp",
+            "description": null,
+            "args": [],
+            "type": {
+              "kind": "NON_NULL",
+              "name": null,
+              "ofType": {
+                "kind": "SCALAR",
+                "name": "String",
+                "ofType": null
+              }
+            },
+            "isDeprecated": false,
+            "deprecationReason": null
+          },
+          {
+            "name": "level",
+            "description": null,
+            "args": [],
+            "type": {
+              "kind": "NON_NULL",
+              "name": null,
+              "ofType": {
+                "kind": "ENUM",
+                "name": "LogLevel",
+                "ofType": null
+              }
+            },
+            "isDeprecated": false,
+            "deprecationReason": null
+          },
+          {
+            "name": "step",
+            "description": null,
+            "args": [],
+            "type": {
+              "kind": "NON_NULL",
+              "name": null,
+              "ofType": {
+                "kind": "OBJECT",
+                "name": "ExecutionStep",
+                "ofType": null
+              }
+            },
+            "isDeprecated": false,
+            "deprecationReason": null
+          },
+          {
+            "name": "fileName",
+            "description": null,
+            "args": [],
+            "type": {
+              "kind": "SCALAR",
+              "name": "String",
+              "ofType": null
+            },
+            "isDeprecated": false,
+            "deprecationReason": null
+          },
+          {
+            "name": "fileLocation",
+            "description": null,
+            "args": [],
+            "type": {
+              "kind": "SCALAR",
+              "name": "String",
+              "ofType": null
+            },
+            "isDeprecated": false,
+            "deprecationReason": null
+          }
+        ],
+        "inputFields": null,
+        "interfaces": [
+          {
+            "kind": "INTERFACE",
+            "name": "MessageEvent",
+            "ofType": null
+          },
+          {
+            "kind": "INTERFACE",
+            "name": "ExecutionStepEvent",
+            "ofType": null
+          }
+        ],
         "enumValues": null,
         "possibleTypes": null
       },
