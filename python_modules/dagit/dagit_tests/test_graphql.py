@@ -1943,6 +1943,8 @@ def test_start_subplan_invalid_input_path(snapshot):
     assert result.data
     assert result.data['startSubplanExecution']['__typename'] == 'PythonError'
     assert 'No such file or directory:' in result.data['startSubplanExecution']['message']
+    # Exception types differ between python 2 and 3 which breaks snapshots
+    del result.data['startSubplanExecution']['message']
     snapshot.assert_match(result.data)
 
 
@@ -1982,6 +1984,9 @@ def test_start_subplan_invalid_output_path(snapshot):
         assert result.data
         assert result.data['startSubplanExecution']['__typename'] == 'PythonError'
         assert 'No such file or directory:' in result.data['startSubplanExecution']['message']
+
+        # Exception types differ between python 2 and 3 which breaks snapshots
+        del result.data['startSubplanExecution']['message']
 
         snapshot.assert_match(result.data)
 

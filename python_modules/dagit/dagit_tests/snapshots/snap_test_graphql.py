@@ -206,17 +206,13 @@ snapshots['test_start_subplan_invalid_output_name 1'] = {
 
 snapshots['test_start_subplan_invalid_input_path 1'] = {
     'startSubplanExecution': {
-        '__typename': 'PythonError',
-        'message': '''FileNotFoundError: [Errno 2] No such file or directory: '160b56ba-c9a6-4111-ab4e-a7ab364eb031'
-'''
+        '__typename': 'PythonError'
     }
 }
 
 snapshots['test_start_subplan_invalid_output_path 1'] = {
     'startSubplanExecution': {
-        '__typename': 'PythonError',
-        'message': '''FileNotFoundError: [Errno 2] No such file or directory: '160b56ba-c9a6-4111-ab4e-a7ab364eb031/160b56ba-c9a6-4111-ab4e-a7ab364eb031'
-'''
+        '__typename': 'PythonError'
     }
 }
 
