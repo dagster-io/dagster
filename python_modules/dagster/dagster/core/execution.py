@@ -52,16 +52,9 @@ from .errors import (
 
 from .events import construct_event_logger
 
-from .execution_plan.create import create_execution_plan_core, create_subplan
+from .execution_plan.create import ExecutionPlanSubsetInfo, create_execution_plan_core
 
-from .execution_plan.objects import (
-    ExecutionPlan,
-    ExecutionPlanInfo,
-    ExecutionPlanSubsetInfo,
-    StepBuilderState,
-    StepResult,
-    StepKind,
-)
+from .execution_plan.objects import ExecutionPlan, ExecutionPlanInfo, StepResult, StepKind
 
 from .execution_plan.simple_engine import execute_plan_core
 
@@ -227,24 +220,30 @@ class SolidExecutionResult(object):
                 return result.failure_data.dagster_error
 
 
-def create_execution_plan(pipeline, env_config=None, execution_metadata=None):
+def create_execution_plan(pipeline, env_config=None, execution_metadata=None, subset_info=None):
     check.inst_param(pipeline, 'pipeline', PipelineDefinition)
     check.opt_dict_param(env_config, 'env_config', key_type=str)
     execution_metadata = execution_metadata if execution_metadata else ExecutionMetadata()
+    check.inst_param(execution_metadata, 'execution_metadata', ExecutionMetadata)
+    check.opt_inst_param(subset_info, 'subset_info', ExecutionPlanSubsetInfo)
 
     typed_environment = create_typed_environment(pipeline, env_config)
     return create_execution_plan_with_typed_environment(
-        pipeline, typed_environment, execution_metadata
+        pipeline, typed_environment, execution_metadata, subset_info
     )
 
 
-def create_execution_plan_with_typed_environment(pipeline, typed_environment, execution_metadata):
+def create_execution_plan_with_typed_environment(
+    pipeline, typed_environment, execution_metadata, subset_info=None
+):
     check.inst_param(pipeline, 'pipeline', PipelineDefinition)
     check.inst_param(typed_environment, 'environment', EnvironmentConfig)
+    check.inst_param(execution_metadata, 'execution_metadata', ExecutionMetadata)
+    check.opt_inst_param(subset_info, 'subset_info', ExecutionPlanSubsetInfo)
 
     with yield_context(pipeline, typed_environment, execution_metadata) as context:
         return create_execution_plan_core(
-            ExecutionPlanInfo(context, pipeline, typed_environment), execution_metadata
+            ExecutionPlanInfo(context, pipeline, typed_environment), execution_metadata, subset_info
         )
 
 
@@ -558,24 +557,22 @@ def execute_externalized_plan(
     typed_environment = create_typed_environment(pipeline, environment)
     with yield_context(pipeline, typed_environment, execution_metadata) as context:
 
-        execution_plan = create_execution_plan_core(
-            ExecutionPlanInfo(context, pipeline, typed_environment),
-            execution_metadata=execution_metadata,
-        )
-
         _check_inputs_to_marshal(execution_plan, inputs_to_marshal)
 
         _check_outputs_to_marshal(execution_plan, outputs_to_marshal)
 
         inputs = _unmarshal_inputs(context, inputs_to_marshal, execution_plan)
 
+        execution_plan = create_execution_plan_core(
+            ExecutionPlanInfo(context, pipeline, typed_environment),
+            execution_metadata=execution_metadata,
+            subset_info=ExecutionPlanSubsetInfo.with_input_values(
+                included_step_keys=step_keys, inputs=inputs
+            ),
+        )
+
         results = _do_execute_plan(
-            context,
-            pipeline,
-            execution_plan,
-            typed_environment,
-            ExecutionPlanSubsetInfo(included_steps=step_keys, inputs=inputs),
-            throw_on_user_error,
+            context, pipeline, execution_plan, typed_environment, throw_on_user_error
         )
 
         _marshal_outputs(context, results, outputs_to_marshal)
@@ -691,50 +688,29 @@ def _unmarshal_inputs(context, inputs_to_marshal, execution_plan):
 
 
 def execute_plan(
-    pipeline,
-    execution_plan,
-    environment=None,
-    subset_info=None,
-    execution_metadata=None,
-    throw_on_user_error=True,
+    pipeline, execution_plan, environment=None, execution_metadata=None, throw_on_user_error=True
 ):
     check.inst_param(pipeline, 'pipeline', PipelineDefinition)
     check.inst_param(execution_plan, 'execution_plan', ExecutionPlan)
     check.opt_dict_param(environment, 'environment')
-    check.opt_inst_param(subset_info, 'subset_info', ExecutionPlanSubsetInfo)
     execution_metadata = execution_metadata if execution_metadata else ExecutionMetadata()
     check.opt_inst_param(execution_metadata, 'execution_metadata', ExecutionMetadata)
 
     typed_environment = create_typed_environment(pipeline, environment)
     with yield_context(pipeline, typed_environment, execution_metadata) as context:
         return _do_execute_plan(
-            context, pipeline, execution_plan, typed_environment, subset_info, throw_on_user_error
+            context, pipeline, execution_plan, typed_environment, throw_on_user_error
         )
 
 
-def _do_execute_plan(
-    context, pipeline, execution_plan, typed_environment, subset_info, throw_on_user_error
-):
+def _do_execute_plan(context, pipeline, execution_plan, typed_environment, throw_on_user_error):
     check.inst_param(context, 'context', RuntimeExecutionContext)
     check.inst_param(pipeline, 'pipeline', PipelineDefinition)
     check.inst_param(execution_plan, 'execution_plan', ExecutionPlan)
     check.inst_param(typed_environment, 'typed_environment', EnvironmentConfig)
-    check.opt_inst_param(subset_info, 'subset_info', ExecutionPlanSubsetInfo)
     check.bool_param(throw_on_user_error, 'throw_on_user_error')
 
-    plan_to_execute = (
-        create_subplan(
-            ExecutionPlanInfo(context=context, pipeline=pipeline, environment=typed_environment),
-            StepBuilderState(pipeline.name),
-            execution_plan,
-            subset_info,
-        )
-        if subset_info
-        else execution_plan
-    )
-    return list(
-        execute_plan_core(context, plan_to_execute, throw_on_user_error=throw_on_user_error)
-    )
+    return list(execute_plan_core(context, execution_plan, throw_on_user_error=throw_on_user_error))
 
 
 def execute_pipeline(

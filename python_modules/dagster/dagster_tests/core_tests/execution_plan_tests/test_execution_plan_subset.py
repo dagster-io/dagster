@@ -10,19 +10,9 @@ from dagster import (
     types,
 )
 
-from dagster.core.execution import (
-    create_subplan,
-    create_execution_plan,
-    execute_plan,
-    create_typed_environment,
-    ExecutionPlanInfo,
-    ExecutionPlanSubsetInfo,
-    yield_context,
-)
+from dagster.core.execution import create_execution_plan, execute_plan, ExecutionPlanSubsetInfo
 
 from dagster.core.execution_plan.utility import VALUE_OUTPUT
-
-from dagster.core.execution_plan.objects import StepBuilderState
 
 
 def define_two_int_pipeline():
@@ -64,66 +54,54 @@ def test_execution_plan_simple_two_steps():
 
 
 def test_create_subplan_source_step():
-    pipeline_def = define_two_int_pipeline()
-    typed_environment = create_typed_environment(pipeline_def, None)
-    execution_plan = create_execution_plan(pipeline_def)
-    with yield_context(pipeline_def, typed_environment, ExecutionMetadata()) as context:
-        subplan = create_subplan(
-            ExecutionPlanInfo(
-                context=context, pipeline=pipeline_def, environment=typed_environment
-            ),
-            StepBuilderState(pipeline_name=pipeline_def.name),
-            execution_plan,
-            ExecutionPlanSubsetInfo(['return_one.transform']),
-        )
-        assert subplan
-        assert len(subplan.steps) == 1
-        assert subplan.steps[0].key == 'return_one.transform'
-        assert not subplan.steps[0].step_inputs
-        assert len(subplan.steps[0].step_outputs) == 1
-        assert len(subplan.topological_steps()) == 1
+    subplan = create_execution_plan(
+        define_two_int_pipeline(),
+        subset_info=ExecutionPlanSubsetInfo.only_subset(['return_one.transform']),
+    )
+    assert subplan
+    assert len(subplan.steps) == 1
+    assert subplan.steps[0].key == 'return_one.transform'
+    assert not subplan.steps[0].step_inputs
+    assert len(subplan.steps[0].step_outputs) == 1
+    assert len(subplan.topological_steps()) == 1
 
 
 def test_create_subplan_middle_step():
-    pipeline_def = define_two_int_pipeline()
-    typed_environment = create_typed_environment(pipeline_def, None)
-    execution_plan = create_execution_plan(pipeline_def)
-    with yield_context(pipeline_def, typed_environment, ExecutionMetadata()) as context:
-        subplan = create_subplan(
-            ExecutionPlanInfo(
-                context=context, pipeline=pipeline_def, environment=typed_environment
-            ),
-            StepBuilderState(pipeline_name=pipeline_def.name),
-            execution_plan,
-            ExecutionPlanSubsetInfo(['add_one.transform'], {'add_one.transform': {'num': 2}}),
-        )
-        assert subplan
-        steps = subplan.topological_steps()
-        assert len(steps) == 2
-        assert steps[0].key == 'add_one.transform.input.num.value'
-        assert not steps[0].step_inputs
-        assert len(steps[0].step_outputs) == 1
-        assert steps[1].key == 'add_one.transform'
-        assert len(steps[1].step_inputs) == 1
-        step_input = steps[1].step_inputs[0]
-        assert step_input.prev_output_handle.step.key == 'add_one.transform.input.num.value'
-        assert step_input.prev_output_handle.output_name == VALUE_OUTPUT
-        assert len(steps[1].step_outputs) == 1
-        assert len(subplan.topological_steps()) == 2
-        assert [step.key for step in subplan.topological_steps()] == [
-            'add_one.transform.input.num.value',
-            'add_one.transform',
-        ]
+    # TODO: replace with top-level create_plan call
+    subplan = create_execution_plan(
+        define_two_int_pipeline(),
+        subset_info=ExecutionPlanSubsetInfo.with_input_values(
+            ['add_one.transform'], {'add_one.transform': {'num': 2}}
+        ),
+    )
+    assert subplan
+    steps = subplan.topological_steps()
+    assert len(steps) == 2
+    assert steps[0].key == 'add_one.transform.input.num.value'
+    assert not steps[0].step_inputs
+    assert len(steps[0].step_outputs) == 1
+    assert steps[1].key == 'add_one.transform'
+    assert len(steps[1].step_inputs) == 1
+    step_input = steps[1].step_inputs[0]
+    assert step_input.prev_output_handle.step.key == 'add_one.transform.input.num.value'
+    assert step_input.prev_output_handle.output_name == VALUE_OUTPUT
+    assert len(steps[1].step_outputs) == 1
+    assert len(subplan.topological_steps()) == 2
+    assert [step.key for step in subplan.topological_steps()] == [
+        'add_one.transform.input.num.value',
+        'add_one.transform',
+    ]
 
 
 def test_execution_plan_source_step():
     pipeline_def = define_two_int_pipeline()
-    execution_plan = create_execution_plan(pipeline_def)
-    step_results = execute_plan(
+    execution_plan = create_execution_plan(
         pipeline_def,
-        execution_plan,
-        subset_info=ExecutionPlanSubsetInfo(included_steps=['return_one.transform']),
+        subset_info=ExecutionPlanSubsetInfo.only_subset(
+            included_step_keys=['return_one.transform']
+        ),
     )
+    step_results = execute_plan(pipeline_def, execution_plan)
 
     assert len(step_results) == 1
     assert step_results[0].success_data.value == 1
@@ -131,14 +109,14 @@ def test_execution_plan_source_step():
 
 def test_execution_plan_middle_step():
     pipeline_def = define_two_int_pipeline()
-    execution_plan = create_execution_plan(pipeline_def)
-    step_results = execute_plan(
+    execution_plan = create_execution_plan(
         pipeline_def,
-        execution_plan,
-        subset_info=ExecutionPlanSubsetInfo(
+        subset_info=ExecutionPlanSubsetInfo.with_input_values(
             ['add_one.transform'], {'add_one.transform': {'num': 2}}
         ),
     )
+
+    step_results = execute_plan(pipeline_def, execution_plan)
 
     assert len(step_results) == 2
     assert step_results[1].success_data.value == 3
