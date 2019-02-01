@@ -1706,7 +1706,7 @@ mutation ($pipeline: ExecutionSelector!, $config: PipelineConfig) {
 '''
 
 
-def test_successful_start_subplan():
+def test_successful_start_subplan(snapshot):
 
     with get_temp_file_name() as num_df_file:
         with get_temp_file_name() as out_df_file:
@@ -1760,8 +1760,10 @@ def test_successful_start_subplan():
 1     3     4    7'''
     )
 
+    snapshot.assert_match(result.data)
 
-def test_user_error_pipeline():
+
+def test_user_error_pipeline(snapshot):
     result = execute_dagster_graphql(
         define_context(),
         START_EXECUTION_PLAN_QUERY,
@@ -1790,9 +1792,10 @@ def test_user_error_pipeline():
     assert 'throw_a_thing.transform' in step_results
     assert step_results['throw_a_thing.transform']['__typename'] == 'StepFailureResult'
     assert step_results['throw_a_thing.transform']['success'] is False
+    snapshot.assert_match(result.data)
 
 
-def test_start_subplan_pipeline_not_found():
+def test_start_subplan_pipeline_not_found(snapshot):
     result = execute_dagster_graphql(
         define_context(),
         START_EXECUTION_PLAN_QUERY,
@@ -1809,9 +1812,10 @@ def test_start_subplan_pipeline_not_found():
 
     assert result.data['startSubplanExecution']['__typename'] == 'PipelineNotFoundError'
     assert result.data['startSubplanExecution']['pipelineName'] == 'nope'
+    snapshot.assert_match(result.data)
 
 
-def test_start_subplan_invalid_config():
+def test_start_subplan_invalid_config(snapshot):
     result = execute_dagster_graphql(
         define_context(),
         START_EXECUTION_PLAN_QUERY,
@@ -1826,9 +1830,10 @@ def test_start_subplan_invalid_config():
     assert not result.errors
     assert result.data
     assert result.data['startSubplanExecution']['__typename'] == 'PipelineConfigValidationInvalid'
+    snapshot.assert_match(result.data)
 
 
-def test_start_subplan_invalid_step_keys():
+def test_start_subplan_invalid_step_keys(snapshot):
     result = execute_dagster_graphql(
         define_context(),
         START_EXECUTION_PLAN_QUERY,
@@ -1850,9 +1855,10 @@ def test_start_subplan_invalid_step_keys():
     )
 
     assert result.data['startSubplanExecution']['invalidStepKeys'] == ['nope']
+    snapshot.assert_match(result.data)
 
 
-def test_start_subplan_invalid_input_name():
+def test_start_subplan_invalid_input_name(snapshot):
     result = execute_dagster_graphql(
         define_context(),
         START_EXECUTION_PLAN_QUERY,
@@ -1880,9 +1886,10 @@ def test_start_subplan_invalid_input_name():
 
     assert result.data['startSubplanExecution']['step']['key'] == 'sum_solid.transform'
     assert result.data['startSubplanExecution']['invalidInputName'] == 'nope'
+    snapshot.assert_match(result.data)
 
 
-def test_start_subplan_invalid_output_name():
+def test_start_subplan_invalid_output_name(snapshot):
     result = execute_dagster_graphql(
         define_context(),
         START_EXECUTION_PLAN_QUERY,
@@ -1910,9 +1917,11 @@ def test_start_subplan_invalid_output_name():
 
     assert result.data['startSubplanExecution']['step']['key'] == 'sum_solid.transform'
     assert result.data['startSubplanExecution']['invalidOutputName'] == 'nope'
+    snapshot.assert_match(result.data)
 
 
-def test_start_subplan_invalid_input_path():
+def test_start_subplan_invalid_input_path(snapshot):
+    hardcoded_uuid = '160b56ba-c9a6-4111-ab4e-a7ab364eb031'
 
     result = execute_dagster_graphql(
         define_context(),
@@ -1923,7 +1932,7 @@ def test_start_subplan_invalid_input_path():
             'stepExecutions': [
                 {
                     'stepKey': 'sum_solid.transform',
-                    'marshalledInputs': [{'inputName': 'num', 'key': str(uuid.uuid4())}],
+                    'marshalledInputs': [{'inputName': 'num', 'key': hardcoded_uuid}],
                 }
             ],
             'executionMetadata': {'runId': 'kdjkfjdfd'},
@@ -1934,14 +1943,17 @@ def test_start_subplan_invalid_input_path():
     assert result.data
     assert result.data['startSubplanExecution']['__typename'] == 'PythonError'
     assert 'No such file or directory:' in result.data['startSubplanExecution']['message']
+    snapshot.assert_match(result.data)
 
 
-def test_start_subplan_invalid_output_path():
+def test_start_subplan_invalid_output_path(snapshot):
     with get_temp_file_name() as num_df_file:
         num_df = pd.read_csv(script_relative_path('num.csv'))
 
         with open(num_df_file, 'wb') as ff:
             pickle.dump(num_df, ff)
+
+        hardcoded_uuid = '160b56ba-c9a6-4111-ab4e-a7ab364eb031'
 
         result = execute_dagster_graphql(
             define_context(),
@@ -1957,7 +1969,7 @@ def test_start_subplan_invalid_output_path():
                             {
                                 'outputName': 'result',
                                 # guaranteed to not exist
-                                'key': '{}/{}'.format(str(uuid.uuid4()), str(uuid.uuid4())),
+                                'key': '{uuid}/{uuid}'.format(uuid=hardcoded_uuid),
                             }
                         ],
                     }
@@ -1971,8 +1983,10 @@ def test_start_subplan_invalid_output_path():
         assert result.data['startSubplanExecution']['__typename'] == 'PythonError'
         assert 'No such file or directory:' in result.data['startSubplanExecution']['message']
 
+        snapshot.assert_match(result.data)
 
-def test_invalid_subplan_missing_inputs():
+
+def test_invalid_subplan_missing_inputs(snapshot):
     result = execute_dagster_graphql(
         define_context(),
         START_EXECUTION_PLAN_QUERY,
@@ -1991,9 +2005,10 @@ def test_invalid_subplan_missing_inputs():
     assert result.data
     assert result.data['startSubplanExecution']['__typename'] == 'InvalidSubplanExecutionError'
     assert result.data['startSubplanExecution']['step']['key'] == 'sum_solid.transform'
+    snapshot.assert_match(result.data)
 
 
-def test_user_code_error_subplan():
+def test_user_code_error_subplan(snapshot):
     result = execute_dagster_graphql(
         define_context(),
         START_EXECUTION_PLAN_QUERY,
@@ -2010,7 +2025,8 @@ def test_user_code_error_subplan():
 
     assert not result.errors
     assert result.data
-    print(result.data)
+
+    snapshot.assert_match(result.data)
 
 
 START_EXECUTION_PLAN_QUERY = '''

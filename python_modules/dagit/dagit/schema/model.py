@@ -416,8 +416,10 @@ def _execute_subplan_or_error(args, dauphin_pipeline, execution_plan, evaluate_v
     check.inst_param(execution_plan, 'execution_plan', ExecutionPlan)
     check.inst_param(evaluate_value_result, 'evaluate_value_result', EvaluateValueResult)
 
-    # convenient shortcuts for brevity
+    # convenient shortcuts for brevity so things fit on one line
+    # type_of retrieves a dauphin type class based on graphql type name
     type_of = args.info.schema.type_named
+    # step_of retrives the step associated with an error object
     step_of = lambda error: execution_plan.get_step_by_key(error.step_key)
 
     try:
