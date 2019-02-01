@@ -361,6 +361,23 @@ jobs:
     steps:
       - checkout
       - run:
+          name: Add deadsnakes ppa
+          command: |
+            sudo add-apt-repository ppa:deadsnakes/ppa
+            sudo apt-get update
+      - run:
+          name: Install py27
+          command: |
+            sudo apt-get install python-2.7
+      - run:
+          name: Install py36
+          command: |
+            apt-get install python-3.6
+      - run:
+          name: Install py37
+          command: |
+            apt-get install python-3.7
+      - run:
           name: Build Dockerfile
           command: |
             pushd python_modules/dagster-airflow/dagster_airflow_tests/test_project
