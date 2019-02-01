@@ -56,7 +56,7 @@ def make_dag(
     dag = DAG(
         dag_id=dag_id,
         description=dag_description,
-        **dag_kwargs,
+        **dag_kwargs
     )
 
     multiply__the__word_word_input__thunk_task = DagsterOperator(
