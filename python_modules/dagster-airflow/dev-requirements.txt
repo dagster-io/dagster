@@ -1,0 +1,9 @@
+pytest==4.0.2
+pytest-cov==2.6.0
+pytest-dependency==0.4.0
+pytest-runner==4.2
+recommonmark==0.4.0
+rope==0.11
+snapshottest==0.5.0
+yapf==0.22.0
+tox==3.6.1
