@@ -372,11 +372,11 @@ jobs:
       - run:
           name: Install py36
           command: |
-            apt-get install python-3.6
+            sudo apt-get install python-3.6
       - run:
           name: Install py37
           command: |
-            apt-get install python-3.7
+            sudo apt-get install python-3.7
       - run:
           name: Build Dockerfile
           command: |
