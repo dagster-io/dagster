@@ -368,15 +368,15 @@ jobs:
       - run:
           name: Install py27
           command: |
-            sudo apt-get install python2.7
+            sudo apt-get install python2.7 python2.7-dev
       - run:
           name: Install py36
           command: |
-            sudo apt-get install python3.6
+            sudo apt-get install python3.6 python3.6-dev
       - run:
           name: Install py37
           command: |
-            sudo apt-get install python3.7
+            sudo apt-get install python3.7 python3.7-dev
       - run:
           name: Build Dockerfile
           command: |
