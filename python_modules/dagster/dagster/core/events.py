@@ -88,7 +88,7 @@ class ExecutionEvents:
             event_type=EventType.EXECUTION_PLAN_STEP_FAILURE.value,
             step_key=step_key,
             # We really need a better serialization story here
-            error_info=json.dumps(serializable_error_info_from_exc_info(exc_info)),
+            error_info=json.dumps(serializable_error_info_from_exc_info(exc_info), sort_keys=True),
         )
 
     def pipeline_name(self):

@@ -55,7 +55,7 @@ def define_builtin_scalar_output_schema(scalar_name):
     def _builtin_output_schema(file_type, file_options, runtime_value):
         if file_type == 'json':
             json_file_path = file_options['path']
-            json_value = json.dumps({'value': runtime_value})
+            json_value = json.dumps({'value': runtime_value}, sort_keys=True)
             with open(json_file_path, 'w') as ff:
                 ff.write(json_value)
         elif file_type == 'pickle':

@@ -246,7 +246,7 @@ def get_papermill_parameters(transform_execution_info, inputs, output_log_path):
         'output_log_path': output_log_path,
     }
 
-    parameters = dict(dm_context=json.dumps(dm_context_dict))
+    parameters = dict(dm_context=json.dumps(dm_context_dict, sort_keys=True))
 
     input_defs = transform_execution_info.solid_def.input_defs
     input_def_dict = {inp.name: inp for inp in input_defs}

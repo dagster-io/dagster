@@ -132,7 +132,7 @@ def _execute_step_async(lambda_client, lambda_step, context, payload):
 def _execute_step_sync(lambda_client, lambda_step, context, payload):
     res = lambda_client.invoke(
         FunctionName=lambda_step['FunctionArn'],
-        Payload=json.dumps({'config': list(payload)}),
+        Payload=json.dumps({'config': list(payload)}, sort_keys=True),
         InvocationType='RequestResponse',
         LogType='Tail',
     )
