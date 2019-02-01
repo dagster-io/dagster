@@ -362,6 +362,10 @@ jobs:
     steps:
       - checkout
       - run:
+          name: Install py27-dev
+          command: |
+            sudo apt-get install python2.7-dev
+      - run:
           name: Install py36
           command: |
             pyenv install 3.6.3
