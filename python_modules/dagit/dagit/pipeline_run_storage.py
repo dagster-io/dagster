@@ -162,7 +162,7 @@ class LogFilePipelineRun(InMemoryPipelineRun):
                         'config': self.config,
                         'execution_plan': 'TODO',
                     },
-                    sort_keys=True
+                    sort_keys=True,
                 )
             )
 
