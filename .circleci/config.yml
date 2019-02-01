@@ -356,27 +356,15 @@ jobs:
       docker_layer_caching: true
     environment:
       TOXENV: py36
+      PYTHON_VERSION: "3.6.3"
       AIRFLOW_HOME: "/home/circleci/airflow"
     working_directory: ~/repo
     steps:
       - checkout
       - run:
-          name: Add deadsnakes ppa
-          command: |
-            sudo add-apt-repository ppa:deadsnakes/ppa
-            sudo apt-get update
-      - run:
-          name: Install py27
-          command: |
-            sudo apt-get install python2.7 python2.7-dev
-      - run:
           name: Install py36
           command: |
-            sudo apt-get install python3.6 python3.6-dev
-      - run:
-          name: Install py37
-          command: |
-            sudo apt-get install python3.7 python3.7-dev
+            pyenv install 3.6.3
       - run:
           name: Build Dockerfile
           command: |
@@ -396,6 +384,7 @@ jobs:
           name: Run Dagster Tests
           command: |
             pushd python_modules/dagster-airflow
+            pyenv local $PYTHON_VERSION
             tox -e $TOXENV
             popd
       - run:
@@ -569,12 +558,14 @@ jobs:
     <<: *dagster-airflow-template
     environment:
       TOXENV: py35
+      PYTHON_VERSION: "3.5.2"
       AIRFLOW_HOME: "/home/circleci/airflow"
 
   dagster-airflow-py27:
     <<: *dagster-airflow-template
     environment:
       TOXENV: py27
+      PYTHON_VERSION: "2.7.12"
       AIRFLOW_HOME: "/home/circleci/airflow"
 
   dagma-py37:
