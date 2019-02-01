@@ -1,8 +1,10 @@
 from collections import defaultdict, namedtuple
 from dagster import check
-from dagster.core.definitions.utils import check_opt_two_dim_dict
+from dagster.core.definitions.utils import check_two_dim_dict, check_opt_two_dim_dict
 from .objects import StepBuilderState, ExecutionStep, StepInput
 from .utility import create_value_thunk_step
+
+MarshalledOutput = namedtuple('MarshalledOutput', 'output_name key')
 
 
 class ExecutionPlanSubsetInfo(namedtuple('_ExecutionPlanSubsetInfo', 'subset step_factory_fns')):
@@ -33,7 +35,7 @@ class ExecutionPlanSubsetInfo(namedtuple('_ExecutionPlanSubsetInfo', 'subset ste
         emit the value
         '''
         check.list_param(included_step_keys, 'included_step_keys', of_type=str)
-        check_opt_two_dim_dict(inputs, 'inputs', key_type=str)
+        check_two_dim_dict(inputs, 'inputs', key_type=str)
 
         def _create_injected_value_factory_fn(input_value):
             def _injected_value_factory_fn(state, step, step_input):
@@ -57,6 +59,58 @@ class ExecutionPlanSubsetInfo(namedtuple('_ExecutionPlanSubsetInfo', 'subset ste
             for input_name, input_value in input_dict.items():
                 factory_fn = _create_injected_value_factory_fn(input_value)
                 step_factory_fns[step_key][input_name] = factory_fn
+
+        return ExecutionPlanSubsetInfo(included_step_keys, step_factory_fns)
+
+    @staticmethod
+    def with_marshalling_steps(included_step_keys, marshalled_inputs=None, marshalled_outputs=None):
+        check.list_param(included_step_keys, 'included_step_keys', of_type=str)
+        check_opt_two_dim_dict(marshalled_inputs, 'marshalled_inputs')
+        check.opt_dict_param(
+            marshalled_outputs, 'marshalled_outputs', key_type=str, value_type=list
+        )
+        if marshalled_outputs:
+            for output_list in marshalled_outputs.values():
+                check.list_param(output_list, 'marshalled_outputs', of_type=MarshalledOutput)
+
+        step_factory_fns = defaultdict(dict)
+
+        def _create_unmarshal_input_factory_fn(key):
+            check.str_param(key, 'key')
+
+            def _unmarshal_factory_fn(state, step, step_input):
+                from dagster.core.definitions import Result
+                from .objects import StepOutputHandle, StepOutput, StepKind
+
+                UNMARSHAL_INPUT_OUTPUT = 'unmarshal-input-output'
+
+                def _compute_fn(context, _step, _inputs):
+                    input_value = context.persistence_policy.read_value(
+                        step_input.runtime_type.serialization_strategy, key
+                    )
+
+                    yield Result(input_value, UNMARSHAL_INPUT_OUTPUT)
+
+                return StepOutputHandle(
+                    ExecutionStep(
+                        key='{step_key}.unmarshal-input.{input_name}'.format(
+                            step_key=step.key, input_name=step_input.name
+                        ),
+                        step_inputs=[],
+                        step_outputs=[StepOutput(UNMARSHAL_INPUT_OUTPUT, step_input.runtime_type)],
+                        compute_fn=_compute_fn,
+                        kind=StepKind.UNMARSHAL_INPUT,
+                        solid=step.solid,
+                        tags=state.get_tags(),
+                    ),
+                    UNMARSHAL_INPUT_OUTPUT,
+                )
+
+            return _unmarshal_factory_fn
+
+        for step_key, input_marshal_dict in marshalled_inputs.items():
+            for input_name, key in input_marshal_dict.items():
+                step_factory_fns[step_key][input_name] = _create_unmarshal_input_factory_fn(key)
 
         return ExecutionPlanSubsetInfo(included_step_keys, step_factory_fns)
 

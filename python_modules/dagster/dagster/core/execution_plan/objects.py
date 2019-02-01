@@ -94,6 +94,7 @@ class StepKind(Enum):
     INPUT_THUNK = 'INPUT_THUNK'
     MATERIALIZATION_THUNK = 'MATERIALIZATION_THUNK'
     VALUE_THUNK = 'VALUE_THUNK'
+    UNMARSHAL_INPUT = 'UNMARSHAL_INPUT'
 
 
 class StepInput(namedtuple('_StepInput', 'name runtime_type prev_output_handle')):

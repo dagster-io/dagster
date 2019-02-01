@@ -44,7 +44,6 @@ from .execution_context import ExecutionContext, RuntimeExecutionContext, Execut
 from .errors import (
     DagsterInvariantViolationError,
     DagsterUnmarshalInputNotFoundError,
-    DagsterUnmarshalInputError,
     DagsterMarshalOutputError,
     DagsterMarshalOutputNotFoundError,
     DagsterExecutionStepNotFoundError,
@@ -561,13 +560,14 @@ def execute_externalized_plan(
 
         _check_outputs_to_marshal(execution_plan, outputs_to_marshal)
 
-        inputs = _unmarshal_inputs(context, inputs_to_marshal, execution_plan)
-
         execution_plan = create_execution_plan_core(
             ExecutionPlanInfo(context, pipeline, typed_environment),
             execution_metadata=execution_metadata,
-            subset_info=ExecutionPlanSubsetInfo.with_input_values(
-                included_step_keys=step_keys, inputs=inputs
+            # subset_info=ExecutionPlanSubsetInfo.with_input_values(
+            #     included_step_keys=step_keys, inputs=inputs
+            # ),
+            subset_info=ExecutionPlanSubsetInfo.with_marshalling_steps(
+                included_step_keys=step_keys, marshalled_inputs=inputs_to_marshal
             ),
         )
 
@@ -650,41 +650,6 @@ def _marshal_outputs(context, results, outputs_to_marshal):
                     ),
                     e,
                 )
-
-
-def _unmarshal_inputs(context, inputs_to_marshal, execution_plan):
-    inputs = defaultdict(dict)
-    for step_key, input_dict in inputs_to_marshal.items():
-        step = execution_plan.get_step_by_key(step_key)
-        for input_name, file_path in input_dict.items():
-            check.invariant(input_name in step.step_input_dict, 'Previously checked')
-
-            step_input = step.step_input_dict[input_name]
-            input_type = step_input.runtime_type
-
-            check.invariant(input_type.serialization_strategy)
-
-            try:
-                input_value = context.persistence_policy.read_value(
-                    input_type.serialization_strategy, file_path
-                )
-            except Exception as e:  # pylint: disable=broad-except
-                raise_from(
-                    DagsterUnmarshalInputError(
-                        (
-                            'Error during the marshalling of input {input_name} in step '
-                            '{step_key}'
-                        ).format(input_name=input_name, step_key=step.key),
-                        user_exception=e,
-                        original_exc_info=sys.exc_info(),
-                        input_name=input_name,
-                        step_key=step.key,
-                    ),
-                    e,
-                )
-
-            inputs[step_key][input_name] = input_value
-    return dict(inputs)
 
 
 def execute_plan(

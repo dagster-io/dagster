@@ -109,15 +109,6 @@ class DagsterUnmarshalInputNotFoundError(DagsterUserError):
         super(DagsterUnmarshalInputNotFoundError, self).__init__(*args, **kwargs)
 
 
-class DagsterUnmarshalInputError(DagsterUserCodeExecutionError):
-    '''Indicates an error doing marshalling a specific input'''
-
-    def __init__(self, *args, **kwargs):
-        self.input_name = check.str_param(kwargs.pop('input_name'), 'input_name')
-        self.step_key = check.str_param(kwargs.pop('step_key'), 'step_key')
-        super(DagsterUnmarshalInputError, self).__init__(*args, **kwargs)
-
-
 class DagsterMarshalOutputNotFoundError(DagsterUserError):
     '''Throw if user tries to marshal an output that does not exist on the step'''
 

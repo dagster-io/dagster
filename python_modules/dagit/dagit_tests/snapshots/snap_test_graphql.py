@@ -117,9 +117,9 @@ snapshots['test_successful_start_subplan 1'] = {
         'stepResults': [
             {
                 '__typename': 'StepSuccessResult',
-                'outputName': 'value_output',
+                'outputName': 'unmarshal-input-output',
                 'step': {
-                    'key': 'sum_solid.transform.input.num.value'
+                    'key': 'sum_solid.transform.unmarshal-input.num'
                 },
                 'success': True,
                 'valueRepr': '''   num1  num2
@@ -206,7 +206,21 @@ snapshots['test_start_subplan_invalid_output_name 1'] = {
 
 snapshots['test_start_subplan_invalid_input_path 1'] = {
     'startSubplanExecution': {
-        '__typename': 'PythonError'
+        '__typename': 'StartSubplanExecutionSuccess',
+        'hasFailures': True,
+        'pipeline': {
+            'name': 'pandas_hello_world'
+        },
+        'stepResults': [
+            {
+                '__typename': 'StepFailureResult',
+                'errorMessage': 'Error occured during step sum_solid.transform.unmarshal-input.num',
+                'step': {
+                    'key': 'sum_solid.transform.unmarshal-input.num'
+                },
+                'success': False
+            }
+        ]
     }
 }
 

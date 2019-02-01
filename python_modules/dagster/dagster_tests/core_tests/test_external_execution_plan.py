@@ -13,7 +13,6 @@ from dagster.core.errors import (
     DagsterInvalidSubplanExecutionError,
     DagsterMarshalOutputError,
     DagsterMarshalOutputNotFoundError,
-    DagsterUnmarshalInputError,
     DagsterUnmarshalInputNotFoundError,
     DagsterExecutionStepExecutionError,
 )
@@ -79,7 +78,7 @@ def test_basic_pipeline_external_plan_execution():
 
     thunk_step_result = results[0]
 
-    assert thunk_step_result.kind == StepKind.VALUE_THUNK
+    assert thunk_step_result.kind == StepKind.UNMARSHAL_INPUT
 
     transform_step_result = results[1]
     assert transform_step_result.kind == StepKind.TRANSFORM
@@ -129,20 +128,30 @@ def test_external_execution_input_marshal_code_error():
 
     execution_plan = create_execution_plan(pipeline)
 
-    with pytest.raises(DagsterUnmarshalInputError) as exc_info:
+    with pytest.raises(IOError):
         execute_externalized_plan(
             pipeline,
             execution_plan,
             ['add_one.transform'],
             inputs_to_marshal={'add_one.transform': {'num': 'nope'}},
             execution_metadata=ExecutionMetadata(),
+            throw_on_user_error=True,
         )
 
-    assert (
-        str(exc_info.value) == 'Error during the marshalling of input num in step add_one.transform'
+    results = execute_externalized_plan(
+        pipeline,
+        execution_plan,
+        ['add_one.transform'],
+        inputs_to_marshal={'add_one.transform': {'num': 'nope'}},
+        execution_metadata=ExecutionMetadata(),
+        throw_on_user_error=False,
     )
-    assert exc_info.value.input_name == 'num'
-    assert exc_info.value.step_key == 'add_one.transform'
+
+    assert len(results) == 1
+    marshal_result = results[0]
+    assert marshal_result.success is False
+    assert marshal_result.step.kind == StepKind.UNMARSHAL_INPUT
+    assert isinstance(marshal_result.failure_data.dagster_error.user_exception, IOError)
 
 
 def test_external_execution_step_for_output_missing():
