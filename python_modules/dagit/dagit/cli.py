@@ -64,7 +64,7 @@ def execute_query_from_cli(repository_container, query, variables):
         executor=Executor(),
     )
 
-    print(json.dumps(result.to_dict()))
+    print(json.dumps(result.to_dict(), sort_keys=True))
 
 
 @click.command(
