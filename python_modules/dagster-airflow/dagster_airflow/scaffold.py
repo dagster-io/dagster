@@ -450,7 +450,7 @@ def _make_static_scaffold(pipeline_name, env_config, execution_plan, image, edit
             with printer.with_indent():
                 printer.line('dag_id=dag_id,')
                 printer.line('description=dag_description,')
-                printer.line('**dag_kwargs,')
+                printer.line('**dag_kwargs')
             printer.line(')')
             printer.blank_line()
 
