@@ -745,7 +745,7 @@ jobs:
             git checkout master
             git reset --hard origin/master
             git checkout nightly
-            GIT_MERGE_AUTOEDIT=no git merge master
+            GIT_MERGE_AUTOEDIT=no git merge master -s ours
 
       - run:
           name: Install requirements
