@@ -5,7 +5,9 @@ from .marshal import create_unmarshal_step
 from .utility import create_value_thunk_step
 
 
-class ExecutionPlanSubsetInfo(namedtuple('_ExecutionPlanSubsetInfo', 'subset step_factory_fns')):
+class ExecutionPlanSubsetInfo(
+    namedtuple('_ExecutionPlanSubsetInfo', 'subset input_step_factory_fns')
+):
     '''
     ExecutionPlanSubsetInfo is created in order to build subset of an execution plan. If
     the caller has removed execution steps from the plan that provide outputs to downstream
@@ -46,21 +48,21 @@ class ExecutionPlanSubsetInfo(namedtuple('_ExecutionPlanSubsetInfo', 'subset ste
                 value=input_value,
             )
 
-        step_factory_fns = defaultdict(dict)
+        input_step_factory_fns = defaultdict(dict)
         for step_key, input_dict in inputs.items():
             for input_name, input_value in input_dict.items():
-                step_factory_fns[step_key][input_name] = _create_injected_value_factory_fn(
+                input_step_factory_fns[step_key][input_name] = _create_injected_value_factory_fn(
                     input_value
                 )
 
-        return ExecutionPlanSubsetInfo(included_step_keys, step_factory_fns)
+        return ExecutionPlanSubsetInfo(included_step_keys, input_step_factory_fns)
 
     @staticmethod
     def with_input_marshalling(included_step_keys, marshalled_inputs=None):
         check.list_param(included_step_keys, 'included_step_keys', of_type=str)
         check_opt_two_dim_dict(marshalled_inputs, 'marshalled_inputs')
 
-        step_factory_fns = defaultdict(dict)
+        input_step_factory_fns = defaultdict(dict)
 
         def _create_unmarshal_input_factory_fn(key):
             return lambda state, step, step_input: create_unmarshal_step(
@@ -69,23 +71,28 @@ class ExecutionPlanSubsetInfo(namedtuple('_ExecutionPlanSubsetInfo', 'subset ste
 
         for step_key, input_marshal_dict in marshalled_inputs.items():
             for input_name, key in input_marshal_dict.items():
-                step_factory_fns[step_key][input_name] = _create_unmarshal_input_factory_fn(key)
+                input_step_factory_fns[step_key][input_name] = _create_unmarshal_input_factory_fn(
+                    key
+                )
 
-        return ExecutionPlanSubsetInfo(included_step_keys, step_factory_fns)
+        return ExecutionPlanSubsetInfo(included_step_keys, input_step_factory_fns)
 
-    def has_injected_step(self, step_key, input_name):
+    def has_injected_step_for_input(self, step_key, input_name):
         check.str_param(step_key, 'step_key')
         check.str_param(input_name, 'input_name')
-        return step_key in self.step_factory_fns and input_name in self.step_factory_fns[step_key]
+        return (
+            step_key in self.input_step_factory_fns
+            and input_name in self.input_step_factory_fns[step_key]
+        )
 
-    def __new__(cls, included_step_keys, step_factory_fns):
+    def __new__(cls, included_step_keys, input_step_factory_fns):
         '''
             This should not be called directly, but instead through the static methods
             on this class.
 
             included_step_keys: list of step keys to include in the subset
 
-            step_factory_fns: A 2D dictinoary step_key => input_name => callable
+            input_step_factory_fns: A 2D dictinoary step_key => input_name => callable
 
             callable should have signature of
 
@@ -102,5 +109,9 @@ class ExecutionPlanSubsetInfo(namedtuple('_ExecutionPlanSubsetInfo', 'subset ste
         return super(ExecutionPlanSubsetInfo, cls).__new__(
             cls,
             set(check.list_param(included_step_keys, 'included_step_keys', of_type=str)),
-            check_opt_two_dim_dict(step_factory_fns, 'step_factory_fns', key_type=str),
+            check_opt_two_dim_dict(input_step_factory_fns, 'input_step_factory_fns', key_type=str),
         )
+
+
+class ExecutionPlanAddedOutputs(namedtuple('_ExecutionPlanAddedOutputs', 'dfsdfs')):
+    pass

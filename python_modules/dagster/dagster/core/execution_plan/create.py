@@ -207,7 +207,7 @@ def _create_subplan(execution_plan_info, state, execution_plan, subset_info):
             continue
 
         with state.push_tags(**step.tags):
-            if step.key not in subset_info.step_factory_fns:
+            if step.key not in subset_info.input_step_factory_fns:
                 steps.append(step)
             else:
                 steps.extend(_create_new_steps_for_input(state, step, subset_info))
@@ -222,7 +222,7 @@ def _create_subplan(execution_plan_info, state, execution_plan, subset_info):
 
             # Now check to see if the input is provided
 
-            if not subset_info.has_injected_step(step.key, step_input.name):
+            if not subset_info.has_injected_step_for_input(step.key, step_input.name):
                 raise DagsterInvalidSubplanExecutionError(
                     (
                         'You have specified a subset execution on pipeline {pipeline_name} '
@@ -247,12 +247,12 @@ def _create_new_steps_for_input(state, step, subset_info):
     new_steps = []
     new_step_inputs = []
     for step_input in step.step_inputs:
-        check.invariant(subset_info.has_injected_step(step.key, step_input.name))
+        check.invariant(subset_info.has_injected_step_for_input(step.key, step_input.name))
 
-        subset_info.step_factory_fns[step.key][step_input.name](state, step, step_input)
+        subset_info.input_step_factory_fns[step.key][step_input.name](state, step, step_input)
 
         step_output_handle = check.inst(
-            subset_info.step_factory_fns[step.key][step_input.name](state, step, step_input),
+            subset_info.input_step_factory_fns[step.key][step_input.name](state, step, step_input),
             StepOutputHandle,
             'Step factory function must create StepOutputHandle',
         )
