@@ -24,6 +24,10 @@ class ResourceDefinition(object):
 
 
 def resource(config_field=None, description=None):
+    # This case is for when decorate is used bare, without arguments
+    if callable(config_field):
+        return ResourceDefinition(resource_fn=config_field)
+
     def _wrap(resource_fn):
         return ResourceDefinition(resource_fn, config_field, description)
 
