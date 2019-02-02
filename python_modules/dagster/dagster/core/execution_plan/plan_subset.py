@@ -1,6 +1,7 @@
 from collections import defaultdict, namedtuple
 from dagster import check
 from dagster.core.definitions.utils import check_two_dim_dict, check_opt_two_dim_dict
+from .marshal import create_unmarshal_step
 from .objects import StepBuilderState, ExecutionStep, StepInput
 from .utility import create_value_thunk_step
 
@@ -38,27 +39,22 @@ class ExecutionPlanSubsetInfo(namedtuple('_ExecutionPlanSubsetInfo', 'subset ste
         check_two_dim_dict(inputs, 'inputs', key_type=str)
 
         def _create_injected_value_factory_fn(input_value):
-            def _injected_value_factory_fn(state, step, step_input):
-                check.inst_param(state, 'state', StepBuilderState)
-                check.inst_param(step, 'step', ExecutionStep)
-                check.inst_param(step_input, 'step_input', StepInput)
-                return create_value_thunk_step(
-                    state=state,
-                    solid=step.solid,
-                    runtime_type=step_input.runtime_type,
-                    step_key='{step_key}.input.{input_name}.value'.format(
-                        step_key=step.key, input_name=step_input.name
-                    ),
-                    value=input_value,
-                )
-
-            return _injected_value_factory_fn
+            return lambda state, step, step_input: create_value_thunk_step(
+                state=state,
+                solid=step.solid,
+                runtime_type=step_input.runtime_type,
+                step_key='{step_key}.input.{input_name}.value'.format(
+                    step_key=step.key, input_name=step_input.name
+                ),
+                value=input_value,
+            )
 
         step_factory_fns = defaultdict(dict)
         for step_key, input_dict in inputs.items():
             for input_name, input_value in input_dict.items():
-                factory_fn = _create_injected_value_factory_fn(input_value)
-                step_factory_fns[step_key][input_name] = factory_fn
+                step_factory_fns[step_key][input_name] = _create_injected_value_factory_fn(
+                    input_value
+                )
 
         return ExecutionPlanSubsetInfo(included_step_keys, step_factory_fns)
 
@@ -76,37 +72,9 @@ class ExecutionPlanSubsetInfo(namedtuple('_ExecutionPlanSubsetInfo', 'subset ste
         step_factory_fns = defaultdict(dict)
 
         def _create_unmarshal_input_factory_fn(key):
-            check.str_param(key, 'key')
-
-            def _unmarshal_factory_fn(state, step, step_input):
-                from dagster.core.definitions import Result
-                from .objects import StepOutputHandle, StepOutput, StepKind
-
-                UNMARSHAL_INPUT_OUTPUT = 'unmarshal-input-output'
-
-                def _compute_fn(context, _step, _inputs):
-                    input_value = context.persistence_policy.read_value(
-                        step_input.runtime_type.serialization_strategy, key
-                    )
-
-                    yield Result(input_value, UNMARSHAL_INPUT_OUTPUT)
-
-                return StepOutputHandle(
-                    ExecutionStep(
-                        key='{step_key}.unmarshal-input.{input_name}'.format(
-                            step_key=step.key, input_name=step_input.name
-                        ),
-                        step_inputs=[],
-                        step_outputs=[StepOutput(UNMARSHAL_INPUT_OUTPUT, step_input.runtime_type)],
-                        compute_fn=_compute_fn,
-                        kind=StepKind.UNMARSHAL_INPUT,
-                        solid=step.solid,
-                        tags=state.get_tags(),
-                    ),
-                    UNMARSHAL_INPUT_OUTPUT,
-                )
-
-            return _unmarshal_factory_fn
+            return lambda state, step, step_input: create_unmarshal_step(
+                state, step, step_input, key
+            )
 
         for step_key, input_marshal_dict in marshalled_inputs.items():
             for input_name, key in input_marshal_dict.items():

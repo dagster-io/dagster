@@ -563,9 +563,6 @@ def execute_externalized_plan(
         execution_plan = create_execution_plan_core(
             ExecutionPlanInfo(context, pipeline, typed_environment),
             execution_metadata=execution_metadata,
-            # subset_info=ExecutionPlanSubsetInfo.with_input_values(
-            #     included_step_keys=step_keys, inputs=inputs
-            # ),
             subset_info=ExecutionPlanSubsetInfo.with_marshalling_steps(
                 included_step_keys=step_keys, marshalled_inputs=inputs_to_marshal
             ),
