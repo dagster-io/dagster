@@ -253,23 +253,20 @@ def _create_new_steps_for_input(state, step, subset_info):
     new_steps = []
     new_step_inputs = []
     for step_input in step.step_inputs:
-        if subset_info.has_injected_step(step.key, step_input.name):
-            subset_info.step_factory_fns[step.key][step_input.name](state, step, step_input)
+        check.invariant(subset_info.has_injected_step(step.key, step_input.name))
 
-            step_output_handle = check.inst(
-                subset_info.step_factory_fns[step.key][step_input.name](state, step, step_input),
-                StepOutputHandle,
-                'Step factory function must create StepOutputHandle',
-            )
+        subset_info.step_factory_fns[step.key][step_input.name](state, step, step_input)
 
-            new_steps.append(step_output_handle.step)
-            new_step_inputs.append(
-                StepInput(step_input.name, step_input.runtime_type, step_output_handle)
-            )
+        step_output_handle = check.inst(
+            subset_info.step_factory_fns[step.key][step_input.name](state, step, step_input),
+            StepOutputHandle,
+            'Step factory function must create StepOutputHandle',
+        )
 
-        else:
-            # TODO: I don't think you should able to get here
-            new_step_inputs.append(step_input)
+        new_steps.append(step_output_handle.step)
+        new_step_inputs.append(
+            StepInput(step_input.name, step_input.runtime_type, step_output_handle)
+        )
 
     new_steps.append(step.with_new_inputs(new_step_inputs))
     return new_steps
