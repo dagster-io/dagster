@@ -494,12 +494,11 @@ def _execute_subplan_or_error(args, dauphin_pipeline, execution_plan, evaluate_v
     check.failed('Should not get here')
 
 
-# TODO pass MarshalledOutput all the way through
 def _get_outputs_to_marshal(args):
     outputs_to_marshal = defaultdict(list)
     for step_execution in args.step_executions:
-        for output_name, key in step_execution.marshalled_outputs:
-            outputs_to_marshal[step_execution.step_key].append({'output': output_name, 'path': key})
+        for marshalled_output in step_execution.marshalled_outputs:
+            outputs_to_marshal[step_execution.step_key].append(marshalled_output)
     return dict(outputs_to_marshal)
 
 

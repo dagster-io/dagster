@@ -56,6 +56,8 @@ from .execution_plan.create import (
 
 from .execution_plan.objects import ExecutionPlan, ExecutionPlanInfo, StepResult, StepKind
 
+from .execution_plan.plan_subset import MarshalledOutput
+
 from .execution_plan.simple_engine import execute_plan_core
 
 from .system_config.objects import EnvironmentConfig
@@ -532,29 +534,6 @@ class PipelineConfigEvaluationError(Exception):
         super(PipelineConfigEvaluationError, self).__init__(error_msg, *args, **kwargs)
 
 
-from .execution_plan.plan_subset import MarshalledOutput
-
-
-def _process_outputs_to_marshall_param(outputs_to_marshal):
-    outputs_to_marshal = check.opt_dict_param(
-        outputs_to_marshal, 'outputs_to_marshal', key_type=str, value_type=list
-    )
-
-    if not outputs_to_marshal:
-        return {}
-
-    marshalled_outputs = defaultdict(list)
-
-    for step_key, output_list in outputs_to_marshal.items():
-        check.list_param(output_list, 'output_list', of_type=dict)
-        for output_entry in output_list:
-            marshalled_outputs[step_key].append(
-                MarshalledOutput(output_entry['output'], output_entry['path'])
-            )
-
-    return marshalled_outputs
-
-
 def execute_externalized_plan(
     pipeline,
     execution_plan,
@@ -574,15 +553,17 @@ def execute_externalized_plan(
     outputs_to_marshal = check.opt_dict_param(
         outputs_to_marshal, 'outputs_to_marshal', key_type=str, value_type=list
     )
+    for output_list in outputs_to_marshal.values():
+        check.list_param(output_list, 'outputs_to_marshal', of_type=MarshalledOutput)
+
     environment = check.opt_dict_param(environment, 'environment')
     check.opt_inst_param(execution_metadata, 'execution_metadata', ExecutionMetadata)
 
+    _check_inputs_to_marshal(execution_plan, inputs_to_marshal)
+    _check_outputs_to_marshal(execution_plan, outputs_to_marshal)
+
     typed_environment = create_typed_environment(pipeline, environment)
     with yield_context(pipeline, typed_environment, execution_metadata) as context:
-
-        _check_inputs_to_marshal(execution_plan, inputs_to_marshal)
-
-        _check_outputs_to_marshal(execution_plan, outputs_to_marshal)
 
         execution_plan = create_execution_plan_core(
             ExecutionPlanInfo(context, pipeline, typed_environment),
@@ -591,7 +572,8 @@ def execute_externalized_plan(
                 included_step_keys=step_keys, marshalled_inputs=inputs_to_marshal
             ),
             added_outputs=ExecutionPlanAddedOutputs.with_output_marshalling(
-                _process_outputs_to_marshall_param(outputs_to_marshal)
+                outputs_to_marshal,
+                # _process_outputs_to_marshall_param(outputs_to_marshal)
             ),
         )
 
@@ -601,44 +583,42 @@ def execute_externalized_plan(
 
 
 def _check_outputs_to_marshal(execution_plan, outputs_to_marshal):
-    if outputs_to_marshal:
-        for step_key, outputs_for_step in outputs_to_marshal.items():
-            if not execution_plan.has_step(step_key):
-                raise DagsterExecutionStepNotFoundError(step_key=step_key)
-            step = execution_plan.get_step_by_key(step_key)
-            for output in outputs_for_step:
-                check.param_invariant(
-                    set(output.keys()) == set(['output', 'path']),
-                    'outputs_to_marshal',
-                    'Output must be a dict with keys "output" and "path"',
-                )
+    if not outputs_to_marshal:
+        return
 
-                output_name = output['output']
-                if not step.has_step_output(output_name):
-                    raise DagsterMarshalOutputNotFoundError(
-                        'Execution step {step_key} does not have output {output}'.format(
-                            step_key=step_key, output=output_name
-                        ),
-                        step_key=step_key,
-                        output_name=output_name,
-                    )
+    for step_key, outputs_for_step in outputs_to_marshal.items():
+        if not execution_plan.has_step(step_key):
+            raise DagsterExecutionStepNotFoundError(step_key=step_key)
+        step = execution_plan.get_step_by_key(step_key)
+        for output in outputs_for_step:
+            output_name = output.output_name
+            if not step.has_step_output(output_name):
+                raise DagsterMarshalOutputNotFoundError(
+                    'Execution step {step_key} does not have output {output}'.format(
+                        step_key=step_key, output=output_name
+                    ),
+                    step_key=step_key,
+                    output_name=output_name,
+                )
 
 
 def _check_inputs_to_marshal(execution_plan, inputs_to_marshal):
-    if inputs_to_marshal:
-        for step_key, input_dict in inputs_to_marshal.items():
-            if not execution_plan.has_step(step_key):
-                raise DagsterExecutionStepNotFoundError(step_key=step_key)
-            step = execution_plan.get_step_by_key(step_key)
-            for input_name in input_dict.keys():
-                if input_name not in step.step_input_dict:
-                    raise DagsterUnmarshalInputNotFoundError(
-                        'Input {input_name} does not exist in execution step {key}'.format(
-                            input_name=input_name, key=step.key
-                        ),
-                        input_name=input_name,
-                        step_key=step.key,
-                    )
+    if not inputs_to_marshal:
+        return
+
+    for step_key, input_dict in inputs_to_marshal.items():
+        if not execution_plan.has_step(step_key):
+            raise DagsterExecutionStepNotFoundError(step_key=step_key)
+        step = execution_plan.get_step_by_key(step_key)
+        for input_name in input_dict.keys():
+            if input_name not in step.step_input_dict:
+                raise DagsterUnmarshalInputNotFoundError(
+                    'Input {input_name} does not exist in execution step {key}'.format(
+                        input_name=input_name, key=step.key
+                    ),
+                    input_name=input_name,
+                    step_key=step.key,
+                )
 
 
 def execute_plan(
