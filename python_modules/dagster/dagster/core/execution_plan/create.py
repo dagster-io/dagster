@@ -254,7 +254,11 @@ def _validate_new_plan(new_plan, subset_info, execution_plan_info):
 
 
 def _all_augmented_steps_for_step(state, step, subset_info, added_outputs):
-    step, new_input_steps = _create_new_step_with_added_inputs(state, step, subset_info)
+
+    new_input_steps = []
+
+    if subset_info and step.key in subset_info.input_step_factory_fns:
+        step, new_input_steps = _create_new_step_with_added_inputs(state, step, subset_info)
 
     all_new_steps = [step] + new_input_steps
 
@@ -270,12 +274,6 @@ def _all_augmented_steps_for_step(state, step, subset_info, added_outputs):
 
 
 def _create_new_step_with_added_inputs(state, step, subset_info):
-    if not subset_info:
-        return step, []
-
-    if step.key not in subset_info.input_step_factory_fns:
-        return step, []
-
     new_steps = []
     new_step_inputs = []
     for step_input in step.step_inputs:
