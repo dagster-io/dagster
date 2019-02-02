@@ -5,8 +5,6 @@ from .marshal import create_unmarshal_step
 from .objects import StepBuilderState, ExecutionStep, StepInput
 from .utility import create_value_thunk_step
 
-MarshalledOutput = namedtuple('MarshalledOutput', 'output_name key')
-
 
 class ExecutionPlanSubsetInfo(namedtuple('_ExecutionPlanSubsetInfo', 'subset step_factory_fns')):
     '''
@@ -59,15 +57,9 @@ class ExecutionPlanSubsetInfo(namedtuple('_ExecutionPlanSubsetInfo', 'subset ste
         return ExecutionPlanSubsetInfo(included_step_keys, step_factory_fns)
 
     @staticmethod
-    def with_marshalling_steps(included_step_keys, marshalled_inputs=None, marshalled_outputs=None):
+    def with_input_marshalling(included_step_keys, marshalled_inputs=None):
         check.list_param(included_step_keys, 'included_step_keys', of_type=str)
         check_opt_two_dim_dict(marshalled_inputs, 'marshalled_inputs')
-        check.opt_dict_param(
-            marshalled_outputs, 'marshalled_outputs', key_type=str, value_type=list
-        )
-        if marshalled_outputs:
-            for output_list in marshalled_outputs.values():
-                check.list_param(output_list, 'marshalled_outputs', of_type=MarshalledOutput)
 
         step_factory_fns = defaultdict(dict)
 
