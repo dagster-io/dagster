@@ -24,7 +24,8 @@ class ResourceDefinition(object):
 
 
 def resource(config_field=None, description=None):
-    # This case is for when decorate is used bare, without arguments
+    # This case is for when decorator is used bare, without arguments.
+    # E.g. @resource versus @resource()
     if callable(config_field):
         return ResourceDefinition(resource_fn=config_field)
 

@@ -387,4 +387,3 @@ def test_no_config_resource_definition():
 
     assert called['resource']
     assert called['solid']
-
