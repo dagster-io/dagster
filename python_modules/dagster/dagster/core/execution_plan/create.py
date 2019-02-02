@@ -79,13 +79,7 @@ def create_execution_plan_core(execution_info, execution_metadata, subset_info=N
     execution_plan = create_execution_plan_from_steps(state.steps)
 
     if subset_info:
-        return _create_subplan(
-            execution_info,
-            # ExecutionPlanInfo(context=context, pipeline=pipeline, environment=typed_environment),
-            StepBuilderState(execution_info.pipeline.name),
-            execution_plan,
-            subset_info,
-        )
+        return _create_subplan(execution_info, state, execution_plan, subset_info)
     else:
         return execution_plan
 

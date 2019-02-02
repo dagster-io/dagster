@@ -67,7 +67,6 @@ def test_create_subplan_source_step():
 
 
 def test_create_subplan_middle_step():
-    # TODO: replace with top-level create_plan call
     subplan = create_execution_plan(
         define_two_int_pipeline(),
         subset_info=ExecutionPlanSubsetInfo.with_input_values(

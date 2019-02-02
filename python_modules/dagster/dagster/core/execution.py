@@ -571,8 +571,8 @@ def execute_externalized_plan(
             ),
         )
 
-        results = _do_execute_plan(
-            context, pipeline, execution_plan, typed_environment, throw_on_user_error
+        results = list(
+            execute_plan_core(context, execution_plan, throw_on_user_error=throw_on_user_error)
         )
 
         _marshal_outputs(context, results, outputs_to_marshal)
@@ -698,19 +698,9 @@ def execute_plan(
 
     typed_environment = create_typed_environment(pipeline, environment)
     with yield_context(pipeline, typed_environment, execution_metadata) as context:
-        return _do_execute_plan(
-            context, pipeline, execution_plan, typed_environment, throw_on_user_error
+        return list(
+            execute_plan_core(context, execution_plan, throw_on_user_error=throw_on_user_error)
         )
-
-
-def _do_execute_plan(context, pipeline, execution_plan, typed_environment, throw_on_user_error):
-    check.inst_param(context, 'context', RuntimeExecutionContext)
-    check.inst_param(pipeline, 'pipeline', PipelineDefinition)
-    check.inst_param(execution_plan, 'execution_plan', ExecutionPlan)
-    check.inst_param(typed_environment, 'typed_environment', EnvironmentConfig)
-    check.bool_param(throw_on_user_error, 'throw_on_user_error')
-
-    return list(execute_plan_core(context, execution_plan, throw_on_user_error=throw_on_user_error))
 
 
 def execute_pipeline(
