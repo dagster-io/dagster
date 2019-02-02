@@ -39,3 +39,36 @@ def create_unmarshal_step(state, step, step_input, key):
         ),
         UNMARSHAL_INPUT_OUTPUT,
     )
+
+
+MARSHAL_OUTPUT_INPUT = 'marshal-output-input'
+
+
+def create_marshal_output_step(state, step, step_output, key):
+    check.inst_param(state, 'state', StepBuilderState)
+    check.inst_param(step, 'step', ExecutionStep)
+    check.inst_param(step_output, 'step_output', StepOutput)
+    check.str_param(key, 'key')
+
+    def _compute_fn(context, _step, inputs):
+        context.persistence_policy.write_value(
+            step_output.runtime_type.serialization_strategy, key, inputs[MARSHAL_OUTPUT_INPUT]
+        )
+
+    return ExecutionStep(
+        key='{step_key}.marshal-output.{output_name}'.format(
+            step_key=step.key, output_name=step_output.name
+        ),
+        step_inputs=[
+            StepInput(
+                MARSHAL_OUTPUT_INPUT,
+                step_output.runtime_type,
+                StepOutputHandle(step, step_output.name),
+            )
+        ],
+        step_outputs=[],
+        compute_fn=_compute_fn,
+        kind=StepKind.MARSHAL_OUTPUT,
+        solid=step.solid,
+        tags=state.get_tags(),
+    )

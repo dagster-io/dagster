@@ -8,6 +8,8 @@ from graphql.execution.base import ResolveInfo
 
 from dagster import ExecutionMetadata, check
 from dagster.core.definitions.environment_configs import construct_environment_config
+from dagster.core.execution_plan.plan_subset import MarshalledOutput
+
 from dagster.core.errors import (
     DagsterInvalidSubplanExecutionError,
     DagsterMarshalOutputNotFoundError,
@@ -304,7 +306,6 @@ def _config_or_error_from_pipeline(info, pipeline, env_config):
 
 
 MarshalledInput = namedtuple('MarshalledInput', 'input_name key')
-MarshalledOutput = namedtuple('MarshalledOutput', 'output_name key')
 
 
 class StepExecution(namedtuple('_StepExecution', 'step_key marshalled_inputs marshalled_outputs')):
@@ -493,6 +494,7 @@ def _execute_subplan_or_error(args, dauphin_pipeline, execution_plan, evaluate_v
     check.failed('Should not get here')
 
 
+# TODO pass MarshalledOutput all the way through
 def _get_outputs_to_marshal(args):
     outputs_to_marshal = defaultdict(list)
     for step_execution in args.step_executions:

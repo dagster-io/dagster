@@ -28,7 +28,7 @@ from .objects import (
     StepKind,
 )
 
-from .plan_subset import ExecutionPlanSubsetInfo
+from .plan_subset import ExecutionPlanSubsetInfo, ExecutionPlanAddedOutputs
 
 from .transform import create_transform_step
 
@@ -42,10 +42,13 @@ def get_solid_user_config(execution_info, pipeline_solid):
     return solid_configs[name].config if name in solid_configs else None
 
 
-def create_execution_plan_core(execution_info, execution_metadata, subset_info=None):
+def create_execution_plan_core(
+    execution_info, execution_metadata, subset_info=None, added_outputs=None
+):
     check.inst_param(execution_info, 'execution_info', ExecutionPlanInfo)
     check.inst_param(execution_metadata, 'execution_metadata', ExecutionMetadata)
     check.opt_inst_param(subset_info, 'subset_info', ExecutionPlanSubsetInfo)
+    check.opt_inst_param(added_outputs, 'added_output', ExecutionPlanAddedOutputs)
 
     state = StepBuilderState(
         pipeline_name=execution_info.pipeline.name, initial_tags=execution_metadata.tags
@@ -79,7 +82,7 @@ def create_execution_plan_core(execution_info, execution_metadata, subset_info=N
     execution_plan = create_execution_plan_from_steps(state.steps)
 
     if subset_info:
-        return _create_subplan(execution_info, state, execution_plan, subset_info)
+        return _create_augmented_subplan(execution_info, state, execution_plan, subset_info)
     else:
         return execution_plan
 
@@ -193,24 +196,47 @@ def create_step_inputs(info, state, solid):
     return step_inputs
 
 
-def _create_subplan(execution_plan_info, state, execution_plan, subset_info):
+def _create_augmented_subplan(
+    execution_plan_info, state, execution_plan, subset_info=None, added_outputs=None
+):
     check.inst_param(execution_plan_info, 'execution_plan_info', ExecutionPlanInfo)
     check.inst_param(state, 'state', StepBuilderState)
     check.inst_param(execution_plan, 'execution_plan', ExecutionPlan)
-    check.inst_param(subset_info, 'subset_info', ExecutionPlanSubsetInfo)
+    check.opt_inst_param(subset_info, 'subset_info', ExecutionPlanSubsetInfo)
+    check.opt_inst_param(added_outputs, 'added_outputs', ExecutionPlanAddedOutputs)
 
     steps = []
 
     for step in execution_plan.steps:
-        if step.key not in subset_info.subset:
+        if subset_info and step.key not in subset_info.subset:
             # Not included in subset. Skip.
             continue
 
         with state.push_tags(**step.tags):
-            if step.key not in subset_info.input_step_factory_fns:
-                steps.append(step)
+            base_step = None
+            new_input_steps = []
+            if not subset_info:
+                base_step = step
+            elif step.key not in subset_info.input_step_factory_fns:
+                base_step = step
             else:
-                steps.extend(_create_new_steps_for_input(state, step, subset_info))
+                base_step, new_input_steps = _create_new_step_with_added_inputs(
+                    state, step, subset_info
+                )
+
+            new_output_steps = []
+
+            if added_outputs and step.key in added_outputs.output_step_factory_fns:
+                for output_step_factory_entry in added_outputs.output_step_factory_fns[step.key]:
+                    check.invariant(step.has_step_output(output_step_factory_entry.output_name))
+                    step_output = step.step_output_named(output_step_factory_entry.output_name)
+                    new_output_steps.append(
+                        output_step_factory_entry.step_factory_fn(state, step, step_output)
+                    )
+
+            steps.append(base_step)
+            steps.extend(new_input_steps)
+            steps.extend(new_output_steps)
 
     new_plan = create_execution_plan_from_steps(steps)
 
@@ -222,7 +248,9 @@ def _create_subplan(execution_plan_info, state, execution_plan, subset_info):
 
             # Now check to see if the input is provided
 
-            if not subset_info.has_injected_step_for_input(step.key, step_input.name):
+            if subset_info and not subset_info.has_injected_step_for_input(
+                step.key, step_input.name
+            ):
                 raise DagsterInvalidSubplanExecutionError(
                     (
                         'You have specified a subset execution on pipeline {pipeline_name} '
@@ -243,13 +271,12 @@ def _create_subplan(execution_plan_info, state, execution_plan, subset_info):
     return new_plan
 
 
-def _create_new_steps_for_input(state, step, subset_info):
+def _create_new_step_with_added_inputs(state, step, subset_info):
     new_steps = []
     new_step_inputs = []
     for step_input in step.step_inputs:
-        check.invariant(subset_info.has_injected_step_for_input(step.key, step_input.name))
-
-        subset_info.input_step_factory_fns[step.key][step_input.name](state, step, step_input)
+        if not subset_info.has_injected_step_for_input(step.key, step_input.name):
+            continue
 
         step_output_handle = check.inst(
             subset_info.input_step_factory_fns[step.key][step_input.name](state, step, step_input),
@@ -262,5 +289,4 @@ def _create_new_steps_for_input(state, step, subset_info):
             StepInput(step_input.name, step_input.runtime_type, step_output_handle)
         )
 
-    new_steps.append(step.with_new_inputs(new_step_inputs))
-    return new_steps
+    return step.with_new_inputs(new_step_inputs), new_steps

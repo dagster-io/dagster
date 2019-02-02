@@ -1,7 +1,8 @@
 from collections import defaultdict, namedtuple
 from dagster import check
 from dagster.core.definitions.utils import check_two_dim_dict, check_opt_two_dim_dict
-from .marshal import create_unmarshal_step
+from .marshal import create_unmarshal_step, create_marshal_output_step
+from .objects import ExecutionPlan
 from .utility import create_value_thunk_step
 
 
@@ -113,5 +114,48 @@ class ExecutionPlanSubsetInfo(
         )
 
 
-class ExecutionPlanAddedOutputs(namedtuple('_ExecutionPlanAddedOutputs', 'dfsdfs')):
-    pass
+MarshalledOutput = namedtuple('MarshalledOutput', 'output_name key')
+
+OutputStepFactoryEntry = namedtuple('OutputStepFactoryEntry', 'output_name step_factory_fn')
+
+
+class ExecutionPlanAddedOutputs(
+    namedtuple('_ExecutionPlanAddedOutputs', 'output_step_factory_fns')
+):
+    def __new__(cls, output_step_factory_fns):
+        check.dict_param(
+            output_step_factory_fns, 'output_step_factory_fns', key_type=str, value_type=list
+        )
+        for step_factory_fns_for_output in output_step_factory_fns.values():
+            for step_factory_nf in step_factory_fns_for_output:
+                check.callable_param(step_factory_nf, 'output_step_factory_fns')
+
+        return super(ExecutionPlanAddedOutputs, cls).__new__(cls, output_step_factory_fns)
+
+    @staticmethod
+    def with_output_marshalling(marshalled_outputs):
+        check.dict_param(marshalled_outputs, 'marshalled_outputs', key_type=str)
+
+        for outputs_for_step in marshalled_outputs.values():
+            check.list_param(outputs_for_step, 'outputs_for_step', of_type=MarshalledOutput)
+
+        output_step_factory_fns = defaultdict(list)
+
+        def _create_marshal_output_fn(key):
+            return lambda state, step, step_output: create_marshal_output_step(
+                state, step, step_output, key
+            )
+
+        for step_key, outputs_for_step in marshalled_outputs.items():
+            for marshalled_output in outputs_for_step:
+                # for every marshalled output passed in, create a new fn that returns
+                # a step that performs the marshalling
+
+                output_step_factory_fns[step_key].append(
+                    OutputStepFactoryEntry(
+                        output_name=marshalled_output.output_name,
+                        step_factory_fn=_create_marshal_output_fn(marshalled_output.key),
+                    )
+                )
+
+        return ExecutionPlanAddedOutputs(output_step_factory_fns)

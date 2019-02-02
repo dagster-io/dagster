@@ -51,7 +51,11 @@ from .errors import (
 
 from .events import construct_event_logger
 
-from .execution_plan.create import ExecutionPlanSubsetInfo, create_execution_plan_core
+from .execution_plan.create import (
+    ExecutionPlanAddedOutputs,
+    ExecutionPlanSubsetInfo,
+    create_execution_plan_core,
+)
 
 from .execution_plan.objects import ExecutionPlan, ExecutionPlanInfo, StepResult, StepKind
 
@@ -531,6 +535,29 @@ class PipelineConfigEvaluationError(Exception):
         super(PipelineConfigEvaluationError, self).__init__(error_msg, *args, **kwargs)
 
 
+from .execution_plan.plan_subset import MarshalledOutput
+
+
+def _process_outputs_to_marshall_param(outputs_to_marshal):
+    outputs_to_marshal = check.opt_dict_param(
+        outputs_to_marshal, 'outputs_to_marshal', key_type=str, value_type=list
+    )
+
+    if not outputs_to_marshal:
+        return {}
+
+    marshalled_outputs = defaultdict(list)
+
+    for step_key, output_list in outputs_to_marshal.items():
+        check.list_param(output_list, 'output_list', of_type=dict)
+        for output_entry in output_list:
+            marshalled_outputs[step_key].append(
+                MarshalledOutput(output_entry['output'], output_entry['path'])
+            )
+
+    return marshalled_outputs
+
+
 def execute_externalized_plan(
     pipeline,
     execution_plan,
@@ -566,6 +593,9 @@ def execute_externalized_plan(
             subset_info=ExecutionPlanSubsetInfo.with_input_marshalling(
                 included_step_keys=step_keys, marshalled_inputs=inputs_to_marshal
             ),
+            # added_outputs=ExecutionPlanAddedOutputs.with_output_marshalling(
+            #     _process_outputs_to_marshall_param(outputs_to_marshal)
+            # ),
         )
 
         results = list(
