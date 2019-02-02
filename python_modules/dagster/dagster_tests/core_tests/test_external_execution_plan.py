@@ -184,26 +184,50 @@ def test_external_execution_output_missing():
         )
 
 
-def test_external_execution_output_code_error():
+def test_external_execution_marshal_output_code_error():
     pipeline = define_inty_pipeline()
 
     execution_plan = create_execution_plan(pipeline)
 
-    with pytest.raises(DagsterMarshalOutputError) as exc_info:
+    # guaranteed that folder does not exist
+    hardcoded_uuid = '83fb4ace-5cab-459d-99b6-2ca9808c54a1'
+
+    with pytest.raises(IOError) as exc_info:
         execute_externalized_plan(
             pipeline,
             execution_plan,
             ['return_one.transform', 'add_one.transform'],
-            outputs_to_marshal={'add_one.transform': [{'output': 'result', 'path': 23434}]},
+            outputs_to_marshal={
+                'add_one.transform': [
+                    {'output': 'result', 'path': '{uuid}/{uuid}'.format(uuid=hardcoded_uuid)}
+                ]
+            },
             execution_metadata=ExecutionMetadata(),
+            throw_on_user_error=True,
         )
 
-    assert (
-        str(exc_info.value)
-        == 'Error during the marshalling of output result in step add_one.transform'
+    assert 'No such file or directory' in str(exc_info.value)
+
+    results = execute_externalized_plan(
+        pipeline,
+        execution_plan,
+        ['return_one.transform', 'add_one.transform'],
+        outputs_to_marshal={
+            'add_one.transform': [
+                {'output': 'result', 'path': '{uuid}/{uuid}'.format(uuid=hardcoded_uuid)}
+            ]
+        },
+        execution_metadata=ExecutionMetadata(),
+        throw_on_user_error=False,
     )
-    assert exc_info.value.output_name == 'result'
-    assert exc_info.value.step_key == 'add_one.transform'
+
+    assert len(results) == 3
+
+    results_dict = {result.step.key: result for result in results}
+
+    assert results_dict['return_one.transform'].success is True
+    assert results_dict['add_one.transform'].success is True
+    assert results_dict['add_one.transform.marshal-output.result'].success is False
 
 
 def test_external_execution_output_code_error_throw_on_user_error():

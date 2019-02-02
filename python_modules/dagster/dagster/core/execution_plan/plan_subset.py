@@ -127,8 +127,7 @@ class ExecutionPlanAddedOutputs(
             output_step_factory_fns, 'output_step_factory_fns', key_type=str, value_type=list
         )
         for step_factory_fns_for_output in output_step_factory_fns.values():
-            for step_factory_nf in step_factory_fns_for_output:
-                check.callable_param(step_factory_nf, 'output_step_factory_fns')
+            check.list_param(step_factory_fns_for_output, 'rename', of_type=OutputStepFactoryEntry)
 
         return super(ExecutionPlanAddedOutputs, cls).__new__(cls, output_step_factory_fns)
 

@@ -593,16 +593,16 @@ def execute_externalized_plan(
             subset_info=ExecutionPlanSubsetInfo.with_input_marshalling(
                 included_step_keys=step_keys, marshalled_inputs=inputs_to_marshal
             ),
-            # added_outputs=ExecutionPlanAddedOutputs.with_output_marshalling(
-            #     _process_outputs_to_marshall_param(outputs_to_marshal)
-            # ),
+            added_outputs=ExecutionPlanAddedOutputs.with_output_marshalling(
+                _process_outputs_to_marshall_param(outputs_to_marshal)
+            ),
         )
 
         results = list(
             execute_plan_core(context, execution_plan, throw_on_user_error=throw_on_user_error)
         )
 
-        _marshal_outputs(context, results, outputs_to_marshal)
+        # _marshal_outputs(context, results, outputs_to_marshal)
 
         return results
 

@@ -82,7 +82,9 @@ def create_execution_plan_core(
     execution_plan = create_execution_plan_from_steps(state.steps)
 
     if subset_info:
-        return _create_augmented_subplan(execution_info, state, execution_plan, subset_info)
+        return _create_augmented_subplan(
+            execution_info, state, execution_plan, subset_info, added_outputs
+        )
     else:
         return execution_plan
 
