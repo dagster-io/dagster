@@ -255,19 +255,6 @@ class ExecutionPlanInfo(namedtuple('_ExecutionPlanInfo', 'context pipeline envir
         )
 
 
-class ExecutionPlanSubsetInfo(namedtuple('_ExecutionPlanSubsetInfo', 'subset inputs')):
-    '''
-    inputs is a two dimensional dictionary that maps step_key => input_name => input_value
-    '''
-
-    def __new__(cls, included_steps, inputs=None):
-        return super(ExecutionPlanSubsetInfo, cls).__new__(
-            cls,
-            set(check.list_param(included_steps, 'included_steps', of_type=str)),
-            check.opt_dict_param(inputs, 'inputs'),
-        )
-
-
 class StepOutputMap(dict):
     def __getitem__(self, key):
         check.inst_param(key, 'key', SolidOutputHandle)

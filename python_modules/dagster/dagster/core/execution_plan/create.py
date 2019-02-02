@@ -22,16 +22,15 @@ from .objects import (
     ExecutionPlanInfo,
     ExecutionStep,
     ExecutionValueSubplan,
-    ExecutionPlanSubsetInfo,
     StepBuilderState,
     StepInput,
     StepOutputHandle,
     StepKind,
 )
 
-from .transform import create_transform_step
+from .plan_subset import ExecutionPlanSubsetInfo
 
-from .utility import create_value_thunk_step
+from .transform import create_transform_step
 
 
 def get_solid_user_config(execution_info, pipeline_solid):
@@ -43,9 +42,10 @@ def get_solid_user_config(execution_info, pipeline_solid):
     return solid_configs[name].config if name in solid_configs else None
 
 
-def create_execution_plan_core(execution_info, execution_metadata):
+def create_execution_plan_core(execution_info, execution_metadata, subset_info=None):
     check.inst_param(execution_info, 'execution_info', ExecutionPlanInfo)
     check.inst_param(execution_metadata, 'execution_metadata', ExecutionMetadata)
+    check.opt_inst_param(subset_info, 'subset_info', ExecutionPlanSubsetInfo)
 
     state = StepBuilderState(
         pipeline_name=execution_info.pipeline.name, initial_tags=execution_metadata.tags
@@ -76,7 +76,12 @@ def create_execution_plan_core(execution_info, execution_metadata):
                     output_handle = solid.output_handle(output_def.name)
                     state.step_output_map[output_handle] = subplan.terminal_step_output_handle
 
-    return create_execution_plan_from_steps(state.steps)
+    execution_plan = create_execution_plan_from_steps(state.steps)
+
+    if subset_info:
+        return _create_subplan(execution_info, state, execution_plan, subset_info)
+    else:
+        return execution_plan
 
 
 def create_execution_plan_from_steps(steps):
@@ -188,7 +193,7 @@ def create_step_inputs(info, state, solid):
     return step_inputs
 
 
-def create_subplan(execution_plan_info, state, execution_plan, subset_info):
+def _create_subplan(execution_plan_info, state, execution_plan, subset_info):
     check.inst_param(execution_plan_info, 'execution_plan_info', ExecutionPlanInfo)
     check.inst_param(state, 'state', StepBuilderState)
     check.inst_param(execution_plan, 'execution_plan', ExecutionPlan)
@@ -202,7 +207,7 @@ def create_subplan(execution_plan_info, state, execution_plan, subset_info):
             continue
 
         with state.push_tags(**step.tags):
-            if step.key not in subset_info.inputs:
+            if step.key not in subset_info.step_factory_fns:
                 steps.append(step)
             else:
                 steps.extend(_create_new_steps_for_input(state, step, subset_info))
@@ -217,9 +222,7 @@ def create_subplan(execution_plan_info, state, execution_plan, subset_info):
 
             # Now check to see if the input is provided
 
-            if not (
-                step.key in subset_info.inputs and step_input.name in subset_info.inputs[step.key]
-            ):
+            if not subset_info.has_injected_step(step.key, step_input.name):
                 raise DagsterInvalidSubplanExecutionError(
                     (
                         'You have specified a subset execution on pipeline {pipeline_name} '
@@ -244,24 +247,20 @@ def _create_new_steps_for_input(state, step, subset_info):
     new_steps = []
     new_step_inputs = []
     for step_input in step.step_inputs:
-        if step_input.name in subset_info.inputs[step.key]:
-            value_thunk_step_output_handle = create_value_thunk_step(
-                state,
-                step.solid,
-                step_input.runtime_type,
-                step.key + '.input.' + step_input.name + '.value',
-                subset_info.inputs[step.key][step_input.name],
-            )
+        check.invariant(subset_info.has_injected_step(step.key, step_input.name))
 
-            new_value_step = value_thunk_step_output_handle.step
+        subset_info.step_factory_fns[step.key][step_input.name](state, step, step_input)
 
-            new_steps.append(new_value_step)
+        step_output_handle = check.inst(
+            subset_info.step_factory_fns[step.key][step_input.name](state, step, step_input),
+            StepOutputHandle,
+            'Step factory function must create StepOutputHandle',
+        )
 
-            new_step_inputs.append(
-                StepInput(step_input.name, step_input.runtime_type, value_thunk_step_output_handle)
-            )
-        else:
-            new_step_inputs.append(step_input)
+        new_steps.append(step_output_handle.step)
+        new_step_inputs.append(
+            StepInput(step_input.name, step_input.runtime_type, step_output_handle)
+        )
 
     new_steps.append(step.with_new_inputs(new_step_inputs))
     return new_steps
