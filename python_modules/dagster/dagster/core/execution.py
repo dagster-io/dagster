@@ -19,9 +19,7 @@ from collections import defaultdict, namedtuple
 from contextlib import contextmanager
 import inspect
 import itertools
-import sys
 
-from future.utils import raise_from
 from contextlib2 import ExitStack
 from dagster import check
 from dagster.utils import merge_dicts
@@ -44,7 +42,6 @@ from .execution_context import ExecutionContext, RuntimeExecutionContext, Execut
 from .errors import (
     DagsterInvariantViolationError,
     DagsterUnmarshalInputNotFoundError,
-    DagsterMarshalOutputError,
     DagsterMarshalOutputNotFoundError,
     DagsterExecutionStepNotFoundError,
 )
@@ -602,8 +599,6 @@ def execute_externalized_plan(
             execute_plan_core(context, execution_plan, throw_on_user_error=throw_on_user_error)
         )
 
-        # _marshal_outputs(context, results, outputs_to_marshal)
-
         return results
 
 
@@ -646,37 +641,6 @@ def _check_inputs_to_marshal(execution_plan, inputs_to_marshal):
                         input_name=input_name,
                         step_key=step.key,
                     )
-
-
-def _marshal_outputs(context, results, outputs_to_marshal):
-    for result in results:
-        step = result.step
-        if not (result.success and step.key in outputs_to_marshal):
-            continue
-
-        for output in outputs_to_marshal[step.key]:
-            output_name = output['output']
-            if output['output'] != result.success_data.output_name:
-                continue
-
-            output_type = step.step_output_dict[output_name].runtime_type
-            try:
-                context.persistence_policy.write_value(
-                    output_type.serialization_strategy, output['path'], result.success_data.value
-                )
-            except Exception as e:  # pylint: disable=broad-except
-                raise_from(
-                    DagsterMarshalOutputError(
-                        'Error during the marshalling of output {output_name} in step {step_key}'.format(
-                            output_name=output_name, step_key=step.key
-                        ),
-                        user_exception=e,
-                        original_exc_info=sys.exc_info(),
-                        output_name=output_name,
-                        step_key=step.key,
-                    ),
-                    e,
-                )
 
 
 def execute_plan(

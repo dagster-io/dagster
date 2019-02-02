@@ -11,7 +11,6 @@ from dagster import (
 from dagster.core.errors import (
     DagsterExecutionStepNotFoundError,
     DagsterInvalidSubplanExecutionError,
-    DagsterMarshalOutputError,
     DagsterMarshalOutputNotFoundError,
     DagsterUnmarshalInputNotFoundError,
     DagsterExecutionStepExecutionError,
