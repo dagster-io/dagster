@@ -23,8 +23,6 @@ import sys
 
 from future.utils import raise_from
 from contextlib2 import ExitStack
-import six
-
 from dagster import check
 from dagster.utils import merge_dicts
 
@@ -49,7 +47,6 @@ from .errors import (
     DagsterUnmarshalInputError,
     DagsterMarshalOutputError,
     DagsterMarshalOutputNotFoundError,
-    DagsterExecutionStepExecutionError,
     DagsterExecutionStepNotFoundError,
 )
 
@@ -219,19 +216,6 @@ class SolidExecutionResult(object):
             )
         else:
             return None
-
-    def reraise_user_error(self):
-        if not self.success:
-            for result in itertools.chain(
-                self.input_expectations, self.output_expectations, self.transforms
-            ):
-                if not result.success:
-                    if isinstance(
-                        result.failure_data.dagster_error, DagsterExecutionStepExecutionError
-                    ):
-                        six.reraise(*result.failure_data.dagster_error.original_exc_info)
-                    else:
-                        raise result.failure_data.dagster_error
 
     @property
     def dagster_error(self):
@@ -433,7 +417,7 @@ def get_resource_or_gen(context_definition, resource_name, environment, run_id):
 
 
 def _do_iterate_pipeline(
-    pipeline, context, typed_environment, execution_metadata, throw_on_error=True
+    pipeline, context, typed_environment, execution_metadata, throw_on_user_error=True
 ):
     check.inst(context, RuntimeExecutionContext)
 
@@ -465,11 +449,8 @@ def _do_iterate_pipeline(
     pipeline_success = True
 
     for solid_result in _process_step_results(
-        context, pipeline, execute_plan_core(context, execution_plan)
+        context, pipeline, execute_plan_core(context, execution_plan, throw_on_user_error)
     ):
-        if throw_on_error and not solid_result.success:
-            solid_result.reraise_user_error()
-
         if not solid_result.success:
             pipeline_success = False
         yield solid_result
@@ -481,7 +462,7 @@ def _do_iterate_pipeline(
 
 
 def execute_pipeline_iterator(
-    pipeline, environment=None, throw_on_error=True, execution_metadata=None, solid_subset=None
+    pipeline, environment=None, throw_on_user_error=True, execution_metadata=None, solid_subset=None
 ):
     '''Returns iterator that yields :py:class:`SolidExecutionResult` for each
     solid executed in the pipeline.
@@ -495,7 +476,7 @@ def execute_pipeline_iterator(
     '''
     check.inst_param(pipeline, 'pipeline', PipelineDefinition)
     check.opt_dict_param(environment, 'environment')
-    check.bool_param(throw_on_error, 'throw_on_error')
+    check.bool_param(throw_on_user_error, 'throw_on_user_error')
     execution_metadata = execution_metadata if execution_metadata else ExecutionMetadata()
     check.inst_param(execution_metadata, 'execution_metadata', ExecutionMetadata)
     check.opt_list_param(solid_subset, 'solid_subset', of_type=str)
@@ -509,7 +490,7 @@ def execute_pipeline_iterator(
             context,
             typed_environment,
             execution_metadata=execution_metadata,
-            throw_on_error=throw_on_error,
+            throw_on_user_error=throw_on_user_error,
         ):
             yield solid_result
 
@@ -560,6 +541,7 @@ def execute_externalized_plan(
     outputs_to_marshal=None,
     environment=None,
     execution_metadata=None,
+    throw_on_user_error=True,
 ):
     check.inst_param(pipeline, 'pipeline', PipelineDefinition)
     check.inst_param(execution_plan, 'execution_plan', ExecutionPlan)
@@ -593,6 +575,7 @@ def execute_externalized_plan(
             execution_plan,
             typed_environment,
             ExecutionPlanSubsetInfo(included_steps=step_keys, inputs=inputs),
+            throw_on_user_error,
         )
 
         _marshal_outputs(context, results, outputs_to_marshal)
@@ -708,7 +691,12 @@ def _unmarshal_inputs(context, inputs_to_marshal, execution_plan):
 
 
 def execute_plan(
-    pipeline, execution_plan, environment=None, subset_info=None, execution_metadata=None
+    pipeline,
+    execution_plan,
+    environment=None,
+    subset_info=None,
+    execution_metadata=None,
+    throw_on_user_error=True,
 ):
     check.inst_param(pipeline, 'pipeline', PipelineDefinition)
     check.inst_param(execution_plan, 'execution_plan', ExecutionPlan)
@@ -719,15 +707,20 @@ def execute_plan(
 
     typed_environment = create_typed_environment(pipeline, environment)
     with yield_context(pipeline, typed_environment, execution_metadata) as context:
-        return _do_execute_plan(context, pipeline, execution_plan, typed_environment, subset_info)
+        return _do_execute_plan(
+            context, pipeline, execution_plan, typed_environment, subset_info, throw_on_user_error
+        )
 
 
-def _do_execute_plan(context, pipeline, execution_plan, typed_environment, subset_info):
+def _do_execute_plan(
+    context, pipeline, execution_plan, typed_environment, subset_info, throw_on_user_error
+):
     check.inst_param(context, 'context', RuntimeExecutionContext)
     check.inst_param(pipeline, 'pipeline', PipelineDefinition)
     check.inst_param(execution_plan, 'execution_plan', ExecutionPlan)
     check.inst_param(typed_environment, 'typed_environment', EnvironmentConfig)
     check.opt_inst_param(subset_info, 'subset_info', ExecutionPlanSubsetInfo)
+    check.bool_param(throw_on_user_error, 'throw_on_user_error')
 
     plan_to_execute = (
         create_subplan(
@@ -739,22 +732,24 @@ def _do_execute_plan(context, pipeline, execution_plan, typed_environment, subse
         if subset_info
         else execution_plan
     )
-    return list(execute_plan_core(context, plan_to_execute))
+    return list(
+        execute_plan_core(context, plan_to_execute, throw_on_user_error=throw_on_user_error)
+    )
 
 
 def execute_pipeline(
-    pipeline, environment=None, throw_on_error=True, execution_metadata=None, solid_subset=None
+    pipeline, environment=None, throw_on_user_error=True, execution_metadata=None, solid_subset=None
 ):
     '''
     "Synchronous" version of :py:func:`execute_pipeline_iterator`.
 
-    Note: throw_on_error is very useful in testing contexts when not testing for error conditions
+    Note: throw_on_user_error is very useful in testing contexts when not testing for error conditions
 
     Parameters:
       pipeline (PipelineDefinition): Pipeline to run
       environment (dict): The enviroment that parameterizes this run
-      throw_on_error (bool):
-        throw_on_error makes the function throw when an error is encoutered rather than returning
+      throw_on_user_error (bool):
+        throw_on_user_error makes the function throw when an error is encoutered rather than returning
         the py:class:`SolidExecutionResult` in an error-state.
 
 
@@ -764,7 +759,7 @@ def execute_pipeline(
 
     check.inst_param(pipeline, 'pipeline', PipelineDefinition)
     check.opt_dict_param(environment, 'environment')
-    check.bool_param(throw_on_error, 'throw_on_error')
+    check.bool_param(throw_on_user_error, 'throw_on_user_error')
     execution_metadata = execution_metadata if execution_metadata else ExecutionMetadata()
     check.inst_param(execution_metadata, 'execution_metadata', ExecutionMetadata)
     check.opt_list_param(solid_subset, 'solid_subset', of_type=str)
@@ -775,7 +770,7 @@ def execute_pipeline(
         pipeline_to_execute,
         typed_environment,
         execution_metadata=execution_metadata,
-        throw_on_error=throw_on_error,
+        throw_on_user_error=throw_on_user_error,
     )
 
 
@@ -819,7 +814,9 @@ def build_sub_pipeline(pipeline_def, solid_names):
     )
 
 
-def execute_pipeline_with_metadata(pipeline, typed_environment, execution_metadata, throw_on_error):
+def execute_pipeline_with_metadata(
+    pipeline, typed_environment, execution_metadata, throw_on_user_error
+):
     check.inst_param(pipeline, 'pipeline', PipelineDefinition)
     check.inst_param(typed_environment, 'typed_environment', EnvironmentConfig)
     check.inst_param(execution_metadata, 'execution_metadata', ExecutionMetadata)
@@ -834,7 +831,7 @@ def execute_pipeline_with_metadata(pipeline, typed_environment, execution_metada
                     context,
                     typed_environment,
                     execution_metadata=execution_metadata,
-                    throw_on_error=throw_on_error,
+                    throw_on_user_error=throw_on_user_error,
                 )
             ),
         )

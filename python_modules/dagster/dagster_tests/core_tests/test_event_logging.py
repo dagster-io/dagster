@@ -102,7 +102,7 @@ def test_single_solid_pipeline_failure():
         name='single_solid_pipeline', solids=[solid_one], event_callback=_event_callback
     )
 
-    result = execute_pipeline(pipeline_def, throw_on_error=False)
+    result = execute_pipeline(pipeline_def, throw_on_user_error=False)
     assert not result.success
 
     start_event = single_event(events, EventType.EXECUTION_PLAN_STEP_START)

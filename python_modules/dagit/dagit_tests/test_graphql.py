@@ -1,4 +1,6 @@
+import os
 import pickle
+import sys
 import uuid
 
 import pandas as pd
@@ -41,268 +43,10 @@ from dagit.pipeline_run_storage import PipelineRunStorage
 from dagit.schema import create_schema
 from dagit.schema.context import DagsterGraphQLContext
 
+# This is needed to find production query in all cases
+sys.path.insert(0, os.path.abspath(script_relative_path('.')))
 
-PRODUCTION_QUERY = '''
-query AppQuery {
-  pipelinesOrError {
-    ... on Error {
-      message
-      stack
-      __typename
-    }
-    ... on PipelineConnection {
-      nodes {
-        ...PipelineFragment
-        __typename
-      }
-    }
-    __typename
-  }
-}
-
-fragment PipelineFragment on Pipeline {
-  name
-  description
-  solids {
-    ...SolidFragment
-    __typename
-  }
-  contexts {
-    name
-    description
-    config {
-      ...ConfigFieldFragment
-      __typename
-    }
-    __typename
-  }
-  ...PipelineGraphFragment
-  ...ConfigEditorFragment
-  __typename
-}
-
-fragment SolidFragment on Solid {
-  ...SolidTypeSignatureFragment
-  name
-  definition {
-    description
-    metadata {
-      key
-      value
-      __typename
-    }
-    configDefinition {
-      ...ConfigFieldFragment
-      __typename
-    }
-    __typename
-  }
-  inputs {
-    definition {
-      name
-      description
-      type {
-        ... RuntimeTypeWithTooltipFragment
-        __typename
-      }
-      expectations {
-        name
-        description
-        __typename
-      }
-      __typename
-    }
-    dependsOn {
-      definition {
-        name
-        __typename
-      }
-      solid {
-        name
-        __typename
-      }
-      __typename
-    }
-    __typename
-  }
-  outputs {
-    definition {
-      name
-      description
-      type {
-        __typename
-      }
-      expectations {
-        name
-        description
-        __typename
-      }
-      expectations {
-        name
-        description
-        __typename
-      }
-      __typename
-    }
-    __typename
-  }
-  __typename
-}
-
-fragment RuntimeTypeWithTooltipFragment on RuntimeType {
-  name
-  description
-  __typename
-}
-
-fragment SolidTypeSignatureFragment on Solid {
-  outputs {
-    definition {
-      name
-      type {
-        ... RuntimeTypeWithTooltipFragment
-        __typename
-      }
-      __typename
-    }
-    __typename
-  }
-  inputs {
-    definition {
-      name
-      type {
-        ... RuntimeTypeWithTooltipFragment
-        __typename
-      }
-      __typename
-    }
-    __typename
-  }
-  __typename
-}
-
-fragment ConfigFieldFragment on ConfigTypeField {
-  configType {
-    __typename
-    name
-    description
-    ... on CompositeConfigType {
-      fields {
-        name
-        description
-        isOptional
-        defaultValue
-        configType {
-          name
-          description
-          ... on CompositeConfigType {
-            fields {
-              name
-              description
-              isOptional
-              defaultValue
-              configType {
-                name
-                description
-                __typename
-              }
-              __typename
-            }
-            __typename
-          }
-          __typename
-        }
-        __typename
-      }
-      __typename
-    }
-  }
-  __typename
-}
-
-fragment PipelineGraphFragment on Pipeline {
-  name
-  solids {
-    ...SolidNodeFragment
-    __typename
-  }
-  __typename
-}
-
-fragment SolidNodeFragment on Solid {
-  name
-  inputs {
-    definition {
-      name
-      type {
-        name
-        __typename
-      }
-      __typename
-    }
-    dependsOn {
-      definition {
-        name
-        __typename
-      }
-      solid {
-        name
-        __typename
-      }
-      __typename
-    }
-    __typename
-  }
-  outputs {
-    definition {
-      name
-      type {
-        name
-        __typename
-      }
-      expectations {
-        name
-        description
-        __typename
-      }
-      __typename
-    }
-    __typename
-  }
-  __typename
-}
-
-fragment ConfigEditorFragment on Pipeline {
-  name
-  ...ConfigExplorerFragment
-  __typename
-}
-
-fragment ConfigExplorerFragment on Pipeline {
-  contexts {
-    name
-    description
-    config {
-      ...ConfigFieldFragment
-      __typename
-    }
-    __typename
-  }
-  solids {
-    definition {
-      name
-      description
-      configDefinition {
-        ...ConfigFieldFragment
-        __typename
-      }
-      __typename
-    }
-    __typename
-  }
-  __typename
-}
-'''
+from production_query import PRODUCTION_QUERY  # pylint: disable=wrong-import-position
 
 
 def define_scalar_output_pipeline():
@@ -325,6 +69,14 @@ def define_scalar_output_pipeline():
     return PipelineDefinition(
         name='scalar_output_pipeline', solids=[return_str, return_int, return_bool, return_any]
     )
+
+
+def define_naughty_programmer_pipeline():
+    @lambda_solid
+    def throw_a_thing():
+        raise Exception('bad programmer, bad')
+
+    return PipelineDefinition(name='naughty_programmer_pipeline', solids=[throw_a_thing])
 
 
 def define_pipeline_with_enum_config():
@@ -360,6 +112,7 @@ def define_repository():
             'no_config_pipeline': define_no_config_pipeline,
             'scalar_output_pipeline': define_scalar_output_pipeline,
             'pipeline_with_enum_config': define_pipeline_with_enum_config,
+            'naughty_programmer_pipeline': define_naughty_programmer_pipeline,
         },
     )
 
@@ -1953,7 +1706,7 @@ mutation ($pipeline: ExecutionSelector!, $config: PipelineConfig) {
 '''
 
 
-def test_successful_start_subplan():
+def test_successful_start_subplan(snapshot):
 
     with get_temp_file_name() as num_df_file:
         with get_temp_file_name() as out_df_file:
@@ -1982,11 +1735,67 @@ def test_successful_start_subplan():
             with open(out_df_file, 'rb') as ff:
                 out_df = pickle.load(ff)
             assert out_df.to_dict('list') == {'num1': [1, 3], 'num2': [2, 4], 'sum': [3, 7]}
-            if result.errors:
-                raise Exception(result.errors)
+
+    if result.errors:
+        raise Exception(result.errors)
+
+    query_result = result.data['startSubplanExecution']
+
+    assert query_result['__typename'] == 'StartSubplanExecutionSuccess'
+    assert query_result['pipeline']['name'] == 'pandas_hello_world'
+    assert query_result['hasFailures'] is False
+    step_results = {
+        step_result['step']['key']: step_result for step_result in query_result['stepResults']
+    }
+
+    assert 'sum_solid.transform' in step_results
+
+    assert step_results['sum_solid.transform']['__typename'] == 'StepSuccessResult'
+    assert step_results['sum_solid.transform']['success'] is True
+    assert step_results['sum_solid.transform']['outputName'] == 'result'
+    assert (
+        step_results['sum_solid.transform']['valueRepr']
+        == '''   num1  num2  sum
+0     1     2    3
+1     3     4    7'''
+    )
+
+    snapshot.assert_match(result.data)
 
 
-def test_start_subplan_pipeline_not_found():
+def test_user_error_pipeline(snapshot):
+    result = execute_dagster_graphql(
+        define_context(),
+        START_EXECUTION_PLAN_QUERY,
+        variables={
+            'pipelineName': 'naughty_programmer_pipeline',
+            'config': {},
+            'stepExecutions': [{'stepKey': 'throw_a_thing.transform'}],
+            'executionMetadata': {'runId': 'dljkfdlkfld'},
+        },
+    )
+
+    if result.errors:
+        raise Exception(result.errors)
+
+    assert result.data
+
+    query_result = result.data['startSubplanExecution']
+    assert query_result['__typename'] == 'StartSubplanExecutionSuccess'
+    assert query_result['pipeline']['name'] == 'naughty_programmer_pipeline'
+    assert query_result['hasFailures'] is True
+
+    step_results = {
+        step_result['step']['key']: step_result for step_result in query_result['stepResults']
+    }
+
+    assert 'throw_a_thing.transform' in step_results
+    assert step_results['throw_a_thing.transform']['__typename'] == 'StepFailureResult'
+    assert step_results['throw_a_thing.transform']['success'] is False
+    snapshot.assert_match(result.data)
+
+
+def test_start_subplan_pipeline_not_found(snapshot):
     result = execute_dagster_graphql(
         define_context(),
         START_EXECUTION_PLAN_QUERY,
@@ -2003,9 +1812,10 @@ def test_start_subplan_pipeline_not_found():
 
     assert result.data['startSubplanExecution']['__typename'] == 'PipelineNotFoundError'
     assert result.data['startSubplanExecution']['pipelineName'] == 'nope'
+    snapshot.assert_match(result.data)
 
 
-def test_start_subplan_invalid_config():
+def test_start_subplan_invalid_config(snapshot):
     result = execute_dagster_graphql(
         define_context(),
         START_EXECUTION_PLAN_QUERY,
@@ -2020,9 +1830,10 @@ def test_start_subplan_invalid_config():
     assert not result.errors
     assert result.data
     assert result.data['startSubplanExecution']['__typename'] == 'PipelineConfigValidationInvalid'
+    snapshot.assert_match(result.data)
 
 
-def test_start_subplan_invalid_step_keys():
+def test_start_subplan_invalid_step_keys(snapshot):
     result = execute_dagster_graphql(
         define_context(),
         START_EXECUTION_PLAN_QUERY,
@@ -2044,9 +1855,10 @@ def test_start_subplan_invalid_step_keys():
     )
 
     assert result.data['startSubplanExecution']['invalidStepKeys'] == ['nope']
+    snapshot.assert_match(result.data)
 
 
-def test_start_subplan_invalid_input_name():
+def test_start_subplan_invalid_input_name(snapshot):
     result = execute_dagster_graphql(
         define_context(),
         START_EXECUTION_PLAN_QUERY,
@@ -2074,9 +1886,10 @@ def test_start_subplan_invalid_input_name():
 
     assert result.data['startSubplanExecution']['step']['key'] == 'sum_solid.transform'
     assert result.data['startSubplanExecution']['invalidInputName'] == 'nope'
+    snapshot.assert_match(result.data)
 
 
-def test_start_subplan_invalid_output_name():
+def test_start_subplan_invalid_output_name(snapshot):
     result = execute_dagster_graphql(
         define_context(),
         START_EXECUTION_PLAN_QUERY,
@@ -2104,9 +1917,11 @@ def test_start_subplan_invalid_output_name():
 
     assert result.data['startSubplanExecution']['step']['key'] == 'sum_solid.transform'
     assert result.data['startSubplanExecution']['invalidOutputName'] == 'nope'
+    snapshot.assert_match(result.data)
 
 
-def test_start_subplan_invalid_input_path():
+def test_start_subplan_invalid_input_path(snapshot):
+    hardcoded_uuid = '160b56ba-c9a6-4111-ab4e-a7ab364eb031'
 
     result = execute_dagster_graphql(
         define_context(),
@@ -2117,7 +1932,7 @@ def test_start_subplan_invalid_input_path():
             'stepExecutions': [
                 {
                     'stepKey': 'sum_solid.transform',
-                    'marshalledInputs': [{'inputName': 'num', 'key': str(uuid.uuid4())}],
+                    'marshalledInputs': [{'inputName': 'num', 'key': hardcoded_uuid}],
                 }
             ],
             'executionMetadata': {'runId': 'kdjkfjdfd'},
@@ -2128,14 +1943,19 @@ def test_start_subplan_invalid_input_path():
     assert result.data
     assert result.data['startSubplanExecution']['__typename'] == 'PythonError'
     assert 'No such file or directory:' in result.data['startSubplanExecution']['message']
+    # Exception types differ between python 2 and 3 which breaks snapshots
+    del result.data['startSubplanExecution']['message']
+    snapshot.assert_match(result.data)
 
 
-def test_start_subplan_invalid_output_path():
+def test_start_subplan_invalid_output_path(snapshot):
     with get_temp_file_name() as num_df_file:
         num_df = pd.read_csv(script_relative_path('num.csv'))
 
         with open(num_df_file, 'wb') as ff:
             pickle.dump(num_df, ff)
+
+        hardcoded_uuid = '160b56ba-c9a6-4111-ab4e-a7ab364eb031'
 
         result = execute_dagster_graphql(
             define_context(),
@@ -2151,7 +1971,7 @@ def test_start_subplan_invalid_output_path():
                             {
                                 'outputName': 'result',
                                 # guaranteed to not exist
-                                'key': '{}/{}'.format(str(uuid.uuid4()), str(uuid.uuid4())),
+                                'key': '{uuid}/{uuid}'.format(uuid=hardcoded_uuid),
                             }
                         ],
                     }
@@ -2165,8 +1985,13 @@ def test_start_subplan_invalid_output_path():
         assert result.data['startSubplanExecution']['__typename'] == 'PythonError'
         assert 'No such file or directory:' in result.data['startSubplanExecution']['message']
 
+        # Exception types differ between python 2 and 3 which breaks snapshots
+        del result.data['startSubplanExecution']['message']
 
-def test_invalid_subplan_missing_inputs():
+        snapshot.assert_match(result.data)
+
+
+def test_invalid_subplan_missing_inputs(snapshot):
     result = execute_dagster_graphql(
         define_context(),
         START_EXECUTION_PLAN_QUERY,
@@ -2185,6 +2010,28 @@ def test_invalid_subplan_missing_inputs():
     assert result.data
     assert result.data['startSubplanExecution']['__typename'] == 'InvalidSubplanExecutionError'
     assert result.data['startSubplanExecution']['step']['key'] == 'sum_solid.transform'
+    snapshot.assert_match(result.data)
+
+
+def test_user_code_error_subplan(snapshot):
+    result = execute_dagster_graphql(
+        define_context(),
+        START_EXECUTION_PLAN_QUERY,
+        variables={
+            'pipelineName': 'naughty_programmer_pipeline',
+            'config': {},
+            'stepExecutions': [{'stepKey': 'throw_a_thing.transform'}],
+            'executionMetadata': {'runId': 'kdjkfjdfd'},
+        },
+    )
+
+    if result.errors:
+        raise Exception(result.errors)
+
+    assert not result.errors
+    assert result.data
+
+    snapshot.assert_match(result.data)
 
 
 START_EXECUTION_PLAN_QUERY = '''
@@ -2203,6 +2050,19 @@ mutation (
         __typename
         ... on StartSubplanExecutionSuccess {
             pipeline { name }
+            hasFailures
+            stepResults {
+                __typename
+                success
+                step { key }
+                ... on StepSuccessResult {
+                    outputName
+                    valueRepr
+                }
+                ... on StepFailureResult {
+                    errorMessage
+                }
+            }
         }
         ... on PipelineNotFoundError {
             pipelineName

@@ -10,7 +10,9 @@ class DagsterExecutionFailureReason(Enum):
 
 
 class DagsterError(Exception):
-    pass
+    @property
+    def is_user_code_error(self):
+        return False
 
 
 class DagsterUserError(DagsterError):
@@ -77,6 +79,10 @@ class DagsterUserCodeExecutionError(DagsterUserError):
 
         self.user_exception = check.opt_inst_param(user_exception, 'user_exception', Exception)
         self.original_exc_info = original_exc_info
+
+    @property
+    def is_user_code_error(self):
+        return True
 
 
 class DagsterExecutionStepNotFoundError(DagsterUserError):

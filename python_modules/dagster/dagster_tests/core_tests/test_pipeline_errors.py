@@ -51,7 +51,7 @@ def create_root_transform_failure_solid(name):
 
 def test_transform_failure_pipeline():
     pipeline = silencing_pipeline(solids=[create_root_transform_failure_solid('failing')])
-    pipeline_result = execute_pipeline(pipeline, throw_on_error=False)
+    pipeline_result = execute_pipeline(pipeline, throw_on_user_error=False)
 
     assert not pipeline_result.success
 
@@ -83,7 +83,7 @@ def test_failure_midstream():
             'C': {'A': DependencyDefinition(solid_a.name), 'B': DependencyDefinition(solid_b.name)}
         },
     )
-    pipeline_result = execute_pipeline(pipeline, throw_on_error=False)
+    pipeline_result = execute_pipeline(pipeline, throw_on_user_error=False)
 
     assert pipeline_result.result_for_solid('A').success
     assert pipeline_result.result_for_solid('B').success

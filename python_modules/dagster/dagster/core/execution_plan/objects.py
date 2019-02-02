@@ -2,7 +2,9 @@ from collections import namedtuple
 from contextlib import contextmanager
 import copy
 from enum import Enum
+
 import toposort
+import six
 
 from dagster import check
 from dagster.utils import merge_dicts
@@ -74,6 +76,13 @@ class StepResult(namedtuple('_StepResult', 'success step kind success_data failu
             success_data=None,
             failure_data=check.inst_param(failure_data, 'failure_data', StepFailureData),
         )
+
+    def reraise_user_error(self):
+        check.invariant(not self.success)
+        if self.failure_data.dagster_error.is_user_code_error:
+            six.reraise(*self.failure_data.dagster_error.original_exc_info)
+        else:
+            raise self.failure_data.dagster_error
 
 
 class StepKind(Enum):

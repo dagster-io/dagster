@@ -96,7 +96,7 @@ class SynchronousExecutionManager(PipelineExecutionManager):
                 execution_metadata=ExecutionMetadata(
                     pipeline_run.run_id, event_callback=pipeline_run.handle_new_event
                 ),
-                throw_on_error=False,
+                throw_on_user_error=False,
             )
         except:  # pylint: disable=W0702
             pipeline_run.handle_new_event(
@@ -275,7 +275,10 @@ def execute_pipeline_through_queue(
 
     try:
         result = execute_pipeline_with_metadata(
-            pipeline, typed_environment, execution_metadata=execution_metadata, throw_on_error=False
+            pipeline,
+            typed_environment,
+            execution_metadata=execution_metadata,
+            throw_on_user_error=False,
         )
         return result
     except:  # pylint: disable=W0702

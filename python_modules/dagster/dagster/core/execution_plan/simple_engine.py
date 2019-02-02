@@ -38,9 +38,11 @@ def _all_inputs_covered(step, results):
     return True
 
 
-def execute_plan_core(context, execution_plan):
+def execute_plan_core(context, execution_plan, throw_on_user_error):
     check.inst_param(context, 'base_context', RuntimeExecutionContext)
     check.inst_param(execution_plan, 'execution_plan', ExecutionPlan)
+    check.bool_param(throw_on_user_error, 'throw_on_user_error')
+
     steps = list(execution_plan.topological_steps())
 
     intermediate_results = {}
@@ -71,6 +73,10 @@ def execute_plan_core(context, execution_plan):
 
         for result in execute_step(step, context_for_step, input_values):
             check.invariant(isinstance(result, StepResult))
+
+            if throw_on_user_error and not result.success:
+                result.reraise_user_error()
+
             yield result
             if result.success:
                 output_handle = StepOutputHandle(step, result.success_data.output_name)
@@ -145,20 +151,23 @@ def _create_step_result(step, result):
     step_output = step.step_output_named(result.output_name)
 
     try:
-        coerced_value = step_output.runtime_type.coerce_runtime_value(result.value)
+        return StepResult.success_result(
+            step=step,
+            kind=step.kind,
+            success_data=StepSuccessData(
+                output_name=result.output_name,
+                value=step_output.runtime_type.coerce_runtime_value(result.value),
+            ),
+        )
     except DagsterRuntimeCoercionError as e:
         raise DagsterInvariantViolationError(
-            '''Solid {step.solid.name} output name {output_name} output {result.value}
-            type failure: {error_msg}'''.format(
+            (
+                'Solid {step.solid.name} output name {output_name} output {result.value} '
+                'type failure: {error_msg}'
+            ).format(
                 step=step, result=result, error_msg=','.join(e.args), output_name=result.output_name
             )
         )
-
-    return StepResult.success_result(
-        step=step,
-        kind=step.kind,
-        success_data=StepSuccessData(output_name=result.output_name, value=coerced_value),
-    )
 
 
 def _get_evaluated_input(step, input_name, input_value):
