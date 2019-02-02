@@ -595,11 +595,9 @@ def execute_externalized_plan(
             ),
         )
 
-        results = list(
+        return list(
             execute_plan_core(context, execution_plan, throw_on_user_error=throw_on_user_error)
         )
-
-        return results
 
 
 def _check_outputs_to_marshal(execution_plan, outputs_to_marshal):

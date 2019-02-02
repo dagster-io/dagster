@@ -215,33 +215,14 @@ def _create_augmented_subplan(
             continue
 
         with state.push_tags(**step.tags):
-            base_step = None
-            new_input_steps = []
-            if not subset_info:
-                base_step = step
-            elif step.key not in subset_info.input_step_factory_fns:
-                base_step = step
-            else:
-                base_step, new_input_steps = _create_new_step_with_added_inputs(
-                    state, step, subset_info
-                )
-
-            new_output_steps = []
-
-            if added_outputs and step.key in added_outputs.output_step_factory_fns:
-                for output_step_factory_entry in added_outputs.output_step_factory_fns[step.key]:
-                    check.invariant(step.has_step_output(output_step_factory_entry.output_name))
-                    step_output = step.step_output_named(output_step_factory_entry.output_name)
-                    new_output_steps.append(
-                        output_step_factory_entry.step_factory_fn(state, step, step_output)
-                    )
-
-            steps.append(base_step)
-            steps.extend(new_input_steps)
-            steps.extend(new_output_steps)
+            steps.extend(_all_augmented_steps_for_step(state, step, subset_info, added_outputs))
 
     new_plan = create_execution_plan_from_steps(steps)
 
+    return _validate_new_plan(new_plan, subset_info, execution_plan_info)
+
+
+def _validate_new_plan(new_plan, subset_info, execution_plan_info):
     for step in new_plan.steps:
         for step_input in step.step_inputs:
             if new_plan.has_step(step_input.prev_output_handle.step.key):
@@ -269,11 +250,32 @@ def _create_augmented_subplan(
                     input_name=step_input.name,
                     step_key=step.key,
                 )
-
     return new_plan
 
 
+def _all_augmented_steps_for_step(state, step, subset_info, added_outputs):
+    step, new_input_steps = _create_new_step_with_added_inputs(state, step, subset_info)
+
+    all_new_steps = [step] + new_input_steps
+
+    if added_outputs and step.key in added_outputs.output_step_factory_fns:
+        for output_step_factory_entry in added_outputs.output_step_factory_fns[step.key]:
+            check.invariant(step.has_step_output(output_step_factory_entry.output_name))
+            step_output = step.step_output_named(output_step_factory_entry.output_name)
+            all_new_steps.append(
+                output_step_factory_entry.step_factory_fn(state, step, step_output)
+            )
+
+    return all_new_steps
+
+
 def _create_new_step_with_added_inputs(state, step, subset_info):
+    if not subset_info:
+        return step, []
+
+    if step.key not in subset_info.input_step_factory_fns:
+        return step, []
+
     new_steps = []
     new_step_inputs = []
     for step_input in step.step_inputs:
