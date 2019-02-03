@@ -314,7 +314,14 @@ class StepExecution(namedtuple('_StepExecution', 'step_key marshalled_inputs mar
             cls,
             check.str_param(step_key, 'step_key'),
             list(map(lambda inp: MarshalledInput(**inp), marshalled_inputs)),
-            list(map(lambda out: MarshalledOutput(**out), marshalled_outputs)),
+            list(
+                map(
+                    lambda out: MarshalledOutput(
+                        output_name=out['output_name'], marshalling_key=out['key']
+                    ),
+                    marshalled_outputs,
+                )
+            ),
         )
 
 

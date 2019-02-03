@@ -164,7 +164,7 @@ def test_external_execution_step_for_output_missing():
             pipeline,
             execution_plan,
             ['add_one.transform'],
-            outputs_to_marshal={'nope': [MarshalledOutput(output_name='nope', key='nope')]},
+            outputs_to_marshal={'nope': [MarshalledOutput('nope', 'nope')]},
             execution_metadata=ExecutionMetadata(),
         )
 
@@ -194,7 +194,9 @@ def test_external_execution_marshal_output_code_error():
 
     outputs_to_marshal = {
         'add_one.transform': [
-            MarshalledOutput(output_name='result', key='{uuid}/{uuid}'.format(uuid=hardcoded_uuid))
+            MarshalledOutput(
+                output_name='result', marshalling_key='{uuid}/{uuid}'.format(uuid=hardcoded_uuid)
+            )
         ]
     }
 

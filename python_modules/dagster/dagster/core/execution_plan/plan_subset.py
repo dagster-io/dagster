@@ -135,7 +135,14 @@ class ExecutionPlanSubsetInfo(
         )
 
 
-MarshalledOutput = namedtuple('MarshalledOutput', 'output_name key')
+class MarshalledOutput(namedtuple('_MarshalledOutput', 'output_name marshalling_key')):
+    def __new__(cls, output_name, marshalling_key):
+        return super(MarshalledOutput, cls).__new__(
+            cls,
+            check.str_param(output_name, 'output_name'),
+            check.str_param(marshalling_key, 'marshalling_key'),
+        )
+
 
 OutputStepFactoryEntry = namedtuple('OutputStepFactoryEntry', 'output_name step_factory_fn')
 
@@ -174,7 +181,9 @@ class ExecutionPlanAddedOutputs(
                 output_step_factory_fns[step_key].append(
                     OutputStepFactoryEntry(
                         output_name=marshalled_output.output_name,
-                        step_factory_fn=_create_marshal_output_fn(marshalled_output.key),
+                        step_factory_fn=_create_marshal_output_fn(
+                            marshalled_output.marshalling_key
+                        ),
                     )
                 )
 
