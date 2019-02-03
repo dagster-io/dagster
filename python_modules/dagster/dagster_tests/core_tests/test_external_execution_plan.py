@@ -11,16 +11,15 @@ from dagster import (
 from dagster.core.errors import (
     DagsterExecutionStepNotFoundError,
     DagsterInvalidSubplanExecutionError,
-    DagsterMarshalOutputError,
     DagsterMarshalOutputNotFoundError,
-    DagsterUnmarshalInputError,
     DagsterUnmarshalInputNotFoundError,
     DagsterExecutionStepExecutionError,
 )
 from dagster.core.execution import (
-    execute_externalized_plan,
-    create_execution_plan,
     ExecutionMetadata,
+    MarshalledOutput,
+    create_execution_plan,
+    execute_externalized_plan,
 )
 from dagster.core.execution_plan.objects import StepKind
 from dagster.core.types.runtime import resolve_to_runtime_type
@@ -69,7 +68,7 @@ def test_basic_pipeline_external_plan_execution():
             execution_plan,
             ['add_one.transform'],
             inputs_to_marshal={'add_one.transform': {'num': temp_path}},
-            outputs_to_marshal={'add_one.transform': [{'output': 'result', 'path': write_path}]},
+            outputs_to_marshal={'add_one.transform': [MarshalledOutput('result', write_path)]},
             execution_metadata=ExecutionMetadata(),
         )
 
@@ -79,7 +78,7 @@ def test_basic_pipeline_external_plan_execution():
 
     thunk_step_result = results[0]
 
-    assert thunk_step_result.kind == StepKind.VALUE_THUNK
+    assert thunk_step_result.kind == StepKind.UNMARSHAL_INPUT
 
     transform_step_result = results[1]
     assert transform_step_result.kind == StepKind.TRANSFORM
@@ -129,20 +128,30 @@ def test_external_execution_input_marshal_code_error():
 
     execution_plan = create_execution_plan(pipeline)
 
-    with pytest.raises(DagsterUnmarshalInputError) as exc_info:
+    with pytest.raises(IOError):
         execute_externalized_plan(
             pipeline,
             execution_plan,
             ['add_one.transform'],
             inputs_to_marshal={'add_one.transform': {'num': 'nope'}},
             execution_metadata=ExecutionMetadata(),
+            throw_on_user_error=True,
         )
 
-    assert (
-        str(exc_info.value) == 'Error during the marshalling of input num in step add_one.transform'
+    results = execute_externalized_plan(
+        pipeline,
+        execution_plan,
+        ['add_one.transform'],
+        inputs_to_marshal={'add_one.transform': {'num': 'nope'}},
+        execution_metadata=ExecutionMetadata(),
+        throw_on_user_error=False,
     )
-    assert exc_info.value.input_name == 'num'
-    assert exc_info.value.step_key == 'add_one.transform'
+
+    assert len(results) == 1
+    marshal_result = results[0]
+    assert marshal_result.success is False
+    assert marshal_result.step.kind == StepKind.UNMARSHAL_INPUT
+    assert isinstance(marshal_result.failure_data.dagster_error.user_exception, IOError)
 
 
 def test_external_execution_step_for_output_missing():
@@ -155,7 +164,7 @@ def test_external_execution_step_for_output_missing():
             pipeline,
             execution_plan,
             ['add_one.transform'],
-            outputs_to_marshal={'nope': [{'output': 'nope', 'path': 'nope'}]},
+            outputs_to_marshal={'nope': [MarshalledOutput('nope', 'nope')]},
             execution_metadata=ExecutionMetadata(),
         )
 
@@ -170,31 +179,55 @@ def test_external_execution_output_missing():
             pipeline,
             execution_plan,
             ['add_one.transform'],
-            outputs_to_marshal={'add_one.transform': [{'output': 'nope', 'path': 'nope'}]},
+            outputs_to_marshal={'add_one.transform': [MarshalledOutput('nope', 'nope')]},
             execution_metadata=ExecutionMetadata(),
         )
 
 
-def test_external_execution_output_code_error():
+def test_external_execution_marshal_output_code_error():
     pipeline = define_inty_pipeline()
 
     execution_plan = create_execution_plan(pipeline)
 
-    with pytest.raises(DagsterMarshalOutputError) as exc_info:
+    # guaranteed that folder does not exist
+    hardcoded_uuid = '83fb4ace-5cab-459d-99b6-2ca9808c54a1'
+
+    outputs_to_marshal = {
+        'add_one.transform': [
+            MarshalledOutput(
+                output_name='result', marshalling_key='{uuid}/{uuid}'.format(uuid=hardcoded_uuid)
+            )
+        ]
+    }
+
+    with pytest.raises(IOError) as exc_info:
         execute_externalized_plan(
             pipeline,
             execution_plan,
             ['return_one.transform', 'add_one.transform'],
-            outputs_to_marshal={'add_one.transform': [{'output': 'result', 'path': 23434}]},
+            outputs_to_marshal=outputs_to_marshal,
             execution_metadata=ExecutionMetadata(),
+            throw_on_user_error=True,
         )
 
-    assert (
-        str(exc_info.value)
-        == 'Error during the marshalling of output result in step add_one.transform'
+    assert 'No such file or directory' in str(exc_info.value)
+
+    results = execute_externalized_plan(
+        pipeline,
+        execution_plan,
+        ['return_one.transform', 'add_one.transform'],
+        outputs_to_marshal=outputs_to_marshal,
+        execution_metadata=ExecutionMetadata(),
+        throw_on_user_error=False,
     )
-    assert exc_info.value.output_name == 'result'
-    assert exc_info.value.step_key == 'add_one.transform'
+
+    assert len(results) == 3
+
+    results_dict = {result.step.key: result for result in results}
+
+    assert results_dict['return_one.transform'].success is True
+    assert results_dict['add_one.transform'].success is True
+    assert results_dict['add_one.transform.marshal-output.result'].success is False
 
 
 def test_external_execution_output_code_error_throw_on_user_error():

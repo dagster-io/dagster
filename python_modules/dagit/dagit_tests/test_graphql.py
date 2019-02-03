@@ -1941,10 +1941,9 @@ def test_start_subplan_invalid_input_path(snapshot):
 
     assert not result.errors
     assert result.data
-    assert result.data['startSubplanExecution']['__typename'] == 'PythonError'
-    assert 'No such file or directory:' in result.data['startSubplanExecution']['message']
-    # Exception types differ between python 2 and 3 which breaks snapshots
-    del result.data['startSubplanExecution']['message']
+    assert result.data['startSubplanExecution']['__typename'] == 'StartSubplanExecutionSuccess'
+    step_results_data = result.data['startSubplanExecution']['stepResults']
+    assert step_results_data[0]['success'] is False
     snapshot.assert_match(result.data)
 
 
@@ -1982,11 +1981,18 @@ def test_start_subplan_invalid_output_path(snapshot):
 
         assert not result.errors
         assert result.data
-        assert result.data['startSubplanExecution']['__typename'] == 'PythonError'
-        assert 'No such file or directory:' in result.data['startSubplanExecution']['message']
+        assert result.data['startSubplanExecution']['__typename'] == 'StartSubplanExecutionSuccess'
+        step_results_data = result.data['startSubplanExecution']['stepResults']
+        assert len(step_results_data) == 3
+        assert [step_result['step']['key'] for step_result in step_results_data] == [
+            'sum_solid.transform.unmarshal-input.num',
+            'sum_solid.transform',
+            'sum_solid.transform.marshal-output.result',
+        ]
 
-        # Exception types differ between python 2 and 3 which breaks snapshots
-        del result.data['startSubplanExecution']['message']
+        assert step_results_data[0]['success']
+        assert step_results_data[1]['success']
+        assert not step_results_data[2]['success']
 
         snapshot.assert_match(result.data)
 

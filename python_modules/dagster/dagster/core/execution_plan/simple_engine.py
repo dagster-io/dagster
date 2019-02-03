@@ -196,7 +196,7 @@ def _compute_result_list(step, context, evaluated_inputs):
 
         if gen is None:
             check.invariant(not step.step_outputs)
-            return
+            return []
 
         return list(gen)
 

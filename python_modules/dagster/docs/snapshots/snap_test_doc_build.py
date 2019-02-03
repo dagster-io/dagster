@@ -20073,22 +20073,8 @@ try:</p>
 <dt>except Exception as e:  # pylint: disable=broad-except</dt>
 <dd><dl class="first docutils">
 <dt>raise_from(</dt>
-<dd><dl class="first docutils">
-<dt>DagsterMarshalOutputError(</dt>
-<dd><dl class="first docutils">
-<dt>‘Error during the marshalling of output {output_name} in step {step_key}’.format(</dt>
-<dd>output_name=output_name, step_key=step.key</dd>
-</dl>
-<p class="last">),
-user_exception=e,
-original_exc_info=sys.exc_info(),
-output_name=output_name,
-step_key=step.key,</p>
-</dd>
-</dl>
-<p class="last">),
-e,</p>
-</dd>
+<dd>DagsterExecutionStepExecutionError(…)
+e,</dd>
 </dl>
 <p class="last">)</p>
 </dd>

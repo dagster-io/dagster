@@ -52,15 +52,7 @@ class DagsterUserCodeExecutionError(DagsterUserError):
         )
     except Exception as e:  # pylint: disable=broad-except
         raise_from(
-            DagsterMarshalOutputError(
-                'Error during the marshalling of output {output_name} in step {step_key}'.format(
-                    output_name=output_name, step_key=step.key
-                ),
-                user_exception=e,
-                original_exc_info=sys.exc_info(),
-                output_name=output_name,
-                step_key=step.key,
-            ),
+            DagsterExecutionStepExecutionError(...)
             e,
         )
 
@@ -109,15 +101,6 @@ class DagsterUnmarshalInputNotFoundError(DagsterUserError):
         super(DagsterUnmarshalInputNotFoundError, self).__init__(*args, **kwargs)
 
 
-class DagsterUnmarshalInputError(DagsterUserCodeExecutionError):
-    '''Indicates an error doing marshalling a specific input'''
-
-    def __init__(self, *args, **kwargs):
-        self.input_name = check.str_param(kwargs.pop('input_name'), 'input_name')
-        self.step_key = check.str_param(kwargs.pop('step_key'), 'step_key')
-        super(DagsterUnmarshalInputError, self).__init__(*args, **kwargs)
-
-
 class DagsterMarshalOutputNotFoundError(DagsterUserError):
     '''Throw if user tries to marshal an output that does not exist on the step'''
 
@@ -125,15 +108,6 @@ class DagsterMarshalOutputNotFoundError(DagsterUserError):
         self.output_name = check.str_param(kwargs.pop('output_name'), 'output_name')
         self.step_key = check.str_param(kwargs.pop('step_key'), 'step_key')
         super(DagsterMarshalOutputNotFoundError, self).__init__(*args, **kwargs)
-
-
-class DagsterMarshalOutputError(DagsterUserCodeExecutionError):
-    '''Indicates an error doing marshalling on a specific output'''
-
-    def __init__(self, *args, **kwargs):
-        self.output_name = check.str_param(kwargs.pop('output_name'), 'output_name')
-        self.step_key = check.str_param(kwargs.pop('step_key'), 'step_key')
-        super(DagsterMarshalOutputError, self).__init__(*args, **kwargs)
 
 
 class DagsterExecutionStepExecutionError(DagsterUserCodeExecutionError):

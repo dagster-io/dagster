@@ -7,6 +7,48 @@ from snapshottest import Snapshot
 
 snapshots = Snapshot()
 
+snapshots['test_start_subplan_invalid_output_path 1'] = {
+    'startSubplanExecution': {
+        '__typename': 'StartSubplanExecutionSuccess',
+        'hasFailures': True,
+        'pipeline': {
+            'name': 'pandas_hello_world'
+        },
+        'stepResults': [
+            {
+                '__typename': 'StepSuccessResult',
+                'outputName': 'unmarshal-input-output',
+                'step': {
+                    'key': 'sum_solid.transform.unmarshal-input.num'
+                },
+                'success': True,
+                'valueRepr': '''   num1  num2
+0     1     2
+1     3     4'''
+            },
+            {
+                '__typename': 'StepSuccessResult',
+                'outputName': 'result',
+                'step': {
+                    'key': 'sum_solid.transform'
+                },
+                'success': True,
+                'valueRepr': '''   num1  num2  sum
+0     1     2    3
+1     3     4    7'''
+            },
+            {
+                '__typename': 'StepFailureResult',
+                'errorMessage': 'Error occured during step sum_solid.transform.marshal-output.result',
+                'step': {
+                    'key': 'sum_solid.transform.marshal-output.result'
+                },
+                'success': False
+            }
+        ]
+    }
+}
+
 snapshots['test_query_execution_plan_snapshot 1'] = {
     'executionPlan': {
         '__typename': 'ExecutionPlan',
@@ -87,26 +129,6 @@ snapshots['test_query_execution_plan_snapshot 1'] = {
     }
 }
 
-snapshots['test_user_code_error_subplan 1'] = {
-    'startSubplanExecution': {
-        '__typename': 'StartSubplanExecutionSuccess',
-        'hasFailures': True,
-        'pipeline': {
-            'name': 'naughty_programmer_pipeline'
-        },
-        'stepResults': [
-            {
-                '__typename': 'StepFailureResult',
-                'errorMessage': 'Error occured during step throw_a_thing.transform',
-                'step': {
-                    'key': 'throw_a_thing.transform'
-                },
-                'success': False
-            }
-        ]
-    }
-}
-
 snapshots['test_successful_start_subplan 1'] = {
     'startSubplanExecution': {
         '__typename': 'StartSubplanExecutionSuccess',
@@ -117,9 +139,9 @@ snapshots['test_successful_start_subplan 1'] = {
         'stepResults': [
             {
                 '__typename': 'StepSuccessResult',
-                'outputName': 'value_output',
+                'outputName': 'unmarshal-input-output',
                 'step': {
-                    'key': 'sum_solid.transform.input.num.value'
+                    'key': 'sum_solid.transform.unmarshal-input.num'
                 },
                 'success': True,
                 'valueRepr': '''   num1  num2
@@ -158,6 +180,13 @@ snapshots['test_user_error_pipeline 1'] = {
                 'success': False
             }
         ]
+    }
+}
+
+snapshots['test_start_subplan_pipeline_not_found 1'] = {
+    'startSubplanExecution': {
+        '__typename': 'PipelineNotFoundError',
+        'pipelineName': 'nope'
     }
 }
 
@@ -206,13 +235,21 @@ snapshots['test_start_subplan_invalid_output_name 1'] = {
 
 snapshots['test_start_subplan_invalid_input_path 1'] = {
     'startSubplanExecution': {
-        '__typename': 'PythonError'
-    }
-}
-
-snapshots['test_start_subplan_invalid_output_path 1'] = {
-    'startSubplanExecution': {
-        '__typename': 'PythonError'
+        '__typename': 'StartSubplanExecutionSuccess',
+        'hasFailures': True,
+        'pipeline': {
+            'name': 'pandas_hello_world'
+        },
+        'stepResults': [
+            {
+                '__typename': 'StepFailureResult',
+                'errorMessage': 'Error occured during step sum_solid.transform.unmarshal-input.num',
+                'step': {
+                    'key': 'sum_solid.transform.unmarshal-input.num'
+                },
+                'success': False
+            }
+        ]
     }
 }
 
@@ -226,9 +263,22 @@ snapshots['test_invalid_subplan_missing_inputs 1'] = {
     }
 }
 
-snapshots['test_start_subplan_pipeline_not_found 1'] = {
+snapshots['test_user_code_error_subplan 1'] = {
     'startSubplanExecution': {
-        '__typename': 'PipelineNotFoundError',
-        'pipelineName': 'nope'
+        '__typename': 'StartSubplanExecutionSuccess',
+        'hasFailures': True,
+        'pipeline': {
+            'name': 'naughty_programmer_pipeline'
+        },
+        'stepResults': [
+            {
+                '__typename': 'StepFailureResult',
+                'errorMessage': 'Error occured during step throw_a_thing.transform',
+                'step': {
+                    'key': 'throw_a_thing.transform'
+                },
+                'success': False
+            }
+        ]
     }
 }

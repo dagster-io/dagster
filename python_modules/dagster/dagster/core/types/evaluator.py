@@ -422,7 +422,6 @@ def validate_selector_config_value(selector_type, config_value, stack):
 
         field_name, incoming_field_value = single_item(config_value)
         if field_name not in selector_type.fields:
-            print('calling ' + 'create_field_not_defined_error')
             yield create_field_not_defined_error(selector_type, stack, field_name)
             return
 

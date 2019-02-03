@@ -73,6 +73,8 @@ class DauphinStepKind(dauphin.Enum):
     SERIALIZE = 'SERIALIZE'
     INPUT_THUNK = 'INPUT_THUNK'
     MATERIALIZATION_THUNK = 'MATERIALIZATION_THUNK'
+    UNMARSHAL_INPUT = 'UNMARSHAL_INPUT'
+    MARSHAL_OUTPUT = 'MARSHAL_OUTPUT'
 
     @property
     def description(self):
@@ -104,7 +106,7 @@ class DauphinStepKind(dauphin.Enum):
                 'the environment'
             )
         else:
-            return 'Unknown enum {value}'.format(value=self)
+            return None
 
 
 class DauphinExecutionStep(dauphin.ObjectType):
