@@ -52,7 +52,16 @@ def test_pandas_input_transform_test_pipeline():
 @notebook_test
 def test_pandas_source_test_pipeline():
     pipeline = define_pandas_source_test_pipeline()
-    pipeline_result = execute_pipeline(pipeline)
+    pipeline_result = execute_pipeline(
+        pipeline,
+        {
+            'solids': {
+                'pandas_source_test': {
+                    'inputs': {'df': {'csv': {'path': script_relative_path('num_prod.csv')}}}
+                }
+            }
+        },
+    )
     assert pipeline_result.success
     solid_result = pipeline_result.result_for_solid('pandas_source_test')
     expected = pd.read_csv(script_relative_path('num_prod.csv')) + 1

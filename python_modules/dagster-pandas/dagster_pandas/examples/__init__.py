@@ -67,12 +67,5 @@ def define_pandas_repository():
 
 def define_pandas_source_test_pipeline():
     return PipelineDefinition(
-        name='input_transform_test_pipeline',
-        solids=[
-            define_stub_solid(
-                'load_num_csv', pd.read_csv(script_relative_path('data/num_prod.csv'))
-            ),
-            define_pandas_source_test_solid(),
-        ],
-        dependencies={'pandas_source_test': {'df': DependencyDefinition('load_num_csv')}},
+        name='input_transform_test_pipeline', solids=[define_pandas_source_test_solid()]
     )
