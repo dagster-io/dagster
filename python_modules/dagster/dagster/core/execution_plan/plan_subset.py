@@ -33,6 +33,20 @@ class ExecutionPlanSubsetInfo(
         Create an execution subset with hardcoded values as inputs. This will create
         execution steps with the key "{step_key}.input.{input_name}.value" that simply
         emit the value
+
+        inputs dictionary is a Dict[str,Dict[str,Any]] mapping
+
+        step_key => input_name = > value
+
+        Example:
+
+        create_execution_plan(
+            define_two_int_pipeline(),
+            subset_info=ExecutionPlanSubsetInfo.with_input_values(
+                ['add_one.transform'], {'add_one.transform': {'num': 2}}
+            ),
+        )
+
         '''
         check.list_param(included_step_keys, 'included_step_keys', of_type=str)
         check_two_dim_dict(inputs, 'inputs', key_type=str)
@@ -59,14 +73,22 @@ class ExecutionPlanSubsetInfo(
 
     @staticmethod
     def with_input_marshalling(included_step_keys, marshalled_inputs=None):
+        '''
+        Create an execution subset that uses the marshalling infrastruture in order
+        to provide values to includes.
+
+        inputs dictionary is a Dict[str,Dict[str,Any]] mapping
+
+        step_key => input_name = > marshalling_key
+        '''
         check.list_param(included_step_keys, 'included_step_keys', of_type=str)
         check_opt_two_dim_dict(marshalled_inputs, 'marshalled_inputs')
 
         input_step_factory_fns = defaultdict(dict)
 
-        def _create_unmarshal_input_factory_fn(key):
+        def _create_unmarshal_input_factory_fn(marshalling_key):
             return lambda state, step, step_input: create_unmarshal_input_step(
-                state, step, step_input, key
+                state, step, step_input, marshalling_key
             )
 
         for step_key, input_marshal_dict in marshalled_inputs.items():

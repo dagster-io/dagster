@@ -571,10 +571,7 @@ def execute_externalized_plan(
             subset_info=ExecutionPlanSubsetInfo.with_input_marshalling(
                 included_step_keys=step_keys, marshalled_inputs=inputs_to_marshal
             ),
-            added_outputs=ExecutionPlanAddedOutputs.with_output_marshalling(
-                outputs_to_marshal,
-                # _process_outputs_to_marshall_param(outputs_to_marshal)
-            ),
+            added_outputs=ExecutionPlanAddedOutputs.with_output_marshalling(outputs_to_marshal),
         )
 
         return list(

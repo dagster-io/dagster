@@ -12,16 +12,16 @@ from .objects import (
 UNMARSHAL_INPUT_OUTPUT = 'unmarshal-input-output'
 
 
-def create_unmarshal_input_step(state, step, step_input, key):
+def create_unmarshal_input_step(state, step, step_input, marshalling_key):
     check.inst_param(state, 'state', StepBuilderState)
     check.inst_param(step, 'step', ExecutionStep)
     check.inst_param(step_input, 'step_input', StepInput)
-    check.str_param(key, 'key')
+    check.str_param(marshalling_key, 'marshalling_key')
 
     def _compute_fn(context, _step, _inputs):
         yield Result(
             context.persistence_policy.read_value(
-                step_input.runtime_type.serialization_strategy, key
+                step_input.runtime_type.serialization_strategy, marshalling_key
             ),
             UNMARSHAL_INPUT_OUTPUT,
         )
@@ -45,15 +45,17 @@ def create_unmarshal_input_step(state, step, step_input, key):
 MARSHAL_OUTPUT_INPUT = 'marshal-output-input'
 
 
-def create_marshal_output_step(state, step, step_output, key):
+def create_marshal_output_step(state, step, step_output, marshalling_key):
     check.inst_param(state, 'state', StepBuilderState)
     check.inst_param(step, 'step', ExecutionStep)
     check.inst_param(step_output, 'step_output', StepOutput)
-    check.str_param(key, 'key')
+    check.str_param(marshalling_key, 'marshalling_key')
 
     def _compute_fn(context, _step, inputs):
         context.persistence_policy.write_value(
-            step_output.runtime_type.serialization_strategy, key, inputs[MARSHAL_OUTPUT_INPUT]
+            step_output.runtime_type.serialization_strategy,
+            marshalling_key,
+            inputs[MARSHAL_OUTPUT_INPUT],
         )
 
     return ExecutionStep(
