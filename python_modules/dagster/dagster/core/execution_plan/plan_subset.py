@@ -1,7 +1,7 @@
 from collections import defaultdict, namedtuple
 from dagster import check
 from dagster.core.definitions.utils import check_two_dim_dict, check_opt_two_dim_dict
-from .marshal import create_unmarshal_step, create_marshal_output_step
+from .marshal import create_unmarshal_input_step, create_marshal_output_step
 from .utility import create_value_thunk_step
 
 
@@ -65,7 +65,7 @@ class ExecutionPlanSubsetInfo(
         input_step_factory_fns = defaultdict(dict)
 
         def _create_unmarshal_input_factory_fn(key):
-            return lambda state, step, step_input: create_unmarshal_step(
+            return lambda state, step, step_input: create_unmarshal_input_step(
                 state, step, step_input, key
             )
 

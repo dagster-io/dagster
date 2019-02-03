@@ -12,18 +12,19 @@ from .objects import (
 UNMARSHAL_INPUT_OUTPUT = 'unmarshal-input-output'
 
 
-def create_unmarshal_step(state, step, step_input, key):
+def create_unmarshal_input_step(state, step, step_input, key):
     check.inst_param(state, 'state', StepBuilderState)
     check.inst_param(step, 'step', ExecutionStep)
     check.inst_param(step_input, 'step_input', StepInput)
     check.str_param(key, 'key')
 
     def _compute_fn(context, _step, _inputs):
-        input_value = context.persistence_policy.read_value(
-            step_input.runtime_type.serialization_strategy, key
+        yield Result(
+            context.persistence_policy.read_value(
+                step_input.runtime_type.serialization_strategy, key
+            ),
+            UNMARSHAL_INPUT_OUTPUT,
         )
-
-        yield Result(input_value, UNMARSHAL_INPUT_OUTPUT)
 
     return StepOutputHandle(
         ExecutionStep(
