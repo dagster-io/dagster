@@ -144,7 +144,13 @@ class MarshalledOutput(namedtuple('_MarshalledOutput', 'output_name marshalling_
         )
 
 
-OutputStepFactoryEntry = namedtuple('OutputStepFactoryEntry', 'output_name step_factory_fn')
+class OutputStepFactoryEntry(namedtuple('_OutputStepFactoryEntry', 'output_name step_factory_fn')):
+    def __new__(cls, output_name, step_factory_fn):
+        return super(OutputStepFactoryEntry, cls).__new__(
+            cls,
+            check.str_param(output_name, 'output_name'),
+            check.callable_param(step_factory_fn, 'step_factory_fn'),
+        )
 
 
 class ExecutionPlanAddedOutputs(
