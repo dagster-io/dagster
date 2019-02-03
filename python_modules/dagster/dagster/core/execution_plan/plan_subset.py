@@ -36,7 +36,7 @@ class ExecutionPlanSubsetInfo(
 
         inputs dictionary is a Dict[str,Dict[str,Any]] mapping
 
-        step_key => input_name = > value
+        step_key => input_name => value
 
         Example:
 
@@ -79,7 +79,7 @@ class ExecutionPlanSubsetInfo(
 
         inputs dictionary is a Dict[str,Dict[str,Any]] mapping
 
-        step_key => input_name = > marshalling_key
+        step_key => input_name => marshalling_key
         '''
         check.list_param(included_step_keys, 'included_step_keys', of_type=str)
         check_opt_two_dim_dict(marshalled_inputs, 'marshalled_inputs')

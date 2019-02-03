@@ -436,19 +436,19 @@ def _execute_subplan_or_error(args, dauphin_pipeline, execution_plan, evaluate_v
             execution_plan=execution_plan,
             step_keys=args.step_keys,
             inputs_to_marshal=_get_inputs_to_marshal(args),
-            outputs_to_marshal=_get_outputs_to_marshal(args),
+            outputs_to_marshal={se.step_key: se.marshalled_outputs for se in args.step_executions},
             environment=evaluate_value_result.value,
             execution_metadata=args.execution_metadata,
             throw_on_user_error=False,
         )
 
         has_failures = False
-        dauphin_steps = []
+        dauphin_step_results = []
         for result in results:
             if not result.success:
                 has_failures = True
 
-            dauphin_steps.append(
+            dauphin_step_results.append(
                 type_of('StepSuccessResult')(
                     success=result.success,
                     step=type_of('ExecutionStep')(result.step),
@@ -464,7 +464,7 @@ def _execute_subplan_or_error(args, dauphin_pipeline, execution_plan, evaluate_v
             )
 
         return type_of('StartSubplanExecutionSuccess')(
-            pipeline=dauphin_pipeline, has_failures=has_failures, step_results=dauphin_steps
+            pipeline=dauphin_pipeline, has_failures=has_failures, step_results=dauphin_step_results
         )
 
     except DagsterInvalidSubplanExecutionError as invalid_subplan_error:
@@ -501,17 +501,9 @@ def _execute_subplan_or_error(args, dauphin_pipeline, execution_plan, evaluate_v
     check.failed('Should not get here')
 
 
-def _get_outputs_to_marshal(args):
-    outputs_to_marshal = defaultdict(list)
-    for step_execution in args.step_executions:
-        for marshalled_output in step_execution.marshalled_outputs:
-            outputs_to_marshal[step_execution.step_key].append(marshalled_output)
-    return dict(outputs_to_marshal)
-
-
 def _get_inputs_to_marshal(args):
     inputs_to_marshal = defaultdict(dict)
     for step_execution in args.step_executions:
-        for input_name, key in step_execution.marshalled_inputs:
-            inputs_to_marshal[step_execution.step_key][input_name] = key
+        for input_name, marshalling_key in step_execution.marshalled_inputs:
+            inputs_to_marshal[step_execution.step_key][input_name] = marshalling_key
     return dict(inputs_to_marshal)
