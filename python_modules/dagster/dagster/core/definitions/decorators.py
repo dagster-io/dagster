@@ -255,6 +255,7 @@ def solid(name=None, inputs=None, outputs=None, config_field=None, description=N
                 return foo + info.config['str_value']
 
     '''
+    # This case is for when decorator is used bare, without arguments. e.g. @solid versus @solid()
     if callable(name):
         check.invariant(inputs is None)
         check.invariant(outputs is None)

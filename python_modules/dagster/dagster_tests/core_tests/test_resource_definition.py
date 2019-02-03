@@ -278,3 +278,112 @@ def test_string_resource():
 
     assert result.success
     assert called['yup']
+
+
+def test_no_config_resource_pass_none():
+    called = {}
+
+    @resource(None)
+    def return_thing(_info):
+        called['resource'] = True
+        return 'thing'
+
+    @solid
+    def check_thing(info):
+        called['solid'] = True
+        assert info.resources.return_thing == 'thing'
+
+    pipeline = PipelineDefinition(
+        name='test_no_config_resource',
+        solids=[check_thing],
+        context_definitions={
+            'default': PipelineContextDefinition(resources={'return_thing': return_thing})
+        },
+    )
+
+    execute_pipeline(pipeline)
+
+    assert called['resource']
+    assert called['solid']
+
+
+def test_no_config_resource_no_arg():
+    called = {}
+
+    @resource()
+    def return_thing(_info):
+        called['resource'] = True
+        return 'thing'
+
+    @solid
+    def check_thing(info):
+        called['solid'] = True
+        assert info.resources.return_thing == 'thing'
+
+    pipeline = PipelineDefinition(
+        name='test_no_config_resource',
+        solids=[check_thing],
+        context_definitions={
+            'default': PipelineContextDefinition(resources={'return_thing': return_thing})
+        },
+    )
+
+    execute_pipeline(pipeline)
+
+    assert called['resource']
+    assert called['solid']
+
+
+def test_no_config_resource_bare_no_arg():
+    called = {}
+
+    @resource
+    def return_thing(_info):
+        called['resource'] = True
+        return 'thing'
+
+    @solid
+    def check_thing(info):
+        called['solid'] = True
+        assert info.resources.return_thing == 'thing'
+
+    pipeline = PipelineDefinition(
+        name='test_no_config_resource',
+        solids=[check_thing],
+        context_definitions={
+            'default': PipelineContextDefinition(resources={'return_thing': return_thing})
+        },
+    )
+
+    execute_pipeline(pipeline)
+
+    assert called['resource']
+    assert called['solid']
+
+
+def test_no_config_resource_definition():
+    called = {}
+
+    def _return_thing_resource_fn(_info):
+        called['resource'] = True
+        return 'thing'
+
+    @solid
+    def check_thing(info):
+        called['solid'] = True
+        assert info.resources.return_thing == 'thing'
+
+    pipeline = PipelineDefinition(
+        name='test_no_config_resource',
+        solids=[check_thing],
+        context_definitions={
+            'default': PipelineContextDefinition(
+                resources={'return_thing': ResourceDefinition(_return_thing_resource_fn)}
+            )
+        },
+    )
+
+    execute_pipeline(pipeline)
+
+    assert called['resource']
+    assert called['solid']
