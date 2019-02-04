@@ -37,19 +37,19 @@ def define_pandas_input_transform_test_solid():
     )
 
 
-def define_pandas_input_transform_test_pipeline():
+def define_pandas_papermill_pandas_hello_world_pipeline():
     in_df = pd.DataFrame({'num': [3, 5, 7]})
     return PipelineDefinition(
-        name='input_transform_test_pipeline',
+        name='papermill_pandas_hello_world_pipeline',
         solids=[define_stub_solid('load_df', in_df), define_pandas_input_transform_test_solid()],
         dependencies={'pandas_input_transform_test': {'df': DependencyDefinition('load_df')}},
     )
 
 
-def define_pandas_source_test_solid():
+def define_papermill_pandas_hello_world_solid():
     return dm.define_dagstermill_solid(
-        name='pandas_source_test',
-        notebook_path=nb_test_path('pandas_source_test'),
+        name='papermill_pandas_hello_world',
+        notebook_path=nb_test_path('papermill_pandas_hello_world'),
         inputs=[InputDefinition(name='df', dagster_type=DataFrame)],
         outputs=[OutputDefinition(DataFrame)],
     )
@@ -59,13 +59,14 @@ def define_pandas_repository():
     return RepositoryDefinition(
         name='test_dagstermill_pandas_solids',
         pipeline_dict={
-            'input_transform_test_pipeline': define_pandas_source_test_pipeline,
+            'papermill_pandas_hello_world_pipeline': define_papermill_pandas_hello_world_pipeline,
             'pandas_hello_world': define_success_pipeline,
         },
     )
 
 
-def define_pandas_source_test_pipeline():
+def define_papermill_pandas_hello_world_pipeline():
     return PipelineDefinition(
-        name='input_transform_test_pipeline', solids=[define_pandas_source_test_solid()]
+        name='papermill_pandas_hello_world_pipeline',
+        solids=[define_papermill_pandas_hello_world_solid()],
     )
