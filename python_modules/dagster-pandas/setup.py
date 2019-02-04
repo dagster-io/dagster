@@ -59,7 +59,7 @@ def _do_setup(name='dagster-pandas'):
             'dagstermill',
             'pandas>=0.22.0',
             'pyarrow>=0.11.0',
-            'matplotlib>=3.0.2',
+            'matplotlib',
         ],
     )
 
