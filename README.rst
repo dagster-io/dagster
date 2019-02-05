@@ -39,8 +39,8 @@ This repository contains a number of distinct subprojects:
 - **js_modules/dagit** - a web app that is a ui for dagit
 - **dagma** - An experimental execution engine for Dagster built on top of AWS Lambda.
 
-Go to https://dagster.readthedocs.io/ for complete documentation, including a
+Go to https://dagster.readthedocs.io/en/0.3.1/ for complete documentation, including a
 step-by-step tutorial and notes on the demo project.
 
 For details on contributing or running the project for development, see
-https://dagster.readthedocs.io/en/latest/contributing.html.
+https://dagster.readthedocs.io/en/0.3.1/contributing.html.
