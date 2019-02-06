@@ -19,7 +19,7 @@ from dagster.core.execution_plan.create import (
     create_execution_plan_from_steps,
 )
 
-from dagster.core.execution_plan.objects import ExecutionStep, StepKind, StepBuilderState
+from dagster.core.execution_plan.objects import ExecutionStep, StepKind, PlanBuilder
 
 from dagster.core.execution_plan.simple_engine import execute_step
 
@@ -82,7 +82,7 @@ def test_duplicate_steps():
                     lambda *args, **kwargs: None,
                     StepKind.TRANSFORM,
                     foo,
-                    StepBuilderState(
+                    PlanBuilder(
                         pipeline_name='dummy',
                         initial_tags=dict(
                             pipeline='dummy', solid='dummy', solid_definition='dummy'
@@ -96,7 +96,7 @@ def test_duplicate_steps():
                     lambda *args, **kwargs: None,
                     StepKind.TRANSFORM,
                     foo,
-                    StepBuilderState(
+                    PlanBuilder(
                         pipeline_name='dummy',
                         initial_tags=dict(
                             pipeline='dummy', solid='dummy', solid_definition='dummy'

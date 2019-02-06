@@ -1,19 +1,12 @@
 from dagster import check
 from dagster.core.definitions import Result
-from .objects import (
-    ExecutionStep,
-    StepBuilderState,
-    StepInput,
-    StepKind,
-    StepOutput,
-    StepOutputHandle,
-)
+from .objects import ExecutionStep, PlanBuilder, StepInput, StepKind, StepOutput, StepOutputHandle
 
 UNMARSHAL_INPUT_OUTPUT = 'unmarshal-input-output'
 
 
-def create_unmarshal_input_step(state, step, step_input, marshalling_key):
-    check.inst_param(state, 'state', StepBuilderState)
+def create_unmarshal_input_step(plan_builder, step, step_input, marshalling_key):
+    check.inst_param(plan_builder, 'plan_builder', PlanBuilder)
     check.inst_param(step, 'step', ExecutionStep)
     check.inst_param(step_input, 'step_input', StepInput)
     check.str_param(marshalling_key, 'marshalling_key')
@@ -36,7 +29,7 @@ def create_unmarshal_input_step(state, step, step_input, marshalling_key):
             compute_fn=_compute_fn,
             kind=StepKind.UNMARSHAL_INPUT,
             solid=step.solid,
-            tags=state.get_tags(),
+            tags=plan_builder.get_tags(),
         ),
         UNMARSHAL_INPUT_OUTPUT,
     )
@@ -45,8 +38,8 @@ def create_unmarshal_input_step(state, step, step_input, marshalling_key):
 MARSHAL_OUTPUT_INPUT = 'marshal-output-input'
 
 
-def create_marshal_output_step(state, step, step_output, marshalling_key):
-    check.inst_param(state, 'state', StepBuilderState)
+def create_marshal_output_step(plan_builder, step, step_output, marshalling_key):
+    check.inst_param(plan_builder, 'plan_builder', PlanBuilder)
     check.inst_param(step, 'step', ExecutionStep)
     check.inst_param(step_output, 'step_output', StepOutput)
     check.str_param(marshalling_key, 'marshalling_key')
@@ -73,5 +66,5 @@ def create_marshal_output_step(state, step, step_output, marshalling_key):
         compute_fn=_compute_fn,
         kind=StepKind.MARSHAL_OUTPUT,
         solid=step.solid,
-        tags=state.get_tags(),
+        tags=plan_builder.get_tags(),
     )

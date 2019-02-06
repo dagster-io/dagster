@@ -52,8 +52,8 @@ class ExecutionPlanSubsetInfo(
         check_two_dim_dict(inputs, 'inputs', key_type=str)
 
         def _create_injected_value_factory_fn(input_value):
-            return lambda state, step, step_input: create_value_thunk_step(
-                state=state,
+            return lambda plan_builder, step, step_input: create_value_thunk_step(
+                plan_builder=plan_builder,
                 solid=step.solid,
                 runtime_type=step_input.runtime_type,
                 step_key='{step_key}.input.{input_name}.value'.format(
@@ -87,8 +87,8 @@ class ExecutionPlanSubsetInfo(
         input_step_factory_fns = defaultdict(dict)
 
         def _create_unmarshal_input_factory_fn(marshalling_key):
-            return lambda state, step, step_input: create_unmarshal_input_step(
-                state, step, step_input, marshalling_key
+            return lambda plan_builder, step, step_input: create_unmarshal_input_step(
+                plan_builder, step, step_input, marshalling_key
             )
 
         for step_key, input_marshal_dict in marshalled_inputs.items():
@@ -175,8 +175,8 @@ class ExecutionPlanAddedOutputs(
         output_step_factory_fns = defaultdict(list)
 
         def _create_marshal_output_fn(key):
-            return lambda state, step, step_output: create_marshal_output_step(
-                state, step, step_output, key
+            return lambda plan_builder, step, step_output: create_marshal_output_step(
+                plan_builder, step, step_output, key
             )
 
         for step_key, outputs_for_step in marshalled_outputs.items():

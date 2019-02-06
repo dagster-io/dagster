@@ -273,7 +273,7 @@ class StepOutputMap(dict):
 # step_output_map maps logical solid outputs (solid_name, output_name) to particular
 # step outputs. This covers the case where a solid maps to multiple steps
 # and one wants to be able to attach to the logical output of a solid during execution
-class StepBuilderState:
+class PlanBuilder:
     def __init__(self, pipeline_name, initial_tags=None):
         self.steps = []
         self.step_output_map = StepOutputMap()
