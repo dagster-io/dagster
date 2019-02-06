@@ -19,7 +19,7 @@ def create_unmarshal_input_step(plan_builder, step, step_input, marshalling_key)
             UNMARSHAL_INPUT_OUTPUT,
         )
 
-    return StepOutputHandle(
+    return StepOutputHandle.create(
         ExecutionStep(
             key='{step_key}.unmarshal-input.{input_name}'.format(
                 step_key=step.key, input_name=step_input.name
@@ -59,7 +59,7 @@ def create_marshal_output_step(plan_builder, step, step_output, marshalling_key)
             StepInput(
                 MARSHAL_OUTPUT_INPUT,
                 step_output.runtime_type,
-                StepOutputHandle(step, step_output.name),
+                StepOutputHandle.create(step, step_output.name),
             )
         ],
         step_outputs=[],

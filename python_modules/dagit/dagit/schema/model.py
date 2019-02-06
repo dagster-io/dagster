@@ -11,7 +11,7 @@ from dagster.core.definitions.environment_configs import construct_environment_c
 from dagster.core.execution_plan.plan_subset import MarshalledOutput
 
 from dagster.core.errors import (
-    DagsterInvalidSubplanExecutionError,
+    DagsterInvalidPlanExecutionError,
     DagsterMarshalOutputNotFoundError,
     DagsterUnmarshalInputNotFoundError,
     DagsterUserCodeExecutionError,
@@ -467,7 +467,7 @@ def _execute_subplan_or_error(args, dauphin_pipeline, execution_plan, evaluate_v
             pipeline=dauphin_pipeline, has_failures=has_failures, step_results=dauphin_step_results
         )
 
-    except DagsterInvalidSubplanExecutionError as invalid_subplan_error:
+    except DagsterInvalidPlanExecutionError as invalid_subplan_error:
         return EitherError(
             type_of('InvalidSubplanExecutionError')(
                 step=type_of('ExecutionStep')(step_of(invalid_subplan_error)),

@@ -4,7 +4,7 @@ from dagster import check
 
 from dagster.core.definitions import InputDefinition, OutputDefinition, Solid
 
-from dagster.core.errors import DagsterInvariantViolationError, DagsterInvalidSubplanExecutionError
+from dagster.core.errors import DagsterInvariantViolationError, DagsterInvalidPlanExecutionError
 
 
 from dagster.core.execution_context import ExecutionMetadata
@@ -51,7 +51,9 @@ def create_execution_plan_core(
     check.opt_inst_param(added_outputs, 'added_output', ExecutionPlanAddedOutputs)
 
     if not execution_info.pipeline.solids:
-        return create_execution_plan_from_steps(create_new_plan_id(), [])
+        return create_execution_plan_from_steps(
+            create_new_plan_id(), [], execution_info, subset_info
+        )
 
     # There must be at least one builder
     check.param_invariant(execution_info.plan_tracker.plan_order, 'execution_info')
@@ -138,12 +140,16 @@ def _create_plan(plan_id, execution_info, plan_builder, subset_info, added_outpu
                     )
 
     if subset_info or added_outputs:
-        return _create_augmented_subplan(execution_info, plan_builder, subset_info, added_outputs)
+        return _create_augmented_subplan(
+            execution_info, plan_builder.get_steps(), subset_info, added_outputs
+        )
     else:
-        return create_execution_plan_from_steps(plan_id, plan_builder.get_steps())
+        return create_execution_plan_from_steps(
+            plan_id, plan_builder.get_steps(), execution_info, subset_info
+        )
 
 
-def create_execution_plan_from_steps(plan_id, steps):
+def create_execution_plan_from_steps(plan_id, steps, execution_info, subset_info):
     check.str_param(plan_id, 'plan_id')
     check.list_param(steps, 'steps', of_type=ExecutionStep)
 
@@ -164,6 +170,25 @@ def create_execution_plan_from_steps(plan_id, steps):
         for step_input in step.step_inputs:
             # For now. Should probably not checkin
             if not step_input.prev_output_handle is SUBPLAN_BEGIN_SENTINEL:
+
+                if step_input.prev_output_handle.step.key not in step_dict:
+                    # raise Exception('mmmhmmm')
+                    raise DagsterInvalidPlanExecutionError(
+                        (
+                            'You have specified a subset execution on pipeline {pipeline_name} '
+                            'with step_keys {step_keys}. You have failed to provide the required input '
+                            '{input_name} for step {step_key}.'
+                        ).format(
+                            pipeline_name=execution_info.pipeline.name,
+                            step_keys=list(subset_info.subset),
+                            input_name=step_input.name,
+                            step_key=step.key,
+                        ),
+                        pipeline_name=execution_info.pipeline.name,
+                        step_keys=list(subset_info.subset),
+                        input_name=step_input.name,
+                        step_key=step.key,
+                    )
                 deps[step.key].add(step_input.prev_output_handle.step.key)
 
     return ExecutionPlan(plan_id, step_dict, deps)
@@ -277,9 +302,8 @@ def create_step_inputs(execution_info, plan_builder, solid):
     return step_inputs
 
 
-def _create_augmented_subplan(execution_info, plan_builder, subset_info=None, added_outputs=None):
+def _create_augmented_subplan(execution_info, existing_steps, subset_info=None, added_outputs=None):
     check.inst_param(execution_info, 'execution_info', CreateExecutionPlanInfo)
-    check.inst_param(plan_builder, 'plan_builder', PlanBuilder)
     check.opt_inst_param(subset_info, 'subset_info', ExecutionPlanSubsetInfo)
     check.opt_inst_param(added_outputs, 'added_outputs', ExecutionPlanAddedOutputs)
 
@@ -295,7 +319,7 @@ def _create_augmented_subplan(execution_info, plan_builder, subset_info=None, ad
 
     steps = []
 
-    for step in plan_builder.get_steps():
+    for step in existing_steps:
         if subset_info and step.key not in subset_info.subset:
             # Not included in subset. Skip.
             continue
@@ -305,7 +329,7 @@ def _create_augmented_subplan(execution_info, plan_builder, subset_info=None, ad
                 _all_augmented_steps_for_step(plan_builder, step, subset_info, added_outputs)
             )
 
-    new_plan = create_execution_plan_from_steps(plan_id, steps)
+    new_plan = create_execution_plan_from_steps(plan_id, steps, execution_info, subset_info)
 
     return _validate_new_plan(new_plan, subset_info, execution_info)
 
@@ -328,7 +352,7 @@ def _validate_new_plan(new_plan, subset_info, execution_info):
             if subset_info and not subset_info.has_injected_step_for_input(
                 step.key, step_input.name
             ):
-                raise DagsterInvalidSubplanExecutionError(
+                raise DagsterInvalidPlanExecutionError(
                     (
                         'You have specified a subset execution on pipeline {pipeline_name} '
                         'with step_keys {step_keys}. You have failed to provide the required input '

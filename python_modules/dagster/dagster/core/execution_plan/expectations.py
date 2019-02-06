@@ -15,7 +15,6 @@ from .objects import (
     CreateExecutionPlanInfo,
     ExecutionStep,
     ExecutionValueSubplan,
-    PlanBuilder,
     StepInput,
     StepOutput,
     StepOutputHandle,

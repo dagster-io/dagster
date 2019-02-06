@@ -114,7 +114,7 @@ class DagsterExecutionStepExecutionError(DagsterUserCodeExecutionError):
     '''Indicates an error occured during the body of execution step execution'''
 
 
-class DagsterInvalidSubplanExecutionError(DagsterUserError):
+class DagsterInvalidPlanExecutionError(DagsterUserError):
     '''Indicates that user has attempted to construct an execution subplan
     that cannot be executed. This is typically because the user needs to specify additional
     inputs that hitherto were satisified by dependencies.
@@ -126,7 +126,7 @@ class DagsterInvalidSubplanExecutionError(DagsterUserError):
         self.input_name = check.str_param(kwargs.pop('input_name'), 'input_name')
         self.step_key = check.str_param(kwargs.pop('step_key'), 'step_key')
 
-        super(DagsterInvalidSubplanExecutionError, self).__init__(*args, **kwargs)
+        super(DagsterInvalidPlanExecutionError, self).__init__(*args, **kwargs)
 
 
 class DagsterExpectationFailedError(DagsterError):

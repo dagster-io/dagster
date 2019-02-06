@@ -221,7 +221,9 @@ class SolidExecutionResult(object):
                 return result.failure_data.dagster_error
 
 
-def create_execution_plan(pipeline, env_config=None, execution_metadata=None, subset_info=None):
+def create_execution_plan(
+    pipeline, env_config=None, execution_metadata=None, subset_info=None, added_outputs=None
+):
     check.inst_param(pipeline, 'pipeline', PipelineDefinition)
     check.opt_dict_param(env_config, 'env_config', key_type=str)
     execution_metadata = execution_metadata if execution_metadata else ExecutionMetadata()
@@ -230,12 +232,12 @@ def create_execution_plan(pipeline, env_config=None, execution_metadata=None, su
 
     typed_environment = create_typed_environment(pipeline, env_config)
     return create_execution_plan_with_typed_environment(
-        pipeline, typed_environment, execution_metadata, subset_info
+        pipeline, typed_environment, execution_metadata, subset_info, added_outputs
     )
 
 
 def create_execution_plan_with_typed_environment(
-    pipeline, typed_environment, execution_metadata, subset_info=None
+    pipeline, typed_environment, execution_metadata, subset_info=None, added_outputs=None
 ):
     check.inst_param(pipeline, 'pipeline', PipelineDefinition)
     check.inst_param(typed_environment, 'environment', EnvironmentConfig)
@@ -247,6 +249,7 @@ def create_execution_plan_with_typed_environment(
             CreateExecutionPlanInfo(context, pipeline, typed_environment),
             execution_metadata,
             subset_info,
+            added_outputs,
         )
 
 

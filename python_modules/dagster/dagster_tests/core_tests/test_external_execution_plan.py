@@ -10,7 +10,7 @@ from dagster import (
 )
 from dagster.core.errors import (
     DagsterExecutionStepNotFoundError,
-    DagsterInvalidSubplanExecutionError,
+    DagsterInvalidPlanExecutionError,
     DagsterMarshalOutputNotFoundError,
     DagsterUnmarshalInputNotFoundError,
     DagsterExecutionStepExecutionError,
@@ -271,7 +271,7 @@ def test_external_execution_unsatisfied_input_error():
 
     execution_plan = create_execution_plan(pipeline)
 
-    with pytest.raises(DagsterInvalidSubplanExecutionError) as exc_info:
+    with pytest.raises(DagsterInvalidPlanExecutionError) as exc_info:
         execute_externalized_plan(
             pipeline, execution_plan, ['add_one.transform'], execution_metadata=ExecutionMetadata()
         )
