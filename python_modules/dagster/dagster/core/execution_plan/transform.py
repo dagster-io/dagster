@@ -3,19 +3,12 @@ from dagster.core.definitions import Result, Solid, TransformExecutionInfo
 from dagster.core.errors import DagsterInvariantViolationError
 from dagster.core.execution_context import RuntimeExecutionContext
 
-from .objects import (
-    ExecutionPlanInfo,
-    ExecutionStep,
-    StepBuilderState,
-    StepInput,
-    StepKind,
-    StepOutput,
-)
+from .objects import ExecutionPlanInfo, ExecutionStep, PlanBuilder, StepInput, StepKind, StepOutput
 
 
-def create_transform_step(execution_info, state, solid, step_inputs, conf):
+def create_transform_step(execution_info, plan_builder, solid, step_inputs, conf):
     check.inst_param(execution_info, 'execution_info', ExecutionPlanInfo)
-    check.inst_param(state, 'state', StepBuilderState)
+    check.inst_param(plan_builder, 'plan_builder', PlanBuilder)
     check.inst_param(solid, 'solid', Solid)
     check.list_param(step_inputs, 'step_inputs', of_type=StepInput)
 
@@ -31,7 +24,7 @@ def create_transform_step(execution_info, state, solid, step_inputs, conf):
         ),
         kind=StepKind.TRANSFORM,
         solid=solid,
-        tags=state.get_tags(),
+        tags=plan_builder.get_tags(),
     )
 
 
