@@ -9,7 +9,12 @@ from .output import OutputDefinition
 from .utils import check_valid_name
 
 
-class SolidDefinition(object):
+# todo make abc
+class ISolidDefinition(object):
+    pass
+
+
+class SolidDefinition(ISolidDefinition):
     '''A solid (a name extracted from the acronym of "software-structured data" (SSD)) represents
     a unit of computation within a data pipeline.
 

@@ -11,7 +11,7 @@ from .context import PipelineContextDefinition
 
 from .dependency import DependencyStructure, SolidInstance, Solid
 
-from .solid import SolidDefinition
+from .solid import ISolidDefinition
 
 
 class SolidAliasMapper:
@@ -51,7 +51,7 @@ def create_execution_structure(solids, dependencies_dict):
 
     pipeline_solids = []
     for solid_def in solids:
-        if isinstance(solid_def, SolidDefinition):
+        if isinstance(solid_def, ISolidDefinition):
             uses_of_solid = mapper.get_uses_of_solid(solid_def.name) or set([solid_def.name])
 
             for alias in uses_of_solid:
@@ -140,7 +140,7 @@ def iterate_solid_def_types(solid_def):
 
 
 def _gather_all_config_types(solid_defs, context_definitions, environment_type):
-    check.list_param(solid_defs, 'solid_defs', SolidDefinition)
+    check.list_param(solid_defs, 'solid_defs', ISolidDefinition)
     check.dict_param(
         context_definitions,
         'context_definitions',
@@ -192,7 +192,7 @@ def _gather_all_schemas(solid_defs):
 
 
 def construct_config_type_dictionary(solid_defs, context_definitions, environment_type):
-    check.list_param(solid_defs, 'solid_defs', SolidDefinition)
+    check.list_param(solid_defs, 'solid_defs', ISolidDefinition)
     check.dict_param(
         context_definitions,
         'context_definitions',

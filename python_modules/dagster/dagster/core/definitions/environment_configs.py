@@ -19,7 +19,7 @@ from dagster.core.types.field_utils import check_opt_field_param, FieldImpl
 from .context import PipelineContextDefinition
 from .resource import ResourceDefinition
 from .dependency import Solid, SolidInputHandle, DependencyStructure
-from .solid import SolidDefinition
+from .solid import ISolidDefinition
 
 
 def SystemNamedDict(name, fields, description=None):
@@ -218,12 +218,12 @@ def define_expectations_config_cls(name):
 
 
 def solid_has_configurable_inputs(solid_def):
-    check.inst_param(solid_def, 'solid_def', SolidDefinition)
+    check.inst_param(solid_def, 'solid_def', ISolidDefinition)
     return any(map(lambda inp: inp.runtime_type.input_schema, solid_def.input_defs))
 
 
 def solid_has_configurable_outputs(solid_def):
-    check.inst_param(solid_def, 'solid_def', SolidDefinition)
+    check.inst_param(solid_def, 'solid_def', ISolidDefinition)
     return any(map(lambda out: out.runtime_type.output_schema, solid_def.output_defs))
 
 
@@ -282,7 +282,7 @@ def get_outputs_field(creation_data, solid):
 
 
 def solid_has_config_entry(solid_def):
-    check.inst_param(solid_def, 'solid_def', SolidDefinition)
+    check.inst_param(solid_def, 'solid_def', ISolidDefinition)
     return (
         solid_def.config_field
         or solid_has_configurable_inputs(solid_def)

@@ -36,13 +36,13 @@ def _create_input_thunk_execution_step(plan_builder, solid, input_def, config_va
     )
 
 
-def create_input_thunk_execution_step(info, plan_builder, solid, input_def, value):
+def create_input_config_thunk_execution_step(info, plan_builder, solid, input_def, value):
     check.inst_param(info, 'info', ExecutionPlanInfo)
     check.inst_param(plan_builder, 'plan_builder', PlanBuilder)
     check.inst_param(solid, 'solid', Solid)
     check.inst_param(input_def, 'input_def', InputDefinition)
 
-    dependency_structure = info.pipeline.dependency_structure
+    dependency_structure = info.selection.dependency_structure
     input_handle = solid.input_handle(input_def.name)
 
     if dependency_structure.has_dep(input_handle):

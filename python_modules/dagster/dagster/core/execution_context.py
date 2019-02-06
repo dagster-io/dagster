@@ -79,6 +79,7 @@ class RuntimeExecutionContext:
         if loggers is None:
             loggers = [define_colored_console_logger('dagster')]
 
+        self.loggers = loggers
         self._logger = CompositeLogger(loggers=loggers)
         self.resources = resources
         self._run_id = check.str_param(run_id, 'run_id')
@@ -198,6 +199,9 @@ class RuntimeExecutionContext:
     def get_tag(self, key):
         check.str_param(key, 'key')
         return self._tags[key]
+
+    def get_tags(self):
+        return self._tags
 
     @property
     def run_id(self):

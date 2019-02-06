@@ -2,7 +2,7 @@ from collections import defaultdict, namedtuple
 
 from dagster import check
 
-from .solid import SolidDefinition
+from .solid import ISolidDefinition
 
 from .input import InputDefinition
 
@@ -52,7 +52,7 @@ class Solid(object):
 
     def __init__(self, name, definition):
         self.name = check.str_param(name, 'name')
-        self.definition = check.inst_param(definition, 'definition', SolidDefinition)
+        self.definition = check.inst_param(definition, 'definition', ISolidDefinition)
 
         input_handles = {}
         for input_def in self.definition.input_defs:

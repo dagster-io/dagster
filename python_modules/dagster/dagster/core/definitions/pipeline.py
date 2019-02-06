@@ -246,12 +246,12 @@ def _create_adjacency_lists(solids, dep_structure):
     return (forward_edges, backward_edges)
 
 
-def solids_in_topological_order(pipeline):
-    check.inst_param(pipeline, 'pipeline', PipelineDefinition)
+def solids_in_topological_order(selection):
+    # check.inst_param(selection, 'pipeline', PipelineDefinition)
 
     _forward_edges, backward_edges = _create_adjacency_lists(
-        pipeline.solids, pipeline.dependency_structure
+        selection.solids, selection.dependency_structure
     )
 
     order = toposort_flatten(backward_edges, sort=True)
-    return [pipeline.solid_named(solid_name) for solid_name in order]
+    return [selection.solid_named(solid_name) for solid_name in order]

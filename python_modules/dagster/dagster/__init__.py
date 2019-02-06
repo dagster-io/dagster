@@ -12,13 +12,11 @@ from dagster.core.execution_context import ExecutionContext, ExecutionMetadata
 
 from dagster.core.definitions import (
     ContextCreationExecutionInfo,
-    DependencyDefinition,
     ExpectationDefinition,
     ExpectationExecutionInfo,
     ExpectationResult,
     InputDefinition,
     OutputDefinition,
-    PipelineContextDefinition,
     PipelineDefinition,
     RepositoryDefinition,
     Result,
@@ -27,7 +25,10 @@ from dagster.core.definitions import (
     TransformExecutionInfo,
 )
 
+from dagster.core.definitions.composite_solid import CompositeSolidDefinition
 from dagster.core.definitions.resource import ResourceDefinition, resource
+from dagster.core.definitions.context import PipelineContextDefinition
+from dagster.core.definitions.dependency import DependencyDefinition
 from dagster.core.definitions.decorators import MultipleResults, lambda_solid, solid
 
 from dagster.core.errors import (

@@ -20,6 +20,7 @@ from dagster.core.errors import (
 from dagster.core.execution import (
     ExecutionPlan,
     ExecutionSelector,
+    ExecutionSelection,
     create_execution_plan_with_typed_environment,
     execute_externalized_plan,
     get_subset_pipeline,
@@ -175,9 +176,10 @@ def get_execution_plan(info, selector, config):
             lambda evaluate_value_result: info.schema.type_named('ExecutionPlan')(
                 pipeline,
                 create_execution_plan_with_typed_environment(
-                    pipeline.get_dagster_pipeline(),
+                    ExecutionSelection.from_pipeline(pipeline.get_dagster_pipeline()),
                     construct_environment_config(evaluate_value_result.value),
                     ExecutionMetadata(),
+                    subset_info=None,
                 ),
             )
         )
@@ -198,9 +200,10 @@ def start_pipeline_execution(info, selector, config):
         def _start_execution(validated_config_either):
             new_run_id = str(uuid.uuid4())
             execution_plan = create_execution_plan_with_typed_environment(
-                pipeline.get_dagster_pipeline(),
+                ExecutionSelection.from_pipeline(pipeline.get_dagster_pipeline()),
                 construct_environment_config(validated_config_either.value),
                 ExecutionMetadata(),
+                subset_info=None,
             )
             run = pipeline_run_storage.create_run(new_run_id, selector, env_config, execution_plan)
             pipeline_run_storage.add_run(run)
@@ -400,9 +403,10 @@ def _execution_plan_or_error(subplan_execution_args, dauphin_pipeline, evaluate_
     check.inst_param(evaluate_value_result, 'evaluate_value_result', EvaluateValueResult)
 
     execution_plan = create_execution_plan_with_typed_environment(
-        dauphin_pipeline.get_dagster_pipeline(),
+        ExecutionSelection.from_pipeline(dauphin_pipeline.get_dagster_pipeline()),
         construct_environment_config(evaluate_value_result.value),
         subplan_execution_args.execution_metadata,
+        subset_info=None,
     )
 
     invalid_keys = []

@@ -56,6 +56,7 @@ from .execution_plan.create import (
 from .execution_plan.objects import (
     ExecutionPlan,
     ExecutionPlanInfo,
+    ExecutionSelection,
     ExecutionStepEvent,
     ExecutionStepEventType,
     StepKind,
@@ -234,23 +235,57 @@ def create_execution_plan(pipeline, env_config=None, execution_metadata=None, su
     check.inst_param(execution_metadata, 'execution_metadata', ExecutionMetadata)
     check.opt_inst_param(subset_info, 'subset_info', ExecutionPlanSubsetInfo)
 
-    typed_environment = create_typed_environment(pipeline, env_config)
-    return create_execution_plan_with_typed_environment(
-        pipeline, typed_environment, execution_metadata, subset_info
+    return create_execution_plan_from_selection(
+        ExecutionSelection.from_pipeline(pipeline), env_config, execution_metadata, subset_info
     )
 
 
+def create_execution_plan_from_selection(selection, env_config, execution_metadata, subset_info):
+    typed_environment = create_typed_environment(selection.executing_pipeline, env_config)
+    return create_execution_plan_with_typed_environment(
+        selection, typed_environment, execution_metadata, subset_info
+    )
+
+
+from .execution_plan.input_thunk import create_input_config_thunk_execution_step
+
+
+def _create_config_thunk_fn(input_config):
+    return lambda info, plan_builder, solid, input_def: create_input_config_thunk_execution_step(
+        info, plan_builder, solid, input_def, input_config
+    )
+
+
+def create_execution_plan_for_environment(context, selection, typed_environment):
+    thunk_fns = defaultdict(dict)
+    for solid_name, solid_config in typed_environment.solids.items():
+        for input_name, input_config in solid_config.inputs.items():
+            thunk_fns[solid_name][input_name] = _create_config_thunk_fn(input_config)
+
+    return ExecutionPlanInfo(context, selection, typed_environment, thunk_fns)
+
+
 def create_execution_plan_with_typed_environment(
-    pipeline, typed_environment, execution_metadata, subset_info=None
+    selection, typed_environment, execution_metadata, subset_info
 ):
-    check.inst_param(pipeline, 'pipeline', PipelineDefinition)
+    check.inst_param(selection, 'selection', ExecutionSelection)
     check.inst_param(typed_environment, 'environment', EnvironmentConfig)
     check.inst_param(execution_metadata, 'execution_metadata', ExecutionMetadata)
     check.opt_inst_param(subset_info, 'subset_info', ExecutionPlanSubsetInfo)
 
-    with yield_context(pipeline, typed_environment, execution_metadata) as context:
+    with yield_context(
+        selection.executing_pipeline, typed_environment, execution_metadata
+    ) as context:
+
+        thunk_fns = defaultdict(dict)
+        for solid_name, solid_config in typed_environment.solids.items():
+            for input_name, input_config in solid_config.inputs.items():
+                thunk_fns[solid_name][input_name] = _create_config_thunk_fn(input_config)
+
         return create_execution_plan_core(
-            ExecutionPlanInfo(context, pipeline, typed_environment), execution_metadata, subset_info
+            create_execution_plan_for_environment(context, selection, typed_environment),
+            execution_metadata,
+            subset_info,
         )
 
 
@@ -430,7 +465,10 @@ def _do_iterate_pipeline(
     context.events.pipeline_start()
 
     execution_plan = create_execution_plan_core(
-        ExecutionPlanInfo(context, pipeline, typed_environment), execution_metadata
+        create_execution_plan_for_environment(
+            context, ExecutionSelection.from_pipeline(pipeline), typed_environment
+        ),
+        execution_metadata,
     )
 
     steps = execution_plan.topological_steps()
@@ -578,7 +616,9 @@ def execute_externalized_plan(
     with yield_context(pipeline, typed_environment, execution_metadata) as context:
 
         execution_plan = create_execution_plan_core(
-            ExecutionPlanInfo(context, pipeline, typed_environment),
+            create_execution_plan_for_environment(
+                context, ExecutionSelection.from_pipeline(pipeline), typed_environment
+            ),
             execution_metadata=execution_metadata,
             subset_info=ExecutionPlanSubsetInfo.with_input_marshalling(
                 included_step_keys=step_keys, marshalled_inputs=inputs_to_marshal

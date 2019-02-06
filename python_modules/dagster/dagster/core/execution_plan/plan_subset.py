@@ -118,12 +118,12 @@ class ExecutionPlanSubsetInfo(
 
             callable should have signature of
 
-            (StepBuilderState, ExecutionStep, StepInput): StepOutputHandle
+            (PlanBuilder, ExecutionStep, StepInput): StepOutputHandle
 
             Full type signature is
             Dict[str,
                 Dict[str,
-                    Callable[StepBuilderState, ExecutionStep, StepInput]: StepOutputHandle
+                    Callable[PlanBuilder, ExecutionStep, StepInput]: StepOutputHandle
                 ]
             ]
         '''

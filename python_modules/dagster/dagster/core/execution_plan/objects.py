@@ -10,6 +10,7 @@ from dagster import check
 from dagster.utils import merge_dicts
 from dagster.core.system_config.objects import EnvironmentConfig
 from dagster.core.definitions import PipelineDefinition, Solid, SolidOutputHandle
+from dagster.core.definitions.utils import check_opt_two_dim_dict
 from dagster.core.errors import DagsterError
 from dagster.core.execution_context import RuntimeExecutionContext
 from dagster.core.types.runtime import RuntimeType
@@ -246,13 +247,36 @@ class ExecutionValueSubplan(
         return ExecutionValueSubplan([], terminal_step_output_handle)
 
 
+class ExecutionSelection:
+    @staticmethod
+    def from_pipeline(pipeline):
+        check.inst_param(pipeline, 'pipeline', PipelineDefinition)
+        return ExecutionSelection(pipeline, pipeline.solids, pipeline.dependency_structure)
+
+    @staticmethod
+    def from_composite_solid(executing_pipeline, composite_solid):
+        return ExecutionSelection(
+            executing_pipeline, composite_solid.solids, composite_solid.dependency_structure
+        )
+
+    def __init__(self, executing_pipeline, solids, dependency_structure):
+        self.executing_pipeline = executing_pipeline
+        self.solids = solids
+        self.dependency_structure = dependency_structure
+        self._solid_dict = {solid.name: solid for solid in solids}
+
+    def solid_named(self, name):
+        return self._solid_dict[name]
+
+
 class ExecutionPlan(object):
-    def __init__(self, step_dict, deps):
+    def __init__(self, step_dict, deps, step_output_map):
         self.step_dict = check.dict_param(
             step_dict, 'step_dict', key_type=str, value_type=ExecutionStep
         )
         self.deps = check.dict_param(deps, 'deps', key_type=str, value_type=set)
         self.steps = list(step_dict.values())
+        self.step_output_map = check.inst_param(step_output_map, 'step_output_map', StepOutputMap)
 
     def has_step(self, key):
         check.str_param(key, 'key')
@@ -271,14 +295,33 @@ class ExecutionPlan(object):
             yield self.step_dict[step_key]
 
 
-class ExecutionPlanInfo(namedtuple('_ExecutionPlanInfo', 'context pipeline environment')):
-    def __new__(cls, context, pipeline, environment):
+class ExecutionPlanInfo(
+    namedtuple('_ExecutionPlanInfo', 'context selection environment solid_input_thunk_fns')
+):
+    def __new__(cls, context, selection, environment, solid_input_thunk_fns=None):
+        solid_input_thunk_fns = check_opt_two_dim_dict(
+            solid_input_thunk_fns, 'solid_input_thunk_fns'
+        )
+        if solid_input_thunk_fns:
+            for thunks_for_solid in solid_input_thunk_fns.values():
+                for thunk_fn in thunks_for_solid.values():
+                    check.callable_param(thunk_fn, 'solid_input_thunk_fns')
+
         return super(ExecutionPlanInfo, cls).__new__(
             cls,
             check.inst_param(context, 'context', RuntimeExecutionContext),
-            check.inst_param(pipeline, 'pipeline', PipelineDefinition),
+            check.inst_param(selection, 'selection', ExecutionSelection),
             check.inst_param(environment, 'environment', EnvironmentConfig),
+            solid_input_thunk_fns,
         )
+
+    def has_input_thunk_fn(self, solid_name, input_name):
+        return self.solid_input_thunk_fns and self.solid_input_thunk_fns.get(solid_name, {}).get(
+            input_name
+        )
+
+    def get_input_thunk_fn(self, solid_name, input_name):
+        return self.solid_input_thunk_fns[solid_name][input_name]
 
 
 class StepOutputMap(dict):

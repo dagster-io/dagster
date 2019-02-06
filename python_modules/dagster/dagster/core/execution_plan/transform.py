@@ -38,7 +38,14 @@ def create_transform_step(execution_info, plan_builder, solid, step_inputs, conf
 
 def _yield_transform_results(execution_info, context, step, conf, inputs):
     gen = step.solid.definition.transform_fn(
-        TransformExecutionInfo(context, conf, step, execution_info.pipeline), inputs
+        TransformExecutionInfo(
+            context,
+            conf,
+            step,
+            execution_info.selection.executing_pipeline,
+            execution_info.environment,
+        ),
+        inputs,
     )
 
     if isinstance(gen, Result):

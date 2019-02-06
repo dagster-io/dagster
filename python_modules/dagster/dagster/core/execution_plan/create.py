@@ -13,8 +13,6 @@ from dagster.core.execution_context import ExecutionMetadata
 
 from .expectations import create_expectations_subplan, decorate_with_expectations
 
-from .input_thunk import create_input_thunk_execution_step
-
 from .materialization_thunk import decorate_with_output_materializations
 
 from .objects import (
@@ -51,10 +49,11 @@ def create_execution_plan_core(
     check.opt_inst_param(added_outputs, 'added_output', ExecutionPlanAddedOutputs)
 
     plan_builder = PlanBuilder(
-        pipeline_name=execution_info.pipeline.name, initial_tags=execution_metadata.tags
+        pipeline_name=execution_info.selection.executing_pipeline.name,
+        initial_tags=execution_metadata.tags,
     )
 
-    for solid in solids_in_topological_order(execution_info.pipeline):
+    for solid in solids_in_topological_order(execution_info.selection):
 
         with plan_builder.push_tags(solid=solid.name, solid_definition=solid.definition.name):
             step_inputs = create_step_inputs(execution_info, plan_builder, solid)
@@ -81,7 +80,9 @@ def create_execution_plan_core(
                         output_handle
                     ] = subplan.terminal_step_output_handle
 
-    execution_plan = create_execution_plan_from_steps(plan_builder.steps)
+    execution_plan = create_execution_plan_from_builder(
+        plan_builder.steps, plan_builder.step_output_map
+    )
 
     if subset_info:
         return _create_augmented_subplan(
@@ -91,8 +92,10 @@ def create_execution_plan_core(
         return execution_plan
 
 
-def create_execution_plan_from_steps(steps):
-    check.list_param(steps, 'steps', of_type=ExecutionStep)
+def create_execution_plan_from_builder(steps, step_output_map):
+    # check.inst_param(plan_builder, 'plan_builder', PlanBuilder)
+
+    # steps = plan_builder.steps
 
     step_dict = {step.key: step for step in steps}
     deps = {step.key: set() for step in steps}
@@ -111,7 +114,7 @@ def create_execution_plan_from_steps(steps):
         for step_input in step.step_inputs:
             deps[step.key].add(step_input.prev_output_handle.step.key)
 
-    return ExecutionPlan(step_dict, deps)
+    return ExecutionPlan(step_dict, deps, step_output_map)
 
 
 def create_subplan_for_input(
@@ -156,11 +159,10 @@ def get_input_source_step_handle(execution_info, plan_builder, solid, input_def)
     check.inst_param(input_def, 'input_def', InputDefinition)
 
     input_handle = solid.input_handle(input_def.name)
-    solid_config = execution_info.environment.solids.get(solid.name)
-    dependency_structure = execution_info.pipeline.dependency_structure
-    if solid_config and input_def.name in solid_config.inputs:
-        input_thunk_output_handle = create_input_thunk_execution_step(
-            execution_info, plan_builder, solid, input_def, solid_config.inputs[input_def.name]
+    dependency_structure = execution_info.selection.dependency_structure
+    if execution_info.has_input_thunk_fn(solid.name, input_def.name):
+        input_thunk_output_handle = execution_info.get_input_thunk_fn(solid.name, input_def.name)(
+            execution_info, plan_builder, solid, input_def
         )
         plan_builder.steps.append(input_thunk_output_handle.step)
         return input_thunk_output_handle
@@ -168,13 +170,18 @@ def get_input_source_step_handle(execution_info, plan_builder, solid, input_def)
         solid_output_handle = dependency_structure.get_dep(input_handle)
         return plan_builder.step_output_map[solid_output_handle]
     else:
+        # probably need different message depending on composite solid versus
+        # pipeline use case
+        #
+        # This error check should be moved to execution time along with the ability
+        # inject intermediate results
         raise DagsterInvariantViolationError(
             (
                 'In pipeline {pipeline_name} solid {solid_name}, input {input_name} '
                 'must get a value either (a) from a dependency or (b) from the '
                 'inputs section of its configuration.'
             ).format(
-                pipeline_name=execution_info.pipeline.name,
+                pipeline_name=execution_info.selection.executing_pipeline.name,
                 solid_name=solid.name,
                 input_name=input_def.name,
             )
@@ -229,7 +236,7 @@ def _create_augmented_subplan(
                 _all_augmented_steps_for_step(plan_builder, step, subset_info, added_outputs)
             )
 
-    new_plan = create_execution_plan_from_steps(steps)
+    new_plan = create_execution_plan_from_builder(steps, plan_builder.step_output_map)
 
     return _validate_new_plan(new_plan, subset_info, execution_info)
 
@@ -256,12 +263,12 @@ def _validate_new_plan(new_plan, subset_info, execution_info):
                         'with step_keys {step_keys}. You have failed to provide the required input '
                         '{input_name} for step {step_key}.'
                     ).format(
-                        pipeline_name=execution_info.pipeline.name,
+                        pipeline_name=execution_info.selection.executing_pipeline.name,
                         step_keys=list(subset_info.subset),
                         input_name=step_input.name,
                         step_key=step.key,
                     ),
-                    pipeline_name=execution_info.pipeline.name,
+                    pipeline_name=execution_info.selection.executing_pipeline.name,
                     step_keys=list(subset_info.subset),
                     input_name=step_input.name,
                     step_key=step.key,
