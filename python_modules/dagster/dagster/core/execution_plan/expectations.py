@@ -12,9 +12,10 @@ from dagster.core.definitions import (
 from dagster.core.errors import DagsterExpectationFailedError
 
 from .objects import (
-    ExecutionPlanInfo,
+    CreateExecutionPlanInfo,
     ExecutionStep,
     ExecutionValueSubplan,
+    PlanBuilder,
     StepInput,
     StepOutput,
     StepOutputHandle,
@@ -22,7 +23,7 @@ from .objects import (
     PlanBuilder,
 )
 
-from .utility import create_joining_subplan
+from .utility import create_joining_value_subplan
 
 EXPECTATION_INPUT = 'expectation_input'
 EXPECTATION_VALUE_OUTPUT = 'expectation_value'
@@ -50,7 +51,9 @@ def _create_expectation_lambda(solid, inout_def, expectation_def, internal_outpu
     return _do_expectation
 
 
-def create_expectations_subplan(plan_builder, solid, inout_def, prev_step_output_handle, kind):
+def create_expectations_value_subplan(
+    plan_builder, solid, inout_def, prev_step_output_handle, kind
+):
     check.inst_param(plan_builder, 'plan_builder', PlanBuilder)
     check.inst_param(solid, 'solid', Solid)
     check.inst_param(inout_def, 'inout_def', (InputDefinition, OutputDefinition))
@@ -76,7 +79,7 @@ def create_expectations_subplan(plan_builder, solid, inout_def, prev_step_output
             )
             input_expect_steps.append(expect_step)
 
-    return create_joining_subplan(
+    return create_joining_value_subplan(
         plan_builder,
         solid,
         '{solid}.{desc_key}.{inout_name}.expectations.join'.format(
@@ -118,19 +121,19 @@ def create_expectation_step(
 
 
 def decorate_with_expectations(execution_info, plan_builder, solid, transform_step, output_def):
-    check.inst_param(execution_info, 'execution_info', ExecutionPlanInfo)
+    check.inst_param(execution_info, 'execution_info', CreateExecutionPlanInfo)
     check.inst_param(plan_builder, 'plan_builder', PlanBuilder)
     check.inst_param(solid, 'solid', Solid)
     check.inst_param(transform_step, 'transform_step', ExecutionStep)
     check.inst_param(output_def, 'output_def', OutputDefinition)
 
     if execution_info.environment.expectations.evaluate and output_def.expectations:
-        return create_expectations_subplan(
+        return create_expectations_value_subplan(
             plan_builder,
             solid,
             output_def,
-            StepOutputHandle(transform_step, output_def.name),
+            StepOutputHandle.create(transform_step, output_def.name),
             kind=StepKind.OUTPUT_EXPECTATION,
         )
     else:
-        return ExecutionValueSubplan.empty(StepOutputHandle(transform_step, output_def.name))
+        return ExecutionValueSubplan.empty(StepOutputHandle.create(transform_step, output_def.name))

@@ -14,7 +14,6 @@ from dagster.core.system_config.objects import EnvironmentConfig
 from dagster.core.execution import create_execution_plan
 
 from dagster.core.execution_plan.create import (
-    ExecutionPlanInfo,
     create_execution_plan_core,
     create_execution_plan_from_steps,
 )
@@ -45,7 +44,7 @@ def test_compute_noop_node_core():
     environment = EnvironmentConfig()
 
     plan = create_execution_plan_core(
-        ExecutionPlanInfo(create_test_runtime_execution_context(), pipeline, environment),
+        CreateExecutionPlanInfo(create_test_runtime_execution_context(), pipeline, environment),
         ExecutionMetadata(),
     )
 
@@ -74,6 +73,7 @@ def test_duplicate_steps():
 
     with pytest.raises(check.CheckError):
         create_execution_plan_from_steps(
+            'kdjfkjdkfe',
             [
                 ExecutionStep(
                     'same_name',
@@ -103,5 +103,5 @@ def test_duplicate_steps():
                         ),
                     ).get_tags(),
                 ),
-            ]
+            ],
         )

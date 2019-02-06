@@ -90,19 +90,18 @@ class PipelineDefinition(object):
             dependencies, 'dependencies', value_type=DependencyDefinition
         )
 
-        dependency_structure, pipeline_solid_dict = create_execution_structure(
+        self.dependency_structure, self._solid_dict = create_execution_structure(
             solids, self.dependencies
         )
 
-        self._solid_dict = pipeline_solid_dict
-        self.dependency_structure = dependency_structure
+        self._solids = _solids_in_topological_order(self.dependency_structure, self._solid_dict)
 
         self.environment_cls = define_environment_cls(
             EnvironmentClassCreationData(
                 self.name,
                 list(self._solid_dict.values()),
                 context_definitions,
-                dependency_structure,
+                self.dependency_structure,
             )
         )
         self.environment_type = self.environment_cls.inst()
@@ -131,12 +130,7 @@ class PipelineDefinition(object):
 
     @property
     def solids(self):
-        '''Return the solids in the pipeline.
-
-        Returns:
-            List[SolidDefinition]: List of solids.
-        '''
-        return list(set(self._solid_dict.values()))
+        return self._solids
 
     def has_solid(self, name):
         '''Return whether or not the solid is in the piepline
@@ -243,12 +237,9 @@ def _create_adjacency_lists(solids, dep_structure):
     return (forward_edges, backward_edges)
 
 
-def solids_in_topological_order(pipeline):
-    check.inst_param(pipeline, 'pipeline', PipelineDefinition)
-
+def _solids_in_topological_order(dep_structure, solid_dict):
     _forward_edges, backward_edges = _create_adjacency_lists(
-        pipeline.solids, pipeline.dependency_structure
+        list(solid_dict.values()), dep_structure
     )
-
     order = toposort_flatten(backward_edges, sort=True)
-    return [pipeline.solid_named(solid_name) for solid_name in order]
+    return [solid_dict[solid_name] for solid_name in order]

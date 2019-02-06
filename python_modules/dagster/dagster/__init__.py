@@ -12,7 +12,6 @@ from dagster.core.execution_context import ExecutionContext, ExecutionMetadata
 
 from dagster.core.definitions import (
     ContextCreationExecutionInfo,
-    DependencyDefinition,
     ExpectationDefinition,
     ExpectationExecutionInfo,
     ExpectationResult,
@@ -29,6 +28,11 @@ from dagster.core.definitions import (
 
 from dagster.core.definitions.resource import ResourceDefinition, resource
 from dagster.core.definitions.decorators import MultipleResults, lambda_solid, solid
+from dagster.core.definitions.dependency import (
+    DependencyDefinition,
+    FaninDependencyDefinition,
+    FanoutDependencyDefinition,
+)
 
 from dagster.core.errors import (
     DagsterExecutionStepExecutionError,
@@ -67,6 +71,7 @@ from dagster.core.types.decorator import dagster_type, as_dagster_type
 from dagster.core.types.config import ConfigType, Enum, EnumValue
 from dagster.core.types.evaluator import DagsterEvaluateConfigValueError
 from dagster.core.types.runtime import RuntimeType
+from dagster.core.types.sequence import Sequence
 
 from dagster.utils.test import execute_solid, execute_solids
 
@@ -75,6 +80,8 @@ from .version import __version__
 __all__ = [
     # Definition
     'DependencyDefinition',
+    'FaninDependencyDefinition',
+    'FanoutDependencyDefinition',
     'ExpectationDefinition',
     'ExpectationResult',
     'Field',
@@ -133,6 +140,7 @@ __all__ = [
     'PythonObjectType',
     'Selector',
     'String',
+    'Sequence',
     # type creation
     'as_dagster_type',
     'dagster_type',

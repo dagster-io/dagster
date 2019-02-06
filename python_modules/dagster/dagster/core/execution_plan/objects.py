@@ -14,10 +14,33 @@ from dagster.core.errors import DagsterError
 from dagster.core.execution_context import RuntimeExecutionContext
 from dagster.core.types.runtime import RuntimeType
 
+from .create_plan_tracker import create_plan_tracker
 
-class StepOutputHandle(namedtuple('_StepOutputHandle', 'step output_name')):
+
+class StepOutputHandle:
+    '''
+    StepOutputHandle, abstractly, is a pointer to a particular output on a particular step
+    '''
+
+    @staticmethod
+    def create(step, output_name):
+        return ConcreteStepOutputHandle(step, output_name)
+
+    @staticmethod
+    def subplan_begin_sentinel():
+        return SubplanBeginStepOutputHandle()
+
+
+class ConcreteStepOutputHandle(
+    namedtuple('_ConcreteStepOutputHandle', 'step output_name'), StepOutputHandle
+):
+    '''
+    ConcreteStepOutputHandle is the case where there is a pointer to an actual ExecutionStep
+    and an actual output.
+    '''
+
     def __new__(cls, step, output_name):
-        return super(StepOutputHandle, cls).__new__(
+        return super(ConcreteStepOutputHandle, cls).__new__(
             cls,
             step=check.inst_param(step, 'step', ExecutionStep),
             output_name=check.str_param(output_name, 'output_name'),
@@ -40,6 +63,15 @@ class StepOutputHandle(namedtuple('_StepOutputHandle', 'step output_name')):
 
     def __eq__(self, other):
         return self.step.key == other.step.key and self.output_name == other.output_name
+
+
+class SubplanBeginStepOutputHandle(StepOutputHandle):
+    '''
+    SubplanBeginStepOutputHandle is used when a step needs an output handle in order
+    to index into collections keyed by StepOutputHandle, but there is no single step
+    to point to. Instead, the subplan execution machinery injects a value into the
+    intermediate result collection indexed by a singleton instance of this object.
+    '''
 
 
 class StepSuccessData(namedtuple('_StepSuccessData', 'output_name value')):
@@ -96,6 +128,7 @@ class StepKind(Enum):
     VALUE_THUNK = 'VALUE_THUNK'
     UNMARSHAL_INPUT = 'UNMARSHAL_INPUT'
     MARSHAL_OUTPUT = 'MARSHAL_OUTPUT'
+    SUBPLAN_EXECUTOR = 'SUBPLAN_EXECUTOR'
 
 
 class StepInput(namedtuple('_StepInput', 'name runtime_type prev_output_handle')):
@@ -122,10 +155,16 @@ class StepOutput(namedtuple('_StepOutput', 'name runtime_type')):
 class ExecutionStep(
     namedtuple(
         '_ExecutionStep',
-        'key step_inputs step_input_dict step_outputs step_output_dict compute_fn kind solid tags',
+        (
+            'key step_inputs step_input_dict step_outputs step_output_dict compute_fn kind solid '
+            'tags subplan'
+        ),
     )
 ):
-    def __new__(cls, key, step_inputs, step_outputs, compute_fn, kind, solid, tags):
+    def __new__(cls, key, step_inputs, step_outputs, compute_fn, kind, solid, tags, subplan=None):
+        if subplan:
+            check.invariant(kind == StepKind.SUBPLAN_EXECUTOR)
+
         check.param_invariant('pipeline' in tags, 'tags', 'Step must have pipeline tag')
         check.param_invariant('solid' in tags, 'tags', 'Step must have solid tag')
         check.param_invariant('solid_definition' in tags, 'tags', 'Step must have solid tag')
@@ -142,6 +181,7 @@ class ExecutionStep(
             kind=check.inst_param(kind, 'kind', StepKind),
             solid=check.inst_param(solid, 'solid', Solid),
             tags=merge_dicts({'step_key': key}, tags),
+            subplan=check.opt_inst_param(subplan, 'subplan', ExecutionPlan),
         )
 
     @property
@@ -223,12 +263,13 @@ class ExecutionValueSubplan(
 
 
 class ExecutionPlan(object):
-    def __init__(self, step_dict, deps):
+    def __init__(self, plan_id, step_dict, deps):
+        self.plan_id = check.str_param(plan_id, 'plan_id')
         self.step_dict = check.dict_param(
             step_dict, 'step_dict', key_type=str, value_type=ExecutionStep
         )
         self.deps = check.dict_param(deps, 'deps', key_type=str, value_type=set)
-        self.steps = list(step_dict.values())
+        self.steps = self.topological_steps()
 
     def has_step(self, key):
         check.str_param(key, 'key')
@@ -247,14 +288,20 @@ class ExecutionPlan(object):
             yield self.step_dict[step_key]
 
 
-class ExecutionPlanInfo(namedtuple('_ExecutionPlanInfo', 'context pipeline environment')):
+class CreateExecutionPlanInfo(
+    namedtuple('_ExecutionPlanInfo', 'context pipeline environment plan_tracker')
+):
     def __new__(cls, context, pipeline, environment):
-        return super(ExecutionPlanInfo, cls).__new__(
+        return super(CreateExecutionPlanInfo, cls).__new__(
             cls,
             check.inst_param(context, 'context', RuntimeExecutionContext),
             check.inst_param(pipeline, 'pipeline', PipelineDefinition),
             check.inst_param(environment, 'environment', EnvironmentConfig),
+            create_plan_tracker(pipeline),
         )
+
+    def plan_id_for_solid(self, solid):
+        return self.plan_tracker.plan_stacks[solid.name][-1]
 
 
 class StepOutputMap(dict):
@@ -274,13 +321,61 @@ class StepOutputMap(dict):
 # step outputs. This covers the case where a solid maps to multiple steps
 # and one wants to be able to attach to the logical output of a solid during execution
 class PlanBuilder:
-    def __init__(self, pipeline_name, initial_tags=None):
-        self.steps = []
-        self.step_output_map = StepOutputMap()
+    def __init__(self, plan_id, solid_names, existing_plans, pipeline_name, initial_tags=None):
+        self._plan_id = check.str_param(plan_id, 'plan_id')
+        self._solid_names = check.list_param(solid_names, 'solid_names', of_type=str)
+        self._existing_plans = check.dict_param(
+            existing_plans, 'existing_plans', key_type=str, value_type=ExecutionPlan
+        )
+
+        self._steps = []
+        self._step_output_map = StepOutputMap()
+        self._plan_output_map = {}
         self._tags = check.opt_dict_param(
             initial_tags, 'initial_tags', key_type=str, value_type=str
         )
         self._tags['pipeline'] = pipeline_name
+
+    def add_step(self, step):
+        check.inst_param(step, 'step', ExecutionStep)
+        self._steps.append(step)
+
+    def add_steps(self, steps):
+        check.list_param(steps, 'steps', of_type=ExecutionStep)
+        self._steps.extend(steps)
+
+    def get_steps(self):
+        return copy.copy(self._steps)
+
+    def get_existing_plan(self, plan_id):
+        return self._existing_plans[plan_id]
+
+    def get_step_output_handle_for_plan_id(self, plan_id):
+        check.str_param(plan_id, 'plan_id')
+        return self._plan_output_map[plan_id]
+
+    def set_step_output_handle_for_plan_id(self, plan_id, step_output_handle):
+        check.str_param(plan_id, 'plan_id')
+        check.inst_param(step_output_handle, 'step_output_handle', StepOutputHandle)
+        check.invariant(plan_id not in self._plan_output_map)
+        self._plan_output_map[plan_id] = step_output_handle
+
+    def get_step_output_for_solid_output_handle(self, solid_output_handle):
+        check.inst_param(solid_output_handle, 'solid_output_handle', SolidOutputHandle)
+        return self._step_output_map[solid_output_handle]
+
+    def set_step_output_for_solid_output_handle(self, solid_output_handle, step_output_handle):
+        check.inst_param(solid_output_handle, 'solid_output_handle', SolidOutputHandle)
+        check.inst_param(step_output_handle, 'step_output_handle', StepOutputHandle)
+        check.invariant(solid_output_handle not in self._step_output_map)
+        self._step_output_map[solid_output_handle] = step_output_handle
+
+    @property
+    def plan_id(self):
+        return self._plan_id
+
+    def get_solid_names(self):
+        return copy.copy(self._solid_names)
 
     def get_tags(self, **additional_tags):
         additional_tags.update(self._tags)
@@ -294,3 +389,14 @@ class PlanBuilder:
             yield
         finally:
             self._tags = old_tags
+
+
+# class StepOutputMap(dict):
+#     def __getitem__(self, key):
+#         check.inst_param(key, 'key', SolidOutputHandle)
+#         return dict.__getitem__(self, key)
+
+#     def __setitem__(self, key, val):
+#         check.inst_param(key, 'key', SolidOutputHandle)
+#         check.inst_param(val, 'val', StepOutputHandle)
+#         return dict.__setitem__(self, key, val)

@@ -5,7 +5,7 @@ from dagster.core.definitions import Result, Solid, OutputDefinition
 from dagster.core.types.runtime import RuntimeType
 
 from .objects import (
-    ExecutionPlanInfo,
+    CreateExecutionPlanInfo,
     ExecutionStep,
     ExecutionValueSubplan,
     PlanBuilder,
@@ -14,7 +14,7 @@ from .objects import (
     StepKind,
 )
 
-from .utility import create_joining_subplan
+from .utility import create_joining_value_subplan
 
 MATERIALIZATION_THUNK_INPUT = 'materialization_thunk_input'
 MATERIALIZATION_THUNK_OUTPUT = 'materialization_thunk_output'
@@ -42,7 +42,7 @@ def configs_for_output(solid, solid_config, output_def):
 
 
 def decorate_with_output_materializations(execution_info, plan_builder, solid, output_def, subplan):
-    check.inst_param(execution_info, 'execution_info', ExecutionPlanInfo)
+    check.inst_param(execution_info, 'execution_info', CreateExecutionPlanInfo)
     check.inst_param(plan_builder, 'plan_builder', PlanBuilder)
     check.inst_param(solid, 'solid', Solid)
     check.inst_param(output_def, 'output_def', OutputDefinition)
@@ -80,7 +80,7 @@ def decorate_with_output_materializations(execution_info, plan_builder, solid, o
             )
         )
 
-    return create_joining_subplan(
+    return create_joining_value_subplan(
         plan_builder,
         solid,
         '{solid}.materialization.output.{output}.join'.format(

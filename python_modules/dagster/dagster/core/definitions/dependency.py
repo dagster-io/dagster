@@ -190,9 +190,10 @@ def _create_handle_dict(solid_dict, dep_dict):
 class DependencyStructure(object):
     @staticmethod
     def from_definitions(solids, dep_dict):
-        return DependencyStructure(_create_handle_dict(solids, dep_dict))
+        return DependencyStructure(dep_dict, _create_handle_dict(solids, dep_dict))
 
-    def __init__(self, handle_dict):
+    def __init__(self, dep_dict, handle_dict):
+        self._dep_dict = check_two_dim_str_dict(dep_dict, 'dep_dict', DependencyDefinition)
         self._handle_dict = check.inst_param(handle_dict, 'handle_dict', InputToOutputHandleDict)
 
     def has_dep(self, solid_input_handle):
@@ -220,7 +221,17 @@ class DependencyStructure(object):
                 result[output_handle].append(input_handle)
         return result
 
-    def get_dep(self, solid_input_handle):
+    def input_handles_depending_on_output(self, solid_output_handle):
+        check.inst_param(solid_output_handle, 'solid_output_handle', SolidOutputHandle)
+        for input_handle, output_handle in self._handle_dict.items():
+            if output_handle == solid_output_handle:
+                yield input_handle
+
+    def get_dep_def(self, solid_input_handle):
+        check.inst_param(solid_input_handle, 'solid_input_handle', SolidInputHandle)
+        return self._dep_dict[solid_input_handle.solid.name][solid_input_handle.input_def.name]
+
+    def get_dep_output_handle(self, solid_input_handle):
         check.inst_param(solid_input_handle, 'solid_input_handle', SolidInputHandle)
         return self._handle_dict[solid_input_handle]
 
@@ -255,3 +266,23 @@ class DependencyDefinition(namedtuple('_DependencyDefinition', 'solid output des
             check.str_param(output, 'output'),
             check.opt_str_param(description, 'description'),
         )
+
+    @property
+    def is_fanin(self):
+        return False
+
+    @property
+    def is_fanout(self):
+        return False
+
+
+class FaninDependencyDefinition(DependencyDefinition):
+    @property
+    def is_fanin(self):
+        return True
+
+
+class FanoutDependencyDefinition(DependencyDefinition):
+    @property
+    def is_fanout(self):
+        return True

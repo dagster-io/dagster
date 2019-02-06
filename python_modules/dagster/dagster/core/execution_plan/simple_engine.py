@@ -38,14 +38,15 @@ def _all_inputs_covered(step, results):
     return True
 
 
-def execute_plan_core(context, execution_plan, throw_on_user_error):
-    check.inst_param(context, 'base_context', RuntimeExecutionContext)
+def execute_plan_core(context, execution_plan, throw_on_user_error, intermediate_results=None):
+    check.inst_param(context, 'context', RuntimeExecutionContext)
     check.inst_param(execution_plan, 'execution_plan', ExecutionPlan)
     check.bool_param(throw_on_user_error, 'throw_on_user_error')
 
     steps = list(execution_plan.topological_steps())
 
-    intermediate_results = {}
+    intermediate_results = check.opt_dict_param(intermediate_results, 'intermediate_results')
+
     context.debug(
         'Entering execute_steps loop. Order: {order}'.format(order=[step.key for step in steps])
     )
@@ -79,7 +80,7 @@ def execute_plan_core(context, execution_plan, throw_on_user_error):
 
             yield result
             if result.success:
-                output_handle = StepOutputHandle(step, result.success_data.output_name)
+                output_handle = StepOutputHandle.create(step, result.success_data.output_name)
                 intermediate_results[output_handle] = result
 
 

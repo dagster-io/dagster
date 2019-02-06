@@ -115,8 +115,11 @@ def test_execution_plan_middle_step():
         ),
     )
 
+    print(execution_plan.steps)
+
     step_results = execute_plan(pipeline_def, execution_plan)
 
+    print(step_results)
     assert len(step_results) == 2
     assert step_results[1].success_data.value == 3
 

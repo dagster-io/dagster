@@ -24,7 +24,7 @@ from .resource import ResourceDefinition
 
 from .repository import RepositoryDefinition
 
-from .pipeline import PipelineDefinition, solids_in_topological_order
+from .pipeline import PipelineDefinition
 
 from .pipeline_creation import create_execution_structure
 
