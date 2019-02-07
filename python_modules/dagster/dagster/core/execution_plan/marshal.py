@@ -1,6 +1,13 @@
 from dagster import check
-from dagster.core.definitions import Result
-from .objects import ExecutionStep, PlanBuilder, StepInput, StepKind, StepOutput, StepOutputHandle
+from .objects import (
+    ExecutionStep,
+    PlanBuilder,
+    StepInput,
+    StepKind,
+    StepOutput,
+    StepOutputHandle,
+    StepOutputValue,
+)
 
 UNMARSHAL_INPUT_OUTPUT = 'unmarshal-input-output'
 
@@ -12,11 +19,11 @@ def create_unmarshal_input_step(plan_builder, step, step_input, marshalling_key)
     check.str_param(marshalling_key, 'marshalling_key')
 
     def _compute_fn(context, _step, _inputs):
-        yield Result(
-            context.persistence_policy.read_value(
+        yield StepOutputValue(
+            output_name=UNMARSHAL_INPUT_OUTPUT,
+            value=context.persistence_policy.read_value(
                 step_input.runtime_type.serialization_strategy, marshalling_key
             ),
-            UNMARSHAL_INPUT_OUTPUT,
         )
 
     return StepOutputHandle(

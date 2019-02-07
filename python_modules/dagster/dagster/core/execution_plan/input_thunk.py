@@ -1,6 +1,6 @@
 from dagster import check
 
-from dagster.core.definitions import InputDefinition, Result, Solid
+from dagster.core.definitions import InputDefinition, Solid
 
 from dagster.core.errors import DagsterInvariantViolationError
 
@@ -9,6 +9,7 @@ from .objects import (
     ExecutionStep,
     StepOutput,
     StepOutputHandle,
+    StepOutputValue,
     StepKind,
     PlanBuilder,
 )
@@ -22,7 +23,7 @@ def _create_input_thunk_execution_step(plan_builder, solid, input_def, config_va
 
     def _fn(_context, _step, _inputs):
         value = input_def.runtime_type.input_schema.construct_from_config_value(config_value)
-        yield Result(value, INPUT_THUNK_OUTPUT)
+        yield StepOutputValue(output_name=INPUT_THUNK_OUTPUT, value=value)
 
     return ExecutionStep(
         key=solid.name + '.' + input_def.name + '.input_thunk',

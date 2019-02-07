@@ -1,6 +1,6 @@
 from dagster import check
 
-from dagster.core.definitions import Result, Solid, OutputDefinition
+from dagster.core.definitions import Solid, OutputDefinition
 
 from dagster.core.types.runtime import RuntimeType
 
@@ -11,6 +11,7 @@ from .objects import (
     PlanBuilder,
     StepInput,
     StepOutput,
+    StepOutputValue,
     StepKind,
 )
 
@@ -27,7 +28,7 @@ def _create_materialization_lambda(runtime_type, config_spec):
     def _fn(_info, _step, inputs):
         runtime_value = inputs[MATERIALIZATION_THUNK_INPUT]
         runtime_type.output_schema.materialize_runtime_value(config_spec, runtime_value)
-        yield Result(runtime_value, MATERIALIZATION_THUNK_OUTPUT)
+        yield StepOutputValue(output_name=MATERIALIZATION_THUNK_OUTPUT, value=runtime_value)
 
     return _fn
 

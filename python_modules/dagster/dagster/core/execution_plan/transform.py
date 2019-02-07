@@ -3,7 +3,15 @@ from dagster.core.definitions import Result, Solid, TransformExecutionInfo
 from dagster.core.errors import DagsterInvariantViolationError
 from dagster.core.execution_context import RuntimeExecutionContext
 
-from .objects import ExecutionPlanInfo, ExecutionStep, PlanBuilder, StepInput, StepKind, StepOutput
+from .objects import (
+    ExecutionPlanInfo,
+    ExecutionStep,
+    PlanBuilder,
+    StepInput,
+    StepKind,
+    StepOutput,
+    StepOutputValue,
+)
 
 
 def create_transform_step(execution_info, plan_builder, solid, step_inputs, conf):
@@ -37,8 +45,8 @@ def _yield_transform_results(execution_info, context, step, conf, inputs):
         raise DagsterInvariantViolationError(
             (
                 'Transform for solid {solid_name} returned a Result rather than '
-                + 'yielding it. The transform_fn of the core SolidDefinition must yield '
-                + 'its results'
+                'yielding it. The transform_fn of the core SolidDefinition must yield '
+                'its results'
             ).format(solid_name=step.solid.name)
         )
 
@@ -50,7 +58,7 @@ def _yield_transform_results(execution_info, context, step, conf, inputs):
             raise DagsterInvariantViolationError(
                 (
                     'Transform for solid {solid_name} yielded {result} rather an '
-                    + 'an instance of the Result class.'
+                    'an instance of the Result class.'
                 ).format(result=repr(result), solid_name=step.solid.name)
             )
 
@@ -59,7 +67,7 @@ def _yield_transform_results(execution_info, context, step, conf, inputs):
                 solid=step.solid.name, output=result.output_name, value=repr(result.value)
             )
         )
-        yield result
+        yield StepOutputValue(output_name=result.output_name, value=result.value)
 
 
 def _execute_core_transform(execution_info, context, step, conf, inputs):
