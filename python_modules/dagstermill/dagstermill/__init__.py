@@ -65,7 +65,6 @@ class Manager:
 
     def define_out_of_pipeline_info(self, context_config):
         check.str_param(self.solid_def_name, 'solid_def_name')
-        solid = Solid(self.solid_def_name, self.solid_def)
         pipeline_def = PipelineDefinition([self.solid_def], name="Ephemeral Notebook Pipeline")
         from dagster.core.execution import create_typed_context
 
@@ -245,7 +244,7 @@ def get_papermill_parameters(transform_execution_info, inputs, output_log_path):
 
     parameters = dict(dm_context=json.dumps(dm_context_dict))
 
-    input_defs = transform_execution_info.step.solid_def.input_defs
+    input_defs = transform_execution_info.step.solid.definition.input_defs
     input_def_dict = {inp.name: inp for inp in input_defs}
     for input_name, input_value in inputs.items():
         assert (
@@ -400,7 +399,7 @@ def _dm_solid_transform(name, notebook_path):
                 info.step.key, "{name} output notebook".format(name=info.step.solid.name), temp_path
             )
 
-            for output_def in info.step.solid_def.output_defs:
+            for output_def in info.step.solid.definition.output_defs:
                 if output_def.name in output_nb.data:
 
                     value = read_value(output_def.runtime_type, output_nb.data[output_def.name])
