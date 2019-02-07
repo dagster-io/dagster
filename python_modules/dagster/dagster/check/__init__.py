@@ -20,7 +20,7 @@ class NotImplementedCheckError(CheckError):
 
 def _param_type_mismatch_exception(obj, ttype, param_name):
     return ParameterCheckError(
-        'Param "{name}" is not a {type}. Got {obj} with is type {obj_type}.'.format(
+        'Param "{name}" is not a {type}. Got {obj} which is type {obj_type}.'.format(
             name=param_name, obj=repr(obj), type=ttype.__name__, obj_type=type(obj)
         )
     )
@@ -257,9 +257,8 @@ def _check_list_items(obj_list, of_type):
         if not isinstance(obj, of_type):
             raise_with_traceback(
                 CheckError(
-                    'Member of list mismatches type. Expected {of_type}. Got {obj_repr}'.format(
-                        of_type=of_type, obj_repr=repr(obj)
-                    )
+                    'Member of list mismatches type. Expected {of_type}. Got {obj_repr} of type '
+                    '{obj_type}.'.format(of_type=of_type, obj_repr=repr(obj), obj_type=type(obj))
                 )
             )
     return obj_list
@@ -274,36 +273,6 @@ def opt_list_param(obj_list, param_name, of_type=None):
         return obj_list
 
     return _check_list_items(obj_list, of_type)
-
-
-def dict_param(obj, param_name, key_type=None, value_type=None):
-    if not isinstance(obj, dict):
-        raise_with_traceback(_param_type_mismatch_exception(obj, dict, param_name))
-
-    if not (key_type or value_type):
-        return obj
-
-    return _check_key_value_types(obj, key_type, value_type)
-
-
-def opt_type_param(obj, param_name, default=None):
-    if obj is not None and not isinstance(obj, type):
-        raise_with_traceback(_not_type_param_subclass_mismatch_exception(obj, param_name))
-    return obj if obj is not None else default
-
-
-def type_param(obj, param_name):
-    if not isinstance(obj, type):
-        raise_with_traceback(_not_type_param_subclass_mismatch_exception(obj, param_name))
-    return obj
-
-
-def subclass_param(obj, param_name, superclass):
-    type_param(obj, param_name)
-    if not issubclass(obj, superclass):
-        raise_with_traceback(_param_subclass_mismatch_exception(obj, superclass, param_name))
-
-    return obj
 
 
 def _check_key_value_types(obj, key_type, value_type):
@@ -326,12 +295,22 @@ def _check_key_value_types(obj, key_type, value_type):
             raise_with_traceback(
                 CheckError(
                     'Value in dictionary mismatches expected type for key {key}. Expected value '
-                    'of type {vtype}. Got value {value} of type {obj_repr}.'.format(
-                        vtype=repr(value_type), obj_repr=repr(value), key=key, value=value
+                    'of type {vtype}. Got value {value} of type {obj_type}.'.format(
+                        vtype=repr(value_type), obj_type=type(value), key=key, value=value
                     )
                 )
             )
     return obj
+
+
+def dict_param(obj, param_name, key_type=None, value_type=None):
+    if not isinstance(obj, dict):
+        raise_with_traceback(_param_type_mismatch_exception(obj, dict, param_name))
+
+    if not (key_type or value_type):
+        return obj
+
+    return _check_key_value_types(obj, key_type, value_type)
 
 
 def opt_dict_param(obj, param_name, key_type=None, value_type=None):
@@ -342,6 +321,54 @@ def opt_dict_param(obj, param_name, key_type=None, value_type=None):
         return {}
 
     return _check_key_value_types(obj, key_type, value_type)
+
+
+def _check_two_dim_key_value_types(obj, key_type, param_name, value_type):
+    _check_key_value_types(obj, key_type, dict)  # check level one
+
+    for level_two_dict in obj.values():
+        if not isinstance(level_two_dict, dict):
+            raise_with_traceback(_param_type_mismatch_exception(obj, dict, param_name))
+        _check_key_value_types(level_two_dict, key_type, value_type)  # check level two
+
+    return obj
+
+
+def two_dim_dict_param(obj, param_name, key_type=string_types, value_type=None):
+    if not isinstance(obj, dict):
+        raise_with_traceback(_param_type_mismatch_exception(obj, dict, param_name))
+
+    return _check_two_dim_key_value_types(obj, key_type, param_name, value_type)
+
+
+def opt_two_dim_dict_param(obj, param_name, key_type=string_types, value_type=None):
+    if obj is not None and not isinstance(obj, dict):
+        raise_with_traceback(_param_type_mismatch_exception(obj, dict, param_name))
+
+    if not obj:
+        return {}
+
+    return _check_two_dim_key_value_types(obj, key_type, param_name, value_type)
+
+
+def type_param(obj, param_name):
+    if not isinstance(obj, type):
+        raise_with_traceback(_not_type_param_subclass_mismatch_exception(obj, param_name))
+    return obj
+
+
+def opt_type_param(obj, param_name, default=None):
+    if obj is not None and not isinstance(obj, type):
+        raise_with_traceback(_not_type_param_subclass_mismatch_exception(obj, param_name))
+    return obj if obj is not None else default
+
+
+def subclass_param(obj, param_name, superclass):
+    type_param(obj, param_name)
+    if not issubclass(obj, superclass):
+        raise_with_traceback(_param_subclass_mismatch_exception(obj, superclass, param_name))
+
+    return obj
 
 
 def _element_check_error(key, value, ddict, ttype):

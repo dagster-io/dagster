@@ -33,7 +33,7 @@ from .definitions import (
     solids_in_topological_order,
 )
 
-from .definitions.utils import check_opt_two_dim_str_dict, DEFAULT_OUTPUT
+from .definitions.utils import DEFAULT_OUTPUT
 from .definitions.environment_configs import construct_environment_config, construct_context_config
 
 from .execution_context import ExecutionContext, RuntimeExecutionContext, ExecutionMetadata
@@ -546,7 +546,7 @@ def execute_externalized_plan(
     check.inst_param(pipeline, 'pipeline', PipelineDefinition)
     check.inst_param(execution_plan, 'execution_plan', ExecutionPlan)
     check.list_param(step_keys, 'step_keys', of_type=str)
-    inputs_to_marshal = check_opt_two_dim_str_dict(
+    inputs_to_marshal = check.opt_two_dim_dict_param(
         inputs_to_marshal, 'inputs_to_marshal', value_type=str
     )
     outputs_to_marshal = check.opt_dict_param(

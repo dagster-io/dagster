@@ -45,28 +45,6 @@ def check_valid_name(name):
     return name
 
 
-def check_two_dim_dict(ddict, param_name, key_type=None, value_type=None):
-    check.dict_param(ddict, param_name, key_type=key_type, value_type=dict)
-    for sub_dict in ddict.values():
-        check.dict_param(sub_dict, 'sub_dict', key_type=key_type, value_type=value_type)
-    return ddict
-
-
-def check_opt_two_dim_dict(ddict, param_name, key_type=None, value_type=None):
-    ddict = check.opt_dict_param(ddict, param_name, key_type=key_type, value_type=dict)
-    for sub_dict in ddict.values():
-        check.dict_param(sub_dict, 'sub_dict', key_type=key_type, value_type=value_type)
-    return ddict
-
-
-def check_two_dim_str_dict(ddict, param_name, value_type):
-    return check_two_dim_dict(ddict, param_name, key_type=str, value_type=value_type)
-
-
-def check_opt_two_dim_str_dict(ddict, param_name, value_type):
-    return check_opt_two_dim_dict(ddict, param_name, key_type=str, value_type=value_type)
-
-
 def _kv_str(key, value):
     return '{key}="{value}"'.format(key=key, value=repr(value))
 
