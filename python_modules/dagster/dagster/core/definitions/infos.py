@@ -86,3 +86,7 @@ class TransformExecutionInfo(
     @property
     def solid_def(self):
         return self.step.solid.definition
+
+    @property
+    def solid(self):
+        return self.step.solid

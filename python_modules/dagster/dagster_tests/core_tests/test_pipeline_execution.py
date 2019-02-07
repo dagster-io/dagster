@@ -59,7 +59,7 @@ def make_transform():
 
         result = []
         result.extend(passed_rows)
-        result.append({info.step.solid.name: 'transform_called'})
+        result.append({info.solid.name: 'transform_called'})
         return result
 
     return transform
@@ -77,7 +77,7 @@ def _transform_fn(info, inputs):
 
     result = []
     result.extend(passed_rows)
-    result.append({info.step.solid.name: 'transform_called'})
+    result.append({info.solid.name: 'transform_called'})
     yield Result(result)
 
 

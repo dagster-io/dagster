@@ -244,7 +244,7 @@ def get_papermill_parameters(transform_execution_info, inputs, output_log_path):
 
     parameters = dict(dm_context=json.dumps(dm_context_dict))
 
-    input_defs = transform_execution_info.step.solid.definition.input_defs
+    input_defs = transform_execution_info.solid_def.input_defs
     input_def_dict = {inp.name: inp for inp in input_defs}
     for input_name, input_value in inputs.items():
         assert (
@@ -361,7 +361,7 @@ def _dm_solid_transform(name, notebook_path):
             with open(output_log_path, 'a') as f:
                 f.close()
 
-            process = subprocess.Popen(["papermill", intermediate_path, temp_path])
+            process = subprocess.Popen(['papermill', intermediate_path, temp_path])
 
             while process.poll() is None:  # while subprocess alive
                 if info.context.event_callback:
@@ -383,8 +383,8 @@ def _dm_solid_transform(name, notebook_path):
 
             if process.returncode != 0:
                 raise DagstermillError(
-                    "There wsas an error when Papermill tried to execute the notebook. "
-                    "The process stderr is {stderr}".format(stderr=process.stderr)
+                    'There wsas an error when Papermill tried to execute the notebook. '
+                    'The process stderr is {stderr}'.format(stderr=process.stderr)
                 )
 
             output_nb = pm.read_notebook(temp_path)
@@ -396,10 +396,10 @@ def _dm_solid_transform(name, notebook_path):
             )
 
             info.context.events.step_materialization(
-                info.step.key, "{name} output notebook".format(name=info.step.solid.name), temp_path
+                info.step.key, "{name} output notebook".format(name=info.solid.name), temp_path
             )
 
-            for output_def in info.step.solid.definition.output_defs:
+            for output_def in info.solid_def.output_defs:
                 if output_def.name in output_nb.data:
 
                     value = read_value(output_def.runtime_type, output_nb.data[output_def.name])
