@@ -77,7 +77,11 @@ class Manager:
         with yield_context(
             pipeline_def, dummy_environment_config, ExecutionMetadata(run_id='')
         ) as context:
-            self.info = TransformExecutionInfo(context, None, None, pipeline_def)
+            solid_config = (
+                None
+            )  # no solid_config, since we're out of pipeline: we might add functionality to support this later
+            execution_step = None  # since we're out of pipeline, there is no execution step
+            self.info = TransformExecutionInfo(context, solid_config, execution_step, pipeline_def)
         return self.info
 
     def get_pipeline(self, name):
@@ -116,7 +120,11 @@ class Manager:
         execution_metadata = ExecutionMetadata(run_id, loggers=loggers)
         typed_environment = construct_environment_config(environment_config)
         with yield_context(pipeline_def, typed_environment, execution_metadata) as context:
-            self.info = TransformExecutionInfo(context, None, None, pipeline_def)
+            solid_config = (
+                None
+            )  # We currently do not reconstruct the solid config, because it can be anything
+            execution_step = None  # because we're out of pipeline
+            self.info = TransformExecutionInfo(context, solid_config, execution_step, pipeline_def)
 
         return self.info
 
