@@ -63,23 +63,21 @@ class StepFailureData(namedtuple('_StepFailureData', 'dagster_error')):
         )
 
 
-class StepResult(namedtuple('_StepResult', 'success step kind success_data failure_data')):
+class StepResult(namedtuple('_StepResult', 'success step success_data failure_data')):
     @staticmethod
-    def success_result(step, kind, success_data):
+    def success_result(step, success_data):
         return StepResult(
             success=True,
             step=check.inst_param(step, 'step', ExecutionStep),
-            kind=check.inst_param(kind, 'kind', StepKind),
             success_data=check.inst_param(success_data, 'success_data', StepSuccessData),
             failure_data=None,
         )
 
     @staticmethod
-    def failure_result(step, kind, failure_data):
+    def failure_result(step, failure_data):
         return StepResult(
             success=False,
             step=check.inst_param(step, 'step', ExecutionStep),
-            kind=check.inst_param(kind, 'kind', StepKind),
             success_data=None,
             failure_data=check.inst_param(failure_data, 'failure_data', StepFailureData),
         )
@@ -90,6 +88,10 @@ class StepResult(namedtuple('_StepResult', 'success step kind success_data failu
             six.reraise(*self.failure_data.dagster_error.original_exc_info)
         else:
             raise self.failure_data.dagster_error
+
+    @property
+    def kind(self):
+        return self.step.kind
 
 
 class StepKind(Enum):

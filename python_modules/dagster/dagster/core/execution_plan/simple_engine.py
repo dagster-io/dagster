@@ -100,7 +100,7 @@ def execute_step(step, context, inputs):
     except DagsterError as dagster_error:
         context.error(str(dagster_error))
         yield StepResult.failure_result(
-            step=step, kind=step.kind, failure_data=StepFailureData(dagster_error=dagster_error)
+            step=step, failure_data=StepFailureData(dagster_error=dagster_error)
         )
         return
 
@@ -155,7 +155,6 @@ def _create_step_result(step, step_output_value):
     try:
         return StepResult.success_result(
             step=step,
-            kind=step.kind,
             success_data=StepSuccessData(
                 output_name=step_output_value.output_name,
                 value=step_output.runtime_type.coerce_runtime_value(step_output_value.value),
