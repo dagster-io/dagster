@@ -9,8 +9,6 @@ from dagster.utils.logging import get_formatted_stack_trace
 
 from dagster.utils.timing import time_execution_scope
 
-from dagster.core.definitions import Result
-
 from dagster.core.errors import (
     DagsterError,
     DagsterInvariantViolationError,
@@ -26,6 +24,7 @@ from .objects import (
     ExecutionStep,
     StepResult,
     StepOutputHandle,
+    StepOutputValue,
     StepSuccessData,
     StepFailureData,
 )
@@ -106,30 +105,32 @@ def execute_step(step, context, inputs):
         return
 
 
-def _error_check_results(step, results):
+def _error_check_results(step, step_output_values):
+    check.inst_param(step, 'step', ExecutionStep)
+    check.list_param(step_output_values, 'step_output_values', of_type=StepOutputValue)
     seen_outputs = set()
-    for result in results:
-        if not step.has_step_output(result.output_name):
+    for step_output_value in step_output_values:
+        if not step.has_step_output(step_output_value.output_name):
             output_names = list(
                 [output_def.name for output_def in step.solid.definition.output_defs]
             )
             raise DagsterInvariantViolationError(
-                '''Core transform for {step.solid.name} returned an output
-                {result.output_name} that does not exist. The available
-                outputs are {output_names}'''.format(
-                    step=step, result=result, output_names=output_names
+                'Core transform for {step.solid.name} returned an output '
+                '{step_output_value.output_name} that does not exist. The available '
+                'outputs are {output_names}'.format(
+                    step=step, step_output_value=step_output_value, output_names=output_names
                 )
             )
 
-        if result.output_name in seen_outputs:
+        if step_output_value.output_name in seen_outputs:
             raise DagsterInvariantViolationError(
-                '''Core transform for {step.solid.name} returned an output
-                {result.output_name} multiple times'''.format(
-                    step=step, result=result
+                'Core transform for {step.solid.name} returned an output '
+                '{step_output_value.output_name} multiple times'.format(
+                    step=step, step_output_value=step_output_value
                 )
             )
 
-        seen_outputs.add(result.output_name)
+        seen_outputs.add(step_output_value.output_name)
 
 
 def _execute_steps_core_loop(step, context, inputs):
@@ -138,34 +139,37 @@ def _execute_steps_core_loop(step, context, inputs):
     for input_name, input_value in inputs.items():
         evaluated_inputs[input_name] = _get_evaluated_input(step, input_name, input_value)
 
-    results = _compute_result_list(step, context, evaluated_inputs)
+    step_output_values = _gather_step_output_values(step, context, evaluated_inputs)
 
-    _error_check_results(step, results)
+    _error_check_results(step, step_output_values)
 
-    return [_create_step_result(step, result) for result in results]
+    return [_create_step_result(step, result) for result in step_output_values]
 
 
-def _create_step_result(step, result):
-    check.inst_param(result, 'result', Result)
+def _create_step_result(step, step_output_value):
+    check.inst_param(step_output_value, 'step_output_value', StepOutputValue)
 
-    step_output = step.step_output_named(result.output_name)
+    step_output = step.step_output_named(step_output_value.output_name)
 
     try:
         return StepResult.success_result(
             step=step,
             kind=step.kind,
             success_data=StepSuccessData(
-                output_name=result.output_name,
-                value=step_output.runtime_type.coerce_runtime_value(result.value),
+                output_name=step_output_value.output_name,
+                value=step_output.runtime_type.coerce_runtime_value(step_output_value.value),
             ),
         )
     except DagsterRuntimeCoercionError as e:
         raise DagsterInvariantViolationError(
             (
-                'Solid {step.solid.name} output name {output_name} output {result.value} '
-                'type failure: {error_msg}'
+                'Solid {step.solid.name} output name {output_name} output '
+                '{step_output_value.value} type failure: {error_msg}.'
             ).format(
-                step=step, result=result, error_msg=','.join(e.args), output_name=result.output_name
+                step=step,
+                step_output_value=step_output_value,
+                error_msg=','.join(e.args),
+                output_name=step_output_value.output_name,
             )
         )
 
@@ -189,7 +193,7 @@ def _get_evaluated_input(step, input_name, input_value):
         )
 
 
-def _compute_result_list(step, context, evaluated_inputs):
+def _gather_step_output_values(step, context, evaluated_inputs):
     error_str = 'Error occured during step {key}'.format(key=step.key)
     with _execution_step_error_boundary(context, step, error_str):
         gen = step.compute_fn(context, step, evaluated_inputs)

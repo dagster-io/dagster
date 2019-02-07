@@ -15,6 +15,13 @@ from dagster.core.execution_context import RuntimeExecutionContext
 from dagster.core.types.runtime import RuntimeType
 
 
+class StepOutputValue(namedtuple('_StepOutputValue', 'output_name value')):
+    def __new__(cls, output_name, value):
+        return super(StepOutputValue, cls).__new__(
+            cls, output_name=check.str_param(output_name, 'output_name'), value=value
+        )
+
+
 class StepOutputHandle(namedtuple('_StepOutputHandle', 'step output_name')):
     def __new__(cls, step, output_name):
         return super(StepOutputHandle, cls).__new__(

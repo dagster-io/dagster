@@ -1,5 +1,5 @@
 from dagster import check
-from dagster.core.definitions import Result, Solid
+from dagster.core.definitions import Solid
 from dagster.core.types.runtime import RuntimeType
 
 from .objects import (
@@ -8,6 +8,7 @@ from .objects import (
     StepInput,
     StepOutput,
     StepOutputHandle,
+    StepOutputValue,
     StepKind,
     PlanBuilder,
 )
@@ -16,7 +17,7 @@ JOIN_OUTPUT = 'join_output'
 
 
 def __join_lambda(_context, _step, inputs):
-    yield Result(output_name=JOIN_OUTPUT, value=list(inputs.values())[0])
+    yield StepOutputValue(output_name=JOIN_OUTPUT, value=list(inputs.values())[0])
 
 
 def create_join_step(plan_builder, solid, step_key, prev_steps, prev_output_name):
@@ -96,7 +97,7 @@ def create_value_thunk_step(plan_builder, solid, runtime_type, step_key, value):
     check.str_param(step_key, 'step_key')
 
     def _fn(_context, _step, _inputs):
-        yield Result(value, VALUE_OUTPUT)
+        yield StepOutputValue(output_name=VALUE_OUTPUT, value=value)
 
     return StepOutputHandle(
         ExecutionStep(
