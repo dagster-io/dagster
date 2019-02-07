@@ -1,3 +1,5 @@
+from collections import defaultdict
+from contextlib import contextmanager
 import pytest
 
 from dagster import check
@@ -624,3 +626,60 @@ def test_subclass_param():
 
     with pytest.raises(CheckError):
         assert check.subclass_param('value', 'foo', Super)
+
+
+@contextmanager
+def raises_with_message(exc_type, message_text):
+    with pytest.raises(exc_type) as exc_info:
+        yield
+
+    assert str(exc_info.value) == message_text
+
+
+def test_two_dim_dict():
+    assert check.two_dim_dict_param({}, 'foo') == {}
+    assert check.two_dim_dict_param({'key': {}}, 'foo')
+    assert check.two_dim_dict_param({'key': {'key2': 2}}, 'foo')
+
+    # make sure default dict passes
+    default_dict = defaultdict(dict)
+    default_dict['key']['key2'] = 2
+    assert check.two_dim_dict_param(default_dict, 'foo')
+
+    with raises_with_message(
+        CheckError, '''Param "foo" is not a dict. Got None which is type <class 'NoneType'>.'''
+    ):
+        check.two_dim_dict_param(None, 'foo')
+
+    with raises_with_message(
+        CheckError,
+        "Value in dictionary mismatches expected type for key int_value. Expected value "
+        "of type <class 'dict'>. Got value 2 of type <class 'int'>.",
+    ):
+        check.two_dim_dict_param({'int_value': 2}, 'foo')
+
+    with raises_with_message(
+        CheckError,
+        "Value in dictionary mismatches expected type for key level_two_value_mismatch. "
+        "Expected value of type (<class 'str'>,). Got value 2 of type <class 'int'>.",
+    ):
+        check.two_dim_dict_param(
+            {'level_one_key': {'level_two_value_mismatch': 2}}, 'foo', value_type=str
+        )
+
+    with raises_with_message(
+        CheckError, "Key in dictionary mismatches type. Expected <class 'int'>. Got 'key'"
+    ):
+        assert check.two_dim_dict_param({'key': {}}, 'foo', key_type=int)
+
+    with raises_with_message(
+        CheckError, "Key in dictionary mismatches type. Expected <class 'int'>. Got 'level_two_key'"
+    ):
+        assert check.two_dim_dict_param({1: {'level_two_key': 'something'}}, 'foo', key_type=int)
+
+
+def test_opt_two_dim_dict_parm():
+    assert check.opt_two_dim_dict_param({}, 'foo') == {}
+    assert check.opt_two_dim_dict_param({'key': {}}, 'foo')
+    assert check.opt_two_dim_dict_param({'key': {'key2': 2}}, 'foo')
+    assert check.opt_two_dim_dict_param(None, 'foo') == {}
