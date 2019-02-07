@@ -3,7 +3,11 @@ from __future__ import absolute_import
 import os
 import sys
 import subprocess
-from shlex import quote
+
+try:
+    from shlex import quote as cmd_quote
+except ImportError:
+    from pipes import quote as cmd_quote
 
 import nbformat
 from flask import Flask, send_file, send_from_directory, request
@@ -128,7 +132,7 @@ def open_file_view():
         return "Success", 200
 
     open_cmd = 'open' if sys.platform.startswith('darwin') else 'xdg-open'
-    (exitcode, output) = subprocess.getstatusoutput(open_cmd + ' ' + quote(path))
+    (exitcode, output) = subprocess.getstatusoutput(open_cmd + ' ' + cmd_quote(path))
     if exitcode == 0:
         return "Success", 200
     else:
