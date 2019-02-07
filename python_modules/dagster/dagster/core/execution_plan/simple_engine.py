@@ -108,6 +108,7 @@ def execute_step(step, context, inputs):
 def _error_check_results(step, step_output_values):
     check.inst_param(step, 'step', ExecutionStep)
     check.list_param(step_output_values, 'step_output_values', of_type=StepOutputValue)
+
     seen_outputs = set()
     for step_output_value in step_output_values:
         if not step.has_step_output(step_output_value.output_name):
