@@ -90,6 +90,7 @@ export default class PipelineRunExecutionPlan extends React.Component<
                 start={metadata.start}
                 elapsed={metadata.elapsed}
                 name={step.name}
+                materializations={metadata.materializations}
                 onShowStateDetails={onShowStateDetails}
                 onApplyStepFilter={onApplyStepFilter}
                 delay={delay}
@@ -132,7 +133,7 @@ const ExecutionTimeline = styled.div`
   position: absolute;
   top: 12px;
   left: 23px;
-  bottom: 12px;
+  bottom: 15px;
 `;
 
 const ExecutionTimelineDot = styled.div<{ completed: boolean }>`

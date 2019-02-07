@@ -60,6 +60,27 @@ export interface PipelineRunLogsSubscription_pipelineRunLogs_messages_PipelinePr
   processId: number;
 }
 
+export interface PipelineRunLogsSubscription_pipelineRunLogs_messages_StepMaterializationEvent_run {
+  __typename: "PipelineRun";
+  runId: string;
+}
+
+export interface PipelineRunLogsSubscription_pipelineRunLogs_messages_StepMaterializationEvent_step {
+  __typename: "ExecutionStep";
+  name: string;
+}
+
+export interface PipelineRunLogsSubscription_pipelineRunLogs_messages_StepMaterializationEvent {
+  __typename: "StepMaterializationEvent";
+  run: PipelineRunLogsSubscription_pipelineRunLogs_messages_StepMaterializationEvent_run;
+  message: string;
+  timestamp: string;
+  level: LogLevel;
+  step: PipelineRunLogsSubscription_pipelineRunLogs_messages_StepMaterializationEvent_step;
+  fileLocation: string;
+  fileName: string;
+}
+
 export interface PipelineRunLogsSubscription_pipelineRunLogs_messages_ExecutionStepStartEvent_run {
   __typename: "PipelineRun";
   runId: string;
@@ -79,7 +100,7 @@ export interface PipelineRunLogsSubscription_pipelineRunLogs_messages_ExecutionS
   step: PipelineRunLogsSubscription_pipelineRunLogs_messages_ExecutionStepStartEvent_step;
 }
 
-export type PipelineRunLogsSubscription_pipelineRunLogs_messages = PipelineRunLogsSubscription_pipelineRunLogs_messages_LogMessageEvent | PipelineRunLogsSubscription_pipelineRunLogs_messages_ExecutionStepFailureEvent | PipelineRunLogsSubscription_pipelineRunLogs_messages_PipelineProcessStartedEvent | PipelineRunLogsSubscription_pipelineRunLogs_messages_ExecutionStepStartEvent;
+export type PipelineRunLogsSubscription_pipelineRunLogs_messages = PipelineRunLogsSubscription_pipelineRunLogs_messages_LogMessageEvent | PipelineRunLogsSubscription_pipelineRunLogs_messages_ExecutionStepFailureEvent | PipelineRunLogsSubscription_pipelineRunLogs_messages_PipelineProcessStartedEvent | PipelineRunLogsSubscription_pipelineRunLogs_messages_StepMaterializationEvent | PipelineRunLogsSubscription_pipelineRunLogs_messages_ExecutionStepStartEvent;
 
 export interface PipelineRunLogsSubscription_pipelineRunLogs {
   __typename: "PipelineRunLogsSubscriptionPayload";

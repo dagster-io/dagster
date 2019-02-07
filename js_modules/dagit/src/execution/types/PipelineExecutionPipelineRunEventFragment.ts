@@ -42,6 +42,21 @@ export interface PipelineExecutionPipelineRunEventFragment_PipelineProcessStarte
   processId: number;
 }
 
+export interface PipelineExecutionPipelineRunEventFragment_StepMaterializationEvent_step {
+  __typename: "ExecutionStep";
+  name: string;
+}
+
+export interface PipelineExecutionPipelineRunEventFragment_StepMaterializationEvent {
+  __typename: "StepMaterializationEvent";
+  message: string;
+  timestamp: string;
+  level: LogLevel;
+  step: PipelineExecutionPipelineRunEventFragment_StepMaterializationEvent_step;
+  fileLocation: string;
+  fileName: string;
+}
+
 export interface PipelineExecutionPipelineRunEventFragment_ExecutionStepStartEvent_step {
   __typename: "ExecutionStep";
   name: string;
@@ -55,4 +70,4 @@ export interface PipelineExecutionPipelineRunEventFragment_ExecutionStepStartEve
   step: PipelineExecutionPipelineRunEventFragment_ExecutionStepStartEvent_step;
 }
 
-export type PipelineExecutionPipelineRunEventFragment = PipelineExecutionPipelineRunEventFragment_LogMessageEvent | PipelineExecutionPipelineRunEventFragment_ExecutionStepFailureEvent | PipelineExecutionPipelineRunEventFragment_PipelineProcessStartedEvent | PipelineExecutionPipelineRunEventFragment_ExecutionStepStartEvent;
+export type PipelineExecutionPipelineRunEventFragment = PipelineExecutionPipelineRunEventFragment_LogMessageEvent | PipelineExecutionPipelineRunEventFragment_ExecutionStepFailureEvent | PipelineExecutionPipelineRunEventFragment_PipelineProcessStartedEvent | PipelineExecutionPipelineRunEventFragment_StepMaterializationEvent | PipelineExecutionPipelineRunEventFragment_ExecutionStepStartEvent;

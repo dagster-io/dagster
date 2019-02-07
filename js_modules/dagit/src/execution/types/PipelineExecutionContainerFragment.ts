@@ -42,6 +42,21 @@ export interface PipelineExecutionContainerFragment_runs_logs_nodes_PipelineProc
   processId: number;
 }
 
+export interface PipelineExecutionContainerFragment_runs_logs_nodes_StepMaterializationEvent_step {
+  __typename: "ExecutionStep";
+  name: string;
+}
+
+export interface PipelineExecutionContainerFragment_runs_logs_nodes_StepMaterializationEvent {
+  __typename: "StepMaterializationEvent";
+  message: string;
+  timestamp: string;
+  level: LogLevel;
+  step: PipelineExecutionContainerFragment_runs_logs_nodes_StepMaterializationEvent_step;
+  fileLocation: string;
+  fileName: string;
+}
+
 export interface PipelineExecutionContainerFragment_runs_logs_nodes_ExecutionStepStartEvent_step {
   __typename: "ExecutionStep";
   name: string;
@@ -55,7 +70,7 @@ export interface PipelineExecutionContainerFragment_runs_logs_nodes_ExecutionSte
   step: PipelineExecutionContainerFragment_runs_logs_nodes_ExecutionStepStartEvent_step;
 }
 
-export type PipelineExecutionContainerFragment_runs_logs_nodes = PipelineExecutionContainerFragment_runs_logs_nodes_LogMessageEvent | PipelineExecutionContainerFragment_runs_logs_nodes_ExecutionStepFailureEvent | PipelineExecutionContainerFragment_runs_logs_nodes_PipelineProcessStartedEvent | PipelineExecutionContainerFragment_runs_logs_nodes_ExecutionStepStartEvent;
+export type PipelineExecutionContainerFragment_runs_logs_nodes = PipelineExecutionContainerFragment_runs_logs_nodes_LogMessageEvent | PipelineExecutionContainerFragment_runs_logs_nodes_ExecutionStepFailureEvent | PipelineExecutionContainerFragment_runs_logs_nodes_PipelineProcessStartedEvent | PipelineExecutionContainerFragment_runs_logs_nodes_StepMaterializationEvent | PipelineExecutionContainerFragment_runs_logs_nodes_ExecutionStepStartEvent;
 
 export interface PipelineExecutionContainerFragment_runs_logs_pageInfo {
   __typename: "PageInfo";

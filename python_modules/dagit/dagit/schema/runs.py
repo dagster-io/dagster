@@ -110,7 +110,7 @@ class DauphinLogMessageConnection(dauphin.ObjectType):
         )
 
 
-class DaupinPipelineRunLogsSubscriptionPayload(dauphin.ObjectType):
+class DauphinPipelineRunLogsSubscriptionPayload(dauphin.ObjectType):
     class Meta:
         name = 'PipelineRunLogsSubscriptionPayload'
 
@@ -189,6 +189,15 @@ class DauphinExecutionStepFailureEvent(dauphin.ObjectType):
     error = dauphin.NonNull('PythonError')
 
 
+class DauphinStepMaterializationEvent(dauphin.ObjectType):
+    class Meta:
+        name = 'StepMaterializationEvent'
+        interfaces = (DauphinMessageEvent, DauphinExecutionStepEvent)
+
+    file_name = dauphin.NonNull(dauphin.String)
+    file_location = dauphin.NonNull(dauphin.String)
+
+
 # Should be a union of all possible events
 class DauphinPipelineRunEvent(dauphin.Union):
     class Meta:
@@ -203,6 +212,7 @@ class DauphinPipelineRunEvent(dauphin.Union):
             DauphinExecutionStepFailureEvent,
             DauphinPipelineProcessStartEvent,
             DauphinPipelineProcessStartedEvent,
+            DauphinStepMaterializationEvent,
         )
 
     @staticmethod
@@ -254,6 +264,15 @@ class DauphinPipelineRunEvent(dauphin.Union):
                     pipeline_run.execution_plan.get_step_by_key(event.step_key)
                 ),
                 error=info.schema.type_named('PythonError')(event.error_info),
+                **basic_params
+            )
+        elif event.event_type == EventType.STEP_MATERIALIAZATION:
+            return info.schema.type_named('StepMaterializationEvent')(
+                step=info.schema.type_named('ExecutionStep')(
+                    pipeline_run.execution_plan.get_step_by_key(event.step_key)
+                ),
+                file_name=event.file_name,
+                file_location=event.file_location,
                 **basic_params
             )
         else:

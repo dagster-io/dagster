@@ -42,6 +42,21 @@ export interface PipelineRunLogsUpdateFragment_logs_nodes_PipelineProcessStarted
   processId: number;
 }
 
+export interface PipelineRunLogsUpdateFragment_logs_nodes_StepMaterializationEvent_step {
+  __typename: "ExecutionStep";
+  name: string;
+}
+
+export interface PipelineRunLogsUpdateFragment_logs_nodes_StepMaterializationEvent {
+  __typename: "StepMaterializationEvent";
+  message: string;
+  timestamp: string;
+  level: LogLevel;
+  step: PipelineRunLogsUpdateFragment_logs_nodes_StepMaterializationEvent_step;
+  fileLocation: string;
+  fileName: string;
+}
+
 export interface PipelineRunLogsUpdateFragment_logs_nodes_ExecutionStepStartEvent_step {
   __typename: "ExecutionStep";
   name: string;
@@ -55,7 +70,7 @@ export interface PipelineRunLogsUpdateFragment_logs_nodes_ExecutionStepStartEven
   step: PipelineRunLogsUpdateFragment_logs_nodes_ExecutionStepStartEvent_step;
 }
 
-export type PipelineRunLogsUpdateFragment_logs_nodes = PipelineRunLogsUpdateFragment_logs_nodes_LogMessageEvent | PipelineRunLogsUpdateFragment_logs_nodes_ExecutionStepFailureEvent | PipelineRunLogsUpdateFragment_logs_nodes_PipelineProcessStartedEvent | PipelineRunLogsUpdateFragment_logs_nodes_ExecutionStepStartEvent;
+export type PipelineRunLogsUpdateFragment_logs_nodes = PipelineRunLogsUpdateFragment_logs_nodes_LogMessageEvent | PipelineRunLogsUpdateFragment_logs_nodes_ExecutionStepFailureEvent | PipelineRunLogsUpdateFragment_logs_nodes_PipelineProcessStartedEvent | PipelineRunLogsUpdateFragment_logs_nodes_StepMaterializationEvent | PipelineRunLogsUpdateFragment_logs_nodes_ExecutionStepStartEvent;
 
 export interface PipelineRunLogsUpdateFragment_logs {
   __typename: "LogMessageConnection";

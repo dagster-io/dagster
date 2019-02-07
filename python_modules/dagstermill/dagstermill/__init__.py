@@ -65,7 +65,6 @@ class Manager:
 
     def define_out_of_pipeline_info(self, context_config):
         check.str_param(self.solid_def_name, 'solid_def_name')
-        solid = Solid(self.solid_def_name, self.solid_def)
         pipeline_def = PipelineDefinition([self.solid_def], name="Ephemeral Notebook Pipeline")
         from dagster.core.execution import create_typed_context
 
@@ -78,7 +77,11 @@ class Manager:
         with yield_context(
             pipeline_def, dummy_environment_config, ExecutionMetadata(run_id='')
         ) as context:
-            self.info = TransformExecutionInfo(context, None, solid, pipeline_def)
+            solid_config = (
+                None
+            )  # no solid_config, since we're out of pipeline: we might add functionality to support this later
+            execution_step = None  # since we're out of pipeline, there is no execution step
+            self.info = TransformExecutionInfo(context, solid_config, execution_step, pipeline_def)
         return self.info
 
     def get_pipeline(self, name):
@@ -115,11 +118,13 @@ class Manager:
         # do not include event_callback in ExecutionMetadata,
         # since that'll be taken care of by side-channel established by event_logger
         execution_metadata = ExecutionMetadata(run_id, loggers=loggers)
-        solid = Solid(self.solid_def_name, self.solid_def)
         typed_environment = construct_environment_config(environment_config)
         with yield_context(pipeline_def, typed_environment, execution_metadata) as context:
-            solid_config = None
-            self.info = TransformExecutionInfo(context, solid_config, solid, pipeline_def)
+            solid_config = (
+                None
+            )  # We currently do not reconstruct the solid config, because it can be anything
+            execution_step = None  # because we're out of pipeline
+            self.info = TransformExecutionInfo(context, solid_config, execution_step, pipeline_def)
 
         return self.info
 
@@ -240,7 +245,6 @@ def get_papermill_parameters(transform_execution_info, inputs, output_log_path):
     dm_context_dict = {
         'run_id': run_id,
         'pipeline_name': transform_execution_info.pipeline_def.name,
-        'solid_def_name': transform_execution_info.solid.definition.name,
         'marshal_dir': marshal_dir,
         'environment_config': transform_execution_info.context.environment_config,
         'output_log_path': output_log_path,
@@ -365,11 +369,7 @@ def _dm_solid_transform(name, notebook_path):
             with open(output_log_path, 'a') as f:
                 f.close()
 
-            # info.log.info("Output log path is {}".format(output_log_path))
-            # info.log.info("info.context.event_callback {}".format(info.context.event_callback))
-
-            process = subprocess.Popen(["papermill", intermediate_path, temp_path])
-            # _source_nb = pm.execute_notebook(intermediate_path, temp_path)
+            process = subprocess.Popen(['papermill', intermediate_path, temp_path])
 
             while process.poll() is None:  # while subprocess alive
                 if info.context.event_callback:
@@ -390,10 +390,10 @@ def _dm_solid_transform(name, notebook_path):
                                 current_time = new_time
 
             if process.returncode != 0:
-                # Throw event that is an execution error!
-                info.log.debug("There was an error in Papermill!")
-                info.log.debug('stderr was None' if process.stderr is None else process.stderr)
-                exit()
+                raise DagstermillError(
+                    'There wsas an error when Papermill tried to execute the notebook. '
+                    'The process stderr is {stderr}'.format(stderr=process.stderr)
+                )
 
             output_nb = pm.read_notebook(temp_path)
 
@@ -403,7 +403,9 @@ def _dm_solid_transform(name, notebook_path):
                 )
             )
 
-            info.log.info("Output notebook path is {}".format(output_notebook_dir))
+            info.context.events.step_materialization(
+                info.step.key, "{name} output notebook".format(name=info.solid.name), temp_path
+            )
 
             for output_def in info.solid_def.output_defs:
                 if output_def.name in output_nb.data:

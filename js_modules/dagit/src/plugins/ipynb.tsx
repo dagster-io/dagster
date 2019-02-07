@@ -1,11 +1,7 @@
 import * as React from "react";
 import { Button, Classes, Dialog } from "@blueprintjs/core";
-import { IPluginInterface, IPluginSidebarProps } from ".";
-
-// TODO: Replace REACT_APP_GRAPHQL_URI with "DAGIT_SERVER_URI" without path
-const NOTEBOOK_RENDERER_URI = process.env.REACT_APP_GRAPHQL_URI
-  ? process.env.REACT_APP_GRAPHQL_URI.replace("/graphql", "/notebook")
-  : "/notebook";
+import { IPluginSidebarProps } from ".";
+import { ROOT_SERVER_URI } from "../Util";
 
 export class SidebarComponent extends React.Component<IPluginSidebarProps> {
   state = {
@@ -50,7 +46,9 @@ export class SidebarComponent extends React.Component<IPluginSidebarProps> {
         >
           <div className={Classes.DIALOG_BODY} style={{ margin: 0 }}>
             <iframe
-              src={`${NOTEBOOK_RENDERER_URI}${notebookPath.value}`}
+              src={`${ROOT_SERVER_URI}/dagit/notebook?path=${encodeURIComponent(
+                notebookPath.value
+              )}`}
               style={{ border: 0, background: "white" }}
               seamless={true}
               width="100%"

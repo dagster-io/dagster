@@ -28,6 +28,8 @@ class EventType(Enum):
     EXECUTION_PLAN_STEP_START = 'EXECUTION_PLAN_STEP_START'
     EXECUTION_PLAN_STEP_FAILURE = 'EXECUTION_PLAN_STEP_FAILURE'
 
+    STEP_MATERIALIAZATION = 'STEP_MATERIALIZATION'
+
     UNCATEGORIZED = 'UNCATEGORIZED'
 
 
@@ -89,6 +91,18 @@ class ExecutionEvents:
             step_key=step_key,
             # We really need a better serialization story here
             error_info=json.dumps(serializable_error_info_from_exc_info(exc_info), sort_keys=True),
+        )
+
+    def step_materialization(self, step_key, file_name, file_location):
+        check.str_param(step_key, 'step_key')
+        self.context.info(
+            'Step {step_key} produced materialization of {name} at {loc}'.format(
+                step_key=step_key, name=file_name, loc=file_location
+            ),
+            event_type=EventType.STEP_MATERIALIAZATION.value,
+            step_key=step_key,
+            file_name=file_name,
+            file_location=file_location,
         )
 
     def pipeline_name(self):
@@ -234,6 +248,27 @@ class LogMessageRecord(EventRecord):
     pass
 
 
+class StepMaterializationRecord(ExecutionStepEventRecord):
+    def __init__(self, file_name, file_location, **kwargs):
+        super(StepMaterializationRecord, self).__init__(**kwargs)
+        self._name = check.str_param(file_name, 'file_name')
+        self._loc = check.str_param(file_location, 'file_location')
+
+    @property
+    def file_name(self):
+        return self._name
+
+    @property
+    def file_location(self):
+        return self._loc
+
+    def to_dict(self):
+        orig = super(StepMaterializationRecord, self).to_dict()
+        orig['name'] = self.file_name
+        orig['loc'] = self.file_location
+        return orig
+
+
 EVENT_CLS_LOOKUP = {
     EventType.EXECUTION_PLAN_STEP_FAILURE: ExecutionStepEventRecord,
     EventType.EXECUTION_PLAN_STEP_START: ExecutionStepEventRecord,
@@ -242,6 +277,7 @@ EVENT_CLS_LOOKUP = {
     EventType.PIPELINE_START: PipelineEventRecord,
     EventType.PIPELINE_SUCCESS: PipelineEventRecord,
     EventType.UNCATEGORIZED: LogMessageRecord,
+    EventType.STEP_MATERIALIAZATION: StepMaterializationRecord,
 }
 
 PIPELINE_EVENTS = {EventType.PIPELINE_FAILURE, EventType.PIPELINE_START, EventType.PIPELINE_SUCCESS}
@@ -287,6 +323,9 @@ def logger_to_kwargs(logger_message):
         }
         if event_cls == ExecutionStepSuccessRecord:
             step_args['millis'] = logger_message.meta['millis']
+        if event_cls == StepMaterializationRecord:
+            step_args['file_name'] = logger_message.meta['file_name']
+            step_args['file_location'] = logger_message.meta['file_location']
 
         return merge_dicts(base_args, step_args)
     else:

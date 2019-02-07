@@ -8,7 +8,7 @@ import { LogLevel } from "./../../types/globalTypes";
 // ====================================================
 
 export interface LogsScrollingTableMessageFragment_LogMessageEvent {
-  __typename: "LogMessageEvent" | "PipelineStartEvent" | "PipelineSuccessEvent" | "PipelineFailureEvent" | "ExecutionStepStartEvent" | "ExecutionStepSuccessEvent" | "PipelineProcessStartEvent" | "PipelineProcessStartedEvent";
+  __typename: "LogMessageEvent" | "PipelineStartEvent" | "PipelineSuccessEvent" | "PipelineFailureEvent" | "ExecutionStepStartEvent" | "ExecutionStepSuccessEvent" | "PipelineProcessStartEvent" | "PipelineProcessStartedEvent" | "StepMaterializationEvent";
   message: string;
   timestamp: string;
   level: LogLevel;
