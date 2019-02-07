@@ -1,6 +1,7 @@
 from collections import defaultdict
 from contextlib import contextmanager
 import pytest
+import sys
 
 from dagster import check
 from dagster.check import (
@@ -636,6 +637,10 @@ def raises_with_message(exc_type, message_text):
     assert str(exc_info.value) == message_text
 
 
+def is_python_three():
+    return sys.version_info[0] >= 3
+
+
 def test_two_dim_dict():
     assert check.two_dim_dict_param({}, 'foo') == {}
     assert check.two_dim_dict_param({'key': {}}, 'foo')
@@ -647,33 +652,48 @@ def test_two_dim_dict():
     assert check.two_dim_dict_param(default_dict, 'foo')
 
     with raises_with_message(
-        CheckError, '''Param "foo" is not a dict. Got None which is type <class 'NoneType'>.'''
+        CheckError,
+        '''Param "foo" is not a dict. Got None which is type <class 'NoneType'>.'''
+        if is_python_three()
+        else '''Param "foo" is not a dict. Got None which is type <type 'NoneType'>.''',
     ):
         check.two_dim_dict_param(None, 'foo')
 
     with raises_with_message(
         CheckError,
         "Value in dictionary mismatches expected type for key int_value. Expected value "
-        "of type <class 'dict'>. Got value 2 of type <class 'int'>.",
+        "of type <class 'dict'>. Got value 2 of type <class 'int'>."
+        if is_python_three()
+        else "Value in dictionary mismatches expected type for key int_value. Expected value "
+        "of type <type 'dict'>. Got value 2 of type <type 'int'>.",
     ):
         check.two_dim_dict_param({'int_value': 2}, 'foo')
 
     with raises_with_message(
         CheckError,
         "Value in dictionary mismatches expected type for key level_two_value_mismatch. "
-        "Expected value of type (<class 'str'>,). Got value 2 of type <class 'int'>.",
+        "Expected value of type (<class 'str'>,). Got value 2 of type <class 'int'>."
+        if is_python_three()
+        else "Value in dictionary mismatches expected type for key level_two_value_mismatch. "
+        "Expected value of type (<type 'basestring'>,). Got value 2 of type <type 'int'>.",
     ):
         check.two_dim_dict_param(
             {'level_one_key': {'level_two_value_mismatch': 2}}, 'foo', value_type=str
         )
 
     with raises_with_message(
-        CheckError, "Key in dictionary mismatches type. Expected <class 'int'>. Got 'key'"
+        CheckError,
+        "Key in dictionary mismatches type. Expected <class 'int'>. Got 'key'"
+        if is_python_three()
+        else "Key in dictionary mismatches type. Expected <type 'int'>. Got 'key'",
     ):
         assert check.two_dim_dict_param({'key': {}}, 'foo', key_type=int)
 
     with raises_with_message(
-        CheckError, "Key in dictionary mismatches type. Expected <class 'int'>. Got 'level_two_key'"
+        CheckError,
+        "Key in dictionary mismatches type. Expected <class 'int'>. Got 'level_two_key'"
+        if is_python_three()
+        else "Key in dictionary mismatches type. Expected <type 'int'>. Got 'level_two_key'",
     ):
         assert check.two_dim_dict_param({1: {'level_two_key': 'something'}}, 'foo', key_type=int)
 

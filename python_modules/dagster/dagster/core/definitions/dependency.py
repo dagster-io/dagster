@@ -8,7 +8,7 @@ from .input import InputDefinition
 
 from .output import OutputDefinition
 
-from .utils import DEFAULT_OUTPUT, check_two_dim_str_dict, struct_to_string
+from .utils import DEFAULT_OUTPUT, struct_to_string
 
 
 class SolidInstance(namedtuple('Solid', 'name alias')):
@@ -172,7 +172,7 @@ class InputToOutputHandleDict(dict):
 
 def _create_handle_dict(solid_dict, dep_dict):
     check.dict_param(solid_dict, 'solid_dict', key_type=str, value_type=Solid)
-    check_two_dim_str_dict(dep_dict, 'dep_dict', DependencyDefinition)
+    check.two_dim_dict_param(dep_dict, 'dep_dict', value_type=DependencyDefinition)
 
     handle_dict = InputToOutputHandleDict()
 

@@ -10,15 +10,13 @@ from .environment_configs import (
 
 from .context import PipelineContextDefinition, default_pipeline_context_definitions
 
-from .dependency import DependencyDefinition, DependencyStructure, Solid
+from .dependency import DependencyDefinition, DependencyStructure, Solid, SolidInstance
 
 from .pipeline_creation import (
     create_execution_structure,
     construct_config_type_dictionary,
     construct_runtime_type_dictionary,
 )
-
-from .utils import check_opt_two_dim_dict
 
 
 class PipelineDefinition(object):
@@ -86,8 +84,11 @@ class PipelineDefinition(object):
             value_type=PipelineContextDefinition,
         )
 
-        self.dependencies = check_opt_two_dim_dict(
-            dependencies, 'dependencies', value_type=DependencyDefinition
+        self.dependencies = check.opt_two_dim_dict_param(
+            dependencies,
+            'dependencies',
+            key_type=(str, SolidInstance),
+            value_type=DependencyDefinition,
         )
 
         dependency_structure, pipeline_solid_dict = create_execution_structure(

@@ -1,6 +1,6 @@
 from collections import defaultdict, namedtuple
 from dagster import check
-from dagster.core.definitions.utils import check_two_dim_dict, check_opt_two_dim_dict
+
 from .marshal import create_unmarshal_input_step, create_marshal_output_step
 from .utility import create_value_thunk_step
 
@@ -49,7 +49,7 @@ class ExecutionPlanSubsetInfo(
 
         '''
         check.list_param(included_step_keys, 'included_step_keys', of_type=str)
-        check_two_dim_dict(inputs, 'inputs', key_type=str)
+        check.two_dim_dict_param(inputs, 'inputs', key_type=str)
 
         def _create_injected_value_factory_fn(input_value):
             return lambda plan_builder, step, step_input: create_value_thunk_step(
@@ -82,7 +82,7 @@ class ExecutionPlanSubsetInfo(
         step_key => input_name => marshalling_key
         '''
         check.list_param(included_step_keys, 'included_step_keys', of_type=str)
-        check_opt_two_dim_dict(marshalled_inputs, 'marshalled_inputs')
+        check.opt_two_dim_dict_param(marshalled_inputs, 'marshalled_inputs')
 
         input_step_factory_fns = defaultdict(dict)
 
@@ -131,7 +131,9 @@ class ExecutionPlanSubsetInfo(
         return super(ExecutionPlanSubsetInfo, cls).__new__(
             cls,
             set(check.list_param(included_step_keys, 'included_step_keys', of_type=str)),
-            check_opt_two_dim_dict(input_step_factory_fns, 'input_step_factory_fns', key_type=str),
+            check.opt_two_dim_dict_param(
+                input_step_factory_fns, 'input_step_factory_fns', key_type=str
+            ),
         )
 
 
