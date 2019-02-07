@@ -25,7 +25,6 @@ from dagster import check
 from dagster.utils import merge_dicts
 
 from .definitions import (
-    DEFAULT_OUTPUT,
     ContextCreationExecutionInfo,
     DependencyDefinition,
     PipelineDefinition,
@@ -34,7 +33,7 @@ from .definitions import (
     solids_in_topological_order,
 )
 
-from .definitions.utils import check_opt_two_dim_str_dict
+from .definitions.utils import check_opt_two_dim_str_dict, DEFAULT_OUTPUT
 from .definitions.environment_configs import construct_environment_config, construct_context_config
 
 from .execution_context import ExecutionContext, RuntimeExecutionContext, ExecutionMetadata
