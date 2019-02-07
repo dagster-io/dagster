@@ -1,3 +1,5 @@
+import six
+
 from toposort import toposort_flatten
 
 from dagster import check
@@ -87,7 +89,7 @@ class PipelineDefinition(object):
         self.dependencies = check.opt_two_dim_dict_param(
             dependencies,
             'dependencies',
-            key_type=(str, SolidInstance),
+            key_type=six.string_types + (SolidInstance,),
             value_type=DependencyDefinition,
         )
 
