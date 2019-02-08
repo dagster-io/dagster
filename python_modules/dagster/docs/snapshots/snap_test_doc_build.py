@@ -9,7 +9,9 @@ snapshots = Snapshot()
 
 snapshots['test_build_all_docs 1'] = [
     (
-        '.',
+        [
+            '.'
+        ],
         [
             'doctrees',
             'html'
@@ -18,7 +20,10 @@ snapshots['test_build_all_docs 1'] = [
         ]
     ),
     (
-        './doctrees',
+        [
+            '.',
+            'doctrees'
+        ],
         [
             'apidocs',
             'guides',
@@ -28,28 +33,43 @@ snapshots['test_build_all_docs 1'] = [
         ]
     ),
     (
-        './doctrees/apidocs',
+        [
+            '.',
+            'doctrees',
+            'apidocs'
+        ],
         [
         ],
         [
         ]
     ),
     (
-        './doctrees/guides',
+        [
+            '.',
+            'doctrees',
+            'guides'
+        ],
         [
         ],
         [
         ]
     ),
     (
-        './doctrees/intro_tutorial',
+        [
+            '.',
+            'doctrees',
+            'intro_tutorial'
+        ],
         [
         ],
         [
         ]
     ),
     (
-        './html',
+        [
+            '.',
+            'html'
+        ],
         [
             '_images',
             '_sources',
@@ -70,14 +90,22 @@ snapshots['test_build_all_docs 1'] = [
         ]
     ),
     (
-        './html/_images',
+        [
+            '.',
+            'html',
+            '_images'
+        ],
         [
         ],
         [
         ]
     ),
     (
-        './html/_sources',
+        [
+            '.',
+            'html',
+            '_sources'
+        ],
         [
             'apidocs',
             'guides',
@@ -91,7 +119,12 @@ snapshots['test_build_all_docs 1'] = [
         ]
     ),
     (
-        './html/_sources/apidocs',
+        [
+            '.',
+            'html',
+            '_sources',
+            'apidocs'
+        ],
         [
         ],
         [
@@ -104,7 +137,12 @@ snapshots['test_build_all_docs 1'] = [
         ]
     ),
     (
-        './html/_sources/guides',
+        [
+            '.',
+            'html',
+            '_sources',
+            'guides'
+        ],
         [
         ],
         [
@@ -113,7 +151,12 @@ snapshots['test_build_all_docs 1'] = [
         ]
     ),
     (
-        './html/_sources/intro_tutorial',
+        [
+            '.',
+            'html',
+            '_sources',
+            'intro_tutorial'
+        ],
         [
         ],
         [
@@ -135,7 +178,11 @@ snapshots['test_build_all_docs 1'] = [
         ]
     ),
     (
-        './html/_static',
+        [
+            '.',
+            'html',
+            '_static'
+        ],
         [
         ],
         [
@@ -154,7 +201,11 @@ snapshots['test_build_all_docs 1'] = [
         ]
     ),
     (
-        './html/apidocs',
+        [
+            '.',
+            'html',
+            'apidocs'
+        ],
         [
         ],
         [
@@ -167,7 +218,11 @@ snapshots['test_build_all_docs 1'] = [
         ]
     ),
     (
-        './html/guides',
+        [
+            '.',
+            'html',
+            'guides'
+        ],
         [
         ],
         [
@@ -176,7 +231,11 @@ snapshots['test_build_all_docs 1'] = [
         ]
     ),
     (
-        './html/intro_tutorial',
+        [
+            '.',
+            'html',
+            'intro_tutorial'
+        ],
         [
         ],
         [
