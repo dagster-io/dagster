@@ -90,15 +90,15 @@ def iterate_step_events_for_step(step, context, inputs):
     check.dict_param(inputs, 'inputs', key_type=str)
 
     try:
-        for step_result in _execute_steps_core_loop(step, context, inputs):
+        for step_event in _execute_steps_core_loop(step, context, inputs):
             context.info(
                 'Step {step} emitted {value} for output {output}'.format(
                     step=step.key,
-                    value=repr(step_result.success_data.value),
-                    output=step_result.success_data.output_name,
+                    value=repr(step_event.success_data.value),
+                    output=step_event.success_data.output_name,
                 )
             )
-            yield step_result
+            yield step_event
     except DagsterError as dagster_error:
         context.error(str(dagster_error))
         yield ExecutionStepEvent.step_failure_event(

@@ -1744,17 +1744,17 @@ def test_successful_start_subplan(snapshot):
     assert query_result['__typename'] == 'StartSubplanExecutionSuccess'
     assert query_result['pipeline']['name'] == 'pandas_hello_world'
     assert query_result['hasFailures'] is False
-    step_results = {
-        step_result['step']['key']: step_result for step_result in query_result['stepResults']
+    step_events = {
+        step_event['step']['key']: step_event for step_event in query_result['stepEvents']
     }
 
-    assert 'sum_solid.transform' in step_results
+    assert 'sum_solid.transform' in step_events
 
-    assert step_results['sum_solid.transform']['__typename'] == 'StepSuccessResult'
-    assert step_results['sum_solid.transform']['success'] is True
-    assert step_results['sum_solid.transform']['outputName'] == 'result'
+    assert step_events['sum_solid.transform']['__typename'] == 'SuccessfulStepOutputEvent'
+    assert step_events['sum_solid.transform']['success'] is True
+    assert step_events['sum_solid.transform']['outputName'] == 'result'
     assert (
-        step_results['sum_solid.transform']['valueRepr']
+        step_events['sum_solid.transform']['valueRepr']
         == '''   num1  num2  sum
 0     1     2    3
 1     3     4    7'''
@@ -1785,13 +1785,13 @@ def test_user_error_pipeline(snapshot):
     assert query_result['pipeline']['name'] == 'naughty_programmer_pipeline'
     assert query_result['hasFailures'] is True
 
-    step_results = {
-        step_result['step']['key']: step_result for step_result in query_result['stepResults']
+    step_events = {
+        step_event['step']['key']: step_event for step_event in query_result['stepEvents']
     }
 
-    assert 'throw_a_thing.transform' in step_results
-    assert step_results['throw_a_thing.transform']['__typename'] == 'StepFailureResult'
-    assert step_results['throw_a_thing.transform']['success'] is False
+    assert 'throw_a_thing.transform' in step_events
+    assert step_events['throw_a_thing.transform']['__typename'] == 'StepFailureEvent'
+    assert step_events['throw_a_thing.transform']['success'] is False
     snapshot.assert_match(result.data)
 
 
@@ -1942,8 +1942,8 @@ def test_start_subplan_invalid_input_path(snapshot):
     assert not result.errors
     assert result.data
     assert result.data['startSubplanExecution']['__typename'] == 'StartSubplanExecutionSuccess'
-    step_results_data = result.data['startSubplanExecution']['stepResults']
-    assert step_results_data[0]['success'] is False
+    step_events_data = result.data['startSubplanExecution']['stepEvents']
+    assert step_events_data[0]['success'] is False
     snapshot.assert_match(result.data)
 
 
@@ -1982,17 +1982,17 @@ def test_start_subplan_invalid_output_path(snapshot):
         assert not result.errors
         assert result.data
         assert result.data['startSubplanExecution']['__typename'] == 'StartSubplanExecutionSuccess'
-        step_results_data = result.data['startSubplanExecution']['stepResults']
-        assert len(step_results_data) == 3
-        assert [step_result['step']['key'] for step_result in step_results_data] == [
+        step_events_data = result.data['startSubplanExecution']['stepEvents']
+        assert len(step_events_data) == 3
+        assert [step_event['step']['key'] for step_event in step_events_data] == [
             'sum_solid.transform.unmarshal-input.num',
             'sum_solid.transform',
             'sum_solid.transform.marshal-output.result',
         ]
 
-        assert step_results_data[0]['success']
-        assert step_results_data[1]['success']
-        assert not step_results_data[2]['success']
+        assert step_events_data[0]['success']
+        assert step_events_data[1]['success']
+        assert not step_events_data[2]['success']
 
         snapshot.assert_match(result.data)
 
@@ -2057,15 +2057,15 @@ mutation (
         ... on StartSubplanExecutionSuccess {
             pipeline { name }
             hasFailures
-            stepResults {
+            stepEvents {
                 __typename
                 success
                 step { key }
-                ... on StepSuccessResult {
+                ... on SuccessfulStepOutputEvent {
                     outputName
                     valueRepr
                 }
-                ... on StepFailureResult {
+                ... on StepFailureEvent {
                     errorMessage
                 }
             }

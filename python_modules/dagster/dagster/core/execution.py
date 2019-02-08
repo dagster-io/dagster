@@ -128,21 +128,21 @@ class SolidExecutionResult(object):
     def __init__(self, context, solid, step_events_by_kind):
         self.context = check.inst_param(context, 'context', RuntimeExecutionContext)
         self.solid = check.inst_param(solid, 'solid', Solid)
-        self.step_results_by_kind = check.dict_param(
+        self.step_events_by_kind = check.dict_param(
             step_events_by_kind, 'step_events_by_kind', key_type=StepKind, value_type=list
         )
 
     @property
     def transforms(self):
-        return self.step_results_by_kind.get(StepKind.TRANSFORM, [])
+        return self.step_events_by_kind.get(StepKind.TRANSFORM, [])
 
     @property
     def input_expectations(self):
-        return self.step_results_by_kind.get(StepKind.INPUT_EXPECTATION, [])
+        return self.step_events_by_kind.get(StepKind.INPUT_EXPECTATION, [])
 
     @property
     def output_expectations(self):
-        return self.step_results_by_kind.get(StepKind.OUTPUT_EXPECTATION, [])
+        return self.step_events_by_kind.get(StepKind.OUTPUT_EXPECTATION, [])
 
     @staticmethod
     def from_step_events(context, step_events):
@@ -454,7 +454,7 @@ def _do_iterate_pipeline(
 
     pipeline_success = True
 
-    for solid_result in _process_step_results(
+    for solid_result in _process_step_events(
         context,
         pipeline,
         iterate_step_events_for_execution_plan(context, execution_plan, throw_on_user_error),
@@ -503,7 +503,7 @@ def execute_pipeline_iterator(
             yield solid_result
 
 
-def _process_step_results(context, pipeline, step_events):
+def _process_step_events(context, pipeline, step_events):
     check.inst_param(context, 'context', RuntimeExecutionContext)
     check.inst_param(pipeline, 'pipeline', PipelineDefinition)
 

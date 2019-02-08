@@ -29,7 +29,7 @@ from dagster.core.types.evaluator import evaluate_config_value, EvaluateValueRes
 from dagster.utils.error import serializable_error_info_from_exc_info
 
 from .config_types import to_dauphin_config_type
-from .errors import DauphinStepSuccessResult, DauphinStepFailureResult
+from .errors import DauphinSuccessfulStepOutputEvent, DauphinStepFailureEvent
 from .execution import DauphinExecutionStep
 from .pipelines import DauphinPipeline
 from .runtime_types import to_dauphin_runtime_type
@@ -424,14 +424,14 @@ def _execution_plan_or_error(subplan_execution_args, dauphin_pipeline, evaluate_
 def _create_dauphin_step_event(step_event):
     check.inst_param(step_event, 'step_event', ExecutionStepEvent)
     if step_event.is_successful_output:
-        return DauphinStepSuccessResult(
+        return DauphinSuccessfulStepOutputEvent(
             success=step_event.is_successful_output,
             step=DauphinExecutionStep(step_event.step),
             output_name=step_event.success_data.output_name,
             value_repr=repr(step_event.success_data.value),
         )
     elif step_event.is_step_failure:
-        return DauphinStepFailureResult(
+        return DauphinStepFailureEvent(
             success=step_event.is_successful_output,
             step=DauphinExecutionStep(step_event.step),
             error_message=str(step_event.failure_data.dagster_error),
@@ -469,7 +469,7 @@ def _execute_subplan_or_error(args, dauphin_pipeline, execution_plan, evaluate_v
         return _type_of(args, 'StartSubplanExecutionSuccess')(
             pipeline=dauphin_pipeline,
             has_failures=any(se for se in step_events if se.is_step_failure),
-            step_results=list(map(_create_dauphin_step_event, step_events)),
+            step_events=list(map(_create_dauphin_step_event, step_events)),
         )
 
     except DagsterInvalidSubplanExecutionError as invalid_subplan_error:
