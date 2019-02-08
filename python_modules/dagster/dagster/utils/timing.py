@@ -6,7 +6,7 @@ from dagster import check
 
 class TimerResult(object):
     def __init__(self):
-        self.start_time = time.time()
+        self.start_time = time.perf_counter()
         self.end_time = None
 
     @property
@@ -36,4 +36,4 @@ def time_execution_scope():
 
     timer_result = TimerResult()
     yield timer_result
-    timer_result.end_time = time.time()
+    timer_result.end_time = time.perf_counter()
