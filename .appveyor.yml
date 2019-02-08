@@ -1,0 +1,3 @@
+test_script:
+  - cd python_modules/dagster
+  - pytest
