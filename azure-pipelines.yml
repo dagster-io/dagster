@@ -25,3 +25,8 @@ jobs:
       displayName: 'Install tox'
     - script: cd python_modules\dagster && tox -e %TOXENV% && cd ..\.. 
       displayName: 'Run tests'
+    - task: PublishTestResults@2
+      inputs:
+        testResultsFiles: '**/test-results.xml'
+        testRunTitle: 'Python $(python.version)'
+      condition: succeededOrFailed()
