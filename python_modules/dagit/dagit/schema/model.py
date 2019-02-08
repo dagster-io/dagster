@@ -440,19 +440,19 @@ def _create_dauphin_step_event(step_event):
         check.failed('{step_event} unsupported'.format(step_event=step_event))
 
 
+def _type_of(args, type_name):
+    return args.info.schema.type_named(type_name)
+
+
+def _dauphin_step_of(execution_plan, error):
+    return DauphinExecutionStep(execution_plan.get_step_by_key(error.step_key))
+
+
 def _execute_subplan_or_error(args, dauphin_pipeline, execution_plan, evaluate_value_result):
     check.inst_param(args, 'args', SubplanExecutionArgs)
     check.inst_param(dauphin_pipeline, 'dauphin_pipeline', DauphinPipeline)
     check.inst_param(execution_plan, 'execution_plan', ExecutionPlan)
     check.inst_param(evaluate_value_result, 'evaluate_value_result', EvaluateValueResult)
-
-    # convenient shortcuts for brevity so things fit on one line
-    # type_of retrieves a dauphin type class based on graphql type name
-    type_of = args.info.schema.type_named
-    # step_of retrives the step associated with an error object
-    dauphin_step_of = lambda error: DauphinExecutionStep(
-        execution_plan.get_step_by_key(error.step_key)
-    )
 
     try:
         step_events = execute_externalized_plan(
@@ -466,7 +466,7 @@ def _execute_subplan_or_error(args, dauphin_pipeline, execution_plan, evaluate_v
             throw_on_user_error=False,
         )
 
-        return type_of('StartSubplanExecutionSuccess')(
+        return _type_of(args, 'StartSubplanExecutionSuccess')(
             pipeline=dauphin_pipeline,
             has_failures=any(se for se in step_events if se.is_step_failure),
             step_results=list(map(_create_dauphin_step_event, step_events)),
@@ -474,24 +474,24 @@ def _execute_subplan_or_error(args, dauphin_pipeline, execution_plan, evaluate_v
 
     except DagsterInvalidSubplanExecutionError as invalid_subplan_error:
         return EitherError(
-            type_of('InvalidSubplanExecutionError')(
-                step=dauphin_step_of(invalid_subplan_error),
+            _type_of(args, 'InvalidSubplanExecutionError')(
+                step=_dauphin_step_of(execution_plan, invalid_subplan_error),
                 missing_input_name=invalid_subplan_error.input_name,
             )
         )
 
     except DagsterUnmarshalInputNotFoundError as input_not_found_error:
         return EitherError(
-            type_of('StartSubplanExecutionInvalidInputError')(
-                step=dauphin_step_of(input_not_found_error),
+            _type_of(args, 'StartSubplanExecutionInvalidInputError')(
+                step=_dauphin_step_of(execution_plan, input_not_found_error),
                 invalid_input_name=input_not_found_error.input_name,
             )
         )
 
     except DagsterMarshalOutputNotFoundError as output_not_found_error:
         return EitherError(
-            type_of('StartSubplanExecutionInvalidOutputError')(
-                step=dauphin_step_of(output_not_found_error),
+            _type_of(args, 'StartSubplanExecutionInvalidOutputError')(
+                step=_dauphin_step_of(execution_plan, output_not_found_error),
                 invalid_output_name=output_not_found_error.output_name,
             )
         )
