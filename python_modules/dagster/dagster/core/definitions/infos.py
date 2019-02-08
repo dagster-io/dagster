@@ -2,7 +2,6 @@ from collections import namedtuple
 
 from dagster import check
 from dagster.core.execution_context import RuntimeExecutionContext
-from dagster.core.execution_plan.objects import ExecutionStep
 
 from .dependency import Solid
 from .expectation import ExpectationDefinition
@@ -73,6 +72,8 @@ class TransformExecutionInfo(
     '''
 
     def __new__(cls, context, config, step, pipeline_def, typed_environment):
+        from dagster.core.execution_plan.objects import ExecutionStep
+
         return super(TransformExecutionInfo, cls).__new__(
             cls,
             check.inst_param(context, 'context', RuntimeExecutionContext),

@@ -10,7 +10,6 @@ from dagster import check
 from dagster.utils import merge_dicts
 from dagster.core.system_config.objects import EnvironmentConfig
 from dagster.core.definitions import PipelineDefinition, Solid, SolidOutputHandle
-from dagster.core.definitions.utils import check_opt_two_dim_dict
 from dagster.core.errors import DagsterError
 from dagster.core.execution_context import RuntimeExecutionContext
 from dagster.core.types.runtime import RuntimeType
@@ -299,7 +298,7 @@ class ExecutionPlanInfo(
     namedtuple('_ExecutionPlanInfo', 'context selection environment solid_input_thunk_fns')
 ):
     def __new__(cls, context, selection, environment, solid_input_thunk_fns=None):
-        solid_input_thunk_fns = check_opt_two_dim_dict(
+        solid_input_thunk_fns = check.opt_two_dim_dict_param(
             solid_input_thunk_fns, 'solid_input_thunk_fns'
         )
         if solid_input_thunk_fns:

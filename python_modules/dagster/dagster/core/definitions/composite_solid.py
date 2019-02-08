@@ -10,7 +10,7 @@ from dagster.core.execution_plan.objects import (
     SolidOutputHandle,
     StepOutputHandle,
 )
-from dagster.core.execution_plan.simple_engine import execute_plan_core
+from dagster.core.execution_plan.simple_engine import iterate_step_events_for_execution_plan
 from dagster.core.execution_plan.utility import create_value_thunk_step
 
 from .dependency import DependencyDefinition
@@ -23,7 +23,7 @@ from .result import Result
 
 from .solid import ISolidDefinition
 
-from .utils import check_valid_name, check_opt_two_dim_dict
+from .utils import check_valid_name
 
 from .pipeline_creation import create_execution_structure
 
@@ -60,14 +60,14 @@ class CompositeSolidDefinition(ISolidDefinition):
         self.name = check_valid_name(name)
         self.description = check.opt_str_param(description, 'description')
         check.list_param(solid_defs, 'solids')
-        self.dependencies = check_opt_two_dim_dict(
+        self.dependencies = check.opt_two_dim_dict_param(
             dependencies, 'dependencies', value_type=DependencyDefinition
         )
 
-        self.input_mapping = check_opt_two_dim_dict(
+        self.input_mapping = check.opt_two_dim_dict_param(
             input_mapping, 'input_mapping', value_type=InputDefinition
         )
-        self.output_mapping = check_opt_two_dim_dict(
+        self.output_mapping = check.opt_two_dim_dict_param(
             output_mapping, 'output_mapping', value_type=OutputDefinition
         )
 
@@ -106,7 +106,11 @@ class CompositeSolidDefinition(ISolidDefinition):
             ),
         )
 
-        results = list(execute_plan_core(info.context, execution_plan, throw_on_user_error=False))
+        results = list(
+            iterate_step_events_for_execution_plan(
+                info.context, execution_plan, throw_on_user_error=False
+            )
+        )
 
         # TODO:
         # need to handle failure
@@ -115,7 +119,7 @@ class CompositeSolidDefinition(ISolidDefinition):
         step_result_dict = {}
 
         for result in results:
-            if result.success:
+            if result.is_successful_output:
                 step_result_dict[
                     StepOutputHandle(result.step, result.success_data.output_name)
                 ] = result

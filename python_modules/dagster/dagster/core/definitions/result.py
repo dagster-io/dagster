@@ -1,11 +1,5 @@
 from collections import namedtuple
-<<<<<<< HEAD
-
 from dagster import check
-
-=======
-from dagster import check
->>>>>>> add ExecutionSelection abstraction
 from .utils import DEFAULT_OUTPUT
 
 
