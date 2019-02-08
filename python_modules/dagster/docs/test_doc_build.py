@@ -38,7 +38,7 @@ def test_build_all_docs(snapshot):
         walked = sorted(
             [
                 (
-                    dirpath.split('/'),
+                    dirpath.split(os.sep),
                     sorted(dirnames),
                     sorted(
                         [
