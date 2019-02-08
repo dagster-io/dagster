@@ -1,5 +1,7 @@
 environment:
   TOXENV: py36
+install:
+  - choco install make
 build_script:
   - pip install tox
 test_script:
