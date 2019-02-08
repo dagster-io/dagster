@@ -1,8 +1,8 @@
 environment:
-  toxenv: py36
+  TOXENV: py36
 build_script:
   - pip install tox
 test_script:
   - cd python_modules\dagster
-  - tox -e $Env:toxenv
+  - tox -e %TOXENV%
   - cd ..\..
