@@ -500,7 +500,9 @@ def _execute_subplan_or_error(args, dauphin_pipeline, execution_plan, evaluate_v
     # Once this issue is resolve we should be able to eliminate this
     except DagsterUserCodeExecutionError as ducee:
         return EitherError(
-            type_of('PythonError')(serializable_error_info_from_exc_info(ducee.original_exc_info))
+            _type_of(args, 'PythonError')(
+                serializable_error_info_from_exc_info(ducee.original_exc_info)
+            )
         )
 
     check.failed('Should not get here')
