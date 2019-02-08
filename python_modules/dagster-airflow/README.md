@@ -6,6 +6,10 @@ while defining them using the Dagster abstractions and running them in fully iso
 Note that until [AIRFLOW-2876] is resolved, Airflow (and, as a consequence, dagster-airflow) is
 incompatible with Python 3.7.
 
+# Requirements
+dagster-airflow depends on Docker, which must be running in your Airflow environment (just as for
+the ordinary Airflow DockerOperator).
+
 # Packaging a Dagster repository for Airflow
 In order to schedule, run, and monitor Dagster pipelines using Airflow, you'll need to take a few
 extra steps after you've defined your pipelines in the ordinary way:
@@ -288,3 +292,6 @@ Now you can visualize and schedule this DAG in Airflow:
 Note that there is one Airflow task corresponding to each execution step in the pipeline, not to
 each solid. This means that 
 Note that we use a single operator, the DagsterOperator, for every execution step
+
+# Testing
+Docker must be running for the test suite to pass.
