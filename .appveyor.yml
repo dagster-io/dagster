@@ -1,3 +1,8 @@
+environment:
+  TOXENV: py36
+build_script:
+  - pip install tox
 test_script:
-  - cd python_modules/dagster
-  - pytest
+  - cd python_modules\dagster
+  - tox -e $TOXENV
+  - cd ..\..
