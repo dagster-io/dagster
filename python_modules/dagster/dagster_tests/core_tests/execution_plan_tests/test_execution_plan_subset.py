@@ -45,11 +45,11 @@ def test_execution_plan_simple_two_steps():
     assert len(step_results) == 2
 
     assert step_results[0].step.key == 'return_one.transform'
-    assert step_results[0].success
+    assert step_results[0].is_successful_output
     assert step_results[0].success_data.value == 1
 
     assert step_results[1].step.key == 'add_one.transform'
-    assert step_results[1].success
+    assert step_results[1].is_successful_output
     assert step_results[1].success_data.value == 2
 
 

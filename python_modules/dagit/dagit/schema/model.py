@@ -8,6 +8,7 @@ from graphql.execution.base import ResolveInfo
 
 from dagster import ExecutionMetadata, check
 from dagster.core.definitions.environment_configs import construct_environment_config
+from dagster.core.execution_plan.objects import ExecutionStepEvent
 from dagster.core.execution_plan.plan_subset import MarshalledOutput
 
 from dagster.core.errors import (
@@ -28,6 +29,8 @@ from dagster.core.types.evaluator import evaluate_config_value, EvaluateValueRes
 from dagster.utils.error import serializable_error_info_from_exc_info
 
 from .config_types import to_dauphin_config_type
+from .errors import DauphinStepSuccessResult, DauphinStepFailureResult
+from .execution import DauphinExecutionStep
 from .pipelines import DauphinPipeline
 from .runtime_types import to_dauphin_runtime_type
 from .utils import EitherValue, EitherError
@@ -418,20 +421,41 @@ def _execution_plan_or_error(subplan_execution_args, dauphin_pipeline, evaluate_
         return EitherValue(execution_plan)
 
 
+def _create_dauphin_step_event(step_event):
+    check.inst_param(step_event, 'step_event', ExecutionStepEvent)
+    if step_event.is_successful_output:
+        return DauphinStepSuccessResult(
+            success=step_event.is_successful_output,
+            step=DauphinExecutionStep(step_event.step),
+            output_name=step_event.success_data.output_name,
+            value_repr=repr(step_event.success_data.value),
+        )
+    elif step_event.is_step_failure:
+        return DauphinStepFailureResult(
+            success=step_event.is_successful_output,
+            step=DauphinExecutionStep(step_event.step),
+            error_message=str(step_event.failure_data.dagster_error),
+        )
+    else:
+        check.failed('{step_event} unsupported'.format(step_event=step_event))
+
+
+def _type_of(args, type_name):
+    return args.info.schema.type_named(type_name)
+
+
+def _dauphin_step_of(execution_plan, error):
+    return DauphinExecutionStep(execution_plan.get_step_by_key(error.step_key))
+
+
 def _execute_subplan_or_error(args, dauphin_pipeline, execution_plan, evaluate_value_result):
     check.inst_param(args, 'args', SubplanExecutionArgs)
     check.inst_param(dauphin_pipeline, 'dauphin_pipeline', DauphinPipeline)
     check.inst_param(execution_plan, 'execution_plan', ExecutionPlan)
     check.inst_param(evaluate_value_result, 'evaluate_value_result', EvaluateValueResult)
 
-    # convenient shortcuts for brevity so things fit on one line
-    # type_of retrieves a dauphin type class based on graphql type name
-    type_of = args.info.schema.type_named
-    # step_of retrives the step associated with an error object
-    step_of = lambda error: execution_plan.get_step_by_key(error.step_key)
-
     try:
-        results = execute_externalized_plan(
+        step_events = execute_externalized_plan(
             pipeline=dauphin_pipeline.get_dagster_pipeline(),
             execution_plan=execution_plan,
             step_keys=args.step_keys,
@@ -442,51 +466,32 @@ def _execute_subplan_or_error(args, dauphin_pipeline, execution_plan, evaluate_v
             throw_on_user_error=False,
         )
 
-        has_failures = False
-        dauphin_step_results = []
-        for result in results:
-            if not result.success:
-                has_failures = True
-
-            dauphin_step_results.append(
-                type_of('StepSuccessResult')(
-                    success=result.success,
-                    step=type_of('ExecutionStep')(result.step),
-                    output_name=result.success_data.output_name,
-                    value_repr=repr(result.success_data.value),
-                )
-                if result.success
-                else type_of('StepFailureResult')(
-                    success=result.success,
-                    step=type_of('ExecutionStep')(result.step),
-                    error_message=str(result.failure_data.dagster_error),
-                )
-            )
-
-        return type_of('StartSubplanExecutionSuccess')(
-            pipeline=dauphin_pipeline, has_failures=has_failures, step_results=dauphin_step_results
+        return _type_of(args, 'StartSubplanExecutionSuccess')(
+            pipeline=dauphin_pipeline,
+            has_failures=any(se for se in step_events if se.is_step_failure),
+            step_results=list(map(_create_dauphin_step_event, step_events)),
         )
 
     except DagsterInvalidSubplanExecutionError as invalid_subplan_error:
         return EitherError(
-            type_of('InvalidSubplanExecutionError')(
-                step=type_of('ExecutionStep')(step_of(invalid_subplan_error)),
+            _type_of(args, 'InvalidSubplanExecutionError')(
+                step=_dauphin_step_of(execution_plan, invalid_subplan_error),
                 missing_input_name=invalid_subplan_error.input_name,
             )
         )
 
     except DagsterUnmarshalInputNotFoundError as input_not_found_error:
         return EitherError(
-            type_of('StartSubplanExecutionInvalidInputError')(
-                step=type_of('ExecutionStep')(step_of(input_not_found_error)),
+            _type_of(args, 'StartSubplanExecutionInvalidInputError')(
+                step=_dauphin_step_of(execution_plan, input_not_found_error),
                 invalid_input_name=input_not_found_error.input_name,
             )
         )
 
     except DagsterMarshalOutputNotFoundError as output_not_found_error:
         return EitherError(
-            type_of('StartSubplanExecutionInvalidOutputError')(
-                step=type_of('ExecutionStep')(step_of(output_not_found_error)),
+            _type_of(args, 'StartSubplanExecutionInvalidOutputError')(
+                step=_dauphin_step_of(execution_plan, output_not_found_error),
                 invalid_output_name=output_not_found_error.output_name,
             )
         )
@@ -495,7 +500,9 @@ def _execute_subplan_or_error(args, dauphin_pipeline, execution_plan, evaluate_v
     # Once this issue is resolve we should be able to eliminate this
     except DagsterUserCodeExecutionError as ducee:
         return EitherError(
-            type_of('PythonError')(serializable_error_info_from_exc_info(ducee.original_exc_info))
+            _type_of(args, 'PythonError')(
+                serializable_error_info_from_exc_info(ducee.original_exc_info)
+            )
         )
 
     check.failed('Should not get here')
