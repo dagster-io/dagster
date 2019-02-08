@@ -22,7 +22,8 @@ from dagster.core.execution_context import RuntimeExecutionContext
 from .objects import (
     ExecutionPlan,
     ExecutionStep,
-    StepResult,
+    ExecutionStepEvent,
+    ExecutionStepEventType,
     StepOutputHandle,
     StepOutputValue,
     StepSuccessData,
@@ -37,7 +38,7 @@ def _all_inputs_covered(step, results):
     return True
 
 
-def execute_plan_core(context, execution_plan, throw_on_user_error):
+def iterate_step_events_for_execution_plan(context, execution_plan, throw_on_user_error):
     check.inst_param(context, 'base_context', RuntimeExecutionContext)
     check.inst_param(execution_plan, 'execution_plan', ExecutionPlan)
     check.bool_param(throw_on_user_error, 'throw_on_user_error')
@@ -70,19 +71,20 @@ def execute_plan_core(context, execution_plan, throw_on_user_error):
             input_value = intermediate_results[prev_output_handle].success_data.value
             input_values[step_input.name] = input_value
 
-        for result in execute_step(step, context_for_step, input_values):
-            check.invariant(isinstance(result, StepResult))
+        for step_event in iterate_step_events_for_step(step, context_for_step, input_values):
+            check.invariant(isinstance(step_event, ExecutionStepEvent))
 
-            if throw_on_user_error and not result.success:
-                result.reraise_user_error()
+            if throw_on_user_error and step_event.event_type == ExecutionStepEventType.STEP_FAILURE:
+                step_event.reraise_user_error()
 
-            yield result
-            if result.success:
-                output_handle = StepOutputHandle(step, result.success_data.output_name)
-                intermediate_results[output_handle] = result
+            yield step_event
+
+            if step_event.event_type == ExecutionStepEventType.STEP_OUTPUT:
+                output_handle = StepOutputHandle(step, step_event.success_data.output_name)
+                intermediate_results[output_handle] = step_event
 
 
-def execute_step(step, context, inputs):
+def iterate_step_events_for_step(step, context, inputs):
     check.inst_param(step, 'step', ExecutionStep)
     check.inst_param(context, 'context', RuntimeExecutionContext)
     check.dict_param(inputs, 'inputs', key_type=str)
@@ -99,7 +101,7 @@ def execute_step(step, context, inputs):
             yield step_result
     except DagsterError as dagster_error:
         context.error(str(dagster_error))
-        yield StepResult.failure_result(
+        yield ExecutionStepEvent.step_failure_event(
             step=step, failure_data=StepFailureData(dagster_error=dagster_error)
         )
         return
@@ -144,16 +146,16 @@ def _execute_steps_core_loop(step, context, inputs):
 
     _error_check_results(step, step_output_values)
 
-    return [_create_step_result(step, result) for result in step_output_values]
+    return [_create_step_event(step, result) for result in step_output_values]
 
 
-def _create_step_result(step, step_output_value):
+def _create_step_event(step, step_output_value):
     check.inst_param(step_output_value, 'step_output_value', StepOutputValue)
 
     step_output = step.step_output_named(step_output_value.output_name)
 
     try:
-        return StepResult.success_result(
+        return ExecutionStepEvent.step_output_event(
             step=step,
             success_data=StepSuccessData(
                 output_name=step_output_value.output_name,

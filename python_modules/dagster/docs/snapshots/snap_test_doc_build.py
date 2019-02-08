@@ -20314,7 +20314,7 @@ node. For the ‘synchronous’ API, see <a class="reference internal" href="#da
 
 <dl class="class">
 <dt id="dagster.SolidExecutionResult">
-<em class="property">class </em><code class="descclassname">dagster.</code><code class="descname">SolidExecutionResult</code><span class="sig-paren">(</span><em>context</em>, <em>solid</em>, <em>step_results_by_kind</em><span class="sig-paren">)</span><a class="headerlink" href="#dagster.SolidExecutionResult" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">dagster.</code><code class="descname">SolidExecutionResult</code><span class="sig-paren">(</span><em>context</em>, <em>solid</em>, <em>step_events_by_kind</em><span class="sig-paren">)</span><a class="headerlink" href="#dagster.SolidExecutionResult" title="Permalink to this definition">¶</a></dt>
 <dd><p>Execution result for one solid of the pipeline.</p>
 <dl class="attribute">
 <dt id="dagster.SolidExecutionResult.context">

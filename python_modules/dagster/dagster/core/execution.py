@@ -53,11 +53,17 @@ from .execution_plan.create import (
     create_execution_plan_core,
 )
 
-from .execution_plan.objects import ExecutionPlan, ExecutionPlanInfo, StepResult, StepKind
+from .execution_plan.objects import (
+    ExecutionPlan,
+    ExecutionPlanInfo,
+    ExecutionStepEvent,
+    ExecutionStepEventType,
+    StepKind,
+)
 
 from .execution_plan.plan_subset import MarshalledOutput
 
-from .execution_plan.simple_engine import execute_plan_core
+from .execution_plan.simple_engine import iterate_step_events_for_execution_plan
 
 from .system_config.objects import EnvironmentConfig
 
@@ -119,11 +125,11 @@ class SolidExecutionResult(object):
       solid (SolidDefinition): Solid for which this result is
     '''
 
-    def __init__(self, context, solid, step_results_by_kind):
+    def __init__(self, context, solid, step_events_by_kind):
         self.context = check.inst_param(context, 'context', RuntimeExecutionContext)
         self.solid = check.inst_param(solid, 'solid', Solid)
         self.step_results_by_kind = check.dict_param(
-            step_results_by_kind, 'step_results_by_kind', key_type=StepKind, value_type=list
+            step_events_by_kind, 'step_events_by_kind', key_type=StepKind, value_type=list
         )
 
     @property
@@ -139,25 +145,25 @@ class SolidExecutionResult(object):
         return self.step_results_by_kind.get(StepKind.OUTPUT_EXPECTATION, [])
 
     @staticmethod
-    def from_results(context, results):
+    def from_step_events(context, step_events):
         check.inst_param(context, 'context', RuntimeExecutionContext)
-        results = check.list_param(results, 'results', StepResult)
-        if results:
-            step_results_by_kind = defaultdict(list)
+        step_events = check.list_param(step_events, 'step_events', ExecutionStepEvent)
+        if step_events:
+            step_events_by_kind = defaultdict(list)
 
             solid = None
-            for result in results:
+            for result in step_events:
                 if solid is None:
                     solid = result.step.solid
                 check.invariant(result.step.solid is solid, 'Must all be from same solid')
 
-            for result in results:
-                step_results_by_kind[result.kind].append(result)
+            for result in step_events:
+                step_events_by_kind[result.kind].append(result)
 
             return SolidExecutionResult(
                 context=context,
-                solid=results[0].step.solid,
-                step_results_by_kind=dict(step_results_by_kind),
+                solid=step_events[0].step.solid,
+                step_events_by_kind=dict(step_events_by_kind),
             )
         else:
             check.failed("Cannot create SolidExecutionResult from empty list")
@@ -167,8 +173,8 @@ class SolidExecutionResult(object):
         '''Whether the solid execution was successful'''
         return all(
             [
-                result.success
-                for result in itertools.chain(
+                step_event.event_type == ExecutionStepEventType.STEP_OUTPUT
+                for step_event in itertools.chain(
                     self.input_expectations, self.output_expectations, self.transforms
                 )
             ]
@@ -217,7 +223,7 @@ class SolidExecutionResult(object):
         for result in itertools.chain(
             self.input_expectations, self.output_expectations, self.transforms
         ):
-            if not result.success:
+            if result.event_type == ExecutionStepEventType.STEP_FAILURE:
                 return result.failure_data.dagster_error
 
 
@@ -449,7 +455,9 @@ def _do_iterate_pipeline(
     pipeline_success = True
 
     for solid_result in _process_step_results(
-        context, pipeline, execute_plan_core(context, execution_plan, throw_on_user_error)
+        context,
+        pipeline,
+        iterate_step_events_for_execution_plan(context, execution_plan, throw_on_user_error),
     ):
         if not solid_result.success:
             pipeline_success = False
@@ -495,18 +503,23 @@ def execute_pipeline_iterator(
             yield solid_result
 
 
-def _process_step_results(context, pipeline, step_results):
+def _process_step_results(context, pipeline, step_events):
     check.inst_param(context, 'context', RuntimeExecutionContext)
     check.inst_param(pipeline, 'pipeline', PipelineDefinition)
 
-    step_results_by_solid_name = defaultdict(list)
-    for step_result in step_results:
-        step_results_by_solid_name[step_result.step.solid.name].append(step_result)
+    # TODO: actually make this stream results. Right now it collects
+    # all results that then constructs solid result
+    # see https://github.com/dagster-io/dagster/issues/792
+    step_events = check.list_param(list(step_events), 'step_events', of_type=ExecutionStepEvent)
 
-    for topo_solid in solids_in_topological_order(pipeline):
-        if topo_solid.name in step_results_by_solid_name:
-            yield SolidExecutionResult.from_results(
-                context, step_results_by_solid_name[topo_solid.name]
+    step_events_by_solid_name = defaultdict(list)
+    for step_event in step_events:
+        step_events_by_solid_name[step_event.step.solid.name].append(step_event)
+
+    for solid in solids_in_topological_order(pipeline):
+        if solid.name in step_events_by_solid_name:
+            yield SolidExecutionResult.from_step_events(
+                context, step_events_by_solid_name[solid.name]
             )
 
 
@@ -574,7 +587,9 @@ def execute_externalized_plan(
         )
 
         return list(
-            execute_plan_core(context, execution_plan, throw_on_user_error=throw_on_user_error)
+            iterate_step_events_for_execution_plan(
+                context, execution_plan, throw_on_user_error=throw_on_user_error
+            )
         )
 
 
@@ -629,7 +644,9 @@ def execute_plan(
     typed_environment = create_typed_environment(pipeline, environment)
     with yield_context(pipeline, typed_environment, execution_metadata) as context:
         return list(
-            execute_plan_core(context, execution_plan, throw_on_user_error=throw_on_user_error)
+            iterate_step_events_for_execution_plan(
+                context, execution_plan, throw_on_user_error=throw_on_user_error
+            )
         )
 
 

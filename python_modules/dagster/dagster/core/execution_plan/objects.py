@@ -63,27 +63,42 @@ class StepFailureData(namedtuple('_StepFailureData', 'dagster_error')):
         )
 
 
-class StepResult(namedtuple('_StepResult', 'success step success_data failure_data')):
+class ExecutionStepEventType(Enum):
+    STEP_OUTPUT = 'STEP_OUTPUT'
+    STEP_FAILURE = 'STEP_FAILURE'
+
+
+class ExecutionStepEvent(
+    namedtuple('_ExecutionStepEvent', 'event_type step success_data failure_data')
+):
+    @property
+    def is_successful_output(self):
+        return self.event_type == ExecutionStepEventType.STEP_OUTPUT
+
+    @property
+    def is_step_failure(self):
+        return self.event_type == ExecutionStepEventType.STEP_FAILURE
+
     @staticmethod
-    def success_result(step, success_data):
-        return StepResult(
-            success=True,
+    def step_output_event(step, success_data):
+        return ExecutionStepEvent(
+            event_type=ExecutionStepEventType.STEP_OUTPUT,
             step=check.inst_param(step, 'step', ExecutionStep),
             success_data=check.inst_param(success_data, 'success_data', StepSuccessData),
             failure_data=None,
         )
 
     @staticmethod
-    def failure_result(step, failure_data):
-        return StepResult(
-            success=False,
+    def step_failure_event(step, failure_data):
+        return ExecutionStepEvent(
+            event_type=ExecutionStepEventType.STEP_FAILURE,
             step=check.inst_param(step, 'step', ExecutionStep),
             success_data=None,
             failure_data=check.inst_param(failure_data, 'failure_data', StepFailureData),
         )
 
     def reraise_user_error(self):
-        check.invariant(not self.success)
+        check.invariant(self.event_type == ExecutionStepEventType.STEP_FAILURE)
         if self.failure_data.dagster_error.is_user_code_error:
             six.reraise(*self.failure_data.dagster_error.original_exc_info)
         else:

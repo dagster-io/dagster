@@ -63,7 +63,7 @@ def test_basic_pipeline_external_plan_execution():
 
         execution_plan = create_execution_plan(pipeline)
 
-        results = execute_externalized_plan(
+        step_events = execute_externalized_plan(
             pipeline,
             execution_plan,
             ['add_one.transform'],
@@ -74,17 +74,17 @@ def test_basic_pipeline_external_plan_execution():
 
         assert deserialize_from_file(int_type.serialization_strategy, write_path) == 6
 
-    assert len(results) == 2
+    assert len(step_events) == 2
 
-    thunk_step_result = results[0]
+    thunk_step_output_event = step_events[0]
 
-    assert thunk_step_result.kind == StepKind.UNMARSHAL_INPUT
+    assert thunk_step_output_event.kind == StepKind.UNMARSHAL_INPUT
 
-    transform_step_result = results[1]
-    assert transform_step_result.kind == StepKind.TRANSFORM
-    assert transform_step_result.success
-    assert transform_step_result.success_data.output_name == 'result'
-    assert transform_step_result.success_data.value == 6
+    transform_step_output_event = step_events[1]
+    assert transform_step_output_event.kind == StepKind.TRANSFORM
+    assert transform_step_output_event.is_successful_output
+    assert transform_step_output_event.success_data.output_name == 'result'
+    assert transform_step_output_event.success_data.value == 6
 
 
 def test_external_execution_marshal_wrong_input_error():
@@ -138,7 +138,7 @@ def test_external_execution_input_marshal_code_error():
             throw_on_user_error=True,
         )
 
-    results = execute_externalized_plan(
+    step_events = execute_externalized_plan(
         pipeline,
         execution_plan,
         ['add_one.transform'],
@@ -147,11 +147,12 @@ def test_external_execution_input_marshal_code_error():
         throw_on_user_error=False,
     )
 
-    assert len(results) == 1
-    marshal_result = results[0]
-    assert marshal_result.success is False
-    assert marshal_result.step.kind == StepKind.UNMARSHAL_INPUT
-    assert isinstance(marshal_result.failure_data.dagster_error.user_exception, IOError)
+    assert len(step_events) == 1
+    marshal_step_error = step_events[0]
+    assert marshal_step_error.is_step_failure
+    assert not marshal_step_error.is_successful_output
+    assert marshal_step_error.step.kind == StepKind.UNMARSHAL_INPUT
+    assert isinstance(marshal_step_error.failure_data.dagster_error.user_exception, IOError)
 
 
 def test_external_execution_step_for_output_missing():
@@ -212,7 +213,7 @@ def test_external_execution_marshal_output_code_error():
 
     assert 'No such file or directory' in str(exc_info.value)
 
-    results = execute_externalized_plan(
+    step_events = execute_externalized_plan(
         pipeline,
         execution_plan,
         ['return_one.transform', 'add_one.transform'],
@@ -221,13 +222,13 @@ def test_external_execution_marshal_output_code_error():
         throw_on_user_error=False,
     )
 
-    assert len(results) == 3
+    assert len(step_events) == 3
 
-    results_dict = {result.step.key: result for result in results}
+    events_dict = {event.step.key: event for event in step_events}
 
-    assert results_dict['return_one.transform'].success is True
-    assert results_dict['add_one.transform'].success is True
-    assert results_dict['add_one.transform.marshal-output.result'].success is False
+    assert events_dict['return_one.transform'].is_successful_output is True
+    assert events_dict['add_one.transform'].is_successful_output is True
+    assert events_dict['add_one.transform.marshal-output.result'].is_successful_output is False
 
 
 def test_external_execution_output_code_error_throw_on_user_error():
@@ -252,7 +253,7 @@ def test_external_execution_output_code_error_no_throw_on_user_error():
 
     execution_plan = create_execution_plan(pipeline)
 
-    results = execute_externalized_plan(
+    step_events = execute_externalized_plan(
         pipeline,
         execution_plan,
         ['user_throw_exception.transform'],
@@ -260,10 +261,10 @@ def test_external_execution_output_code_error_no_throw_on_user_error():
         throw_on_user_error=False,
     )
 
-    assert len(results) == 1
-    step_result = results[0]
-    assert isinstance(step_result.failure_data.dagster_error, DagsterExecutionStepExecutionError)
-    assert str(step_result.failure_data.dagster_error.user_exception) == 'whoops'
+    assert len(step_events) == 1
+    step_event = step_events[0]
+    assert isinstance(step_event.failure_data.dagster_error, DagsterExecutionStepExecutionError)
+    assert str(step_event.failure_data.dagster_error.user_exception) == 'whoops'
 
 
 def test_external_execution_unsatisfied_input_error():
