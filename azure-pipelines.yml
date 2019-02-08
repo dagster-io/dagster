@@ -30,3 +30,34 @@ jobs:
         testResultsFiles: '**/test_results.xml'
         testRunTitle: 'Python $(python.version)'
       condition: succeededOrFailed()
+  - job: 'dagit'
+    pool:
+      vmImage: 'vs2017-win2016'
+    strategy:
+      matrix:
+        Python27:
+          TOXENV: 'py27'
+          python.version: '2.7'
+        Python35:
+          TOXENV: 'py35'
+          python.version: '3.5'
+        Python36:
+          TOXENV: 'py36'
+          python.version: '3.6'
+        Python37:
+          TOXENV: 'py37'
+          python.version: '3.7'
+    steps:
+    - task: UsePythonVersion@0
+      inputs:
+        versionSpec: '$(python.version)'
+        architecture: 'x64'
+    - script: pip install tox
+      displayName: 'Install tox'
+    - script: cd python_modules\dagit && tox -e %TOXENV% && cd ..\.. 
+      displayName: 'Run tests'
+    - task: PublishTestResults@2
+      inputs:
+        testResultsFiles: '**/dagit_test_results.xml'
+        testRunTitle: 'Python $(python.version)'
+      condition: succeededOrFailed()
