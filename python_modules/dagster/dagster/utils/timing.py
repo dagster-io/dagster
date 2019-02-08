@@ -1,12 +1,22 @@
-from contextlib import contextmanager
+import os
+import sys
 import time
 
+from contextlib import contextmanager
+
 from dagster import check
+
+if sys.version_info.major >= 3 and sys.version_info.minor >= 3:
+    time_fn = time.perf_counter
+elif os.name == 'nt':
+    time_fn = time.clock
+else:
+    time_fn = time.time
 
 
 class TimerResult(object):
     def __init__(self):
-        self.start_time = time.perf_counter()
+        self.start_time = time_fn()
         self.end_time = None
 
     @property
@@ -36,4 +46,4 @@ def time_execution_scope():
 
     timer_result = TimerResult()
     yield timer_result
-    timer_result.end_time = time.perf_counter()
+    timer_result.end_time = time_fn()
