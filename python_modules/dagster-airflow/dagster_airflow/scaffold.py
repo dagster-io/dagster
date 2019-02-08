@@ -56,13 +56,17 @@ def _key_for_marshalled_result(step_key, result_name):
     )
 
 
+def _step_executions_key(step):
+    return 'STEP_EXECUTIONS_' + _normalize_key(step.key).upper()
+
+
 def _scaffold_marshalled_inputs_for_step(step):
     '''Generate the marshalled input block for our scaffolding.'''
     printer = IndentingBlockPrinter(indent_level=2)
     printer.line('[')
     with printer.with_indent():
         for step_input in step.step_inputs:
-            printer.line('{{')
+            printer.line('{')
             with printer.with_indent():
                 printer.line('inputName: "{input_name}",'.format(input_name=step_input.name))
                 printer.line(
@@ -73,7 +77,7 @@ def _scaffold_marshalled_inputs_for_step(step):
                         )
                     )
                 )
-            printer.line('}}')
+            printer.line('}')
     printer.line(']')
 
     return printer.read()
@@ -85,7 +89,7 @@ def _scaffold_marshalled_outputs_for_step(step):
     printer.line('[')
     with printer.with_indent():
         for step_output in step.step_outputs:
-            printer.line('{{')
+            printer.line('{')
             with printer.with_indent():
                 printer.line('outputName: "{output_name}",'.format(output_name=step_output.name))
                 printer.line(
@@ -93,7 +97,7 @@ def _scaffold_marshalled_outputs_for_step(step):
                         key=_key_for_marshalled_result(step.key, step_output.name)
                     )
                 )
-            printer.line('}}')
+            printer.line('}')
     printer.line(']')
 
     return printer.read()
@@ -133,8 +137,7 @@ def _format_config(config):
         printer.line('[')
 
         n_elements = len(config)
-        for i in range(len(config)):
-            value = config[i]
+        for i, value in enumerate(config):
             with printer.with_indent():
                 formatted_value = (
                     _format_config_item(value, current_indent=printer.current_indent)
@@ -167,116 +170,25 @@ def _format_config(config):
     return _format_config_subdict(config)
 
 
-def _scaffold_query_for_step(pipeline_name, step):
+def _scaffold_step_executions(step):
     marshalled_inputs = _scaffold_marshalled_inputs_for_step(step)
     marshalled_outputs = _scaffold_marshalled_outputs_for_step(step)
 
     printer = IndentingBlockPrinter(indent_level=2)
 
-    printer.line('mutation {{')
+    printer.line('[')
     with printer.with_indent():
-        printer.line('startSubplanExecution(')
+        printer.line('{')
         with printer.with_indent():
-            printer.line('config: {config},')
-            printer.line('executionMetadata: {{')
-            with printer.with_indent():
-                printer.line('runId: "testRun"')  # FIXME need to see if we can thread this through
-            printer.line('}},')
-            printer.line('pipelineName: "{pipeline_name}",'.format(pipeline_name=pipeline_name))
-            printer.line('stepExecutions: [')
-            with printer.with_indent():
-                printer.line('{{')
-                with printer.with_indent():
-                    printer.line('stepKey: "{step_key}"'.format(step_key=step.key))
-                    printer.line('marshalledInputs: ')
-                    for line in (marshalled_inputs.strip('\n') + ',').split('\n'):
-                        printer.line(line)
-                    printer.line('marshalledOutputs: ')
-                    for line in (marshalled_outputs.strip('\n') + ',').split('\n'):
-                        printer.line(line)
-                printer.line('}}')
-            printer.line('],')
-        printer.line(') {{')
-        with printer.with_indent():
-            printer.line('__typename')
-            printer.line('... on StartSubplanExecutionSuccess {{')
-            with printer.with_indent():
-                printer.line('pipeline {{')
-                with printer.with_indent():
-                    printer.line('name')
-                printer.line('}}')
-            printer.line('}}')
-        printer.line('}}')
-    printer.line('}}')
-    # FIXME need to support comprehensive error handling here
-
-    # ... on PipelineConfigValidationInvalid {
-    #     pipeline {
-    #         name
-    #     }
-    #     errors {
-    #         message
-    #         path
-    #         stack {
-    #         entries {
-    #             __typename
-    #             ... on EvaluationStackPathEntry {
-    #             field {
-    #                 name
-    #                 description
-    #                 configType {
-    #                 key
-    #                 name
-    #                 description
-    #                 }
-    #                 defaultValue
-    #                 isOptional
-    #             }
-    #             }
-    #         }
-    #         }
-    #         reason
-    #     }
-    #     }
-    #     ... on StartSubplanExecutionInvalidStepsError {
-    #     invalidStepKeys
-    #     }
-    #     ... on StartSubplanExecutionInvalidOutputError {
-    #     step {
-    #         key
-    #         inputs {
-    #         name
-    #         type {
-    #             key
-    #             name
-    #         }
-    #         }
-    #         outputs {
-    #         name
-    #         type {
-    #             key
-    #             name
-    #         }
-    #         }
-    #         solid {
-    #         name
-    #         definition {
-    #             name
-    #         }
-    #         inputs {
-    #             solid {
-    #             name
-    #             }
-    #             definition {
-    #             name
-    #             }
-    #         }
-    #         }
-    #         kind
-    #     }
-    #     }
-    # }
-    # }
+            printer.line('stepKey: "{step_key}"'.format(step_key=step.key))
+            printer.line('marshalledInputs: ')
+            for line in (marshalled_inputs.strip('\n') + ',').split('\n'):
+                printer.line(line)
+            printer.line('marshalledOutputs: ')
+            for line in (marshalled_outputs.strip('\n') + ',').split('\n'):
+                printer.line(line)
+        printer.line('}')
+    printer.line(']')
     return printer.read()
 
 
@@ -399,6 +311,7 @@ def _make_editable_scaffold(
         return printer.read()
 
 
+# pylint: disable=too-many-statements
 def _make_static_scaffold(pipeline_name, env_config, execution_plan, image, editable_scaffold):
     with IndentingBlockPrinter() as printer:
         printer.block(
@@ -432,8 +345,24 @@ def _make_static_scaffold(pipeline_name, env_config, execution_plan, image, edit
         with printer.with_indent():
             for line in _format_config(env_config).strip('\n').split('\n'):
                 printer.line(line)
-        printer.line('\'\'\'')
+        printer.line('\'\'\'.strip(\'\\n\').strip(\' \')')
         printer.blank_line()
+        printer.line('PIPELINE_NAME = \'{pipeline_name}\''.format(pipeline_name=pipeline_name))
+        printer.blank_line()
+
+        for step in execution_plan.topological_steps():
+            step_executions_key = _step_executions_key(step)
+
+            step_executions = _scaffold_step_executions(step)
+
+            printer.line(
+                '{step_executions_key} = \'\'\''.format(step_executions_key=step_executions_key)
+            )
+            for line in step_executions.strip('\n').split('\n'):
+                printer.line(line)
+            printer.line('\'\'\'.strip(\'\\n\')')
+            printer.blank_line()
+
         printer.blank_line()
 
         printer.line('def make_dag(')
@@ -457,8 +386,7 @@ def _make_static_scaffold(pipeline_name, env_config, execution_plan, image, edit
             for step in execution_plan.topological_steps():
                 step_key = step.key
                 airflow_step_key = _normalize_key(step_key)
-
-                query = _scaffold_query_for_step(pipeline_name, step)
+                step_executions_key = _step_executions_key(step)
 
                 printer.line(
                     '{airflow_step_key}_task = DagsterOperator('.format(
@@ -476,12 +404,12 @@ def _make_static_scaffold(pipeline_name, env_config, execution_plan, image, edit
                         'task_id=\'{airflow_step_key}\','.format(airflow_step_key=airflow_step_key)
                     )
                     printer.line('s3_conn_id=s3_conn_id,')
-                    printer.line('command=\'\'\'-q \'')
-                    with printer.with_indent():
-                        for line in query.split('\n')[:-1]:
-                            printer.line(line)
-                        printer.line('\'')
-                    printer.line('\'\'\'.format(config=CONFIG.strip(\'\\n\')),')
+                    printer.line('pipeline_name=PIPELINE_NAME,')
+                    printer.line(
+                        'step_executions={step_executions_key},'.format(
+                            step_executions_key=step_executions_key
+                        )
+                    )
                 printer.line(')')
                 printer.blank_line()
 
@@ -490,7 +418,8 @@ def _make_static_scaffold(pipeline_name, env_config, execution_plan, image, edit
                     prev_airflow_step_key = _normalize_key(step_input.prev_output_handle.step.key)
                     airflow_step_key = _normalize_key(step.key)
                     printer.line(
-                        '{prev_airflow_step_key}_task.set_downstream({airflow_step_key}_task)'.format(
+                        '{prev_airflow_step_key}_task.set_downstream('
+                        '{airflow_step_key}_task)'.format(
                             prev_airflow_step_key=prev_airflow_step_key,
                             airflow_step_key=airflow_step_key,
                         )
@@ -501,6 +430,7 @@ def _make_static_scaffold(pipeline_name, env_config, execution_plan, image, edit
         return printer.read()
 
 
+# pylint: disable=too-many-locals
 def scaffold_airflow_dag(pipeline, env_config, image, output_path=None, dag_kwargs=None):
     '''Scaffold a new Airflow DAG based on a PipelineDefinition and config.
 
@@ -529,7 +459,7 @@ def scaffold_airflow_dag(pipeline, env_config, image, output_path=None, dag_kwar
         dag_kwargs (dict, optional): Any additional keyword arguments to pass to the ``airflow.DAG``
             constructor. If `dag_kwargs.default_args` is set, values set there will smash the
             values in ``dagster_airflow.scaffold.DEFAULT_ARGS``. Default: None.
-    
+
     Returns:
         (str, str): Paths to the static and editable scaffold files.
     '''
@@ -628,10 +558,10 @@ def scaffold_airflow_dag(pipeline, env_config, image, output_path=None, dag_kwar
         default_args=default_args,
     )
 
-    with open(static_path, 'w') as fd:
-        fd.write(static_scaffold)
+    with open(static_path, 'w') as static_fd:
+        static_fd.write(static_scaffold)
 
-    with open(editable_path, 'w') as fd:
-        fd.write(editable_scaffold)
+    with open(editable_path, 'w') as editable_fd:
+        editable_fd.write(editable_scaffold)
 
     return (static_path, editable_path)

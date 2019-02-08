@@ -8,7 +8,14 @@ from dagster_airflow.dagster_plugin import DagsterOperator
 
 
 def test_init_modified_docker_operator():
-    DagsterOperator(image='dagster-airflow-demo', api_version='auto', task_id='nonce')
+    DagsterOperator(
+        image='dagster-airflow-demo',
+        api_version='auto',
+        task_id='nonce',
+        config='',
+        pipeline_name='',
+        step_executions='',
+    )
 
 
 def test_modified_docker_operator_bad_docker_conn():
@@ -18,6 +25,9 @@ def test_modified_docker_operator_bad_docker_conn():
         task_id='nonce',
         docker_conn_id='foo_conn',
         command='--help',
+        config='',
+        pipeline_name='',
+        step_executions='',
     )
 
     with pytest.raises(AirflowException, match='The conn_id `foo_conn` isn\'t defined'):
@@ -31,6 +41,9 @@ def test_modified_docker_operator_env(temp_dir):
         task_id='nonce',
         host_tmp_dir=temp_dir,
         command='--help',
+        config='',
+        pipeline_name='',
+        step_executions='',
     )
     operator.execute({})
 
@@ -44,6 +57,9 @@ def test_modified_docker_operator_xcom(temp_dir):
         xcom_push=True,
         xcom_all=True,
         command='--help',
+        config='',
+        pipeline_name='',
+        step_executions='',
     )
     assert b'Usage: dagit' in operator.execute({})
 
@@ -55,6 +71,9 @@ def test_modified_docker_operator_bad_command(temp_dir):
         task_id='nonce',
         host_tmp_dir=temp_dir,
         command='gargle bargle',
+        config='',
+        pipeline_name='',
+        step_executions='',
     )
     with pytest.raises(AirflowException, match='\'StatusCode\': 2}'):
         operator.execute({})
@@ -81,6 +100,9 @@ def test_modified_docker_operator_url(temp_dir):
             tls_ca_cert=docker_cert_path,
             host_tmp_dir=temp_dir,
             command='--help',
+            config='',
+            pipeline_name='',
+            step_executions='',
         )
 
         operator.execute({})

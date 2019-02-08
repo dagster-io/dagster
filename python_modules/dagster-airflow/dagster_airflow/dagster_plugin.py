@@ -5,183 +5,149 @@ airflow.operators.dagster_plugin.DagsterOperator available.
 '''
 import ast
 import json
+import uuid
 
-from airflow.hooks.docker_hook import DockerHook
+from contextlib import contextmanager
+
 from airflow.exceptions import AirflowException
-from airflow.models import BaseOperator
+from airflow.operators.docker_operator import DockerOperator
 from airflow.plugins_manager import AirflowPlugin
-from airflow.utils.decorators import apply_defaults
 from airflow.utils.file import TemporaryDirectory
-from docker import APIClient, from_env, tls
+from docker import APIClient, from_env
 
 
-# This modified DockerOperator incorporates https://github.com/apache/airflow/pull/4315/files
-# for Docker compatibility on OS X, and additionally allows the Docker client to be configured
-# using `docker.from_env`.
-class ModifiedDockerOperator(BaseOperator):
-    """
-    Execute a command inside a docker container.
+# We don't use six here to avoid taking the dependency
+STRING_TYPES = ("".__class__, u"".__class__)
 
-    A temporary directory is created on the host and
-    mounted into a container to allow storing files
-    that together exceed the default disk size of 10GB in a container.
-    The path to the mounted directory can be accessed
-    via the environment variable ``AIRFLOW_TMP_DIR``.
+# FIXME need the types and separate variables
+DAGSTER_OPERATOR_COMMAND_TEMPLATE = '''-q '
+{query}
+'
+'''.strip(
+    '\n'
+)
 
-    If a login to a private registry is required prior to pulling the image, a
-    Docker connection needs to be configured in Airflow and the connection ID
-    be provided with the parameter ``docker_conn_id``.
+QUERY_TEMPLATE = '''
+mutation(
+  $config: PipelineConfig = {config},
+  $stepExecutions: [StepExecution!] = {step_executions},
+  $pipelineName: String = "{pipeline_name}",
+  $runId: String = "{run_id}"
+) {{
+  startSubplanExecution(
+    config: $config,
+    executionMetadata: {{
+      runId: $runId
+    }},
+    pipelineName: $pipelineName,
+    stepExecutions: $stepExecutions,
+  ) {{
+    __typename
+    ... on StartSubplanExecutionSuccess {{
+      pipeline {{
+        name
+      }}
+    }}
+  }}
+}}
+'''.strip(
+    '\n'
+)
 
-    :param image: Docker image from which to create the container.
-        If image tag is omitted, "latest" will be used.
-    :type image: str
-    :param api_version: Remote API version. Set to ``auto`` to automatically
-        detect the server's version.
-    :type api_version: str
-    :param auto_remove: Auto-removal of the container on daemon side when the
-        container's process exits.
-        The default is False.
-    :type auto_remove: bool
-    :param command: Command to be run in the container. (templated)
-    :type command: str or list
-    :param cpus: Number of CPUs to assign to the container.
-        This value gets multiplied with 1024. See
-        https://docs.docker.com/engine/reference/run/#cpu-share-constraint
-    :type cpus: float
-    :param dns: Docker custom DNS servers
-    :type dns: list of strings
-    :param dns_search: Docker custom DNS search domain
-    :type dns_search: list of strings
-    :param docker_url: URL of the host running the docker daemon.
-        Default is unix://var/run/docker.sock
-    :type docker_url: str
-    :param environment: Environment variables to set in the container. (templated)
-    :type environment: dict
-    :param force_pull: Pull the docker image on every run. Default is False.
-    :type force_pull: bool
-    :param mem_limit: Maximum amount of memory the container can use.
-        Either a float value, which represents the limit in bytes,
-        or a string like ``128m`` or ``1g``.
+# FIXME need to support comprehensive error handling here
+
+# ... on PipelineConfigValidationInvalid {
+#     pipeline {
+#         name
+#     }
+#     errors {
+#         message
+#         path
+#         stack {
+#         entries {
+#             __typename
+#             ... on EvaluationStackPathEntry {
+#             field {
+#                 name
+#                 description
+#                 configType {
+#                 key
+#                 name
+#                 description
+#                 }
+#                 defaultValue
+#                 isOptional
+#             }
+#             }
+#         }
+#         }
+#         reason
+#     }
+#     }
+#     ... on StartSubplanExecutionInvalidStepsError {
+#     invalidStepKeys
+#     }
+#     ... on StartSubplanExecutionInvalidOutputError {
+#     step {
+#         key
+#         inputs {
+#         name
+#         type {
+#             key
+#             name
+#         }
+#         }
+#         outputs {
+#         name
+#         type {
+#             key
+#             name
+#         }
+#         }
+#         solid {
+#         name
+#         definition {
+#             name
+#         }
+#         inputs {
+#             solid {
+#             name
+#             }
+#             definition {
+#             name
+#             }
+#         }
+#         }
+#         kind
+#     }
+#     }
+# }
+# }
+
+
+class ModifiedDockerOperator(DockerOperator):
+    """ModifiedDockerOperator supports host temporary directories on OSX.
+
+    Incorporates https://github.com/apache/airflow/pull/4315/ and an implementation of
+    https://issues.apache.org/jira/browse/AIRFLOW-3825.
+
     :param host_tmp_dir: Specify the location of the temporary directory on the host which will
         be mapped to tmp_dir. If not provided defaults to using the standard system temp directory.
     :type host_tmp_dir: str
-    :type mem_limit: float or str
-    :param network_mode: Network mode for the container.
-    :type network_mode: str
-    :param tls_ca_cert: Path to a PEM-encoded certificate authority
-        to secure the docker connection.
-    :type tls_ca_cert: str
-    :param tls_client_cert: Path to the PEM-encoded certificate
-        used to authenticate docker client.
-    :type tls_client_cert: str
-    :param tls_client_key: Path to the PEM-encoded key used to authenticate docker client.
-    :type tls_client_key: str
-    :param tls_hostname: Hostname to match against
-        the docker server certificate or False to disable the check.
-    :type tls_hostname: str or bool
-    :param tls_ssl_version: Version of SSL to use when communicating with docker daemon.
-    :type tls_ssl_version: str
-    :param tmp_dir: Mount point inside the container to
-        a temporary directory created on the host by the operator.
-        The path is also made available via the environment variable
-        ``AIRFLOW_TMP_DIR`` inside the container.
-    :type tmp_dir: str
-    :param user: Default user inside the docker container.
-    :type user: int or str
-    :param volumes: List of volumes to mount into the container, e.g.
-        ``['/host/path:/container/path', '/host/path2:/container/path2:ro']``.
-    :param working_dir: Working directory to
-        set on the container (equivalent to the -w switch the docker client)
-    :type working_dir: str
-    :param xcom_push: Does the stdout will be pushed to the next step using XCom.
-        The default is False.
-    :type xcom_push: bool
-    :param xcom_all: Push all the stdout or just the last line.
-        The default is False (last line).
-    :type xcom_all: bool
-    :param docker_conn_id: ID of the Airflow connection to use
-    :type docker_conn_id: str
-    :param shm_size: Size of ``/dev/shm`` in bytes. The size must be
-        greater than 0. If omitted uses system default.
-    :type shm_size: int
     """
 
-    template_fields = ('command', 'environment')
-    template_ext = ('.sh', '.bash')
-
-    @apply_defaults
-    def __init__(
-        self,
-        image,
-        api_version=None,
-        command=None,
-        cpus=1.0,
-        docker_url='unix://var/run/docker.sock',
-        environment=None,
-        force_pull=False,
-        host_tmp_dir=None,
-        mem_limit=None,
-        network_mode=None,
-        tls_ca_cert=None,
-        tls_client_cert=None,
-        tls_client_key=None,
-        tls_hostname=None,
-        tls_ssl_version=None,
-        tmp_dir='/tmp/airflow',
-        user=None,
-        volumes=None,
-        working_dir=None,
-        xcom_push=False,
-        xcom_all=False,
-        docker_conn_id=None,
-        dns=None,
-        dns_search=None,
-        auto_remove=False,
-        shm_size=None,
-        *args,
-        **kwargs
-    ):
-
-        super(ModifiedDockerOperator, self).__init__(*args, **kwargs)
-        self.api_version = api_version
-        self.auto_remove = auto_remove
-        self.command = command
-        self.cpus = cpus
-        self.dns = dns
-        self.dns_search = dns_search
-        self.docker_url = docker_url
-        self.environment = environment or {}
-        self.force_pull = force_pull
+    def __init__(self, host_tmp_dir=None, **kwargs):
         self.host_tmp_dir = host_tmp_dir
-        self.image = image
-        self.mem_limit = mem_limit
-        self.network_mode = network_mode
-        self.tls_ca_cert = tls_ca_cert
-        self.tls_client_cert = tls_client_cert
-        self.tls_client_key = tls_client_key
-        self.tls_hostname = tls_hostname
-        self.tls_ssl_version = tls_ssl_version
-        self.tmp_dir = tmp_dir
-        self.user = user
-        self.volumes = volumes or []
-        self.working_dir = working_dir
-        self.xcom_push_flag = xcom_push
-        self.xcom_all = xcom_all
-        self.docker_conn_id = docker_conn_id
-        self.shm_size = shm_size
+        super(ModifiedDockerOperator, self).__init__(**kwargs)
 
-        self.cli = None
-        self.container = None
-
-    def get_hook(self):
-        return DockerHook(
-            docker_conn_id=self.docker_conn_id,
-            base_url=self.docker_url,
-            version=self.api_version,
-            tls=self.__get_tls_config(),
-        )
+    @contextmanager
+    def get_host_tmp_dir(self):
+        '''Abstracts the tempdir context manager so that this can be overridden.'''
+        with TemporaryDirectory(prefix='airflowtmp', dir=self.host_tmp_dir) as tmp_dir:
+            yield tmp_dir
 
     def execute(self, context):
+        '''Modified only to use the get_host_tmp_dir helper.'''
         self.log.info('Starting docker container from image %s', self.image)
 
         tls_config = self.__get_tls_config()
@@ -189,12 +155,7 @@ class ModifiedDockerOperator(BaseOperator):
         if self.docker_conn_id:
             self.cli = self.get_hook().get_conn()
         else:
-            try:
-                self.cli = from_env().api
-            except:
-                self.cli = APIClient(
-                    base_url=self.docker_url, version=self.api_version, tls=tls_config
-                )
+            self.cli = APIClient(base_url=self.docker_url, version=self.api_version, tls=tls_config)
 
         if self.force_pull or len(self.cli.images(name=self.image)) == 0:
             self.log.info('Pulling docker image %s', self.image)
@@ -203,83 +164,160 @@ class ModifiedDockerOperator(BaseOperator):
                 if 'status' in output:
                     self.log.info("%s", output['status'])
 
-        # FIXME: need to figure out what to do here. We probably want to provide some knobs to
-        # govern whether intermediate result materializations get cleaned up or not -- but we need
-        # them for follow-on step executions and we can't rely on xcom, probably.
-        # with TemporaryDirectory(prefix='airflowtmp', dir=self.host_tmp_dir) as host_tmp_dir:
-        self.environment['AIRFLOW_TMP_DIR'] = self.tmp_dir
-        self.volumes.append('{0}:{1}'.format(self.host_tmp_dir, self.tmp_dir))
+        with self.get_host_tmp_dir() as host_tmp_dir:
+            self.environment['AIRFLOW_TMP_DIR'] = self.tmp_dir
+            self.volumes.append('{0}:{1}'.format(host_tmp_dir, self.tmp_dir))
 
-        self.container = self.cli.create_container(
-            command=self.get_command(),
-            environment=self.environment,
-            host_config=self.cli.create_host_config(
-                auto_remove=self.auto_remove,
-                binds=self.volumes,
-                network_mode=self.network_mode,
-                shm_size=self.shm_size,
-                dns=self.dns,
-                dns_search=self.dns_search,
-                cpu_shares=int(round(self.cpus * 1024)),
-                mem_limit=self.mem_limit,
-            ),
-            image=self.image,
-            user=self.user,
-            working_dir=self.working_dir,
+            self.container = self.cli.create_container(
+                command=self.get_command(),
+                environment=self.environment,
+                host_config=self.cli.create_host_config(
+                    auto_remove=self.auto_remove,
+                    binds=self.volumes,
+                    network_mode=self.network_mode,
+                    shm_size=self.shm_size,
+                    dns=self.dns,
+                    dns_search=self.dns_search,
+                    cpu_shares=int(round(self.cpus * 1024)),
+                    mem_limit=self.mem_limit,
+                ),
+                image=self.image,
+                user=self.user,
+                working_dir=self.working_dir,
+            )
+            self.cli.start(self.container['Id'])
+
+            line = ''
+            for line in self.cli.logs(container=self.container['Id'], stream=True):
+                line = line.strip()
+                if hasattr(line, 'decode'):
+                    line = line.decode('utf-8')
+                self.log.info(line)
+
+            result = self.cli.wait(self.container['Id'])
+            if result['StatusCode'] != 0:
+                raise AirflowException('docker container failed: ' + repr(result))
+
+            if self.xcom_push_flag:
+                return self.cli.logs(container=self.container['Id']) if self.xcom_all else str(line)
+
+    # We should open an Airflow issue so that this isn't a class-private name on DockerOperator --
+    # all that the status quo does is inhibit extension of the class
+    def __get_tls_config(self):
+        return super(ModifiedDockerOperator, self)._DockerOperator__get_tls_config()
+
+
+class DagsterOperator(ModifiedDockerOperator):
+    '''Dagster operator for Apache Airflow.
+
+    Wraps a modified DockerOperator incorporating https://github.com/apache/airflow/pull/4315.
+
+    Additionally, if a Docker client can be initialized using docker.from_env, 
+    Unlike the standard DockerOperator, this operator also supports config using docker.from_env,
+    so it isn't necessary to explicitly set docker_url, tls_config, or api_version.
+
+    '''
+
+    def __init__(
+        self,
+        *args,
+        step=None,
+        config=None,
+        pipeline_name=None,
+        step_executions=None,
+        docker_from_env=True,
+        s3_conn_id=None,
+        persist_intermediate_results_to_s3=False,
+        **kwargs
+    ):
+        self.step = step
+        self.config = config
+        self.pipeline_name = pipeline_name
+        self.step_executions = step_executions
+        self.docker_from_env = docker_from_env
+        self.docker_conn_id_set = kwargs.get('docker_conn_id') is not None
+        self.s3_conn_id = s3_conn_id
+        self.persist_intermediate_results_to_s3 = persist_intermediate_results_to_s3
+
+        self._run_id = None
+
+        # We don't use dagster.check here to avoid taking the dependency.
+        for attr_ in ['config', 'pipeline_name', 'step_executions']:
+            assert isinstance(getattr(self, attr_), STRING_TYPES), (
+                'Bad value for DagsterOperator {attr_}: expected a string and got {value} of '
+                'type {type_}'.format(
+                    attr_=attr_, value=getattr(self, attr_), type_=type(getattr(self, attr_))
+                )
+            )
+
+        # These shenanigans are so we can override DockerOperator.get_hook in order to configure
+        # a docker client using docker.from_env, rather than messing with the logic of
+        # DockerOperator.execute
+        if not self.docker_conn_id_set:
+            try:
+                from_env().version()
+            except Exception:
+                pass
+            else:
+                kwargs['docker_conn_id'] = True
+
+        super(DagsterOperator, self).__init__(*args, **kwargs)
+
+    @property
+    def query(self):
+        return QUERY_TEMPLATE.format(
+            config=self.config.strip('\n'),
+            run_id=self._run_id,
+            step_executions=self.step_executions.strip('\n'),
+            pipeline_name=self.pipeline_name,
         )
-        self.cli.start(self.container['Id'])
-
-        line = ''
-        for line in self.cli.logs(container=self.container['Id'], stream=True):
-            line = line.strip()
-            if hasattr(line, 'decode'):
-                line = line.decode('utf-8')
-            self.log.info(line)
-
-        result = self.cli.wait(self.container['Id'])
-        if result['StatusCode'] != 0:
-            raise AirflowException('docker container failed: ' + repr(result))
-
-        if self.xcom_push_flag:
-            return self.cli.logs(container=self.container['Id']) if self.xcom_all else str(line)
 
     def get_command(self):
         if self.command is not None and self.command.strip().find('[') == 0:
             commands = ast.literal_eval(self.command)
-        else:
+        elif self.command is not None:
             commands = self.command
+        else:
+            commands = DAGSTER_OPERATOR_COMMAND_TEMPLATE.format(query=self.query)
         return commands
 
-    def on_kill(self):
-        if self.cli is not None:
-            self.log.info('Stopping docker container')
-            self.cli.stop(self.container['Id'])
+    def get_hook(self):
+        if self.docker_conn_id_set:
+            return super(DagsterOperator, self).get_hook()
+
+        class _DummyHook(object):
+            def get_conn(self):
+                return from_env().api
+
+        return _DummyHook()
+
+    @contextmanager
+    def get_host_tmp_dir(self):
+        # FIXME: need to figure out what to do here. We probably want to provide some knobs to
+        # govern whether intermediate result materializations get cleaned up or not.
+        yield self.host_tmp_dir
+
+    def execute(self, context):
+        if 'dag_run' in context and context['dag_run'] is not None:
+            self._run_id = context['dag_run'].run_id
+        else:
+            self._run_id = str(uuid.uuid4())
+        try:
+            # FIXME implement intermediate result persistence
+            return super(DagsterOperator, self).execute(context)
+        finally:
+            self._run_id = None
 
     def __get_tls_config(self):
-        tls_config = None
-        if self.tls_ca_cert and self.tls_client_cert and self.tls_client_key:
-            tls_config = tls.TLSConfig(
-                ca_cert=self.tls_ca_cert,
-                client_cert=(self.tls_client_cert, self.tls_client_key),
-                verify=True,
-                ssl_version=self.tls_ssl_version,
-                assert_hostname=self.tls_hostname,
-            )
-            self.docker_url = self.docker_url.replace('tcp://', 'https://')
-        return tls_config
-
-
-class DagsterOperator(ModifiedDockerOperator):
-    def __init__(self, step=None, config=None, *args, **kwargs):
-        self.step = step
-        self.config = config
-        super(DagsterOperator, self).__init__(*args, **kwargs)
+        return super(DagsterOperator, self)._ModifiedDockerOperator__get_tls_config()
 
 
 class DagsterPlugin(AirflowPlugin):
+    '''Dagster plugin for Apache Airflow.
+
+    This plugin's only member is the DagsterOperator, which is intended to be used in
+    autoscaffolded code created by dagster_airflow.scaffold_airflow_dag.
+    '''
+
     name = 'dagster_plugin'
     operators = [DagsterOperator]
-
-
-# https://stackoverflow.com/questions/43345991/how-to-get-the-jobid-for-the-airflow-dag-runs
-# https://airflow.apache.org/_modules/airflow/operators/python_operator.html - provide_context
