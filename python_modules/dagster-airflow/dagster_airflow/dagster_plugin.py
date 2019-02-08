@@ -220,7 +220,6 @@ class DagsterOperator(ModifiedDockerOperator):
 
     def __init__(
         self,
-        *args,
         step=None,
         config=None,
         pipeline_name=None,
@@ -228,6 +227,7 @@ class DagsterOperator(ModifiedDockerOperator):
         docker_from_env=True,
         s3_conn_id=None,
         persist_intermediate_results_to_s3=False,
+        *args,
         **kwargs
     ):
         self.step = step
