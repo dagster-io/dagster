@@ -38,7 +38,7 @@ def test_build_all_docs(snapshot):
         walked = sorted(
             [
                 (
-                    dirpath,
+                    dirpath.split('/'),
                     sorted(dirnames),
                     sorted(
                         [
@@ -62,7 +62,7 @@ def test_build_all_docs(snapshot):
                 if any((re.match(pattern, filename) for pattern in IGNORE_FILES)):
                     continue
                 # py27 compat
-                with io.open(os.path.join(dirpath, filename), mode='r', encoding='utf-8') as fd:
+                with io.open(os.path.join(*dirpath, filename), mode='r', encoding='utf-8') as fd:
                     try:
                         snapshot.assert_match(fd.read())
                     except UnicodeDecodeError:
