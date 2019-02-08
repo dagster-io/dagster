@@ -292,27 +292,27 @@ class DauphinStartPipelineExecutionResult(dauphin.Union):
         )
 
 
-class DauphinStepResult(dauphin.Interface):
+class DauphinStepEvent(dauphin.Interface):
     class Meta:
-        name = 'StepResult'
+        name = 'StepEvent'
 
     step = dauphin.Field(dauphin.NonNull('ExecutionStep'))
     success = dauphin.Field(dauphin.NonNull(dauphin.Boolean))
 
 
-class DauphinStepSuccessResult(dauphin.ObjectType):
+class DauphinSuccessfulStepOutputEvent(dauphin.ObjectType):
     class Meta:
-        name = 'StepSuccessResult'
-        interfaces = (DauphinStepResult,)
+        name = 'SuccessfulStepOutputEvent'
+        interfaces = (DauphinStepEvent,)
 
     output_name = dauphin.Field(dauphin.NonNull(dauphin.String))
     value_repr = dauphin.Field(dauphin.NonNull(dauphin.String))
 
 
-class DauphinStepFailureResult(dauphin.ObjectType):
+class DauphinStepFailureEvent(dauphin.ObjectType):
     class Meta:
-        name = 'StepFailureResult'
-        interfaces = (DauphinStepResult,)
+        name = 'StepFailureEvent'
+        interfaces = (DauphinStepEvent,)
 
     error_message = dauphin.Field(dauphin.NonNull(dauphin.String))
 
@@ -323,7 +323,7 @@ class DauphinStartSubplanExecutionSuccess(dauphin.ObjectType):
 
     pipeline = dauphin.Field(dauphin.NonNull('Pipeline'))
     has_failures = dauphin.Field(dauphin.NonNull(dauphin.Boolean))
-    step_results = dauphin.non_null_list(DauphinStepResult)
+    step_events = dauphin.non_null_list(DauphinStepEvent)
 
 
 class DauphinStartSubplanExecutionInvalidStepsError(dauphin.ObjectType):
