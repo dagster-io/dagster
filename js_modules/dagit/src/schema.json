@@ -6175,7 +6175,7 @@
             "deprecationReason": null
           },
           {
-            "name": "stepResults",
+            "name": "stepEvents",
             "description": null,
             "args": [],
             "type": {
