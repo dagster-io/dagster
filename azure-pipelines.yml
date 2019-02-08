@@ -82,10 +82,10 @@ jobs:
         architecture: 'x64'
     - script: pip install tox
       displayName: 'Install tox'
-    - script: cd python_modules\dagit && tox -e %TOXENV% && cd ..\.. 
+    - script: cd python_modules\dagstermill && tox -e %TOXENV% && cd ..\.. 
       displayName: 'Run tests'
     - task: PublishTestResults@2
       inputs:
-        testResultsFiles: '**/dagit_test_results.xml'
+        testResultsFiles: '**/dagstermill_test_results.xml'
         testRunTitle: 'dagstermill $(TOXENV)'
       condition: succeededOrFailed()
