@@ -216,6 +216,26 @@ class RuntimeExecutionContext:
         return self._environment_config
 
 
+class DagsterLog:
+    def __init__(self, context):
+        self.context = context
+
+    def debug(self, msg, **kwargs):
+        return self.context.debug(msg, **kwargs)
+
+    def info(self, msg, **kwargs):
+        return self.context.info(msg, **kwargs)
+
+    def warning(self, msg, **kwargs):
+        return self.context.warning(msg, **kwargs)
+
+    def error(self, msg, **kwargs):
+        return self.context.error(msg, **kwargs)
+
+    def critical(self, msg, **kwargs):
+        return self.context.critical(msg, **kwargs)
+
+
 class ExecutionMetadata(namedtuple('_ExecutionMetadata', 'run_id tags event_callback loggers')):
     def __new__(cls, run_id=None, tags=None, event_callback=None, loggers=None):
         return super(ExecutionMetadata, cls).__new__(

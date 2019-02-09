@@ -1,5 +1,6 @@
 from __future__ import absolute_import, division, print_function, unicode_literals
 from builtins import *  # pylint: disable=W0622,W0401
+from collections import namedtuple
 
 import base64
 import copy
@@ -29,7 +30,7 @@ from dagster import (
     types,
 )
 
-from dagster.core.definitions import TransformExecutionInfo
+from dagster.core.definitions.infos import ITransformExecutionInfo
 from dagster.core.types.marshal import serialize_to_file, deserialize_from_file
 from dagster.core.types.runtime import RuntimeType
 
@@ -37,12 +38,56 @@ from dagster.core.definitions.dependency import Solid
 from dagster.core.events import construct_json_event_logger, EventRecord, EventType
 from dagster.core.definitions.environment_configs import construct_environment_config
 from dagster.core.execution import yield_context
-from dagster.core.execution_context import ExecutionMetadata
+from dagster.core.execution_context import ExecutionMetadata, DagsterLog, RuntimeExecutionContext
 
 # magic incantation for syncing up notebooks to enclosing virtual environment.
 # I don't claim to understand it.
 # ipython kernel install --name "dagster" --user
 # python3 -m ipykernel install --user
+
+
+class DagstermillInNotebookExecutionInfo(
+    ITransformExecutionInfo,
+    namedtuple('_DagstermillInNotebookExecutionInfo', 'context__ pipeline_def__'),
+):
+    def __new__(cls, context, pipeline_def):
+        return super(DagstermillInNotebookExecutionInfo, cls).__new__(
+            cls,
+            check.inst_param(context, 'context', RuntimeExecutionContext),
+            check.inst_param(pipeline_def, 'pipeline_def', PipelineDefinition),
+        )
+
+    @property
+    def context(self):
+        return self.context__
+
+    @property
+    def config(self):
+        check.not_implemented('Cannot access solid config in dagstermill exploratory context')
+
+    @property
+    def step(self):
+        check.not_implemented('Cannot access step in dagstermill exploratory context')
+
+    @property
+    def solid_def(self):
+        check.not_implemented('Cannot access solid_def in dagstermill exploratory context')
+
+    @property
+    def solid(self):
+        check.not_implemented('Cannot access solid in dagstermill exploratory context')
+
+    @property
+    def pipeline_def(self):
+        return self.pipeline_def__
+
+    @property
+    def resources(self):
+        return self.context__.resources
+
+    @property
+    def log(self):
+        return DagsterLog(self.context__)
 
 
 class DagstermillError(Exception):
@@ -74,14 +119,14 @@ class Manager:
         from dagster.core.system_config.objects import EnvironmentConfig
 
         dummy_environment_config = EnvironmentConfig(context=typed_context)
+        # BUG: If the context cleans up after itself (e.g. closes a db connection or similar)
+        # This will instigate that process *before* return. We are going to have to
+        # manage this manually (without an if block) in order to make this work.
+        # See https://github.com/dagster-io/dagster/issues/796
         with yield_context(
             pipeline_def, dummy_environment_config, ExecutionMetadata(run_id='')
         ) as context:
-            solid_config = (
-                None
-            )  # no solid_config, since we're out of pipeline: we might add functionality to support this later
-            execution_step = None  # since we're out of pipeline, there is no execution step
-            self.info = TransformExecutionInfo(context, solid_config, execution_step, pipeline_def)
+            self.info = DagstermillInNotebookExecutionInfo(context, pipeline_def)
         return self.info
 
     def get_pipeline(self, name):
@@ -119,12 +164,10 @@ class Manager:
         # since that'll be taken care of by side-channel established by event_logger
         execution_metadata = ExecutionMetadata(run_id, loggers=loggers)
         typed_environment = construct_environment_config(environment_config)
+        # See block comment above referencing this issue
+        # See https://github.com/dagster-io/dagster/issues/796
         with yield_context(pipeline_def, typed_environment, execution_metadata) as context:
-            solid_config = (
-                None
-            )  # We currently do not reconstruct the solid config, because it can be anything
-            execution_step = None  # because we're out of pipeline
-            self.info = TransformExecutionInfo(context, solid_config, execution_step, pipeline_def)
+            self.info = DagstermillInNotebookExecutionInfo(context, pipeline_def)
 
         return self.info
 
@@ -224,7 +267,7 @@ def read_value(runtime_type, value):
 
 
 def get_papermill_parameters(transform_execution_info, inputs, output_log_path):
-    check.inst_param(transform_execution_info, 'transform_execution_info', TransformExecutionInfo)
+    check.inst_param(transform_execution_info, 'transform_execution_info', ITransformExecutionInfo)
     check.param_invariant(
         isinstance(transform_execution_info.context.environment_config, dict),
         'transform_execution_info',

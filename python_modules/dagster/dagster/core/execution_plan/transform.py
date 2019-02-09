@@ -1,7 +1,9 @@
+from collections import namedtuple
 from dagster import check
-from dagster.core.definitions import Result, Solid, TransformExecutionInfo
+from dagster.core.definitions import Result, Solid, PipelineDefinition
+from dagster.core.definitions.infos import ITransformExecutionInfo
 from dagster.core.errors import DagsterInvariantViolationError
-from dagster.core.execution_context import RuntimeExecutionContext
+from dagster.core.execution_context import RuntimeExecutionContext, DagsterLog
 
 from .objects import (
     ExecutionPlanInfo,
@@ -12,6 +14,65 @@ from .objects import (
     StepOutput,
     StepOutputValue,
 )
+
+
+class TransformExecutionInfo(
+    ITransformExecutionInfo,
+    namedtuple(
+        '_TransformExecutionInfo', 'context__ config__ step__ pipeline_def__ resources__ log__'
+    ),
+):
+    '''An instance of TransformExecutionInfo is passed every solid transform function.
+
+    Attributes:
+
+        context (ExecutionContext): Context instance for this pipeline invocation
+        config (Any): Config object for current solid
+    '''
+
+    def __new__(cls, context, config, step, pipeline_def):
+
+        return super(TransformExecutionInfo, cls).__new__(
+            cls,
+            check.inst_param(context, 'context', RuntimeExecutionContext),
+            config,
+            check.inst_param(step, 'step', ExecutionStep),
+            check.inst_param(pipeline_def, 'pipeline_def', PipelineDefinition),
+            context.resources,
+            DagsterLog(context),
+        )
+
+    @property
+    def context(self):
+        return self.context__
+
+    @property
+    def config(self):
+        return self.config__
+
+    @property
+    def step(self):
+        return self.step__
+
+    @property
+    def solid_def(self):
+        return self.step__.solid.definition
+
+    @property
+    def solid(self):
+        return self.step__.solid
+
+    @property
+    def pipeline_def(self):
+        return self.pipeline_def__
+
+    @property
+    def resources(self):
+        return self.resources__
+
+    @property
+    def log(self):
+        return self.log__
 
 
 def create_transform_step(execution_info, plan_builder, solid, step_inputs, conf):

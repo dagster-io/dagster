@@ -10,6 +10,8 @@ from dagster.core.execution import (
 
 from dagster.core.execution_context import ExecutionContext, ExecutionMetadata
 
+from dagster.core.execution_plan.transform import TransformExecutionInfo
+
 from dagster.core.definitions import (
     ContextCreationExecutionInfo,
     DependencyDefinition,
@@ -24,7 +26,6 @@ from dagster.core.definitions import (
     Result,
     SolidDefinition,
     SolidInstance,
-    TransformExecutionInfo,
 )
 
 from dagster.core.definitions.resource import ResourceDefinition, resource
