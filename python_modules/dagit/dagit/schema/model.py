@@ -272,7 +272,7 @@ def _repository_or_error_from_container(graphene_info, container):
     except Exception:  # pylint: disable=broad-except
         return EitherError(
             graphene_info.schema.type_named('PythonError')(
-                serializable_error_info_from_exc_info(sys.exc_graphene_info())
+                serializable_error_info_from_exc_info(sys.exc_info())
             )
         )
 
@@ -517,7 +517,7 @@ def _execute_subplan_or_error(args, dauphin_pipeline, execution_plan, evaluate_v
     except DagsterUserCodeExecutionError as ducee:
         return EitherError(
             _type_of(args, 'PythonError')(
-                serializable_error_info_from_exc_info(ducee.original_exc_graphene_info)
+                serializable_error_info_from_exc_info(ducee.original_exc_info)
             )
         )
 
