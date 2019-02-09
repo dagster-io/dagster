@@ -36,9 +36,9 @@ class DauphinPipeline(dauphin.ObjectType):
         super(DauphinPipeline, self).__init__(name=pipeline.name, description=pipeline.description)
         self._pipeline = check.inst_param(pipeline, 'pipeline', PipelineDefinition)
 
-    def resolve_solids(self, info):
+    def resolve_solids(self, graphene_info):
         return [
-            info.schema.type_named('Solid')(
+            graphene_info.schema.type_named('Solid')(
                 solid,
                 self._pipeline.dependency_structure.deps_of_solid_with_input(solid.name),
                 self._pipeline.dependency_structure.depended_by_of_solid(solid.name),
@@ -46,22 +46,22 @@ class DauphinPipeline(dauphin.ObjectType):
             for solid in self._pipeline.solids
         ]
 
-    def resolve_contexts(self, info):
+    def resolve_contexts(self, graphene_info):
         return [
-            info.schema.type_named('PipelineContext')(name=name, context=context)
+            graphene_info.schema.type_named('PipelineContext')(name=name, context=context)
             for name, context in self._pipeline.context_definitions.items()
         ]
 
-    def resolve_environment_type(self, _info):
+    def resolve_environment_type(self, _graphene_info):
         return to_dauphin_config_type(self._pipeline.environment_type)
 
-    def resolve_config_types(self, _info):
+    def resolve_config_types(self, _graphene_info):
         return sorted(
             list(map(to_dauphin_config_type, self._pipeline.all_config_types())),
             key=lambda config_type: config_type.key,
         )
 
-    def resolve_runtime_types(self, _info):
+    def resolve_runtime_types(self, _graphene_info):
         return sorted(
             list(
                 map(
@@ -72,16 +72,16 @@ class DauphinPipeline(dauphin.ObjectType):
             key=lambda config_type: config_type.name,
         )
 
-    def resolve_runs(self, info):
+    def resolve_runs(self, graphene_info):
         return [
-            info.schema.type_named('PipelineRun')(r)
-            for r in info.context.pipeline_runs.all_runs_for_pipeline(self._pipeline.name)
+            graphene_info.schema.type_named('PipelineRun')(r)
+            for r in graphene_info.context.pipeline_runs.all_runs_for_pipeline(self._pipeline.name)
         ]
 
     def get_dagster_pipeline(self):
         return self._pipeline
 
-    def get_type(self, _info, typeName):
+    def get_type(self, _graphene_info, typeName):
         if self._pipeline.has_config_type(typeName):
             return to_dauphin_config_type(self._pipeline.config_type_named(typeName))
         elif self._pipeline.has_runtime_type(typeName):
@@ -111,9 +111,9 @@ class DauphinResource(dauphin.ObjectType):
     description = dauphin.String()
     config = dauphin.Field('ConfigTypeField')
 
-    def resolve_config(self, info):
+    def resolve_config(self, graphene_info):
         return (
-            info.schema.type_named('ConfigTypeField')(
+            graphene_info.schema.type_named('ConfigTypeField')(
                 name="config", field=self._resource.config_field
             )
             if self._resource.config_field
@@ -134,16 +134,16 @@ class DauphinPipelineContext(dauphin.ObjectType):
         super(DauphinPipelineContext, self).__init__(name=name, description=context.description)
         self._context = check.inst_param(context, 'context', PipelineContextDefinition)
 
-    def resolve_config(self, info):
+    def resolve_config(self, graphene_info):
         return (
-            info.schema.type_named('ConfigTypeField')(
+            graphene_info.schema.type_named('ConfigTypeField')(
                 name="config", field=self._context.config_field
             )
             if self._context.config_field
             else None
         )
 
-    def resolve_resources(self, _info):
+    def resolve_resources(self, _graphene_info):
         return [DauphinResource(*item) for item in self._context.resources.items()]
 
 
@@ -175,18 +175,18 @@ class DauphinSolid(dauphin.ObjectType):
         else:
             self.depended_by = {}
 
-    def resolve_definition(self, info):
-        return info.schema.type_named('SolidDefinition')(self._solid.definition)
+    def resolve_definition(self, graphene_info):
+        return graphene_info.schema.type_named('SolidDefinition')(self._solid.definition)
 
-    def resolve_inputs(self, info):
+    def resolve_inputs(self, graphene_info):
         return [
-            info.schema.type_named('Input')(input_handle, self)
+            graphene_info.schema.type_named('Input')(input_handle, self)
             for input_handle in self._solid.input_handles()
         ]
 
-    def resolve_outputs(self, info):
+    def resolve_outputs(self, graphene_info):
         return [
-            info.schema.type_named('Output')(output_handle, self)
+            graphene_info.schema.type_named('Output')(output_handle, self)
             for output_handle in self._solid.output_handles()
         ]
 
@@ -204,16 +204,18 @@ class DauphinInput(dauphin.ObjectType):
         self._solid = check.inst_param(solid, 'solid', DauphinSolid)
         self._input_handle = check.inst_param(input_handle, 'input_handle', SolidInputHandle)
 
-    def resolve_definition(self, info):
-        return info.schema.type_named('InputDefinition')(
-            self._input_handle.input_def, self._solid.resolve_definition(info)
+    def resolve_definition(self, graphene_info):
+        return graphene_info.schema.type_named('InputDefinition')(
+            self._input_handle.input_def, self._solid.resolve_definition(graphene_info)
         )
 
-    def resolve_depends_on(self, info):
+    def resolve_depends_on(self, graphene_info):
         if self._input_handle in self._solid.depends_on:
-            return info.schema.type_named('Output')(
+            return graphene_info.schema.type_named('Output')(
                 self._solid.depends_on[self._input_handle],
-                info.schema.type_named('Solid')(self._solid.depends_on[self._input_handle].solid),
+                graphene_info.schema.type_named('Solid')(
+                    self._solid.depends_on[self._input_handle].solid
+                ),
             )
         else:
             return None
@@ -232,14 +234,14 @@ class DauphinOutput(dauphin.ObjectType):
         self._solid = check.inst_param(solid, 'solid', DauphinSolid)
         self._output_handle = check.inst_param(output_handle, 'output_handle', SolidOutputHandle)
 
-    def resolve_definition(self, info):
-        return info.schema.type_named('OutputDefinition')(
-            self._output_handle.output_def, self._solid.resolve_definition(info)
+    def resolve_definition(self, graphene_info):
+        return graphene_info.schema.type_named('OutputDefinition')(
+            self._output_handle.output_def, self._solid.resolve_definition(graphene_info)
         )
 
-    def resolve_depended_by(self, info):
+    def resolve_depended_by(self, graphene_info):
         return [
-            info.schema.type_named('Input')(input_handle, DauphinSolid(input_handle.solid))
+            graphene_info.schema.type_named('Input')(input_handle, DauphinSolid(input_handle.solid))
             for input_handle in self._solid.depended_by.get(self._output_handle, [])
         ]
 
@@ -272,27 +274,29 @@ class DauphinSolidDefinition(dauphin.ObjectType):
 
         self._solid_def = check.inst_param(solid_def, 'solid_def', SolidDefinition)
 
-    def resolve_metadata(self, info):
+    def resolve_metadata(self, graphene_info):
         return [
-            info.schema.type_named('SolidMetadataItemDefinition')(key=item[0], value=item[1])
+            graphene_info.schema.type_named('SolidMetadataItemDefinition')(
+                key=item[0], value=item[1]
+            )
             for item in self._solid_def.metadata.items()
         ]
 
-    def resolve_input_definitions(self, info):
+    def resolve_input_definitions(self, graphene_info):
         return [
-            info.schema.type_named('InputDefinition')(input_definition, self)
+            graphene_info.schema.type_named('InputDefinition')(input_definition, self)
             for input_definition in self._solid_def.input_defs
         ]
 
-    def resolve_output_definitions(self, info):
+    def resolve_output_definitions(self, graphene_info):
         return [
-            info.schema.type_named('OutputDefinition')(output_definition, self)
+            graphene_info.schema.type_named('OutputDefinition')(output_definition, self)
             for output_definition in self._solid_def.output_defs
         ]
 
-    def resolve_config_definition(self, info):
+    def resolve_config_definition(self, graphene_info):
         return (
-            info.schema.type_named('ConfigTypeField')(
+            graphene_info.schema.type_named('ConfigTypeField')(
                 name="config", field=self._solid_def.config_field
             )
             if self._solid_def.config_field
@@ -322,13 +326,13 @@ class DauphinInputDefinition(dauphin.ObjectType):
             input_definition, 'input_definition', InputDefinition
         )
 
-    def resolve_type(self, _info):
+    def resolve_type(self, _graphene_info):
         return to_dauphin_runtime_type(self._input_definition.runtime_type)
 
-    def resolve_expectations(self, info):
+    def resolve_expectations(self, graphene_info):
         if self._input_definition.expectations:
             return [
-                info.schema.type_named('Expectation')(
+                graphene_info.schema.type_named('Expectation')(
                     expectation for expectation in self._input_definition.expectations
                 )
             ]
@@ -358,13 +362,13 @@ class DauphinOutputDefinition(dauphin.ObjectType):
             output_definition, 'output_definition', OutputDefinition
         )
 
-    def resolve_type(self, _info):
+    def resolve_type(self, _graphene_info):
         return to_dauphin_runtime_type(self._output_definition.runtime_type)
 
-    def resolve_expectations(self, info):
+    def resolve_expectations(self, graphene_info):
         if self._output_definition.expectations:
             return [
-                info.schema.type_named('Expectation')(expectation)
+                graphene_info.schema.type_named('Expectation')(expectation)
                 for expectation in self._output_definition.expectations
             ]
         else:

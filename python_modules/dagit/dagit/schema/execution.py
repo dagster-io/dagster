@@ -18,7 +18,7 @@ class DauphinExecutionPlan(dauphin.ObjectType):
         super(DauphinExecutionPlan, self).__init__(pipeline=pipeline)
         self.execution_plan = check.inst_param(execution_plan, 'execution_plan', ExecutionPlan)
 
-    def resolve_steps(self, _info):
+    def resolve_steps(self, _graphene_info):
         return [DauphinExecutionStep(step) for step in self.execution_plan.topological_steps()]
 
 
@@ -33,10 +33,10 @@ class DauphinExecutionStepOutput(dauphin.ObjectType):
         super(DauphinExecutionStepOutput, self).__init__()
         self._step_output = check.inst_param(step_output, 'step_output', StepOutput)
 
-    def resolve_name(self, _info):
+    def resolve_name(self, _graphene_info):
         return self._step_output.name
 
-    def resolve_type(self, _info):
+    def resolve_type(self, _graphene_info):
         return to_dauphin_runtime_type(self._step_output.runtime_type)
 
 
@@ -52,14 +52,16 @@ class DauphinExecutionStepInput(dauphin.ObjectType):
         super(DauphinExecutionStepInput, self).__init__()
         self._step_input = check.inst_param(step_input, 'step_input', StepInput)
 
-    def resolve_name(self, _info):
+    def resolve_name(self, _graphene_info):
         return self._step_input.name
 
-    def resolve_type(self, _info):
+    def resolve_type(self, _graphene_info):
         return to_dauphin_runtime_type(self._step_input.runtime_type)
 
-    def resolve_dependsOn(self, info):
-        return info.schema.type_named('ExecutionStep')(self._step_input.prev_output_handle.step)
+    def resolve_dependsOn(self, graphene_info):
+        return graphene_info.schema.type_named('ExecutionStep')(
+            self._step_input.prev_output_handle.step
+        )
 
 
 class DauphinStepKind(dauphin.Enum):
@@ -124,26 +126,26 @@ class DauphinExecutionStep(dauphin.ObjectType):
         super(DauphinExecutionStep, self).__init__()
         self.execution_step = check.inst_param(execution_step, 'execution_step', ExecutionStep)
 
-    def resolve_inputs(self, info):
+    def resolve_inputs(self, graphene_info):
         return [
-            info.schema.type_named('ExecutionStepInput')(inp)
+            graphene_info.schema.type_named('ExecutionStepInput')(inp)
             for inp in self.execution_step.step_inputs
         ]
 
-    def resolve_outputs(self, info):
+    def resolve_outputs(self, graphene_info):
         return [
-            info.schema.type_named('ExecutionStepOutput')(out)
+            graphene_info.schema.type_named('ExecutionStepOutput')(out)
             for out in self.execution_step.step_outputs
         ]
 
-    def resolve_key(self, _info):
+    def resolve_key(self, _graphene_info):
         return self.execution_step.key
 
-    def resolve_name(self, _info):
+    def resolve_name(self, _graphene_info):
         return self.execution_step.key
 
-    def resolve_solid(self, info):
-        return info.schema.type_named('Solid')(self.execution_step.solid)
+    def resolve_solid(self, graphene_info):
+        return graphene_info.schema.type_named('Solid')(self.execution_step.solid)
 
-    def resolve_kind(self, _info):
+    def resolve_kind(self, _graphene_info):
         return self.execution_step.kind
