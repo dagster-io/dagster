@@ -97,7 +97,7 @@ class DauphinListConfigType(dauphin.ObjectType):
         name = 'ListConfigType'
         interfaces = [DauphinConfigType, DauphinWrappingConfigType]
 
-    def resolve_of_type(self, _):
+    def resolve_of_type(self, _graphene_info):
         return to_dauphin_config_type(self._config_type.inner_type)
 
     def resolve_inner_types(self, _graphene_info):
