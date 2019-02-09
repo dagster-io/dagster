@@ -1,3 +1,5 @@
+variables:
+  PYTHONIOENCODING: UTF-8
 jobs:
   - job: 'dagster'
     pool:
