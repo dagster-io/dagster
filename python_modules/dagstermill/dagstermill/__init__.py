@@ -41,7 +41,7 @@ from dagster.core.execution_context import (
     ExecutionMetadata,
     DagsterLog,
     LegacyRuntimeExecutionContext,
-    ITransformExecutionContext,
+    TransformExecutionContextMetadata,
     WithLegacyContext,
 )
 
@@ -53,7 +53,7 @@ from dagster.core.execution_context import (
 
 class DagstermillInNotebookExecutionContext(
     WithLegacyContext,
-    ITransformExecutionContext,
+    TransformExecutionContextMetadata,
     namedtuple('_DagstermillInNotebookExecutionContext', 'context__ pipeline_def__'),
 ):
     def __new__(cls, context, pipeline_def):
@@ -269,7 +269,7 @@ def read_value(runtime_type, value):
 
 
 def get_papermill_parameters(transform_context, inputs, output_log_path):
-    check.inst_param(transform_context, 'transform_context', ITransformExecutionContext)
+    check.inst_param(transform_context, 'transform_context', TransformExecutionContextMetadata)
     check.param_invariant(
         isinstance(transform_context.environment_config, dict),
         'transform_context',

@@ -252,7 +252,7 @@ class ExecutionMetadata(namedtuple('_ExecutionMetadata', 'run_id tags event_call
         )
 
 
-class ITransformExecutionContext(six.with_metaclass(ABCMeta)):  # pylint: disable=no-init
+class TransformExecutionContextMetadata(six.with_metaclass(ABCMeta)):  # pylint: disable=no-init
     @abstractmethod
     def has_tag(self, key):
         pass
@@ -362,7 +362,7 @@ class WithLegacyContext(six.with_metaclass(ABCMeta)):  # pylint: disable=no-init
 
 class TransformExecutionContext(
     WithLegacyContext,
-    ITransformExecutionContext,
+    TransformExecutionContextMetadata,
     namedtuple('_TransformExecutionContext', 'context__ config__ step__ pipeline_def__'),
 ):
     '''An instance of TransformExecutionContext is passed every solid transform function.

@@ -11,7 +11,7 @@ from dagster.core.execution import (
 from dagster.core.execution_context import (
     ExecutionContext,
     ExecutionMetadata,
-    ITransformExecutionContext,
+    TransformExecutionContextMetadata,
     TransformExecutionContext,
 )
 
