@@ -1,9 +1,12 @@
+from abc import ABCMeta, abstractproperty, abstractmethod
+from collections import namedtuple
 import itertools
 import json
 import logging
 import uuid
 
-from collections import namedtuple
+import six
+
 
 from dagster import check
 from dagster.utils import merge_dicts
@@ -41,7 +44,7 @@ class ExecutionContext(namedtuple('_ExecutionContext', 'loggers resources tags')
         )
 
 
-class RuntimeExecutionContext:
+class LegacyRuntimeExecutionContext:
     '''
     A context object flowed through the entire scope of single execution of a
     pipeline of solids. This is used by both framework and user code to log
@@ -79,6 +82,7 @@ class RuntimeExecutionContext:
         if loggers is None:
             loggers = [define_colored_console_logger('dagster')]
 
+        self.loggers = loggers
         self._logger = CompositeLogger(loggers=loggers)
         self.resources = resources
         self._run_id = check.str_param(run_id, 'run_id')
@@ -93,7 +97,7 @@ class RuntimeExecutionContext:
         )
 
     def for_step(self, step):
-        return RuntimeExecutionContext(
+        return LegacyRuntimeExecutionContext(
             run_id=self.run_id,
             loggers=self._logger.loggers,
             resources=self.resources,
@@ -245,3 +249,171 @@ class ExecutionMetadata(namedtuple('_ExecutionMetadata', 'run_id tags event_call
             event_callback=check.opt_callable_param(event_callback, 'event_callback'),
             loggers=check.opt_list_param(loggers, 'loggers'),
         )
+
+
+class ITransformExecutionContext(six.with_metaclass(ABCMeta)):  # pylint: disable=no-init
+    @abstractmethod
+    def has_tag(self, key):
+        pass
+
+    @abstractmethod
+    def get_tag(self, key):
+        pass
+
+    @abstractproperty
+    def run_id(self):
+        pass
+
+    @abstractproperty
+    def event_callback(self):
+        pass
+
+    @abstractmethod
+    def has_event_callback(self):
+        pass
+
+    @abstractproperty
+    def environment_config(self):
+        pass
+
+    @abstractproperty
+    def context(self):
+        pass
+
+    @abstractproperty
+    def config(self):
+        pass
+
+    @abstractproperty
+    def step(self):
+        pass
+
+    @abstractproperty
+    def solid_def(self):
+        pass
+
+    @abstractproperty
+    def solid(self):
+        pass
+
+    @abstractproperty
+    def pipeline_def(self):
+        pass
+
+    @abstractproperty
+    def resources(self):
+        pass
+
+    @abstractproperty
+    def log(self):
+        pass
+
+
+class WithLegacyContext(six.with_metaclass(ABCMeta)):  # pylint: disable=no-init
+    @abstractproperty
+    def legacy_context(self):
+        pass
+
+    def has_tag(self, key):
+        check.str_param(key, 'key')
+        return self.legacy_context.has_tag(key)
+
+    def get_tag(self, key):
+        check.str_param(key, 'key')
+        return self.legacy_context.get_tag(key)
+
+    @property
+    def run_id(self):
+        return self.legacy_context.run_id
+
+    @property
+    def event_callback(self):
+        return self.legacy_context.event_callback
+
+    @property
+    def has_event_callback(self):
+        return self.legacy_context.has_event_callback
+
+    @property
+    def environment_config(self):
+        return self.legacy_context.environment_config
+
+    @property
+    def log(self):
+        return DagsterLog(self.legacy_context)
+
+    @property
+    def resources(self):
+        return self.legacy_context.resources
+
+    @property
+    def persistence_policy(self):
+        return self.legacy_context.persistence_policy
+
+    @property
+    def events(self):
+        return self.legacy_context.events
+
+    @property
+    def loggers(self):
+        return self.legacy_context.loggers
+
+
+class TransformExecutionContext(
+    WithLegacyContext,
+    ITransformExecutionContext,
+    namedtuple('_TransformExecutionContext', 'context__ config__ step__ pipeline_def__'),
+):
+    '''An instance of TransformExecutionContext is passed every solid transform function.
+
+    Attributes:
+
+        context (ExecutionContext): Context instance for this pipeline invocation
+        config (Any): Config object for current solid
+    '''
+
+    def __new__(cls, legacy_context, config, step, pipeline_def):
+        from dagster.core.definitions.pipeline import PipelineDefinition
+        from dagster.core.execution_plan.objects import ExecutionStep
+
+        return super(TransformExecutionContext, cls).__new__(
+            cls,
+            check.inst_param(legacy_context, 'legacy_context', LegacyRuntimeExecutionContext),
+            config,
+            check.inst_param(step, 'step', ExecutionStep),
+            check.inst_param(pipeline_def, 'pipeline_def', PipelineDefinition),
+        )
+
+    @property
+    def context(self):
+        # Deprecated
+        return self.context__
+
+    @property
+    def legacy_context(self):
+        return self.context__
+
+    @property
+    def solid_config(self):
+        return self.config__
+
+    @property
+    def config(self):
+        # Deprecated
+        return self.config__
+
+    @property
+    def step(self):
+        return self.step__
+
+    @property
+    def solid_def(self):
+        return self.step__.solid.definition
+
+    @property
+    def solid(self):
+        return self.step__.solid
+
+    @property
+    def pipeline_def(self):
+        return self.pipeline_def__

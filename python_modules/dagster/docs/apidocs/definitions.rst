@@ -49,5 +49,5 @@ Core API for defining solids and pipelines.
 .. autoclass:: SolidInstance
     :members:
 
-.. autoclass:: TransformExecutionInfo
+.. autoclass:: TransformExecutionContext
    :members:

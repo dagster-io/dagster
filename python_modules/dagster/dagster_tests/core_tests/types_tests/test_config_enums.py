@@ -54,8 +54,8 @@ def test_enum_in_pipeline_execution():
         )
     )
     def config_me(info):
-        assert info.config['int_field'] == 2
-        assert info.config['enum_field'] == 'ENUM_VALUE'
+        assert info.solid_config['int_field'] == 2
+        assert info.solid_config['enum_field'] == 'ENUM_VALUE'
         called['yup'] = True
 
     pipeline_def = PipelineDefinition(name='enum_in_pipeline', solids=[config_me])
@@ -97,7 +97,7 @@ def test_native_enum_dagster_enum():
 
     @solid(config_field=Field(dagster_enum))
     def dagster_enum_me(info):
-        assert info.config == NativeEnum.BAR
+        assert info.solid_config == NativeEnum.BAR
         called['yup'] = True
 
     pipeline_def = PipelineDefinition(name='native_enum_dagster_pipeline', solids=[dagster_enum_me])

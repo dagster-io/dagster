@@ -76,7 +76,7 @@ def test_empty_solid():
 
 def test_solid():
     @solid(outputs=[OutputDefinition()])
-    def hello_world(_info):
+    def hello_world(_context):
         return {'foo': 'bar'}
 
     result = execute_single_solid_in_isolation(create_test_context(), hello_world)
@@ -100,7 +100,7 @@ def test_solid_one_output():
 
 def test_solid_yield():
     @solid(outputs=[OutputDefinition()])
-    def hello_world(_info):
+    def hello_world(_context):
         yield Result(value={'foo': 'bar'})
 
     result = execute_single_solid_in_isolation(create_test_context(), hello_world)
@@ -112,7 +112,7 @@ def test_solid_yield():
 
 def test_solid_result_return():
     @solid(outputs=[OutputDefinition()])
-    def hello_world(_info):
+    def hello_world(_context):
         return Result(value={'foo': 'bar'})
 
     result = execute_single_solid_in_isolation(create_test_context(), hello_world)
@@ -124,7 +124,7 @@ def test_solid_result_return():
 
 def test_solid_multiple_outputs():
     @solid(outputs=[OutputDefinition(name="left"), OutputDefinition(name="right")])
-    def hello_world(_info):
+    def hello_world(_context):
         return MultipleResults(
             Result(value={'foo': 'left'}, output_name='left'),
             Result(value={'foo': 'right'}, output_name='right'),
@@ -141,7 +141,7 @@ def test_solid_multiple_outputs():
 
 def test_dict_multiple_outputs():
     @solid(outputs=[OutputDefinition(name="left"), OutputDefinition(name="right")])
-    def hello_world(_info):
+    def hello_world(_context):
         return MultipleResults.from_dict({'left': {'foo': 'left'}, 'right': {'foo': 'right'}})
 
     result = execute_single_solid_in_isolation(create_test_context(), hello_world)
@@ -155,7 +155,7 @@ def test_dict_multiple_outputs():
 
 def test_solid_with_explicit_empty_outputs():
     @solid(outputs=[])
-    def hello_world(_info):
+    def hello_world(_context):
         return 'foo'
 
     with pytest.raises(DagsterInvariantViolationError) as exc_info:
@@ -174,7 +174,7 @@ def test_solid_with_explicit_empty_outputs():
 
 def test_solid_with_implicit_single_output():
     @solid()
-    def hello_world(_info):
+    def hello_world(_context):
         return 'foo'
 
     result = execute_single_solid_in_isolation(create_test_context(), hello_world)
@@ -187,7 +187,7 @@ def test_solid_with_implicit_single_output():
 
 def test_solid_return_list_instead_of_multiple_results():
     @solid(outputs=[OutputDefinition(name='foo'), OutputDefinition(name='bar')])
-    def hello_world(_info):
+    def hello_world(_context):
         return ['foo', 'bar']
 
     with pytest.raises(DagsterInvariantViolationError) as exc_info:
@@ -210,7 +210,7 @@ def test_lambda_solid_with_name():
 
 def test_solid_with_name():
     @solid(name="foobar", outputs=[OutputDefinition()])
-    def hello_world(_info):
+    def hello_world(_context):
         return {'foo': 'bar'}
 
     result = execute_single_solid_in_isolation(create_test_context(), hello_world)
@@ -271,13 +271,13 @@ def test_solid_definition_errors():
     with pytest.raises(DagsterInvalidDefinitionError):
 
         @solid(inputs=[InputDefinition(name="foo")], outputs=[OutputDefinition()])
-        def no_info(foo):
+        def no_context(foo):
             pass
 
     with pytest.raises(DagsterInvalidDefinitionError):
 
         @solid(inputs=[InputDefinition(name="foo")], outputs=[OutputDefinition()])
-        def extras(_info, foo, bar):
+        def extras(_context, foo, bar):
             pass
 
     @solid(
@@ -324,7 +324,7 @@ def test_any_config_field():
 
     @solid(config_field=Field(Any))
     def hello_world(info):
-        assert info.config == conf_value
+        assert info.solid_config == conf_value
         called['yup'] = True
 
     result = execute_single_solid_in_isolation(

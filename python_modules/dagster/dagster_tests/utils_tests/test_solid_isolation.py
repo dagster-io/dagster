@@ -79,7 +79,7 @@ def test_single_solid_with_config():
 
     @solid(config_field=Field(Int))
     def check_config_for_two(info):
-        assert info.config == 2
+        assert info.solid_config == 2
         ran['check_config_for_two'] = True
 
     pipeline_def = PipelineDefinition(solids=[check_config_for_two])

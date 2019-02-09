@@ -562,7 +562,7 @@ snapshots['test_build_all_docs 4'] = '''
 <h2 id="C">C</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="apidocs/definitions.html#dagster.TransformExecutionInfo.config">config (dagster.TransformExecutionInfo attribute)</a>
+      <li><a href="apidocs/definitions.html#dagster.TransformExecutionContext.config">config (dagster.TransformExecutionContext attribute)</a>
 </li>
       <li><a href="apidocs/definitions.html#dagster.PipelineContextDefinition.config_field">config_field (dagster.PipelineContextDefinition attribute)</a>
 
@@ -577,7 +577,7 @@ snapshots['test_build_all_docs 4'] = '''
       <ul>
         <li><a href="apidocs/execution.html#dagster.SolidExecutionResult.context">(dagster.SolidExecutionResult attribute)</a>
 </li>
-        <li><a href="apidocs/definitions.html#dagster.TransformExecutionInfo.context">(dagster.TransformExecutionInfo attribute)</a>
+        <li><a href="apidocs/definitions.html#dagster.TransformExecutionContext.context">(dagster.TransformExecutionContext attribute)</a>
 </li>
       </ul></li>
   </ul></td>
@@ -658,6 +658,8 @@ snapshots['test_build_all_docs 4'] = '''
 </li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="apidocs/execution.html#dagster.ExecutionMetadata">ExecutionMetadata (class in dagster)</a>
+</li>
       <li><a href="apidocs/definitions.html#dagster.ExpectationDefinition.expectation_fn">expectation_fn (dagster.ExpectationDefinition attribute)</a>
 </li>
       <li><a href="apidocs/definitions.html#dagster.ExpectationDefinition">ExpectationDefinition (class in dagster)</a>
@@ -898,7 +900,7 @@ snapshots['test_build_all_docs 4'] = '''
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="apidocs/execution.html#dagster.SolidExecutionResult.transformed_values">transformed_values (dagster.SolidExecutionResult attribute)</a>
 </li>
-      <li><a href="apidocs/definitions.html#dagster.TransformExecutionInfo">TransformExecutionInfo (class in dagster)</a>
+      <li><a href="apidocs/definitions.html#dagster.TransformExecutionContext">TransformExecutionContext (class in dagster)</a>
 </li>
   </ul></td>
 </tr></table>
@@ -2338,7 +2340,7 @@ Core API for defining solids and pipelines.
 .. autoclass:: SolidInstance
     :members:
 
-.. autoclass:: TransformExecutionInfo
+.. autoclass:: TransformExecutionContext
    :members:'''
 
 snapshots['test_build_all_docs 16'] = '''Errors
@@ -2380,7 +2382,7 @@ Executing pipelines and solids.
 .. autoclass:: PipelineExecutionResult
    :members:
 
-.. autoclass:: ReentrantInfo
+.. autoclass:: ExecutionMetadata
    :members:
 
 .. autoclass:: SolidExecutionResult
@@ -3203,8 +3205,8 @@ proceeds. For now, the salient differences are:
    solid. This parameter should be a :py:func:`Field <dagster.Field>`, which tells the dagster
    machinery how to translate config values into runtime values available to the solid.
 2. The function annotated by the :py:func:`@solid <dagster.solid>` API receives an additional first
-   parameter, ``info``, of type :py:class:`TransformExecutionInfo <dagster.TransformExecutionInfo>`.
-   The configuration passed into each solid is available to the annotated function as ``info.config``.
+   parameter, ``context``, of type :py:class:`TransformExecutionContext <dagster.TransformExecutionContext>`.
+   The configuration passed into each solid is available to the annotated function as ``context.solid_config``.
 
 Configuration values are passed in a dict as the second argument to
 :py:func:`execute_pipeline <dagster.execute_pipeline>`. This dict specifies *all* of the
@@ -3353,7 +3355,7 @@ snapshots['test_build_all_docs 25'] = '''Execution Context
 
 One of the most important objects in the system is the execution context. The execution
 context, the logger, and the resources are threaded throughout the entire computation (
-via the ``info`` object passed to user code) and contains handles to logging facilities
+via the ``context`` object passed to user code) and contains handles to logging facilities
 and external resources. Interactions with logging systems, databases, and external
 clusters (e.g. a Spark cluster) should be managed through these properties of the 
 info object.
@@ -19124,30 +19126,30 @@ multiple outputs. Useful for solids that have multiple outputs.</li>
 </table>
 <p class="rubric">Examples</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="nd">@solid</span>
-<span class="k">def</span> <span class="nf">hello_world</span><span class="p">(</span><span class="n">info</span><span class="p">):</span>
+<span class="k">def</span> <span class="nf">hello_world</span><span class="p">(</span><span class="n">_context</span><span class="p">):</span>
     <span class="k">print</span><span class="p">(</span><span class="s1">&#39;hello&#39;</span><span class="p">)</span>
 
 <span class="nd">@solid</span><span class="p">()</span>
-<span class="k">def</span> <span class="nf">hello_world</span><span class="p">(</span><span class="n">info</span><span class="p">):</span>
+<span class="k">def</span> <span class="nf">hello_world</span><span class="p">(</span><span class="n">_context</span><span class="p">):</span>
     <span class="k">print</span><span class="p">(</span><span class="s1">&#39;hello&#39;</span><span class="p">)</span>
 
 <span class="nd">@solid</span><span class="p">(</span><span class="n">outputs</span><span class="o">=</span><span class="p">[</span><span class="n">OutputDefinition</span><span class="p">()])</span>
-<span class="k">def</span> <span class="nf">hello_world</span><span class="p">(</span><span class="n">info</span><span class="p">):</span>
+<span class="k">def</span> <span class="nf">hello_world</span><span class="p">(</span><span class="n">_context</span><span class="p">):</span>
     <span class="k">return</span> <span class="p">{</span><span class="s1">&#39;foo&#39;</span><span class="p">:</span> <span class="s1">&#39;bar&#39;</span><span class="p">}</span>
 
 <span class="nd">@solid</span><span class="p">(</span><span class="n">outputs</span><span class="o">=</span><span class="p">[</span><span class="n">OutputDefinition</span><span class="p">()])</span>
-<span class="k">def</span> <span class="nf">hello_world</span><span class="p">(</span><span class="n">info</span><span class="p">):</span>
+<span class="k">def</span> <span class="nf">hello_world</span><span class="p">(</span><span class="n">_context</span><span class="p">):</span>
     <span class="k">return</span> <span class="n">Result</span><span class="p">(</span><span class="n">value</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;foo&#39;</span><span class="p">:</span> <span class="s1">&#39;bar&#39;</span><span class="p">})</span>
 
 <span class="nd">@solid</span><span class="p">(</span><span class="n">outputs</span><span class="o">=</span><span class="p">[</span><span class="n">OutputDefinition</span><span class="p">()])</span>
-<span class="k">def</span> <span class="nf">hello_world</span><span class="p">(</span><span class="n">info</span><span class="p">):</span>
+<span class="k">def</span> <span class="nf">hello_world</span><span class="p">(</span><span class="n">_context</span><span class="p">):</span>
     <span class="k">yield</span> <span class="n">Result</span><span class="p">(</span><span class="n">value</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;foo&#39;</span><span class="p">:</span> <span class="s1">&#39;bar&#39;</span><span class="p">})</span>
 
 <span class="nd">@solid</span><span class="p">(</span><span class="n">outputs</span><span class="o">=</span><span class="p">[</span>
     <span class="n">OutputDefinition</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;left&quot;</span><span class="p">),</span>
     <span class="n">OutputDefinition</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;right&quot;</span><span class="p">),</span>
 <span class="p">])</span>
-<span class="k">def</span> <span class="nf">hello_world</span><span class="p">(</span><span class="n">info</span><span class="p">):</span>
+<span class="k">def</span> <span class="nf">hello_world</span><span class="p">(</span><span class="n">_context</span><span class="p">):</span>
     <span class="k">return</span> <span class="n">MultipleResults</span><span class="o">.</span><span class="n">from_dict</span><span class="p">({</span>
         <span class="s1">&#39;left&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;foo&#39;</span><span class="p">:</span> <span class="s1">&#39;left&#39;</span><span class="p">},</span>
         <span class="s1">&#39;right&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;foo&#39;</span><span class="p">:</span> <span class="s1">&#39;right&#39;</span><span class="p">},</span>
@@ -19157,15 +19159,15 @@ multiple outputs. Useful for solids that have multiple outputs.</li>
     <span class="n">inputs</span><span class="o">=</span><span class="p">[</span><span class="n">InputDefinition</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;foo&quot;</span><span class="p">)],</span>
     <span class="n">outputs</span><span class="o">=</span><span class="p">[</span><span class="n">OutputDefinition</span><span class="p">()]</span>
 <span class="p">)</span>
-<span class="k">def</span> <span class="nf">hello_world</span><span class="p">(</span><span class="n">info</span><span class="p">,</span> <span class="n">foo</span><span class="p">):</span>
+<span class="k">def</span> <span class="nf">hello_world</span><span class="p">(</span><span class="n">_context</span><span class="p">,</span> <span class="n">foo</span><span class="p">):</span>
     <span class="k">return</span> <span class="n">foo</span>
 
 <span class="nd">@solid</span><span class="p">(</span>
     <span class="n">inputs</span><span class="o">=</span><span class="p">[</span><span class="n">InputDefinition</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;foo&quot;</span><span class="p">)],</span>
     <span class="n">outputs</span><span class="o">=</span><span class="p">[</span><span class="n">OutputDefinition</span><span class="p">()],</span>
 <span class="p">)</span>
-<span class="k">def</span> <span class="nf">hello_world</span><span class="p">(</span><span class="n">info</span><span class="p">,</span> <span class="n">foo</span><span class="p">):</span>
-    <span class="n">info</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;log something&#39;</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">hello_world</span><span class="p">(</span><span class="n">context</span><span class="p">,</span> <span class="n">foo</span><span class="p">):</span>
+    <span class="n">context</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;log something&#39;</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">foo</span>
 
 <span class="nd">@solid</span><span class="p">(</span>
@@ -19173,9 +19175,9 @@ multiple outputs. Useful for solids that have multiple outputs.</li>
     <span class="n">outputs</span><span class="o">=</span><span class="p">[</span><span class="n">OutputDefinition</span><span class="p">()],</span>
     <span class="n">config_field</span><span class="o">=</span><span class="n">Field</span><span class="p">(</span><span class="n">types</span><span class="o">.</span><span class="n">Dict</span><span class="p">({</span><span class="s1">&#39;str_value&#39;</span> <span class="p">:</span> <span class="n">Field</span><span class="p">(</span><span class="n">types</span><span class="o">.</span><span class="n">String</span><span class="p">)})),</span>
 <span class="p">)</span>
-<span class="k">def</span> <span class="nf">hello_world</span><span class="p">(</span><span class="n">info</span><span class="p">,</span> <span class="n">foo</span><span class="p">):</span>
-    <span class="c1"># info.config is a dictionary with &#39;str_value&#39; key</span>
-    <span class="k">return</span> <span class="n">foo</span> <span class="o">+</span> <span class="n">info</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;str_value&#39;</span><span class="p">]</span>
+<span class="k">def</span> <span class="nf">hello_world</span><span class="p">(</span><span class="n">context</span><span class="p">,</span> <span class="n">foo</span><span class="p">):</span>
+    <span class="c1"># context.solid_config is a dictionary with &#39;str_value&#39; key</span>
+    <span class="k">return</span> <span class="n">foo</span> <span class="o">+</span> <span class="n">context</span><span class="o">.</span><span class="n">solid_config</span><span class="p">[</span><span class="s1">&#39;str_value&#39;</span><span class="p">]</span>
 </pre></div>
 </div>
 </dd></dl>
@@ -19867,7 +19869,7 @@ is generally used by framework authors.</p>
 <dl class="attribute">
 <dt id="dagster.SolidDefinition.transform_fn">
 <code class="descname">transform_fn</code><a class="headerlink" href="#dagster.SolidDefinition.transform_fn" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>callable</em> – Callable with the signature (<strong>info</strong>: <cite>TransformExecutionInfo</cite>,
+<dd><p><em>callable</em> – Callable with the signature (<strong>info</strong>: <cite>TransformExecutionContext</cite>,
 <strong>inputs</strong>: <cite>Dict[str, Any]</cite>) : <cite>Iterable&lt;Result&gt;</cite></p>
 </dd></dl>
 
@@ -19932,18 +19934,18 @@ like the alias.</p>
 </dd></dl>
 
 <dl class="class">
-<dt id="dagster.TransformExecutionInfo">
-<em class="property">class </em><code class="descclassname">dagster.</code><code class="descname">TransformExecutionInfo</code><a class="headerlink" href="#dagster.TransformExecutionInfo" title="Permalink to this definition">¶</a></dt>
-<dd><p>An instance of TransformExecutionInfo is passed every solid transform function.</p>
+<dt id="dagster.TransformExecutionContext">
+<em class="property">class </em><code class="descclassname">dagster.</code><code class="descname">TransformExecutionContext</code><a class="headerlink" href="#dagster.TransformExecutionContext" title="Permalink to this definition">¶</a></dt>
+<dd><p>An instance of TransformExecutionContext is passed every solid transform function.</p>
 <dl class="attribute">
-<dt id="dagster.TransformExecutionInfo.context">
-<code class="descname">context</code><a class="headerlink" href="#dagster.TransformExecutionInfo.context" title="Permalink to this definition">¶</a></dt>
+<dt id="dagster.TransformExecutionContext.context">
+<code class="descname">context</code><a class="headerlink" href="#dagster.TransformExecutionContext.context" title="Permalink to this definition">¶</a></dt>
 <dd><p><em>ExecutionContext</em> – Context instance for this pipeline invocation</p>
 </dd></dl>
 
 <dl class="attribute">
-<dt id="dagster.TransformExecutionInfo.config">
-<code class="descname">config</code><a class="headerlink" href="#dagster.TransformExecutionInfo.config" title="Permalink to this definition">¶</a></dt>
+<dt id="dagster.TransformExecutionContext.config">
+<code class="descname">config</code><a class="headerlink" href="#dagster.TransformExecutionContext.config" title="Permalink to this definition">¶</a></dt>
 <dd><p><em>Any</em> – Config object for current solid</p>
 </dd></dl>
 
@@ -20370,6 +20372,11 @@ node. For the ‘synchronous’ API, see <a class="reference internal" href="#da
 </dd></dl>
 
 </dd></dl>
+
+<dl class="class">
+<dt id="dagster.ExecutionMetadata">
+<em class="property">class </em><code class="descclassname">dagster.</code><code class="descname">ExecutionMetadata</code><a class="headerlink" href="#dagster.ExecutionMetadata" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
 
 <dl class="class">
 <dt id="dagster.SolidExecutionResult">
@@ -22051,10 +22058,10 @@ languages.</p>
 <span class="nd">@solid</span><span class="p">(</span>
     <span class="n">config_field</span><span class="o">=</span><span class="n">Field</span><span class="p">(</span><span class="n">types</span><span class="o">.</span><span class="n">String</span><span class="p">,</span> <span class="n">is_optional</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">default_value</span><span class="o">=</span><span class="s1">&#39;en-us&#39;</span><span class="p">)</span>
 <span class="p">)</span>
-<span class="k">def</span> <span class="nf">configurable_hello</span><span class="p">(</span><span class="n">info</span><span class="p">):</span>
-    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">info</span><span class="o">.</span><span class="n">config</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="mi">3</span> <span class="ow">and</span> <span class="n">info</span><span class="o">.</span><span class="n">config</span><span class="p">[:</span><span class="mi">3</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;haw&#39;</span><span class="p">:</span>
+<span class="k">def</span> <span class="nf">configurable_hello</span><span class="p">(</span><span class="n">context</span><span class="p">):</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">context</span><span class="o">.</span><span class="n">solid_config</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="mi">3</span> <span class="ow">and</span> <span class="n">context</span><span class="o">.</span><span class="n">solid_config</span><span class="p">[:</span><span class="mi">3</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;haw&#39;</span><span class="p">:</span>
         <span class="k">return</span> <span class="s1">&#39;Aloha honua!&#39;</span>
-    <span class="k">elif</span> <span class="nb">len</span><span class="p">(</span><span class="n">info</span><span class="o">.</span><span class="n">config</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="mi">2</span> <span class="ow">and</span> <span class="n">info</span><span class="o">.</span><span class="n">config</span><span class="p">[:</span><span class="mi">2</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;cn&#39;</span><span class="p">:</span>
+    <span class="k">elif</span> <span class="nb">len</span><span class="p">(</span><span class="n">context</span><span class="o">.</span><span class="n">solid_config</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="mi">2</span> <span class="ow">and</span> <span class="n">context</span><span class="o">.</span><span class="n">solid_config</span><span class="p">[:</span><span class="mi">2</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;cn&#39;</span><span class="p">:</span>
         <span class="k">return</span> <span class="s1">&#39;你好, 世界!&#39;</span>
     <span class="k">else</span><span class="p">:</span>
         <span class="k">return</span> <span class="s1">&#39;Hello, world!&#39;</span>
@@ -22082,8 +22089,8 @@ defines the structure and type of configuration values that can be set on each e
 solid. This parameter should be a <a class="reference internal" href="../apidocs/definitions.html#dagster.Field" title="dagster.Field"><code class="xref py py-func docutils literal notranslate"><span class="pre">Field</span></code></a>, which tells the dagster
 machinery how to translate config values into runtime values available to the solid.</li>
 <li>The function annotated by the <a class="reference internal" href="../apidocs/decorators.html#dagster.solid" title="dagster.solid"><code class="xref py py-func docutils literal notranslate"><span class="pre">&#64;solid</span></code></a> API receives an additional first
-parameter, <code class="docutils literal notranslate"><span class="pre">info</span></code>, of type <a class="reference internal" href="../apidocs/definitions.html#dagster.TransformExecutionInfo" title="dagster.TransformExecutionInfo"><code class="xref py py-class docutils literal notranslate"><span class="pre">TransformExecutionInfo</span></code></a>.
-The configuration passed into each solid is available to the annotated function as <code class="docutils literal notranslate"><span class="pre">info.config</span></code>.</li>
+parameter, <code class="docutils literal notranslate"><span class="pre">context</span></code>, of type <a class="reference internal" href="../apidocs/definitions.html#dagster.TransformExecutionContext" title="dagster.TransformExecutionContext"><code class="xref py py-class docutils literal notranslate"><span class="pre">TransformExecutionContext</span></code></a>.
+The configuration passed into each solid is available to the annotated function as <code class="docutils literal notranslate"><span class="pre">context.solid_config</span></code>.</li>
 </ol>
 <p>Configuration values are passed in a dict as the second argument to
 <a class="reference internal" href="../apidocs/execution.html#dagster.execute_pipeline" title="dagster.execute_pipeline"><code class="xref py py-func docutils literal notranslate"><span class="pre">execute_pipeline</span></code></a>. This dict specifies <em>all</em> of the
@@ -22369,8 +22376,8 @@ We’ll replace the config field in our solid definition with a structured, stro
 
 
 <span class="nd">@solid</span><span class="p">(</span><span class="n">inputs</span><span class="o">=</span><span class="p">[</span><span class="n">InputDefinition</span><span class="p">(</span><span class="s1">&#39;word&#39;</span><span class="p">,</span> <span class="n">String</span><span class="p">)],</span> <span class="n">config_field</span><span class="o">=</span><span class="n">Field</span><span class="p">(</span><span class="n">Any</span><span class="p">))</span>
-<span class="k">def</span> <span class="nf">multiply_the_word</span><span class="p">(</span><span class="n">info</span><span class="p">,</span> <span class="n">word</span><span class="p">):</span>
-    <span class="k">return</span> <span class="n">word</span> <span class="o">*</span> <span class="n">info</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;factor&#39;</span><span class="p">]</span>
+<span class="k">def</span> <span class="nf">multiply_the_word</span><span class="p">(</span><span class="n">context</span><span class="p">,</span> <span class="n">word</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">word</span> <span class="o">*</span> <span class="n">context</span><span class="o">.</span><span class="n">solid_config</span><span class="p">[</span><span class="s1">&#39;factor&#39;</span><span class="p">]</span>
 
 
 <span class="nd">@lambda_solid</span><span class="p">(</span><span class="n">inputs</span><span class="o">=</span><span class="p">[</span><span class="n">InputDefinition</span><span class="p">(</span><span class="s1">&#39;word&#39;</span><span class="p">)])</span>
@@ -22385,16 +22392,16 @@ We’ll replace the config field in our solid definition with a structured, stro
     <span class="n">inputs</span><span class="o">=</span><span class="p">[</span><span class="n">InputDefinition</span><span class="p">(</span><span class="s1">&#39;word&#39;</span><span class="p">,</span> <span class="n">String</span><span class="p">)],</span>
     <span class="n">config_field</span><span class="o">=</span><span class="n">Field</span><span class="p">(</span><span class="n">Dict</span><span class="p">({</span><span class="s1">&#39;factor&#39;</span><span class="p">:</span> <span class="n">Field</span><span class="p">(</span><span class="n">Int</span><span class="p">)})),</span>
 <span class="p">)</span>
-<span class="k">def</span> <span class="nf">typed_multiply_the_word</span><span class="p">(</span><span class="n">info</span><span class="p">,</span> <span class="n">word</span><span class="p">):</span>
-    <span class="k">return</span> <span class="n">word</span> <span class="o">*</span> <span class="n">info</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;factor&#39;</span><span class="p">]</span>
+<span class="k">def</span> <span class="nf">typed_multiply_the_word</span><span class="p">(</span><span class="n">context</span><span class="p">,</span> <span class="n">word</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">word</span> <span class="o">*</span> <span class="n">context</span><span class="o">.</span><span class="n">solid_config</span><span class="p">[</span><span class="s1">&#39;factor&#39;</span><span class="p">]</span>
 
 
 <span class="nd">@solid</span><span class="p">(</span>
     <span class="n">inputs</span><span class="o">=</span><span class="p">[</span><span class="n">InputDefinition</span><span class="p">(</span><span class="s1">&#39;word&#39;</span><span class="p">,</span> <span class="n">String</span><span class="p">)],</span>
     <span class="n">config_field</span><span class="o">=</span><span class="n">Field</span><span class="p">(</span><span class="n">Dict</span><span class="p">({</span><span class="s1">&#39;factor&#39;</span><span class="p">:</span> <span class="n">Field</span><span class="p">(</span><span class="n">String</span><span class="p">)})),</span>
 <span class="p">)</span>
-<span class="k">def</span> <span class="nf">typed_multiply_the_word_error</span><span class="p">(</span><span class="n">info</span><span class="p">,</span> <span class="n">word</span><span class="p">):</span>
-    <span class="k">return</span> <span class="n">word</span> <span class="o">*</span> <span class="n">info</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;factor&#39;</span><span class="p">]</span>
+<span class="k">def</span> <span class="nf">typed_multiply_the_word_error</span><span class="p">(</span><span class="n">context</span><span class="p">,</span> <span class="n">word</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">word</span> <span class="o">*</span> <span class="n">context</span><span class="o">.</span><span class="n">solid_config</span><span class="p">[</span><span class="s1">&#39;factor&#39;</span><span class="p">]</span>
 
 
 <span class="k">def</span> <span class="nf">define_demo_configuration_schema_pipeline</span><span class="p">():</span>
@@ -22737,7 +22744,7 @@ snapshots['test_build_all_docs 60'] = '''
 <h1>Execution Context<a class="headerlink" href="#execution-context" title="Permalink to this headline">¶</a></h1>
 <p>One of the most important objects in the system is the execution context. The execution
 context, the logger, and the resources are threaded throughout the entire computation (
-via the <code class="docutils literal notranslate"><span class="pre">info</span></code> object passed to user code) and contains handles to logging facilities
+via the <code class="docutils literal notranslate"><span class="pre">context</span></code> object passed to user code) and contains handles to logging facilities
 and external resources. Interactions with logging systems, databases, and external
 clusters (e.g. a Spark cluster) should be managed through these properties of the
 info object.</p>
@@ -22756,14 +22763,14 @@ your production cluster environment.</p>
 
 
 <span class="nd">@solid</span>
-<span class="k">def</span> <span class="nf">debug_message</span><span class="p">(</span><span class="n">info</span><span class="p">):</span>
-    <span class="n">info</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;A debug message.&#39;</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">debug_message</span><span class="p">(</span><span class="n">context</span><span class="p">):</span>
+    <span class="n">context</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;A debug message.&#39;</span><span class="p">)</span>
     <span class="k">return</span> <span class="s1">&#39;foo&#39;</span>
 
 
 <span class="nd">@solid</span>
-<span class="k">def</span> <span class="nf">error_message</span><span class="p">(</span><span class="n">info</span><span class="p">):</span>
-    <span class="n">info</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s1">&#39;An error occurred.&#39;</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">error_message</span><span class="p">(</span><span class="n">context</span><span class="p">):</span>
+    <span class="n">context</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s1">&#39;An error occurred.&#39;</span><span class="p">)</span>
 
 
 <span class="k">def</span> <span class="nf">define_execution_context_pipeline_step_one</span><span class="p">():</span>
@@ -24130,14 +24137,14 @@ happened during the computation.</p>
 41
 42</pre></div></td><td class="code"><div class="highlight"><pre><span></span>
 <span class="nd">@solid</span><span class="p">(</span><span class="n">inputs</span><span class="o">=</span><span class="p">[</span><span class="n">InputDefinition</span><span class="p">(</span><span class="s1">&#39;num&#39;</span><span class="p">,</span> <span class="n">dagster_type</span><span class="o">=</span><span class="n">Int</span><span class="p">)])</span>
-<span class="k">def</span> <span class="nf">log_num</span><span class="p">(</span><span class="n">info</span><span class="p">,</span> <span class="n">num</span><span class="p">):</span>
-    <span class="n">info</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;num </span><span class="si">{num}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">num</span><span class="o">=</span><span class="n">num</span><span class="p">))</span>
+<span class="k">def</span> <span class="nf">log_num</span><span class="p">(</span><span class="n">context</span><span class="p">,</span> <span class="n">num</span><span class="p">):</span>
+    <span class="n">context</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;num </span><span class="si">{num}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">num</span><span class="o">=</span><span class="n">num</span><span class="p">))</span>
     <span class="k">return</span> <span class="n">num</span>
 
 
 <span class="nd">@solid</span><span class="p">(</span><span class="n">inputs</span><span class="o">=</span><span class="p">[</span><span class="n">InputDefinition</span><span class="p">(</span><span class="s1">&#39;num&#39;</span><span class="p">,</span> <span class="n">dagster_type</span><span class="o">=</span><span class="n">Int</span><span class="p">)])</span>
-<span class="k">def</span> <span class="nf">log_num_squared</span><span class="p">(</span><span class="n">info</span><span class="p">,</span> <span class="n">num</span><span class="p">):</span>
-    <span class="n">info</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;num_squared </span><span class="si">{num_squared}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">num_squared</span><span class="o">=</span><span class="n">num</span> <span class="o">*</span> <span class="n">num</span><span class="p">))</span>
+<span class="k">def</span> <span class="nf">log_num_squared</span><span class="p">(</span><span class="n">context</span><span class="p">,</span> <span class="n">num</span><span class="p">):</span>
+    <span class="n">context</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;num_squared </span><span class="si">{num_squared}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">num_squared</span><span class="o">=</span><span class="n">num</span> <span class="o">*</span> <span class="n">num</span><span class="p">))</span>
     <span class="k">return</span> <span class="n">num</span> <span class="o">*</span> <span class="n">num</span>
 
 
@@ -24149,7 +24156,7 @@ happened during the computation.</p>
         <span class="n">OutputDefinition</span><span class="p">(</span><span class="n">dagster_type</span><span class="o">=</span><span class="n">Int</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;out_two&#39;</span><span class="p">),</span>
     <span class="p">]</span>
 <span class="p">)</span>
-<span class="k">def</span> <span class="nf">return_dict_results</span><span class="p">(</span><span class="n">_info</span><span class="p">):</span>
+<span class="k">def</span> <span class="nf">return_dict_results</span><span class="p">(</span><span class="n">_context</span><span class="p">):</span>
     <span class="k">return</span> <span class="n">MultipleResults</span><span class="o">.</span><span class="n">from_dict</span><span class="p">({</span><span class="s1">&#39;out_one&#39;</span><span class="p">:</span> <span class="mi">23</span><span class="p">,</span> <span class="s1">&#39;out_two&#39;</span><span class="p">:</span> <span class="mi">45</span><span class="p">})</span>
 
     <span class="k">return</span> <span class="n">PipelineDefinition</span><span class="p">(</span>
@@ -24222,7 +24229,7 @@ the iterator form.)</p>
         <span class="n">OutputDefinition</span><span class="p">(</span><span class="n">dagster_type</span><span class="o">=</span><span class="n">Int</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;out_two&#39;</span><span class="p">),</span>
     <span class="p">]</span>
 <span class="p">)</span>
-<span class="k">def</span> <span class="nf">yield_outputs</span><span class="p">(</span><span class="n">_info</span><span class="p">):</span>
+<span class="k">def</span> <span class="nf">yield_outputs</span><span class="p">(</span><span class="n">_context</span><span class="p">):</span>
     <span class="k">yield</span> <span class="n">Result</span><span class="p">(</span><span class="mi">23</span><span class="p">,</span> <span class="s1">&#39;out_one&#39;</span><span class="p">)</span>
     <span class="k">yield</span> <span class="n">Result</span><span class="p">(</span><span class="mi">45</span><span class="p">,</span> <span class="s1">&#39;out_two&#39;</span><span class="p">)</span>
 
@@ -24284,10 +24291,10 @@ and then execute that pipeline.</p>
         <span class="n">OutputDefinition</span><span class="p">(</span><span class="n">dagster_type</span><span class="o">=</span><span class="n">Int</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;out_two&#39;</span><span class="p">),</span>
     <span class="p">],</span>
 <span class="p">)</span>
-<span class="k">def</span> <span class="nf">conditional</span><span class="p">(</span><span class="n">info</span><span class="p">):</span>
-    <span class="k">if</span> <span class="n">info</span><span class="o">.</span><span class="n">config</span> <span class="o">==</span> <span class="s1">&#39;out_one&#39;</span><span class="p">:</span>
+<span class="k">def</span> <span class="nf">conditional</span><span class="p">(</span><span class="n">context</span><span class="p">):</span>
+    <span class="k">if</span> <span class="n">context</span><span class="o">.</span><span class="n">solid_config</span> <span class="o">==</span> <span class="s1">&#39;out_one&#39;</span><span class="p">:</span>
         <span class="k">yield</span> <span class="n">Result</span><span class="p">(</span><span class="mi">23</span><span class="p">,</span> <span class="s1">&#39;out_one&#39;</span><span class="p">)</span>
-    <span class="k">elif</span> <span class="n">info</span><span class="o">.</span><span class="n">config</span> <span class="o">==</span> <span class="s1">&#39;out_two&#39;</span><span class="p">:</span>
+    <span class="k">elif</span> <span class="n">context</span><span class="o">.</span><span class="n">solid_config</span> <span class="o">==</span> <span class="s1">&#39;out_two&#39;</span><span class="p">:</span>
         <span class="k">yield</span> <span class="n">Result</span><span class="p">(</span><span class="mi">45</span><span class="p">,</span> <span class="s1">&#39;out_two&#39;</span><span class="p">)</span>
     <span class="k">else</span><span class="p">:</span>
         <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s1">&#39;invalid config&#39;</span><span class="p">)</span>
@@ -24541,8 +24548,8 @@ a yaml file to tell the CLI tool about the repository.</p>
     <span class="n">inputs</span><span class="o">=</span><span class="p">[</span><span class="n">InputDefinition</span><span class="p">(</span><span class="s1">&#39;word&#39;</span><span class="p">,</span> <span class="n">String</span><span class="p">)],</span>
     <span class="n">config_field</span><span class="o">=</span><span class="n">Field</span><span class="p">(</span><span class="n">Dict</span><span class="p">({</span><span class="s1">&#39;factor&#39;</span><span class="p">:</span> <span class="n">Field</span><span class="p">(</span><span class="n">Int</span><span class="p">)})),</span>
 <span class="p">)</span>
-<span class="k">def</span> <span class="nf">multiply_the_word</span><span class="p">(</span><span class="n">info</span><span class="p">,</span> <span class="n">word</span><span class="p">):</span>
-    <span class="k">return</span> <span class="n">word</span> <span class="o">*</span> <span class="n">info</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;factor&#39;</span><span class="p">]</span>
+<span class="k">def</span> <span class="nf">multiply_the_word</span><span class="p">(</span><span class="n">context</span><span class="p">,</span> <span class="n">word</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">word</span> <span class="o">*</span> <span class="n">context</span><span class="o">.</span><span class="n">solid_config</span><span class="p">[</span><span class="s1">&#39;factor&#39;</span><span class="p">]</span>
 
 
 <span class="nd">@lambda_solid</span><span class="p">(</span><span class="n">inputs</span><span class="o">=</span><span class="p">[</span><span class="n">InputDefinition</span><span class="p">(</span><span class="s1">&#39;word&#39;</span><span class="p">)])</span>
@@ -25067,9 +25074,9 @@ key of the <code class="docutils literal notranslate"><span class="pre">info</sp
     <span class="n">inputs</span><span class="o">=</span><span class="p">[</span><span class="n">InputDefinition</span><span class="p">(</span><span class="s1">&#39;num_one&#39;</span><span class="p">,</span> <span class="n">Int</span><span class="p">),</span> <span class="n">InputDefinition</span><span class="p">(</span><span class="s1">&#39;num_two&#39;</span><span class="p">,</span> <span class="n">Int</span><span class="p">)],</span>
     <span class="n">outputs</span><span class="o">=</span><span class="p">[</span><span class="n">OutputDefinition</span><span class="p">(</span><span class="n">Int</span><span class="p">)],</span>
 <span class="p">)</span>
-<span class="k">def</span> <span class="nf">add_ints</span><span class="p">(</span><span class="n">info</span><span class="p">,</span> <span class="n">num_one</span><span class="p">,</span> <span class="n">num_two</span><span class="p">):</span>
+<span class="k">def</span> <span class="nf">add_ints</span><span class="p">(</span><span class="n">context</span><span class="p">,</span> <span class="n">num_one</span><span class="p">,</span> <span class="n">num_two</span><span class="p">):</span>
     <span class="n">sum_ints</span> <span class="o">=</span> <span class="n">num_one</span> <span class="o">+</span> <span class="n">num_two</span>
-    <span class="n">info</span><span class="o">.</span><span class="n">resources</span><span class="o">.</span><span class="n">store</span><span class="o">.</span><span class="n">record_value</span><span class="p">(</span><span class="n">info</span><span class="o">.</span><span class="n">log</span><span class="p">,</span> <span class="s1">&#39;add&#39;</span><span class="p">,</span> <span class="n">sum_ints</span><span class="p">)</span>
+    <span class="n">context</span><span class="o">.</span><span class="n">resources</span><span class="o">.</span><span class="n">store</span><span class="o">.</span><span class="n">record_value</span><span class="p">(</span><span class="n">context</span><span class="o">.</span><span class="n">log</span><span class="p">,</span> <span class="s1">&#39;add&#39;</span><span class="p">,</span> <span class="n">sum_ints</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">sum_ints</span>
 
 

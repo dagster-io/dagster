@@ -444,7 +444,7 @@ def test_solid_config_error():
 
 def test_optional_solid_with_no_config():
     def _assert_config_none(info, value):
-        assert info.config is value
+        assert info.solid_config is value
 
     pipeline_def = PipelineDefinition(
         name='some_pipeline',
@@ -470,7 +470,7 @@ def test_optional_solid_with_no_config():
 
 def test_optional_solid_with_optional_scalar_config():
     def _assert_config_none(info, value):
-        assert info.config is value
+        assert info.solid_config is value
 
     pipeline_def = PipelineDefinition(
         name='some_pipeline',
@@ -506,7 +506,7 @@ def test_optional_solid_with_optional_scalar_config():
 
 def test_optional_solid_with_required_scalar_config():
     def _assert_config_none(info, value):
-        assert info.config is value
+        assert info.solid_config is value
 
     pipeline_def = PipelineDefinition(
         name='some_pipeline',

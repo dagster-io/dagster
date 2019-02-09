@@ -1,10 +1,8 @@
-from abc import ABCMeta, abstractproperty
 from collections import namedtuple
 
-import six
 
 from dagster import check
-from dagster.core.execution_context import RuntimeExecutionContext, DagsterLog
+from dagster.core.execution_context import LegacyRuntimeExecutionContext, DagsterLog
 
 from .dependency import Solid
 from .expectation import ExpectationDefinition
@@ -31,44 +29,10 @@ class ExpectationExecutionInfo(
     def __new__(cls, context, inout_def, solid, expectation_def):
         return super(ExpectationExecutionInfo, cls).__new__(
             cls,
-            check.inst_param(context, 'context', RuntimeExecutionContext),
+            check.inst_param(context, 'context', LegacyRuntimeExecutionContext),
             check.inst_param(inout_def, 'inout_def', (InputDefinition, OutputDefinition)),
             check.inst_param(solid, 'solid', Solid),
             check.inst_param(expectation_def, 'expectation_def', ExpectationDefinition),
             context.resources,
             DagsterLog(context),
         )
-
-
-class ITransformExecutionInfo(six.with_metaclass(ABCMeta)):  # pylint: disable=no-init
-    @abstractproperty
-    def context(self):
-        pass
-
-    @abstractproperty
-    def config(self):
-        pass
-
-    @abstractproperty
-    def step(self):
-        pass
-
-    @abstractproperty
-    def solid_def(self):
-        pass
-
-    @abstractproperty
-    def solid(self):
-        pass
-
-    @abstractproperty
-    def pipeline_def(self):
-        pass
-
-    @abstractproperty
-    def resources(self):
-        pass
-
-    @abstractproperty
-    def log(self):
-        pass

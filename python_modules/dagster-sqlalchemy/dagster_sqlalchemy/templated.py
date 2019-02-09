@@ -55,10 +55,10 @@ def _render_template_string(template_text, config_dict):
 
 
 def _create_templated_sql_transform_with_output(sql):
-    def do_transform(info, _inputs):
-        rendered_sql = _render_template_string(sql, info.config)
-        execute_sql_text_on_context(info.context, rendered_sql)
-        yield Result(info.config)
+    def do_transform(context, _inputs):
+        rendered_sql = _render_template_string(sql, context.solid_config)
+        execute_sql_text_on_context(context, rendered_sql)
+        yield Result(context.solid_config)
         yield Result(output_name='sql_text', value=rendered_sql)
 
     return do_transform

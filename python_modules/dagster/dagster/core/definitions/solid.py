@@ -35,7 +35,7 @@ class SolidDefinition(object):
 
         name (str): Name of the solid.
         input_defs (List[InputDefinition]): Inputs of the solid.
-        transform_fn (callable): Callable with the signature (**info**: `TransformExecutionInfo`,
+        transform_fn (callable): Callable with the signature (**info**: `TransformExecutionContext`,
             **inputs**: `Dict[str, Any]`) : `Iterable<Result>`
         outputs_defs (List[OutputDefinition]): Outputs of the solid.
         config_field (Field): How the solid configured.

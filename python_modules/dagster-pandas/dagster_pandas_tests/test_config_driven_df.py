@@ -24,7 +24,7 @@ def test_dataframe_csv_from_inputs():
     called = {}
 
     @solid(inputs=[InputDefinition('df', DataFrame)])
-    def df_as_config(_info, df):
+    def df_as_config(_context, df):
         assert df.to_dict('list') == {'num1': [1, 3], 'num2': [2, 4]}
         called['yup'] = True
 
@@ -49,7 +49,7 @@ def test_dataframe_wrong_sep_from_inputs():
     called = {}
 
     @solid(inputs=[InputDefinition('df', DataFrame)])
-    def df_as_config(_info, df):
+    def df_as_config(_context, df):
         # this is the pandas behavior
         assert df.to_dict('list') == {'num1,num2': ['1,2', '3,4']}
         called['yup'] = True
@@ -75,7 +75,7 @@ def test_dataframe_pipe_sep_csv_from_inputs():
     called = {}
 
     @solid(inputs=[InputDefinition('df', DataFrame)])
-    def df_as_config(_info, df):
+    def df_as_config(_context, df):
         assert df.to_dict('list') == {'num1': [1, 3], 'num2': [2, 4]}
         called['yup'] = True
 
@@ -102,7 +102,7 @@ def test_dataframe_csv_missing_inputs():
     called = {}
 
     @solid(inputs=[InputDefinition('df', DataFrame)])
-    def df_as_input(_info, df):  # pylint: disable=W0613
+    def df_as_input(_context, df):  # pylint: disable=W0613
         called['yup'] = True
 
     pipeline = PipelineDefinition(name='missing_inputs', solids=[df_as_input])
@@ -123,11 +123,11 @@ def test_dataframe_csv_missing_input_collision():
     called = {}
 
     @solid(outputs=[OutputDefinition(DataFrame)])
-    def df_as_output(_info):
+    def df_as_output(_context):
         return pd.DataFrame()
 
     @solid(inputs=[InputDefinition('df', DataFrame)])
-    def df_as_input(_info, df):  # pylint: disable=W0613
+    def df_as_input(_context, df):  # pylint: disable=W0613
         called['yup'] = True
 
     pipeline = PipelineDefinition(
@@ -158,7 +158,7 @@ def test_dataframe_parquet_from_inputs():
     called = {}
 
     @solid(inputs=[InputDefinition('df', DataFrame)])
-    def df_as_config(_info, df):
+    def df_as_config(_context, df):
         assert df.to_dict('list') == {'num1': [1, 3], 'num2': [2, 4]}
         called['yup'] = True
 
@@ -183,7 +183,7 @@ def test_dataframe_table_from_inputs():
     called = {}
 
     @solid(inputs=[InputDefinition('df', DataFrame)])
-    def df_as_config(_info, df):
+    def df_as_config(_context, df):
         assert df.to_dict('list') == {'num1': [1, 3], 'num2': [2, 4]}
         called['yup'] = True
 
@@ -206,7 +206,7 @@ def test_dataframe_table_from_inputs():
 
 def test_dataframe_csv_materialization():
     @solid(outputs=[OutputDefinition(DataFrame)])
-    def return_df(_info):
+    def return_df(_context):
         return pd.DataFrame({'num1': [1, 3], 'num2': [2, 4]})
 
     pipeline_def = PipelineDefinition(name='return_df_pipeline', solids=[return_df])
@@ -225,7 +225,7 @@ def test_dataframe_csv_materialization():
 
 def test_dataframe_parquet_materialization():
     @solid(outputs=[OutputDefinition(DataFrame)])
-    def return_df(_info):
+    def return_df(_context):
         return pd.DataFrame({'num1': [1, 3], 'num2': [2, 4]})
 
     pipeline_def = PipelineDefinition(name='return_df_pipeline', solids=[return_df])
@@ -244,7 +244,7 @@ def test_dataframe_parquet_materialization():
 
 def test_dataframe_table_materialization():
     @solid(outputs=[OutputDefinition(DataFrame)])
-    def return_df(_info):
+    def return_df(_context):
         return pd.DataFrame({'num1': [1, 3], 'num2': [2, 4]})
 
     pipeline_def = PipelineDefinition(name='return_df_pipeline', solids=[return_df])

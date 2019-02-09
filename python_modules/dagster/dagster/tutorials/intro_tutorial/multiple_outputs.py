@@ -18,7 +18,7 @@ from dagster import (
         OutputDefinition(dagster_type=Int, name='out_two'),
     ]
 )
-def yield_outputs(_info):
+def yield_outputs(_context):
     yield Result(23, 'out_one')
     yield Result(45, 'out_two')
 
@@ -29,7 +29,7 @@ def yield_outputs(_info):
         OutputDefinition(dagster_type=Int, name='out_two'),
     ]
 )
-def return_dict_results(_info):
+def return_dict_results(_context):
     return MultipleResults.from_dict({'out_one': 23, 'out_two': 45})
 
 
@@ -42,24 +42,24 @@ def return_dict_results(_info):
         OutputDefinition(dagster_type=Int, name='out_two'),
     ],
 )
-def conditional(info):
-    if info.config == 'out_one':
+def conditional(context):
+    if context.solid_config == 'out_one':
         yield Result(23, 'out_one')
-    elif info.config == 'out_two':
+    elif context.solid_config == 'out_two':
         yield Result(45, 'out_two')
     else:
         raise Exception('invalid config')
 
 
 @solid(inputs=[InputDefinition('num', dagster_type=Int)])
-def log_num(info, num):
-    info.log.info('num {num}'.format(num=num))
+def log_num(context, num):
+    context.log.info('num {num}'.format(num=num))
     return num
 
 
 @solid(inputs=[InputDefinition('num', dagster_type=Int)])
-def log_num_squared(info, num):
-    info.log.info('num_squared {num_squared}'.format(num_squared=num * num))
+def log_num_squared(context, num):
+    context.log.info('num_squared {num_squared}'.format(num_squared=num * num))
     return num * num
 
 

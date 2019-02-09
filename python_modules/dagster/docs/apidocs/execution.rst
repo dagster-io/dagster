@@ -15,7 +15,7 @@ Executing pipelines and solids.
 .. autoclass:: PipelineExecutionResult
    :members:
 
-.. autoclass:: ReentrantInfo
+.. autoclass:: ExecutionMetadata
    :members:
 
 .. autoclass:: SolidExecutionResult

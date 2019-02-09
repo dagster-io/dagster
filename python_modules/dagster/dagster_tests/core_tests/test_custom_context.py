@@ -27,9 +27,9 @@ def test_default_context():
     called = {}
 
     @solid(inputs=[], outputs=[OutputDefinition()])
-    def default_context_transform(info):
+    def default_context_transform(context):
         called['yes'] = True
-        for logger in info.context._logger.loggers:
+        for logger in context.loggers:
             assert logger.level == INFO
 
     pipeline = PipelineDefinition(solids=[default_context_transform])
@@ -41,9 +41,9 @@ def test_default_context():
 def test_run_id():
     called = {}
 
-    def construct_context(info):
+    def construct_context(context):
         called['yes'] = True
-        assert uuid.UUID(info.run_id)
+        assert uuid.UUID(context.run_id)
         return ExecutionContext()
 
     pipeline = PipelineDefinition(
@@ -57,8 +57,8 @@ def test_run_id():
 
 def test_default_context_with_log_level():
     @solid(inputs=[], outputs=[OutputDefinition()])
-    def default_context_transform(info):
-        for logger in info.context._logger.loggers:
+    def default_context_transform(context):
+        for logger in context.loggers:
             assert logger.level == INFO
 
     pipeline = PipelineDefinition(solids=[default_context_transform])
@@ -75,8 +75,8 @@ def test_default_context_with_log_level():
 def test_default_value():
     def _get_config_test_solid(config_key, config_value):
         @solid(inputs=[], outputs=[OutputDefinition()])
-        def config_test(info):
-            assert info.resources == {config_key: config_value}
+        def config_test(context):
+            assert context.resources == {config_key: config_value}
 
         return config_test
 
@@ -105,8 +105,8 @@ def test_default_value():
 
 def test_custom_contexts():
     @solid(inputs=[], outputs=[OutputDefinition()])
-    def custom_context_transform(info):
-        assert info.resources == {'field_one': 'value_two'}
+    def custom_context_transform(context):
+        assert context.resources == {'field_one': 'value_two'}
 
     pipeline = PipelineDefinition(
         solids=[custom_context_transform],
@@ -134,9 +134,9 @@ def test_yield_context():
     events = []
 
     @solid(inputs=[], outputs=[OutputDefinition()])
-    def custom_context_transform(info):
-        assert info.resources == {'field_one': 'value_two'}
-        assert info.context._tags['foo'] == 'bar'  # pylint: disable=W0212
+    def custom_context_transform(context):
+        assert context.resources == {'field_one': 'value_two'}
+        assert context.get_tag('foo') == 'bar'  # pylint: disable=W0212
         events.append('during')
 
     def _yield_context(info):

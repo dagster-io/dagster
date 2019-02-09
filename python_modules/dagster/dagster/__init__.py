@@ -8,9 +8,12 @@ from dagster.core.execution import (
     execute_pipeline_iterator,
 )
 
-from dagster.core.execution_context import ExecutionContext, ExecutionMetadata
-
-from dagster.core.execution_plan.transform import TransformExecutionInfo
+from dagster.core.execution_context import (
+    ExecutionContext,
+    ExecutionMetadata,
+    ITransformExecutionContext,
+    TransformExecutionContext,
+)
 
 from dagster.core.definitions import (
     ContextCreationExecutionInfo,
@@ -92,7 +95,7 @@ __all__ = [
     # Infos
     'ContextCreationExecutionInfo',
     'ExpectationExecutionInfo',
-    'TransformExecutionInfo',
+    'TransformExecutionContext',
     # Decorators
     'lambda_solid',
     'solid',

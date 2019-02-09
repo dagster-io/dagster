@@ -24,8 +24,8 @@ def test_injected_tags():
     called = {}
 
     @solid
-    def check_tags(info):
-        assert info.context.get_tag('foo') == 'bar'
+    def check_tags(context):
+        assert context.get_tag('foo') == 'bar'
         called['yup'] = True
 
     pipeline_def = PipelineDefinition(name='injected_run_id', solids=[check_tags])
@@ -41,12 +41,12 @@ def test_user_injected_tags():
     called = {}
 
     @solid
-    def check_tags(info):
-        assert info.context.get_tag('foo') == 'bar'
-        assert info.context.get_tag('quux') == 'baaz'
+    def check_tags(context):
+        assert context.get_tag('foo') == 'bar'
+        assert context.get_tag('quux') == 'baaz'
         called['yup'] = True
 
-    def _create_context(_info):
+    def _create_context(_context):
         return ExecutionContext(tags={'quux': 'baaz'})
 
     pipeline_def = PipelineDefinition(
@@ -67,12 +67,12 @@ def test_user_injected_tags_collision():
     called = {}
 
     @solid
-    def check_tags(info):
-        assert info.context.get_tag('foo') == 'bar'
-        assert info.context.get_tag('quux') == 'baaz'
+    def check_tags(context):
+        assert context.get_tag('foo') == 'bar'
+        assert context.get_tag('quux') == 'baaz'
         called['yup'] = True
 
-    def _create_context(_info):
+    def _create_context(_context):
         return ExecutionContext(tags={'foo': 'baaz'})
 
     pipeline_def = PipelineDefinition(

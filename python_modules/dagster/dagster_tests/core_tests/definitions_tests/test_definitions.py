@@ -35,7 +35,7 @@ def test_pipeline_types():
         outputs=[OutputDefinition(types.Any)],
         config_field=Field(Dict({'another_field': Field(types.Int)})),
     )
-    def solid_one(_info, input_one):
+    def solid_one(_context, input_one):
         raise Exception('should not execute')
 
     pipeline_def = PipelineDefinition(

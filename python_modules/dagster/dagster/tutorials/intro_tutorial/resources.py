@@ -80,9 +80,9 @@ def define_cloud_store_resource():
     inputs=[InputDefinition('num_one', Int), InputDefinition('num_two', Int)],
     outputs=[OutputDefinition(Int)],
 )
-def add_ints(info, num_one, num_two):
+def add_ints(context, num_one, num_two):
     sum_ints = num_one + num_two
-    info.resources.store.record_value(info.log, 'add', sum_ints)
+    context.resources.store.record_value(context.log, 'add', sum_ints)
     return sum_ints
 
 

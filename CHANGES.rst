@@ -1,3 +1,22 @@
+0.3.2
+
+   - New features
+      - Link to output notebook rendered in dagit when dagstermill solids are executed.
+
+   - API Additions and changes
+      - The `info` object passed to transform functions has been renamed to `context`. All fields that were previously
+        available on the `info.context` object are now hoisted to the top level `context` object. Additionally an alias
+        for `config` has been introduced: `solid_config`. So where you would have written `info.config` it is now
+        `context.solid_config` Logging should be done with the top-level property `context.log`.
+
+   - GraphQL Schema Changes
+      - `StepResult` has been renamed to `StepEvent`.
+      - `stepResults` property on `startSubplanExecution` has been renamed to `stepEvents`.
+      - `StepSuccessResult` is now `SuccessfulStepOutputEvent`
+      - `StepFailureResult` is now `StepFailureEvent`
+      - Added `UNMARSHAL_INPUT` and `MARSHAL_OUTPUT` values to the `StepKind` enumeration. Marshalling steps are now
+        implemented as execution steps themselves.
+
 
 0.3.1
 

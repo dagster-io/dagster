@@ -35,5 +35,5 @@ class MockEngine(sqlalchemy.engine.Engine):
 
 def test_mock():
     sa_resource = dagster_sa.SqlAlchemyResource(engine=MockEngine(), mock_sql=True)
-    context = create_sql_alchemy_context_from_sa_resource(sa_resource)
-    dagster_sa.common.execute_sql_text_on_context(context, 'NOPE')
+    legacy_context = create_sql_alchemy_context_from_sa_resource(sa_resource)
+    dagster_sa.common.execute_sql_text_on_sa_resource(legacy_context.resources.sa, 'NOPE')

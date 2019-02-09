@@ -2,7 +2,7 @@
 
 We distill the process of adding a new event by examining how we added the new event `StepMaterialization` that is emitted whenever we materialize anything in a solid (currently only called for materializating output notebooks in Dagstermill.)
 
-The `info` object (type `TransformExecutionInfo`) that is passed into the transform function of a solid has an attribute `info.context` (type `RuntimeExecutionContext`). The `info.context` object has an attribute `events` that is an instantiation of the `ExecutionEvents()` class (in the file `dagster.core.events`). To trigger an event that is consumed by the GraphQL API, we call a method of the `ExecutionEvents` class, such as `info.context.events.step_materialization_event(**kwargs)`. Thus we must add this event to the `ExecutionEvents` class as below:
+The `info` object (type `TransformExecutionContext`) that is passed into the transform function of a solid has an attribute `info.context` (type `RuntimeExecutionContext`). The `info.context` object has an attribute `events` that is an instantiation of the `ExecutionEvents()` class (in the file `dagster.core.events`). To trigger an event that is consumed by the GraphQL API, we call a method of the `ExecutionEvents` class, such as `info.context.events.step_materialization_event(**kwargs)`. Thus we must add this event to the `ExecutionEvents` class as below:
 
 `python_modules/dagster/dagster/core/events.py`
 

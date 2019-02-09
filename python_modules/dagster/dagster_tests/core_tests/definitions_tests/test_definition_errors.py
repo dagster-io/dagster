@@ -24,13 +24,13 @@ def solid_a_b_list():
             name='A',
             inputs=[],
             outputs=[OutputDefinition()],
-            transform_fn=lambda _info, _inputs: None,
+            transform_fn=lambda _context, _inputs: None,
         ),
         SolidDefinition(
             name='B',
             inputs=[InputDefinition('b_input')],
             outputs=[],
-            transform_fn=lambda _info, _inputs: None,
+            transform_fn=lambda _context, _inputs: None,
         ),
     ]
 
@@ -102,11 +102,11 @@ def test_invalid_item_in_solid_list():
 
 def test_double_type():
     @solid(config_field=Field(NamedDict('Name', {'some_field': Field(String)})))
-    def solid_one(_info):
+    def solid_one(_context):
         raise Exception('should not execute')
 
     @solid(config_field=Field(NamedDict('Name', {'some_field': Field(String)})))
-    def solid_two(_info):
+    def solid_two(_context):
         raise Exception('should not execute')
 
     with pytest.raises(DagsterInvalidDefinitionError, match='Type names must be unique.'):

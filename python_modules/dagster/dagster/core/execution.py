@@ -36,7 +36,7 @@ from .definitions import (
 from .definitions.utils import DEFAULT_OUTPUT
 from .definitions.environment_configs import construct_environment_config, construct_context_config
 
-from .execution_context import ExecutionContext, RuntimeExecutionContext, ExecutionMetadata
+from .execution_context import ExecutionContext, LegacyRuntimeExecutionContext, ExecutionMetadata
 
 from .errors import (
     DagsterInvariantViolationError,
@@ -82,7 +82,7 @@ class PipelineExecutionResult(object):
 
     def __init__(self, pipeline, context, result_list):
         self.pipeline = check.inst_param(pipeline, 'pipeline', PipelineDefinition)
-        self.context = check.inst_param(context, 'context', RuntimeExecutionContext)
+        self.context = check.inst_param(context, 'context', LegacyRuntimeExecutionContext)
         self.result_list = check.list_param(
             result_list, 'result_list', of_type=SolidExecutionResult
         )
@@ -126,7 +126,7 @@ class SolidExecutionResult(object):
     '''
 
     def __init__(self, context, solid, step_events_by_kind):
-        self.context = check.inst_param(context, 'context', RuntimeExecutionContext)
+        self.context = check.inst_param(context, 'context', LegacyRuntimeExecutionContext)
         self.solid = check.inst_param(solid, 'solid', Solid)
         self.step_events_by_kind = check.dict_param(
             step_events_by_kind, 'step_events_by_kind', key_type=StepKind, value_type=list
@@ -146,7 +146,7 @@ class SolidExecutionResult(object):
 
     @staticmethod
     def from_step_events(context, step_events):
-        check.inst_param(context, 'context', RuntimeExecutionContext)
+        check.inst_param(context, 'context', LegacyRuntimeExecutionContext)
         step_events = check.list_param(step_events, 'step_events', ExecutionStepEvent)
         if step_events:
             step_events_by_kind = defaultdict(list)
@@ -356,7 +356,7 @@ def yield_context(pipeline, environment, execution_metadata):
         ) as resources:
             loggers = _create_loggers(execution_metadata, execution_context)
 
-            yield RuntimeExecutionContext(
+            yield LegacyRuntimeExecutionContext(
                 run_id=execution_metadata.run_id,
                 loggers=loggers,
                 resources=resources,
@@ -425,7 +425,7 @@ def get_resource_or_gen(context_definition, resource_name, environment, run_id):
 def _do_iterate_pipeline(
     pipeline, context, typed_environment, execution_metadata, throw_on_user_error=True
 ):
-    check.inst(context, RuntimeExecutionContext)
+    check.inst(context, LegacyRuntimeExecutionContext)
 
     context.events.pipeline_start()
 
@@ -504,7 +504,7 @@ def execute_pipeline_iterator(
 
 
 def _process_step_events(context, pipeline, step_events):
-    check.inst_param(context, 'context', RuntimeExecutionContext)
+    check.inst_param(context, 'context', LegacyRuntimeExecutionContext)
     check.inst_param(pipeline, 'pipeline', PipelineDefinition)
 
     # TODO: actually make this stream results. Right now it collects
