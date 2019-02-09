@@ -1,33 +1,16 @@
+from abc import ABCMeta, abstractproperty
 from collections import namedtuple
 
+import six
+
 from dagster import check
-from dagster.core.execution_context import RuntimeExecutionContext
+from dagster.core.execution_context import RuntimeExecutionContext, DagsterLog
 
 from .dependency import Solid
 from .expectation import ExpectationDefinition
 from .input import InputDefinition
 from .output import OutputDefinition
 from .pipeline import PipelineDefinition
-
-
-class DagsterLog:
-    def __init__(self, context):
-        self.context = context
-
-    def debug(self, msg, **kwargs):
-        return self.context.debug(msg, **kwargs)
-
-    def info(self, msg, **kwargs):
-        return self.context.info(msg, **kwargs)
-
-    def warning(self, msg, **kwargs):
-        return self.context.warning(msg, **kwargs)
-
-    def error(self, msg, **kwargs):
-        return self.context.error(msg, **kwargs)
-
-    def critical(self, msg, **kwargs):
-        return self.context.critical(msg, **kwargs)
 
 
 class ContextCreationExecutionInfo(
@@ -57,36 +40,35 @@ class ExpectationExecutionInfo(
         )
 
 
-class TransformExecutionInfo(
-    namedtuple('_TransformExecutionInfo', 'context config step pipeline_def resources log')
-):
-    '''An instance of TransformExecutionInfo is passed every solid transform function.
+class ITransformExecutionInfo(six.with_metaclass(ABCMeta)):  # pylint: disable=no-init
+    @abstractproperty
+    def context(self):
+        pass
 
-    Attributes:
+    @abstractproperty
+    def config(self):
+        pass
 
-        context (ExecutionContext): Context instance for this pipeline invocation
-        config (Any): Config object for current solid
-    '''
+    @abstractproperty
+    def step(self):
+        pass
 
-    def __new__(cls, context, config, step, pipeline_def):
-        from dagster.core.execution_plan.objects import ExecutionStep
-
-        return super(TransformExecutionInfo, cls).__new__(
-            cls,
-            check.inst_param(context, 'context', RuntimeExecutionContext),
-            config,
-            check.opt_inst_param(step, 'step', ExecutionStep),
-            # step can be None if TransformExecutionInfo is being reconstructed
-            # out-of-pipeline execution
-            check.inst_param(pipeline_def, 'pipeline_def', PipelineDefinition),
-            context.resources,
-            DagsterLog(context),
-        )
-
-    @property
+    @abstractproperty
     def solid_def(self):
-        return self.step.solid.definition
+        pass
 
-    @property
+    @abstractproperty
     def solid(self):
-        return self.step.solid
+        pass
+
+    @abstractproperty
+    def pipeline_def(self):
+        pass
+
+    @abstractproperty
+    def resources(self):
+        pass
+
+    @abstractproperty
+    def log(self):
+        pass
