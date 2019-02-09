@@ -19,7 +19,7 @@ black:
 
 
 pylint:
-	pylint -j 0 --disable=R,C dagster/dagster dagster/dagster_tests dagit/dagit dagit/dagit_tests dagstermill/dagstermill dagster-pandas/dagster_pandas dagster-sqlalchemy/dagster_sqlalchemy
+	pylint -j 0 --disable=R,C dagster/dagster dagster/dagster_tests dagit/dagit dagit/dagit_tests dagstermill/dagstermill dagster-pandas/dagster_pandas dagster-sqlalchemy/dagster_sqlalchemy --rcfile=../.pylintrc
 
 reinstall:
 	pip uninstall dagit

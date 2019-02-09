@@ -19,5 +19,6 @@
 # W1201, W1202 disable log format warning. False positives (I think)
 # R1705 Unnecessary else after return
 # R0902 Too many instance attributes. Sometimes big config objects are what you want
-# R1710 All returns should return an expression
-disable=C0111,C0330,C0103,duplicate-code,R0201,R0903,R0913,W0511,W1201,W1202,R1705,R0902,R1710,C0102
+# R1710 All returns should return an expressionj
+disable=C0111,C0330,C0103,duplicate-code,R0201,R0903,R0913,W0511,W1201,W1202,R1705,R0902,R1710,C0102,
+disable=missing-docstring,fixme
