@@ -35,6 +35,9 @@ jobs:
       vmImage: 'vs2017-win2016'
     strategy:
       matrix:
+        # py27:
+        #   TOXENV: 'py27'
+        #   python.version: '2.7'
         py35:
           TOXENV: 'py35'
           python.version: '3.5'
@@ -63,9 +66,9 @@ jobs:
       vmImage: 'vs2017-win2016'
     strategy:
       matrix:
-        py27:
-          TOXENV: 'py27'
-          python.version: '2.7'
+        # py27:
+        #   TOXENV: 'py27'
+        #   python.version: '2.7'
         py35:
           TOXENV: 'py35'
           python.version: '3.5'
