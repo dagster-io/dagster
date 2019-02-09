@@ -71,26 +71,13 @@ mutation ($pipeline: ExecutionSelector!, $config: PipelineConfig) {
 
 
 def test_start_execution():
-    variables = '''
- {{
-     "pipeline" : {{
-         "name" : "pandas_hello_world"
-    }},
-    "config" : {{
-        "solids" : {{
-            "sum_solid" : {{
-                "inputs" : {{
-                    "num" : {{
-                        "csv" : {{
-                            "path" : "{path}"
-                        }}
-                    }}
-                }}
-            }}
-        }}
-    }}
- }}'''.format(
-        path=script_relative_path('./num.csv')
+    path = script_relative_path('./num.csv')
+
+    variables = json.dumps(
+        {
+            "pipeline": {"name": "pandas_hello_world"},
+            "config": {"solids": {"sum_solid": {"inputs": {"num": {"csv": {"path": path}}}}}},
+        }
     )
 
     repo_path = script_relative_path('./repository.yml')

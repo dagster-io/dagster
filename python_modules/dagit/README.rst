@@ -2,6 +2,12 @@
 Dagster UI
 ============
 
+Requirements
+~~~~~~~~~~~~
+On Windows, dagit is known not to work with Python 2.7. See: https://arrow.apache.org/docs/python/install.html
+
+Usage
+~~~~~
 Eg in dagster_examples
 
 .. code-block:: sh
