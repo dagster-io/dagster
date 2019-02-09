@@ -31,7 +31,7 @@ from dagster.core.execution import (
 
 from dagster.core.utility_solids import define_stub_solid
 
-from dagster.utils.test import create_test_runtime_execution_context, execute_solid
+from dagster.utils.test import create_test_runtime_legacy_execution_context, execute_solid
 
 # protected members
 # pylint: disable=W0212
@@ -291,7 +291,7 @@ def _do_test(pipeline, do_execute_pipeline_iter):
     for result in do_execute_pipeline_iter():
         results.append(result)
 
-    result = PipelineExecutionResult(pipeline, create_test_runtime_execution_context(), results)
+    result = PipelineExecutionResult(pipeline, create_test_runtime_legacy_execution_context(), results)
 
     assert result.result_for_solid('A').transformed_value() == [
         input_set('A_input'),

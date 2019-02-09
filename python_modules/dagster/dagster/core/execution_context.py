@@ -4,6 +4,7 @@ import itertools
 import json
 import logging
 import uuid
+import warnings
 
 import six
 
@@ -386,7 +387,13 @@ class TransformExecutionContext(
 
     @property
     def context(self):
-        # Deprecated
+        warnings.warn(
+            'As of 3.0.2 the context property is deprecated. Before your code likely looked '
+            'like info.context.some_method_or_property. All of the properties of the nested '
+            'context object have been hoisted to the top level, so just rename your info '
+            'object to context and access context.some_method_or_property. This property '
+            'will be removed in 0.4.0.'
+        )
         return self.context__
 
     @property
@@ -399,7 +406,7 @@ class TransformExecutionContext(
 
     @property
     def config(self):
-        # Deprecated
+        warnings.warn('As of 3.0.2 the config property is deprecated. Use solid_config instead.')
         return self.config__
 
     @property

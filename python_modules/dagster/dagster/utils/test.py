@@ -19,7 +19,7 @@ from dagster.core.execution_context import LegacyRuntimeExecutionContext
 from dagster.core.utility_solids import define_stub_solid
 
 
-def create_test_runtime_execution_context(loggers=None, resources=None, tags=None):
+def create_test_runtime_legacy_execution_context(loggers=None, resources=None, tags=None):
     run_id = str(uuid.uuid4())
     return LegacyRuntimeExecutionContext(
         run_id=run_id, loggers=loggers, resources=resources, tags=tags
