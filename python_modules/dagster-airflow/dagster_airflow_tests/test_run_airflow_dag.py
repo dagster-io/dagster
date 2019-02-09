@@ -49,7 +49,12 @@ def test_unit_run_airflow_dag_steps(airflow_test, dags_path):
 
     for step in execution_plan.topological_steps():
         task_id = _normalize_key(step.key)
-        res = subprocess.check_output(['airflow', 'test', pipeline_name, task_id, execution_date])
+        try:
+            res = subprocess.check_output(
+                ['airflow', 'test', pipeline_name, task_id, execution_date]
+            )
+        except subprocess.CalledProcessError as cpe:
+            raise Exception('Process failed with output {}'.format(cpe.output))
 
         assert 'EXECUTION_PLAN_STEP_SUCCESS' in str(res)
 

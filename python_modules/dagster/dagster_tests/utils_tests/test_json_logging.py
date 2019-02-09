@@ -64,7 +64,7 @@ def test_write_dagster_meta():
     with get_temp_file_name() as tf_name:
         logger = define_json_file_logger('foo', tf_name, DEBUG)
         execution_context = create_test_runtime_legacy_execution_context(loggers=[logger])
-        execution_context.debug('some_debug_message', context_key='context_value')
+        execution_context.log.debug('some_debug_message', context_key='context_value')
         data = list(parse_json_lines(tf_name))
         assert len(data) == 1
         assert data[0]['name'] == 'foo'

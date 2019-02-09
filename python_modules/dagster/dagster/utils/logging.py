@@ -20,19 +20,6 @@ def level_from_string(string):
     return LOOKUP[string]
 
 
-class CompositeLogger(object):
-    def __init__(self, loggers=None):
-        self.loggers = check.opt_list_param(loggers, 'loggers', of_type=logging.Logger)
-
-    def __getattr__(self, name):
-        def _invoke_logger_method(*args, **kwargs):
-            for logger in self.loggers:
-                logger_method = check.is_callable(getattr(logger, name))
-                logger_method(*args, **kwargs)
-
-        return _invoke_logger_method
-
-
 class JsonFileHandler(logging.Handler):
     def __init__(self, json_path):
         super(JsonFileHandler, self).__init__()

@@ -10,8 +10,6 @@ from .dependency import (
 
 from .expectation import ExpectationDefinition, ExpectationResult
 
-from .infos import ContextCreationExecutionInfo, ExpectationExecutionInfo
-
 from .input import InputDefinition
 
 from .output import OutputDefinition

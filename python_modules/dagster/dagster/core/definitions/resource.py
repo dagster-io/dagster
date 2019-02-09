@@ -12,12 +12,12 @@ class ResourceDefinition(object):
 
     @staticmethod
     def none_resource(description=None):
-        return ResourceDefinition(resource_fn=lambda _info: None, description=description)
+        return ResourceDefinition(resource_fn=lambda _init_context: None, description=description)
 
     @staticmethod
     def string_resource(description=None):
         return ResourceDefinition(
-            resource_fn=lambda info: info.config,
+            resource_fn=lambda init_context: init_context.resource_config,
             config_field=Field(String),
             description=description,
         )

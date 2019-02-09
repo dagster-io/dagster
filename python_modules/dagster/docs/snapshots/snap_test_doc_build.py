@@ -562,8 +562,6 @@ snapshots['test_build_all_docs 4'] = '''
 <h2 id="C">C</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="apidocs/definitions.html#dagster.TransformExecutionContext.config">config (dagster.TransformExecutionContext attribute)</a>
-</li>
       <li><a href="apidocs/definitions.html#dagster.PipelineContextDefinition.config_field">config_field (dagster.PipelineContextDefinition attribute)</a>
 
       <ul>
@@ -572,21 +570,17 @@ snapshots['test_build_all_docs 4'] = '''
       </ul></li>
       <li><a href="apidocs/types.html#dagster.ConfigType">ConfigType (class in dagster)</a>
 </li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="apidocs/execution.html#dagster.PipelineExecutionResult.context">context (dagster.PipelineExecutionResult attribute)</a>
 
       <ul>
         <li><a href="apidocs/execution.html#dagster.SolidExecutionResult.context">(dagster.SolidExecutionResult attribute)</a>
 </li>
-        <li><a href="apidocs/definitions.html#dagster.TransformExecutionContext.context">(dagster.TransformExecutionContext attribute)</a>
-</li>
       </ul></li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="apidocs/definitions.html#dagster.PipelineDefinition.context_definitions">context_definitions (dagster.PipelineDefinition attribute)</a>
 </li>
       <li><a href="apidocs/definitions.html#dagster.PipelineContextDefinition.context_fn">context_fn (dagster.PipelineContextDefinition attribute)</a>
-</li>
-      <li><a href="apidocs/definitions.html#dagster.ContextCreationExecutionInfo">ContextCreationExecutionInfo (class in dagster)</a>
 </li>
   </ul></td>
 </tr></table>
@@ -663,8 +657,6 @@ snapshots['test_build_all_docs 4'] = '''
       <li><a href="apidocs/definitions.html#dagster.ExpectationDefinition.expectation_fn">expectation_fn (dagster.ExpectationDefinition attribute)</a>
 </li>
       <li><a href="apidocs/definitions.html#dagster.ExpectationDefinition">ExpectationDefinition (class in dagster)</a>
-</li>
-      <li><a href="apidocs/definitions.html#dagster.ExpectationExecutionInfo">ExpectationExecutionInfo (class in dagster)</a>
 </li>
       <li><a href="apidocs/definitions.html#dagster.ExpectationResult">ExpectationResult (class in dagster)</a>
 </li>
@@ -894,13 +886,11 @@ snapshots['test_build_all_docs 4'] = '''
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="apidocs/definitions.html#dagster.SolidDefinition.transform_fn">transform_fn (dagster.SolidDefinition attribute)</a>
 </li>
-      <li><a href="apidocs/execution.html#dagster.SolidExecutionResult.transformed_value">transformed_value() (dagster.SolidExecutionResult method)</a>
-</li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="apidocs/execution.html#dagster.SolidExecutionResult.transformed_values">transformed_values (dagster.SolidExecutionResult attribute)</a>
+      <li><a href="apidocs/execution.html#dagster.SolidExecutionResult.transformed_value">transformed_value() (dagster.SolidExecutionResult method)</a>
 </li>
-      <li><a href="apidocs/definitions.html#dagster.TransformExecutionContext">TransformExecutionContext (class in dagster)</a>
+      <li><a href="apidocs/execution.html#dagster.SolidExecutionResult.transformed_values">transformed_values (dagster.SolidExecutionResult attribute)</a>
 </li>
   </ul></td>
 </tr></table>
@@ -2296,16 +2286,10 @@ snapshots['test_build_all_docs 15'] = '''Definitions
 
 Core API for defining solids and pipelines.
 
-.. autoclass:: ContextCreationExecutionInfo
-    :members:
-
 .. autoclass:: DependencyDefinition
     :members:
 
 .. autoclass:: ExpectationDefinition
-    :members:
-
-.. autoclass:: ExpectationExecutionInfo
     :members:
 
 .. autoclass:: ExpectationResult
@@ -2339,9 +2323,7 @@ Core API for defining solids and pipelines.
 
 .. autoclass:: SolidInstance
     :members:
-
-.. autoclass:: TransformExecutionContext
-   :members:'''
+'''
 
 snapshots['test_build_all_docs 16'] = '''Errors
 =========
@@ -2513,11 +2495,11 @@ The only real reusable resource here is the LocalFsHandleResource, so let's brea
 
 ```py
 def define_local_fs_resource():
-    def _create_resource(info):
-        resource = LocalFsHandleResource.for_pipeline_run(info.run_id)
+    def _create_resource(init_context):
+        resource = LocalFsHandleResource.for_pipeline_run(init_context.run_id)
         yield resource
-        if info.config['cleanup_files']:
-            LocalFsHandleResource.clean_up_dir(info.run_id)
+        if init_context.resource_config['cleanup_files']:
+            LocalFsHandleResource.clean_up_dir(init_context.run_id)
 
     return ResourceDefinition(
         resource_fn=_create_resource,
@@ -2559,9 +2541,9 @@ This context does not log to file and also has a configurable log_level.
         '''
     )
 
-def create_fileload_unittest_context(info):
-    data_source_run_id = info.config['data_source_run_id']
-    log_level = level_from_string(info.config['log_level'])
+def create_fileload_unittest_context(init_context):
+    data_source_run_id = init_context.context_config['data_source_run_id']
+    log_level = level_from_string(init_context.context_config['log_level'])
 
     yield ExecutionContext(
         loggers=[define_colored_console_logger('dagster', log_level)],
@@ -2641,12 +2623,12 @@ For example, here would be a resource to create a redshift connection.
 
 ```py
 def define_redshift_sa_resource():
-    def _create_resource(info):
-        user = info.config['user']
-        password = info.config['password']
-        host = info.config['host']
-        port = info.config['port']
-        dbname = info.config['dbname']
+    def _create_resource(init_context):
+        user = init_context.resource_config['user']
+        password = init_context.resource_config['password']
+        host = init_context.resource_config['host']
+        port = init_context.resource_config['port']
+        dbname = init_context.resource_config['dbname']
         return sa.create_engine(f'postgresql://{user}:{password}@{host}:{port}/{dbname}')
 
     return ResourceDefinition(
@@ -2710,7 +2692,7 @@ This takes a single, pre-existing zip folder with a single file and unzips it,
 and then outputs the path to that file.
 ''',
 )
-def unzip_file(info, zipped_file):
+def unzip_file(context, zipped_file):
     # ...
     pass
 ```
@@ -3120,7 +3102,7 @@ Before:
 
 ```py
 @solid(outputs=[OutputDefinition(dagster_type=dagster_pd.DataFrame)])
-def return_none(info):
+def return_none(context):
     return None # None no longer allowed, would break at runtime
 ```
 
@@ -3128,7 +3110,7 @@ After
 
 ```py
 @solid(outputs=[OutputDefinition(dagster_type=Nullable(dagster_pd.DataFrame))])
-def return_none(info):
+def return_none(context):
     return None # Because of Nullable wrapper, this is ok
 ```
 """
@@ -19369,11 +19351,6 @@ snapshots['test_build_all_docs 50'] = '''
 <h1>Definitions<a class="headerlink" href="#definitions" title="Permalink to this headline">¶</a></h1>
 <p>Core API for defining solids and pipelines.</p>
 <dl class="class">
-<dt id="dagster.ContextCreationExecutionInfo">
-<em class="property">class </em><code class="descclassname">dagster.</code><code class="descname">ContextCreationExecutionInfo</code><a class="headerlink" href="#dagster.ContextCreationExecutionInfo" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="class">
 <dt id="dagster.DependencyDefinition">
 <em class="property">class </em><code class="descclassname">dagster.</code><code class="descname">DependencyDefinition</code><a class="headerlink" href="#dagster.DependencyDefinition" title="Permalink to this definition">¶</a></dt>
 <dd><p>Dependency definitions represent an edge in the DAG of solids. This object is
@@ -19443,11 +19420,6 @@ you can assume that value is a <code class="docutils literal notranslate"><span 
 </pre></div>
 </div>
 </dd></dl>
-
-<dl class="class">
-<dt id="dagster.ExpectationExecutionInfo">
-<em class="property">class </em><code class="descclassname">dagster.</code><code class="descname">ExpectationExecutionInfo</code><a class="headerlink" href="#dagster.ExpectationExecutionInfo" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
 
 <dl class="class">
 <dt id="dagster.ExpectationResult">
@@ -19899,7 +19871,7 @@ certain metadata to be attached to a solid.</p>
 </dd></dl>
 
 <p class="rubric">Examples</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">_add_one</span><span class="p">(</span><span class="n">info</span><span class="p">,</span> <span class="n">inputs</span><span class="p">):</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">_add_one</span><span class="p">(</span><span class="n">_context</span><span class="p">,</span> <span class="n">inputs</span><span class="p">):</span>
     <span class="k">yield</span> <span class="n">Result</span><span class="p">(</span><span class="n">inputs</span><span class="p">[</span><span class="s2">&quot;num&quot;</span><span class="p">]</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
 
 <span class="n">SolidDefinition</span><span class="p">(</span>
@@ -19931,24 +19903,6 @@ like the alias.</p>
 <span class="p">)</span>
 </pre></div>
 </div>
-</dd></dl>
-
-<dl class="class">
-<dt id="dagster.TransformExecutionContext">
-<em class="property">class </em><code class="descclassname">dagster.</code><code class="descname">TransformExecutionContext</code><a class="headerlink" href="#dagster.TransformExecutionContext" title="Permalink to this definition">¶</a></dt>
-<dd><p>An instance of TransformExecutionContext is passed every solid transform function.</p>
-<dl class="attribute">
-<dt id="dagster.TransformExecutionContext.context">
-<code class="descname">context</code><a class="headerlink" href="#dagster.TransformExecutionContext.context" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>ExecutionContext</em> – Context instance for this pipeline invocation</p>
-</dd></dl>
-
-<dl class="attribute">
-<dt id="dagster.TransformExecutionContext.config">
-<code class="descname">config</code><a class="headerlink" href="#dagster.TransformExecutionContext.config" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>Any</em> – Config object for current solid</p>
-</dd></dl>
-
 </dd></dl>
 
 </div>
@@ -20085,7 +20039,7 @@ snapshots['test_build_all_docs 51'] = '''
 <p>Core dagster error classes.</p>
 <dl class="exception">
 <dt id="dagster.DagsterExpectationFailedError">
-<em class="property">exception </em><code class="descclassname">dagster.</code><code class="descname">DagsterExpectationFailedError</code><span class="sig-paren">(</span><em>info</em>, <em>value</em>, <em>*args</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#dagster.DagsterExpectationFailedError" title="Permalink to this definition">¶</a></dt>
+<em class="property">exception </em><code class="descclassname">dagster.</code><code class="descname">DagsterExpectationFailedError</code><span class="sig-paren">(</span><em>expectation_context</em>, <em>value</em>, <em>*args</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#dagster.DagsterExpectationFailedError" title="Permalink to this definition">¶</a></dt>
 <dd><p>Thrown with pipeline configured to throw on expectation failure</p>
 </dd></dl>
 
@@ -20125,7 +20079,7 @@ argument to the ctor is meant to be a sys.exc_info at the site of constructor.</
 try:</p>
 <blockquote>
 <div><dl class="docutils">
-<dt>context.persistence_policy.write_value(</dt>
+<dt>context.persistence_strategy.write_value(</dt>
 <dd>output_type.serialization_strategy, output[‘path’], result.success_data.value</dd>
 </dl>
 <p>)</p>
@@ -20380,7 +20334,7 @@ node. For the ‘synchronous’ API, see <a class="reference internal" href="#da
 
 <dl class="class">
 <dt id="dagster.SolidExecutionResult">
-<em class="property">class </em><code class="descclassname">dagster.</code><code class="descname">SolidExecutionResult</code><span class="sig-paren">(</span><em>context</em>, <em>solid</em>, <em>step_events_by_kind</em><span class="sig-paren">)</span><a class="headerlink" href="#dagster.SolidExecutionResult" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">dagster.</code><code class="descname">SolidExecutionResult</code><span class="sig-paren">(</span><em>pipeline_context</em>, <em>solid</em>, <em>step_events_by_kind</em><span class="sig-paren">)</span><a class="headerlink" href="#dagster.SolidExecutionResult" title="Permalink to this definition">¶</a></dt>
 <dd><p>Execution result for one solid of the pipeline.</p>
 <dl class="attribute">
 <dt id="dagster.SolidExecutionResult.context">
@@ -20975,11 +20929,11 @@ snapshots['test_build_all_docs 55'] = '''
 <p>That’s quite the ball of wax for what should be relatively straightforward. And this doesn’t even include the boilerplate <code class="docutils literal notranslate"><span class="pre">FileloadResources</span></code> class as well. We’re going to break this apart using the <code class="docutils literal notranslate"><span class="pre">ResourceDefinition</span></code> abstraction and eliminate the need for that class.</p>
 <p>The only real reusable resource here is the LocalFsHandleResource, so let’s break that out into it’s own <code class="docutils literal notranslate"><span class="pre">ResourceDefinition</span></code>.</p>
 <div class="highlight-py notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">define_local_fs_resource</span><span class="p">():</span>
-    <span class="k">def</span> <span class="nf">_create_resource</span><span class="p">(</span><span class="n">info</span><span class="p">):</span>
-        <span class="n">resource</span> <span class="o">=</span> <span class="n">LocalFsHandleResource</span><span class="o">.</span><span class="n">for_pipeline_run</span><span class="p">(</span><span class="n">info</span><span class="o">.</span><span class="n">run_id</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">_create_resource</span><span class="p">(</span><span class="n">init_context</span><span class="p">):</span>
+        <span class="n">resource</span> <span class="o">=</span> <span class="n">LocalFsHandleResource</span><span class="o">.</span><span class="n">for_pipeline_run</span><span class="p">(</span><span class="n">init_context</span><span class="o">.</span><span class="n">run_id</span><span class="p">)</span>
         <span class="k">yield</span> <span class="n">resource</span>
-        <span class="k">if</span> <span class="n">info</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;cleanup_files&#39;</span><span class="p">]:</span>
-            <span class="n">LocalFsHandleResource</span><span class="o">.</span><span class="n">clean_up_dir</span><span class="p">(</span><span class="n">info</span><span class="o">.</span><span class="n">run_id</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">init_context</span><span class="o">.</span><span class="n">resource_config</span><span class="p">[</span><span class="s1">&#39;cleanup_files&#39;</span><span class="p">]:</span>
+            <span class="n">LocalFsHandleResource</span><span class="o">.</span><span class="n">clean_up_dir</span><span class="p">(</span><span class="n">init_context</span><span class="o">.</span><span class="n">run_id</span><span class="p">)</span>
 
     <span class="k">return</span> <span class="n">ResourceDefinition</span><span class="p">(</span>
         <span class="n">resource_fn</span><span class="o">=</span><span class="n">_create_resource</span><span class="p">,</span>
@@ -21016,9 +20970,9 @@ snapshots['test_build_all_docs 55'] = '''
 <span class="s1">        &#39;&#39;&#39;</span>
     <span class="p">)</span>
 
-<span class="k">def</span> <span class="nf">create_fileload_unittest_context</span><span class="p">(</span><span class="n">info</span><span class="p">):</span>
-    <span class="n">data_source_run_id</span> <span class="o">=</span> <span class="n">info</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;data_source_run_id&#39;</span><span class="p">]</span>
-    <span class="n">log_level</span> <span class="o">=</span> <span class="n">level_from_string</span><span class="p">(</span><span class="n">info</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;log_level&#39;</span><span class="p">])</span>
+<span class="k">def</span> <span class="nf">create_fileload_unittest_context</span><span class="p">(</span><span class="n">init_context</span><span class="p">):</span>
+    <span class="n">data_source_run_id</span> <span class="o">=</span> <span class="n">init_context</span><span class="o">.</span><span class="n">context_config</span><span class="p">[</span><span class="s1">&#39;data_source_run_id&#39;</span><span class="p">]</span>
+    <span class="n">log_level</span> <span class="o">=</span> <span class="n">level_from_string</span><span class="p">(</span><span class="n">init_context</span><span class="o">.</span><span class="n">context_config</span><span class="p">[</span><span class="s1">&#39;log_level&#39;</span><span class="p">])</span>
 
     <span class="k">yield</span> <span class="n">ExecutionContext</span><span class="p">(</span>
         <span class="n">loggers</span><span class="o">=</span><span class="p">[</span><span class="n">define_colored_console_logger</span><span class="p">(</span><span class="s1">&#39;dagster&#39;</span><span class="p">,</span> <span class="n">log_level</span><span class="p">)],</span>
@@ -21088,12 +21042,12 @@ snapshots['test_build_all_docs 55'] = '''
 <p>The real promise of resources to build a library of resuable, composable resources.</p>
 <p>For example, here would be a resource to create a redshift connection.</p>
 <div class="highlight-py notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">define_redshift_sa_resource</span><span class="p">():</span>
-    <span class="k">def</span> <span class="nf">_create_resource</span><span class="p">(</span><span class="n">info</span><span class="p">):</span>
-        <span class="n">user</span> <span class="o">=</span> <span class="n">info</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;user&#39;</span><span class="p">]</span>
-        <span class="n">password</span> <span class="o">=</span> <span class="n">info</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;password&#39;</span><span class="p">]</span>
-        <span class="n">host</span> <span class="o">=</span> <span class="n">info</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;host&#39;</span><span class="p">]</span>
-        <span class="n">port</span> <span class="o">=</span> <span class="n">info</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;port&#39;</span><span class="p">]</span>
-        <span class="n">dbname</span> <span class="o">=</span> <span class="n">info</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;dbname&#39;</span><span class="p">]</span>
+    <span class="k">def</span> <span class="nf">_create_resource</span><span class="p">(</span><span class="n">init_context</span><span class="p">):</span>
+        <span class="n">user</span> <span class="o">=</span> <span class="n">init_context</span><span class="o">.</span><span class="n">resource_config</span><span class="p">[</span><span class="s1">&#39;user&#39;</span><span class="p">]</span>
+        <span class="n">password</span> <span class="o">=</span> <span class="n">init_context</span><span class="o">.</span><span class="n">resource_config</span><span class="p">[</span><span class="s1">&#39;password&#39;</span><span class="p">]</span>
+        <span class="n">host</span> <span class="o">=</span> <span class="n">init_context</span><span class="o">.</span><span class="n">resource_config</span><span class="p">[</span><span class="s1">&#39;host&#39;</span><span class="p">]</span>
+        <span class="n">port</span> <span class="o">=</span> <span class="n">init_context</span><span class="o">.</span><span class="n">resource_config</span><span class="p">[</span><span class="s1">&#39;port&#39;</span><span class="p">]</span>
+        <span class="n">dbname</span> <span class="o">=</span> <span class="n">init_context</span><span class="o">.</span><span class="n">resource_config</span><span class="p">[</span><span class="s1">&#39;dbname&#39;</span><span class="p">]</span>
         <span class="k">return</span> <span class="n">sa</span><span class="o">.</span><span class="n">create_engine</span><span class="p">(</span><span class="n">f</span><span class="s1">&#39;postgresql://{user}:{password}@{host}:{port}/{dbname}&#39;</span><span class="p">)</span>
 
     <span class="k">return</span> <span class="n">ResourceDefinition</span><span class="p">(</span>
@@ -21150,7 +21104,7 @@ be modeling such things as inputs.</p>
 <span class="s1">and then outputs the path to that file.</span>
 <span class="s1">&#39;&#39;&#39;</span><span class="p">,</span>
 <span class="p">)</span>
-<span class="k">def</span> <span class="nf">unzip_file</span><span class="p">(</span><span class="n">info</span><span class="p">,</span> <span class="n">zipped_file</span><span class="p">):</span>
+<span class="k">def</span> <span class="nf">unzip_file</span><span class="p">(</span><span class="n">context</span><span class="p">,</span> <span class="n">zipped_file</span><span class="p">):</span>
     <span class="c1"># ...</span>
     <span class="k">pass</span>
 </pre></div>
@@ -21622,13 +21576,13 @@ Third, you do not have to name it. The net result is much nicer:</p>
 accept None by default, and this is no longer true in 0.3.0. You have to opt into accepting nulls.</p>
 <p>Before:</p>
 <div class="highlight-py notranslate"><div class="highlight"><pre><span></span><span class="nd">@solid</span><span class="p">(</span><span class="n">outputs</span><span class="o">=</span><span class="p">[</span><span class="n">OutputDefinition</span><span class="p">(</span><span class="n">dagster_type</span><span class="o">=</span><span class="n">dagster_pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">)])</span>
-<span class="k">def</span> <span class="nf">return_none</span><span class="p">(</span><span class="n">info</span><span class="p">):</span>
+<span class="k">def</span> <span class="nf">return_none</span><span class="p">(</span><span class="n">context</span><span class="p">):</span>
     <span class="k">return</span> <span class="bp">None</span> <span class="c1"># None no longer allowed, would break at runtime</span>
 </pre></div>
 </div>
 <p>After</p>
 <div class="highlight-py notranslate"><div class="highlight"><pre><span></span><span class="nd">@solid</span><span class="p">(</span><span class="n">outputs</span><span class="o">=</span><span class="p">[</span><span class="n">OutputDefinition</span><span class="p">(</span><span class="n">dagster_type</span><span class="o">=</span><span class="n">Nullable</span><span class="p">(</span><span class="n">dagster_pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">))])</span>
-<span class="k">def</span> <span class="nf">return_none</span><span class="p">(</span><span class="n">info</span><span class="p">):</span>
+<span class="k">def</span> <span class="nf">return_none</span><span class="p">(</span><span class="n">context</span><span class="p">):</span>
     <span class="k">return</span> <span class="bp">None</span> <span class="c1"># Because of Nullable wrapper, this is ok</span>
 </pre></div>
 </div>
@@ -22089,7 +22043,7 @@ defines the structure and type of configuration values that can be set on each e
 solid. This parameter should be a <a class="reference internal" href="../apidocs/definitions.html#dagster.Field" title="dagster.Field"><code class="xref py py-func docutils literal notranslate"><span class="pre">Field</span></code></a>, which tells the dagster
 machinery how to translate config values into runtime values available to the solid.</li>
 <li>The function annotated by the <a class="reference internal" href="../apidocs/decorators.html#dagster.solid" title="dagster.solid"><code class="xref py py-func docutils literal notranslate"><span class="pre">&#64;solid</span></code></a> API receives an additional first
-parameter, <code class="docutils literal notranslate"><span class="pre">context</span></code>, of type <a class="reference internal" href="../apidocs/definitions.html#dagster.TransformExecutionContext" title="dagster.TransformExecutionContext"><code class="xref py py-class docutils literal notranslate"><span class="pre">TransformExecutionContext</span></code></a>.
+parameter, <code class="docutils literal notranslate"><span class="pre">context</span></code>, of type <code class="xref py py-class docutils literal notranslate"><span class="pre">TransformExecutionContext</span></code>.
 The configuration passed into each solid is available to the annotated function as <code class="docutils literal notranslate"><span class="pre">context.solid_config</span></code>.</li>
 </ol>
 <p>Configuration values are passed in a dict as the second argument to
@@ -25053,8 +25007,9 @@ We are going to record the results of computations in that key value store.</p>
 
 <span class="k">def</span> <span class="nf">define_cloud_store_resource</span><span class="p">():</span>
     <span class="k">return</span> <span class="n">ResourceDefinition</span><span class="p">(</span>
-        <span class="n">resource_fn</span><span class="o">=</span><span class="k">lambda</span> <span class="n">info</span><span class="p">:</span> <span class="n">PublicCloudStore</span><span class="p">(</span>
-            <span class="n">info</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;username&#39;</span><span class="p">],</span> <span class="n">info</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;password&#39;</span><span class="p">]</span>
+        <span class="n">resource_fn</span><span class="o">=</span><span class="k">lambda</span> <span class="n">init_context</span><span class="p">:</span> <span class="n">PublicCloudStore</span><span class="p">(</span>
+            <span class="n">init_context</span><span class="o">.</span><span class="n">resource_config</span><span class="p">[</span><span class="s1">&#39;username&#39;</span><span class="p">],</span>
+            <span class="n">init_context</span><span class="o">.</span><span class="n">resource_config</span><span class="p">[</span><span class="s1">&#39;password&#39;</span><span class="p">],</span>
         <span class="p">),</span>
         <span class="n">config_field</span><span class="o">=</span><span class="n">Field</span><span class="p">(</span>
             <span class="n">Dict</span><span class="p">({</span><span class="s1">&#39;username&#39;</span><span class="p">:</span> <span class="n">Field</span><span class="p">(</span><span class="n">String</span><span class="p">),</span> <span class="s1">&#39;password&#39;</span><span class="p">:</span> <span class="n">Field</span><span class="p">(</span><span class="n">String</span><span class="p">)})</span>
@@ -25062,7 +25017,6 @@ We are going to record the results of computations in that key value store.</p>
         <span class="n">description</span><span class="o">=</span><span class="s1">&#39;&#39;&#39;This represents some cloud-hosted key value store.</span>
 <span class="s1">        Username and password must be provided via configuration for this to</span>
 <span class="s1">        work&#39;&#39;&#39;</span><span class="p">,</span>
-    <span class="p">)</span>
 </pre></div>
 </div>
 <p>The core of a resource are the definition of its configuration (the <code class="docutils literal notranslate"><span class="pre">config_field</span></code>)
@@ -25070,7 +25024,8 @@ and then the function that can actually construct the resource. Notice that all 
 configuration specified for a given resource is passed to its constructor under the <code class="docutils literal notranslate"><span class="pre">config</span></code>
 key of the <code class="docutils literal notranslate"><span class="pre">info</span></code> parameter.</p>
 <p>Let’s now attach this resource to a pipeline and use it in a solid.</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="nd">@solid</span><span class="p">(</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>
+<span class="nd">@solid</span><span class="p">(</span>
     <span class="n">inputs</span><span class="o">=</span><span class="p">[</span><span class="n">InputDefinition</span><span class="p">(</span><span class="s1">&#39;num_one&#39;</span><span class="p">,</span> <span class="n">Int</span><span class="p">),</span> <span class="n">InputDefinition</span><span class="p">(</span><span class="s1">&#39;num_two&#39;</span><span class="p">,</span> <span class="n">Int</span><span class="p">)],</span>
     <span class="n">outputs</span><span class="o">=</span><span class="p">[</span><span class="n">OutputDefinition</span><span class="p">(</span><span class="n">Int</span><span class="p">)],</span>
 <span class="p">)</span>
@@ -25084,12 +25039,11 @@ key of the <code class="docutils literal notranslate"><span class="pre">info</sp
     <span class="k">return</span> <span class="n">PipelineDefinition</span><span class="p">(</span>
         <span class="n">name</span><span class="o">=</span><span class="s1">&#39;resource_test_pipeline&#39;</span><span class="p">,</span>
         <span class="n">solids</span><span class="o">=</span><span class="p">[</span><span class="n">add_ints</span><span class="p">],</span>
-        <span class="n">context_definitions</span><span class="o">=</span><span class="p">{</span>
+            <span class="p">),</span>
             <span class="s1">&#39;cloud&#39;</span><span class="p">:</span> <span class="n">PipelineContextDefinition</span><span class="p">(</span>
                 <span class="n">resources</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;store&#39;</span><span class="p">:</span> <span class="n">define_cloud_store_resource</span><span class="p">()}</span>
             <span class="p">),</span>
         <span class="p">},</span>
-    <span class="p">)</span>
 </pre></div>
 </div>
 <p>Resources are attached to pipeline context definitions. A pipeline context
@@ -25101,7 +25055,8 @@ by altering configuration, while not changing your code.</p>
 <p>In this case we have a single context definition “cloud” and that has a single
 resource.</p>
 <p>In order to invoke this pipeline, we pass it the following configuration:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">result</span> <span class="o">=</span> <span class="n">execute_pipeline</span><span class="p">(</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">_name__</span> <span class="o">==</span> <span class="s1">&#39;__main__&#39;</span><span class="p">:</span>
+<span class="n">result</span> <span class="o">=</span> <span class="n">execute_pipeline</span><span class="p">(</span>
     <span class="n">define_resource_test_pipeline</span><span class="p">(),</span>
     <span class="n">environment</span><span class="o">=</span><span class="p">{</span>
         <span class="s1">&#39;context&#39;</span><span class="p">:</span> <span class="p">{</span>
@@ -25125,7 +25080,6 @@ resource.</p>
             <span class="p">}</span>
         <span class="p">},</span>
     <span class="p">},</span>
-<span class="p">)</span>
 </pre></div>
 </div>
 <p>Note how we are telling the configuration to create a cloud context by
@@ -25161,28 +25115,29 @@ in testing contexts but does not touch the public cloud:</p>
 </pre></div>
 </div>
 <p>And lastly add a new context definition to represent this new operating “mode”:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">define_resource_test_pipeline</span><span class="p">():</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>
+<span class="k">def</span> <span class="nf">define_resource_test_pipeline</span><span class="p">():</span>
     <span class="k">return</span> <span class="n">PipelineDefinition</span><span class="p">(</span>
         <span class="n">name</span><span class="o">=</span><span class="s1">&#39;resource_test_pipeline&#39;</span><span class="p">,</span>
         <span class="n">solids</span><span class="o">=</span><span class="p">[</span><span class="n">add_ints</span><span class="p">],</span>
-        <span class="n">context_definitions</span><span class="o">=</span><span class="p">{</span>
-<span class="hll">            <span class="s1">&#39;local&#39;</span><span class="p">:</span> <span class="n">PipelineContextDefinition</span><span class="p">(</span>
+<span class="hll">        <span class="n">context_definitions</span><span class="o">=</span><span class="p">{</span>
+</span><span class="hll">            <span class="s1">&#39;local&#39;</span><span class="p">:</span> <span class="n">PipelineContextDefinition</span><span class="p">(</span>
 </span><span class="hll">                <span class="n">resources</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;store&#39;</span><span class="p">:</span> <span class="n">define_in_memory_store_resource</span><span class="p">()}</span>
-</span><span class="hll">            <span class="p">),</span>
-</span>            <span class="s1">&#39;cloud&#39;</span><span class="p">:</span> <span class="n">PipelineContextDefinition</span><span class="p">(</span>
+</span>            <span class="p">),</span>
+            <span class="s1">&#39;cloud&#39;</span><span class="p">:</span> <span class="n">PipelineContextDefinition</span><span class="p">(</span>
                 <span class="n">resources</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;store&#39;</span><span class="p">:</span> <span class="n">define_cloud_store_resource</span><span class="p">()}</span>
             <span class="p">),</span>
         <span class="p">},</span>
-    <span class="p">)</span>
 </pre></div>
 </div>
 <p>Now we can simply change configuration and the “in-memory” version of the
 resource will be used instead of the cloud version:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">result</span> <span class="o">=</span> <span class="n">execute_pipeline</span><span class="p">(</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>
+<span class="n">result</span> <span class="o">=</span> <span class="n">execute_pipeline</span><span class="p">(</span>
     <span class="n">define_resource_test_pipeline</span><span class="p">(),</span>
-    <span class="n">environment</span><span class="o">=</span><span class="p">{</span>
-<span class="hll">        <span class="s1">&#39;context&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;local&#39;</span><span class="p">:</span> <span class="p">{}},</span>
-</span>        <span class="s1">&#39;solids&#39;</span><span class="p">:</span> <span class="p">{</span>
+<span class="hll">    <span class="n">environment</span><span class="o">=</span><span class="p">{</span>
+</span>        <span class="s1">&#39;context&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;local&#39;</span><span class="p">:</span> <span class="p">{}},</span>
+        <span class="s1">&#39;solids&#39;</span><span class="p">:</span> <span class="p">{</span>
             <span class="s1">&#39;add_ints&#39;</span><span class="p">:</span> <span class="p">{</span>
                 <span class="s1">&#39;inputs&#39;</span><span class="p">:</span> <span class="p">{</span>
                     <span class="s1">&#39;num_one&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;value&#39;</span><span class="p">:</span> <span class="mi">2</span><span class="p">},</span>
@@ -25191,7 +25146,6 @@ resource will be used instead of the cloud version:</p>
             <span class="p">}</span>
         <span class="p">},</span>
     <span class="p">},</span>
-<span class="p">)</span>
 </pre></div>
 </div>
 <p>In the next section, we’ll see how to declaratively specify <a class="reference internal" href="repos.html"><span class="doc">Repositories</span></a> to

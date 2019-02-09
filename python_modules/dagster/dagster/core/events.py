@@ -1,3 +1,4 @@
+from collections import namedtuple
 from enum import Enum
 import json
 
@@ -14,6 +15,8 @@ from dagster.utils.logging import (
     check_valid_level_param,
     construct_single_handler_logger,
 )
+
+from .log import DagsterLog
 
 
 class EventType(Enum):
@@ -33,38 +36,39 @@ class EventType(Enum):
     UNCATEGORIZED = 'UNCATEGORIZED'
 
 
-class ExecutionEvents:
-    def __init__(self, context):
-        self.context = context
+class ExecutionEvents(namedtuple('_ExecutionEvents', 'pipeline_name log')):
+    def __new__(cls, pipeline_name, log):
+        return super(ExecutionEvents, cls).__new__(
+            cls,
+            check.str_param(pipeline_name, 'pipeline_name'),
+            check.inst_param(log, 'log', DagsterLog),
+        )
 
     def pipeline_start(self):
-        self.check_pipeline_in_context()
-        self.context.info(
-            'Beginning execution of pipeline {pipeline}'.format(pipeline=self.pipeline_name()),
+        self.log.info(
+            'Beginning execution of pipeline {pipeline}'.format(pipeline=self.pipeline_name),
             event_type=EventType.PIPELINE_START.value,
         )
 
     def pipeline_success(self):
-        self.check_pipeline_in_context()
-        self.context.info(
+        self.log.info(
             'Completing successful execution of pipeline {pipeline}'.format(
-                pipeline=self.pipeline_name()
+                pipeline=self.pipeline_name
             ),
             event_type=EventType.PIPELINE_SUCCESS.value,
         )
 
     def pipeline_failure(self):
-        self.check_pipeline_in_context()
-        self.context.info(
+        self.log.info(
             'Completing failing execution of pipeline {pipeline}'.format(
-                pipeline=self.pipeline_name()
+                pipeline=self.pipeline_name
             ),
             event_type=EventType.PIPELINE_FAILURE.value,
         )
 
     def execution_plan_step_start(self, step_key):
         check.str_param(step_key, 'step_key')
-        self.context.info(
+        self.log.info(
             'Beginning execution of {step_key}'.format(step_key=step_key),
             event_type=EventType.EXECUTION_PLAN_STEP_START.value,
             step_key=step_key,
@@ -74,7 +78,7 @@ class ExecutionEvents:
         check.str_param(step_key, 'step_key')
         check.float_param(millis, 'millis')
 
-        self.context.info(
+        self.log.info(
             'Execution of {step_key} succeeded in {millis}'.format(
                 step_key=step_key, millis=millis
             ),
@@ -85,7 +89,7 @@ class ExecutionEvents:
 
     def execution_plan_step_failure(self, step_key, exc_info):
         check.str_param(step_key, 'step_key')
-        self.context.info(
+        self.log.info(
             'Execution of {step_key} failed'.format(step_key=step_key),
             event_type=EventType.EXECUTION_PLAN_STEP_FAILURE.value,
             step_key=step_key,
@@ -95,7 +99,7 @@ class ExecutionEvents:
 
     def step_materialization(self, step_key, file_name, file_location):
         check.str_param(step_key, 'step_key')
-        self.context.info(
+        self.log.info(
             'Step {step_key} produced materialization of {name} at {loc}'.format(
                 step_key=step_key, name=file_name, loc=file_location
             ),
@@ -104,12 +108,6 @@ class ExecutionEvents:
             file_name=file_name,
             file_location=file_location,
         )
-
-    def pipeline_name(self):
-        return self.context.get_tag('pipeline')
-
-    def check_pipeline_in_context(self):
-        check.invariant(self.context.has_tag('pipeline'), 'Must have pipeline context value')
 
 
 EVENT_TYPE_VALUES = {item.value for item in EventType}

@@ -78,8 +78,8 @@ def test_single_solid_with_config():
     ran = {}
 
     @solid(config_field=Field(Int))
-    def check_config_for_two(info):
-        assert info.solid_config == 2
+    def check_config_for_two(context):
+        assert context.solid_config == 2
         ran['check_config_for_two'] = True
 
     pipeline_def = PipelineDefinition(solids=[check_config_for_two])
@@ -97,8 +97,8 @@ def test_single_solid_with_context_config():
     ran = {'check_context_config_for_two': 0}
 
     @solid
-    def check_context_config_for_two(info):
-        assert info.resources == 2
+    def check_context_config_for_two(context):
+        assert context.resources == 2
         ran['check_context_config_for_two'] += 1
 
     pipeline_def = PipelineDefinition(
@@ -106,7 +106,9 @@ def test_single_solid_with_context_config():
         context_definitions={
             'test_context': PipelineContextDefinition(
                 config_field=Field(Int, is_optional=True, default_value=2),
-                context_fn=lambda info: ExecutionContext(resources=info.config),
+                context_fn=lambda init_context: ExecutionContext(
+                    resources=init_context.context_config
+                ),
             )
         },
     )

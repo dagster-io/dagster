@@ -17,10 +17,10 @@ from dagster.cli.dynamic_loader import (
 from dagster.utils import safe_isfile
 
 
-def get_module_target_function(info):
-    check.inst_param(info, 'info', RepositoryTargetInfo)
-    if info.repository_yaml:
-        mode_data = create_repository_loading_mode_data(info)
+def get_module_target_function(repo_target_info):
+    check.inst_param(repo_target_info, 'repo_target_info', RepositoryTargetInfo)
+    if repo_target_info.repository_yaml:
+        mode_data = create_repository_loading_mode_data(repo_target_info)
         file_path = mode_data.data
         check.str_param(file_path, 'file_path')
         config = load_yaml_from_path(file_path)
@@ -30,9 +30,11 @@ def get_module_target_function(info):
         if module_name:
             return ModuleTargetFunction(module_name=module_name, fn_name=fn_name)
         return None
-    elif info.module_name and info.fn_name:
-        return ModuleTargetFunction(module_name=info.module_name, fn_name=info.fn_name)
-    elif info.python_file and info.fn_name:
+    elif repo_target_info.module_name and repo_target_info.fn_name:
+        return ModuleTargetFunction(
+            module_name=repo_target_info.module_name, fn_name=repo_target_info.fn_name
+        )
+    elif repo_target_info.python_file and repo_target_info.fn_name:
         return None
     else:
         raise InvalidRepositoryLoadingComboError()

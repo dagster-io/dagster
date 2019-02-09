@@ -2,7 +2,7 @@ import sqlalchemy
 
 from dagster import ExecutionContext, check
 
-from dagster.core.execution_context import TransformExecutionContext, LegacyRuntimeExecutionContext
+from dagster.core.execution_context import PipelineExecutionContext, TransformExecutionContext
 
 
 class SqlAlchemyResource(object):
@@ -16,19 +16,19 @@ class DefaultSqlAlchemyResources(object):
         self.sa = check.inst_param(sa, 'sa', SqlAlchemyResource)
 
 
-def check_supports_sql_alchemy_resource(legacy_context):
-    check.inst_param(legacy_context, 'legacy_context', LegacyRuntimeExecutionContext)
-    check.invariant(legacy_context.resources is not None)
+def check_supports_sql_alchemy_resource(pipeline_context):
+    check.inst_param(pipeline_context, 'pipeline_context', PipelineExecutionContext)
+    check.invariant(pipeline_context.resources is not None)
     check.invariant(
-        hasattr(legacy_context.resources, 'sa'),
+        hasattr(pipeline_context.resources, 'sa'),
         'Resources must have sa property be an object of SqlAlchemyResource',
     )
     check.inst(
-        legacy_context.resources.sa,
+        pipeline_context.resources.sa,
         SqlAlchemyResource,
         'Resources must have sa property be an object of SqlAlchemyResource',
     )
-    return legacy_context
+    return pipeline_context
 
 
 def create_sql_alchemy_context_params_from_engine(engine, loggers=None):
@@ -36,11 +36,11 @@ def create_sql_alchemy_context_params_from_engine(engine, loggers=None):
     return ExecutionContext(loggers=loggers, resources=resources)
 
 
-def _is_sqlite_context(context):
-    check.inst_param(context, 'context', TransformExecutionContext)
+def _is_sqlite_context(transform_context):
+    check.inst_param(transform_context, 'transform_context', TransformExecutionContext)
 
-    check_supports_sql_alchemy_resource(context.legacy_context)
-    return _is_sqlite_resource(context.resources.sa)
+    check_supports_sql_alchemy_resource(transform_context.legacy_context)
+    return _is_sqlite_resource(transform_context.resources.sa)
 
 
 def _is_sqlite_resource(sa_resource):
@@ -53,11 +53,11 @@ def _is_sqlite_resource(sa_resource):
     return type(raw_connection.connection).__module__ == 'sqlite3'
 
 
-def execute_sql_text_on_context(context, sql_text):
-    check.inst_param(context, 'context', TransformExecutionContext)
-    check_supports_sql_alchemy_resource(context.legacy_context)
+def execute_sql_text_on_context(transform_context, sql_text):
+    check.inst_param(transform_context, 'transform_context', TransformExecutionContext)
+    check_supports_sql_alchemy_resource(transform_context)
 
-    return execute_sql_text_on_sa_resource(context.resources.sa, sql_text)
+    return execute_sql_text_on_sa_resource(transform_context.resources.sa, sql_text)
 
 
 def execute_sql_text_on_sa_resource(sa_resource, sql_text):

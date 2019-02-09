@@ -100,11 +100,11 @@ class DauphinPipelineConfigValidationError(dauphin.Interface):
     reason = dauphin.NonNull('EvaluationErrorReason')
 
     @staticmethod
-    def from_dagster_error(info, error):
+    def from_dagster_error(graphene_info, error):
         check.inst_param(error, 'error', EvaluationError)
 
         if isinstance(error.error_data, RuntimeMismatchErrorData):
-            return info.schema.type_named('RuntimeMismatchConfigError')(
+            return graphene_info.schema.type_named('RuntimeMismatchConfigError')(
                 message=error.message,
                 path=[],  # TODO: remove
                 stack=error.stack,
@@ -113,17 +113,17 @@ class DauphinPipelineConfigValidationError(dauphin.Interface):
                 value_rep=error.error_data.value_rep,
             )
         elif isinstance(error.error_data, MissingFieldErrorData):
-            return info.schema.type_named('MissingFieldConfigError')(
+            return graphene_info.schema.type_named('MissingFieldConfigError')(
                 message=error.message,
                 path=[],  # TODO: remove
                 stack=error.stack,
                 reason=error.reason,
-                field=info.schema.type_named('ConfigTypeField')(
+                field=graphene_info.schema.type_named('ConfigTypeField')(
                     name=error.error_data.field_name, field=error.error_data.field_def
                 ),
             )
         elif isinstance(error.error_data, FieldNotDefinedErrorData):
-            return info.schema.type_named('FieldNotDefinedConfigError')(
+            return graphene_info.schema.type_named('FieldNotDefinedConfigError')(
                 message=error.message,
                 path=[],  # TODO: remove
                 stack=error.stack,
@@ -131,7 +131,7 @@ class DauphinPipelineConfigValidationError(dauphin.Interface):
                 field_name=error.error_data.field_name,
             )
         elif isinstance(error.error_data, SelectorTypeErrorData):
-            return info.schema.type_named('SelectorTypeConfigError')(
+            return graphene_info.schema.type_named('SelectorTypeConfigError')(
                 message=error.message,
                 path=[],  # TODO: remove
                 stack=error.stack,
@@ -244,8 +244,10 @@ class DauphinEvaluationStack(dauphin.ObjectType):
 
     entries = dauphin.non_null_list('EvaluationStackEntry')
 
-    def resolve_entries(self, info):
-        return map(info.schema.type_named('EvaluationStackEntry').from_native_entry, self.entries)
+    def resolve_entries(self, graphene_info):
+        return map(
+            graphene_info.schema.type_named('EvaluationStackEntry').from_native_entry, self.entries
+        )
 
 
 class DauphinPipelineOrError(dauphin.Union):

@@ -26,29 +26,29 @@ def nonce_solid(name, n_inputs, n_outputs):
             for i in range(n_outputs)
         ],
     )
-    def solid_fn(info, **_kwargs):
+    def solid_fn(context, **_kwargs):
         for i in range(200):
             time.sleep(0.02)
             if i % 1000 == 420:
-                info.log.error(
+                context.log.error(
                     'Error message seq={i} from solid {name}'.format(
                         i=i, name=name
                     )
                 )
             elif i % 100 == 0:
-                info.log.warning(
+                context.log.warning(
                     'Warning message seq={i} from solid {name}'.format(
                         i=i, name=name
                     )
                 )
             elif i % 10 == 0:
-                info.log.info(
+                context.log.info(
                     'Info message seq={i} from solid {name}'.format(
                         i=i, name=name
                     )
                 )
             else:
-                info.log.debug(
+                context.log.debug(
                     'Debug message seq={i} from solid {name}'.format(
                         i=i, name=name
                     )

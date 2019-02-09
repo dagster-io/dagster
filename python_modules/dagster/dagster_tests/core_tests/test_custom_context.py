@@ -29,7 +29,7 @@ def test_default_context():
     @solid(inputs=[], outputs=[OutputDefinition()])
     def default_context_transform(context):
         called['yes'] = True
-        for logger in context.loggers:
+        for logger in context.log.loggers:
             assert logger.level == INFO
 
     pipeline = PipelineDefinition(solids=[default_context_transform])
@@ -58,7 +58,7 @@ def test_run_id():
 def test_default_context_with_log_level():
     @solid(inputs=[], outputs=[OutputDefinition()])
     def default_context_transform(context):
-        for logger in context.loggers:
+        for logger in context.log.loggers:
             assert logger.level == INFO
 
     pipeline = PipelineDefinition(solids=[default_context_transform])
@@ -93,7 +93,9 @@ def test_default_value():
                         }
                     )
                 ),
-                context_fn=lambda info: ExecutionContext(resources=info.config),
+                context_fn=lambda init_context: ExecutionContext(
+                    resources=init_context.context_config
+                ),
             )
         },
     )
@@ -113,11 +115,15 @@ def test_custom_contexts():
         context_definitions={
             'custom_one': PipelineContextDefinition(
                 config_field=Field(Dict({'field_one': Field(dagster_type=String)})),
-                context_fn=lambda info: ExecutionContext(resources=info.config),
+                context_fn=lambda init_context: ExecutionContext(
+                    resources=init_context.context_config
+                ),
             ),
             'custom_two': PipelineContextDefinition(
                 config_field=Field(Dict({'field_one': Field(dagster_type=String)})),
-                context_fn=lambda info: ExecutionContext(resources=info.config),
+                context_fn=lambda init_context: ExecutionContext(
+                    resources=init_context.context_config
+                ),
             ),
         },
     )
@@ -139,10 +145,10 @@ def test_yield_context():
         assert context.get_tag('foo') == 'bar'  # pylint: disable=W0212
         events.append('during')
 
-    def _yield_context(info):
+    def _yield_context(init_context):
         events.append('before')
         tags = {'foo': 'bar'}
-        context = ExecutionContext(resources=info.config, tags=tags)
+        context = ExecutionContext(resources=init_context.context_config, tags=tags)
         yield context
         events.append('after')
 
@@ -197,7 +203,7 @@ def test_invalid_context():
         context_definitions={
             'default': PipelineContextDefinition(
                 config_field=Field(Dict({'string_field': Field(String)})),
-                context_fn=lambda info: ExecutionContext(resources=info.config),
+                context_fn=lambda init_context: ExecutionContext(resources=init_context.config),
             )
         },
     )

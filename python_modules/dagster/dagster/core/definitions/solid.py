@@ -46,7 +46,7 @@ class SolidDefinition(object):
     Examples:
         .. code-block:: python
 
-            def _add_one(info, inputs):
+            def _add_one(_context, inputs):
                 yield Result(inputs["num"] + 1)
 
             SolidDefinition(

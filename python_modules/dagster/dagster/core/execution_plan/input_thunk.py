@@ -36,13 +36,13 @@ def _create_input_thunk_execution_step(plan_builder, solid, input_def, config_va
     )
 
 
-def create_input_thunk_execution_step(info, plan_builder, solid, input_def, value):
-    check.inst_param(info, 'info', ExecutionPlanInfo)
+def create_input_thunk_execution_step(execution_info, plan_builder, solid, input_def, value):
+    check.inst_param(execution_info, 'execution_info', ExecutionPlanInfo)
     check.inst_param(plan_builder, 'plan_builder', PlanBuilder)
     check.inst_param(solid, 'solid', Solid)
     check.inst_param(input_def, 'input_def', InputDefinition)
 
-    dependency_structure = info.pipeline.dependency_structure
+    dependency_structure = execution_info.pipeline.dependency_structure
     input_handle = solid.input_handle(input_def.name)
 
     if dependency_structure.has_dep(input_handle):
@@ -53,7 +53,9 @@ def create_input_thunk_execution_step(info, plan_builder, solid, input_def, valu
                 'a dependency. Either remove the dependency, specify a subdag '
                 'to execute, or remove the inputs specification in the environment.'
             ).format(
-                pipeline_name=info.pipeline.name, solid_name=solid.name, input_name=input_def.name
+                pipeline_name=execution_info.pipeline.name,
+                solid_name=solid.name,
+                input_name=input_def.name,
             )
         )
 

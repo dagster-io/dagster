@@ -21,7 +21,7 @@ def create_unmarshal_input_step(plan_builder, step, step_input, marshalling_key)
     def _compute_fn(context, _step, _inputs):
         yield StepOutputValue(
             output_name=UNMARSHAL_INPUT_OUTPUT,
-            value=context.persistence_policy.read_value(
+            value=context.persistence_strategy.read_value(
                 step_input.runtime_type.serialization_strategy, marshalling_key
             ),
         )
@@ -52,7 +52,7 @@ def create_marshal_output_step(plan_builder, step, step_output, marshalling_key)
     check.str_param(marshalling_key, 'marshalling_key')
 
     def _compute_fn(context, _step, inputs):
-        context.persistence_policy.write_value(
+        context.persistence_strategy.write_value(
             step_output.runtime_type.serialization_strategy,
             marshalling_key,
             inputs[MARSHAL_OUTPUT_INPUT],

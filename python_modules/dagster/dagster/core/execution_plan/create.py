@@ -181,8 +181,8 @@ def get_input_source_step_handle(execution_info, plan_builder, solid, input_def)
         )
 
 
-def create_step_inputs(info, plan_builder, solid):
-    check.inst_param(info, 'info', ExecutionPlanInfo)
+def create_step_inputs(execution_info, plan_builder, solid):
+    check.inst_param(execution_info, 'execution_info', ExecutionPlanInfo)
     check.inst_param(plan_builder, 'plan_builder', PlanBuilder)
     check.inst_param(solid, 'solid', Solid)
 
@@ -191,11 +191,11 @@ def create_step_inputs(info, plan_builder, solid):
     for input_def in solid.definition.input_defs:
         with plan_builder.push_tags(input=input_def.name):
             prev_step_output_handle = get_input_source_step_handle(
-                info, plan_builder, solid, input_def
+                execution_info, plan_builder, solid, input_def
             )
 
             subplan = create_subplan_for_input(
-                info, plan_builder, solid, prev_step_output_handle, input_def
+                execution_info, plan_builder, solid, prev_step_output_handle, input_def
             )
 
             plan_builder.steps.extend(subplan.steps)

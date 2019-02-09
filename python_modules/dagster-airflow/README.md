@@ -1,24 +1,30 @@
 # dagster-airflow
+
 An Airflow integration for DAGs defined using Dagster. Schedule and monitor your DAGs with Airflow,
 while defining them using the Dagster abstractions and running them in fully isolated containers.
 
 ### Compatibility
+
 Note that until [AIRFLOW-2876] is resolved, Airflow (and, as a consequence, dagster-airflow) is
 incompatible with Python 3.7.
 
 # Requirements
+
 dagster-airflow depends on Docker, which must be running in your Airflow environment (just as for
 the ordinary Airflow DockerOperator).
 
 # Packaging a Dagster repository for Airflow
+
 In order to schedule, run, and monitor Dagster pipelines using Airflow, you'll need to take a few
 extra steps after you've defined your pipelines in the ordinary way:
+
 1. Containerize your repository
 2. Set up an S3 bucket for dagster-airflow
 3. Install the dagster-airflow plugin
 4. Define your pipeline as an Airflow DAG
 
 ## Containerizing your repository
+
 A Dagster repository must be containerized in order to be run using dagster-airflow.
 
 Make sure you have Docker installed, and write a Dockerfile like the following:
@@ -78,6 +84,7 @@ than the public DockerHub, to store your containerized pipelines. =
 We'll see later on how to set dagster-airflow up to pull images from the registry of your choice.
 
 ## Setting up S3 for dagster-airflow
+
 We need a place to store intermediate results from execution of steps in your pipeline. By default,
 dagster-airflow uses Amazon S3 as a lake for this purpose.
 
@@ -103,13 +110,12 @@ Results will appear in this bucket prefixed by the `run_id` that Airflow generat
 is run (and passes to each operator in its `context` argument), so you can easily search for and
 examine the results produced by each step in any of your DAG runs.
 
-If you're new to using Airflow connections, you may want to [configure your Airflow instance]
-(https://airflow.readthedocs.io/en/stable/howto/secure-connections.html) to encrypt your access
-keys. We also recommend that you use credentials for an IAM user which has the [least privilege]
-(https://docs.aws.amazon.com/IAM/latest/UserGuide/best-practices.html#grant-least-privilege)
+If you're new to using Airflow connections, you may want to [configure your Airflow instance](https://airflow.readthedocs.io/en/stable/howto/secure-connections.html) to encrypt your access
+keys. We also recommend that you use credentials for an IAM user which has the [least privilege](https://docs.aws.amazon.com/IAM/latest/UserGuide/best-practices.html#grant-least-privilege)
 required to access the S3 bucket for dagster-airflow.
 
 ## Installing the dagster-airflow plugin
+
 Airflow needs to know about our the custom `DagsterOperator` that we'll use to execute steps in
 containerized pipelines. We use Airflow's [plugin machinery](https://airflow.apache.org/plugins.html)
 to accomplish this.
@@ -123,6 +129,7 @@ dagster-airflow install
 ```
 
 ## Defining your pipeline as an Airflow DAG
+
 Airflow DAGs are declaratively defined in Python files that live in another magic directory,
 `$AIRFLOW_HOME/dags/`. Code in these files doesn't do any actual processing -- it's just a way of
 telling Airflow about the structure of your pipelines. The pipeline steps themselves are fully
@@ -149,7 +156,8 @@ dagster-airflow scaffold demo_pipeline -e env.yml --install
 ```
 
 ### Customizing your DAG
-Once you've scaffolded your DAG, you can make changes as your business logic requires to take 
+
+Once you've scaffolded your DAG, you can make changes as your business logic requires to take
 advantage of Airflow functionality that is external to the logical structure of your pipelines.
 
 FIXME discuss SubDAGs and structure.
@@ -159,6 +167,7 @@ DAG runs interact with their environment, or you may want to manually edit DAG a
 `start_date` or `email`.
 
 ### Configuring your connection to Amazon S3
+
 If you want to use an Airflow connection other than `aws_default` to connect to S3, you'll need to
 edit the lines in the scaffolded definition that read:
 
@@ -175,6 +184,7 @@ S3.
 **FIXME**
 
 #### An example Airflow DAG definition
+
 For example, consider the following Dagster pipeline definition (which should be familiar from the
 Dagster tutorial):
 
@@ -196,8 +206,8 @@ from dagster import (
 
 
 @solid(inputs=[InputDefinition('word', String)], config_field=Field(Dict({'factor': Field(Int)})))
-def multiply_the_word(info, word):
-    return word * info.config['factor']
+def multiply_the_word(context, word):
+    return word * context.solid_config['factor']
 
 
 @lambda_solid(inputs=[InputDefinition('word')])
@@ -290,8 +300,9 @@ Now you can visualize and schedule this DAG in Airflow:
 ![Example DAG](example_dag.png)
 
 Note that there is one Airflow task corresponding to each execution step in the pipeline, not to
-each solid. This means that 
+each solid. This means that
 Note that we use a single operator, the DagsterOperator, for every execution step
 
 # Testing
+
 Docker must be running for the test suite to pass.

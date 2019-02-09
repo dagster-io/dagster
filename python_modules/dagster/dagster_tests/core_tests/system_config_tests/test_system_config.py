@@ -443,8 +443,8 @@ def test_solid_config_error():
 
 
 def test_optional_solid_with_no_config():
-    def _assert_config_none(info, value):
-        assert info.solid_config is value
+    def _assert_config_none(context, value):
+        assert context.solid_config is value
 
     pipeline_def = PipelineDefinition(
         name='some_pipeline',
@@ -454,13 +454,13 @@ def test_optional_solid_with_no_config():
                 config_field=Field(Int),
                 inputs=[],
                 outputs=[],
-                transform_fn=lambda info, _inputs: _assert_config_none(info, 234),
+                transform_fn=lambda context, _inputs: _assert_config_none(context, 234),
             ),
             SolidDefinition(
                 name='no_config_solid',
                 inputs=[],
                 outputs=[],
-                transform_fn=lambda info, _inputs: _assert_config_none(info, None),
+                transform_fn=lambda context, _inputs: _assert_config_none(context, None),
             ),
         ],
     )
@@ -469,8 +469,8 @@ def test_optional_solid_with_no_config():
 
 
 def test_optional_solid_with_optional_scalar_config():
-    def _assert_config_none(info, value):
-        assert info.solid_config is value
+    def _assert_config_none(context, value):
+        assert context.solid_config is value
 
     pipeline_def = PipelineDefinition(
         name='some_pipeline',
@@ -480,7 +480,7 @@ def test_optional_solid_with_optional_scalar_config():
                 config_field=Field(Int, is_optional=True),
                 inputs=[],
                 outputs=[],
-                transform_fn=lambda info, _inputs: _assert_config_none(info, 234),
+                transform_fn=lambda context, _inputs: _assert_config_none(context, 234),
             )
         ],
     )
@@ -505,8 +505,8 @@ def test_optional_solid_with_optional_scalar_config():
 
 
 def test_optional_solid_with_required_scalar_config():
-    def _assert_config_none(info, value):
-        assert info.solid_config is value
+    def _assert_config_none(context, value):
+        assert context.solid_config is value
 
     pipeline_def = PipelineDefinition(
         name='some_pipeline',
@@ -516,7 +516,7 @@ def test_optional_solid_with_required_scalar_config():
                 config_field=Field(Int),
                 inputs=[],
                 outputs=[],
-                transform_fn=lambda info, _inputs: _assert_config_none(info, 234),
+                transform_fn=lambda context, _inputs: _assert_config_none(context, 234),
             )
         ],
     )

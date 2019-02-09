@@ -82,7 +82,7 @@ def create_sql_statement_solid(name, sql_text, inputs=None):
 
 
 InMemSqlLiteEngineResource = ResourceDefinition(
-    resource_fn=lambda info: in_mem_engine(info.config['num_table']),
+    resource_fn=lambda init_context: in_mem_engine(init_context.resource_config['num_table']),
     config_field=Field(
         Dict({'num_table': Field(String, is_optional=True, default_value='num_table')})
     ),

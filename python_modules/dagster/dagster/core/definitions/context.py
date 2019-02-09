@@ -93,8 +93,8 @@ class PipelineContextDefinition(object):
         self.resources_type = namedtuple('Resources', list(resources.keys())) if resources else None
 
 
-def _default_context_fn(info):
-    log_level = level_from_string(info.config['log_level'])
+def _default_context_fn(init_context):
+    log_level = level_from_string(init_context.context_config['log_level'])
     context = ExecutionContext(loggers=[define_colored_console_logger('dagster', level=log_level)])
     return context
 

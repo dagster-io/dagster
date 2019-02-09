@@ -18,7 +18,7 @@ def test_structured_logger_in_context():
 
     logger = define_structured_logger('some_name', _append_message, level=DEBUG)
     context = create_test_runtime_legacy_execution_context(loggers=[logger])
-    context.debug('from_context', foo=2)
+    context.log.debug('from_context', foo=2)
     assert len(messages) == 1
     message = messages[0]
     assert message.name == 'some_name'
@@ -37,7 +37,7 @@ def test_construct_event_record():
     context = create_test_runtime_legacy_execution_context(
         loggers=[logger], tags={'pipeline': 'some_pipeline'}
     )
-    context.info('random message')
+    context.log.info('random message')
 
     assert len(messages) == 1
     message = messages[0]
