@@ -31,7 +31,7 @@ from dagster.core.execution import (
 
 from dagster.core.utility_solids import define_stub_solid
 
-from dagster.utils.test import create_test_runtime_execution_context, execute_solid
+from dagster.utils.test import create_test_runtime_legacy_execution_context, execute_solid
 
 # protected members
 # pylint: disable=W0212
@@ -47,7 +47,7 @@ def create_dep_input_fn(name):
 
 
 def make_transform():
-    def transform(info, inputs):
+    def transform(context, inputs):
         passed_rows = []
         seen = set()
         for row in inputs.values():
@@ -59,13 +59,13 @@ def make_transform():
 
         result = []
         result.extend(passed_rows)
-        result.append({info.solid.name: 'transform_called'})
+        result.append({context.solid.name: 'transform_called'})
         return result
 
     return transform
 
 
-def _transform_fn(info, inputs):
+def _transform_fn(context, inputs):
     passed_rows = []
     seen = set()
     for row in inputs.values():
@@ -77,7 +77,7 @@ def _transform_fn(info, inputs):
 
     result = []
     result.extend(passed_rows)
-    result.append({info.solid.name: 'transform_called'})
+    result.append({context.solid.name: 'transform_called'})
     yield Result(result)
 
 
@@ -291,7 +291,9 @@ def _do_test(pipeline, do_execute_pipeline_iter):
     for result in do_execute_pipeline_iter():
         results.append(result)
 
-    result = PipelineExecutionResult(pipeline, create_test_runtime_execution_context(), results)
+    result = PipelineExecutionResult(
+        pipeline, create_test_runtime_legacy_execution_context(), results
+    )
 
     assert result.result_for_solid('A').transformed_value() == [
         input_set('A_input'),
@@ -335,9 +337,9 @@ def test_pipeline_name_threaded_through_context():
     name = 'foobar'
 
     @solid()
-    def assert_name_transform(info):
-        assert info.context._tags['pipeline']
-        assert info.context._tags['pipeline'] == name
+    def assert_name_transform(context):
+        assert context.has_tag('pipeline')
+        assert context.get_tag('pipeline') == name
 
     result = execute_pipeline(PipelineDefinition(name="foobar", solids=[assert_name_transform]))
 

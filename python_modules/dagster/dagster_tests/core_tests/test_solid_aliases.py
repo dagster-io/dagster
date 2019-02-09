@@ -65,7 +65,7 @@ def test_only_aliased_solids():
 def test_aliased_configs():
     @solid(inputs=[], config_field=Field(Int))
     def load_constant(info):
-        return info.config
+        return info.solid_config
 
     pipeline = PipelineDefinition(
         solids=[load_constant],
@@ -88,9 +88,9 @@ def test_aliased_solids_context():
     record = defaultdict(set)
 
     @solid
-    def log_things(info):
-        solid_value = info.context.get_tag('solid')
-        solid_def_value = info.context.get_tag('solid_definition')
+    def log_things(context):
+        solid_value = context.get_tag('solid')
+        solid_def_value = context.get_tag('solid_definition')
         record[solid_def_value].add(solid_value)
 
     pipeline = PipelineDefinition(

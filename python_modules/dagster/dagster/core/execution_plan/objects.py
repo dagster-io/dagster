@@ -11,7 +11,7 @@ from dagster.utils import merge_dicts
 from dagster.core.system_config.objects import EnvironmentConfig
 from dagster.core.definitions import PipelineDefinition, Solid, SolidOutputHandle
 from dagster.core.errors import DagsterError
-from dagster.core.execution_context import RuntimeExecutionContext
+from dagster.core.execution_context import LegacyRuntimeExecutionContext
 from dagster.core.types.runtime import RuntimeType
 
 
@@ -275,7 +275,7 @@ class ExecutionPlanInfo(namedtuple('_ExecutionPlanInfo', 'context pipeline envir
     def __new__(cls, context, pipeline, environment):
         return super(ExecutionPlanInfo, cls).__new__(
             cls,
-            check.inst_param(context, 'context', RuntimeExecutionContext),
+            check.inst_param(context, 'context', LegacyRuntimeExecutionContext),
             check.inst_param(pipeline, 'pipeline', PipelineDefinition),
             check.inst_param(environment, 'environment', EnvironmentConfig),
         )

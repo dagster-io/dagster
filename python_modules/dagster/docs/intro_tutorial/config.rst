@@ -31,8 +31,8 @@ proceeds. For now, the salient differences are:
    solid. This parameter should be a :py:func:`Field <dagster.Field>`, which tells the dagster
    machinery how to translate config values into runtime values available to the solid.
 2. The function annotated by the :py:func:`@solid <dagster.solid>` API receives an additional first
-   parameter, ``info``, of type :py:class:`TransformExecutionInfo <dagster.TransformExecutionInfo>`.
-   The configuration passed into each solid is available to the annotated function as ``info.config``.
+   parameter, ``context``, of type :py:class:`TransformExecutionContext <dagster.TransformExecutionContext>`.
+   The configuration passed into each solid is available to the annotated function as ``context.solid_config``.
 
 Configuration values are passed in a dict as the second argument to
 :py:func:`execute_pipeline <dagster.execute_pipeline>`. This dict specifies *all* of the

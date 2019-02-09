@@ -16,8 +16,8 @@ from dagster import (
 
 
 @solid(inputs=[InputDefinition('word', String)], config_field=Field(Any))
-def multiply_the_word(info, word):
-    return word * info.config['factor']
+def multiply_the_word(context, word):
+    return word * context.solid_config['factor']
 
 
 @lambda_solid(inputs=[InputDefinition('word')])
@@ -32,16 +32,16 @@ def count_letters(word):
     inputs=[InputDefinition('word', String)],
     config_field=Field(Dict({'factor': Field(Int)})),
 )
-def typed_multiply_the_word(info, word):
-    return word * info.config['factor']
+def typed_multiply_the_word(context, word):
+    return word * context.solid_config['factor']
 
 
 @solid(
     inputs=[InputDefinition('word', String)],
     config_field=Field(Dict({'factor': Field(String)})),
 )
-def typed_multiply_the_word_error(info, word):
-    return word * info.config['factor']
+def typed_multiply_the_word_error(context, word):
+    return word * context.solid_config['factor']
 
 
 def define_demo_configuration_schema_pipeline():

@@ -7,7 +7,7 @@ from dagster_sqlalchemy.common import (
     create_sql_alchemy_context_params_from_engine,
 )
 
-from dagster.utils.test import create_test_runtime_execution_context
+from dagster.utils.test import create_test_runtime_legacy_execution_context
 
 
 def create_num_table(engine, num_table_name='num_table'):
@@ -37,7 +37,7 @@ def in_mem_engine(num_table_name='num_table'):
 
 def create_sql_alchemy_context_from_engine(engine, *args, **kwargs):
     resources = DefaultSqlAlchemyResources(SqlAlchemyResource(engine))
-    context = create_test_runtime_execution_context(resources=resources, *args, **kwargs)
+    context = create_test_runtime_legacy_execution_context(resources=resources, *args, **kwargs)
     return check_supports_sql_alchemy_resource(context)
 
 

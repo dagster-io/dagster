@@ -1,6 +1,7 @@
 import os
 
 from dagster import Field, InputDefinition, OutputDefinition, SolidDefinition, check, Dict, String
+from dagster.core.execution_context import TransformExecutionContext
 
 from dagster.core.test_utils import single_output_transform
 
@@ -42,14 +43,14 @@ class DagsterSqlTableExpression(DagsterSqlExpression):
 
 
 def define_create_table_solid(name):
-    def _materialization_fn(info, inputs):
+    def _materialization_fn(context, inputs):
         sql_expr = inputs['expr']
         check.inst(sql_expr, DagsterSqlExpression)
-        output_table_name = check.str_elem(info.config, 'table_name')
+        output_table_name = check.str_elem(context.solid_config, 'table_name')
         total_sql = '''CREATE TABLE {output_table_name} AS {query_text}'''.format(
             output_table_name=output_table_name, query_text=sql_expr.query_text
         )
-        info.resources.sa.engine.connect().execute(total_sql)
+        context.resources.sa.engine.connect().execute(total_sql)
 
     return SolidDefinition(
         name=name,
@@ -93,6 +94,7 @@ def _create_sql_alchemy_transform_fn(sql_text):
     check.str_param(sql_text, 'sql_text')
 
     def transform_fn(context, _args):
+        check.inst_param(context, 'context', TransformExecutionContext)
         return execute_sql_text_on_context(context, sql_text)
 
     return transform_fn

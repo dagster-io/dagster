@@ -123,7 +123,7 @@ def test_execution_plan_middle_step():
 
 def test_execution_plan_two_outputs():
     @solid(outputs=[OutputDefinition(types.Int, 'num_one'), OutputDefinition(types.Int, 'num_two')])
-    def return_one_two(_info):
+    def return_one_two(_context):
         yield Result(1, 'num_one')
         yield Result(2, 'num_two')
 
@@ -146,9 +146,9 @@ def test_reentrant_execute_plan():
     called = {}
 
     @solid
-    def has_tag(info):
-        assert info.context.has_tag('foo')
-        assert info.context.get_tag('foo') == 'bar'
+    def has_tag(context):
+        assert context.has_tag('foo')
+        assert context.get_tag('foo') == 'bar'
         called['yup'] = True
 
     pipeline_def = PipelineDefinition(name='has_tag_pipeline', solids=[has_tag])

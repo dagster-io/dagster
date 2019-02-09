@@ -81,8 +81,8 @@ def single_output_transform(name, inputs, transform_fn, output, description=None
 
     '''
 
-    def _new_transform_fn(info, inputs):
-        value = transform_fn(info.context, inputs)
+    def _new_transform_fn(context, inputs):
+        value = transform_fn(context, inputs)
         if isinstance(value, Result):
             raise DagsterInvariantViolationError(
                 '''Single output transform Solid {name} returned a Result. Just return

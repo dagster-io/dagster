@@ -121,7 +121,7 @@ class _Solid(object):
         if not self.name:
             self.name = fn.__name__
 
-        _validate_transform_fn(self.name, fn, self.input_defs, ['info'])
+        _validate_transform_fn(self.name, fn, self.input_defs, [('info', 'context')])
         transform_fn = _create_solid_transform_wrapper(fn, self.input_defs, self.outputs)
         return SolidDefinition(
             name=self.name,
@@ -201,30 +201,30 @@ def solid(name=None, inputs=None, outputs=None, config_field=None, description=N
         .. code-block:: python
 
             @solid
-            def hello_world(info):
+            def hello_world(_context):
                 print('hello')
 
             @solid()
-            def hello_world(info):
+            def hello_world(_context):
                 print('hello')
 
             @solid(outputs=[OutputDefinition()])
-            def hello_world(info):
+            def hello_world(_context):
                 return {'foo': 'bar'}
 
             @solid(outputs=[OutputDefinition()])
-            def hello_world(info):
+            def hello_world(_context):
                 return Result(value={'foo': 'bar'})
 
             @solid(outputs=[OutputDefinition()])
-            def hello_world(info):
+            def hello_world(_context):
                 yield Result(value={'foo': 'bar'})
 
             @solid(outputs=[
                 OutputDefinition(name="left"),
                 OutputDefinition(name="right"),
             ])
-            def hello_world(info):
+            def hello_world(_context):
                 return MultipleResults.from_dict({
                     'left': {'foo': 'left'},
                     'right': {'foo': 'right'},
@@ -234,15 +234,15 @@ def solid(name=None, inputs=None, outputs=None, config_field=None, description=N
                 inputs=[InputDefinition(name="foo")],
                 outputs=[OutputDefinition()]
             )
-            def hello_world(info, foo):
+            def hello_world(_context, foo):
                 return foo
 
             @solid(
                 inputs=[InputDefinition(name="foo")],
                 outputs=[OutputDefinition()],
             )
-            def hello_world(info, foo):
-                info.log.info('log something')
+            def hello_world(context, foo):
+                context.log.info('log something')
                 return foo
 
             @solid(
@@ -250,9 +250,9 @@ def solid(name=None, inputs=None, outputs=None, config_field=None, description=N
                 outputs=[OutputDefinition()],
                 config_field=Field(types.Dict({'str_value' : Field(types.String)})),
             )
-            def hello_world(info, foo):
-                # info.config is a dictionary with 'str_value' key
-                return foo + info.config['str_value']
+            def hello_world(context, foo):
+                # context.solid_config is a dictionary with 'str_value' key
+                return foo + context.solid_config['str_value']
 
     '''
     # This case is for when decorator is used bare, without arguments. e.g. @solid versus @solid()
@@ -280,7 +280,7 @@ def _create_lambda_solid_transform_wrapper(fn, input_defs, output_def):
     input_names = [input_def.name for input_def in input_defs]
 
     @wraps(fn)
-    def transform(_info, inputs):
+    def transform(_context, inputs):
         kwargs = {}
         for input_name in input_names:
             kwargs[input_name] = inputs[input_name]
@@ -299,12 +299,12 @@ def _create_solid_transform_wrapper(fn, input_defs, output_defs):
     input_names = [input_def.name for input_def in input_defs]
 
     @wraps(fn)
-    def transform(info, inputs):
+    def transform(context, inputs):
         kwargs = {}
         for input_name in input_names:
             kwargs[input_name] = inputs[input_name]
 
-        result = fn(info, **kwargs)
+        result = fn(context, **kwargs)
 
         if inspect.isgenerator(result):
             for item in result:
@@ -365,7 +365,7 @@ def _validate_transform_fn(solid_name, transform_fn, inputs, expected_positional
     check.callable_param(transform_fn, 'transform_fn')
     check.list_param(inputs, 'inputs', of_type=InputDefinition)
     expected_positionals = check.opt_list_param(
-        expected_positionals, 'expected_positionals', of_type=str
+        expected_positionals, 'expected_positionals', of_type=(str, tuple)
     )
 
     names = set(inp.name for inp in inputs)
@@ -377,7 +377,7 @@ def _validate_transform_fn(solid_name, transform_fn, inputs, expected_positional
             raise DagsterInvalidDefinitionError(
                 "solid '{solid_name}' transform function has positional vararg parameter "
                 "'{e.param}'. Transform functions should only have keyword arguments that match "
-                "input names and a first positional parameter named 'info'.".format(
+                "input names and a first positional parameter named 'context'.".format(
                     solid_name=solid_name, e=e
                 )
             )
@@ -385,7 +385,7 @@ def _validate_transform_fn(solid_name, transform_fn, inputs, expected_positional
             raise DagsterInvalidDefinitionError(
                 "solid '{solid_name}' transform function has parameter '{e.param}' that is not "
                 "one of the solid inputs. Transform functions should only have keyword arguments "
-                "that match input names and a first positional parameter named 'info'.".format(
+                "that match input names and a first positional parameter named 'context'.".format(
                     solid_name=solid_name, e=e
                 )
             )
@@ -393,7 +393,7 @@ def _validate_transform_fn(solid_name, transform_fn, inputs, expected_positional
             raise DagsterInvalidDefinitionError(
                 "solid '{solid_name}' transform function do not have required positional "
                 "parameter '{e.param}'. Transform functions should only have keyword arguments "
-                "that match input names and a first positional parameter named 'info'.".format(
+                "that match input names and a first positional parameter named 'context'.".format(
                     solid_name=solid_name, e=e
                 )
             )
@@ -403,7 +403,7 @@ def _validate_transform_fn(solid_name, transform_fn, inputs, expected_positional
                 "solid '{solid_name}' transform function do not have parameter(s) "
                 "'{undeclared_inputs_printed}', which are in solid's inputs. Transform functions "
                 "should only have keyword arguments that match input names and a first positional "
-                "parameter named 'info'.".format(
+                "parameter named 'context'.".format(
                     solid_name=solid_name, undeclared_inputs_printed=undeclared_inputs_printed
                 )
             )
@@ -421,19 +421,23 @@ def _validate_decorated_fn(fn, names, expected_positionals):
     expected_positional_params = params[0 : len(expected_positionals)]
     other_params = params[len(expected_positionals) :]
 
-    for expected, actual in zip(expected_positionals, expected_positional_params):
-        possible_names = [
-            '_',
-            expected,
-            '_{expected}'.format(expected=expected),
-            '{expected}_'.format(expected=expected),
-        ]
+    for expected_names, actual in zip(expected_positionals, expected_positional_params):
+        possible_names = []
+        for expected in expected_names:
+            possible_names.extend(
+                [
+                    '_',
+                    expected,
+                    '_{expected}'.format(expected=expected),
+                    '{expected}_'.format(expected=expected),
+                ]
+            )
         if (
             actual.kind
             not in [funcsigs.Parameter.POSITIONAL_OR_KEYWORD, funcsigs.Parameter.POSITIONAL_ONLY]
         ) or (actual.name not in possible_names):
             raise FunctionValidationError(
-                FunctionValidationError.TYPES['missing_positional'], param=expected
+                FunctionValidationError.TYPES['missing_positional'], param=expected_names
             )
 
     for param in other_params:

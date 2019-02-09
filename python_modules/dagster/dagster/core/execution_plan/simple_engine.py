@@ -17,7 +17,7 @@ from dagster.core.errors import (
     DagsterTypeError,
 )
 
-from dagster.core.execution_context import RuntimeExecutionContext
+from dagster.core.execution_context import LegacyRuntimeExecutionContext
 
 from .objects import (
     ExecutionPlan,
@@ -39,7 +39,7 @@ def _all_inputs_covered(step, results):
 
 
 def iterate_step_events_for_execution_plan(context, execution_plan, throw_on_user_error):
-    check.inst_param(context, 'base_context', RuntimeExecutionContext)
+    check.inst_param(context, 'base_context', LegacyRuntimeExecutionContext)
     check.inst_param(execution_plan, 'execution_plan', ExecutionPlan)
     check.bool_param(throw_on_user_error, 'throw_on_user_error')
 
@@ -86,7 +86,7 @@ def iterate_step_events_for_execution_plan(context, execution_plan, throw_on_use
 
 def iterate_step_events_for_step(step, context, inputs):
     check.inst_param(step, 'step', ExecutionStep)
-    check.inst_param(context, 'context', RuntimeExecutionContext)
+    check.inst_param(context, 'context', LegacyRuntimeExecutionContext)
     check.dict_param(inputs, 'inputs', key_type=str)
 
     try:
@@ -217,7 +217,7 @@ def _execution_step_error_boundary(context, step, msg, **kwargs):
     framework code in the stack trace, if a tool author wishes to do so. This has
     been especially help in a notebooking context.
     '''
-    check.inst_param(context, 'context', RuntimeExecutionContext)
+    check.inst_param(context, 'context', LegacyRuntimeExecutionContext)
     check.str_param(msg, 'msg')
 
     context.events.execution_plan_step_start(step.key)

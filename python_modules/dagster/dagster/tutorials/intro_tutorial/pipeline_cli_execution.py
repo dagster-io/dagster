@@ -18,8 +18,8 @@ from dagster import (
     inputs=[InputDefinition('word', String)],
     config_field=Field(Dict({'factor': Field(Int)})),
 )
-def multiply_the_word(info, word):
-    return word * info.config['factor']
+def multiply_the_word(context, word):
+    return word * context.solid_config['factor']
 
 
 @lambda_solid(inputs=[InputDefinition('word')])

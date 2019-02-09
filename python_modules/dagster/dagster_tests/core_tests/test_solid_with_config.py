@@ -15,7 +15,7 @@ def test_basic_solid_with_config():
     did_get = {}
 
     def _t_fn(info, _inputs):
-        did_get['yep'] = info.config
+        did_get['yep'] = info.solid_config
 
     solid = SolidDefinition(
         name='solid_with_context',

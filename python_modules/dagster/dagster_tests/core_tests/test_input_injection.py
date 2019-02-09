@@ -17,7 +17,7 @@ def test_string_from_inputs():
     called = {}
 
     @solid(inputs=[InputDefinition('string_input', types.String)])
-    def str_as_input(_info, string_input):
+    def str_as_input(_context, string_input):
         assert string_input == 'foo'
         called['yup'] = True
 
@@ -35,7 +35,7 @@ def test_string_from_aliased_inputs():
     called = {}
 
     @solid(inputs=[InputDefinition('string_input', types.String)])
-    def str_as_input(_info, string_input):
+    def str_as_input(_context, string_input):
         assert string_input == 'foo'
         called['yup'] = True
 
@@ -55,7 +55,7 @@ def test_string_missing_inputs():
     called = {}
 
     @solid(inputs=[InputDefinition('string_input', types.String)])
-    def str_as_input(_info, string_input):  # pylint: disable=W0613
+    def str_as_input(_context, string_input):  # pylint: disable=W0613
         called['yup'] = True
 
     pipeline = PipelineDefinition(name='missing_inputs', solids=[str_as_input])
@@ -76,11 +76,11 @@ def test_string_missing_input_collision():
     called = {}
 
     @solid(outputs=[OutputDefinition(types.String)])
-    def str_as_output(_info):
+    def str_as_output(_context):
         return 'bar'
 
     @solid(inputs=[InputDefinition('string_input', types.String)])
-    def str_as_input(_info, string_input):  # pylint: disable=W0613
+    def str_as_input(_context, string_input):  # pylint: disable=W0613
         called['yup'] = True
 
     pipeline = PipelineDefinition(

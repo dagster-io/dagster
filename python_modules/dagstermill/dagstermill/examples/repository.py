@@ -95,8 +95,8 @@ def define_add_pipeline():
 
 
 @solid(inputs=[], config_field=Field(Int))
-def load_constant(info):
-    return info.config
+def load_constant(context):
+    return context.solid_config
 
 
 def define_test_notebook_dag_pipeline():

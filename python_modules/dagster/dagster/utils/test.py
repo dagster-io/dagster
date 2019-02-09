@@ -15,13 +15,15 @@ from dagster import (
 )
 
 from dagster.core.execution import build_sub_pipeline
-from dagster.core.execution_context import RuntimeExecutionContext
+from dagster.core.execution_context import LegacyRuntimeExecutionContext
 from dagster.core.utility_solids import define_stub_solid
 
 
-def create_test_runtime_execution_context(loggers=None, resources=None, tags=None):
+def create_test_runtime_legacy_execution_context(loggers=None, resources=None, tags=None):
     run_id = str(uuid.uuid4())
-    return RuntimeExecutionContext(run_id=run_id, loggers=loggers, resources=resources, tags=tags)
+    return LegacyRuntimeExecutionContext(
+        run_id=run_id, loggers=loggers, resources=resources, tags=tags
+    )
 
 
 def _unlink_swallow_errors(path):

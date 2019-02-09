@@ -29,16 +29,16 @@ def _is_sqlite_context(context):
     return type(raw_connection.connection).__module__ == 'sqlite3'
 
 
-def execute_sql_text_on_context(info, sql_text):
+def execute_sql_text_on_context(context, sql_text):
     # check_supports_sql_alchemy_resource(context)
     check.str_param(sql_text, 'sql_text')
 
     # if context.resources.sa.mock_sql:
     #     return
 
-    engine = info.resources.engine
+    engine = context.resources.engine
 
-    if _is_sqlite_context(info.context):
+    if _is_sqlite_context(context):
         # sqlite3 does not support multiple statements in a single
         # sql text and sqlalchemy does not abstract that away AFAICT
         # so have to hack around this
@@ -59,8 +59,8 @@ def execute_sql_text_on_context(info, sql_text):
 def _create_sql_alchemy_transform_fn(sql_text):
     check.str_param(sql_text, 'sql_text')
 
-    def transform_fn(info, _args):
-        yield Result(execute_sql_text_on_context(info, sql_text))
+    def transform_fn(context, _args):
+        yield Result(execute_sql_text_on_context(context, sql_text))
 
     return transform_fn
 

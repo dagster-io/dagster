@@ -2,7 +2,7 @@ import sqlalchemy
 
 from dagster import ExecutionContext, check
 
-from dagster.core.execution_context import RuntimeExecutionContext
+from dagster.core.execution_context import TransformExecutionContext, LegacyRuntimeExecutionContext
 
 
 class SqlAlchemyResource(object):
@@ -16,19 +16,19 @@ class DefaultSqlAlchemyResources(object):
         self.sa = check.inst_param(sa, 'sa', SqlAlchemyResource)
 
 
-def check_supports_sql_alchemy_resource(context):
-    check.inst_param(context, 'context', RuntimeExecutionContext)
-    check.invariant(context.resources is not None)
+def check_supports_sql_alchemy_resource(legacy_context):
+    check.inst_param(legacy_context, 'legacy_context', LegacyRuntimeExecutionContext)
+    check.invariant(legacy_context.resources is not None)
     check.invariant(
-        hasattr(context.resources, 'sa'),
+        hasattr(legacy_context.resources, 'sa'),
         'Resources must have sa property be an object of SqlAlchemyResource',
     )
     check.inst(
-        context.resources.sa,
+        legacy_context.resources.sa,
         SqlAlchemyResource,
         'Resources must have sa property be an object of SqlAlchemyResource',
     )
-    return context
+    return legacy_context
 
 
 def create_sql_alchemy_context_params_from_engine(engine, loggers=None):
@@ -37,8 +37,15 @@ def create_sql_alchemy_context_params_from_engine(engine, loggers=None):
 
 
 def _is_sqlite_context(context):
-    check_supports_sql_alchemy_resource(context)
-    raw_connection = context.resources.sa.engine.raw_connection()
+    check.inst_param(context, 'context', TransformExecutionContext)
+
+    check_supports_sql_alchemy_resource(context.legacy_context)
+    return _is_sqlite_resource(context.resources.sa)
+
+
+def _is_sqlite_resource(sa_resource):
+    check.inst_param(sa_resource, 'sa_resource', SqlAlchemyResource)
+    raw_connection = sa_resource.engine.raw_connection()
     if not hasattr(raw_connection, 'connection'):
         return False
 
@@ -47,15 +54,22 @@ def _is_sqlite_context(context):
 
 
 def execute_sql_text_on_context(context, sql_text):
-    check_supports_sql_alchemy_resource(context)
+    check.inst_param(context, 'context', TransformExecutionContext)
+    check_supports_sql_alchemy_resource(context.legacy_context)
+
+    return execute_sql_text_on_sa_resource(context.resources.sa, sql_text)
+
+
+def execute_sql_text_on_sa_resource(sa_resource, sql_text):
+    check.inst_param(sa_resource, 'sa_resource', SqlAlchemyResource)
     check.str_param(sql_text, 'sql_text')
 
-    if context.resources.sa.mock_sql:
+    if sa_resource.mock_sql:
         return
 
-    engine = context.resources.sa.engine
+    engine = sa_resource.engine
 
-    if _is_sqlite_context(context):
+    if _is_sqlite_resource(sa_resource):
         # sqlite3 does not support multiple statements in a single
         # sql text and sqlalchemy does not abstract that away AFAICT
         # so have to hack around this

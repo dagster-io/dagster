@@ -23,7 +23,7 @@ from dagster.core.execution_plan.objects import ExecutionStep, StepKind, PlanBui
 
 from dagster.core.execution_plan.simple_engine import iterate_step_events_for_step
 
-from dagster.utils.test import create_test_runtime_execution_context
+from dagster.utils.test import create_test_runtime_legacy_execution_context
 
 
 def silencing_default_context():
@@ -45,14 +45,16 @@ def test_compute_noop_node_core():
     environment = EnvironmentConfig()
 
     plan = create_execution_plan_core(
-        ExecutionPlanInfo(create_test_runtime_execution_context(), pipeline, environment),
+        ExecutionPlanInfo(create_test_runtime_legacy_execution_context(), pipeline, environment),
         ExecutionMetadata(),
     )
 
     assert len(plan.steps) == 1
 
     events = list(
-        iterate_step_events_for_step(plan.steps[0], create_test_runtime_execution_context(), {})
+        iterate_step_events_for_step(
+            plan.steps[0], create_test_runtime_legacy_execution_context(), {}
+        )
     )
 
     assert events[0].success_data.value == 'foo'
@@ -65,7 +67,9 @@ def test_compute_noop_node():
 
     assert len(plan.steps) == 1
     events = list(
-        iterate_step_events_for_step(plan.steps[0], create_test_runtime_execution_context(), {})
+        iterate_step_events_for_step(
+            plan.steps[0], create_test_runtime_legacy_execution_context(), {}
+        )
     )
 
     assert events[0].success_data.value == 'foo'
