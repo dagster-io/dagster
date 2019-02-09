@@ -7,7 +7,9 @@
       - The `info` object passed to transform functions has been renamed to `context`. All fields that were previously
         available on the `info.context` object are now hoisted to the top level `context` object. Additionally an alias
         for `config` has been introduced: `solid_config`. So where you would have written `info.config` it is now
-        `context.solid_config` Logging should be done with the top-level property `context.log`.
+        `context.solid_config` Logging should be done with the top-level property `context.log`. The `context`
+        and `config` properies on this new context object are deprecated, will warn for now, and be eliminated
+        when 0.4.0 is released.
 
    - GraphQL Schema Changes
       - `StepResult` has been renamed to `StepEvent`.
