@@ -7,13 +7,10 @@ plan.
 
 import os
 
-from copy import copy
 from datetime import datetime, timedelta
-from pprint import pformat
-from textwrap import TextWrapper
 
-from airflow import DAG
-from six import StringIO, string_types
+from six import string_types
+from yaml import dump
 
 from dagster import check, PipelineDefinition
 from dagster.core.execution import create_execution_plan
@@ -47,6 +44,154 @@ def _bad_import(path):
     return '.' in os.path.basename(path)[:-3]
 
 
+def _split_lines(lines):
+    '''Fancy utility adds a trailing comma to the last line of output.'''
+    return (lines.strip('\n') + ',').split('\n')
+
+
+def _key_for_marshalled_result(step_key, result_name):
+    '''Standardizes keys for marshalled inputs and outputs.'''
+    return (
+        '/tmp/results/' + _normalize_key(step_key) + '___' + _normalize_key(result_name) + '.pickle'
+    )
+
+
+def _step_executions_key(step):
+    return 'STEP_EXECUTIONS_' + _normalize_key(step.key).upper()
+
+
+def _scaffold_marshalled_inputs_for_step(step):
+    '''Generate the marshalled input block for our scaffolding.'''
+    printer = IndentingBlockPrinter(indent_level=2)
+    printer.line('[')
+    with printer.with_indent():
+        for step_input in step.step_inputs:
+            printer.line('{')
+            with printer.with_indent():
+                printer.line('inputName: "{input_name}",'.format(input_name=step_input.name))
+                printer.line(
+                    'key: "{key}"'.format(
+                        key=_key_for_marshalled_result(
+                            step_input.prev_output_handle.step.key,
+                            step_input.prev_output_handle.output_name,
+                        )
+                    )
+                )
+            printer.line('}')
+    printer.line(']')
+
+    return printer.read()
+
+
+def _scaffold_marshalled_outputs_for_step(step):
+    '''Generate the marshalled output block for our scaffolding.'''
+    printer = IndentingBlockPrinter(indent_level=2)
+    printer.line('[')
+    with printer.with_indent():
+        for step_output in step.step_outputs:
+            printer.line('{')
+            with printer.with_indent():
+                printer.line('outputName: "{output_name}",'.format(output_name=step_output.name))
+                printer.line(
+                    'key: "{key}"'.format(
+                        key=_key_for_marshalled_result(step.key, step_output.name)
+                    )
+                )
+            printer.line('}')
+    printer.line(']')
+
+    return printer.read()
+
+
+def _format_config(config):
+    '''This recursive descent thing formats a config dict for GraphQL.'''
+
+    def _format_config_subdict(config, current_indent=0):
+        check.dict_param(config, 'config', key_type=str)
+
+        printer = IndentingBlockPrinter(indent_level=2, current_indent=current_indent)
+        printer.line('{')
+
+        n_elements = len(config)
+        for i, key in enumerate(sorted(config, key=lambda x: x[0])):
+            value = config[key]
+            with printer.with_indent():
+                formatted_value = (
+                    _format_config_item(value, current_indent=printer.current_indent)
+                    .lstrip(' ')
+                    .rstrip('\n')
+                )
+                printer.line(
+                    '{key}: {formatted_value}{comma}'.format(
+                        key=key,
+                        formatted_value=formatted_value,
+                        comma=',' if i != n_elements - 1 else '',
+                    )
+                )
+        printer.line('}')
+
+        return printer.read()
+
+    def _format_config_sublist(config, current_indent=0):
+        printer = IndentingBlockPrinter(indent_level=2, current_indent=current_indent)
+        printer.line('[')
+
+        n_elements = len(config)
+        for i, value in enumerate(config):
+            with printer.with_indent():
+                formatted_value = (
+                    _format_config_item(value, current_indent=printer.current_indent)
+                    .lstrip(' ')
+                    .rstrip('\n')
+                )
+                printer.line(
+                    '{formatted_value}{comma}'.format(
+                        formatted_value=formatted_value, comma=',' if i != n_elements - 1 else ''
+                    )
+                )
+        printer.line(']')
+
+        return printer.read()
+
+    def _format_config_item(config, current_indent=0):
+        printer = IndentingBlockPrinter(indent_level=2, current_indent=current_indent)
+
+        if isinstance(config, dict):
+            return _format_config_subdict(config, printer.current_indent)
+        elif isinstance(config, list):
+            return _format_config_sublist(config, printer.current_indent)
+        else:
+            return repr(config).replace('\'', '"')
+
+    check.dict_param(config, 'config', key_type=str)
+    if not isinstance(config, dict):
+        check.failed('Expected a dict to format as config, got: {item}'.format(item=repr(config)))
+
+    return _format_config_subdict(config)
+
+
+def _scaffold_step_executions(step):
+    marshalled_inputs = _scaffold_marshalled_inputs_for_step(step)
+    marshalled_outputs = _scaffold_marshalled_outputs_for_step(step)
+
+    printer = IndentingBlockPrinter(indent_level=2)
+
+    printer.line('[')
+    with printer.with_indent():
+        printer.line('{')
+        with printer.with_indent():
+            printer.line('stepKey: "{step_key}"'.format(step_key=step.key))
+            printer.line('marshalledInputs: ')
+            for line in (marshalled_inputs.strip('\n') + ',').split('\n'):
+                printer.line(line)
+            printer.line('marshalledOutputs: ')
+            for line in (marshalled_outputs.strip('\n') + ',').split('\n'):
+                printer.line(line)
+        printer.line('}')
+    printer.line(']')
+    return printer.read()
+
+
 def _make_editable_scaffold(
     pipeline_name, pipeline_description, env_config, static_scaffold, default_args
 ):
@@ -70,7 +215,8 @@ def _make_editable_scaffold(
         printer.blank_line()
 
         with printer.with_indent():
-            printer.block(pformat(env_config))
+            for line in dump(env_config).split('\n'):
+                printer.line(line)
         printer.blank_line()
 
         printer.block(
@@ -96,25 +242,18 @@ def _make_editable_scaffold(
             'Arguments to be passed to the ``default_args`` parameter of the ``airflow.DAG`` '
             'constructor.You can override these with values of your choice.'
         )
-        printer.line('DEFAULT_ARGS = {{')
+        printer.line('DEFAULT_ARGS = {')
         with printer.with_indent():
             for key, value in sorted(default_args.items(), key=lambda x: x[0]):
-                printer.line('\'{key}\': {value_repr}'.format(key=key, value_repr=repr(value)))
-        printer.line('}}')
+                printer.line('\'{key}\': {value_repr},'.format(key=key, value_repr=repr(value)))
+        printer.line('}')
         printer.blank_line()
 
         printer.comment(
             'Any additional keyword arguments to be passed to the ``airflow.DAG`` constructor. '
             'You can override these with values of your choice.'
         )
-        printer.line('DAG_KWARGS = {{}}')
-        printer.blank_line()
-
-        printer.comment(
-            'Any additional keyword arguments to be passed to the ``ModifiedDockerOperator`` '
-            'constructor. You can override these with values of your choice.'
-        )
-        printer.line('MODIFIED_DOCKER_OPERATOR_KWARGS = {{}}')
+        printer.line('DAG_KWARGS = {}')
         printer.blank_line()
 
         printer.comment(
@@ -142,10 +281,10 @@ def _make_editable_scaffold(
 
         printer.comment(
             'Additional arguments, if any, to pass to the underlying '
-            '``dagster_airflow.dagster_plugin.ModifiedDockerOperator``. Set these if, for '
-            'instance, you need to set special TLS parameters.'
+            '``dagster_airflow.dagster_plugin.ModifiedDockerOperator`` constructor. Set these if, '
+            'for instance, you need to set special TLS parameters.'
         )
-        printer.line('DOCKER_ARGUMENTS = {{}}')
+        printer.line('MODIFIED_DOCKER_OPERATOR_KWARGS = {}')
         printer.blank_line()
 
         printer.comment(
@@ -155,6 +294,10 @@ def _make_editable_scaffold(
         printer.line('S3_CONN_ID = \'aws_default\'')
         printer.blank_line()
 
+        printer.comment('Set the host directory to mount into /tmp/results on the containers.')
+        printer.line('HOST_TMP_DIR = \'/tmp/results\'')
+        printer.blank_line()
+
         printer.line('dag = make_dag(')
         with printer.with_indent():
             printer.line('dag_id=DAG_ID,')
@@ -162,11 +305,13 @@ def _make_editable_scaffold(
             printer.line('dag_kwargs=dict(default_args=DEFAULT_ARGS, **DAG_KWARGS),')
             printer.line('s3_conn_id=S3_CONN_ID,')
             printer.line('modified_docker_operator_kwargs=MODIFIED_DOCKER_OPERATOR_KWARGS,')
+            printer.line('host_tmp_dir=HOST_TMP_DIR,')
         printer.line(')')
 
         return printer.read()
 
 
+# pylint: disable=too-many-statements
 def _make_static_scaffold(pipeline_name, env_config, execution_plan, image, editable_scaffold):
     with IndentingBlockPrinter() as printer:
         printer.block(
@@ -176,7 +321,8 @@ def _make_static_scaffold(pipeline_name, env_config, execution_plan, image, edit
         printer.blank_line()
 
         with printer.with_indent():
-            printer.block(pformat(env_config))
+            for line in dump(env_config).split('\n'):
+                printer.line(line)
         printer.blank_line()
 
         printer.block(
@@ -195,44 +341,96 @@ def _make_static_scaffold(pipeline_name, env_config, execution_plan, image, edit
         printer.blank_line()
         printer.blank_line()
 
-        printer.line(
-            'def make_dag(dag_id, dag_description, dag_kwargs, s3_conn_id, modified_docker_operator_kwargs):'
-        )
+        printer.line('CONFIG = \'\'\'')
+        with printer.with_indent():
+            for line in _format_config(env_config).strip('\n').split('\n'):
+                printer.line(line)
+        printer.line('\'\'\'.strip(\'\\n\').strip(\' \')')
+        printer.blank_line()
+        printer.line('PIPELINE_NAME = \'{pipeline_name}\''.format(pipeline_name=pipeline_name))
+        printer.blank_line()
+
+        for step in execution_plan.topological_steps():
+            step_executions_key = _step_executions_key(step)
+
+            step_executions = _scaffold_step_executions(step)
+
+            printer.line(
+                '{step_executions_key} = \'\'\''.format(step_executions_key=step_executions_key)
+            )
+            for line in step_executions.strip('\n').split('\n'):
+                printer.line(line)
+            printer.line('\'\'\'.strip(\'\\n\')')
+            printer.blank_line()
+
+        printer.blank_line()
+
+        printer.line('def make_dag(')
+        with printer.with_indent():
+            printer.line('dag_id,')
+            printer.line('dag_description,')
+            printer.line('dag_kwargs,')
+            printer.line('s3_conn_id,')
+            printer.line('modified_docker_operator_kwargs,')
+            printer.line('host_tmp_dir')
+        printer.line('):')
         with printer.with_indent():
             printer.line('dag = DAG(')
             with printer.with_indent():
                 printer.line('dag_id=dag_id,')
                 printer.line('description=dag_description,')
-                printer.line('**dag_kwargs,')
-            printer.line(')')
-        printer.blank_line()
-
-        for step in execution_plan.topological_steps():
-            step_key = _normalize_key(step.key)
-
-            printer.line('{step_key}_task = DagsterOperator('.format(step_key=step_key))
-            with printer.with_indent():
-                printer.line('step=\'{step_key}\','.format(step_key=step_key))
-                printer.line('dag=dag,')
-                printer.line('image=\'{image}\','.format(image=image))
-                printer.line('task_id=\'{step_key}\','.format(step_key=step_key))
-                printer.line('s3_conn_id=S3_CONN_ID,')
+                printer.line('**dag_kwargs')
             printer.line(')')
             printer.blank_line()
 
-        for step in execution_plan.topological_steps():
-            for step_input in step.step_inputs:
-                prev_step_key = _normalize_key(step_input.prev_output_handle.step.key)
-                step_key = _normalize_key(step.key)
+            for step in execution_plan.topological_steps():
+                step_key = step.key
+                airflow_step_key = _normalize_key(step_key)
+                step_executions_key = _step_executions_key(step)
+
                 printer.line(
-                    '{prev_step_key}_task.set_downstream({step_key}_task)'.format(
-                        prev_step_key=prev_step_key, step_key=step_key
+                    '{airflow_step_key}_task = DagsterOperator('.format(
+                        airflow_step_key=airflow_step_key
                     )
                 )
+                with printer.with_indent():
+                    printer.line('step=\'{step_key}\','.format(step_key=step_key))
+                    printer.line('config=CONFIG,')
+                    printer.line('dag=dag,')
+                    printer.line('tmp_dir=\'/tmp/results\',')
+                    printer.line('host_tmp_dir=host_tmp_dir,')
+                    printer.line('image=\'{image}\','.format(image=image))
+                    printer.line(
+                        'task_id=\'{airflow_step_key}\','.format(airflow_step_key=airflow_step_key)
+                    )
+                    printer.line('s3_conn_id=s3_conn_id,')
+                    printer.line('pipeline_name=PIPELINE_NAME,')
+                    printer.line(
+                        'step_executions={step_executions_key},'.format(
+                            step_executions_key=step_executions_key
+                        )
+                    )
+                printer.line(')')
+                printer.blank_line()
+
+            for step in execution_plan.topological_steps():
+                for step_input in step.step_inputs:
+                    prev_airflow_step_key = _normalize_key(step_input.prev_output_handle.step.key)
+                    airflow_step_key = _normalize_key(step.key)
+                    printer.line(
+                        '{prev_airflow_step_key}_task.set_downstream('
+                        '{airflow_step_key}_task)'.format(
+                            prev_airflow_step_key=prev_airflow_step_key,
+                            airflow_step_key=airflow_step_key,
+                        )
+                    )
+            printer.blank_line()
+            printer.line('return dag')
 
         return printer.read()
 
 
+# pylint: disable=too-many-locals
 def scaffold_airflow_dag(pipeline, env_config, image, output_path=None, dag_kwargs=None):
     '''Scaffold a new Airflow DAG based on a PipelineDefinition and config.
 
@@ -261,7 +459,7 @@ def scaffold_airflow_dag(pipeline, env_config, image, output_path=None, dag_kwar
         dag_kwargs (dict, optional): Any additional keyword arguments to pass to the ``airflow.DAG``
             constructor. If `dag_kwargs.default_args` is set, values set there will smash the
             values in ``dagster_airflow.scaffold.DEFAULT_ARGS``. Default: None.
-    
+
     Returns:
         (str, str): Paths to the static and editable scaffold files.
     '''
@@ -341,8 +539,8 @@ def scaffold_airflow_dag(pipeline, env_config, image, output_path=None, dag_kwar
         dict(DEFAULT_ARGS, start_date=datetime.utcnow()), **(dag_kwargs.pop('default_args', {}))
     )
 
-    editable_scaffold_module_name = os.path.basename(editable_path).split('.')[-1]
-    static_scaffold_module_name = os.path.basename(static_path).split('.')[-1]
+    editable_scaffold_module_name = os.path.basename(editable_path).split('.')[-2]
+    static_scaffold_module_name = os.path.basename(static_path).split('.')[-2]
 
     static_scaffold = _make_static_scaffold(
         pipeline_name=pipeline_name,
@@ -360,10 +558,10 @@ def scaffold_airflow_dag(pipeline, env_config, image, output_path=None, dag_kwar
         default_args=default_args,
     )
 
-    with open(static_path, 'w') as fd:
-        fd.write(static_scaffold)
+    with open(static_path, 'w') as static_fd:
+        static_fd.write(static_scaffold)
 
-    with open(editable_path, 'w') as fd:
-        fd.write(editable_scaffold)
+    with open(editable_path, 'w') as editable_fd:
+        editable_fd.write(editable_scaffold)
 
     return (static_path, editable_path)

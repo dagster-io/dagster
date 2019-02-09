@@ -145,30 +145,3 @@ def test_scaffold_airflow_override_args(snapshot):
     finally:
         os.remove(static_path)
         os.remove(editable_path)
-
-
-# def test_scaffold_airflow_dag(airflow_test, dags_path):
-#     pipeline = define_demo_execution_pipeline()
-#     env_config = load_yaml_from_path(script_relative_path('test_project/env.yml'))
-
-#     scaffold_airflow_dag(
-#         pipeline,
-#         env_config,
-#         image='dagster-airflow-demo',
-#         output_path=script_relative_path(DAG_DEFINITION_FILENAME),
-#     )
-
-#     shutil.copyfile(
-#         script_relative_path(DAG_DEFINITION_FILENAME),
-#         os.path.abspath(os.path.join(dags_path, DAG_DEFINITION_FILENAME)),
-#     )
-
-#     task_id = 'minimal_dockerized_dagster_airflow_node'
-#     execution_date = datetime.datetime.utcnow().strftime('%Y-%m-%d')
-
-#     pipeline_name = pipeline.name
-
-#     # for step in
-#     # res = subprocess.check_output(
-#     #     ['airflow', 'test', pipeline_name, task_id, execution_date]
-#     # )

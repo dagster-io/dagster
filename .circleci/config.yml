@@ -153,7 +153,7 @@ jobs:
 
       - run:
           name: Format
-          command: black python_modules --line-length 100 -S --fast --check --exclude "build/|buck-out/|dist/|_build/|\.eggs/|\.git/|\.hg/|\.mypy_cache/|\.nox/|\.tox/|\.venv/|python_modules/dagster/dagster/tutorials/|snapshots/"
+          command: black python_modules --line-length 100 -S --fast --check --exclude "build/|buck-out/|dist/|_build/|\.eggs/|\.git/|\.hg/|\.mypy_cache/|\.nox/|\.tox/|\.venv/|python_modules/dagster/dagster/tutorials/|snapshots/|__scaffold\.py"
 
       - run:
           name: Format
@@ -183,7 +183,7 @@ jobs:
           at: /tmp/workspace
 
       # only block warnings for now
-      - run: pylint -j 0 python_modules/dagster/dagster python_modules/dagster/dagster_tests python_modules/dagit/dagit python_modules/dagit/dagit_tests python_modules/dagstermill/dagstermill python_modules/dagster-pandas/dagster_pandas python_modules/dagster-sqlalchemy/dagster_sqlalchemy --rcfile=python_modules/.pylintrc --disable=R,C
+      - run: pylint -j 0 python_modules/dagster/dagster python_modules/dagster/dagster_tests python_modules/dagit/dagit python_modules/dagit/dagit_tests python_modules/dagstermill/dagstermill python_modules/dagster-pandas/dagster_pandas python_modules/dagster-sqlalchemy/dagster_sqlalchemy --rcfile=.pylintrc --disable=R,C
 
   dagit-py36: &dagit-template
     docker:
@@ -352,16 +352,23 @@ jobs:
             - .coverage*
 
   dagster-airflow-py36: &dagster-airflow-template
-    docker:
-      - image: circleci/python:3.6.6
+    machine:
+      docker_layer_caching: true
     environment:
       TOXENV: py36
+      PYTHON_VERSION: "3.6.3"
       AIRFLOW_HOME: "/home/circleci/airflow"
     working_directory: ~/repo
     steps:
       - checkout
-      - setup_remote_docker:
-          docker_layer_caching: true
+      - run:
+          name: Install py27-dev
+          command: |
+            sudo apt-get install python2.7-dev
+      - run:
+          name: Install py36
+          command: |
+            pyenv install 3.6.3
       - run:
           name: Build Dockerfile
           command: |
@@ -381,6 +388,7 @@ jobs:
           name: Run Dagster Tests
           command: |
             pushd python_modules/dagster-airflow
+            pyenv local $PYTHON_VERSION
             tox -e $TOXENV
             popd
       - run:
@@ -546,26 +554,22 @@ jobs:
   # https://github.com/apache/airflow/pull/3723
   # dagster-airflow-py37:
   #   <<: *dagster-airflow-template
-  #   docker:
-  #     - image: circleci/python:3.7.2
   #   environment:
   #     TOXENV: py37
   #     AIRFLOW_HOME: "/home/circleci/airflow"
 
   dagster-airflow-py35:
     <<: *dagster-airflow-template
-    docker:
-      - image: circleci/python:3.5.6
     environment:
       TOXENV: py35
+      PYTHON_VERSION: "3.5.2"
       AIRFLOW_HOME: "/home/circleci/airflow"
 
   dagster-airflow-py27:
     <<: *dagster-airflow-template
-    docker:
-      - image: circleci/python:2.7.15
     environment:
       TOXENV: py27
+      PYTHON_VERSION: "2.7.12"
       AIRFLOW_HOME: "/home/circleci/airflow"
 
   dagma-py37:

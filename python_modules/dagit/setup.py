@@ -76,7 +76,7 @@ def _do_setup(name='dagit'):
             # server
             'Flask-GraphQL>=2.0.0',
             'Flask-Sockets>=0.2.1',
-            'Flask>=1.0.2',
+            'Flask==0.12.4',  # pinned for compatibility with existing Airflow installs
             'flask-cors>=3.0.6',
             'gevent-websocket==0.10.1',
             'gevent==1.3.7',
