@@ -4,19 +4,19 @@
       - Link to output notebook rendered in dagit when dagstermill solids are executed.
 
    - API Additions and changes
-      - The `info` object passed to transform functions has been renamed to `context`. All fields that were previously
-        available on the `info.context` object are now hoisted to the top level `context` object. Additionally an alias
-        for `config` has been introduced: `solid_config`. So where you would have written `info.config` it is now
-        `context.solid_config` Logging should be done with the top-level property `context.log`. The `context`
-        and `config` properies on this new context object are deprecated, will warn for now, and be eliminated
+      - The ``info`` object passed to transform functions has been renamed to ``context``. All fields that were previously
+        available on the ``info.context`` object are now hoisted to the top level ``context`` object. Additionally an alias
+        for ``config`` has been introduced: ``solid_config``. So where you would have written ``info.config`` it is now
+        ``context.solid_config`` Logging should be done with the top-level property ``context.log``. The ``context``
+        and ``config`` properies on this new context object are deprecated, will warn for now, and be eliminated
         when 0.4.0 is released.
 
    - GraphQL Schema Changes
-      - `StepResult` has been renamed to `StepEvent`.
-      - `stepResults` property on `startSubplanExecution` has been renamed to `stepEvents`.
-      - `StepSuccessResult` is now `SuccessfulStepOutputEvent`
-      - `StepFailureResult` is now `StepFailureEvent`
-      - Added `UNMARSHAL_INPUT` and `MARSHAL_OUTPUT` values to the `StepKind` enumeration. Marshalling steps are now
+      - ``StepResult`` has been renamed to ``StepEvent``.
+      - ``stepResults`` property on ``startSubplanExecution`` has been renamed to ``stepEvents``.
+      - ``StepSuccessResult`` is now ``SuccessfulStepOutputEvent``
+      - ``StepFailureResult`` is now ``StepFailureEvent``
+      - Added ``UNMARSHAL_INPUT`` and ``MARSHAL_OUTPUT`` values to the ``StepKind`` enumeration. Marshalling steps are now
         implemented as execution steps themselves.
 
 
@@ -37,7 +37,7 @@
    - API Additions and Changes
       - New decorated-based @resource API as a more concise alternative to ResourceDefinition
       - Dagster config type system now supports enum types. (dagster.Enum and dagster.EnumType) 
-      - New top level properties `resources` and `log` on info.
+      - New top level properties ``resources`` and ``log`` on info.
       - The context stack in RuntimeExecutionContext is no longer modify-able by the user during a transform. It has been renamed to 'tags'.
       - ReentrantInfo has been renamed to ExecutionMetadata
 
