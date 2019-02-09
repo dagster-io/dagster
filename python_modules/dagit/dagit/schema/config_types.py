@@ -77,7 +77,7 @@ class DauphinRegularConfigType(dauphin.ObjectType):
         name = 'RegularConfigType'
         interfaces = [DauphinConfigType]
 
-    def resolve_inner_types(self, _info):
+    def resolve_inner_types(self, _graphene_info):
         return _resolve_inner_types(self._config_type)
 
 
@@ -97,10 +97,10 @@ class DauphinListConfigType(dauphin.ObjectType):
         name = 'ListConfigType'
         interfaces = [DauphinConfigType, DauphinWrappingConfigType]
 
-    def resolve_of_type(self, _info):
+    def resolve_of_type(self, _):
         return to_dauphin_config_type(self._config_type.inner_type)
 
-    def resolve_inner_types(self, _info):
+    def resolve_inner_types(self, _graphene_info):
         return _resolve_inner_types(self._config_type)
 
 
@@ -113,10 +113,10 @@ class DauphinNullableConfigType(dauphin.ObjectType):
         name = 'NullableConfigType'
         interfaces = [DauphinConfigType, DauphinWrappingConfigType]
 
-    def resolve_of_type(self, _info):
+    def resolve_of_type(self, _graphene_info):
         return to_dauphin_config_type(self._config_type.inner_type)
 
-    def resolve_inner_types(self, _info):
+    def resolve_inner_types(self, _graphene_info):
         return _resolve_inner_types(self._config_type)
 
 
@@ -133,13 +133,13 @@ class DauphinEnumConfigType(dauphin.ObjectType):
 
     values = dauphin.non_null_list('EnumConfigValue')
 
-    def resolve_values(self, _info):
+    def resolve_values(self, _graphene_info):
         return [
             DauphinEnumConfigValue(value=ev.config_value, description=ev.description)
             for ev in self._config_type.enum_values
         ]
 
-    def resolve_inner_types(self, _info):
+    def resolve_inner_types(self, _graphene_info):
         return _resolve_inner_types(self._config_type)
 
 
@@ -164,7 +164,7 @@ class DauphinCompositeConfigType(dauphin.ObjectType):
 
     fields = dauphin.non_null_list('ConfigTypeField')
 
-    def resolve_fields(self, _info):
+    def resolve_fields(self, _graphene_info):
         return sorted(
             [
                 DauphinConfigTypeField(name=name, field=field)
@@ -173,7 +173,7 @@ class DauphinCompositeConfigType(dauphin.ObjectType):
             key=lambda field: field.name,
         )
 
-    def resolve_inner_types(self, _info):
+    def resolve_inner_types(self, _graphene_info):
         return _resolve_inner_types(self._config_type)
 
 
@@ -196,5 +196,5 @@ class DauphinConfigTypeField(dauphin.ObjectType):
         )
         self._field = field
 
-    def resolve_config_type(self, _info):
+    def resolve_config_type(self, _graphene_info):
         return to_dauphin_config_type(self._field.config_type)

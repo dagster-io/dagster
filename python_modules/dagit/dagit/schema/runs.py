@@ -28,15 +28,17 @@ class DauphinPipelineRun(dauphin.ObjectType):
         )
         self._pipeline_run = check.inst_param(pipeline_run, 'pipeline_run', PipelineRun)
 
-    def resolve_pipeline(self, info):
-        return model.get_pipeline_or_raise(info, self._pipeline_run.selector)
+    def resolve_pipeline(self, graphene_info):
+        return model.get_pipeline_or_raise(graphene_info, self._pipeline_run.selector)
 
-    def resolve_logs(self, info):
-        return info.schema.type_named('LogMessageConnection')(self._pipeline_run)
+    def resolve_logs(self, graphene_info):
+        return graphene_info.schema.type_named('LogMessageConnection')(self._pipeline_run)
 
-    def resolve_executionPlan(self, info):
-        pipeline = self.resolve_pipeline(info)
-        return info.schema.type_named('ExecutionPlan')(pipeline, self._pipeline_run.execution_plan)
+    def resolve_executionPlan(self, graphene_info):
+        pipeline = self.resolve_pipeline(graphene_info)
+        return graphene_info.schema.type_named('ExecutionPlan')(
+            pipeline, self._pipeline_run.execution_plan
+        )
 
 
 class DauphinLogLevel(dauphin.Enum):
@@ -89,19 +91,21 @@ class DauphinLogMessageConnection(dauphin.ObjectType):
         )
         self._logs = self._pipeline_run.all_logs()
 
-    def resolve_nodes(self, info):
-        pipeline = model.get_pipeline_or_raise(info, self._pipeline_run.selector)
+    def resolve_nodes(self, graphene_info):
+        pipeline = model.get_pipeline_or_raise(graphene_info, self._pipeline_run.selector)
         return [
-            info.schema.type_named('PipelineRunEvent').from_dagster_event(info, log, pipeline)
+            graphene_info.schema.type_named('PipelineRunEvent').from_dagster_event(
+                graphene_info, log, pipeline
+            )
             for log in self._logs
         ]
 
-    def resolve_pageInfo(self, info):
+    def resolve_pageInfo(self, graphene_info):
         count = len(self._logs)
         lastCursor = None
         if count > 0:
             lastCursor = str(count - 1)
-        return info.schema.type_named('PageInfo')(
+        return graphene_info.schema.type_named('PageInfo')(
             lastCursor=lastCursor,
             hasNextPage=None,
             hasPreviousPage=None,
@@ -216,10 +220,10 @@ class DauphinPipelineRunEvent(dauphin.Union):
         )
 
     @staticmethod
-    def from_dagster_event(info, event, pipeline):
+    def from_dagster_event(graphene_info, event, pipeline):
         check.inst_param(event, 'event', EventRecord)
-        check.inst_param(pipeline, 'pipeline', info.schema.type_named('Pipeline'))
-        pipeline_run = info.context.pipeline_runs.get_run_by_id(event.run_id)
+        check.inst_param(pipeline, 'pipeline', graphene_info.schema.type_named('Pipeline'))
+        pipeline_run = graphene_info.context.pipeline_runs.get_run_by_id(event.run_id)
         run = DauphinPipelineRun(pipeline_run)
 
         basic_params = {
@@ -230,45 +234,51 @@ class DauphinPipelineRunEvent(dauphin.Union):
         }
 
         if event.event_type == EventType.PIPELINE_START:
-            return info.schema.type_named('PipelineStartEvent')(pipeline=pipeline, **basic_params)
+            return graphene_info.schema.type_named('PipelineStartEvent')(
+                pipeline=pipeline, **basic_params
+            )
         elif event.event_type == EventType.PIPELINE_SUCCESS:
-            return info.schema.type_named('PipelineSuccessEvent')(pipeline=pipeline, **basic_params)
+            return graphene_info.schema.type_named('PipelineSuccessEvent')(
+                pipeline=pipeline, **basic_params
+            )
         elif event.event_type == EventType.PIPELINE_FAILURE:
-            return info.schema.type_named('PipelineFailureEvent')(pipeline=pipeline, **basic_params)
+            return graphene_info.schema.type_named('PipelineFailureEvent')(
+                pipeline=pipeline, **basic_params
+            )
         elif event.event_type == EventType.PIPELINE_PROCESS_START:
-            return info.schema.type_named('PipelineProcessStartEvent')(
+            return graphene_info.schema.type_named('PipelineProcessStartEvent')(
                 pipeline=pipeline, **basic_params
             )
         elif event.event_type == EventType.PIPELINE_PROCESS_STARTED:
-            return info.schema.type_named('PipelineProcessStartedEvent')(
+            return graphene_info.schema.type_named('PipelineProcessStartedEvent')(
                 pipeline=pipeline, process_id=event.process_id, **basic_params
             )
         elif event.event_type == EventType.EXECUTION_PLAN_STEP_START:
-            return info.schema.type_named('ExecutionStepStartEvent')(
-                step=info.schema.type_named('ExecutionStep')(
+            return graphene_info.schema.type_named('ExecutionStepStartEvent')(
+                step=graphene_info.schema.type_named('ExecutionStep')(
                     pipeline_run.execution_plan.get_step_by_key(event.step_key)
                 ),
                 **basic_params
             )
         elif event.event_type == EventType.EXECUTION_PLAN_STEP_SUCCESS:
-            return info.schema.type_named('ExecutionStepSuccessEvent')(
-                step=info.schema.type_named('ExecutionStep')(
+            return graphene_info.schema.type_named('ExecutionStepSuccessEvent')(
+                step=graphene_info.schema.type_named('ExecutionStep')(
                     pipeline_run.execution_plan.get_step_by_key(event.step_key)
                 ),
                 **basic_params
             )
         elif event.event_type == EventType.EXECUTION_PLAN_STEP_FAILURE:
-            check.inst(event.error_info, SerializableErrorInfo)
-            return info.schema.type_named('ExecutionStepFailureEvent')(
-                step=info.schema.type_named('ExecutionStep')(
+            check.inst(event.error_graphene_info, SerializableErrorInfo)
+            return graphene_info.schema.type_named('ExecutionStepFailureEvent')(
+                step=graphene_info.schema.type_named('ExecutionStep')(
                     pipeline_run.execution_plan.get_step_by_key(event.step_key)
                 ),
-                error=info.schema.type_named('PythonError')(event.error_info),
+                error=graphene_info.schema.type_named('PythonError')(event.error_graphene_info),
                 **basic_params
             )
         elif event.event_type == EventType.STEP_MATERIALIAZATION:
-            return info.schema.type_named('StepMaterializationEvent')(
-                step=info.schema.type_named('ExecutionStep')(
+            return graphene_info.schema.type_named('StepMaterializationEvent')(
+                step=graphene_info.schema.type_named('ExecutionStep')(
                     pipeline_run.execution_plan.get_step_by_key(event.step_key)
                 ),
                 file_name=event.file_name,
@@ -276,4 +286,4 @@ class DauphinPipelineRunEvent(dauphin.Union):
                 **basic_params
             )
         else:
-            return info.schema.type_named('LogMessageEvent')(**basic_params)
+            return graphene_info.schema.type_named('LogMessageEvent')(**basic_params)
