@@ -298,15 +298,17 @@ def _make_editable_scaffold(
         printer.line('HOST_TMP_DIR = \'/tmp/results\'')
         printer.blank_line()
 
-        printer.line('dag = make_dag(')
+        printer.line('if __name__.startswith(\'unusual_prefix\'):')
         with printer.with_indent():
-            printer.line('dag_id=DAG_ID,')
-            printer.line('dag_description=DAG_DESCRIPTION,')
-            printer.line('dag_kwargs=dict(default_args=DEFAULT_ARGS, **DAG_KWARGS),')
-            printer.line('s3_conn_id=S3_CONN_ID,')
-            printer.line('modified_docker_operator_kwargs=MODIFIED_DOCKER_OPERATOR_KWARGS,')
-            printer.line('host_tmp_dir=HOST_TMP_DIR,')
-        printer.line(')')
+            printer.line('dag, tasks = make_dag(')
+            with printer.with_indent():
+                printer.line('dag_id=DAG_ID,')
+                printer.line('dag_description=DAG_DESCRIPTION,')
+                printer.line('dag_kwargs=dict(default_args=DEFAULT_ARGS, **DAG_KWARGS),')
+                printer.line('s3_conn_id=S3_CONN_ID,')
+                printer.line('modified_docker_operator_kwargs=MODIFIED_DOCKER_OPERATOR_KWARGS,')
+                printer.line('host_tmp_dir=HOST_TMP_DIR,')
+            printer.line(')')
 
         return printer.read()
 
@@ -383,6 +385,9 @@ def _make_static_scaffold(pipeline_name, env_config, execution_plan, image, edit
             printer.line(')')
             printer.blank_line()
 
+            printer.line('tasks = []')
+            printer.blank_line()
+
             for step in execution_plan.topological_steps():
                 step_key = step.key
                 airflow_step_key = _normalize_key(step_key)
@@ -411,6 +416,11 @@ def _make_static_scaffold(pipeline_name, env_config, execution_plan, image, edit
                         )
                     )
                 printer.line(')')
+                printer.line(
+                    'tasks.append({airflow_step_key}_task)'.format(
+                        airflow_step_key=airflow_step_key
+                    )
+                )
                 printer.blank_line()
 
             for step in execution_plan.topological_steps():
@@ -425,7 +435,8 @@ def _make_static_scaffold(pipeline_name, env_config, execution_plan, image, edit
                         )
                     )
             printer.blank_line()
-            printer.line('return dag')
+            # We return both the DAG and the tasks to make testing, etc. easier
+            printer.line('return (dag, tasks)')
 
         return printer.read()
 

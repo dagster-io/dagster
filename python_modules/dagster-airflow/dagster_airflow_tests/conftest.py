@@ -117,9 +117,7 @@ def scaffold_dag(airflow_test):
     )
 
     # Ensure that the scaffolded files parse correctly
-    subprocess.check_output(
-        ['python', script_relative_path('test_project/demo_pipeline_editable__scaffold.py')]
-    )
+    subprocess.check_output(['python', editable_path])
 
     shutil.copyfile(
         script_relative_path(static_path),
@@ -135,4 +133,10 @@ def scaffold_dag(airflow_test):
 
     execution_plan = create_execution_plan(pipeline, env_config)
 
-    return (pipeline_name, execution_plan, execution_date)
+    return (
+        pipeline_name,
+        execution_plan,
+        execution_date,
+        os.path.abspath(os.path.join(dags_path, os.path.basename(static_path))),
+        os.path.abspath(os.path.join(dags_path, os.path.basename(editable_path))),
+    )

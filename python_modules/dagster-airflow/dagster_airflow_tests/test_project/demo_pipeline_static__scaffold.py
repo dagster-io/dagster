@@ -123,6 +123,8 @@ def make_dag(
         **dag_kwargs
     )
 
+    tasks = []
+
     multiply__the__word_word_input__thunk_task = DagsterOperator(
         step='multiply_the_word.word.input_thunk',
         config=CONFIG,
@@ -135,6 +137,7 @@ def make_dag(
         pipeline_name=PIPELINE_NAME,
         step_executions=STEP_EXECUTIONS_MULTIPLY__THE__WORD_WORD_INPUT__THUNK,
     )
+    tasks.append(multiply__the__word_word_input__thunk_task)
 
     multiply__the__word_transform_task = DagsterOperator(
         step='multiply_the_word.transform',
@@ -148,6 +151,7 @@ def make_dag(
         pipeline_name=PIPELINE_NAME,
         step_executions=STEP_EXECUTIONS_MULTIPLY__THE__WORD_TRANSFORM,
     )
+    tasks.append(multiply__the__word_transform_task)
 
     count__letters_transform_task = DagsterOperator(
         step='count_letters.transform',
@@ -161,8 +165,9 @@ def make_dag(
         pipeline_name=PIPELINE_NAME,
         step_executions=STEP_EXECUTIONS_COUNT__LETTERS_TRANSFORM,
     )
+    tasks.append(count__letters_transform_task)
 
     multiply__the__word_word_input__thunk_task.set_downstream(multiply__the__word_transform_task)
     multiply__the__word_transform_task.set_downstream(count__letters_transform_task)
 
-    return dag
+    return (dag, tasks)
