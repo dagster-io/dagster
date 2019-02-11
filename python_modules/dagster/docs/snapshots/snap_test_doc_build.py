@@ -20281,7 +20281,10 @@ node. For the ‘synchronous’ API, see <a class="reference internal" href="#da
 <dl class="class">
 <dt id="dagster.ExecutionContext">
 <em class="property">class </em><code class="descclassname">dagster.</code><code class="descname">ExecutionContext</code><a class="headerlink" href="#dagster.ExecutionContext" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<dd><p>The user-facing object in the context creation function. The user constructs
+this in order to effect the context creation process. This could be named
+PipelineExecutionContextCreationData although that seemed excessively verbose.</p>
+</dd></dl>
 
 <dl class="class">
 <dt id="dagster.PipelineExecutionResult">
