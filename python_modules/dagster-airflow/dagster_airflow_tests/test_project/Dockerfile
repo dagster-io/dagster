@@ -4,9 +4,17 @@ RUN mkdir -p /tmp/results
 
 WORKDIR /tmp/
 
-ADD requirements.txt .
+# In a typical production deploy, use the following pattern.
 
-RUN pip install -r requirements.txt
+# ADD requirements.txt .
+
+# RUN pip install -r requirements.txt
+
+ADD dagster .
+ADD dagit .
+
+RUN pip install dagster/
+RUN pip install dagit/
 
 ADD . .
 
