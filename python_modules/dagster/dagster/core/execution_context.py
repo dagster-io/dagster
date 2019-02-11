@@ -164,7 +164,7 @@ class LegacyContextAdapter:
         return self._pipeline_context.log.critical(msg, **kwargs)
 
 
-class TransformExecutionContextMetadata(six.with_metaclass(ABCMeta)):  # pylint: disable=no-init
+class AbstractTransformExecutionContext(six.with_metaclass(ABCMeta)):  # pylint: disable=no-init
     @abstractmethod
     def has_tag(self, key):
         pass
@@ -358,7 +358,7 @@ class StepExecutionContext(PipelineExecutionContext):
         return self._step.solid
 
 
-class TransformExecutionContext(StepExecutionContext, TransformExecutionContextMetadata):
+class TransformExecutionContext(StepExecutionContext, AbstractTransformExecutionContext):
     __slots__ = ['_solid_config']
 
     def __init__(self, pipeline_context_data, tags, log, step, solid_config):

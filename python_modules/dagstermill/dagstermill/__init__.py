@@ -42,7 +42,7 @@ from dagster.core.execution_context import (
     ExecutionMetadata,
     PipelineExecutionContext,
     TransformExecutionContext,
-    TransformExecutionContextMetadata,
+    AbstractTransformExecutionContext,
 )
 
 # magic incantation for syncing up notebooks to enclosing virtual environment.
@@ -51,7 +51,7 @@ from dagster.core.execution_context import (
 # python3 -m ipykernel install --user
 
 
-class DagstermillInNotebookExecutionContext(TransformExecutionContextMetadata):
+class DagstermillInNotebookExecutionContext(AbstractTransformExecutionContext):
     def __init__(self, pipeline_context):
         self._pipeline_context = pipeline_context
 
@@ -288,7 +288,7 @@ def read_value(runtime_type, value):
 
 
 def get_papermill_parameters(transform_context, inputs, output_log_path):
-    check.inst_param(transform_context, 'transform_context', TransformExecutionContextMetadata)
+    check.inst_param(transform_context, 'transform_context', AbstractTransformExecutionContext)
     check.param_invariant(
         isinstance(transform_context.environment_config, dict),
         'transform_context',
