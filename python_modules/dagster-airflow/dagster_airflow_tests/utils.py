@@ -29,10 +29,7 @@ def reload_module(module):
     if version.major >= 4 and version.minor >= 4:
         from importlib import reload
 
-        reload(module)
     elif version.major >= 3:
         from imp import reload
 
-        reload(module)
-    else:
-        reload(module)
+    reload(module)
