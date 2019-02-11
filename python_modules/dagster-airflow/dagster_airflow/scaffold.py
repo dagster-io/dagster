@@ -53,7 +53,7 @@ def _key_for_marshalled_result(step_key, result_name, prepend_run_id=True):
     '''Standardizes keys for marshalled inputs and outputs.'''
     return (
         '/tmp/results/'
-        + ('{run_id}_' if prepend_run_id else '')
+        + ('{run_id_prefix}' if prepend_run_id else '')
         + _normalize_key(step_key)
         + '___'
         + _normalize_key(result_name)

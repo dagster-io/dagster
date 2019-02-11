@@ -412,7 +412,7 @@ class DagsterOperator(ModifiedDockerOperator):
                         printer.line('}}}}{comma}'.format(comma=',' if i < n_outputs - 1 else ''))
             printer.line('}}')
         printer.line(']')
-        return printer.read().format(run_id=self.run_id)
+        return printer.read().format(run_id_prefix=self.run_id + '_' if self.run_id else '')
 
     @property
     def query(self):
