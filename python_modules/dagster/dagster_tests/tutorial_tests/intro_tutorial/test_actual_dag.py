@@ -10,7 +10,7 @@ def test_intro_tutorial_actual_dag():
     result = execute_pipeline(pipeline)
 
     assert result.success
-    assert len(result.result_list) == 4
+    assert len(result.solid_result_list) == 4
     assert result.result_for_solid('solid_a').transformed_value() == 1
     assert result.result_for_solid('solid_b').transformed_value() == 2
     assert result.result_for_solid('solid_c').transformed_value() == 3

@@ -344,11 +344,11 @@ def do_scaffold_command(pipeline, printer, skip_optional):
 
 
 def process_results_for_console(pipeline_iter):
-    results = []
+    step_events = []
 
-    for result in pipeline_iter:
-        if not result.success:
-            result.reraise_user_error()
-        results.append(result)
+    for step_event in pipeline_iter:
+        if step_event.is_step_failure:
+            step_event.reraise_user_error()
+        step_events.append(step_event)
 
-    return results
+    return step_events

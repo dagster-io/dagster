@@ -71,7 +71,7 @@ def iterate_step_events_for_execution_plan(pipeline_context, execution_plan, thr
             input_value = intermediate_results[prev_output_handle].success_data.value
             input_values[step_input.name] = input_value
 
-        for step_event in iterate_step_events_for_step(step_context, input_values):
+        for step_event in check.generator(iterate_step_events_for_step(step_context, input_values)):
             check.inst(step_event, ExecutionStepEvent)
 
             if throw_on_user_error and step_event.event_type == ExecutionStepEventType.STEP_FAILURE:
@@ -89,7 +89,7 @@ def iterate_step_events_for_step(step_context, inputs):
     check.dict_param(inputs, 'inputs', key_type=str)
 
     try:
-        for step_event in _execute_steps_core_loop(step_context, inputs):
+        for step_event in check.generator(_execute_steps_core_loop(step_context, inputs)):
             step_context.log.info(
                 'Step {step} emitted {value} for output {output}'.format(
                     step=step_context.step.key,
@@ -106,9 +106,9 @@ def iterate_step_events_for_step(step_context, inputs):
         return
 
 
-def _error_check_results(step, step_output_values):
+def _error_check_step_output_values(step, step_output_values):
     check.inst_param(step, 'step', ExecutionStep)
-    check.list_param(step_output_values, 'step_output_values', of_type=StepOutputValue)
+    check.generator_param(step_output_values, 'step_output_values')
 
     seen_outputs = set()
     for step_output_value in step_output_values:
@@ -132,6 +132,7 @@ def _error_check_results(step, step_output_values):
                 )
             )
 
+        yield step_output_value
         seen_outputs.add(step_output_value.output_name)
 
 
@@ -146,11 +147,15 @@ def _execute_steps_core_loop(step_context, inputs):
             step_context.step, input_name, input_value
         )
 
-    step_output_values = _gather_step_output_values(step_context, evaluated_inputs)
+    step_output_value_iterator = check.generator(
+        _iterate_step_output_values_within_boundary(step_context, evaluated_inputs)
+    )
 
-    _error_check_results(step_context.step, step_output_values)
+    for step_output_value in check.generator(
+        _error_check_step_output_values(step_context.step, step_output_value_iterator)
+    ):
 
-    return [_create_step_event(step_context.step, result) for result in step_output_values]
+        yield _create_step_event(step_context.step, step_output_value)
 
 
 def _create_step_event(step, step_output_value):
@@ -203,19 +208,17 @@ def _get_evaluated_input(step, input_name, input_value):
         )
 
 
-def _gather_step_output_values(step_context, evaluated_inputs):
+def _iterate_step_output_values_within_boundary(step_context, evaluated_inputs):
     check.inst_param(step_context, 'step_context', StepExecutionContext)
     check.dict_param(evaluated_inputs, 'evaluated_inputs', key_type=str)
 
     error_str = 'Error occured during step {key}'.format(key=step_context.step.key)
     with _execution_step_error_boundary(step_context, error_str):
-        gen = step_context.step.compute_fn(step_context, evaluated_inputs)
+        gen = check.opt_generator(step_context.step.compute_fn(step_context, evaluated_inputs))
 
-        if gen is None:
-            check.invariant(not step_context.step.step_outputs)
-            return []
-
-        return list(gen)
+        if gen is not None:
+            for step_output_value in gen:
+                yield step_output_value
 
 
 @contextmanager

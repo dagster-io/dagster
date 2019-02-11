@@ -10,6 +10,12 @@
         ``context.solid_config`` Logging should be done with the top-level property ``context.log``. The ``context``
         and ``config`` properies on this new context object are deprecated, will warn for now, and be eliminated
         when 0.4.0 is released.
+      - PipelineExecutionResult's (returned from execute_pipeline)
+        ``result_list`` property has been renaming to ``solid_result_list``
+      - execute_pipeline_iterator now returns an iterable of ExecutionStepEvent instead of SolidExecutionResult
+
+   - Bug fixes
+      - #792: execute_pipeline_iterator now properly streams results at step-event granularity.
 
    - GraphQL Schema Changes
       - ``StepResult`` has been renamed to ``StepEvent``.

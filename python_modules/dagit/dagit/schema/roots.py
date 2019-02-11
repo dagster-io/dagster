@@ -192,6 +192,8 @@ class DauphinMutation(dauphin.ObjectType):
         name = 'Mutation'
 
     start_pipeline_execution = DauphinStartPipelineExecutionMutation.Field()
+    # TODO this name should indicate that this is synchronous
+    # https://github.com/dagster-io/dagster/issues/810
     start_subplan_execution = DauphinStartSubplanExecution.Field()
 
 

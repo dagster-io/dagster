@@ -1,4 +1,7 @@
 from future.utils import raise_with_traceback
+
+import inspect
+
 from six import string_types
 
 
@@ -377,6 +380,48 @@ def _element_check_error(key, value, ddict, ttype):
             key=key, value=repr(value), ddict=repr(ddict), ttype=repr(ttype)
         )
     )
+
+
+def generator(obj):
+    if not inspect.isgenerator(obj):
+        raise ParameterCheckError(
+            'Not a generator (return value of function that yields) Got {obj} instead'.format(
+                obj=obj
+            )
+        )
+    return obj
+
+
+def opt_generator(obj):
+    if obj is not None and not inspect.isgenerator(obj):
+        raise ParameterCheckError(
+            'Not a generator (return value of function that yields) Got {obj} instead'.format(
+                obj=obj
+            )
+        )
+    return obj
+
+
+def generator_param(obj, param_name):
+    if not inspect.isgenerator(obj):
+        raise ParameterCheckError(
+            (
+                'Param "{name}" is not a generator (return value of function that yields) Got '
+                '{obj} instead'
+            ).format(name=param_name, obj=obj)
+        )
+    return obj
+
+
+def opt_generator_param(obj, param_name):
+    if obj is not None and not inspect.isgenerator(obj):
+        raise ParameterCheckError(
+            (
+                'Param "{name}" is not a generator (return value of function that yields) Got '
+                '{obj} instead'
+            ).format(name=param_name, obj=obj)
+        )
+    return obj
 
 
 def list_elem(ddict, key):
