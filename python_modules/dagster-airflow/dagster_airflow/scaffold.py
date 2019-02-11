@@ -52,11 +52,12 @@ def _split_lines(lines):
 def _key_for_marshalled_result(step_key, result_name, prepend_run_id=True):
     '''Standardizes keys for marshalled inputs and outputs.'''
     return (
-        '/tmp/results/' +
-        ('{run_id}_' if prepend_run_id else '') +
-        _normalize_key(step_key) +
-        '___' +
-        _normalize_key(result_name) + '.pickle'
+        '/tmp/results/'
+        + ('{run_id}_' if prepend_run_id else '')
+        + _normalize_key(step_key)
+        + '___'
+        + _normalize_key(result_name)
+        + '.pickle'
     )
 
 
@@ -306,7 +307,9 @@ def _make_static_scaffold(pipeline_name, env_config, execution_plan, image, edit
                         printer.line('{')
                         with printer.with_indent():
                             printer.line(
-                                '\'input_name\': \'{input_name}\','.format(input_name=step_input.name)
+                                '\'input_name\': \'{input_name}\','.format(
+                                    input_name=step_input.name
+                                )
                             )
                             printer.line(
                                 '\'key\': \'{key}\''.format(
@@ -324,14 +327,13 @@ def _make_static_scaffold(pipeline_name, env_config, execution_plan, image, edit
                         printer.line('{')
                         with printer.with_indent():
                             printer.line(
-                                '\'output_name\': \'{output_name}\','.format(output_name=step_output.name)
+                                '\'output_name\': \'{output_name}\','.format(
+                                    output_name=step_output.name
+                                )
                             )
                             printer.line(
                                 '\'key\': \'{key}\''.format(
-                                    key=_key_for_marshalled_result(
-                                        step.key,
-                                        step_output.name,
-                                    )
+                                    key=_key_for_marshalled_result(step.key, step_output.name)
                                 )
                             )
                         printer.line('},')

@@ -343,7 +343,7 @@ class DagsterOperator(ModifiedDockerOperator):
                     attr_=attr_, value=getattr(self, attr_), type_=type(getattr(self, attr_))
                 )
             )
-        
+
         assert isinstance(self._step_executions, dict), (
             'Bad value for DagsterOperator step_executions: expected a dict and got {value} of '
             'type {type_}'.format(value=self._step_executions, type_=type(self._step_executions))
