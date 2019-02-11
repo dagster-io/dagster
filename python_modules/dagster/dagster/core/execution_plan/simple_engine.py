@@ -71,7 +71,7 @@ def iterate_step_events_for_execution_plan(pipeline_context, execution_plan, thr
             input_value = intermediate_results[prev_output_handle].success_data.value
             input_values[step_input.name] = input_value
 
-        for step_event in iterate_step_events_for_step(step, step_context, input_values):
+        for step_event in iterate_step_events_for_step(step_context, input_values):
             check.inst(step_event, ExecutionStepEvent)
 
             if throw_on_user_error and step_event.event_type == ExecutionStepEventType.STEP_FAILURE:
@@ -84,16 +84,15 @@ def iterate_step_events_for_execution_plan(pipeline_context, execution_plan, thr
                 intermediate_results[output_handle] = step_event
 
 
-def iterate_step_events_for_step(step, step_context, inputs):
-    check.inst_param(step, 'step', ExecutionStep)
+def iterate_step_events_for_step(step_context, inputs):
     check.inst_param(step_context, 'step_context', StepExecutionContext)
     check.dict_param(inputs, 'inputs', key_type=str)
 
     try:
-        for step_event in _execute_steps_core_loop(step, step_context, inputs):
+        for step_event in _execute_steps_core_loop(step_context, inputs):
             step_context.log.info(
                 'Step {step} emitted {value} for output {output}'.format(
-                    step=step.key,
+                    step=step_context.step.key,
                     value=repr(step_event.success_data.value),
                     output=step_event.success_data.output_name,
                 )
@@ -102,7 +101,7 @@ def iterate_step_events_for_step(step, step_context, inputs):
     except DagsterError as dagster_error:
         step_context.log.error(str(dagster_error))
         yield ExecutionStepEvent.step_failure_event(
-            step=step, failure_data=StepFailureData(dagster_error=dagster_error)
+            step=step_context.step, failure_data=StepFailureData(dagster_error=dagster_error)
         )
         return
 
@@ -136,21 +135,22 @@ def _error_check_results(step, step_output_values):
         seen_outputs.add(step_output_value.output_name)
 
 
-def _execute_steps_core_loop(step, step_context, inputs):
-    check.inst_param(step, 'step', ExecutionStep)
+def _execute_steps_core_loop(step_context, inputs):
     check.inst_param(step_context, 'step_context', StepExecutionContext)
     check.dict_param(inputs, 'inputs', key_type=str)
 
     evaluated_inputs = {}
     # do runtime type checks of inputs versus step inputs
     for input_name, input_value in inputs.items():
-        evaluated_inputs[input_name] = _get_evaluated_input(step, input_name, input_value)
+        evaluated_inputs[input_name] = _get_evaluated_input(
+            step_context.step, input_name, input_value
+        )
 
-    step_output_values = _gather_step_output_values(step, step_context, evaluated_inputs)
+    step_output_values = _gather_step_output_values(step_context, evaluated_inputs)
 
-    _error_check_results(step, step_output_values)
+    _error_check_results(step_context.step, step_output_values)
 
-    return [_create_step_event(step, result) for result in step_output_values]
+    return [_create_step_event(step_context.step, result) for result in step_output_values]
 
 
 def _create_step_event(step, step_output_value):
@@ -203,24 +203,23 @@ def _get_evaluated_input(step, input_name, input_value):
         )
 
 
-def _gather_step_output_values(step, step_context, evaluated_inputs):
-    check.inst_param(step, 'step', ExecutionStep)
+def _gather_step_output_values(step_context, evaluated_inputs):
     check.inst_param(step_context, 'step_context', StepExecutionContext)
     check.dict_param(evaluated_inputs, 'evaluated_inputs', key_type=str)
 
-    error_str = 'Error occured during step {key}'.format(key=step.key)
-    with _execution_step_error_boundary(step_context, step, error_str):
-        gen = step.compute_fn(step_context, step, evaluated_inputs)
+    error_str = 'Error occured during step {key}'.format(key=step_context.step.key)
+    with _execution_step_error_boundary(step_context, error_str):
+        gen = step_context.step.compute_fn(step_context, evaluated_inputs)
 
         if gen is None:
-            check.invariant(not step.step_outputs)
+            check.invariant(not step_context.step.step_outputs)
             return []
 
         return list(gen)
 
 
 @contextmanager
-def _execution_step_error_boundary(step_context, step, msg, **kwargs):
+def _execution_step_error_boundary(step_context, msg, **kwargs):
     '''
     Wraps the execution of user-space code in an error boundary. This places a uniform
     policy around an user code invoked by the framework. This ensures that all user
@@ -230,9 +229,9 @@ def _execution_step_error_boundary(step_context, step, msg, **kwargs):
     been especially help in a notebooking context.
     '''
     check.inst_param(step_context, 'step_context', StepExecutionContext)
-    check.inst_param(step, 'step', ExecutionStep)
     check.str_param(msg, 'msg')
 
+    step = step_context.step
     step_context.events.execution_plan_step_start(step.key)
     try:
         with time_execution_scope() as timer_result:

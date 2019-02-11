@@ -16,7 +16,7 @@ from .objects import (
 JOIN_OUTPUT = 'join_output'
 
 
-def __join_lambda(_context, _step, inputs):
+def __join_lambda(_context, inputs):
     yield StepOutputValue(output_name=JOIN_OUTPUT, value=list(inputs.values())[0])
 
 
@@ -96,7 +96,7 @@ def create_value_thunk_step(plan_builder, solid, runtime_type, step_key, value):
     check.inst_param(runtime_type, 'runtime_type', RuntimeType)
     check.str_param(step_key, 'step_key')
 
-    def _fn(_context, _step, _inputs):
+    def _fn(_context, _inputs):
         yield StepOutputValue(output_name=VALUE_OUTPUT, value=value)
 
     return StepOutputHandle(
