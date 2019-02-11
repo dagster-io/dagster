@@ -21,3 +21,17 @@ def import_module_from_path(module_name, path_to_file):
         module = imp.load_source(module_name, path_to_file)
 
     return module
+
+# https://stackoverflow.com/a/437591/324449
+def reload_module(module):
+    version = sys.version_info
+    if version.major >= 4 and version.minor >= 4:
+        from importlib import reload
+
+        reload(module)
+    elif version.major >= 3:
+        from imp import reload
+
+        reload(module)
+    else:
+        reload(module)

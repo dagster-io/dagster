@@ -6,6 +6,7 @@ import shutil
 import subprocess
 import uuid
 
+import airflow
 import docker
 import pytest
 
@@ -15,7 +16,7 @@ from dagster.utils import load_yaml_from_path, mkdir_p, script_relative_path
 from dagster_airflow import scaffold_airflow_dag
 
 from .test_project.dagster_airflow_demo import define_demo_execution_pipeline
-
+from .utils import reload_module
 
 IMAGE = 'dagster-airflow-demo'
 
@@ -98,6 +99,11 @@ def airflow_test(docker_image, dags_path, plugins_path, host_tmp_dir):
     mkdir_p(os.path.abspath(dags_path))
 
     subprocess.check_output(['airflow', 'initdb'])
+
+    reload_module(airflow)
+
+    from airflow.operators.dagster_plugin import DagsterOperator
+    del DagsterOperator
 
     return (docker_image, dags_path, host_tmp_dir)
 
