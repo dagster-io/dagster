@@ -25,7 +25,12 @@ class InitContext(namedtuple('_InitContext', 'context_config pipeline_def run_id
 
     @property
     def config(self):
-        warnings.warn('As of 0.3.2 the config property is deprecated. Use context_config instead.')
+        warnings.warn(
+            (
+                'As of 0.3.2 the config property is deprecated. Use context_config instead. '
+                'This will be removed in 0.4.0.'
+            )
+        )
         return self.context_config
 
 
@@ -51,5 +56,10 @@ class InitResourceContext(
 
     @property
     def config(self):
-        warnings.warn('As of 0.3.2 the config property is deprecated. Use resource_config instead.')
+        warnings.warn(
+            (
+                'As of 0.3.2 the config property is deprecated. Use resource_config instead.'
+                'This will be removed in 0.4.0.'
+            )
+        )
         return self.resource_config

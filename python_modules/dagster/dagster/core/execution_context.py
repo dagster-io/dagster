@@ -85,7 +85,12 @@ def _warn_about_context_property():
 
 
 def _warn_about_config_property():
-    warnings.warn('As of 3.0.2 the config property is deprecated. Use solid_config instead.')
+    warnings.warn(
+        (
+            'As of 3.0.2 the config property is deprecated. Use solid_config instead. '
+            'This will be removed in 0.4.0.'
+        )
+    )
 
 
 # Delete this after 0.4.0
