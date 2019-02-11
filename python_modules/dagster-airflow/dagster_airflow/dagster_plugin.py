@@ -204,6 +204,7 @@ class ModifiedDockerOperator(DockerOperator):
     # We should open an Airflow issue so that this isn't a class-private name on DockerOperator --
     # all that the status quo does is inhibit extension of the class
     def __get_tls_config(self):
+        # pylint: disable=no-member
         return super(ModifiedDockerOperator, self)._DockerOperator__get_tls_config()
 
 
@@ -212,12 +213,14 @@ class DagsterOperator(ModifiedDockerOperator):
 
     Wraps a modified DockerOperator incorporating https://github.com/apache/airflow/pull/4315.
 
-    Additionally, if a Docker client can be initialized using docker.from_env, 
+    Additionally, if a Docker client can be initialized using docker.from_env,
     Unlike the standard DockerOperator, this operator also supports config using docker.from_env,
     so it isn't necessary to explicitly set docker_url, tls_config, or api_version.
 
     '''
 
+    # py2 compat
+    # pylint: disable=keyword-arg-before-vararg
     def __init__(
         self,
         step=None,
@@ -264,11 +267,18 @@ class DagsterOperator(ModifiedDockerOperator):
         super(DagsterOperator, self).__init__(*args, **kwargs)
 
     @property
+    def run_id(self):
+        if self._run_id is None:
+            return ''
+        else:
+            return self._run_id
+
+    @property
     def query(self):
         return QUERY_TEMPLATE.format(
             config=self.config.strip('\n'),
-            run_id=self._run_id,
-            step_executions=self.step_executions.strip('\n'),
+            run_id=self.run_id,
+            step_executions=self.step_executions.strip('\n').format(run_id=self.run_id),
             pipeline_name=self.pipeline_name,
         )
 
@@ -309,6 +319,7 @@ class DagsterOperator(ModifiedDockerOperator):
             self._run_id = None
 
     def __get_tls_config(self):
+        # pylint:disable=no-member
         return super(DagsterOperator, self)._ModifiedDockerOperator__get_tls_config()
 
 

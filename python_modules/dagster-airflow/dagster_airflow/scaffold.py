@@ -49,10 +49,14 @@ def _split_lines(lines):
     return (lines.strip('\n') + ',').split('\n')
 
 
-def _key_for_marshalled_result(step_key, result_name):
+def _key_for_marshalled_result(step_key, result_name, prepend_run_id=True):
     '''Standardizes keys for marshalled inputs and outputs.'''
     return (
-        '/tmp/results/' + _normalize_key(step_key) + '___' + _normalize_key(result_name) + '.pickle'
+        '/tmp/results/' +
+        ('{run_id}_' if prepend_run_id else '') +
+        _normalize_key(step_key) +
+        '___' +
+        _normalize_key(result_name) + '.pickle'
     )
 
 
@@ -359,12 +363,18 @@ def _make_static_scaffold(pipeline_name, env_config, execution_plan, image, edit
             step_executions = _scaffold_step_executions(step)
 
             printer.line(
-                '{step_executions_key} = \'\'\''.format(step_executions_key=step_executions_key)
+                '{step_execution_key} = {'.format(step_executions_key=step_executions_key)
             )
-            for line in step_executions.strip('\n').split('\n'):
-                printer.line(line)
-            printer.line('\'\'\'.strip(\'\\n\')')
-            printer.blank_line()
+            with printer.with_indent():
+                pass
+            printer.line('}')
+            # printer.line(
+            #     '{step_executions_key} = \'\'\''.format(step_executions_key=step_executions_key)
+            # )
+            # for line in step_executions.strip('\n').split('\n'):
+            #     printer.line(line)
+            # printer.line('\'\'\'.strip(\'\\n\')')
+            # printer.blank_line()
 
         printer.blank_line()
 

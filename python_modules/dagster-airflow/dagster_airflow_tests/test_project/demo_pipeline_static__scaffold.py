@@ -57,7 +57,7 @@ STEP_EXECUTIONS_MULTIPLY__THE__WORD_WORD_INPUT__THUNK = '''
     [
       {
         outputName: "input_thunk_output",
-        key: "/tmp/results/multiply__the__word_word_input__thunk___input__thunk__output.pickle"
+        key: "/tmp/results/{run_id}_multiply__the__word_word_input__thunk___input__thunk__output.pickle"
       }
     ],
   }
@@ -72,14 +72,14 @@ STEP_EXECUTIONS_MULTIPLY__THE__WORD_TRANSFORM = '''
     [
       {
         inputName: "word",
-        key: "/tmp/results/multiply__the__word_word_input__thunk___input__thunk__output.pickle"
+        key: "/tmp/results/{run_id}_multiply__the__word_word_input__thunk___input__thunk__output.pickle"
       }
     ],
     marshalledOutputs: 
     [
       {
         outputName: "result",
-        key: "/tmp/results/multiply__the__word_transform___result.pickle"
+        key: "/tmp/results/{run_id}_multiply__the__word_transform___result.pickle"
       }
     ],
   }
@@ -94,14 +94,14 @@ STEP_EXECUTIONS_COUNT__LETTERS_TRANSFORM = '''
     [
       {
         inputName: "word",
-        key: "/tmp/results/multiply__the__word_transform___result.pickle"
+        key: "/tmp/results/{run_id}_multiply__the__word_transform___result.pickle"
       }
     ],
     marshalledOutputs: 
     [
       {
         outputName: "result",
-        key: "/tmp/results/count__letters_transform___result.pickle"
+        key: "/tmp/results/{run_id}_count__letters_transform___result.pickle"
       }
     ],
   }
