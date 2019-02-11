@@ -54,11 +54,11 @@ from .utils import (
 
 
 def define_lambda_resource(func, *args, **kwargs):
-    return ResourceDefinition(lambda _info: func(*args, **kwargs))
+    return ResourceDefinition(lambda _init_context: func(*args, **kwargs))
 
 
 def define_value_resource(value):
-    return ResourceDefinition(lambda _info: value)
+    return ResourceDefinition(lambda _init_context: value)
 
 
 def define_none_resource():
@@ -66,7 +66,9 @@ def define_none_resource():
 
 
 def define_string_resource():
-    return ResourceDefinition(resource_fn=lambda info: info.config, config_field=Field(String))
+    return ResourceDefinition(
+        resource_fn=lambda init_context: init_context.resource_config, config_field=Field(String)
+    )
 
 
 class TempfileManager(object):
@@ -128,23 +130,23 @@ DbInfo = namedtuple('DbInfo', 'engine url jdbc_url dialect load_table')
 
 
 def define_redshift_db_info_resource():
-    def _create_redshift_db_info(info):
+    def _create_redshift_db_info(init_context):
         db_url_jdbc = create_redshift_db_url(
-            info.config['redshift_username'],
-            info.config['redshift_password'],
-            info.config['redshift_hostname'],
-            info.config['redshift_db_name'],
+            init_context.resource_config['redshift_username'],
+            init_context.resource_config['redshift_password'],
+            init_context.resource_config['redshift_hostname'],
+            init_context.resource_config['redshift_db_name'],
         )
 
         db_url = create_redshift_db_url(
-            info.config['redshift_username'],
-            info.config['redshift_password'],
-            info.config['redshift_hostname'],
-            info.config['redshift_db_name'],
+            init_context.resource_config['redshift_username'],
+            init_context.resource_config['redshift_password'],
+            init_context.resource_config['redshift_hostname'],
+            init_context.resource_config['redshift_db_name'],
             jdbc=False,
         )
 
-        s3_temp_dir = info.config['s3_temp_dir']
+        s3_temp_dir = init_context.resource_config['s3_temp_dir']
 
         def _do_load(data_frame, table_name):
             data_frame.write.format('com.databricks.spark.redshift').option(
@@ -165,19 +167,19 @@ def define_redshift_db_info_resource():
 
 
 def define_postgres_db_info_resource():
-    def _create_postgres_db_info(info):
+    def _create_postgres_db_info(init_context):
         db_url_jdbc = create_postgres_db_url(
-            info.config['postgres_username'],
-            info.config['postgres_password'],
-            info.config['postgres_hostname'],
-            info.config['postgres_db_name'],
+            init_context.resource_config['postgres_username'],
+            init_context.resource_config['postgres_password'],
+            init_context.resource_config['postgres_hostname'],
+            init_context.resource_config['postgres_db_name'],
         )
 
         db_url = create_postgres_db_url(
-            info.config['postgres_username'],
-            info.config['postgres_password'],
-            info.config['postgres_hostname'],
-            info.config['postgres_db_name'],
+            init_context.resource_config['postgres_username'],
+            init_context.resource_config['postgres_password'],
+            init_context.resource_config['postgres_hostname'],
+            init_context.resource_config['postgres_db_name'],
             jdbc=False,
         )
 
@@ -200,7 +202,7 @@ def define_postgres_db_info_resource():
 
 
 test_context = PipelineContextDefinition(
-    context_fn=lambda info: ExecutionContext.console_logging(log_level=logging.DEBUG),
+    context_fn=lambda _: ExecutionContext.console_logging(log_level=logging.DEBUG),
     resources={
         'spark': define_lambda_resource(create_spark_session_local),
         's3': define_lambda_resource(create_s3_session, signed=False),
@@ -219,7 +221,7 @@ PostgresConfigData = Dict(
 )
 
 local_context = PipelineContextDefinition(
-    context_fn=lambda info: ExecutionContext.console_logging(log_level=logging.DEBUG),
+    context_fn=lambda _: ExecutionContext.console_logging(log_level=logging.DEBUG),
     resources={
         'spark': define_lambda_resource(create_spark_session_local),
         's3': define_lambda_resource(create_s3_session, signed=False),
@@ -229,7 +231,7 @@ local_context = PipelineContextDefinition(
 )
 
 cloud_context = PipelineContextDefinition(
-    context_fn=lambda info: ExecutionContext.console_logging(log_level=logging.DEBUG),
+    context_fn=lambda _: ExecutionContext.console_logging(log_level=logging.DEBUG),
     resources={
         'spark': define_lambda_resource(create_spark_session_local),  # FIXME
         's3': define_lambda_resource(create_s3_session(), signed=False),

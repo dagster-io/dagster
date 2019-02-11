@@ -250,13 +250,13 @@ def test_solid_definition_errors():
     with pytest.raises(DagsterInvalidDefinitionError, match='positional vararg'):
 
         @solid(inputs=[InputDefinition(name="foo")], outputs=[OutputDefinition()])
-        def vargs(info, foo, *args):
+        def vargs(context, foo, *args):
             pass
 
     with pytest.raises(DagsterInvalidDefinitionError):
 
         @solid(inputs=[InputDefinition(name="foo")], outputs=[OutputDefinition()])
-        def wrong_name(info, bar):
+        def wrong_name(context, bar):
             pass
 
     with pytest.raises(DagsterInvalidDefinitionError):
@@ -265,7 +265,7 @@ def test_solid_definition_errors():
             inputs=[InputDefinition(name="foo"), InputDefinition(name="bar")],
             outputs=[OutputDefinition()],
         )
-        def wrong_name_2(info, foo):
+        def wrong_name_2(context, foo):
             pass
 
     with pytest.raises(DagsterInvalidDefinitionError):
@@ -284,14 +284,14 @@ def test_solid_definition_errors():
         inputs=[InputDefinition(name="foo"), InputDefinition(name="bar")],
         outputs=[OutputDefinition()],
     )
-    def valid_kwargs(info, **kwargs):
+    def valid_kwargs(context, **kwargs):
         pass
 
     @solid(
         inputs=[InputDefinition(name="foo"), InputDefinition(name="bar")],
         outputs=[OutputDefinition()],
     )
-    def valid(info, foo, bar):
+    def valid(context, foo, bar):
         pass
 
 
@@ -323,8 +323,8 @@ def test_any_config_field():
     conf_value = 234
 
     @solid(config_field=Field(Any))
-    def hello_world(info):
-        assert info.solid_config == conf_value
+    def hello_world(context):
+        assert context.solid_config == conf_value
         called['yup'] = True
 
     result = execute_single_solid_in_isolation(

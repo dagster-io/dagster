@@ -36,13 +36,13 @@ from dagster.core.types.runtime import RuntimeType
 from dagster.core.definitions.dependency import Solid
 from dagster.core.events import construct_json_event_logger, EventRecord, EventType
 from dagster.core.definitions.environment_configs import construct_environment_config
-from dagster.core.execution import yield_context
+from dagster.core.execution import yield_pipeline_execution_context
 from dagster.core.execution_context import (
-    ExecutionMetadata,
     DagsterLog,
-    LegacyRuntimeExecutionContext,
-    TransformExecutionContextMetadata,
-    WithLegacyContext,
+    ExecutionMetadata,
+    PipelineExecutionContext,
+    TransformExecutionContext,
+    AbstractTransformExecutionContext,
 )
 
 # magic incantation for syncing up notebooks to enclosing virtual environment.
@@ -51,25 +51,46 @@ from dagster.core.execution_context import (
 # python3 -m ipykernel install --user
 
 
-class DagstermillInNotebookExecutionContext(
-    WithLegacyContext,
-    TransformExecutionContextMetadata,
-    namedtuple('_DagstermillInNotebookExecutionContext', 'context__ pipeline_def__'),
-):
-    def __new__(cls, context, pipeline_def):
-        return super(DagstermillInNotebookExecutionContext, cls).__new__(
-            cls,
-            check.inst_param(context, 'context', LegacyRuntimeExecutionContext),
-            check.inst_param(pipeline_def, 'pipeline_def', PipelineDefinition),
-        )
+class DagstermillInNotebookExecutionContext(AbstractTransformExecutionContext):
+    def __init__(self, pipeline_context):
+        self._pipeline_context = pipeline_context
+
+    def has_tag(self, key):
+        return self._pipeline_context.has_tag(key)
+
+    def get_tag(self, key):
+        return self._pipeline_context.get_tag(key)
+
+    @property
+    def run_id(self):
+        return self._pipeline_context.run_id
+
+    @property
+    def event_callback(self):
+        return self._pipeline_context.event_callback
+
+    def has_event_callback(self):
+        return self._pipeline_context.has_event_callback
+
+    @property
+    def environment_config(self):
+        return self._pipeline_context.environment_config
+
+    @property
+    def pipeline_def(self):
+        return self._pipeline_context.pipeline_def
+
+    @property
+    def resources(self):
+        return self._pipeline_context.resources
+
+    @property
+    def log(self):
+        return self._pipeline_context.log
 
     @property
     def context(self):
-        return self.context__
-
-    @property
-    def legacy_context(self):
-        return self.context__
+        return self._pipeline_context.context
 
     @property
     def config(self):
@@ -86,10 +107,6 @@ class DagstermillInNotebookExecutionContext(
     @property
     def solid(self):
         check.not_implemented('Cannot access solid in dagstermill exploratory context')
-
-    @property
-    def pipeline_def(self):
-        return self.pipeline_def__
 
 
 class DagstermillError(Exception):
@@ -125,10 +142,10 @@ class Manager:
         # This will instigate that process *before* return. We are going to have to
         # manage this manually (without an if block) in order to make this work.
         # See https://github.com/dagster-io/dagster/issues/796
-        with yield_context(
+        with yield_pipeline_execution_context(
             pipeline_def, dummy_environment_config, ExecutionMetadata(run_id='')
-        ) as context:
-            self.info = DagstermillInNotebookExecutionContext(context, pipeline_def)
+        ) as pipeline_context:
+            self.info = DagstermillInNotebookExecutionContext(pipeline_context)
         return self.info
 
     def get_pipeline(self, name):
@@ -168,8 +185,10 @@ class Manager:
         typed_environment = construct_environment_config(environment_config)
         # See block comment above referencing this issue
         # See https://github.com/dagster-io/dagster/issues/796
-        with yield_context(pipeline_def, typed_environment, execution_metadata) as context:
-            self.info = DagstermillInNotebookExecutionContext(context, pipeline_def)
+        with yield_pipeline_execution_context(
+            pipeline_def, typed_environment, execution_metadata
+        ) as pipeline_context:
+            self.info = DagstermillInNotebookExecutionContext(pipeline_context)
 
         return self.info
 
@@ -269,7 +288,7 @@ def read_value(runtime_type, value):
 
 
 def get_papermill_parameters(transform_context, inputs, output_log_path):
-    check.inst_param(transform_context, 'transform_context', TransformExecutionContextMetadata)
+    check.inst_param(transform_context, 'transform_context', AbstractTransformExecutionContext)
     check.param_invariant(
         isinstance(transform_context.environment_config, dict),
         'transform_context',

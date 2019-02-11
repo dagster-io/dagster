@@ -55,24 +55,26 @@ def define_dagma_resource():
         )
     """
 
-    def _create_dagma_resource(info):
+    def _create_dagma_resource(init_context):
         sessionmaker = lambda: boto3.Session(  # Otherwise, can't be pickled b/c of ssl.SSLContext
-            aws_access_key_id=info.get('aws_access_key_id'),
-            aws_secret_access_key=info.get('aws_secret_access_key'),
-            aws_session_token=info.get('aws_session_token'),
-            region_name=info.config['aws_region_name'],
+            aws_access_key_id=init_context.resource_config.get('aws_access_key_id'),
+            aws_secret_access_key=init_context.resource_config.get('aws_secret_access_key'),
+            aws_session_token=init_context.resource_config.get('aws_session_token'),
+            region_name=init_context.resource_config['aws_region_name'],
         )
 
         storage_config = dict(
-            DEFAULT_STORAGE_CONFIG, sessionmaker=sessionmaker, s3_bucket=info.config['s3_bucket']
+            DEFAULT_STORAGE_CONFIG,
+            sessionmaker=sessionmaker,
+            s3_bucket=init_context.resource_config['s3_bucket'],
         )
 
         return DagmaResourceType(
             sessionmaker=sessionmaker,
-            aws_region_name=info.config['aws_region_name'],
+            aws_region_name=init_context.resource_config['aws_region_name'],
             storage=Storage(storage_config),
-            s3_bucket=info.config['s3_bucket'],
-            runtime_bucket=info.config['runtime_bucket'],
+            s3_bucket=init_context.resource_config['s3_bucket'],
+            runtime_bucket=init_context.resource_config['runtime_bucket'],
         )
 
     return ResourceDefinition(

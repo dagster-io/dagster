@@ -1,12 +1,8 @@
 from dagster import check
 
-from dagster.core.definitions import (
-    ExpectationDefinition,
-    ExpectationExecutionInfo,
-    InputDefinition,
-    OutputDefinition,
-    Solid,
-)
+from dagster.core.execution_context import StepExecutionContext
+
+from dagster.core.definitions import ExpectationDefinition, InputDefinition, OutputDefinition, Solid
 
 from dagster.core.errors import DagsterExpectationFailedError
 
@@ -34,18 +30,21 @@ def _create_expectation_lambda(solid, inout_def, expectation_def, internal_outpu
     check.inst_param(expectation_def, 'expectations_def', ExpectationDefinition)
     check.str_param(internal_output_name, 'internal_output_name')
 
-    def _do_expectation(context, step, inputs):
+    def _do_expectation(step_context, step, inputs):
+        check.inst_param(step_context, 'step_context', StepExecutionContext)
         value = inputs[EXPECTATION_INPUT]
-        info = ExpectationExecutionInfo(context, inout_def, solid, expectation_def)
-        expt_result = expectation_def.expectation_fn(info, value)
+        expectation_context = step_context.for_expectation(inout_def, expectation_def)
+        expt_result = expectation_def.expectation_fn(step_context, value)
         if expt_result.success:
-            context.debug(
+            expectation_context.log.debug(
                 'Expectation {key} succeeded on {value}.'.format(key=step.key, value=value)
             )
             yield StepOutputValue(output_name=internal_output_name, value=inputs[EXPECTATION_INPUT])
         else:
-            context.debug('Expectation {key} failed on {value}.'.format(key=step.key, value=value))
-            raise DagsterExpectationFailedError(info, value)
+            expectation_context.log.debug(
+                'Expectation {key} failed on {value}.'.format(key=step.key, value=value)
+            )
+            raise DagsterExpectationFailedError(expectation_context, value)
 
     return _do_expectation
 

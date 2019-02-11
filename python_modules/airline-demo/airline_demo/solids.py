@@ -95,7 +95,7 @@ def sql_solid(name, select_statement, materialization_strategy, table_name=None,
         'drop table if exists {table_name};\n' 'create table {table_name} as {select_statement};'
     ).format(table_name=table_name, select_statement=select_statement)
 
-    def transform_fn(info, _inputs):
+    def transform_fn(context, _inputs):
         '''Inner function defining the new solid.
 
         Args:
@@ -107,10 +107,10 @@ def sql_solid(name, select_statement, materialization_strategy, table_name=None,
                 The table name of the newly materialized SQL select statement.
         '''
 
-        info.log.info(
+        context.log.info(
             'Executing sql statement:\n{sql_statement}'.format(sql_statement=sql_statement)
         )
-        info.resources.db_info.engine.execute(text(sql_statement))
+        context.resources.db_info.engine.execute(text(sql_statement))
         yield Result(value=table_name, output_name='result')
 
     return SolidDefinition(
@@ -134,7 +134,7 @@ def sql_solid(name, select_statement, materialization_strategy, table_name=None,
     description='No-op solid that simply outputs its single string config value.',
     outputs=[OutputDefinition(String, description='The string passed in as ')],
 )
-def thunk(info):
+def thunk(context):
     '''Output the config vakue.
 
     Especially useful when constructing DAGs with root nodes that take inputs which might in
@@ -147,21 +147,21 @@ def thunk(info):
         str;
             The config value passed to the solid.
     '''
-    return info.config
+    return context.solid_config
 
 
 @solid(
     name='thunk_database_engine',
     outputs=[OutputDefinition(SqlAlchemyEngineType, description='The db resource.')],
 )
-def thunk_database_engine(info):
+def thunk_database_engine(context):
     """Returns the db resource as its output.
 
     Why? Because we don't currently have a good way to pass contexts around between execution
     threads. So in order to get a database engine into a Jupyter notebook, we need to serialize
     it and pass it along.
     """
-    return info.resources.db
+    return context.resources.db
 
 
 @solid(
@@ -201,7 +201,7 @@ def thunk_database_engine(info):
         OutputDefinition(List(FileExistsAtPath), description='The path to the downloaded object.')
     ],
 )
-def download_from_s3(info):
+def download_from_s3(context):
     '''Download an object from s3.
 
     Args:
@@ -212,16 +212,16 @@ def download_from_s3(info):
             The path to the downloaded object.
     '''
     results = []
-    for file_ in info.config:
+    for file_ in context.solid_config:
         bucket = file_['bucket']
         key = file_['key']
         target_path = file_.get('target_path') or key
 
         if target_path is None:
-            target_path = info.resources.tempfile.tempfile().name
+            target_path = context.resources.tempfile.tempfile().name
 
         if file_['skip_if_present'] and safe_isfile(target_path):
-            info.log.info(
+            context.log.info(
                 'Skipping download, file already present at {target_path}'.format(
                     target_path=target_path
                 )
@@ -230,7 +230,7 @@ def download_from_s3(info):
             if os.path.dirname(target_path):
                 mkdir_p(os.path.dirname(target_path))
 
-            info.resources.s3.download_file(bucket, key, target_path)
+            context.resources.s3.download_file(bucket, key, target_path)
         results.append(target_path)
     return results
 
@@ -260,7 +260,7 @@ def download_from_s3(info):
         OutputDefinition(String, description='The key to which the file was uploaded.', name='key'),
     ],
 )
-def upload_to_s3(info, file_path):
+def upload_to_s3(context, file_path):
     '''Upload a file to s3.
 
     Args:
@@ -270,12 +270,12 @@ def upload_to_s3(info, file_path):
         (str, str):
             The bucket and key to which the file was uploaded.
     '''
-    bucket = info.config['bucket']
-    key = info.config['key']
+    bucket = context.solid_config['bucket']
+    key = context.solid_config['key']
 
     with open(file_path, 'rb') as fd:
-        info.resources.s3.put_object(
-            Bucket=bucket, Body=fd, Key=key, **(info.config.get('kwargs') or {})
+        context.resources.s3.put_object(
+            Bucket=bucket, Body=fd, Key=key, **(context.solid_config.get('kwargs') or {})
         )
     yield Result(bucket, 'bucket')
     yield Result(key, 'key')
@@ -328,7 +328,7 @@ def upload_to_s3(info, file_path):
     ],
 )
 def unzip_file(
-    info,
+    context,
     archive_paths,
     archive_members,
     # destination_dir=None
@@ -352,11 +352,11 @@ def unzip_file(
                 target_path = os.path.join(destination_dir, archive_member)
                 is_file = safe_isfile(target_path)
                 is_dir = os.path.isdir(target_path)
-                if not (info.config['skip_if_present'] and (is_file or is_dir)):
+                if not (context.solid_config['skip_if_present'] and (is_file or is_dir)):
                     zip_ref.extract(archive_member, destination_dir)
                 else:
                     if is_file:
-                        info.log.info(
+                        context.log.info(
                             'Skipping unarchive of {archive_member} from {archive_path}, '
                             'file already present at {target_path}'.format(
                                 archive_member=archive_member,
@@ -365,7 +365,7 @@ def unzip_file(
                             )
                         )
                     if is_dir:
-                        info.log.info(
+                        context.log.info(
                             'Skipping unarchive of {archive_member} from {archive_path}, '
                             'directory already present at {target_path}'.format(
                                 archive_member=archive_member,
@@ -374,10 +374,10 @@ def unzip_file(
                             )
                         )
             else:
-                if not (info.config['skip_if_present'] and is_dir):
+                if not (context.solid_config['skip_if_present'] and is_dir):
                     zip_ref.extractall(destination_dir)
                 else:
-                    info.log.info(
+                    context.log.info(
                         'Skipping unarchive of {archive_path}, directory already present '
                         'at {target_path}'.format(
                             archive_path=archive_path, target_path=target_path
@@ -392,9 +392,9 @@ def unzip_file(
     inputs=[InputDefinition('input_csv', Path)],
     outputs=[OutputDefinition(SparkDataFrameType)],
 )
-def ingest_csv_to_spark(info, input_csv):
+def ingest_csv_to_spark(context, input_csv):
     data_frame = (
-        info.resources.spark.read.format('csv')
+        context.resources.spark.read.format('csv')
         .options(
             header='true',
             # inferSchema='true',
@@ -420,9 +420,9 @@ def rename_spark_dataframe_columns(data_frame, fn):
     config_field=Field(String, description='Prefix to append.'),
     outputs=[OutputDefinition(SparkDataFrameType)],
 )
-def prefix_column_names(info, data_frame):
+def prefix_column_names(context, data_frame):
     return rename_spark_dataframe_columns(
-        data_frame, lambda c: '{prefix}{c}'.format(prefix=info.config, c=c)
+        data_frame, lambda c: '{prefix}{c}'.format(prefix=context.solid_config, c=c)
     )
 
 
@@ -435,7 +435,7 @@ def prefix_column_names(info, data_frame):
     ],
     outputs=[OutputDefinition(SparkDataFrameType)],
 )
-def canonicalize_column_names(_info, data_frame):
+def canonicalize_column_names(_context, data_frame):
     return rename_spark_dataframe_columns(data_frame, lambda c: c.lower())
 
 
@@ -459,7 +459,7 @@ def replace_values_spark(data_frame, old, new):
         )
     ],
 )
-def normalize_weather_na_values(_info, data_frame):
+def normalize_weather_na_values(_context, data_frame):
     return replace_values_spark(data_frame, 'M', None)
 
 
@@ -475,8 +475,8 @@ def normalize_weather_na_values(_info, data_frame):
     outputs=[OutputDefinition(SparkDataFrameType)],
     config_field=Field(Dict(fields={'table_name': Field(String, description='')})),
 )
-def load_data_to_database_from_spark(info, data_frame):
-    info.resources.db_info.load_table(data_frame, info.config['table_name'])
+def load_data_to_database_from_spark(context, data_frame):
+    context.resources.db_info.load_table(data_frame, context.config['table_name'])
     return data_frame
 
 
@@ -499,8 +499,8 @@ def load_data_to_database_from_spark(info, data_frame):
         )
     ],
 )
-def subsample_spark_dataset(info, data_frame):
-    return data_frame.sample(False, info.config['subsample_pct'] / 100.0)
+def subsample_spark_dataset(context, data_frame):
+    return data_frame.sample(False, context.solid_config['subsample_pct'] / 100.0)
 
 
 @solid(
@@ -530,14 +530,14 @@ def subsample_spark_dataset(info, data_frame):
         )
     ),
 )
-def join_spark_data_frames(info, left_data_frame, right_data_frame):
+def join_spark_data_frames(context, left_data_frame, right_data_frame):
     return left_data_frame.join(
         right_data_frame,
         on=(
-            getattr(left_data_frame, info.config['on_left'])
-            == getattr(right_data_frame, info.config['on_right'])
+            getattr(left_data_frame, context.config['on_left'])
+            == getattr(right_data_frame, context.config['on_right'])
         ),
-        how=info.config['how'],
+        how=context.solid_config['how'],
     )
 
 
@@ -558,7 +558,7 @@ def join_spark_data_frames(info, left_data_frame, right_data_frame):
         )
     ],
 )
-def union_spark_data_frames(_info, left_data_frame, right_data_frame):
+def union_spark_data_frames(_context, left_data_frame, right_data_frame):
     return left_data_frame.union(right_data_frame)
 
 

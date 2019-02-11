@@ -354,8 +354,8 @@ def test_solid_list_config():
     value = [1, 2]
     called = {}
 
-    def _test_config(info, _inputs):
-        assert info.solid_config == value
+    def _test_config(context, _inputs):
+        assert context.solid_config == value
         called['yup'] = True
 
     pipeline_def = PipelineDefinition(
@@ -398,8 +398,8 @@ def test_two_list_types():
 
 def test_multilevel_default_handling():
     @solid(config_field=Field(Int, is_optional=True, default_value=234))
-    def has_default_value(info):
-        assert info.solid_config == 234
+    def has_default_value(context):
+        assert context.solid_config == 234
 
     pipeline_def = PipelineDefinition(
         name='multilevel_default_handling', solids=[has_default_value]
@@ -491,8 +491,8 @@ def test_working_list_path():
     called = {}
 
     @solid(config_field=Field(List(Int)))
-    def required_list_int_solid(info):
-        assert info.solid_config == [1, 2]
+    def required_list_int_solid(context):
+        assert context.solid_config == [1, 2]
         called['yup'] = True
 
     pipeline_def = PipelineDefinition(name='list_path', solids=[required_list_int_solid])
@@ -509,8 +509,8 @@ def test_item_error_list_path():
     called = {}
 
     @solid(config_field=Field(List(Int)))
-    def required_list_int_solid(info):
-        assert info.solid_config == [1, 2]
+    def required_list_int_solid(context):
+        assert context.solid_config == [1, 2]
         called['yup'] = True
 
     pipeline_def = PipelineDefinition(name='list_path', solids=[required_list_int_solid])
@@ -533,8 +533,8 @@ def test_context_selector_working():
     called = {}
 
     @solid
-    def check_context(info):
-        assert info.resources == 32
+    def check_context(context):
+        assert context.resources == 32
         called['yup'] = True
 
     pipeline_def = PipelineDefinition(
@@ -542,7 +542,9 @@ def test_context_selector_working():
         solids=[check_context],
         context_definitions={
             'context_required_int': PipelineContextDefinition(
-                context_fn=lambda info: ExecutionContext(resources=info.config),
+                context_fn=lambda init_context: ExecutionContext(
+                    resources=init_context.context_config
+                ),
                 config_field=Field(Int),
             )
         },
@@ -566,7 +568,9 @@ def test_context_selector_extra_context():
         solids=[check_context],
         context_definitions={
             'context_required_int': PipelineContextDefinition(
-                context_fn=lambda info: ExecutionContext(resources=info.solid_config),
+                context_fn=lambda init_context: ExecutionContext(
+                    resources=init_context.solid_config
+                ),
                 config_field=Field(Int),
             )
         },
@@ -599,7 +603,9 @@ def test_context_selector_wrong_name():
         solids=[check_context],
         context_definitions={
             'context_required_int': PipelineContextDefinition(
-                context_fn=lambda info: ExecutionContext(resources=info.solid_config),
+                context_fn=lambda init_context: ExecutionContext(
+                    resources=init_context.solid_config
+                ),
                 config_field=Field(Int),
             )
         },
@@ -624,7 +630,9 @@ def test_context_selector_none_given():
         solids=[check_context],
         context_definitions={
             'context_required_int': PipelineContextDefinition(
-                context_fn=lambda info: ExecutionContext(resources=info.solid_config),
+                context_fn=lambda init_context: ExecutionContext(
+                    resources=init_context.solid_config
+                ),
                 config_field=Field(Int),
             )
         },

@@ -85,6 +85,9 @@ def test_start_execution():
     result = subprocess.check_output(
         ['dagit', '-q', START_PIPELINE_EXECUTION_QUERY, '-v', variables, '-y', repo_path]
     )
-    result_data = json.loads(result.decode())
-    print(result_data)
-    assert result_data['data']
+    decoded = result.decode()
+    try:
+        result_data = json.loads(result.decode())
+        assert result_data['data']
+    except Exception as e:
+        raise Exception('Failed with {} Exception: {}'.format(decoded, e))

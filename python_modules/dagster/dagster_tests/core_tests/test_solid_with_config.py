@@ -14,8 +14,8 @@ from dagster import (
 def test_basic_solid_with_config():
     did_get = {}
 
-    def _t_fn(info, _inputs):
-        did_get['yep'] = info.solid_config
+    def _t_fn(context, _inputs):
+        did_get['yep'] = context.solid_config
 
     solid = SolidDefinition(
         name='solid_with_context',

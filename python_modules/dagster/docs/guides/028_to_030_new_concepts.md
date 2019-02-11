@@ -65,11 +65,11 @@ The only real reusable resource here is the LocalFsHandleResource, so let's brea
 
 ```py
 def define_local_fs_resource():
-    def _create_resource(info):
-        resource = LocalFsHandleResource.for_pipeline_run(info.run_id)
+    def _create_resource(init_context):
+        resource = LocalFsHandleResource.for_pipeline_run(init_context.run_id)
         yield resource
-        if info.config['cleanup_files']:
-            LocalFsHandleResource.clean_up_dir(info.run_id)
+        if init_context.resource_config['cleanup_files']:
+            LocalFsHandleResource.clean_up_dir(init_context.run_id)
 
     return ResourceDefinition(
         resource_fn=_create_resource,
@@ -111,9 +111,9 @@ This context does not log to file and also has a configurable log_level.
         '''
     )
 
-def create_fileload_unittest_context(info):
-    data_source_run_id = info.config['data_source_run_id']
-    log_level = level_from_string(info.config['log_level'])
+def create_fileload_unittest_context(init_context):
+    data_source_run_id = init_context.context_config['data_source_run_id']
+    log_level = level_from_string(init_context.context_config['log_level'])
 
     yield ExecutionContext(
         loggers=[define_colored_console_logger('dagster', log_level)],
@@ -193,12 +193,12 @@ For example, here would be a resource to create a redshift connection.
 
 ```py
 def define_redshift_sa_resource():
-    def _create_resource(info):
-        user = info.config['user']
-        password = info.config['password']
-        host = info.config['host']
-        port = info.config['port']
-        dbname = info.config['dbname']
+    def _create_resource(init_context):
+        user = init_context.resource_config['user']
+        password = init_context.resource_config['password']
+        host = init_context.resource_config['host']
+        port = init_context.resource_config['port']
+        dbname = init_context.resource_config['dbname']
         return sa.create_engine(f'postgresql://{user}:{password}@{host}:{port}/{dbname}')
 
     return ResourceDefinition(
@@ -262,7 +262,7 @@ This takes a single, pre-existing zip folder with a single file and unzips it,
 and then outputs the path to that file.
 ''',
 )
-def unzip_file(info, zipped_file):
+def unzip_file(context, zipped_file):
     # ...
     pass
 ```

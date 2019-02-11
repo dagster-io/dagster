@@ -98,23 +98,25 @@ class InvalidRepositoryLoadingComboError(Exception):
     pass
 
 
-def check_info_fields(info, *fields):
-    check.inst_param(info, 'info', PipelineTargetInfo)
+def check_info_fields(pipeline_target_info, *fields):
+    check.inst_param(pipeline_target_info, 'pipeline_target_info', PipelineTargetInfo)
     check.tuple_param(fields, 'fields')
 
-    info_dict = info._asdict()
+    pipeline_target_dict = pipeline_target_info._asdict()
     for field in fields:
-        if info_dict[field] is None:
+        if pipeline_target_dict[field] is None:
             return False
 
     for none_field in INFO_FIELDS.difference(set(fields)):
-        if info_dict[none_field] is not None:
+        if pipeline_target_dict[none_field] is not None:
             raise InvalidPipelineLoadingComboError(
                 (
                     'field: {none_field} with value {value} should not be set if'
                     '{fields} were provided'
                 ).format(
-                    value=repr(info_dict[none_field]), none_field=none_field, fields=repr(fields)
+                    value=repr(pipeline_target_dict[none_field]),
+                    none_field=none_field,
+                    fields=repr(fields),
                 )
             )
 
@@ -126,82 +128,93 @@ def repo_load_invariant(condition):
         raise InvalidRepositoryLoadingComboError()
 
 
-def create_repository_loading_mode_data(info):
-    check.inst_param(info, 'info', RepositoryTargetInfo)
+def create_repository_loading_mode_data(repo_target_info):
+    check.inst_param(repo_target_info, 'repo_target_info', RepositoryTargetInfo)
 
-    if info.repository_yaml:
-        repo_load_invariant(info.module_name is None)
-        repo_load_invariant(info.python_file is None)
-        repo_load_invariant(info.fn_name is None)
+    if repo_target_info.repository_yaml:
+        repo_load_invariant(repo_target_info.module_name is None)
+        repo_load_invariant(repo_target_info.python_file is None)
+        repo_load_invariant(repo_target_info.fn_name is None)
         return RepositoryLoadingModeData(
-            mode=RepositoryTargetMode.YAML_FILE, data=info.repository_yaml
+            mode=RepositoryTargetMode.YAML_FILE, data=repo_target_info.repository_yaml
         )
-    elif info.module_name and info.fn_name:
-        repo_load_invariant(info.repository_yaml is None)
-        repo_load_invariant(info.python_file is None)
+    elif repo_target_info.module_name and repo_target_info.fn_name:
+        repo_load_invariant(repo_target_info.repository_yaml is None)
+        repo_load_invariant(repo_target_info.python_file is None)
         return RepositoryLoadingModeData(
             mode=RepositoryTargetMode.MODULE,
-            data=ModuleTargetFunction(module_name=info.module_name, fn_name=info.fn_name),
+            data=ModuleTargetFunction(
+                module_name=repo_target_info.module_name, fn_name=repo_target_info.fn_name
+            ),
         )
-    elif info.python_file and info.fn_name:
-        repo_load_invariant(info.repository_yaml is None)
-        repo_load_invariant(info.module_name is None)
+    elif repo_target_info.python_file and repo_target_info.fn_name:
+        repo_load_invariant(repo_target_info.repository_yaml is None)
+        repo_load_invariant(repo_target_info.module_name is None)
         return RepositoryLoadingModeData(
             mode=RepositoryTargetMode.FILE,
-            data=FileTargetFunction(python_file=info.python_file, fn_name=info.fn_name),
+            data=FileTargetFunction(
+                python_file=repo_target_info.python_file, fn_name=repo_target_info.fn_name
+            ),
         )
     else:
         raise InvalidRepositoryLoadingComboError()
 
 
-def create_pipeline_loading_mode_data(info):
-    check.inst_param(info, 'info', PipelineTargetInfo)
+def create_pipeline_loading_mode_data(pipeline_target_info):
+    check.inst_param(pipeline_target_info, 'pipeline_target_info', PipelineTargetInfo)
 
-    if check_info_fields(info, 'python_file', 'fn_name', 'pipeline_name'):
+    if check_info_fields(pipeline_target_info, 'python_file', 'fn_name', 'pipeline_name'):
         return PipelineLoadingModeData(
             mode=PipelineTargetMode.REPOSITORY_PYTHON_FILE,
             data=RepositoryPythonFileData(
                 file_target_function=FileTargetFunction(
-                    python_file=info.python_file, fn_name=info.fn_name
+                    python_file=pipeline_target_info.python_file,
+                    fn_name=pipeline_target_info.fn_name,
                 ),
-                pipeline_name=info.pipeline_name,
+                pipeline_name=pipeline_target_info.pipeline_name,
             ),
         )
-    elif check_info_fields(info, 'module_name', 'fn_name', 'pipeline_name'):
+    elif check_info_fields(pipeline_target_info, 'module_name', 'fn_name', 'pipeline_name'):
         return PipelineLoadingModeData(
             mode=PipelineTargetMode.REPOSITORY_MODULE,
             data=RepositoryModuleData(
                 module_target_function=ModuleTargetFunction(
-                    module_name=info.module_name, fn_name=info.fn_name
+                    module_name=pipeline_target_info.module_name,
+                    fn_name=pipeline_target_info.fn_name,
                 ),
-                pipeline_name=info.pipeline_name,
+                pipeline_name=pipeline_target_info.pipeline_name,
             ),
         )
-    elif check_info_fields(info, 'python_file', 'fn_name'):
+    elif check_info_fields(pipeline_target_info, 'python_file', 'fn_name'):
         return PipelineLoadingModeData(
             mode=PipelineTargetMode.PIPELINE_PYTHON_FILE,
-            data=FileTargetFunction(python_file=info.python_file, fn_name=info.fn_name),
+            data=FileTargetFunction(
+                python_file=pipeline_target_info.python_file, fn_name=pipeline_target_info.fn_name
+            ),
         )
-    elif check_info_fields(info, 'module_name', 'fn_name'):
+    elif check_info_fields(pipeline_target_info, 'module_name', 'fn_name'):
         return PipelineLoadingModeData(
             mode=PipelineTargetMode.PIPELINE_MODULE,
-            data=ModuleTargetFunction(module_name=info.module_name, fn_name=info.fn_name),
+            data=ModuleTargetFunction(
+                module_name=pipeline_target_info.module_name, fn_name=pipeline_target_info.fn_name
+            ),
         )
-    elif info.pipeline_name:
+    elif pipeline_target_info.pipeline_name:
         for none_field in ['python_file', 'fn_name', 'module_name']:
-            if getattr(info, none_field) is not None:
+            if getattr(pipeline_target_info, none_field) is not None:
                 raise InvalidPipelineLoadingComboError(
                     '{none_field} is not None. Got {value}'.format(
-                        none_field=none_field, value=getattr(info, none_field)
+                        none_field=none_field, value=getattr(pipeline_target_info, none_field)
                     )
                 )
 
-        check.invariant(info.repository_yaml is not None)
+        check.invariant(pipeline_target_info.repository_yaml is not None)
 
         return PipelineLoadingModeData(
             mode=PipelineTargetMode.REPOSITORY_YAML_FILE,
             data=RepositoryYamlData(
-                repository_yaml=info.repository_yaml, pipeline_name=info.pipeline_name
+                repository_yaml=pipeline_target_info.repository_yaml,
+                pipeline_name=pipeline_target_info.pipeline_name,
             ),
         )
     else:
@@ -264,10 +277,10 @@ def load_module_target_function(module_target_function):
 EMPHERMAL_NAME = '<<unnamed>>'
 
 
-def load_repository_object_from_target_info(info):
-    check.inst_param(info, 'info', RepositoryTargetInfo)
+def load_repository_object_from_target_info(repo_target_info):
+    check.inst_param(repo_target_info, 'repo_target_info', RepositoryTargetInfo)
 
-    mode_data = create_repository_loading_mode_data(info)
+    mode_data = create_repository_loading_mode_data(repo_target_info)
 
     if mode_data.mode == RepositoryTargetMode.YAML_FILE:
         dynamic_obj = load_repository_from_file(mode_data.data)
@@ -282,34 +295,17 @@ def load_repository_object_from_target_info(info):
     return dynamic_obj
 
 
-def load_repository_from_target_info(info):
-    return check.inst(load_repository_object_from_target_info(info).load(), RepositoryDefinition)
+def load_repository_from_target_info(repo_target_info):
+    check.inst_param(repo_target_info, 'repo_target_info', RepositoryTargetInfo)
+    return check.inst(
+        load_repository_object_from_target_info(repo_target_info).load(), RepositoryDefinition
+    )
 
 
-# Keeping this code around for a week. I might need to be able to
-# coerce a single pipeline repo into a pipeline at some point while
-# we work out the kinks in the command line tool.
-#
-# If this is still around in a week or two delete this -- schrockn (09/18/18)
+def load_pipeline_from_target_info(pipeline_target_info):
+    check.inst_param(pipeline_target_info, 'pipeline_target_info', PipelineTargetInfo)
 
-# def _pipeline_from_dynamic_object(mode_data, dynamic_object):
-#     check.inst_param(mode_data, 'mode_data', PipelineLoadingModeData)
-#     check.inst_param(dynamic_object, 'dynamic_object', DynamicObject)
-
-#     repository = check.inst(
-#         ensure_in_repo(dynamic_object).object,
-#         RepositoryDefinition,
-#     )
-#     if len(repository.pipeline_dict) == 1:
-#         return repository.get_all_pipelines()[0]
-
-#     return repository.get_pipeline(mode_data.data.pipeline_name)
-
-
-def load_pipeline_from_target_info(info):
-    check.inst_param(info, 'info', PipelineTargetInfo)
-
-    mode_data = create_pipeline_loading_mode_data(info)
+    mode_data = create_pipeline_loading_mode_data(pipeline_target_info)
 
     if mode_data.mode == PipelineTargetMode.REPOSITORY_PYTHON_FILE:
         repository = check.inst(
@@ -317,18 +313,12 @@ def load_pipeline_from_target_info(info):
             RepositoryDefinition,
         )
         return repository.get_pipeline(mode_data.data.pipeline_name)
-        # dynamic_object = load_file_target_function(mode_data.data.file_target_function)
-        # return _pipeline_from_dynamic_object(mode_data, dynamic_object)
-        # If this is still around in a week or two delete this -- schrockn (09/18/18)
     elif mode_data.mode == PipelineTargetMode.REPOSITORY_MODULE:
         repository = check.inst(
             load_module_target_function(mode_data.data.module_target_function).load(),
             RepositoryDefinition,
         )
         return repository.get_pipeline(mode_data.data.pipeline_name)
-        # dynamic_object = load_module_target_function(mode_data.data.module_target_function)
-        # return _pipeline_from_dynamic_object(mode_data, dynamic_object)
-        # If this is still around in a week or two delete this -- schrockn (09/18/18)
     elif mode_data.mode == PipelineTargetMode.PIPELINE_PYTHON_FILE:
         return check.inst(load_file_target_function(mode_data.data).load(), PipelineDefinition)
     elif mode_data.mode == PipelineTargetMode.PIPELINE_MODULE:

@@ -64,8 +64,9 @@ def define_in_memory_store_resource():
 
 def define_cloud_store_resource():
     return ResourceDefinition(
-        resource_fn=lambda info: PublicCloudStore(
-            info.config['username'], info.config['password']
+        resource_fn=lambda init_context: PublicCloudStore(
+            init_context.resource_config['username'],
+            init_context.resource_config['password'],
         ),
         config_field=Field(
             Dict({'username': Field(String), 'password': Field(String)})

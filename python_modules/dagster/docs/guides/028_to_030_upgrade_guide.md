@@ -368,7 +368,7 @@ Before:
 
 ```py
 @solid(outputs=[OutputDefinition(dagster_type=dagster_pd.DataFrame)])
-def return_none(info):
+def return_none(context):
     return None # None no longer allowed, would break at runtime
 ```
 
@@ -376,6 +376,6 @@ After
 
 ```py
 @solid(outputs=[OutputDefinition(dagster_type=Nullable(dagster_pd.DataFrame))])
-def return_none(info):
+def return_none(context):
     return None # Because of Nullable wrapper, this is ok
 ```

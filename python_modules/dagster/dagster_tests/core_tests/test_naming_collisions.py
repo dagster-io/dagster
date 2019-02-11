@@ -24,8 +24,8 @@ def define_pass_value_solid(name, description=None):
     check.str_param(name, 'name')
     check.opt_str_param(description, 'description')
 
-    def _value_t_fn(info, _inputs):
-        yield Result(info.solid_config['value'])
+    def _value_t_fn(context, _inputs):
+        yield Result(context.solid_config['value'])
 
     return SolidDefinition(
         name=name,

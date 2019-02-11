@@ -1,7 +1,22 @@
+'''
+This module defines the different notions of context passed to user code during pipeline
+execution. There are currently four types of contexts defined:
+
+1) PipelineExecutionContext
+2) StepExecutionContext
+3) TransformExecutionContext
+4) ExpectationExecutionContext
+
+They inherit from eac hother in reverse order. They are also relatively lightweight
+objects, and a new one is created for every invocation into user space.
+
+Additionally in order to maintain backwards compat (where info.context used to rule the day)
+we have a separate class LegacyContextAdapter which can be easily deleted once we break
+that API guarantee in 0.4.0.
+'''
+
 from abc import ABCMeta, abstractproperty, abstractmethod
 from collections import namedtuple
-import itertools
-import json
 import logging
 import uuid
 import warnings
@@ -11,25 +26,23 @@ import six
 
 from dagster import check
 from dagster.utils import merge_dicts
-from dagster.utils.logging import CompositeLogger, INFO, define_colored_console_logger
+from dagster.utils.logging import INFO, define_colored_console_logger
 
+from .definitions.expectation import ExpectationDefinition
+from .definitions.input import InputDefinition
+from .definitions.output import OutputDefinition
 from .events import ExecutionEvents
 from .types.marshal import PersistenceStrategy
-
-
-def _kv_message(all_items):
-    return ' '.join(
-        [
-            '{key}={value}'.format(key=key, value=json.dumps(value, sort_keys=True))
-            for key, value in all_items
-        ]
-    )
-
-
-DAGSTER_META_KEY = 'dagster_meta'
+from .log import DagsterLog
 
 
 class ExecutionContext(namedtuple('_ExecutionContext', 'loggers resources tags')):
+    '''
+    The user-facing object in the context creation function. The user constructs
+    this in order to effect the context creation process. This could be named
+    PipelineExecutionContextCreationData although that seemed excessively verbose.
+    '''
+
     def __new__(cls, loggers=None, resources=None, tags=None):
         return super(ExecutionContext, cls).__new__(
             cls,
@@ -45,202 +58,6 @@ class ExecutionContext(namedtuple('_ExecutionContext', 'loggers resources tags')
         )
 
 
-class LegacyRuntimeExecutionContext:
-    '''
-    A context object flowed through the entire scope of single execution of a
-    pipeline of solids. This is used by both framework and user code to log
-    messages and metrics. It also maintains a stack of context values so that
-    logs, metrics, and any future reporting are reported with a minimal, consistent
-    level of context so that developers do not have to repeatedly log well-known
-    information (e.g. the name of the solid, the name of the pipeline, etc) when
-    logging. Additionally tool author may add their own context values to assist
-    reporting.
-
-
-    Args:
-        loggers (List[logging.Logger]):
-            The list of loggers that will be invoked whenever the context logging
-            functions are called.
-
-        resources(Any):
-            An arbitrary user-defined object that can be passed in by a user and
-            then access during pipeline execution. This exists so that a user can
-            inject their own objects into the context without having to subclass
-            ExecutionContext.
-    '''
-
-    def __init__(
-        self,
-        run_id,
-        loggers=None,
-        resources=None,
-        event_callback=None,
-        environment_config=None,
-        tags=None,
-        persistence_policy=None,
-    ):
-
-        if loggers is None:
-            loggers = [define_colored_console_logger('dagster')]
-
-        self.loggers = loggers
-        self._logger = CompositeLogger(loggers=loggers)
-        self.resources = resources
-        self._run_id = check.str_param(run_id, 'run_id')
-        self._tags = check.opt_dict_param(tags, 'tags')
-        self.events = ExecutionEvents(self)
-
-        # For re-construction purposes later on
-        self._event_callback = check.opt_callable_param(event_callback, 'event_callback')
-        self._environment_config = environment_config
-        self.persistence_policy = check.opt_inst_param(
-            persistence_policy, 'persistence_policy', PersistenceStrategy
-        )
-
-    def for_step(self, step):
-        return LegacyRuntimeExecutionContext(
-            run_id=self.run_id,
-            loggers=self._logger.loggers,
-            resources=self.resources,
-            tags=merge_dicts(step.tags, self._tags),
-            environment_config=self.environment_config,
-            event_callback=self.event_callback,
-            persistence_policy=self.persistence_policy,
-        )
-
-    def _log(self, method, orig_message, message_props):
-        check.str_param(method, 'method')
-        check.str_param(orig_message, 'orig_message')
-        check.dict_param(message_props, 'message_props')
-
-        check.invariant(
-            'extra' not in message_props, 'do not allow until explicit support is handled'
-        )
-        check.invariant(
-            'exc_info' not in message_props, 'do not allow until explicit support is handled'
-        )
-
-        check.invariant('orig_message' not in message_props, 'orig_message reserved value')
-        check.invariant('message' not in message_props, 'message reserved value')
-        check.invariant('log_message_id' not in message_props, 'log_message_id reserved value')
-
-        log_message_id = str(uuid.uuid4())
-
-        synth_props = {
-            'orig_message': orig_message,
-            'log_message_id': log_message_id,
-            'run_id': self._run_id,
-        }
-
-        # We first generate all props for the purpose of producing the semi-structured
-        # log message via _kv_messsage
-        all_props = dict(
-            itertools.chain(synth_props.items(), self._tags.items(), message_props.items())
-        )
-
-        message_with_structured_props = _kv_message(all_props.items())
-
-        # So here we use the arbitrary key DAGSTER_META_KEY to store a dictionary of
-        # all the meta information that dagster injects into log message.
-        # The python logging module, in its infinite wisdom, actually takes all the
-        # keys in extra and unconditionally smashes them into the internal dictionary
-        # of the logging.LogRecord class. We used a reserved key here to avoid naming
-        # collisions with internal variables of the LogRecord class.
-        # See __init__.py:363 (makeLogRecord) in the python 3.6 logging module source
-        # for the gory details.
-        getattr(self._logger, method)(
-            message_with_structured_props, extra={DAGSTER_META_KEY: all_props}
-        )
-
-    def debug(self, msg, **kwargs):
-        '''
-        Debug level logging directive. Ends up invoking loggers with DEBUG error level.
-
-        The message will be automatically adorned with context information about the name
-        of the pipeline, the name of the solid, and so forth. The use can also add
-        context values during execution using the value() method of ExecutionContext.
-        Therefore it is generally unnecessary to include this type of information
-        (solid name, pipeline name, etc) in the log message unless it is critical
-        for the readability/fluency of the log message text itself.
-
-        You can optionally additional context key-value pairs to an individual log
-        message using the keyword args to this message
-
-        Args:
-            msg (str): The core string
-            **kwargs (Dict[str, Any]): Additional context values for only this log message.
-        '''
-        return self._log('debug', msg, kwargs)
-
-    def info(self, msg, **kwargs):
-        '''Log at INFO level
-
-        See debug()'''
-        return self._log('info', msg, kwargs)
-
-    def warning(self, msg, **kwargs):
-        '''Log at WARNING level
-
-        See debug()'''
-        return self._log('warning', msg, kwargs)
-
-    def error(self, msg, **kwargs):
-        '''Log at ERROR level
-
-        See debug()'''
-        return self._log('error', msg, kwargs)
-
-    def critical(self, msg, **kwargs):
-        '''Log at CRITICAL level
-
-        See debug()'''
-        return self._log('critical', msg, kwargs)
-
-    def has_tag(self, key):
-        check.str_param(key, 'key')
-        return key in self._tags
-
-    def get_tag(self, key):
-        check.str_param(key, 'key')
-        return self._tags[key]
-
-    @property
-    def run_id(self):
-        return self._run_id
-
-    @property
-    def event_callback(self):
-        return self._event_callback
-
-    @property
-    def has_event_callback(self):
-        return self._event_callback is not None
-
-    @property
-    def environment_config(self):
-        return self._environment_config
-
-
-class DagsterLog:
-    def __init__(self, context):
-        self.context = context
-
-    def debug(self, msg, **kwargs):
-        return self.context.debug(msg, **kwargs)
-
-    def info(self, msg, **kwargs):
-        return self.context.info(msg, **kwargs)
-
-    def warning(self, msg, **kwargs):
-        return self.context.warning(msg, **kwargs)
-
-    def error(self, msg, **kwargs):
-        return self.context.error(msg, **kwargs)
-
-    def critical(self, msg, **kwargs):
-        return self.context.critical(msg, **kwargs)
-
-
 class ExecutionMetadata(namedtuple('_ExecutionMetadata', 'run_id tags event_callback loggers')):
     def __new__(cls, run_id=None, tags=None, event_callback=None, loggers=None):
         return super(ExecutionMetadata, cls).__new__(
@@ -252,175 +69,333 @@ class ExecutionMetadata(namedtuple('_ExecutionMetadata', 'run_id tags event_call
         )
 
 
-class TransformExecutionContextMetadata(six.with_metaclass(ABCMeta)):  # pylint: disable=no-init
-    @abstractmethod
-    def has_tag(self, key):
-        pass
-
-    @abstractmethod
-    def get_tag(self, key):
-        pass
-
-    @abstractproperty
-    def run_id(self):
-        pass
-
-    @abstractproperty
-    def event_callback(self):
-        pass
-
-    @abstractmethod
-    def has_event_callback(self):
-        pass
-
-    @abstractproperty
-    def environment_config(self):
-        pass
-
-    @abstractproperty
-    def context(self):
-        pass
-
-    @abstractproperty
-    def config(self):
-        pass
-
-    @abstractproperty
-    def step(self):
-        pass
-
-    @abstractproperty
-    def solid_def(self):
-        pass
-
-    @abstractproperty
-    def solid(self):
-        pass
-
-    @abstractproperty
-    def pipeline_def(self):
-        pass
-
-    @abstractproperty
-    def resources(self):
-        pass
-
-    @abstractproperty
-    def log(self):
-        pass
+DEFAULT_LOGGERS = [define_colored_console_logger('dagster')]
 
 
-class WithLegacyContext(six.with_metaclass(ABCMeta)):  # pylint: disable=no-init
-    @abstractproperty
-    def legacy_context(self):
-        pass
-
-    def has_tag(self, key):
-        check.str_param(key, 'key')
-        return self.legacy_context.has_tag(key)
-
-    def get_tag(self, key):
-        check.str_param(key, 'key')
-        return self.legacy_context.get_tag(key)
-
-    @property
-    def run_id(self):
-        return self.legacy_context.run_id
-
-    @property
-    def event_callback(self):
-        return self.legacy_context.event_callback
-
-    @property
-    def has_event_callback(self):
-        return self.legacy_context.has_event_callback
-
-    @property
-    def environment_config(self):
-        return self.legacy_context.environment_config
-
-    @property
-    def log(self):
-        return DagsterLog(self.legacy_context)
-
-    @property
-    def resources(self):
-        return self.legacy_context.resources
-
-    @property
-    def persistence_policy(self):
-        return self.legacy_context.persistence_policy
-
-    @property
-    def events(self):
-        return self.legacy_context.events
-
-    @property
-    def loggers(self):
-        return self.legacy_context.loggers
-
-
-class TransformExecutionContext(
-    WithLegacyContext,
-    TransformExecutionContextMetadata,
-    namedtuple('_TransformExecutionContext', 'context__ config__ step__ pipeline_def__'),
-):
-    '''An instance of TransformExecutionContext is passed every solid transform function.
-
-    Attributes:
-
-        context (ExecutionContext): Context instance for this pipeline invocation
-        config (Any): Config object for current solid
-    '''
-
-    def __new__(cls, legacy_context, config, step, pipeline_def):
-        from dagster.core.definitions.pipeline import PipelineDefinition
-        from dagster.core.execution_plan.objects import ExecutionStep
-
-        return super(TransformExecutionContext, cls).__new__(
-            cls,
-            check.inst_param(legacy_context, 'legacy_context', LegacyRuntimeExecutionContext),
-            config,
-            check.inst_param(step, 'step', ExecutionStep),
-            check.inst_param(pipeline_def, 'pipeline_def', PipelineDefinition),
-        )
-
-    @property
-    def context(self):
-        warnings.warn(
+def _warn_about_context_property():
+    warnings.warn(
+        (
             'As of 3.0.2 the context property is deprecated. Before your code likely looked '
             'like info.context.some_method_or_property. All of the properties of the nested '
             'context object have been hoisted to the top level, so just rename your info '
             'object to context and access context.some_method_or_property. This property '
             'will be removed in 0.4.0.'
         )
-        return self.context__
+    )
+
+
+def _warn_about_config_property():
+    warnings.warn(
+        (
+            'As of 3.0.2 the config property is deprecated. Use solid_config instead. '
+            'This will be removed in 0.4.0.'
+        )
+    )
+
+
+# Delete this after 0.4.0
+class LegacyContextAdapter:
+    '''
+    This class mimics the object that was at info.context prior to 0.3.1. It exists in
+    order to provide backwards compatibility.
+    '''
+
+    def __init__(self, pipeline_context):
+        self._pipeline_context = check.inst_param(
+            pipeline_context, 'pipeline_context', PipelineExecutionContext
+        )
+
+    def has_tag(self, key):
+        check.str_param(key, 'key')
+        return key in self._pipeline_context.tags
+
+    def get_tag(self, key):
+        check.str_param(key, 'key')
+        return self._pipeline_context.tags[key]
 
     @property
-    def legacy_context(self):
-        return self.context__
+    def run_id(self):
+        return self._pipeline_context.run_id
 
     @property
-    def solid_config(self):
-        return self.config__
+    def event_callback(self):
+        return self._pipeline_context.event_callback
 
     @property
-    def config(self):
-        warnings.warn('As of 3.0.2 the config property is deprecated. Use solid_config instead.')
-        return self.config__
+    def has_event_callback(self):
+        return self._pipeline_context.event_callback is not None
 
     @property
-    def step(self):
-        return self.step__
+    def environment_config(self):
+        return self._pipeline_context.environment_config
 
     @property
-    def solid_def(self):
-        return self.step__.solid.definition
+    def resources(self):
+        return self._pipeline_context.resources
 
     @property
-    def solid(self):
-        return self.step__.solid
+    def tags(self):
+        return self._pipeline_context.tags
+
+    @property
+    def persistence_strategy(self):
+        return self._pipeline_context.persistence_strategy
+
+    @property
+    def events(self):
+        return self._pipeline_context.events
+
+    @property
+    def log(self):
+        return self._pipeline_context.log
 
     @property
     def pipeline_def(self):
-        return self.pipeline_def__
+        return self._pipeline_context.pipeline_def
+
+    def debug(self, msg, **kwargs):
+        return self._pipeline_context.log.debug(msg, **kwargs)
+
+    def info(self, msg, **kwargs):
+        return self._pipeline_context.log.info(msg, **kwargs)
+
+    def warning(self, msg, **kwargs):
+        return self._pipeline_context.log.warning(msg, **kwargs)
+
+    def error(self, msg, **kwargs):
+        return self._pipeline_context.log.error(msg, **kwargs)
+
+    def critical(self, msg, **kwargs):
+        return self._pipeline_context.log.critical(msg, **kwargs)
+
+
+class AbstractTransformExecutionContext(six.with_metaclass(ABCMeta)):  # pylint: disable=no-init
+    @abstractmethod
+    def has_tag(self, key):
+        pass
+
+    @abstractmethod
+    def get_tag(self, key):
+        pass
+
+    @abstractproperty
+    def run_id(self):
+        pass
+
+    @abstractproperty
+    def event_callback(self):
+        pass
+
+    @abstractmethod
+    def has_event_callback(self):
+        pass
+
+    @abstractproperty
+    def environment_config(self):
+        pass
+
+    @abstractproperty
+    def context(self):
+        pass
+
+    @abstractproperty
+    def step(self):
+        pass
+
+    @abstractproperty
+    def solid_def(self):
+        pass
+
+    @abstractproperty
+    def solid(self):
+        pass
+
+    @abstractproperty
+    def pipeline_def(self):
+        pass
+
+    @abstractproperty
+    def resources(self):
+        pass
+
+    @abstractproperty
+    def log(self):
+        pass
+
+
+class PipelineExecutionContextData(
+    namedtuple(
+        '_PipelineExecutionContextData',
+        'run_id resources environment_config persistence_strategy pipeline_def event_callback',
+    )
+):
+    '''
+    PipelineContextData is the data that remains context throughtout the entire execution
+    of a pipeline.
+    '''
+
+    def __new__(
+        cls,
+        run_id,
+        resources,
+        environment_config,
+        persistence_strategy,
+        pipeline_def,
+        event_callback=None,
+    ):
+        from .definitions.pipeline import PipelineDefinition
+
+        return super(PipelineExecutionContextData, cls).__new__(
+            cls,
+            run_id=check.str_param(run_id, 'run_id'),
+            resources=resources,
+            environment_config=check.dict_param(environment_config, 'environment_config'),
+            persistence_strategy=check.inst_param(
+                persistence_strategy, 'persistence_strategy', PersistenceStrategy
+            ),
+            pipeline_def=check.inst_param(pipeline_def, 'pipeline_def', PipelineDefinition),
+            event_callback=check.opt_callable_param(event_callback, 'event_callback'),
+        )
+
+
+class PipelineExecutionContext(object):
+    __slots__ = ['_pipeline_context_data', '_tags', '_log', '_legacy_context', '_events']
+
+    def __init__(self, pipeline_context_data, tags, log):
+        self._pipeline_context_data = check.inst_param(
+            pipeline_context_data, 'pipeline_context_data', PipelineExecutionContextData
+        )
+        self._tags = check.dict_param(tags, 'tags')
+        self._log = check.inst_param(log, 'log', DagsterLog) if log else DEFAULT_LOGGERS
+        self._legacy_context = LegacyContextAdapter(self)
+        self._events = ExecutionEvents(pipeline_context_data.pipeline_def.name, self._log)
+
+    def for_step(self, step):
+        from .execution_plan.objects import ExecutionStep
+
+        check.inst_param(step, 'step', ExecutionStep)
+        tags = merge_dicts(self.tags, step.tags)
+        log = DagsterLog(self.run_id, tags, self.log.loggers)
+        return StepExecutionContext(self._pipeline_context_data, tags, log, step)
+
+    @property
+    def resources(self):
+        return self._pipeline_context_data.resources
+
+    @property
+    def run_id(self):
+        return self._pipeline_context_data.run_id
+
+    @property
+    def environment_config(self):
+        return self._pipeline_context_data.environment_config
+
+    @property
+    def tags(self):
+        return self._tags
+
+    def has_tag(self, key):
+        check.str_param(key, 'key')
+        return key in self._tags
+
+    def get_tag(self, key):
+        check.str_param(key, 'key')
+        return self._tags[key]
+
+    @property
+    def persistence_strategy(self):
+        return self._pipeline_context_data.persistence_strategy
+
+    @property
+    def pipeline_def(self):
+        return self._pipeline_context_data.pipeline_def
+
+    @property
+    def events(self):
+        return self._events
+
+    @property
+    def event_callback(self):
+        return self._pipeline_context_data.event_callback
+
+    def has_event_callback(self):
+        return self._pipeline_context_data.event_callback is not None
+
+    @property
+    def log(self):
+        return self._log
+
+    @property
+    def context(self):
+        _warn_about_context_property()
+        return self._legacy_context
+
+
+class StepExecutionContext(PipelineExecutionContext):
+    __slots__ = ['_step']
+
+    def __init__(self, pipeline_context_data, tags, log, step):
+        from .execution_plan.objects import ExecutionStep
+
+        self._step = check.inst_param(step, 'step', ExecutionStep)
+        super(StepExecutionContext, self).__init__(pipeline_context_data, tags, log)
+
+    def for_transform(self, solid_config):
+        return TransformExecutionContext(
+            self._pipeline_context_data, self.tags, self.log, self.step, solid_config
+        )
+
+    def for_expectation(self, inout_def, expectation_def):
+        return ExpectationExecutionContext(
+            self._pipeline_context_data, self.tags, self.log, self.step, inout_def, expectation_def
+        )
+
+    @property
+    def step(self):
+        return self._step
+
+    @property
+    def solid_def(self):
+        return self._step.solid.definition
+
+    @property
+    def solid(self):
+        return self._step.solid
+
+
+class TransformExecutionContext(StepExecutionContext, AbstractTransformExecutionContext):
+    __slots__ = ['_solid_config']
+
+    def __init__(self, pipeline_context_data, tags, log, step, solid_config):
+        self._solid_config = solid_config
+        super(TransformExecutionContext, self).__init__(pipeline_context_data, tags, log, step)
+
+    @property
+    def solid_config(self):
+        return self._solid_config
+
+    @property
+    def config(self):
+        _warn_about_config_property()
+        return self._solid_config
+
+
+class ExpectationExecutionContext(StepExecutionContext):
+    __slots__ = ['_inout_def', '_expectation_def']
+
+    def __init__(self, pipeline_context_data, tags, log, step, inout_def, expectation_def):
+        self._expectation_def = check.inst_param(
+            expectation_def, 'expectation_def', ExpectationDefinition
+        )
+        self._inout_def = check.inst_param(
+            inout_def, 'inout_def', (InputDefinition, OutputDefinition)
+        )
+        super(ExpectationExecutionContext, self).__init__(pipeline_context_data, tags, log, step)
+
+    @property
+    def expectation_def(self):
+        return self._expectation_def
+
+    @property
+    def inout_def(self):
+        return self._inout_def

@@ -26,7 +26,7 @@ def define_event_logging_pipeline(name, solids, event_callback, deps=None):
         description=deps,
         context_definitions={
             'default': PipelineContextDefinition(
-                context_fn=lambda info: ExecutionContext(
+                context_fn=lambda _: ExecutionContext(
                     loggers=[
                         construct_event_logger(event_callback),
                         define_colored_console_logger('yup'),

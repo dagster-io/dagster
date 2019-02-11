@@ -43,10 +43,6 @@ def test_nullable_list_combos():
 def test_basic_dict():
     output = print_type_to_string(Dict({'int_field': Field(Int)}))
 
-    # print('OUTPUT')
-    # print(output.replace(' ', '-'))
-    # print('******')
-
     expected = '''{
   int_field: Int
 }'''
@@ -84,10 +80,6 @@ def test_two_field_dicts_same_type():
 
 def test_optional_field():
     output = print_type_to_string(Dict({'int_field': Field(Int, is_optional=True)}))
-
-    # print('OUTPUT')
-    # print(output.replace(' ', '-'))
-    # print('******')
 
     expected = '''{
   int_field?: Int

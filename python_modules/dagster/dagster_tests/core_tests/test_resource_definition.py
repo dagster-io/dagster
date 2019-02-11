@@ -11,16 +11,18 @@ from dagster import (
 
 
 def define_string_resource():
-    return ResourceDefinition(config_field=Field(String), resource_fn=lambda info: info.config)
+    return ResourceDefinition(
+        config_field=Field(String), resource_fn=lambda init_context: init_context.resource_config
+    )
 
 
 def test_basic_resource():
     called = {}
 
     @solid
-    def a_solid(info):
+    def a_solid(context):
         called['yup'] = True
-        assert info.resources.a_string == 'foo'
+        assert context.resources.a_string == 'foo'
 
     pipeline_def = PipelineDefinition(
         name='with_a_resource',
@@ -42,12 +44,12 @@ def test_yield_resource():
     called = {}
 
     @solid
-    def a_solid(info):
+    def a_solid(context):
         called['yup'] = True
-        assert info.resources.a_string == 'foo'
+        assert context.resources.a_string == 'foo'
 
-    def _do_resource(info):
-        yield info.config
+    def _do_resource(init_context):
+        yield init_context.resource_config
 
     yield_string_resource = ResourceDefinition(config_field=Field(String), resource_fn=_do_resource)
 
@@ -73,15 +75,15 @@ def test_yield_multiple_resources():
     saw = []
 
     @solid
-    def a_solid(info):
+    def a_solid(context):
         called['yup'] = True
-        assert info.resources.string_one == 'foo'
-        assert info.resources.string_two == 'bar'
+        assert context.resources.string_one == 'foo'
+        assert context.resources.string_two == 'bar'
 
-    def _do_resource(info):
-        saw.append('before yield ' + info.config)
-        yield info.config
-        saw.append('after yield ' + info.config)
+    def _do_resource(init_context):
+        saw.append('before yield ' + init_context.resource_config)
+        yield init_context.resource_config
+        saw.append('after yield ' + init_context.resource_config)
 
     yield_string_resource = ResourceDefinition(config_field=Field(String), resource_fn=_do_resource)
 
@@ -122,16 +124,16 @@ def test_resource_decorator():
     saw = []
 
     @solid
-    def a_solid(info):
+    def a_solid(context):
         called['yup'] = True
-        assert info.resources.string_one == 'foo'
-        assert info.resources.string_two == 'bar'
+        assert context.resources.string_one == 'foo'
+        assert context.resources.string_two == 'bar'
 
     @resource(Field(String))
-    def yielding_string_resource(info):
-        saw.append('before yield ' + info.config)
-        yield info.config
-        saw.append('after yield ' + info.config)
+    def yielding_string_resource(init_context):
+        saw.append('before yield ' + init_context.resource_config)
+        yield init_context.resource_config
+        saw.append('after yield ' + init_context.resource_config)
 
     pipeline_def = PipelineDefinition(
         name='with_yield_resources',
@@ -173,23 +175,23 @@ def test_mixed_multiple_resources():
     saw = []
 
     @solid
-    def a_solid(info):
+    def a_solid(context):
         called['yup'] = True
-        assert info.resources.returned_string == 'foo'
-        assert info.resources.yielded_string == 'bar'
+        assert context.resources.returned_string == 'foo'
+        assert context.resources.yielded_string == 'bar'
 
-    def _do_yield_resource(info):
-        saw.append('before yield ' + info.config)
-        yield info.config
-        saw.append('after yield ' + info.config)
+    def _do_yield_resource(init_context):
+        saw.append('before yield ' + init_context.resource_config)
+        yield init_context.resource_config
+        saw.append('after yield ' + init_context.resource_config)
 
     yield_string_resource = ResourceDefinition(
         config_field=Field(String), resource_fn=_do_yield_resource
     )
 
-    def _do_return_resource(info):
-        saw.append('before return ' + info.config)
-        return info.config
+    def _do_return_resource(init_context):
+        saw.append('before return ' + init_context.resource_config)
+        return init_context.resource_config
 
     return_string_resource = ResourceDefinition(
         config_field=Field(String), resource_fn=_do_return_resource
@@ -234,8 +236,8 @@ def test_none_resource():
     called = {}
 
     @solid
-    def solid_test_null(info):
-        assert info.resources.test_null is None
+    def solid_test_null(context):
+        assert context.resources.test_null is None
         called['yup'] = True
 
     pipeline = PipelineDefinition(
@@ -258,8 +260,8 @@ def test_string_resource():
     called = {}
 
     @solid
-    def solid_test_string(info):
-        assert info.resources.test_string == 'foo'
+    def solid_test_string(context):
+        assert context.resources.test_string == 'foo'
         called['yup'] = True
 
     pipeline = PipelineDefinition(
@@ -284,14 +286,14 @@ def test_no_config_resource_pass_none():
     called = {}
 
     @resource(None)
-    def return_thing(_info):
+    def return_thing(_init_context):
         called['resource'] = True
         return 'thing'
 
     @solid
-    def check_thing(info):
+    def check_thing(context):
         called['solid'] = True
-        assert info.resources.return_thing == 'thing'
+        assert context.resources.return_thing == 'thing'
 
     pipeline = PipelineDefinition(
         name='test_no_config_resource',
@@ -311,14 +313,14 @@ def test_no_config_resource_no_arg():
     called = {}
 
     @resource()
-    def return_thing(_info):
+    def return_thing(_init_context):
         called['resource'] = True
         return 'thing'
 
     @solid
-    def check_thing(info):
+    def check_thing(context):
         called['solid'] = True
-        assert info.resources.return_thing == 'thing'
+        assert context.resources.return_thing == 'thing'
 
     pipeline = PipelineDefinition(
         name='test_no_config_resource',
@@ -338,14 +340,14 @@ def test_no_config_resource_bare_no_arg():
     called = {}
 
     @resource
-    def return_thing(_info):
+    def return_thing(_init_context):
         called['resource'] = True
         return 'thing'
 
     @solid
-    def check_thing(info):
+    def check_thing(context):
         called['solid'] = True
-        assert info.resources.return_thing == 'thing'
+        assert context.resources.return_thing == 'thing'
 
     pipeline = PipelineDefinition(
         name='test_no_config_resource',
@@ -364,14 +366,14 @@ def test_no_config_resource_bare_no_arg():
 def test_no_config_resource_definition():
     called = {}
 
-    def _return_thing_resource_fn(_info):
+    def _return_thing_resource_fn(_init_context):
         called['resource'] = True
         return 'thing'
 
     @solid
-    def check_thing(info):
+    def check_thing(context):
         called['solid'] = True
-        assert info.resources.return_thing == 'thing'
+        assert context.resources.return_thing == 'thing'
 
     pipeline = PipelineDefinition(
         name='test_no_config_resource',

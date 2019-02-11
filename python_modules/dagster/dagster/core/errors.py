@@ -47,7 +47,7 @@ class DagsterUserCodeExecutionError(DagsterUserError):
 
     output_type = step.step_output_dict[output_name].runtime_type
     try:
-        context.persistence_policy.write_value(
+        context.persistence_strategy.write_value(
             output_type.serialization_strategy, output['path'], result.success_data.value
         )
     except Exception as e:  # pylint: disable=broad-except
@@ -132,18 +132,18 @@ class DagsterInvalidSubplanExecutionError(DagsterUserError):
 class DagsterExpectationFailedError(DagsterError):
     '''Thrown with pipeline configured to throw on expectation failure'''
 
-    def __init__(self, info, value, *args, **kwargs):
+    def __init__(self, expectation_context, value, *args, **kwargs):
         super(DagsterExpectationFailedError, self).__init__(*args, **kwargs)
-        self.info = info
+        self.expectation_context = expectation_context
         self.value = value
 
     def __repr__(self):
-        inout_def = self.info.inout_def
+        inout_def = self.expectation_context.inout_def
         return (
             'DagsterExpectationFailedError('
-            + 'solid={name}, '.format(name=self.info.solid.name)
+            + 'solid={name}, '.format(name=self.expectation_context.solid.name)
             + '{key}={name}, '.format(key=inout_def.descriptive_key, name=inout_def.name)
-            + 'expectation={name}'.format(name=self.info.expectation_def.name)
+            + 'expectation={name}'.format(name=self.expectation_context.expectation_def.name)
             + 'value={value}'.format(value=repr(self.value))
             + ')'
         )
