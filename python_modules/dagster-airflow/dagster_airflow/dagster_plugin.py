@@ -58,6 +58,10 @@ mutation(
         name
       }}
     }}
+    ... on PythonError {{
+        message
+        stack
+    }}
   }}
 }}
 '''.strip(
@@ -143,7 +147,6 @@ class IndentingBlockPrinter(object):
         assert isinstance(current_indent, int)
         assert isinstance(indent_level, int)
         assert isinstance(indent_level, int)
-        assert callable(printer)
         self.buffer = StringIO()
         self.line_length = line_length
         self.current_indent = current_indent
@@ -333,13 +336,18 @@ class DagsterOperator(ModifiedDockerOperator):
         self._run_id = None
 
         # We don't use dagster.check here to avoid taking the dependency.
-        for attr_ in ['config', 'pipeline_name', 'step_executions']:
+        for attr_ in ['config', 'pipeline_name']:
             assert isinstance(getattr(self, attr_), STRING_TYPES), (
                 'Bad value for DagsterOperator {attr_}: expected a string and got {value} of '
                 'type {type_}'.format(
                     attr_=attr_, value=getattr(self, attr_), type_=type(getattr(self, attr_))
                 )
             )
+        
+        assert isinstance(self._step_executions, dict), (
+            'Bad value for DagsterOperator step_executions: expected a dict and got {value} of '
+            'type {type_}'.format(value=self._step_executions, type_=type(self._step_executions))
+        )
 
         # These shenanigans are so we can override DockerOperator.get_hook in order to configure
         # a docker client using docker.from_env, rather than messing with the logic of
@@ -347,7 +355,7 @@ class DagsterOperator(ModifiedDockerOperator):
         if not self.docker_conn_id_set:
             try:
                 from_env().version()
-            except Exception:
+            except:
                 pass
             else:
                 kwargs['docker_conn_id'] = True
@@ -363,7 +371,48 @@ class DagsterOperator(ModifiedDockerOperator):
 
     @property
     def step_executions(self):
-        pass
+        if not self._step_executions:
+            return ''
+
+        inputs = self._step_executions['inputs']
+        n_inputs = len(inputs)
+        outputs = self._step_executions['outputs']
+        n_outputs = len(outputs)
+        step_key = self._step_executions['step_key']
+        printer = IndentingBlockPrinter(indent_level=2)
+
+        printer.line('[')
+        with printer.with_indent():
+            printer.line('{{')
+            with printer.with_indent():
+                printer.line('stepKey: "{step_key}"'.format(step_key=step_key))
+                printer.line('marshalledInputs: [')
+                with printer.with_indent():
+                    for i, step_input in enumerate(inputs):
+                        input_name = step_input['input_name']
+                        key = step_input['key']
+
+                        printer.line('{{')
+                        with printer.with_indent():
+                            printer.line('inputName: "{input_name}",'.format(input_name=input_name))
+                            printer.line('key: "{key}"'.format(key=key))
+                        printer.line('}}}}{comma}'.format(comma=',' if i < n_inputs - 1 else ''))
+                printer.line(']')
+                printer.line('marshalledOutputs: ')
+                with printer.with_indent():
+                    for i, step_output in enumerate(outputs):
+                        output_name = step_output['output_name']
+                        key = step_output['key']
+                        printer.line('{{')
+                        with printer.with_indent():
+                            printer.line(
+                                'outputName: "{output_name}",'.format(output_name=output_name)
+                            )
+                            printer.line('key: "{key}"'.format(key=key))
+                        printer.line('}}}}{comma}'.format(comma=',' if i < n_outputs - 1 else ''))
+            printer.line('}}')
+        printer.line(']')
+        return printer.read().format(run_id=self.run_id)
 
     @property
     def query(self):
@@ -402,8 +451,6 @@ class DagsterOperator(ModifiedDockerOperator):
     def execute(self, context):
         if 'dag_run' in context and context['dag_run'] is not None:
             self._run_id = context['dag_run'].run_id
-        else:
-            self._run_id = str(uuid.uuid4())
         try:
             # FIXME implement intermediate result persistence
             return super(DagsterOperator, self).execute(context)

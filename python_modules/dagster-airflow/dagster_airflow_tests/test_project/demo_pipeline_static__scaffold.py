@@ -46,67 +46,49 @@ CONFIG = '''
 
 PIPELINE_NAME = 'demo_pipeline'
 
-STEP_EXECUTIONS_MULTIPLY__THE__WORD_WORD_INPUT__THUNK = '''
-[
-  {
-    stepKey: "multiply_the_word.word.input_thunk"
-    marshalledInputs: 
-    [
+STEP_EXECUTIONS_MULTIPLY__THE__WORD_WORD_INPUT__THUNK = {
+    'step_key': 'multiply_the_word.word.input_thunk',
+    'inputs': [
     ],
-    marshalledOutputs: 
-    [
-      {
-        outputName: "input_thunk_output",
-        key: "/tmp/results/{run_id}_multiply__the__word_word_input__thunk___input__thunk__output.pickle"
-      }
-    ],
-  }
-]
-'''.strip('\n')
+    'outputs': [
+        {
+            'output_name': 'input_thunk_output',
+            'key': '/tmp/results/{run_id}_multiply__the__word_word_input__thunk___input__thunk__output.pickle'
+        },
+    ]
+}
 
-STEP_EXECUTIONS_MULTIPLY__THE__WORD_TRANSFORM = '''
-[
-  {
-    stepKey: "multiply_the_word.transform"
-    marshalledInputs: 
-    [
-      {
-        inputName: "word",
-        key: "/tmp/results/{run_id}_multiply__the__word_word_input__thunk___input__thunk__output.pickle"
-      }
+STEP_EXECUTIONS_MULTIPLY__THE__WORD_TRANSFORM = {
+    'step_key': 'multiply_the_word.transform',
+    'inputs': [
+        {
+            'input_name': 'word',
+            'key': '/tmp/results/{run_id}_multiply__the__word_word_input__thunk___input__thunk__output.pickle'
+        },
     ],
-    marshalledOutputs: 
-    [
-      {
-        outputName: "result",
-        key: "/tmp/results/{run_id}_multiply__the__word_transform___result.pickle"
-      }
-    ],
-  }
-]
-'''.strip('\n')
+    'outputs': [
+        {
+            'output_name': 'result',
+            'key': '/tmp/results/{run_id}_multiply__the__word_transform___result.pickle'
+        },
+    ]
+}
 
-STEP_EXECUTIONS_COUNT__LETTERS_TRANSFORM = '''
-[
-  {
-    stepKey: "count_letters.transform"
-    marshalledInputs: 
-    [
-      {
-        inputName: "word",
-        key: "/tmp/results/{run_id}_multiply__the__word_transform___result.pickle"
-      }
+STEP_EXECUTIONS_COUNT__LETTERS_TRANSFORM = {
+    'step_key': 'count_letters.transform',
+    'inputs': [
+        {
+            'input_name': 'word',
+            'key': '/tmp/results/{run_id}_multiply__the__word_transform___result.pickle'
+        },
     ],
-    marshalledOutputs: 
-    [
-      {
-        outputName: "result",
-        key: "/tmp/results/{run_id}_count__letters_transform___result.pickle"
-      }
-    ],
-  }
-]
-'''.strip('\n')
+    'outputs': [
+        {
+            'output_name': 'result',
+            'key': '/tmp/results/{run_id}_count__letters_transform___result.pickle'
+        },
+    ]
+}
 
 
 def make_dag(

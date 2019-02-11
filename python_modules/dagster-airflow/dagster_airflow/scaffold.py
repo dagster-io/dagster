@@ -64,49 +64,6 @@ def _step_executions_key(step):
     return 'STEP_EXECUTIONS_' + _normalize_key(step.key).upper()
 
 
-def _scaffold_marshalled_inputs_for_step(step):
-    '''Generate the marshalled input block for our scaffolding.'''
-    printer = IndentingBlockPrinter(indent_level=2)
-    printer.line('[')
-    with printer.with_indent():
-        for step_input in step.step_inputs:
-            printer.line('{')
-            with printer.with_indent():
-                printer.line('inputName: "{input_name}",'.format(input_name=step_input.name))
-                printer.line(
-                    'key: "{key}"'.format(
-                        key=_key_for_marshalled_result(
-                            step_input.prev_output_handle.step.key,
-                            step_input.prev_output_handle.output_name,
-                        )
-                    )
-                )
-            printer.line('}')
-    printer.line(']')
-
-    return printer.read()
-
-
-def _scaffold_marshalled_outputs_for_step(step):
-    '''Generate the marshalled output block for our scaffolding.'''
-    printer = IndentingBlockPrinter(indent_level=2)
-    printer.line('[')
-    with printer.with_indent():
-        for step_output in step.step_outputs:
-            printer.line('{')
-            with printer.with_indent():
-                printer.line('outputName: "{output_name}",'.format(output_name=step_output.name))
-                printer.line(
-                    'key: "{key}"'.format(
-                        key=_key_for_marshalled_result(step.key, step_output.name)
-                    )
-                )
-            printer.line('}')
-    printer.line(']')
-
-    return printer.read()
-
-
 def _format_config(config):
     '''This recursive descent thing formats a config dict for GraphQL.'''
 
@@ -172,28 +129,6 @@ def _format_config(config):
         check.failed('Expected a dict to format as config, got: {item}'.format(item=repr(config)))
 
     return _format_config_subdict(config)
-
-
-def _scaffold_step_executions(step):
-    marshalled_inputs = _scaffold_marshalled_inputs_for_step(step)
-    marshalled_outputs = _scaffold_marshalled_outputs_for_step(step)
-
-    printer = IndentingBlockPrinter(indent_level=2)
-
-    printer.line('[')
-    with printer.with_indent():
-        printer.line('{')
-        with printer.with_indent():
-            printer.line('stepKey: "{step_key}"'.format(step_key=step.key))
-            printer.line('marshalledInputs: ')
-            for line in (marshalled_inputs.strip('\n') + ',').split('\n'):
-                printer.line(line)
-            printer.line('marshalledOutputs: ')
-            for line in (marshalled_outputs.strip('\n') + ',').split('\n'):
-                printer.line(line)
-        printer.line('}')
-    printer.line(']')
-    return printer.read()
 
 
 def _make_editable_scaffold(
@@ -360,50 +295,49 @@ def _make_static_scaffold(pipeline_name, env_config, execution_plan, image, edit
         for step in execution_plan.topological_steps():
             step_executions_key = _step_executions_key(step)
 
-            # step_executions = _scaffold_step_executions(step)
-
             printer.line(
                 '{step_executions_key} = {{'.format(step_executions_key=step_executions_key)
             )
             with printer.with_indent():
                 printer.line('\'step_key\': \'{step_key}\','.format(step_key=step.key))
-                printer.line('\'inputs\' = [')
+                printer.line('\'inputs\': [')
                 for step_input in step.step_inputs:
                     with printer.with_indent():
                         printer.line('{')
                         with printer.with_indent():
                             printer.line(
-                                'input_name: {input_name},'.format(input_name=step_input.name)
+                                '\'input_name\': \'{input_name}\','.format(input_name=step_input.name)
                             )
                             printer.line(
-                                'key: {key}'.format(
+                                '\'key\': \'{key}\''.format(
                                     key=_key_for_marshalled_result(
                                         step_input.prev_output_handle.step.key,
                                         step_input.prev_output_handle.output_name,
                                     )
                                 )
                             )
-                        printer.line('}')
-                printer.line(']')
-                printer.line('\'outputs\' = [')
+                        printer.line('},')
+                printer.line('],')
+                printer.line('\'outputs\': [')
                 for step_output in step.step_outputs:
                     with printer.with_indent():
                         printer.line('{')
                         with printer.with_indent():
                             printer.line(
-                                'output_name: {output_name},'.format(output_name=step_output.name)
+                                '\'output_name\': \'{output_name}\','.format(output_name=step_output.name)
                             )
-                        printer.line('}')
+                            printer.line(
+                                '\'key\': \'{key}\''.format(
+                                    key=_key_for_marshalled_result(
+                                        step.key,
+                                        step_output.name,
+                                    )
+                                )
+                            )
+                        printer.line('},')
                 printer.line(']')
             printer.line('}')
-            # printer.line(
-            #     '{step_executions_key} = \'\'\''.format(step_executions_key=step_executions_key)
-            # )
-            # for line in step_executions.strip('\n').split('\n'):
-            #     printer.line(line)
-            # printer.line('\'\'\'.strip(\'\\n\')')
-            # printer.blank_line()
-
+            printer.blank_line()
         printer.blank_line()
 
         printer.line('def make_dag(')
