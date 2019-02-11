@@ -43,45 +43,55 @@ def iterate_step_events_for_execution_plan(pipeline_context, execution_plan, thr
     check.inst_param(execution_plan, 'execution_plan', ExecutionPlan)
     check.bool_param(throw_on_user_error, 'throw_on_user_error')
 
-    steps = list(execution_plan.topological_steps())
+    step_levels = execution_plan.topological_step_levels()
 
-    intermediate_results = {}
-    pipeline_context.log.debug(
-        'Entering execute_steps loop. Order: {order}'.format(order=[step.key for step in steps])
-    )
+    # It would be good to implement a reference tracking algorithm here so we could
+    # garbage collection results that are no longer needed by any steps
+    # https://github.com/dagster-io/dagster/issues/811
+    all_results = {}
 
-    for step in steps:
-        step_context = pipeline_context.for_step(step)
+    for step_level in step_levels:
+        for step in step_level:
+            step_context = pipeline_context.for_step(step)
 
-        if not _all_inputs_covered(step, intermediate_results):
-            result_keys = set(intermediate_results.keys())
-            expected_outputs = [ni.prev_output_handle for ni in step.step_inputs]
+            if not _all_inputs_covered(step, all_results):
+                result_keys = set(all_results.keys())
+                expected_outputs = [ni.prev_output_handle for ni in step.step_inputs]
 
-            step_context.log.debug(
-                (
-                    'Not all inputs covered for {step}. Not executing. Keys in result: '
-                    '{result_keys}. Outputs need for inputs {expected_outputs}'
-                ).format(expected_outputs=expected_outputs, step=step.key, result_keys=result_keys)
-            )
-            continue
+                step_context.log.debug(
+                    (
+                        'Not all inputs covered for {step}. Not executing. Keys in result: '
+                        '{result_keys}. Outputs need for inputs {expected_outputs}'
+                    ).format(
+                        expected_outputs=expected_outputs, step=step.key, result_keys=result_keys
+                    )
+                )
+                continue
 
-        input_values = {}
-        for step_input in step.step_inputs:
-            prev_output_handle = step_input.prev_output_handle
-            input_value = intermediate_results[prev_output_handle].success_data.value
-            input_values[step_input.name] = input_value
+            input_values = _create_input_values(step, all_results)
 
-        for step_event in check.generator(iterate_step_events_for_step(step_context, input_values)):
-            check.inst(step_event, ExecutionStepEvent)
+            for step_event in check.generator(
+                iterate_step_events_for_step(step_context, input_values)
+            ):
+                check.inst(step_event, ExecutionStepEvent)
 
-            if throw_on_user_error and step_event.event_type == ExecutionStepEventType.STEP_FAILURE:
-                step_event.reraise_user_error()
+                if throw_on_user_error and step_event.is_step_failure:
+                    step_event.reraise_user_error()
 
-            yield step_event
+                yield step_event
 
-            if step_event.event_type == ExecutionStepEventType.STEP_OUTPUT:
-                output_handle = StepOutputHandle(step, step_event.success_data.output_name)
-                intermediate_results[output_handle] = step_event
+                if step_event.event_type == ExecutionStepEventType.STEP_OUTPUT:
+                    output_handle = StepOutputHandle(step, step_event.success_data.output_name)
+                    all_results[output_handle] = step_event
+
+
+def _create_input_values(step, prev_level_results):
+    input_values = {}
+    for step_input in step.step_inputs:
+        prev_output_handle = step_input.prev_output_handle
+        input_value = prev_level_results[prev_output_handle].success_data.value
+        input_values[step_input.name] = input_value
+    return input_values
 
 
 def iterate_step_events_for_step(step_context, inputs):

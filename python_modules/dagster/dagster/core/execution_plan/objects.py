@@ -268,9 +268,15 @@ class ExecutionPlan(object):
         return list(self._topological_steps())
 
     def _topological_steps(self):
-        ordered_step_keys = toposort.toposort_flatten(self.deps)
-        for step_key in ordered_step_keys:
+        for step_key in toposort.toposort_flatten(self.deps):
             yield self.step_dict[step_key]
+
+    def topological_step_levels(self):
+        return list(self._topological_step_levels())
+
+    def _topological_step_levels(self):
+        for step_key_level in toposort.toposort(self.deps):
+            yield [self.step_dict[step_key] for step_key in step_key_level]
 
 
 class StepOutputMap(dict):

@@ -20737,12 +20737,12 @@ snapshots['test_build_all_docs 54'] = '''
 <h1>Utilities<a class="headerlink" href="#utilities" title="Permalink to this headline">¶</a></h1>
 <dl class="function">
 <dt id="dagster.execute_solid">
-<code class="descclassname">dagster.</code><code class="descname">execute_solid</code><span class="sig-paren">(</span><em>pipeline_def</em>, <em>solid_name</em>, <em>inputs=None</em>, <em>environment=None</em><span class="sig-paren">)</span><a class="headerlink" href="#dagster.execute_solid" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">dagster.</code><code class="descname">execute_solid</code><span class="sig-paren">(</span><em>pipeline_def</em>, <em>solid_name</em>, <em>inputs=None</em>, <em>environment_dict=None</em><span class="sig-paren">)</span><a class="headerlink" href="#dagster.execute_solid" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="function">
 <dt id="dagster.execute_solids">
-<code class="descclassname">dagster.</code><code class="descname">execute_solids</code><span class="sig-paren">(</span><em>pipeline_def</em>, <em>solid_names</em>, <em>inputs=None</em>, <em>environment=None</em><span class="sig-paren">)</span><a class="headerlink" href="#dagster.execute_solids" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">dagster.</code><code class="descname">execute_solids</code><span class="sig-paren">(</span><em>pipeline_def</em>, <em>solid_names</em>, <em>inputs=None</em>, <em>environment_dict=None</em><span class="sig-paren">)</span><a class="headerlink" href="#dagster.execute_solids" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 </div>

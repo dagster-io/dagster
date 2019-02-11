@@ -68,7 +68,12 @@ def test_single_solid_with_multiple_inputs():
         },
     )
 
-    result = execute_solid(pipeline_def, 'add_solid', inputs={'num_one': 2, 'num_two': 3})
+    result = execute_solid(
+        pipeline_def,
+        'add_solid',
+        inputs={'num_one': 2, 'num_two': 3},
+        environment_dict={'context': {'default': {'config': {'log_level': 'DEBUG'}}}},
+    )
 
     assert result.success
     assert result.transformed_value() == 5
@@ -86,7 +91,7 @@ def test_single_solid_with_config():
     result = execute_solid(
         pipeline_def,
         'check_config_for_two',
-        environment={'solids': {'check_config_for_two': {'config': 2}}},
+        environment_dict={'solids': {'check_config_for_two': {'config': 2}}},
     )
 
     assert result.success
@@ -116,7 +121,7 @@ def test_single_solid_with_context_config():
     result = execute_solid(
         pipeline_def,
         'check_context_config_for_two',
-        environment={'context': {'test_context': {'config': 2}}},
+        environment_dict={'context': {'test_context': {'config': 2}}},
     )
 
     assert result.success
