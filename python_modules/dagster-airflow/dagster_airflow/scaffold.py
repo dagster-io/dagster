@@ -26,6 +26,7 @@ DEFAULT_ARGS = {
     'email_on_retry': False,
     'retries': 1,
     'retry_delay': timedelta(0, 300),
+    'schedule_interval': '0 0 * * *',
 }
 
 
