@@ -39,7 +39,7 @@ def test_key_for_marshalled_result():
     )
     assert (
         _key_for_marshalled_result('foo.bar_baz', 'zip_zowie.quux')
-        == '/tmp/results/{run_id}_foo_bar__baz___zip__zowie_quux.pickle'
+        == '/tmp/results/{run_id_prefix}foo_bar__baz___zip__zowie_quux.pickle'
     )
 
 

@@ -53,7 +53,7 @@ STEP_EXECUTIONS_MULTIPLY__THE__WORD_WORD_INPUT__THUNK = {
     'outputs': [
         {
             'output_name': 'input_thunk_output',
-            'key': '/tmp/results/{run_id}_multiply__the__word_word_input__thunk___input__thunk__output.pickle'
+            'key': '/tmp/results/{run_id_prefix}multiply__the__word_word_input__thunk___input__thunk__output.pickle'
         },
     ]
 }
@@ -63,13 +63,13 @@ STEP_EXECUTIONS_MULTIPLY__THE__WORD_TRANSFORM = {
     'inputs': [
         {
             'input_name': 'word',
-            'key': '/tmp/results/{run_id}_multiply__the__word_word_input__thunk___input__thunk__output.pickle'
+            'key': '/tmp/results/{run_id_prefix}multiply__the__word_word_input__thunk___input__thunk__output.pickle'
         },
     ],
     'outputs': [
         {
             'output_name': 'result',
-            'key': '/tmp/results/{run_id}_multiply__the__word_transform___result.pickle'
+            'key': '/tmp/results/{run_id_prefix}multiply__the__word_transform___result.pickle'
         },
     ]
 }
@@ -79,13 +79,13 @@ STEP_EXECUTIONS_COUNT__LETTERS_TRANSFORM = {
     'inputs': [
         {
             'input_name': 'word',
-            'key': '/tmp/results/{run_id}_multiply__the__word_transform___result.pickle'
+            'key': '/tmp/results/{run_id_prefix}multiply__the__word_transform___result.pickle'
         },
     ],
     'outputs': [
         {
             'output_name': 'result',
-            'key': '/tmp/results/{run_id}_count__letters_transform___result.pickle'
+            'key': '/tmp/results/{run_id_prefix}count__letters_transform___result.pickle'
         },
     ]
 }
