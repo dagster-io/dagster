@@ -130,20 +130,15 @@ class Manager:
     def define_out_of_pipeline_info(self, context_config):
         check.str_param(self.solid_def_name, 'solid_def_name')
         pipeline_def = PipelineDefinition([self.solid_def], name="Ephemeral Notebook Pipeline")
-        from dagster.core.execution import create_typed_context
 
-        typed_context = create_typed_context(
-            pipeline_def, {} if context_config is None else context_config
-        )
-        from dagster.core.system_config.objects import EnvironmentConfig
-
-        dummy_environment_config = EnvironmentConfig(context=typed_context)
         # BUG: If the context cleans up after itself (e.g. closes a db connection or similar)
         # This will instigate that process *before* return. We are going to have to
         # manage this manually (without an if block) in order to make this work.
         # See https://github.com/dagster-io/dagster/issues/796
         with yield_pipeline_execution_context(
-            pipeline_def, dummy_environment_config, ExecutionMetadata(run_id='')
+            pipeline_def,
+            {} if context_config is None else {'context': context_config},
+            ExecutionMetadata(run_id=''),
         ) as pipeline_context:
             self.info = DagstermillInNotebookExecutionContext(pipeline_context)
         return self.info
@@ -168,9 +163,9 @@ class Manager:
         pm.record(output_name, write_value(runtime_type, value, out_file))
 
     def populate_context(
-        self, run_id, pipeline_def, marshal_dir, environment_config, output_log_path
+        self, run_id, pipeline_def, marshal_dir, environment_dict, output_log_path
     ):
-        check.dict_param(environment_config, 'environment_config')
+        check.dict_param(environment_dict, 'environment_dict')
         check.invariant(pipeline_def.has_solid_def(self.solid_def_name))
 
         self.marshal_dir = marshal_dir
@@ -182,11 +177,10 @@ class Manager:
         # do not include event_callback in ExecutionMetadata,
         # since that'll be taken care of by side-channel established by event_logger
         execution_metadata = ExecutionMetadata(run_id, loggers=loggers)
-        typed_environment = construct_environment_config(environment_config)
         # See block comment above referencing this issue
         # See https://github.com/dagster-io/dagster/issues/796
         with yield_pipeline_execution_context(
-            pipeline_def, typed_environment, execution_metadata
+            pipeline_def, environment_dict, execution_metadata
         ) as pipeline_context:
             self.info = DagstermillInNotebookExecutionContext(pipeline_context)
 
@@ -290,9 +284,9 @@ def read_value(runtime_type, value):
 def get_papermill_parameters(transform_context, inputs, output_log_path):
     check.inst_param(transform_context, 'transform_context', AbstractTransformExecutionContext)
     check.param_invariant(
-        isinstance(transform_context.environment_config, dict),
+        isinstance(transform_context.environment_dict, dict),
         'transform_context',
-        'TransformExecutionContext must have valid environment_config',
+        'TransformExecutionContext must have valid environment_dict',
     )
     check.dict_param(inputs, 'inputs', key_type=six.string_types)
 
@@ -310,7 +304,8 @@ def get_papermill_parameters(transform_context, inputs, output_log_path):
         'run_id': run_id,
         'pipeline_name': transform_context.pipeline_def.name,
         'marshal_dir': marshal_dir,
-        'environment_config': transform_context.environment_config,
+        # TODO rename to environment_dict
+        'environment_config': transform_context.environment_dict,
         'output_log_path': output_log_path,
     }
 
@@ -401,14 +396,15 @@ def _dm_solid_transform(name, notebook_path):
 
     do_cleanup = False  # for now
 
-    def _t_fn(context, inputs):
+    def _t_fn(transform_context, inputs):
+        check.inst_param(transform_context, 'transform_context', TransformExecutionContext)
         check.param_invariant(
-            isinstance(context.environment_config, dict),
+            isinstance(transform_context.environment_dict, dict),
             'context',
-            'TransformExecutionContext must have valid environment_config',
+            'TransformExecutionContext must have valid environment_dict',
         )
 
-        base_dir = '/tmp/dagstermill/{run_id}/'.format(run_id=context.run_id)
+        base_dir = '/tmp/dagstermill/{run_id}/'.format(run_id=transform_context.run_id)
         output_notebook_dir = os.path.join(base_dir, 'output_notebooks/')
 
         if not os.path.exists(output_notebook_dir):
@@ -423,7 +419,9 @@ def _dm_solid_transform(name, notebook_path):
         try:
             nb = load_notebook_node(notebook_path)
             nb_no_parameters = replace_parameters(
-                context, nb, get_papermill_parameters(context, inputs, output_log_path)
+                transform_context,
+                nb,
+                get_papermill_parameters(transform_context, inputs, output_log_path),
             )
             intermediate_path = os.path.join(
                 output_notebook_dir, '{prefix}-inter.ipynb'.format(prefix=str(uuid.uuid4()))
@@ -436,7 +434,7 @@ def _dm_solid_transform(name, notebook_path):
             process = subprocess.Popen(['papermill', intermediate_path, temp_path])
 
             while process.poll() is None:  # while subprocess alive
-                if context.event_callback:
+                if transform_context.event_callback:
                     with open(output_log_path, 'r') as ff:
                         current_time = os.path.getmtime(output_log_path)
                         while process.poll() is None:
@@ -450,7 +448,7 @@ def _dm_solid_transform(name, notebook_path):
                                 event_record_dict['event_type'] = EventType(
                                     event_record_dict['event_type']
                                 )
-                                context.event_callback(EventRecord(**event_record_dict))
+                                transform_context.event_callback(EventRecord(**event_record_dict))
                                 current_time = new_time
 
             if process.returncode != 0:
@@ -461,19 +459,19 @@ def _dm_solid_transform(name, notebook_path):
 
             output_nb = pm.read_notebook(temp_path)
 
-            context.log.debug(
+            transform_context.log.debug(
                 'Notebook execution complete for {name}. Data is {data}'.format(
                     name=name, data=output_nb.data
                 )
             )
 
-            context.events.step_materialization(
-                context.step.key,
-                "{name} output notebook".format(name=context.solid.name),
+            transform_context.events.step_materialization(
+                transform_context.step.key,
+                "{name} output notebook".format(name=transform_context.solid.name),
                 temp_path,
             )
 
-            for output_def in context.solid_def.output_defs:
+            for output_def in transform_context.solid_def.output_defs:
                 if output_def.name in output_nb.data:
 
                     value = read_value(output_def.runtime_type, output_nb.data[output_def.name])

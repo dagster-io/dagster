@@ -21,7 +21,7 @@ from dagster.core.definitions.environment_configs import (
     solid_has_configurable_outputs,
 )
 
-from dagster.core.execution import create_typed_environment, create_execution_plan
+from dagster.core.execution import create_environment_config, create_execution_plan
 
 from dagster.core.execution_plan.objects import StepOutputHandle
 
@@ -90,7 +90,7 @@ def test_solid_has_config_entry():
 
 
 def test_basic_json_default_output_config_schema():
-    env = create_typed_environment(
+    env = create_environment_config(
         single_int_output_pipeline(),
         {'solids': {'return_one': {'outputs': [{'result': {'json': {'path': 'foo'}}}]}}},
     )
@@ -100,7 +100,7 @@ def test_basic_json_default_output_config_schema():
 
 
 def test_basic_json_named_output_config_schema():
-    env = create_typed_environment(
+    env = create_environment_config(
         single_int_named_output_pipeline(),
         {'solids': {'return_named_one': {'outputs': [{'named': {'json': {'path': 'foo'}}}]}}},
     )
@@ -111,7 +111,7 @@ def test_basic_json_named_output_config_schema():
 
 def test_basic_json_misnamed_output_config_schema():
     with pytest.raises(PipelineConfigEvaluationError) as exc_info:
-        create_typed_environment(
+        create_environment_config(
             single_int_named_output_pipeline(),
             {
                 'solids': {
@@ -126,23 +126,23 @@ def test_basic_json_misnamed_output_config_schema():
 
 
 def test_no_outputs_no_inputs_config_schema():
-    assert create_typed_environment(no_input_no_output_pipeline())
+    assert create_environment_config(no_input_no_output_pipeline())
 
     with pytest.raises(PipelineConfigEvaluationError) as exc_info:
-        create_typed_environment(no_input_no_output_pipeline(), {'solids': {'return_one': {}}})
+        create_environment_config(no_input_no_output_pipeline(), {'solids': {'return_one': {}}})
 
     assert len(exc_info.value.errors) == 1
     assert 'Error 1: Undefined field "return_one" at path root:solids' in exc_info.value.message
 
 
 def test_no_outputs_one_input_config_schema():
-    assert create_typed_environment(
+    assert create_environment_config(
         one_input_no_output_pipeline(),
         {'solids': {'take_input_return_nothing': {'inputs': {'dummy': {'value': 'value'}}}}},
     )
 
     with pytest.raises(PipelineConfigEvaluationError) as exc_info:
-        create_typed_environment(
+        create_environment_config(
             one_input_no_output_pipeline(),
             {
                 'solids': {

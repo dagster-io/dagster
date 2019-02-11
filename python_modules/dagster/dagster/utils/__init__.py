@@ -84,3 +84,42 @@ def merge_dicts(left, right):
     result = left.copy()
     result.update(right)
     return result
+
+
+class frozendict(dict):
+    def __readonly__(self, *args, **kwargs):
+        raise RuntimeError("Cannot modify ReadOnlyDict")
+
+    __setitem__ = __readonly__
+    __delitem__ = __readonly__
+    pop = __readonly__
+    popitem = __readonly__
+    clear = __readonly__
+    update = __readonly__
+    setdefault = __readonly__
+    del __readonly__
+
+
+class frozenlist(list):
+    def __readonly__(self, *args, **kwargs):
+        raise RuntimeError("Cannot modify ReadOnlyList")
+
+    __setitem__ = __readonly__
+    __delitem__ = __readonly__
+    append = __readonly__
+    clear = __readonly__
+    extend = __readonly__
+    insert = __readonly__
+    pop = __readonly__
+    remove = __readonly__
+    reverse = __readonly__
+    sort = __readonly__
+
+
+def make_readonly_value(value):
+    if isinstance(value, list):
+        return frozenlist(list(map(make_readonly_value, value)))
+    elif isinstance(value, dict):
+        return frozendict({key: make_readonly_value(value) for key, value in value.items()})
+    else:
+        return value

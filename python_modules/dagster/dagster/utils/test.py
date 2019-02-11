@@ -19,7 +19,7 @@ from dagster.core.execution import (
     ExecutionContext,
     build_sub_pipeline,
     construct_pipeline_execution_context,
-    create_typed_environment,
+    create_environment_config,
 )
 
 from dagster.core.utility_solids import define_stub_solid
@@ -33,7 +33,7 @@ def create_test_runtime_legacy_execution_context(loggers=None, resources=None, t
         pipeline=pipeline_def,
         execution_context=ExecutionContext(),
         resources=resources,
-        environment=create_typed_environment(pipeline_def),
+        environment_config=create_environment_config(pipeline_def),
     )
 
 

@@ -63,12 +63,12 @@ def test_default_context_with_log_level():
 
     pipeline = PipelineDefinition(solids=[default_context_transform])
     execute_pipeline(
-        pipeline, environment={'context': {'default': {'config': {'log_level': 'INFO'}}}}
+        pipeline, environment_dict={'context': {'default': {'config': {'log_level': 'INFO'}}}}
     )
 
     with pytest.raises(PipelineConfigEvaluationError):
         execute_pipeline(
-            pipeline, environment={'context': {'default': {'config': {'log_level': 2}}}}
+            pipeline, environment_dict={'context': {'default': {'config': {'log_level': 2}}}}
         )
 
 
@@ -100,9 +100,9 @@ def test_default_value():
         },
     )
 
-    execute_pipeline(pipeline, environment={'context': {'custom_one': {}}})
+    execute_pipeline(pipeline, environment_dict={'context': {'custom_one': {}}})
 
-    execute_pipeline(pipeline, environment={'context': {'custom_one': None}})
+    execute_pipeline(pipeline, environment_dict={'context': {'custom_one': None}})
 
 
 def test_custom_contexts():
@@ -129,11 +129,11 @@ def test_custom_contexts():
     )
     environment_one = {'context': {'custom_one': {'config': {'field_one': 'value_two'}}}}
 
-    execute_pipeline(pipeline, environment=environment_one)
+    execute_pipeline(pipeline, environment_dict=environment_one)
 
     environment_two = {'context': {'custom_two': {'config': {'field_one': 'value_two'}}}}
 
-    execute_pipeline(pipeline, environment=environment_two)
+    execute_pipeline(pipeline, environment_dict=environment_two)
 
 
 def test_yield_context():
@@ -164,7 +164,7 @@ def test_yield_context():
 
     environment_one = {'context': {'custom_one': {'config': {'field_one': 'value_two'}}}}
 
-    execute_pipeline(pipeline, environment=environment_one)
+    execute_pipeline(pipeline, environment_dict=environment_one)
 
     assert events == ['before', 'during', 'after']
 
@@ -185,7 +185,7 @@ def test_invalid_context():
     ):
         execute_pipeline(
             default_context_pipeline,
-            environment=environment_context_not_found,
+            environment_dict=environment_context_not_found,
             throw_on_user_error=True,
         )
 
@@ -194,7 +194,7 @@ def test_invalid_context():
     with pytest.raises(PipelineConfigEvaluationError, match='Undefined field "unexpected"'):
         execute_pipeline(
             default_context_pipeline,
-            environment=environment_field_name_mismatch,
+            environment_dict=environment_field_name_mismatch,
             throw_on_user_error=True,
         )
 
@@ -219,7 +219,7 @@ def test_invalid_context():
     ):
         execute_pipeline(
             with_argful_context_pipeline,
-            environment=environment_no_config_error,
+            environment_dict=environment_no_config_error,
             throw_on_user_error=True,
         )
 
@@ -235,6 +235,6 @@ def test_invalid_context():
     ):
         execute_pipeline(
             with_argful_context_pipeline,
-            environment=environment_type_mismatch_error,
+            environment_dict=environment_type_mismatch_error,
             throw_on_user_error=True,
         )

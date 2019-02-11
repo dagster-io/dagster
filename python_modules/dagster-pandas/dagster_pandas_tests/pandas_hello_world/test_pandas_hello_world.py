@@ -24,7 +24,7 @@ def test_execute_pipeline():
         }
     }
 
-    result = execute_pipeline(pipeline, environment=environment)
+    result = execute_pipeline(pipeline, environment_dict=environment)
 
     assert result.success
 

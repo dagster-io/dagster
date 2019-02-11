@@ -33,7 +33,7 @@ def run_hello_world(hello_world):
 
     pipeline = PipelineDefinition(solids=[hello_world], dependencies={'hello_world': {}})
 
-    pipeline_result = execute_pipeline(pipeline, environment=create_num_csv_environment())
+    pipeline_result = execute_pipeline(pipeline, environment_dict=create_num_csv_environment())
 
     result = pipeline_result.result_for_solid('hello_world')
 

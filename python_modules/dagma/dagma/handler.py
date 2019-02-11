@@ -62,7 +62,7 @@ def aws_lambda_handler(event, _context):
         execution_metadata=ExecutionMetadata(run_id=run_id),
         execution_context=ExecutionContext(loggers=[logger]),
         resources=resources,
-        environment={},
+        environment_config={},
     )
 
     logger.info('Looking for step body at %s/%s', s3_bucket, s3_key_body)

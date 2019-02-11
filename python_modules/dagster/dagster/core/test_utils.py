@@ -44,7 +44,7 @@ def execute_single_solid_in_isolation(
                 context_params
             ),
         ),
-        environment=single_solid_environment,
+        environment_dict=single_solid_environment,
         throw_on_user_error=throw_on_user_error,
     )
 

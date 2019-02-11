@@ -33,7 +33,7 @@ from .definitions import (
 )
 
 from .definitions.utils import DEFAULT_OUTPUT
-from .definitions.environment_configs import construct_environment_config, construct_context_config
+from .definitions.environment_configs import construct_environment_config
 
 from .execution_context import (
     ExecutionContext,
@@ -59,7 +59,6 @@ from .execution_plan.create import (
 
 from .execution_plan.objects import (
     ExecutionPlan,
-    ExecutionPlanInfo,
     ExecutionStepEvent,
     ExecutionStepEventType,
     StepKind,
@@ -237,33 +236,19 @@ class SolidExecutionResult(object):
                 return result.failure_data.dagster_error
 
 
-def create_execution_plan(pipeline, env_config=None, execution_metadata=None, subset_info=None):
+def create_execution_plan(
+    pipeline, environment_dict=None, execution_metadata=None, subset_info=None
+):
     check.inst_param(pipeline, 'pipeline', PipelineDefinition)
-    check.opt_dict_param(env_config, 'env_config', key_type=str)
+    environment_dict = check.opt_dict_param(environment_dict, 'environment_dict', key_type=str)
     execution_metadata = execution_metadata if execution_metadata else ExecutionMetadata()
     check.inst_param(execution_metadata, 'execution_metadata', ExecutionMetadata)
     check.opt_inst_param(subset_info, 'subset_info', ExecutionPlanSubsetInfo)
 
-    typed_environment = create_typed_environment(pipeline, env_config)
-    return create_execution_plan_with_typed_environment(
-        pipeline, typed_environment, execution_metadata, subset_info
-    )
-
-
-def create_execution_plan_with_typed_environment(
-    pipeline, typed_environment, execution_metadata, subset_info=None
-):
-    check.inst_param(pipeline, 'pipeline', PipelineDefinition)
-    check.inst_param(typed_environment, 'environment', EnvironmentConfig)
-    check.inst_param(execution_metadata, 'execution_metadata', ExecutionMetadata)
-    check.opt_inst_param(subset_info, 'subset_info', ExecutionPlanSubsetInfo)
-
     with yield_pipeline_execution_context(
-        pipeline, typed_environment, execution_metadata
-    ) as context:
-        return create_execution_plan_core(
-            ExecutionPlanInfo(context, pipeline, typed_environment), execution_metadata, subset_info
-        )
+        pipeline, environment_dict, execution_metadata
+    ) as pipeline_context:
+        return create_execution_plan_core(pipeline_context, execution_metadata, subset_info)
 
 
 def get_event_callback(execution_metadata):
@@ -342,17 +327,19 @@ def _create_persistence_strategy(persistence_config):
 
 
 @contextmanager
-def yield_pipeline_execution_context(pipeline, environment, execution_metadata):
-    check.inst_param(pipeline, 'pipeline', PipelineDefinition)
-    check.inst_param(environment, 'environment', EnvironmentConfig)
+def yield_pipeline_execution_context(pipeline_def, environment_dict, execution_metadata):
+    check.inst_param(pipeline_def, 'pipeline_def', PipelineDefinition)
+    check.dict_param(environment_dict, 'environment_dict', key_type=str)
     check.inst_param(execution_metadata, 'execution_metadata', ExecutionMetadata)
 
-    context_definition = pipeline.context_definitions[environment.context.name]
+    environment_config = create_environment_config(pipeline_def, environment_dict)
+
+    context_definition = pipeline_def.context_definitions[environment_config.context.name]
 
     ec_or_gen = context_definition.context_fn(
         InitContext(
-            context_config=environment.context.config,
-            pipeline_def=pipeline,
+            context_config=environment_config.context.config,
+            pipeline_def=pipeline_def,
             run_id=execution_metadata.run_id,
         )
     )
@@ -361,20 +348,24 @@ def yield_pipeline_execution_context(pipeline, environment, execution_metadata):
         check.inst(execution_context, ExecutionContext)
 
         with _create_resources(
-            pipeline, context_definition, environment, execution_context, execution_metadata.run_id
+            pipeline_def,
+            context_definition,
+            environment_config,
+            execution_context,
+            execution_metadata.run_id,
         ) as resources:
             yield construct_pipeline_execution_context(
-                execution_metadata, execution_context, pipeline, resources, environment
+                execution_metadata, execution_context, pipeline_def, resources, environment_config
             )
 
 
 def construct_pipeline_execution_context(
-    execution_metadata, execution_context, pipeline, resources, environment
+    execution_metadata, execution_context, pipeline, resources, environment_config
 ):
     check.inst_param(execution_metadata, 'execution_metadata', ExecutionMetadata)
     check.inst_param(execution_context, 'execution_context', ExecutionContext)
     check.inst_param(pipeline, 'pipeline', PipelineDefinition)
-    check.inst_param(environment, 'environment', EnvironmentConfig)
+    check.inst_param(environment_config, 'environment_config', EnvironmentConfig)
 
     loggers = _create_loggers(execution_metadata, execution_context)
     tags = get_tags(execution_context, execution_metadata, pipeline)
@@ -386,8 +377,10 @@ def construct_pipeline_execution_context(
             run_id=execution_metadata.run_id,
             resources=resources,
             event_callback=get_event_callback(execution_metadata),
-            environment_config=environment.original_config_dict,
-            persistence_strategy=_create_persistence_strategy(environment.context.persistence),
+            environment_config=environment_config,
+            persistence_strategy=_create_persistence_strategy(
+                environment_config.context.persistence
+            ),
         ),
         tags=tags,
         log=log,
@@ -459,18 +452,13 @@ def get_resource_or_gen(pipeline_def, context_definition, resource_name, environ
     )
 
 
-def _do_iterate_pipeline(
-    pipeline, pipeline_context, typed_environment, execution_metadata, throw_on_user_error=True
-):
+def _do_iterate_pipeline(pipeline, pipeline_context, execution_metadata, throw_on_user_error=True):
     check.inst_param(pipeline, 'pipeline', PipelineDefinition)
     check.inst_param(pipeline_context, 'context', PipelineExecutionContext)
-    check.inst_param(typed_environment, 'typed_environment', EnvironmentConfig)
 
     pipeline_context.events.pipeline_start()
 
-    execution_plan = create_execution_plan_core(
-        ExecutionPlanInfo(pipeline_context, pipeline, typed_environment), execution_metadata
-    )
+    execution_plan = create_execution_plan_core(pipeline_context, execution_metadata)
 
     steps = execution_plan.topological_steps()
 
@@ -511,7 +499,11 @@ def _do_iterate_pipeline(
 
 
 def execute_pipeline_iterator(
-    pipeline, environment=None, throw_on_user_error=True, execution_metadata=None, solid_subset=None
+    pipeline,
+    environment_dict=None,
+    throw_on_user_error=True,
+    execution_metadata=None,
+    solid_subset=None,
 ):
     '''Returns iterator that yields :py:class:`SolidExecutionResult` for each
     solid executed in the pipeline.
@@ -524,22 +516,19 @@ def execute_pipeline_iterator(
       execution (ExecutionContext): execution context of the run
     '''
     check.inst_param(pipeline, 'pipeline', PipelineDefinition)
-    check.opt_dict_param(environment, 'environment')
+    environment_dict = check.opt_dict_param(environment_dict, 'environment_dict')
     check.bool_param(throw_on_user_error, 'throw_on_user_error')
     execution_metadata = execution_metadata if execution_metadata else ExecutionMetadata()
     check.inst_param(execution_metadata, 'execution_metadata', ExecutionMetadata)
     check.opt_list_param(solid_subset, 'solid_subset', of_type=str)
 
     pipeline_to_execute = get_subset_pipeline(pipeline, solid_subset)
-    typed_environment = create_typed_environment(pipeline_to_execute, environment)
-
     with yield_pipeline_execution_context(
-        pipeline_to_execute, typed_environment, execution_metadata
+        pipeline_to_execute, environment_dict, execution_metadata
     ) as pipeline_context:
         for solid_result in _do_iterate_pipeline(
             pipeline_to_execute,
             pipeline_context,
-            typed_environment,
             execution_metadata=execution_metadata,
             throw_on_user_error=throw_on_user_error,
         ):
@@ -595,7 +584,7 @@ def execute_externalized_plan(
     step_keys,
     inputs_to_marshal=None,
     outputs_to_marshal=None,
-    environment=None,
+    environment_dict=None,
     execution_metadata=None,
     throw_on_user_error=True,
 ):
@@ -611,19 +600,18 @@ def execute_externalized_plan(
     for output_list in outputs_to_marshal.values():
         check.list_param(output_list, 'outputs_to_marshal', of_type=MarshalledOutput)
 
-    environment = check.opt_dict_param(environment, 'environment')
+    environment_dict = check.opt_dict_param(environment_dict, 'environment_dict')
     check.opt_inst_param(execution_metadata, 'execution_metadata', ExecutionMetadata)
 
     _check_inputs_to_marshal(execution_plan, inputs_to_marshal)
     _check_outputs_to_marshal(execution_plan, outputs_to_marshal)
 
-    typed_environment = create_typed_environment(pipeline, environment)
     with yield_pipeline_execution_context(
-        pipeline, typed_environment, execution_metadata
+        pipeline, environment_dict, execution_metadata
     ) as pipeline_context:
 
         execution_plan = create_execution_plan_core(
-            ExecutionPlanInfo(pipeline_context, pipeline, typed_environment),
+            pipeline_context,
             execution_metadata=execution_metadata,
             subset_info=ExecutionPlanSubsetInfo.with_input_marshalling(
                 included_step_keys=step_keys, marshalled_inputs=inputs_to_marshal
@@ -678,17 +666,20 @@ def _check_inputs_to_marshal(execution_plan, inputs_to_marshal):
 
 
 def execute_plan(
-    pipeline, execution_plan, environment=None, execution_metadata=None, throw_on_user_error=True
+    pipeline,
+    execution_plan,
+    environment_dict=None,
+    execution_metadata=None,
+    throw_on_user_error=True,
 ):
     check.inst_param(pipeline, 'pipeline', PipelineDefinition)
     check.inst_param(execution_plan, 'execution_plan', ExecutionPlan)
-    check.opt_dict_param(environment, 'environment')
+    environment_dict = check.opt_dict_param(environment_dict, 'environment_dict')
     execution_metadata = execution_metadata if execution_metadata else ExecutionMetadata()
     check.opt_inst_param(execution_metadata, 'execution_metadata', ExecutionMetadata)
 
-    typed_environment = create_typed_environment(pipeline, environment)
     with yield_pipeline_execution_context(
-        pipeline, typed_environment, execution_metadata
+        pipeline, environment_dict, execution_metadata
     ) as pipeline_context:
         return list(
             iterate_step_events_for_execution_plan(
@@ -698,7 +689,11 @@ def execute_plan(
 
 
 def execute_pipeline(
-    pipeline, environment=None, throw_on_user_error=True, execution_metadata=None, solid_subset=None
+    pipeline,
+    environment_dict=None,
+    throw_on_user_error=True,
+    execution_metadata=None,
+    solid_subset=None,
 ):
     '''
     "Synchronous" version of :py:func:`execute_pipeline_iterator`.
@@ -718,17 +713,16 @@ def execute_pipeline(
     '''
 
     check.inst_param(pipeline, 'pipeline', PipelineDefinition)
-    check.opt_dict_param(environment, 'environment')
+    environment_dict = check.opt_dict_param(environment_dict, 'environment_dict')
     check.bool_param(throw_on_user_error, 'throw_on_user_error')
     execution_metadata = execution_metadata if execution_metadata else ExecutionMetadata()
     check.inst_param(execution_metadata, 'execution_metadata', ExecutionMetadata)
     check.opt_list_param(solid_subset, 'solid_subset', of_type=str)
 
     pipeline_to_execute = get_subset_pipeline(pipeline, solid_subset)
-    typed_environment = create_typed_environment(pipeline_to_execute, environment)
     return execute_pipeline_with_metadata(
         pipeline_to_execute,
-        typed_environment,
+        environment_dict,
         execution_metadata=execution_metadata,
         throw_on_user_error=throw_on_user_error,
     )
@@ -775,14 +769,14 @@ def build_sub_pipeline(pipeline_def, solid_names):
 
 
 def execute_pipeline_with_metadata(
-    pipeline, typed_environment, execution_metadata, throw_on_user_error
+    pipeline, environment_dict, execution_metadata, throw_on_user_error
 ):
     check.inst_param(pipeline, 'pipeline', PipelineDefinition)
-    check.inst_param(typed_environment, 'typed_environment', EnvironmentConfig)
+    environment_dict = check.opt_dict_param(environment_dict, 'environment_dict')
     check.inst_param(execution_metadata, 'execution_metadata', ExecutionMetadata)
 
     with yield_pipeline_execution_context(
-        pipeline, typed_environment, execution_metadata
+        pipeline, environment_dict, execution_metadata
     ) as pipeline_context:
         return PipelineExecutionResult(
             pipeline,
@@ -791,7 +785,6 @@ def execute_pipeline_with_metadata(
                 _do_iterate_pipeline(
                     pipeline,
                     pipeline_context,
-                    typed_environment,
                     execution_metadata=execution_metadata,
                     throw_on_user_error=throw_on_user_error,
                 )
@@ -805,28 +798,16 @@ def get_subset_pipeline(pipeline, solid_subset):
     return pipeline if solid_subset is None else build_sub_pipeline(pipeline, solid_subset)
 
 
-def create_typed_environment(pipeline, environment=None):
+def create_environment_config(pipeline, environment_dict=None):
     check.inst_param(pipeline, 'pipeline', PipelineDefinition)
-    check.opt_dict_param(environment, 'environment')
+    check.opt_dict_param(environment_dict, 'environment')
 
-    result = evaluate_config_value(pipeline.environment_type, environment)
+    result = evaluate_config_value(pipeline.environment_type, environment_dict)
 
     if not result.success:
-        raise PipelineConfigEvaluationError(pipeline, result.errors, environment)
+        raise PipelineConfigEvaluationError(pipeline, result.errors, environment_dict)
 
     return construct_environment_config(result.value)
-
-
-def create_typed_context(pipeline, context=None):
-    check.inst_param(pipeline, 'pipeline', PipelineDefinition)
-    check.opt_dict_param(context, 'context')
-
-    result = evaluate_config_value(pipeline.context_type, context)
-
-    if not result.success:
-        raise PipelineConfigEvaluationError(pipeline, result.errors, context)
-
-    return construct_context_config(result.value['context'])
 
 
 class ExecutionSelector(object):

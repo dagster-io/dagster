@@ -6,7 +6,7 @@ import six
 from dagster import check
 
 from dagster.core.errors import DagsterError
-from dagster.utils import single_item
+from dagster.utils import single_item, make_readonly_value
 
 from .config import ConfigType
 from .default_applier import apply_default_values
@@ -258,7 +258,7 @@ def evaluate_config_value(config_type, config_value):
 
     value = apply_default_values(config_type, config_value)
 
-    return EvaluateValueResult(success=True, value=value, errors=[])
+    return EvaluateValueResult(success=True, value=make_readonly_value(value), errors=[])
 
 
 def validate_config(config_type, config_value):

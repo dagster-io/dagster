@@ -1,11 +1,11 @@
 from dagster import check
 
+from dagster.core.execution_context import PipelineExecutionContext
 from dagster.core.definitions import InputDefinition, Solid
 
 from dagster.core.errors import DagsterInvariantViolationError
 
 from .objects import (
-    ExecutionPlanInfo,
     ExecutionStep,
     StepOutput,
     StepOutputHandle,
@@ -17,12 +17,12 @@ from .objects import (
 INPUT_THUNK_OUTPUT = 'input_thunk_output'
 
 
-def _create_input_thunk_execution_step(plan_builder, solid, input_def, config_value):
+def _create_input_thunk_execution_step(plan_builder, solid, input_def, input_spec):
     check.invariant(input_def.runtime_type.input_schema)
     check.inst_param(plan_builder, 'plan_builder', PlanBuilder)
 
-    def _fn(_context, _step, _inputs):
-        value = input_def.runtime_type.input_schema.construct_from_config_value(config_value)
+    def _fn(_step_context, _step, _inputs):
+        value = input_def.runtime_type.input_schema.construct_from_config_value(input_spec)
         yield StepOutputValue(output_name=INPUT_THUNK_OUTPUT, value=value)
 
     return ExecutionStep(
@@ -36,13 +36,13 @@ def _create_input_thunk_execution_step(plan_builder, solid, input_def, config_va
     )
 
 
-def create_input_thunk_execution_step(execution_info, plan_builder, solid, input_def, value):
-    check.inst_param(execution_info, 'execution_info', ExecutionPlanInfo)
+def create_input_thunk_execution_step(pipeline_context, plan_builder, solid, input_def, input_spec):
+    check.inst_param(pipeline_context, 'pipeline_context', PipelineExecutionContext)
     check.inst_param(plan_builder, 'plan_builder', PlanBuilder)
     check.inst_param(solid, 'solid', Solid)
     check.inst_param(input_def, 'input_def', InputDefinition)
 
-    dependency_structure = execution_info.pipeline.dependency_structure
+    dependency_structure = pipeline_context.pipeline_def.dependency_structure
     input_handle = solid.input_handle(input_def.name)
 
     if dependency_structure.has_dep(input_handle):
@@ -53,11 +53,11 @@ def create_input_thunk_execution_step(execution_info, plan_builder, solid, input
                 'a dependency. Either remove the dependency, specify a subdag '
                 'to execute, or remove the inputs specification in the environment.'
             ).format(
-                pipeline_name=execution_info.pipeline.name,
+                pipeline_name=pipeline_context.pipeline.name,
                 solid_name=solid.name,
                 input_name=input_def.name,
             )
         )
 
-    input_thunk = _create_input_thunk_execution_step(plan_builder, solid, input_def, value)
+    input_thunk = _create_input_thunk_execution_step(plan_builder, solid, input_def, input_spec)
     return StepOutputHandle(input_thunk, INPUT_THUNK_OUTPUT)

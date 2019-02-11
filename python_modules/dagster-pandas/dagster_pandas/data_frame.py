@@ -24,6 +24,10 @@ def define_csv_dict_field():
     )
 
 
+def dict_without_keys(ddict, *keys):
+    return {key: value for key, value in ddict.items() if key not in set(keys)}
+
+
 @output_selector_schema(
     NamedSelector(
         'DataFrameOutputSchema',
@@ -41,8 +45,7 @@ def dataframe_output_schema(file_type, file_options, pandas_df):
 
     if file_type == 'csv':
         path = file_options['path']
-        del file_options['path']
-        return pandas_df.to_csv(path, index=False, **file_options)
+        return pandas_df.to_csv(path, index=False, **dict_without_keys(file_options, 'path'))
     elif file_type == 'parquet':
         return pandas_df.to_parquet(file_options['path'])
     elif file_type == 'table':
@@ -67,8 +70,7 @@ def dataframe_input_schema(file_type, file_options):
 
     if file_type == 'csv':
         path = file_options['path']
-        del file_options['path']
-        return pd.read_csv(path, **file_options)
+        return pd.read_csv(path, **dict_without_keys(file_options, 'path'))
     elif file_type == 'parquet':
         return pd.read_parquet(file_options['path'])
     elif file_type == 'table':

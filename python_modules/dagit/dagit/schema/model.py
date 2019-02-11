@@ -7,7 +7,6 @@ import uuid
 from graphql.execution.base import ResolveInfo
 
 from dagster import ExecutionMetadata, check
-from dagster.core.definitions.environment_configs import construct_environment_config
 from dagster.core.execution_plan.objects import ExecutionStepEvent
 from dagster.core.execution_plan.plan_subset import MarshalledOutput
 
@@ -20,7 +19,7 @@ from dagster.core.errors import (
 from dagster.core.execution import (
     ExecutionPlan,
     ExecutionSelector,
-    create_execution_plan_with_typed_environment,
+    create_execution_plan,
     execute_externalized_plan,
     get_subset_pipeline,
 )
@@ -183,9 +182,9 @@ def get_execution_plan(graphene_info, selector, config):
         return config_or_error.chain(
             lambda evaluate_value_result: graphene_info.schema.type_named('ExecutionPlan')(
                 pipeline,
-                create_execution_plan_with_typed_environment(
+                create_execution_plan(
                     pipeline.get_dagster_pipeline(),
-                    construct_environment_config(evaluate_value_result.value),
+                    evaluate_value_result.value,
                     ExecutionMetadata(),
                 ),
             )
@@ -206,16 +205,17 @@ def start_pipeline_execution(graphene_info, selector, config):
     def get_config_and_start_execution(pipeline):
         def _start_execution(validated_config_either):
             new_run_id = str(uuid.uuid4())
-            execution_plan = create_execution_plan_with_typed_environment(
-                pipeline.get_dagster_pipeline(),
-                construct_environment_config(validated_config_either.value),
-                ExecutionMetadata(),
+            execution_plan = create_execution_plan(
+                pipeline.get_dagster_pipeline(), validated_config_either.value, ExecutionMetadata()
             )
             run = pipeline_run_storage.create_run(new_run_id, selector, env_config, execution_plan)
             pipeline_run_storage.add_run(run)
 
             graphene_info.context.execution_manager.execute_pipeline(
-                graphene_info.context.repository_container, pipeline.get_dagster_pipeline(), run
+                graphene_info.context.repository_container,
+                pipeline.get_dagster_pipeline(),
+                run,
+                throw_on_user_error=graphene_info.context.throw_on_user_error,
             )
             return graphene_info.schema.type_named('StartPipelineExecutionSuccess')(
                 run=graphene_info.schema.type_named('PipelineRun')(run)
@@ -415,9 +415,9 @@ def _execution_plan_or_error(subplan_execution_args, dauphin_pipeline, evaluate_
     check.inst_param(dauphin_pipeline, 'dauphin_pipeline', DauphinPipeline)
     check.inst_param(evaluate_value_result, 'evaluate_value_result', EvaluateValueResult)
 
-    execution_plan = create_execution_plan_with_typed_environment(
+    execution_plan = create_execution_plan(
         dauphin_pipeline.get_dagster_pipeline(),
-        construct_environment_config(evaluate_value_result.value),
+        evaluate_value_result.value,
         subplan_execution_args.execution_metadata,
     )
 
@@ -477,7 +477,7 @@ def _execute_subplan_or_error(args, dauphin_pipeline, execution_plan, evaluate_v
             step_keys=args.step_keys,
             inputs_to_marshal=_get_inputs_to_marshal(args),
             outputs_to_marshal={se.step_key: se.marshalled_outputs for se in args.step_executions},
-            environment=evaluate_value_result.value,
+            environment_dict=evaluate_value_result.value,
             execution_metadata=args.execution_metadata,
             throw_on_user_error=False,
         )

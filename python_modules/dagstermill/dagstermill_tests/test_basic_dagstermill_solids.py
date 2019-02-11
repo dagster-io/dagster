@@ -52,7 +52,7 @@ def test_add_pipeline():
 def test_notebook_dag():
     pipeline_result = execute_pipeline(
         define_test_notebook_dag_pipeline(),
-        environment={'solids': {'load_a': {'config': 1}, 'load_b': {'config': 2}}},
+        environment_dict={'solids': {'load_a': {'config': 1}, 'load_b': {'config': 2}}},
     )
     assert pipeline_result.success
     assert pipeline_result.result_for_solid('add_two').transformed_value() == 3
