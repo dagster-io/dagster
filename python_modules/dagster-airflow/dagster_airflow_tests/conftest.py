@@ -1,24 +1,23 @@
-import errno
+# pylint doesn't understand the way that pytest constructs fixture dependnecies
+# pylint: disable=redefined-outer-name
+import datetime
 import os
 import shutil
 import subprocess
-import tempfile
 import uuid
 
 import docker
 import pytest
 
-from dagster.utils import mkdir_p, script_relative_path
+from dagster.core.execution import create_execution_plan
+from dagster.utils import load_yaml_from_path, mkdir_p, script_relative_path
+
+from dagster_airflow import scaffold_airflow_dag
+
+from .test_project.dagster_airflow_demo import define_demo_execution_pipeline
 
 
-def mkdir_p(path):
-    try:
-        os.makedirs(path)
-    except OSError as exc:  # Python >2.5
-        if exc.errno == errno.EEXIST and os.path.isdir(path):
-            pass
-        else:
-            raise
+IMAGE = 'dagster-airflow-demo'
 
 
 @pytest.fixture(scope='module')
@@ -51,6 +50,21 @@ def docker_client():
 
 
 @pytest.fixture(scope='module')
+def docker_image(docker_client):
+    try:
+        docker_client.images.get(IMAGE)
+    except docker.errors.ImageNotFound:
+        raise Exception(
+            'Couldn\'t find docker image {image} required for test: please run the script at '
+            '{script_path}'.format(
+                image=IMAGE, script_path=script_relative_path('test_project/build.sh')
+            )
+        )
+
+    return IMAGE
+
+
+@pytest.fixture(scope='module')
 def dags_path(airflow_home):
     path = os.path.join(airflow_home, 'dags', '')
     mkdir_p(os.path.abspath(path))
@@ -67,10 +81,13 @@ def plugins_path(airflow_home):
 @pytest.fixture(scope='module')
 def host_tmp_dir():
     mkdir_p('/tmp/results')
+    return '/tmp/results'
 
 
 @pytest.fixture(scope='module')
-def airflow_test(airflow_home, docker_client, dags_path, plugins_path, host_tmp_dir):
+def airflow_test(docker_image, dags_path, plugins_path, host_tmp_dir):
+
+    assert docker_image
 
     plugin_definition_filename = 'dagster_plugin.py'
     shutil.copyfile(
@@ -81,3 +98,41 @@ def airflow_test(airflow_home, docker_client, dags_path, plugins_path, host_tmp_
     mkdir_p(os.path.abspath(dags_path))
 
     subprocess.check_output(['airflow', 'initdb'])
+
+    return (docker_image, dags_path, host_tmp_dir)
+
+
+@pytest.fixture(scope='module')
+def scaffold_dag(airflow_test):
+    docker_image, dags_path, _ = airflow_test
+    pipeline = define_demo_execution_pipeline()
+    env_config = load_yaml_from_path(script_relative_path('test_project/env.yml'))
+
+    static_path, editable_path = scaffold_airflow_dag(
+        pipeline=pipeline,
+        env_config=env_config,
+        image=docker_image,
+        output_path=script_relative_path('test_project'),
+        dag_kwargs={'default_args': {'start_date': datetime.datetime(1900, 1, 1)}},
+    )
+
+    # Ensure that the scaffolded files parse correctly
+    subprocess.check_output(
+        ['python', script_relative_path('test_project/demo_pipeline_editable__scaffold.py')]
+    )
+
+    shutil.copyfile(
+        script_relative_path(static_path),
+        os.path.abspath(os.path.join(dags_path, os.path.basename(static_path))),
+    )
+
+    shutil.copyfile(
+        script_relative_path(editable_path),
+        os.path.abspath(os.path.join(dags_path, os.path.basename(editable_path))),
+    )
+    execution_date = datetime.datetime.utcnow().strftime('%Y-%m-%d')
+    pipeline_name = pipeline.name
+
+    execution_plan = create_execution_plan(pipeline, env_config)
+
+    return (pipeline_name, execution_plan, execution_date)
