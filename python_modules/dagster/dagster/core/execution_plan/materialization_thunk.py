@@ -25,7 +25,7 @@ def _create_materialization_lambda(runtime_type, config_spec):
     check.inst_param(runtime_type, 'runtime_type', RuntimeType)
     check.invariant(runtime_type.output_schema, 'Must have output schema')
 
-    def _fn(_info, _step, inputs):
+    def _fn(_step_context, inputs):
         runtime_value = inputs[MATERIALIZATION_THUNK_INPUT]
         runtime_type.output_schema.materialize_runtime_value(config_spec, runtime_value)
         yield StepOutputValue(output_name=MATERIALIZATION_THUNK_OUTPUT, value=runtime_value)

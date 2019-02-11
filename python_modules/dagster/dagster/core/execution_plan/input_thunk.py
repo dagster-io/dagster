@@ -21,7 +21,7 @@ def _create_input_thunk_execution_step(plan_builder, solid, input_def, input_spe
     check.invariant(input_def.runtime_type.input_schema)
     check.inst_param(plan_builder, 'plan_builder', PlanBuilder)
 
-    def _fn(_step_context, _step, _inputs):
+    def _fn(_step_context, _inputs):
         value = input_def.runtime_type.input_schema.construct_from_config_value(input_spec)
         yield StepOutputValue(output_name=INPUT_THUNK_OUTPUT, value=value)
 
