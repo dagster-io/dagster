@@ -8,7 +8,6 @@ from __future__ import print_function
 import ast
 import json
 import sys
-import uuid
 
 
 from contextlib import contextmanager
