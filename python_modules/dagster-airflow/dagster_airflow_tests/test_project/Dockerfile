@@ -10,8 +10,8 @@ WORKDIR /tmp/
 
 # RUN pip install -r requirements.txt
 
-ADD dagster .
-ADD dagit .
+ADD dagster dagster
+ADD dagit dagit
 
 RUN pip install dagster/
 RUN pip install dagit/
