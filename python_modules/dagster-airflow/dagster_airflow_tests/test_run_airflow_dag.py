@@ -29,7 +29,7 @@ def test_unit_run_airflow_dag_steps(scaffold_dag):
             assert os.path.isfile(_key_for_marshalled_result(step.key, step_output.name))
 
 
-def test_run_airflow_dag(scaffold_dag, dags_path):
+def test_run_airflow_dag(scaffold_dag):
     '''This test runs the sample Airflow dag using the '''
     _n, _p, _d, _s, editable_path = scaffold_dag
 
