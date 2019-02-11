@@ -228,7 +228,7 @@ class ModifiedDockerOperator(DockerOperator):
 
     def __init__(self, host_tmp_dir=None, **kwargs):
         self.host_tmp_dir = host_tmp_dir
-        super(ModifiedDockerOperator, self).__init__(**kwargs)
+        super().__init__(**kwargs)
 
     @contextmanager
     def get_host_tmp_dir(self):
@@ -295,7 +295,7 @@ class ModifiedDockerOperator(DockerOperator):
     # all that the status quo does is inhibit extension of the class
     def __get_tls_config(self):
         # pylint: disable=no-member
-        return super(ModifiedDockerOperator, self)._DockerOperator__get_tls_config()
+        return super()._DockerOperator__get_tls_config()
 
 
 class DagsterOperator(ModifiedDockerOperator):
@@ -359,7 +359,7 @@ class DagsterOperator(ModifiedDockerOperator):
             else:
                 kwargs['docker_conn_id'] = True
 
-        super(DagsterOperator, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
     @property
     def run_id(self):
@@ -433,7 +433,7 @@ class DagsterOperator(ModifiedDockerOperator):
 
     def get_hook(self):
         if self.docker_conn_id_set:
-            return super(DagsterOperator, self).get_hook()
+            return super().get_hook()
 
         class _DummyHook(object):
             def get_conn(self):
@@ -452,13 +452,13 @@ class DagsterOperator(ModifiedDockerOperator):
             self._run_id = context['dag_run'].run_id
         try:
             # FIXME implement intermediate result persistence
-            return super(DagsterOperator, self).execute(context)
+            return super().execute(context)
         finally:
             self._run_id = None
 
     def __get_tls_config(self):
         # pylint:disable=no-member
-        return super(DagsterOperator, self)._ModifiedDockerOperator__get_tls_config()
+        return super()._ModifiedDockerOperator__get_tls_config()
 
 
 class DagsterPlugin(AirflowPlugin):

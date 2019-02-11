@@ -26,7 +26,6 @@ DEFAULT_ARGS = {
     'email_on_retry': False,
     'retries': 1,
     'retry_delay': timedelta(0, 300),
-    'schedule_interval': '0 0 * * *',
 }
 
 
@@ -194,7 +193,10 @@ def _make_editable_scaffold(
             'Any additional keyword arguments to be passed to the ``airflow.DAG`` constructor. '
             'You can override these with values of your choice.'
         )
-        printer.line('DAG_KWARGS = {}')
+        printer.line('DAG_KWARGS = {')
+        with printer.with_indent():
+            printer.line('\'schedule_interval\': \'0 0 * * *\',')
+        printer.line('}')
         printer.blank_line()
 
         printer.comment(

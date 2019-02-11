@@ -6,7 +6,7 @@ import shutil
 import subprocess
 import uuid
 
-import airflow
+import airflow.plugins_manager
 import docker
 import pytest
 
@@ -100,7 +100,7 @@ def airflow_test(docker_image, dags_path, plugins_path, host_tmp_dir):
 
     subprocess.check_output(['airflow', 'initdb'])
 
-    reload_module(airflow)
+    reload_module(airflow.plugins_manager)
 
     from airflow.operators.dagster_plugin import DagsterOperator
 
