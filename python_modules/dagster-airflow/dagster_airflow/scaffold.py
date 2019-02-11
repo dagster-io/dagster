@@ -360,13 +360,41 @@ def _make_static_scaffold(pipeline_name, env_config, execution_plan, image, edit
         for step in execution_plan.topological_steps():
             step_executions_key = _step_executions_key(step)
 
-            step_executions = _scaffold_step_executions(step)
+            # step_executions = _scaffold_step_executions(step)
 
             printer.line(
-                '{step_execution_key} = {'.format(step_executions_key=step_executions_key)
+                '{step_executions_key} = {{'.format(step_executions_key=step_executions_key)
             )
             with printer.with_indent():
-                pass
+                printer.line('\'step_key\': \'{step_key}\','.format(step_key=step.key))
+                printer.line('\'inputs\' = [')
+                for step_input in step.step_inputs:
+                    with printer.with_indent():
+                        printer.line('{')
+                        with printer.with_indent():
+                            printer.line(
+                                'input_name: {input_name},'.format(input_name=step_input.name)
+                            )
+                            printer.line(
+                                'key: {key}'.format(
+                                    key=_key_for_marshalled_result(
+                                        step_input.prev_output_handle.step.key,
+                                        step_input.prev_output_handle.output_name,
+                                    )
+                                )
+                            )
+                        printer.line('}')
+                printer.line(']')
+                printer.line('\'outputs\' = [')
+                for step_output in step.step_outputs:
+                    with printer.with_indent():
+                        printer.line('{')
+                        with printer.with_indent():
+                            printer.line(
+                                'output_name: {output_name},'.format(output_name=step_output.name)
+                            )
+                        printer.line('}')
+                printer.line(']')
             printer.line('}')
             # printer.line(
             #     '{step_executions_key} = \'\'\''.format(step_executions_key=step_executions_key)

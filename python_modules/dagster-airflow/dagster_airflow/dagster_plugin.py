@@ -3,17 +3,27 @@
 Place this file in your Airflow plugins directory (``$AIRFLOW_HOME/plugins``) to make
 airflow.operators.dagster_plugin.DagsterOperator available.
 '''
+from __future__ import print_function
+
 import ast
 import json
+import sys
 import uuid
 
+
 from contextlib import contextmanager
+from textwrap import TextWrapper
 
 from airflow.exceptions import AirflowException
 from airflow.operators.docker_operator import DockerOperator
 from airflow.plugins_manager import AirflowPlugin
 from airflow.utils.file import TemporaryDirectory
 from docker import APIClient, from_env
+
+if sys.version_info.major >= 3:
+    from io import StringIO  # pylint:disable=import-error
+else:
+    from StringIO import StringIO  # pylint:disable=import-error
 
 
 # We don't use six here to avoid taking the dependency
@@ -123,6 +133,84 @@ mutation(
 #     }
 # }
 # }
+
+
+LINE_LENGTH = 100
+
+# We include this directly to avoid taking the dependency on dagster
+class IndentingBlockPrinter(object):
+    def __init__(self, line_length=LINE_LENGTH, indent_level=4, current_indent=0):
+        assert isinstance(current_indent, int)
+        assert isinstance(indent_level, int)
+        assert isinstance(indent_level, int)
+        assert callable(printer)
+        self.buffer = StringIO()
+        self.line_length = line_length
+        self.current_indent = current_indent
+        self.indent_level = indent_level
+        self.printer = lambda x: self.buffer.write(x + '\n')
+
+        self._line_so_far = ''
+
+    def append(self, text):
+        assert isinstance(text, STRING_TYPES)
+        self._line_so_far += text
+
+    def line(self, text):
+        assert isinstance(text, STRING_TYPES)
+        self.printer(self.current_indent_str + self._line_so_far + text)
+        self._line_so_far = ''
+
+    @property
+    def current_indent_str(self):
+        return ' ' * self.current_indent
+
+    def blank_line(self):
+        assert not self._line_so_far, 'Cannot throw away appended strings by calling blank_line'
+        self.printer('')
+
+    def increase_indent(self):
+        self.current_indent += self.indent_level
+
+    def decrease_indent(self):
+        if self.indent_level and self.current_indent <= 0:
+            raise Exception('indent cannot be negative')
+        self.current_indent -= self.indent_level
+
+    @contextmanager
+    def with_indent(self, text=None):
+        if text is not None:
+            self.line(text)
+        self.increase_indent()
+        yield
+        self.decrease_indent()
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, _exception_type, _exception_value, _traceback):
+        self.buffer.close()
+
+    def block(self, text, prefix=''):
+        '''Automagically wrap a block of text.'''
+        assert isinstance(text, STRING_TYPES)
+        wrapper = TextWrapper(
+            width=self.line_length - len(self.current_indent_str),
+            initial_indent=prefix,
+            subsequent_indent=prefix,
+            break_long_words=False,
+            break_on_hyphens=False,
+        )
+        for line in wrapper.wrap(text):
+            self.line(line)
+
+    def comment(self, text):
+        assert isinstance(text, STRING_TYPES)
+        self.block(text, prefix='# ')
+
+    def read(self):
+        '''Get the value of the backing StringIO.'''
+        return self.buffer.getvalue()
 
 
 class ModifiedDockerOperator(DockerOperator):
@@ -236,7 +324,7 @@ class DagsterOperator(ModifiedDockerOperator):
         self.step = step
         self.config = config
         self.pipeline_name = pipeline_name
-        self.step_executions = step_executions
+        self._step_executions = step_executions
         self.docker_from_env = docker_from_env
         self.docker_conn_id_set = kwargs.get('docker_conn_id') is not None
         self.s3_conn_id = s3_conn_id
@@ -274,11 +362,15 @@ class DagsterOperator(ModifiedDockerOperator):
             return self._run_id
 
     @property
+    def step_executions(self):
+        pass
+
+    @property
     def query(self):
         return QUERY_TEMPLATE.format(
             config=self.config.strip('\n'),
             run_id=self.run_id,
-            step_executions=self.step_executions.strip('\n').format(run_id=self.run_id),
+            step_executions=self.step_executions,
             pipeline_name=self.pipeline_name,
         )
 
