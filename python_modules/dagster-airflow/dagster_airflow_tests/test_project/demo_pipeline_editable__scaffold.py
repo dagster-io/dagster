@@ -30,6 +30,7 @@ DEFAULT_ARGS = {
     'owner': 'airflow',
     'retries': 1,
     'retry_delay': datetime.timedelta(0, 300),
+    'schedule_interval': '0 0 * * *',
     'start_date': datetime.datetime(1900, 1, 1, 0, 0),
 }
 
