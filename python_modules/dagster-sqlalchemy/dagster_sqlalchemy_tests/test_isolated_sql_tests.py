@@ -65,7 +65,7 @@ def test_basic_pipeline():
 
     assert pipeline_result.success
 
-    exec_results = pipeline_result.result_list
+    exec_results = pipeline_result.solid_result_list
 
     assert len(exec_results) == 2
 
@@ -103,7 +103,7 @@ def test_pipeline_from_files():
 
     assert pipeline_result.success
 
-    exec_results = pipeline_result.result_list
+    exec_results = pipeline_result.solid_result_list
 
     for exec_result in exec_results:
         assert exec_result.success is True

@@ -42,7 +42,7 @@ def test_execute_solid_with_dep_only_inputs_no_api():
 
     assert pipeline_result.success
 
-    for result in pipeline_result.result_list:
+    for result in pipeline_result.solid_result_list:
         assert result.success
 
     assert did_run_dict['step_one'] is True
@@ -75,7 +75,7 @@ def test_execute_solid_with_dep_only_inputs_with_api():
 
     pipeline_result = execute_pipeline(pipeline)
 
-    for result in pipeline_result.result_list:
+    for result in pipeline_result.solid_result_list:
         assert result.success
 
     assert did_run_dict['step_one'] is True

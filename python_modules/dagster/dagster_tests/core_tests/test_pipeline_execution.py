@@ -345,10 +345,10 @@ def test_pipeline_name_threaded_through_context():
 
     assert result.success
 
-    for result in execute_pipeline_iterator(
+    for step_event in execute_pipeline_iterator(
         PipelineDefinition(name="foobar", solids=[assert_name_transform]), {}
     ):
-        assert result.success
+        assert step_event.is_step_success
 
 
 def test_pipeline_subset():
@@ -376,15 +376,15 @@ def test_pipeline_subset():
     )
 
     assert subset_result.success
-    assert len(subset_result.result_list) == 1
+    assert len(subset_result.solid_result_list) == 1
     assert subset_result.result_for_solid('add_one').transformed_value() == 4
 
-    iter_results = execute_pipeline_iterator(
+    step_events = execute_pipeline_iterator(
         pipeline_def, environment_dict=env_config, solid_subset=['add_one']
     )
 
-    for result in iter_results:
-        assert result.success
+    for step_event in step_events:
+        assert step_event.is_step_success
 
 
 def define_three_part_pipeline():
@@ -429,7 +429,7 @@ def test_pipeline_execution_disjoint_subset():
 
     assert result.success
 
-    assert len(result.result_list) == 2
+    assert len(result.solid_result_list) == 2
 
     assert result.result_for_solid('add_one').transformed_value() == 3
     assert result.result_for_solid('add_three').transformed_value() == 8
@@ -474,3 +474,64 @@ def test_pipeline_wrapping_types():
             'solids': {'double_string_for_all': {'inputs': {'value': [{'value': 'bar'}, None]}}}
         },
     ).success
+
+
+def test_pipeline_streaming_iterator():
+    events = []
+
+    @lambda_solid
+    def push_one():
+        events.append(1)
+        return 1
+
+    @lambda_solid(inputs=[InputDefinition('num')])
+    def add_one(num):
+        events.append(num + 1)
+        return num + 1
+
+    pipeline_def = PipelineDefinition(
+        name='test_streaming_iterator',
+        solids=[push_one, add_one],
+        dependencies={'add_one': {'num': DependencyDefinition('push_one')}},
+    )
+
+    step_event_iterator = execute_pipeline_iterator(pipeline_def)
+
+    push_one_step_event = next(step_event_iterator)
+    assert push_one_step_event.is_successful_output
+    assert push_one_step_event.success_data.value == 1
+    assert events == [1]
+
+    add_one_step_event = next(step_event_iterator)
+    assert add_one_step_event.is_successful_output
+    assert add_one_step_event.success_data.value == 2
+    assert events == [1, 2]
+
+
+def test_pipeline_streaming_multiple_outputs():
+    events = []
+
+    @solid(outputs=[OutputDefinition(Int, 'one'), OutputDefinition(Int, 'two')])
+    def push_one_two(_context):
+        events.append(1)
+        yield Result(1, 'one')
+        events.append(2)
+        yield Result(2, 'two')
+
+    pipeline_def = PipelineDefinition(
+        name='test_streaming_iterator_multiple_outputs', solids=[push_one_two]
+    )
+
+    step_event_iterator = execute_pipeline_iterator(pipeline_def)
+
+    one_output_step_event = next(step_event_iterator)
+    assert one_output_step_event.is_successful_output
+    assert one_output_step_event.success_data.value == 1
+    assert one_output_step_event.success_data.output_name == 'one'
+    assert events == [1]
+
+    two_output_step_event = next(step_event_iterator)
+    assert two_output_step_event.is_successful_output
+    assert two_output_step_event.success_data.value == 2
+    assert two_output_step_event.success_data.output_name == 'two'
+    assert events == [1, 2]

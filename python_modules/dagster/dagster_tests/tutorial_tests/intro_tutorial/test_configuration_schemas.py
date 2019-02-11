@@ -20,7 +20,7 @@ def test_demo_configuration_schema_pipeline_correct_yaml():
         load_yaml_from_path(intro_tutorial_path('configuration_schemas.yml')),
     )
     assert result.success
-    assert len(result.result_list) == 2
+    assert len(result.solid_result_list) == 2
     count_letters_result = result.result_for_solid('count_letters').transformed_value()
     expected_value = {'q': 2, 'u': 4, 'x': 2}
     assert set(count_letters_result.keys()) == set(expected_value.keys())
@@ -54,7 +54,7 @@ def test_typed_demo_configuration_schema_pipeline_correct_yaml():
         load_yaml_from_path(intro_tutorial_path('configuration_schemas_typed.yml')),
     )
     assert result.success
-    assert len(result.result_list) == 2
+    assert len(result.solid_result_list) == 2
     count_letters_result = result.result_for_solid('count_letters').transformed_value()
     expected_value = {'q': 2, 'u': 4, 'x': 2}
     assert set(count_letters_result.keys()) == set(expected_value.keys())

@@ -119,7 +119,7 @@ def test_execute_sql_sum_sq_solid():
 
     assert pipeline_result.success
 
-    result_list = pipeline_result.result_list
+    result_list = pipeline_result.solid_result_list
 
     sum_table_sql_text = result_list[1].transformed_value().query_text
     assert sum_table_sql_text == 'SELECT num1, num2, num1 + num2 as sum FROM num_table'
@@ -148,7 +148,7 @@ def test_output_sql_sum_sq_solid():
 
     assert pipeline_result.success
 
-    result_list = pipeline_result.result_list
+    result_list = pipeline_result.solid_result_list
 
     assert len(result_list) == 3
     engine = pipeline_result.context.resources.sa.engine

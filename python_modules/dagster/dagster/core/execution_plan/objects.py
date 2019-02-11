@@ -70,6 +70,10 @@ class ExecutionStepEvent(
     namedtuple('_ExecutionStepEvent', 'event_type step success_data failure_data')
 ):
     @property
+    def is_step_success(self):
+        return not self.is_step_failure
+
+    @property
     def is_successful_output(self):
         return self.event_type == ExecutionStepEventType.STEP_OUTPUT
 

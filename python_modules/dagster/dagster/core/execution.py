@@ -15,7 +15,7 @@ will not invoke *any* outputs (and their APIs don't allow the user to).
 # too many lines
 # pylint: disable=C0302
 
-from collections import defaultdict
+from collections import defaultdict, OrderedDict
 from contextlib import contextmanager
 import inspect
 import itertools
@@ -24,13 +24,7 @@ from contextlib2 import ExitStack
 from dagster import check
 from dagster.utils import merge_dicts
 
-from .definitions import (
-    DependencyDefinition,
-    PipelineDefinition,
-    Solid,
-    SolidInstance,
-    solids_in_topological_order,
-)
+from .definitions import DependencyDefinition, PipelineDefinition, Solid, SolidInstance
 
 from .definitions.utils import DEFAULT_OUTPUT
 from .definitions.environment_configs import construct_environment_config
@@ -87,18 +81,46 @@ class PipelineExecutionResult(object):
         result_list (list[SolidExecutionResult]): List of results for each pipeline solid.
     '''
 
-    def __init__(self, pipeline, context, result_list):
+    def __init__(self, pipeline, context, step_event_list):
         self.pipeline = check.inst_param(pipeline, 'pipeline', PipelineDefinition)
         self.context = check.inst_param(context, 'context', PipelineExecutionContext)
-        self.result_list = check.list_param(
-            result_list, 'result_list', of_type=SolidExecutionResult
+        self.step_event_list = check.list_param(
+            step_event_list, 'step_event_list', of_type=ExecutionStepEvent
         )
         self.run_id = context.run_id
+
+        solid_result_dict = self._context_solid_result_dict(step_event_list)
+
+        self.solid_result_dict = solid_result_dict
+        self.solid_result_list = list(self.solid_result_dict.values())
+
+    def _context_solid_result_dict(self, step_event_list):
+        solid_set = set()
+        solid_order = []
+        step_events_by_solid_by_kind = defaultdict(lambda: defaultdict(list))
+
+        for step_event in step_event_list:
+            solid_name = step_event.step.solid.name
+            if solid_name not in solid_set:
+                solid_order.append(solid_name)
+                solid_set.add(solid_name)
+
+            step_events_by_solid_by_kind[solid_name][step_event.step.kind].append(step_event)
+
+        solid_result_dict = OrderedDict()
+
+        for solid_name in solid_order:
+            solid_result_dict[solid_name] = SolidExecutionResult(
+                self.context,
+                self.pipeline.solid_named(solid_name),
+                dict(step_events_by_solid_by_kind[solid_name]),
+            )
+        return solid_result_dict
 
     @property
     def success(self):
         '''Whether the pipeline execution was successful at all steps'''
-        return all([result.success for result in self.result_list])
+        return all([not step_event.is_step_failure for step_event in self.step_event_list])
 
     def result_for_solid(self, name):
         '''Get a :py:class:`SolidExecutionResult` for a given solid name.
@@ -115,13 +137,14 @@ class PipelineExecutionResult(object):
                 )
             )
 
-        for result in self.result_list:
-            if result.solid.name == name:
-                return result
+        if name not in self.solid_result_dict:
+            raise DagsterInvariantViolationError(
+                'Did not find result for solid {name} in pipeline execution result'.format(
+                    name=name
+                )
+            )
 
-        raise DagsterInvariantViolationError(
-            'Did not find result for solid {name} in pipeline execution result'.format(name=name)
-        )
+        return self.solid_result_dict[name]
 
 
 class SolidExecutionResult(object):
@@ -182,7 +205,7 @@ class SolidExecutionResult(object):
         '''Whether the solid execution was successful'''
         return all(
             [
-                step_event.event_type == ExecutionStepEventType.STEP_OUTPUT
+                not step_event.is_step_failure
                 for step_event in itertools.chain(
                     self.input_expectations, self.output_expectations, self.transforms
                 )
@@ -483,16 +506,12 @@ def _do_iterate_pipeline(pipeline, pipeline_context, execution_metadata, throw_o
 
     pipeline_success = True
 
-    for solid_result in _process_step_events(
-        pipeline_context,
-        pipeline,
-        iterate_step_events_for_execution_plan(
-            pipeline_context, execution_plan, throw_on_user_error
-        ),
+    for step_event in iterate_step_events_for_execution_plan(
+        pipeline_context, execution_plan, throw_on_user_error
     ):
-        if not solid_result.success:
+        if step_event.is_step_failure:
             pipeline_success = False
-        yield solid_result
+        yield step_event
 
     if pipeline_success:
         pipeline_context.events.pipeline_success()
@@ -534,27 +553,6 @@ def execute_pipeline_iterator(
             throw_on_user_error=throw_on_user_error,
         ):
             yield solid_result
-
-
-def _process_step_events(pipeline_context, pipeline, step_events):
-    check.inst_param(pipeline_context, 'pipeline_context', PipelineExecutionContext)
-    check.inst_param(pipeline, 'pipeline', PipelineDefinition)
-
-    # TODO: actually make this stream results. Right now it collects
-    # all results that then constructs solid result
-    # see https://github.com/dagster-io/dagster/issues/792
-    step_events = check.list_param(list(step_events), 'step_events', of_type=ExecutionStepEvent)
-
-    step_events_by_solid_name = defaultdict(list)
-    for step_event in step_events:
-        check.inst(step_event, ExecutionStepEvent)
-        step_events_by_solid_name[step_event.step.solid.name].append(step_event)
-
-    for solid in solids_in_topological_order(pipeline):
-        if solid.name in step_events_by_solid_name:
-            yield SolidExecutionResult.from_step_events(
-                pipeline_context, step_events_by_solid_name[solid.name]
-            )
 
 
 class PipelineConfigEvaluationError(Exception):

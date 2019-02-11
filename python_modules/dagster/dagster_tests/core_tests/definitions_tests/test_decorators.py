@@ -82,8 +82,8 @@ def test_solid():
     result = execute_single_solid_in_isolation(create_test_context(), hello_world)
 
     assert result.success
-    assert len(result.result_list) == 1
-    assert result.result_list[0].transformed_value()['foo'] == 'bar'
+    assert len(result.solid_result_list) == 1
+    assert result.solid_result_list[0].transformed_value()['foo'] == 'bar'
 
 
 def test_solid_one_output():
@@ -94,8 +94,8 @@ def test_solid_one_output():
     result = execute_single_solid_in_isolation(create_test_context(), hello_world)
 
     assert result.success
-    assert len(result.result_list) == 1
-    assert result.result_list[0].transformed_value()['foo'] == 'bar'
+    assert len(result.solid_result_list) == 1
+    assert result.solid_result_list[0].transformed_value()['foo'] == 'bar'
 
 
 def test_solid_yield():
@@ -106,8 +106,8 @@ def test_solid_yield():
     result = execute_single_solid_in_isolation(create_test_context(), hello_world)
 
     assert result.success
-    assert len(result.result_list) == 1
-    assert result.result_list[0].transformed_value()['foo'] == 'bar'
+    assert len(result.solid_result_list) == 1
+    assert result.solid_result_list[0].transformed_value()['foo'] == 'bar'
 
 
 def test_solid_result_return():
@@ -118,8 +118,8 @@ def test_solid_result_return():
     result = execute_single_solid_in_isolation(create_test_context(), hello_world)
 
     assert result.success
-    assert len(result.result_list) == 1
-    assert result.result_list[0].transformed_value()['foo'] == 'bar'
+    assert len(result.solid_result_list) == 1
+    assert result.solid_result_list[0].transformed_value()['foo'] == 'bar'
 
 
 def test_solid_multiple_outputs():
@@ -133,8 +133,8 @@ def test_solid_multiple_outputs():
     result = execute_single_solid_in_isolation(create_test_context(), hello_world)
 
     assert result.success
-    assert len(result.result_list) == 1
-    solid_result = result.result_list[0]
+    assert len(result.solid_result_list) == 1
+    solid_result = result.solid_result_list[0]
     assert solid_result.transformed_value('left')['foo'] == 'left'
     assert solid_result.transformed_value('right')['foo'] == 'right'
 
@@ -147,8 +147,8 @@ def test_dict_multiple_outputs():
     result = execute_single_solid_in_isolation(create_test_context(), hello_world)
 
     assert result.success
-    assert len(result.result_list) == 1
-    solid_result = result.result_list[0]
+    assert len(result.solid_result_list) == 1
+    solid_result = result.solid_result_list[0]
     assert solid_result.transformed_value('left')['foo'] == 'left'
     assert solid_result.transformed_value('right')['foo'] == 'right'
 
@@ -180,8 +180,8 @@ def test_solid_with_implicit_single_output():
     result = execute_single_solid_in_isolation(create_test_context(), hello_world)
 
     assert result.success
-    assert len(result.result_list) == 1
-    solid_result = result.result_list[0]
+    assert len(result.solid_result_list) == 1
+    solid_result = result.solid_result_list[0]
     assert solid_result.transformed_value() == 'foo'
 
 
@@ -204,8 +204,8 @@ def test_lambda_solid_with_name():
     result = execute_single_solid_in_isolation(create_test_context(), hello_world)
 
     assert result.success
-    assert len(result.result_list) == 1
-    assert result.result_list[0].transformed_value()['foo'] == 'bar'
+    assert len(result.solid_result_list) == 1
+    assert result.solid_result_list[0].transformed_value()['foo'] == 'bar'
 
 
 def test_solid_with_name():
@@ -216,8 +216,8 @@ def test_solid_with_name():
     result = execute_single_solid_in_isolation(create_test_context(), hello_world)
 
     assert result.success
-    assert len(result.result_list) == 1
-    assert result.result_list[0].transformed_value()['foo'] == 'bar'
+    assert len(result.solid_result_list) == 1
+    assert result.solid_result_list[0].transformed_value()['foo'] == 'bar'
 
 
 def test_solid_with_input():

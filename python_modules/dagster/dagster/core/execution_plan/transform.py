@@ -77,7 +77,10 @@ def _execute_core_transform(transform_context, inputs):
         'Executing core transform for solid {solid}.'.format(solid=solid.name)
     )
 
-    all_results = list(_yield_transform_results(transform_context, inputs))
+    all_results = []
+    for step_output_value in _yield_transform_results(transform_context, inputs):
+        yield step_output_value
+        all_results.append(step_output_value)
 
     if len(all_results) != len(solid.definition.output_defs):
         emitted_result_names = {r.output_name for r in all_results}
@@ -88,5 +91,3 @@ def _execute_core_transform(transform_context, inputs):
                 solid=solid.name, outputs=repr(omitted_outputs)
             )
         )
-
-    return all_results

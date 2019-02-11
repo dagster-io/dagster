@@ -29,7 +29,7 @@ def test_multiple_outputs():
     pipeline = PipelineDefinition(solids=[solid])
 
     result = execute_pipeline(pipeline)
-    solid_result = result.result_list[0]
+    solid_result = result.solid_result_list[0]
 
     assert solid_result.solid.name == 'multiple_outputs'
     assert solid_result.transformed_value('output_one') == 'foo'

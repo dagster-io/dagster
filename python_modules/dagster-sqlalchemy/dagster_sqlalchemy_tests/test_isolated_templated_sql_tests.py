@@ -160,9 +160,9 @@ def test_templated_sql_solid_pipeline():
     first_result = execute_pipeline(pipeline, environment_dict=environment_one)
     assert first_result.success
 
-    assert len(first_result.result_list) == 2
-    assert first_result.result_list[0].transformed_value() == {'sum_table': first_sum_table}
-    assert first_result.result_list[1].transformed_value() == {
+    assert len(first_result.solid_result_list) == 2
+    assert first_result.solid_result_list[0].transformed_value() == {'sum_table': first_sum_table}
+    assert first_result.solid_result_list[1].transformed_value() == {
         'sum_table': first_sum_table,
         'sum_sq_table': first_sum_sq_table,
     }
@@ -187,7 +187,7 @@ def test_templated_sql_solid_pipeline():
 
     second_result = execute_pipeline(pipeline_two, environment_dict=environment_two)
     assert second_result.success
-    assert len(second_result.result_list) == 2
+    assert len(second_result.solid_result_list) == 2
     assert _load_table(second_result.context, second_sum_sq_table) == [(1, 2, 3, 9), (3, 4, 7, 49)]
 
 
@@ -233,7 +233,7 @@ def test_with_from_through_specifying_all_solids():
     }
 
     pipeline_result = execute_pipeline(pipeline, environment_dict=environment)
-    assert len(pipeline_result.result_list) == 3
+    assert len(pipeline_result.solid_result_list) == 3
     assert _load_table(pipeline_result.context, first_sum_table) == [(1, 2, 3), (3, 4, 7)]
     assert _load_table(pipeline_result.context, first_mult_table) == [(1, 2, 2), (3, 4, 12)]
     assert _load_table(pipeline_result.context, first_sum_mult_table) == [(1, 3, 2), (3, 7, 12)]
@@ -263,7 +263,7 @@ def test_multi_input_partial_execution():
     first_pipeline_result = execute_pipeline(pipeline, environment_dict=environment)
 
     assert first_pipeline_result.success
-    assert len(first_pipeline_result.result_list) == 3
+    assert len(first_pipeline_result.solid_result_list) == 3
     assert _load_table(first_pipeline_result.context, first_sum_table) == [(1, 2, 3), (3, 4, 7)]
     assert _load_table(first_pipeline_result.context, first_mult_table) == [(1, 2, 2), (3, 4, 12)]
     assert _load_table(first_pipeline_result.context, first_sum_mult_table) == [

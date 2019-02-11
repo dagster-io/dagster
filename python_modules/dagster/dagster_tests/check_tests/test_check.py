@@ -703,3 +703,73 @@ def test_opt_two_dim_dict_parm():
     assert check.opt_two_dim_dict_param({'key': {}}, 'foo')
     assert check.opt_two_dim_dict_param({'key': {'key2': 2}}, 'foo')
     assert check.opt_two_dim_dict_param(None, 'foo') == {}
+
+
+def test_generator_param():
+    def _test_gen():
+        yield 1
+
+    assert check.generator_param(_test_gen(), 'gen')
+
+    gen = _test_gen()
+    assert check.generator(gen)
+    assert list(gen) == [1]
+    assert check.generator(gen)
+    assert list(gen) == []
+
+    with pytest.raises(ParameterCheckError):
+        assert check.generator_param(list(gen), 'gen')
+
+    with pytest.raises(ParameterCheckError):
+        assert check.generator_param(None, 'gen')
+
+    with pytest.raises(ParameterCheckError):
+        assert check.generator_param(_test_gen, 'gen')
+
+
+def test_opt_generator_param():
+    def _test_gen():
+        yield 1
+
+    assert check.opt_generator_param(_test_gen(), 'gen')
+
+    assert check.opt_generator_param(None, 'gen') is None
+
+    with pytest.raises(ParameterCheckError):
+        assert check.opt_generator_param(_test_gen, 'gen')
+
+
+def test_generator():
+    def _test_gen():
+        yield 1
+
+    assert check.generator(_test_gen())
+
+    gen = _test_gen()
+    assert check.generator(gen)
+
+    with pytest.raises(ParameterCheckError):
+        assert check.generator(list(gen))
+
+    with pytest.raises(ParameterCheckError):
+        assert check.generator(None)
+
+    with pytest.raises(ParameterCheckError):
+        assert check.generator(_test_gen)
+
+
+def test_opt_generator():
+    def _test_gen():
+        yield 1
+
+    assert check.opt_generator(_test_gen())
+
+    gen = _test_gen()
+    assert check.opt_generator(gen)
+    assert check.opt_generator(None) is None
+
+    with pytest.raises(ParameterCheckError):
+        assert check.opt_generator(list(gen))
+
+    with pytest.raises(ParameterCheckError):
+        assert check.opt_generator(_test_gen)

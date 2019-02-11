@@ -55,7 +55,7 @@ def test_hello_typed():
         {'solids': {'add_hello_to_word_typed': {'inputs': {'word': {'value': 'Foobar Baz'}}}}},
     )
     assert result.success
-    assert len(result.result_list) == 1
+    assert len(result.solid_result_list) == 1
     assert (
         result.result_for_solid('add_hello_to_word_typed').transformed_value()
         == 'Hello, Foobar Baz!'

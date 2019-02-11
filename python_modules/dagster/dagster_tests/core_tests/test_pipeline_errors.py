@@ -55,7 +55,7 @@ def test_transform_failure_pipeline():
 
     assert not pipeline_result.success
 
-    result_list = pipeline_result.result_list
+    result_list = pipeline_result.solid_result_list
 
     assert len(result_list) == 1
     assert not result_list[0].success

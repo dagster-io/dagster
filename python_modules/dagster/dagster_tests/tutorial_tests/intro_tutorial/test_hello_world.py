@@ -10,7 +10,7 @@ def test_tutorial_intro_tutorial_hello_world():
     result = execute_pipeline(pipeline)
 
     assert result.success
-    assert len(result.result_list) == 1
+    assert len(result.solid_result_list) == 1
     assert result.result_for_solid('hello_world').transformed_value() == 'hello'
     return result
 
