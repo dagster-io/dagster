@@ -1,13 +1,12 @@
 from dagster import check
 
-from dagster.core.execution_context import StepExecutionContext
+from dagster.core.execution_context import StepExecutionContext, PipelineExecutionContext
 
 from dagster.core.definitions import ExpectationDefinition, InputDefinition, OutputDefinition, Solid
 
 from dagster.core.errors import DagsterExpectationFailedError
 
 from .objects import (
-    ExecutionPlanInfo,
     ExecutionStep,
     ExecutionValueSubplan,
     StepInput,
@@ -116,14 +115,14 @@ def create_expectation_step(
     )
 
 
-def decorate_with_expectations(execution_info, plan_builder, solid, transform_step, output_def):
-    check.inst_param(execution_info, 'execution_info', ExecutionPlanInfo)
+def decorate_with_expectations(pipeline_context, plan_builder, solid, transform_step, output_def):
+    check.inst_param(pipeline_context, 'pipeline_context', PipelineExecutionContext)
     check.inst_param(plan_builder, 'plan_builder', PlanBuilder)
     check.inst_param(solid, 'solid', Solid)
     check.inst_param(transform_step, 'transform_step', ExecutionStep)
     check.inst_param(output_def, 'output_def', OutputDefinition)
 
-    if execution_info.environment.expectations.evaluate and output_def.expectations:
+    if pipeline_context.environment_config.expectations.evaluate and output_def.expectations:
         return create_expectations_subplan(
             plan_builder,
             solid,

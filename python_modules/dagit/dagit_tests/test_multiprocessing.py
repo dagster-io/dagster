@@ -42,7 +42,9 @@ def test_running():
         run_id, selector, env_config, create_execution_plan(pipeline, env_config)
     )
     execution_manager = MultiprocessingExecutionManager()
-    execution_manager.execute_pipeline(repository_container, pipeline, pipeline_run)
+    execution_manager.execute_pipeline(
+        repository_container, pipeline, pipeline_run, throw_on_user_error=False
+    )
     execution_manager.join()
     assert pipeline_run.status == PipelineRunStatus.SUCCESS
     events = pipeline_run.all_logs()
@@ -76,7 +78,9 @@ def test_failing():
         run_id, selector, env_config, create_execution_plan(pipeline, env_config)
     )
     execution_manager = MultiprocessingExecutionManager()
-    execution_manager.execute_pipeline(repository_container, pipeline, pipeline_run)
+    execution_manager.execute_pipeline(
+        repository_container, pipeline, pipeline_run, throw_on_user_error=False
+    )
     execution_manager.join()
     assert pipeline_run.status == PipelineRunStatus.FAILURE
     assert pipeline_run.all_logs()
@@ -103,7 +107,9 @@ def test_execution_crash():
         run_id, selector, env_config, create_execution_plan(pipeline, env_config)
     )
     execution_manager = MultiprocessingExecutionManager()
-    execution_manager.execute_pipeline(repository_container, pipeline, pipeline_run)
+    execution_manager.execute_pipeline(
+        repository_container, pipeline, pipeline_run, throw_on_user_error=False
+    )
     execution_manager.join()
     assert pipeline_run.status == PipelineRunStatus.FAILURE
     last_log = pipeline_run.all_logs()[-1]

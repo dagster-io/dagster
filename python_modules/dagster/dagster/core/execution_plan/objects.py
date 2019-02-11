@@ -8,8 +8,7 @@ import six
 
 from dagster import check
 from dagster.utils import merge_dicts
-from dagster.core.system_config.objects import EnvironmentConfig
-from dagster.core.definitions import PipelineDefinition, Solid, SolidOutputHandle
+from dagster.core.definitions import Solid, SolidOutputHandle
 from dagster.core.errors import DagsterError
 from dagster.core.types.runtime import RuntimeType
 
@@ -268,18 +267,6 @@ class ExecutionPlan(object):
         ordered_step_keys = toposort.toposort_flatten(self.deps)
         for step_key in ordered_step_keys:
             yield self.step_dict[step_key]
-
-
-class ExecutionPlanInfo(namedtuple('_ExecutionPlanInfo', 'context pipeline environment')):
-    def __new__(cls, context, pipeline, environment):
-        from dagster.core.execution_context import PipelineExecutionContext
-
-        return super(ExecutionPlanInfo, cls).__new__(
-            cls,
-            check.inst_param(context, 'context', PipelineExecutionContext),
-            check.inst_param(pipeline, 'pipeline', PipelineDefinition),
-            check.inst_param(environment, 'environment', EnvironmentConfig),
-        )
 
 
 class StepOutputMap(dict):

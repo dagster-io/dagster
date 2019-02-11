@@ -22,7 +22,7 @@ def test_run_local():
 
     result = execute_pipeline(
         define_resource_test_pipeline(),
-        environment={
+        environment_dict={
             'context': {'local': {}},
             'solids': {'add_ints': {'inputs': {'num_one': {'value': 2}, 'num_two': {'value': 3}}}},
         },
@@ -44,7 +44,7 @@ def test_run_cloud():
 
     result = execute_pipeline(
         define_resource_test_pipeline(),
-        environment={
+        environment_dict={
             'context': {
                 'cloud': {
                     'resources': {

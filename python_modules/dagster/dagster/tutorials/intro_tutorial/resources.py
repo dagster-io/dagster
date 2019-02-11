@@ -105,7 +105,7 @@ def define_resource_test_pipeline():
 if __name__ == '__main__':
     result = execute_pipeline(
         define_resource_test_pipeline(),
-        environment={
+        environment_dict={
             'context': {
                 'cloud': {
                     'resources': {
@@ -131,7 +131,7 @@ if __name__ == '__main__':
 
     result = execute_pipeline(
         define_resource_test_pipeline(),
-        environment={
+        environment_dict={
             'context': {'local': {}},
             'solids': {
                 'add_ints': {

@@ -51,7 +51,7 @@ def test_execute_solid_with_input_same_name():
     )
 
     result = execute_pipeline(
-        pipeline, environment={'solids': {'pass_value': {'config': {'value': 'foo'}}}}
+        pipeline, environment_dict={'solids': {'pass_value': {'config': {'value': 'foo'}}}}
     )
 
     assert result.result_for_solid('a_thing').transformed_value() == 'foofoo'
@@ -89,7 +89,7 @@ def test_execute_two_solids_with_same_input_name():
 
     result = execute_pipeline(
         pipeline,
-        environment={
+        environment_dict={
             'solids': {
                 'pass_to_one': {'config': {'value': 'foo'}},
                 'pass_to_two': {'config': {'value': 'bar'}},
@@ -129,7 +129,7 @@ def test_execute_dep_solid_different_input_name():
     )
 
     result = dagster.execute_pipeline(
-        pipeline, environment={'solids': {'pass_to_first': {'config': {'value': 'bar'}}}}
+        pipeline, environment_dict={'solids': {'pass_to_first': {'config': {'value': 'bar'}}}}
     )
 
     assert result.success

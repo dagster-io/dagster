@@ -122,11 +122,12 @@ def define_context():
         RepositoryContainer(repository=define_repository()),
         PipelineRunStorage(),
         execution_manager=SynchronousExecutionManager(),
+        throw_on_user_error=True,
     )
 
 
 def execute_dagster_graphql(context, query, variables=None):
-    return graphql(
+    result = graphql(
         create_schema(),
         query,
         context=context,
@@ -135,6 +136,12 @@ def execute_dagster_graphql(context, query, variables=None):
         allow_subscriptions=True,
         return_promise=False,
     )
+
+    # has to check attr because in subscription case it returns AnonymousObservable
+    if hasattr(result, 'errors') and result.errors:
+        raise result.errors[0]
+
+    return result
 
 
 @lambda_solid(inputs=[InputDefinition('num', DataFrame)], output=OutputDefinition(DataFrame))

@@ -371,14 +371,16 @@ def test_pipeline_subset():
 
     env_config = {'solids': {'add_one': {'inputs': {'num': {'value': 3}}}}}
 
-    subset_result = execute_pipeline(pipeline_def, environment=env_config, solid_subset=['add_one'])
+    subset_result = execute_pipeline(
+        pipeline_def, environment_dict=env_config, solid_subset=['add_one']
+    )
 
     assert subset_result.success
     assert len(subset_result.result_list) == 1
     assert subset_result.result_for_solid('add_one').transformed_value() == 4
 
     iter_results = execute_pipeline_iterator(
-        pipeline_def, environment=env_config, solid_subset=['add_one']
+        pipeline_def, environment_dict=env_config, solid_subset=['add_one']
     )
 
     for result in iter_results:
@@ -422,7 +424,7 @@ def test_pipeline_execution_disjoint_subset():
     pipeline_def = define_created_disjoint_three_part_pipeline()
 
     result = execute_pipeline(
-        pipeline_def, environment=env_config, solid_subset=['add_one', 'add_three']
+        pipeline_def, environment_dict=env_config, solid_subset=['add_one', 'add_three']
     )
 
     assert result.success
@@ -450,23 +452,25 @@ def test_pipeline_wrapping_types():
     pipeline_def = PipelineDefinition(name='wrapping_test', solids=[double_string_for_all])
 
     assert execute_pipeline(
-        pipeline_def, environment={'solids': {'double_string_for_all': {'inputs': {'value': None}}}}
-    ).success
-
-    assert execute_pipeline(
-        pipeline_def, environment={'solids': {'double_string_for_all': {'inputs': {'value': []}}}}
+        pipeline_def,
+        environment_dict={'solids': {'double_string_for_all': {'inputs': {'value': None}}}},
     ).success
 
     assert execute_pipeline(
         pipeline_def,
-        environment={
+        environment_dict={'solids': {'double_string_for_all': {'inputs': {'value': []}}}},
+    ).success
+
+    assert execute_pipeline(
+        pipeline_def,
+        environment_dict={
             'solids': {'double_string_for_all': {'inputs': {'value': [{'value': 'foo'}]}}}
         },
     ).success
 
     assert execute_pipeline(
         pipeline_def,
-        environment={
+        environment_dict={
             'solids': {'double_string_for_all': {'inputs': {'value': [{'value': 'bar'}, None]}}}
         },
     ).success

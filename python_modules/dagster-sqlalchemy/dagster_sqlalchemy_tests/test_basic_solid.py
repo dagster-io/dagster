@@ -144,7 +144,7 @@ def test_output_sql_sum_sq_solid():
 
     environment = {'solids': {create_sum_sq_table.name: {'config': {'table_name': 'sum_sq_table'}}}}
 
-    pipeline_result = execute_pipeline(pipeline=pipeline, environment=environment)
+    pipeline_result = execute_pipeline(pipeline=pipeline, environment_dict=environment)
 
     assert pipeline_result.success
 

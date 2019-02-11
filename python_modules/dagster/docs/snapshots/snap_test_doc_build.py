@@ -20235,7 +20235,7 @@ snapshots['test_build_all_docs 52'] = '''
 <p>Executing pipelines and solids.</p>
 <dl class="function">
 <dt id="dagster.execute_pipeline">
-<code class="descclassname">dagster.</code><code class="descname">execute_pipeline</code><span class="sig-paren">(</span><em>pipeline</em>, <em>environment=None</em>, <em>throw_on_user_error=True</em>, <em>execution_metadata=None</em>, <em>solid_subset=None</em><span class="sig-paren">)</span><a class="headerlink" href="#dagster.execute_pipeline" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">dagster.</code><code class="descname">execute_pipeline</code><span class="sig-paren">(</span><em>pipeline</em>, <em>environment_dict=None</em>, <em>throw_on_user_error=True</em>, <em>execution_metadata=None</em>, <em>solid_subset=None</em><span class="sig-paren">)</span><a class="headerlink" href="#dagster.execute_pipeline" title="Permalink to this definition">¶</a></dt>
 <dd><p>“Synchronous” version of <a class="reference internal" href="#dagster.execute_pipeline_iterator" title="dagster.execute_pipeline_iterator"><code class="xref py py-func docutils literal notranslate"><span class="pre">execute_pipeline_iterator()</span></code></a>.</p>
 <p>Note: throw_on_user_error is very useful in testing contexts when not testing for error conditions</p>
 <table class="docutils field-list" frame="void" rules="none">
@@ -20259,7 +20259,7 @@ the py:class:<cite>SolidExecutionResult</cite> in an error-state.</li>
 
 <dl class="function">
 <dt id="dagster.execute_pipeline_iterator">
-<code class="descclassname">dagster.</code><code class="descname">execute_pipeline_iterator</code><span class="sig-paren">(</span><em>pipeline</em>, <em>environment=None</em>, <em>throw_on_user_error=True</em>, <em>execution_metadata=None</em>, <em>solid_subset=None</em><span class="sig-paren">)</span><a class="headerlink" href="#dagster.execute_pipeline_iterator" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">dagster.</code><code class="descname">execute_pipeline_iterator</code><span class="sig-paren">(</span><em>pipeline</em>, <em>environment_dict=None</em>, <em>throw_on_user_error=True</em>, <em>execution_metadata=None</em>, <em>solid_subset=None</em><span class="sig-paren">)</span><a class="headerlink" href="#dagster.execute_pipeline_iterator" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns iterator that yields <a class="reference internal" href="#dagster.SolidExecutionResult" title="dagster.SolidExecutionResult"><code class="xref py py-class docutils literal notranslate"><span class="pre">SolidExecutionResult</span></code></a> for each
 solid executed in the pipeline.</p>
 <p>This is intended to allow the caller to do things between each executed
@@ -25061,7 +25061,7 @@ resource.</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">_name__</span> <span class="o">==</span> <span class="s1">&#39;__main__&#39;</span><span class="p">:</span>
 <span class="n">result</span> <span class="o">=</span> <span class="n">execute_pipeline</span><span class="p">(</span>
     <span class="n">define_resource_test_pipeline</span><span class="p">(),</span>
-    <span class="n">environment</span><span class="o">=</span><span class="p">{</span>
+    <span class="n">environment_dict</span><span class="o">=</span><span class="p">{</span>
         <span class="s1">&#39;context&#39;</span><span class="p">:</span> <span class="p">{</span>
             <span class="s1">&#39;cloud&#39;</span><span class="p">:</span> <span class="p">{</span>
                 <span class="s1">&#39;resources&#39;</span><span class="p">:</span> <span class="p">{</span>
@@ -25138,7 +25138,7 @@ resource will be used instead of the cloud version:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span>
 <span class="n">result</span> <span class="o">=</span> <span class="n">execute_pipeline</span><span class="p">(</span>
     <span class="n">define_resource_test_pipeline</span><span class="p">(),</span>
-<span class="hll">    <span class="n">environment</span><span class="o">=</span><span class="p">{</span>
+<span class="hll">    <span class="n">environment_dict</span><span class="o">=</span><span class="p">{</span>
 </span>        <span class="s1">&#39;context&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;local&#39;</span><span class="p">:</span> <span class="p">{}},</span>
         <span class="s1">&#39;solids&#39;</span><span class="p">:</span> <span class="p">{</span>
             <span class="s1">&#39;add_ints&#39;</span><span class="p">:</span> <span class="p">{</span>
@@ -25567,14 +25567,14 @@ in the dagster-pandas library, building it step by step along the way.</p>
 <div class="section" id="basic-typing">
 <h2>Basic Typing<a class="headerlink" href="#basic-typing" title="Permalink to this headline">¶</a></h2>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+        <span class="k">raise</span> <span class="n">DagsterInvariantViolationError</span><span class="p">(</span>
+            <span class="s1">&#39;Unsupported file_type </span><span class="si">{file_type}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">file_type</span><span class="o">=</span><span class="n">file_type</span><span class="p">)</span>
         <span class="p">)</span>
 
 
 <span class="n">DataFrame</span> <span class="o">=</span> <span class="n">as_dagster_type</span><span class="p">(</span>
     <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span>
-    <span class="n">name</span><span class="o">=</span><span class="s1">&#39;PandasDataFrame&#39;</span><span class="p">,</span>
-    <span class="n">description</span><span class="o">=</span><span class="s1">&#39;&#39;&#39;Two-dimensional size-mutable, potentially heterogeneous</span>
-<span class="s1">    input_schema=dataframe_input_schema,</span>
+    <span class="n">tabular</span> <span class="n">data</span> <span class="n">structure</span> <span class="k">with</span> <span class="n">labeled</span> <span class="n">axes</span> <span class="p">(</span><span class="n">rows</span> <span class="ow">and</span> <span class="n">columns</span><span class="p">)</span><span class="o">.</span>
 </pre></div>
 </div>
 <p>What this code doing is annotating/registering an existing type as a dagster type. Now one can
@@ -25648,7 +25648,10 @@ values have been applied.</p>
 API that removes some boilerplate around manipulating the config_value dictionary. Instead, the
 user-provided function takes the unpacked key and value of config_value directly, since in the
 case of a selector, the config_value dictionary has only 1 (key, value) pair.</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>    <span class="k">else</span><span class="p">:</span>
+        <span class="n">check</span><span class="o">.</span><span class="n">failed</span><span class="p">(</span><span class="s1">&#39;Unsupported file_type </span><span class="si">{file_type}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">file_type</span><span class="o">=</span><span class="n">file_type</span><span class="p">))</span>
+
+
 <span class="nd">@input_selector_schema</span><span class="p">(</span>
     <span class="n">NamedSelector</span><span class="p">(</span>
         <span class="s1">&#39;DataFrameInputSchema&#39;</span><span class="p">,</span>
@@ -25665,27 +25668,24 @@ case of a selector, the config_value dictionary has only 1 (key, value) pair.</p
 
     <span class="k">if</span> <span class="n">file_type</span> <span class="o">==</span> <span class="s1">&#39;csv&#39;</span><span class="p">:</span>
         <span class="n">path</span> <span class="o">=</span> <span class="n">file_options</span><span class="p">[</span><span class="s1">&#39;path&#39;</span><span class="p">]</span>
-        <span class="k">del</span> <span class="n">file_options</span><span class="p">[</span><span class="s1">&#39;path&#39;</span><span class="p">]</span>
-        <span class="k">return</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="o">**</span><span class="n">file_options</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="o">**</span><span class="n">dict_without_keys</span><span class="p">(</span><span class="n">file_options</span><span class="p">,</span> <span class="s1">&#39;path&#39;</span><span class="p">))</span>
     <span class="k">elif</span> <span class="n">file_type</span> <span class="o">==</span> <span class="s1">&#39;parquet&#39;</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_parquet</span><span class="p">(</span><span class="n">file_options</span><span class="p">[</span><span class="s1">&#39;path&#39;</span><span class="p">])</span>
     <span class="k">elif</span> <span class="n">file_type</span> <span class="o">==</span> <span class="s1">&#39;table&#39;</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_table</span><span class="p">(</span><span class="n">file_options</span><span class="p">[</span><span class="s1">&#39;path&#39;</span><span class="p">])</span>
-    <span class="k">else</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="n">DagsterInvariantViolationError</span><span class="p">(</span>
 </pre></div>
 </div>
 <p>You’ll note that we no longer need to manipulate the <code class="docutils literal notranslate"><span class="pre">config_value</span></code> dictionary. It grabs
 that key and value for you and calls the provided function.</p>
 <p>Finally insert this into the original declaration:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>            <span class="s1">&#39;Unsupported file_type </span><span class="si">{file_type}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">file_type</span><span class="o">=</span><span class="n">file_type</span><span class="p">)</span>
+        <span class="p">)</span>
+
 
 <span class="n">DataFrame</span> <span class="o">=</span> <span class="n">as_dagster_type</span><span class="p">(</span>
     <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span>
-    <span class="n">name</span><span class="o">=</span><span class="s1">&#39;PandasDataFrame&#39;</span><span class="p">,</span>
-    <span class="n">description</span><span class="o">=</span><span class="s1">&#39;&#39;&#39;Two-dimensional size-mutable, potentially heterogeneous</span>
-<span class="hll"><span class="s1">    tabular data structure with labeled axes (rows and columns).</span>
-</span><span class="s1">    input_schema=dataframe_input_schema,</span>
+<span class="hll">    <span class="n">name</span><span class="o">=</span><span class="s1">&#39;PandasDataFrame&#39;</span><span class="p">,</span>
+</span>    <span class="n">tabular</span> <span class="n">data</span> <span class="n">structure</span> <span class="k">with</span> <span class="n">labeled</span> <span class="n">axes</span> <span class="p">(</span><span class="n">rows</span> <span class="ow">and</span> <span class="n">columns</span><span class="p">)</span><span class="o">.</span>
 </pre></div>
 </div>
 <p>Now if you run a pipeline with this solid from dagit you will be able to provide sources for
@@ -25699,8 +25699,12 @@ for taking the in-memory object flowed through your computation and materializin
 persistent store. Outputs are purely <em>optional</em> for any computation, whereas inputs <em>must</em> be provided
 for a computation to proceed. You will likely want outputs as for a pipeline to be useful it
 should produce some materialization that outlives the computation.</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="hll"><span class="nd">@output_selector_schema</span><span class="p">(</span>
-</span>    <span class="n">NamedSelector</span><span class="p">(</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="hll"><span class="k">def</span> <span class="nf">dict_without_keys</span><span class="p">(</span><span class="n">ddict</span><span class="p">,</span> <span class="o">*</span><span class="n">keys</span><span class="p">):</span>
+</span>    <span class="k">return</span> <span class="p">{</span><span class="n">key</span><span class="p">:</span> <span class="n">value</span> <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">ddict</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="n">key</span> <span class="ow">not</span> <span class="ow">in</span> <span class="nb">set</span><span class="p">(</span><span class="n">keys</span><span class="p">)}</span>
+
+
+<span class="nd">@output_selector_schema</span><span class="p">(</span>
+    <span class="n">NamedSelector</span><span class="p">(</span>
         <span class="s1">&#39;DataFrameOutputSchema&#39;</span><span class="p">,</span>
         <span class="p">{</span>
             <span class="s1">&#39;csv&#39;</span><span class="p">:</span> <span class="n">define_csv_dict_field</span><span class="p">(),</span>
@@ -25716,13 +25720,9 @@ should produce some materialization that outlives the computation.</p>
 
     <span class="k">if</span> <span class="n">file_type</span> <span class="o">==</span> <span class="s1">&#39;csv&#39;</span><span class="p">:</span>
         <span class="n">path</span> <span class="o">=</span> <span class="n">file_options</span><span class="p">[</span><span class="s1">&#39;path&#39;</span><span class="p">]</span>
-        <span class="k">del</span> <span class="n">file_options</span><span class="p">[</span><span class="s1">&#39;path&#39;</span><span class="p">]</span>
-        <span class="k">return</span> <span class="n">pandas_df</span><span class="o">.</span><span class="n">to_csv</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="o">**</span><span class="n">file_options</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">pandas_df</span><span class="o">.</span><span class="n">to_csv</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="o">**</span><span class="n">dict_without_keys</span><span class="p">(</span><span class="n">file_options</span><span class="p">,</span> <span class="s1">&#39;path&#39;</span><span class="p">))</span>
     <span class="k">elif</span> <span class="n">file_type</span> <span class="o">==</span> <span class="s1">&#39;parquet&#39;</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">pandas_df</span><span class="o">.</span><span class="n">to_parquet</span><span class="p">(</span><span class="n">file_options</span><span class="p">[</span><span class="s1">&#39;path&#39;</span><span class="p">])</span>
-    <span class="k">elif</span> <span class="n">file_type</span> <span class="o">==</span> <span class="s1">&#39;table&#39;</span><span class="p">:</span>
-        <span class="k">return</span> <span class="n">pandas_df</span><span class="o">.</span><span class="n">to_csv</span><span class="p">(</span><span class="n">file_options</span><span class="p">[</span><span class="s1">&#39;path&#39;</span><span class="p">],</span> <span class="n">sep</span><span class="o">=</span><span class="s1">&#39;</span><span class="se">\\t</span><span class="s1">&#39;</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
-    <span class="k">else</span><span class="p">:</span>
 </pre></div>
 </div>
 <p>This has a similar aesthetic to an input schema but performs a different function. Notice that
@@ -25730,15 +25730,15 @@ it takes a third argument, <cite>pandas_df</cite> (it can be named anything), th
 outputted from the solid in question. It then takes the configuration data as “instructions” as to
 how to materialize the value.</p>
 <p>One connects the output schema to the type as follows:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>            <span class="s1">&#39;Unsupported file_type </span><span class="si">{file_type}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">file_type</span><span class="o">=</span><span class="n">file_type</span><span class="p">)</span>
+        <span class="p">)</span>
+
 
 <span class="n">DataFrame</span> <span class="o">=</span> <span class="n">as_dagster_type</span><span class="p">(</span>
     <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span>
     <span class="n">name</span><span class="o">=</span><span class="s1">&#39;PandasDataFrame&#39;</span><span class="p">,</span>
-    <span class="n">description</span><span class="o">=</span><span class="s1">&#39;&#39;&#39;Two-dimensional size-mutable, potentially heterogeneous</span>
-<span class="s1">    tabular data structure with labeled axes (rows and columns).</span>
-<span class="hll"><span class="s1">    See http://pandas.pydata.org/&#39;&#39;&#39;</span><span class="p">,</span>
-</span>    <span class="n">input_schema</span><span class="o">=</span><span class="n">dataframe_input_schema</span><span class="p">,</span>
+<span class="hll">    <span class="n">description</span><span class="o">=</span><span class="s1">&#39;&#39;&#39;Two-dimensional size-mutable, potentially heterogeneous</span>
+</span><span class="s1">    tabular data structure with labeled axes (rows and columns).</span>
 </pre></div>
 </div>
 <p>Now we can provide a list of materializations to a given execution.</p>

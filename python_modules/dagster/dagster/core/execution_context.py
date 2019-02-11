@@ -28,12 +28,14 @@ from dagster import check
 from dagster.utils import merge_dicts
 from dagster.utils.logging import INFO, define_colored_console_logger
 
+
 from .definitions.expectation import ExpectationDefinition
 from .definitions.input import InputDefinition
 from .definitions.output import OutputDefinition
 from .events import ExecutionEvents
-from .types.marshal import PersistenceStrategy
 from .log import DagsterLog
+from .system_config.objects import EnvironmentConfig
+from .types.marshal import PersistenceStrategy
 
 
 class ExecutionContext(namedtuple('_ExecutionContext', 'loggers resources tags')):
@@ -249,13 +251,19 @@ class PipelineExecutionContextData(
             cls,
             run_id=check.str_param(run_id, 'run_id'),
             resources=resources,
-            environment_config=check.dict_param(environment_config, 'environment_config'),
+            environment_config=check.inst_param(
+                environment_config, 'environment_config', EnvironmentConfig
+            ),
             persistence_strategy=check.inst_param(
                 persistence_strategy, 'persistence_strategy', PersistenceStrategy
             ),
             pipeline_def=check.inst_param(pipeline_def, 'pipeline_def', PipelineDefinition),
             event_callback=check.opt_callable_param(event_callback, 'event_callback'),
         )
+
+    @property
+    def environment_dict(self):
+        return self.environment_config.original_config_dict
 
 
 class PipelineExecutionContext(object):
@@ -285,6 +293,10 @@ class PipelineExecutionContext(object):
     @property
     def run_id(self):
         return self._pipeline_context_data.run_id
+
+    @property
+    def environment_dict(self):
+        return self._pipeline_context_data.environment_dict
 
     @property
     def environment_config(self):
@@ -340,9 +352,9 @@ class StepExecutionContext(PipelineExecutionContext):
         self._step = check.inst_param(step, 'step', ExecutionStep)
         super(StepExecutionContext, self).__init__(pipeline_context_data, tags, log)
 
-    def for_transform(self, solid_config):
+    def for_transform(self):
         return TransformExecutionContext(
-            self._pipeline_context_data, self.tags, self.log, self.step, solid_config
+            self._pipeline_context_data, self.tags, self.log, self.step
         )
 
     def for_expectation(self, inout_def, expectation_def):
@@ -364,20 +376,15 @@ class StepExecutionContext(PipelineExecutionContext):
 
 
 class TransformExecutionContext(StepExecutionContext, AbstractTransformExecutionContext):
-    __slots__ = ['_solid_config']
-
-    def __init__(self, pipeline_context_data, tags, log, step, solid_config):
-        self._solid_config = solid_config
-        super(TransformExecutionContext, self).__init__(pipeline_context_data, tags, log, step)
-
     @property
     def solid_config(self):
-        return self._solid_config
+        solid_config = self.environment_config.solids.get(self.solid.name)
+        return solid_config.config if solid_config else None
 
     @property
     def config(self):
         _warn_about_config_property()
-        return self._solid_config
+        return self.solid_config
 
 
 class ExpectationExecutionContext(StepExecutionContext):

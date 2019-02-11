@@ -372,7 +372,7 @@ def test_solid_list_config():
     )
 
     result = execute_pipeline(
-        pipeline_def, environment={'solids': {'solid_list_config': {'config': value}}}
+        pipeline_def, environment_dict={'solids': {'solid_list_config': {'config': value}}}
     )
 
     assert result.success
@@ -406,18 +406,20 @@ def test_multilevel_default_handling():
     )
 
     assert execute_pipeline(pipeline_def).success
-    assert execute_pipeline(pipeline_def, environment=None).success
-    assert execute_pipeline(pipeline_def, environment={}).success
-    assert execute_pipeline(pipeline_def, environment={'solids': None}).success
-    assert execute_pipeline(pipeline_def, environment={'solids': {}}).success
+    assert execute_pipeline(pipeline_def, environment_dict=None).success
+    assert execute_pipeline(pipeline_def, environment_dict={}).success
+    assert execute_pipeline(pipeline_def, environment_dict={'solids': None}).success
+    assert execute_pipeline(pipeline_def, environment_dict={'solids': {}}).success
     assert execute_pipeline(
-        pipeline_def, environment={'solids': {'has_default_value': None}}
+        pipeline_def, environment_dict={'solids': {'has_default_value': None}}
     ).success
 
-    assert execute_pipeline(pipeline_def, environment={'solids': {'has_default_value': {}}}).success
+    assert execute_pipeline(
+        pipeline_def, environment_dict={'solids': {'has_default_value': {}}}
+    ).success
 
     assert execute_pipeline(
-        pipeline_def, environment={'solids': {'has_default_value': {'config': 234}}}
+        pipeline_def, environment_dict={'solids': {'has_default_value': {'config': 234}}}
     ).success
 
 
@@ -459,7 +461,7 @@ def test_root_extra_field():
     with pytest.raises(PipelineConfigEvaluationError) as pe_info:
         execute_pipeline(
             pipeline_def,
-            environment={'solids': {'required_int_solid': {'config': 948594}}, 'nope': None},
+            environment_dict={'solids': {'required_int_solid': {'config': 948594}}, 'nope': None},
         )
 
     pe = pe_info.value
@@ -478,7 +480,7 @@ def test_deeper_path():
 
     with pytest.raises(PipelineConfigEvaluationError) as pe_info:
         execute_pipeline(
-            pipeline_def, environment={'solids': {'required_int_solid': {'config': 'asdf'}}}
+            pipeline_def, environment_dict={'solids': {'required_int_solid': {'config': 'asdf'}}}
         )
 
     pe = pe_info.value
@@ -498,7 +500,7 @@ def test_working_list_path():
     pipeline_def = PipelineDefinition(name='list_path', solids=[required_list_int_solid])
 
     result = execute_pipeline(
-        pipeline_def, environment={'solids': {'required_list_int_solid': {'config': [1, 2]}}}
+        pipeline_def, environment_dict={'solids': {'required_list_int_solid': {'config': [1, 2]}}}
     )
 
     assert result.success
@@ -518,7 +520,7 @@ def test_item_error_list_path():
     with pytest.raises(PipelineConfigEvaluationError) as pe_info:
         execute_pipeline(
             pipeline_def,
-            environment={'solids': {'required_list_int_solid': {'config': [1, 'nope']}}},
+            environment_dict={'solids': {'required_list_int_solid': {'config': [1, 'nope']}}},
         )
 
     pe = pe_info.value
@@ -551,7 +553,7 @@ def test_context_selector_working():
     )
 
     result = execute_pipeline(
-        pipeline_def, environment={'context': {'context_required_int': {'config': 32}}}
+        pipeline_def, environment_dict={'context': {'context_required_int': {'config': 32}}}
     )
 
     assert result.success
@@ -579,7 +581,7 @@ def test_context_selector_extra_context():
     with pytest.raises(PipelineConfigEvaluationError) as pe_info:
         execute_pipeline(
             pipeline_def,
-            environment={
+            environment_dict={
                 'context': {
                     'context_required_int': {'config': 32},
                     'extra_context': {'config': None},
@@ -612,7 +614,9 @@ def test_context_selector_wrong_name():
     )
 
     with pytest.raises(PipelineConfigEvaluationError) as pe_info:
-        execute_pipeline(pipeline_def, environment={'context': {'wrong_name': {'config': None}}})
+        execute_pipeline(
+            pipeline_def, environment_dict={'context': {'wrong_name': {'config': None}}}
+        )
 
     pe = pe_info.value
     cse = pe.errors[0]
@@ -639,7 +643,7 @@ def test_context_selector_none_given():
     )
 
     with pytest.raises(PipelineConfigEvaluationError) as pe_info:
-        execute_pipeline(pipeline_def, environment={'context': None})
+        execute_pipeline(pipeline_def, environment_dict={'context': None})
 
     pe = pe_info.value
     cse = pe.errors[0]
@@ -657,7 +661,7 @@ def test_multilevel_good_error_handling_solids():
     )
 
     with pytest.raises(PipelineConfigEvaluationError) as pe_info:
-        execute_pipeline(pipeline_def, environment={'solids': None})
+        execute_pipeline(pipeline_def, environment_dict={'solids': None})
 
     assert (
         'Missing required field  "good_error_handling" at path root:solids Expected: '
@@ -675,7 +679,7 @@ def test_multilevel_good_error_handling_solid_name_solids():
     )
 
     with pytest.raises(PipelineConfigEvaluationError) as pe_info:
-        execute_pipeline(pipeline_def, environment={'solids': {'good_error_handling': {}}})
+        execute_pipeline(pipeline_def, environment_dict={'solids': {'good_error_handling': {}}})
 
     assert (
         'Missing required field  "config" at path root:solids:good_error_handling Expected: '
@@ -693,5 +697,5 @@ def test_multilevel_good_error_handling_config_solids_name_solids():
     )
 
     execute_pipeline(
-        pipeline_def, environment={'solids': {'good_error_handling': {'config': None}}}
+        pipeline_def, environment_dict={'solids': {'good_error_handling': {'config': None}}}
     )

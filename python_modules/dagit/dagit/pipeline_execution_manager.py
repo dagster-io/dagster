@@ -7,16 +7,11 @@ import sys
 import time
 
 import gevent
+import six
 
 from dagster import check, ExecutionMetadata, PipelineDefinition
-from dagster.core.execution import (
-    create_typed_environment,
-    execute_pipeline_with_metadata,
-    get_subset_pipeline,
-)
+from dagster.core.execution import execute_pipeline_with_metadata, get_subset_pipeline
 from dagster.core.events import PipelineEventRecord, EventType
-from dagster.core.types.evaluator import evaluate_config_value
-from dagster.core.definitions.environment_configs import construct_environment_config
 from dagster.utils.error import serializable_error_info_from_exc_info, SerializableErrorInfo
 from dagster.utils.logging import level_from_string
 
@@ -24,7 +19,7 @@ from .pipeline_run_storage import PipelineRun
 
 
 class PipelineExecutionManager(object):
-    def execute_pipeline(self, repository_container, pipeline, pipeline_run):
+    def execute_pipeline(self, repository_container, pipeline, pipeline_run, throw_on_user_error):
         raise NotImplementedError()
 
 
@@ -87,18 +82,21 @@ class PipelineProcessStartedEvent(PipelineEventRecord):
 
 
 class SynchronousExecutionManager(PipelineExecutionManager):
-    def execute_pipeline(self, repository_container, pipeline, pipeline_run):
+    def execute_pipeline(self, repository_container, pipeline, pipeline_run, throw_on_user_error):
         check.inst_param(pipeline, 'pipeline', PipelineDefinition)
         try:
             return execute_pipeline_with_metadata(
                 pipeline,
-                create_typed_environment(pipeline, pipeline_run.config),
+                pipeline_run.config,
                 execution_metadata=ExecutionMetadata(
                     pipeline_run.run_id, event_callback=pipeline_run.handle_new_event
                 ),
-                throw_on_user_error=False,
+                throw_on_user_error=throw_on_user_error,
             )
         except:  # pylint: disable=W0702
+            if throw_on_user_error:
+                six.reraise(*sys.exc_info())
+
             pipeline_run.handle_new_event(
                 build_synthetic_pipeline_error_record(
                     pipeline_run.run_id,
@@ -216,7 +214,12 @@ class MultiprocessingExecutionManager(PipelineExecutionManager):
                     return True
             gevent.sleep(0.1)
 
-    def execute_pipeline(self, repository_container, pipeline, pipeline_run):
+    def execute_pipeline(self, repository_container, pipeline, pipeline_run, throw_on_user_error):
+        check.invariant(
+            throw_on_user_error is False,
+            'Multiprocessing execute_pipeline does not rethrow user error',
+        )
+
         message_queue = self._multiprocessing_context.Queue()
         p = self._multiprocessing_context.Process(
             target=execute_pipeline_through_queue,
@@ -266,19 +269,13 @@ def execute_pipeline_through_queue(
         )
         return
 
-    pipeline = repository_container.repository.get_pipeline(pipeline_name)
-    pipeline = get_subset_pipeline(pipeline, pipeline_solid_subset)
-
-    typed_environment = construct_environment_config(
-        evaluate_config_value(pipeline.environment_type, config).value
+    pipeline = get_subset_pipeline(
+        repository_container.repository.get_pipeline(pipeline_name), pipeline_solid_subset
     )
 
     try:
         result = execute_pipeline_with_metadata(
-            pipeline,
-            typed_environment,
-            execution_metadata=execution_metadata,
-            throw_on_user_error=False,
+            pipeline, config, execution_metadata=execution_metadata, throw_on_user_error=False
         )
         return result
     except:  # pylint: disable=W0702

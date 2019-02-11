@@ -1,11 +1,11 @@
 from dagster import check
 
 from dagster.core.definitions import Solid, OutputDefinition
+from dagster.core.execution_context import PipelineExecutionContext
 
 from dagster.core.types.runtime import RuntimeType
 
 from .objects import (
-    ExecutionPlanInfo,
     ExecutionStep,
     ExecutionValueSubplan,
     PlanBuilder,
@@ -42,14 +42,16 @@ def configs_for_output(solid, solid_config, output_def):
             yield output_spec
 
 
-def decorate_with_output_materializations(execution_info, plan_builder, solid, output_def, subplan):
-    check.inst_param(execution_info, 'execution_info', ExecutionPlanInfo)
+def decorate_with_output_materializations(
+    pipeline_context, plan_builder, solid, output_def, subplan
+):
+    check.inst_param(pipeline_context, 'pipeline_context', PipelineExecutionContext)
     check.inst_param(plan_builder, 'plan_builder', PlanBuilder)
     check.inst_param(solid, 'solid', Solid)
     check.inst_param(output_def, 'output_def', OutputDefinition)
     check.inst_param(subplan, 'subplan', ExecutionValueSubplan)
 
-    solid_config = execution_info.environment.solids.get(solid.name)
+    solid_config = pipeline_context.environment_config.solids.get(solid.name)
 
     if not (solid_config and solid_config.outputs):
         return subplan

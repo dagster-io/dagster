@@ -54,7 +54,7 @@ def test_single_templated_sql_solid_single_table_with_api():
 
     environment = {'solids': {'sum_table_transform': {'config': {'sum_table': sum_table_arg}}}}
 
-    result = execute_pipeline(pipeline, environment=environment)
+    result = execute_pipeline(pipeline, environment_dict=environment)
     assert result.success
 
     assert _load_table(result.context, sum_table_arg) == [(1, 2, 3), (3, 4, 7)]
@@ -81,7 +81,7 @@ def test_single_templated_sql_solid_double_table_raw_api():
         }
     }
 
-    result = execute_pipeline(pipeline, environment=environment)
+    result = execute_pipeline(pipeline, environment_dict=environment)
     assert result.success
 
     assert _load_table(result.context, sum_table_arg) == [(1, 2, 3), (3, 4, 7)]
@@ -108,7 +108,7 @@ def test_single_templated_sql_solid_double_table_with_api():
         }
     }
 
-    result = execute_pipeline(pipeline, environment=environment)
+    result = execute_pipeline(pipeline, environment_dict=environment)
     assert result.success
 
     assert _load_table(result.context, sum_table_arg) == [(1, 2, 3), (3, 4, 7)]
@@ -157,7 +157,7 @@ def test_templated_sql_solid_pipeline():
         }
     }
 
-    first_result = execute_pipeline(pipeline, environment=environment_one)
+    first_result = execute_pipeline(pipeline, environment_dict=environment_one)
     assert first_result.success
 
     assert len(first_result.result_list) == 2
@@ -185,7 +185,7 @@ def test_templated_sql_solid_pipeline():
 
     environment_two = {'solids': {'sum_sq_table': {'config': sum_sq_args}}}
 
-    second_result = execute_pipeline(pipeline_two, environment=environment_two)
+    second_result = execute_pipeline(pipeline_two, environment_dict=environment_two)
     assert second_result.success
     assert len(second_result.result_list) == 2
     assert _load_table(second_result.context, second_sum_sq_table) == [(1, 2, 3, 9), (3, 4, 7, 49)]
@@ -205,7 +205,7 @@ def test_templated_sql_solid_with_api():
 
     environment = {'solids': {'sum_solid': {'config': {'sum_table': sum_table_arg}}}}
 
-    result = execute_pipeline(pipeline, environment=environment)
+    result = execute_pipeline(pipeline, environment_dict=environment)
     assert result.success
 
     assert _load_table(result.context, sum_table_arg) == [(1, 2, 3), (3, 4, 7)]
@@ -232,7 +232,7 @@ def test_with_from_through_specifying_all_solids():
         }
     }
 
-    pipeline_result = execute_pipeline(pipeline, environment=environment)
+    pipeline_result = execute_pipeline(pipeline, environment_dict=environment)
     assert len(pipeline_result.result_list) == 3
     assert _load_table(pipeline_result.context, first_sum_table) == [(1, 2, 3), (3, 4, 7)]
     assert _load_table(pipeline_result.context, first_mult_table) == [(1, 2, 2), (3, 4, 12)]
@@ -260,7 +260,7 @@ def test_multi_input_partial_execution():
         }
     }
 
-    first_pipeline_result = execute_pipeline(pipeline, environment=environment)
+    first_pipeline_result = execute_pipeline(pipeline, environment_dict=environment)
 
     assert first_pipeline_result.success
     assert len(first_pipeline_result.result_list) == 3

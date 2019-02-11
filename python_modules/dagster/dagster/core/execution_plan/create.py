@@ -9,7 +9,7 @@ from dagster.core.definitions import (
 
 from dagster.core.errors import DagsterInvariantViolationError, DagsterInvalidSubplanExecutionError
 
-from dagster.core.execution_context import ExecutionMetadata
+from dagster.core.execution_context import ExecutionMetadata, PipelineExecutionContext
 
 from .expectations import create_expectations_subplan, decorate_with_expectations
 
@@ -19,7 +19,6 @@ from .materialization_thunk import decorate_with_output_materializations
 
 from .objects import (
     ExecutionPlan,
-    ExecutionPlanInfo,
     ExecutionStep,
     ExecutionValueSubplan,
     PlanBuilder,
@@ -33,38 +32,25 @@ from .plan_subset import ExecutionPlanSubsetInfo, ExecutionPlanAddedOutputs
 from .transform import create_transform_step
 
 
-def get_solid_user_config(execution_info, pipeline_solid):
-    check.inst_param(execution_info, 'execution_info', ExecutionPlanInfo)
-    check.inst_param(pipeline_solid, 'pipeline_solid', Solid)
-
-    name = pipeline_solid.name
-    solid_configs = execution_info.environment.solids
-    return solid_configs[name].config if name in solid_configs else None
-
-
 def create_execution_plan_core(
-    execution_info, execution_metadata, subset_info=None, added_outputs=None
+    pipeline_context, execution_metadata, subset_info=None, added_outputs=None
 ):
-    check.inst_param(execution_info, 'execution_info', ExecutionPlanInfo)
+    check.inst_param(pipeline_context, 'pipeline_context', PipelineExecutionContext)
     check.inst_param(execution_metadata, 'execution_metadata', ExecutionMetadata)
     check.opt_inst_param(subset_info, 'subset_info', ExecutionPlanSubsetInfo)
     check.opt_inst_param(added_outputs, 'added_output', ExecutionPlanAddedOutputs)
 
     plan_builder = PlanBuilder(
-        pipeline_name=execution_info.pipeline.name, initial_tags=execution_metadata.tags
+        pipeline_name=pipeline_context.pipeline_def.name, initial_tags=execution_metadata.tags
     )
 
-    for solid in solids_in_topological_order(execution_info.pipeline):
+    for solid in solids_in_topological_order(pipeline_context.pipeline_def):
 
         with plan_builder.push_tags(solid=solid.name, solid_definition=solid.definition.name):
-            step_inputs = create_step_inputs(execution_info, plan_builder, solid)
+            step_inputs = create_step_inputs(pipeline_context, plan_builder, solid)
 
             solid_transform_step = create_transform_step(
-                execution_info,
-                plan_builder,
-                solid,
-                step_inputs,
-                get_solid_user_config(execution_info, solid),
+                pipeline_context, plan_builder, solid, step_inputs
             )
 
             plan_builder.steps.append(solid_transform_step)
@@ -72,7 +58,7 @@ def create_execution_plan_core(
             for output_def in solid.definition.output_defs:
                 with plan_builder.push_tags(output=output_def.name):
                     subplan = create_subplan_for_output(
-                        execution_info, plan_builder, solid, solid_transform_step, output_def
+                        pipeline_context, plan_builder, solid, solid_transform_step, output_def
                     )
                     plan_builder.steps.extend(subplan.steps)
 
@@ -85,7 +71,7 @@ def create_execution_plan_core(
 
     if subset_info:
         return _create_augmented_subplan(
-            execution_info, plan_builder, execution_plan, subset_info, added_outputs
+            pipeline_context, plan_builder, execution_plan, subset_info, added_outputs
         )
     else:
         return execution_plan
@@ -115,15 +101,15 @@ def create_execution_plan_from_steps(steps):
 
 
 def create_subplan_for_input(
-    execution_info, plan_builder, solid, prev_step_output_handle, input_def
+    pipeline_context, plan_builder, solid, prev_step_output_handle, input_def
 ):
-    check.inst_param(execution_info, 'execution_info', ExecutionPlanInfo)
+    check.inst_param(pipeline_context, 'pipeline_context', PipelineExecutionContext)
     check.inst_param(plan_builder, 'plan_builder', PlanBuilder)
     check.inst_param(solid, 'solid', Solid)
     check.inst_param(prev_step_output_handle, 'prev_step_output_handle', StepOutputHandle)
     check.inst_param(input_def, 'input_def', InputDefinition)
 
-    if execution_info.environment.expectations.evaluate and input_def.expectations:
+    if pipeline_context.environment_config.expectations.evaluate and input_def.expectations:
         return create_expectations_subplan(
             plan_builder, solid, input_def, prev_step_output_handle, kind=StepKind.INPUT_EXPECTATION
         )
@@ -132,35 +118,35 @@ def create_subplan_for_input(
 
 
 def create_subplan_for_output(
-    execution_info, plan_builder, solid, solid_transform_step, output_def
+    pipeline_context, plan_builder, solid, solid_transform_step, output_def
 ):
-    check.inst_param(execution_info, 'execution_info', ExecutionPlanInfo)
+    check.inst_param(pipeline_context, 'pipeline_context', PipelineExecutionContext)
     check.inst_param(plan_builder, 'plan_builder', PlanBuilder)
     check.inst_param(solid, 'solid', Solid)
     check.inst_param(solid_transform_step, 'solid_transform_step', ExecutionStep)
     check.inst_param(output_def, 'output_def', OutputDefinition)
 
     subplan = decorate_with_expectations(
-        execution_info, plan_builder, solid, solid_transform_step, output_def
+        pipeline_context, plan_builder, solid, solid_transform_step, output_def
     )
 
     return decorate_with_output_materializations(
-        execution_info, plan_builder, solid, output_def, subplan
+        pipeline_context, plan_builder, solid, output_def, subplan
     )
 
 
-def get_input_source_step_handle(execution_info, plan_builder, solid, input_def):
-    check.inst_param(execution_info, 'execution_info', ExecutionPlanInfo)
+def get_input_source_step_handle(pipeline_context, plan_builder, solid, input_def):
+    check.inst_param(pipeline_context, 'pipeline_context', PipelineExecutionContext)
     check.inst_param(plan_builder, 'plan_builder', PlanBuilder)
     check.inst_param(solid, 'solid', Solid)
     check.inst_param(input_def, 'input_def', InputDefinition)
 
     input_handle = solid.input_handle(input_def.name)
-    solid_config = execution_info.environment.solids.get(solid.name)
-    dependency_structure = execution_info.pipeline.dependency_structure
+    solid_config = pipeline_context.environment_config.solids.get(solid.name)
+    dependency_structure = pipeline_context.pipeline_def.dependency_structure
     if solid_config and input_def.name in solid_config.inputs:
         input_thunk_output_handle = create_input_thunk_execution_step(
-            execution_info, plan_builder, solid, input_def, solid_config.inputs[input_def.name]
+            pipeline_context, plan_builder, solid, input_def, solid_config.inputs[input_def.name]
         )
         plan_builder.steps.append(input_thunk_output_handle.step)
         return input_thunk_output_handle
@@ -174,15 +160,15 @@ def get_input_source_step_handle(execution_info, plan_builder, solid, input_def)
                 'must get a value either (a) from a dependency or (b) from the '
                 'inputs section of its configuration.'
             ).format(
-                pipeline_name=execution_info.pipeline.name,
+                pipeline_name=pipeline_context.pipeline.name,
                 solid_name=solid.name,
                 input_name=input_def.name,
             )
         )
 
 
-def create_step_inputs(execution_info, plan_builder, solid):
-    check.inst_param(execution_info, 'execution_info', ExecutionPlanInfo)
+def create_step_inputs(pipeline_context, plan_builder, solid):
+    check.inst_param(pipeline_context, 'pipeline_context', PipelineExecutionContext)
     check.inst_param(plan_builder, 'plan_builder', PlanBuilder)
     check.inst_param(solid, 'solid', Solid)
 
@@ -191,11 +177,11 @@ def create_step_inputs(execution_info, plan_builder, solid):
     for input_def in solid.definition.input_defs:
         with plan_builder.push_tags(input=input_def.name):
             prev_step_output_handle = get_input_source_step_handle(
-                execution_info, plan_builder, solid, input_def
+                pipeline_context, plan_builder, solid, input_def
             )
 
             subplan = create_subplan_for_input(
-                execution_info, plan_builder, solid, prev_step_output_handle, input_def
+                pipeline_context, plan_builder, solid, prev_step_output_handle, input_def
             )
 
             plan_builder.steps.extend(subplan.steps)
@@ -209,9 +195,9 @@ def create_step_inputs(execution_info, plan_builder, solid):
 
 
 def _create_augmented_subplan(
-    execution_info, plan_builder, execution_plan, subset_info=None, added_outputs=None
+    pipeline_context, plan_builder, execution_plan, subset_info=None, added_outputs=None
 ):
-    check.inst_param(execution_info, 'execution_info', ExecutionPlanInfo)
+    check.inst_param(pipeline_context, 'pipeline_context', PipelineExecutionContext)
     check.inst_param(plan_builder, 'plan_builder', PlanBuilder)
     check.inst_param(execution_plan, 'execution_plan', ExecutionPlan)
     check.opt_inst_param(subset_info, 'subset_info', ExecutionPlanSubsetInfo)
@@ -231,13 +217,13 @@ def _create_augmented_subplan(
 
     new_plan = create_execution_plan_from_steps(steps)
 
-    return _validate_new_plan(new_plan, subset_info, execution_info)
+    return _validate_new_plan(new_plan, subset_info, pipeline_context)
 
 
-def _validate_new_plan(new_plan, subset_info, execution_info):
+def _validate_new_plan(new_plan, subset_info, pipeline_context):
     check.inst_param(new_plan, 'new_plan', ExecutionPlan)
     check.opt_inst_param(subset_info, 'subset_info', ExecutionPlanSubsetInfo)
-    check.inst_param(execution_info, 'execution_info', ExecutionPlanInfo)
+    check.inst_param(pipeline_context, 'pipeline_context', PipelineExecutionContext)
 
     for step in new_plan.steps:
         for step_input in step.step_inputs:
@@ -256,12 +242,12 @@ def _validate_new_plan(new_plan, subset_info, execution_info):
                         'with step_keys {step_keys}. You have failed to provide the required input '
                         '{input_name} for step {step_key}.'
                     ).format(
-                        pipeline_name=execution_info.pipeline.name,
+                        pipeline_name=pipeline_context.pipeline_def.name,
                         step_keys=list(subset_info.subset),
                         input_name=step_input.name,
                         step_key=step.key,
                     ),
-                    pipeline_name=execution_info.pipeline.name,
+                    pipeline_name=pipeline_context.pipeline_def.name,
                     step_keys=list(subset_info.subset),
                     input_name=step_input.name,
                     step_key=step.key,
