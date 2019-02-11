@@ -1,3 +1,20 @@
+'''
+This module defines the different notions of context passed to user code during pipeline
+execution. There are currently four types of contexts defined:
+
+1) PipelineExecutionContext
+2) StepExecutionContext
+3) TransformExecutionContext
+4) ExpectationExecutionContext
+
+They inherit from eac hother in reverse order. They are also relatively lightweight
+objects, and a new one is created for every invocation into user space.
+
+Additionally in order to maintain backwards compat (where info.context used to rule the day)
+we have a separate class LegacyContextAdapter which can be easily deleted once we break
+that API guarantee in 0.4.0.
+'''
+
 from abc import ABCMeta, abstractproperty, abstractmethod
 from collections import namedtuple
 import logging
@@ -20,6 +37,12 @@ from .log import DagsterLog
 
 
 class ExecutionContext(namedtuple('_ExecutionContext', 'loggers resources tags')):
+    '''
+    The user-facing object in the context creation function. The user constructs
+    this in order to effect the context creation process. This could be named
+    PipelineExecutionContextCreationData although that seemed excessively verbose.
+    '''
+
     def __new__(cls, loggers=None, resources=None, tags=None):
         return super(ExecutionContext, cls).__new__(
             cls,
@@ -195,9 +218,9 @@ class TransformExecutionContextMetadata(six.with_metaclass(ABCMeta)):  # pylint:
         pass
 
 
-class PipelineContextData(
+class PipelineExecutionContextData(
     namedtuple(
-        '_PipelineContextData',
+        '_PipelineExecutionContextData',
         'run_id resources environment_config persistence_strategy pipeline_def event_callback',
     )
 ):
@@ -217,7 +240,7 @@ class PipelineContextData(
     ):
         from .definitions.pipeline import PipelineDefinition
 
-        return super(PipelineContextData, cls).__new__(
+        return super(PipelineExecutionContextData, cls).__new__(
             cls,
             run_id=check.str_param(run_id, 'run_id'),
             resources=resources,
@@ -235,7 +258,7 @@ class PipelineExecutionContext(object):
 
     def __init__(self, pipeline_context_data, tags, log):
         self._pipeline_context_data = check.inst_param(
-            pipeline_context_data, 'pipeline_context_data', PipelineContextData
+            pipeline_context_data, 'pipeline_context_data', PipelineExecutionContextData
         )
         self._tags = check.dict_param(tags, 'tags')
         self._log = check.inst_param(log, 'log', DagsterLog) if log else DEFAULT_LOGGERS

@@ -31,7 +31,7 @@ class EventType(Enum):
     EXECUTION_PLAN_STEP_START = 'EXECUTION_PLAN_STEP_START'
     EXECUTION_PLAN_STEP_FAILURE = 'EXECUTION_PLAN_STEP_FAILURE'
 
-    STEP_MATERIALIAZATION = 'STEP_MATERIALIZATION'
+    STEP_MATERIALIZATION = 'STEP_MATERIALIZATION'
 
     UNCATEGORIZED = 'UNCATEGORIZED'
 
@@ -103,7 +103,7 @@ class ExecutionEvents(namedtuple('_ExecutionEvents', 'pipeline_name log')):
             'Step {step_key} produced materialization of {name} at {loc}'.format(
                 step_key=step_key, name=file_name, loc=file_location
             ),
-            event_type=EventType.STEP_MATERIALIAZATION.value,
+            event_type=EventType.STEP_MATERIALIZATION.value,
             step_key=step_key,
             file_name=file_name,
             file_location=file_location,
@@ -275,7 +275,7 @@ EVENT_CLS_LOOKUP = {
     EventType.PIPELINE_START: PipelineEventRecord,
     EventType.PIPELINE_SUCCESS: PipelineEventRecord,
     EventType.UNCATEGORIZED: LogMessageRecord,
-    EventType.STEP_MATERIALIAZATION: StepMaterializationRecord,
+    EventType.STEP_MATERIALIZATION: StepMaterializationRecord,
 }
 
 PIPELINE_EVENTS = {EventType.PIPELINE_FAILURE, EventType.PIPELINE_START, EventType.PIPELINE_SUCCESS}

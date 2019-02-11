@@ -14,7 +14,7 @@ class ExecutionEvents()
             msg='Step {step_key} produced materialization of {name} at {loc}'.format(
                 step_key=step_key, name=file_name, loc=file_location
             ),
-            event_type=EventType.STEP_MATERIALIAZATION.value,
+            event_type=EventType.STEP_MATERIALIZATION.value,
             step_key=step_key,
             file_name=file_name,
             file_location=file_location
@@ -41,7 +41,7 @@ We need to make sure `construct_event_record` calls the correct `EventRecord` co
 ```
 EVENT_CLS_LOOKUP = {
     ...
-    EventType.STEP_MATERIALIAZATION: StepMaterializationRecord,
+    EventType.STEP_MATERIALIZATION: StepMaterializationRecord,
 }
 ```
 
@@ -50,7 +50,7 @@ We also need to make sure we add the new event to the `EventType` enum, like bel
 ```
 class EventType(Enum):
     ...
-    STEP_MATERIALIAZATION = 'STEP_MATERIALIZATION'
+    STEP_MATERIALIZATION = 'STEP_MATERIALIZATION'
 ```
 
 We also need to modify the `logger_to_kwargs` function that constructs the kwargs dictionary that gets passed into `StepMaterializationRecord` constructor in `construct_event_record` to add new arguments necesary for the constructor. Notice this should remind us of something we've already done since we're already passed in these parameters as keyword args when we did logging in the function `step_materialization_event` in the `ExecutionEvents()` class, so now we're unpacking these arguments that were stored in the meta information of the logging and re-constructing them in creation of the EventRecord.
@@ -83,7 +83,7 @@ class DauphinStepMaterializationEvent(dauphin.ObjectType):
 The fields `file_name` and `file_location` are fields in the corresponding GraphQL schema for `StepMaterializationEvent`. The interfaces that the event implements define additional fields contained in thos classes. Finally, we need to add code to the `from_dagster_event()` function to actually return an instance of the `DauphinStepMaterializationEvent` class.
 
 ```
-elif event.event_type == EventType.STEP_MATERIALIAZATION:
+elif event.event_type == EventType.STEP_MATERIALIZATION:
     return info.schema.type_named('StepMaterializationEvent')(
         step=info.schema.type_named('ExecutionStep')(
             pipeline_run.execution_plan.get_step_by_key(event.step_key)

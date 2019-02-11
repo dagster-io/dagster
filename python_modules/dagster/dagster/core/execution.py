@@ -38,7 +38,7 @@ from .definitions.environment_configs import construct_environment_config, const
 from .execution_context import (
     ExecutionContext,
     ExecutionMetadata,
-    PipelineContextData,
+    PipelineExecutionContextData,
     PipelineExecutionContext,
 )
 
@@ -381,7 +381,7 @@ def construct_pipeline_execution_context(
     log = DagsterLog(execution_metadata.run_id, tags, loggers)
 
     return PipelineExecutionContext(
-        PipelineContextData(
+        PipelineExecutionContextData(
             pipeline_def=pipeline,
             run_id=execution_metadata.run_id,
             resources=resources,
@@ -451,6 +451,7 @@ def get_resource_or_gen(pipeline_def, context_definition, resource_name, environ
     return resource_def.resource_fn(
         InitResourceContext(
             pipeline_def=pipeline_def,
+            resource_def=resource_def,
             context_config=environment.context.config,
             resource_config=resource_config,
             run_id=run_id,

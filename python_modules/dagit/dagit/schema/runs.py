@@ -276,7 +276,7 @@ class DauphinPipelineRunEvent(dauphin.Union):
                 error=graphene_info.schema.type_named('PythonError')(event.error_graphene_info),
                 **basic_params
             )
-        elif event.event_type == EventType.STEP_MATERIALIAZATION:
+        elif event.event_type == EventType.STEP_MATERIALIZATION:
             return graphene_info.schema.type_named('StepMaterializationEvent')(
                 step=graphene_info.schema.type_named('ExecutionStep')(
                     pipeline_run.execution_plan.get_step_by_key(event.step_key)
