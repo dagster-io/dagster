@@ -236,12 +236,20 @@ class SolidExecutionResult(object):
                 return result.failure_data.dagster_error
 
 
+def check_execution_metadata_param(execution_metadata):
+    return (
+        check.inst_param(execution_metadata, 'execution_metadata', ExecutionMetadata)
+        if execution_metadata
+        else ExecutionMetadata()
+    )
+
+
 def create_execution_plan(
     pipeline, environment_dict=None, execution_metadata=None, subset_info=None
 ):
     check.inst_param(pipeline, 'pipeline', PipelineDefinition)
     environment_dict = check.opt_dict_param(environment_dict, 'environment_dict', key_type=str)
-    execution_metadata = execution_metadata if execution_metadata else ExecutionMetadata()
+    execution_metadata = check_execution_metadata_param(execution_metadata)
     check.inst_param(execution_metadata, 'execution_metadata', ExecutionMetadata)
     check.opt_inst_param(subset_info, 'subset_info', ExecutionPlanSubsetInfo)
 
@@ -249,14 +257,6 @@ def create_execution_plan(
         pipeline, environment_dict, execution_metadata
     ) as pipeline_context:
         return create_execution_plan_core(pipeline_context, execution_metadata, subset_info)
-
-
-def get_event_callback(execution_metadata):
-    check.opt_inst_param(execution_metadata, 'execution_metadata', ExecutionMetadata)
-    if execution_metadata and execution_metadata.event_callback:
-        return check.callable_param(execution_metadata.event_callback, 'event_callback')
-    else:
-        return None
 
 
 def get_tags(user_context_params, execution_metadata, pipeline):
@@ -376,7 +376,7 @@ def construct_pipeline_execution_context(
             pipeline_def=pipeline,
             run_id=execution_metadata.run_id,
             resources=resources,
-            event_callback=get_event_callback(execution_metadata),
+            event_callback=execution_metadata.event_callback,
             environment_config=environment_config,
             persistence_strategy=_create_persistence_strategy(
                 environment_config.context.persistence
@@ -391,11 +391,11 @@ def _create_loggers(execution_metadata, execution_context):
     check.inst_param(execution_metadata, 'execution_metadata', ExecutionMetadata)
     check.inst_param(execution_context, 'execution_context', ExecutionContext)
 
-    if execution_metadata and execution_metadata.event_callback:
+    if execution_metadata.event_callback:
         return execution_context.loggers + [
             construct_event_logger(execution_metadata.event_callback)
         ]
-    elif execution_metadata and execution_metadata.loggers:
+    elif execution_metadata.loggers:
         return execution_context.loggers + execution_metadata.loggers
     else:
         return execution_context.loggers
@@ -455,6 +455,8 @@ def get_resource_or_gen(pipeline_def, context_definition, resource_name, environ
 def _do_iterate_pipeline(pipeline, pipeline_context, execution_metadata, throw_on_user_error=True):
     check.inst_param(pipeline, 'pipeline', PipelineDefinition)
     check.inst_param(pipeline_context, 'context', PipelineExecutionContext)
+    check.inst_param(execution_metadata, 'execution_metadata', ExecutionMetadata)
+    check.bool_param(throw_on_user_error, 'throw_on_user_error')
 
     pipeline_context.events.pipeline_start()
 
@@ -518,8 +520,7 @@ def execute_pipeline_iterator(
     check.inst_param(pipeline, 'pipeline', PipelineDefinition)
     environment_dict = check.opt_dict_param(environment_dict, 'environment_dict')
     check.bool_param(throw_on_user_error, 'throw_on_user_error')
-    execution_metadata = execution_metadata if execution_metadata else ExecutionMetadata()
-    check.inst_param(execution_metadata, 'execution_metadata', ExecutionMetadata)
+    execution_metadata = check_execution_metadata_param(execution_metadata)
     check.opt_list_param(solid_subset, 'solid_subset', of_type=str)
 
     pipeline_to_execute = get_subset_pipeline(pipeline, solid_subset)
@@ -546,6 +547,7 @@ def _process_step_events(pipeline_context, pipeline, step_events):
 
     step_events_by_solid_name = defaultdict(list)
     for step_event in step_events:
+        check.inst(step_event, ExecutionStepEvent)
         step_events_by_solid_name[step_event.step.solid.name].append(step_event)
 
     for solid in solids_in_topological_order(pipeline):
@@ -601,7 +603,7 @@ def execute_externalized_plan(
         check.list_param(output_list, 'outputs_to_marshal', of_type=MarshalledOutput)
 
     environment_dict = check.opt_dict_param(environment_dict, 'environment_dict')
-    check.opt_inst_param(execution_metadata, 'execution_metadata', ExecutionMetadata)
+    execution_metadata = check_execution_metadata_param(execution_metadata)
 
     _check_inputs_to_marshal(execution_plan, inputs_to_marshal)
     _check_outputs_to_marshal(execution_plan, outputs_to_marshal)
@@ -675,8 +677,8 @@ def execute_plan(
     check.inst_param(pipeline, 'pipeline', PipelineDefinition)
     check.inst_param(execution_plan, 'execution_plan', ExecutionPlan)
     environment_dict = check.opt_dict_param(environment_dict, 'environment_dict')
-    execution_metadata = execution_metadata if execution_metadata else ExecutionMetadata()
-    check.opt_inst_param(execution_metadata, 'execution_metadata', ExecutionMetadata)
+
+    execution_metadata = check_execution_metadata_param(execution_metadata)
 
     with yield_pipeline_execution_context(
         pipeline, environment_dict, execution_metadata
@@ -715,8 +717,7 @@ def execute_pipeline(
     check.inst_param(pipeline, 'pipeline', PipelineDefinition)
     environment_dict = check.opt_dict_param(environment_dict, 'environment_dict')
     check.bool_param(throw_on_user_error, 'throw_on_user_error')
-    execution_metadata = execution_metadata if execution_metadata else ExecutionMetadata()
-    check.inst_param(execution_metadata, 'execution_metadata', ExecutionMetadata)
+    execution_metadata = check_execution_metadata_param(execution_metadata)
     check.opt_list_param(solid_subset, 'solid_subset', of_type=str)
 
     pipeline_to_execute = get_subset_pipeline(pipeline, solid_subset)
