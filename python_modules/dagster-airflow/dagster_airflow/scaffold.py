@@ -298,6 +298,7 @@ def _make_editable_scaffold(
         printer.line('HOST_TMP_DIR = \'/tmp/results\'')
         printer.blank_line()
 
+        # This is the canonical way to hide globals from import, but not from Airflow's DagBag
         printer.line('if __name__.startswith(\'unusual_prefix\'):')
         with printer.with_indent():
             printer.line('dag, tasks = make_dag(')
