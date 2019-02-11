@@ -103,6 +103,7 @@ def airflow_test(docker_image, dags_path, plugins_path, host_tmp_dir):
     reload_module(airflow)
 
     from airflow.operators.dagster_plugin import DagsterOperator
+
     del DagsterOperator
 
     return (docker_image, dags_path, host_tmp_dir)

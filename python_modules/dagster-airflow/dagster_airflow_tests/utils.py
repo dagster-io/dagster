@@ -22,6 +22,7 @@ def import_module_from_path(module_name, path_to_file):
 
     return module
 
+
 # https://stackoverflow.com/a/437591/324449
 def reload_module(module):
     version = sys.version_info
