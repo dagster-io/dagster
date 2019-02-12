@@ -36,16 +36,124 @@ The demo defines a single repository with three pipelines, in `airline_demo/pipe
 Once you've installed the requirements, you can run `dagit` from the root of the demo and browse
 the pipelines.
 
+Configuration files for running the demo pipelines are provided under `environments/`. To run the
+pipelines locally, use the configuration files that begin with the prefix `local_`.
+
+To avoid unnecessary duplication, the config that is common to all of the pipelines is factored
+out into `local_base.yml` file. Recall that when running a pipeline using `dagster pipeline execute`
+you can pass more than one yaml file using the `-e` flag, and these will be combined.
+
 ## The download pipeline
 
 ![Download pipeline](img/download_pipeline.png)
 
 The `airline_demo_download_pipeline` models the first stage of most data science workflows, in
-which raw data is consumed from a variety of sources. In practice, these might be files in S3 or
-other cloud storage systems; publicly available datasets downloaded over http; or batch files in an
-SFTP drop.
+which raw data is consumed from a variety of sources. 
 
-For demo purposes, we've put our source files in a 
+For demo purposes, we've put our source files in a publicly-readable S3 repository. In practice,
+these might be files in S3 or other cloud storage systems; publicly available datasets downloaded
+over http; or batch files in an SFTP drop.
+
+Let's start by looking at the pipeline definition (in `airline_demo/pipelines.py`):
+
+    def define_airline_demo_download_pipeline():
+        solids = [download_from_s3, unzip_file]
+        dependencies = {
+            SolidInstance('download_from_s3', alias='download_archives'): {},
+            SolidInstance('unzip_file', alias='unzip_archives'): {
+                'archive_paths': DependencyDefinition('download_archives')
+            },
+            SolidInstance('download_from_s3', alias='download_q2_sfo_weather'): {},
+        }
+
+        return PipelineDefinition(
+            name='airline_demo_download_pipeline',
+            context_definitions=CONTEXT_DEFINITIONS,
+            solids=solids,
+            dependencies=dependencies,
+        )
+
+The first thing to note is that we're relying on `SolidInstance` to build our pipeline by defining
+aliased instances (`download_archives`, `unzip_archives`, `download_q2_sfo_weather`) of
+reusable library solids (`download_from_s3`, `unzip_file`).
+
+In general, you won't want every data science user in your organization to have to roll their own
+implementation of common functionality like downloading and unzipping files. Instead, you'll want to
+abstract common functionality into reusable solids, separating task-specific parameters out into
+declarative config, and building up a library of building blocks for new data pipelines.
+
+Let's take a look at how one of these library solids is defined:
+
+    @solid(
+        name='download_from_s3',
+        config_field=Field(
+            List(
+                Dict(
+                    fields={
+                        # Probably want to make the region configuable too
+                        'bucket': Field(
+                            String, description='The S3 bucket in which to look for the key.'
+                        ),
+                        'key': Field(String, description='The key to download.'),
+                        'skip_if_present': Field(
+                            Bool,
+                            description=(
+                                'If True, and a file already exists at the path described by the '
+                                'target_path config value, if present, or the key, then the solid '
+                                'will no-op.'
+                            ),
+                            default_value=False,
+                            is_optional=True,
+                        ),
+                        'target_path': Field(
+                            Path,
+                            description=(
+                                'If present, specifies the path at which to download the object.'
+                            ),
+                            is_optional=True,
+                        ),
+                    }
+                )
+            )
+        ),
+        description='Downloads an object from S3.',
+        outputs=[
+            OutputDefinition(List(FileExistsAtPath), description='The path to the downloaded object.')
+        ],
+    )
+    def download_from_s3(context):
+        '''Download an object from s3.
+
+        Args:
+            info (ExpectationExecutionInfo): Must expose a boto3 S3 client as its `s3` resource.
+
+        Returns:
+            str:
+                The path to the downloaded object.
+        '''
+        results = []
+        for file_ in context.solid_config:
+            bucket = file_['bucket']
+            key = file_['key']
+            target_path = file_.get('target_path') or key
+
+            if target_path is None:
+                target_path = context.resources.tempfile.tempfile().name
+
+            if file_['skip_if_present'] and safe_isfile(target_path):
+                context.log.info(
+                    'Skipping download, file already present at {target_path}'.format(
+                        target_path=target_path
+                    )
+                )
+            else:
+                if os.path.dirname(target_path):
+                    mkdir_p(os.path.dirname(target_path))
+
+                context.resources.s3.download_file(bucket, key, target_path)
+            results.append(target_path)
+        return results
+
 
 ### Running tests
 You won't want to suppress test output if you want to see loglines from dagster:
