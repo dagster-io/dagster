@@ -174,8 +174,19 @@ def _make_editable_scaffold(
         printer.blank_line()
 
         printer.line(
-            'from {static_scaffold} import make_dag'.format(static_scaffold=static_scaffold)
+            'try:'
         )
+        with printer.with_indent():
+            printer.line(
+                'from {static_scaffold} import make_dag'.format(static_scaffold=static_scaffold)
+            )
+        printer.line(
+            'except ImportError:'
+        )
+        with printer.with_indent():
+            printer.line(
+                'from .{static_scaffold} import make_dag'.format(static_scaffold=static_scaffold)
+            )
         printer.blank_line()
 
         printer.comment(
