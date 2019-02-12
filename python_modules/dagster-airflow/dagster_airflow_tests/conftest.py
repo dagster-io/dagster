@@ -112,6 +112,7 @@ def airflow_test(docker_image, dags_path, plugins_path, host_tmp_dir):
         )
 
         mkdir_p(os.path.abspath(dags_path))
+        sys.path.append(os.path.abspath(dags_path))
 
         created_init_py = False
         init_py_path = os.path.join(os.path.abspath(dags_path), '__init__.py')
@@ -141,9 +142,11 @@ def airflow_test(docker_image, dags_path, plugins_path, host_tmp_dir):
         if temporary_plugin_path is not None:
             shutil.copyfile(temporary_plugin_path, plugin_path)
             os.remove(temporary_plugin_path)
-        
+
         if created_init_py:
             os.remove(init_py_path)
+
+        sys.path = sys.path[:-1]
 
 
 @pytest.fixture(scope='module')

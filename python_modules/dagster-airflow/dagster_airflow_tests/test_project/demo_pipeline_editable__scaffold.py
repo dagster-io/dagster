@@ -18,10 +18,7 @@ it is necessary to make changes to the static file.
 
 import datetime
 
-try:
-    from demo_pipeline_static__scaffold import make_dag
-except ImportError:
-    from .demo_pipeline_static__scaffold import make_dag
+from demo_pipeline_static__scaffold import make_dag
 
 # Arguments to be passed to the ``default_args`` parameter of the ``airflow.DAG`` constructor.You
 # can override these with values of your choice.

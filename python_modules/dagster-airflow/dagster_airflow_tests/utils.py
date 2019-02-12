@@ -32,6 +32,7 @@ def reload_module(module):
         return reload_(module)
     elif version.major >= 3:
         from imp import reload as reload_
+
         return reload_(module)
 
     return reload(module)
