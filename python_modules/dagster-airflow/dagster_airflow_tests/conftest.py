@@ -12,6 +12,7 @@ import airflow.plugins_manager
 import docker
 import pytest
 
+from dagster import check
 from dagster.core.execution import create_execution_plan
 from dagster.utils import load_yaml_from_path, mkdir_p, script_relative_path
 
@@ -53,7 +54,7 @@ def docker_client():
         client = docker.from_env()
         client.info()
     except docker.errors.APIError:
-        raise Exception(
+        check.failed(
             'Couldn\'t find docker at {url} -- is it running?'.format(url=client._url(''))
         )
     return client
@@ -64,7 +65,7 @@ def docker_image(docker_client):
     try:
         docker_client.images.get(IMAGE)
     except docker.errors.ImageNotFound:
-        raise Exception(
+        check.failed(
             'Couldn\'t find docker image {image} required for test: please run the script at '
             '{script_path}'.format(
                 image=IMAGE, script_path=script_relative_path('test_project/build.sh')
@@ -135,8 +136,8 @@ def airflow_test(docker_image, dags_path, plugins_path, host_tmp_dir):
             sys.modules[operators_module.__name__] = operators_module
             globals()[operators_module._name] = operators_module
 
+        # Test that we can now actually import the DagsterOperator
         from airflow.operators.dagster_plugin import DagsterOperator
-
         del DagsterOperator
 
         yield (docker_image, dags_path, host_tmp_dir)
