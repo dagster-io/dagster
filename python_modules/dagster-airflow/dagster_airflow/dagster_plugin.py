@@ -471,7 +471,9 @@ class DagsterOperator(ModifiedDockerOperator):
             if PY3:
                 return super().execute(context)
             else:
-                return super(self.__class__, self).execute(context)  # pylint: disable=bad-super-call
+                return super(self.__class__, self).execute(
+                    context
+                )  # pylint: disable=bad-super-call
         finally:
             self._run_id = None
 

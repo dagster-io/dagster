@@ -169,13 +169,11 @@ def scaffold_dag(airflow_test):
     subprocess.check_output(['python', editable_path])
 
     shutil.copyfile(
-        static_path,
-        os.path.abspath(os.path.join(dags_path, os.path.basename(static_path))),
+        static_path, os.path.abspath(os.path.join(dags_path, os.path.basename(static_path)))
     )
 
     shutil.copyfile(
-        editable_path,
-        os.path.abspath(os.path.join(dags_path, os.path.basename(editable_path))),
+        editable_path, os.path.abspath(os.path.join(dags_path, os.path.basename(editable_path)))
     )
 
     os.remove(static_path)
