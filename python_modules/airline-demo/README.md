@@ -1,7 +1,51 @@
 # Airline demo
-This repository models realistic data download, ingest, and manipulation pipelines in Dagster,
-using real-world airline data. It is intended to exercise the features of the Dagster tooling,
-and as a model for users building their own first production pipelines in the system. 
+This repository is intended as a realistic demo of Dagster's capabilities. It defines three
+realistic data pipelines corresponding to stereotyped download, ingest, and analysis phases of
+typical data science workflows, using real-world airline data. Although the view of the pipelines
+provided by the Dagster tooling is unified, in typical practice we expect that each pipeline is
+likely to be the responsibility of individuals with more or less clearly distinguished roles.
+
+Use the airline demo to familiarize yourself with the features of the Dagster tooling in a more
+fleshed-out context than the introductory tutorial, and as a reference when building your own
+first production pipelines in the system. Comments and suggestions are enthusiastically encouraged!
+
+### Requirements 
+To run the airline demo pipelines locally, you'll need
+
+- An Internet connection
+- AWS credentials in the ordinary [boto3 credential chain](https://boto3.amazonaws.com/v1/documentation/api/latest/guide/configuration.html)
+- An [Apache Spark](https://spark.apache.org/downloads.html) install
+- A running Postgres database available at `postgresql://test:test@127.0.0.1:5432/test`. (A
+  docker-compose file is provided in this repo; run `docker-compose up` from the root of the
+  airline demo.)
+
+Use pip to install the demo's Python requirements:
+
+    pip install -e .
+
+### Pipelines and config
+
+The demo defines a single repository with three pipelines, in `airline_demo/pipelines.py`:
+
+- **airline_demo_download_pipeline** grabs data archives from S3 and unzips them.
+- **airline_demo_ingest_pipeline** reads the raw data into Spark, performs some typical
+  manipulations on the data, and then loads tables into a data warehouse.
+- **airline_demo_warehouse_pipeline** performs typical in-warehouse analysis and manipulations
+  using SQL, and then generates and archives analysis artifacts and plots using Jupyter notebooks.
+
+Once you've installed the requirements, you can run `dagit` from the root of the demo and browse
+the pipelines.
+
+## The download pipeline
+
+![Download pipeline](img/download_pipeline.png)
+
+The `airline_demo_download_pipeline` models the first stage of most data science workflows, in
+which raw data is consumed from a variety of sources. In practice, these might be files in S3 or
+other cloud storage systems; publicly available datasets downloaded over http; or batch files in an
+SFTP drop.
+
+For demo purposes, we've put our source files in a 
 
 ### Running tests
 You won't want to suppress test output if you want to see loglines from dagster:
@@ -13,14 +57,6 @@ identify useful subsets of tests. For instance, to run only those tests that do 
 running Spark cluster, you can run:
 
     pytest -m "not spark"
-
-To run the full test suite, you will need:
-
-- An Internet connection
-- AWS credentials accessible in the normal credential chain
-- A local Spark install
-- A running Postgres at `postgresql://test:test@127.0.0.1:5432/test`. (A docker-compose file is
-  provided in this repo; run `docker-compose up`.)
 
 ### Orchestrating AWS resources
 The pipelines defined in this repository can run against a local Spark cluster
@@ -80,10 +116,7 @@ manually delete the VPC from the console, which will force-delete dependencies.
 - Add config option for Spark running on EMR cluster
 - Document running the pipeline and tests (e.g., postgres requirements)
 - Add expectations
-- Running local Spark tests on Circle is going to require us to create a custom Docker image with
-  both Python and a Java runtime [(!)](https://discuss.circleci.com/t/recommended-way-to-use-multiple-languages-in-2-0/14174/11)
 - Maybe implement templated SQL handling
-- Replace unhelpful stringcase dependency
 - Add sub-DAG tests
 
 ### Issues with general availability
