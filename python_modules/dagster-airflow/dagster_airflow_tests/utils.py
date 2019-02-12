@@ -35,4 +35,4 @@ def reload_module(module):
 
         return reload_(module)
 
-    return reload(module)
+    return reload(module)  # pylint: disable=undefined-variable

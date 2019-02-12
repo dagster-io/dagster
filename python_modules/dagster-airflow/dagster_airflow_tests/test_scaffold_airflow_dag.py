@@ -145,3 +145,17 @@ def test_scaffold_airflow_override_args(snapshot):
     finally:
         os.remove(static_path)
         os.remove(editable_path)
+
+
+def test_scaffold_dag(airflow_test):
+    docker_image, dags_path, _ = airflow_test
+    pipeline = define_demo_execution_pipeline()
+    env_config = load_yaml_from_path(script_relative_path('test_project/env.yml'))
+
+    scaffold_airflow_dag(
+        pipeline=pipeline,
+        env_config=env_config,
+        image=docker_image,
+        output_path=script_relative_path('test_project'),
+        dag_kwargs={'default_args': {'start_date': datetime.datetime(1900, 1, 1)}},
+    )

@@ -155,11 +155,13 @@ def scaffold_dag(airflow_test):
     pipeline = define_demo_execution_pipeline()
     env_config = load_yaml_from_path(script_relative_path('test_project/env.yml'))
 
+    tempdir = tempfile.gettempdir()
+
     static_path, editable_path = scaffold_airflow_dag(
         pipeline=pipeline,
         env_config=env_config,
         image=docker_image,
-        output_path=script_relative_path('test_project'),
+        output_path=tempdir,
         dag_kwargs={'default_args': {'start_date': datetime.datetime(1900, 1, 1)}},
     )
 
@@ -167,23 +169,30 @@ def scaffold_dag(airflow_test):
     subprocess.check_output(['python', editable_path])
 
     shutil.copyfile(
-        script_relative_path(static_path),
+        static_path,
         os.path.abspath(os.path.join(dags_path, os.path.basename(static_path))),
     )
 
     shutil.copyfile(
-        script_relative_path(editable_path),
+        editable_path,
         os.path.abspath(os.path.join(dags_path, os.path.basename(editable_path))),
     )
+
+    os.remove(static_path)
+    os.remove(editable_path)
+
     execution_date = datetime.datetime.utcnow().strftime('%Y-%m-%d')
     pipeline_name = pipeline.name
 
     execution_plan = create_execution_plan(pipeline, env_config)
 
-    return (
+    yield (
         pipeline_name,
         execution_plan,
         execution_date,
         os.path.abspath(os.path.join(dags_path, os.path.basename(static_path))),
         os.path.abspath(os.path.join(dags_path, os.path.basename(editable_path))),
     )
+
+    os.remove(os.path.abspath(os.path.join(dags_path, os.path.basename(static_path))))
+    os.remove(os.path.abspath(os.path.join(dags_path, os.path.basename(editable_path))))
