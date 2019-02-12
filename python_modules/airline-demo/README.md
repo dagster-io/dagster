@@ -181,6 +181,8 @@ This lets us avoid a typical pattern in DAG and workflow definitions where a sin
 fragment is repeated horizontally N times, once for each data source being processed. You will
 probably be familiar with DAGs that look like the following:
 
+![Download pipeline alternate](img/download_pipeline_alternate.png)
+
 By using a List type, we can add or remove new data sources by adjusting config, rather than by
 adding or removing DAG fragment definitions. Of course, there may be cases in which a more explicit
 graph is preferable -- for example, if the same operations are being executed on two sets of inputs,
