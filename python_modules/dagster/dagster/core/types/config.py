@@ -219,7 +219,11 @@ def List(inner_type):
             super(_List, self).__init__(
                 key='List.{inner_type}'.format(inner_type=inner_type.key),
                 name=None,
-                description='List of {inner_type}'.format(inner_type=inner_type.name),
+                description=(
+                    'List of {inner_type}'.format(inner_type=inner_type.name)
+                    if inner_type.name is not None
+                    else 'List of config values'
+                ),
                 type_attributes=ConfigTypeAttributes(is_builtin=True),
                 inner_type=inner_type,
             )
