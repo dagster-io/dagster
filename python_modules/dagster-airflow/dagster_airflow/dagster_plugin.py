@@ -19,9 +19,8 @@ from airflow.plugins_manager import AirflowPlugin
 from airflow.utils.file import TemporaryDirectory
 from docker import APIClient, from_env
 
-PY3 = sys.version_info.major >= 3
 
-if PY3:
+if sys.version_info.major >= 3:
     from io import StringIO  # pylint:disable=import-error
 else:
     from StringIO import StringIO  # pylint:disable=import-error
@@ -230,10 +229,7 @@ class ModifiedDockerOperator(DockerOperator):
 
     def __init__(self, host_tmp_dir=None, **kwargs):
         self.host_tmp_dir = host_tmp_dir
-        if PY3:
-            super().__init__(**kwargs)
-        else:
-            super(self.__class__, self).__init__(**kwargs)  # pylint: disable=bad-s
+        super(ModifiedDockerOperator, self).__init__(**kwargs)
 
     @contextmanager
     def get_host_tmp_dir(self):
@@ -300,11 +296,7 @@ class ModifiedDockerOperator(DockerOperator):
     # all that the status quo does is inhibit extension of the class
     def __get_tls_config(self):
         # pylint: disable=no-member
-        if PY3:
-            return super()._DockerOperator__get_tls_config()
-        else:
-            # pylint: disable=bad-super-call
-            return super(self.__class__, self)._DockerOperator__get_tls_config()
+        return super(ModifiedDockerOperator, self)._DockerOperator__get_tls_config()
 
 
 class DagsterOperator(ModifiedDockerOperator):
@@ -368,11 +360,7 @@ class DagsterOperator(ModifiedDockerOperator):
             else:
                 kwargs['docker_conn_id'] = True
 
-        if PY3:
-            super().__init__(*args, **kwargs)
-        else:
-            # pylint: disable=bad-super-call
-            super(self.__class__, self).__init__(*args, **kwargs)
+        super(DagsterOperator, self).__init__(*args, **kwargs)
 
     @property
     def run_id(self):
@@ -446,10 +434,7 @@ class DagsterOperator(ModifiedDockerOperator):
 
     def get_hook(self):
         if self.docker_conn_id_set:
-            if PY3:
-                return super().get_hook()
-            else:
-                return super(self.__class__, self).get_hook()  # pylint: disable=bad-super-call
+            return super(DagsterOperator, self).get_hook()
 
         class _DummyHook(object):
             def get_conn(self):
@@ -468,22 +453,13 @@ class DagsterOperator(ModifiedDockerOperator):
             self._run_id = context['dag_run'].run_id
         try:
             # FIXME implement intermediate result persistence to S3
-            if PY3:
-                return super().execute(context)
-            else:
-                return super(self.__class__, self).execute(
-                    context
-                )  # pylint: disable=bad-super-call
+            return super(DagsterOperator, self).execute(context)
         finally:
             self._run_id = None
 
     def __get_tls_config(self):
         # pylint:disable=no-member
-        if PY3:
-            return super()._ModifiedDockerOperator__get_tls_config()
-        else:
-            # pylint: disable=bad-super-call
-            return super(self.__class__, self)._ModifiedDockerOperator__get_tls_config()
+        return super(DagsterOperator, self)._ModifiedDockerOperator__get_tls_config()
 
 
 class DagsterPlugin(AirflowPlugin):
