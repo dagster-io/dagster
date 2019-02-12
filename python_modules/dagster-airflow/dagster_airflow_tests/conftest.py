@@ -54,9 +54,7 @@ def docker_client():
         client = docker.from_env()
         client.info()
     except docker.errors.APIError:
-        check.failed(
-            'Couldn\'t find docker at {url} -- is it running?'.format(url=client._url(''))
-        )
+        check.failed('Couldn\'t find docker at {url} -- is it running?'.format(url=client._url('')))
     return client
 
 
@@ -138,6 +136,7 @@ def airflow_test(docker_image, dags_path, plugins_path, host_tmp_dir):
 
         # Test that we can now actually import the DagsterOperator
         from airflow.operators.dagster_plugin import DagsterOperator
+
         del DagsterOperator
 
         yield (docker_image, dags_path, host_tmp_dir)
