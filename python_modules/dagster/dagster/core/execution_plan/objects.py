@@ -299,4 +299,3 @@ class ExecutionPlan(object):
     def _topological_step_levels(self):
         for step_key_level in toposort.toposort(self.deps):
             yield [self.step_dict[step_key] for step_key in step_key_level]
-
