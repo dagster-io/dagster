@@ -222,15 +222,14 @@ def List(inner_type):
             super(_List, self).__init__(
                 key='List.{inner_type}'.format(inner_type=inner_type.key),
                 name=None,
-                description=(
-                    'List of {inner_type}'.format(
-                        inner_type=print_config_type_to_string(self, with_lines=False)
-                    )
-                ),
                 type_attributes=ConfigTypeAttributes(is_builtin=True),
                 inner_type=inner_type,
             )
 
+            self.description= 'List of {inner_type}'.format(
+                inner_type=print_config_type_to_string(self, with_lines=False)
+            )
+ 
     return _List
 
 
