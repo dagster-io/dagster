@@ -292,8 +292,9 @@ class ModifiedDockerOperator(DockerOperator):
             if self.xcom_push_flag:
                 return self.cli.logs(container=self.container['Id']) if self.xcom_all else str(line)
 
-    # We should open an Airflow issue so that this isn't a class-private name on DockerOperator --
-    # all that the status quo does is inhibit extension of the class
+    # This is a class-private name on DockerOperator for no good reason --
+    # all that the status quo does is inhibit extension of the class.
+    # See https://issues.apache.org/jira/browse/AIRFLOW-3880
     def __get_tls_config(self):
         # pylint: disable=no-member
         return super(ModifiedDockerOperator, self)._DockerOperator__get_tls_config()
@@ -457,6 +458,9 @@ class DagsterOperator(ModifiedDockerOperator):
         finally:
             self._run_id = None
 
+    # This is a class-private name on DockerOperator for no good reason --
+    # all that the status quo does is inhibit extension of the class.
+    # See https://issues.apache.org/jira/browse/AIRFLOW-3880
     def __get_tls_config(self):
         # pylint:disable=no-member
         return super(DagsterOperator, self)._ModifiedDockerOperator__get_tls_config()
