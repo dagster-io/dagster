@@ -16,7 +16,7 @@ from dagster_sqlalchemy.subquery_builder_experimental import (
     DagsterSqlTableExpression,
     define_create_table_solid,
 )
-from .math_test_db import in_mem_context_params
+from .math_test_db import in_mem_context
 
 
 def pipeline_test_def(solids, context, dependencies):
@@ -53,9 +53,11 @@ def test_sql_sum_solid():
 
     environment = {'solids': {create_sum_table.name: {'config': {'table_name': 'sum_table'}}}}
 
+    context = in_mem_context()
+
     pipeline = pipeline_test_def(
         solids=[expr_solid, sum_table_solid, create_sum_table],
-        context=in_mem_context_params(),
+        context=context,
         dependencies={
             'sum_table': {'num_table': DependencyDefinition('expr')},
             create_sum_table.name: {'expr': DependencyDefinition('sum_table')},
@@ -69,9 +71,7 @@ def test_sql_sum_solid():
 
     assert result.success
 
-    results = (
-        result.context.resources.sa.engine.connect().execute('SELECT * FROM sum_table').fetchall()
-    )
+    results = context.resources.sa.engine.connect().execute('SELECT * FROM sum_table').fetchall()
     assert results == [(1, 2, 3), (3, 4, 7)]
 
 
@@ -111,9 +111,7 @@ def create_sum_sq_pipeline(context, expr, extra_solids=None, extra_deps=None):
 
 
 def test_execute_sql_sum_sq_solid():
-    pipeline = create_sum_sq_pipeline(
-        in_mem_context_params(), DagsterSqlTableExpression('num_table')
-    )
+    pipeline = create_sum_sq_pipeline(in_mem_context(), DagsterSqlTableExpression('num_table'))
 
     pipeline_result = execute_pipeline(pipeline)
 
@@ -135,8 +133,9 @@ def test_execute_sql_sum_sq_solid():
 def test_output_sql_sum_sq_solid():
     create_sum_sq_table = define_create_table_solid('create_sum_sq_table')
 
+    context = in_mem_context()
     pipeline = create_sum_sq_pipeline(
-        in_mem_context_params(),
+        context,
         DagsterSqlTableExpression('num_table'),
         [create_sum_sq_table],
         {create_sum_sq_table.name: {'expr': DependencyDefinition('sum_sq_table')}},
@@ -151,6 +150,6 @@ def test_output_sql_sum_sq_solid():
     result_list = pipeline_result.solid_result_list
 
     assert len(result_list) == 3
-    engine = pipeline_result.context.resources.sa.engine
+    engine = context.resources.sa.engine
     result_list = engine.connect().execute('SELECT * FROM sum_sq_table').fetchall()
     assert result_list == [(1, 2, 3, 9), (3, 4, 7, 49)]

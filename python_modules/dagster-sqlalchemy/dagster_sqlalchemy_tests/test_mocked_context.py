@@ -2,7 +2,7 @@ import sqlalchemy
 
 from dagster import check
 
-from dagster.utils.test import create_test_runtime_legacy_execution_context
+from dagster.utils.test import create_test_pipeline_execution_context
 
 import dagster_sqlalchemy as dagster_sa
 
@@ -16,7 +16,7 @@ from dagster_sqlalchemy.common import (
 def create_sql_alchemy_context_from_sa_resource(sa_resource, *args, **kwargs):
     check.inst_param(sa_resource, 'sa_resource', SqlAlchemyResource)
     resources = DefaultSqlAlchemyResources(sa_resource)
-    context = create_test_runtime_legacy_execution_context(resources=resources, *args, **kwargs)
+    context = create_test_pipeline_execution_context(resources=resources, *args, **kwargs)
     return check_supports_sql_alchemy_resource(context)
 
 

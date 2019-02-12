@@ -2,13 +2,13 @@ import warnings
 import uuid
 
 from dagster import PipelineDefinition, solid, execute_pipeline
-from dagster.utils.test import create_test_runtime_legacy_execution_context
+from dagster.utils.test import create_test_pipeline_execution_context
 
 # pylint: disable=W0212
 
 
 def test_noarg_ctor():
-    legacy_context = create_test_runtime_legacy_execution_context()
+    legacy_context = create_test_pipeline_execution_context()
     assert uuid.UUID(legacy_context.run_id)
 
 

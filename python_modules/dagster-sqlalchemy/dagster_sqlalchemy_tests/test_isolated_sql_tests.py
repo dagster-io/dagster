@@ -12,7 +12,7 @@ from dagster_sqlalchemy.subquery_builder_experimental import (
     sql_file_solid,
 )
 
-from .math_test_db import in_mem_context_params
+from .math_test_db import in_mem_context
 
 
 def pipeline_test_def(solids, context, dependencies=None):
@@ -26,7 +26,7 @@ def pipeline_test_def(solids, context, dependencies=None):
 
 
 def test_basic_isolated_sql_solid():
-    context = in_mem_context_params()
+    context = in_mem_context()
 
     sql_text = '''CREATE TABLE sum_table AS SELECT num1, num2, num1 + num2 as sum FROM num_table'''
 
@@ -53,9 +53,11 @@ def test_basic_pipeline():
         'sum_sq_sql_solid', sum_sq_sql_text, inputs=[InputDefinition(name=sum_sql_solid.name)]
     )
 
+    context = in_mem_context()
+
     pipeline = pipeline_test_def(
         solids=[sum_sql_solid, sum_sq_sql_solid],
-        context=in_mem_context_params(),
+        context=context,
         dependencies={
             'sum_sq_sql_solid': {sum_sql_solid.name: DependencyDefinition(sum_sql_solid.name)}
         },
@@ -72,7 +74,7 @@ def test_basic_pipeline():
     for exec_result in exec_results:
         assert exec_result.success is True
 
-    engine = pipeline_result.context.resources.sa.engine
+    engine = context.resources.sa.engine
 
     results = engine.connect().execute('SELECT * from sum_table').fetchall()
     assert results == [(1, 2, 3), (3, 4, 7)]
@@ -88,10 +90,10 @@ def test_pipeline_from_files():
         script_relative_path('sql_files/create_sum_sq_table.sql'),
         inputs=[InputDefinition(create_sum_table_solid.name)],
     )
-
+    context = in_mem_context()
     pipeline = pipeline_test_def(
         solids=[create_sum_table_solid, create_sum_sq_table_solid],
-        context=in_mem_context_params(),
+        context=context,
         dependencies={
             create_sum_sq_table_solid.name: {
                 create_sum_table_solid.name: DependencyDefinition(create_sum_table_solid.name)
@@ -108,7 +110,7 @@ def test_pipeline_from_files():
     for exec_result in exec_results:
         assert exec_result.success is True
 
-    engine = pipeline_result.context.resources.sa.engine
+    engine = context.resources.sa.engine
 
     results = engine.connect().execute('SELECT * from sum_table').fetchall()
     assert results == [(1, 2, 3), (3, 4, 7)]

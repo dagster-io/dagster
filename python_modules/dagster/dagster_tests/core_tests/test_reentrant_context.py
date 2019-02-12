@@ -17,7 +17,7 @@ def test_injected_run_id():
     result = execute_pipeline(pipeline_def, execution_metadata=ExecutionMetadata(run_id=run_id))
 
     assert result.success
-    assert result.context.run_id == run_id
+    assert result.run_id == run_id
 
 
 def test_injected_tags():

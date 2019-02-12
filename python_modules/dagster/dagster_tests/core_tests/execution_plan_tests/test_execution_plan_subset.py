@@ -41,7 +41,7 @@ def test_execution_plan_simple_two_steps():
     assert execution_plan.get_step_by_key('return_one.transform')
     assert execution_plan.get_step_by_key('add_one.transform')
 
-    step_events = execute_plan(pipeline_def, execution_plan)
+    step_events = execute_plan(execution_plan)
     assert len(step_events) == 2
 
     assert step_events[0].step.key == 'return_one.transform'
@@ -100,7 +100,7 @@ def test_execution_plan_source_step():
             included_step_keys=['return_one.transform']
         ),
     )
-    step_events = execute_plan(pipeline_def, execution_plan)
+    step_events = execute_plan(execution_plan)
 
     assert len(step_events) == 1
     assert step_events[0].success_data.value == 1
@@ -115,7 +115,7 @@ def test_execution_plan_middle_step():
         ),
     )
 
-    step_events = execute_plan(pipeline_def, execution_plan)
+    step_events = execute_plan(execution_plan)
 
     assert len(step_events) == 2
     assert step_events[1].success_data.value == 3
@@ -131,7 +131,7 @@ def test_execution_plan_two_outputs():
 
     execution_plan = create_execution_plan(pipeline_def)
 
-    step_events = execute_plan(pipeline_def, execution_plan)
+    step_events = execute_plan(execution_plan)
 
     # FIXME: we should change this to be *single* result with two outputs
     assert step_events[0].step.key == 'return_one_two.transform'
@@ -155,7 +155,7 @@ def test_reentrant_execute_plan():
     execution_plan = create_execution_plan(pipeline_def)
 
     step_events = execute_plan(
-        pipeline_def, execution_plan, execution_metadata=ExecutionMetadata(tags={'foo': 'bar'})
+        execution_plan, execution_metadata=ExecutionMetadata(tags={'foo': 'bar'})
     )
 
     assert called['yup']

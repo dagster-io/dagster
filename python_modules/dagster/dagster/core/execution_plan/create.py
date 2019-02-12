@@ -81,7 +81,7 @@ def create_execution_plan_core(
             output_handle = solid.output_handle(output_def.name)
             plan_builder.step_output_map[output_handle] = subplan.terminal_step_output_handle
 
-    execution_plan = create_execution_plan_from_steps(plan_builder.steps)
+    execution_plan = create_execution_plan_from_steps(pipeline_context, plan_builder.steps)
 
     if subset_info:
         return _create_augmented_subplan(
@@ -91,7 +91,8 @@ def create_execution_plan_core(
         return execution_plan
 
 
-def create_execution_plan_from_steps(steps):
+def create_execution_plan_from_steps(pipeline_context, steps):
+    check.inst_param(pipeline_context, 'pipeline_context', PipelineExecutionContext)
     check.list_param(steps, 'steps', of_type=ExecutionStep)
 
     step_dict = {step.key: step for step in steps}
@@ -111,7 +112,7 @@ def create_execution_plan_from_steps(steps):
         for step_input in step.step_inputs:
             deps[step.key].add(step_input.prev_output_handle.step.key)
 
-    return ExecutionPlan(step_dict, deps)
+    return ExecutionPlan(pipeline_context.pipeline_def, step_dict, deps)
 
 
 def create_subplan_for_input(pipeline_context, solid, prev_step_output_handle, input_def):
@@ -218,7 +219,7 @@ def _create_augmented_subplan(
             _all_augmented_steps_for_step(pipeline_context, step, subset_info, added_outputs)
         )
 
-    new_plan = create_execution_plan_from_steps(steps)
+    new_plan = create_execution_plan_from_steps(pipeline_context, steps)
 
     return _validate_new_plan(new_plan, subset_info, pipeline_context)
 

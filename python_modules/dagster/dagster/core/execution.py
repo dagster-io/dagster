@@ -81,13 +81,12 @@ class PipelineExecutionResult(object):
         result_list (list[SolidExecutionResult]): List of results for each pipeline solid.
     '''
 
-    def __init__(self, pipeline, context, step_event_list):
+    def __init__(self, pipeline, run_id, step_event_list):
         self.pipeline = check.inst_param(pipeline, 'pipeline', PipelineDefinition)
-        self.context = check.inst_param(context, 'context', PipelineExecutionContext)
+        self.run_id = check.str_param(run_id, 'run_id')
         self.step_event_list = check.list_param(
             step_event_list, 'step_event_list', of_type=ExecutionStepEvent
         )
-        self.run_id = context.run_id
 
         solid_result_dict = self._context_solid_result_dict(step_event_list)
 
@@ -111,7 +110,6 @@ class PipelineExecutionResult(object):
 
         for solid_name in solid_order:
             solid_result_dict[solid_name] = SolidExecutionResult(
-                self.context,
                 self.pipeline.solid_named(solid_name),
                 dict(step_events_by_solid_by_kind[solid_name]),
             )
@@ -155,10 +153,7 @@ class SolidExecutionResult(object):
       solid (SolidDefinition): Solid for which this result is
     '''
 
-    def __init__(self, pipeline_context, solid, step_events_by_kind):
-        self.context = check.inst_param(
-            pipeline_context, 'pipeline_context', PipelineExecutionContext
-        )
+    def __init__(self, solid, step_events_by_kind):
         self.solid = check.inst_param(solid, 'solid', Solid)
         self.step_events_by_kind = check.dict_param(
             step_events_by_kind, 'step_events_by_kind', key_type=StepKind, value_type=list
@@ -193,9 +188,7 @@ class SolidExecutionResult(object):
                 step_events_by_kind[result.kind].append(result)
 
             return SolidExecutionResult(
-                pipeline_context=pipeline_context,
-                solid=step_events[0].step.solid,
-                step_events_by_kind=dict(step_events_by_kind),
+                solid=step_events[0].step.solid, step_events_by_kind=dict(step_events_by_kind)
             )
         else:
             check.failed("Cannot create SolidExecutionResult from empty list")
@@ -475,50 +468,6 @@ def get_resource_or_gen(pipeline_def, context_definition, resource_name, environ
     )
 
 
-def _do_iterate_pipeline(pipeline, pipeline_context, execution_metadata, throw_on_user_error=True):
-    check.inst_param(pipeline, 'pipeline', PipelineDefinition)
-    check.inst_param(pipeline_context, 'context', PipelineExecutionContext)
-    check.inst_param(execution_metadata, 'execution_metadata', ExecutionMetadata)
-    check.bool_param(throw_on_user_error, 'throw_on_user_error')
-
-    pipeline_context.events.pipeline_start()
-
-    execution_plan = create_execution_plan_core(pipeline_context, execution_metadata)
-
-    steps = execution_plan.topological_steps()
-
-    if not steps:
-        pipeline_context.log.debug(
-            'Pipeline {pipeline} has no nodes and no execution will happen'.format(
-                pipeline=pipeline.display_name
-            )
-        )
-        pipeline_context.events.pipeline_success()
-        return
-
-    pipeline_context.log.debug(
-        'About to execute the compute node graph in the following order {order}'.format(
-            order=[step.key for step in steps]
-        )
-    )
-
-    check.invariant(len(steps[0].step_inputs) == 0)
-
-    pipeline_success = True
-
-    for step_event in iterate_step_events_for_execution_plan(
-        pipeline_context, execution_plan, throw_on_user_error
-    ):
-        if step_event.is_step_failure:
-            pipeline_success = False
-        yield step_event
-
-    if pipeline_success:
-        pipeline_context.events.pipeline_success()
-    else:
-        pipeline_context.events.pipeline_failure()
-
-
 def execute_pipeline_iterator(
     pipeline,
     environment_dict=None,
@@ -542,17 +491,92 @@ def execute_pipeline_iterator(
     execution_metadata = check_execution_metadata_param(execution_metadata)
     check.opt_list_param(solid_subset, 'solid_subset', of_type=str)
 
-    pipeline_to_execute = get_subset_pipeline(pipeline, solid_subset)
     with yield_pipeline_execution_context(
-        pipeline_to_execute, environment_dict, execution_metadata
+        get_subset_pipeline(pipeline, solid_subset), environment_dict, execution_metadata
     ) as pipeline_context:
-        for solid_result in _do_iterate_pipeline(
-            pipeline_to_execute,
-            pipeline_context,
-            execution_metadata=execution_metadata,
-            throw_on_user_error=throw_on_user_error,
+
+        pipeline_context.events.pipeline_start()
+
+        execution_plan = create_execution_plan_core(pipeline_context, execution_metadata)
+
+        steps = execution_plan.topological_steps()
+
+        if not steps:
+            pipeline_context.log.debug(
+                'Pipeline {pipeline} has no nodes and no execution will happen'.format(
+                    pipeline=pipeline.display_name
+                )
+            )
+            pipeline_context.events.pipeline_success()
+            return
+
+        pipeline_context.log.debug(
+            'About to execute the compute node graph in the following order {order}'.format(
+                order=[step.key for step in steps]
+            )
+        )
+
+        check.invariant(len(steps[0].step_inputs) == 0)
+
+        pipeline_success = True
+
+        for step_event in iterate_step_events_for_execution_plan(
+            pipeline_context, execution_plan, throw_on_user_error
         ):
-            yield solid_result
+            if step_event.is_step_failure:
+                pipeline_success = False
+            yield step_event
+
+        if pipeline_success:
+            pipeline_context.events.pipeline_success()
+        else:
+            pipeline_context.events.pipeline_failure()
+
+
+def execute_pipeline(
+    pipeline,
+    environment_dict=None,
+    throw_on_user_error=True,
+    execution_metadata=None,
+    solid_subset=None,
+):
+    '''
+    "Synchronous" version of :py:func:`execute_pipeline_iterator`.
+
+    Note: throw_on_user_error is very useful in testing contexts when not testing for error
+    conditions
+
+    Parameters:
+      pipeline (PipelineDefinition): Pipeline to run
+      environment (dict): The enviroment that parameterizes this run
+      throw_on_user_error (bool):
+        throw_on_user_error makes the function throw when an error is encoutered rather than
+        returning the py:class:`SolidExecutionResult` in an error-state.
+
+
+    Returns:
+      PipelineExecutionResult
+    '''
+
+    check.inst_param(pipeline, 'pipeline', PipelineDefinition)
+    environment_dict = check.opt_dict_param(environment_dict, 'environment_dict')
+    check.bool_param(throw_on_user_error, 'throw_on_user_error')
+    execution_metadata = check_execution_metadata_param(execution_metadata)
+    check.opt_list_param(solid_subset, 'solid_subset', of_type=str)
+
+    return PipelineExecutionResult(
+        pipeline,
+        execution_metadata.run_id,
+        list(
+            execute_pipeline_iterator(
+                pipeline=pipeline,
+                environment_dict=environment_dict,
+                throw_on_user_error=throw_on_user_error,
+                execution_metadata=execution_metadata,
+                solid_subset=solid_subset,
+            )
+        ),
+    )
 
 
 class PipelineConfigEvaluationError(Exception):
@@ -666,66 +690,21 @@ def _check_inputs_to_marshal(execution_plan, inputs_to_marshal):
 
 
 def execute_plan(
-    pipeline,
-    execution_plan,
-    environment_dict=None,
-    execution_metadata=None,
-    throw_on_user_error=True,
+    execution_plan, environment_dict=None, execution_metadata=None, throw_on_user_error=True
 ):
-    check.inst_param(pipeline, 'pipeline', PipelineDefinition)
     check.inst_param(execution_plan, 'execution_plan', ExecutionPlan)
     environment_dict = check.opt_dict_param(environment_dict, 'environment_dict')
 
     execution_metadata = check_execution_metadata_param(execution_metadata)
 
     with yield_pipeline_execution_context(
-        pipeline, environment_dict, execution_metadata
+        execution_plan.pipeline_def, environment_dict, execution_metadata
     ) as pipeline_context:
         return list(
             iterate_step_events_for_execution_plan(
                 pipeline_context, execution_plan, throw_on_user_error=throw_on_user_error
             )
         )
-
-
-def execute_pipeline(
-    pipeline,
-    environment_dict=None,
-    throw_on_user_error=True,
-    execution_metadata=None,
-    solid_subset=None,
-):
-    '''
-    "Synchronous" version of :py:func:`execute_pipeline_iterator`.
-
-    Note: throw_on_user_error is very useful in testing contexts when not testing for error
-    conditions
-
-    Parameters:
-      pipeline (PipelineDefinition): Pipeline to run
-      environment (dict): The enviroment that parameterizes this run
-      throw_on_user_error (bool):
-        throw_on_user_error makes the function throw when an error is encoutered rather than
-        returning the py:class:`SolidExecutionResult` in an error-state.
-
-
-    Returns:
-      PipelineExecutionResult
-    '''
-
-    check.inst_param(pipeline, 'pipeline', PipelineDefinition)
-    environment_dict = check.opt_dict_param(environment_dict, 'environment_dict')
-    check.bool_param(throw_on_user_error, 'throw_on_user_error')
-    execution_metadata = check_execution_metadata_param(execution_metadata)
-    check.opt_list_param(solid_subset, 'solid_subset', of_type=str)
-
-    pipeline_to_execute = get_subset_pipeline(pipeline, solid_subset)
-    return execute_pipeline_with_metadata(
-        pipeline_to_execute,
-        environment_dict,
-        execution_metadata=execution_metadata,
-        throw_on_user_error=throw_on_user_error,
-    )
 
 
 def _dep_key_of(solid):
@@ -766,30 +745,6 @@ def build_sub_pipeline(pipeline_def, solid_names):
         context_definitions=pipeline_def.context_definitions,
         dependencies=deps,
     )
-
-
-def execute_pipeline_with_metadata(
-    pipeline, environment_dict, execution_metadata, throw_on_user_error
-):
-    check.inst_param(pipeline, 'pipeline', PipelineDefinition)
-    environment_dict = check.opt_dict_param(environment_dict, 'environment_dict')
-    check.inst_param(execution_metadata, 'execution_metadata', ExecutionMetadata)
-
-    with yield_pipeline_execution_context(
-        pipeline, environment_dict, execution_metadata
-    ) as pipeline_context:
-        return PipelineExecutionResult(
-            pipeline,
-            pipeline_context,
-            list(
-                _do_iterate_pipeline(
-                    pipeline,
-                    pipeline_context,
-                    execution_metadata=execution_metadata,
-                    throw_on_user_error=throw_on_user_error,
-                )
-            ),
-        )
 
 
 def get_subset_pipeline(pipeline, solid_subset):
