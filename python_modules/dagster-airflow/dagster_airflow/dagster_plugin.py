@@ -233,7 +233,7 @@ class ModifiedDockerOperator(DockerOperator):
         if PY3:
             super().__init__(**kwargs)
         else:
-            super(type(self), self).__init__(**kwargs)  # pylint: disable=bad-s
+            super(self.__class__, self).__init__(**kwargs)  # pylint: disable=bad-s
 
     @contextmanager
     def get_host_tmp_dir(self):
@@ -304,7 +304,7 @@ class ModifiedDockerOperator(DockerOperator):
             return super()._DockerOperator__get_tls_config()
         else:
             # pylint: disable=bad-super-call
-            return super(type(self), self)._DockerOperator__get_tls_config()
+            return super(self.__class__, self)._DockerOperator__get_tls_config()
 
 
 class DagsterOperator(ModifiedDockerOperator):
@@ -372,7 +372,7 @@ class DagsterOperator(ModifiedDockerOperator):
             super().__init__(*args, **kwargs)
         else:
             # pylint: disable=bad-super-call
-            super(type(self), self).__init__(*args, **kwargs)
+            super(self.__class__, self).__init__(*args, **kwargs)
 
     @property
     def run_id(self):
@@ -449,7 +449,7 @@ class DagsterOperator(ModifiedDockerOperator):
             if PY3:
                 return super().get_hook()
             else:
-                return super(type(self), self).get_hook()  # pylint: disable=bad-super-call
+                return super(self.__class__, self).get_hook()  # pylint: disable=bad-super-call
 
         class _DummyHook(object):
             def get_conn(self):
@@ -471,7 +471,7 @@ class DagsterOperator(ModifiedDockerOperator):
             if PY3:
                 return super().execute(context)
             else:
-                return super(type(self), self).execute(context)  # pylint: disable=bad-super-call
+                return super(self.__class__, self).execute(context)  # pylint: disable=bad-super-call
         finally:
             self._run_id = None
 
@@ -481,7 +481,7 @@ class DagsterOperator(ModifiedDockerOperator):
             return super()._ModifiedDockerOperator__get_tls_config()
         else:
             # pylint: disable=bad-super-call
-            return super(type(self), self)._ModifiedDockerOperator__get_tls_config()
+            return super(self.__class__, self)._ModifiedDockerOperator__get_tls_config()
 
 
 class DagsterPlugin(AirflowPlugin):
