@@ -3,16 +3,16 @@ from dagster.core.definitions import Result, Solid
 from dagster.core.errors import DagsterInvariantViolationError
 from dagster.core.execution_context import TransformExecutionContext, PipelineExecutionContext
 
-from .objects import ExecutionStep, PlanBuilder, StepInput, StepKind, StepOutput, StepOutputValue
+from .objects import ExecutionStep, StepInput, StepKind, StepOutput, StepOutputValue
 
 
-def create_transform_step(pipeline_context, plan_builder, solid, step_inputs):
-    check.inst_param(pipeline_context, 'pipeline_execution_context', PipelineExecutionContext)
-    check.inst_param(plan_builder, 'plan_builder', PlanBuilder)
+def create_transform_step(pipeline_context, solid, step_inputs):
+    check.inst_param(pipeline_context, 'pipeline_context', PipelineExecutionContext)
     check.inst_param(solid, 'solid', Solid)
     check.list_param(step_inputs, 'step_inputs', of_type=StepInput)
 
     return ExecutionStep(
+        pipeline_context=pipeline_context,
         key='{solid.name}.transform'.format(solid=solid),
         step_inputs=step_inputs,
         step_outputs=[
@@ -24,7 +24,6 @@ def create_transform_step(pipeline_context, plan_builder, solid, step_inputs):
         ),
         kind=StepKind.TRANSFORM,
         solid=solid,
-        tags=plan_builder.get_tags(),
     )
 
 

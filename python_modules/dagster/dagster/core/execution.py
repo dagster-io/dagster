@@ -698,14 +698,15 @@ def execute_pipeline(
     '''
     "Synchronous" version of :py:func:`execute_pipeline_iterator`.
 
-    Note: throw_on_user_error is very useful in testing contexts when not testing for error conditions
+    Note: throw_on_user_error is very useful in testing contexts when not testing for error
+    conditions
 
     Parameters:
       pipeline (PipelineDefinition): Pipeline to run
       environment (dict): The enviroment that parameterizes this run
       throw_on_user_error (bool):
-        throw_on_user_error makes the function throw when an error is encoutered rather than returning
-        the py:class:`SolidExecutionResult` in an error-state.
+        throw_on_user_error makes the function throw when an error is encoutered rather than
+        returning the py:class:`SolidExecutionResult` in an error-state.
 
 
     Returns:

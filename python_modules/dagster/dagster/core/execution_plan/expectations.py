@@ -14,7 +14,6 @@ from .objects import (
     StepOutputHandle,
     StepOutputValue,
     StepKind,
-    PlanBuilder,
 )
 
 from .utility import create_joining_subplan
@@ -52,8 +51,8 @@ def _create_expectation_lambda(solid, inout_def, expectation_def, internal_outpu
     return _do_expectation
 
 
-def create_expectations_subplan(plan_builder, solid, inout_def, prev_step_output_handle, kind):
-    check.inst_param(plan_builder, 'plan_builder', PlanBuilder)
+def create_expectations_subplan(pipeline_context, solid, inout_def, prev_step_output_handle, kind):
+    check.inst_param(pipeline_context, 'pipeline_context', PipelineExecutionContext)
     check.inst_param(solid, 'solid', Solid)
     check.inst_param(inout_def, 'inout_def', (InputDefinition, OutputDefinition))
     check.inst_param(prev_step_output_handle, 'prev_step_output_handle', StepOutputHandle)
@@ -61,25 +60,24 @@ def create_expectations_subplan(plan_builder, solid, inout_def, prev_step_output
 
     input_expect_steps = []
     for expectation_def in inout_def.expectations:
-        with plan_builder.push_tags(expectation=expectation_def.name):
-            expect_step = create_expectation_step(
-                plan_builder=plan_builder,
-                solid=solid,
-                expectation_def=expectation_def,
-                key='{solid}.{desc_key}.{inout_name}.expectation.{expectation_name}'.format(
-                    solid=solid.name,
-                    desc_key=inout_def.descriptive_key,
-                    inout_name=inout_def.name,
-                    expectation_name=expectation_def.name,
-                ),
-                kind=kind,
-                prev_step_output_handle=prev_step_output_handle,
-                inout_def=inout_def,
-            )
-            input_expect_steps.append(expect_step)
+        expect_step = create_expectation_step(
+            pipeline_context=pipeline_context,
+            solid=solid,
+            expectation_def=expectation_def,
+            key='{solid}.{desc_key}.{inout_name}.expectation.{expectation_name}'.format(
+                solid=solid.name,
+                desc_key=inout_def.descriptive_key,
+                inout_name=inout_def.name,
+                expectation_name=expectation_def.name,
+            ),
+            kind=kind,
+            prev_step_output_handle=prev_step_output_handle,
+            inout_def=inout_def,
+        )
+        input_expect_steps.append(expect_step)
 
     return create_joining_subplan(
-        plan_builder,
+        pipeline_context,
         solid,
         '{solid}.{desc_key}.{inout_name}.expectations.join'.format(
             solid=solid.name, desc_key=inout_def.descriptive_key, inout_name=inout_def.name
@@ -90,9 +88,9 @@ def create_expectations_subplan(plan_builder, solid, inout_def, prev_step_output
 
 
 def create_expectation_step(
-    plan_builder, solid, expectation_def, key, kind, prev_step_output_handle, inout_def
+    pipeline_context, solid, expectation_def, key, kind, prev_step_output_handle, inout_def
 ):
-    check.inst_param(plan_builder, 'plan_builder', PlanBuilder)
+    check.inst_param(pipeline_context, 'pipeline_context', PipelineExecutionContext)
     check.inst_param(solid, 'solid', Solid)
     check.inst_param(expectation_def, 'input_expct_def', ExpectationDefinition)
     check.inst_param(prev_step_output_handle, 'prev_step_output_handle', StepOutputHandle)
@@ -101,6 +99,7 @@ def create_expectation_step(
     value_type = inout_def.runtime_type
 
     return ExecutionStep(
+        pipeline_context=pipeline_context,
         key=key,
         step_inputs=[
             StepInput(
@@ -115,20 +114,19 @@ def create_expectation_step(
         ),
         kind=kind,
         solid=solid,
-        tags=plan_builder.get_tags(),
+        tags={'expectation': expectation_def.name, inout_def.descriptive_key: inout_def.name},
     )
 
 
-def decorate_with_expectations(pipeline_context, plan_builder, solid, transform_step, output_def):
+def decorate_with_expectations(pipeline_context, solid, transform_step, output_def):
     check.inst_param(pipeline_context, 'pipeline_context', PipelineExecutionContext)
-    check.inst_param(plan_builder, 'plan_builder', PlanBuilder)
     check.inst_param(solid, 'solid', Solid)
     check.inst_param(transform_step, 'transform_step', ExecutionStep)
     check.inst_param(output_def, 'output_def', OutputDefinition)
 
     if pipeline_context.environment_config.expectations.evaluate and output_def.expectations:
         return create_expectations_subplan(
-            plan_builder,
+            pipeline_context,
             solid,
             output_def,
             StepOutputHandle(transform_step, output_def.name),

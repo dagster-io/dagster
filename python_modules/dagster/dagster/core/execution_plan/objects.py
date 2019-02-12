@@ -1,6 +1,4 @@
 from collections import namedtuple
-from contextlib import contextmanager
-import copy
 from enum import Enum
 
 import toposort
@@ -8,7 +6,8 @@ import six
 
 from dagster import check
 from dagster.utils import merge_dicts
-from dagster.core.definitions import Solid, SolidOutputHandle
+from dagster.core.execution_context import PipelineExecutionContext
+from dagster.core.definitions import Solid
 from dagster.core.errors import DagsterError
 from dagster.core.types.runtime import RuntimeType
 
@@ -148,17 +147,25 @@ class StepOutput(namedtuple('_StepOutput', 'name runtime_type')):
 class ExecutionStep(
     namedtuple(
         '_ExecutionStep',
-        'key step_inputs step_input_dict step_outputs step_output_dict compute_fn kind solid tags',
+        (
+            'pipeline_context key step_inputs step_input_dict step_outputs step_output_dict '
+            'compute_fn kind solid tags'
+        ),
     )
 ):
-    def __new__(cls, key, step_inputs, step_outputs, compute_fn, kind, solid, tags):
-        check.param_invariant('pipeline' in tags, 'tags', 'Step must have pipeline tag')
-        check.param_invariant('solid' in tags, 'tags', 'Step must have solid tag')
-        check.param_invariant('solid_definition' in tags, 'tags', 'Step must have solid tag')
-        check.dict_param(tags, 'tags', key_type=str, value_type=str)
+    def __new__(
+        cls, pipeline_context, key, step_inputs, step_outputs, compute_fn, kind, solid, tags=None
+    ):
+        # check.param_invariant('pipeline' in tags, 'tags', 'Step must have pipeline tag')
+        # check.param_invariant('solid' in tags, 'tags', 'Step must have solid tag')
+        # check.param_invariant('solid_definition' in tags, 'tags', 'Step must have solid tag')
+        # check.p[tdict_param(tags, 'tags', key_type=str, value_type=str)
 
         return super(ExecutionStep, cls).__new__(
             cls,
+            pipeline_context=check.inst_param(
+                pipeline_context, 'pipeline_context', PipelineExecutionContext
+            ),
             key=check.str_param(key, 'key'),
             step_inputs=check.list_param(step_inputs, 'step_inputs', of_type=StepInput),
             step_input_dict={si.name: si for si in step_inputs},
@@ -167,20 +174,34 @@ class ExecutionStep(
             compute_fn=check.callable_param(compute_fn, 'compute_fn'),
             kind=check.inst_param(kind, 'kind', StepKind),
             solid=check.inst_param(solid, 'solid', Solid),
-            tags=merge_dicts({'step_key': key}, tags),
+            tags=merge_dicts(
+                merge_dicts(
+                    {
+                        'step_key': key,
+                        'pipeline': pipeline_context.pipeline_def.name,
+                        'solid': solid.name,
+                        'solid_definition': solid.definition.name,
+                    },
+                    check.opt_dict_param(tags, 'tags'),
+                ),
+                pipeline_context.tags,
+            ),
         )
 
     @property
     def pipeline_name(self):
-        return self.tags['pipeline']
+        return self.pipeline_context.pipeline_def.name
+        # return self.tags['pipeline']
 
     @property
     def solid_name(self):
-        return self.tags['solid']
+        # return self.tags['solid']
+        return self.solid.name
 
     @property
     def solid_definition_name(self):
-        return self.tags['solid_definition']
+        # return self.tags['solid_definition']
+        return self.solid.definition.name
 
     def __getnewargs__(self):
         # print('getnewargs was called')
@@ -195,6 +216,7 @@ class ExecutionStep(
 
     def with_new_inputs(self, step_inputs):
         return ExecutionStep(
+            pipeline_context=self.pipeline_context,
             key=self.key,
             step_inputs=step_inputs,
             step_outputs=self.step_outputs,
@@ -277,42 +299,3 @@ class ExecutionPlan(object):
     def _topological_step_levels(self):
         for step_key_level in toposort.toposort(self.deps):
             yield [self.step_dict[step_key] for step_key in step_key_level]
-
-
-class StepOutputMap(dict):
-    def __getitem__(self, key):
-        check.inst_param(key, 'key', SolidOutputHandle)
-        return dict.__getitem__(self, key)
-
-    def __setitem__(self, key, val):
-        check.inst_param(key, 'key', SolidOutputHandle)
-        check.inst_param(val, 'val', StepOutputHandle)
-        return dict.__setitem__(self, key, val)
-
-
-# This is the state that is built up during the execution plan build process.
-# steps is just a list of the steps that have been created
-# step_output_map maps logical solid outputs (solid_name, output_name) to particular
-# step outputs. This covers the case where a solid maps to multiple steps
-# and one wants to be able to attach to the logical output of a solid during execution
-class PlanBuilder:
-    def __init__(self, pipeline_name, initial_tags=None):
-        self.steps = []
-        self.step_output_map = StepOutputMap()
-        self._tags = check.opt_dict_param(
-            initial_tags, 'initial_tags', key_type=str, value_type=str
-        )
-        self._tags['pipeline'] = pipeline_name
-
-    def get_tags(self, **additional_tags):
-        additional_tags.update(self._tags)
-        return additional_tags
-
-    @contextmanager
-    def push_tags(self, **kwargs):
-        old_tags = copy.copy(self._tags)
-        self._tags.update(kwargs)
-        try:
-            yield
-        finally:
-            self._tags = old_tags

@@ -1,7 +1,7 @@
 from dagster import check
+from dagster.core.execution_context import PipelineExecutionContext
 from .objects import (
     ExecutionStep,
-    PlanBuilder,
     StepInput,
     StepKind,
     StepOutput,
@@ -12,8 +12,8 @@ from .objects import (
 UNMARSHAL_INPUT_OUTPUT = 'unmarshal-input-output'
 
 
-def create_unmarshal_input_step(plan_builder, step, step_input, marshalling_key):
-    check.inst_param(plan_builder, 'plan_builder', PlanBuilder)
+def create_unmarshal_input_step(pipeline_context, step, step_input, marshalling_key):
+    check.inst_param(pipeline_context, 'pipeline_context', PipelineExecutionContext)
     check.inst_param(step, 'step', ExecutionStep)
     check.inst_param(step_input, 'step_input', StepInput)
     check.str_param(marshalling_key, 'marshalling_key')
@@ -28,6 +28,7 @@ def create_unmarshal_input_step(plan_builder, step, step_input, marshalling_key)
 
     return StepOutputHandle(
         ExecutionStep(
+            pipeline_context=pipeline_context,
             key='{step_key}.unmarshal-input.{input_name}'.format(
                 step_key=step.key, input_name=step_input.name
             ),
@@ -36,7 +37,7 @@ def create_unmarshal_input_step(plan_builder, step, step_input, marshalling_key)
             compute_fn=_compute_fn,
             kind=StepKind.UNMARSHAL_INPUT,
             solid=step.solid,
-            tags=plan_builder.get_tags(),
+            tags=step.tags,
         ),
         UNMARSHAL_INPUT_OUTPUT,
     )
@@ -45,8 +46,8 @@ def create_unmarshal_input_step(plan_builder, step, step_input, marshalling_key)
 MARSHAL_OUTPUT_INPUT = 'marshal-output-input'
 
 
-def create_marshal_output_step(plan_builder, step, step_output, marshalling_key):
-    check.inst_param(plan_builder, 'plan_builder', PlanBuilder)
+def create_marshal_output_step(pipeline_context, step, step_output, marshalling_key):
+    check.inst_param(pipeline_context, 'pipeline_context', PipelineExecutionContext)
     check.inst_param(step, 'step', ExecutionStep)
     check.inst_param(step_output, 'step_output', StepOutput)
     check.str_param(marshalling_key, 'marshalling_key')
@@ -59,6 +60,7 @@ def create_marshal_output_step(plan_builder, step, step_output, marshalling_key)
         )
 
     return ExecutionStep(
+        pipeline_context=pipeline_context,
         key='{step_key}.marshal-output.{output_name}'.format(
             step_key=step.key, output_name=step_output.name
         ),
@@ -73,5 +75,5 @@ def create_marshal_output_step(plan_builder, step, step_output, marshalling_key)
         compute_fn=_compute_fn,
         kind=StepKind.MARSHAL_OUTPUT,
         solid=step.solid,
-        tags=plan_builder.get_tags(),
+        tags=step.tags,
     )

@@ -5,40 +5,36 @@ from dagster.core.definitions import InputDefinition, Solid
 
 from dagster.core.errors import DagsterInvariantViolationError
 
-from .objects import (
-    ExecutionStep,
-    StepOutput,
-    StepOutputHandle,
-    StepOutputValue,
-    StepKind,
-    PlanBuilder,
-)
+from .objects import ExecutionStep, StepOutput, StepOutputHandle, StepOutputValue, StepKind
 
 INPUT_THUNK_OUTPUT = 'input_thunk_output'
 
 
-def _create_input_thunk_execution_step(plan_builder, solid, input_def, input_spec):
+def _create_input_thunk_execution_step(pipeline_context, solid, input_def, input_spec):
+    check.inst_param(pipeline_context, 'pipeline_context', PipelineExecutionContext)
+    check.inst_param(solid, 'solid', Solid)
+    check.inst_param(input_def, 'input_def', InputDefinition)
+
     check.invariant(input_def.runtime_type.input_schema)
-    check.inst_param(plan_builder, 'plan_builder', PlanBuilder)
 
     def _fn(_step_context, _inputs):
         value = input_def.runtime_type.input_schema.construct_from_config_value(input_spec)
         yield StepOutputValue(output_name=INPUT_THUNK_OUTPUT, value=value)
 
     return ExecutionStep(
+        pipeline_context=pipeline_context,
         key=solid.name + '.' + input_def.name + '.input_thunk',
         step_inputs=[],
         step_outputs=[StepOutput(name=INPUT_THUNK_OUTPUT, runtime_type=input_def.runtime_type)],
         compute_fn=_fn,
         kind=StepKind.INPUT_THUNK,
         solid=solid,
-        tags=plan_builder.get_tags(),
+        tags={'input': input_def.name},
     )
 
 
-def create_input_thunk_execution_step(pipeline_context, plan_builder, solid, input_def, input_spec):
+def create_input_thunk_execution_step(pipeline_context, solid, input_def, input_spec):
     check.inst_param(pipeline_context, 'pipeline_context', PipelineExecutionContext)
-    check.inst_param(plan_builder, 'plan_builder', PlanBuilder)
     check.inst_param(solid, 'solid', Solid)
     check.inst_param(input_def, 'input_def', InputDefinition)
 
@@ -59,5 +55,5 @@ def create_input_thunk_execution_step(pipeline_context, plan_builder, solid, inp
             )
         )
 
-    input_thunk = _create_input_thunk_execution_step(plan_builder, solid, input_def, input_spec)
+    input_thunk = _create_input_thunk_execution_step(pipeline_context, solid, input_def, input_spec)
     return StepOutputHandle(input_thunk, INPUT_THUNK_OUTPUT)
