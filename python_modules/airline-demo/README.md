@@ -199,7 +199,23 @@ file from S3 (at least in our toy example). In YAML, an entry in the config look
       skip_if_present: false
       target_path: source_data/On_Time_Reporting_Carrier_On_Time_Performance_1987_present_2018_4.zip
 
+Because each of these values is strongly typed, we'll get rich error information in the dagit
+config editor (or when running pipelines from the command line) when a config value is incorrectly
+specified.
 
+![Download pipeline bad config](img/download_pipeline_bad_config.png)
+
+While this may seem like a mere convenience, in production contexts it can dramatically reduce
+avoidable errors. Consider boto3's [S3.Client.put_object](https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/s3.html#S3.Client.put_object)
+method, which has 28 parameters, many restricted in obscure ways (for example,
+`ServerSideEncryption` must be one of `'AES256'|'aws:kms'`). Strongly typed config schemas can catch
+any error of this type.
+
+By setting the `description` on each of our config members, we also get easily navigable
+documentation in dagit. Users of library solids no longer need to investigate implementations in
+order to understand what values are required, or what they do -- enabling more confident reuse.
+
+![Download pipeline config docs](img/download_pipeline_config_docs.png)
 
 Note that the output of this solid is also a List -- in this case, a `List(FileExistsAtPath`)
 ### Strongly-typed, self-documenting configuration
