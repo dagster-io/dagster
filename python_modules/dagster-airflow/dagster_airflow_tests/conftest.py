@@ -4,6 +4,8 @@ import datetime
 import os
 import shutil
 import subprocess
+import sys
+import tempfile
 import uuid
 
 import airflow.plugins_manager
@@ -16,6 +18,7 @@ from dagster.utils import load_yaml_from_path, mkdir_p, script_relative_path
 from dagster_airflow import scaffold_airflow_dag
 
 from .test_project.dagster_airflow_demo import define_demo_execution_pipeline
+
 from .utils import reload_module
 
 IMAGE = 'dagster-airflow-demo'
@@ -91,22 +94,46 @@ def airflow_test(docker_image, dags_path, plugins_path, host_tmp_dir):
     assert docker_image
 
     plugin_definition_filename = 'dagster_plugin.py'
-    shutil.copyfile(
-        script_relative_path(os.path.join('..', 'dagster_airflow', plugin_definition_filename)),
-        os.path.abspath(os.path.join(plugins_path, plugin_definition_filename)),
-    )
 
-    mkdir_p(os.path.abspath(dags_path))
+    plugin_path = os.path.abspath(os.path.join(plugins_path, plugin_definition_filename))
 
-    subprocess.check_output(['airflow', 'initdb'])
+    temporary_plugin_path = None
 
-    reload_module(airflow.plugins_manager)
+    try:
+        if os.path.exists(plugin_path):
+            temporary_plugin_file = tempfile.NamedTemporaryFile(delete=False)
+            temporary_plugin_file.close()
+            temporary_plugin_path = temporary_plugin_file.name
+            shutil.copyfile(plugin_path, temporary_plugin_path)
 
-    from airflow.operators.dagster_plugin import DagsterOperator
+        shutil.copyfile(
+            script_relative_path(os.path.join('..', 'dagster_airflow', plugin_definition_filename)),
+            plugin_path,
+        )
 
-    del DagsterOperator
+        mkdir_p(os.path.abspath(dags_path))
 
-    return (docker_image, dags_path, host_tmp_dir)
+        subprocess.check_output(['airflow', 'initdb'])
+
+        # necromancy; follows airflow.operators.__init__
+        reload_module(airflow.plugins_manager)
+        for operators_module in airflow.plugins_manager.operators_modules:
+            sys.modules[operators_module.__name__] = operators_module
+            globals()[operators_module._name] = operators_module
+
+        from airflow.operators.dagster_plugin import DagsterOperator
+
+        del DagsterOperator
+
+        yield (docker_image, dags_path, host_tmp_dir)
+
+    finally:
+        if os.path.exists(plugin_path):
+            os.remove(plugin_path)
+
+        if temporary_plugin_path is not None:
+            shutil.copyfile(temporary_plugin_path, plugin_path)
+            os.remove(temporary_plugin_path)
 
 
 @pytest.fixture(scope='module')

@@ -26,7 +26,7 @@ def import_module_from_path(module_name, path_to_file):
 # https://stackoverflow.com/a/437591/324449
 def reload_module(module):
     version = sys.version_info
-    if version.major >= 4 and version.minor >= 4:
+    if version.major >= 3 and version.minor >= 4:
         from importlib import reload
 
     elif version.major >= 3:
