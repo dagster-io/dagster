@@ -19,7 +19,9 @@ from airflow.plugins_manager import AirflowPlugin
 from airflow.utils.file import TemporaryDirectory
 from docker import APIClient, from_env
 
-if sys.version_info.major >= 3:
+PY3 = sys.version_info.major >= 3
+
+if PY3:
     from io import StringIO  # pylint:disable=import-error
 else:
     from StringIO import StringIO  # pylint:disable=import-error
@@ -228,7 +230,10 @@ class ModifiedDockerOperator(DockerOperator):
 
     def __init__(self, host_tmp_dir=None, **kwargs):
         self.host_tmp_dir = host_tmp_dir
-        super().__init__(**kwargs)
+        if PY3:
+            super().__init__(**kwargs)
+        else:
+            super(type(self), self).__init__(**kwargs)
 
     @contextmanager
     def get_host_tmp_dir(self):
@@ -295,8 +300,10 @@ class ModifiedDockerOperator(DockerOperator):
     # all that the status quo does is inhibit extension of the class
     def __get_tls_config(self):
         # pylint: disable=no-member
-        return super()._DockerOperator__get_tls_config()
-
+        if PY3:
+            return super()._DockerOperator__get_tls_config()
+        else:
+            return super(type(self), self)._DockerOperator__get_tls_config()
 
 class DagsterOperator(ModifiedDockerOperator):
     '''Dagster operator for Apache Airflow.
@@ -359,7 +366,10 @@ class DagsterOperator(ModifiedDockerOperator):
             else:
                 kwargs['docker_conn_id'] = True
 
-        super().__init__(*args, **kwargs)
+        if PY3:
+            super().__init__(*args, **kwargs)
+        else:
+            super(type(self), self).__init__(*args, **kwargs)
 
     @property
     def run_id(self):
@@ -433,7 +443,10 @@ class DagsterOperator(ModifiedDockerOperator):
 
     def get_hook(self):
         if self.docker_conn_id_set:
-            return super().get_hook()
+            if PY3:
+                return super().get_hook()
+            else:
+                return super(type(self), self).get_hook()
 
         class _DummyHook(object):
             def get_conn(self):
@@ -451,14 +464,20 @@ class DagsterOperator(ModifiedDockerOperator):
         if 'dag_run' in context and context['dag_run'] is not None:
             self._run_id = context['dag_run'].run_id
         try:
-            # FIXME implement intermediate result persistence
-            return super().execute(context)
+            # FIXME implement intermediate result persistence to S3
+            if PY3:
+                return super().execute(context)
+            else:
+                return super(type(self), self).execute(context)
         finally:
             self._run_id = None
 
     def __get_tls_config(self):
         # pylint:disable=no-member
-        return super()._ModifiedDockerOperator__get_tls_config()
+        if PY3:
+            return super()._ModifiedDockerOperator__get_tls_config()
+        else:
+            return super(type(self), self)._ModifiedDockerOperator__get_tls_config()
 
 
 class DagsterPlugin(AirflowPlugin):
