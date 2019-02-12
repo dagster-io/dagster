@@ -1,6 +1,6 @@
 # Airline demo
 
-This repository is intended as a realistic demo of Dagster's capabilities. It defines three
+This repository is intended as a fleshed-out demo of Dagster's capabilities. It defines three
 realistic data pipelines corresponding to stereotyped download, ingest, and analysis phases of
 typical data science workflows, using real-world airline data. Although the view of the pipelines
 provided by the Dagster tooling is unified, in typical practice we expect that each pipeline is
