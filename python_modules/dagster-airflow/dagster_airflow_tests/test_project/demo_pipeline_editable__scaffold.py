@@ -61,6 +61,8 @@ S3_CONN_ID = 'aws_default'
 # Set the host directory to mount into /tmp/results on the containers.
 HOST_TMP_DIR = '/tmp/results'
 
+# The 'unusual_prefix' ensures that the following code will be executed only when
+# Airflow imports this file. See: https://bcb.github.io/airflow/hide-globals-in-dag-definition-file
 if __name__.startswith('unusual_prefix'):
     dag, tasks = make_dag(
         dag_id=DAG_ID,

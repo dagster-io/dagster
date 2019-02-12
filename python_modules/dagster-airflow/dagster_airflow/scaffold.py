@@ -242,6 +242,10 @@ def _make_editable_scaffold(
         printer.blank_line()
 
         # This is the canonical way to hide globals from import, but not from Airflow's DagBag
+        printer.line(
+            '# The \'unusual_prefix\' ensures that the following code will be executed only when')
+        printer.line(
+            '# Airflow imports this file. See: https://bcb.github.io/airflow/hide-globals-in-dag-definition-file')
         printer.line('if __name__.startswith(\'unusual_prefix\'):')
         with printer.with_indent():
             printer.line('dag, tasks = make_dag(')
