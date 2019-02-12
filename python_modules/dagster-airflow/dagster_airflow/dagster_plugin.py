@@ -305,6 +305,7 @@ class ModifiedDockerOperator(DockerOperator):
         else:
             return super(type(self), self)._DockerOperator__get_tls_config()
 
+
 class DagsterOperator(ModifiedDockerOperator):
     '''Dagster operator for Apache Airflow.
 
