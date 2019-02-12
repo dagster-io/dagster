@@ -1,4 +1,5 @@
 # Airline demo
+
 This repository is intended as a realistic demo of Dagster's capabilities. It defines three
 realistic data pipelines corresponding to stereotyped download, ingest, and analysis phases of
 typical data science workflows, using real-world airline data. Although the view of the pipelines
@@ -10,6 +11,7 @@ fleshed-out context than the introductory tutorial, and as a reference when buil
 first production pipelines in the system. Comments and suggestions are enthusiastically encouraged!
 
 ### Requirements 
+
 To run the airline demo pipelines locally, you'll need
 
 - An Internet connection
@@ -54,6 +56,23 @@ For demo purposes, we've put our source files in a publicly-readable S3 reposito
 these might be files in S3 or other cloud storage systems; publicly available datasets downloaded
 over http; or batch files in an SFTP drop.
 
+### Running the pipeline locally with test config
+
+If you want to start by running this pipeline, try the config fragment in
+`environments/local_test_download.yml`. The first time you run this pipeline, you'll likely see a
+bunch of log lines in the terminal running dagit as Spark dependencies are resolved.
+
+This config fragment points to cut-down versions of the original data files on S3. It can be good
+practice to maintain similar test sets so that you can run fast versions of your data pipelines
+locally or in test environments. While there are many faults that will not be caught by using small
+cut-down or synthetic data sets -- for example, data issues that may only appear in production data
+or at scale -- this practice will allow you to verify the integrity of your pipeline construction
+and to catch at least some semantic issues.
+
+![Download pipeline run](img/download_pipeline_run.png)
+
+### Defining a pipeline with library solids
+
 Let's start by looking at the pipeline definition (in `airline_demo/pipelines.py`):
 
     def define_airline_demo_download_pipeline():
@@ -82,6 +101,8 @@ implementation of common functionality like downloading and unzipping files. Ins
 abstract common functionality into reusable solids, separating task-specific parameters out into
 declarative config, and building up a library of building blocks for new data pipelines.
 
+### Implementing a solid with a List type
+
 Let's take a look at how one of these library solids is defined:
 
     @solid(
@@ -90,7 +111,7 @@ Let's take a look at how one of these library solids is defined:
             List(
                 Dict(
                     fields={
-                        # Probably want to make the region configuable too
+                        # Probably want to make the region configurable too
                         'bucket': Field(
                             String, description='The S3 bucket in which to look for the key.'
                         ),
@@ -154,6 +175,7 @@ Let's take a look at how one of these library solids is defined:
             results.append(target_path)
         return results
 
+There's a lot to unpack here, but let's start with the config field on the solid.
 
 ### Running tests
 You won't want to suppress test output if you want to see loglines from dagster:
