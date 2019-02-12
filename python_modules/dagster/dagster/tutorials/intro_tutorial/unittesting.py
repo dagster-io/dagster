@@ -59,9 +59,6 @@ def execute_test_a_plus_b_final_subdag():
         define_part_fourteen_step_one_pipeline(),
         ['a_plus_b', 'final'],
         inputs={'a_plus_b': {'num1': 2, 'num2': 4}, 'final': {'num2': 6}},
-        environment_dict={
-            'context': {'default': {'config': {'log_level': 'DEBUG'}}}
-        },
     )
 
     assert results['a_plus_b'].transformed_value() == 6
