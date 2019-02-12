@@ -2,6 +2,7 @@ import datetime
 import os
 import subprocess
 
+import airflow
 from airflow.models import TaskInstance
 
 from dagster_airflow.scaffold import _key_for_marshalled_result, _normalize_key
@@ -51,6 +52,7 @@ def test_run_airflow_dag(scaffold_dag):
 
     execution_date = datetime.datetime.utcnow()
 
+    import pdb; pdb.set_trace()
     test_dag = import_module_from_path('test_dag', editable_path)
 
     _dag, tasks = test_dag.make_dag(
