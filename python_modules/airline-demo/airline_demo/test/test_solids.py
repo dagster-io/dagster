@@ -78,7 +78,9 @@ def test_sql_solid():
 
 def test_thunk():
     result = execute_solid(
-        PipelineDefinition([thunk]), 'thunk', environment={'solids': {'thunk': {'config': 'foo'}}}
+        PipelineDefinition([thunk]),
+        'thunk',
+        environment_dict={'solids': {'thunk': {'config': 'foo'}}},
     )
     assert result.success
     assert result.transformed_value() == 'foo'
@@ -89,7 +91,7 @@ def test_download_from_s3():
     result = execute_solid(
         PipelineDefinition([download_from_s3], context_definitions=_s3_context()),
         'download_from_s3',
-        environment={
+        environment_dict={
             'context': {'test': {}},
             'solids': {
                 'download_from_s3': {
@@ -112,7 +114,7 @@ def test_download_from_s3_tempfile():
     result = execute_solid(
         PipelineDefinition([download_from_s3], context_definitions=_s3_context()),
         'download_from_s3',
-        environment={
+        environment_dict={
             'context': {'test': {}},
             'solids': {
                 'download_from_s3': {
@@ -149,7 +151,7 @@ def test_unzip_file_tempfile():
             'archive_paths': [os.path.join(os.path.dirname(__file__), 'data/test.zip')],
             'archive_members': ['test/test_file'],
         },
-        environment={'solids': {'unzip_file': {'config': {'skip_if_present': False}}}},
+        environment_dict={'solids': {'unzip_file': {'config': {'skip_if_present': False}}}},
     )
     assert result.success
     assert result.transformed_value()
@@ -171,7 +173,7 @@ def test_ingest_csv_to_spark():
         ),
         'ingest_csv_to_spark',
         inputs={'input_csv': os.path.join(os.path.dirname(__file__), 'data/test.csv')},
-        environment={'context': {'test': {}}},
+        environment_dict={'context': {'test': {}}},
     )
     assert result.success
     assert isinstance(result.transformed_value(), pyspark.sql.dataframe.DataFrame)
