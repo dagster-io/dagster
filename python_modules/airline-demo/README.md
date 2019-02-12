@@ -10,7 +10,7 @@ Use the airline demo to familiarize yourself with the features of the Dagster to
 fleshed-out context than the introductory tutorial, and as a reference when building your own
 first production pipelines in the system. Comments and suggestions are enthusiastically encouraged!
 
-### Requirements 
+## Getting Started
 
 To run the airline demo pipelines locally, you'll need
 
@@ -25,7 +25,11 @@ Use pip to install the demo's Python requirements:
 
     pip install -e .
 
-### Pipelines and config
+Then just run dagit from the root of the repo:
+
+    dagit
+
+## Pipelines and config
 
 The demo defines a single repository with three pipelines, in `airline_demo/pipelines.py`:
 
@@ -35,11 +39,8 @@ The demo defines a single repository with three pipelines, in `airline_demo/pipe
 - **airline_demo_warehouse_pipeline** performs typical in-warehouse analysis and manipulations
   using SQL, and then generates and archives analysis artifacts and plots using Jupyter notebooks.
 
-Once you've installed the requirements, you can run `dagit` from the root of the demo and browse
-the pipelines.
-
-Configuration files for running the demo pipelines are provided under `environments/`. To run the
-pipelines locally, use the configuration files that begin with the prefix `local_`.
+Sample configuration files for running the demo pipelines are provided under `environments/`. To run
+the pipelines locally, use the configuration files that begin with the prefix `local_`.
 
 To avoid unnecessary duplication, the config that is common to all of the pipelines is factored
 out into `local_base.yml` file. Recall that when running a pipeline using `dagster pipeline execute`
@@ -101,7 +102,7 @@ implementation of common functionality like downloading and unzipping files. Ins
 abstract common functionality into reusable solids, separating task-specific parameters out into
 declarative config, and building up a library of building blocks for new data pipelines.
 
-### Implementing a solid with a List type
+### Implementing a solid with List-typed inputs and outputs
 
 Let's take a look at how one of these library solids is defined:
 
@@ -217,10 +218,22 @@ order to understand what values are required, or what they do -- enabling more c
 
 ![Download pipeline config docs](img/download_pipeline_config_docs.png)
 
-Note that the output of this solid is also a List -- in this case, a `List(FileExistsAtPath`)
-### Strongly-typed, self-documenting configuration
+Note that the output of this solid is also a List -- in this case, a `List(FileExistsAtPath)`. We've
+defined a custom output type to illustrate the richness of the Dagster type system:
 
-Our `download_from_s3` solid
+    from dagster.core.types.runtime import Stringish
+    from dagster.utils import safe_isfile
+
+    class FileExistsAtPath(Stringish):
+        def __init__(self):
+            super(FileExistsAtPath, self).__init__(description='A path at which a file actually exists')
+
+        def coerce_runtime_value(self, value):
+            value = super(FileExistsAtPath, self).coerce_runtime_value(value)
+            return self.throw_if_false(safe_isfile, value)
+
+By overriding `coerce_runtime_value` to check if a file actually exists at the specified path, we
+can lever the type system to make runtime guarantees about the integrity of our pipeline.
 
 ### Running tests
 You won't want to suppress test output if you want to see loglines from dagster:
