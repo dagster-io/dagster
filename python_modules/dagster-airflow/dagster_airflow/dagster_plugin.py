@@ -233,7 +233,7 @@ class ModifiedDockerOperator(DockerOperator):
         if PY3:
             super().__init__(**kwargs)
         else:
-            super(type(self), self).__init__(**kwargs)
+            super(type(self), self).__init__(**kwargs)  # pylint: disable=bad-s
 
     @contextmanager
     def get_host_tmp_dir(self):
@@ -303,6 +303,7 @@ class ModifiedDockerOperator(DockerOperator):
         if PY3:
             return super()._DockerOperator__get_tls_config()
         else:
+            # pylint: disable=bad-super-call
             return super(type(self), self)._DockerOperator__get_tls_config()
 
 
@@ -370,6 +371,7 @@ class DagsterOperator(ModifiedDockerOperator):
         if PY3:
             super().__init__(*args, **kwargs)
         else:
+            # pylint: disable=bad-super-call
             super(type(self), self).__init__(*args, **kwargs)
 
     @property
@@ -447,7 +449,7 @@ class DagsterOperator(ModifiedDockerOperator):
             if PY3:
                 return super().get_hook()
             else:
-                return super(type(self), self).get_hook()
+                return super(type(self), self).get_hook()  # pylint: disable=bad-super-call
 
         class _DummyHook(object):
             def get_conn(self):
@@ -469,7 +471,7 @@ class DagsterOperator(ModifiedDockerOperator):
             if PY3:
                 return super().execute(context)
             else:
-                return super(type(self), self).execute(context)
+                return super(type(self), self).execute(context)  # pylint: disable=bad-super-call
         finally:
             self._run_id = None
 
@@ -478,6 +480,7 @@ class DagsterOperator(ModifiedDockerOperator):
         if PY3:
             return super()._ModifiedDockerOperator__get_tls_config()
         else:
+            # pylint: disable=bad-super-call
             return super(type(self), self)._ModifiedDockerOperator__get_tls_config()
 
 
