@@ -1,4 +1,5 @@
 from dagster import check
+from dagster.core.execution import PipelineExecutionContext
 from dagster.core.definitions import Solid
 from dagster.core.types.runtime import RuntimeType
 
@@ -10,7 +11,6 @@ from .objects import (
     StepOutputHandle,
     StepOutputValue,
     StepKind,
-    PlanBuilder,
 )
 
 JOIN_OUTPUT = 'join_output'
@@ -20,8 +20,8 @@ def __join_lambda(_context, inputs):
     yield StepOutputValue(output_name=JOIN_OUTPUT, value=list(inputs.values())[0])
 
 
-def create_join_step(plan_builder, solid, step_key, prev_steps, prev_output_name):
-    check.inst_param(plan_builder, 'plan_builder', PlanBuilder)
+def create_join_step(pipeline_context, solid, step_key, prev_steps, prev_output_name):
+    check.inst_param(pipeline_context, 'pipeline_context', PipelineExecutionContext)
     check.inst_param(solid, 'solid', Solid)
     check.str_param(step_key, 'step_key')
     check.list_param(prev_steps, 'prev_steps', of_type=ExecutionStep)
@@ -43,18 +43,20 @@ def create_join_step(plan_builder, solid, step_key, prev_steps, prev_output_name
         step_inputs.append(StepInput(prev_step.key, prev_step_output.runtime_type, output_handle))
 
     return ExecutionStep(
+        pipeline_context=pipeline_context,
         key=step_key,
         step_inputs=step_inputs,
         step_outputs=[StepOutput(JOIN_OUTPUT, seen_runtime_type)],
         compute_fn=__join_lambda,
         kind=StepKind.JOIN,
         solid=solid,
-        tags=plan_builder.get_tags(),
+        tags={},
+        # tags=pipeline_context.get_tags(),
     )
 
 
 def create_joining_subplan(
-    plan_builder, solid, join_step_key, parallel_steps, parallel_step_output
+    pipeline_context, solid, join_step_key, parallel_steps, parallel_step_output
 ):
     '''
     This captures a common pattern of fanning out a single value to N steps,
@@ -68,7 +70,7 @@ def create_joining_subplan(
     to be seen if there should be any work or verification done in this step, especially
     in multi-process environments that require persistence between steps.
     '''
-    check.inst_param(plan_builder, 'plan_builder', PlanBuilder)
+    check.inst_param(pipeline_context, 'pipeline_context', PipelineExecutionContext)
     check.inst_param(solid, 'solid', Solid)
     check.str_param(join_step_key, 'join_step_key')
     check.list_param(parallel_steps, 'parallel_steps', of_type=ExecutionStep)
@@ -78,7 +80,7 @@ def create_joining_subplan(
         check.invariant(parallel_step.has_step_output(parallel_step_output))
 
     join_step = create_join_step(
-        plan_builder, solid, join_step_key, parallel_steps, parallel_step_output
+        pipeline_context, solid, join_step_key, parallel_steps, parallel_step_output
     )
 
     output_name = join_step.step_outputs[0].name
@@ -90,8 +92,8 @@ def create_joining_subplan(
 VALUE_OUTPUT = 'value_output'
 
 
-def create_value_thunk_step(plan_builder, solid, runtime_type, step_key, value):
-    check.inst_param(plan_builder, 'plan_builder', PlanBuilder)
+def create_value_thunk_step(pipeline_context, solid, runtime_type, step_key, value):
+    check.inst_param(pipeline_context, 'pipeline_context', PipelineExecutionContext)
     check.inst_param(solid, 'solid', Solid)
     check.inst_param(runtime_type, 'runtime_type', RuntimeType)
     check.str_param(step_key, 'step_key')
@@ -101,13 +103,14 @@ def create_value_thunk_step(plan_builder, solid, runtime_type, step_key, value):
 
     return StepOutputHandle(
         ExecutionStep(
+            pipeline_context=pipeline_context,
             key=step_key,
             step_inputs=[],
             step_outputs=[StepOutput(VALUE_OUTPUT, runtime_type)],
             compute_fn=_fn,
             kind=StepKind.VALUE_THUNK,
             solid=solid,
-            tags=plan_builder.get_tags(),
+            tags={},
         ),
         VALUE_OUTPUT,
     )

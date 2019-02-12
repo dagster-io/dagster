@@ -8,7 +8,6 @@ from dagster.core.types.runtime import RuntimeType
 from .objects import (
     ExecutionStep,
     ExecutionValueSubplan,
-    PlanBuilder,
     StepInput,
     StepOutput,
     StepOutputValue,
@@ -42,11 +41,8 @@ def configs_for_output(solid, solid_config, output_def):
             yield output_spec
 
 
-def decorate_with_output_materializations(
-    pipeline_context, plan_builder, solid, output_def, subplan
-):
+def decorate_with_output_materializations(pipeline_context, solid, output_def, subplan):
     check.inst_param(pipeline_context, 'pipeline_context', PipelineExecutionContext)
-    check.inst_param(plan_builder, 'plan_builder', PlanBuilder)
     check.inst_param(solid, 'solid', Solid)
     check.inst_param(output_def, 'output_def', OutputDefinition)
     check.inst_param(subplan, 'subplan', ExecutionValueSubplan)
@@ -61,6 +57,7 @@ def decorate_with_output_materializations(
     for mat_count, output_spec in enumerate(configs_for_output(solid, solid_config, output_def)):
         new_steps.append(
             ExecutionStep(
+                pipeline_context=pipeline_context,
                 key='{solid}.materialization.output.{output}.{mat_count}'.format(
                     solid=solid.name, output=output_def.name, mat_count=mat_count
                 ),
@@ -79,12 +76,12 @@ def decorate_with_output_materializations(
                 kind=StepKind.MATERIALIZATION_THUNK,
                 solid=solid,
                 compute_fn=_create_materialization_lambda(output_def.runtime_type, output_spec),
-                tags=plan_builder.get_tags(),
+                # tags=plan_builder.get_tags(),
             )
         )
 
     return create_joining_subplan(
-        plan_builder,
+        pipeline_context,
         solid,
         '{solid}.materialization.output.{output}.join'.format(
             solid=solid.name, output=output_def.name
