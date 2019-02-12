@@ -23,6 +23,12 @@ from .utils import reload_module
 
 IMAGE = 'dagster-airflow-demo'
 
+# py2 compat
+try:
+    FileNotFoundError
+except NameError:
+    FileNotFoundError = IOError
+
 
 @pytest.fixture(scope='module')
 def airflow_home():
