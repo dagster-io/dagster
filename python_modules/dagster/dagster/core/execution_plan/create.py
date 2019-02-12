@@ -5,6 +5,7 @@ from dagster.core.definitions import (
     InputDefinition,
     OutputDefinition,
     Solid,
+    SolidOutputHandle,
 )
 
 from dagster.core.errors import DagsterInvariantViolationError, DagsterInvalidSubplanExecutionError
@@ -21,7 +22,6 @@ from .objects import (
     ExecutionPlan,
     ExecutionStep,
     ExecutionValueSubplan,
-    PlanBuilder,
     StepInput,
     StepOutputHandle,
     StepKind,
@@ -30,6 +30,28 @@ from .objects import (
 from .plan_subset import ExecutionPlanSubsetInfo, ExecutionPlanAddedOutputs
 
 from .transform import create_transform_step
+
+
+class StepOutputMap(dict):
+    def __getitem__(self, key):
+        check.inst_param(key, 'key', SolidOutputHandle)
+        return dict.__getitem__(self, key)
+
+    def __setitem__(self, key, val):
+        check.inst_param(key, 'key', SolidOutputHandle)
+        check.inst_param(val, 'val', StepOutputHandle)
+        return dict.__setitem__(self, key, val)
+
+
+# This is the state that is built up during the execution plan build process.
+# steps is just a list of the steps that have been created
+# step_output_map maps logical solid outputs (solid_name, output_name) to particular
+# step outputs. This covers the case where a solid maps to multiple steps
+# and one wants to be able to attach to the logical output of a solid during execution
+class PlanBuilder:
+    def __init__(self):
+        self.steps = []
+        self.step_output_map = StepOutputMap()
 
 
 def create_execution_plan_core(

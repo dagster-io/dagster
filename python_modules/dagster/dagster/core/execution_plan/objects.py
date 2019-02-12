@@ -7,7 +7,7 @@ import six
 from dagster import check
 from dagster.utils import merge_dicts
 from dagster.core.execution_context import PipelineExecutionContext
-from dagster.core.definitions import Solid, SolidOutputHandle
+from dagster.core.definitions import Solid
 from dagster.core.errors import DagsterError
 from dagster.core.types.runtime import RuntimeType
 
@@ -300,37 +300,3 @@ class ExecutionPlan(object):
         for step_key_level in toposort.toposort(self.deps):
             yield [self.step_dict[step_key] for step_key in step_key_level]
 
-
-class StepOutputMap(dict):
-    def __getitem__(self, key):
-        check.inst_param(key, 'key', SolidOutputHandle)
-        return dict.__getitem__(self, key)
-
-    def __setitem__(self, key, val):
-        check.inst_param(key, 'key', SolidOutputHandle)
-        check.inst_param(val, 'val', StepOutputHandle)
-        return dict.__setitem__(self, key, val)
-
-
-# This is the state that is built up during the execution plan build process.
-# steps is just a list of the steps that have been created
-# step_output_map maps logical solid outputs (solid_name, output_name) to particular
-# step outputs. This covers the case where a solid maps to multiple steps
-# and one wants to be able to attach to the logical output of a solid during execution
-class PlanBuilder:
-    def __init__(self):
-        self.steps = []
-        self.step_output_map = StepOutputMap()
-
-    # def get_tags(self, **additional_tags):
-    #     additional_tags.update(self._tags)
-    #     return additional_tags
-
-    # @contextmanager
-    # def push_tags(self, **kwargs):
-    #     old_tags = copy.copy(self._tags)
-    #     self._tags.update(kwargs)
-    #     try:
-    #         yield
-    #     finally:
-    #         self._tags = old_tags
