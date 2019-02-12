@@ -175,7 +175,19 @@ Let's take a look at how one of these library solids is defined:
             results.append(target_path)
         return results
 
-There's a lot to unpack here, but let's start with the config field on the solid.
+There's a lot to unpack here, but let's start with the config field on the solid. We define this
+solid using a `List` type so that it can download an arbitrary number of files in a single step.
+This lets us avoid a typical pattern in DAG and workflow definitions where a single vertical DAG
+fragment is repeated horizontally N times, once for each data source being processed. You will
+probably be familiar with DAGs that look like the following:
+
+By using a List type, we can add or remove new data sources by adjusting config, rather than by
+adding or removing DAG fragment definitions. Of course, there may be cases in which a more explicit
+graph is preferable -- for example, if the same operations are being executed on two sets of inputs,
+but the downstream dependencies are independent. Actually, you can see an example of this in this
+very pipeline -- the output of `download_q2_sfo_weather` does not need to be unzipped, and so we've
+defined a separate alias (still using the same library solid -- and underlying List type -- for
+maximum flexibility).
 
 ### Running tests
 You won't want to suppress test output if you want to see loglines from dagster:
