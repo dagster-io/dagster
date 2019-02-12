@@ -219,6 +219,7 @@ def List(inner_type):
             # Avoiding a very nasty circular dependency which would require us to restructure the
             # entire module
             from .type_printer import print_config_type_to_string
+
             super(_List, self).__init__(
                 key='List.{inner_type}'.format(inner_type=inner_type.key),
                 name=None,
@@ -226,10 +227,10 @@ def List(inner_type):
                 inner_type=inner_type,
             )
 
-            self.description= 'List of {inner_type}'.format(
+            self.description = 'List of {inner_type}'.format(
                 inner_type=print_config_type_to_string(self, with_lines=False)
             )
- 
+
     return _List
 
 
