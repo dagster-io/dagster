@@ -203,11 +203,11 @@ def scaffold_dag(airflow_test):
 
     try:
         os.remove(
-            os.path.abspath(os.path.join(dags_path, os.path.basename(static_path)[:3] + '.pyc'))
+            os.path.abspath(os.path.join(dags_path, os.path.basename(static_path)[:-3] + '.pyc'))
         )
         os.remove(
-            os.path.abspath(os.path.join(dags_path, os.path.basename(editable_path)[:3] + '.pyc'))
+            os.path.abspath(os.path.join(dags_path, os.path.basename(editable_path)[:-3] + '.pyc'))
         )
 
-    except FileNotFoundError:
+    except (FileNotFoundError, OSError):
         pass
