@@ -2,10 +2,7 @@ import datetime
 import os
 import subprocess
 
-import airflow
 from airflow.models import TaskInstance
-
-from dagster.utils import pushd
 
 from dagster_airflow.scaffold import _key_for_marshalled_result, _normalize_key
 
@@ -50,14 +47,14 @@ def test_unit_run_airflow_dag_steps(scaffold_dag):
 
 def test_run_airflow_dag(scaffold_dag):
     '''This test runs the sample Airflow dag using the TaskInstance API, directly from Python'''
-    _n, _p, _d, _s, editable_path = scaffold_dag
+    _n, _p, _d, static_path, editable_path = scaffold_dag
 
     execution_date = datetime.datetime.utcnow()
 
-    with pushd(os.path.dirname(editable_path)):
-        test_dag = import_module_from_path('test_dag', editable_path)
+    test_dag = import_module_from_path('demo_pipeline_static__scaffold', static_path)
+    test_dag = import_module_from_path('demo_pipeline', editable_path)
 
-    _dag, tasks = test_dag.make_dag(
+    _dag, tasks = demo_pipeline.make_dag(
         dag_id=test_dag.DAG_ID,
         dag_description=test_dag.DAG_DESCRIPTION,
         dag_kwargs=dict(default_args=test_dag.DEFAULT_ARGS, **test_dag.DAG_KWARGS),
