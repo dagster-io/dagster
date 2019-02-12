@@ -191,6 +191,21 @@ very pipeline -- the output of `download_q2_sfo_weather` does not need to be unz
 defined a separate alias (still using the same library solid -- and underlying List type -- for
 maximum flexibility).
 
+Each entry in the config list for our solid specifies everything we need to know to download a
+file from S3 (at least in our toy example). In YAML, an entry in the config looks like this:
+
+    - bucket: dagster-airline-demo-source-data
+      key: test/On_Time_Reporting_Carrier_On_Time_Performance_1987_present_2018_4.zip
+      skip_if_present: false
+      target_path: source_data/On_Time_Reporting_Carrier_On_Time_Performance_1987_present_2018_4.zip
+
+
+
+Note that the output of this solid is also a List -- in this case, a `List(FileExistsAtPath`)
+### Strongly-typed, self-documenting configuration
+
+Our `download_from_s3` solid
+
 ### Running tests
 You won't want to suppress test output if you want to see loglines from dagster:
 
