@@ -216,13 +216,16 @@ def List(inner_type):
 
     class _List(ConfigList):
         def __init__(self):
+            # Avoiding a very nasty circular dependency which would require us to restructure the
+            # entire module
+            from .type_printer import print_config_type_to_string
             super(_List, self).__init__(
                 key='List.{inner_type}'.format(inner_type=inner_type.key),
                 name=None,
                 description=(
-                    'List of {inner_type}'.format(inner_type=inner_type.name)
-                    if inner_type.name is not None
-                    else 'List of config values'
+                    'List of {inner_type}'.format(
+                        inner_type=print_config_type_to_string(self, with_lines=False)
+                    )
                 ),
                 type_attributes=ConfigTypeAttributes(is_builtin=True),
                 inner_type=inner_type,
