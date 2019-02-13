@@ -472,7 +472,6 @@ def _execute_subplan_or_error(args, dauphin_pipeline, execution_plan, evaluate_v
 
     try:
         step_events = execute_externalized_plan(
-            pipeline=dauphin_pipeline.get_dagster_pipeline(),
             execution_plan=execution_plan,
             step_keys=args.step_keys,
             inputs_to_marshal=_get_inputs_to_marshal(args),

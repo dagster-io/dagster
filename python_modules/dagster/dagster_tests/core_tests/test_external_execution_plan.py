@@ -64,7 +64,6 @@ def test_basic_pipeline_external_plan_execution():
         execution_plan = create_execution_plan(pipeline)
 
         step_events = execute_externalized_plan(
-            pipeline,
             execution_plan,
             ['add_one.transform'],
             inputs_to_marshal={'add_one.transform': {'num': temp_path}},
@@ -94,7 +93,6 @@ def test_external_execution_marshal_wrong_input_error():
 
     with pytest.raises(DagsterUnmarshalInputNotFoundError) as exc_info:
         execute_externalized_plan(
-            pipeline,
             execution_plan,
             ['add_one.transform'],
             inputs_to_marshal={'add_one.transform': {'nope': 'nope'}},
@@ -113,7 +111,6 @@ def test_external_execution_step_for_input_missing():
 
     with pytest.raises(DagsterExecutionStepNotFoundError) as exc_info:
         execute_externalized_plan(
-            pipeline,
             execution_plan,
             ['add_one.transform'],
             inputs_to_marshal={'nope': {'nope': 'nope'}},
@@ -130,7 +127,6 @@ def test_external_execution_input_marshal_code_error():
 
     with pytest.raises(IOError):
         execute_externalized_plan(
-            pipeline,
             execution_plan,
             ['add_one.transform'],
             inputs_to_marshal={'add_one.transform': {'num': 'nope'}},
@@ -139,7 +135,6 @@ def test_external_execution_input_marshal_code_error():
         )
 
     step_events = execute_externalized_plan(
-        pipeline,
         execution_plan,
         ['add_one.transform'],
         inputs_to_marshal={'add_one.transform': {'num': 'nope'}},
@@ -162,7 +157,6 @@ def test_external_execution_step_for_output_missing():
 
     with pytest.raises(DagsterExecutionStepNotFoundError):
         execute_externalized_plan(
-            pipeline,
             execution_plan,
             ['add_one.transform'],
             outputs_to_marshal={'nope': [MarshalledOutput('nope', 'nope')]},
@@ -177,7 +171,6 @@ def test_external_execution_output_missing():
 
     with pytest.raises(DagsterMarshalOutputNotFoundError):
         execute_externalized_plan(
-            pipeline,
             execution_plan,
             ['add_one.transform'],
             outputs_to_marshal={'add_one.transform': [MarshalledOutput('nope', 'nope')]},
@@ -203,7 +196,6 @@ def test_external_execution_marshal_output_code_error():
 
     with pytest.raises(IOError) as exc_info:
         execute_externalized_plan(
-            pipeline,
             execution_plan,
             ['return_one.transform', 'add_one.transform'],
             outputs_to_marshal=outputs_to_marshal,
@@ -214,7 +206,6 @@ def test_external_execution_marshal_output_code_error():
     assert 'No such file or directory' in str(exc_info.value)
 
     step_events = execute_externalized_plan(
-        pipeline,
         execution_plan,
         ['return_one.transform', 'add_one.transform'],
         outputs_to_marshal=outputs_to_marshal,
@@ -238,7 +229,6 @@ def test_external_execution_output_code_error_throw_on_user_error():
 
     with pytest.raises(Exception) as exc_info:
         execute_externalized_plan(
-            pipeline,
             execution_plan,
             ['user_throw_exception.transform'],
             execution_metadata=ExecutionMetadata(),
@@ -254,7 +244,6 @@ def test_external_execution_output_code_error_no_throw_on_user_error():
     execution_plan = create_execution_plan(pipeline)
 
     step_events = execute_externalized_plan(
-        pipeline,
         execution_plan,
         ['user_throw_exception.transform'],
         execution_metadata=ExecutionMetadata(),
@@ -274,7 +263,7 @@ def test_external_execution_unsatisfied_input_error():
 
     with pytest.raises(DagsterInvalidSubplanExecutionError) as exc_info:
         execute_externalized_plan(
-            pipeline, execution_plan, ['add_one.transform'], execution_metadata=ExecutionMetadata()
+            execution_plan, ['add_one.transform'], execution_metadata=ExecutionMetadata()
         )
 
     assert exc_info.value.pipeline_name == 'basic_external_plan_execution'
