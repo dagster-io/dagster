@@ -1380,7 +1380,7 @@ def test_query_execution_plan_errors():
     result = execute_dagster_graphql(
         define_context(),
         EXECUTION_PLAN_QUERY,
-        {'config': 2_334_893, 'pipeline': {'name': 'pandas_hello_world'}},
+        {'config': 2334893, 'pipeline': {'name': 'pandas_hello_world'}},
     )
 
     assert not result.errors
@@ -1388,7 +1388,7 @@ def test_query_execution_plan_errors():
     assert result.data['executionPlan']['__typename'] == 'PipelineConfigValidationInvalid'
 
     result = execute_dagster_graphql(
-        define_context(), EXECUTION_PLAN_QUERY, {'config': 2_334_893, 'pipeline': {'name': 'nope'}}
+        define_context(), EXECUTION_PLAN_QUERY, {'config': 2334893, 'pipeline': {'name': 'nope'}}
     )
 
     assert not result.errors
@@ -1532,7 +1532,7 @@ def test_basic_start_pipeline_execution_config_failure():
         variables={
             'pipeline': {'name': 'pandas_hello_world'},
             'config': {
-                'solids': {'sum_solid': {'inputs': {'num': {'csv': {'path': 384_938_439}}}}}
+                'solids': {'sum_solid': {'inputs': {'num': {'csv': {'path': 384938439}}}}}
             },
         },
     )
@@ -1850,7 +1850,7 @@ def test_start_subplan_invalid_config(snapshot):
         variables={
             'pipelineName': 'pandas_hello_world',
             'config': {
-                'solids': {'sum_solid': {'inputs': {'num': {'csv': {'path': 384_938_439}}}}}
+                'solids': {'sum_solid': {'inputs': {'num': {'csv': {'path': 384938439}}}}}
             },
             'stepExecutions': [{'stepKey': 'sum_solid.transform'}],
             'executionMetadata': {'runId': 'kdjkfjdfd'},
