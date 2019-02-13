@@ -49,58 +49,20 @@ def _split_lines(lines):
     return (lines.strip('\n') + ',').split('\n')
 
 
-def _key_for_marshalled_result(step_key, result_name):
+def _key_for_marshalled_result(step_key, result_name, prepend_run_id=True):
     '''Standardizes keys for marshalled inputs and outputs.'''
     return (
-        '/tmp/results/' + _normalize_key(step_key) + '___' + _normalize_key(result_name) + '.pickle'
+        '/tmp/results/'
+        + ('{run_id_prefix}' if prepend_run_id else '')
+        + _normalize_key(step_key)
+        + '___'
+        + _normalize_key(result_name)
+        + '.pickle'
     )
 
 
 def _step_executions_key(step):
     return 'STEP_EXECUTIONS_' + _normalize_key(step.key).upper()
-
-
-def _scaffold_marshalled_inputs_for_step(step):
-    '''Generate the marshalled input block for our scaffolding.'''
-    printer = IndentingBlockPrinter(indent_level=2)
-    printer.line('[')
-    with printer.with_indent():
-        for step_input in step.step_inputs:
-            printer.line('{')
-            with printer.with_indent():
-                printer.line('inputName: "{input_name}",'.format(input_name=step_input.name))
-                printer.line(
-                    'key: "{key}"'.format(
-                        key=_key_for_marshalled_result(
-                            step_input.prev_output_handle.step.key,
-                            step_input.prev_output_handle.output_name,
-                        )
-                    )
-                )
-            printer.line('}')
-    printer.line(']')
-
-    return printer.read()
-
-
-def _scaffold_marshalled_outputs_for_step(step):
-    '''Generate the marshalled output block for our scaffolding.'''
-    printer = IndentingBlockPrinter(indent_level=2)
-    printer.line('[')
-    with printer.with_indent():
-        for step_output in step.step_outputs:
-            printer.line('{')
-            with printer.with_indent():
-                printer.line('outputName: "{output_name}",'.format(output_name=step_output.name))
-                printer.line(
-                    'key: "{key}"'.format(
-                        key=_key_for_marshalled_result(step.key, step_output.name)
-                    )
-                )
-            printer.line('}')
-    printer.line(']')
-
-    return printer.read()
 
 
 def _format_config(config):
@@ -170,28 +132,6 @@ def _format_config(config):
     return _format_config_subdict(config)
 
 
-def _scaffold_step_executions(step):
-    marshalled_inputs = _scaffold_marshalled_inputs_for_step(step)
-    marshalled_outputs = _scaffold_marshalled_outputs_for_step(step)
-
-    printer = IndentingBlockPrinter(indent_level=2)
-
-    printer.line('[')
-    with printer.with_indent():
-        printer.line('{')
-        with printer.with_indent():
-            printer.line('stepKey: "{step_key}"'.format(step_key=step.key))
-            printer.line('marshalledInputs: ')
-            for line in (marshalled_inputs.strip('\n') + ',').split('\n'):
-                printer.line(line)
-            printer.line('marshalledOutputs: ')
-            for line in (marshalled_outputs.strip('\n') + ',').split('\n'):
-                printer.line(line)
-        printer.line('}')
-    printer.line(']')
-    return printer.read()
-
-
 def _make_editable_scaffold(
     pipeline_name, pipeline_description, env_config, static_scaffold, default_args
 ):
@@ -253,7 +193,10 @@ def _make_editable_scaffold(
             'Any additional keyword arguments to be passed to the ``airflow.DAG`` constructor. '
             'You can override these with values of your choice.'
         )
-        printer.line('DAG_KWARGS = {}')
+        printer.line('DAG_KWARGS = {')
+        with printer.with_indent():
+            printer.line('\'schedule_interval\': \'0 0 * * *\',')
+        printer.line('}')
         printer.blank_line()
 
         printer.comment(
@@ -298,15 +241,24 @@ def _make_editable_scaffold(
         printer.line('HOST_TMP_DIR = \'/tmp/results\'')
         printer.blank_line()
 
-        printer.line('dag = make_dag(')
+        # This is the canonical way to hide globals from import, but not from Airflow's DagBag
+        printer.line(
+            '# The \'unusual_prefix\' ensures that the following code will be executed only when'
+        )
+        printer.line(
+            '# Airflow imports this file. See: https://bcb.github.io/airflow/hide-globals-in-dag-definition-file'
+        )
+        printer.line('if __name__.startswith(\'unusual_prefix\'):')
         with printer.with_indent():
-            printer.line('dag_id=DAG_ID,')
-            printer.line('dag_description=DAG_DESCRIPTION,')
-            printer.line('dag_kwargs=dict(default_args=DEFAULT_ARGS, **DAG_KWARGS),')
-            printer.line('s3_conn_id=S3_CONN_ID,')
-            printer.line('modified_docker_operator_kwargs=MODIFIED_DOCKER_OPERATOR_KWARGS,')
-            printer.line('host_tmp_dir=HOST_TMP_DIR,')
-        printer.line(')')
+            printer.line('dag, tasks = make_dag(')
+            with printer.with_indent():
+                printer.line('dag_id=DAG_ID,')
+                printer.line('dag_description=DAG_DESCRIPTION,')
+                printer.line('dag_kwargs=dict(default_args=DEFAULT_ARGS, **DAG_KWARGS),')
+                printer.line('s3_conn_id=S3_CONN_ID,')
+                printer.line('modified_docker_operator_kwargs=MODIFIED_DOCKER_OPERATOR_KWARGS,')
+                printer.line('host_tmp_dir=HOST_TMP_DIR,')
+            printer.line(')')
 
         return printer.read()
 
@@ -353,16 +305,50 @@ def _make_static_scaffold(pipeline_name, env_config, execution_plan, image, edit
         for step in execution_plan.topological_steps():
             step_executions_key = _step_executions_key(step)
 
-            step_executions = _scaffold_step_executions(step)
-
             printer.line(
-                '{step_executions_key} = \'\'\''.format(step_executions_key=step_executions_key)
+                '{step_executions_key} = {{'.format(step_executions_key=step_executions_key)
             )
-            for line in step_executions.strip('\n').split('\n'):
-                printer.line(line)
-            printer.line('\'\'\'.strip(\'\\n\')')
+            with printer.with_indent():
+                printer.line('\'step_key\': \'{step_key}\','.format(step_key=step.key))
+                printer.line('\'inputs\': [')
+                for step_input in step.step_inputs:
+                    with printer.with_indent():
+                        printer.line('{')
+                        with printer.with_indent():
+                            printer.line(
+                                '\'input_name\': \'{input_name}\','.format(
+                                    input_name=step_input.name
+                                )
+                            )
+                            printer.line(
+                                '\'key\': \'{key}\''.format(
+                                    key=_key_for_marshalled_result(
+                                        step_input.prev_output_handle.step.key,
+                                        step_input.prev_output_handle.output_name,
+                                    )
+                                )
+                            )
+                        printer.line('},')
+                printer.line('],')
+                printer.line('\'outputs\': [')
+                for step_output in step.step_outputs:
+                    with printer.with_indent():
+                        printer.line('{')
+                        with printer.with_indent():
+                            printer.line(
+                                '\'output_name\': \'{output_name}\','.format(
+                                    output_name=step_output.name
+                                )
+                            )
+                            printer.line(
+                                '\'key\': \'{key}\''.format(
+                                    key=_key_for_marshalled_result(step.key, step_output.name)
+                                )
+                            )
+                        printer.line('},')
+                printer.line(']')
+            printer.line('}')
             printer.blank_line()
-
         printer.blank_line()
 
         printer.line('def make_dag(')
@@ -381,6 +367,9 @@ def _make_static_scaffold(pipeline_name, env_config, execution_plan, image, edit
                 printer.line('description=dag_description,')
                 printer.line('**dag_kwargs')
             printer.line(')')
+            printer.blank_line()
+
+            printer.line('tasks = []')
             printer.blank_line()
 
             for step in execution_plan.topological_steps():
@@ -411,6 +400,11 @@ def _make_static_scaffold(pipeline_name, env_config, execution_plan, image, edit
                         )
                     )
                 printer.line(')')
+                printer.line(
+                    'tasks.append({airflow_step_key}_task)'.format(
+                        airflow_step_key=airflow_step_key
+                    )
+                )
                 printer.blank_line()
 
             for step in execution_plan.topological_steps():
@@ -425,7 +419,8 @@ def _make_static_scaffold(pipeline_name, env_config, execution_plan, image, edit
                         )
                     )
             printer.blank_line()
-            printer.line('return dag')
+            # We return both the DAG and the tasks to make testing, etc. easier
+            printer.line('return (dag, tasks)')
 
         return printer.read()
 

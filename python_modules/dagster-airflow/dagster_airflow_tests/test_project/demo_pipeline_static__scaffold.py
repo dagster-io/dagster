@@ -46,67 +46,49 @@ CONFIG = '''
 
 PIPELINE_NAME = 'demo_pipeline'
 
-STEP_EXECUTIONS_MULTIPLY__THE__WORD_WORD_INPUT__THUNK = '''
-[
-  {
-    stepKey: "multiply_the_word.word.input_thunk"
-    marshalledInputs: 
-    [
+STEP_EXECUTIONS_MULTIPLY__THE__WORD_WORD_INPUT__THUNK = {
+    'step_key': 'multiply_the_word.word.input_thunk',
+    'inputs': [
     ],
-    marshalledOutputs: 
-    [
-      {
-        outputName: "input_thunk_output",
-        key: "/tmp/results/multiply__the__word_word_input__thunk___input__thunk__output.pickle"
-      }
-    ],
-  }
-]
-'''.strip('\n')
+    'outputs': [
+        {
+            'output_name': 'input_thunk_output',
+            'key': '/tmp/results/{run_id_prefix}multiply__the__word_word_input__thunk___input__thunk__output.pickle'
+        },
+    ]
+}
 
-STEP_EXECUTIONS_MULTIPLY__THE__WORD_TRANSFORM = '''
-[
-  {
-    stepKey: "multiply_the_word.transform"
-    marshalledInputs: 
-    [
-      {
-        inputName: "word",
-        key: "/tmp/results/multiply__the__word_word_input__thunk___input__thunk__output.pickle"
-      }
+STEP_EXECUTIONS_MULTIPLY__THE__WORD_TRANSFORM = {
+    'step_key': 'multiply_the_word.transform',
+    'inputs': [
+        {
+            'input_name': 'word',
+            'key': '/tmp/results/{run_id_prefix}multiply__the__word_word_input__thunk___input__thunk__output.pickle'
+        },
     ],
-    marshalledOutputs: 
-    [
-      {
-        outputName: "result",
-        key: "/tmp/results/multiply__the__word_transform___result.pickle"
-      }
-    ],
-  }
-]
-'''.strip('\n')
+    'outputs': [
+        {
+            'output_name': 'result',
+            'key': '/tmp/results/{run_id_prefix}multiply__the__word_transform___result.pickle'
+        },
+    ]
+}
 
-STEP_EXECUTIONS_COUNT__LETTERS_TRANSFORM = '''
-[
-  {
-    stepKey: "count_letters.transform"
-    marshalledInputs: 
-    [
-      {
-        inputName: "word",
-        key: "/tmp/results/multiply__the__word_transform___result.pickle"
-      }
+STEP_EXECUTIONS_COUNT__LETTERS_TRANSFORM = {
+    'step_key': 'count_letters.transform',
+    'inputs': [
+        {
+            'input_name': 'word',
+            'key': '/tmp/results/{run_id_prefix}multiply__the__word_transform___result.pickle'
+        },
     ],
-    marshalledOutputs: 
-    [
-      {
-        outputName: "result",
-        key: "/tmp/results/count__letters_transform___result.pickle"
-      }
-    ],
-  }
-]
-'''.strip('\n')
+    'outputs': [
+        {
+            'output_name': 'result',
+            'key': '/tmp/results/{run_id_prefix}count__letters_transform___result.pickle'
+        },
+    ]
+}
 
 
 def make_dag(
@@ -123,6 +105,8 @@ def make_dag(
         **dag_kwargs
     )
 
+    tasks = []
+
     multiply__the__word_word_input__thunk_task = DagsterOperator(
         step='multiply_the_word.word.input_thunk',
         config=CONFIG,
@@ -135,6 +119,7 @@ def make_dag(
         pipeline_name=PIPELINE_NAME,
         step_executions=STEP_EXECUTIONS_MULTIPLY__THE__WORD_WORD_INPUT__THUNK,
     )
+    tasks.append(multiply__the__word_word_input__thunk_task)
 
     multiply__the__word_transform_task = DagsterOperator(
         step='multiply_the_word.transform',
@@ -148,6 +133,7 @@ def make_dag(
         pipeline_name=PIPELINE_NAME,
         step_executions=STEP_EXECUTIONS_MULTIPLY__THE__WORD_TRANSFORM,
     )
+    tasks.append(multiply__the__word_transform_task)
 
     count__letters_transform_task = DagsterOperator(
         step='count_letters.transform',
@@ -161,8 +147,9 @@ def make_dag(
         pipeline_name=PIPELINE_NAME,
         step_executions=STEP_EXECUTIONS_COUNT__LETTERS_TRANSFORM,
     )
+    tasks.append(count__letters_transform_task)
 
     multiply__the__word_word_input__thunk_task.set_downstream(multiply__the__word_transform_task)
     multiply__the__word_transform_task.set_downstream(count__letters_transform_task)
 
-    return dag
+    return (dag, tasks)

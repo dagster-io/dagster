@@ -351,7 +351,7 @@ jobs:
           paths:
             - .coverage*
 
-  dagster-airflow-py36: &dagster-airflow-template
+  dagster-airflow-py36:
     machine:
       docker_layer_caching: true
     environment:
@@ -361,10 +361,6 @@ jobs:
     working_directory: ~/repo
     steps:
       - checkout
-      - run:
-          name: Install py27-dev
-          command: |
-            sudo apt-get install python2.7-dev
       - run:
           name: Install py36
           command: |
@@ -559,18 +555,88 @@ jobs:
   #     AIRFLOW_HOME: "/home/circleci/airflow"
 
   dagster-airflow-py35:
-    <<: *dagster-airflow-template
+    machine:
+      docker_layer_caching: true
     environment:
       TOXENV: py35
       PYTHON_VERSION: "3.5.2"
       AIRFLOW_HOME: "/home/circleci/airflow"
+    working_directory: ~/repo
+    steps:
+      - checkout
+      - run:
+          name: Build Dockerfile
+          command: |
+            pushd python_modules/dagster-airflow/dagster_airflow_tests/test_project
+            . build.sh
+            popd
+      - run:
+          name: Install Dependencies
+          command: |
+            sudo pip install -U 'pip<19.0' # see: https://github.com/pypa/pip/issues/6163
+            sudo pip install tox
+      - run:
+          name: Setup AIRFLOW_HOME
+          command: |
+            mkdir -p /home/circleci/airflow
+      - run:
+          name: Run Dagster Tests
+          command: |
+            pushd python_modules/dagster-airflow
+            pyenv local $PYTHON_VERSION
+            tox -e $TOXENV
+            popd
+      - run:
+          command: |
+            mv python_modules/dagster-airflow/.coverage python_modules/.coverage.dagster-airflow.${CIRCLE_BUILD_NUM}
+      - persist_to_workspace:
+          root: python_modules/
+          paths:
+            - .coverage*
 
   dagster-airflow-py27:
-    <<: *dagster-airflow-template
+    machine:
+      docker_layer_caching: true
     environment:
       TOXENV: py27
       PYTHON_VERSION: "2.7.12"
       AIRFLOW_HOME: "/home/circleci/airflow"
+    working_directory: ~/repo
+    steps:
+      - checkout
+      - run:
+          name: Install py27-dev
+          command: |
+            sudo apt-get install python2.7-dev
+      - run:
+          name: Build Dockerfile
+          command: |
+            pushd python_modules/dagster-airflow/dagster_airflow_tests/test_project
+            . build.sh
+            popd
+      - run:
+          name: Install Dependencies
+          command: |
+            sudo pip install -U 'pip<19.0' # see: https://github.com/pypa/pip/issues/6163
+            sudo pip install tox
+      - run:
+          name: Setup AIRFLOW_HOME
+          command: |
+            mkdir -p /home/circleci/airflow
+      - run:
+          name: Run Dagster Tests
+          command: |
+            pushd python_modules/dagster-airflow
+            pyenv local $PYTHON_VERSION
+            tox -e $TOXENV
+            popd
+      - run:
+          command: |
+            mv python_modules/dagster-airflow/.coverage python_modules/.coverage.dagster-airflow.${CIRCLE_BUILD_NUM}
+      - persist_to_workspace:
+          root: python_modules/
+          paths:
+            - .coverage*
 
   dagma-py37:
     <<: *dagma-template

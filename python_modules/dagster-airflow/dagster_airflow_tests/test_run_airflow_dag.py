@@ -1,57 +1,33 @@
 import datetime
 import os
-import shutil
 import subprocess
 
-from dagster.core.execution import create_execution_plan
-from dagster.utils import load_yaml_from_path, script_relative_path
+from airflow.models import TaskInstance
 
-from dagster_airflow import scaffold_airflow_dag
 from dagster_airflow.scaffold import _key_for_marshalled_result, _normalize_key
 
-from .test_project.dagster_airflow_demo import define_demo_execution_pipeline
+from .utils import import_module_from_path
 
 
-IMAGE = 'dagster-airflow-demo'
+def test_unit_run_airflow_dag_steps(scaffold_dag):
+    '''This test runs the steps in the sample Airflow DAG using the ``airflow test`` API.'''
 
-import pytest
+    pipeline_name, execution_plan, execution_date, _s, _e = scaffold_dag
 
-
-# @pytest.mark.skip('do not understand; do not checkin')
-def test_unit_run_airflow_dag_steps(airflow_test, dags_path):
-    pipeline = define_demo_execution_pipeline()
-    env_config = load_yaml_from_path(script_relative_path('test_project/env.yml'))
-
-    static_path, editable_path = scaffold_airflow_dag(
-        pipeline=pipeline,
-        env_config=env_config,
-        image=IMAGE,
-        output_path=script_relative_path('test_project'),
-        dag_kwargs={'default_args': {'start_date': datetime.datetime(1900, 1, 1)}},
-    )
-
-    # Ensure that the scaffolded files parse correctly
-    subprocess.check_output(
-        ['python', script_relative_path('test_project/demo_pipeline_editable__scaffold.py')]
-    )
-
-    shutil.copyfile(
-        script_relative_path(static_path),
-        os.path.abspath(os.path.join(dags_path, os.path.basename(static_path))),
-    )
-
-    shutil.copyfile(
-        script_relative_path(editable_path),
-        os.path.abspath(os.path.join(dags_path, os.path.basename(editable_path))),
-    )
-
-    execution_date = datetime.datetime.utcnow().strftime('%Y-%m-%d')
-    pipeline_name = pipeline.name
-
-    execution_plan = create_execution_plan(pipeline, env_config)
+    run_id = ''
 
     for step in execution_plan.topological_steps():
         task_id = _normalize_key(step.key)
+
+        for step_input in step.step_inputs:
+            assert os.path.isfile(
+                _key_for_marshalled_result(
+                    step_input.prev_output_handle.step.key,
+                    step_input.prev_output_handle.output_name,
+                    prepend_run_id=False,
+                )
+            )
+
         try:
             res = subprocess.check_output(
                 ['airflow', 'test', pipeline_name, task_id, execution_date]
@@ -62,14 +38,33 @@ def test_unit_run_airflow_dag_steps(airflow_test, dags_path):
         assert 'EXECUTION_PLAN_STEP_SUCCESS' in str(res)
 
         for step_output in step.step_outputs:
-
-            # TODO: I don't understand this failure
-            # Relying on logging output?
             assert 'for output {output_name}'.format(output_name=step_output.name) in str(res)
-            # E               assert 'for output result' in 'b\'[2019-02-11 14:35:24,503] {__init__.py:51} INFO - Using executor SequentialExecutor\\n[2019-02-11 14:35:24,743] {m...{"startSubplanExecution": {"__typename": "StartSubplanExecutionSuccess", "pipeline": {"name": "demo_pipeline"}}}}\\n\''
-            # E                +  where 'for output result' = <built-in method format of str object at 0x7fd7b9229bc0>(output_name='result')
-            # E                +    where <built-in method format of str object at 0x7fd7b9229bc0> = 'for output {output_name}'.format
-            # E                +    and   'result' = StepOutput(name='result', runtime_type=<dagster.core.types.runtime.Any object at 0x7fd7bbf48f98>).name
-            # E                +  and   'b\'[2019-02-11 14:35:24,503] {__init__.py:51} INFO - Using executor SequentialExecutor\\n[2019-02-11 14:35:24,743] {m...{"startSubplanExecution": {"__typename": "StartSubplanExecutionSuccess", "pipeline": {"name": "demo_pipeline"}}}}\\n\'' = str(b'[2019-02-11 14:35:24,503] {__init__.py:51} INFO - Using executor SequentialExecutor\n[2019-02-11 14:35:24,743] {mode...": {"startSubplanExecution": {"__typename": "StartSubplanExecutionSuccess", "pipeline": {"name": "demo_pipeline"}}}}\n')
 
-            assert os.path.isfile(_key_for_marshalled_result(step.key, step_output.name))
+            assert os.path.isfile(
+                _key_for_marshalled_result(step.key, step_output.name, prepend_run_id=False)
+            )
+
+
+def test_run_airflow_dag(scaffold_dag):
+    '''This test runs the sample Airflow dag using the TaskInstance API, directly from Python'''
+    _n, _p, _d, static_path, editable_path = scaffold_dag
+
+    execution_date = datetime.datetime.utcnow()
+
+    import_module_from_path('demo_pipeline_static__scaffold', static_path)
+    demo_pipeline = import_module_from_path('demo_pipeline', editable_path)
+
+    _dag, tasks = demo_pipeline.make_dag(
+        dag_id=demo_pipeline.DAG_ID,
+        dag_description=demo_pipeline.DAG_DESCRIPTION,
+        dag_kwargs=dict(default_args=demo_pipeline.DEFAULT_ARGS, **demo_pipeline.DAG_KWARGS),
+        s3_conn_id=demo_pipeline.S3_CONN_ID,
+        modified_docker_operator_kwargs=demo_pipeline.MODIFIED_DOCKER_OPERATOR_KWARGS,
+        host_tmp_dir=demo_pipeline.HOST_TMP_DIR,
+    )
+
+    # These are in topo order already
+    for task in tasks:
+        ti = TaskInstance(task=task, execution_date=execution_date)
+        context = ti.get_template_context()
+        task.execute(context)

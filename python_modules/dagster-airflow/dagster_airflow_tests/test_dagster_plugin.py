@@ -14,7 +14,7 @@ def test_init_modified_docker_operator():
         task_id='nonce',
         config='',
         pipeline_name='',
-        step_executions='',
+        step_executions={},
     )
 
 
@@ -27,7 +27,7 @@ def test_modified_docker_operator_bad_docker_conn():
         command='--help',
         config='',
         pipeline_name='',
-        step_executions='',
+        step_executions={},
     )
 
     with pytest.raises(AirflowException, match='The conn_id `foo_conn` isn\'t defined'):
@@ -43,7 +43,7 @@ def test_modified_docker_operator_env(temp_dir):
         command='--help',
         config='',
         pipeline_name='',
-        step_executions='',
+        step_executions={},
     )
     operator.execute({})
 
@@ -59,7 +59,7 @@ def test_modified_docker_operator_xcom(temp_dir):
         command='--help',
         config='',
         pipeline_name='',
-        step_executions='',
+        step_executions={},
     )
     assert b'Usage: dagit' in operator.execute({})
 
@@ -73,7 +73,7 @@ def test_modified_docker_operator_bad_command(temp_dir):
         command='gargle bargle',
         config='',
         pipeline_name='',
-        step_executions='',
+        step_executions={},
     )
     with pytest.raises(AirflowException, match='\'StatusCode\': 2}'):
         operator.execute({})
@@ -102,7 +102,7 @@ def test_modified_docker_operator_url(temp_dir):
             command='--help',
             config='',
             pipeline_name='',
-            step_executions='',
+            step_executions={},
         )
 
         operator.execute({})
