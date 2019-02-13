@@ -639,24 +639,93 @@ will execute (just double-click on any solid tagged with a small red `sql`):
 
 ![Warehouse pipeline SQL](img/warehouse_pipeline_sql_display.png)
 
+Second, note that even though this wrapper only implements materialization of a SQL statement as a
+table, we've made `materialization_strategy` configurable. This lets data engineers add new
+capabilities for frontend analysts without having to rewrite any SQL. For example, we might add a
+materialization strategy which created a materialized view instead of a table; an in-memory
+SQLAlchemy query which could be executed or transformed by downstream solids; a SQLAlchemy
+ResultProxy representing the records resulting from executing the query; or a materialization of
+the results as a Pandas data frame, Spark data frame, parquet file, etc. The point is to decouple
+the implementation of these strategies from the logic of the query itself.
+
+Suppose that we wanted to change the logic of `sql_statement` from
+`drop_table_if_exists; create table` to something more sophisticated (perhaps a conditional upsert,
+or adding a new partition to an existing partitioned table). Again, rather than relying on analysts
+to write or maintain many separate copies of the boilerplate around the select statement, we can
+make the change once and expose the new functionality everywhere we execute SQL in our pipelines.
+
+Third, note how straightforward the interface to `sql_statement` is. To define a new solid executing
+a relatively complex transform against the data warehouse, an analyst need only write the following
+code:
+
+    delays_vs_fares = sql_solid(
+        'delays_vs_fares',
+        '''
+        with avg_fares as (
+            select
+                tickets.origin,
+                tickets.dest,
+                avg(cast(tickets.itinfare as float)) as avg_fare,
+                avg(cast(tickets.farepermile as float)) as avg_fare_per_mile
+            from tickets_with_destination as tickets
+            where origin = 'SFO'
+            group by (tickets.origin, tickets.dest)
+        )
+        select
+            avg_fares.*,
+            avg(avg_delays.arrival_delay) as avg_arrival_delay,
+            avg(avg_delays.departure_delay) as avg_departure_delay
+        from
+            avg_fares,
+            average_sfo_outbound_avg_delays_by_destination as avg_delays
+        where
+            avg_fares.origin = avg_delays.origin and
+            avg_fares.dest = avg_delays.destination
+        group by (
+            avg_fares.avg_fare,
+            avg_fares.avg_fare_per_mile,
+            avg_fares.origin,
+            avg_delays.origin,
+            avg_fares.dest,
+            avg_delays.destination
+        )
+        ''',
+        'table',
+        table_name='delays_vs_fares',
+        inputs=[
+            InputDefinition('tickets_with_destination', SqlTableName),
+            InputDefinition('average_sfo_outbound_avg_delays_by_destination', SqlTableName),
+        ],
+)
+
+This kind of interface can supercharge the work of analysts who are highly skilled in SQL, but
+for whom fully general-purpose programming in Python may be uncomfortable. Analysts need only master
+a very constrained interface in order to define their SQL statements' data dependencies and outputs
+in a way that allows them to be orchestrated and explored in heterogeneous DAGs containing other
+forms of computation, and must make only minimal changes to code (in some cases, no changes) in
+order to take advantage of centralized infrastructure work.
+
+Finally, observe the opportunities for extensibility in the construction of the SQL statement
+itself. In this implementation, by convention we require the analyst to be responsible for
+explicitly defining inputs of types `SqlTableName` and linking those to the output of previous
+SQL solids -- but we don't actually consume these inputs in any way other than to order the DAG's
+dependencies.
+
+    sql_statement = (
+        'drop table if exists {table_name};\n' 'create table {table_name} as {select_statement};'
+    ).format(table_name=table_name, select_statement=select_statement)
+
+We could also change our implementation of the SQL statement construction, moving beyond string
+formatting to use fuller-featured tools like SQLAlchemy or Jinja templating to dynamically
+construct SQL statements based on the values of inputs to the solid.
+
+But don't overcomplicate matters! A simple wrapper like the one we've presented here might be
+able to get your organization 80% or more of the way there.
+
+### Dagstermill: executing and checkpointing notebooks
 
 
-SQL statement
-        # n.b., we will eventually want to make this resources key configurable
 
-
-To illustrate the extensibility of this approach. For example, we might output a materialized view
-
-            # 'view': String,
-            # 'query': SqlAlchemyQueryType,
-            # 'subquery': SqlAlchemySubqueryType,
-            # 'result_proxy': SqlAlchemyResultProxyType,
-            # could also materialize as a Pandas table, as a Spark table, as an intermediate file, etc.
-
-
-
-The warehouse pipeline is our first introduction to modeling a typically heterogeneous analytics
-pipeline in Dagster.
 <!--
 FIXME need to actually describe how to run this pipeline against AWS
 
