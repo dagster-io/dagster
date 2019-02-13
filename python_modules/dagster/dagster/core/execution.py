@@ -603,7 +603,6 @@ class PipelineConfigEvaluationError(Exception):
 
 
 def execute_externalized_plan(
-    pipeline,
     execution_plan,
     step_keys,
     inputs_to_marshal=None,
@@ -612,7 +611,6 @@ def execute_externalized_plan(
     execution_metadata=None,
     throw_on_user_error=True,
 ):
-    check.inst_param(pipeline, 'pipeline', PipelineDefinition)
     check.inst_param(execution_plan, 'execution_plan', ExecutionPlan)
     check.list_param(step_keys, 'step_keys', of_type=str)
     inputs_to_marshal = check.opt_two_dim_dict_param(
@@ -631,7 +629,7 @@ def execute_externalized_plan(
     _check_outputs_to_marshal(execution_plan, outputs_to_marshal)
 
     with yield_pipeline_execution_context(
-        pipeline, environment_dict, execution_metadata
+        execution_plan.pipeline_def, environment_dict, execution_metadata
     ) as pipeline_context:
 
         execution_plan = create_execution_plan_core(
