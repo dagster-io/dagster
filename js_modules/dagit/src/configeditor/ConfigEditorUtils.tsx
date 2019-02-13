@@ -132,48 +132,49 @@ export function scaffoldConfig(pipeline: ConfigEditorPipelineFragment): string {
     String: "value",
     Int: 1,
     Bool: false,
-    Float: 1.0,
+    Float: 1.0
   };
 
-  const configPlaceholderFor = (
-    typeKey: string,
-    commentDepth: number
-  ): any => {
+  const configPlaceholderFor = (typeKey: string, commentDepth: number): any => {
     if (placeholders[typeKey] !== undefined) {
       return placeholders[typeKey];
     }
 
-    if (typeKey.startsWith('List.')) {
-      const innerPlaceholder = configPlaceholderFor(typeKey.substr(5), commentDepth)
+    if (typeKey.startsWith("List.")) {
+      const innerPlaceholder = configPlaceholderFor(
+        typeKey.substr(5),
+        commentDepth
+      );
       if (innerPlaceholder === null) return null;
-      return [innerPlaceholder]
+      return [innerPlaceholder];
     }
 
     const type = pipeline.configTypes.find(t => t.key === typeKey);
     if (!type || type.__typename !== "CompositeConfigType") {
-      console.warn(`Unsure of how to scaffold ${typeKey} ${JSON.stringify(type)}`);
+      console.warn(
+        `Unsure of how to scaffold ${typeKey} ${JSON.stringify(type)}`
+      );
       return null;
     }
     const result = {};
-    type.fields
-      .forEach((field, idx) => {
-        const startComment = type.isSelector && idx > 0;
-        const fieldCommentDepth =
-          commentDepth > 0 ? commentDepth + 2 : startComment ? 1 : 0;
+    type.fields.forEach((field, idx) => {
+      const startComment = type.isSelector && idx > 0;
+      const fieldCommentDepth =
+        commentDepth > 0 ? commentDepth + 2 : startComment ? 1 : 0;
 
-        const val = configPlaceholderFor(
-          field.configType.key,
-          fieldCommentDepth
-        );
-        if (val === null || (val instanceof Object && Object.keys(val).length == 0)) {
-          return;
-        }
-        if (fieldCommentDepth > 0) {
-          result[`COMMENTED_${fieldCommentDepth}_${field.name}`] = val;
-        } else {
-          result[field.name] = val;
-        }
-      });
+      const val = configPlaceholderFor(field.configType.key, fieldCommentDepth);
+      if (
+        val === null ||
+        (val instanceof Object && Object.keys(val).length == 0)
+      ) {
+        return;
+      }
+      if (fieldCommentDepth > 0) {
+        result[`COMMENTED_${fieldCommentDepth}_${field.name}`] = val;
+      } else {
+        result[field.name] = val;
+      }
+    });
     return result;
   };
 
