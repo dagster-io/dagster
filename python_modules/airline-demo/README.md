@@ -724,6 +724,29 @@ able to get your organization 80% or more of the way there.
 
 ### Dagstermill: executing and checkpointing notebooks
 
+Notebooks are a flexible way and increasingly ubiquitous way to explore datasets and build data
+products -- from transformed or augmented datasets to charts and metrics to deployable machine
+learning models. But their very flexibility -- the way they allow analysts to move seamlessly from
+interactive exploration of data to scratch code and finally to actionable results -- can make them
+difficult to productionize.
+
+Our approach, built on the [papermill](https://github.com/nteract/papermill) library, embraces
+the diversity of code in notebooks. Rather than requiring notebooks to be rewritten or "cleaned up"
+in order to consume inputs from other nodes in a pipeline or to produce outputs for downstream
+nodes, we can just add a few cells to provide a thin wrapper around an existing notebook.
+
+Let's start with the definition of our `notebook_solid` helper:
+
+    import os
+
+    from dagstermill import define_dagstermill_solid
+
+    def _notebook_path(name):
+        return os.path.join(os.path.dirname(os.path.abspath(__file__)), 'notebooks', name)
+
+
+    def notebook_solid(name, notebook_path, inputs, outputs):
+        return define_dagstermill_solid(name, _notebook_path(notebook_path), inputs, outputs)
 
 
 <!--
