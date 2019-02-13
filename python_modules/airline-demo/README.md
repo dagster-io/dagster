@@ -533,7 +533,128 @@ notebooks in Python, R, or Scala.
 
 ### The sql_solid: wrapping foreign code in a solid
 
-How do we actually package the SQL 
+How do we actually package the SQL for execution and display with Dagster and Dagit? Let's look at
+the implementation of the `sql_solid`:
+
+    class SqlTableName(Stringish):
+        def __init__(self):
+            super(SqlTableName, self).__init__(description='The name of a database table')
+
+We introduce the custom type `SqlTableName` to make it as clear as possible what we're expecting
+to return from a solid that executes a SQL statement, and what we're expecting to consume
+downstream.
+
+Next we define `sql_solid` itself. This function wraps a SQL `select` statement in a transform
+function that executes the statement (again, using the database engine exposed by the `db_info`
+resource) against the database, materializing the result as a table, and returning the name of the
+newly created table.
+
+    def sql_solid(name, select_statement, materialization_strategy, table_name=None, inputs=None):
+        '''Return a new solid that executes and materializes a SQL select statement.
+
+        Args:
+            name (str): The name of the new solid.
+            select_statement (str): The select statement to execute.
+            materialization_strategy (str): Must be 'table', the only currently supported
+                materialization strategy. If 'table', the kwarg `table_name` must also be passed.
+        Kwargs:
+            table_name (str): THe name of the new table to create, if the materialization strategy
+                is 'table'. Default: None.
+            inputs (list[InputDefinition]): Inputs, if any, for the new solid. Default: None.
+
+        Returns:
+            function:
+                The new SQL solid.
+        '''
+        inputs = check.opt_list_param(inputs, 'inputs', InputDefinition)
+
+        materialization_strategy_output_types = {
+            'table': SqlTableName,
+        }
+
+        if materialization_strategy not in materialization_strategy_output_types:
+            raise Exception(
+                'Invalid materialization strategy {materialization_strategy}, must '
+                'be one of {materialization_strategies}'.format(
+                    materialization_strategy=materialization_strategy,
+                    materialization_strategies=str(list(materialization_strategy_output_types.keys())),
+                )
+            )
+
+        if materialization_strategy == 'table':
+            if table_name is None:
+                raise Exception('Missing table_name: required for materialization strategy \'table\'')
+
+        output_description = (
+            'The string name of the new table created by the solid'
+            if materialization_strategy == 'table'
+            else 'The materialized SQL statement. If the materialization_strategy is '
+            '\'table\', this is the string name of the new table created by the solid.'
+        )
+
+        description = '''This solid executes the following SQL statement:
+        {select_statement}'''.format(
+            select_statement=select_statement
+        )
+
+        sql_statement = (
+            'drop table if exists {table_name};\n' 'create table {table_name} as {select_statement};'
+        ).format(table_name=table_name, select_statement=select_statement)
+
+        def transform_fn(context, _inputs):
+            '''Inner function defining the new solid.
+
+            Args:
+                info (ExpectationExecutionInfo): Must expose a `db` resource with an `execute` method,
+                    like a SQLAlchemy engine, that can execute raw SQL against a database.
+
+            Returns:
+                str:
+                    The table name of the newly materialized SQL select statement.
+            '''
+
+            context.log.info(
+                'Executing sql statement:\n{sql_statement}'.format(sql_statement=sql_statement)
+            )
+            context.resources.db_info.engine.execute(text(sql_statement))
+            yield Result(value=table_name, output_name='result')
+
+        return SolidDefinition(
+            name=name,
+            inputs=inputs,
+            outputs=[
+                OutputDefinition(
+                    materialization_strategy_output_types[materialization_strategy],
+                    description=output_description,
+                )
+            ],
+            transform_fn=transform_fn,
+            description=description,
+            metadata={'kind': 'sql', 'sql': sql_statement},
+        )
+
+There are a couple of things to note about this implementation. First of all, we make sure to
+set the `metadata` key on our generated solid so that Dagit knows how to display the SQL that it
+will execute (just double-click on any solid tagged with a small red `sql`):
+
+![Warehouse pipeline SQL](img/warehouse_pipeline_sql_display.png)
+
+
+
+SQL statement
+        # n.b., we will eventually want to make this resources key configurable
+
+
+To illustrate the extensibility of this approach. For example, we might output a materialized view
+
+            # 'view': String,
+            # 'query': SqlAlchemyQueryType,
+            # 'subquery': SqlAlchemySubqueryType,
+            # 'result_proxy': SqlAlchemyResultProxyType,
+            # could also materialize as a Pandas table, as a Spark table, as an intermediate file, etc.
+
+
+
 The warehouse pipeline is our first introduction to modeling a typically heterogeneous analytics
 pipeline in Dagster.
 <!--
