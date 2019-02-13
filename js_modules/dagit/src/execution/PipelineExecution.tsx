@@ -8,6 +8,7 @@ import { PipelineRun, PipelineRunEmpty } from "./PipelineRun";
 import { ExecutionTabs, ExecutionTab } from "./ExecutionTabs";
 import { PanelDivider } from "../PanelDivider";
 import PipelineSolidSelector from "./PipelineSolidSelector";
+import RunHistory from "./RunHistory";
 import ExecutionStartButton from "./ExecutionStartButton";
 import ConfigEditor from "../configeditor/ConfigEditor";
 import {
@@ -179,10 +180,6 @@ export default class PipelineExecution extends React.Component<
               onChange={this.onSolidSubsetChange}
             />
           </SessionSettingsFooter>
-          <ExecutionStartButton
-            executing={activeRunExecuting}
-            onClick={this.props.onExecute}
-          />
         </Split>
         <PanelDivider
           axis="horizontal"
@@ -194,6 +191,14 @@ export default class PipelineExecution extends React.Component<
           ) : (
             <PipelineRunEmpty />
           )}
+          <ExecutionStartButton
+            executing={activeRunExecuting}
+            onClick={this.props.onExecute}
+          />
+        </Split>
+        <PanelDivider axis="horizontal" onMove={() => {}} />
+        <Split style={{flex: 0.5}}>
+          <RunHistory activeRun={activeRun} pipelineName={pipeline.name} />
         </Split>
       </PipelineExecutionWrapper>
     );
