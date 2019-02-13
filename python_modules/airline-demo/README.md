@@ -10,7 +10,7 @@ Use the airline demo to familiarize yourself with the features of the Dagster to
 fleshed-out context than the introductory tutorial, and as a reference when building your own
 first production pipelines in the system. Comments and suggestions are enthusiastically encouraged!
 
-## Getting Started
+## Getting started
 
 To run the airline demo pipelines locally, you'll need
 
@@ -29,6 +29,7 @@ Then just run dagit from the root of the repo:
 
     dagit
 
+
 ## Pipelines and config
 
 The demo defines a single repository with three pipelines, in `airline_demo/pipelines.py`:
@@ -45,6 +46,18 @@ the pipelines locally, use the configuration files that begin with the prefix `l
 To avoid unnecessary duplication, the config that is common to all of the pipelines is factored
 out into `local_base.yml` file. Recall that when running a pipeline using `dagster pipeline execute`
 you can pass more than one yaml file using the `-e` flag, and these will be combined.
+
+### Running tests
+
+You won't want to suppress test output if you want to see loglines from dagster:
+
+    pytest -s
+
+We use [pytest marks](https://docs.pytest.org/en/latest/example/markers.html#mark-examples) to
+identify useful subsets of tests. For instance, to run only those tests that do not require a
+running Spark cluster, you can run:
+
+    pytest -m "not spark"
 
 ## The download pipeline
 
@@ -102,7 +115,7 @@ implementation of common functionality like downloading and unzipping files. Ins
 abstract common functionality into reusable solids, separating task-specific parameters out into
 declarative config, and building up a library of building blocks for new data pipelines.
 
-### Implementing a solid with List-typed inputs and outputs
+### Implementing a library solid with List-typed inputs and outputs
 
 Let's take a look at how one of these library solids is defined:
 
@@ -192,6 +205,8 @@ very pipeline -- the output of `download_q2_sfo_weather` does not need to be unz
 defined a separate alias (still using the same library solid -- and underlying List type -- for
 maximum flexibility).
 
+### Strongly typed config and outputs
+
 Each entry in the config list for our solid specifies everything we need to know to download a
 file from S3 (at least in our toy example). In YAML, an entry in the config looks like this:
 
@@ -218,6 +233,8 @@ order to understand what values are required, or what they do -- enabling more c
 
 ![Download pipeline config docs](img/download_pipeline_config_docs.png)
 
+### Custom types
+
 Note that the output of this solid is also a List -- in this case, a `List(FileExistsAtPath)`. We've
 defined a custom output type to illustrate the richness of the Dagster type system:
 
@@ -235,16 +252,35 @@ defined a custom output type to illustrate the richness of the Dagster type syst
 By overriding `coerce_runtime_value` to check if a file actually exists at the specified path, we
 can lever the type system to make runtime guarantees about the integrity of our pipeline.
 
-### Running tests
-You won't want to suppress test output if you want to see loglines from dagster:
+### Robust solids for development workflows
 
-    pytest -s
+Notice the `skip_if_present` key in the config for both `download_from_s3` and `unzip_file`. We've
+included this to illustrate how you can introduce knobs into your solids that make moving between
+development, test, and production environments and workflows easier.
 
-We use [pytest marks](https://docs.pytest.org/en/latest/example/markers.html#mark-examples) to
-identify useful subsets of tests. For instance, to run only those tests that do not require a
-running Spark cluster, you can run:
+In production, you may have pipelines that grab large files from batch processes or filedrops, and
+that may take minutes or hours to execute. But in development, you probably won't want to download
+large data every time you make a small tweak to a pipeline. Practitioners often find themselves
+writing special-case wrappers to handle their local workflows -- for instance, to download files
+only if they are not already present on the local file system.
 
-    pytest -m "not spark"
+Here, we've moved that logic into the body of the solid itself. Because we can turn this feature on
+and off with config, we don't need to write ad hoc tooling to support local workflows. Instead, the
+same pipeline can run locally as runs in production. This makes it easier both to develop locally
+with a short feedback cycle and to write and run tests against pipeline code.
+
+### Running on production data
+
+Don't worry, we've got plenty of big(gish) data to run through this pipeline. Instead of the
+`local_fast_download.yml` config fragment, use `local_full_download.yml`.
+
+
+## The ingest pipeline
+
+
+
+<!--
+FIXME need to actually describe how to run this pipeline against AWS
 
 ### Orchestrating AWS resources
 The pipelines defined in this repository can run against a local Spark cluster
@@ -296,20 +332,19 @@ Right now the workaround is to wait for a timeout (about 15 minutes), then
 manually delete the VPC from the console, which will force-delete dependencies.
 </small>
 
-### TODOs
-
-- Flesh out unit tests for solids
-- Wire Spark up to EMR cluster
-- Add config option for local ingestion (Postgres)
-- Add config option for Spark running on EMR cluster
-- Document running the pipeline and tests (e.g., postgres requirements)
-- Add expectations
-- Maybe implement templated SQL handling
-- Add sub-DAG tests
-
 ### Issues with general availability
 - Right now the pulumi spec, as well as the sample config, expect that you will
 be able to orchestrate a Redshift cluster at `db.dagster.io` and an EMR cluster
 at `spark.dagster.io`. If you are running this demo and you do not control
 `dagster.io`, you will need to edit both the pulumi project and the config to
 point these at DNS you do control.
+
+-->
+
+### TODOs
+
+- Flesh out unit tests for solids
+- Write ephemeral EMR cluster resource
+- Add expectations
+- Maybe implement templated SQL handling
+- Add sub-DAG tests
