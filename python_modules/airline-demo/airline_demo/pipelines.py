@@ -230,7 +230,7 @@ local_context = PipelineContextDefinition(
     },
 )
 
-cloud_context = PipelineContextDefinition(
+prod_context = PipelineContextDefinition(
     context_fn=lambda _: ExecutionContext.console_logging(log_level=logging.DEBUG),
     resources={
         'spark': define_lambda_resource(create_spark_session_local),  # FIXME
@@ -240,7 +240,7 @@ cloud_context = PipelineContextDefinition(
     },
 )
 
-CONTEXT_DEFINITIONS = {'test': test_context, 'local': local_context, 'cloud': cloud_context}
+CONTEXT_DEFINITIONS = {'test': test_context, 'local': local_context, 'prod': prod_context}
 
 
 def define_airline_demo_download_pipeline():

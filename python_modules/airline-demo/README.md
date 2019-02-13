@@ -284,7 +284,100 @@ The `airline_demo_ingest_pipeline` models the ingestion stage of a typical data 
 in which raw data is normalized, scrubbed, munged, and finally loaded into a production system
 that supports general purpose queries. We've chosen to use Spark to perform these transformations.
 
+### Context definitions: using configurable resources to interact with the external world
 
+In practice, you'll want to run your pipelines in environments that vary widely in their available
+facilities. For example, when running an ingestion pipeline locally for test or development, you
+may want to use a local Spark cluster; but when running in production, you will probably want to
+target something heftier, like an ephemeral EMR cluster or your organization's on-prem Spark
+cluster. Or, you may want to target a locally-running Postgres as your "data warehouse" in local
+test/dev, but target a Redshift cluster in production and production tests. Ideally, we want this
+to be a matter of flipping a config switch.
+
+Let's look at how we make configurable resources available to our pipelines. In
+`airline_demo/pipelines.py`, you'll find that we define multiple contexts within which our pipelines
+may run:
+
+    CONTEXT_DEFINITIONS = {'test': test_context, 'local': local_context, 'prod': prod_context}
+
+This is intended to mimic a typical setup where you may have pipelines running locally on developer
+machines, often with a (anonymized or scrubbed) subset of data and with limited compute resources;
+remotely in CI/CD, with access to a production or replica environment, but where speed is of the
+essence; and remotely in production on live data.
+
+    local_context = PipelineContextDefinition(
+        context_fn=lambda _: ExecutionContext.console_logging(log_level=logging.DEBUG),
+        resources={
+            'db_info': define_postgres_db_info_resource(),
+            ...
+        },
+    )
+
+    prod_context = PipelineContextDefinition(
+        context_fn=lambda _: ExecutionContext.console_logging(log_level=logging.DEBUG),
+        resources={
+            'db_info': define_redshift_db_info_resource(),
+            ...
+        },
+    )
+
+Here we've defined a `db_info` resource that exposes a unified API to our solid logic, but that
+wraps two very different underlying assets -- in one case, a Postgres database, and in the other,
+a Redshift cluster. Let's look more closely at how this is implemented for the Postgres case:
+
+    DbInfo = namedtuple('DbInfo', 'engine url jdbc_url dialect load_table')
+
+    PostgresConfigData = Dict(
+        {
+            'postgres_username': Field(String),
+            'postgres_password': Field(String),
+            'postgres_hostname': Field(String),
+            'postgres_db_name': Field(String),
+        }
+    )
+
+    def define_postgres_db_info_resource():
+        def _create_postgres_db_info(init_context):
+            db_url_jdbc = create_postgres_db_url(
+                init_context.resource_config['postgres_username'],
+                init_context.resource_config['postgres_password'],
+                init_context.resource_config['postgres_hostname'],
+                init_context.resource_config['postgres_db_name'],
+            )
+
+            db_url = create_postgres_db_url(
+                init_context.resource_config['postgres_username'],
+                init_context.resource_config['postgres_password'],
+                init_context.resource_config['postgres_hostname'],
+                init_context.resource_config['postgres_db_name'],
+                jdbc=False,
+            )
+
+            def _do_load(data_frame, table_name):
+                data_frame.write.option('driver', 'org.postgresql.Driver').mode('overwrite').jdbc(
+                    db_url_jdbc, table_name
+                )
+
+            return DbInfo(
+                url=db_url,
+                jdbc_url=db_url_jdbc,
+                engine=create_postgres_engine(db_url),
+                dialect='postgres',
+                load_table=_do_load,
+            )
+
+        return ResourceDefinition(
+            resource_fn=_create_postgres_db_info, config_field=Field(PostgresConfigData)
+        )
+
+
+### Ingesting data to Spark data frames
+
+### Implicit dependencies between pipelines
+
+### Abstract building blocks for specific transformations
+
+### Loading data to the warehouse
 
 
 <!--
