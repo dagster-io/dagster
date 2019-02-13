@@ -1531,9 +1531,7 @@ def test_basic_start_pipeline_execution_config_failure():
         START_PIPELINE_EXECUTION_QUERY,
         variables={
             'pipeline': {'name': 'pandas_hello_world'},
-            'config': {
-                'solids': {'sum_solid': {'inputs': {'num': {'csv': {'path': 384938439}}}}}
-            },
+            'config': {'solids': {'sum_solid': {'inputs': {'num': {'csv': {'path': 384938439}}}}}},
         },
     )
 
@@ -1849,9 +1847,7 @@ def test_start_subplan_invalid_config(snapshot):
         START_EXECUTION_PLAN_QUERY,
         variables={
             'pipelineName': 'pandas_hello_world',
-            'config': {
-                'solids': {'sum_solid': {'inputs': {'num': {'csv': {'path': 384938439}}}}}
-            },
+            'config': {'solids': {'sum_solid': {'inputs': {'num': {'csv': {'path': 384938439}}}}}},
             'stepExecutions': [{'stepKey': 'sum_solid.transform'}],
             'executionMetadata': {'runId': 'kdjkfjdfd'},
         },
