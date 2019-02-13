@@ -117,12 +117,12 @@ def define_repository():
     )
 
 
-def define_context():
+def define_context(throw_on_user_error=True):
     return DagsterGraphQLContext(
         RepositoryContainer(repository=define_repository()),
         PipelineRunStorage(),
         execution_manager=SynchronousExecutionManager(),
-        throw_on_user_error=True,
+        throw_on_user_error=throw_on_user_error,
     )
 
 
@@ -243,9 +243,6 @@ def test_pandas_hello_world_pipeline_or_error_subset_wrong_solid_name():
         {'name': 'pandas_hello_world', 'solidSubset': ['nope']},
     )
 
-    if result.errors:
-        raise Exception(result.errors)
-
     assert not result.errors
     assert result.data
     assert result.data['pipelineOrError']['__typename'] == 'SolidNotFoundError'
@@ -272,8 +269,6 @@ def test_enum_query():
 '''
 
     result = execute_dagster_graphql(define_context(), ENUM_QUERY)
-    if result.errors:
-        raise Exception(result.errors)
 
     assert not result.errors
     assert result.data
@@ -298,9 +293,6 @@ def do_test_subset(query, top_key):
     subset_result = execute_dagster_graphql(
         define_context(), query, {'name': 'pandas_hello_world', 'solidSubset': ['sum_sq_solid']}
     )
-
-    if subset_result.errors:
-        raise Exception(subset_result.errors)
 
     assert not subset_result.errors
     assert subset_result.data
@@ -1425,9 +1417,6 @@ def test_query_execution_plan():
         {'config': pandas_hello_world_solids_config(), 'pipeline': {'name': 'pandas_hello_world'}},
     )
 
-    if result.errors:
-        raise Exception(result.errors[0])
-
     assert not result.errors
     assert result.data
 
@@ -1473,9 +1462,6 @@ def get_named_thing(llist, name):
 def test_production_query():
     result = execute_dagster_graphql(define_context(), PRODUCTION_QUERY)
 
-    if result.errors:
-        raise Exception(result.errors)
-
     assert not result.errors
     assert result.data
 
@@ -1515,8 +1501,6 @@ ALL_TYPES_QUERY = '''
 
 def test_production_config_editor_query():
     result = execute_dagster_graphql(define_context(), ALL_TYPES_QUERY)
-    if result.errors:
-        raise Exception(result.errors)
 
     assert not result.errors
     assert result.data
@@ -1531,9 +1515,6 @@ def test_basic_start_pipeline_execution():
             'config': pandas_hello_world_solids_config(),
         },
     )
-
-    if result.errors:
-        raise Exception(result.errors)
 
     assert not result.errors
     assert result.data
@@ -1568,9 +1549,6 @@ def test_basis_start_pipeline_not_found_error():
             'config': {'solids': {'sum_solid': {'inputs': {'num': {'csv': {'path': 'test.csv'}}}}}},
         },
     )
-
-    if result.errors:
-        raise Exception(result.errors)
 
     assert not result.errors
     assert result.data
@@ -1619,10 +1597,60 @@ def test_basic_start_pipeline_execution_and_subscribe():
         assert m.data['pipelineRunLogs']
 
 
+def test_subscription_query_error():
+    context = define_context(throw_on_user_error=False)
+
+    result = execute_dagster_graphql(
+        context,
+        START_PIPELINE_EXECUTION_QUERY,
+        variables={'pipeline': {'name': 'naughty_programmer_pipeline'}},
+    )
+
+    assert not result.errors
+    assert result.data
+
+    # just test existence
+    assert result.data['startPipelineExecution']['__typename'] == 'StartPipelineExecutionSuccess'
+    run_id = result.data['startPipelineExecution']['run']['runId']
+    assert uuid.UUID(run_id)
+
+    subscription = execute_dagster_graphql(
+        context, parse(SUBSCRIPTION_QUERY), variables={'runId': run_id}
+    )
+
+    messages = []
+    subscription.subscribe(messages.append)
+
+    assert len(messages) == 1
+    message = messages[0]
+    assert not message.errors
+    assert message.data
+    assert message.data['pipelineRunLogs']
+
+    step_run_log_entry = _get_step_run_log_entry(
+        message.data['pipelineRunLogs'], 'throw_a_thing.transform', 'ExecutionStepFailureEvent'
+    )
+
+    assert step_run_log_entry
+
+
+def _get_step_run_log_entry(pipeline_run_logs, step_key, typename):
+    for message_data in pipeline_run_logs['messages']:
+        if message_data['__typename'] == typename:
+            if message_data['step']['key'] == step_key:
+                return message_data
+
+
 SUBSCRIPTION_QUERY = '''
 subscription subscribeTest($runId: ID!) {
     pipelineRunLogs(runId: $runId) {
         __typename
+        messages {
+            __typename
+            ... on ExecutionStepEvent {
+                step {key }
+            }
+        }
     }
 }
 '''
@@ -1743,9 +1771,6 @@ def test_successful_start_subplan(snapshot):
                 out_df = pickle.load(ff)
             assert out_df.to_dict('list') == {'num1': [1, 3], 'num2': [2, 4], 'sum': [3, 7]}
 
-    if result.errors:
-        raise Exception(result.errors)
-
     query_result = result.data['startSubplanExecution']
 
     assert query_result['__typename'] == 'StartSubplanExecutionSuccess'
@@ -1782,9 +1807,6 @@ def test_user_error_pipeline(snapshot):
         },
     )
 
-    if result.errors:
-        raise Exception(result.errors)
-
     assert result.data
 
     query_result = result.data['startSubplanExecution']
@@ -1813,9 +1835,6 @@ def test_start_subplan_pipeline_not_found(snapshot):
             'executionMetadata': {'runId': 'kdjkfjdfd'},
         },
     )
-
-    if result.errors:
-        raise Exception(result.errors)
 
     assert result.data['startSubplanExecution']['__typename'] == 'PipelineNotFoundError'
     assert result.data['startSubplanExecution']['pipelineName'] == 'nope'
@@ -1852,9 +1871,6 @@ def test_start_subplan_invalid_step_keys(snapshot):
         },
     )
 
-    if result.errors:
-        raise Exception(result.errors)
-
     assert result.data
     assert (
         result.data['startSubplanExecution']['__typename']
@@ -1881,9 +1897,6 @@ def test_start_subplan_invalid_input_name(snapshot):
             'executionMetadata': {'runId': 'kdjkfjdfd'},
         },
     )
-
-    if result.errors:
-        raise Exception(result.errors)
 
     assert result.data
     assert (
@@ -1912,9 +1925,6 @@ def test_start_subplan_invalid_output_name(snapshot):
             'executionMetadata': {'runId': 'kdjkfjdfd'},
         },
     )
-
-    if result.errors:
-        raise Exception(result.errors)
 
     assert result.data
     assert (
@@ -2016,9 +2026,6 @@ def test_invalid_subplan_missing_inputs(snapshot):
         },
     )
 
-    if result.errors:
-        raise Exception(result.errors)
-
     assert not result.errors
     assert result.data
     assert result.data['startSubplanExecution']['__typename'] == 'InvalidSubplanExecutionError'
@@ -2037,9 +2044,6 @@ def test_user_code_error_subplan(snapshot):
             'executionMetadata': {'runId': 'kdjkfjdfd'},
         },
     )
-
-    if result.errors:
-        raise Exception(result.errors)
 
     assert not result.errors
     assert result.data
