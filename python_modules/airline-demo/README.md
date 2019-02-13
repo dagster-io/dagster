@@ -400,7 +400,7 @@ be extremely valuable in the case of notoriously complex configuration formats, 
 ![Ingest pipeline resource config](img/ingest_pipeline_resource_config.png)
 
 
-### Ingesting data to Spark data frames
+<!-- ### Ingesting data to Spark data frames
 
 ![Ingest pipeline type signature](img/ingest_pipeline_type_signature.png)
 
@@ -408,7 +408,7 @@ be extremely valuable in the case of notoriously complex configuration formats, 
 
 ### Abstract building blocks for specific transformations
 
-### Loading data to the warehouse
+### Loading data to the warehouse -->
 
 
 <!--
@@ -473,10 +473,10 @@ point these at DNS you do control.
 
 -->
 
-### TODOs
+<!-- ### TODOs
 
 - Flesh out unit tests for solids
 - Write ephemeral EMR cluster resource
 - Add expectations
 - Maybe implement templated SQL handling
-- Add sub-DAG tests
+- Add sub-DAG tests -->
