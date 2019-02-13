@@ -166,7 +166,6 @@ def thunk_database_engine(context):
 
 @solid(
     name='download_from_s3',
-    # inputs=[InputDefinition('files_to_download', dagster_type=List(Dict())],
     config_field=Field(
         List(
             Dict(
