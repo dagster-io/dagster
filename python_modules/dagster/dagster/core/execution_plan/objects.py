@@ -7,7 +7,7 @@ import six
 from dagster import check
 from dagster.utils import merge_dicts
 from dagster.core.execution_context import PipelineExecutionContext
-from dagster.core.definitions import Solid
+from dagster.core.definitions import Solid, PipelineDefinition
 from dagster.core.errors import DagsterError
 from dagster.core.types.runtime import RuntimeType
 
@@ -270,13 +270,17 @@ class ExecutionValueSubplan(
         return ExecutionValueSubplan([], terminal_step_output_handle)
 
 
-class ExecutionPlan(object):
-    def __init__(self, step_dict, deps):
-        self.step_dict = check.dict_param(
-            step_dict, 'step_dict', key_type=str, value_type=ExecutionStep
+class ExecutionPlan(namedtuple('_ExecutionPlan', 'pipeline_def step_dict, deps, steps')):
+    def __new__(cls, pipeline_def, step_dict, deps):
+        return super(ExecutionPlan, cls).__new__(
+            cls,
+            pipeline_def=check.inst_param(pipeline_def, 'pipeline_def', PipelineDefinition),
+            step_dict=check.dict_param(
+                step_dict, 'step_dict', key_type=str, value_type=ExecutionStep
+            ),
+            deps=check.dict_param(deps, 'deps', key_type=str, value_type=set),
+            steps=list(step_dict.values()),
         )
-        self.deps = check.dict_param(deps, 'deps', key_type=str, value_type=set)
-        self.steps = list(step_dict.values())
 
     def has_step(self, key):
         check.str_param(key, 'key')

@@ -5,14 +5,15 @@ from dagster import (
     execute_pipeline,
 )
 
+from dagster.core.utility_solids import define_stub_solid
+
 from dagster_sqlalchemy.templated import (
     _render_template_string,
     create_templated_sql_transform_solid,
 )
 
-from dagster.core.utility_solids import define_stub_solid
 
-from .math_test_db import in_mem_context_params
+from .math_test_db import in_mem_context
 
 
 def _load_table(context, table_name):
@@ -23,17 +24,15 @@ def _load_table(context, table_name):
     )
 
 
-def pipeline_test_def(solids, context_params, dependencies=None):
+def pipeline_test_def(solids, context, dependencies=None):
     return PipelineDefinition(
         solids=solids,
-        context_definitions={
-            'default': PipelineContextDefinition(context_fn=lambda _: context_params)
-        },
+        context_definitions={'default': PipelineContextDefinition(context_fn=lambda _: context)},
         dependencies=dependencies,
     )
 
 
-def define_sum_table_pipeline():
+def define_sum_table_pipeline(context):
     sql = '''CREATE TABLE {{sum_table}} AS
     SELECT num1, num2, num1 + num2 as sum FROM num_table'''
 
@@ -41,14 +40,13 @@ def define_sum_table_pipeline():
         name='sum_table_transform', sql=sql, table_arguments=['sum_table']
     )
 
-    pipeline = pipeline_test_def(
-        solids=[sum_table_transform], context_params=in_mem_context_params()
-    )
+    pipeline = pipeline_test_def(solids=[sum_table_transform], context=context)
     return pipeline
 
 
 def test_single_templated_sql_solid_single_table_with_api():
-    pipeline = define_sum_table_pipeline()
+    context = in_mem_context()
+    pipeline = define_sum_table_pipeline(context)
 
     sum_table_arg = 'specific_sum_table'
 
@@ -57,7 +55,7 @@ def test_single_templated_sql_solid_single_table_with_api():
     result = execute_pipeline(pipeline, environment_dict=environment)
     assert result.success
 
-    assert _load_table(result.context, sum_table_arg) == [(1, 2, 3), (3, 4, 7)]
+    assert _load_table(context, sum_table_arg) == [(1, 2, 3), (3, 4, 7)]
 
 
 def test_single_templated_sql_solid_double_table_raw_api():
@@ -70,10 +68,8 @@ def test_single_templated_sql_solid_double_table_raw_api():
     sum_solid = create_templated_sql_transform_solid(
         name='sum_solid', sql=sql, table_arguments=['sum_table', 'num_table']
     )
-
-    pipeline = pipeline_test_def(
-        solids=[sum_solid], context_params=in_mem_context_params(num_table_arg)
-    )
+    context = in_mem_context(num_table_arg)
+    pipeline = pipeline_test_def(solids=[sum_solid], context=context)
 
     environment = {
         'solids': {
@@ -84,7 +80,7 @@ def test_single_templated_sql_solid_double_table_raw_api():
     result = execute_pipeline(pipeline, environment_dict=environment)
     assert result.success
 
-    assert _load_table(result.context, sum_table_arg) == [(1, 2, 3), (3, 4, 7)]
+    assert _load_table(context, sum_table_arg) == [(1, 2, 3), (3, 4, 7)]
 
 
 def test_single_templated_sql_solid_double_table_with_api():
@@ -97,10 +93,8 @@ def test_single_templated_sql_solid_double_table_with_api():
     sum_solid = create_templated_sql_transform_solid(
         name='sum_solid', sql=sql, table_arguments=['sum_table', 'num_table']
     )
-
-    pipeline = pipeline_test_def(
-        solids=[sum_solid], context_params=in_mem_context_params(num_table_arg)
-    )
+    context = in_mem_context(num_table_arg)
+    pipeline = pipeline_test_def(solids=[sum_solid], context=context)
 
     environment = {
         'solids': {
@@ -111,7 +105,7 @@ def test_single_templated_sql_solid_double_table_with_api():
     result = execute_pipeline(pipeline, environment_dict=environment)
     assert result.success
 
-    assert _load_table(result.context, sum_table_arg) == [(1, 2, 3), (3, 4, 7)]
+    assert _load_table(context, sum_table_arg) == [(1, 2, 3), (3, 4, 7)]
 
     assert (
         result.result_for_solid('sum_solid').transformed_value('sql_text')
@@ -138,11 +132,11 @@ def test_templated_sql_solid_pipeline():
         dependant_solids=[sum_solid],
     )
 
-    context = in_mem_context_params()
+    context = in_mem_context()
 
     pipeline = pipeline_test_def(
         solids=[sum_solid, sum_sq_solid],
-        context_params=context,
+        context=context,
         dependencies={sum_sq_solid.name: {sum_solid.name: DependencyDefinition(sum_solid.name)}},
     )
     first_sum_table = 'first_sum_table'
@@ -167,15 +161,15 @@ def test_templated_sql_solid_pipeline():
         'sum_sq_table': first_sum_sq_table,
     }
 
-    assert _load_table(first_result.context, first_sum_table) == [(1, 2, 3), (3, 4, 7)]
+    assert _load_table(context, first_sum_table) == [(1, 2, 3), (3, 4, 7)]
 
-    assert _load_table(first_result.context, first_sum_sq_table) == [(1, 2, 3, 9), (3, 4, 7, 49)]
+    assert _load_table(context, first_sum_sq_table) == [(1, 2, 3, 9), (3, 4, 7, 49)]
 
     # now execute subdag
 
     pipeline_two = pipeline_test_def(
         solids=[define_stub_solid('pass_value', 'TODO'), sum_sq_solid],
-        context_params=context,
+        context=context,
         dependencies={sum_sq_solid.name: {sum_solid.name: DependencyDefinition('pass_value')}},
     )
 
@@ -188,7 +182,7 @@ def test_templated_sql_solid_pipeline():
     second_result = execute_pipeline(pipeline_two, environment_dict=environment_two)
     assert second_result.success
     assert len(second_result.solid_result_list) == 2
-    assert _load_table(second_result.context, second_sum_sq_table) == [(1, 2, 3, 9), (3, 4, 7, 49)]
+    assert _load_table(context, second_sum_sq_table) == [(1, 2, 3, 9), (3, 4, 7, 49)]
 
 
 def test_templated_sql_solid_with_api():
@@ -199,7 +193,9 @@ def test_templated_sql_solid_with_api():
         name='sum_solid', sql=sql_template, table_arguments=['sum_table']
     )
 
-    pipeline = pipeline_test_def(solids=[sum_solid], context_params=in_mem_context_params())
+    context = in_mem_context()
+
+    pipeline = pipeline_test_def(solids=[sum_solid], context=context)
 
     sum_table_arg = 'specific_sum_table'
 
@@ -208,11 +204,12 @@ def test_templated_sql_solid_with_api():
     result = execute_pipeline(pipeline, environment_dict=environment)
     assert result.success
 
-    assert _load_table(result.context, sum_table_arg) == [(1, 2, 3), (3, 4, 7)]
+    assert _load_table(context, sum_table_arg) == [(1, 2, 3), (3, 4, 7)]
 
 
 def test_with_from_through_specifying_all_solids():
-    pipeline = create_multi_input_pipeline()
+    context = in_mem_context()
+    pipeline = create_multi_input_pipeline(context)
 
     first_sum_table = 'first_sum_table'
     first_mult_table = 'first_mult_table'
@@ -234,13 +231,14 @@ def test_with_from_through_specifying_all_solids():
 
     pipeline_result = execute_pipeline(pipeline, environment_dict=environment)
     assert len(pipeline_result.solid_result_list) == 3
-    assert _load_table(pipeline_result.context, first_sum_table) == [(1, 2, 3), (3, 4, 7)]
-    assert _load_table(pipeline_result.context, first_mult_table) == [(1, 2, 2), (3, 4, 12)]
-    assert _load_table(pipeline_result.context, first_sum_mult_table) == [(1, 3, 2), (3, 7, 12)]
+    assert _load_table(context, first_sum_table) == [(1, 2, 3), (3, 4, 7)]
+    assert _load_table(context, first_mult_table) == [(1, 2, 2), (3, 4, 12)]
+    assert _load_table(context, first_sum_mult_table) == [(1, 3, 2), (3, 7, 12)]
 
 
 def test_multi_input_partial_execution():
-    pipeline = create_multi_input_pipeline()
+    context = in_mem_context()
+    pipeline = create_multi_input_pipeline(context)
 
     first_sum_table = 'first_sum_table'
     first_mult_table = 'first_mult_table'
@@ -264,15 +262,12 @@ def test_multi_input_partial_execution():
 
     assert first_pipeline_result.success
     assert len(first_pipeline_result.solid_result_list) == 3
-    assert _load_table(first_pipeline_result.context, first_sum_table) == [(1, 2, 3), (3, 4, 7)]
-    assert _load_table(first_pipeline_result.context, first_mult_table) == [(1, 2, 2), (3, 4, 12)]
-    assert _load_table(first_pipeline_result.context, first_sum_mult_table) == [
-        (1, 3, 2),
-        (3, 7, 12),
-    ]
+    assert _load_table(context, first_sum_table) == [(1, 2, 3), (3, 4, 7)]
+    assert _load_table(context, first_mult_table) == [(1, 2, 2), (3, 4, 12)]
+    assert _load_table(context, first_sum_mult_table) == [(1, 3, 2), (3, 7, 12)]
 
 
-def create_multi_input_pipeline():
+def create_multi_input_pipeline(context):
     sum_sql_template = '''CREATE TABLE {{sum_table}} AS
         SELECT num1, num2, num1 + num2 as sum FROM num_table'''
 
@@ -300,7 +295,7 @@ def create_multi_input_pipeline():
 
     pipeline = pipeline_test_def(
         solids=[sum_solid, mult_solid, sum_mult_solid],
-        context_params=in_mem_context_params(),
+        context=context,
         dependencies={
             sum_mult_solid.name: {
                 sum_solid.name: DependencyDefinition(sum_solid.name),

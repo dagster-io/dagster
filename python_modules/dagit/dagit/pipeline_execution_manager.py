@@ -9,8 +9,7 @@ import time
 import gevent
 import six
 
-from dagster import check, ExecutionMetadata, PipelineDefinition
-from dagster.core.execution import execute_pipeline_with_metadata, get_subset_pipeline
+from dagster import check, ExecutionMetadata, PipelineDefinition, execute_pipeline
 from dagster.core.events import PipelineEventRecord, EventType
 from dagster.utils.error import serializable_error_info_from_exc_info, SerializableErrorInfo
 from dagster.utils.logging import level_from_string
@@ -85,7 +84,7 @@ class SynchronousExecutionManager(PipelineExecutionManager):
     def execute_pipeline(self, repository_container, pipeline, pipeline_run, throw_on_user_error):
         check.inst_param(pipeline, 'pipeline', PipelineDefinition)
         try:
-            return execute_pipeline_with_metadata(
+            return execute_pipeline(
                 pipeline,
                 pipeline_run.config,
                 execution_metadata=ExecutionMetadata(
@@ -248,7 +247,7 @@ class RunProcessWrapper(namedtuple('RunProcessWrapper', 'pipeline_run process me
 
 
 def execute_pipeline_through_queue(
-    repository_info, pipeline_name, pipeline_solid_subset, config, run_id, message_queue
+    repository_info, pipeline_name, solid_subset, environment_dict, run_id, message_queue
 ):
     """
     Execute pipeline using message queue as a transport
@@ -269,13 +268,13 @@ def execute_pipeline_through_queue(
         )
         return
 
-    pipeline = get_subset_pipeline(
-        repository_container.repository.get_pipeline(pipeline_name), pipeline_solid_subset
-    )
-
     try:
-        result = execute_pipeline_with_metadata(
-            pipeline, config, execution_metadata=execution_metadata, throw_on_user_error=False
+        result = execute_pipeline(
+            repository_container.repository.get_pipeline(pipeline_name),
+            environment_dict,
+            execution_metadata=execution_metadata,
+            throw_on_user_error=False,
+            solid_subset=solid_subset,
         )
         return result
     except:  # pylint: disable=W0702

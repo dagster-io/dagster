@@ -25,7 +25,7 @@ from dagster.core.execution import (
 from dagster.core.utility_solids import define_stub_solid
 
 
-def create_test_runtime_legacy_execution_context(loggers=None, resources=None, tags=None):
+def create_test_pipeline_execution_context(loggers=None, resources=None, tags=None):
     run_id = str(uuid.uuid4())
     pipeline_def = PipelineDefinition(name='test_legacy_context', solids=[])
     return construct_pipeline_execution_context(
