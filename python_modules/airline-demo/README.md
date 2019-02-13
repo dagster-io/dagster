@@ -47,7 +47,7 @@ To avoid unnecessary duplication, the config that is common to all of the pipeli
 out into `local_base.yml` file. Recall that when running a pipeline using `dagster pipeline execute`
 you can pass more than one yaml file using the `-e` flag, and these will be combined.
 
-### Running tests
+## Running tests
 
 You won't want to suppress test output if you want to see loglines from dagster:
 
@@ -399,16 +399,67 @@ be extremely valuable in the case of notoriously complex configuration formats, 
 
 ![Ingest pipeline resource config](img/ingest_pipeline_resource_config.png)
 
+### Ingesting data to Spark data frames
 
-<!-- ### Ingesting data to Spark data frames
+The root nodes of the ingestion pipeline are all aliases of the `ingest_csv_to_spark` solid,
+independently configured with their inputs, e.g.:
+
+ingest_april_on_time_data:
+  inputs:
+    input_csv: source_data/On_Time_Reporting_Carrier_On_Time_Performance_(1987_present)_2018_4.csv
+
+Note the type signature of these solids.
 
 ![Ingest pipeline type signature](img/ingest_pipeline_type_signature.png)
 
+The output has type `SparkDataFrameType`, a custom Dagster type that wraps a pyspark.sql.DataFrame.
+Defining types of this kind is straightforward and provides additional safety when your solids pass
+Python objects to each other:
+
+    from dagster import as_dagster_type
+    from pyspark.sql import DataFrame
+
+    SparkDataFrameType = as_dagster_type(
+        DataFrame, name='SparkDataFrameType', description='A Pyspark data frame.'
+    )
+
+The transformation solids that follow all use the SparkDataFrameType for their intermediate results.
+You might also build DAGs where Pandas data frames, or some other in-memory Python object, are the
+common intermediate representation.
+
 ### Implicit dependencies between pipelines
+
+We configured the ingestion pipeline by specifying paths to source .csv files for each root node of
+the DAG. But we know that in order for these files to be where we expect them, the download pipeline
+must first have run. We have an implicit dependency between pipelines that isn't expressed in code.
+
+In practice, you'll need to decide where to draw the line between pipelines, just as you'll need to
+decide which units of computation are best suited to be expressed as solids. In this demo, we
+hypothesize that pipelines correspond well to conceptually independent workflows that are likely to
+be run and maintained by distinct teams.
+
+A typical ingestion pipeline might be maintained by an ops, software engineering, or data
+engineering team. It's likely to have to consider a lot of messy infastructural details, like
+external secrets, connection configuration, protocols, retry logic, and encodings.
+
+A typical ingestion pipeline might be maintained by data engineers and ETL engineers. It will make
+use of common internal infrastructure and require data to be munged into the standard
+representations exposed to analysts and data scientists in the data warehouse.
+
+Typical data warehouse pipelines will involve a heterogeneous mix of work in Jupyter notebooks
+(in Python, R, Scala, etc.) and SQL, and might have outputs to reporting, real time messaging, or
+shared file servers. They will typically be maintained by dedicated analysts and data scientists.
+
+In an organization that adopts Dagster, software and data engineering teams will tend to build
+library solids and resources for internal clients, focusing on making their existing systems
+available to pipeline authors. They will also likely be responsible for deploying and orchestrating
+pipelines in production. Analysts and data scientists will tend to write pipelines that connect
+library solid, as well as logic in familiar tools (like SQL and Jupyter) that can be easily wrapped
+by utility solids.
 
 ### Abstract building blocks for specific transformations
 
-### Loading data to the warehouse -->
+### Loading data to the warehouse
 
 
 <!--
