@@ -273,11 +273,12 @@ with a short feedback cycle and to write and run tests against pipeline code.
 
 Don't worry, we've got plenty of big(gish) data to run through this pipeline. Instead of the
 `local_fast_download.yml` config fragment, use `local_full_download.yml` -- but be prepared to wait!
-
+In practice, you can use this pattern to run your Dagster pipelines against synthetic, anonymized,
+or subsampled datasets in test and development environments.
 
 ## The ingest pipeline
 
-![Download pipeline](img/download_pipeline.png)
+![Ingest pipeline](img/ingest_pipeline.png)
 
 The `airline_demo_download_pipeline` models the first stage of most data science workflows, in
 which raw data is consumed from a variety of sources. 
