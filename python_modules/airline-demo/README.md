@@ -457,11 +457,85 @@ pipelines in production. Analysts and data scientists will tend to write pipelin
 library solid, as well as logic in familiar tools (like SQL and Jupyter) that can be easily wrapped
 by utility solids.
 
-<!-- ### Abstract building blocks for specific transformations
+### Abstract building blocks for specific transformations
 
-### Loading data to the warehouse -->
+The bulk of this pipeline is built out of generic library solids, which are presented as examples
+of the kind of reusable abstract building blocks you'll be able to write to simplify the expression
+of common workloads:
 
+- **union_spark_data_frames** (2x) just performs the operation 
+  `left_data_frame.union(right_data_frame)`. Abstracting this operation makes it very clear where
+  you're working with component datasets and where you're working with unions -- especially useful
+  if different outputs of the DAG depend on each. You might extend this solid in practice to chain
+  union operations, with the signature
+  `left_data_frame: SparkDataFrame, right_data_frames: [SparkDataFrame] -> SparkDataFrame`.
+- **subsample_spark_dataset** (4x) randomly subsamples a dataset using  `data_frame.sample`. 
+  Abstracting this out makes it clear which datasets may be subsampled and which may not be (e.g.,
+  lookup tables like the `master_cord_data`) in this pipeline). Because subsampling is now
+  controlled by config, it's easy to turn off in production (by sampling 100% of the rows) or to
+  adjust progressively in test. In practice, you might want to extend this solid, e.g., by allowing
+  the random seed to be set via config to ensure deterministic test output.
+- **prefix_column_names** (2x) wraps a use of `data_frame.toDF` to rename the columns of a data
+  frame, adding a prefix to avoid collisions and for clarity when columns with the same name are
+  joined from two separate source data frames.
+- **join_spark_data_frames** (2x) wraps `data_frame.join`, allowing users to set the join parameters
+  in config. You can use abstractions like this and  strongly typed config to guard against common
+  errors: for example, by specifying a `joinType` config value as an `Enum`, you could enforce
+  Spark's restriction on join types *at config time*.
 
+Throughout, we work with Spark data frames, but it's straightforward to write similar solids that
+manipulate .csv files, parquet files, Pandas data frames, and other common data formats.
+
+Each of your pipelines will also have idiosyncratic operations that don't necessarily abstract
+well. Here, for instance, our weather data uses the value `M` to specify a missing value. The
+`normalize_weather_na_values` solid handles this operation for us, cleanly separating the weather
+data-specific cleanup operations from the rest of our logic. (Of course, in practice, you may want
+to write a more generic `normalize_na_values` solid that allows the user to specify the source
+data's missing value representation[s] in config.)
+
+### Loading data to the warehouse
+
+The terminal nodes of this pipeline are all aliased instances of `load_data_to_database_from_spark`,
+which abstracts the operation of loading a Spark data frame to a database -- either our production
+Redshift cluster or our local Postgres in test:
+
+    @solid(
+        name='load_data_to_database_from_spark',
+        inputs=[
+            InputDefinition(
+                'data_frame',
+                SparkDataFrameType,
+                description='The pyspark DataFrame to load into the database.',
+            )
+        ],
+        outputs=[OutputDefinition(SparkDataFrameType)],
+        config_field=Field(Dict(fields={'table_name': Field(String, description='')})),
+    )
+    def load_data_to_database_from_spark(context, data_frame):
+        context.resources.db_info.load_table(data_frame, context.config['table_name'])
+        return data_frame
+
+Note how using the `db_info` resource simplifies this operation. There's no need to pollute the
+implementation of our DAGs with specifics about how to connect to outside databases, credentials,
+formatting details, retry or batching logic, etc. This greatly reduces the opportunities for
+implementations of these core external operations to drift and introduce subtle bugs, and cleanly
+separates infrastructural concerns from the logic of any particular data processing pipeline.
+
+## The warehouse pipeline
+
+![Warehouse pipeline](img/warehouse_pipeline.png)
+
+The `airline_demo_warehouse_pipeline` models the analytics stage of a typical data science workflow.
+This is a heterogeneous-by-design process in which analysts, data scientists, and ML engineers
+incrementally derive and formalize insights and analytic products (charts, data frames, models, and
+metrics) using a wide range of tools -- from SQL run directly against the warehouse to Jupyter
+notebooks in Python, R, or Scala. 
+
+### The sql_solid: wrapping foreign code in a solid
+
+How do we actually package the SQL 
+The warehouse pipeline is our first introduction to modeling a typically heterogeneous analytics
+pipeline in Dagster.
 <!--
 FIXME need to actually describe how to run this pipeline against AWS
 

@@ -522,7 +522,6 @@ def subsample_spark_dataset(context, data_frame):
     config_field=Field(
         Dict(
             fields={
-                # Probably want to make the region configuable too
                 'on_left': Field(String, description='', default_value='id', is_optional=True),
                 'on_right': Field(String, description='', default_value='id', is_optional=True),
                 'how': Field(String, description='', default_value='inner', is_optional=True),
