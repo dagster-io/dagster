@@ -7,4 +7,3 @@ matplotlib==3.0.2
 pyspark==2.4.0
 sqlalchemy-redshift==0.7.1
 SQLAlchemy-Utils==0.33.8
-stringcase==1.2.0

@@ -37,7 +37,6 @@ setup(
         'pyspark',
         'sqlalchemy-redshift',
         'SQLAlchemy-Utils',
-        'stringcase',
     ],
     dependency_links=['git+ssh://git@github.com:dagster-io/dagster.git'],
 )
