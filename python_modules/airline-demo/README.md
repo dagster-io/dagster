@@ -777,7 +777,27 @@ where to look for the notebooks. We define a new solid as follows:
         ],
     )
 
-As always, we define the inputs and outputs of the notebook
+As always, we define the inputs and outputs of the new solid. Within the notebook itself, we only
+need to add a few lines of boilerplate.
+
+At the top of the notebook, we declare the notebook to be a solid as follows:
+
+    import dagstermill as dm
+    from airline_demo.pipelines import define_repo
+    dm.declare_as_solid(define_repo(), 'sfo_delays_by_destination')
+
+The call to `dagstermill.declare_as_solid` identifies the notebook contents with the notebook solid
+we defined in our pipeline.
+
+Then, in a cell with the `parameters` tag, we write:
+
+    #(db_url, table_name) = dm.get_inputs(dm_context, 'db_url', 'table_name')
+    db_url = ''\n
+    table_name = ''
+
+Finally, at the very end of the notebook, we yield the result back to the pipeline:
+
+    dm.yield_result(pdf_path, 'result')#, output_name='plots_pdf_path')
 
 <!--
 FIXME need to actually describe how to run this pipeline against AWS
