@@ -323,9 +323,25 @@ essence; and remotely in production on live data.
 
 Here we've defined a `db_info` resource that exposes a unified API to our solid logic, but that
 wraps two very different underlying assets -- in one case, a Postgres database, and in the other,
-a Redshift cluster. Let's look more closely at how this is implemented for the Postgres case:
+a Redshift cluster. Let's look more closely at how this is implemented for the Postgres case.
+
+First, we define the `db_info` resource itself:
+
+    from collections import namedtuple
 
     DbInfo = namedtuple('DbInfo', 'engine url jdbc_url dialect load_table')
+
+This resource exposes a SQLAlchemy engine, the URL of the database (in two forms), metadata about
+the SQL dialect that the database speaks, and a utility function, `load_table`, which loads a
+Spark data frame into the target database. In practice, we would probably find that over time we
+wanted to add or subtract from this interface, rework its implementations, or factor it into
+multiple resources. Because the type definition, config definitions, and implementations are 
+centralized -- rather than spread out across the internals of many solids -- this is a relatively
+easy task.
+
+Next, we define the config required to instantiate our resource:
+
+    from dagster import Dict
 
     PostgresConfigData = Dict(
         {
@@ -335,6 +351,13 @@ a Redshift cluster. Let's look more closely at how this is implemented for the P
             'postgres_db_name': Field(String),
         }
     )
+
+Obviously, this config will differ for Redshift, as it might if we had to reach our database through
+a proxy server, or using a different authentication schema.
+
+Finally, we bring it all together in the `define_postgres_db_info_resource` function:
+
+    from dagster import ResourceDefinition, Field
 
     def define_postgres_db_info_resource():
         def _create_postgres_db_info(init_context):
@@ -370,8 +393,16 @@ a Redshift cluster. Let's look more closely at how this is implemented for the P
             resource_fn=_create_postgres_db_info, config_field=Field(PostgresConfigData)
         )
 
+Note that by setting the strongly typed `config_field` parameter, we now have typeahead
+support in dagit and rich error messages for the configuration of our external resources. This can
+be extremely valuable in the case of notoriously complex configuration formats, such as Spark's.
+
+![Ingest pipeline resource config](img/ingest_pipeline_resource_config.png)
+
 
 ### Ingesting data to Spark data frames
+
+![Ingest pipeline type signature](img/ingest_pipeline_type_signature.png)
 
 ### Implicit dependencies between pipelines
 
