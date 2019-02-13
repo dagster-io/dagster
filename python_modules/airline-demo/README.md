@@ -272,11 +272,19 @@ with a short feedback cycle and to write and run tests against pipeline code.
 ### Running on production data
 
 Don't worry, we've got plenty of big(gish) data to run through this pipeline. Instead of the
-`local_fast_download.yml` config fragment, use `local_full_download.yml`.
+`local_fast_download.yml` config fragment, use `local_full_download.yml` -- but be prepared to wait!
 
 
 ## The ingest pipeline
 
+![Download pipeline](img/download_pipeline.png)
+
+The `airline_demo_download_pipeline` models the first stage of most data science workflows, in
+which raw data is consumed from a variety of sources. 
+
+For demo purposes, we've put our source files in a publicly-readable S3 repository. In practice,
+these might be files in S3 or other cloud storage systems; publicly available datasets downloaded
+over http; or batch files in an SFTP drop.
 
 
 <!--
