@@ -280,12 +280,11 @@ or subsampled datasets in test and development environments.
 
 ![Ingest pipeline](img/ingest_pipeline.png)
 
-The `airline_demo_download_pipeline` models the first stage of most data science workflows, in
-which raw data is consumed from a variety of sources. 
+The `airline_demo_ingest_pipeline` models the ingestion stage of a typical data science workflow,
+in which raw data is normalized, scrubbed, munged, and finally loaded into a production system
+that supports general purpose queries. We've chosen to use Spark to perform these transformations.
 
-For demo purposes, we've put our source files in a publicly-readable S3 repository. In practice,
-these might be files in S3 or other cloud storage systems; publicly available datasets downloaded
-over http; or batch files in an SFTP drop.
+
 
 
 <!--
