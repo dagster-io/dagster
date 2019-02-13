@@ -457,9 +457,9 @@ pipelines in production. Analysts and data scientists will tend to write pipelin
 library solid, as well as logic in familiar tools (like SQL and Jupyter) that can be easily wrapped
 by utility solids.
 
-### Abstract building blocks for specific transformations
+<!-- ### Abstract building blocks for specific transformations
 
-### Loading data to the warehouse
+### Loading data to the warehouse -->
 
 
 <!--
