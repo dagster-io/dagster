@@ -131,23 +131,31 @@ export function scaffoldConfig(pipeline: ConfigEditorPipelineFragment): string {
     Path: "/path/to/file",
     String: "value",
     Int: 1,
-    Boolean: "false"
+    Bool: false,
+    Float: 1.0,
   };
 
   const configPlaceholderFor = (
-    typeName: string,
+    typeKey: string,
     commentDepth: number
   ): any => {
-    if (placeholders[typeName]) {
-      return placeholders[typeName];
+    if (placeholders[typeKey] !== undefined) {
+      return placeholders[typeKey];
     }
 
-    const type = pipeline.configTypes.find(t => t.name === typeName);
-    if (!type || type.__typename !== "CompositeConfigType") return null;
+    if (typeKey.startsWith('List.')) {
+      const innerPlaceholder = configPlaceholderFor(typeKey.substr(5), commentDepth)
+      if (innerPlaceholder === null) return null;
+      return [innerPlaceholder]
+    }
 
+    const type = pipeline.configTypes.find(t => t.key === typeKey);
+    if (!type || type.__typename !== "CompositeConfigType") {
+      console.warn(`Unsure of how to scaffold ${typeKey} ${JSON.stringify(type)}`);
+      return null;
+    }
     const result = {};
     type.fields
-      .filter(f => !f.isOptional)
       .forEach((field, idx) => {
         const startComment = type.isSelector && idx > 0;
         const fieldCommentDepth =
@@ -157,8 +165,9 @@ export function scaffoldConfig(pipeline: ConfigEditorPipelineFragment): string {
           field.configType.key,
           fieldCommentDepth
         );
-        if (!val || Object.keys(val).length == 0) return;
-
+        if (val === null || (val instanceof Object && Object.keys(val).length == 0)) {
+          return;
+        }
         if (fieldCommentDepth > 0) {
           result[`COMMENTED_${fieldCommentDepth}_${field.name}`] = val;
         } else {
