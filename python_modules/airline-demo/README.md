@@ -735,6 +735,12 @@ the diversity of code in notebooks. Rather than requiring notebooks to be rewrit
 in order to consume inputs from other nodes in a pipeline or to produce outputs for downstream
 nodes, we can just add a few cells to provide a thin wrapper around an existing notebook.
 
+Notebook solids can be identified by the small red `ipynb` tag in Dagit. As with SQL solids, they
+can be explored from within Dagit by drilling down on the tag:
+
+![Warehouse pipeline notebook](img/warehouse_pipeline_notebook_display.png)
+
+
 Let's start with the definition of our `notebook_solid` helper:
 
     import os
@@ -748,6 +754,30 @@ Let's start with the definition of our `notebook_solid` helper:
     def notebook_solid(name, notebook_path, inputs, outputs):
         return define_dagstermill_solid(name, _notebook_path(notebook_path), inputs, outputs)
 
+This is just a wrapper around Dagstermill's `define_dagstermill_solid` which tells Dagstermill
+where to look for the notebooks. We define a new solid as follows:
+
+    sfo_delays_by_destination = notebook_solid(
+        'sfo_delays_by_destination',
+        'SFO Delays by Destination.ipynb',
+        inputs=[
+            InputDefinition(
+                'db_url', String, description='The db_url to use to construct a SQLAlchemy engine.'
+            ),
+            InputDefinition(
+                'table_name', SqlTableName, description='The SQL table to use for calcuations.'
+            ),
+        ],
+        outputs=[
+            OutputDefinition(
+                dagster_type=Path,
+                # name='plots_pdf_path',
+                description='The path to the saved PDF plots.',
+            )
+        ],
+    )
+
+As always, we define the inputs and outputs of the notebook
 
 <!--
 FIXME need to actually describe how to run this pipeline against AWS
