@@ -45,7 +45,7 @@ def get_module_target_function(repo_target_info):
 
 def get_notebook_scaffolding(register_repo_info):
     if register_repo_info is None:  # do not register repo
-        first_cell_source = 'import dagstermill as dm\\n'
+        first_cell_source = '"import dagstermill as dm"'
     else:
         check.str_param(register_repo_info.import_statement, 'register_repo_info.import_statement')
         check.str_param(
