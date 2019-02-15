@@ -381,7 +381,7 @@ def replace_parameters(context, nb, parameters):
         context.log.debug(
             (
                 'Warning notebook has no parameters cell, '
-                'so first cell must import dagstermill and call dm.declare_as_solid'
+                'so first cell must import dagstermill and call dm.register_repo()'
             )
         )
         before = nb.cells[:1]
