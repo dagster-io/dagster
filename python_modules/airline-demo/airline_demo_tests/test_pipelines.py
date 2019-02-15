@@ -28,8 +28,8 @@ def test_all_airline_pipelines():
     assert result_download.success
 
     ingest_config_object = load_yaml_from_globs(
-        script_relative_path('../../environments/local_base.yml'),
-        script_relative_path('../../environments/local_fast_ingest.yml'),
+        script_relative_path('../environments/local_base.yml'),
+        script_relative_path('../environments/local_fast_ingest.yml'),
     )
 
     result_ingest = execute_pipeline(define_airline_demo_ingest_pipeline(), ingest_config_object)
@@ -37,8 +37,8 @@ def test_all_airline_pipelines():
     assert result_ingest.success
 
     warehouse_config_object = load_yaml_from_globs(
-        script_relative_path('../../environments/local_base.yml'),
-        script_relative_path('../../environments/local_fast_warehouse.yml'),
+        script_relative_path('../environments/local_base.yml'),
+        script_relative_path('../environments/local_fast_warehouse.yml'),
     )
 
     result_warehouse = execute_pipeline(
