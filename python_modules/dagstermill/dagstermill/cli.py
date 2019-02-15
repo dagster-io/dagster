@@ -80,7 +80,7 @@ def get_notebook_scaffolding(register_repo_info):
     }},
     "outputs": [],
     "source": [
-        "info = dm.get_info()"
+        "context = dm.get_context()"
     ]
     }}
     ],

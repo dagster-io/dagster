@@ -120,12 +120,12 @@ class Manager:
         self.pipeline_def = None
         self.solid_def = None
         self.marshal_dir = None
-        self.info = None
+        self.context = None
 
     def register_repository(self, repository_def):
         self.repository_def = repository_def
 
-    def define_out_of_pipeline_info(self, context_config):
+    def define_out_of_pipeline_context(self, context_config):
         pipeline_def = PipelineDefinition([], name='Ephemeral Notebook Pipeline')
 
         # BUG: If the context cleans up after itself (e.g. closes a db connection or similar)
@@ -137,8 +137,8 @@ class Manager:
             {} if context_config is None else {'context': context_config},
             ExecutionMetadata(run_id=''),
         ) as pipeline_context:
-            self.info = DagstermillInNotebookExecutionContext(pipeline_context)
-        return self.info
+            self.context = DagstermillInNotebookExecutionContext(pipeline_context)
+        return self.context
 
     def yield_result(self, value, output_name):
         if not self.populated_by_papermill:
@@ -194,9 +194,9 @@ class Manager:
         with yield_pipeline_execution_context(
             self.pipeline_def, environment_dict, execution_metadata
         ) as pipeline_context:
-            self.info = DagstermillInNotebookExecutionContext(pipeline_context)
+            self.context = DagstermillInNotebookExecutionContext(pipeline_context)
 
-        return self.info
+        return self.context
 
 
 class DagsterTranslator(pm.translators.PythonTranslator):
@@ -207,7 +207,7 @@ class DagsterTranslator(pm.translators.PythonTranslator):
         content += '{}\n'.format('import json')
         content += '{}\n'.format(
             cls.assign(
-                'info',
+                'context',
                 'dm.populate_context(json.loads(\'{dm_context}\'))'.format(
                     dm_context=parameters['dm_context']
                 ),
@@ -393,10 +393,10 @@ def replace_parameters(context, nb, parameters):
     return nb
 
 
-def get_info(config=None):
+def get_context(config=None):
     if not MANAGER_FOR_NOTEBOOK_INSTANCE.populated_by_papermill:
-        MANAGER_FOR_NOTEBOOK_INSTANCE.define_out_of_pipeline_info(config)
-    return MANAGER_FOR_NOTEBOOK_INSTANCE.info
+        MANAGER_FOR_NOTEBOOK_INSTANCE.define_out_of_pipeline_context(config)
+    return MANAGER_FOR_NOTEBOOK_INSTANCE.context
 
 
 def _dm_solid_transform(name, notebook_path):

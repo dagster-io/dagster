@@ -28,7 +28,7 @@ EXPECTED_OUTPUT_SHELL = '''
     }},
     "outputs": [],
     "source": [
-        "info = dm.get_info()"
+        "context = dm.get_context()"
     ]
     }}
     ],
