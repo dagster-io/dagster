@@ -19,8 +19,8 @@ from .marks import db, nettest, slow, spark
 def test_pipeline_download():
     config_object = load_yaml_from_glob_list(
         [
-            script_relative_path('../../environments/local_base.yml'),
-            script_relative_path('../../environments/local_fast_download.yml'),
+            script_relative_path('../environments/local_base.yml'),
+            script_relative_path('../environments/local_fast_download.yml'),
         ]
     )
 
@@ -34,8 +34,8 @@ def test_pipeline_download():
 def test_pipeline_ingest():
     config_object = load_yaml_from_glob_list(
         [
-            script_relative_path('../../environments/local_base.yml'),
-            script_relative_path('../../environments/local_fast_ingest.yml'),
+            script_relative_path('../environments/local_base.yml'),
+            script_relative_path('../environments/local_fast_ingest.yml'),
         ]
     )
 

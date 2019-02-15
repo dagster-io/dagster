@@ -17,8 +17,8 @@ from .marks import db, nettest, py3, spark
 @spark
 def test_all_airline_pipelines():
     download_config_object = load_yaml_from_globs(
-        script_relative_path('../../environments/local_base.yml'),
-        script_relative_path('../../environments/local_fast_download.yml'),
+        script_relative_path('../environments/local_base.yml'),
+        script_relative_path('../environments/local_fast_download.yml'),
     )
 
     result_download = execute_pipeline(
