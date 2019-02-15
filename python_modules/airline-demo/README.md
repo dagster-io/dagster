@@ -54,8 +54,8 @@ You won't want to suppress test output if you want to see loglines from dagster:
     pytest -s
 
 We use [pytest marks](https://docs.pytest.org/en/latest/example/markers.html#mark-examples) to
-identify useful subsets of tests. For instance, to run only those tests that do not require a
-running Spark cluster, you can run:
+identify useful subsets of tests. You can find the marks we use in `airline_demo_tests/marks.py`.
+For instance, to run only those tests that do not require Spark, you can run:
 
     pytest -m "not spark"
 

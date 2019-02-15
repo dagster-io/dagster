@@ -1,5 +1,3 @@
-import pytest
-
 from dagster import execute_pipeline
 
 from dagster.utils import load_yaml_from_globs, script_relative_path
@@ -10,11 +8,13 @@ from airline_demo.pipelines import (
     define_airline_demo_warehouse_pipeline,
 )
 
+from .marks import db, nettest, py3, spark
 
-@pytest.mark.nettest
-@pytest.mark.spark
-@pytest.mark.db
-@pytest.mark.py3
+
+@db
+@nettest
+@py3
+@spark
 def test_all_airline_pipelines():
     download_config_object = load_yaml_from_globs(
         script_relative_path('../../environments/local_base.yml'),
