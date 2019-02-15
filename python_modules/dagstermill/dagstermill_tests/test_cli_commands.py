@@ -28,6 +28,7 @@ EXPECTED_OUTPUT_SHELL = '''
     }},
     "outputs": [],
     "source": [
+        "info = dm.get_info()"
     ]
     }}
     ],
@@ -50,7 +51,7 @@ def check_notebook_expected_output(notebook_name, expected_output):
         'r',
     ) as f:
         notebook_content = f.read()
-        assert notebook_content == expected_output
+        assert notebook_content == expected_output, notebook_content + "\n\n\n\n" + expected_output
 
 
 def cleanup(notebook_name):
@@ -63,9 +64,7 @@ def cleanup(notebook_name):
         os.remove(notebook_path)
 
 
-def execute_dagstermill_cli(
-    file_name=None, module_name=None, fn_name=None, notebook_name=None, solid_name=None
-):
+def execute_dagstermill_cli(file_name=None, module_name=None, fn_name=None, notebook_name=None):
     cli_cmd = ['dagstermill', "create-notebook"]
     if file_name:
         cli_cmd += ['-f', file_name]
@@ -75,8 +74,6 @@ def execute_dagstermill_cli(
         cli_cmd += ['--fn-name', fn_name]
     if notebook_name:
         cli_cmd += ['--notebook', notebook_name]
-    if solid_name:
-        cli_cmd += ['-s', solid_name]
     cli_cmd.append('--force-overwrite')
 
     try:
@@ -94,11 +91,10 @@ def test_module_example():
             module_name="module_name",
             fn_name="function_name",
             notebook_name="notebooks/CLI_test_module",
-            solid_name="notebook_solid",
         )
         EXPECTED_OUTPUT = EXPECTED_OUTPUT_SHELL.format(
             import_statement="from module_name import function_name",
-            declaration_statement="dm.declare_as_solid(function_name(), 'notebook_solid')",
+            declaration_statement="dm.register_repository(function_name())",
         )
         check_notebook_expected_output(
             notebook_name="CLI_test_module", expected_output=EXPECTED_OUTPUT
@@ -121,37 +117,14 @@ def test_file_example():
         )
 
 
-def test_default_solid_name():
-    original_cwd = os.getcwd()
-    try:
-        os.chdir(script_relative_path('.'))
-        execute_dagstermill_cli(
-            module_name="module_name",
-            fn_name="function_name",
-            notebook_name="notebooks/CLI_test_default_solid",
-        )
-        EXPECTED_OUTPUT = EXPECTED_OUTPUT_SHELL.format(
-            import_statement="from module_name import function_name",
-            declaration_statement="dm.declare_as_solid(function_name(), 'CLI_test_default_solid')",
-        )
-        check_notebook_expected_output(
-            notebook_name="CLI_test_default_solid", expected_output=EXPECTED_OUTPUT
-        )
-    finally:
-        cleanup("CLI_test_default_solid")
-        os.chdir(original_cwd)
-
-
 def test_yaml_example():
     original_cwd = os.getcwd()
     try:
         os.chdir(script_relative_path('.'))
-        execute_dagstermill_cli(
-            notebook_name="notebooks/CLI_test_YAML", solid_name="notebook_solid"
-        )
+        execute_dagstermill_cli(notebook_name="notebooks/CLI_test_YAML")
         EXPECTED_OUTPUT = EXPECTED_OUTPUT_SHELL.format(
             import_statement=EXPECTED_IMPORT_STATEMENT,
-            declaration_statement="dm.declare_as_solid(define_example_repository(), 'notebook_solid')",
+            declaration_statement="dm.register_repository(define_example_repository())",
         )
         check_notebook_expected_output(
             notebook_name="CLI_test_YAML", expected_output=EXPECTED_OUTPUT
@@ -164,10 +137,7 @@ def test_yaml_example():
 def test_invalid_filename_example():
     with pytest.raises(subprocess.CalledProcessError) as cpe:
         execute_dagstermill_cli(
-            module_name="module_name",
-            fn_name="function_name",
-            notebook_name="notebooks/CLI!!~@",
-            solid_name="notebook_solid",
+            module_name="module_name", fn_name="function_name", notebook_name="notebooks/CLI!!~@"
         )
         assert (
             'Notebook name {name} is not valid, '
@@ -183,7 +153,6 @@ def test_coverage():
         os.chdir(script_relative_path('.'))
         execute_create_notebook(
             notebook="notebooks/CLI_coverage",
-            solid_name="solid_name",
             force_overwrite=True,
             module_name=None,
             fn_name=None,
