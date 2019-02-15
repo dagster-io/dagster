@@ -729,7 +729,7 @@ westbound_delays = sql_solid(
 )
 
 delays_by_geography = notebook_solid(
-    'delays_by_geo',
+    'delays_by_geography',
     'Delays by Geography.ipynb',
     inputs=[
         InputDefinition(
