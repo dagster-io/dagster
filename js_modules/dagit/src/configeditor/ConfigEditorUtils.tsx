@@ -1,7 +1,10 @@
 import gql from "graphql-tag";
 import { ApolloClient } from "apollo-boost";
 import { ValidationResult } from "./codemirror-yaml/mode";
-import { ConfigEditorPipelineFragment } from "./types/ConfigEditorPipelineFragment";
+import {
+  ConfigEditorPipelineFragment,
+  ConfigEditorPipelineFragment_configTypes_CompositeConfigType_fields_configType_ListConfigType_innerTypes
+} from "./types/ConfigEditorPipelineFragment";
 import {
   ConfigEditorCheckConfigQuery,
   ConfigEditorCheckConfigQueryVariables
@@ -36,7 +39,18 @@ export const CONFIG_EDITOR_PIPELINE_FRAGMENT = gql`
             isList
             isNullable
             ... on ListConfigType {
+              innerTypes {
+                __typename
+                key
+                ... on ListConfigType {
+                  ofType {
+                    __typename
+                    key
+                  }
+                }
+              }
               ofType {
+                __typename
                 key
               }
             }
@@ -126,38 +140,69 @@ export async function checkConfig(
   return { isValid: false, errors: errors };
 }
 
+function nullOrEmpty(val: any) {
+  return (
+    val === null || (val instanceof Object && Object.keys(val).length == 0)
+  );
+}
+
 export function scaffoldConfig(pipeline: ConfigEditorPipelineFragment): string {
   const placeholders = {
     Path: "/path/to/file",
     String: "value",
     Int: 1,
-    Boolean: "false"
+    Bool: false,
+    Float: 1.0
   };
 
-  const configPlaceholderFor = (
-    typeName: string,
-    commentDepth: number
-  ): any => {
-    if (placeholders[typeName]) {
-      return placeholders[typeName];
+  const configPlaceholderFor = (typeKey: string, commentDepth: number): any => {
+    if (placeholders[typeKey] !== undefined) {
+      return placeholders[typeKey];
     }
 
-    const type = pipeline.configTypes.find(t => t.name === typeName);
-    if (!type || type.__typename !== "CompositeConfigType") return null;
+    const type = pipeline.configTypes.find(t => t.key === typeKey);
+    if (!type) {
+      console.warn(`Unsure of how to scaffold missing type: ${typeKey}`);
+      return null;
+    }
 
-    const result = {};
-    type.fields
-      .filter(f => !f.isOptional)
-      .forEach((field, idx) => {
+    if (type.__typename === "CompositeConfigType") {
+      const result = {};
+      type.fields.forEach((field, idx) => {
         const startComment = type.isSelector && idx > 0;
         const fieldCommentDepth =
           commentDepth > 0 ? commentDepth + 2 : startComment ? 1 : 0;
 
-        const val = configPlaceholderFor(
-          field.configType.key,
-          fieldCommentDepth
-        );
-        if (!val || Object.keys(val).length == 0) return;
+        let val = null;
+
+        if (field.configType.__typename === "ListConfigType") {
+          let inner: ConfigEditorPipelineFragment_configTypes_CompositeConfigType_fields_configType_ListConfigType_innerTypes =
+            field.configType;
+          let wrap = 0;
+
+          // If the field's type is a list, we need to scaffold an item in the list.
+          // The list could be a list of lists, though. Drill in to the `ofType` and
+          // repeatedly look up the type in the top level innerTypes set until we find
+          // a non-list ofType. Then we scaffold it and wrap it in layers of arrays.
+          while (true) {
+            if (inner.__typename !== "ListConfigType") break;
+            const innerTypeKey: string = inner.ofType.key;
+            inner = field.configType.innerTypes.find(
+              t => t.key === innerTypeKey
+            )!;
+            wrap += 1;
+          }
+          val = configPlaceholderFor(inner.key, commentDepth);
+          if (nullOrEmpty(val)) return;
+          while (wrap > 0) {
+            val = [val];
+            wrap--;
+          }
+        } else {
+          val = configPlaceholderFor(field.configType.key, fieldCommentDepth);
+        }
+
+        if (nullOrEmpty(val)) return;
 
         if (fieldCommentDepth > 0) {
           result[`COMMENTED_${fieldCommentDepth}_${field.name}`] = val;
@@ -165,7 +210,13 @@ export function scaffoldConfig(pipeline: ConfigEditorPipelineFragment): string {
           result[field.name] = val;
         }
       });
-    return result;
+      return result;
+    }
+
+    console.warn(
+      `Unsure of how to scaffold ${typeKey}: ${JSON.stringify(type)}`
+    );
+    return null;
   };
 
   // Convert the top level to a YAML string
