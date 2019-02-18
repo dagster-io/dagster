@@ -39,6 +39,24 @@ export interface ConfigEditorPipelineFragment_configTypes_CompositeConfigType_fi
   isNullable: boolean;
 }
 
+export interface ConfigEditorPipelineFragment_configTypes_CompositeConfigType_fields_configType_ListConfigType_innerTypes_EnumConfigType {
+  __typename: "EnumConfigType" | "CompositeConfigType" | "RegularConfigType" | "NullableConfigType";
+  key: string;
+}
+
+export interface ConfigEditorPipelineFragment_configTypes_CompositeConfigType_fields_configType_ListConfigType_innerTypes_ListConfigType_ofType {
+  __typename: "EnumConfigType" | "CompositeConfigType" | "RegularConfigType" | "ListConfigType" | "NullableConfigType";
+  key: string;
+}
+
+export interface ConfigEditorPipelineFragment_configTypes_CompositeConfigType_fields_configType_ListConfigType_innerTypes_ListConfigType {
+  __typename: "ListConfigType";
+  key: string;
+  ofType: ConfigEditorPipelineFragment_configTypes_CompositeConfigType_fields_configType_ListConfigType_innerTypes_ListConfigType_ofType;
+}
+
+export type ConfigEditorPipelineFragment_configTypes_CompositeConfigType_fields_configType_ListConfigType_innerTypes = ConfigEditorPipelineFragment_configTypes_CompositeConfigType_fields_configType_ListConfigType_innerTypes_EnumConfigType | ConfigEditorPipelineFragment_configTypes_CompositeConfigType_fields_configType_ListConfigType_innerTypes_ListConfigType;
+
 export interface ConfigEditorPipelineFragment_configTypes_CompositeConfigType_fields_configType_ListConfigType_ofType {
   __typename: "EnumConfigType" | "CompositeConfigType" | "RegularConfigType" | "ListConfigType" | "NullableConfigType";
   key: string;
@@ -50,6 +68,7 @@ export interface ConfigEditorPipelineFragment_configTypes_CompositeConfigType_fi
   name: string | null;
   isList: boolean;
   isNullable: boolean;
+  innerTypes: ConfigEditorPipelineFragment_configTypes_CompositeConfigType_fields_configType_ListConfigType_innerTypes[];
   ofType: ConfigEditorPipelineFragment_configTypes_CompositeConfigType_fields_configType_ListConfigType_ofType;
 }
 
