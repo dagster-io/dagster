@@ -1,7 +1,10 @@
 import gql from "graphql-tag";
 import { ApolloClient } from "apollo-boost";
 import { ValidationResult } from "./codemirror-yaml/mode";
-import { ConfigEditorPipelineFragment, ConfigEditorPipelineFragment_configTypes_CompositeConfigType_fields_configType_ListConfigType_innerTypes } from "./types/ConfigEditorPipelineFragment";
+import {
+  ConfigEditorPipelineFragment,
+  ConfigEditorPipelineFragment_configTypes_CompositeConfigType_fields_configType_ListConfigType_innerTypes
+} from "./types/ConfigEditorPipelineFragment";
 import {
   ConfigEditorCheckConfigQuery,
   ConfigEditorCheckConfigQueryVariables
@@ -138,7 +141,9 @@ export async function checkConfig(
 }
 
 function nullOrEmpty(val: any) {
-  return val === null || (val instanceof Object && Object.keys(val).length == 0)
+  return (
+    val === null || (val instanceof Object && Object.keys(val).length == 0)
+  );
 }
 
 export function scaffoldConfig(pipeline: ConfigEditorPipelineFragment): string {
@@ -160,7 +165,7 @@ export function scaffoldConfig(pipeline: ConfigEditorPipelineFragment): string {
       console.warn(`Unsure of how to scaffold missing type: ${typeKey}`);
       return null;
     }
-    
+
     if (type.__typename === "CompositeConfigType") {
       const result = {};
       type.fields.forEach((field, idx) => {
@@ -171,7 +176,8 @@ export function scaffoldConfig(pipeline: ConfigEditorPipelineFragment): string {
         let val = null;
 
         if (field.configType.__typename === "ListConfigType") {
-          let inner: ConfigEditorPipelineFragment_configTypes_CompositeConfigType_fields_configType_ListConfigType_innerTypes = field.configType;
+          let inner: ConfigEditorPipelineFragment_configTypes_CompositeConfigType_fields_configType_ListConfigType_innerTypes =
+            field.configType;
           let wrap = 0;
 
           // If the field's type is a list, we need to scaffold an item in the list.
@@ -181,14 +187,16 @@ export function scaffoldConfig(pipeline: ConfigEditorPipelineFragment): string {
           while (true) {
             if (inner.__typename !== "ListConfigType") break;
             const innerTypeKey: string = inner.ofType.key;
-            inner = field.configType.innerTypes.find(t => t.key === innerTypeKey)!
+            inner = field.configType.innerTypes.find(
+              t => t.key === innerTypeKey
+            )!;
             wrap += 1;
           }
           val = configPlaceholderFor(inner.key, commentDepth);
           if (nullOrEmpty(val)) return;
           while (wrap > 0) {
-            val = [val]
-            wrap --;
+            val = [val];
+            wrap--;
           }
         } else {
           val = configPlaceholderFor(field.configType.key, fieldCommentDepth);
@@ -205,7 +213,9 @@ export function scaffoldConfig(pipeline: ConfigEditorPipelineFragment): string {
       return result;
     }
 
-    console.warn(`Unsure of how to scaffold ${typeKey}: ${JSON.stringify(type)}`);
+    console.warn(
+      `Unsure of how to scaffold ${typeKey}: ${JSON.stringify(type)}`
+    );
     return null;
   };
 
