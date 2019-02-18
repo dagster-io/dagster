@@ -2,6 +2,7 @@
 
    - New features
       - Link to output notebook rendered in dagit when dagstermill solids are executed.
+      - Dagstermill solids now required reduced scaffolding.
 
    - API Additions and changes
       - The ``info`` object passed to transform and expectation functions has been renamed to ``context``.
@@ -22,7 +23,7 @@
 
    - Bug fixes
       - #792: execute_pipeline_iterator now properly streams results at step-event granularity.
-
+      - #820: Unbreak config scaffolding within dagit.
 
    - GraphQL Schema Changes
       - ``StepResult`` has been renamed to ``StepEvent``.
