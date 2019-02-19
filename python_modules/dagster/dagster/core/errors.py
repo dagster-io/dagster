@@ -89,44 +89,41 @@ class DagsterExecutionStepNotFoundError(DagsterUserError):
         super(DagsterExecutionStepNotFoundError, self).__init__(*args, **kwargs)
 
 
-class DagsterUnmarshalInputNotFoundError(DagsterUserError):
-    '''
-    This error is when the user specifies an input to be marshalled and that
-    input does not exist on the step specified.
-    '''
-
-    def __init__(self, *args, **kwargs):
-        self.input_name = check.str_param(kwargs.pop('input_name'), 'input_name')
-        self.step_key = check.str_param(kwargs.pop('step_key'), 'step_key')
-        super(DagsterUnmarshalInputNotFoundError, self).__init__(*args, **kwargs)
-
-
-class DagsterMarshalOutputNotFoundError(DagsterUserError):
-    '''Throw if user tries to marshal an output that does not exist on the step'''
-
-    def __init__(self, *args, **kwargs):
-        self.output_name = check.str_param(kwargs.pop('output_name'), 'output_name')
-        self.step_key = check.str_param(kwargs.pop('step_key'), 'step_key')
-        super(DagsterMarshalOutputNotFoundError, self).__init__(*args, **kwargs)
-
-
 class DagsterExecutionStepExecutionError(DagsterUserCodeExecutionError):
     '''Indicates an error occured during the body of execution step execution'''
 
 
-class DagsterInvalidSubplanExecutionError(DagsterUserError):
+class InvalidSubplanErrorData(object):
+    def __init__(self, *args, **kwargs):
+        from dagster.core.execution_plan.objects import ExecutionStep
+
+        self.pipeline_name = check.str_param(kwargs.pop('pipeline_name'), 'pipeline_name')
+        self.step_keys = check.list_param(kwargs.pop('step_keys'), 'step_keys', of_type=str)
+        self.step = check.inst_param(kwargs.pop('step'), 'step', ExecutionStep)
+
+        super(InvalidSubplanErrorData, self).__init__(*args, **kwargs)
+
+
+class DagsterInvalidSubplanMissingInputError(InvalidSubplanErrorData, DagsterUserError):
     '''Indicates that user has attempted to construct an execution subplan
-    that cannot be executed. This is typically because the user needs to specify additional
-    inputs that hitherto were satisified by dependencies.
+    that cannot be executed because the user needs to specify additional inputs.
     '''
 
     def __init__(self, *args, **kwargs):
-        self.pipeline_name = check.str_param(kwargs.pop('pipeline_name'), 'pipeline_name')
-        self.step_keys = check.list_param(kwargs.pop('step_keys'), 'step_keys', of_type=str)
         self.input_name = check.str_param(kwargs.pop('input_name'), 'input_name')
-        self.step_key = check.str_param(kwargs.pop('step_key'), 'step_key')
+        super(DagsterInvalidSubplanMissingInputError, self).__init__(*args, **kwargs)
 
-        super(DagsterInvalidSubplanExecutionError, self).__init__(*args, **kwargs)
+
+class DagsterInvalidSubplanOutputNotFoundError(InvalidSubplanErrorData, DagsterUserError):
+    def __init__(self, *args, **kwargs):
+        self.output_name = check.str_param(kwargs.pop('output_name'), 'output_name')
+        super(DagsterInvalidSubplanOutputNotFoundError, self).__init__(*args, **kwargs)
+
+
+class DagsterInvalidSubplanInputNotFoundError(InvalidSubplanErrorData, DagsterUserError):
+    def __init__(self, *args, **kwargs):
+        self.input_name = check.str_param(kwargs.pop('input_name'), 'input_name')
+        super(DagsterInvalidSubplanInputNotFoundError, self).__init__(*args, **kwargs)
 
 
 class DagsterExpectationFailedError(DagsterError):

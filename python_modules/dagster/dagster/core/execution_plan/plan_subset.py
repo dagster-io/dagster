@@ -82,7 +82,7 @@ class ExecutionPlanSubsetInfo(
         step_key => input_name => marshalling_key
         '''
         check.list_param(included_step_keys, 'included_step_keys', of_type=str)
-        check.opt_two_dim_dict_param(marshalled_inputs, 'marshalled_inputs')
+        marshalled_inputs = check.opt_two_dim_dict_param(marshalled_inputs, 'marshalled_inputs')
 
         input_step_factory_fns = defaultdict(dict)
 
@@ -163,13 +163,19 @@ class ExecutionPlanAddedOutputs(
             output_step_factory_fns, 'output_step_factory_fns', key_type=str, value_type=list
         )
         for step_factory_fns_for_output in output_step_factory_fns.values():
-            check.list_param(step_factory_fns_for_output, 'rename', of_type=OutputStepFactoryEntry)
+            check.list_param(
+                step_factory_fns_for_output,
+                'output_step_factory_fns',
+                of_type=OutputStepFactoryEntry,
+            )
 
         return super(ExecutionPlanAddedOutputs, cls).__new__(cls, output_step_factory_fns)
 
     @staticmethod
     def with_output_marshalling(marshalled_outputs):
-        check.dict_param(marshalled_outputs, 'marshalled_outputs', key_type=str)
+        marshalled_outputs = check.opt_dict_param(
+            marshalled_outputs, 'marshalled_outputs', key_type=str
+        )
 
         for outputs_for_step in marshalled_outputs.values():
             check.list_param(outputs_for_step, 'outputs_for_step', of_type=MarshalledOutput)

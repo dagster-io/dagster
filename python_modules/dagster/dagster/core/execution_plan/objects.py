@@ -8,6 +8,7 @@ from dagster import check
 from dagster.utils import merge_dicts
 from dagster.core.execution_context import PipelineExecutionContext
 from dagster.core.definitions import Solid, PipelineDefinition
+
 from dagster.core.errors import DagsterError
 from dagster.core.types.runtime import RuntimeType
 

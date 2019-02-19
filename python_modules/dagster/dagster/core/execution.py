@@ -36,12 +36,7 @@ from .execution_context import (
     PipelineExecutionContext,
 )
 
-from .errors import (
-    DagsterInvariantViolationError,
-    DagsterUnmarshalInputNotFoundError,
-    DagsterMarshalOutputNotFoundError,
-    DagsterExecutionStepNotFoundError,
-)
+from .errors import DagsterInvariantViolationError
 
 from .events import construct_event_logger
 
@@ -57,8 +52,6 @@ from .execution_plan.objects import (
     ExecutionStepEventType,
     StepKind,
 )
-
-from .execution_plan.plan_subset import MarshalledOutput
 
 from .execution_plan.simple_engine import iterate_step_events_for_execution_plan
 
@@ -261,18 +254,21 @@ def check_execution_metadata_param(execution_metadata):
 
 
 def create_execution_plan(
-    pipeline, environment_dict=None, execution_metadata=None, subset_info=None
+    pipeline, environment_dict=None, execution_metadata=None, subset_info=None, added_outputs=None
 ):
     check.inst_param(pipeline, 'pipeline', PipelineDefinition)
     environment_dict = check.opt_dict_param(environment_dict, 'environment_dict', key_type=str)
     execution_metadata = check_execution_metadata_param(execution_metadata)
     check.inst_param(execution_metadata, 'execution_metadata', ExecutionMetadata)
     check.opt_inst_param(subset_info, 'subset_info', ExecutionPlanSubsetInfo)
+    check.opt_inst_param(added_outputs, 'added_outputs', ExecutionPlanAddedOutputs)
 
     with yield_pipeline_execution_context(
         pipeline, environment_dict, execution_metadata
     ) as pipeline_context:
-        return create_execution_plan_core(pipeline_context, execution_metadata, subset_info)
+        return create_execution_plan_core(
+            pipeline_context, execution_metadata, subset_info, added_outputs
+        )
 
 
 def get_tags(user_context_params, execution_metadata, pipeline):
@@ -602,8 +598,8 @@ class PipelineConfigEvaluationError(Exception):
         super(PipelineConfigEvaluationError, self).__init__(error_msg, *args, **kwargs)
 
 
-def execute_externalized_plan(
-    execution_plan,
+def execute_marshalling(
+    pipeline,
     step_keys,
     inputs_to_marshal=None,
     outputs_to_marshal=None,
@@ -611,80 +607,20 @@ def execute_externalized_plan(
     execution_metadata=None,
     throw_on_user_error=True,
 ):
-    check.inst_param(execution_plan, 'execution_plan', ExecutionPlan)
-    check.list_param(step_keys, 'step_keys', of_type=str)
-    inputs_to_marshal = check.opt_two_dim_dict_param(
-        inputs_to_marshal, 'inputs_to_marshal', value_type=str
+    execution_plan = create_execution_plan(
+        pipeline,
+        subset_info=ExecutionPlanSubsetInfo.with_input_marshalling(step_keys, inputs_to_marshal),
+        added_outputs=ExecutionPlanAddedOutputs.with_output_marshalling(outputs_to_marshal),
+        execution_metadata=execution_metadata,
+        environment_dict=environment_dict,
     )
-    outputs_to_marshal = check.opt_dict_param(
-        outputs_to_marshal, 'outputs_to_marshal', key_type=str, value_type=list
+
+    return execute_plan(
+        execution_plan,
+        environment_dict=environment_dict,
+        execution_metadata=execution_metadata,
+        throw_on_user_error=throw_on_user_error,
     )
-    for output_list in outputs_to_marshal.values():
-        check.list_param(output_list, 'outputs_to_marshal', of_type=MarshalledOutput)
-
-    environment_dict = check.opt_dict_param(environment_dict, 'environment_dict')
-    execution_metadata = check_execution_metadata_param(execution_metadata)
-
-    _check_inputs_to_marshal(execution_plan, inputs_to_marshal)
-    _check_outputs_to_marshal(execution_plan, outputs_to_marshal)
-
-    with yield_pipeline_execution_context(
-        execution_plan.pipeline_def, environment_dict, execution_metadata
-    ) as pipeline_context:
-
-        execution_plan = create_execution_plan_core(
-            pipeline_context,
-            execution_metadata=execution_metadata,
-            subset_info=ExecutionPlanSubsetInfo.with_input_marshalling(
-                included_step_keys=step_keys, marshalled_inputs=inputs_to_marshal
-            ),
-            added_outputs=ExecutionPlanAddedOutputs.with_output_marshalling(outputs_to_marshal),
-        )
-
-        return list(
-            iterate_step_events_for_execution_plan(
-                pipeline_context, execution_plan, throw_on_user_error=throw_on_user_error
-            )
-        )
-
-
-def _check_outputs_to_marshal(execution_plan, outputs_to_marshal):
-    if not outputs_to_marshal:
-        return
-
-    for step_key, outputs_for_step in outputs_to_marshal.items():
-        if not execution_plan.has_step(step_key):
-            raise DagsterExecutionStepNotFoundError(step_key=step_key)
-        step = execution_plan.get_step_by_key(step_key)
-        for output in outputs_for_step:
-            output_name = output.output_name
-            if not step.has_step_output(output_name):
-                raise DagsterMarshalOutputNotFoundError(
-                    'Execution step {step_key} does not have output {output}'.format(
-                        step_key=step_key, output=output_name
-                    ),
-                    step_key=step_key,
-                    output_name=output_name,
-                )
-
-
-def _check_inputs_to_marshal(execution_plan, inputs_to_marshal):
-    if not inputs_to_marshal:
-        return
-
-    for step_key, input_dict in inputs_to_marshal.items():
-        if not execution_plan.has_step(step_key):
-            raise DagsterExecutionStepNotFoundError(step_key=step_key)
-        step = execution_plan.get_step_by_key(step_key)
-        for input_name in input_dict.keys():
-            if input_name not in step.step_input_dict:
-                raise DagsterUnmarshalInputNotFoundError(
-                    'Input {input_name} does not exist in execution step {key}'.format(
-                        input_name=input_name, key=step.key
-                    ),
-                    input_name=input_name,
-                    step_key=step.key,
-                )
 
 
 def execute_plan(
