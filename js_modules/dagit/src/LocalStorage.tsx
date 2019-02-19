@@ -17,27 +17,18 @@ export interface IExecutionSessionPlan {
   }>;
 }
 
-export interface IExecutionSessionRun {
-  executionParams: {
-    pipelineName: string;
-    config: object;
-  };
-  executionPlan: IExecutionSessionPlan;
-  runId: string;
-}
-
 export interface IExecutionSession {
   key: string;
   name: string;
   config: string;
   solidSubset: string[] | null;
+
+  // this is set when you execute the session and freeze it
+  runId?: string;
+  configChangedSinceRun: boolean;
 }
 
-export interface IExecutionSessionChanges {
-  name?: string;
-  config?: string;
-  solidSubset?: string[] | null;
-}
+export type IExecutionSessionChanges = Partial<IExecutionSession>;
 
 // When we create a new session, we insert a placeholder config that is swapped
 // with a scaffold when the pipeline with the desired solidSubset has loaded
@@ -46,9 +37,11 @@ export const SESSION_CONFIG_PLACEHOLDER = "SCAFFOLD-PLACEHOLDER";
 
 const DEFAULT_SESSION: IExecutionSession = {
   key: "default",
-  name: "Untitled",
+  name: "Workspace",
   config: SESSION_CONFIG_PLACEHOLDER,
-  solidSubset: null
+  solidSubset: null,
+  runId: undefined,
+  configChangedSinceRun: false,
 };
 
 export function applySelectSession(data: IStorageData, key: string) {
@@ -71,13 +64,17 @@ export function applyChangesToSession(
   key: string,
   changes: IExecutionSessionChanges
 ) {
-  Object.assign(data.sessions[key], changes);
+  const saved = data.sessions[key];
+  if (changes.config && changes.config !== saved.config && saved.runId) {
+    changes.configChangedSinceRun = true;
+  }
+  Object.assign(saved, changes);
   return data;
 }
 
-export function applyCreateSession(data: IStorageData) {
+export function applyCreateSession(data: IStorageData, initial: IExecutionSessionChanges = {}) {
   const key = `s${Date.now()}`;
-  data.sessions[key] = Object.assign({}, DEFAULT_SESSION, { key });
+  data.sessions[key] = Object.assign({}, DEFAULT_SESSION, initial, { key, configChangedSinceRun: false });
   data.current = key;
   return data;
 }
