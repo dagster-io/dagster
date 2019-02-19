@@ -100,12 +100,19 @@ export interface PipelineExecutionRootQuery_pipeline_runs_executionPlan {
   steps: PipelineExecutionRootQuery_pipeline_runs_executionPlan_steps[];
 }
 
+export interface PipelineExecutionRootQuery_pipeline_runs_pipeline {
+  __typename: "Pipeline";
+  name: string;
+}
+
 export interface PipelineExecutionRootQuery_pipeline_runs {
   __typename: "PipelineRun";
   runId: string;
   status: PipelineRunStatus;
   logs: PipelineExecutionRootQuery_pipeline_runs_logs;
   executionPlan: PipelineExecutionRootQuery_pipeline_runs_executionPlan;
+  config: string;
+  pipeline: PipelineExecutionRootQuery_pipeline_runs_pipeline;
 }
 
 export interface PipelineExecutionRootQuery_pipeline_environmentType {

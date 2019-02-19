@@ -7,6 +7,28 @@ import { ExecutionSelector, PipelineRunStatus, LogLevel, StepKind } from "./../.
 // GraphQL mutation operation: StartPipelineExecution
 // ====================================================
 
+export interface StartPipelineExecution_startPipelineExecution_StartPipelineExecutionSuccess_run_pipeline {
+  __typename: "Pipeline";
+  name: string;
+}
+
+export interface StartPipelineExecution_startPipelineExecution_StartPipelineExecutionSuccess_run_executionPlan_steps_solid {
+  __typename: "Solid";
+  name: string;
+}
+
+export interface StartPipelineExecution_startPipelineExecution_StartPipelineExecutionSuccess_run_executionPlan_steps {
+  __typename: "ExecutionStep";
+  name: string;
+  solid: StartPipelineExecution_startPipelineExecution_StartPipelineExecutionSuccess_run_executionPlan_steps_solid;
+  kind: StepKind;
+}
+
+export interface StartPipelineExecution_startPipelineExecution_StartPipelineExecutionSuccess_run_executionPlan {
+  __typename: "ExecutionPlan";
+  steps: StartPipelineExecution_startPipelineExecution_StartPipelineExecutionSuccess_run_executionPlan_steps[];
+}
+
 export interface StartPipelineExecution_startPipelineExecution_StartPipelineExecutionSuccess_run_logs_nodes_LogMessageEvent {
   __typename: "LogMessageEvent" | "PipelineStartEvent" | "PipelineSuccessEvent" | "PipelineFailureEvent" | "PipelineProcessStartEvent";
   message: string;
@@ -83,29 +105,14 @@ export interface StartPipelineExecution_startPipelineExecution_StartPipelineExec
   pageInfo: StartPipelineExecution_startPipelineExecution_StartPipelineExecutionSuccess_run_logs_pageInfo;
 }
 
-export interface StartPipelineExecution_startPipelineExecution_StartPipelineExecutionSuccess_run_executionPlan_steps_solid {
-  __typename: "Solid";
-  name: string;
-}
-
-export interface StartPipelineExecution_startPipelineExecution_StartPipelineExecutionSuccess_run_executionPlan_steps {
-  __typename: "ExecutionStep";
-  name: string;
-  solid: StartPipelineExecution_startPipelineExecution_StartPipelineExecutionSuccess_run_executionPlan_steps_solid;
-  kind: StepKind;
-}
-
-export interface StartPipelineExecution_startPipelineExecution_StartPipelineExecutionSuccess_run_executionPlan {
-  __typename: "ExecutionPlan";
-  steps: StartPipelineExecution_startPipelineExecution_StartPipelineExecutionSuccess_run_executionPlan_steps[];
-}
-
 export interface StartPipelineExecution_startPipelineExecution_StartPipelineExecutionSuccess_run {
   __typename: "PipelineRun";
   runId: string;
   status: PipelineRunStatus;
-  logs: StartPipelineExecution_startPipelineExecution_StartPipelineExecutionSuccess_run_logs;
+  config: string;
+  pipeline: StartPipelineExecution_startPipelineExecution_StartPipelineExecutionSuccess_run_pipeline;
   executionPlan: StartPipelineExecution_startPipelineExecution_StartPipelineExecutionSuccess_run_executionPlan;
+  logs: StartPipelineExecution_startPipelineExecution_StartPipelineExecutionSuccess_run_logs;
 }
 
 export interface StartPipelineExecution_startPipelineExecution_StartPipelineExecutionSuccess {
