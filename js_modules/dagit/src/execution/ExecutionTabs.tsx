@@ -2,10 +2,13 @@ import * as React from "react";
 import styled from "styled-components";
 import { Icon, Colors } from "@blueprintjs/core";
 import { IconNames } from "@blueprintjs/icons";
+import { RunStatus } from "./ExecutionUtils";
 
 interface IExecutationTabProps {
-  active?: boolean;
   title: string;
+  active?: boolean;
+  unsaved?: boolean;
+  run?: { status: "SUCCESS" | "NOT_STARTED" | "FAILURE" | "STARTED" };
   onChange?: (title: string) => void;
   onRemove?: () => void;
   onClick: () => void;
@@ -35,14 +38,22 @@ export class ExecutionTab extends React.Component<
   };
 
   render() {
-    const { title, onChange, onClick, onRemove, active } = this.props;
+    const { title, onChange, onClick, onRemove, active, run, unsaved } = this.props;
     const { editing } = this.state;
+
+    const Container = run ? RunTabContainer : TabContainer;
+
     return (
-      <ExecutionTabContainer
+      <Container
         active={active || false}
         onDoubleClick={this.onDoubleClick}
         onClick={onClick}
       >
+        {run && (
+          <div style={{ marginRight: 4 }}>
+            <RunStatus status={run.status} />
+          </div>
+        )}
         {editing ? (
           <input
             ref={this.input}
@@ -53,7 +64,7 @@ export class ExecutionTab extends React.Component<
             onBlur={() => this.setState({ editing: false })}
           />
         ) : (
-          title
+          unsaved ? `${title}*` : title
         )}
         {!editing && onRemove && (
           <RemoveButton
@@ -65,22 +76,25 @@ export class ExecutionTab extends React.Component<
             <Icon icon={IconNames.CROSS} />
           </RemoveButton>
         )}
-      </ExecutionTabContainer>
+      </Container>
     );
   }
 }
 
 export const ExecutionTabs = styled.div`
-  background: ${Colors.BLACK};
   display; flex;
   z-index: 1;
   flex-direction: row;
-`;
+  position: relative;
+  top: 6px;
+  `;
 
-const ExecutionTabContainer = styled.div<{ active: boolean }>`
+const TabContainer = styled.div<{ active: boolean }>`
   color: ${({ active }) => (active ? Colors.WHITE : Colors.GRAY3)};
-  padding: 12px 15px;
-  display: inline-block;
+  padding: 6px 9px;
+  height: 36px
+  display: inline-flex;
+  align-items: center;
   border-left: 1px solid ${Colors.DARK_GRAY2};
   user-select: none;
   background: ${({ active }) => (active ? "#263238" : Colors.BLACK)};
@@ -94,6 +108,10 @@ const ExecutionTabContainer = styled.div<{ active: boolean }>`
     outline: none;
   }
   cursor: ${({ active }) => (!active ? "pointer" : "inherit")};
+`;
+
+const RunTabContainer = styled(TabContainer)`
+  font-family: monospace;
 `;
 
 const RemoveButton = styled.div`

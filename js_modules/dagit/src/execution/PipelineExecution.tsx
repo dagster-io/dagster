@@ -5,11 +5,8 @@ import { Colors } from "@blueprintjs/core";
 import { ApolloConsumer } from "react-apollo";
 
 import { PipelineRun, PipelineRunEmpty } from "./PipelineRun";
-import { ExecutionTabs, ExecutionTab } from "./ExecutionTabs";
 import { PanelDivider } from "../PanelDivider";
 import PipelineSolidSelector from "./PipelineSolidSelector";
-import RunHistory from "./RunHistory";
-import ExecutionStartButton from "./ExecutionStartButton";
 import ConfigEditor from "../configeditor/ConfigEditor";
 import {
   IExecutionSession,
@@ -29,14 +26,9 @@ const CONFIRM_RESET_TO_SCAFFOLD = `Would you like to reset your config to a scaf
 
 interface IPipelineExecutionProps {
   pipeline: PipelineExecutionPipelineFragment;
-  activeRun: PipelineExecutionPipelineRunFragment | null;
-  sessions: { [name: string]: IExecutionSession };
+  currentRun: PipelineExecutionPipelineRunFragment | null;
   currentSession: IExecutionSession;
-  onSelectSession: (session: string) => void;
   onSaveSession: (session: string, changes: IExecutionSessionChanges) => void;
-  onCreateSession: () => void;
-  onRemoveSession: (session: string) => void;
-  onExecute: () => void;
 }
 
 interface IPipelineExecutionState {
@@ -114,55 +106,21 @@ export default class PipelineExecution extends React.Component<
   };
 
   render() {
-    const { sessions, pipeline, activeRun, currentSession } = this.props;
+    const {pipeline, currentRun, currentSession } = this.props;
 
     if (!currentSession) {
       return <span />;
     }
 
-    let activeRunExecuting = false;
-    if (activeRun) {
-      const start = activeRun.logs.nodes.find(
-        l => l.__typename === "PipelineProcessStartEvent"
-      );
-      const end = activeRun.logs.nodes.find(
-        l =>
-          l.__typename === "PipelineSuccessEvent" ||
-          l.__typename === "PipelineFailureEvent"
-      );
-      activeRunExecuting = start !== null && end == null;
-    }
-
     return (
       <PipelineExecutionWrapper>
         <Split width={this.state.editorVW}>
-          <ExecutionTabs>
-            {Object.keys(sessions).map(key => (
-              <ExecutionTab
-                key={key}
-                active={key === currentSession.key}
-                title={sessions[key].name}
-                onClick={() => this.props.onSelectSession(key)}
-                onChange={name => this.props.onSaveSession(key, { name })}
-                onRemove={
-                  Object.keys(sessions).length > 1
-                    ? () => this.props.onRemoveSession(key)
-                    : undefined
-                }
-              />
-            ))}
-            <ExecutionTab
-              title={"Add..."}
-              onClick={() => {
-                this.props.onCreateSession();
-              }}
-            />
-          </ExecutionTabs>
           <ApolloConsumer>
             {client => (
               <ConfigEditor
                 configCode={currentSession.config}
                 onConfigChange={this.onConfigChange}
+                readOnly={false}
                 pipeline={pipeline}
                 checkConfig={json =>
                   checkConfig(client, json, {
@@ -186,19 +144,11 @@ export default class PipelineExecution extends React.Component<
           onMove={(vw: number) => this.setState({ editorVW: vw })}
         />
         <Split>
-          {activeRun ? (
-            <PipelineRun pipelineRun={activeRun} />
+          {currentRun ? (
+            <PipelineRun plan={currentRun.executionPlan} run={currentRun} />
           ) : (
             <PipelineRunEmpty />
           )}
-          <ExecutionStartButton
-            executing={activeRunExecuting}
-            onClick={this.props.onExecute}
-          />
-        </Split>
-        <PanelDivider axis="horizontal" onMove={() => {}} />
-        <Split style={{flex: 0.5}}>
-          <RunHistory activeRun={activeRun} pipelineName={pipeline.name} />
         </Split>
       </PipelineExecutionWrapper>
     );
@@ -212,7 +162,7 @@ const PipelineExecutionWrapper = styled.div`
   width: 100%;
   height: 100vh;
   position: absolute;
-  padding-top: 50px;
+  padding-top: 100px;
 `;
 
 const SessionSettingsFooter = styled.div`

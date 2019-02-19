@@ -4,8 +4,10 @@ import { ApolloClient } from "apollo-client";
 import { DataProxy } from "apollo-cache";
 import produce from "immer";
 import { Mutation, FetchResult } from "react-apollo";
-import { PipelineRunStatus } from "../types/globalTypes";
 import * as yaml from "yaml";
+import RunBar from "./RunBar";
+import RunSubscriptionProvider from "./RunSubscriptionProvider";
+import { titleForRun } from "./ExecutionUtils";
 
 import {
   applyChangesToSession,
@@ -25,8 +27,6 @@ import {
   StartPipelineExecution,
   StartPipelineExecutionVariables
 } from "./types/StartPipelineExecution";
-import { PipelineRunLogsSubscription } from "./types/PipelineRunLogsSubscription";
-import { PipelineRunLogsUpdateFragment } from "./types/PipelineRunLogsUpdateFragment";
 
 const YAML_SYNTAX_INVALID = `The YAML you provided couldn't be parsed. Please fix the syntax errors and try again.`;
 
@@ -49,6 +49,7 @@ export default class PipelineExecutionContainer extends React.Component<
           runId
           status
           ...PipelineExecutionPipelineRunFragment
+          ...RunBarRunFragment
           logs {
             pageInfo {
               lastCursor
@@ -60,67 +61,9 @@ export default class PipelineExecutionContainer extends React.Component<
 
       ${PipelineExecution.fragments.PipelineExecutionPipelineFragment}
       ${PipelineExecution.fragments.PipelineExecutionPipelineRunFragment}
+      ${RunBar.fragments.RunBarRunFragment}
     `
   };
-
-  componentDidMount() {
-    this.subscribeToRuns();
-  }
-
-  componentDidUpdate() {
-    this.subscribeToRuns();
-  }
-
-  componentWillUnmount() {
-    this.unsubscribeFromRuns();
-  }
-
-  _subscriptions: {
-    [runId: string]: ZenObservable.Subscription;
-  } = {};
-
-  subscribeToRuns() {
-    const validRuns = this.props.pipeline.runs.filter(({ status }) => {
-      return (
-        status === PipelineRunStatus.NOT_STARTED ||
-        status === PipelineRunStatus.STARTED
-      );
-    });
-    const validRunIds = new Set(validRuns.map(({ runId }) => runId));
-    const subscribedRunIds = new Set(Object.keys(this._subscriptions));
-    subscribedRunIds.forEach(runId => {
-      if (!validRunIds.has(runId)) {
-        this._subscriptions[runId].unsubscribe();
-        delete this._subscriptions[runId];
-      }
-    });
-
-    validRuns.forEach(run => {
-      if (this._subscriptions[run.runId]) {
-        return;
-      }
-      const observable = this.props.client.subscribe({
-        query: PIPELINE_RUN_LOGS_SUBSCRIPTION,
-        variables: {
-          runId: run.runId,
-          after: run.logs.pageInfo.lastCursor
-        }
-      });
-
-      this._subscriptions[run.runId] = observable.subscribe({
-        next: msg => {
-          this.handleNewMessages(msg.data);
-        }
-      });
-    });
-  }
-
-  unsubscribeFromRuns() {
-    Object.keys(this._subscriptions).forEach(runId => {
-      this._subscriptions[runId].unsubscribe();
-      delete this._subscriptions[runId];
-    });
-  }
 
   handleSelectSession = (session: string) => {
     this.props.onSave(applySelectSession(this.props.data, session));
@@ -130,8 +73,8 @@ export default class PipelineExecutionContainer extends React.Component<
     this.props.onSave(applyChangesToSession(this.props.data, session, changes));
   };
 
-  handleCreateSession = () => {
-    this.props.onSave(applyCreateSession(this.props.data));
+  handleCreateSession = (initial?: IExecutionSessionChanges) => {
+    this.props.onSave(applyCreateSession(this.props.data, initial));
   };
 
   handleRemoveSession = (session: string) => {
@@ -189,44 +132,6 @@ export default class PipelineExecutionContainer extends React.Component<
     }
   };
 
-  handleNewMessages = (result: PipelineRunLogsSubscription) => {
-    const runId = result.pipelineRunLogs.messages[0].run.runId;
-    const id = `PipelineRun.${runId}`;
-
-    let localData: PipelineRunLogsUpdateFragment | null = this.props.client.readFragment(
-      {
-        fragmentName: "PipelineRunLogsUpdateFragment",
-        fragment: PIPELINE_RUN_LOGS_UPDATE_FRAGMENT,
-        id
-      }
-    );
-    if (localData === null) {
-      return;
-    }
-    localData = produce(
-      localData as PipelineRunLogsUpdateFragment,
-      draftData => {
-        result.pipelineRunLogs.messages.forEach(message => {
-          draftData.logs.nodes.push(message);
-          if (message.__typename === "PipelineProcessStartEvent") {
-            draftData.status = PipelineRunStatus.STARTED;
-          } else if (message.__typename === "PipelineSuccessEvent") {
-            draftData.status = PipelineRunStatus.SUCCESS;
-          } else if (message.__typename === "PipelineFailureEvent") {
-            draftData.status = PipelineRunStatus.FAILURE;
-          }
-        });
-      }
-    );
-
-    this.props.client.writeFragment({
-      fragmentName: "PipelineRunLogsUpdateFragment",
-      fragment: PIPELINE_RUN_LOGS_UPDATE_FRAGMENT,
-      id,
-      data: localData
-    });
-  };
-
   buildExecutionVariables = () => {
     const { currentSession, pipeline } = this.props;
 
@@ -250,34 +155,72 @@ export default class PipelineExecutionContainer extends React.Component<
   };
 
   render() {
-    let activeRun: PipelineExecutionContainerFragment_runs | null = null;
-    if (this.props.pipeline.runs.length > 0) {
-      activeRun = this.props.pipeline.runs[this.props.pipeline.runs.length - 1];
-    }
+    const { currentSession, pipeline } = this.props;
+    const currentRun =
+      pipeline.runs.find(r => currentSession.runId === r.runId) || null;
+
     return (
       <Mutation<StartPipelineExecution, StartPipelineExecutionVariables>
         mutation={START_PIPELINE_EXECUTION_MUTATION}
-        key={this.props.pipeline.name}
+        key={pipeline.name}
         update={this.handleExecutionResult}
       >
-        {(startPipelineExecution, { loading }) => {
-          return (
-            <PipelineExecution
-              activeRun={activeRun}
-              pipeline={this.props.pipeline}
+        {(startPipelineExecution, { loading }) => (
+          <>
+            <RunSubscriptionProvider
+              client={this.props.client}
+              pipeline={pipeline}
+              run={currentRun}
+            />
+            <RunBar
+              executing={currentRun ? isRunExecuting(currentRun) : false}
+              runs={pipeline.runs}
               sessions={this.props.data.sessions}
-              currentSession={this.props.currentSession}
+              currentSession={currentSession}
               onSelectSession={this.handleSelectSession}
-              onSaveSession={this.handleSaveSession}
               onCreateSession={this.handleCreateSession}
               onRemoveSession={this.handleRemoveSession}
-              onExecute={() => {
+              onSaveSession={this.handleSaveSession}
+              onExecute={async event => {
+                if (!currentSession) return;
+
                 const variables = this.buildExecutionVariables();
-                if (variables) startPipelineExecution({ variables });
+                if (!variables) return;
+
+                const useNewTab = !currentSession.runId || event.altKey || event.metaKey;
+                const result = await startPipelineExecution({ variables });
+                if (
+                  result &&
+                  result.data &&
+                  result.data.startPipelineExecution.__typename ===
+                    "StartPipelineExecutionSuccess"
+                ) {
+                  const run = result.data.startPipelineExecution.run;
+
+                  if (useNewTab) {
+                    this.handleCreateSession({
+                      ...currentSession,
+                      name: titleForRun(run),
+                      runId: run.runId
+                    });
+                  } else {
+                    this.handleSaveSession(currentSession.key, {
+                      configChangedSinceRun: false,
+                      name: titleForRun(run),
+                      runId: run.runId
+                    });
+                  }
+                }
               }}
             />
-          );
-        }}
+            <PipelineExecution
+              pipeline={this.props.pipeline}
+              currentRun={currentRun}
+              currentSession={this.props.currentSession}
+              onSaveSession={this.handleSaveSession}
+            />
+          </>
+        )}
       </Mutation>
     );
   }
@@ -295,6 +238,7 @@ const START_PIPELINE_EXECUTION_MUTATION = gql`
         run {
           runId
           status
+          ...RunBarRunFragment
           ...PipelineExecutionPipelineRunFragment
           logs {
             pageInfo {
@@ -313,37 +257,21 @@ const START_PIPELINE_EXECUTION_MUTATION = gql`
       }
     }
   }
-
+  ${RunBar.fragments.RunBarRunFragment}
   ${PipelineExecution.fragments.PipelineExecutionPipelineRunFragment}
 `;
 
-const PIPELINE_RUN_LOGS_SUBSCRIPTION = gql`
-  subscription PipelineRunLogsSubscription($runId: ID!, $after: Cursor) {
-    pipelineRunLogs(runId: $runId, after: $after) {
-      messages {
-        ... on MessageEvent {
-          run {
-            runId
-          }
-          ...PipelineExecutionPipelineRunEventFragment
-        }
-      }
-    }
-  }
-
-  ${PipelineExecution.fragments.PipelineExecutionPipelineRunEventFragment}
-`;
-
-const PIPELINE_RUN_LOGS_UPDATE_FRAGMENT = gql`
-  fragment PipelineRunLogsUpdateFragment on PipelineRun {
-    runId
-    status
-    logs {
-      nodes {
-        ...PipelineExecutionPipelineRunEventFragment
-      }
-    }
-  }
-
-  ${PipelineExecution.fragments.PipelineExecutionPipelineRunEventFragment}
-`;
+function isRunExecuting(
+  activeRun: PipelineExecutionContainerFragment_runs | null
+) {
+  if (!activeRun) return false;
+  const start = activeRun.logs.nodes.find(
+    l => l.__typename === "PipelineProcessStartEvent"
+  );
+  const end = activeRun.logs.nodes.find(
+    l =>
+      l.__typename === "PipelineSuccessEvent" ||
+      l.__typename === "PipelineFailureEvent"
+  );
+  return start !== null && end == null;
+}
