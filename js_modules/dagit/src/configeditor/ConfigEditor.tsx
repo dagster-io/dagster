@@ -27,6 +27,7 @@ interface IConfigEditorProps {
   checkConfig: YamlModeLintJson;
   configCode: string;
   onConfigChange: (newValue: string) => void;
+  readOnly: boolean;
 }
 
 const AUTO_COMPLETE_AFTER_KEY = /^[a-zA-Z0-9_@(]$/;
@@ -44,6 +45,7 @@ export default class ConfigEditor extends React.Component<IConfigEditorProps> {
             mode: "yaml",
             theme: "material",
             lineNumbers: true,
+            readOnly: this.props.readOnly,
             indentUnit: 2,
             smartIndent: true,
             showCursorWhenSelecting: true,
