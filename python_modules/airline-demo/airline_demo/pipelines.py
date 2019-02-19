@@ -399,7 +399,7 @@ def define_airline_demo_warehouse_pipeline():
                     'average_sfo_outbound_avg_delays_by_destination'
                 ),
             },
-            'delays_by_geo': {
+            'delays_by_geography': {
                 'db_url': DependencyDefinition('db_url'),
                 'eastbound_delays': DependencyDefinition('eastbound_delays'),
                 'westbound_delays': DependencyDefinition('westbound_delays'),
@@ -411,7 +411,7 @@ def define_airline_demo_warehouse_pipeline():
                 'file_path': DependencyDefinition('fares_vs_delays')
             },
             SolidInstance('upload_to_s3', alias='upload_delays_by_geography_pdf_plots'): {
-                'file_path': DependencyDefinition('delays_by_geo')
+                'file_path': DependencyDefinition('delays_by_geography')
             },
         },
         context_definitions=CONTEXT_DEFINITIONS,
