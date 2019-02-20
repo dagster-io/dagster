@@ -18,12 +18,7 @@ from dagster.core.errors import (
     DagsterUserCodeExecutionError,
 )
 
-from dagster.core.execution import (
-    ExecutionSelector,
-    create_execution_plan,
-    execute_marshalling,
-    get_subset_pipeline,
-)
+from dagster.core.execution import ExecutionSelector, create_execution_plan, execute_marshalling
 from dagster.core.types.evaluator import evaluate_config_value, EvaluateValueResult
 
 from dagster.utils.error import serializable_error_info_from_exc_info
@@ -291,7 +286,7 @@ def _pipeline_or_error_from_repository(graphene_info, repository, selector):
                     return EitherError(
                         graphene_info.schema.type_named('SolidNotFoundError')(solid_name=solid_name)
                     )
-        pipeline = get_subset_pipeline(orig_pipeline, selector.solid_subset)
+        pipeline = orig_pipeline.build_sub_pipeline(selector.solid_subset)
 
         return EitherValue(graphene_info.schema.type_named('Pipeline')(pipeline))
 
