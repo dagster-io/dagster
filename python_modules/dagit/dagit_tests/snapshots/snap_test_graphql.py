@@ -108,38 +108,9 @@ snapshots['test_start_subplan_invalid_config 1'] = {
     }
 }
 
-snapshots['test_start_subplan_invalid_step_keys 1'] = {
-    'startSubplanExecution': {
-        '__typename': 'StartSubplanExecutionInvalidStepsError',
-        'invalidStepKeys': [
-            'nope'
-        ]
-    }
-}
-
-snapshots['test_start_subplan_invalid_input_name 1'] = {
-    'startSubplanExecution': {
-        '__typename': 'StartSubplanExecutionInvalidInputError',
-        'invalidInputName': 'nope',
-        'step': {
-            'key': 'sum_solid.transform'
-        }
-    }
-}
-
-snapshots['test_start_subplan_invalid_output_name 1'] = {
-    'startSubplanExecution': {
-        '__typename': 'StartSubplanExecutionInvalidOutputError',
-        'invalidOutputName': 'nope',
-        'step': {
-            'key': 'sum_solid.transform'
-        }
-    }
-}
-
 snapshots['test_invalid_subplan_missing_inputs 1'] = {
     'startSubplanExecution': {
-        '__typename': 'InvalidSubplanExecutionError',
+        '__typename': 'InvalidSubplanMissingInputError',
         'missingInputName': 'num',
         'step': {
             'key': 'sum_solid.transform'
@@ -280,5 +251,32 @@ snapshots['test_user_code_error_subplan 1'] = {
                 'success': False
             }
         ]
+    }
+}
+
+snapshots['test_start_subplan_invalid_output_name 1'] = {
+    'startSubplanExecution': {
+        '__typename': 'StartSubplanExecutionInvalidOutputError',
+        'invalidOutputName': 'nope',
+        'step': {
+            'key': 'sum_solid.transform'
+        }
+    }
+}
+
+snapshots['test_start_subplan_invalid_input_name 1'] = {
+    'startSubplanExecution': {
+        '__typename': 'StartSubplanExecutionInvalidInputError',
+        'invalidInputName': 'nope',
+        'step': {
+            'key': 'sum_solid.transform'
+        }
+    }
+}
+
+snapshots['test_start_subplan_invalid_step_keys 1'] = {
+    'startSubplanExecution': {
+        '__typename': 'StartSubplanExecutionInvalidStepError',
+        'invalidStepKey': 'nope'
     }
 }

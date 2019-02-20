@@ -328,11 +328,11 @@ class DauphinStartSubplanExecutionSuccess(dauphin.ObjectType):
     step_events = dauphin.non_null_list(DauphinStepEvent)
 
 
-class DauphinStartSubplanExecutionInvalidStepsError(dauphin.ObjectType):
+class DauphinStartSubplanExecutionInvalidStepError(dauphin.ObjectType):
     class Meta:
-        name = 'StartSubplanExecutionInvalidStepsError'
+        name = 'StartSubplanExecutionInvalidStepError'
 
-    invalid_step_keys = dauphin.Field(dauphin.non_null_list(dauphin.String))
+    invalid_step_key = dauphin.NonNull(dauphin.String)
 
 
 class DauphinStartSubplanExecutionInvalidInputError(dauphin.ObjectType):
@@ -351,9 +351,9 @@ class DauphinStartSubplanExecutionInvalidOutputError(dauphin.ObjectType):
     invalid_output_name = dauphin.NonNull(dauphin.String)
 
 
-class DauphinInvalidSubplanExecutionError(dauphin.ObjectType):
+class DauphinInvalidSubplanMissingInputError(dauphin.ObjectType):
     class Meta:
-        name = 'InvalidSubplanExecutionError'
+        name = 'InvalidSubplanMissingInputError'
 
     step = dauphin.NonNull('ExecutionStep')
     missing_input_name = dauphin.NonNull(dauphin.String)
@@ -363,13 +363,13 @@ class DauphinStartSubplanExecutionResult(dauphin.Union):
     class Meta:
         name = 'StartSubplanExecutionResult'
         types = (
-            DauphinInvalidSubplanExecutionError,
+            DauphinInvalidSubplanMissingInputError,
             DauphinPipelineConfigValidationInvalid,
             DauphinPipelineNotFoundError,
             DauphinPythonError,
             DauphinStartSubplanExecutionInvalidInputError,
             DauphinStartSubplanExecutionInvalidOutputError,
-            DauphinStartSubplanExecutionInvalidStepsError,
+            DauphinStartSubplanExecutionInvalidStepError,
             DauphinStartSubplanExecutionSuccess,
         )
 

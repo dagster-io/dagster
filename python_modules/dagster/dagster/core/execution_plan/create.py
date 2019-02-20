@@ -8,7 +8,13 @@ from dagster.core.definitions import (
     SolidOutputHandle,
 )
 
-from dagster.core.errors import DagsterInvariantViolationError, DagsterInvalidSubplanExecutionError
+from dagster.core.errors import (
+    DagsterExecutionStepNotFoundError,
+    DagsterInvalidSubplanMissingInputError,
+    DagsterInvalidSubplanInputNotFoundError,
+    DagsterInvalidSubplanOutputNotFoundError,
+    DagsterInvariantViolationError,
+)
 
 from dagster.core.execution_context import ExecutionMetadata, PipelineExecutionContext
 
@@ -27,7 +33,7 @@ from .objects import (
     StepKind,
 )
 
-from .plan_subset import ExecutionPlanSubsetInfo, ExecutionPlanAddedOutputs
+from .plan_subset import ExecutionPlanSubsetInfo, ExecutionPlanAddedOutputs, OutputStepFactoryEntry
 
 from .transform import create_transform_step
 
@@ -83,7 +89,7 @@ def create_execution_plan_core(
 
     execution_plan = create_execution_plan_from_steps(pipeline_context, plan_builder.steps)
 
-    if subset_info:
+    if subset_info or added_outputs:
         return _create_augmented_subplan(
             pipeline_context, execution_plan, subset_info, added_outputs
         )
@@ -200,6 +206,10 @@ def create_step_inputs(pipeline_context, plan_builder, solid):
     return step_inputs
 
 
+def _is_step_in_subset(execution_plan, subset_info, step_key):
+    return step_key in subset_info.subset if subset_info else execution_plan.has_step(step_key)
+
+
 def _create_augmented_subplan(
     pipeline_context, execution_plan, subset_info=None, added_outputs=None
 ):
@@ -208,8 +218,10 @@ def _create_augmented_subplan(
     check.opt_inst_param(subset_info, 'subset_info', ExecutionPlanSubsetInfo)
     check.opt_inst_param(added_outputs, 'added_outputs', ExecutionPlanAddedOutputs)
 
-    steps = []
+    _validate_subset_info(subset_info, execution_plan, pipeline_context)
+    _validate_added_outputs(added_outputs, execution_plan, subset_info, pipeline_context)
 
+    steps = []
     for step in execution_plan.steps:
         if subset_info and step.key not in subset_info.subset:
             # Not included in subset. Skip.
@@ -221,12 +233,71 @@ def _create_augmented_subplan(
 
     new_plan = create_execution_plan_from_steps(pipeline_context, steps)
 
-    return _validate_new_plan(new_plan, subset_info, pipeline_context)
+    return _validate_new_plan(new_plan, subset_info, added_outputs, pipeline_context)
 
 
-def _validate_new_plan(new_plan, subset_info, pipeline_context):
+def _validate_subset_info(subset_info, execution_plan, pipeline_context):
+    if not subset_info:
+        return
+
+    for step_key in subset_info.subset:
+        if not execution_plan.has_step(step_key):
+            raise DagsterExecutionStepNotFoundError(
+                'Step {step_key} does not exist.'.format(step_key=step_key), step_key=step_key
+            )
+
+    for step_key, input_dict in subset_info.input_step_factory_fns.items():
+        if not execution_plan.has_step(step_key):
+            raise DagsterExecutionStepNotFoundError(
+                'Step {step_key} does not exist.'.format(step_key=step_key), step_key=step_key
+            )
+
+        step = execution_plan.get_step_by_key(step_key)
+
+        for input_name in input_dict.keys():
+            if not step.has_step_input(input_name):
+                raise DagsterInvalidSubplanInputNotFoundError(
+                    'Input {input_name} on {step_key} does not exist.'.format(
+                        input_name=input_name, step_key=step_key
+                    ),
+                    pipeline_name=pipeline_context.pipeline_def.name,
+                    step_keys=list(subset_info.subset),
+                    input_name=input_name,
+                    step=step,
+                )
+
+
+def _validate_added_outputs(added_outputs, execution_plan, subset_info, pipeline_context):
+    if not added_outputs:
+        return
+
+    for step_key, outputs_for_step in added_outputs.output_step_factory_fns.items():
+        if not _is_step_in_subset(execution_plan, subset_info, step_key):
+            raise DagsterExecutionStepNotFoundError(
+                'Step {step_key} does not exist.'.format(step_key=step_key), step_key=step_key
+            )
+
+        step = execution_plan.get_step_by_key(step_key)
+
+        for output in outputs_for_step:
+            check.inst(output, OutputStepFactoryEntry)
+            output_name = output.output_name
+            if not step.has_step_output(output_name):
+                raise DagsterInvalidSubplanOutputNotFoundError(
+                    'Execution step {step_key} does not have output {output}'.format(
+                        step_key=step_key, output=output_name
+                    ),
+                    pipeline_name=pipeline_context.pipeline_def.name,
+                    step_keys=list(subset_info.subset),
+                    step=step,
+                    output_name=output_name,
+                )
+
+
+def _validate_new_plan(new_plan, subset_info, added_outputs, pipeline_context):
     check.inst_param(new_plan, 'new_plan', ExecutionPlan)
     check.opt_inst_param(subset_info, 'subset_info', ExecutionPlanSubsetInfo)
+    check.opt_inst_param(added_outputs, 'added_outputs', ExecutionPlanAddedOutputs)
     check.inst_param(pipeline_context, 'pipeline_context', PipelineExecutionContext)
 
     for step in new_plan.steps:
@@ -240,7 +311,7 @@ def _validate_new_plan(new_plan, subset_info, pipeline_context):
             if subset_info and not subset_info.has_injected_step_for_input(
                 step.key, step_input.name
             ):
-                raise DagsterInvalidSubplanExecutionError(
+                raise DagsterInvalidSubplanMissingInputError(
                     (
                         'You have specified a subset execution on pipeline {pipeline_name} '
                         'with step_keys {step_keys}. You have failed to provide the required input '
@@ -254,7 +325,7 @@ def _validate_new_plan(new_plan, subset_info, pipeline_context):
                     pipeline_name=pipeline_context.pipeline_def.name,
                     step_keys=list(subset_info.subset),
                     input_name=step_input.name,
-                    step_key=step.key,
+                    step=step,
                 )
     return new_plan
 

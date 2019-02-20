@@ -11,16 +11,17 @@ from dagster.core.execution_plan.objects import ExecutionStepEvent
 from dagster.core.execution_plan.plan_subset import MarshalledOutput
 
 from dagster.core.errors import (
-    DagsterInvalidSubplanExecutionError,
-    DagsterMarshalOutputNotFoundError,
-    DagsterUnmarshalInputNotFoundError,
+    DagsterExecutionStepNotFoundError,
+    DagsterInvalidSubplanInputNotFoundError,
+    DagsterInvalidSubplanMissingInputError,
+    DagsterInvalidSubplanOutputNotFoundError,
     DagsterUserCodeExecutionError,
 )
+
 from dagster.core.execution import (
-    ExecutionPlan,
     ExecutionSelector,
     create_execution_plan,
-    execute_externalized_plan,
+    execute_marshalling,
     get_subset_pipeline,
 )
 from dagster.core.types.evaluator import evaluate_config_value, EvaluateValueResult
@@ -390,7 +391,7 @@ def _chain_config_or_error_from_pipeline(args, dauphin_pipeline):
     return (
         _config_or_error_from_pipeline(args.graphene_info, dauphin_pipeline, args.env_config)
         .chain(
-            lambda evaluate_value_result: _chain_execution_plan_or_error(
+            lambda evaluate_value_result: _execute_marshalling_or_error(
                 args, dauphin_pipeline, evaluate_value_result
             )
         )
@@ -398,43 +399,67 @@ def _chain_config_or_error_from_pipeline(args, dauphin_pipeline):
     )
 
 
-def _chain_execution_plan_or_error(args, dauphin_pipeline, evaluate_value_result):
-    return (
-        _execution_plan_or_error(args, dauphin_pipeline, evaluate_value_result)
-        .chain(
-            lambda execution_plan: _execute_subplan_or_error(
-                args, dauphin_pipeline, execution_plan, evaluate_value_result
-            )
-        )
-        .value()
-    )
-
-
-def _execution_plan_or_error(subplan_execution_args, dauphin_pipeline, evaluate_value_result):
-    check.inst_param(subplan_execution_args, 'subplan_execution_args', SubplanExecutionArgs)
+def _execute_marshalling_or_error(args, dauphin_pipeline, evaluate_value_result):
+    check.inst_param(args, 'args', SubplanExecutionArgs)
     check.inst_param(dauphin_pipeline, 'dauphin_pipeline', DauphinPipeline)
     check.inst_param(evaluate_value_result, 'evaluate_value_result', EvaluateValueResult)
 
-    execution_plan = create_execution_plan(
-        dauphin_pipeline.get_dagster_pipeline(),
-        evaluate_value_result.value,
-        subplan_execution_args.execution_metadata,
-    )
-
-    invalid_keys = []
-    for step_key in subplan_execution_args.step_keys:
-        if not execution_plan.has_step(step_key):
-            invalid_keys.append(step_key)
-
-    if invalid_keys:
-        return EitherError(
-            subplan_execution_args.graphene_info.schema.type_named(
-                'StartSubplanExecutionInvalidStepsError'
-            )(invalid_step_keys=invalid_keys)
+    try:
+        step_events = execute_marshalling(
+            dauphin_pipeline.get_dagster_pipeline(),
+            step_keys=args.step_keys,
+            inputs_to_marshal=_get_inputs_to_marshal(args),
+            outputs_to_marshal={se.step_key: se.marshalled_outputs for se in args.step_executions},
+            environment_dict=evaluate_value_result.value,
+            execution_metadata=args.execution_metadata,
+            throw_on_user_error=False,
         )
 
-    else:
-        return EitherValue(execution_plan)
+    except DagsterInvalidSubplanMissingInputError as invalid_subplan_error:
+        return EitherError(
+            _type_of(args, 'InvalidSubplanMissingInputError')(
+                step=DauphinExecutionStep(invalid_subplan_error.step),
+                missing_input_name=invalid_subplan_error.input_name,
+            )
+        )
+
+    except DagsterInvalidSubplanOutputNotFoundError as output_not_found_error:
+        return EitherError(
+            _type_of(args, 'StartSubplanExecutionInvalidOutputError')(
+                step=DauphinExecutionStep(output_not_found_error.step),
+                invalid_output_name=output_not_found_error.output_name,
+            )
+        )
+
+    except DagsterInvalidSubplanInputNotFoundError as input_not_found_error:
+        return EitherError(
+            _type_of(args, 'StartSubplanExecutionInvalidInputError')(
+                step=DauphinExecutionStep(input_not_found_error.step),
+                invalid_input_name=input_not_found_error.input_name,
+            )
+        )
+
+    except DagsterExecutionStepNotFoundError as step_not_found_error:
+        return EitherError(
+            _type_of(args, 'StartSubplanExecutionInvalidStepError')(
+                invalid_step_key=step_not_found_error.step_key
+            )
+        )
+
+    # https://github.com/dagster-io/dagster/issues/763
+    # Once this issue is resolve we should be able to eliminate this
+    except DagsterUserCodeExecutionError as ducee:
+        return EitherError(
+            _type_of(args, 'PythonError')(
+                serializable_error_info_from_exc_info(ducee.original_exc_info)
+            )
+        )
+
+    return _type_of(args, 'StartSubplanExecutionSuccess')(
+        pipeline=dauphin_pipeline,
+        has_failures=any(se for se in step_events if se.is_step_failure),
+        step_events=list(map(_create_dauphin_step_event, step_events)),
+    )
 
 
 def _create_dauphin_step_event(step_event):
@@ -458,69 +483,6 @@ def _create_dauphin_step_event(step_event):
 
 def _type_of(args, type_name):
     return args.graphene_info.schema.type_named(type_name)
-
-
-def _dauphin_step_of(execution_plan, error):
-    return DauphinExecutionStep(execution_plan.get_step_by_key(error.step_key))
-
-
-def _execute_subplan_or_error(args, dauphin_pipeline, execution_plan, evaluate_value_result):
-    check.inst_param(args, 'args', SubplanExecutionArgs)
-    check.inst_param(dauphin_pipeline, 'dauphin_pipeline', DauphinPipeline)
-    check.inst_param(execution_plan, 'execution_plan', ExecutionPlan)
-    check.inst_param(evaluate_value_result, 'evaluate_value_result', EvaluateValueResult)
-
-    try:
-        step_events = execute_externalized_plan(
-            execution_plan=execution_plan,
-            step_keys=args.step_keys,
-            inputs_to_marshal=_get_inputs_to_marshal(args),
-            outputs_to_marshal={se.step_key: se.marshalled_outputs for se in args.step_executions},
-            environment_dict=evaluate_value_result.value,
-            execution_metadata=args.execution_metadata,
-            throw_on_user_error=False,
-        )
-
-        return _type_of(args, 'StartSubplanExecutionSuccess')(
-            pipeline=dauphin_pipeline,
-            has_failures=any(se for se in step_events if se.is_step_failure),
-            step_events=list(map(_create_dauphin_step_event, step_events)),
-        )
-
-    except DagsterInvalidSubplanExecutionError as invalid_subplan_error:
-        return EitherError(
-            _type_of(args, 'InvalidSubplanExecutionError')(
-                step=_dauphin_step_of(execution_plan, invalid_subplan_error),
-                missing_input_name=invalid_subplan_error.input_name,
-            )
-        )
-
-    except DagsterUnmarshalInputNotFoundError as input_not_found_error:
-        return EitherError(
-            _type_of(args, 'StartSubplanExecutionInvalidInputError')(
-                step=_dauphin_step_of(execution_plan, input_not_found_error),
-                invalid_input_name=input_not_found_error.input_name,
-            )
-        )
-
-    except DagsterMarshalOutputNotFoundError as output_not_found_error:
-        return EitherError(
-            _type_of(args, 'StartSubplanExecutionInvalidOutputError')(
-                step=_dauphin_step_of(execution_plan, output_not_found_error),
-                invalid_output_name=output_not_found_error.output_name,
-            )
-        )
-
-    # https://github.com/dagster-io/dagster/issues/763
-    # Once this issue is resolve we should be able to eliminate this
-    except DagsterUserCodeExecutionError as ducee:
-        return EitherError(
-            _type_of(args, 'PythonError')(
-                serializable_error_info_from_exc_info(ducee.original_exc_info)
-            )
-        )
-
-    check.failed('Should not get here')
 
 
 def _get_inputs_to_marshal(args):
