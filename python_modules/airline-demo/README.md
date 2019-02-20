@@ -54,8 +54,8 @@ You won't want to suppress test output if you want to see loglines from dagster:
     pytest -s
 
 We use [pytest marks](https://docs.pytest.org/en/latest/example/markers.html#mark-examples) to
-identify useful subsets of tests. For instance, to run only those tests that do not require a
-running Spark cluster, you can run:
+identify useful subsets of tests. You can find the marks we use in `airline_demo_tests/marks.py`.
+For instance, to run only those tests that do not require Spark, you can run:
 
     pytest -m "not spark"
 
@@ -457,10 +457,347 @@ pipelines in production. Analysts and data scientists will tend to write pipelin
 library solid, as well as logic in familiar tools (like SQL and Jupyter) that can be easily wrapped
 by utility solids.
 
-<!-- ### Abstract building blocks for specific transformations
+### Abstract building blocks for specific transformations
 
-### Loading data to the warehouse -->
+The bulk of this pipeline is built out of generic library solids, which are presented as examples
+of the kind of reusable abstract building blocks you'll be able to write to simplify the expression
+of common workloads:
 
+- **union_spark_data_frames** (2x) just performs the operation 
+  `left_data_frame.union(right_data_frame)`. Abstracting this operation makes it very clear where
+  you're working with component datasets and where you're working with unions -- especially useful
+  if different outputs of the DAG depend on each. You might extend this solid in practice to chain
+  union operations, with the signature
+  `left_data_frame: SparkDataFrame, right_data_frames: [SparkDataFrame] -> SparkDataFrame`.
+- **subsample_spark_dataset** (4x) randomly subsamples a dataset using  `data_frame.sample`. 
+  Abstracting this out makes it clear which datasets may be subsampled and which may not be (e.g.,
+  lookup tables like the `master_cord_data`) in this pipeline). Because subsampling is now
+  controlled by config, it's easy to turn off in production (by sampling 100% of the rows) or to
+  adjust progressively in test. In practice, you might want to extend this solid, e.g., by allowing
+  the random seed to be set via config to ensure deterministic test output.
+- **prefix_column_names** (2x) wraps a use of `data_frame.toDF` to rename the columns of a data
+  frame, adding a prefix to avoid collisions and for clarity when columns with the same name are
+  joined from two separate source data frames.
+- **join_spark_data_frames** (2x) wraps `data_frame.join`, allowing users to set the join parameters
+  in config. You can use abstractions like this and  strongly typed config to guard against common
+  errors: for example, by specifying a `joinType` config value as an `Enum`, you could enforce
+  Spark's restriction on join types *at config time*.
+
+Throughout, we work with Spark data frames, but it's straightforward to write similar solids that
+manipulate .csv files, parquet files, Pandas data frames, and other common data formats.
+
+Each of your pipelines will also have idiosyncratic operations that don't necessarily abstract
+well. Here, for instance, our weather data uses the value `M` to specify a missing value. The
+`normalize_weather_na_values` solid handles this operation for us, cleanly separating the weather
+data-specific cleanup operations from the rest of our logic. (Of course, in practice, you may want
+to write a more generic `normalize_na_values` solid that allows the user to specify the source
+data's missing value representation[s] in config.)
+
+### Loading data to the warehouse
+
+The terminal nodes of this pipeline are all aliased instances of `load_data_to_database_from_spark`,
+which abstracts the operation of loading a Spark data frame to a database -- either our production
+Redshift cluster or our local Postgres in test:
+
+    @solid(
+        name='load_data_to_database_from_spark',
+        inputs=[
+            InputDefinition(
+                'data_frame',
+                SparkDataFrameType,
+                description='The pyspark DataFrame to load into the database.',
+            )
+        ],
+        outputs=[OutputDefinition(SparkDataFrameType)],
+        config_field=Field(Dict(fields={'table_name': Field(String, description='')})),
+    )
+    def load_data_to_database_from_spark(context, data_frame):
+        context.resources.db_info.load_table(data_frame, context.config['table_name'])
+        return data_frame
+
+Note how using the `db_info` resource simplifies this operation. There's no need to pollute the
+implementation of our DAGs with specifics about how to connect to outside databases, credentials,
+formatting details, retry or batching logic, etc. This greatly reduces the opportunities for
+implementations of these core external operations to drift and introduce subtle bugs, and cleanly
+separates infrastructural concerns from the logic of any particular data processing pipeline.
+
+## The warehouse pipeline
+
+![Warehouse pipeline](img/warehouse_pipeline.png)
+
+The `airline_demo_warehouse_pipeline` models the analytics stage of a typical data science workflow.
+This is a heterogeneous-by-design process in which analysts, data scientists, and ML engineers
+incrementally derive and formalize insights and analytic products (charts, data frames, models, and
+metrics) using a wide range of tools -- from SQL run directly against the warehouse to Jupyter
+notebooks in Python, R, or Scala. 
+
+### The sql_solid: wrapping foreign code in a solid
+
+How do we actually package the SQL for execution and display with Dagster and Dagit? Let's look at
+the implementation of the `sql_solid`:
+
+    class SqlTableName(Stringish):
+        def __init__(self):
+            super(SqlTableName, self).__init__(description='The name of a database table')
+
+We introduce the custom type `SqlTableName` to make it as clear as possible what we're expecting
+to return from a solid that executes a SQL statement, and what we're expecting to consume
+downstream.
+
+Next we define `sql_solid` itself. This function wraps a SQL `select` statement in a transform
+function that executes the statement (again, using the database engine exposed by the `db_info`
+resource) against the database, materializing the result as a table, and returning the name of the
+newly created table.
+
+    def sql_solid(name, select_statement, materialization_strategy, table_name=None, inputs=None):
+        '''Return a new solid that executes and materializes a SQL select statement.
+
+        Args:
+            name (str): The name of the new solid.
+            select_statement (str): The select statement to execute.
+            materialization_strategy (str): Must be 'table', the only currently supported
+                materialization strategy. If 'table', the kwarg `table_name` must also be passed.
+        Kwargs:
+            table_name (str): THe name of the new table to create, if the materialization strategy
+                is 'table'. Default: None.
+            inputs (list[InputDefinition]): Inputs, if any, for the new solid. Default: None.
+
+        Returns:
+            function:
+                The new SQL solid.
+        '''
+        inputs = check.opt_list_param(inputs, 'inputs', InputDefinition)
+
+        materialization_strategy_output_types = {
+            'table': SqlTableName,
+        }
+
+        if materialization_strategy not in materialization_strategy_output_types:
+            raise Exception(
+                'Invalid materialization strategy {materialization_strategy}, must '
+                'be one of {materialization_strategies}'.format(
+                    materialization_strategy=materialization_strategy,
+                    materialization_strategies=str(list(materialization_strategy_output_types.keys())),
+                )
+            )
+
+        if materialization_strategy == 'table':
+            if table_name is None:
+                raise Exception('Missing table_name: required for materialization strategy \'table\'')
+
+        output_description = (
+            'The string name of the new table created by the solid'
+            if materialization_strategy == 'table'
+            else 'The materialized SQL statement. If the materialization_strategy is '
+            '\'table\', this is the string name of the new table created by the solid.'
+        )
+
+        description = '''This solid executes the following SQL statement:
+        {select_statement}'''.format(
+            select_statement=select_statement
+        )
+
+        sql_statement = (
+            'drop table if exists {table_name};\n' 'create table {table_name} as {select_statement};'
+        ).format(table_name=table_name, select_statement=select_statement)
+
+        def transform_fn(context, _inputs):
+            '''Inner function defining the new solid.
+
+            Args:
+                info (ExpectationExecutionInfo): Must expose a `db` resource with an `execute` method,
+                    like a SQLAlchemy engine, that can execute raw SQL against a database.
+
+            Returns:
+                str:
+                    The table name of the newly materialized SQL select statement.
+            '''
+
+            context.log.info(
+                'Executing sql statement:\n{sql_statement}'.format(sql_statement=sql_statement)
+            )
+            context.resources.db_info.engine.execute(text(sql_statement))
+            yield Result(value=table_name, output_name='result')
+
+        return SolidDefinition(
+            name=name,
+            inputs=inputs,
+            outputs=[
+                OutputDefinition(
+                    materialization_strategy_output_types[materialization_strategy],
+                    description=output_description,
+                )
+            ],
+            transform_fn=transform_fn,
+            description=description,
+            metadata={'kind': 'sql', 'sql': sql_statement},
+        )
+
+There are a couple of things to note about this implementation. First of all, we make sure to
+set the `metadata` key on our generated solid so that Dagit knows how to display the SQL that it
+will execute (just double-click on any solid tagged with a small red `sql`):
+
+![Warehouse pipeline SQL](img/warehouse_pipeline_sql_display.png)
+
+Second, note that even though this wrapper only implements materialization of a SQL statement as a
+table, we've made `materialization_strategy` configurable. This lets data engineers add new
+capabilities for frontend analysts without having to rewrite any SQL. For example, we might add a
+materialization strategy which created a materialized view instead of a table; an in-memory
+SQLAlchemy query which could be executed or transformed by downstream solids; a SQLAlchemy
+ResultProxy representing the records resulting from executing the query; or a materialization of
+the results as a Pandas data frame, Spark data frame, parquet file, etc. The point is to decouple
+the implementation of these strategies from the logic of the query itself.
+
+Suppose that we wanted to change the logic of `sql_statement` from
+`drop_table_if_exists; create table` to something more sophisticated (perhaps a conditional upsert,
+or adding a new partition to an existing partitioned table). Again, rather than relying on analysts
+to write or maintain many separate copies of the boilerplate around the select statement, we can
+make the change once and expose the new functionality everywhere we execute SQL in our pipelines.
+
+Third, note how straightforward the interface to `sql_statement` is. To define a new solid executing
+a relatively complex transform against the data warehouse, an analyst need only write the following
+code:
+
+    delays_vs_fares = sql_solid(
+        'delays_vs_fares',
+        '''
+        with avg_fares as (
+            select
+                tickets.origin,
+                tickets.dest,
+                avg(cast(tickets.itinfare as float)) as avg_fare,
+                avg(cast(tickets.farepermile as float)) as avg_fare_per_mile
+            from tickets_with_destination as tickets
+            where origin = 'SFO'
+            group by (tickets.origin, tickets.dest)
+        )
+        select
+            avg_fares.*,
+            avg(avg_delays.arrival_delay) as avg_arrival_delay,
+            avg(avg_delays.departure_delay) as avg_departure_delay
+        from
+            avg_fares,
+            average_sfo_outbound_avg_delays_by_destination as avg_delays
+        where
+            avg_fares.origin = avg_delays.origin and
+            avg_fares.dest = avg_delays.destination
+        group by (
+            avg_fares.avg_fare,
+            avg_fares.avg_fare_per_mile,
+            avg_fares.origin,
+            avg_delays.origin,
+            avg_fares.dest,
+            avg_delays.destination
+        )
+        ''',
+        'table',
+        table_name='delays_vs_fares',
+        inputs=[
+            InputDefinition('tickets_with_destination', SqlTableName),
+            InputDefinition('average_sfo_outbound_avg_delays_by_destination', SqlTableName),
+        ],
+)
+
+This kind of interface can supercharge the work of analysts who are highly skilled in SQL, but
+for whom fully general-purpose programming in Python may be uncomfortable. Analysts need only master
+a very constrained interface in order to define their SQL statements' data dependencies and outputs
+in a way that allows them to be orchestrated and explored in heterogeneous DAGs containing other
+forms of computation, and must make only minimal changes to code (in some cases, no changes) in
+order to take advantage of centralized infrastructure work.
+
+Finally, observe the opportunities for extensibility in the construction of the SQL statement
+itself. In this implementation, by convention we require the analyst to be responsible for
+explicitly defining inputs of types `SqlTableName` and linking those to the output of previous
+SQL solids -- but we don't actually consume these inputs in any way other than to order the DAG's
+dependencies.
+
+    sql_statement = (
+        'drop table if exists {table_name};\n' 'create table {table_name} as {select_statement};'
+    ).format(table_name=table_name, select_statement=select_statement)
+
+We could also change our implementation of the SQL statement construction, moving beyond string
+formatting to use fuller-featured tools like SQLAlchemy or Jinja templating to dynamically
+construct SQL statements based on the values of inputs to the solid.
+
+But don't overcomplicate matters! A simple wrapper like the one we've presented here might be
+able to get your organization 80% or more of the way there.
+
+### Dagstermill: executing and checkpointing notebooks
+
+Notebooks are a flexible way and increasingly ubiquitous way to explore datasets and build data
+products -- from transformed or augmented datasets to charts and metrics to deployable machine
+learning models. But their very flexibility -- the way they allow analysts to move seamlessly from
+interactive exploration of data to scratch code and finally to actionable results -- can make them
+difficult to productionize.
+
+Our approach, built on the [papermill](https://github.com/nteract/papermill) library, embraces
+the diversity of code in notebooks. Rather than requiring notebooks to be rewritten or "cleaned up"
+in order to consume inputs from other nodes in a pipeline or to produce outputs for downstream
+nodes, we can just add a few cells to provide a thin wrapper around an existing notebook.
+
+Notebook solids can be identified by the small red `ipynb` tag in Dagit. As with SQL solids, they
+can be explored from within Dagit by drilling down on the tag:
+
+![Warehouse pipeline notebook](img/warehouse_pipeline_notebook_display.png)
+
+
+Let's start with the definition of our `notebook_solid` helper:
+
+    import os
+
+    from dagstermill import define_dagstermill_solid
+
+    def _notebook_path(name):
+        return os.path.join(os.path.dirname(os.path.abspath(__file__)), 'notebooks', name)
+
+
+    def notebook_solid(name, notebook_path, inputs, outputs):
+        return define_dagstermill_solid(name, _notebook_path(notebook_path), inputs, outputs)
+
+This is just a wrapper around Dagstermill's `define_dagstermill_solid` which tells Dagstermill
+where to look for the notebooks. We define a new solid as follows:
+
+    sfo_delays_by_destination = notebook_solid(
+        'sfo_delays_by_destination',
+        'SFO Delays by Destination.ipynb',
+        inputs=[
+            InputDefinition(
+                'db_url', String, description='The db_url to use to construct a SQLAlchemy engine.'
+            ),
+            InputDefinition(
+                'table_name', SqlTableName, description='The SQL table to use for calcuations.'
+            ),
+        ],
+        outputs=[
+            OutputDefinition(
+                dagster_type=Path,
+                # name='plots_pdf_path',
+                description='The path to the saved PDF plots.',
+            )
+        ],
+    )
+
+As always, we define the inputs and outputs of the new solid. Within the notebook itself, we only
+need to add a few lines of boilerplate.
+
+At the top of the notebook, we declare the notebook to be a solid as follows:
+
+    import dagstermill as dm
+    from airline_demo.pipelines import define_repo
+    dm.declare_as_solid(define_repo(), 'sfo_delays_by_destination')
+
+The call to `dagstermill.declare_as_solid` identifies the notebook contents with the notebook solid
+we defined in our pipeline.
+
+Then, in a cell with the `parameters` tag, we write:
+
+    #(db_url, table_name) = dm.get_inputs(dm_context, 'db_url', 'table_name')
+    db_url = ''\n
+    table_name = ''
+
+Finally, at the very end of the notebook, we yield the result back to the pipeline:
+
+    dm.yield_result(pdf_path, 'result')#, output_name='plots_pdf_path')
 
 <!--
 FIXME need to actually describe how to run this pipeline against AWS

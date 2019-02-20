@@ -1,7 +1,5 @@
 import datetime
 
-import pytest
-
 from dagster import execute_pipeline
 
 from dagster.utils import script_relative_path
@@ -13,14 +11,16 @@ from airline_demo.pipelines import (
     define_airline_demo_warehouse_pipeline,
 )
 
+from .marks import db, nettest, slow, spark
 
-@pytest.mark.nettest
-@pytest.mark.slow
+
+@nettest
+@slow
 def test_pipeline_download():
     config_object = load_yaml_from_glob_list(
         [
-            script_relative_path('../../environments/local_base.yml'),
-            script_relative_path('../../environments/local_fast_download.yml'),
+            script_relative_path('../environments/local_base.yml'),
+            script_relative_path('../environments/local_fast_download.yml'),
         ]
     )
 
@@ -29,13 +29,13 @@ def test_pipeline_download():
     assert result.success
 
 
-@pytest.mark.spark
-@pytest.mark.slow
+@slow
+@spark
 def test_pipeline_ingest():
     config_object = load_yaml_from_glob_list(
         [
-            script_relative_path('../../environments/local_base.yml'),
-            script_relative_path('../../environments/local_fast_ingest.yml'),
+            script_relative_path('../environments/local_base.yml'),
+            script_relative_path('../environments/local_fast_ingest.yml'),
         ]
     )
 
@@ -43,9 +43,9 @@ def test_pipeline_ingest():
     assert result.success
 
 
-@pytest.mark.slow
-@pytest.mark.db
-@pytest.mark.spark
+@db
+@slow
+@spark
 def test_pipeline_warehouse():
     now = datetime.datetime.utcnow()
     timestamp = now.strftime('%Y_%m_%d_%H_%M_%S')

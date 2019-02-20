@@ -99,7 +99,7 @@ def sql_solid(name, select_statement, materialization_strategy, table_name=None,
         '''Inner function defining the new solid.
 
         Args:
-            info (ExpectationExecutionInfo): Must expose a `db` resource with an `execute` method,
+            context (TransformExecutionContext): Must expose a `db` resource with an `execute` method,
                 like a SQLAlchemy engine, that can execute raw SQL against a database.
 
         Returns:
@@ -522,7 +522,6 @@ def subsample_spark_dataset(context, data_frame):
     config_field=Field(
         Dict(
             fields={
-                # Probably want to make the region configuable too
                 'on_left': Field(String, description='', default_value='id', is_optional=True),
                 'on_right': Field(String, description='', default_value='id', is_optional=True),
                 'how': Field(String, description='', default_value='inner', is_optional=True),
@@ -730,7 +729,7 @@ westbound_delays = sql_solid(
 )
 
 delays_by_geography = notebook_solid(
-    'delays_by_geo',
+    'delays_by_geography',
     'Delays by Geography.ipynb',
     inputs=[
         InputDefinition(

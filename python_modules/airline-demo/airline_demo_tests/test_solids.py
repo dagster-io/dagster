@@ -25,6 +25,8 @@ from airline_demo.solids import sql_solid, download_from_s3, ingest_csv_to_spark
 from airline_demo.pipelines import define_lambda_resource, define_tempfile_resource
 from airline_demo.utils import create_s3_session, create_spark_session_local
 
+from .marks import nettest, postgres, redshift, skip, spark
+
 
 def _tempfile_context():
     return {
@@ -86,7 +88,7 @@ def test_thunk():
     assert result.transformed_value() == 'foo'
 
 
-@pytest.mark.nettest
+@nettest
 def test_download_from_s3():
     result = execute_solid(
         PipelineDefinition([download_from_s3], context_definitions=_s3_context()),
@@ -109,7 +111,7 @@ def test_download_from_s3():
         assert fd.read() == 'test\n'
 
 
-@pytest.mark.nettest
+@nettest
 def test_download_from_s3_tempfile():
     result = execute_solid(
         PipelineDefinition([download_from_s3], context_definitions=_s3_context()),
@@ -159,7 +161,7 @@ def test_unzip_file_tempfile():
     assert [not os.path.isfile(v) for v in result.transformed_value()]
 
 
-@pytest.mark.spark
+@spark
 def test_ingest_csv_to_spark():
     @lambda_solid
     def nonce():
@@ -180,28 +182,28 @@ def test_ingest_csv_to_spark():
     assert result.transformed_value().head()[0] == '1'
 
 
-@pytest.mark.spark
-@pytest.mark.postgres
-@pytest.mark.skip
+@postgres
+@skip
+@spark
 def test_load_data_to_postgres_from_spark_postgres():
     raise NotImplementedError()
 
 
-@pytest.mark.nettest
-@pytest.mark.spark
-@pytest.mark.redshift
-@pytest.mark.skip
+@nettest
+@redshift
+@skip
+@spark
 def test_load_data_to_redshift_from_spark():
     raise NotImplementedError()
 
 
-@pytest.mark.spark
-@pytest.mark.skip
+@skip
+@spark
 def test_subsample_spark_dataset():
     raise NotImplementedError()
 
 
-@pytest.mark.spark
-@pytest.mark.skip
+@skip
+@spark
 def test_join_spark_data_frame():
     raise NotImplementedError()
