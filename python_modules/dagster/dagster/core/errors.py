@@ -137,12 +137,14 @@ class DagsterExpectationFailedError(DagsterError):
     def __repr__(self):
         inout_def = self.expectation_context.inout_def
         return (
-            'DagsterExpectationFailedError('
-            + 'solid={name}, '.format(name=self.expectation_context.solid.name)
-            + '{key}={name}, '.format(key=inout_def.descriptive_key, name=inout_def.name)
-            + 'expectation={name}'.format(name=self.expectation_context.expectation_def.name)
-            + 'value={value}'.format(value=repr(self.value))
-            + ')'
+            'DagsterExpectationFailedError(solid={solid_name}, {key}={inout_name}, '
+            'expectation={e_name}, value={value})'
+        ).format(
+            solid_name=self.expectation_context.solid.name,
+            key=inout_def.descriptive_key,
+            inout_name=inout_def.name,
+            e_name=self.expectation_context.expectation_def.name,
+            value=repr(self.value),
         )
 
     def __str__(self):
