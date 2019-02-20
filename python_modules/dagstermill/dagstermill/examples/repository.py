@@ -140,7 +140,7 @@ def clean_data_solid():
 @solid_definition
 def LR_solid():
     return dm.define_dagstermill_solid(
-        'LR',
+        'linear_regression',
         nb_test_path('tutorial_LR'),
         inputs=[InputDefinition(name='df', dagster_type=DataFrame)],
     )
@@ -149,7 +149,7 @@ def LR_solid():
 @solid_definition
 def RF_solid():
     return dm.define_dagstermill_solid(
-        'RF',
+        'random_forest_regression',
         nb_test_path('tutorial_RF'),
         inputs=[InputDefinition(name='df', dagster_type=DataFrame)],
     )
@@ -161,8 +161,8 @@ def define_tutorial_pipeline():
         solids=[clean_data_solid, LR_solid, RF_solid],
         dependencies={
             SolidInstance('clean_data'): {},
-            SolidInstance('LR'): {'df': DependencyDefinition('clean_data')},
-            SolidInstance('RF'): {'df': DependencyDefinition('clean_data')},
+            SolidInstance('linear_regression'): {'df': DependencyDefinition('clean_data')},
+            SolidInstance('random_forest_regression'): {'df': DependencyDefinition('clean_data')},
         },
     )
 
