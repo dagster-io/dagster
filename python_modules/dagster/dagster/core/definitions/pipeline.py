@@ -217,6 +217,9 @@ class PipelineDefinition(object):
 
         return False
 
+    def build_sub_pipeline(self, solid_subset):
+        return self if solid_subset is None else _build_sub_pipeline(self, solid_subset)
+
 
 def _create_adjacency_lists(solids, dep_structure):
     check.list_param(solids, 'solids', Solid)
@@ -255,3 +258,49 @@ def solids_in_topological_order(pipeline):
 
     order = toposort_flatten(backward_edges, sort=True)
     return [pipeline.solid_named(solid_name) for solid_name in order]
+
+
+def _dep_key_of(solid):
+    return SolidInstance(solid.definition.name, solid.name)
+
+
+def _build_sub_pipeline(pipeline_def, solid_names):
+    '''
+    Build a pipeline which is a subset of another pipeline.
+    Only includes the solids which are in solid_names.
+    '''
+
+    check.inst_param(pipeline_def, 'pipeline_def', PipelineDefinition)
+    check.list_param(solid_names, 'solid_names', of_type=str)
+
+    solid_name_set = set(solid_names)
+    solids = list(map(pipeline_def.solid_named, solid_names))
+    deps = {_dep_key_of(solid): {} for solid in solids}
+
+    def _out_handle_of_inp(input_handle):
+        if pipeline_def.dependency_structure.has_dep(input_handle):
+            output_handle = pipeline_def.dependency_structure.get_dep(input_handle)
+            if output_handle.solid.name in solid_name_set:
+                return output_handle
+        return None
+
+    for solid in solids:
+        for input_handle in solid.input_handles():
+            output_handle = _out_handle_of_inp(input_handle)
+            if output_handle:
+                deps[_dep_key_of(solid)][input_handle.input_def.name] = DependencyDefinition(
+                    solid=output_handle.solid.name, output=output_handle.output_def.name
+                )
+
+    return PipelineDefinition(
+        name=pipeline_def.name,
+        solids=list({solid.definition for solid in solids}),
+        context_definitions=pipeline_def.context_definitions,
+        dependencies=deps,
+    )
+
+
+# def get_subset_pipeline(pipeline, solid_subset):
+#     check.inst_param(pipeline, 'pipeline', PipelineDefinition)
+#     check.opt_list_param(solid_subset, 'solid_subset', of_type=str)
+#     return pipeline if solid_subset is None else build_sub_pipeline(pipeline, solid_subset)
