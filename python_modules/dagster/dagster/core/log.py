@@ -1,3 +1,4 @@
+import datetime
 import json
 import itertools
 import logging
@@ -40,12 +41,16 @@ class DagsterLog:
         check.invariant('orig_message' not in message_props, 'orig_message reserved value')
         check.invariant('message' not in message_props, 'message reserved value')
         check.invariant('log_message_id' not in message_props, 'log_message_id reserved value')
+        check.invariant('log_timestamp' not in message_props, 'log_timestamp reserved value')
 
         log_message_id = str(uuid.uuid4())
+
+        log_timestamp = datetime.datetime.utcnow().isoformat()
 
         synth_props = {
             'orig_message': orig_message,
             'log_message_id': log_message_id,
+            'log_timestamp': log_timestamp,
             'run_id': self.run_id,
         }
 
