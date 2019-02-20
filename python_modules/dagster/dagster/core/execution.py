@@ -24,8 +24,7 @@ from contextlib2 import ExitStack
 from dagster import check
 from dagster.utils import merge_dicts
 
-from .definitions import DependencyDefinition, PipelineDefinition, Solid, SolidInstance
-
+from .definitions import PipelineDefinition, Solid
 from .definitions.utils import DEFAULT_OUTPUT
 from .definitions.environment_configs import construct_environment_config
 

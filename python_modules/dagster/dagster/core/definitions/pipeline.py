@@ -298,9 +298,3 @@ def _build_sub_pipeline(pipeline_def, solid_names):
         context_definitions=pipeline_def.context_definitions,
         dependencies=deps,
     )
-
-
-# def get_subset_pipeline(pipeline, solid_subset):
-#     check.inst_param(pipeline, 'pipeline', PipelineDefinition)
-#     check.opt_list_param(solid_subset, 'solid_subset', of_type=str)
-#     return pipeline if solid_subset is None else build_sub_pipeline(pipeline, solid_subset)
