@@ -23,11 +23,7 @@ from dagster.core.definitions.dependency import DependencyStructure
 
 from dagster.core.definitions.pipeline import _create_adjacency_lists
 
-from dagster.core.execution import (
-    PipelineExecutionResult,
-    SolidExecutionResult,
-    get_subset_pipeline,
-)
+from dagster.core.execution import PipelineExecutionResult, SolidExecutionResult
 
 from dagster.core.utility_solids import define_stub_solid
 
@@ -370,7 +366,7 @@ def test_pipeline_subset():
     env_config = {'solids': {'add_one': {'inputs': {'num': {'value': 3}}}}}
 
     subset_result = execute_pipeline(
-        pipeline_def, environment_dict=env_config, solid_subset=['add_one']
+        pipeline_def.build_sub_pipeline(['add_one']), environment_dict=env_config
     )
 
     assert subset_result.success
@@ -378,7 +374,7 @@ def test_pipeline_subset():
     assert subset_result.result_for_solid('add_one').transformed_value() == 4
 
     step_events = execute_pipeline_iterator(
-        pipeline_def, environment_dict=env_config, solid_subset=['add_one']
+        pipeline_def.build_sub_pipeline(['add_one']), environment_dict=env_config
     )
 
     for step_event in step_events:
@@ -402,11 +398,11 @@ def define_three_part_pipeline():
 
 
 def define_created_disjoint_three_part_pipeline():
-    return get_subset_pipeline(define_three_part_pipeline(), ['add_one', 'add_three'])
+    return define_three_part_pipeline().build_sub_pipeline(['add_one', 'add_three'])
 
 
 def test_pipeline_disjoint_subset():
-    disjoint_pipeline = get_subset_pipeline(define_three_part_pipeline(), ['add_one', 'add_three'])
+    disjoint_pipeline = define_three_part_pipeline().build_sub_pipeline(['add_one', 'add_three'])
     assert len(disjoint_pipeline.solids) == 2
 
 
@@ -422,7 +418,7 @@ def test_pipeline_execution_disjoint_subset():
     pipeline_def = define_created_disjoint_three_part_pipeline()
 
     result = execute_pipeline(
-        pipeline_def, environment_dict=env_config, solid_subset=['add_one', 'add_three']
+        pipeline_def.build_sub_pipeline(['add_one', 'add_three']), environment_dict=env_config
     )
 
     assert result.success

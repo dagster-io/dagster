@@ -24,8 +24,7 @@ from contextlib2 import ExitStack
 from dagster import check
 from dagster.utils import merge_dicts
 
-from .definitions import DependencyDefinition, PipelineDefinition, Solid, SolidInstance
-
+from .definitions import PipelineDefinition, Solid
 from .definitions.utils import DEFAULT_OUTPUT
 from .definitions.environment_configs import construct_environment_config
 
@@ -463,11 +462,7 @@ def get_resource_or_gen(pipeline_def, context_definition, resource_name, environ
 
 
 def execute_pipeline_iterator(
-    pipeline,
-    environment_dict=None,
-    throw_on_user_error=True,
-    execution_metadata=None,
-    solid_subset=None,
+    pipeline, environment_dict=None, throw_on_user_error=True, execution_metadata=None
 ):
     '''Returns iterator that yields :py:class:`SolidExecutionResult` for each
     solid executed in the pipeline.
@@ -483,10 +478,9 @@ def execute_pipeline_iterator(
     environment_dict = check.opt_dict_param(environment_dict, 'environment_dict')
     check.bool_param(throw_on_user_error, 'throw_on_user_error')
     execution_metadata = check_execution_metadata_param(execution_metadata)
-    check.opt_list_param(solid_subset, 'solid_subset', of_type=str)
 
     with yield_pipeline_execution_context(
-        get_subset_pipeline(pipeline, solid_subset), environment_dict, execution_metadata
+        pipeline, environment_dict, execution_metadata
     ) as pipeline_context:
 
         pipeline_context.events.pipeline_start()
@@ -528,11 +522,7 @@ def execute_pipeline_iterator(
 
 
 def execute_pipeline(
-    pipeline,
-    environment_dict=None,
-    throw_on_user_error=True,
-    execution_metadata=None,
-    solid_subset=None,
+    pipeline, environment_dict=None, throw_on_user_error=True, execution_metadata=None
 ):
     '''
     "Synchronous" version of :py:func:`execute_pipeline_iterator`.
@@ -556,7 +546,6 @@ def execute_pipeline(
     environment_dict = check.opt_dict_param(environment_dict, 'environment_dict')
     check.bool_param(throw_on_user_error, 'throw_on_user_error')
     execution_metadata = check_execution_metadata_param(execution_metadata)
-    check.opt_list_param(solid_subset, 'solid_subset', of_type=str)
 
     return PipelineExecutionResult(
         pipeline,
@@ -567,7 +556,6 @@ def execute_pipeline(
                 environment_dict=environment_dict,
                 throw_on_user_error=throw_on_user_error,
                 execution_metadata=execution_metadata,
-                solid_subset=solid_subset,
             )
         ),
     )
@@ -647,52 +635,6 @@ def execute_plan(
                 pipeline_context, execution_plan, throw_on_user_error=throw_on_user_error
             )
         )
-
-
-def _dep_key_of(solid):
-    return SolidInstance(solid.definition.name, solid.name)
-
-
-def build_sub_pipeline(pipeline_def, solid_names):
-    '''
-    Build a pipeline which is a subset of another pipeline.
-    Only includes the solids which are in solid_names.
-    '''
-
-    check.inst_param(pipeline_def, 'pipeline_def', PipelineDefinition)
-    check.list_param(solid_names, 'solid_names', of_type=str)
-
-    solid_name_set = set(solid_names)
-    solids = list(map(pipeline_def.solid_named, solid_names))
-    deps = {_dep_key_of(solid): {} for solid in solids}
-
-    def _out_handle_of_inp(input_handle):
-        if pipeline_def.dependency_structure.has_dep(input_handle):
-            output_handle = pipeline_def.dependency_structure.get_dep(input_handle)
-            if output_handle.solid.name in solid_name_set:
-                return output_handle
-        return None
-
-    for solid in solids:
-        for input_handle in solid.input_handles():
-            output_handle = _out_handle_of_inp(input_handle)
-            if output_handle:
-                deps[_dep_key_of(solid)][input_handle.input_def.name] = DependencyDefinition(
-                    solid=output_handle.solid.name, output=output_handle.output_def.name
-                )
-
-    return PipelineDefinition(
-        name=pipeline_def.name,
-        solids=list({solid.definition for solid in solids}),
-        context_definitions=pipeline_def.context_definitions,
-        dependencies=deps,
-    )
-
-
-def get_subset_pipeline(pipeline, solid_subset):
-    check.inst_param(pipeline, 'pipeline', PipelineDefinition)
-    check.opt_list_param(solid_subset, 'solid_subset', of_type=str)
-    return pipeline if solid_subset is None else build_sub_pipeline(pipeline, solid_subset)
 
 
 def create_environment_config(pipeline, environment_dict=None):
