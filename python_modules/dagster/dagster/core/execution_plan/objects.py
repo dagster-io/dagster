@@ -157,11 +157,6 @@ class ExecutionStep(
     def __new__(
         cls, pipeline_context, key, step_inputs, step_outputs, compute_fn, kind, solid, tags=None
     ):
-        # check.param_invariant('pipeline' in tags, 'tags', 'Step must have pipeline tag')
-        # check.param_invariant('solid' in tags, 'tags', 'Step must have solid tag')
-        # check.param_invariant('solid_definition' in tags, 'tags', 'Step must have solid tag')
-        # check.p[tdict_param(tags, 'tags', key_type=str, value_type=str)
-
         return super(ExecutionStep, cls).__new__(
             cls,
             pipeline_context=check.inst_param(
@@ -192,20 +187,16 @@ class ExecutionStep(
     @property
     def pipeline_name(self):
         return self.pipeline_context.pipeline_def.name
-        # return self.tags['pipeline']
 
     @property
     def solid_name(self):
-        # return self.tags['solid']
         return self.solid.name
 
     @property
     def solid_definition_name(self):
-        # return self.tags['solid_definition']
         return self.solid.definition.name
 
     def __getnewargs__(self):
-        # print('getnewargs was called')
         return (
             self.key,
             self.step_inputs,
