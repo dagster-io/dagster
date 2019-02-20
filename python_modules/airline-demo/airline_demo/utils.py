@@ -77,6 +77,7 @@ def create_postgres_db_url(username, password, hostname, db_name, jdbc=True):
 def create_postgres_engine(db_url):
     return sqlalchemy.create_engine(db_url)
 
+
 class S3Logger(object):
     def __init__(self, logger, bucket, key, filename, size):
         self._logger = logger
