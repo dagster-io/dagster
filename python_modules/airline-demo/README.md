@@ -73,7 +73,7 @@ over http; or batch files in an SFTP drop.
 ### Running the pipeline locally with test config
 
 If you want to start by running this pipeline, try the config fragment in
-`environments/local_test_download.yml`. The first time you run this pipeline, you'll likely see a
+`environments/local_fast_download.yml`. The first time you run this pipeline, you'll likely see a
 bunch of log lines in the terminal running dagit as Spark dependencies are resolved.
 
 This config fragment points to cut-down versions of the original data files on S3. It can be good
@@ -185,7 +185,19 @@ Let's take a look at how one of these library solids is defined:
                 if os.path.dirname(target_path):
                     mkdir_p(os.path.dirname(target_path))
 
-                context.resources.s3.download_file(bucket, key, target_path)
+                context.log.info(
+                    'Starting download of {bucket}/{key} to {target_path}'.format(
+                        bucket=bucket, key=key, target_path=target_path
+                    )
+                )
+
+                headers = context.resources.s3.head_object(Bucket=bucket, Key=key)
+                logger = S3Logger(
+                    context.log.debug, bucket, key, target_path, int(headers['ContentLength'])
+                )
+                context.resources.s3.download_file(
+                    Bucket=bucket, Key=key, Filename=target_path, Callback=logger
+                )
             results.append(target_path)
         return results
 
@@ -740,7 +752,6 @@ can be explored from within Dagit by drilling down on the tag:
 
 ![Warehouse pipeline notebook](img/warehouse_pipeline_notebook_display.png)
 
-
 Let's start with the definition of our `notebook_solid` helper:
 
     import os
@@ -778,13 +789,22 @@ where to look for the notebooks. We define a new solid as follows:
     )
 
 As always, we define the inputs and outputs of the new solid. Within the notebook itself, we only
-need to add a few lines of boilerplate.
+need to add a few lines of boilerplate. Dagstermill exposes a command line facility to scaffold a
+notebook for you, so that you don't need to manage this boilerplate directly. Just run, e.g.:
 
-At the top of the notebook, we declare the notebook to be a solid as follows:
+    dagstermill create-notebook -n define_repo -m airline_demo.repository -note Delays_by_Geography
+
+The arguments to `-m` and `-n` tell dagstermill where to find the repository that the new notebook
+solid will belong to, and the argument to `-note` tells dagstermill what to call the new notebook.
+
+You can also manually insert the boilerplate. In either case, at the top of the notebook, we
+declare the notebook to be a solid and register it to our repository with the following code:
 
     import dagstermill as dm
-    from airline_demo.pipelines import define_repo
-    dm.declare_as_solid(define_repo(), 'sfo_delays_by_destination')
+    from airline_demo.repository import define_repo
+    dm.register_repository(define_repo())
+
+In your own pipelines, you'll register your solid to your own repositories.
 
 The call to `dagstermill.declare_as_solid` identifies the notebook contents with the notebook solid
 we defined in our pipeline.

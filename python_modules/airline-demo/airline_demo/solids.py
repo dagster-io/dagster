@@ -25,7 +25,7 @@ from dagster.utils import safe_isfile
 from dagstermill import define_dagstermill_solid
 
 from .types import FileExistsAtPath, SparkDataFrameType, SqlAlchemyEngineType, SqlTableName
-from .utils import mkdir_p
+from .utils import mkdir_p, S3Logger
 
 
 def _notebook_path(name):
@@ -230,7 +230,19 @@ def download_from_s3(context):
             if os.path.dirname(target_path):
                 mkdir_p(os.path.dirname(target_path))
 
-            context.resources.s3.download_file(bucket, key, target_path)
+            context.log.info(
+                'Starting download of {bucket}/{key} to {target_path}'.format(
+                    bucket=bucket, key=key, target_path=target_path
+                )
+            )
+
+            headers = context.resources.s3.head_object(Bucket=bucket, Key=key)
+            logger = S3Logger(
+                context.log.debug, bucket, key, target_path, int(headers['ContentLength'])
+            )
+            context.resources.s3.download_file(
+                Bucket=bucket, Key=key, Filename=target_path, Callback=logger
+            )
         results.append(target_path)
     return results
 
