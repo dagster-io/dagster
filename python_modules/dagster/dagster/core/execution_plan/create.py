@@ -16,7 +16,7 @@ from dagster.core.errors import (
     DagsterInvariantViolationError,
 )
 
-from dagster.core.execution_context import ExecutionMetadata, PipelineExecutionContext
+from dagster.core.execution_context import PipelineExecutionContext
 
 from .expectations import create_expectations_subplan, decorate_with_expectations
 
