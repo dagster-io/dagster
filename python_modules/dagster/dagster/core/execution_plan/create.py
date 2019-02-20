@@ -60,11 +60,8 @@ class PlanBuilder:
         self.step_output_map = StepOutputMap()
 
 
-def create_execution_plan_core(
-    pipeline_context, execution_metadata, subset_info=None, added_outputs=None
-):
+def create_execution_plan_core(pipeline_context, subset_info=None, added_outputs=None):
     check.inst_param(pipeline_context, 'pipeline_context', PipelineExecutionContext)
-    check.inst_param(execution_metadata, 'execution_metadata', ExecutionMetadata)
     check.opt_inst_param(subset_info, 'subset_info', ExecutionPlanSubsetInfo)
     check.opt_inst_param(added_outputs, 'added_output', ExecutionPlanAddedOutputs)
 

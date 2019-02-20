@@ -266,9 +266,7 @@ def create_execution_plan(
     with yield_pipeline_execution_context(
         pipeline, environment_dict, execution_metadata
     ) as pipeline_context:
-        return create_execution_plan_core(
-            pipeline_context, execution_metadata, subset_info, added_outputs
-        )
+        return create_execution_plan_core(pipeline_context, subset_info, added_outputs)
 
 
 def get_tags(user_context_params, execution_metadata, pipeline):
@@ -493,7 +491,7 @@ def execute_pipeline_iterator(
 
         pipeline_context.events.pipeline_start()
 
-        execution_plan = create_execution_plan_core(pipeline_context, execution_metadata)
+        execution_plan = create_execution_plan_core(pipeline_context)
 
         steps = execution_plan.topological_steps()
 
@@ -607,20 +605,30 @@ def execute_marshalling(
     execution_metadata=None,
     throw_on_user_error=True,
 ):
-    execution_plan = create_execution_plan(
-        pipeline,
-        subset_info=ExecutionPlanSubsetInfo.with_input_marshalling(step_keys, inputs_to_marshal),
-        added_outputs=ExecutionPlanAddedOutputs.with_output_marshalling(outputs_to_marshal),
-        execution_metadata=execution_metadata,
-        environment_dict=environment_dict,
-    )
+    check.inst_param(pipeline, 'pipeline', PipelineDefinition)
+    check.list_param(step_keys, 'step_keys', of_type=str)
+    environment_dict = check.opt_dict_param(environment_dict, 'environment_dict')
+    execution_metadata = check_execution_metadata_param(execution_metadata)
+    check.bool_param(throw_on_user_error, 'throw_on_user_error')
 
-    return execute_plan(
-        execution_plan,
-        environment_dict=environment_dict,
-        execution_metadata=execution_metadata,
-        throw_on_user_error=throw_on_user_error,
-    )
+    with yield_pipeline_execution_context(
+        pipeline, environment_dict, execution_metadata
+    ) as pipeline_context:
+        return list(
+            iterate_step_events_for_execution_plan(
+                pipeline_context,
+                execution_plan=create_execution_plan_core(
+                    pipeline_context,
+                    subset_info=ExecutionPlanSubsetInfo.with_input_marshalling(
+                        step_keys, inputs_to_marshal
+                    ),
+                    added_outputs=ExecutionPlanAddedOutputs.with_output_marshalling(
+                        outputs_to_marshal
+                    ),
+                ),
+                throw_on_user_error=throw_on_user_error,
+            )
+        )
 
 
 def execute_plan(
