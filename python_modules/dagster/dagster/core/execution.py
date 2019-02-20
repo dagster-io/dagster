@@ -52,7 +52,12 @@ from .execution_plan.objects import (
     StepKind,
 )
 
-from .execution_plan.simple_engine import iterate_step_events_for_execution_plan
+from .execution_plan.multiprocessing_engine import (
+    multiprocess_execute_plan,
+    MultiprocessExecutorConfig,
+)
+
+from .execution_plan.simple_engine import start_inprocess_executor
 
 from .init_context import InitContext, InitResourceContext
 
@@ -383,7 +388,7 @@ def construct_pipeline_execution_context(
     return PipelineExecutionContext(
         PipelineExecutionContextData(
             pipeline_def=pipeline,
-            run_id=execution_metadata.run_id,
+            execution_metadata=execution_metadata,
             resources=resources,
             event_callback=execution_metadata.event_callback,
             environment_config=environment_config,
@@ -462,7 +467,11 @@ def get_resource_or_gen(pipeline_def, context_definition, resource_name, environ
 
 
 def execute_pipeline_iterator(
-    pipeline, environment_dict=None, throw_on_user_error=True, execution_metadata=None
+    pipeline,
+    environment_dict=None,
+    throw_on_user_error=True,
+    execution_metadata=None,
+    executor_config=None,
 ):
     '''Returns iterator that yields :py:class:`SolidExecutionResult` for each
     solid executed in the pipeline.
@@ -508,8 +517,8 @@ def execute_pipeline_iterator(
 
         pipeline_success = True
 
-        for step_event in iterate_step_events_for_execution_plan(
-            pipeline_context, execution_plan, throw_on_user_error
+        for step_event in invoke_executor_on_plan(
+            pipeline_context, execution_plan, throw_on_user_error, executor_config
         ):
             if step_event.is_step_failure:
                 pipeline_success = False
@@ -521,8 +530,16 @@ def execute_pipeline_iterator(
             pipeline_context.events.pipeline_failure()
 
 
+class InProcessExecutorConfig:
+    pass
+
+
 def execute_pipeline(
-    pipeline, environment_dict=None, throw_on_user_error=True, execution_metadata=None
+    pipeline,
+    environment_dict=None,
+    throw_on_user_error=True,
+    execution_metadata=None,
+    executor_config=None,
 ):
     '''
     "Synchronous" version of :py:func:`execute_pipeline_iterator`.
@@ -556,6 +573,7 @@ def execute_pipeline(
                 environment_dict=environment_dict,
                 throw_on_user_error=throw_on_user_error,
                 execution_metadata=execution_metadata,
+                executor_config=executor_config,
             )
         ),
     )
@@ -584,6 +602,25 @@ class PipelineConfigEvaluationError(Exception):
         super(PipelineConfigEvaluationError, self).__init__(error_msg, *args, **kwargs)
 
 
+def invoke_executor_on_plan(pipeline_context, execution_plan, throw_on_user_error, executor_config):
+    if executor_config is None:
+        executor_config = InProcessExecutorConfig()
+
+    if isinstance(executor_config, InProcessExecutorConfig):
+        step_events_gen = start_inprocess_executor(pipeline_context, execution_plan)
+    elif isinstance(executor_config, MultiprocessExecutorConfig):
+        step_events_gen = multiprocess_execute_plan(
+            executor_config, pipeline_context, execution_plan
+        )
+    else:
+        check.failed('Unsupport config {}'.format(executor_config))
+
+    for step_event in step_events_gen:
+        if throw_on_user_error and step_event.is_step_failure:
+            step_event.reraise_user_error()
+        yield step_event
+
+
 def execute_marshalling(
     pipeline,
     step_keys,
@@ -592,6 +629,7 @@ def execute_marshalling(
     environment_dict=None,
     execution_metadata=None,
     throw_on_user_error=True,
+    executor_config=None,
 ):
     check.inst_param(pipeline, 'pipeline', PipelineDefinition)
     check.list_param(step_keys, 'step_keys', of_type=str)
@@ -603,7 +641,7 @@ def execute_marshalling(
         pipeline, environment_dict, execution_metadata
     ) as pipeline_context:
         return list(
-            iterate_step_events_for_execution_plan(
+            invoke_executor_on_plan(
                 pipeline_context,
                 execution_plan=create_execution_plan_core(
                     pipeline_context,
@@ -615,12 +653,17 @@ def execute_marshalling(
                     ),
                 ),
                 throw_on_user_error=throw_on_user_error,
+                executor_config=executor_config,
             )
         )
 
 
 def execute_plan(
-    execution_plan, environment_dict=None, execution_metadata=None, throw_on_user_error=True
+    execution_plan,
+    environment_dict=None,
+    execution_metadata=None,
+    throw_on_user_error=True,
+    executor_config=None,
 ):
     check.inst_param(execution_plan, 'execution_plan', ExecutionPlan)
     environment_dict = check.opt_dict_param(environment_dict, 'environment_dict')
@@ -631,8 +674,11 @@ def execute_plan(
         execution_plan.pipeline_def, environment_dict, execution_metadata
     ) as pipeline_context:
         return list(
-            iterate_step_events_for_execution_plan(
-                pipeline_context, execution_plan, throw_on_user_error=throw_on_user_error
+            invoke_executor_on_plan(
+                pipeline_context,
+                execution_plan,
+                throw_on_user_error=throw_on_user_error,
+                executor_config=executor_config,
             )
         )
 

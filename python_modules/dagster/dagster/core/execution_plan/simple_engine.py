@@ -38,10 +38,9 @@ def _all_inputs_covered(step, results):
     return True
 
 
-def iterate_step_events_for_execution_plan(pipeline_context, execution_plan, throw_on_user_error):
+def start_inprocess_executor(pipeline_context, execution_plan):
     check.inst_param(pipeline_context, 'pipeline_context', PipelineExecutionContext)
     check.inst_param(execution_plan, 'execution_plan', ExecutionPlan)
-    check.bool_param(throw_on_user_error, 'throw_on_user_error')
 
     step_levels = execution_plan.topological_step_levels()
 
@@ -70,13 +69,8 @@ def iterate_step_events_for_execution_plan(pipeline_context, execution_plan, thr
 
             input_values = _create_input_values(step, all_results)
 
-            for step_event in check.generator(
-                iterate_step_events_for_step(step_context, input_values)
-            ):
+            for step_event in check.generator(execute_step_in_memory(step_context, input_values)):
                 check.inst(step_event, ExecutionStepEvent)
-
-                if throw_on_user_error and step_event.is_step_failure:
-                    step_event.reraise_user_error()
 
                 yield step_event
 
@@ -94,7 +88,7 @@ def _create_input_values(step, prev_level_results):
     return input_values
 
 
-def iterate_step_events_for_step(step_context, inputs):
+def execute_step_in_memory(step_context, inputs):
     check.inst_param(step_context, 'step_context', StepExecutionContext)
     check.dict_param(inputs, 'inputs', key_type=str)
 
@@ -111,7 +105,7 @@ def iterate_step_events_for_step(step_context, inputs):
     except DagsterError as dagster_error:
         step_context.log.error(str(dagster_error))
         yield ExecutionStepEvent.step_failure_event(
-            step=step_context.step, failure_data=StepFailureData(dagster_error=dagster_error)
+            step_context=step_context, failure_data=StepFailureData(dagster_error=dagster_error)
         )
         return
 
@@ -165,10 +159,11 @@ def _execute_steps_core_loop(step_context, inputs):
         _error_check_step_output_values(step_context.step, step_output_value_iterator)
     ):
 
-        yield _create_step_event(step_context.step, step_output_value)
+        yield _create_step_event(step_context, step_output_value)
 
 
-def _create_step_event(step, step_output_value):
+def _create_step_event(step_context, step_output_value):
+    step = step_context.step
     check.inst_param(step, 'step', ExecutionStep)
     check.inst_param(step_output_value, 'step_output_value', StepOutputValue)
 
@@ -176,7 +171,7 @@ def _create_step_event(step, step_output_value):
 
     try:
         return ExecutionStepEvent.step_output_event(
-            step=step,
+            step_context=step_context,
             success_data=StepSuccessData(
                 output_name=step_output_value.output_name,
                 value=step_output.runtime_type.coerce_runtime_value(step_output_value.value),
