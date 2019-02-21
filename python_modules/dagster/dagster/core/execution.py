@@ -613,7 +613,7 @@ def invoke_executor_on_plan(pipeline_context, execution_plan, throw_on_user_erro
             executor_config, pipeline_context, execution_plan
         )
     else:
-        check.failed('Unsupport config {}'.format(executor_config))
+        check.failed('Unsupported config {}'.format(executor_config))
 
     for step_event in step_events_gen:
         if throw_on_user_error and step_event.is_step_failure:
