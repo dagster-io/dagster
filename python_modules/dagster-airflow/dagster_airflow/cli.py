@@ -60,8 +60,9 @@ def scaffold(env, install, image, **cli_args):
     check.str_param(image, 'image')
 
     if install:
-        check.invariant(isinstance(os.getenv('AIRFLOW_HOME', string_types)))
-        output_path = os.path.join(os.path.abspath(os.getenv('AIRFLOW_HOME')), 'dags')
+        airflow_home = os.getenv('AIRFLOW_HOME')
+        check.invariant(isinstance(airflow_home, string_types))
+        output_path = os.path.join(os.path.abspath(airflow_home), 'dags')
     else:
         output_path = None
 
