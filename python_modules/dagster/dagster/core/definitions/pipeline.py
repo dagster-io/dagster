@@ -1,8 +1,7 @@
 import six
 
 from dagster import check
-
-from ..utils import toposort_flatten
+from dagster.core.utils import toposort_flatten
 
 from .context import PipelineContextDefinition, default_pipeline_context_definitions
 from .dependency import DependencyDefinition, DependencyStructure, Solid, SolidInstance
