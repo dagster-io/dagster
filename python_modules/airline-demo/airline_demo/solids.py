@@ -742,7 +742,7 @@ westbound_delays = sql_solid(
 
 delays_by_geography = notebook_solid(
     'delays_by_geography',
-    'Delays by Geography.ipynb',
+    'Delays_by_Geography.ipynb',
     inputs=[
         InputDefinition(
             'db_url', String, description='The db_url to use to construct a SQLAlchemy engine.'
@@ -769,7 +769,7 @@ delays_by_geography = notebook_solid(
 
 delays_vs_fares_nb = notebook_solid(
     'fares_vs_delays',
-    'Fares vs. Delays.ipynb',
+    'Fares_vs_Delays.ipynb',
     inputs=[
         InputDefinition(
             'db_url', String, description='The db_url to use to construct a SQLAlchemy engine.'
@@ -789,7 +789,7 @@ delays_vs_fares_nb = notebook_solid(
 
 sfo_delays_by_destination = notebook_solid(
     'sfo_delays_by_destination',
-    'SFO Delays by Destination.ipynb',
+    'SFO_Delays_by_Destination.ipynb',
     inputs=[
         InputDefinition(
             'db_url', String, description='The db_url to use to construct a SQLAlchemy engine.'
