@@ -70,6 +70,14 @@ class ExecutionMetadata(namedtuple('_ExecutionMetadata', 'run_id tags event_call
             loggers=check.opt_list_param(loggers, 'loggers'),
         )
 
+    def with_tags(self, **tags):
+        return ExecutionMetadata(
+            run_id=self.run_id,
+            event_callback=self.event_callback,
+            loggers=self.loggers,
+            tags=merge_dicts(self.tags, tags),
+        )
+
 
 DEFAULT_LOGGERS = [define_colored_console_logger('dagster')]
 
@@ -228,7 +236,10 @@ class AbstractTransformExecutionContext(six.with_metaclass(ABCMeta)):  # pylint:
 class PipelineExecutionContextData(
     namedtuple(
         '_PipelineExecutionContextData',
-        'run_id resources environment_config persistence_strategy pipeline_def event_callback',
+        (
+            'execution_metadata resources environment_config persistence_strategy pipeline_def '
+            'event_callback'
+        ),
     )
 ):
     '''
@@ -238,7 +249,7 @@ class PipelineExecutionContextData(
 
     def __new__(
         cls,
-        run_id,
+        execution_metadata,
         resources,
         environment_config,
         persistence_strategy,
@@ -249,7 +260,9 @@ class PipelineExecutionContextData(
 
         return super(PipelineExecutionContextData, cls).__new__(
             cls,
-            run_id=check.str_param(run_id, 'run_id'),
+            execution_metadata=check.inst_param(
+                execution_metadata, 'execution_metadata', ExecutionMetadata
+            ),
             resources=resources,
             environment_config=check.inst_param(
                 environment_config, 'environment_config', EnvironmentConfig
@@ -260,6 +273,10 @@ class PipelineExecutionContextData(
             pipeline_def=check.inst_param(pipeline_def, 'pipeline_def', PipelineDefinition),
             event_callback=check.opt_callable_param(event_callback, 'event_callback'),
         )
+
+    @property
+    def run_id(self):
+        return self.execution_metadata.run_id
 
     @property
     def environment_dict(self):
@@ -285,6 +302,10 @@ class PipelineExecutionContext(object):
         tags = merge_dicts(self.tags, step.tags)
         log = DagsterLog(self.run_id, tags, self.log.loggers)
         return StepExecutionContext(self._pipeline_context_data, tags, log, step)
+
+    @property
+    def execution_metadata(self):
+        return self._pipeline_context_data.execution_metadata
 
     @property
     def resources(self):

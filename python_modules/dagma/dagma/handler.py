@@ -13,7 +13,7 @@ from dagster.core.execution import (
 )
 from dagster.core.execution_context import PipelineExecutionContext
 from dagster.core.execution_plan.objects import ExecutionStepEvent
-from dagster.core.execution_plan.simple_engine import iterate_step_events_for_step
+from dagster.core.execution_plan.simple_engine import execute_step_in_memory
 
 from .serialize import deserialize, serialize
 from .utils import get_input_key, get_resources_key, get_step_key, LambdaInvocationPayload
@@ -94,7 +94,7 @@ def aws_lambda_handler(event, _context):
         input_values[step_input.name] = input_value
 
     logger.info('Executing step {key}'.format(key=key))
-    step_events = list(iterate_step_events_for_step(step, execution_context, input_values))
+    step_events = list(execute_step_in_memory(step, execution_context, input_values))
 
     for step_event in step_events:
         check.invariant(isinstance(step_event, ExecutionStepEvent))

@@ -6,7 +6,7 @@ import six
 
 from dagster import check
 from dagster.utils import merge_dicts
-from dagster.core.execution_context import PipelineExecutionContext
+from dagster.core.execution_context import PipelineExecutionContext, StepExecutionContext
 from dagster.core.definitions import Solid, PipelineDefinition
 
 from dagster.core.errors import DagsterError
@@ -67,8 +67,18 @@ class ExecutionStepEventType(Enum):
 
 
 class ExecutionStepEvent(
-    namedtuple('_ExecutionStepEvent', 'event_type step success_data failure_data')
+    namedtuple('_ExecutionStepEvent', 'event_type step success_data failure_data tags')
 ):
+    def __new__(cls, event_type, step, success_data, failure_data, tags):
+        return super(ExecutionStepEvent, cls).__new__(
+            cls,
+            check.inst_param(event_type, 'event_type', ExecutionStepEventType),
+            check.inst_param(step, 'step', ExecutionStep),
+            check.opt_inst_param(success_data, 'success_data', StepSuccessData),
+            check.opt_inst_param(failure_data, 'failure_data', StepFailureData),
+            check.dict_param(tags, 'tags'),
+        )
+
     @property
     def is_step_success(self):
         return not self.is_step_failure
@@ -82,21 +92,27 @@ class ExecutionStepEvent(
         return self.event_type == ExecutionStepEventType.STEP_FAILURE
 
     @staticmethod
-    def step_output_event(step, success_data):
+    def step_output_event(step_context, success_data):
+        check.inst_param(step_context, 'step_context', StepExecutionContext)
+
         return ExecutionStepEvent(
             event_type=ExecutionStepEventType.STEP_OUTPUT,
-            step=check.inst_param(step, 'step', ExecutionStep),
+            step=step_context.step,
             success_data=check.inst_param(success_data, 'success_data', StepSuccessData),
             failure_data=None,
+            tags=step_context.tags,
         )
 
     @staticmethod
-    def step_failure_event(step, failure_data):
+    def step_failure_event(step_context, failure_data):
+        check.inst_param(step_context, 'step_context', StepExecutionContext)
+
         return ExecutionStepEvent(
             event_type=ExecutionStepEventType.STEP_FAILURE,
-            step=check.inst_param(step, 'step', ExecutionStep),
+            step=step_context.step,
             success_data=None,
             failure_data=check.inst_param(failure_data, 'failure_data', StepFailureData),
+            tags=step_context.tags,
         )
 
     def reraise_user_error(self):
