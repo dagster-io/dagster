@@ -22,9 +22,7 @@ from .version import __version__
     ),
 )
 @click.option(
-    '--image',
-    help='The Docker image to use to run your pipeline with airflow.',
-    required=True
+    '--image', help='The Docker image to use to run your pipeline with airflow.', required=True
 )
 @pipeline_target_command
 @click.option(
