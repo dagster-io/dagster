@@ -1,19 +1,16 @@
 import six
 
-from toposort import toposort_flatten
-
 from dagster import check
 
+from ..utils import toposort_flatten
+
+from .context import PipelineContextDefinition, default_pipeline_context_definitions
+from .dependency import DependencyDefinition, DependencyStructure, Solid, SolidInstance
 from .environment_configs import (
     EnvironmentClassCreationData,
     define_environment_cls,
     define_context_cls,
 )
-
-from .context import PipelineContextDefinition, default_pipeline_context_definitions
-
-from .dependency import DependencyDefinition, DependencyStructure, Solid, SolidInstance
-
 from .pipeline_creation import (
     create_execution_structure,
     construct_config_type_dictionary,
@@ -256,7 +253,7 @@ def solids_in_topological_order(pipeline):
         pipeline.solids, pipeline.dependency_structure
     )
 
-    order = toposort_flatten(backward_edges, sort=True)
+    order = toposort_flatten(backward_edges)
     return [pipeline.solid_named(solid_name) for solid_name in order]
 
 
