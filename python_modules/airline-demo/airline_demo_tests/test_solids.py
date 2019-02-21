@@ -40,10 +40,7 @@ def _s3_context():
     return {
         'test': PipelineContextDefinition(
             context_fn=lambda info: ExecutionContext.console_logging(log_level=logging.DEBUG),
-            resources={
-                's3': unsigned_s3_session,
-                'tempfile': tempfile_resource,
-            },
+            resources={'s3': unsigned_s3_session, 'tempfile': tempfile_resource},
         )
     }
 
