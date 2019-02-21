@@ -806,18 +806,27 @@ declare the notebook to be a solid and register it to our repository with the fo
 
 In your own pipelines, you'll register your solid to your own repositories.
 
-The call to `dagstermill.declare_as_solid` identifies the notebook contents with the notebook solid
-we defined in our pipeline.
+The call to `dagstermill.register_repository` identifies the notebook contents with the notebook
+solid we defined in our pipeline.
 
 Then, in a cell with the `parameters` tag, we write:
 
-    #(db_url, table_name) = dm.get_inputs(dm_context, 'db_url', 'table_name')
-    db_url = ''\n
-    table_name = ''
+    context = dm.get_context()
+    db_url = 'postgresql://test:test@127.0.0.1:5432/test'
+    eastbound_delays = 'eastbound_delays'
+    westbound_delays = 'westbound_delays'
+
+When dagstermill executes this notebook as part of a pipeline, values for these inputs will be
+injected from the output of upstream solids.
 
 Finally, at the very end of the notebook, we yield the result back to the pipeline:
 
-    dm.yield_result(pdf_path, 'result')#, output_name='plots_pdf_path')
+    dm.yield_result(pdf_path, 'result')
+
+<!-- TODOs (with db resource)
+    - Discuss output notebooks
+    - Discuss dagstermill resources/context
+-->
 
 <!--
 FIXME need to actually describe how to run this pipeline against AWS
