@@ -1,16 +1,15 @@
 from collections import namedtuple
 from enum import Enum
 
-import toposort
 import six
 
 from dagster import check
-from dagster.utils import merge_dicts
-from dagster.core.execution_context import PipelineExecutionContext, StepExecutionContext
 from dagster.core.definitions import Solid, PipelineDefinition
-
 from dagster.core.errors import DagsterError
+from dagster.core.execution_context import PipelineExecutionContext, StepExecutionContext
 from dagster.core.types.runtime import RuntimeType
+from dagster.core.utils import toposort
+from dagster.utils import merge_dicts
 
 
 class StepOutputValue(namedtuple('_StepOutputValue', 'output_name value')):
@@ -299,15 +298,11 @@ class ExecutionPlan(namedtuple('_ExecutionPlan', 'pipeline_def step_dict, deps, 
         return self.step_dict[key]
 
     def topological_steps(self):
-        return list(self._topological_steps())
-
-    def _topological_steps(self):
-        for step_key in toposort.toposort_flatten(self.deps):
-            yield self.step_dict[step_key]
+        return [step for step_level in self.topological_step_levels() for step in step_level]
 
     def topological_step_levels(self):
-        return list(self._topological_step_levels())
-
-    def _topological_step_levels(self):
-        for step_key_level in toposort.toposort(self.deps):
-            yield [self.step_dict[step_key] for step_key in step_key_level]
+        return [
+            [self.step_dict[step_key]]
+            for step_key_level in toposort(self.deps)
+            for step_key in step_key_level
+        ]
