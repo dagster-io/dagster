@@ -8,7 +8,7 @@ from dagster.core.definitions import Solid, PipelineDefinition
 from dagster.core.errors import DagsterError
 from dagster.core.execution_context import PipelineExecutionContext, StepExecutionContext
 from dagster.core.types.runtime import RuntimeType
-from dagster.core.utils import toposort, toposort_flatten
+from dagster.core.utils import toposort
 from dagster.utils import merge_dicts
 
 
