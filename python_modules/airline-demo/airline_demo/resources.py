@@ -75,7 +75,7 @@ def _tempfile_manager():
 
 
 @resource
-def tempfile_resource():
+def tempfile_resource(_init_context):
     with _tempfile_manager() as manager:
         yield manager
 
