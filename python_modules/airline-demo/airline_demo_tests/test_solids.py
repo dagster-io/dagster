@@ -21,7 +21,7 @@ from dagster import (
     lambda_solid,
 )
 
-from airline_demo.solids import sql_solid, download_from_s3, ingest_csv_to_spark, thunk, unzip_file
+from airline_demo.solids import sql_solid, download_from_s3, ingest_csv_to_spark, unzip_file
 from airline_demo.pipelines import define_lambda_resource, define_tempfile_resource
 from airline_demo.utils import create_s3_session, create_spark_session_local
 
@@ -76,16 +76,6 @@ def test_sql_solid():
     result = sql_solid('foo', 'select * from bar', 'table', 'quux')
     assert result
     # TODO: test execution?
-
-
-def test_thunk():
-    result = execute_solid(
-        PipelineDefinition([thunk]),
-        'thunk',
-        environment_dict={'solids': {'thunk': {'config': 'foo'}}},
-    )
-    assert result.success
-    assert result.transformed_value() == 'foo'
 
 
 @nettest

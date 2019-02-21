@@ -34,7 +34,6 @@ from .solids import (
     q2_sfo_outbound_flights,
     sfo_delays_by_destination,
     subsample_spark_dataset,
-    thunk,
     tickets_with_destination,
     union_spark_data_frames,
     unzip_file,
@@ -368,13 +367,11 @@ def define_airline_demo_warehouse_pipeline():
             eastbound_delays,
             q2_sfo_outbound_flights,
             sfo_delays_by_destination,
-            thunk,
             tickets_with_destination,
             upload_to_s3,
             westbound_delays,
         ],
         dependencies={
-            SolidInstance('thunk', alias='db_url'): {},
             'q2_sfo_outbound_flights': {},
             'tickets_with_destination': {},
             'westbound_delays': {},
@@ -389,17 +386,14 @@ def define_airline_demo_warehouse_pipeline():
                 ),
             },
             'fares_vs_delays': {
-                'db_url': DependencyDefinition('db_url'),
                 'table_name': DependencyDefinition('delays_vs_fares'),
             },
             'sfo_delays_by_destination': {
-                'db_url': DependencyDefinition('db_url'),
                 'table_name': DependencyDefinition(
                     'average_sfo_outbound_avg_delays_by_destination'
                 ),
             },
             'delays_by_geography': {
-                'db_url': DependencyDefinition('db_url'),
                 'eastbound_delays': DependencyDefinition('eastbound_delays'),
                 'westbound_delays': DependencyDefinition('westbound_delays'),
             },

@@ -129,42 +129,6 @@ def sql_solid(name, select_statement, materialization_strategy, table_name=None,
 
 
 @solid(
-    name='thunk',
-    config_field=Field(String, description='The string value to output.'),
-    description='No-op solid that simply outputs its single string config value.',
-    outputs=[OutputDefinition(String, description='The string passed in as ')],
-)
-def thunk(context):
-    '''Output the config vakue.
-
-    Especially useful when constructing DAGs with root nodes that take inputs which might in
-    other dags come from upstream solids.
-
-    Args:
-        info (ExpectationExecutionInfo)
-
-    Returns:
-        str;
-            The config value passed to the solid.
-    '''
-    return context.solid_config
-
-
-@solid(
-    name='thunk_database_engine',
-    outputs=[OutputDefinition(SqlAlchemyEngineType, description='The db resource.')],
-)
-def thunk_database_engine(context):
-    """Returns the db resource as its output.
-
-    Why? Because we don't currently have a good way to pass contexts around between execution
-    threads. So in order to get a database engine into a Jupyter notebook, we need to serialize
-    it and pass it along.
-    """
-    return context.resources.db
-
-
-@solid(
     name='download_from_s3',
     config_field=Field(
         List(
@@ -745,9 +709,6 @@ delays_by_geography = notebook_solid(
     'Delays_by_Geography.ipynb',
     inputs=[
         InputDefinition(
-            'db_url', String, description='The db_url to use to construct a SQLAlchemy engine.'
-        ),
-        InputDefinition(
             'westbound_delays',
             SqlTableName,
             description='The SQL table containing westbound delays.',
@@ -772,11 +733,8 @@ delays_vs_fares_nb = notebook_solid(
     'Fares_vs_Delays.ipynb',
     inputs=[
         InputDefinition(
-            'db_url', String, description='The db_url to use to construct a SQLAlchemy engine.'
-        ),
-        InputDefinition(
             'table_name', SqlTableName, description='The SQL table to use for calcuations.'
-        ),
+        )
     ],
     outputs=[
         OutputDefinition(
@@ -792,11 +750,8 @@ sfo_delays_by_destination = notebook_solid(
     'SFO_Delays_by_Destination.ipynb',
     inputs=[
         InputDefinition(
-            'db_url', String, description='The db_url to use to construct a SQLAlchemy engine.'
-        ),
-        InputDefinition(
             'table_name', SqlTableName, description='The SQL table to use for calcuations.'
-        ),
+        )
     ],
     outputs=[
         OutputDefinition(
