@@ -22,8 +22,7 @@ from dagster import (
 )
 
 from airline_demo.solids import sql_solid, download_from_s3, ingest_csv_to_spark, unzip_file
-from airline_demo.pipelines import define_lambda_resource, define_tempfile_resource
-from airline_demo.utils import create_s3_session, create_spark_session_local
+from airline_demo.resources import spark_session_local, tempfile_resource, unsigned_s3_session
 
 from .marks import nettest, postgres, redshift, skip, spark
 
@@ -32,7 +31,7 @@ def _tempfile_context():
     return {
         'test': PipelineContextDefinition(
             context_fn=lambda info: ExecutionContext.console_logging(log_level=logging.DEBUG),
-            resources={'tempfile': define_tempfile_resource()},
+            resources={'tempfile': tempfile_resource},
         )
     }
 
@@ -42,8 +41,8 @@ def _s3_context():
         'test': PipelineContextDefinition(
             context_fn=lambda info: ExecutionContext.console_logging(log_level=logging.DEBUG),
             resources={
-                's3': define_lambda_resource(create_s3_session, signed=False),
-                'tempfile': define_tempfile_resource(),
+                's3': unsigned_s3_session,
+                'tempfile': tempfile_resource,
             },
         )
     }
@@ -53,7 +52,7 @@ def _spark_context():
     return {
         'test': PipelineContextDefinition(
             context_fn=lambda info: ExecutionContext.console_logging(log_level=logging.DEBUG),
-            resources={'spark': define_lambda_resource(create_spark_session_local)},
+            resources={'spark': spark_session_local},
         )
     }
 
