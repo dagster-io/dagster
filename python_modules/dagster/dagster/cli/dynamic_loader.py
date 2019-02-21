@@ -383,7 +383,7 @@ def pipeline_target_command(f):
     # f = repository_config_argument(f)
     # nargs=-1 is used right now to make this argument optional
     # it can only handle 0 or 1 pipeline names
-    # see create_pipeline_from_cli_args
+    # see .pipeline.create_pipeline_from_cli_args
     return apply_click_params(
         f,
         click.option(
