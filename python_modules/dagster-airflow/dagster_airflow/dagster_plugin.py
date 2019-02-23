@@ -256,6 +256,7 @@ class ModifiedDockerOperator(DockerOperator):
 
     def __init__(self, host_tmp_dir=None, **kwargs):
         self.host_tmp_dir = host_tmp_dir
+        kwargs['xcom_push'] = True
         super(ModifiedDockerOperator, self).__init__(**kwargs)
 
     @contextmanager
@@ -481,7 +482,10 @@ class DagsterOperator(ModifiedDockerOperator):
             self._run_id = context['dag_run'].run_id
         try:
             # FIXME implement intermediate result persistence to S3
-            return super(DagsterOperator, self).execute(context)
+
+            self.log.debug('Executing with query: {query}'.format(query=self.query))
+            res = super(DagsterOperator, self).execute(context)
+            return res
         finally:
             self._run_id = None
 
