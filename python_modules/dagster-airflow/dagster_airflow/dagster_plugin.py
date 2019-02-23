@@ -57,6 +57,33 @@ mutation(
       pipeline {{
         name
       }}
+      hasFailures
+      stepEvents {{
+        step {{
+          key
+          solid {{
+            name
+          }}
+          kind
+        }}
+        success
+        __typename
+        ... on SuccessfulStepOutputEvent {{
+          step {{
+            key
+          }}
+          success
+          outputName
+          valueRepr
+        }}
+        ... on StepFailureEvent {{
+          step {{
+            key
+          }}
+          success
+          errorMessage
+        }}
+      }}
     }}
     ... on PythonError {{
         message

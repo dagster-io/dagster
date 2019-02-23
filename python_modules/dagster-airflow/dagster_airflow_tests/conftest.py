@@ -18,7 +18,10 @@ from dagster.utils import load_yaml_from_path, mkdir_p, script_relative_path
 
 from dagster_airflow import scaffold_airflow_dag
 
-from .test_project.dagster_airflow_demo import define_demo_execution_pipeline
+from .test_project.dagster_airflow_demo import (
+    define_demo_error_pipeline,
+    define_demo_execution_pipeline,
+)
 
 from .utils import reload_module
 
@@ -160,6 +163,64 @@ def scaffold_dag(airflow_test):
     docker_image, dags_path, _ = airflow_test
     pipeline = define_demo_execution_pipeline()
     env_config = load_yaml_from_path(script_relative_path('test_project/env.yml'))
+
+    tempdir = tempfile.gettempdir()
+
+    static_path, editable_path = scaffold_airflow_dag(
+        pipeline=pipeline,
+        env_config=env_config,
+        image=docker_image,
+        output_path=tempdir,
+        dag_kwargs={'default_args': {'start_date': datetime.datetime(1900, 1, 1)}},
+    )
+
+    # Ensure that the scaffolded files parse correctly
+    subprocess.check_output(['python', editable_path])
+
+    shutil.copyfile(
+        static_path, os.path.abspath(os.path.join(dags_path, os.path.basename(static_path)))
+    )
+
+    shutil.copyfile(
+        editable_path, os.path.abspath(os.path.join(dags_path, os.path.basename(editable_path)))
+    )
+
+    os.remove(static_path)
+    os.remove(editable_path)
+
+    execution_date = datetime.datetime.utcnow().strftime('%Y-%m-%d')
+    pipeline_name = pipeline.name
+
+    execution_plan = create_execution_plan(pipeline, env_config)
+
+    yield (
+        pipeline_name,
+        execution_plan,
+        execution_date,
+        os.path.abspath(os.path.join(dags_path, os.path.basename(static_path))),
+        os.path.abspath(os.path.join(dags_path, os.path.basename(editable_path))),
+    )
+
+    os.remove(os.path.abspath(os.path.join(dags_path, os.path.basename(static_path))))
+    os.remove(os.path.abspath(os.path.join(dags_path, os.path.basename(editable_path))))
+
+    try:
+        os.remove(
+            os.path.abspath(os.path.join(dags_path, os.path.basename(static_path)[:-3] + '.pyc'))
+        )
+        os.remove(
+            os.path.abspath(os.path.join(dags_path, os.path.basename(editable_path)[:-3] + '.pyc'))
+        )
+
+    except (FileNotFoundError, OSError):
+        pass
+
+
+@pytest.fixture(scope='module')
+def scaffold_error_dag(airflow_test):
+    docker_image, dags_path, _ = airflow_test
+    pipeline = define_demo_error_pipeline()
+    env_config = {}
 
     tempdir = tempfile.gettempdir()
 
