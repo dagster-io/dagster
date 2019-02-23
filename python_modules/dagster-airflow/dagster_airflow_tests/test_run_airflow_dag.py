@@ -17,8 +17,6 @@ def test_unit_run_airflow_dag_steps(scaffold_dag):
 
     pipeline_name, execution_plan, execution_date, _s, _e = scaffold_dag
 
-    run_id = ''
-
     for step in execution_plan.topological_steps():
         task_id = _normalize_key(step.key)
 
