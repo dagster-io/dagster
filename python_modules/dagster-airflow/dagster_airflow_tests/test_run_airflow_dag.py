@@ -52,8 +52,8 @@ def test_run_airflow_dag(scaffold_dag):
 
     execution_date = datetime.datetime.utcnow()
 
-    import_module_from_path('demo_pipeline_static__scaffold', static_path)
-    demo_pipeline = import_module_from_path('demo_pipeline', editable_path)
+    import_module_from_path('demo_error_pipeline_static__scaffold', static_path)
+    demo_pipeline = import_module_from_path('demo_error_pipeline', editable_path)
 
     _dag, tasks = demo_pipeline.make_dag(
         dag_id=demo_pipeline.DAG_ID,
@@ -77,7 +77,7 @@ def test_run_airflow_error_dag(scaffold_error_dag):
 
     execution_date = datetime.datetime.utcnow()
 
-    import_module_from_path('demo_pipeline_static__scaffold', static_path)
+    import_module_from_path('demo_error_pipeline_static__scaffold', static_path)
     demo_pipeline = import_module_from_path('demo_pipeline', editable_path)
 
     _dag, tasks = demo_pipeline.make_dag(

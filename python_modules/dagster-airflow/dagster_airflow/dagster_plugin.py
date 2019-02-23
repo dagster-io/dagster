@@ -483,12 +483,15 @@ class DagsterOperator(ModifiedDockerOperator):
             # FIXME implement intermediate result persistence to S3
 
             self.log.debug('Executing with query: {query}'.format(query=self.query))
-            res = json.loads(super(DagsterOperator, self).execute(context))
+            raw_res = super(DagsterOperator, self).execute(context)
+            res = json.loads(raw_res)
             if res['data']['startSubplanExecution']['hasFailures']:
                 raise AirflowException(
                     res['data']['startSubplanExecution']['stepEvents'][0]['errorMessage']
                 )
             return res
+        except json.decoder.JSONDecodeError:
+            raise AirflowException(raw_res)
         finally:
             self._run_id = None
 
