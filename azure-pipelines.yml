@@ -1,4 +1,12 @@
-jobs:
+# Placeholder until we reenable the config below!
+pool:
+  vmImage: 'Ubuntu 16.04'
+
+steps:
+- task: UsePythonVersion@0
+  inputs:
+    versionSpec: 3.5
+architecture: 'x64'
 
 # jobs:
 #   - job: 'dagster'
