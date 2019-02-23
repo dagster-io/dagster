@@ -6,7 +6,6 @@ steps:
 - task: UsePythonVersion@0
   inputs:
     versionSpec: 3.5
-architecture: 'x64'
 
 # jobs:
 #   - job: 'dagster'
