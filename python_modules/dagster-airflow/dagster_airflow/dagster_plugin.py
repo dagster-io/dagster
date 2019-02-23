@@ -9,7 +9,6 @@ import ast
 import json
 import sys
 
-
 from contextlib import contextmanager
 from textwrap import TextWrapper
 
@@ -484,7 +483,11 @@ class DagsterOperator(ModifiedDockerOperator):
             # FIXME implement intermediate result persistence to S3
 
             self.log.debug('Executing with query: {query}'.format(query=self.query))
-            res = super(DagsterOperator, self).execute(context)
+            res = json.loads(super(DagsterOperator, self).execute(context))
+            if res['data']['startSubplanExecution']['hasFailures']:
+                raise AirflowException(
+                    res['data']['startSubplanExecution']['stepEvents'][0]['errorMessage']
+                )
             return res
         finally:
             self._run_id = None

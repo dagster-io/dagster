@@ -2,6 +2,9 @@ import datetime
 import os
 import subprocess
 
+import pytest
+
+from airflow.exceptions import AirflowException
 from airflow.models import TaskInstance
 
 from dagster_airflow.scaffold import _key_for_marshalled_result, _normalize_key
@@ -92,6 +95,7 @@ def test_run_airflow_error_dag(scaffold_error_dag):
     for task in tasks:
         ti = TaskInstance(task=task, execution_date=execution_date)
         context = ti.get_template_context()
-        raise Exception()
-
-        task.execute(context)
+        with pytest.raises(
+            AirflowException, match='Error occured during step error_solid.transform'
+        ):
+            task.execute(context)
