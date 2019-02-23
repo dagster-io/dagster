@@ -440,8 +440,12 @@ def _dm_solid_transform(name, notebook_path):
             with open(output_log_path, 'a') as f:
                 f.close()
 
-            process = subprocess.Popen(['papermill', intermediate_path, temp_path])
+            process = subprocess.Popen(
+                ['papermill', '--log-output', '--log-level', 'ERROR', intermediate_path, temp_path],
+                stderr=subprocess.PIPE,
+            )
 
+            _stdout, stderr = process.communicate()
             while process.poll() is None:  # while subprocess alive
                 if transform_context.event_callback:
                     with open(output_log_path, 'r') as ff:
@@ -463,7 +467,7 @@ def _dm_solid_transform(name, notebook_path):
             if process.returncode != 0:
                 raise DagstermillError(
                     'There was an error when Papermill tried to execute the notebook. '
-                    'The process stderr is {stderr}'.format(stderr=process.stderr)
+                    'The process stderr is \'{stderr}\''.format(stderr=stderr)
                 )
 
             output_nb = pm.read_notebook(temp_path)

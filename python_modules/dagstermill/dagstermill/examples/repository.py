@@ -118,13 +118,21 @@ def define_test_notebook_dag_pipeline():
     )
 
 
+def define_error_pipeline():
+    return PipelineDefinition(
+        name='error_pipeline',
+        solids=[dm.define_dagstermill_solid('error_solid', nb_test_path('error_notebook'))],
+    )
+
+
 def define_example_repository():
     return RepositoryDefinition(
         name='notebook_repo',
         pipeline_dict={
-            'test_notebook_dag': define_test_notebook_dag_pipeline,
-            'test_add_pipeline': define_add_pipeline,
-            'hello_world_with_output_pipeline': define_hello_world_with_output_pipeline,
+            'error_pipeline': define_error_pipeline,
             'hello_world_pipeline': define_hello_world_pipeline,
+            'hello_world_with_output_pipeline': define_hello_world_with_output_pipeline,
+            'test_add_pipeline': define_add_pipeline,
+            'test_notebook_dag': define_test_notebook_dag_pipeline,
         },
     )
