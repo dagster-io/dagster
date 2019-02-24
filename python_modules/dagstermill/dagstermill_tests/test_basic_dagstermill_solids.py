@@ -75,4 +75,3 @@ def test_tutorial_pipeline():
         pipeline, {'context': {'default': {'config': {'log_level': 'DEBUG'}}}}
     )
     assert result.success
-
