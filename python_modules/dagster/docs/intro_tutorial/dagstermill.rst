@@ -13,7 +13,7 @@ There are a few stages of data scientists using notebooks in the wild.
 Typically, only stage 3 would be involved in a production pipeline. However, with dagstermill, if you have a notebook in stage 2 (i.e. cells run sequentially to produce the desired output), with minimal effort you can register this notebook as a solid in the pipeline and use the notebook driven solid as a unit of computation that takes in inputs and produces outputs (that can be consumed by later stages of the pipeline).
 
 ------------------------------------------
-An (Very Simple) Pipeline with a Notebook
+A (Very Simple) Pipeline with a Notebook
 ------------------------------------------
 
 Say you have a pipeline as shown below:
@@ -53,7 +53,7 @@ The function ``dm.define_dagstermill_solid()`` returns an object of type ``Solid
 
 * ``name``: the name of the solid 
 * ``notebook_path``: the location of the notebook so that the dagster execution engine can run the code in the notebook
-* ``inputs``, ``outputs``: the named and typed inputs and ouputs of the notebook as a solid
+* ``inputs``, ``outputs``: the named and typed inputs and outputs of the notebook as a solid
 
 However, we also have to add some boilerplate to the notebook itself to make sure it plays nice with the dagstermill framework. The final notebook with the boilerplate looks as follows.
 
@@ -72,7 +72,7 @@ Output Notebooks & How Dagstermill Works
 
 The way dagstermill works is by auto-injecting a cell that replaces the `parameters`-tagged cell with the 
 runtime values of the inputs and then running the notebook using the `papermill <https://github.com/nteract/papermill/>`_ library. 
-A nice side-effect of using the papermill library to run the notebook is that the output is contained in an "output notebook", 
+A nice side effect of using the papermill library to run the notebook is that the output is contained in an "output notebook", 
 and the source notebook remains unchanged. Since the output notebook is itself a valid Jupyter notebook, debugging can be done within the notebook environment! 
 
 The execution log contains the path to the output notebook so that you can access it after execution to examine and potentially debug the output. Within dagit we also provide a link to the output notebook, as shown below.

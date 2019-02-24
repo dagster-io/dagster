@@ -127,7 +127,7 @@ def define_error_pipeline():
     )
 
 
-DataFrame = as_dagster_type(pd.DataFrame)
+from dagster_pandas import DataFrame
 
 
 @solid_definition
