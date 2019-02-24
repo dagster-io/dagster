@@ -11,6 +11,7 @@ from dagstermill.examples.repository import (
     define_hello_world_pipeline,
     define_hello_world_with_output_pipeline,
     define_test_notebook_dag_pipeline,
+    define_tutorial_pipeline,
 )
 
 
@@ -65,3 +66,13 @@ def test_notebook_dag():
 def test_error_notebook():
     with pytest.raises(DagstermillError, match='Someone set up us the bomb'):
         execute_pipeline(define_error_pipeline())
+
+
+@notebook_test
+def test_tutorial_pipeline():
+    pipeline = define_tutorial_pipeline()
+    result = execute_pipeline(
+        pipeline, {'context': {'default': {'config': {'log_level': 'DEBUG'}}}}
+    )
+    assert result.success
+
