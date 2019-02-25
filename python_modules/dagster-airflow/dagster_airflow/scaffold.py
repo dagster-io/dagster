@@ -289,7 +289,12 @@ def _make_static_scaffold(pipeline_name, env_config, execution_plan, image, edit
         printer.blank_line()
 
         printer.line('from airflow import DAG')
-        printer.line('from airflow.operators.dagster_plugin import DagsterOperator')
+        printer.line('try:')
+        with printer.with_indent():
+            printer.line('from airflow.operators.dagster_plugin import DagsterOperator')
+        printer.line('except (ModuleNotFoundError, ImportError):')
+        with printer.with_indent():
+            printer.line('from dagster_airflow import DagsterOperator')
         printer.blank_line()
         printer.blank_line()
 

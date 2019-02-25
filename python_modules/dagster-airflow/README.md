@@ -20,7 +20,7 @@ extra steps after you've defined your pipelines in the ordinary way:
 
 1. Containerize your repository
 2. Set up an S3 bucket for dagster-airflow
-3. Install the dagster-airflow plugin
+3. Optionally, install the dagster-airflow plugin
 4. Define your pipeline as an Airflow DAG
 
 ## Containerizing your repository
@@ -116,10 +116,13 @@ required to access the S3 bucket for dagster-airflow.
 
 ## Installing the dagster-airflow plugin
 
-Airflow needs to know about our the custom `DagsterOperator` that we'll use to execute steps in
-containerized pipelines. We use Airflow's [plugin machinery](https://airflow.apache.org/plugins.html)
-to accomplish this.
+If you prefer not to use Airflow plugins, you can skip this step and  import the `DagsterOperator`
+directly. Be sure that the dagster-airflow package is installed in the Python environment in which
+you run Airflow:
 
+    from dagster_airflow import DagsterOperator
+
+Alternatively, we can use Airflow's [plugin machinery](https://airflow.apache.org/plugins.html).
 Airflow looks for plugins in a magic directory, `$AIRFLOW_HOME/plugins/`. The dagster plugin is
 defined in `dagster_airflow/dagster_plugin.py`. You can copy that file to the plugin directory
 yourself, or just run our convenience CLI tool:
