@@ -1057,11 +1057,6 @@ snapshots['test_build_all_docs 5'] = '''
 </ul>
 </div>
 </div>
-<div class="section" id="dagstermill">
-<h1>Dagstermill<a class="headerlink" href="#dagstermill" title="Permalink to this headline">¶</a></h1>
-<div class="toctree-wrapper compound" id="dagstermill-productionizing-jupyter-notebooks">
-</div>
-</div>
 <div class="section" id="api-reference">
 <h1>API Reference<a class="headerlink" href="#api-reference" title="Permalink to this headline">¶</a></h1>
 <div class="toctree-wrapper compound" id="id2">
@@ -2040,16 +2035,6 @@ Intro Tutorial
   intro_tutorial/reusable_solids
   intro_tutorial/unittesting
   intro_tutorial/dagstermill
-
-Dagstermill
-===========
-
-.. toctree::
-  :maxdepth: 1
-  :name: Dagstermill: Productionizing Jupyter Notebooks
-
-  dagstermill_tutorial/hello_world
-  dagstermill_tutorial/CLI
 
 API Reference
 ================
