@@ -24,6 +24,11 @@ if sys.version_info.major >= 3:
 else:
     from StringIO import StringIO  # pylint:disable=import-error
 
+if sys.version_info.major >= 3:
+    from json.decoder import JSONDecodeError
+else:
+    JSONDecodeError = ValueError
+
 
 # We don't use six here to avoid taking the dependency
 STRING_TYPES = ("".__class__, u"".__class__)
@@ -490,7 +495,7 @@ class DagsterOperator(ModifiedDockerOperator):
                     res['data']['startSubplanExecution']['stepEvents'][0]['errorMessage']
                 )
             return res
-        except json.decoder.JSONDecodeError:
+        except JSONDecodeError:
             raise AirflowException(raw_res)
         finally:
             self._run_id = None
