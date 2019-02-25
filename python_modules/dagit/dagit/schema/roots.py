@@ -174,7 +174,7 @@ class DauphinStartSubplanExecution(dauphin.Mutation):
                 kwargs.get('config'),
                 list(
                     map(
-                        lambda data: model.StepExecution(
+                        lambda data: model.step_executions_from_graphql_inputs(
                             data['stepKey'],
                             data.get('marshalledInputs', []),
                             data.get('marshalledOutputs', []),

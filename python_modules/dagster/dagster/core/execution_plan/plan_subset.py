@@ -146,6 +146,19 @@ class MarshalledOutput(namedtuple('_MarshalledOutput', 'output_name marshalling_
         )
 
 
+MarshalledInput = namedtuple('MarshalledInput', 'input_name key')
+
+
+class StepExecution(namedtuple('_StepExecution', 'step_key marshalled_inputs marshalled_outputs')):
+    def __new__(cls, step_key, marshalled_inputs, marshalled_outputs):
+        return super(StepExecution, cls).__new__(
+            cls,
+            check.str_param(step_key, 'step_key'),
+            check.list_param(marshalled_inputs, 'marshalled_inputs', of_type=MarshalledInput),
+            check.list_param(marshalled_outputs, 'marshalled_outputs', of_type=MarshalledOutput),
+        )
+
+
 class OutputStepFactoryEntry(namedtuple('_OutputStepFactoryEntry', 'output_name step_factory_fn')):
     def __new__(cls, output_name, step_factory_fn):
         return super(OutputStepFactoryEntry, cls).__new__(
