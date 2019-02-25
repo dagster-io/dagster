@@ -52,7 +52,7 @@ def list_pull(alist, key):
     return list(map(lambda elem: getattr(elem, key), alist))
 
 
-def _get_inputs_to_marshal(step_executions):
+def input_marshalling_dict_from_step_executions(step_executions):
     check.list_param(step_executions, 'step_executions', of_type=StepExecution)
     inputs_to_marshal = defaultdict(dict)
     for step_execution in step_executions:
@@ -82,6 +82,13 @@ def _to_serializable_step_event(step_event):
 
 
 class PipelineFactory(six.with_metaclass(ABCMeta)):  # pylint: disable=no-init
+    '''
+    Made this a factory protocol so that we can reconstruct pipelines in other
+    processes through different means. We may want to reconstruct a pipeline
+    from the information that is the passed to dagit rather than relying
+    on pickling to remote a function over to another process. 
+    '''
+
     @abstractmethod
     def construct_pipeline(self):
         pass
@@ -106,7 +113,7 @@ def execute_serializable_execution_plan(
         pipeline_factory.construct_pipeline(),
         environment_dict=environment_dict,
         step_keys=list_pull(step_executions, 'step_key'),
-        inputs_to_marshal=_get_inputs_to_marshal(step_executions),
+        inputs_to_marshal=input_marshalling_dict_from_step_executions(step_executions),
         outputs_to_marshal={se.step_key: se.marshalled_outputs for se in step_executions},
         execution_metadata=ExecutionMetadata(
             run_id=execution_metadata.run_id, tags=execution_metadata.tags

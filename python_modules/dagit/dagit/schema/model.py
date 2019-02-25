@@ -25,10 +25,11 @@ from dagster.core.execution import (
 )
 
 from dagster.core.serializable import (
-    execute_serializable_execution_plan,
+    ForkedProcessPipelineFactory,
     SerializableExecutionMetadata,
     SerializableStepEvents,
-    ForkedProcessPipelineFactory,
+    execute_serializable_execution_plan,
+    input_marshalling_dict_from_step_executions,
 )
 from dagster.core.types.evaluator import evaluate_config_value, EvaluateValueResult
 
@@ -408,14 +409,13 @@ def _execute_marshalling_or_error(args, dauphin_pipeline, evaluate_value_result)
     environment_dict = evaluate_value_result.value
 
     try:
-        inputs_to_marshal = _get_inputs_to_marshal(args.step_executions)
         outputs_to_marshal = {se.step_key: se.marshalled_outputs for se in args.step_executions}
         execution_plan = create_execution_plan(
             dauphin_pipeline.get_dagster_pipeline(),
             environment_dict=environment_dict,
             execution_metadata=args.execution_metadata,
             subset_info=ExecutionPlanSubsetInfo.with_input_marshalling(
-                args.step_keys, inputs_to_marshal
+                args.step_keys, input_marshalling_dict_from_step_executions(args.step_executions)
             ),
             added_outputs=ExecutionPlanAddedOutputs.with_output_marshalling(outputs_to_marshal),
         )
@@ -497,12 +497,3 @@ def _create_dauphin_step_event(execution_plan, step_event):
 def _type_of(args, type_name):
     return args.graphene_info.schema.type_named(type_name)
 
-
-# TODO include from .serializable
-def _get_inputs_to_marshal(step_executions):
-    check.list_param(step_executions, 'step_executions', of_type=StepExecution)
-    inputs_to_marshal = defaultdict(dict)
-    for step_execution in step_executions:
-        for input_name, marshalling_key in step_execution.marshalled_inputs:
-            inputs_to_marshal[step_execution.step_key][input_name] = marshalling_key
-    return dict(inputs_to_marshal)
