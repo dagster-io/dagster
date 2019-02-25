@@ -1,5 +1,4 @@
 import os
-import pandas as pd
 
 import dagstermill as dm
 
@@ -15,7 +14,6 @@ from dagster import (
     check,
     lambda_solid,
     solid,
-    as_dagster_type,
 )
 
 from dagster import RepositoryDefinition
