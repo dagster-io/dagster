@@ -9,14 +9,31 @@ import re
 import subprocess
 
 import click
+import distutils
 import packaging.version
 
 from itertools import groupby
 
-PUBLISH_COMMAND = '''rm -rf dist/ && {additional_steps}\\
-python setup.py sdist bdist_wheel{nightly} && \\
-twine upload dist/*
-'''
+
+def _which(exe):
+    # https://github.com/PyCQA/pylint/issues/73
+    return distutils.spawn.find_executable(exe)  # pylint: disable=no-member
+
+
+def get_publish_comands(additional_steps=None, nightly=False):
+    publish_commands = (
+        ['rm -rf dist']
+        + (additional_steps or [])
+        + [
+            'python setup.py sdist bdist_wheel{nightly}'.format(
+                nightly=' --nightly' if nightly else ''
+            ),
+            'twine upload dist/*',
+        ]
+    )
+
+    return publish_commands
+
 
 DAGIT_ADDITIONAL_STEPS = '''pushd ../../js_modules/dagit; \\
 yarn install && \\
@@ -62,19 +79,13 @@ def pushd_module(module_name):
 
 def publish_module(module, nightly=False, additional_steps=''):
     with pushd_module(module) as cwd:
-        command = PUBLISH_COMMAND.format(
-            additional_steps=additional_steps, nightly=' --nightly' if nightly else ''
-        )
-        print('About to run command: {}'.format(command))
-        process = subprocess.Popen(
-            command,
-            stderr=subprocess.PIPE,
-            cwd=cwd,
-            shell=True,
-            stdout=subprocess.PIPE,
-        )
-        for line in iter(process.stdout.readline, b''):
-            print(line.decode('utf-8'))
+        for command in get_publish_comands(additional_steps=additional_steps, nightly=nightly):
+            print('About to run command: {}'.format(command))
+            process = subprocess.Popen(
+                command, stderr=subprocess.PIPE, cwd=cwd, shell=True, stdout=subprocess.PIPE
+            )
+            for line in iter(process.stdout.readline, b''):
+                print(line.decode('utf-8'))
 
 
 def publish_dagster(nightly):
@@ -403,6 +414,21 @@ PyPI, preferably in the form of a ~/.pypirc file as follows:
     password: <password>
 '''
     )
+    assert '\nwheel' in subprocess.check_output(['pip', 'list']), (
+        'You must have wheel installed in order to build packages for release -- run '
+        '`pip install wheel`.'
+    )
+
+    assert _which('twine'), (
+        'You must have twin installed in order to upload packages to PyPI -- run '
+        '`pip install twine`.'
+    )
+
+    assert _which('yarn'), (
+        'You must have yarn installed in order to build dagit for release -- see '
+        'https://yarnpkg.com/lang/en/docs/install/'
+    )
+
     if not nightly:
         print(
             'Checking that module versions are in lockstep and match git tag on most recent commit...'

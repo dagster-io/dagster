@@ -1,3 +1,4 @@
 click==7.0
 packaging==18.0
 twine==1.12.1
+wheel==0.33.1
