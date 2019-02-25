@@ -46,6 +46,8 @@ def _do_setup(name='dagstermill'):
             'future>=0.16.0',
             'ipykernel>=4.9.0',
             'papermill>=0.18.0',
+            'scikit-learn>=0.20.2',
+            'dagster-pandas',
         ],
         entry_points={"console_scripts": ['dagstermill = dagstermill.cli:main']},
     )

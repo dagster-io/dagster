@@ -125,6 +125,46 @@ def define_error_pipeline():
     )
 
 
+from dagster_pandas import DataFrame
+
+
+@solid_definition
+def clean_data_solid():
+    return dm.define_dagstermill_solid(
+        'clean_data', nb_test_path('clean_data'), outputs=[OutputDefinition(DataFrame)]
+    )
+
+
+@solid_definition
+def LR_solid():
+    return dm.define_dagstermill_solid(
+        'linear_regression',
+        nb_test_path('tutorial_LR'),
+        inputs=[InputDefinition(name='df', dagster_type=DataFrame)],
+    )
+
+
+@solid_definition
+def RF_solid():
+    return dm.define_dagstermill_solid(
+        'random_forest_regression',
+        nb_test_path('tutorial_RF'),
+        inputs=[InputDefinition(name='df', dagster_type=DataFrame)],
+    )
+
+
+def define_tutorial_pipeline():
+    return PipelineDefinition(
+        name='tutorial_pipeline',
+        solids=[clean_data_solid, LR_solid, RF_solid],
+        dependencies={
+            SolidInstance('clean_data'): {},
+            SolidInstance('linear_regression'): {'df': DependencyDefinition('clean_data')},
+            SolidInstance('random_forest_regression'): {'df': DependencyDefinition('clean_data')},
+        },
+    )
+
+
 def define_example_repository():
     return RepositoryDefinition(
         name='notebook_repo',
@@ -134,5 +174,6 @@ def define_example_repository():
             'hello_world_with_output_pipeline': define_hello_world_with_output_pipeline,
             'test_add_pipeline': define_add_pipeline,
             'test_notebook_dag': define_test_notebook_dag_pipeline,
+            'tutorial_pipeline': define_tutorial_pipeline,
         },
     )
