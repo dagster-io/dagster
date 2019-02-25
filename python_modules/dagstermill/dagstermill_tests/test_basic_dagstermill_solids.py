@@ -66,6 +66,9 @@ def test_notebook_dag():
 def test_error_notebook():
     with pytest.raises(DagstermillError, match='Someone set up us the bomb'):
         execute_pipeline(define_error_pipeline())
+    res = execute_pipeline(define_error_pipeline(), throw_on_user_error=False)
+    assert not res.success
+    assert res.step_event_list[0].event_type.value == 'STEP_FAILURE'
 
 
 @notebook_test
