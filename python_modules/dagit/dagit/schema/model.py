@@ -8,7 +8,7 @@ from graphql.execution.base import ResolveInfo
 
 from dagster import ExecutionMetadata, check
 from dagster.core.execution_plan.objects import ExecutionStepEvent
-from dagster.core.execution_plan.plan_subset import MarshalledOutput
+from dagster.core.execution_plan.plan_subset import MarshalledOutput, MarshalledInput, StepExecution
 
 from dagster.core.errors import (
     DagsterExecutionStepNotFoundError,
@@ -317,24 +317,19 @@ def _config_or_error_from_pipeline(graphene_info, pipeline, env_config):
         return EitherValue(validated_config)
 
 
-MarshalledInput = namedtuple('MarshalledInput', 'input_name key')
-
-
-class StepExecution(namedtuple('_StepExecution', 'step_key marshalled_inputs marshalled_outputs')):
-    def __new__(cls, step_key, marshalled_inputs, marshalled_outputs):
-        return super(StepExecution, cls).__new__(
-            cls,
-            check.str_param(step_key, 'step_key'),
-            list(map(lambda inp: MarshalledInput(**inp), marshalled_inputs)),
-            list(
-                map(
-                    lambda out: MarshalledOutput(
-                        output_name=out['output_name'], marshalling_key=out['key']
-                    ),
-                    marshalled_outputs,
-                )
-            ),
-        )
+def step_executions_from_graphql_inputs(step_key, marshalled_inputs, marshalled_outputs):
+    return StepExecution(
+        step_key,
+        list(map(lambda inp: MarshalledInput(**inp), marshalled_inputs)),
+        list(
+            map(
+                lambda out: MarshalledOutput(
+                    output_name=out['output_name'], marshalling_key=out['key']
+                ),
+                marshalled_outputs,
+            )
+        ),
+    )
 
 
 class SubplanExecutionArgs(
@@ -403,7 +398,7 @@ def _execute_marshalling_or_error(args, dauphin_pipeline, evaluate_value_result)
         step_events = execute_marshalling(
             dauphin_pipeline.get_dagster_pipeline(),
             step_keys=args.step_keys,
-            inputs_to_marshal=_get_inputs_to_marshal(args),
+            inputs_to_marshal=_get_inputs_to_marshal(args.step_executions),
             outputs_to_marshal={se.step_key: se.marshalled_outputs for se in args.step_executions},
             environment_dict=evaluate_value_result.value,
             execution_metadata=args.execution_metadata,
@@ -480,9 +475,10 @@ def _type_of(args, type_name):
     return args.graphene_info.schema.type_named(type_name)
 
 
-def _get_inputs_to_marshal(args):
+def _get_inputs_to_marshal(step_executions):
+    check.list_param(step_executions, 'step_executions', of_type=StepExecution)
     inputs_to_marshal = defaultdict(dict)
-    for step_execution in args.step_executions:
+    for step_execution in step_executions:
         for input_name, marshalling_key in step_execution.marshalled_inputs:
             inputs_to_marshal[step_execution.step_key][input_name] = marshalling_key
     return dict(inputs_to_marshal)
