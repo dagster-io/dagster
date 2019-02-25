@@ -1057,6 +1057,11 @@ snapshots['test_build_all_docs 5'] = '''
 </ul>
 </div>
 </div>
+<div class="section" id="dagstermill">
+<h1>Dagstermill<a class="headerlink" href="#dagstermill" title="Permalink to this headline">¶</a></h1>
+<div class="toctree-wrapper compound" id="dagstermill-productionizing-jupyter-notebooks">
+</div>
+</div>
 <div class="section" id="api-reference">
 <h1>API Reference<a class="headerlink" href="#api-reference" title="Permalink to this headline">¶</a></h1>
 <div class="toctree-wrapper compound" id="id2">
@@ -2035,6 +2040,16 @@ Intro Tutorial
   intro_tutorial/reusable_solids
   intro_tutorial/unittesting
   intro_tutorial/dagstermill
+
+Dagstermill
+===========
+
+.. toctree::
+  :maxdepth: 1
+  :name: Dagstermill: Productionizing Jupyter Notebooks
+
+  dagstermill_tutorial/hello_world
+  dagstermill_tutorial/CLI
 
 API Reference
 ================
@@ -3366,7 +3381,7 @@ There are a few stages of data scientists using notebooks in the wild.
 Typically, only stage 3 would be involved in a production pipeline. However, with dagstermill, if you have a notebook in stage 2 (i.e. cells run sequentially to produce the desired output), with minimal effort you can register this notebook as a solid in the pipeline and use the notebook driven solid as a unit of computation that takes in inputs and produces outputs (that can be consumed by later stages of the pipeline).
 
 ------------------------------------------
-An (Very Simple) Pipeline with a Notebook
+A (Very Simple) Pipeline with a Notebook
 ------------------------------------------
 
 Say you have a pipeline as shown below:
@@ -3406,7 +3421,7 @@ The function ``dm.define_dagstermill_solid()`` returns an object of type ``Solid
 
 * ``name``: the name of the solid 
 * ``notebook_path``: the location of the notebook so that the dagster execution engine can run the code in the notebook
-* ``inputs``, ``outputs``: the named and typed inputs and ouputs of the notebook as a solid
+* ``inputs``, ``outputs``: the named and typed inputs and outputs of the notebook as a solid
 
 However, we also have to add some boilerplate to the notebook itself to make sure it plays nice with the dagstermill framework. The final notebook with the boilerplate looks as follows.
 
@@ -3425,7 +3440,7 @@ Output Notebooks & How Dagstermill Works
 
 The way dagstermill works is by auto-injecting a cell that replaces the `parameters`-tagged cell with the 
 runtime values of the inputs and then running the notebook using the `papermill <https://github.com/nteract/papermill/>`_ library. 
-A nice side-effect of using the papermill library to run the notebook is that the output is contained in an "output notebook", 
+A nice side effect of using the papermill library to run the notebook is that the output is contained in an "output notebook", 
 and the source notebook remains unchanged. Since the output notebook is itself a valid Jupyter notebook, debugging can be done within the notebook environment! 
 
 The execution log contains the path to the output notebook so that you can access it after execution to examine and potentially debug the output. Within dagit we also provide a link to the output notebook, as shown below.
@@ -23029,8 +23044,8 @@ snapshots['test_build_all_docs 61'] = '''
 <li>Pieces of re-usable code are extracted from a notebook, turned into functions and put in a script (<code class="docutils literal notranslate"><span class="pre">.py</span></code> file)</li>
 </ol>
 <p>Typically, only stage 3 would be involved in a production pipeline. However, with dagstermill, if you have a notebook in stage 2 (i.e. cells run sequentially to produce the desired output), with minimal effort you can register this notebook as a solid in the pipeline and use the notebook driven solid as a unit of computation that takes in inputs and produces outputs (that can be consumed by later stages of the pipeline).</p>
-<div class="section" id="an-very-simple-pipeline-with-a-notebook">
-<h2>An (Very Simple) Pipeline with a Notebook<a class="headerlink" href="#an-very-simple-pipeline-with-a-notebook" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="a-very-simple-pipeline-with-a-notebook">
+<h2>A (Very Simple) Pipeline with a Notebook<a class="headerlink" href="#a-very-simple-pipeline-with-a-notebook" title="Permalink to this headline">¶</a></h2>
 <p>Say you have a pipeline as shown below:</p>
 <img alt="../_images/test_add_pipeline.png" src="../_images/test_add_pipeline.png" />
 <p>This is a very simple pipeline, where the solid <code class="docutils literal notranslate"><span class="pre">return_one</span></code> returns 1 and <code class="docutils literal notranslate"><span class="pre">return_two</span></code> returns 2. The notebook driven solid <code class="docutils literal notranslate"><span class="pre">add_two_numbers</span></code> simply adds two numbers and returns the result, as the name suggests.</p>
@@ -23060,7 +23075,7 @@ snapshots['test_build_all_docs 61'] = '''
 <ul class="simple">
 <li><code class="docutils literal notranslate"><span class="pre">name</span></code>: the name of the solid</li>
 <li><code class="docutils literal notranslate"><span class="pre">notebook_path</span></code>: the location of the notebook so that the dagster execution engine can run the code in the notebook</li>
-<li><code class="docutils literal notranslate"><span class="pre">inputs</span></code>, <code class="docutils literal notranslate"><span class="pre">outputs</span></code>: the named and typed inputs and ouputs of the notebook as a solid</li>
+<li><code class="docutils literal notranslate"><span class="pre">inputs</span></code>, <code class="docutils literal notranslate"><span class="pre">outputs</span></code>: the named and typed inputs and outputs of the notebook as a solid</li>
 </ul>
 <p>However, we also have to add some boilerplate to the notebook itself to make sure it plays nice with the dagstermill framework. The final notebook with the boilerplate looks as follows.</p>
 <img alt="../_images/add_two_numbers.png" src="../_images/add_two_numbers.png" />
@@ -23076,7 +23091,7 @@ snapshots['test_build_all_docs 61'] = '''
 <h2>Output Notebooks &amp; How Dagstermill Works<a class="headerlink" href="#output-notebooks-how-dagstermill-works" title="Permalink to this headline">¶</a></h2>
 <p>The way dagstermill works is by auto-injecting a cell that replaces the <cite>parameters</cite>-tagged cell with the
 runtime values of the inputs and then running the notebook using the <a class="reference external" href="https://github.com/nteract/papermill/">papermill</a> library.
-A nice side-effect of using the papermill library to run the notebook is that the output is contained in an “output notebook”,
+A nice side effect of using the papermill library to run the notebook is that the output is contained in an “output notebook”,
 and the source notebook remains unchanged. Since the output notebook is itself a valid Jupyter notebook, debugging can be done within the notebook environment!</p>
 <p>The execution log contains the path to the output notebook so that you can access it after execution to examine and potentially debug the output. Within dagit we also provide a link to the output notebook, as shown below.</p>
 <img alt="../_images/output_notebook.png" src="../_images/output_notebook.png" />
