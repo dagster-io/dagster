@@ -57,6 +57,17 @@ mutation(
     stepExecutions: $stepExecutions,
   ) {{
     __typename
+    ... on PipelineConfigValidationInvalid {{
+      pipeline {{
+        name
+      }}
+      errors {{
+        __typename
+        message
+        path
+        reason
+      }}
+    }}
     ... on StartSubplanExecutionSuccess {{
       pipeline {{
         name
@@ -490,6 +501,7 @@ class DagsterOperator(ModifiedDockerOperator):
             self.log.debug('Executing with query: {query}'.format(query=self.query))
             raw_res = super(DagsterOperator, self).execute(context)
             res = json.loads(raw_res)
+            raise Exception(res)
             if res['data']['startSubplanExecution']['hasFailures']:
                 raise AirflowException(
                     res['data']['startSubplanExecution']['stepEvents'][0]['errorMessage']
