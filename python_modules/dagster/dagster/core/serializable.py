@@ -1,21 +1,49 @@
+from abc import ABCMeta, abstractmethod
 from collections import namedtuple, defaultdict
+
+import six
+
 from dagster import check
 
 from .execution import execute_marshalling
 from .execution_context import ExecutionMetadata
-from .execution_plan.objects import ExecutionStepEvent
+from .execution_plan.objects import ExecutionStepEvent, ExecutionStepEventType
 from .execution_plan.plan_subset import StepExecution
 
 
-SerializableExecutionMetadata = namedtuple('SerializableExecutionMetadata', 'run_id tags')
+class SerializableExecutionMetadata(namedtuple('_SerializableExecutionMetadata', 'run_id tags')):
+    def __new__(cls, run_id, tags):
+        return super(SerializableExecutionMetadata, cls).__new__(
+            cls,
+            check.str_param(run_id, 'run_id'),
+            check.dict_param(tags, 'tags', key_type=str, value_type=str),
+        )
 
-SerializableStepOutputEvent = namedtuple(
-    'SerializableStepOutputEvent', 'event_type step_key output_name value_repr'
-)
 
-SerializableStepFailureEvent = namedtuple(
-    'SerializableStepFailureEvent', 'event_type step_key error_message'
-)
+class SerializableStepOutputEvent(
+    namedtuple('_SerializableStepOutputEvent', 'event_type step_key output_name value_repr')
+):
+    def __new__(cls, event_type, step_key, output_name, value_repr):
+        return super(SerializableStepOutputEvent, cls).__new__(
+            cls,
+            check.inst_param(event_type, 'event_type', ExecutionStepEventType),
+            check.str_param(step_key, 'step_key'),
+            check.str_param(output_name, 'output_name'),
+            check.str_param(value_repr, 'value_repr'),
+        )
+
+
+class SerializableStepFailureEvent(
+    namedtuple('_SerializableStepFailureEvent', 'event_type step_key error_message')
+):
+    def __new__(cls, event_type, step_key, error_message):
+        return super(SerializableStepFailureEvent, cls).__new__(
+            cls,
+            check.inst_param(event_type, 'event_type', ExecutionStepEventType),
+            check.str_param(step_key, 'step_key'),
+            check.str_param(error_message, 'error_message'),
+        )
+
 
 SerializableStepEvents = (SerializableStepOutputEvent, SerializableStepFailureEvent)
 
@@ -53,16 +81,29 @@ def _to_serializable_step_event(step_event):
     check.failed('Unsupported step_event type {}'.format(step_event))
 
 
-def execute_serializable_execution_plan(
-    pipeline_fn, environment_dict, execution_metadata, step_executions
+class PipelineFactory(six.with_metaclass(ABCMeta)):  # pylint: disable=no-init
+    @abstractmethod
+    def construct_pipeline(self):
+        pass
+
+
+class ForkedProcessPipelineFactory(
+    PipelineFactory, namedtuple('_ForkedProcessPipelineFactory', 'pipeline_fn')
 ):
-    check.callable_param(pipeline_fn, 'pipeline_fn')
+    def construct_pipeline(self):
+        return self.pipeline_fn()
+
+
+def execute_serializable_execution_plan(
+    pipeline_factory, environment_dict, execution_metadata, step_executions
+):
+    check.inst_param(pipeline_factory, 'pipeline_factory', PipelineFactory)
     check.dict_param(environment_dict, 'enviroment_dict', key_type=str)
     check.inst_param(execution_metadata, 'execution_metadata', SerializableExecutionMetadata)
     check.list_param(step_executions, 'step_executions', of_type=StepExecution)
 
     step_events = execute_marshalling(
-        pipeline_fn(),
+        pipeline_factory.construct_pipeline(),
         environment_dict=environment_dict,
         step_keys=list_pull(step_executions, 'step_key'),
         inputs_to_marshal=_get_inputs_to_marshal(step_executions),

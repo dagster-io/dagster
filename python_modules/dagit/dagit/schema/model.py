@@ -28,6 +28,7 @@ from dagster.core.serializable import (
     execute_serializable_execution_plan,
     SerializableExecutionMetadata,
     SerializableStepEvents,
+    ForkedProcessPipelineFactory,
 )
 from dagster.core.types.evaluator import evaluate_config_value, EvaluateValueResult
 
@@ -454,7 +455,7 @@ def _execute_marshalling_or_error(args, dauphin_pipeline, evaluate_value_result)
     check.invariant(not args.execution_metadata.event_callback)
 
     step_events = execute_serializable_execution_plan(
-        dauphin_pipeline.get_dagster_pipeline,
+        ForkedProcessPipelineFactory(pipeline_fn=dauphin_pipeline.get_dagster_pipeline),
         environment_dict=environment_dict,
         execution_metadata=SerializableExecutionMetadata(
             run_id=args.execution_metadata.run_id, tags=args.execution_metadata.tags
