@@ -1,5 +1,5 @@
 from __future__ import absolute_import
-from collections import defaultdict, namedtuple
+from collections import namedtuple
 import sys
 import uuid
 
@@ -496,4 +496,3 @@ def _create_dauphin_step_event(execution_plan, step_event):
 
 def _type_of(args, type_name):
     return args.graphene_info.schema.type_named(type_name)
-
