@@ -475,6 +475,7 @@ def _type_of(args, type_name):
     return args.graphene_info.schema.type_named(type_name)
 
 
+# TODO include from .serializable
 def _get_inputs_to_marshal(step_executions):
     check.list_param(step_executions, 'step_executions', of_type=StepExecution)
     inputs_to_marshal = defaultdict(dict)
