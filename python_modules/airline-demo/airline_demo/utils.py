@@ -5,7 +5,6 @@ import boto3
 import sqlalchemy
 
 from botocore.handlers import disable_signing
-from pyspark.sql import SparkSession
 
 
 def mkdir_p(newdir, mode=0o777):
@@ -16,21 +15,6 @@ def mkdir_p(newdir, mode=0o777):
         # Reraise the error unless it's about an already existing directory
         if err.errno != errno.EEXIST or not os.path.isdir(newdir):
             raise
-
-
-def create_spark_session_local():
-    # Need two versions of this, one for test/local and one with a
-    # configurable cluster
-    spark = (
-        SparkSession.builder.appName("AirlineDemo")
-        .config(
-            'spark.jars.packages',
-            'com.databricks:spark-avro_2.11:3.0.0,com.databricks:spark-redshift_2.11:2.0.1,'
-            'com.databricks:spark-csv_2.11:1.5.0,org.postgresql:postgresql:42.2.5',
-        )
-        .getOrCreate()
-    )
-    return spark
 
 
 def create_s3_session(signed=True):
