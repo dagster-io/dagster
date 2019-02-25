@@ -1,15 +1,13 @@
 from dagster import check
 
+from dagster.core.definitions import ExpectationDefinition, InputDefinition, OutputDefinition, Solid
+from dagster.core.errors import DagsterExpectationFailedError
 from dagster.core.execution_context import (
     SystemStepExecutionContext,
     SystemPipelineExecutionContext,
 )
-
 from dagster.core.user_context import ExpectationExecutionContext
-
-from dagster.core.definitions import ExpectationDefinition, InputDefinition, OutputDefinition, Solid
-
-from dagster.core.errors import DagsterExpectationFailedError
+from dagster.utils import merge_dicts
 
 from .objects import (
     ExecutionStep,
