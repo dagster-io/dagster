@@ -40,10 +40,17 @@ def _do_setup(name='dagster-airflow'):
             # standard python 2/3 compatability things
             'enum34>=1.1.6',
             'future>=0.16.0',
+            'six>=1.11.0',
+            # cli
+            'click>=6.7',
+            # airflow
             'apache-airflow==1.10.2',
+            # dagster
             'dagster>=0.2.0',
+            # docker api
             'docker==3.7.0',
         ],
+        entry_points={"console_scripts": ['dagster-airflow = dagster_airflow.cli:main']},
     )
 
 
