@@ -10,7 +10,6 @@ import subprocess
 import uuid
 
 import nbformat
-
 import six
 
 from future.utils import raise_from
@@ -18,6 +17,7 @@ from future.utils import raise_from
 import papermill as pm
 from papermill.translators import translate_parameters
 from papermill.iorw import load_notebook_node, write_ipynb
+
 from dagster import (
     DagsterRuntimeCoercionError,
     InputDefinition,
@@ -29,13 +29,10 @@ from dagster import (
     check,
     types,
 )
-
-from dagster.core.types.marshal import serialize_to_file, deserialize_from_file
-from dagster.core.types.runtime import RuntimeType
-
 from dagster.core.definitions.dependency import Solid
-from dagster.core.events import construct_json_event_logger, EventRecord, EventType
 from dagster.core.definitions.environment_configs import construct_environment_config
+from dagster.core.errors import DagsterSubprocessExecutionError
+from dagster.core.events import construct_json_event_logger, EventRecord, EventType
 from dagster.core.execution import yield_pipeline_execution_context
 from dagster.core.execution_context import (
     DagsterLog,
@@ -44,6 +41,8 @@ from dagster.core.execution_context import (
     TransformExecutionContext,
     AbstractTransformExecutionContext,
 )
+from dagster.core.types.marshal import serialize_to_file, deserialize_from_file
+from dagster.core.types.runtime import RuntimeType
 
 # magic incantation for syncing up notebooks to enclosing virtual environment.
 # I don't claim to understand it.
@@ -109,7 +108,7 @@ class DagstermillInNotebookExecutionContext(AbstractTransformExecutionContext):
         check.not_implemented('Cannot access solid in dagstermill exploratory context')
 
 
-class DagstermillError(Exception):
+class DagstermillError(DagsterSubprocessExecutionError):
     pass
 
 
