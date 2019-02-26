@@ -495,7 +495,7 @@ class DagsterOperator(ModifiedDockerOperator):
                     res['data']['startSubplanExecution']['stepEvents'][0]['errorMessage']
                 )
             return res
-        except JSONDecodeError:
+        except JSONDecodeError:  # This is the bad case where we don't get a GraphQL response
             raise AirflowException(raw_res)
         finally:
             self._run_id = None
