@@ -6,6 +6,7 @@ airflow.operators.dagster_plugin.DagsterOperator available.
 from __future__ import print_function
 
 import ast
+import errno
 import json
 import sys
 
@@ -501,8 +502,15 @@ class DagsterOperator(ModifiedDockerOperator):
             self.log.debug('Executing with query: {query}'.format(query=self.query))
             raw_res = super(DagsterOperator, self).execute(context)
             res = json.loads(raw_res)
-            raise Exception(res)
-            if res['data']['startSubplanExecution']['hasFailures']:
+
+            res_type = res['data']['startSubplanExecution']['__typename']
+
+            if res_type == 'PipelineConfigValidationInvalid':
+                errors = [err['message'] for err in res['data']['startSubplanExecution']['errors']]
+                raise AirflowException(
+                    'Pipeline configuration invalid:\n{errors}'.format(errors='\n'.join(errors))
+                )
+            elif res['data']['startSubplanExecution']['hasFailures']:
                 raise AirflowException(
                     res['data']['startSubplanExecution']['stepEvents'][0]['errorMessage']
                 )
