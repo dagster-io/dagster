@@ -187,10 +187,13 @@ def ensure_dir(file_path):
 
 class PipelineRunObservableSubscribe(object):
     def __init__(self, pipeline_run, after_cursor=None):
-        self.debouncing_queue = DebouncingLogQueue()
+        self.log_sequence = LogSequence()
         self.pipeline_run = pipeline_run
         self.observer = None
         self.after_cursor = after_cursor or -1
+        self.lock = gevent.lock.Semaphore()
+        self.flush_scheduled = False
+        self.flush_after = 0.75
 
     def __call__(self, observer):
         self.observer = observer
@@ -200,80 +203,20 @@ class PipelineRunObservableSubscribe(object):
         self.pipeline_run.subscribe(self)
 
     def handle_new_event(self, new_event):
-        self.debouncing_queue.enqueue(new_event)
-        gevent.spawn(self._enqueue_flush_logs)
+        with self.lock:
+            self.log_sequence = self.log_sequence.append(new_event)
+            if not self.flush_scheduled:
+                self.flush_scheduled = True
+                gevent.spawn(self._flush_logs_after_delay)
 
-    def _enqueue_flush_logs(self):
-        events = self.debouncing_queue.attempt_dequeue()
-        if events:
-            self.observer.on_next(events)
+    def _flush_logs_after_delay(self):
+        gevent.sleep(self.flush_after)
+        with self.lock:
+            self.observer.on_next(self.log_sequence)
+            self.log_sequence = LogSequence()
+            self.flush_scheduled = False
 
 
 class LogSequence(pyrsistent.CheckedPVector):
     __type__ = EventRecord
 
-
-class DebouncingLogQueue(object):
-    '''
-    A queue that debounces dequeuing operation
-    '''
-
-    def __init__(self, timeout_length=1.0, sleep_length=0.1):
-        self._log_queue_lock = gevent.lock.Semaphore()
-        self._log_sequence = LogSequence()
-        self._is_dequeueing_blocked = False
-        self._queue_timeout = time.time()
-        self._timeout_length = check.float_param(timeout_length, 'timeout_length')
-        self._sleep_length = check.float_param(sleep_length, 'sleep_length')
-
-    def attempt_dequeue(self):
-        '''
-        Attempt to dequeue from queue. Will block first call to this until the
-        timeout_length has elapsed from last enqueue. Subsequent calls return
-        empty list, until the dequeing timeout happens.
-        '''
-        with self._log_queue_lock:
-            if self._is_dequeueing_blocked:
-                return LogSequence()
-            else:
-                self._is_dequeueing_blocked = True
-
-        # wait till we have elapsed timeout_length seconds from first event, while
-        # letting other gevent threads do the work (sleep_length is the chosen sleep cycle)
-        while True:
-            queue_timeout = self._threadsafe_read_queue_timeout()
-
-            # Queue timeout being none indicates that someone
-            # else has emptied the queue without another event
-            # being *enqueued*
-            if queue_timeout is None:
-                check.invariant(
-                    not self._log_sequence,
-                    (
-                        'queue_timeout is None should correspond to the state where another '
-                        'greenlet has emptied the queue and no one other greenlet has enqueued'
-                    ),
-                )
-                return LogSequence()
-            else:
-                if (time.time() - queue_timeout) >= self._timeout_length:
-                    break
-
-            gevent.sleep(self._sleep_length)
-
-        with self._log_queue_lock:
-            events = self._log_sequence
-            self._log_sequence = LogSequence()
-            self._is_dequeueing_blocked = False
-            self._queue_timeout = None
-            return events
-
-    def _threadsafe_read_queue_timeout(self):
-        with self._log_queue_lock:
-            return copy.copy(self._queue_timeout)
-
-    def enqueue(self, item):
-        with self._log_queue_lock:
-            if not self._queue_timeout:
-                self._queue_timeout = time.time()
-            self._log_sequence = self._log_sequence.append(item)
