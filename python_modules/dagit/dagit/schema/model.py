@@ -67,7 +67,7 @@ def _get_pipelines(graphene_info):
             )
         except DagsterInvalidDefinitionError:
             return EitherError(
-                graphene_info.schema.type_named('PythonError')(
+                graphene_info.schema.type_named('InvalidDefinitionError')(
                     serializable_error_info_from_exc_info(sys.exc_info())
                 )
             )
