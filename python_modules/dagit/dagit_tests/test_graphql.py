@@ -703,9 +703,7 @@ def define_circular_dependency_pipeline():
                 transform_fn=lambda *_args: None,
             )
         ],
-        dependencies={
-            'csolid': {'num': DependencyDefinition('csolid')},
-        },
+        dependencies={'csolid': {'num': DependencyDefinition('csolid')}},
     )
 
 
@@ -997,10 +995,7 @@ def test_pipelines_or_error():
 
 def test_pipelines_or_error_invalid():
     repository = RepositoryDefinition(
-        name='test',
-        pipeline_dict={
-            'pipeline': define_circular_dependency_pipeline
-        },
+        name='test', pipeline_dict={'pipeline': define_circular_dependency_pipeline}
     )
     context = DagsterGraphQLContext(
         RepositoryContainer(repository=repository),
