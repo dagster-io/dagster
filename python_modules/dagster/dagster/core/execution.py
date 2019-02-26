@@ -45,6 +45,8 @@ from .execution_plan.create import (
     create_execution_plan_core,
 )
 
+from .execution_plan.intermediates_manager import InMemoryIntermediatesManager
+
 from .execution_plan.objects import (
     ExecutionPlan,
     ExecutionStepEvent,
@@ -208,7 +210,7 @@ class SolidExecutionResult(object):
         Returns None if execution result isn't a success.'''
         if self.success and self.transforms:
             return {
-                result.success_data.output_name: result.success_data.value
+                result.step_output_data.output_name: result.step_output_data.get_value()
                 for result in self.transforms
             }
         else:
@@ -228,8 +230,8 @@ class SolidExecutionResult(object):
 
         if self.success:
             for result in self.transforms:
-                if result.success_data.output_name == output_name:
-                    return result.success_data.value
+                if result.step_output_data.output_name == output_name:
+                    return result.step_output_data.get_value()
             raise DagsterInvariantViolationError(
                 (
                     'Did not find result {output_name} in solid {self.solid.name} '
@@ -246,7 +248,7 @@ class SolidExecutionResult(object):
             self.input_expectations, self.output_expectations, self.transforms
         ):
             if result.event_type == ExecutionStepEventType.STEP_FAILURE:
-                return result.failure_data.dagster_error
+                return result.step_failure_data.dagster_error
 
 
 def check_execution_metadata_param(execution_metadata):
@@ -607,7 +609,9 @@ def invoke_executor_on_plan(pipeline_context, execution_plan, throw_on_user_erro
         executor_config = InProcessExecutorConfig()
 
     if isinstance(executor_config, InProcessExecutorConfig):
-        step_events_gen = start_inprocess_executor(pipeline_context, execution_plan)
+        step_events_gen = start_inprocess_executor(
+            pipeline_context, execution_plan, InMemoryIntermediatesManager()
+        )
     elif isinstance(executor_config, MultiprocessExecutorConfig):
         step_events_gen = multiprocess_execute_plan(
             executor_config, pipeline_context, execution_plan

@@ -22,7 +22,7 @@ def test_unit_run_airflow_dag_steps(scaffold_dag):
         for step_input in step.step_inputs:
             assert os.path.isfile(
                 _key_for_marshalled_result(
-                    step_input.prev_output_handle.step.key,
+                    step_input.prev_output_handle.step_key,
                     step_input.prev_output_handle.output_name,
                     prepend_run_id=False,
                 )

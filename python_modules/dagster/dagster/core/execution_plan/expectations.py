@@ -129,8 +129,10 @@ def decorate_with_expectations(pipeline_context, solid, transform_step, output_d
             pipeline_context,
             solid,
             output_def,
-            StepOutputHandle(transform_step, output_def.name),
+            StepOutputHandle.from_step(transform_step, output_def.name),
             kind=StepKind.OUTPUT_EXPECTATION,
         )
     else:
-        return ExecutionValueSubplan.empty(StepOutputHandle(transform_step, output_def.name))
+        return ExecutionValueSubplan.empty(
+            StepOutputHandle.from_step(transform_step, output_def.name)
+        )

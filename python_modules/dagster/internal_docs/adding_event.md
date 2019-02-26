@@ -86,6 +86,7 @@ The fields `file_name` and `file_location` are fields in the corresponding Graph
 elif event.event_type == EventType.STEP_MATERIALIZATION:
     return info.schema.type_named('StepMaterializationEvent')(
         step=info.schema.type_named('ExecutionStep')(
+            pipeline_run.execution_plan,
             pipeline_run.execution_plan.get_step_by_key(event.step_key)
         ),
         file_name=event.file_name,

@@ -23,22 +23,21 @@ from .objects import (
     ExecutionPlan,
     ExecutionStep,
     ExecutionStepEvent,
-    ExecutionStepEventType,
     StepOutputHandle,
     StepOutputValue,
-    StepSuccessData,
+    StepOutputData,
     StepFailureData,
 )
 
 
-def _all_inputs_covered(step, results):
+def _all_inputs_covered(step, intermediates_manager):
     for step_input in step.step_inputs:
-        if step_input.prev_output_handle not in results:
+        if not intermediates_manager.has_value(step_input.prev_output_handle):
             return False
     return True
 
 
-def start_inprocess_executor(pipeline_context, execution_plan):
+def start_inprocess_executor(pipeline_context, execution_plan, intermediates_manager):
     check.inst_param(pipeline_context, 'pipeline_context', PipelineExecutionContext)
     check.inst_param(execution_plan, 'execution_plan', ExecutionPlan)
 
@@ -47,65 +46,62 @@ def start_inprocess_executor(pipeline_context, execution_plan):
     # It would be good to implement a reference tracking algorithm here so we could
     # garbage collection results that are no longer needed by any steps
     # https://github.com/dagster-io/dagster/issues/811
-    all_results = {}
 
     for step_level in step_levels:
         for step in step_level:
             step_context = pipeline_context.for_step(step)
 
-            if not _all_inputs_covered(step, all_results):
-                result_keys = set(all_results.keys())
+            if not _all_inputs_covered(step, intermediates_manager):
                 expected_outputs = [ni.prev_output_handle for ni in step.step_inputs]
 
-                step_context.log.debug(
+                step_context.log.info(
                     (
-                        'Not all inputs covered for {step}. Not executing. Keys in result: '
-                        '{result_keys}. Outputs need for inputs {expected_outputs}'
-                    ).format(
-                        expected_outputs=expected_outputs, step=step.key, result_keys=result_keys
-                    )
+                        'Not all inputs covered for {step}. Not executing. Output need for '
+                        'inputs {expected_outputs}'
+                    ).format(expected_outputs=expected_outputs, step=step.key)
                 )
                 continue
 
-            input_values = _create_input_values(step, all_results)
+            input_values = _create_input_values(step, intermediates_manager)
 
-            for step_event in check.generator(execute_step_in_memory(step_context, input_values)):
+            for step_event in check.generator(
+                execute_step_in_memory(step_context, input_values, intermediates_manager)
+            ):
                 check.inst(step_event, ExecutionStepEvent)
 
                 yield step_event
 
-                if step_event.event_type == ExecutionStepEventType.STEP_OUTPUT:
-                    output_handle = StepOutputHandle(step, step_event.success_data.output_name)
-                    all_results[output_handle] = step_event
 
-
-def _create_input_values(step, prev_level_results):
+def _create_input_values(step, manager):
     input_values = {}
     for step_input in step.step_inputs:
         prev_output_handle = step_input.prev_output_handle
-        input_value = prev_level_results[prev_output_handle].success_data.value
+        input_value = manager.get_value(prev_output_handle)
         input_values[step_input.name] = input_value
     return input_values
 
 
-def execute_step_in_memory(step_context, inputs):
+def execute_step_in_memory(step_context, inputs, intermediates_manager):
     check.inst_param(step_context, 'step_context', StepExecutionContext)
     check.dict_param(inputs, 'inputs', key_type=str)
 
     try:
-        for step_event in check.generator(_execute_steps_core_loop(step_context, inputs)):
+        for step_event in check.generator(
+            _execute_steps_core_loop(step_context, inputs, intermediates_manager)
+        ):
             step_context.log.info(
                 'Step {step} emitted {value} for output {output}'.format(
                     step=step_context.step.key,
-                    value=repr(step_event.success_data.value),
-                    output=step_event.success_data.output_name,
+                    value=step_event.step_output_data.value_repr,
+                    output=step_event.step_output_data.output_name,
                 )
             )
             yield step_event
     except DagsterError as dagster_error:
         step_context.log.error(str(dagster_error))
         yield ExecutionStepEvent.step_failure_event(
-            step_context=step_context, failure_data=StepFailureData(dagster_error=dagster_error)
+            step_context=step_context,
+            step_failure_data=StepFailureData(dagster_error=dagster_error),
         )
         return
 
@@ -140,7 +136,7 @@ def _error_check_step_output_values(step, step_output_values):
         seen_outputs.add(step_output_value.output_name)
 
 
-def _execute_steps_core_loop(step_context, inputs):
+def _execute_steps_core_loop(step_context, inputs, intermediates_manager):
     check.inst_param(step_context, 'step_context', StepExecutionContext)
     check.dict_param(inputs, 'inputs', key_type=str)
 
@@ -159,10 +155,10 @@ def _execute_steps_core_loop(step_context, inputs):
         _error_check_step_output_values(step_context.step, step_output_value_iterator)
     ):
 
-        yield _create_step_event(step_context, step_output_value)
+        yield _create_step_event(step_context, step_output_value, intermediates_manager)
 
 
-def _create_step_event(step_context, step_output_value):
+def _create_step_event(step_context, step_output_value, intermediates_manager):
     step = step_context.step
     check.inst_param(step, 'step', ExecutionStep)
     check.inst_param(step_output_value, 'step_output_value', StepOutputValue)
@@ -170,11 +166,19 @@ def _create_step_event(step_context, step_output_value):
     step_output = step.step_output_named(step_output_value.output_name)
 
     try:
+        value = step_output.runtime_type.coerce_runtime_value(step_output_value.value)
+        step_output_handle = StepOutputHandle.from_step(
+            step=step, output_name=step_output_value.output_name
+        )
+
+        intermediates_manager.set_value(step_output_handle, value)
+
         return ExecutionStepEvent.step_output_event(
             step_context=step_context,
-            success_data=StepSuccessData(
-                output_name=step_output_value.output_name,
-                value=step_output.runtime_type.coerce_runtime_value(step_output_value.value),
+            step_output_data=StepOutputData(
+                step_output_handle=step_output_handle,
+                value_repr=repr(value),
+                intermediates_manager=intermediates_manager,
             ),
         )
     except DagsterRuntimeCoercionError as e:

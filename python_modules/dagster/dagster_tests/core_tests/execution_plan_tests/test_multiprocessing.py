@@ -64,3 +64,29 @@ def define_diamond_pipeline():
             },
         },
     )
+
+
+def define_error_pipeline():
+    @lambda_solid
+    def throw_error():
+        raise Exception('bad programmer')
+
+    return PipelineDefinition(name='error_pipeline', solids=[throw_error])
+
+
+def test_error_pipeline():
+    pipeline = define_error_pipeline()
+    result = execute_pipeline(
+        pipeline, throw_on_user_error=False, executor_config=InProcessExecutorConfig()
+    )
+    assert not result.success
+
+
+def test_error_pipeline_multiprocess():
+    pipeline = define_error_pipeline()
+    result = execute_pipeline(
+        pipeline,
+        throw_on_user_error=False,
+        executor_config=MultiprocessExecutorConfig(define_error_pipeline),
+    )
+    assert not result.success

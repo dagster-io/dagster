@@ -7,6 +7,7 @@ from .objects import (
     StepOutput,
     StepOutputHandle,
     StepOutputValue,
+    SingleOutputStepCreationData,
 )
 
 UNMARSHAL_INPUT_OUTPUT = 'unmarshal-input-output'
@@ -26,7 +27,7 @@ def create_unmarshal_input_step(pipeline_context, step, step_input, marshalling_
             ),
         )
 
-    return StepOutputHandle(
+    return SingleOutputStepCreationData(
         ExecutionStep(
             pipeline_context=pipeline_context,
             key='{step_key}.unmarshal-input.{input_name}'.format(
@@ -68,7 +69,7 @@ def create_marshal_output_step(pipeline_context, step, step_output, marshalling_
             StepInput(
                 MARSHAL_OUTPUT_INPUT,
                 step_output.runtime_type,
-                StepOutputHandle(step, step_output.name),
+                StepOutputHandle.from_step(step, step_output.name),
             )
         ],
         step_outputs=[],

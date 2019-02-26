@@ -493,12 +493,12 @@ def test_pipeline_streaming_iterator():
 
     push_one_step_event = next(step_event_iterator)
     assert push_one_step_event.is_successful_output
-    assert push_one_step_event.success_data.value == 1
+    assert push_one_step_event.step_output_data.get_value() == 1
     assert events == [1]
 
     add_one_step_event = next(step_event_iterator)
     assert add_one_step_event.is_successful_output
-    assert add_one_step_event.success_data.value == 2
+    assert add_one_step_event.step_output_data.get_value() == 2
     assert events == [1, 2]
 
 
@@ -520,12 +520,12 @@ def test_pipeline_streaming_multiple_outputs():
 
     one_output_step_event = next(step_event_iterator)
     assert one_output_step_event.is_successful_output
-    assert one_output_step_event.success_data.value == 1
-    assert one_output_step_event.success_data.output_name == 'one'
+    assert one_output_step_event.step_output_data.get_value() == 1
+    assert one_output_step_event.step_output_data.output_name == 'one'
     assert events == [1]
 
     two_output_step_event = next(step_event_iterator)
     assert two_output_step_event.is_successful_output
-    assert two_output_step_event.success_data.value == 2
-    assert two_output_step_event.success_data.output_name == 'two'
+    assert two_output_step_event.step_output_data.get_value() == 2
+    assert two_output_step_event.step_output_data.output_name == 'two'
     assert events == [1, 2]
