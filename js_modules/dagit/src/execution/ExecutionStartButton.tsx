@@ -19,6 +19,10 @@ export default class ExecutionStartButton extends React.Component<
 > {
   _mounted: boolean = false;
 
+  state = {
+    starting: false
+  };
+
   componentDidMount() {
     this._mounted = true;
   }
