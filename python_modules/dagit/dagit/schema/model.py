@@ -11,6 +11,7 @@ from dagster.core.execution_plan.objects import ExecutionStepEventType
 from dagster.core.execution_plan.plan_subset import MarshalledOutput, MarshalledInput, StepExecution
 
 from dagster.core.errors import (
+    DagsterInvalidDefinitionError,
     DagsterExecutionStepNotFoundError,
     DagsterInvalidSubplanInputNotFoundError,
     DagsterInvalidSubplanMissingInputError,
@@ -57,12 +58,19 @@ def _get_pipelines(graphene_info):
     check.inst_param(graphene_info, 'graphene_info', ResolveInfo)
 
     def process_pipelines(repository):
-        pipeline_instances = []
-        for pipeline_def in repository.get_all_pipelines():
-            pipeline_instances.append(graphene_info.schema.type_named('Pipeline')(pipeline_def))
-        return graphene_info.schema.type_named('PipelineConnection')(
-            nodes=sorted(pipeline_instances, key=lambda pipeline: pipeline.name)
-        )
+        try:
+            pipeline_instances = []
+            for pipeline_def in repository.get_all_pipelines():
+                pipeline_instances.append(graphene_info.schema.type_named('Pipeline')(pipeline_def))
+            return graphene_info.schema.type_named('PipelineConnection')(
+                nodes=sorted(pipeline_instances, key=lambda pipeline: pipeline.name)
+            )
+        except DagsterInvalidDefinitionError:
+            return EitherError(
+                graphene_info.schema.type_named('PythonError')(
+                    serializable_error_info_from_exc_info(sys.exc_info())
+                )
+            )
 
     repository_or_error = _repository_or_error_from_container(
         graphene_info, graphene_info.context.repository_container
