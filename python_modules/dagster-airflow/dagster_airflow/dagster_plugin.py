@@ -457,7 +457,9 @@ class DagsterOperator(ModifiedDockerOperator):
                         printer.line('}}}}{comma}'.format(comma=',' if i < n_outputs - 1 else ''))
             printer.line('}}')
         printer.line(']')
-        return printer.read().format(run_id_prefix=self.run_id + '_' if self.run_id else '')
+        return printer.read().format(
+            run_id_prefix=self.safe_run_id + '_' if self.safe_run_id else '',
+        )
 
     @property
     def query(self):
@@ -511,8 +513,13 @@ class DagsterOperator(ModifiedDockerOperator):
                     'Pipeline configuration invalid:\n{errors}'.format(errors='\n'.join(errors))
                 )
             elif res['data']['startSubplanExecution']['hasFailures']:
+                errors = [
+                    step['errorMessage']
+                    for step in res['data']['startSubplanExecution']['stepEvents']
+                    if not step['success']
+                ]
                 raise AirflowException(
-                    res['data']['startSubplanExecution']['stepEvents'][0]['errorMessage']
+                    'Subplan execution failed:\n{errors}'.format(errors='\n'.join(errors))
                 )
             return res
         except JSONDecodeError:  # This is the bad case where we don't get a GraphQL response
