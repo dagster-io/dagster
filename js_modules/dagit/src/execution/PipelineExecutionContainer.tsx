@@ -273,7 +273,8 @@ export default class PipelineExecutionContainer extends React.Component<
               onRemoveSession={this.handleRemoveSession}
               onExecute={() => {
                 const variables = this.buildExecutionVariables();
-                if (variables) startPipelineExecution({ variables });
+                if (!variables) return
+                return startPipelineExecution({ variables });
               }}
             />
           );
