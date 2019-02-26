@@ -23,11 +23,19 @@ class NotImplementedCheckError(CheckError):
 
 
 def _param_type_mismatch_exception(obj, ttype, param_name):
-    return ParameterCheckError(
-        'Param "{name}" is not a {type}. Got {obj} which is type {obj_type}.'.format(
-            name=param_name, obj=repr(obj), type=ttype.__name__, obj_type=type(obj)
+    if isinstance(ttype, tuple):
+        type_names = sorted([t.__name__ for t in ttype])
+        return ParameterCheckError(
+            'Param "{name}" is not one of {type_names}. Got {obj} which is type {obj_type}.'.format(
+                name=param_name, obj=repr(obj), type_names=type_names, obj_type=type(obj)
+            )
         )
-    )
+    else:
+        return ParameterCheckError(
+            'Param "{name}" is not a {type}. Got {obj} which is type {obj_type}.'.format(
+                name=param_name, obj=repr(obj), type=ttype.__name__, obj_type=type(obj)
+            )
+        )
 
 
 def _not_type_param_subclass_mismatch_exception(obj, param_name):
