@@ -1,7 +1,6 @@
 import sqlalchemy
 
 from dagster import ExecutionContext, check
-
 from dagster.core.execution_context import (
     SystemPipelineExecutionContext,
     SystemTransformExecutionContext,
@@ -41,7 +40,6 @@ def create_sqlalchemy_context_from_engine(engine, loggers=None):
 
 def _is_sqlite_context(transform_context):
     check.inst_param(transform_context, 'transform_context', SystemTransformExecutionContext)
-
     check_supports_sql_alchemy_resource(transform_context.legacy_context)
     return _is_sqlite_resource(transform_context.resources.sa)
 

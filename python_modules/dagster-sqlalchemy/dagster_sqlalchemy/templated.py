@@ -57,7 +57,7 @@ def _render_template_string(template_text, config_dict):
 def _create_templated_sql_transform_with_output(sql):
     def do_transform(context, _inputs):
         rendered_sql = _render_template_string(sql, context.solid_config)
-        execute_sql_text_on_context(context, rendered_sql)
+        execute_sql_text_on_context(context.get_system_context(), rendered_sql)
         yield Result(context.solid_config)
         yield Result(output_name='sql_text', value=rendered_sql)
 
