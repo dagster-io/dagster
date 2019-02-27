@@ -6,6 +6,7 @@ airflow.operators.dagster_plugin.DagsterOperator available.
 from __future__ import print_function
 
 import ast
+import errno
 import json
 import sys
 
@@ -57,6 +58,17 @@ mutation(
     stepExecutions: $stepExecutions,
   ) {{
     __typename
+    ... on PipelineConfigValidationInvalid {{
+      pipeline {{
+        name
+      }}
+      errors {{
+        __typename
+        message
+        path
+        reason
+      }}
+    }}
     ... on StartSubplanExecutionSuccess {{
       pipeline {{
         name
@@ -445,7 +457,7 @@ class DagsterOperator(ModifiedDockerOperator):
                         printer.line('}}}}{comma}'.format(comma=',' if i < n_outputs - 1 else ''))
             printer.line('}}')
         printer.line(']')
-        return printer.read().format(run_id_prefix=self.run_id + '_' if self.run_id else '')
+        return printer.read().format(run_id_prefix=self.run_id)
 
     @property
     def query(self):
@@ -490,9 +502,22 @@ class DagsterOperator(ModifiedDockerOperator):
             self.log.debug('Executing with query: {query}'.format(query=self.query))
             raw_res = super(DagsterOperator, self).execute(context)
             res = json.loads(raw_res)
-            if res['data']['startSubplanExecution']['hasFailures']:
+
+            res_type = res['data']['startSubplanExecution']['__typename']
+
+            if res_type == 'PipelineConfigValidationInvalid':
+                errors = [err['message'] for err in res['data']['startSubplanExecution']['errors']]
                 raise AirflowException(
-                    res['data']['startSubplanExecution']['stepEvents'][0]['errorMessage']
+                    'Pipeline configuration invalid:\n{errors}'.format(errors='\n'.join(errors))
+                )
+            elif res['data']['startSubplanExecution']['hasFailures']:
+                errors = [
+                    step['errorMessage']
+                    for step in res['data']['startSubplanExecution']['stepEvents']
+                    if not step['success']
+                ]
+                raise AirflowException(
+                    'Subplan execution failed:\n{errors}'.format(errors='\n'.join(errors))
                 )
             return res
         except JSONDecodeError:  # This is the bad case where we don't get a GraphQL response

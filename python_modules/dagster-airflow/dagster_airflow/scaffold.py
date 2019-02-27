@@ -122,6 +122,8 @@ def _format_config(config):
             return _format_config_subdict(config, printer.current_indent)
         elif isinstance(config, list):
             return _format_config_sublist(config, printer.current_indent)
+        elif isinstance(config, bool):
+            return repr(config).lower()
         else:
             return repr(config).replace('\'', '"')
 
