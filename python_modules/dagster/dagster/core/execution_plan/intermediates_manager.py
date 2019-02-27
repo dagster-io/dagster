@@ -86,11 +86,7 @@ class FileSystemIntermediateManager(IntermediatesManager):
 
     def _create_path_from_handle(self, step_output_handle):
         check.inst_param(step_output_handle, 'step_output_handle', StepOutputHandle)
-        return '{root}/{step_key}/{output_name}'.format(
-            root=self._root,
-            step_key=step_output_handle.step_key,
-            output_name=step_output_handle.output_name,
-        )
+        return os.path.join(self._root, step_output_handle.step_key, step_output_handle.output_name)
 
     def get_value(self, step_output_handle):
         check.inst_param(step_output_handle, 'step_output_handle', StepOutputHandle)
@@ -112,4 +108,8 @@ class FileSystemIntermediateManager(IntermediatesManager):
     def has_value(self, step_output_handle):
         check.inst_param(step_output_handle, 'step_output_handle', StepOutputHandle)
         output_path = self._create_path_from_handle(step_output_handle)
-        return os.path.exists(output_path)
+        if os.path.exists(output_path):
+            check.invariant(os.path.isfile(output_path))
+            return True
+        else:
+            return False
