@@ -4,7 +4,8 @@ contextlib2>=0.5.5
 enum34>=1.1.6
 # funcsigs pinned for compatibility with existing Airflow installs
 funcsigs==1.0.0
-future>=0.16.0
+# future pinned to range for compatibility with Airflow
+future>=0.16.0, <0.17a0
 graphviz>=0.8.3
 pyyaml>=3.12
 six>=1.11.0

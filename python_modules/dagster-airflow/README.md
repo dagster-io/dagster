@@ -5,8 +5,8 @@ while defining them using the Dagster abstractions and running them in fully iso
 
 ### Compatibility
 
-Note that until [AIRFLOW-2876] is resolved, Airflow (and, as a consequence, dagster-airflow) is
-incompatible with Python 3.7.
+Note that until [AIRFLOW-2876](https://github.com/apache/airflow/pull/3723) is resolved (expected
+in 1.10.3), Airflow (and, as a consequence, dagster-airflow) is incompatible with Python 3.7.
 
 # Requirements
 

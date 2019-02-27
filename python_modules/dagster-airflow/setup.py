@@ -39,7 +39,7 @@ def _do_setup(name='dagster-airflow'):
         install_requires=[
             # standard python 2/3 compatability things
             'enum34>=1.1.6',
-            'future>=0.16.0',
+            'future>=0.16.0, <0.17.0a0',  # pin to range for Airflow compat
             'six>=1.11.0',
             # cli
             'click>=6.7',
@@ -49,6 +49,8 @@ def _do_setup(name='dagster-airflow'):
             'dagster>=0.2.0',
             # docker api
             'docker==3.7.0',
+            # aws
+            'boto3==1.9.103',
         ],
         entry_points={"console_scripts": ['dagster-airflow = dagster_airflow.cli:main']},
     )

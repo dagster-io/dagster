@@ -55,7 +55,7 @@ def _do_setup(name='dagit'):
         install_requires=[
             # standard python 2/3 compatability things
             'enum34>=1.1.6',
-            'future>=0.16.0',
+            'future>=0.16.0, <0.17.0a0',
             # cli
             # 'click>=6.7',
             # 'coloredlogs>=10.0',
