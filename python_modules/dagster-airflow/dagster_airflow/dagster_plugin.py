@@ -458,7 +458,7 @@ class DagsterOperator(ModifiedDockerOperator):
             printer.line('}}')
         printer.line(']')
         return printer.read().format(
-            run_id_prefix=self.safe_run_id + '_' if self.safe_run_id else '',
+            run_id_prefix=self.safe_run_id + '_' if self.safe_run_id else ''
         )
 
     @property
