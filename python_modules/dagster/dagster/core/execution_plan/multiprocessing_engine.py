@@ -50,7 +50,6 @@ def _execute_in_child_process(
         for step_event in start_inprocess_executor(
             pipeline_context, execution_plan, intermediates_manager
         ):
-            print(f'Step Event: {step_event}')
             data_to_put = {
                 'event_type': step_event.event_type,
                 'step_output_data': {
