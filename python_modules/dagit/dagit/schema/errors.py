@@ -65,6 +65,18 @@ class DauphinSolidNotFoundError(dauphin.ObjectType):
         self.message = 'Solid {solid_name} does not exist'.format(solid_name=solid_name)
 
 
+class DauphinInvalidDefinitionError(dauphin.ObjectType):
+    class Meta:
+        name = 'InvalidDefinitionError'
+        interfaces = (DauphinError,)
+
+    def __init__(self, error_info):
+        super(DauphinInvalidDefinitionError, self).__init__()
+        check.inst_param(error_info, 'error_info', SerializableErrorInfo)
+        self.message = error_info.message
+        self.stack = error_info.stack
+
+
 class DauphinPipelineConfigValidationValid(dauphin.ObjectType):
     class Meta:
         name = 'PipelineConfigValidationValid'
@@ -264,7 +276,7 @@ class DauphinPipelineOrError(dauphin.Union):
 class DauphinPipelinesOrError(dauphin.Union):
     class Meta:
         name = 'PipelinesOrError'
-        types = ('PipelineConnection', DauphinPythonError)
+        types = ('PipelineConnection', DauphinPythonError, DauphinInvalidDefinitionError)
 
 
 class DauphinExecutionPlanResult(dauphin.Union):

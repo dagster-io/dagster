@@ -110,7 +110,7 @@ export default class PipelinePage extends React.Component<IPipelinePageProps> {
     let body;
 
     if (error) {
-      body = <PythonErrorInfo error={error} />;
+      body = <PythonErrorInfo error={error} centered={true} />;
     } else if (selectedPipeline && selectedTab) {
       body = selectedTab.render(
         Object.assign({ pipeline: selectedPipeline }, this.props)

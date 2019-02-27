@@ -692,6 +692,21 @@ def define_context_config_pipeline():
     )
 
 
+def define_circular_dependency_pipeline():
+    return PipelineDefinition(
+        name='circular_dependency_pipeline',
+        solids=[
+            SolidDefinition(
+                name='csolid',
+                inputs=[InputDefinition('num', DataFrame)],
+                outputs=[OutputDefinition(DataFrame)],
+                transform_fn=lambda *_args: None,
+            )
+        ],
+        dependencies={'csolid': {'num': DependencyDefinition('csolid')}},
+    )
+
+
 RESOURCE_QUERY = '''
 {
   pipeline(params: { name: "context_config_pipeline" }) {
@@ -976,6 +991,22 @@ def test_pipelines_or_error():
     assert {p['name'] for p in result.data['pipelinesOrError']['nodes']} == {
         p.name for p in define_repository().get_all_pipelines()
     }
+
+
+def test_pipelines_or_error_invalid():
+    repository = RepositoryDefinition(
+        name='test', pipeline_dict={'pipeline': define_circular_dependency_pipeline}
+    )
+    context = DagsterGraphQLContext(
+        RepositoryContainer(repository=repository),
+        PipelineRunStorage(),
+        execution_manager=SynchronousExecutionManager(),
+    )
+    result = execute_dagster_graphql(
+        context, '{ pipelinesOrError { ... on InvalidDefinitionError { message } } }'
+    )
+    msg = result.data['pipelinesOrError']['message']
+    assert "Circular reference detected in solid csolid" in msg
 
 
 def test_pipeline_by_name():
