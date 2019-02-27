@@ -38,5 +38,4 @@ setup(
         'sqlalchemy-redshift',
         'SQLAlchemy-Utils',
     ],
-    dependency_links=['git+ssh://git@github.com:dagster-io/dagster.git'],
 )

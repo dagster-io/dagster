@@ -9,7 +9,6 @@ import ast
 import json
 import sys
 
-
 from contextlib import contextmanager
 from textwrap import TextWrapper
 
@@ -24,6 +23,11 @@ if sys.version_info.major >= 3:
     from io import StringIO  # pylint:disable=import-error
 else:
     from StringIO import StringIO  # pylint:disable=import-error
+
+if sys.version_info.major >= 3:
+    from json.decoder import JSONDecodeError
+else:
+    JSONDecodeError = ValueError
 
 
 # We don't use six here to avoid taking the dependency
@@ -56,6 +60,33 @@ mutation(
     ... on StartSubplanExecutionSuccess {{
       pipeline {{
         name
+      }}
+      hasFailures
+      stepEvents {{
+        step {{
+          key
+          solid {{
+            name
+          }}
+          kind
+        }}
+        success
+        __typename
+        ... on SuccessfulStepOutputEvent {{
+          step {{
+            key
+          }}
+          success
+          outputName
+          valueRepr
+        }}
+        ... on StepFailureEvent {{
+          step {{
+            key
+          }}
+          success
+          errorMessage
+        }}
       }}
     }}
     ... on PythonError {{
@@ -229,6 +260,7 @@ class ModifiedDockerOperator(DockerOperator):
 
     def __init__(self, host_tmp_dir=None, **kwargs):
         self.host_tmp_dir = host_tmp_dir
+        kwargs['xcom_push'] = True
         super(ModifiedDockerOperator, self).__init__(**kwargs)
 
     @contextmanager
@@ -454,7 +486,17 @@ class DagsterOperator(ModifiedDockerOperator):
             self._run_id = context['dag_run'].run_id
         try:
             # FIXME implement intermediate result persistence to S3
-            return super(DagsterOperator, self).execute(context)
+
+            self.log.debug('Executing with query: {query}'.format(query=self.query))
+            raw_res = super(DagsterOperator, self).execute(context)
+            res = json.loads(raw_res)
+            if res['data']['startSubplanExecution']['hasFailures']:
+                raise AirflowException(
+                    res['data']['startSubplanExecution']['stepEvents'][0]['errorMessage']
+                )
+            return res
+        except JSONDecodeError:  # This is the bad case where we don't get a GraphQL response
+            raise AirflowException(raw_res)
         finally:
             self._run_id = None
 
