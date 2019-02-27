@@ -219,4 +219,3 @@ class PipelineRunObservableSubscribe(object):
 
 class LogSequence(pyrsistent.CheckedPVector):
     __type__ = EventRecord
-
