@@ -1,5 +1,5 @@
 from dagster import check
-from dagster.core.execution_context import PipelineExecutionContext
+from dagster.core.execution_context import SystemPipelineExecutionContext
 from .objects import (
     ExecutionStep,
     StepInput,
@@ -14,7 +14,7 @@ UNMARSHAL_INPUT_OUTPUT = 'unmarshal-input-output'
 
 
 def create_unmarshal_input_step(pipeline_context, step, step_input, marshalling_key):
-    check.inst_param(pipeline_context, 'pipeline_context', PipelineExecutionContext)
+    check.inst_param(pipeline_context, 'pipeline_context', SystemPipelineExecutionContext)
     check.inst_param(step, 'step', ExecutionStep)
     check.inst_param(step_input, 'step_input', StepInput)
     check.str_param(marshalling_key, 'marshalling_key')
@@ -48,7 +48,7 @@ MARSHAL_OUTPUT_INPUT = 'marshal-output-input'
 
 
 def create_marshal_output_step(pipeline_context, step, step_output, marshalling_key):
-    check.inst_param(pipeline_context, 'pipeline_context', PipelineExecutionContext)
+    check.inst_param(pipeline_context, 'pipeline_context', SystemPipelineExecutionContext)
     check.inst_param(step, 'step', ExecutionStep)
     check.inst_param(step_output, 'step_output', StepOutput)
     check.str_param(marshalling_key, 'marshalling_key')

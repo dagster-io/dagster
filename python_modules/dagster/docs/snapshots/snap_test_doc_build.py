@@ -20142,7 +20142,7 @@ is generally used by framework authors.</p>
 <dl class="attribute">
 <dt id="dagster.SolidDefinition.transform_fn">
 <code class="descname">transform_fn</code><a class="headerlink" href="#dagster.SolidDefinition.transform_fn" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>callable</em> – Callable with the signature (<strong>info</strong>: <cite>TransformExecutionContext</cite>,
+<dd><p><em>callable</em> – Callable with the signature (<strong>info</strong>: <cite>SystemTransformExecutionContext</cite>,
 <strong>inputs</strong>: <cite>Dict[str, Any]</cite>) : <cite>Iterable&lt;Result&gt;</cite></p>
 </dd></dl>
 
@@ -20589,7 +20589,7 @@ node. For the ‘synchronous’ API, see <a class="reference internal" href="#da
 <em class="property">class </em><code class="descclassname">dagster.</code><code class="descname">ExecutionContext</code><a class="headerlink" href="#dagster.ExecutionContext" title="Permalink to this definition">¶</a></dt>
 <dd><p>The user-facing object in the context creation function. The user constructs
 this in order to effect the context creation process. This could be named
-PipelineExecutionContextCreationData although that seemed excessively verbose.</p>
+SystemPipelineExecutionContextCreationData although that seemed excessively verbose.</p>
 </dd></dl>
 
 <dl class="class">

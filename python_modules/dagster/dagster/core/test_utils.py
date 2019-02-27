@@ -1,6 +1,7 @@
 from dagster import (
     DagsterEvaluateConfigValueError,
     DagsterInvariantViolationError,
+    ExecutionContext,
     PipelineDefinition,
     PipelineContextDefinition,
     Result,
@@ -10,8 +11,6 @@ from dagster import (
 )
 
 from dagster.core.types.evaluator import evaluate_config_value
-
-from dagster.core.execution_context import ExecutionContext
 
 
 def execute_single_solid_in_isolation(

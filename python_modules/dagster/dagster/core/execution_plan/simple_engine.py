@@ -17,7 +17,10 @@ from dagster.core.errors import (
     DagsterTypeError,
 )
 
-from dagster.core.execution_context import PipelineExecutionContext, StepExecutionContext
+from dagster.core.execution_context import (
+    SystemPipelineExecutionContext,
+    SystemStepExecutionContext,
+)
 
 from .objects import (
     ExecutionPlan,
@@ -38,7 +41,7 @@ def _all_inputs_covered(step, intermediates_manager):
 
 
 def start_inprocess_executor(pipeline_context, execution_plan, intermediates_manager):
-    check.inst_param(pipeline_context, 'pipeline_context', PipelineExecutionContext)
+    check.inst_param(pipeline_context, 'pipeline_context', SystemPipelineExecutionContext)
     check.inst_param(execution_plan, 'execution_plan', ExecutionPlan)
 
     step_levels = execution_plan.topological_step_levels()
@@ -82,7 +85,7 @@ def _create_input_values(step, manager):
 
 
 def execute_step_in_memory(step_context, inputs, intermediates_manager):
-    check.inst_param(step_context, 'step_context', StepExecutionContext)
+    check.inst_param(step_context, 'step_context', SystemStepExecutionContext)
     check.dict_param(inputs, 'inputs', key_type=str)
 
     try:
@@ -137,7 +140,7 @@ def _error_check_step_output_values(step, step_output_values):
 
 
 def _execute_steps_core_loop(step_context, inputs, intermediates_manager):
-    check.inst_param(step_context, 'step_context', StepExecutionContext)
+    check.inst_param(step_context, 'step_context', SystemStepExecutionContext)
     check.dict_param(inputs, 'inputs', key_type=str)
 
     evaluated_inputs = {}
@@ -218,7 +221,7 @@ def _get_evaluated_input(step, input_name, input_value):
 
 
 def _iterate_step_output_values_within_boundary(step_context, evaluated_inputs):
-    check.inst_param(step_context, 'step_context', StepExecutionContext)
+    check.inst_param(step_context, 'step_context', SystemStepExecutionContext)
     check.dict_param(evaluated_inputs, 'evaluated_inputs', key_type=str)
 
     error_str = 'Error occured during step {key}'.format(key=step_context.step.key)
@@ -240,7 +243,7 @@ def _execution_step_error_boundary(step_context, msg, **kwargs):
     framework code in the stack trace, if a tool author wishes to do so. This has
     been especially help in a notebooking context.
     '''
-    check.inst_param(step_context, 'step_context', StepExecutionContext)
+    check.inst_param(step_context, 'step_context', SystemStepExecutionContext)
     check.str_param(msg, 'msg')
 
     step = step_context.step

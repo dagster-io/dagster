@@ -1,7 +1,8 @@
 import os
 
 from dagster import Field, InputDefinition, OutputDefinition, SolidDefinition, check, Dict, String
-from dagster.core.execution_context import TransformExecutionContext
+from dagster.core.user_context import TransformExecutionContext
+from dagster.core.execution_context import SystemTransformExecutionContext
 
 from dagster.core.test_utils import single_output_transform
 
@@ -95,7 +96,7 @@ def _create_sql_alchemy_transform_fn(sql_text):
 
     def transform_fn(context, _args):
         check.inst_param(context, 'context', TransformExecutionContext)
-        return execute_sql_text_on_context(context, sql_text)
+        return execute_sql_text_on_context(context.get_system_context(), sql_text)
 
     return transform_fn
 

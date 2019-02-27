@@ -7,7 +7,10 @@ import six
 from dagster import check
 from dagster.core.definitions import Solid, PipelineDefinition
 from dagster.core.errors import DagsterError
-from dagster.core.execution_context import PipelineExecutionContext, StepExecutionContext
+from dagster.core.execution_context import (
+    SystemPipelineExecutionContext,
+    SystemStepExecutionContext,
+)
 from dagster.core.types.runtime import RuntimeType
 from dagster.core.utils import toposort
 from dagster.utils import merge_dicts
@@ -91,7 +94,7 @@ class ExecutionStepEvent(
 
     @staticmethod
     def step_output_event(step_context, step_output_data):
-        check.inst_param(step_context, 'step_context', StepExecutionContext)
+        check.inst_param(step_context, 'step_context', SystemStepExecutionContext)
 
         return ExecutionStepEvent(
             event_type=ExecutionStepEventType.STEP_OUTPUT,
@@ -103,7 +106,7 @@ class ExecutionStepEvent(
 
     @staticmethod
     def step_failure_event(step_context, step_failure_data):
-        check.inst_param(step_context, 'step_context', StepExecutionContext)
+        check.inst_param(step_context, 'step_context', SystemStepExecutionContext)
 
         return ExecutionStepEvent(
             event_type=ExecutionStepEventType.STEP_FAILURE,
@@ -176,7 +179,7 @@ class ExecutionStep(
         return super(ExecutionStep, cls).__new__(
             cls,
             pipeline_context=check.inst_param(
-                pipeline_context, 'pipeline_context', PipelineExecutionContext
+                pipeline_context, 'pipeline_context', SystemPipelineExecutionContext
             ),
             key=check.str_param(key, 'key'),
             step_inputs=check.list_param(step_inputs, 'step_inputs', of_type=StepInput),

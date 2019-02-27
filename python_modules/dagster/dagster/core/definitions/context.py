@@ -4,7 +4,7 @@ from dagster import check
 
 from dagster.core.types import Field, Dict, String
 from dagster.core.types.field_utils import check_opt_field_param
-from dagster.core.execution_context import ExecutionContext
+from dagster.core.user_context import ExecutionContext
 from dagster.core.system_config.objects import DEFAULT_CONTEXT_NAME
 
 from dagster.utils.logging import level_from_string, define_colored_console_logger

@@ -16,7 +16,7 @@ from dagster.core.errors import (
     DagsterInvariantViolationError,
 )
 
-from dagster.core.execution_context import PipelineExecutionContext
+from dagster.core.execution_context import SystemPipelineExecutionContext
 
 from .expectations import create_expectations_subplan, decorate_with_expectations
 
@@ -62,7 +62,7 @@ class PlanBuilder:
 
 
 def create_execution_plan_core(pipeline_context, subset_info=None, added_outputs=None):
-    check.inst_param(pipeline_context, 'pipeline_context', PipelineExecutionContext)
+    check.inst_param(pipeline_context, 'pipeline_context', SystemPipelineExecutionContext)
     check.opt_inst_param(subset_info, 'subset_info', ExecutionPlanSubsetInfo)
     check.opt_inst_param(added_outputs, 'added_output', ExecutionPlanAddedOutputs)
 
@@ -96,7 +96,7 @@ def create_execution_plan_core(pipeline_context, subset_info=None, added_outputs
 
 
 def create_execution_plan_from_steps(pipeline_context, steps):
-    check.inst_param(pipeline_context, 'pipeline_context', PipelineExecutionContext)
+    check.inst_param(pipeline_context, 'pipeline_context', SystemPipelineExecutionContext)
     check.list_param(steps, 'steps', of_type=ExecutionStep)
 
     step_dict = {step.key: step for step in steps}
@@ -120,7 +120,7 @@ def create_execution_plan_from_steps(pipeline_context, steps):
 
 
 def create_subplan_for_input(pipeline_context, solid, prev_step_output_handle, input_def):
-    check.inst_param(pipeline_context, 'pipeline_context', PipelineExecutionContext)
+    check.inst_param(pipeline_context, 'pipeline_context', SystemPipelineExecutionContext)
     check.inst_param(solid, 'solid', Solid)
     check.inst_param(prev_step_output_handle, 'prev_step_output_handle', StepOutputHandle)
     check.inst_param(input_def, 'input_def', InputDefinition)
@@ -138,7 +138,7 @@ def create_subplan_for_input(pipeline_context, solid, prev_step_output_handle, i
 
 
 def create_subplan_for_output(pipeline_context, solid, solid_transform_step, output_def):
-    check.inst_param(pipeline_context, 'pipeline_context', PipelineExecutionContext)
+    check.inst_param(pipeline_context, 'pipeline_context', SystemPipelineExecutionContext)
     check.inst_param(solid, 'solid', Solid)
     check.inst_param(solid_transform_step, 'solid_transform_step', ExecutionStep)
     check.inst_param(output_def, 'output_def', OutputDefinition)
@@ -149,7 +149,7 @@ def create_subplan_for_output(pipeline_context, solid, solid_transform_step, out
 
 
 def get_input_source_step_handle(pipeline_context, plan_builder, solid, input_def):
-    check.inst_param(pipeline_context, 'pipeline_context', PipelineExecutionContext)
+    check.inst_param(pipeline_context, 'pipeline_context', SystemPipelineExecutionContext)
     check.inst_param(plan_builder, 'plan_builder', PlanBuilder)
     check.inst_param(solid, 'solid', Solid)
     check.inst_param(input_def, 'input_def', InputDefinition)
@@ -181,7 +181,7 @@ def get_input_source_step_handle(pipeline_context, plan_builder, solid, input_de
 
 
 def create_step_inputs(pipeline_context, plan_builder, solid):
-    check.inst_param(pipeline_context, 'pipeline_context', PipelineExecutionContext)
+    check.inst_param(pipeline_context, 'pipeline_context', SystemPipelineExecutionContext)
     check.inst_param(plan_builder, 'plan_builder', PlanBuilder)
     check.inst_param(solid, 'solid', Solid)
 
@@ -211,7 +211,7 @@ def _is_step_in_subset(execution_plan, subset_info, step_key):
 def _create_augmented_subplan(
     pipeline_context, execution_plan, subset_info=None, added_outputs=None
 ):
-    check.inst_param(pipeline_context, 'pipeline_context', PipelineExecutionContext)
+    check.inst_param(pipeline_context, 'pipeline_context', SystemPipelineExecutionContext)
     check.inst_param(execution_plan, 'execution_plan', ExecutionPlan)
     check.opt_inst_param(subset_info, 'subset_info', ExecutionPlanSubsetInfo)
     check.opt_inst_param(added_outputs, 'added_outputs', ExecutionPlanAddedOutputs)
@@ -296,7 +296,7 @@ def _validate_new_plan(new_plan, subset_info, added_outputs, pipeline_context):
     check.inst_param(new_plan, 'new_plan', ExecutionPlan)
     check.opt_inst_param(subset_info, 'subset_info', ExecutionPlanSubsetInfo)
     check.opt_inst_param(added_outputs, 'added_outputs', ExecutionPlanAddedOutputs)
-    check.inst_param(pipeline_context, 'pipeline_context', PipelineExecutionContext)
+    check.inst_param(pipeline_context, 'pipeline_context', SystemPipelineExecutionContext)
 
     for step in new_plan.steps:
         for step_input in step.step_inputs:
@@ -329,7 +329,7 @@ def _validate_new_plan(new_plan, subset_info, added_outputs, pipeline_context):
 
 
 def _all_augmented_steps_for_step(pipeline_context, step, subset_info, added_outputs):
-    check.inst_param(pipeline_context, 'pipeline_context', PipelineExecutionContext)
+    check.inst_param(pipeline_context, 'pipeline_context', SystemPipelineExecutionContext)
     check.inst_param(step, 'step', ExecutionStep)
     check.opt_inst_param(subset_info, 'subset_info', ExecutionPlanSubsetInfo)
     check.opt_inst_param(added_outputs, 'added_output', ExecutionPlanAddedOutputs)
@@ -355,7 +355,7 @@ def _all_augmented_steps_for_step(pipeline_context, step, subset_info, added_out
 
 
 def _create_new_step_with_added_inputs(pipeline_context, step, subset_info):
-    check.inst_param(pipeline_context, 'pipeline_context', PipelineExecutionContext)
+    check.inst_param(pipeline_context, 'pipeline_context', SystemPipelineExecutionContext)
     check.inst_param(step, 'step', ExecutionStep)
     check.opt_inst_param(subset_info, 'subset_info', ExecutionPlanSubsetInfo)
 

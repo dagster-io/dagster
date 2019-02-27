@@ -5,7 +5,7 @@ from dagster import check
 from dagster.utils import mkdir_p
 from dagster.core.errors import DagsterSubprocessExecutionError
 
-from dagster.core.execution_context import PipelineExecutionContext
+from dagster.core.execution_context import SystemPipelineExecutionContext
 
 from .create import create_execution_plan_core
 from .intermediates_manager import FileSystemIntermediateManager
@@ -154,7 +154,7 @@ def _all_inputs_covered(step, intermediates_manager):
 
 def multiprocess_execute_plan(executor_config, pipeline_context, execution_plan):
     check.inst_param(executor_config, 'executor_config', MultiprocessExecutorConfig)
-    check.inst_param(pipeline_context, 'pipeline_context', PipelineExecutionContext)
+    check.inst_param(pipeline_context, 'pipeline_context', SystemPipelineExecutionContext)
     check.inst_param(execution_plan, 'execution_plan', ExecutionPlan)
 
     step_levels = execution_plan.topological_step_levels()
