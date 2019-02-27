@@ -204,12 +204,6 @@ class SystemTransformExecutionContext(SystemStepExecutionContext):
         solid_config = self.environment_config.solids.get(self.solid.name)
         return solid_config.config if solid_config else None
 
-    # TODO move to user_context
-    @property
-    def config(self):
-        # _warn_about_config_property()
-        return self.solid_config
-
 
 class SystemExpectationExecutionContext(SystemStepExecutionContext):
     __slots__ = ['_inout_def', '_expectation_def']
