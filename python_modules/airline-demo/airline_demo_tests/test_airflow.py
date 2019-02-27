@@ -1,36 +1,41 @@
-# import datetime
-# import os
-# import subprocess
+import datetime
+import os
 
-# import pytest
+from airflow.models import TaskInstance
 
-# from airflow.models import TaskInstance
+from dagster.utils import script_relative_path
 
-# from dagster_airflow.scaffold import _key_for_marshalled_result, _normalize_key
+from airline_demo.pipelines import define_airline_demo_download_pipeline
 
-# from .utils import import_module_from_path
+from .utils import import_module_from_path
 
 
-# def test_run_airflow_dag(scaffold_dag):
-#     '''This test runs the sample Airflow dag using the TaskInstance API, directly from Python'''
-#     _n, _p, _d, static_path, editable_path = scaffold_dag
+class TestInMemoryAirflowDagExecution:
+    pipeline = define_airline_demo_download_pipeline
+    config = [
+        script_relative_path(os.path.join('..', 'environments', 'local_base.yml')),
+        script_relative_path(os.path.join('..', 'environments', 'local_fast_download.yml')),
+    ]
 
-#     execution_date = datetime.datetime.utcnow()
+    def test_airflow_run_download_pipeline(self, scaffold_dag):
+        _n, _p, _d, static_path, editable_path = scaffold_dag
 
-#     import_module_from_path('demo_pipeline_static__scaffold', static_path)
-#     demo_pipeline = import_module_from_path('demo_pipeline', editable_path)
+        execution_date = datetime.datetime.utcnow()
 
-#     _dag, tasks = demo_pipeline.make_dag(
-#         dag_id=demo_pipeline.DAG_ID,
-#         dag_description=demo_pipeline.DAG_DESCRIPTION,
-#         dag_kwargs=dict(default_args=demo_pipeline.DEFAULT_ARGS, **demo_pipeline.DAG_KWARGS),
-#         s3_conn_id=demo_pipeline.S3_CONN_ID,
-#         modified_docker_operator_kwargs=demo_pipeline.MODIFIED_DOCKER_OPERATOR_KWARGS,
-#         host_tmp_dir=demo_pipeline.HOST_TMP_DIR,
-#     )
+        import_module_from_path('demo_pipeline_static__scaffold', static_path)
+        demo_pipeline = import_module_from_path('demo_pipeline', editable_path)
 
-#     # These are in topo order already
-#     for task in tasks:
-#         ti = TaskInstance(task=task, execution_date=execution_date)
-#         context = ti.get_template_context()
-#         task.execute(context)
+        _dag, tasks = demo_pipeline.make_dag(
+            dag_id=demo_pipeline.DAG_ID,
+            dag_description=demo_pipeline.DAG_DESCRIPTION,
+            dag_kwargs=dict(default_args=demo_pipeline.DEFAULT_ARGS, **demo_pipeline.DAG_KWARGS),
+            s3_conn_id=demo_pipeline.S3_CONN_ID,
+            modified_docker_operator_kwargs=demo_pipeline.MODIFIED_DOCKER_OPERATOR_KWARGS,
+            host_tmp_dir=demo_pipeline.HOST_TMP_DIR,
+        )
+
+        # These are in topo order already
+        for task in tasks:
+            ti = TaskInstance(task=task, execution_date=execution_date)
+            context = ti.get_template_context()
+            task.execute(context)
