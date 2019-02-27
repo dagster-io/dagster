@@ -2,7 +2,7 @@ import * as React from "react";
 import styled from "styled-components";
 import { Colors, Spinner, Intent } from "@blueprintjs/core";
 import { IStepState, IStepMaterialization } from "./RunMetadataProvider";
-import { ROOT_SERVER_URI } from "../Util";
+import { Materialization } from "./Materialization";
 
 interface IExecutionPlanBoxProps {
   state: IStepState;
@@ -21,13 +21,6 @@ interface IExecutionPlanBoxState {
 
 function twoDigit(v: number) {
   return `${v < 10 ? "0" : ""}${v}`;
-}
-
-function fileLocationToHref(location: string) {
-  if (location.startsWith("/")) {
-    return `file://${location}`;
-  }
-  return location;
 }
 
 export class ExecutionPlanBox extends React.Component<
@@ -88,27 +81,6 @@ export class ExecutionPlanBox extends React.Component<
     this.setState({ v: this.state.v + 1 });
   };
 
-  onOpenFileLink = async (event: React.MouseEvent<HTMLAnchorElement>) => {
-    const url = event.currentTarget.href;
-
-    // If the file's location is a path, tell dagit to open it on the machine.
-    if (url.startsWith("file://")) {
-      event.preventDefault();
-
-      const path = url.replace("file://", "");
-      const result = await fetch(
-        `${ROOT_SERVER_URI}/dagit/open?path=${encodeURIComponent(path)}`
-      );
-
-      if (result.status !== 200) {
-        const error = await result.text();
-        alert(`Dagit was unable to open the file.\n\n${error}`);
-      }
-    } else {
-      // If the file's location is a URL, allow the browser to open it normally.
-    }
-  };
-
   render() {
     const {
       state,
@@ -151,33 +123,15 @@ export class ExecutionPlanBox extends React.Component<
           {elapsed !== undefined && <ExecutionTime elapsed={elapsed} />}
         </ExecutionPlanBoxContainer>
         {(materializations || []).map(mat => (
-          <MaterializationLink
-            onClick={this.onOpenFileLink}
-            href={fileLocationToHref(mat.fileLocation)}
-            key={mat.fileLocation}
-            title={mat.fileLocation}
-            target="__blank"
-          >
-            {FileIcon} {mat.fileName}
-          </MaterializationLink>
+          <Materialization
+            fileLocation={mat.fileLocation}
+            fileName={mat.fileName}
+          />
         ))}
       </>
     );
   }
 }
-
-const MaterializationLink = styled.a`
-  display: block;
-  color: ${Colors.GRAY3};
-  display: inline-block;
-  padding: 6px 3px;
-  padding-left: 23px;
-  display: inline-flex;
-  font-size: 12px;
-  &:hover {
-    color: ${Colors.WHITE};
-  }
-`;
 
 const ExeuctionStateWrap = styled.div`
   display: inherit;
@@ -292,27 +246,3 @@ const ExecutionPlanBoxContainer = styled.div<{ state: IStepState }>`
       state === IStepState.WAITING ? Colors.LIGHT_GRAY4 : Colors.WHITE};
   }
 `;
-
-const FileIcon = (
-  <svg width="20px" height="14px" viewBox="-100 0 350 242" version="1.1">
-    <g stroke="none" strokeWidth="1" fill="none" fillRule="evenodd">
-      <path
-        d="M-100,96 L0,96"
-        stroke={Colors.GRAY3}
-        strokeWidth="15"
-        strokeLinecap="square"
-      />
-      <polygon
-        stroke={Colors.GRAY3}
-        strokeWidth="15"
-        points="5.4296875 236.507812 5.4296875 5.84765625 137.851562 5.84765625 188.003906 56 188.003906 236.507812"
-      />
-      <path
-        d="M187.5,62.5078125 L130.5,62.5078125 M130.5,5.84765625 L130.5,62.5078125"
-        stroke={Colors.GRAY3}
-        strokeWidth="15"
-        strokeLinecap="square"
-      />
-    </g>
-  </svg>
-);
