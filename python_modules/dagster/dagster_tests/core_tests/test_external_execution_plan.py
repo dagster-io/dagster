@@ -78,8 +78,8 @@ def test_basic_pipeline_external_plan_execution():
     transform_step_output_event = step_events[1]
     assert transform_step_output_event.kind == StepKind.TRANSFORM
     assert transform_step_output_event.is_successful_output
-    assert transform_step_output_event.success_data.output_name == 'result'
-    assert transform_step_output_event.success_data.value == 6
+    assert transform_step_output_event.step_output_data.output_name == 'result'
+    assert transform_step_output_event.step_output_data.get_value() == 6
 
 
 def test_external_execution_marshal_wrong_input_error():
@@ -131,7 +131,7 @@ def test_external_execution_input_marshal_code_error():
     assert marshal_step_error.is_step_failure
     assert not marshal_step_error.is_successful_output
     assert marshal_step_error.step.kind == StepKind.UNMARSHAL_INPUT
-    assert isinstance(marshal_step_error.failure_data.dagster_error.user_exception, IOError)
+    assert isinstance(marshal_step_error.step_failure_data.dagster_error.user_exception, IOError)
 
 
 def test_external_execution_step_for_output_missing():
@@ -225,8 +225,10 @@ def test_external_execution_output_code_error_no_throw_on_user_error():
 
     assert len(step_events) == 1
     step_event = step_events[0]
-    assert isinstance(step_event.failure_data.dagster_error, DagsterExecutionStepExecutionError)
-    assert str(step_event.failure_data.dagster_error.user_exception) == 'whoops'
+    assert isinstance(
+        step_event.step_failure_data.dagster_error, DagsterExecutionStepExecutionError
+    )
+    assert str(step_event.step_failure_data.dagster_error.user_exception) == 'whoops'
 
 
 def test_external_execution_unsatisfied_input_error():

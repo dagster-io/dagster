@@ -3,6 +3,7 @@ from enum import Enum
 
 import six
 
+
 from dagster import check
 from dagster.core.definitions import Solid, PipelineDefinition
 from dagster.core.errors import DagsterError
@@ -10,6 +11,8 @@ from dagster.core.execution_context import PipelineExecutionContext, StepExecuti
 from dagster.core.types.runtime import RuntimeType
 from dagster.core.utils import toposort
 from dagster.utils import merge_dicts
+
+from .intermediates_manager import StepOutputHandle
 
 
 class StepOutputValue(namedtuple('_StepOutputValue', 'output_name value')):
@@ -19,38 +22,34 @@ class StepOutputValue(namedtuple('_StepOutputValue', 'output_name value')):
         )
 
 
-class StepOutputHandle(namedtuple('_StepOutputHandle', 'step output_name')):
-    def __new__(cls, step, output_name):
-        return super(StepOutputHandle, cls).__new__(
-            cls,
-            step=check.inst_param(step, 'step', ExecutionStep),
-            output_name=check.str_param(output_name, 'output_name'),
-        )
+class SingleOutputStepCreationData(namedtuple('SingleOutputStepCreationData', 'step output_name')):
+    '''
+    It is very common for step creation to involve processing a single value (e.g. an input thunk).
+    This tuple is meant to be used by those functions to return both a new step and the output
+    that deals with the value in question.
+    '''
 
-    # Make this hashable so it be a key in a dictionary
-
-    def __str__(self):
-        return 'StepOutputHandle' '(step="{step.key}", output_name="{output_name}")'.format(
-            step=self.step, output_name=self.output_name
-        )
-
-    def __repr__(self):
-        return 'StepOutputHandle' '(step="{step.key}", output_name="{output_name}")'.format(
-            step=self.step, output_name=self.output_name
-        )
-
-    def __hash__(self):
-        return hash(self.step.key + self.output_name)
-
-    def __eq__(self, other):
-        return self.step.key == other.step.key and self.output_name == other.output_name
+    @property
+    def step_output_handle(self):
+        return StepOutputHandle.from_step(self.step, self.output_name)
 
 
-class StepSuccessData(namedtuple('_StepSuccessData', 'output_name value')):
-    def __new__(cls, output_name, value):
-        return super(StepSuccessData, cls).__new__(
-            cls, output_name=check.str_param(output_name, 'output_name'), value=value
-        )
+class StepOutputData:
+    def __init__(self, step_output_handle, value_repr, intermediates_manager):
+        self._value_repr = value_repr
+        self._intermediates_manager = intermediates_manager
+        self.step_output_handle = step_output_handle
+
+    @property
+    def output_name(self):
+        return self.step_output_handle.output_name
+
+    @property
+    def value_repr(self):
+        return self._value_repr
+
+    def get_value(self):
+        return self._intermediates_manager.get_value(self.step_output_handle)
 
 
 class StepFailureData(namedtuple('_StepFailureData', 'dagster_error')):
@@ -66,15 +65,15 @@ class ExecutionStepEventType(Enum):
 
 
 class ExecutionStepEvent(
-    namedtuple('_ExecutionStepEvent', 'event_type step success_data failure_data tags')
+    namedtuple('_ExecutionStepEvent', 'event_type step step_output_data step_failure_data tags')
 ):
-    def __new__(cls, event_type, step, success_data, failure_data, tags):
+    def __new__(cls, event_type, step, step_output_data, step_failure_data, tags):
         return super(ExecutionStepEvent, cls).__new__(
             cls,
             check.inst_param(event_type, 'event_type', ExecutionStepEventType),
             check.inst_param(step, 'step', ExecutionStep),
-            check.opt_inst_param(success_data, 'success_data', StepSuccessData),
-            check.opt_inst_param(failure_data, 'failure_data', StepFailureData),
+            check.opt_inst_param(step_output_data, 'step_output_data', StepOutputData),
+            check.opt_inst_param(step_failure_data, 'step_failure_data', StepFailureData),
             check.dict_param(tags, 'tags'),
         )
 
@@ -91,35 +90,37 @@ class ExecutionStepEvent(
         return self.event_type == ExecutionStepEventType.STEP_FAILURE
 
     @staticmethod
-    def step_output_event(step_context, success_data):
+    def step_output_event(step_context, step_output_data):
         check.inst_param(step_context, 'step_context', StepExecutionContext)
 
         return ExecutionStepEvent(
             event_type=ExecutionStepEventType.STEP_OUTPUT,
             step=step_context.step,
-            success_data=check.inst_param(success_data, 'success_data', StepSuccessData),
-            failure_data=None,
+            step_output_data=check.inst_param(step_output_data, 'step_output_data', StepOutputData),
+            step_failure_data=None,
             tags=step_context.tags,
         )
 
     @staticmethod
-    def step_failure_event(step_context, failure_data):
+    def step_failure_event(step_context, step_failure_data):
         check.inst_param(step_context, 'step_context', StepExecutionContext)
 
         return ExecutionStepEvent(
             event_type=ExecutionStepEventType.STEP_FAILURE,
             step=step_context.step,
-            success_data=None,
-            failure_data=check.inst_param(failure_data, 'failure_data', StepFailureData),
+            step_output_data=None,
+            step_failure_data=check.inst_param(
+                step_failure_data, 'step_failure_data', StepFailureData
+            ),
             tags=step_context.tags,
         )
 
     def reraise_user_error(self):
         check.invariant(self.event_type == ExecutionStepEventType.STEP_FAILURE)
-        if self.failure_data.dagster_error.is_user_code_error:
-            six.reraise(*self.failure_data.dagster_error.original_exc_info)
+        if self.step_failure_data.dagster_error.is_user_code_error:
+            six.reraise(*self.step_failure_data.dagster_error.original_exc_info)
         else:
-            raise self.failure_data.dagster_error
+            raise self.step_failure_data.dagster_error
 
     @property
     def kind(self):
@@ -288,6 +289,11 @@ class ExecutionPlan(namedtuple('_ExecutionPlan', 'pipeline_def step_dict, deps, 
             deps=check.dict_param(deps, 'deps', key_type=str, value_type=set),
             steps=list(step_dict.values()),
         )
+
+    def get_step_output(self, step_output_handle):
+        check.inst_param(step_output_handle, 'step_output_handle', StepOutputHandle)
+        step = self.get_step_by_key(step_output_handle.step_key)
+        return step.step_output_named(step_output_handle.output_name)
 
     def has_step(self, key):
         check.str_param(key, 'key')

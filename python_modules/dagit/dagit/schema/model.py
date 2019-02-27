@@ -423,7 +423,7 @@ def _execute_marshalling_or_error(args, dauphin_pipeline, evaluate_value_result)
     except DagsterInvalidSubplanMissingInputError as invalid_subplan_error:
         return EitherError(
             _type_of(args, 'InvalidSubplanMissingInputError')(
-                step=DauphinExecutionStep(invalid_subplan_error.step),
+                step_key=invalid_subplan_error.step.key,
                 missing_input_name=invalid_subplan_error.input_name,
             )
         )
@@ -431,7 +431,7 @@ def _execute_marshalling_or_error(args, dauphin_pipeline, evaluate_value_result)
     except DagsterInvalidSubplanOutputNotFoundError as output_not_found_error:
         return EitherError(
             _type_of(args, 'StartSubplanExecutionInvalidOutputError')(
-                step=DauphinExecutionStep(output_not_found_error.step),
+                step_key=output_not_found_error.step.key,
                 invalid_output_name=output_not_found_error.output_name,
             )
         )
@@ -439,7 +439,7 @@ def _execute_marshalling_or_error(args, dauphin_pipeline, evaluate_value_result)
     except DagsterInvalidSubplanInputNotFoundError as input_not_found_error:
         return EitherError(
             _type_of(args, 'StartSubplanExecutionInvalidInputError')(
-                step=DauphinExecutionStep(input_not_found_error.step),
+                step_key=input_not_found_error.step.key,
                 invalid_input_name=input_not_found_error.input_name,
             )
         )
@@ -482,13 +482,15 @@ def _create_dauphin_step_event(execution_plan, step_event):
     if step_event.event_type == ExecutionStepEventType.STEP_OUTPUT:
         return DauphinSuccessfulStepOutputEvent(
             success=True,
-            step=DauphinExecutionStep(step),
+            step=DauphinExecutionStep(execution_plan, step),
             output_name=step_event.output_name,
             value_repr=step_event.value_repr,
         )
     elif step_event.event_type == ExecutionStepEventType.STEP_FAILURE:
         return DauphinStepFailureEvent(
-            success=False, step=DauphinExecutionStep(step), error_message=step_event.error_message
+            success=False,
+            step=DauphinExecutionStep(execution_plan, step),
+            error_message=step_event.error_message,
         )
     else:
         check.failed('{step_event} unsupported'.format(step_event=step_event))

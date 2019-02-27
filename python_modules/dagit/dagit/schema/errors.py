@@ -339,7 +339,7 @@ class DauphinStartSubplanExecutionInvalidInputError(dauphin.ObjectType):
     class Meta:
         name = 'StartSubplanExecutionInvalidInputError'
 
-    step = dauphin.NonNull('ExecutionStep')
+    step_key = dauphin.NonNull(dauphin.String)
     invalid_input_name = dauphin.NonNull(dauphin.String)
 
 
@@ -347,7 +347,7 @@ class DauphinStartSubplanExecutionInvalidOutputError(dauphin.ObjectType):
     class Meta:
         name = 'StartSubplanExecutionInvalidOutputError'
 
-    step = dauphin.NonNull('ExecutionStep')
+    step_key = dauphin.NonNull(dauphin.String)
     invalid_output_name = dauphin.NonNull(dauphin.String)
 
 
@@ -355,7 +355,7 @@ class DauphinInvalidSubplanMissingInputError(dauphin.ObjectType):
     class Meta:
         name = 'InvalidSubplanMissingInputError'
 
-    step = dauphin.NonNull('ExecutionStep')
+    step_key = dauphin.NonNull(dauphin.String)
     missing_input_name = dauphin.NonNull(dauphin.String)
 
 

@@ -46,11 +46,11 @@ def test_execution_plan_simple_two_steps():
 
     assert step_events[0].step.key == 'return_one.transform'
     assert step_events[0].is_successful_output
-    assert step_events[0].success_data.value == 1
+    assert step_events[0].step_output_data.get_value() == 1
 
     assert step_events[1].step.key == 'add_one.transform'
     assert step_events[1].is_successful_output
-    assert step_events[1].success_data.value == 2
+    assert step_events[1].step_output_data.get_value() == 2
 
 
 def test_create_subplan_source_step():
@@ -82,7 +82,7 @@ def test_create_subplan_middle_step():
     assert steps[1].key == 'add_one.transform'
     assert len(steps[1].step_inputs) == 1
     step_input = steps[1].step_inputs[0]
-    assert step_input.prev_output_handle.step.key == 'add_one.transform.input.num.value'
+    assert step_input.prev_output_handle.step_key == 'add_one.transform.input.num.value'
     assert step_input.prev_output_handle.output_name == VALUE_OUTPUT
     assert len(steps[1].step_outputs) == 1
     assert len(subplan.topological_steps()) == 2
@@ -103,7 +103,7 @@ def test_execution_plan_source_step():
     step_events = execute_plan(execution_plan)
 
     assert len(step_events) == 1
-    assert step_events[0].success_data.value == 1
+    assert step_events[0].step_output_data.get_value() == 1
 
 
 def test_execution_plan_middle_step():
@@ -118,7 +118,7 @@ def test_execution_plan_middle_step():
     step_events = execute_plan(execution_plan)
 
     assert len(step_events) == 2
-    assert step_events[1].success_data.value == 3
+    assert step_events[1].step_output_data.get_value() == 3
 
 
 def test_execution_plan_two_outputs():
@@ -133,13 +133,12 @@ def test_execution_plan_two_outputs():
 
     step_events = execute_plan(execution_plan)
 
-    # FIXME: we should change this to be *single* result with two outputs
     assert step_events[0].step.key == 'return_one_two.transform'
-    assert step_events[0].success_data.value == 1
-    assert step_events[0].success_data.output_name == 'num_one'
+    assert step_events[0].step_output_data.get_value() == 1
+    assert step_events[0].step_output_data.output_name == 'num_one'
     assert step_events[1].step.key == 'return_one_two.transform'
-    assert step_events[1].success_data.value == 2
-    assert step_events[1].success_data.output_name == 'num_two'
+    assert step_events[1].step_output_data.get_value() == 2
+    assert step_events[1].step_output_data.output_name == 'num_two'
 
 
 def test_reentrant_execute_plan():

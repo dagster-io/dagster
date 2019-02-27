@@ -328,7 +328,7 @@ def _make_static_scaffold(pipeline_name, env_config, execution_plan, image, edit
                             printer.line(
                                 '\'key\': \'{key}\''.format(
                                     key=_key_for_marshalled_result(
-                                        step_input.prev_output_handle.step.key,
+                                        step_input.prev_output_handle.step_key,
                                         step_input.prev_output_handle.output_name,
                                     )
                                 )
@@ -414,7 +414,7 @@ def _make_static_scaffold(pipeline_name, env_config, execution_plan, image, edit
 
             for step in execution_plan.topological_steps():
                 for step_input in step.step_inputs:
-                    prev_airflow_step_key = _normalize_key(step_input.prev_output_handle.step.key)
+                    prev_airflow_step_key = _normalize_key(step_input.prev_output_handle.step_key)
                     airflow_step_key = _normalize_key(step.key)
                     printer.line(
                         '{prev_airflow_step_key}_task.set_downstream('

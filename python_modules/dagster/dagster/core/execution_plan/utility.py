@@ -11,6 +11,7 @@ from .objects import (
     StepOutputHandle,
     StepOutputValue,
     StepKind,
+    SingleOutputStepCreationData,
 )
 
 JOIN_OUTPUT = 'join_output'
@@ -38,7 +39,7 @@ def create_join_step(pipeline_context, solid, step_key, prev_steps, prev_output_
         else:
             check.invariant(seen_runtime_type == prev_step_output.runtime_type)
 
-        output_handle = StepOutputHandle(prev_step, prev_output_name)
+        output_handle = StepOutputHandle.from_step(prev_step, prev_output_name)
 
         step_inputs.append(StepInput(prev_step.key, prev_step_output.runtime_type, output_handle))
 
@@ -85,7 +86,7 @@ def create_joining_subplan(
 
     output_name = join_step.step_outputs[0].name
     return ExecutionValueSubplan(
-        parallel_steps + [join_step], StepOutputHandle(join_step, output_name)
+        parallel_steps + [join_step], StepOutputHandle.from_step(join_step, output_name)
     )
 
 
@@ -101,7 +102,7 @@ def create_value_thunk_step(pipeline_context, solid, runtime_type, step_key, val
     def _fn(_context, _inputs):
         yield StepOutputValue(output_name=VALUE_OUTPUT, value=value)
 
-    return StepOutputHandle(
+    return SingleOutputStepCreationData(
         ExecutionStep(
             pipeline_context=pipeline_context,
             key=step_key,

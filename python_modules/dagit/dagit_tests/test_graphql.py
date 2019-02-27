@@ -1904,7 +1904,7 @@ def test_start_subplan_invalid_input_name(snapshot):
         == 'StartSubplanExecutionInvalidInputError'
     )
 
-    assert result.data['startSubplanExecution']['step']['key'] == 'sum_solid.transform'
+    assert result.data['startSubplanExecution']['stepKey'] == 'sum_solid.transform'
     assert result.data['startSubplanExecution']['invalidInputName'] == 'nope'
     snapshot.assert_match(result.data)
 
@@ -1932,7 +1932,7 @@ def test_start_subplan_invalid_output_name(snapshot):
         == 'StartSubplanExecutionInvalidOutputError'
     )
 
-    assert result.data['startSubplanExecution']['step']['key'] == 'sum_solid.transform'
+    assert result.data['startSubplanExecution']['stepKey'] == 'sum_solid.transform'
     assert result.data['startSubplanExecution']['invalidOutputName'] == 'nope'
     snapshot.assert_match(result.data)
 
@@ -2029,7 +2029,7 @@ def test_invalid_subplan_missing_inputs(snapshot):
     assert not result.errors
     assert result.data
     assert result.data['startSubplanExecution']['__typename'] == 'InvalidSubplanMissingInputError'
-    assert result.data['startSubplanExecution']['step']['key'] == 'sum_solid.transform'
+    assert result.data['startSubplanExecution']['stepKey'] == 'sum_solid.transform'
     snapshot.assert_match(result.data)
 
 
@@ -2092,15 +2092,15 @@ mutation (
             invalidStepKey
         }
         ... on StartSubplanExecutionInvalidInputError {
-            step { key }
+            stepKey
             invalidInputName
         }
         ... on StartSubplanExecutionInvalidOutputError {
-            step { key }
+            stepKey
             invalidOutputName
         }
         ... on InvalidSubplanMissingInputError {
-            step { key }
+            stepKey
             missingInputName
         }
         ... on PythonError {

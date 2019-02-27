@@ -31,6 +31,7 @@ from .objects import (
     StepInput,
     StepOutputHandle,
     StepKind,
+    SingleOutputStepCreationData,
 )
 
 from .plan_subset import ExecutionPlanSubsetInfo, ExecutionPlanAddedOutputs, OutputStepFactoryEntry
@@ -113,7 +114,7 @@ def create_execution_plan_from_steps(pipeline_context, steps):
         seen_keys.add(step.key)
 
         for step_input in step.step_inputs:
-            deps[step.key].add(step_input.prev_output_handle.step.key)
+            deps[step.key].add(step_input.prev_output_handle.step_key)
 
     return ExecutionPlan(pipeline_context.pipeline_def, step_dict, deps)
 
@@ -157,11 +158,11 @@ def get_input_source_step_handle(pipeline_context, plan_builder, solid, input_de
     solid_config = pipeline_context.environment_config.solids.get(solid.name)
     dependency_structure = pipeline_context.pipeline_def.dependency_structure
     if solid_config and input_def.name in solid_config.inputs:
-        input_thunk_output_handle = create_input_thunk_execution_step(
+        step_creation_data = create_input_thunk_execution_step(
             pipeline_context, solid, input_def, solid_config.inputs[input_def.name]
         )
-        plan_builder.steps.append(input_thunk_output_handle.step)
-        return input_thunk_output_handle
+        plan_builder.steps.append(step_creation_data.step)
+        return step_creation_data.step_output_handle
     elif dependency_structure.has_dep(input_handle):
         solid_output_handle = dependency_structure.get_dep(input_handle)
         return plan_builder.step_output_map[solid_output_handle]
@@ -299,7 +300,7 @@ def _validate_new_plan(new_plan, subset_info, added_outputs, pipeline_context):
 
     for step in new_plan.steps:
         for step_input in step.step_inputs:
-            if new_plan.has_step(step_input.prev_output_handle.step.key):
+            if new_plan.has_step(step_input.prev_output_handle.step_key):
                 # step in is in the new plan, we're fine
                 continue
 
@@ -364,17 +365,19 @@ def _create_new_step_with_added_inputs(pipeline_context, step, subset_info):
         if not subset_info.has_injected_step_for_input(step.key, step_input.name):
             continue
 
-        step_output_handle = check.inst(
+        step_creation_data = check.inst(
             subset_info.input_step_factory_fns[step.key][step_input.name](
                 pipeline_context, step, step_input
             ),
-            StepOutputHandle,
-            'Step factory function must create StepOutputHandle',
+            SingleOutputStepCreationData,
+            'Step factory function must create SingleOutputStepCreationData',
         )
 
-        new_steps.append(step_output_handle.step)
+        new_steps.append(step_creation_data.step)
         new_step_inputs.append(
-            StepInput(step_input.name, step_input.runtime_type, step_output_handle)
+            StepInput(
+                step_input.name, step_input.runtime_type, step_creation_data.step_output_handle
+            )
         )
 
     return step.with_new_inputs(new_step_inputs), new_steps

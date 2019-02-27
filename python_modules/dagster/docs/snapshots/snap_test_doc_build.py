@@ -20383,7 +20383,7 @@ try:</p>
 <blockquote>
 <div><dl class="docutils">
 <dt>context.persistence_strategy.write_value(</dt>
-<dd>output_type.serialization_strategy, output[‘path’], result.success_data.value</dd>
+<dd>output_type.serialization_strategy, output[‘path’], result.step_output_data.value</dd>
 </dl>
 <p>)</p>
 </div></blockquote>

@@ -7,86 +7,6 @@ from snapshottest import Snapshot
 
 snapshots = Snapshot()
 
-snapshots['test_query_execution_plan_snapshot 1'] = {
-    'executionPlan': {
-        '__typename': 'ExecutionPlan',
-        'pipeline': {
-            'name': 'pandas_hello_world'
-        },
-        'steps': [
-            {
-                'inputs': [
-                ],
-                'kind': 'INPUT_THUNK',
-                'name': 'sum_solid.num.input_thunk',
-                'outputs': [
-                    {
-                        'name': 'input_thunk_output',
-                        'type': {
-                            'name': 'PandasDataFrame'
-                        }
-                    }
-                ],
-                'solid': {
-                    'name': 'sum_solid'
-                }
-            },
-            {
-                'inputs': [
-                    {
-                        'dependsOn': {
-                            'name': 'sum_solid.num.input_thunk'
-                        },
-                        'name': 'num',
-                        'type': {
-                            'name': 'PandasDataFrame'
-                        }
-                    }
-                ],
-                'kind': 'TRANSFORM',
-                'name': 'sum_solid.transform',
-                'outputs': [
-                    {
-                        'name': 'result',
-                        'type': {
-                            'name': 'PandasDataFrame'
-                        }
-                    }
-                ],
-                'solid': {
-                    'name': 'sum_solid'
-                }
-            },
-            {
-                'inputs': [
-                    {
-                        'dependsOn': {
-                            'name': 'sum_solid.transform'
-                        },
-                        'name': 'sum_df',
-                        'type': {
-                            'name': 'PandasDataFrame'
-                        }
-                    }
-                ],
-                'kind': 'TRANSFORM',
-                'name': 'sum_sq_solid.transform',
-                'outputs': [
-                    {
-                        'name': 'result',
-                        'type': {
-                            'name': 'PandasDataFrame'
-                        }
-                    }
-                ],
-                'solid': {
-                    'name': 'sum_sq_solid'
-                }
-            }
-        ]
-    }
-}
-
 snapshots['test_start_subplan_pipeline_not_found 1'] = {
     'startSubplanExecution': {
         '__typename': 'PipelineNotFoundError',
@@ -104,16 +24,6 @@ snapshots['test_start_subplan_invalid_config 1'] = {
         ],
         'pipeline': {
             'name': 'pandas_hello_world'
-        }
-    }
-}
-
-snapshots['test_invalid_subplan_missing_inputs 1'] = {
-    'startSubplanExecution': {
-        '__typename': 'InvalidSubplanMissingInputError',
-        'missingInputName': 'num',
-        'step': {
-            'key': 'sum_solid.transform'
         }
     }
 }
@@ -254,13 +164,26 @@ snapshots['test_user_code_error_subplan 1'] = {
     }
 }
 
+snapshots['test_start_subplan_invalid_step_keys 1'] = {
+    'startSubplanExecution': {
+        '__typename': 'StartSubplanExecutionInvalidStepError',
+        'invalidStepKey': 'nope'
+    }
+}
+
+snapshots['test_invalid_subplan_missing_inputs 1'] = {
+    'startSubplanExecution': {
+        '__typename': 'InvalidSubplanMissingInputError',
+        'missingInputName': 'num',
+        'stepKey': 'sum_solid.transform'
+    }
+}
+
 snapshots['test_start_subplan_invalid_output_name 1'] = {
     'startSubplanExecution': {
         '__typename': 'StartSubplanExecutionInvalidOutputError',
         'invalidOutputName': 'nope',
-        'step': {
-            'key': 'sum_solid.transform'
-        }
+        'stepKey': 'sum_solid.transform'
     }
 }
 
@@ -268,15 +191,86 @@ snapshots['test_start_subplan_invalid_input_name 1'] = {
     'startSubplanExecution': {
         '__typename': 'StartSubplanExecutionInvalidInputError',
         'invalidInputName': 'nope',
-        'step': {
-            'key': 'sum_solid.transform'
-        }
+        'stepKey': 'sum_solid.transform'
     }
 }
 
-snapshots['test_start_subplan_invalid_step_keys 1'] = {
-    'startSubplanExecution': {
-        '__typename': 'StartSubplanExecutionInvalidStepError',
-        'invalidStepKey': 'nope'
+snapshots['test_query_execution_plan_snapshot 1'] = {
+    'executionPlan': {
+        '__typename': 'ExecutionPlan',
+        'pipeline': {
+            'name': 'pandas_hello_world'
+        },
+        'steps': [
+            {
+                'inputs': [
+                ],
+                'kind': 'INPUT_THUNK',
+                'name': 'sum_solid.num.input_thunk',
+                'outputs': [
+                    {
+                        'name': 'input_thunk_output',
+                        'type': {
+                            'name': 'PandasDataFrame'
+                        }
+                    }
+                ],
+                'solid': {
+                    'name': 'sum_solid'
+                }
+            },
+            {
+                'inputs': [
+                    {
+                        'dependsOn': {
+                            'name': 'sum_solid.num.input_thunk'
+                        },
+                        'name': 'num',
+                        'type': {
+                            'name': 'PandasDataFrame'
+                        }
+                    }
+                ],
+                'kind': 'TRANSFORM',
+                'name': 'sum_solid.transform',
+                'outputs': [
+                    {
+                        'name': 'result',
+                        'type': {
+                            'name': 'PandasDataFrame'
+                        }
+                    }
+                ],
+                'solid': {
+                    'name': 'sum_solid'
+                }
+            },
+            {
+                'inputs': [
+                    {
+                        'dependsOn': {
+                            'name': 'sum_solid.transform'
+                        },
+                        'name': 'sum_df',
+                        'type': {
+                            'name': 'PandasDataFrame'
+                        }
+                    }
+                ],
+                'kind': 'TRANSFORM',
+                'name': 'sum_sq_solid.transform',
+                'outputs': [
+                    {
+                        'name': 'result',
+                        'type': {
+                            'name': 'PandasDataFrame'
+                        }
+                    }
+                ],
+                'solid': {
+                    'name': 'sum_sq_solid'
+                }
+            }
+        ]
     }
 }
