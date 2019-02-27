@@ -1,3 +1,7 @@
+0.3.3
+
+   - API Additions and Changes
+      - Removed step, environment_config, event_callback, has_event_callback, persistence_strategy, events, and execution_metadata properties from user-facing context objects.
 0.3.2
 
    - New features
