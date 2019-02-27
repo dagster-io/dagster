@@ -9,47 +9,77 @@ interface IExecutionStartButtonProps {
   onClick: () => void;
 }
 
-export default function ExecutionStartButton(
-  props: IExecutionStartButtonProps
-) {
-  return (
-    <WebsocketStatusContext.Consumer>
-      {websocketStatus => {
-        if (props.executing) {
+interface IExecutionStartButtonState {
+  starting: boolean;
+}
+
+export default class ExecutionStartButton extends React.Component<
+  IExecutionStartButtonProps,
+  IExecutionStartButtonState
+> {
+  _mounted: boolean = false;
+
+  state = {
+    starting: false
+  };
+
+  componentDidMount() {
+    this._mounted = true;
+  }
+
+  componentWillUnmount() {
+    this._mounted = false;
+  }
+
+  onClick = async () => {
+    this.setState({ starting: true });
+    await this.props.onClick();
+    setTimeout(() => {
+      if (!this._mounted) return;
+      this.setState({ starting: false });
+    }, 300);
+  };
+
+  render() {
+    return (
+      <WebsocketStatusContext.Consumer>
+        {websocketStatus => {
+          if (this.props.executing || this.state.starting) {
+            return (
+              <IconWrapper
+                role="button"
+                title={"Pipeline execution is in progress..."}
+              >
+                <Spinner intent={Intent.NONE} size={39} />
+              </IconWrapper>
+            );
+          }
+
+          if (websocketStatus !== WebSocket.OPEN) {
+            return (
+              <IconWrapper
+                role="button"
+                disabled={true}
+                title={"Dagit is disconnected"}
+              >
+                <Icon icon={IconNames.OFFLINE} iconSize={40} />
+              </IconWrapper>
+            );
+          }
+
           return (
             <IconWrapper
               role="button"
-              title={"Pipeline execution is in progress..."}
+              title={"Start pipeline execution"}
+              onClick={this.onClick}
             >
-              <Spinner intent={Intent.NONE} size={39} />
+              <Icon icon={IconNames.PLAY} iconSize={40} />
             </IconWrapper>
           );
-        }
-
-        if (websocketStatus !== WebSocket.OPEN) {
-          return (
-            <IconWrapper
-              role="button"
-              disabled={true}
-              title={"Dagit is disconnected"}
-            >
-              <Icon icon={IconNames.OFFLINE} iconSize={40} />
-            </IconWrapper>
-          );
-        }
-
-        return (
-          <IconWrapper
-            role="button"
-            title={"Start pipeline execution"}
-            onClick={props.onClick}
-          >
-            <Icon icon={IconNames.PLAY} iconSize={40} />
-          </IconWrapper>
-        );
-      }}
-    </WebsocketStatusContext.Consumer>
-  );
+        }}
+      </WebsocketStatusContext.Consumer>
+    );
+  }
 }
 
 const IconWrapper = styled.div<{ disabled?: boolean }>`
