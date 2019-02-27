@@ -7,8 +7,6 @@ from dagster.core.errors import DagsterSubprocessExecutionError
 
 from dagster.core.execution_context import SystemPipelineExecutionContext
 
-from dagster.core.files import LocalTempFileStore
-
 from .create import create_execution_plan_core
 from .intermediates_manager import FileSystemIntermediateManager
 from .objects import (

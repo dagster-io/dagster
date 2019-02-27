@@ -2,13 +2,22 @@ from abc import ABCMeta, abstractmethod
 from contextlib import contextmanager
 import os
 
+import six
+
 from dagster import check
 from dagster.utils import mkdir_p
 
 
-class FileStore:
-    pass
-    # def __init__(self):
+class FileStore(six.with_metaclass(ABCMeta)):  # pylint: disable=no-init
+    @abstractmethod
+    @contextmanager
+    def writeable_binary_stream(self, *path_comps):
+        pass
+
+    @abstractmethod
+    @contextmanager
+    def readable_binary_stream(self, *path_comps):
+        pass
 
 
 class LocalTempFileStore(FileStore):

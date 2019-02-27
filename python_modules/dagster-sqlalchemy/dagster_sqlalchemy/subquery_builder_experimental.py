@@ -2,7 +2,6 @@ import os
 
 from dagster import Field, InputDefinition, OutputDefinition, SolidDefinition, check, Dict, String
 from dagster.core.user_context import TransformExecutionContext
-from dagster.core.execution_context import SystemTransformExecutionContext
 
 from dagster.core.test_utils import single_output_transform
 

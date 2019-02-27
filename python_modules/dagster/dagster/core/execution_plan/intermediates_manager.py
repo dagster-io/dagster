@@ -1,14 +1,12 @@
 from abc import ABCMeta, abstractmethod
 from collections import namedtuple
-import os
 import pickle
 
 import six
 
 from dagster import check
-from dagster.utils import mkdir_p
 
-from dagster.core.files import FileStore, LocalTempFileStore
+from dagster.core.files import FileStore
 
 
 class StepOutputHandle(namedtuple('_StepOutputHandle', 'step_key output_name')):
