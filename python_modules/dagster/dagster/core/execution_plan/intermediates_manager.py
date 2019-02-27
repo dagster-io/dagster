@@ -8,6 +8,8 @@ import six
 from dagster import check
 from dagster.utils import mkdir_p
 
+from dagster.core.files import FileStore, LocalTempFileStore
+
 
 class StepOutputHandle(namedtuple('_StepOutputHandle', 'step_key output_name')):
     @staticmethod
@@ -76,40 +78,25 @@ class InMemoryIntermediatesManager(IntermediatesManager):
 # will likely be to inject a different type of execution step that threads
 # the manager
 class FileSystemIntermediateManager(IntermediatesManager):
-    def __init__(self, root):
-        check.invariant(os.path.isdir(root))
-        self._root = root
+    def __init__(self, files):
+        self._files = check.inst_param(files, 'files', FileStore)
 
-    @property
-    def root(self):
-        return self._root
-
-    def _create_path_from_handle(self, step_output_handle):
-        check.inst_param(step_output_handle, 'step_output_handle', StepOutputHandle)
-        return os.path.join(self._root, step_output_handle.step_key, step_output_handle.output_name)
+    def _get_path_comps(self, step_output_handle):
+        return ['intermediates', step_output_handle.step_key, step_output_handle.output_name]
 
     def get_value(self, step_output_handle):
         check.inst_param(step_output_handle, 'step_output_handle', StepOutputHandle)
         check.invariant(self.has_value(step_output_handle))
-        output_path = self._create_path_from_handle(step_output_handle)
-        check.invariant(os.path.isfile(output_path))
-        return read_pickle_file(output_path)
+
+        with self._files.readable_binary_stream(*self._get_path_comps(step_output_handle)) as ff:
+            return pickle.load(ff)
 
     def set_value(self, step_output_handle, value):
         check.inst_param(step_output_handle, 'step_output_handle', StepOutputHandle)
         check.invariant(not self.has_value(step_output_handle))
 
-        mkdir_p('{root}/{step_key}'.format(root=self._root, step_key=step_output_handle.step_key))
-
-        output_path = self._create_path_from_handle(step_output_handle)
-        check.invariant(not os.path.exists(output_path))
-        write_pickle_file(output_path, value)
+        with self._files.writeable_binary_stream(*self._get_path_comps(step_output_handle)) as ff:
+            pickle.dump(value, ff)
 
     def has_value(self, step_output_handle):
-        check.inst_param(step_output_handle, 'step_output_handle', StepOutputHandle)
-        output_path = self._create_path_from_handle(step_output_handle)
-        if os.path.exists(output_path):
-            check.invariant(os.path.isfile(output_path))
-            return True
-        else:
-            return False
+        return self._files.has_file(*self._get_path_comps(step_output_handle))

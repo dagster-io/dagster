@@ -7,6 +7,8 @@ from dagster.core.errors import DagsterSubprocessExecutionError
 
 from dagster.core.execution_context import SystemPipelineExecutionContext
 
+from dagster.core.files import LocalTempFileStore
+
 from .create import create_execution_plan_core
 from .intermediates_manager import FileSystemIntermediateManager
 from .objects import (
@@ -22,7 +24,7 @@ from .simple_engine import start_inprocess_executor
 
 
 def _execute_in_child_process(
-    queue, executor_config, environment_dict, execution_metadata, step_key, input_meta_dict, root
+    queue, executor_config, environment_dict, execution_metadata, step_key, input_meta_dict
 ):
     from dagster.core.execution import yield_pipeline_execution_context
 
@@ -34,7 +36,7 @@ def _execute_in_child_process(
         pipeline, environment_dict, execution_metadata.with_tags(pid=str(os.getpid()))
     ) as pipeline_context:
 
-        intermediates_manager = FileSystemIntermediateManager(root)
+        intermediates_manager = FileSystemIntermediateManager(pipeline_context.files)
 
         inputs_for_step = _create_input_values(input_meta_dict, intermediates_manager)
 
@@ -48,6 +50,7 @@ def _execute_in_child_process(
         for step_event in start_inprocess_executor(
             pipeline_context, execution_plan, intermediates_manager
         ):
+            print(f'Step Event: {step_event}')
             data_to_put = {
                 'event_type': step_event.event_type,
                 'step_output_data': {
@@ -85,7 +88,6 @@ def execute_step_out_of_process(executor_config, step_context, step, intermediat
             step_context.execution_metadata,
             step.key,
             {step_input.name: step_input.prev_output_handle for step_input in step.step_inputs},
-            intermediates_manager.root,
         ),
     )
 
@@ -164,7 +166,7 @@ def multiprocess_execute_plan(executor_config, pipeline_context, execution_plan)
     root_dir = '/tmp/dagster/runs/{run_id}'.format(run_id=pipeline_context.run_id)
     mkdir_p(root_dir)
 
-    intermediates_manager = FileSystemIntermediateManager(root_dir)
+    intermediates_manager = FileSystemIntermediateManager(pipeline_context.files)
 
     # It would be good to implement a reference tracking algorithm here so we could
     # garbage collection results that are no longer needed by any steps

@@ -61,6 +61,8 @@ from .execution_plan.multiprocessing_engine import (
 
 from .execution_plan.simple_engine import start_inprocess_executor
 
+from .files import LocalTempFileStore
+
 from .init_context import InitContext, InitResourceContext
 
 from .log import DagsterLog
@@ -399,11 +401,12 @@ def construct_pipeline_execution_context(
             pipeline_def=pipeline,
             execution_metadata=execution_metadata,
             resources=resources,
-            event_callback=execution_metadata.event_callback,
             environment_config=environment_config,
             persistence_strategy=_create_persistence_strategy(
                 environment_config.context.persistence
             ),
+            files=LocalTempFileStore(execution_metadata.run_id),
+            event_callback=execution_metadata.event_callback,
         ),
         tags=tags,
         log=log,
