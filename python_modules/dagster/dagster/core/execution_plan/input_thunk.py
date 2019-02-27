@@ -1,6 +1,6 @@
 from dagster import check
 
-from dagster.core.execution_context import PipelineExecutionContext
+from dagster.core.execution_context import SystemPipelineExecutionContext
 from dagster.core.definitions import InputDefinition, Solid
 
 from dagster.core.errors import DagsterInvariantViolationError
@@ -17,7 +17,7 @@ INPUT_THUNK_OUTPUT = 'input_thunk_output'
 
 
 def _create_input_thunk_execution_step(pipeline_context, solid, input_def, input_spec):
-    check.inst_param(pipeline_context, 'pipeline_context', PipelineExecutionContext)
+    check.inst_param(pipeline_context, 'pipeline_context', SystemPipelineExecutionContext)
     check.inst_param(solid, 'solid', Solid)
     check.inst_param(input_def, 'input_def', InputDefinition)
 
@@ -40,7 +40,7 @@ def _create_input_thunk_execution_step(pipeline_context, solid, input_def, input
 
 
 def create_input_thunk_execution_step(pipeline_context, solid, input_def, input_spec):
-    check.inst_param(pipeline_context, 'pipeline_context', PipelineExecutionContext)
+    check.inst_param(pipeline_context, 'pipeline_context', SystemPipelineExecutionContext)
     check.inst_param(solid, 'solid', Solid)
     check.inst_param(input_def, 'input_def', InputDefinition)
 

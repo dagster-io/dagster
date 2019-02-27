@@ -2,7 +2,10 @@ import sqlalchemy
 
 from dagster import ExecutionContext, check
 
-from dagster.core.execution_context import PipelineExecutionContext, TransformExecutionContext
+from dagster.core.execution_context import (
+    SystemPipelineExecutionContext,
+    SystemTransformExecutionContext,
+)
 
 
 class SqlAlchemyResource(object):
@@ -17,7 +20,7 @@ class DefaultSqlAlchemyResources(object):
 
 
 def check_supports_sql_alchemy_resource(pipeline_context):
-    check.inst_param(pipeline_context, 'pipeline_context', PipelineExecutionContext)
+    check.inst_param(pipeline_context, 'pipeline_context', SystemPipelineExecutionContext)
     check.invariant(pipeline_context.resources is not None)
     check.invariant(
         hasattr(pipeline_context.resources, 'sa'),
@@ -37,7 +40,7 @@ def create_sqlalchemy_context_from_engine(engine, loggers=None):
 
 
 def _is_sqlite_context(transform_context):
-    check.inst_param(transform_context, 'transform_context', TransformExecutionContext)
+    check.inst_param(transform_context, 'transform_context', SystemTransformExecutionContext)
 
     check_supports_sql_alchemy_resource(transform_context.legacy_context)
     return _is_sqlite_resource(transform_context.resources.sa)
@@ -54,7 +57,7 @@ def _is_sqlite_resource(sa_resource):
 
 
 def execute_sql_text_on_context(transform_context, sql_text):
-    check.inst_param(transform_context, 'transform_context', TransformExecutionContext)
+    check.inst_param(transform_context, 'transform_context', SystemTransformExecutionContext)
     check_supports_sql_alchemy_resource(transform_context)
 
     return execute_sql_text_on_sa_resource(transform_context.resources.sa, sql_text)

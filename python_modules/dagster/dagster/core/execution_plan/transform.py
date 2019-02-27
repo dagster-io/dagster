@@ -1,13 +1,17 @@
 from dagster import check
 from dagster.core.definitions import Result, Solid
 from dagster.core.errors import DagsterInvariantViolationError
-from dagster.core.execution_context import TransformExecutionContext, PipelineExecutionContext
+from dagster.core.user_context import TransformExecutionContext
+from dagster.core.execution_context import (
+    SystemTransformExecutionContext,
+    SystemPipelineExecutionContext,
+)
 
 from .objects import ExecutionStep, StepInput, StepKind, StepOutput, StepOutputValue
 
 
 def create_transform_step(pipeline_context, solid, step_inputs):
-    check.inst_param(pipeline_context, 'pipeline_context', PipelineExecutionContext)
+    check.inst_param(pipeline_context, 'pipeline_context', SystemPipelineExecutionContext)
     check.inst_param(solid, 'solid', Solid)
     check.list_param(step_inputs, 'step_inputs', of_type=StepInput)
 
@@ -28,9 +32,9 @@ def create_transform_step(pipeline_context, solid, step_inputs):
 
 
 def _yield_transform_results(transform_context, inputs):
-    check.inst_param(transform_context, 'transform_context', TransformExecutionContext)
+    check.inst_param(transform_context, 'transform_context', SystemTransformExecutionContext)
     step = transform_context.step
-    gen = step.solid.definition.transform_fn(transform_context, inputs)
+    gen = step.solid.definition.transform_fn(TransformExecutionContext(transform_context), inputs)
 
     if isinstance(gen, Result):
         raise DagsterInvariantViolationError(
@@ -66,7 +70,7 @@ def _execute_core_transform(transform_context, inputs):
     Execute the user-specified transform for the solid. Wrap in an error boundary and do
     all relevant logging and metrics tracking
     '''
-    check.inst_param(transform_context, 'transform_context', TransformExecutionContext)
+    check.inst_param(transform_context, 'transform_context', SystemTransformExecutionContext)
     check.dict_param(inputs, 'inputs', key_type=str)
 
     step = transform_context.step

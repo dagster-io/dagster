@@ -29,11 +29,11 @@ from .definitions.utils import DEFAULT_OUTPUT
 from .definitions.environment_configs import construct_environment_config
 
 from .execution_context import (
-    ExecutionContext,
     ExecutionMetadata,
-    PipelineExecutionContextData,
-    PipelineExecutionContext,
+    SystemPipelineExecutionContextData,
+    SystemPipelineExecutionContext,
 )
+
 
 from .errors import DagsterInvariantViolationError
 
@@ -69,6 +69,8 @@ from .system_config.objects import EnvironmentConfig
 
 from .types.evaluator import EvaluationError, evaluate_config_value, friendly_string_for_error
 from .types.marshal import FilePersistencePolicy
+
+from .user_context import ExecutionContext
 
 
 class PipelineExecutionResult(object):
@@ -159,6 +161,11 @@ class SolidExecutionResult(object):
         )
 
     @property
+    def transform(self):
+        check.invariant(len(self.step_events_by_kind[StepKind.TRANSFORM]) == 1)
+        return self.step_events_by_kind[StepKind.TRANSFORM][0]
+
+    @property
     def transforms(self):
         return self.step_events_by_kind.get(StepKind.TRANSFORM, [])
 
@@ -172,7 +179,7 @@ class SolidExecutionResult(object):
 
     @staticmethod
     def from_step_events(pipeline_context, step_events):
-        check.inst_param(pipeline_context, 'pipeline_context', PipelineExecutionContext)
+        check.inst_param(pipeline_context, 'pipeline_context', SystemPipelineExecutionContext)
         step_events = check.list_param(step_events, 'step_events', ExecutionStepEvent)
         if step_events:
             step_events_by_kind = defaultdict(list)
@@ -387,8 +394,8 @@ def construct_pipeline_execution_context(
     tags = get_tags(execution_context, execution_metadata, pipeline)
     log = DagsterLog(execution_metadata.run_id, tags, loggers)
 
-    return PipelineExecutionContext(
-        PipelineExecutionContextData(
+    return SystemPipelineExecutionContext(
+        SystemPipelineExecutionContextData(
             pipeline_def=pipeline,
             execution_metadata=execution_metadata,
             resources=resources,

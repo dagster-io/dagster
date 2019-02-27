@@ -1,5 +1,5 @@
 from dagster import check
-from dagster.core.execution import PipelineExecutionContext
+from dagster.core.execution import SystemPipelineExecutionContext
 from dagster.core.definitions import Solid
 from dagster.core.types.runtime import RuntimeType
 
@@ -22,7 +22,7 @@ def __join_lambda(_context, inputs):
 
 
 def create_join_step(pipeline_context, solid, step_key, prev_steps, prev_output_name):
-    check.inst_param(pipeline_context, 'pipeline_context', PipelineExecutionContext)
+    check.inst_param(pipeline_context, 'pipeline_context', SystemPipelineExecutionContext)
     check.inst_param(solid, 'solid', Solid)
     check.str_param(step_key, 'step_key')
     check.list_param(prev_steps, 'prev_steps', of_type=ExecutionStep)
@@ -71,7 +71,7 @@ def create_joining_subplan(
     to be seen if there should be any work or verification done in this step, especially
     in multi-process environments that require persistence between steps.
     '''
-    check.inst_param(pipeline_context, 'pipeline_context', PipelineExecutionContext)
+    check.inst_param(pipeline_context, 'pipeline_context', SystemPipelineExecutionContext)
     check.inst_param(solid, 'solid', Solid)
     check.str_param(join_step_key, 'join_step_key')
     check.list_param(parallel_steps, 'parallel_steps', of_type=ExecutionStep)
@@ -94,7 +94,7 @@ VALUE_OUTPUT = 'value_output'
 
 
 def create_value_thunk_step(pipeline_context, solid, runtime_type, step_key, value):
-    check.inst_param(pipeline_context, 'pipeline_context', PipelineExecutionContext)
+    check.inst_param(pipeline_context, 'pipeline_context', SystemPipelineExecutionContext)
     check.inst_param(solid, 'solid', Solid)
     check.inst_param(runtime_type, 'runtime_type', RuntimeType)
     check.str_param(step_key, 'step_key')

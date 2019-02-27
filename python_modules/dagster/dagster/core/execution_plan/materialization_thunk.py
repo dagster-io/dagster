@@ -1,7 +1,7 @@
 from dagster import check
 
 from dagster.core.definitions import Solid, OutputDefinition
-from dagster.core.execution_context import PipelineExecutionContext
+from dagster.core.execution_context import SystemPipelineExecutionContext
 
 from dagster.core.types.runtime import RuntimeType
 
@@ -42,7 +42,7 @@ def configs_for_output(solid, solid_config, output_def):
 
 
 def decorate_with_output_materializations(pipeline_context, solid, output_def, subplan):
-    check.inst_param(pipeline_context, 'pipeline_context', PipelineExecutionContext)
+    check.inst_param(pipeline_context, 'pipeline_context', SystemPipelineExecutionContext)
     check.inst_param(solid, 'solid', Solid)
     check.inst_param(output_def, 'output_def', OutputDefinition)
     check.inst_param(subplan, 'subplan', ExecutionValueSubplan)
