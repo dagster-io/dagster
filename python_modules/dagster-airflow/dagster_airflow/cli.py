@@ -34,6 +34,15 @@ from .version import __version__
     ),
 )
 @click.option(
+    '--regenerate',
+    is_flag=True,
+    help=(
+        'If the --regenerate flag is set, regenerate only the static file (to keep up with '
+        'changes in the source pipeline definition or config), but do not touch the editable '
+        'file.'
+    ),
+)
+@click.option(
     '-e',
     '--env',
     type=click.STRING,
@@ -53,7 +62,7 @@ from .version import __version__
         '-e environments/local_fast_download.yml'
     ),
 )
-def scaffold(env, install, image, **cli_args):
+def scaffold(env, install, image, regenerate, **cli_args):
     check.invariant(isinstance(env, tuple))
     env = list(env)
 
@@ -70,7 +79,9 @@ def scaffold(env, install, image, **cli_args):
 
     env_config = load_yaml_from_glob_list(env)
 
-    scaffold_airflow_dag(pipeline, env_config, image=image, output_path=output_path)
+    scaffold_airflow_dag(
+        pipeline, env_config, image=image, output_path=output_path, regenerate=regenerate
+    )
 
 
 def create_dagster_airflow_cli():
