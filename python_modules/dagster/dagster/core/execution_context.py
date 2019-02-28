@@ -15,6 +15,7 @@ from .definitions.expectation import ExpectationDefinition
 from .definitions.input import InputDefinition
 from .definitions.output import OutputDefinition
 from .events import ExecutionEvents
+from .files import FileStore
 from .log import DagsterLog
 from .system_config.objects import EnvironmentConfig
 from .types.marshal import PersistenceStrategy
@@ -46,7 +47,7 @@ class SystemPipelineExecutionContextData(
         '_SystemPipelineExecutionContextData',
         (
             'execution_metadata resources environment_config persistence_strategy pipeline_def '
-            'event_callback'
+            'files event_callback'
         ),
     )
 ):
@@ -62,6 +63,7 @@ class SystemPipelineExecutionContextData(
         environment_config,
         persistence_strategy,
         pipeline_def,
+        files,
         event_callback=None,
     ):
         from .definitions.pipeline import PipelineDefinition
@@ -79,6 +81,7 @@ class SystemPipelineExecutionContextData(
                 persistence_strategy, 'persistence_strategy', PersistenceStrategy
             ),
             pipeline_def=check.inst_param(pipeline_def, 'pipeline_def', PipelineDefinition),
+            files=check.inst_param(files, 'files', FileStore),
             event_callback=check.opt_callable_param(event_callback, 'event_callback'),
         )
 
@@ -164,6 +167,10 @@ class SystemPipelineExecutionContext(object):
     @property
     def log(self):
         return self._log
+
+    @property
+    def files(self):
+        return self._pipeline_context_data.files
 
 
 class SystemStepExecutionContext(SystemPipelineExecutionContext):
