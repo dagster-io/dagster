@@ -5,12 +5,14 @@
 // GraphQL query operation: AppQuery
 // ====================================================
 
-export interface AppQuery_pipelinesOrError_InvalidDefinitionError {
-  __typename: "InvalidDefinitionError";
-}
-
 export interface AppQuery_pipelinesOrError_PythonError {
   __typename: "PythonError";
+  message: string;
+  stack: string[];
+}
+
+export interface AppQuery_pipelinesOrError_InvalidDefinitionError {
+  __typename: "InvalidDefinitionError";
   message: string;
   stack: string[];
 }
@@ -567,7 +569,7 @@ export interface AppQuery_pipelinesOrError_PipelineConnection {
   nodes: AppQuery_pipelinesOrError_PipelineConnection_nodes[];
 }
 
-export type AppQuery_pipelinesOrError = AppQuery_pipelinesOrError_InvalidDefinitionError | AppQuery_pipelinesOrError_PythonError | AppQuery_pipelinesOrError_PipelineConnection;
+export type AppQuery_pipelinesOrError = AppQuery_pipelinesOrError_PythonError | AppQuery_pipelinesOrError_InvalidDefinitionError | AppQuery_pipelinesOrError_PipelineConnection;
 
 export interface AppQuery {
   pipelinesOrError: AppQuery_pipelinesOrError;
