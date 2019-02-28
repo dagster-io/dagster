@@ -29,6 +29,7 @@ from dagster import (
     check,
     types,
 )
+from dagster.core.types.marshal import PickleSerializationStrategy
 from dagster.core.definitions.dependency import Solid
 from dagster.core.definitions.environment_configs import construct_environment_config
 from dagster.core.errors import DagsterSubprocessExecutionError
@@ -109,6 +110,9 @@ class Manager:
         self.solid_def = None
         self.marshal_dir = None
         self.context = None
+        self.input_def_str_dict = None
+        self.output_def_str_dict = None
+        self.solid_def_name = None
 
     def register_repository(self, repository_def):
         self.repository_def = repository_def
@@ -132,21 +136,36 @@ class Manager:
         if not self.populated_by_papermill:
             return value
 
-        check.invariant(
-            self.solid_def is not None,
-            "If Dagstermill has been run by papermill, self.solid_def should not be None",
-        )
-        if not self.solid_def.has_output(output_name):
-            raise DagstermillError(
-                'Solid {solid_name} does not have output named {output_name}'.format(
-                    solid_name=self.solid_def.name, output_name=output_name
+        if self.solid_def is None:
+            if output_name not in self.output_def_str_dict:
+                raise DagstermillError(
+                    'Solid {solid_name} does not have output named {output_name}'.format(
+                        solid_name=self.solid_def_name, output_name=output_name
+                    )
                 )
-            )
+            runtime_type_str = self.output_def_str_dict[output_name]
+            if runtime_type_str == 'scalar':
+                pm.record(output_name, value)
+            elif runtime_type_str == 'any' and is_json_serializable(value):
+                pm.record(output_name, value)
+            elif runtime_type_str == 'pickle':
+                out_file = os.path.join(self.marshal_dir, 'output-{}'.format(output_name))
+                serialize_to_file(PickleSerializationStrategy, value, out_file)
+                pm.record(output_name, out_file)
+            else:
+                raise DagstermillError('Output Definition requires repo registration')
+        else:
+            if not self.solid_def.has_output(output_name):
+                raise DagstermillError(
+                    'Solid {solid_name} does not have output named {output_name}'.format(
+                        solid_name=self.solid_def.name, output_name=output_name
+                    )
+                )
 
-        runtime_type = self.solid_def.output_def_named(output_name).runtime_type
+            runtime_type = self.solid_def.output_def_named(output_name).runtime_type
 
-        out_file = os.path.join(self.marshal_dir, 'output-{}'.format(output_name))
-        pm.record(output_name, write_value(runtime_type, value, out_file))
+            out_file = os.path.join(self.marshal_dir, 'output-{}'.format(output_name))
+            pm.record(output_name, write_value(runtime_type, value, out_file))
 
     def populate_context(
         self,
@@ -156,33 +175,56 @@ class Manager:
         marshal_dir,
         environment_dict,
         output_log_path,
+        input_def_str_dict,
+        output_def_str_dict,
     ):
         check.dict_param(environment_dict, 'environment_dict')
         self.populated_by_papermill = True
-        check.invariant(
-            self.repository_def != None,
-            desc='When running Dagstermill notebook in pipeline, '
-            'must register a repository within notebook by calling '
-            '"dm.register_repository(repository_def)"',
-        )
-        self.pipeline_def = self.repository_def.get_pipeline(pipeline_def_name)
-        check.invariant(self.pipeline_def.has_solid_def(solid_def_name))
-        self.solid_def = self.pipeline_def.solid_def_named(solid_def_name)
-
+        self.solid_def_name = solid_def_name
         self.marshal_dir = marshal_dir
-        loggers = None
-        if output_log_path != 0:
-            event_logger = construct_json_event_logger(output_log_path)
-            loggers = [event_logger]
-        # do not include event_callback in ExecutionMetadata,
-        # since that'll be taken care of by side-channel established by event_logger
-        run_config = RunConfig(run_id, loggers=loggers)
-        # See block comment above referencing this issue
-        # See https://github.com/dagster-io/dagster/issues/796
-        with yield_pipeline_execution_context(
-            self.pipeline_def, environment_dict, run_config
-        ) as pipeline_context:
-            self.context = DagstermillInNotebookExecutionContext(pipeline_context)
+
+        if self.repository_def is None:
+            for _, input_def_str in input_def_str_dict.items():
+                check.invariant(
+                    input_def_str != None,
+                    desc='If Dagstermill solids have inputs that require serialization strategies '
+                    'that are not pickling, then you must register a repository within notebook '
+                    'by calling dm.register_repository(repository_def)',
+                )
+            for _, output_def_str in output_def_str_dict.items():
+                check.invariant(
+                    output_def_str != None,
+                    desc='If Dagstermill solids have outputs that require serialization strategies '
+                    'that are not pickling, then you must register a repository within notebook '
+                    'by calling dm.register_repository(repository_def).',
+                )
+            self.pipeline_def = PipelineDefinition([], name='Dummy Pipeline (No Repo Registration)')
+            self.input_def_str_dict = input_def_str_dict
+            self.output_def_str_dict = output_def_str_dict
+            with yield_pipeline_execution_context(
+                self.pipeline_def, {}, ExecutionMetadata(run_id=run_id)
+            ) as pipeline_context:
+                self.context = DagstermillInNotebookExecutionContext(pipeline_context)
+            print(self.input_def_str_dict)
+            print(self.output_def_str_dict)
+        else:
+            self.pipeline_def = self.repository_def.get_pipeline(pipeline_def_name)
+            check.invariant(self.pipeline_def.has_solid_def(solid_def_name))
+            self.solid_def = self.pipeline_def.solid_def_named(solid_def_name)
+
+            loggers = None
+            if output_log_path != 0:
+                event_logger = construct_json_event_logger(output_log_path)
+                loggers = [event_logger]
+            # do not include event_callback in ExecutionMetadata,
+            # since that'll be taken care of by side-channel established by event_logger
+            execution_metadata = ExecutionMetadata(run_id, loggers=loggers)
+            # See block comment above referencing this issue
+            # See https://github.com/dagster-io/dagster/issues/796
+            with yield_pipeline_execution_context(
+                self.pipeline_def, environment_dict, execution_metadata
+            ) as pipeline_context:
+                self.context = DagstermillInNotebookExecutionContext(pipeline_context)
 
         return self.context
 
@@ -225,6 +267,26 @@ def is_json_serializable(value):
         return False
 
 
+def output_runtime_type_dict_conversion(runtime_type):
+    if runtime_type.is_scalar:
+        return 'scalar'
+    elif runtime_type.is_any:
+        return 'any'
+    elif runtime_type.serialization_strategy:
+        if isinstance(runtime_type.serialization_strategy, PickleSerializationStrategy):
+            return 'pickle'
+    return None
+
+
+def runtime_type_dict_conversion(runtime_type, value):
+    if runtime_type.is_scalar or (runtime_type.is_any and is_json_serializable(value)):
+        return 'value'
+    elif runtime_type.serialization_strategy:
+        if isinstance(runtime_type.serialization_strategy, PickleSerializationStrategy):
+            return 'pickle'
+    return None
+
+
 def write_value(runtime_type, value, target_file):
     check.inst_param(runtime_type, 'runtime_type', RuntimeType)
     if runtime_type.is_scalar:
@@ -255,14 +317,31 @@ def populate_context(dm_context_data):
         dm_context_data['marshal_dir'],
         dm_context_data['environment_config'],
         dm_context_data['output_log_path'],
+        dm_context_data['input_def_str_dict'],
+        dm_context_data['output_def_str_dict'],
     )
 
 
 def load_parameter(input_name, input_value):
     check.invariant(MANAGER_FOR_NOTEBOOK_INSTANCE.populated_by_papermill, 'populated_by_papermill')
-    solid_def = MANAGER_FOR_NOTEBOOK_INSTANCE.solid_def
-    input_def = solid_def.input_def_named(input_name)
-    return read_value(input_def.runtime_type, input_value)
+    if MANAGER_FOR_NOTEBOOK_INSTANCE.solid_def is None:
+        check.invariant(
+            MANAGER_FOR_NOTEBOOK_INSTANCE.input_def_str_dict,
+            'input_def_str_dict must not be None if solid_def is not defined!',
+        )
+        input_def_str_dict = MANAGER_FOR_NOTEBOOK_INSTANCE.input_def_str_dict
+        if input_def_str_dict[input_name] == 'value':
+            return input_value
+        else:
+            check.invariant(
+                input_def_str_dict[input_name] == 'pickle',
+                'input type serialization strategy must be pickling if its not a value',
+            )
+            return deserialize_from_file(PickleSerializationStrategy, input_value)
+    else:
+        solid_def = MANAGER_FOR_NOTEBOOK_INSTANCE.solid_def
+        input_def = solid_def.input_def_named(input_name)
+        return read_value(input_def.runtime_type, input_value)
 
 
 def read_value(runtime_type, value):
@@ -310,7 +389,10 @@ def get_papermill_parameters(transform_context, inputs, output_log_path):
         'output_log_path': output_log_path,
     }
 
-    parameters = dict(dm_context=json.dumps(dm_context_dict, sort_keys=True))
+    parameters = {}
+    # dict(dm_context=json.dumps(dm_context_dict, sort_keys=True))
+
+    input_def_str_dict = {}
 
     input_defs = transform_context.solid_def.input_defs
     input_def_dict = {inp.name: inp for inp in input_defs}
@@ -323,6 +405,20 @@ def get_papermill_parameters(transform_context, inputs, output_log_path):
             runtime_type, input_value, os.path.join(marshal_dir, 'input-{}'.format(input_name))
         )
         parameters[input_name] = parameter_value
+        input_def_str_dict[input_name] = runtime_type_dict_conversion(runtime_type, input_value)
+
+    dm_context_dict['input_def_str_dict'] = input_def_str_dict
+
+    output_def_str_dict = {}
+    output_defs = transform_context.solid_def.output_defs
+    for output_def in output_defs:
+        output_def_str_dict[output_def.name] = output_runtime_type_dict_conversion(
+            output_def.runtime_type
+        )
+
+    dm_context_dict['output_def_str_dict'] = output_def_str_dict
+
+    parameters['dm_context'] = json.dumps(dm_context_dict, sort_keys=True)
 
     return parameters
 
