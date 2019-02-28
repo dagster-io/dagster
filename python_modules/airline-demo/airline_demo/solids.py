@@ -380,13 +380,18 @@ def unzip_file(context, archive_paths, archive_members):
     outputs=[OutputDefinition(SparkDataFrameType)],
 )
 def ingest_csv_to_spark(context, input_csv):
+    target_path = context.resources.tempfile.tempfile().name
+    with context.resources.filesystem.read(input_csv) as read_obj:
+        with open(target_path, 'wb') as write_obj:
+            write_obj.write(read_obj.read())
+
     data_frame = (
         context.resources.spark.read.format('csv')
         .options(
             header='true',
             # inferSchema='true',
         )
-        .load(input_csv)
+        .load(target_path)
     )
     return data_frame
 
