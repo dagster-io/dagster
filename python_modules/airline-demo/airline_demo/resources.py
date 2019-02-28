@@ -1,5 +1,6 @@
 '''Resource definitions for the airline demo.'''
 import contextlib
+import io
 import os
 import shutil
 import tempfile
@@ -235,7 +236,7 @@ class S3FilesystemManager(AbstractFilesystemManager):
     @contextlib.contextmanager
     def read(self, path):
         res = self.client.get_object(Bucket=self.s3_bucket_name, Key=path)
-        yield res['Body']
+        yield io.BytesIO(res['Body'].read())
 
     def join(self, *path_fragments):
         return '/'.join(*path_fragments)
