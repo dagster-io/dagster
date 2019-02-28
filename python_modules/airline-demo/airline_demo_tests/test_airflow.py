@@ -30,7 +30,10 @@ class TestInMemoryAirflowDagExecution:
             dag_description=demo_pipeline.DAG_DESCRIPTION,
             dag_kwargs=dict(default_args=demo_pipeline.DEFAULT_ARGS, **demo_pipeline.DAG_KWARGS),
             s3_conn_id=demo_pipeline.S3_CONN_ID,
-            modified_docker_operator_kwargs=demo_pipeline.MODIFIED_DOCKER_OPERATOR_KWARGS,
+            modified_docker_operator_kwargs={
+                'persist_intermediate_results_to_s3': True,
+                's3_bucket_name': 'dagster-lambda-execution',
+            },
             host_tmp_dir=demo_pipeline.HOST_TMP_DIR,
         )
 
