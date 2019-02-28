@@ -187,7 +187,8 @@ export default class PipelineExecutionContainer extends React.Component<
                 const variables = this.buildExecutionVariables();
                 if (!variables) return;
 
-                const useNewTab = !currentSession.runId || event.altKey || event.metaKey;
+                const useNewTab =
+                  !currentSession.runId || event.altKey || event.metaKey;
                 const result = await startPipelineExecution({ variables });
                 if (
                   result &&

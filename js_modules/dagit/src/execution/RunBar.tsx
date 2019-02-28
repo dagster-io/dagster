@@ -47,7 +47,9 @@ export default class RunBar extends React.Component<IRunBarProps> {
       onCreateSession
     } = this.props;
 
-    const openRunIds = Object.keys(sessions).map(key => sessions[key].runId).filter(s => !!s) as string[]
+    const openRunIds = Object.keys(sessions)
+      .map(key => sessions[key].runId)
+      .filter(s => !!s) as string[];
 
     return (
       <RunBarContainer className="bp3-dark">

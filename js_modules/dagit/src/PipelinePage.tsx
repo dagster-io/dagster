@@ -98,7 +98,10 @@ export default class PipelinePage extends React.Component<IPipelinePageProps> {
   render() {
     const { history, match, pipelinesOrError } = this.props;
 
-    let error: PipelinePageFragment_PythonError | PipelinePageFragment_InvalidDefinitionError | null = null;
+    let error:
+      | PipelinePageFragment_PythonError
+      | PipelinePageFragment_InvalidDefinitionError
+      | null = null;
     let pipelines: Array<PipelinePageFragment_PipelineConnection_nodes> = [];
 
     if (pipelinesOrError.__typename === "PipelineConnection") {

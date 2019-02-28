@@ -8,7 +8,7 @@ import {
   NonIdealState,
   Menu,
   MenuItem,
-  Icon,
+  Icon
 } from "@blueprintjs/core";
 import { RunHistoryRunFragment } from "./types/RunHistoryRunFragment";
 import { titleForRun, RunStatus } from "./ExecutionUtils";
@@ -57,7 +57,11 @@ export default class RunHistory extends React.Component<IRunHistoryProps> {
               <MenuItem
                 key={run.runId}
                 text={titleForRun(run)}
-                labelElement={openRunIds.indexOf(run.runId) !== -1 && <Icon icon="eye-open" />}
+                labelElement={
+                  openRunIds.indexOf(run.runId) !== -1 && (
+                    <Icon icon="eye-open" />
+                  )
+                }
                 icon={<RunStatus status={run.status} />}
                 onClick={() => this.props.onShowSessionFor(run)}
               />

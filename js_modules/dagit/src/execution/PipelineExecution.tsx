@@ -106,7 +106,7 @@ export default class PipelineExecution extends React.Component<
   };
 
   render() {
-    const {pipeline, currentRun, currentSession } = this.props;
+    const { pipeline, currentRun, currentSession } = this.props;
 
     if (!currentSession) {
       return <span />;

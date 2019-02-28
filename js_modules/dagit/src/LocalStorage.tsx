@@ -41,7 +41,7 @@ const DEFAULT_SESSION: IExecutionSession = {
   config: SESSION_CONFIG_PLACEHOLDER,
   solidSubset: null,
   runId: undefined,
-  configChangedSinceRun: false,
+  configChangedSinceRun: false
 };
 
 export function applySelectSession(data: IStorageData, key: string) {
@@ -72,9 +72,15 @@ export function applyChangesToSession(
   return data;
 }
 
-export function applyCreateSession(data: IStorageData, initial: IExecutionSessionChanges = {}) {
+export function applyCreateSession(
+  data: IStorageData,
+  initial: IExecutionSessionChanges = {}
+) {
   const key = `s${Date.now()}`;
-  data.sessions[key] = Object.assign({}, DEFAULT_SESSION, initial, { key, configChangedSinceRun: false });
+  data.sessions[key] = Object.assign({}, DEFAULT_SESSION, initial, {
+    key,
+    configChangedSinceRun: false
+  });
   data.current = key;
   return data;
 }

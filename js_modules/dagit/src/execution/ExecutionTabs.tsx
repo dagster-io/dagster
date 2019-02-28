@@ -38,7 +38,15 @@ export class ExecutionTab extends React.Component<
   };
 
   render() {
-    const { title, onChange, onClick, onRemove, active, run, unsaved } = this.props;
+    const {
+      title,
+      onChange,
+      onClick,
+      onRemove,
+      active,
+      run,
+      unsaved
+    } = this.props;
     const { editing } = this.state;
 
     const Container = run ? RunTabContainer : TabContainer;
@@ -63,8 +71,10 @@ export class ExecutionTab extends React.Component<
             onChange={e => onChange && onChange(e.currentTarget.value)}
             onBlur={() => this.setState({ editing: false })}
           />
+        ) : unsaved ? (
+          `${title}*`
         ) : (
-          unsaved ? `${title}*` : title
+          title
         )}
         {!editing && onRemove && (
           <RemoveButton

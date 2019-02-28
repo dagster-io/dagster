@@ -50,7 +50,9 @@ export default class ExecutionStartButton extends React.Component<
                 role="button"
                 title={"Pipeline execution is in progress..."}
               >
-                <div style={{marginRight: 5}}><Spinner intent={Intent.NONE} size={17} /></div>
+                <div style={{ marginRight: 5 }}>
+                  <Spinner intent={Intent.NONE} size={17} />
+                </div>
                 Running...
               </Wrapper>
             );
@@ -58,16 +60,13 @@ export default class ExecutionStartButton extends React.Component<
 
           if (websocketStatus !== WebSocket.OPEN) {
             return (
-              <Wrapper
-                role="button"
-                title={"Start pipeline execution"}
-              >
+              <Wrapper role="button" title={"Start pipeline execution"}>
                 <Icon icon={IconNames.OFFLINE} iconSize={17} />
-              Start Execution
+                Start Execution
               </Wrapper>
             );
           }
-  
+
           return (
             <Wrapper
               role="button"

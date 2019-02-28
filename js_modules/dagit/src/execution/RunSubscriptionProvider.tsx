@@ -6,11 +6,11 @@ import { PipelineRunStatus } from "../types/globalTypes";
 
 import PipelineExecution from "./PipelineExecution";
 import {
-  PipelineExecutionContainerFragment, PipelineExecutionContainerFragment_runs,
+  PipelineExecutionContainerFragment,
+  PipelineExecutionContainerFragment_runs
 } from "./types/PipelineExecutionContainerFragment";
 import { PipelineRunLogsSubscription } from "./types/PipelineRunLogsSubscription";
 import { PipelineRunLogsUpdateFragment } from "./types/PipelineRunLogsUpdateFragment";
-
 
 interface IRunSubscriptionProviderProps {
   client: ApolloClient<any>;
@@ -18,8 +18,9 @@ interface IRunSubscriptionProviderProps {
   run: PipelineExecutionContainerFragment_runs | null;
 }
 
-export default class RunSubscriptionProvider extends React.Component<IRunSubscriptionProviderProps> {
-
+export default class RunSubscriptionProvider extends React.Component<
+  IRunSubscriptionProviderProps
+> {
   componentDidMount() {
     this.subscribeToRuns();
   }
@@ -31,7 +32,6 @@ export default class RunSubscriptionProvider extends React.Component<IRunSubscri
   componentWillUnmount() {
     this.unsubscribeFromRuns();
   }
-
 
   _subscriptions: {
     [runId: string]: ZenObservable.Subscription;
@@ -114,7 +114,7 @@ export default class RunSubscriptionProvider extends React.Component<IRunSubscri
   };
 
   render() {
-    return false
+    return false;
   }
 }
 
@@ -131,7 +131,6 @@ const PIPELINE_RUN_LOGS_UPDATE_FRAGMENT = gql`
 
   ${PipelineExecution.fragments.PipelineExecutionPipelineRunEventFragment}
 `;
-
 
 const PIPELINE_RUN_LOGS_SUBSCRIPTION = gql`
   subscription PipelineRunLogsSubscription($runId: ID!, $after: Cursor) {
