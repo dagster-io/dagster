@@ -67,3 +67,6 @@ PostgresConfigData = Dict(
         'postgres_db_name': Field(String),
     }
 )
+
+
+S3ConfigData = Dict({'s3_bucket_name': Field(String)})

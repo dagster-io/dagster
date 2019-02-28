@@ -1,13 +1,21 @@
+'''Resource definitions for the airline demo.'''
 import contextlib
 import os
 import shutil
 import tempfile
 
+from abc import ABCMeta, abstractmethod
+
+import boto3
+import six
+
+from botocore.exceptions import ClientError
 from pyspark.sql import SparkSession
 
 from dagster import Field, resource
+from dagster.utils import safe_isfile
 
-from .types import DbInfo, PostgresConfigData, RedshiftConfigData
+from .types import DbInfo, PostgresConfigData, RedshiftConfigData, S3ConfigData
 from .utils import (
     create_postgres_db_url,
     create_postgres_engine,
@@ -142,3 +150,102 @@ def postgres_db_info_resource(init_context):
         dialect='postgres',
         load_table=_do_load,
     )
+
+
+class AbstractFilesystemManager(six.with_metaclass(ABCMeta)):  # pylint: disable=no-init
+    @abstractmethod
+    def is_file(self, path):
+        pass
+
+    @abstractmethod
+    def is_dir(self, path):
+        pass
+
+    @abstractmethod
+    @contextlib.contextmanager
+    def write(self, path):
+        pass
+
+    @abstractmethod
+    @contextlib.contextmanager
+    def read(self, path):
+        pass
+
+    @abstractmethod
+    def join(self, *path_fragments):
+        pass
+
+
+class LocalFilesystemManager(AbstractFilesystemManager):  # pylint: disable=no-init
+    def is_file(self, path):
+        return safe_isfile(path)
+
+    def is_dir(self, path):
+        return os.path.isdir(path)
+
+    @contextlib.contextmanager
+    def write(self, path):
+        with open(path, 'wb') as file_obj:
+            yield file_obj
+
+    @contextlib.contextmanager
+    def read(self, path):
+        with open(path, 'rb') as file_obj:
+            yield file_obj
+
+    def join(self, *path_fragments):
+        return os.path.join(*path_fragments)
+
+
+class S3FilesystemManager(AbstractFilesystemManager):
+    def __init__(self, s3_bucket_name):
+        self.s3_bucket_name = s3_bucket_name
+        self.client = boto3.client('s3')
+        self.resource = boto3.resource('s3')
+        self.s3_bucket = self.resource.Bucket(self.s3_bucket_name)
+
+    def is_dir(self, path):
+        try:
+            self.client.head_object(Bucket=self.s3_bucket_name, Key=path)
+            return False
+        except ClientError as exc:
+            if exc.response['Error']['Code'] == '404':
+                res = self.client.list_objects(Bucket=self.s3_bucket_name, Prefix=path)
+                if 'Contents' in res:
+                    return True
+                return False
+            raise
+
+    def is_file(self, path):
+        try:
+            self.client.head_object(Bucket=self.s3_bucket_name, Key=path)
+            return True
+        except ClientError as exc:
+            if exc.response['Error']['Code'] == '404':
+                return False
+            raise
+
+    @contextlib.contextmanager
+    def write(self, path):
+        with tempfile.TemporaryFile() as file_obj:
+            yield file_obj
+            file_obj.seek(0)
+            self.client.upload_fileobj(Fileobj=file_obj, Bucket=self.s3_bucket_name, Key=path)
+
+    @contextlib.contextmanager
+    def read(self, path):
+        res = self.client.get_object(Bucket=self.s3_bucket_name, Key=path)
+        yield res['Body']
+
+    def join(self, *path_fragments):
+        return '/'.join(*path_fragments)
+
+
+@resource
+def local_filesystem_resource(_init_context):
+    yield LocalFilesystemManager()
+
+
+@resource(config_field=Field(S3ConfigData))
+def s3_filesystem_resource(init_context):
+    yield S3FilesystemManager(s3_bucket_name=init_context.resource_config['s3_bucket_namme'])

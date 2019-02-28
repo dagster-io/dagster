@@ -1,6 +1,8 @@
 '''A fully fleshed out demo dagster repository with many configurable options.'''
 
 import os
+import shutil
+import tempfile
 import zipfile
 
 from sqlalchemy import text
@@ -24,7 +26,7 @@ from dagster import (
 from dagster.utils import safe_isfile
 from dagstermill import define_dagstermill_solid
 
-from .types import FileExistsAtPath, SparkDataFrameType, SqlAlchemyEngineType, SqlTableName
+from .types import FileExistsAtPath, SparkDataFrameType, SqlTableName
 from .utils import mkdir_p, S3Logger
 
 
@@ -99,8 +101,8 @@ def sql_solid(name, select_statement, materialization_strategy, table_name=None,
         '''Inner function defining the new solid.
 
         Args:
-            context (TransformExecutionContext): Must expose a `db` resource with an `execute` method,
-                like a SQLAlchemy engine, that can execute raw SQL against a database.
+            context (TransformExecutionContext): Must expose a `db` resource with an `execute`
+                method, like a SQLAlchemy engine, that can execute raw SQL against a database.
 
         Returns:
             str:
@@ -259,23 +261,11 @@ def upload_to_s3(context, file_path):
 
 @solid(
     name='unzip_file',
-    # config_field=Field(
-    #     ConfigDictionary(name='UnzipFileConfigType', fields={
-    #         'archive_path': Field(String, description=''),
-    #         'archive_member': Field(String, description=''),
-    #         'destination_dir': Field(String, description=''),
-    #     })
-    # ),
     inputs=[
         InputDefinition('archive_paths', List(Path), description='The path to the archive.'),
         InputDefinition(
             'archive_members', List(String), description='The archive member to extract.'
         ),
-        # InputDefinition(
-        #     'destination_dir',
-        #     String,
-        #     description='',
-        # ),
     ],
     config_field=Field(
         Dict(
@@ -307,15 +297,54 @@ def unzip_file(
     context,
     archive_paths,
     archive_members,
-    # destination_dir=None
 ):
-    # FIXME
-    # archive_path = info.config['archive_path']
-    # archive_member = info.config['archive_member']
+
+
+    def extract(context, archive_path, zip_ref, archive_member, destination_dir, skip_if_present):
+        filesystem = context.resources.filesystem
+
+        target_path = filesystem.join(destination_dir, archive_member)
+        is_file = filesystem.is_file(target_path)
+        is_dir = filesystem.is_dir(target_path)
+
+        if not (skip_if_present and (is_file or is_dir)):
+            tempdir = tempfile.mkdtemp()
+            try:
+                extracted_path = zip_ref.extract(archive_member, tempdir)
+                with filesystem.write(
+                    filesystem.join(destination_dir, os.path.basename(extracted_path))
+                ) as write_obj:
+                    with open(extracted_path, 'rb') as read_obj:
+                        write_obj.write(read_obj.read())
+            finally:
+                shutil.rmtree(tempdir)
+        else:
+            if is_file:
+                context.log.info(
+                    'Skipping unarchive of {archive_member} from {archive_path}, '
+                    'file already present at {target_path}'.format(
+                        archive_member=archive_member,
+                        archive_path=archive_path,
+                        target_path=target_path,
+                    )
+                )
+            if is_dir:
+                context.log.info(
+                    'Skipping unarchive of {archive_member} from {archive_path}, '
+                    'directory already present at {target_path}'.format(
+                        archive_member=archive_member,
+                        archive_path=archive_path,
+                        target_path=target_path,
+                    )
+                )
+
+        return target_path
+
+    skip_if_present = context.solid_config['skip_if_present']
+
     results = []
     for (i, archive_path) in enumerate(archive_paths):
         destination_dir = (
-            # info.config['destination_dir'] or
             os.path.dirname(archive_path)
         )
         if archive_members:
@@ -325,41 +354,12 @@ def unzip_file(
 
         with zipfile.ZipFile(archive_path, 'r') as zip_ref:
             if archive_member is not None:
-                target_path = os.path.join(destination_dir, archive_member)
-                is_file = safe_isfile(target_path)
-                is_dir = os.path.isdir(target_path)
-                if not (context.solid_config['skip_if_present'] and (is_file or is_dir)):
-                    zip_ref.extract(archive_member, destination_dir)
-                else:
-                    if is_file:
-                        context.log.info(
-                            'Skipping unarchive of {archive_member} from {archive_path}, '
-                            'file already present at {target_path}'.format(
-                                archive_member=archive_member,
-                                archive_path=archive_path,
-                                target_path=target_path,
-                            )
-                        )
-                    if is_dir:
-                        context.log.info(
-                            'Skipping unarchive of {archive_member} from {archive_path}, '
-                            'directory already present at {target_path}'.format(
-                                archive_member=archive_member,
-                                archive_path=archive_path,
-                                target_path=target_path,
-                            )
-                        )
+                target_path = extract(context, archive_path, zip_ref, archive_member, destination_dir, skip_if_present)
+                results.append(target_path)
             else:
-                if not (context.solid_config['skip_if_present'] and is_dir):
-                    zip_ref.extractall(destination_dir)
-                else:
-                    context.log.info(
-                        'Skipping unarchive of {archive_path}, directory already present '
-                        'at {target_path}'.format(
-                            archive_path=archive_path, target_path=target_path
-                        )
-                    )
-        results.append(target_path)
+                for archive_member in zip_ref.namelist():
+                    target_path = extract(context, archive_path, zip_ref, archive_member, destination_dir, skip_if_present)
+                    results.append(target_path)
     return results
 
 
