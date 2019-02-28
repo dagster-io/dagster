@@ -4,17 +4,33 @@ import os
 
 from airflow.models import TaskInstance
 
-from dagster.utils import script_relative_path
+from dagster import execute_pipeline
+from dagster.utils import load_yaml_from_glob_list, script_relative_path
 
 from airline_demo.pipelines import define_airline_demo_download_pipeline
 
+from .marks import airflow
 from .utils import import_module_from_path
 
 
+def test_uncontainerized_airflow_dag_execution():
+    config_object = load_yaml_from_glob_list(
+        [
+            script_relative_path('../environments/airflow_base.yml'),
+            script_relative_path('../environments/local_fast_download.yml'),
+        ]
+    )
+
+    result = execute_pipeline(define_airline_demo_download_pipeline(), config_object)
+
+    assert result.success
+
+
+@airflow
 class TestInMemoryAirflowDagExecution:
     pipeline = define_airline_demo_download_pipeline
     config = [
-        script_relative_path(os.path.join('..', 'environments', 'local_base.yml')),
+        script_relative_path(os.path.join('..', 'environments', 'airflow_base.yml')),
         script_relative_path(os.path.join('..', 'environments', 'local_fast_download.yml')),
     ]
 
@@ -42,5 +58,5 @@ class TestInMemoryAirflowDagExecution:
         for task in tasks:
             ti = TaskInstance(task=task, execution_date=execution_date)
             context = ti.get_template_context()
-            task._log = logging
+            task._log = logging  # pylint: disable=protected-access
             task.execute(context)

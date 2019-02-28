@@ -1,0 +1,13 @@
+context:
+  airflow:
+    resources:
+      db_info:
+        config:
+          postgres_username: test
+          postgres_password: test
+          postgres_hostname: localhost
+          postgres_db_name: test
+      filesystem:
+        config:
+          s3_bucket_name: dagster-airflow-scratch
+          signed: false
