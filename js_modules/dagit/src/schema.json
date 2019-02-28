@@ -3445,6 +3445,11 @@
           },
           {
             "kind": "OBJECT",
+            "name": "InvalidDefinitionError",
+            "ofType": null
+          },
+          {
+            "kind": "OBJECT",
             "name": "ConfigTypeNotFoundError",
             "ofType": null
           },
@@ -4123,6 +4128,11 @@
             "kind": "OBJECT",
             "name": "PythonError",
             "ofType": null
+          },
+          {
+            "kind": "OBJECT",
+            "name": "InvalidDefinitionError",
+            "ofType": null
           }
         ]
       },
@@ -4158,6 +4168,63 @@
         ],
         "inputFields": null,
         "interfaces": [],
+        "enumValues": null,
+        "possibleTypes": null
+      },
+      {
+        "kind": "OBJECT",
+        "name": "InvalidDefinitionError",
+        "description": null,
+        "fields": [
+          {
+            "name": "message",
+            "description": null,
+            "args": [],
+            "type": {
+              "kind": "NON_NULL",
+              "name": null,
+              "ofType": {
+                "kind": "SCALAR",
+                "name": "String",
+                "ofType": null
+              }
+            },
+            "isDeprecated": false,
+            "deprecationReason": null
+          },
+          {
+            "name": "stack",
+            "description": null,
+            "args": [],
+            "type": {
+              "kind": "NON_NULL",
+              "name": null,
+              "ofType": {
+                "kind": "LIST",
+                "name": null,
+                "ofType": {
+                  "kind": "NON_NULL",
+                  "name": null,
+                  "ofType": {
+                    "kind": "SCALAR",
+                    "name": "String",
+                    "ofType": null
+                  }
+                }
+              }
+            },
+            "isDeprecated": false,
+            "deprecationReason": null
+          }
+        ],
+        "inputFields": null,
+        "interfaces": [
+          {
+            "kind": "INTERFACE",
+            "name": "Error",
+            "ofType": null
+          }
+        ],
         "enumValues": null,
         "possibleTypes": null
       },

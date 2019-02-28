@@ -5,6 +5,10 @@
 // GraphQL fragment: PipelinePageFragment
 // ====================================================
 
+export interface PipelinePageFragment_InvalidDefinitionError {
+  __typename: "InvalidDefinitionError";
+}
+
 export interface PipelinePageFragment_PythonError {
   __typename: "PythonError";
   message: string;
@@ -563,4 +567,4 @@ export interface PipelinePageFragment_PipelineConnection {
   nodes: PipelinePageFragment_PipelineConnection_nodes[];
 }
 
-export type PipelinePageFragment = PipelinePageFragment_PythonError | PipelinePageFragment_PipelineConnection;
+export type PipelinePageFragment = PipelinePageFragment_InvalidDefinitionError | PipelinePageFragment_PythonError | PipelinePageFragment_PipelineConnection;
