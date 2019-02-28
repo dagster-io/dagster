@@ -310,8 +310,12 @@ class ExecutionPlan(namedtuple('_ExecutionPlan', 'pipeline_def step_dict, deps, 
         return [step for step_level in self.topological_step_levels() for step in step_level]
 
     def topological_step_levels(self):
-        return [
-            [self.step_dict[step_key]]
-            for step_key_level in toposort(self.deps)
-            for step_key in step_key_level
-        ]
+        levels = []
+        for step_key_level in toposort(self.deps):
+            levels.append([self.step_dict[step_key] for step_key in step_key_level])
+        return levels
+
+        # return [ [self.step_dict[step_key]]
+        #     for step_key_level in toposort(self.deps)
+        #     for step_key in step_key_level
+        # ]
