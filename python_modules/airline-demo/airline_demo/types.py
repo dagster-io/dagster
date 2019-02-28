@@ -9,7 +9,7 @@ import sqlalchemy
 
 from pyspark.sql import DataFrame
 
-from dagster import as_dagster_type, dagster_type, Dict, Field, String
+from dagster import as_dagster_type, Bool, dagster_type, Dict, Field, String
 from dagster.core.types.runtime import PythonObjectType, Stringish
 from dagster.utils import safe_isfile
 
@@ -69,4 +69,4 @@ PostgresConfigData = Dict(
 )
 
 
-S3ConfigData = Dict({'s3_bucket_name': Field(String)})
+S3ConfigData = Dict({'s3_bucket_name': Field(String), 'signed': Field(Bool, default_value=False, is_optional=True)})

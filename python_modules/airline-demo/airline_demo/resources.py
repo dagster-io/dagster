@@ -11,6 +11,7 @@ import boto3
 import six
 
 from botocore.exceptions import ClientError
+from botocore.handlers import disable_signing
 from pyspark.sql import SparkSession
 
 from dagster import Field, resource
@@ -199,11 +200,14 @@ class LocalFilesystemManager(AbstractFilesystemManager):  # pylint: disable=no-i
 
 
 class S3FilesystemManager(AbstractFilesystemManager):
-    def __init__(self, s3_bucket_name):
+    def __init__(self, s3_bucket_name, signed=True):
         self.s3_bucket_name = s3_bucket_name
         self.client = boto3.client('s3')
-        self.resource = boto3.resource('s3')
-        self.s3_bucket = self.resource.Bucket(self.s3_bucket_name)
+
+        self.signed = signed
+        if not self.signed:
+            self.client.meta.events.register('choose-signer.s3.*', disable_signing)
+
 
     def is_dir(self, path):
         try:
@@ -231,7 +235,10 @@ class S3FilesystemManager(AbstractFilesystemManager):
         with tempfile.TemporaryFile() as file_obj:
             yield file_obj
             file_obj.seek(0)
-            self.client.upload_fileobj(Fileobj=file_obj, Bucket=self.s3_bucket_name, Key=path)
+            if not self.signed:
+                self.client.upload_fileobj(Fileobj=file_obj, Bucket=self.s3_bucket_name, Key=path, ExtraArgs={'ACL': 'public-read'})
+            else:
+                self.client.upload_fileobj(Fileobj=file_obj, Bucket=self.s3_bucket_name, Key=path)
 
     @contextlib.contextmanager
     def read(self, path):
@@ -249,4 +256,4 @@ def local_filesystem_resource(_init_context):
 
 @resource(config_field=Field(S3ConfigData))
 def s3_filesystem_resource(init_context):
-    yield S3FilesystemManager(s3_bucket_name=init_context.resource_config['s3_bucket_namme'])
+    yield S3FilesystemManager(s3_bucket_name=init_context.resource_config['s3_bucket_name'], signed=init_context.resource_config['signed'])
