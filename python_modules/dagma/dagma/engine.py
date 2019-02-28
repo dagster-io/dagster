@@ -16,7 +16,7 @@ from collections import namedtuple
 import cloudpickle as pickle
 
 from dagster import check
-from dagster.core.execution_context import PipelineExecutionContext
+from dagster.core.execution_context import SystemPipelineExecutionContext
 from dagster.core.execution_plan.objects import ExecutionPlan
 from dagster.utils.zip import zip_folder
 
@@ -147,7 +147,7 @@ def _execute_step_sync(lambda_client, lambda_step, context, payload):
 
 def execute_plan(context, execution_plan, cleanup_lambda_functions=True, local=False):
     """Core executor."""
-    check.inst_param(context, 'context', PipelineExecutionContext)
+    check.inst_param(context, 'context', SystemPipelineExecutionContext)
     check.inst_param(execution_plan, 'execution_plan', ExecutionPlan)
 
     steps = list(execution_plan.topological_steps())

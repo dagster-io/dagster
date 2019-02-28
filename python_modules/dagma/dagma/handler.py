@@ -11,9 +11,9 @@ from dagster.core.execution import (
     ExecutionMetadata,
     ExecutionContext,
 )
-from dagster.core.execution_context import PipelineExecutionContext
+from dagster.core.execution_context import SystemPipelineExecutionContext
 from dagster.core.execution_plan.objects import ExecutionStepEvent
-from dagster.core.execution_plan.simple_engine import iterate_step_events_for_step
+from dagster.core.execution_plan.simple_engine import execute_step_in_memory
 
 from .serialize import deserialize, serialize
 from .utils import get_input_key, get_resources_key, get_step_key, LambdaInvocationPayload
@@ -88,22 +88,22 @@ def aws_lambda_handler(event, _context):
         prev_output_handle = step_input.prev_output_handle
         handle = (prev_output_handle.step.key, prev_output_handle.output_name)
         # FIXME - we need a less hacky strategy for serializing and deserializing input handles and
-        # result values -- the subscript below is like accessing .success_data on the namedtuple
+        # result values -- the subscript below is like accessing .step_output_data on the namedtuple
         # in the simple engine
         input_value = intermediate_results[handle][1].value
         input_values[step_input.name] = input_value
 
     logger.info('Executing step {key}'.format(key=key))
-    step_events = list(iterate_step_events_for_step(step, execution_context, input_values))
+    step_events = list(execute_step_in_memory(step, execution_context, input_values))
 
     for step_event in step_events:
         check.invariant(isinstance(step_event, ExecutionStepEvent))
-        output_name = step_event.success_data.output_name
+        output_name = step_event.step_output_data.output_name
         output_handle = (step.key, output_name)
         intermediate_results[output_handle] = (
             step_event.success,
-            step_event.success_data,
-            step_event.failure_data,
+            step_event.step_output_data,
+            step_event.step_failure_data,
         )
         logger.info('Processing result: %s', output_name)
 

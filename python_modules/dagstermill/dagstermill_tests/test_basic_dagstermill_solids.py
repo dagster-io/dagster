@@ -4,11 +4,14 @@ import pytest
 
 from dagster import execute_pipeline
 
+from dagstermill import DagstermillError
 from dagstermill.examples.repository import (
+    define_add_pipeline,
+    define_error_pipeline,
     define_hello_world_pipeline,
     define_hello_world_with_output_pipeline,
-    define_add_pipeline,
     define_test_notebook_dag_pipeline,
+    define_tutorial_pipeline,
 )
 
 
@@ -57,3 +60,21 @@ def test_notebook_dag():
     assert pipeline_result.success
     assert pipeline_result.result_for_solid('add_two').transformed_value() == 3
     assert pipeline_result.result_for_solid('mult_two').transformed_value() == 6
+
+
+@notebook_test
+def test_error_notebook():
+    with pytest.raises(DagstermillError, match='Someone set up us the bomb'):
+        execute_pipeline(define_error_pipeline())
+    res = execute_pipeline(define_error_pipeline(), throw_on_user_error=False)
+    assert not res.success
+    assert res.step_event_list[0].event_type.value == 'STEP_FAILURE'
+
+
+@notebook_test
+def test_tutorial_pipeline():
+    pipeline = define_tutorial_pipeline()
+    result = execute_pipeline(
+        pipeline, {'context': {'default': {'config': {'log_level': 'DEBUG'}}}}
+    )
+    assert result.success

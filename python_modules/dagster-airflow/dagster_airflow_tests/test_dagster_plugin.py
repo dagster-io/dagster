@@ -45,23 +45,8 @@ def test_modified_docker_operator_env(temp_dir):
         pipeline_name='',
         step_executions={},
     )
-    operator.execute({})
-
-
-def test_modified_docker_operator_xcom(temp_dir):
-    operator = DagsterOperator(
-        image='dagster-airflow-demo',
-        api_version='auto',
-        task_id='nonce',
-        host_tmp_dir=temp_dir,
-        xcom_push=True,
-        xcom_all=True,
-        command='--help',
-        config='',
-        pipeline_name='',
-        step_executions={},
-    )
-    assert b'Usage: dagit' in operator.execute({})
+    with pytest.raises(AirflowException, match='Show this message'):
+        operator.execute({})
 
 
 def test_modified_docker_operator_bad_command(temp_dir):
@@ -105,7 +90,8 @@ def test_modified_docker_operator_url(temp_dir):
             step_executions={},
         )
 
-        operator.execute({})
+        with pytest.raises(AirflowException, match='Show this message'):
+            operator.execute({})
 
     finally:
         if docker_host is not None:

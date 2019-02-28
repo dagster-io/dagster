@@ -270,11 +270,12 @@ def execute_pipeline_through_queue(
 
     try:
         result = execute_pipeline(
-            repository_container.repository.get_pipeline(pipeline_name),
+            repository_container.repository.get_pipeline(pipeline_name).build_sub_pipeline(
+                solid_subset
+            ),
             environment_dict,
             execution_metadata=execution_metadata,
             throw_on_user_error=False,
-            solid_subset=solid_subset,
         )
         return result
     except:  # pylint: disable=W0702

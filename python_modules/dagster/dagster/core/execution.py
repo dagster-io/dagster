@@ -24,24 +24,18 @@ from contextlib2 import ExitStack
 from dagster import check
 from dagster.utils import merge_dicts
 
-from .definitions import DependencyDefinition, PipelineDefinition, Solid, SolidInstance
-
+from .definitions import PipelineDefinition, Solid
 from .definitions.utils import DEFAULT_OUTPUT
 from .definitions.environment_configs import construct_environment_config
 
 from .execution_context import (
-    ExecutionContext,
     ExecutionMetadata,
-    PipelineExecutionContextData,
-    PipelineExecutionContext,
+    SystemPipelineExecutionContextData,
+    SystemPipelineExecutionContext,
 )
 
-from .errors import (
-    DagsterInvariantViolationError,
-    DagsterUnmarshalInputNotFoundError,
-    DagsterMarshalOutputNotFoundError,
-    DagsterExecutionStepNotFoundError,
-)
+
+from .errors import DagsterInvariantViolationError
 
 from .events import construct_event_logger
 
@@ -51,6 +45,8 @@ from .execution_plan.create import (
     create_execution_plan_core,
 )
 
+from .execution_plan.intermediates_manager import InMemoryIntermediatesManager
+
 from .execution_plan.objects import (
     ExecutionPlan,
     ExecutionStepEvent,
@@ -58,9 +54,12 @@ from .execution_plan.objects import (
     StepKind,
 )
 
-from .execution_plan.plan_subset import MarshalledOutput
+from .execution_plan.multiprocessing_engine import (
+    multiprocess_execute_plan,
+    MultiprocessExecutorConfig,
+)
 
-from .execution_plan.simple_engine import iterate_step_events_for_execution_plan
+from .execution_plan.simple_engine import start_inprocess_executor
 
 from .init_context import InitContext, InitResourceContext
 
@@ -70,6 +69,8 @@ from .system_config.objects import EnvironmentConfig
 
 from .types.evaluator import EvaluationError, evaluate_config_value, friendly_string_for_error
 from .types.marshal import FilePersistencePolicy
+
+from .user_context import ExecutionContext
 
 
 class PipelineExecutionResult(object):
@@ -160,6 +161,11 @@ class SolidExecutionResult(object):
         )
 
     @property
+    def transform(self):
+        check.invariant(len(self.step_events_by_kind[StepKind.TRANSFORM]) == 1)
+        return self.step_events_by_kind[StepKind.TRANSFORM][0]
+
+    @property
     def transforms(self):
         return self.step_events_by_kind.get(StepKind.TRANSFORM, [])
 
@@ -173,7 +179,7 @@ class SolidExecutionResult(object):
 
     @staticmethod
     def from_step_events(pipeline_context, step_events):
-        check.inst_param(pipeline_context, 'pipeline_context', PipelineExecutionContext)
+        check.inst_param(pipeline_context, 'pipeline_context', SystemPipelineExecutionContext)
         step_events = check.list_param(step_events, 'step_events', ExecutionStepEvent)
         if step_events:
             step_events_by_kind = defaultdict(list)
@@ -211,7 +217,7 @@ class SolidExecutionResult(object):
         Returns None if execution result isn't a success.'''
         if self.success and self.transforms:
             return {
-                result.success_data.output_name: result.success_data.value
+                result.step_output_data.output_name: result.step_output_data.get_value()
                 for result in self.transforms
             }
         else:
@@ -231,8 +237,8 @@ class SolidExecutionResult(object):
 
         if self.success:
             for result in self.transforms:
-                if result.success_data.output_name == output_name:
-                    return result.success_data.value
+                if result.step_output_data.output_name == output_name:
+                    return result.step_output_data.get_value()
             raise DagsterInvariantViolationError(
                 (
                     'Did not find result {output_name} in solid {self.solid.name} '
@@ -249,7 +255,7 @@ class SolidExecutionResult(object):
             self.input_expectations, self.output_expectations, self.transforms
         ):
             if result.event_type == ExecutionStepEventType.STEP_FAILURE:
-                return result.failure_data.dagster_error
+                return result.step_failure_data.dagster_error
 
 
 def check_execution_metadata_param(execution_metadata):
@@ -261,18 +267,19 @@ def check_execution_metadata_param(execution_metadata):
 
 
 def create_execution_plan(
-    pipeline, environment_dict=None, execution_metadata=None, subset_info=None
+    pipeline, environment_dict=None, execution_metadata=None, subset_info=None, added_outputs=None
 ):
     check.inst_param(pipeline, 'pipeline', PipelineDefinition)
     environment_dict = check.opt_dict_param(environment_dict, 'environment_dict', key_type=str)
     execution_metadata = check_execution_metadata_param(execution_metadata)
     check.inst_param(execution_metadata, 'execution_metadata', ExecutionMetadata)
     check.opt_inst_param(subset_info, 'subset_info', ExecutionPlanSubsetInfo)
+    check.opt_inst_param(added_outputs, 'added_outputs', ExecutionPlanAddedOutputs)
 
     with yield_pipeline_execution_context(
         pipeline, environment_dict, execution_metadata
     ) as pipeline_context:
-        return create_execution_plan_core(pipeline_context, execution_metadata, subset_info)
+        return create_execution_plan_core(pipeline_context, subset_info, added_outputs)
 
 
 def get_tags(user_context_params, execution_metadata, pipeline):
@@ -387,10 +394,10 @@ def construct_pipeline_execution_context(
     tags = get_tags(execution_context, execution_metadata, pipeline)
     log = DagsterLog(execution_metadata.run_id, tags, loggers)
 
-    return PipelineExecutionContext(
-        PipelineExecutionContextData(
+    return SystemPipelineExecutionContext(
+        SystemPipelineExecutionContextData(
             pipeline_def=pipeline,
-            run_id=execution_metadata.run_id,
+            execution_metadata=execution_metadata,
             resources=resources,
             event_callback=execution_metadata.event_callback,
             environment_config=environment_config,
@@ -473,7 +480,7 @@ def execute_pipeline_iterator(
     environment_dict=None,
     throw_on_user_error=True,
     execution_metadata=None,
-    solid_subset=None,
+    executor_config=None,
 ):
     '''Returns iterator that yields :py:class:`SolidExecutionResult` for each
     solid executed in the pipeline.
@@ -489,15 +496,14 @@ def execute_pipeline_iterator(
     environment_dict = check.opt_dict_param(environment_dict, 'environment_dict')
     check.bool_param(throw_on_user_error, 'throw_on_user_error')
     execution_metadata = check_execution_metadata_param(execution_metadata)
-    check.opt_list_param(solid_subset, 'solid_subset', of_type=str)
 
     with yield_pipeline_execution_context(
-        get_subset_pipeline(pipeline, solid_subset), environment_dict, execution_metadata
+        pipeline, environment_dict, execution_metadata
     ) as pipeline_context:
 
         pipeline_context.events.pipeline_start()
 
-        execution_plan = create_execution_plan_core(pipeline_context, execution_metadata)
+        execution_plan = create_execution_plan_core(pipeline_context)
 
         steps = execution_plan.topological_steps()
 
@@ -520,8 +526,8 @@ def execute_pipeline_iterator(
 
         pipeline_success = True
 
-        for step_event in iterate_step_events_for_execution_plan(
-            pipeline_context, execution_plan, throw_on_user_error
+        for step_event in invoke_executor_on_plan(
+            pipeline_context, execution_plan, throw_on_user_error, executor_config
         ):
             if step_event.is_step_failure:
                 pipeline_success = False
@@ -533,12 +539,16 @@ def execute_pipeline_iterator(
             pipeline_context.events.pipeline_failure()
 
 
+class InProcessExecutorConfig:
+    pass
+
+
 def execute_pipeline(
     pipeline,
     environment_dict=None,
     throw_on_user_error=True,
     execution_metadata=None,
-    solid_subset=None,
+    executor_config=None,
 ):
     '''
     "Synchronous" version of :py:func:`execute_pipeline_iterator`.
@@ -562,7 +572,6 @@ def execute_pipeline(
     environment_dict = check.opt_dict_param(environment_dict, 'environment_dict')
     check.bool_param(throw_on_user_error, 'throw_on_user_error')
     execution_metadata = check_execution_metadata_param(execution_metadata)
-    check.opt_list_param(solid_subset, 'solid_subset', of_type=str)
 
     return PipelineExecutionResult(
         pipeline,
@@ -573,7 +582,7 @@ def execute_pipeline(
                 environment_dict=environment_dict,
                 throw_on_user_error=throw_on_user_error,
                 execution_metadata=execution_metadata,
-                solid_subset=solid_subset,
+                executor_config=executor_config,
             )
         ),
     )
@@ -602,95 +611,70 @@ class PipelineConfigEvaluationError(Exception):
         super(PipelineConfigEvaluationError, self).__init__(error_msg, *args, **kwargs)
 
 
-def execute_externalized_plan(
+def invoke_executor_on_plan(pipeline_context, execution_plan, throw_on_user_error, executor_config):
+    if executor_config is None:
+        executor_config = InProcessExecutorConfig()
+
+    if isinstance(executor_config, InProcessExecutorConfig):
+        step_events_gen = start_inprocess_executor(
+            pipeline_context, execution_plan, InMemoryIntermediatesManager()
+        )
+    elif isinstance(executor_config, MultiprocessExecutorConfig):
+        step_events_gen = multiprocess_execute_plan(
+            executor_config, pipeline_context, execution_plan
+        )
+    else:
+        check.failed('Unsupported config {}'.format(executor_config))
+
+    for step_event in step_events_gen:
+        if throw_on_user_error and step_event.is_step_failure:
+            step_event.reraise_user_error()
+        yield step_event
+
+
+def execute_marshalling(
     pipeline,
-    execution_plan,
     step_keys,
     inputs_to_marshal=None,
     outputs_to_marshal=None,
     environment_dict=None,
     execution_metadata=None,
     throw_on_user_error=True,
+    executor_config=None,
 ):
     check.inst_param(pipeline, 'pipeline', PipelineDefinition)
-    check.inst_param(execution_plan, 'execution_plan', ExecutionPlan)
     check.list_param(step_keys, 'step_keys', of_type=str)
-    inputs_to_marshal = check.opt_two_dim_dict_param(
-        inputs_to_marshal, 'inputs_to_marshal', value_type=str
-    )
-    outputs_to_marshal = check.opt_dict_param(
-        outputs_to_marshal, 'outputs_to_marshal', key_type=str, value_type=list
-    )
-    for output_list in outputs_to_marshal.values():
-        check.list_param(output_list, 'outputs_to_marshal', of_type=MarshalledOutput)
-
     environment_dict = check.opt_dict_param(environment_dict, 'environment_dict')
     execution_metadata = check_execution_metadata_param(execution_metadata)
-
-    _check_inputs_to_marshal(execution_plan, inputs_to_marshal)
-    _check_outputs_to_marshal(execution_plan, outputs_to_marshal)
+    check.bool_param(throw_on_user_error, 'throw_on_user_error')
 
     with yield_pipeline_execution_context(
         pipeline, environment_dict, execution_metadata
     ) as pipeline_context:
-
-        execution_plan = create_execution_plan_core(
-            pipeline_context,
-            execution_metadata=execution_metadata,
-            subset_info=ExecutionPlanSubsetInfo.with_input_marshalling(
-                included_step_keys=step_keys, marshalled_inputs=inputs_to_marshal
-            ),
-            added_outputs=ExecutionPlanAddedOutputs.with_output_marshalling(outputs_to_marshal),
-        )
-
         return list(
-            iterate_step_events_for_execution_plan(
-                pipeline_context, execution_plan, throw_on_user_error=throw_on_user_error
+            invoke_executor_on_plan(
+                pipeline_context,
+                execution_plan=create_execution_plan_core(
+                    pipeline_context,
+                    subset_info=ExecutionPlanSubsetInfo.with_input_marshalling(
+                        step_keys, inputs_to_marshal
+                    ),
+                    added_outputs=ExecutionPlanAddedOutputs.with_output_marshalling(
+                        outputs_to_marshal
+                    ),
+                ),
+                throw_on_user_error=throw_on_user_error,
+                executor_config=executor_config,
             )
         )
 
 
-def _check_outputs_to_marshal(execution_plan, outputs_to_marshal):
-    if not outputs_to_marshal:
-        return
-
-    for step_key, outputs_for_step in outputs_to_marshal.items():
-        if not execution_plan.has_step(step_key):
-            raise DagsterExecutionStepNotFoundError(step_key=step_key)
-        step = execution_plan.get_step_by_key(step_key)
-        for output in outputs_for_step:
-            output_name = output.output_name
-            if not step.has_step_output(output_name):
-                raise DagsterMarshalOutputNotFoundError(
-                    'Execution step {step_key} does not have output {output}'.format(
-                        step_key=step_key, output=output_name
-                    ),
-                    step_key=step_key,
-                    output_name=output_name,
-                )
-
-
-def _check_inputs_to_marshal(execution_plan, inputs_to_marshal):
-    if not inputs_to_marshal:
-        return
-
-    for step_key, input_dict in inputs_to_marshal.items():
-        if not execution_plan.has_step(step_key):
-            raise DagsterExecutionStepNotFoundError(step_key=step_key)
-        step = execution_plan.get_step_by_key(step_key)
-        for input_name in input_dict.keys():
-            if input_name not in step.step_input_dict:
-                raise DagsterUnmarshalInputNotFoundError(
-                    'Input {input_name} does not exist in execution step {key}'.format(
-                        input_name=input_name, key=step.key
-                    ),
-                    input_name=input_name,
-                    step_key=step.key,
-                )
-
-
 def execute_plan(
-    execution_plan, environment_dict=None, execution_metadata=None, throw_on_user_error=True
+    execution_plan,
+    environment_dict=None,
+    execution_metadata=None,
+    throw_on_user_error=True,
+    executor_config=None,
 ):
     check.inst_param(execution_plan, 'execution_plan', ExecutionPlan)
     environment_dict = check.opt_dict_param(environment_dict, 'environment_dict')
@@ -701,56 +685,13 @@ def execute_plan(
         execution_plan.pipeline_def, environment_dict, execution_metadata
     ) as pipeline_context:
         return list(
-            iterate_step_events_for_execution_plan(
-                pipeline_context, execution_plan, throw_on_user_error=throw_on_user_error
+            invoke_executor_on_plan(
+                pipeline_context,
+                execution_plan,
+                throw_on_user_error=throw_on_user_error,
+                executor_config=executor_config,
             )
         )
-
-
-def _dep_key_of(solid):
-    return SolidInstance(solid.definition.name, solid.name)
-
-
-def build_sub_pipeline(pipeline_def, solid_names):
-    '''
-    Build a pipeline which is a subset of another pipeline.
-    Only includes the solids which are in solid_names.
-    '''
-
-    check.inst_param(pipeline_def, 'pipeline_def', PipelineDefinition)
-    check.list_param(solid_names, 'solid_names', of_type=str)
-
-    solid_name_set = set(solid_names)
-    solids = list(map(pipeline_def.solid_named, solid_names))
-    deps = {_dep_key_of(solid): {} for solid in solids}
-
-    def _out_handle_of_inp(input_handle):
-        if pipeline_def.dependency_structure.has_dep(input_handle):
-            output_handle = pipeline_def.dependency_structure.get_dep(input_handle)
-            if output_handle.solid.name in solid_name_set:
-                return output_handle
-        return None
-
-    for solid in solids:
-        for input_handle in solid.input_handles():
-            output_handle = _out_handle_of_inp(input_handle)
-            if output_handle:
-                deps[_dep_key_of(solid)][input_handle.input_def.name] = DependencyDefinition(
-                    solid=output_handle.solid.name, output=output_handle.output_def.name
-                )
-
-    return PipelineDefinition(
-        name=pipeline_def.name,
-        solids=list({solid.definition for solid in solids}),
-        context_definitions=pipeline_def.context_definitions,
-        dependencies=deps,
-    )
-
-
-def get_subset_pipeline(pipeline, solid_subset):
-    check.inst_param(pipeline, 'pipeline', PipelineDefinition)
-    check.opt_list_param(solid_subset, 'solid_subset', of_type=str)
-    return pipeline if solid_subset is None else build_sub_pipeline(pipeline, solid_subset)
 
 
 def create_environment_config(pipeline, environment_dict=None):

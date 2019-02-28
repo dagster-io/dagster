@@ -17,7 +17,10 @@ changes to the static file.
 '''
 
 from airflow import DAG
-from airflow.operators.dagster_plugin import DagsterOperator
+try:
+    from airflow.operators.dagster_plugin import DagsterOperator
+except (ModuleNotFoundError, ImportError):
+    from dagster_airflow import DagsterOperator
 
 
 CONFIG = '''

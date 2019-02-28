@@ -8,6 +8,8 @@
 # Most dagster developers use venv for virtual environment management
 
 pip install --upgrade pip
+pip install -r bin/requirements.txt
+
 pip install -e python_modules/dagster
 pip install -r python_modules/dagster/requirements.txt
 pip install -r python_modules/dagster/dev-requirements.txt

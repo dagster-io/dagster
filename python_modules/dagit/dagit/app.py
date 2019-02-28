@@ -127,6 +127,13 @@ def notebook_view():
 def open_file_view():
     path = request.args.get('path')
 
+    # Jupyter doesn't register as a handler for ipynb files, so calling `open` won't
+    # work. Instead, spawn a Jupyter notebook process.
+    if path.endswith(".ipynb"):
+        subprocess.Popen(['jupyter', 'notebook', path])
+        return "Success", 200
+
+    # Fall back to `open` or `xdg-open` for other file types
     if os.name == 'nt':  # For Windows
         os.startfile(path, 'open')  # pylint:disable=no-member
         return "Success", 200

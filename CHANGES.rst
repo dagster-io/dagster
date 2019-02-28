@@ -1,7 +1,12 @@
+0.3.3
+
+   - API Additions and Changes
+      - Removed step, environment_config, event_callback, has_event_callback, persistence_strategy, events, and execution_metadata properties from user-facing context objects.
 0.3.2
 
    - New features
       - Link to output notebook rendered in dagit when dagstermill solids are executed.
+      - Dagstermill solids now required reduced scaffolding.
 
    - API Additions and changes
       - The ``info`` object passed to transform and expectation functions has been renamed to ``context``.
@@ -22,7 +27,7 @@
 
    - Bug fixes
       - #792: execute_pipeline_iterator now properly streams results at step-event granularity.
-
+      - #820: Unbreak config scaffolding within dagit.
 
    - GraphQL Schema Changes
       - ``StepResult`` has been renamed to ``StepEvent``.

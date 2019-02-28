@@ -17,6 +17,7 @@ def create_sql_alchemy_context_from_sa_resource(sa_resource, *args, **kwargs):
     check.inst_param(sa_resource, 'sa_resource', SqlAlchemyResource)
     resources = DefaultSqlAlchemyResources(sa_resource)
     context = create_test_pipeline_execution_context(resources=resources, *args, **kwargs)
+
     return check_supports_sql_alchemy_resource(context)
 
 

@@ -9,50 +9,79 @@ interface IExecutionStartButtonProps {
   onClick: (event: React.MouseEvent<HTMLDivElement, MouseEvent>) => void;
 }
 
-export default function ExecutionStartButton(
-  props: IExecutionStartButtonProps
-) {
-  return (
-    <WebsocketStatusContext.Consumer>
-      {websocketStatus => {
-        if (props.executing) {
+interface IExecutionStartButtonState {
+  starting: boolean;
+}
+
+export default class ExecutionStartButton extends React.Component<
+  IExecutionStartButtonProps,
+  IExecutionStartButtonState
+> {
+  _mounted: boolean = false;
+
+  state = {
+    starting: false
+  };
+
+  componentDidMount() {
+    this._mounted = true;
+  }
+
+  componentWillUnmount() {
+    this._mounted = false;
+  }
+
+  onClick = async (event: React.MouseEvent<HTMLDivElement, MouseEvent>) => {
+    this.setState({ starting: true });
+    await this.props.onClick(event);
+    setTimeout(() => {
+      if (!this._mounted) return;
+      this.setState({ starting: false });
+    }, 300);
+  };
+
+  render() {
+    return (
+      <WebsocketStatusContext.Consumer>
+        {websocketStatus => {
+          if (this.props.executing || this.state.starting) {
+            return (
+              <Wrapper
+                role="button"
+                title={"Pipeline execution is in progress..."}
+              >
+                <div style={{marginRight: 5}}><Spinner intent={Intent.NONE} size={17} /></div>
+                Running...
+              </Wrapper>
+            );
+          }
+
+          if (websocketStatus !== WebSocket.OPEN) {
+            return (
+              <Wrapper
+                role="button"
+                title={"Start pipeline execution"}
+              >
+                <Icon icon={IconNames.OFFLINE} iconSize={17} />
+              Start Execution
+              </Wrapper>
+            );
+          }
+  
           return (
             <Wrapper
               role="button"
-              title={"Pipeline execution is in progress..."}
+              title={"Start pipeline execution"}
+              onClick={this.onClick}
             >
-              <div style={{marginRight: 5}}><Spinner intent={Intent.NONE} size={17} /></div>
-              Running...
+              <Icon icon={IconNames.PLAY} iconSize={17} />
+              Start Execution
             </Wrapper>
           );
-        }
-
-        if (websocketStatus !== WebSocket.OPEN) {
-          return (
-            <Wrapper
-              role="button"
-              disabled={true}
-              title={"Dagit is disconnected"}
-            >
-              <Icon icon={IconNames.OFFLINE} iconSize={17} />
-            Start Execution
-            </Wrapper>
-          );
-        }
-
-        return (
-          <Wrapper
-            role="button"
-            title={"Start pipeline execution"}
-            onClick={props.onClick}
-          >
-            <Icon icon={IconNames.PLAY} iconSize={17} />
-            Start Execution
-          </Wrapper>
-        );
-      }}
-    </WebsocketStatusContext.Consumer>
-  );
+        }}
+      </WebsocketStatusContext.Consumer>
+    );
+  }
 }
 
 const Wrapper = styled.div<{ disabled?: boolean }>`

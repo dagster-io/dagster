@@ -1,6 +1,11 @@
 from dagster import check
 
-from dagster.core.execution_context import StepExecutionContext, PipelineExecutionContext
+from dagster.core.execution_context import (
+    SystemStepExecutionContext,
+    SystemPipelineExecutionContext,
+)
+
+from dagster.core.user_context import ExpectationExecutionContext
 
 from dagster.core.definitions import ExpectationDefinition, InputDefinition, OutputDefinition, Solid
 
@@ -28,22 +33,25 @@ def _create_expectation_lambda(solid, inout_def, expectation_def, internal_outpu
     check.inst_param(expectation_def, 'expectations_def', ExpectationDefinition)
     check.str_param(internal_output_name, 'internal_output_name')
 
-    def _do_expectation(step_context, inputs):
-        check.inst_param(step_context, 'step_context', StepExecutionContext)
+    def _do_expectation(expectation_context, inputs):
+        check.inst_param(expectation_context, 'step_context', SystemStepExecutionContext)
         value = inputs[EXPECTATION_INPUT]
-        expectation_context = step_context.for_expectation(inout_def, expectation_def)
-        expt_result = expectation_def.expectation_fn(step_context, value)
+        expectation_context = expectation_context.for_expectation(inout_def, expectation_def)
+        expt_result = expectation_def.expectation_fn(
+            ExpectationExecutionContext(expectation_context), value
+        )
+        # step_context,  value)
         if expt_result.success:
             expectation_context.log.debug(
                 'Expectation {key} succeeded on {value}.'.format(
-                    key=step_context.step.key, value=value
+                    key=expectation_context.step.key, value=value
                 )
             )
             yield StepOutputValue(output_name=internal_output_name, value=inputs[EXPECTATION_INPUT])
         else:
             expectation_context.log.debug(
                 'Expectation {key} failed on {value}.'.format(
-                    key=step_context.step.key, value=value
+                    key=expectation_context.step.key, value=value
                 )
             )
             raise DagsterExpectationFailedError(expectation_context, value)
@@ -52,7 +60,7 @@ def _create_expectation_lambda(solid, inout_def, expectation_def, internal_outpu
 
 
 def create_expectations_subplan(pipeline_context, solid, inout_def, prev_step_output_handle, kind):
-    check.inst_param(pipeline_context, 'pipeline_context', PipelineExecutionContext)
+    check.inst_param(pipeline_context, 'pipeline_context', SystemPipelineExecutionContext)
     check.inst_param(solid, 'solid', Solid)
     check.inst_param(inout_def, 'inout_def', (InputDefinition, OutputDefinition))
     check.inst_param(prev_step_output_handle, 'prev_step_output_handle', StepOutputHandle)
@@ -90,7 +98,7 @@ def create_expectations_subplan(pipeline_context, solid, inout_def, prev_step_ou
 def create_expectation_step(
     pipeline_context, solid, expectation_def, key, kind, prev_step_output_handle, inout_def
 ):
-    check.inst_param(pipeline_context, 'pipeline_context', PipelineExecutionContext)
+    check.inst_param(pipeline_context, 'pipeline_context', SystemPipelineExecutionContext)
     check.inst_param(solid, 'solid', Solid)
     check.inst_param(expectation_def, 'input_expct_def', ExpectationDefinition)
     check.inst_param(prev_step_output_handle, 'prev_step_output_handle', StepOutputHandle)
@@ -119,7 +127,7 @@ def create_expectation_step(
 
 
 def decorate_with_expectations(pipeline_context, solid, transform_step, output_def):
-    check.inst_param(pipeline_context, 'pipeline_context', PipelineExecutionContext)
+    check.inst_param(pipeline_context, 'pipeline_context', SystemPipelineExecutionContext)
     check.inst_param(solid, 'solid', Solid)
     check.inst_param(transform_step, 'transform_step', ExecutionStep)
     check.inst_param(output_def, 'output_def', OutputDefinition)
@@ -129,8 +137,10 @@ def decorate_with_expectations(pipeline_context, solid, transform_step, output_d
             pipeline_context,
             solid,
             output_def,
-            StepOutputHandle(transform_step, output_def.name),
+            StepOutputHandle.from_step(transform_step, output_def.name),
             kind=StepKind.OUTPUT_EXPECTATION,
         )
     else:
-        return ExecutionValueSubplan.empty(StepOutputHandle(transform_step, output_def.name))
+        return ExecutionValueSubplan.empty(
+            StepOutputHandle.from_step(transform_step, output_def.name)
+        )

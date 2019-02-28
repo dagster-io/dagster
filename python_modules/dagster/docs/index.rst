@@ -34,6 +34,7 @@ Intro Tutorial
   intro_tutorial/multiple_outputs
   intro_tutorial/reusable_solids
   intro_tutorial/unittesting
+  intro_tutorial/dagstermill
 
 API Reference
 ================

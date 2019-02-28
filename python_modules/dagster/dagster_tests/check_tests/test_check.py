@@ -427,6 +427,9 @@ def test_inst_param():
     class Bar(object):
         pass
 
+    class Baaz(object):
+        pass
+
     obj = Foo()
 
     assert check.inst_param(obj, 'obj', Foo) == obj
@@ -437,12 +440,21 @@ def test_inst_param():
     with pytest.raises(ParameterCheckError, match='not a Bar'):
         check.inst_param(Foo(), 'obj', Bar)
 
+    with pytest.raises(ParameterCheckError, match=r"not one of \['Bar', 'Foo'\]"):
+        check.inst_param(None, 'obj', (Foo, Bar))
+
+    with pytest.raises(ParameterCheckError, match=r"not one of \['Bar', 'Foo'\]"):
+        check.inst_param(Baaz(), 'obj', (Foo, Bar))
+
 
 def test_opt_inst_param():
     class Foo(object):
         pass
 
     class Bar(object):
+        pass
+
+    class Baaz(object):
         pass
 
     obj = Foo()
@@ -459,6 +471,11 @@ def test_opt_inst_param():
     default_obj = Foo()
 
     assert check.opt_inst_param(None, 'obj', Foo, default_obj) is default_obj
+
+    assert check.opt_inst_param(None, 'obj', (Foo, Bar)) is None
+
+    with pytest.raises(ParameterCheckError, match=r"not one of \['Bar', 'Foo'\]"):
+        check.inst_param(Baaz(), 'obj', (Foo, Bar))
 
 
 def test_dict_elem():

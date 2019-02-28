@@ -5,7 +5,6 @@ import boto3
 import sqlalchemy
 
 from botocore.handlers import disable_signing
-from pyspark.sql import SparkSession
 
 
 def mkdir_p(newdir, mode=0o777):
@@ -16,21 +15,6 @@ def mkdir_p(newdir, mode=0o777):
         # Reraise the error unless it's about an already existing directory
         if err.errno != errno.EEXIST or not os.path.isdir(newdir):
             raise
-
-
-def create_spark_session_local():
-    # Need two versions of this, one for test/local and one with a
-    # configurable cluster
-    spark = (
-        SparkSession.builder.appName("AirlineDemo")
-        .config(
-            'spark.jars.packages',
-            'com.databricks:spark-avro_2.11:3.0.0,com.databricks:spark-redshift_2.11:2.0.1,'
-            'com.databricks:spark-csv_2.11:1.5.0,org.postgresql:postgresql:42.2.5',
-        )
-        .getOrCreate()
-    )
-    return spark
 
 
 def create_s3_session(signed=True):
@@ -76,3 +60,25 @@ def create_postgres_db_url(username, password, hostname, db_name, jdbc=True):
 
 def create_postgres_engine(db_url):
     return sqlalchemy.create_engine(db_url)
+
+
+class S3Logger(object):
+    def __init__(self, logger, bucket, key, filename, size):
+        self._logger = logger
+        self._bucket = bucket
+        self._key = key
+        self._filename = filename
+        self._seen_so_far = 0
+        self._size = size
+
+    def __call__(self, bytes_amount):
+        self._seen_so_far += bytes_amount
+        percentage = (self._seen_so_far / self._size) * 100
+        self._logger(
+            'Download of {bucket}/{key} to {target_path}: {percentage}% complete'.format(
+                bucket=self._bucket,
+                key=self._key,
+                target_path=self._filename,
+                percentage=percentage,
+            )
+        )

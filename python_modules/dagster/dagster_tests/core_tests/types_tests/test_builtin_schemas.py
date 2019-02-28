@@ -20,6 +20,12 @@ from dagster import (
 from dagster.utils.test import get_temp_file_name
 
 
+def _execute_pipeline_with_subset(pipeline, environment_dict, solid_subset):
+    return execute_pipeline(
+        pipeline.build_sub_pipeline(solid_subset), environment_dict=environment_dict
+    )
+
+
 def define_test_all_scalars_pipeline():
     @lambda_solid(inputs=[InputDefinition('num', Int)])
     def take_int(num):
@@ -103,7 +109,7 @@ def single_input_env(solid_name, input_name, input_spec):
 
 
 def test_int_input_schema_value():
-    result = execute_pipeline(
+    result = _execute_pipeline_with_subset(
         define_test_all_scalars_pipeline(),
         environment_dict=single_input_env('take_int', 'num', {'value': 2}),
         solid_subset=['take_int'],
@@ -115,7 +121,7 @@ def test_int_input_schema_value():
 
 def test_int_input_schema_failure():
     with pytest.raises(PipelineConfigEvaluationError) as exc_info:
-        execute_pipeline(
+        _execute_pipeline_with_subset(
             define_test_all_scalars_pipeline(),
             environment_dict=single_input_env('take_int', 'num', {'value': 'dkjdfkdj'}),
             solid_subset=['take_int'],
@@ -132,7 +138,7 @@ def single_output_env(solid_name, output_spec):
 
 def test_int_json_schema_roundtrip():
     with get_temp_file_name() as tmp_file:
-        mat_result = execute_pipeline(
+        mat_result = _execute_pipeline_with_subset(
             define_test_all_scalars_pipeline(),
             environment_dict=single_output_env('produce_int', {'json': {'path': tmp_file}}),
             solid_subset=['produce_int'],
@@ -140,7 +146,7 @@ def test_int_json_schema_roundtrip():
 
         assert mat_result.success
 
-        source_result = execute_pipeline(
+        source_result = _execute_pipeline_with_subset(
             define_test_all_scalars_pipeline(),
             environment_dict=single_input_env('take_int', 'num', {'json': {'path': tmp_file}}),
             solid_subset=['take_int'],
@@ -151,7 +157,7 @@ def test_int_json_schema_roundtrip():
 
 def test_int_pickle_schema_roundtrip():
     with get_temp_file_name() as tmp_file:
-        mat_result = execute_pipeline(
+        mat_result = _execute_pipeline_with_subset(
             define_test_all_scalars_pipeline(),
             environment_dict=single_output_env('produce_int', {'pickle': {'path': tmp_file}}),
             solid_subset=['produce_int'],
@@ -159,7 +165,7 @@ def test_int_pickle_schema_roundtrip():
 
         assert mat_result.success
 
-        source_result = execute_pipeline(
+        source_result = _execute_pipeline_with_subset(
             define_test_all_scalars_pipeline(),
             environment_dict=single_input_env('take_int', 'num', {'pickle': {'path': tmp_file}}),
             solid_subset=['take_int'],
@@ -169,7 +175,7 @@ def test_int_pickle_schema_roundtrip():
 
 
 def test_string_input_schema_value():
-    result = execute_pipeline(
+    result = _execute_pipeline_with_subset(
         define_test_all_scalars_pipeline(),
         environment_dict=single_input_env('take_string', 'string', {'value': 'dkjkfd'}),
         solid_subset=['take_string'],
@@ -181,7 +187,7 @@ def test_string_input_schema_value():
 
 def test_string_input_schema_failure():
     with pytest.raises(PipelineConfigEvaluationError) as exc_info:
-        execute_pipeline(
+        _execute_pipeline_with_subset(
             define_test_all_scalars_pipeline(),
             environment_dict=single_input_env('take_string', 'string', {'value': 3343}),
             solid_subset=['take_string'],
@@ -194,7 +200,7 @@ def test_string_input_schema_failure():
 
 
 def test_float_input_schema_value():
-    result = execute_pipeline(
+    result = _execute_pipeline_with_subset(
         define_test_all_scalars_pipeline(),
         environment_dict=single_input_env('take_float', 'float_number', {'value': 3.34}),
         solid_subset=['take_float'],
@@ -206,7 +212,7 @@ def test_float_input_schema_value():
 
 def test_float_input_schema_failure():
     with pytest.raises(PipelineConfigEvaluationError) as exc_info:
-        execute_pipeline(
+        _execute_pipeline_with_subset(
             define_test_all_scalars_pipeline(),
             environment_dict=single_input_env('take_float', 'float_number', {'value': '3343'}),
             solid_subset=['take_float'],
@@ -219,7 +225,7 @@ def test_float_input_schema_failure():
 
 
 def test_bool_input_schema_value():
-    result = execute_pipeline(
+    result = _execute_pipeline_with_subset(
         define_test_all_scalars_pipeline(),
         environment_dict=single_input_env('take_bool', 'bool_value', {'value': True}),
         solid_subset=['take_bool'],
@@ -231,7 +237,7 @@ def test_bool_input_schema_value():
 
 def test_bool_input_schema_failure():
     with pytest.raises(PipelineConfigEvaluationError) as exc_info:
-        execute_pipeline(
+        _execute_pipeline_with_subset(
             define_test_all_scalars_pipeline(),
             environment_dict=single_input_env('take_bool', 'bool_value', {'value': '3343'}),
             solid_subset=['take_bool'],
@@ -244,7 +250,7 @@ def test_bool_input_schema_failure():
 
 
 def test_any_input_schema_value():
-    result = execute_pipeline(
+    result = _execute_pipeline_with_subset(
         define_test_all_scalars_pipeline(),
         environment_dict=single_input_env('take_any', 'any_value', {'value': 'ff'}),
         solid_subset=['take_any'],
@@ -253,7 +259,7 @@ def test_any_input_schema_value():
     assert result.success
     assert result.result_for_solid('take_any').transformed_value() == 'ff'
 
-    result = execute_pipeline(
+    result = _execute_pipeline_with_subset(
         define_test_all_scalars_pipeline(),
         environment_dict=single_input_env('take_any', 'any_value', {'value': 3843}),
         solid_subset=['take_any'],
@@ -265,7 +271,7 @@ def test_any_input_schema_value():
 
 def test_none_string_input_schema_failure():
     with pytest.raises(PipelineConfigEvaluationError) as exc_info:
-        execute_pipeline(
+        _execute_pipeline_with_subset(
             define_test_all_scalars_pipeline(),
             environment_dict=single_input_env('take_string', 'string', None),
             solid_subset=['take_string'],
@@ -279,7 +285,7 @@ def test_none_string_input_schema_failure():
 
 def test_value_none_string_input_schema_failure():
     with pytest.raises(PipelineConfigEvaluationError) as exc_info:
-        execute_pipeline(
+        _execute_pipeline_with_subset(
             define_test_all_scalars_pipeline(),
             environment_dict=single_input_env('take_string', 'string', {'value': None}),
             solid_subset=['take_string'],
@@ -293,7 +299,7 @@ def test_value_none_string_input_schema_failure():
 
 def test_string_json_schema_roundtrip():
     with get_temp_file_name() as tmp_file:
-        mat_result = execute_pipeline(
+        mat_result = _execute_pipeline_with_subset(
             define_test_all_scalars_pipeline(),
             environment_dict=single_output_env('produce_string', {'json': {'path': tmp_file}}),
             solid_subset=['produce_string'],
@@ -301,7 +307,7 @@ def test_string_json_schema_roundtrip():
 
         assert mat_result.success
 
-        source_result = execute_pipeline(
+        source_result = _execute_pipeline_with_subset(
             define_test_all_scalars_pipeline(),
             environment_dict=single_input_env(
                 'take_string', 'string', {'json': {'path': tmp_file}}
@@ -314,7 +320,7 @@ def test_string_json_schema_roundtrip():
 
 def test_string_pickle_schema_roundtrip():
     with get_temp_file_name() as tmp_file:
-        mat_result = execute_pipeline(
+        mat_result = _execute_pipeline_with_subset(
             define_test_all_scalars_pipeline(),
             environment_dict=single_output_env('produce_string', {'pickle': {'path': tmp_file}}),
             solid_subset=['produce_string'],
@@ -322,7 +328,7 @@ def test_string_pickle_schema_roundtrip():
 
         assert mat_result.success
 
-        source_result = execute_pipeline(
+        source_result = _execute_pipeline_with_subset(
             define_test_all_scalars_pipeline(),
             environment_dict=single_input_env(
                 'take_string', 'string', {'pickle': {'path': tmp_file}}
@@ -334,7 +340,7 @@ def test_string_pickle_schema_roundtrip():
 
 
 def test_path_input_schema_value():
-    result = execute_pipeline(
+    result = _execute_pipeline_with_subset(
         define_test_all_scalars_pipeline(),
         environment_dict=single_input_env('take_path', 'path', '/a/path'),
         solid_subset=['take_path'],
@@ -346,7 +352,7 @@ def test_path_input_schema_value():
 
 def test_path_input_schema_failure():
     with pytest.raises(PipelineConfigEvaluationError) as exc_info:
-        execute_pipeline(
+        _execute_pipeline_with_subset(
             define_test_all_scalars_pipeline(),
             environment_dict=single_input_env('take_path', 'path', {'value': 3343}),
             solid_subset=['take_path'],
@@ -358,7 +364,7 @@ def test_path_input_schema_failure():
 
 
 def test_string_list_input():
-    result = execute_pipeline(
+    result = _execute_pipeline_with_subset(
         define_test_all_scalars_pipeline(),
         environment_dict=single_input_env('take_string_list', 'string_list', [{'value': 'foobar'}]),
         solid_subset=['take_string_list'],
@@ -370,7 +376,7 @@ def test_string_list_input():
 
 
 def test_nullable_string_input_with_value():
-    result = execute_pipeline(
+    result = _execute_pipeline_with_subset(
         define_test_all_scalars_pipeline(),
         environment_dict=single_input_env(
             'take_nullable_string', 'nullable_string', {'value': 'foobar'}
@@ -387,7 +393,7 @@ def test_nullable_string_input_with_none_value():
     # Perhaps a confusing test case. Nullable makes the entire enclosing structure nullable,
     # rather than the "value" value embedded within it
     with pytest.raises(PipelineConfigEvaluationError) as exc_info:
-        execute_pipeline(
+        _execute_pipeline_with_subset(
             define_test_all_scalars_pipeline(),
             environment_dict=single_input_env(
                 'take_nullable_string', 'nullable_string', {'value': None}
@@ -402,7 +408,7 @@ def test_nullable_string_input_with_none_value():
 
 
 def test_nullable_string_input_without_value():
-    result = execute_pipeline(
+    result = _execute_pipeline_with_subset(
         define_test_all_scalars_pipeline(),
         environment_dict=single_input_env('take_nullable_string', 'nullable_string', None),
         solid_subset=['take_nullable_string'],

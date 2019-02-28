@@ -23,11 +23,7 @@ from dagster.core.definitions.dependency import DependencyStructure
 
 from dagster.core.definitions.pipeline import _create_adjacency_lists
 
-from dagster.core.execution import (
-    PipelineExecutionResult,
-    SolidExecutionResult,
-    get_subset_pipeline,
-)
+from dagster.core.execution import PipelineExecutionResult, SolidExecutionResult
 
 from dagster.core.utility_solids import define_stub_solid
 
@@ -336,8 +332,7 @@ def test_pipeline_name_threaded_through_context():
 
     @solid()
     def assert_name_transform(context):
-        assert context.has_tag('pipeline')
-        assert context.get_tag('pipeline') == name
+        assert context.pipeline_def.name == name
 
     result = execute_pipeline(PipelineDefinition(name="foobar", solids=[assert_name_transform]))
 
@@ -370,7 +365,7 @@ def test_pipeline_subset():
     env_config = {'solids': {'add_one': {'inputs': {'num': {'value': 3}}}}}
 
     subset_result = execute_pipeline(
-        pipeline_def, environment_dict=env_config, solid_subset=['add_one']
+        pipeline_def.build_sub_pipeline(['add_one']), environment_dict=env_config
     )
 
     assert subset_result.success
@@ -378,7 +373,7 @@ def test_pipeline_subset():
     assert subset_result.result_for_solid('add_one').transformed_value() == 4
 
     step_events = execute_pipeline_iterator(
-        pipeline_def, environment_dict=env_config, solid_subset=['add_one']
+        pipeline_def.build_sub_pipeline(['add_one']), environment_dict=env_config
     )
 
     for step_event in step_events:
@@ -402,11 +397,11 @@ def define_three_part_pipeline():
 
 
 def define_created_disjoint_three_part_pipeline():
-    return get_subset_pipeline(define_three_part_pipeline(), ['add_one', 'add_three'])
+    return define_three_part_pipeline().build_sub_pipeline(['add_one', 'add_three'])
 
 
 def test_pipeline_disjoint_subset():
-    disjoint_pipeline = get_subset_pipeline(define_three_part_pipeline(), ['add_one', 'add_three'])
+    disjoint_pipeline = define_three_part_pipeline().build_sub_pipeline(['add_one', 'add_three'])
     assert len(disjoint_pipeline.solids) == 2
 
 
@@ -422,7 +417,7 @@ def test_pipeline_execution_disjoint_subset():
     pipeline_def = define_created_disjoint_three_part_pipeline()
 
     result = execute_pipeline(
-        pipeline_def, environment_dict=env_config, solid_subset=['add_one', 'add_three']
+        pipeline_def.build_sub_pipeline(['add_one', 'add_three']), environment_dict=env_config
     )
 
     assert result.success
@@ -497,12 +492,12 @@ def test_pipeline_streaming_iterator():
 
     push_one_step_event = next(step_event_iterator)
     assert push_one_step_event.is_successful_output
-    assert push_one_step_event.success_data.value == 1
+    assert push_one_step_event.step_output_data.get_value() == 1
     assert events == [1]
 
     add_one_step_event = next(step_event_iterator)
     assert add_one_step_event.is_successful_output
-    assert add_one_step_event.success_data.value == 2
+    assert add_one_step_event.step_output_data.get_value() == 2
     assert events == [1, 2]
 
 
@@ -524,12 +519,12 @@ def test_pipeline_streaming_multiple_outputs():
 
     one_output_step_event = next(step_event_iterator)
     assert one_output_step_event.is_successful_output
-    assert one_output_step_event.success_data.value == 1
-    assert one_output_step_event.success_data.output_name == 'one'
+    assert one_output_step_event.step_output_data.get_value() == 1
+    assert one_output_step_event.step_output_data.output_name == 'one'
     assert events == [1]
 
     two_output_step_event = next(step_event_iterator)
     assert two_output_step_event.is_successful_output
-    assert two_output_step_event.success_data.value == 2
-    assert two_output_step_event.success_data.output_name == 'two'
+    assert two_output_step_event.step_output_data.get_value() == 2
+    assert two_output_step_event.step_output_data.output_name == 'two'
     assert events == [1, 2]

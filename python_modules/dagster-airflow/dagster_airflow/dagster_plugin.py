@@ -6,9 +6,9 @@ airflow.operators.dagster_plugin.DagsterOperator available.
 from __future__ import print_function
 
 import ast
+import errno
 import json
 import sys
-
 
 from contextlib import contextmanager
 from textwrap import TextWrapper
@@ -24,6 +24,11 @@ if sys.version_info.major >= 3:
     from io import StringIO  # pylint:disable=import-error
 else:
     from StringIO import StringIO  # pylint:disable=import-error
+
+if sys.version_info.major >= 3:
+    from json.decoder import JSONDecodeError
+else:
+    JSONDecodeError = ValueError
 
 
 # We don't use six here to avoid taking the dependency
@@ -53,9 +58,47 @@ mutation(
     stepExecutions: $stepExecutions,
   ) {{
     __typename
+    ... on PipelineConfigValidationInvalid {{
+      pipeline {{
+        name
+      }}
+      errors {{
+        __typename
+        message
+        path
+        reason
+      }}
+    }}
     ... on StartSubplanExecutionSuccess {{
       pipeline {{
         name
+      }}
+      hasFailures
+      stepEvents {{
+        step {{
+          key
+          solid {{
+            name
+          }}
+          kind
+        }}
+        success
+        __typename
+        ... on SuccessfulStepOutputEvent {{
+          step {{
+            key
+          }}
+          success
+          outputName
+          valueRepr
+        }}
+        ... on StepFailureEvent {{
+          step {{
+            key
+          }}
+          success
+          errorMessage
+        }}
       }}
     }}
     ... on PythonError {{
@@ -229,6 +272,7 @@ class ModifiedDockerOperator(DockerOperator):
 
     def __init__(self, host_tmp_dir=None, **kwargs):
         self.host_tmp_dir = host_tmp_dir
+        kwargs['xcom_push'] = True
         super(ModifiedDockerOperator, self).__init__(**kwargs)
 
     @contextmanager
@@ -413,7 +457,7 @@ class DagsterOperator(ModifiedDockerOperator):
                         printer.line('}}}}{comma}'.format(comma=',' if i < n_outputs - 1 else ''))
             printer.line('}}')
         printer.line(']')
-        return printer.read().format(run_id_prefix=self.run_id + '_' if self.run_id else '')
+        return printer.read().format(run_id_prefix=self.run_id)
 
     @property
     def query(self):
@@ -454,7 +498,30 @@ class DagsterOperator(ModifiedDockerOperator):
             self._run_id = context['dag_run'].run_id
         try:
             # FIXME implement intermediate result persistence to S3
-            return super(DagsterOperator, self).execute(context)
+
+            self.log.debug('Executing with query: {query}'.format(query=self.query))
+            raw_res = super(DagsterOperator, self).execute(context)
+            res = json.loads(raw_res)
+
+            res_type = res['data']['startSubplanExecution']['__typename']
+
+            if res_type == 'PipelineConfigValidationInvalid':
+                errors = [err['message'] for err in res['data']['startSubplanExecution']['errors']]
+                raise AirflowException(
+                    'Pipeline configuration invalid:\n{errors}'.format(errors='\n'.join(errors))
+                )
+            elif res['data']['startSubplanExecution']['hasFailures']:
+                errors = [
+                    step['errorMessage']
+                    for step in res['data']['startSubplanExecution']['stepEvents']
+                    if not step['success']
+                ]
+                raise AirflowException(
+                    'Subplan execution failed:\n{errors}'.format(errors='\n'.join(errors))
+                )
+            return res
+        except JSONDecodeError:  # This is the bad case where we don't get a GraphQL response
+            raise AirflowException(raw_res)
         finally:
             self._run_id = None
 

@@ -260,14 +260,16 @@ class DauphinPipelineRunEvent(dauphin.Union):
         elif event.event_type == EventType.EXECUTION_PLAN_STEP_START:
             return graphene_info.schema.type_named('ExecutionStepStartEvent')(
                 step=graphene_info.schema.type_named('ExecutionStep')(
-                    pipeline_run.execution_plan.get_step_by_key(event.step_key)
+                    pipeline_run.execution_plan,
+                    pipeline_run.execution_plan.get_step_by_key(event.step_key),
                 ),
                 **basic_params
             )
         elif event.event_type == EventType.EXECUTION_PLAN_STEP_SUCCESS:
             return graphene_info.schema.type_named('ExecutionStepSuccessEvent')(
                 step=graphene_info.schema.type_named('ExecutionStep')(
-                    pipeline_run.execution_plan.get_step_by_key(event.step_key)
+                    pipeline_run.execution_plan,
+                    pipeline_run.execution_plan.get_step_by_key(event.step_key),
                 ),
                 **basic_params
             )
@@ -275,7 +277,8 @@ class DauphinPipelineRunEvent(dauphin.Union):
             check.inst(event.error_info, SerializableErrorInfo)
             return graphene_info.schema.type_named('ExecutionStepFailureEvent')(
                 step=graphene_info.schema.type_named('ExecutionStep')(
-                    pipeline_run.execution_plan.get_step_by_key(event.step_key)
+                    pipeline_run.execution_plan,
+                    pipeline_run.execution_plan.get_step_by_key(event.step_key),
                 ),
                 error=graphene_info.schema.type_named('PythonError')(event.error_info),
                 **basic_params
@@ -283,7 +286,8 @@ class DauphinPipelineRunEvent(dauphin.Union):
         elif event.event_type == EventType.STEP_MATERIALIZATION:
             return graphene_info.schema.type_named('StepMaterializationEvent')(
                 step=graphene_info.schema.type_named('ExecutionStep')(
-                    pipeline_run.execution_plan.get_step_by_key(event.step_key)
+                    pipeline_run.execution_plan,
+                    pipeline_run.execution_plan.get_step_by_key(event.step_key),
                 ),
                 file_name=event.file_name,
                 file_location=event.file_location,

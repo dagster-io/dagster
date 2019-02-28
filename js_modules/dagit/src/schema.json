@@ -5949,7 +5949,7 @@
         "possibleTypes": [
           {
             "kind": "OBJECT",
-            "name": "InvalidSubplanExecutionError",
+            "name": "InvalidSubplanMissingInputError",
             "ofType": null
           },
           {
@@ -5979,7 +5979,7 @@
           },
           {
             "kind": "OBJECT",
-            "name": "StartSubplanExecutionInvalidStepsError",
+            "name": "StartSubplanExecutionInvalidStepError",
             "ofType": null
           },
           {
@@ -5991,19 +5991,19 @@
       },
       {
         "kind": "OBJECT",
-        "name": "InvalidSubplanExecutionError",
+        "name": "InvalidSubplanMissingInputError",
         "description": null,
         "fields": [
           {
-            "name": "step",
+            "name": "stepKey",
             "description": null,
             "args": [],
             "type": {
               "kind": "NON_NULL",
               "name": null,
               "ofType": {
-                "kind": "OBJECT",
-                "name": "ExecutionStep",
+                "kind": "SCALAR",
+                "name": "String",
                 "ofType": null
               }
             },
@@ -6038,15 +6038,15 @@
         "description": null,
         "fields": [
           {
-            "name": "step",
+            "name": "stepKey",
             "description": null,
             "args": [],
             "type": {
               "kind": "NON_NULL",
               "name": null,
               "ofType": {
-                "kind": "OBJECT",
-                "name": "ExecutionStep",
+                "kind": "SCALAR",
+                "name": "String",
                 "ofType": null
               }
             },
@@ -6081,15 +6081,15 @@
         "description": null,
         "fields": [
           {
-            "name": "step",
+            "name": "stepKey",
             "description": null,
             "args": [],
             "type": {
               "kind": "NON_NULL",
               "name": null,
               "ofType": {
-                "kind": "OBJECT",
-                "name": "ExecutionStep",
+                "kind": "SCALAR",
+                "name": "String",
                 "ofType": null
               }
             },
@@ -6120,28 +6120,20 @@
       },
       {
         "kind": "OBJECT",
-        "name": "StartSubplanExecutionInvalidStepsError",
+        "name": "StartSubplanExecutionInvalidStepError",
         "description": null,
         "fields": [
           {
-            "name": "invalidStepKeys",
+            "name": "invalidStepKey",
             "description": null,
             "args": [],
             "type": {
               "kind": "NON_NULL",
               "name": null,
               "ofType": {
-                "kind": "LIST",
-                "name": null,
-                "ofType": {
-                  "kind": "NON_NULL",
-                  "name": null,
-                  "ofType": {
-                    "kind": "SCALAR",
-                    "name": "String",
-                    "ofType": null
-                  }
-                }
+                "kind": "SCALAR",
+                "name": "String",
+                "ofType": null
               }
             },
             "isDeprecated": false,

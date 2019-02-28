@@ -25,7 +25,7 @@ from dagster.utils import safe_isfile
 from dagstermill import define_dagstermill_solid
 
 from .types import FileExistsAtPath, SparkDataFrameType, SqlAlchemyEngineType, SqlTableName
-from .utils import mkdir_p
+from .utils import mkdir_p, S3Logger
 
 
 def _notebook_path(name):
@@ -99,7 +99,7 @@ def sql_solid(name, select_statement, materialization_strategy, table_name=None,
         '''Inner function defining the new solid.
 
         Args:
-            info (ExpectationExecutionInfo): Must expose a `db` resource with an `execute` method,
+            context (TransformExecutionContext): Must expose a `db` resource with an `execute` method,
                 like a SQLAlchemy engine, that can execute raw SQL against a database.
 
         Returns:
@@ -126,42 +126,6 @@ def sql_solid(name, select_statement, materialization_strategy, table_name=None,
         description=description,
         metadata={'kind': 'sql', 'sql': sql_statement},
     )
-
-
-@solid(
-    name='thunk',
-    config_field=Field(String, description='The string value to output.'),
-    description='No-op solid that simply outputs its single string config value.',
-    outputs=[OutputDefinition(String, description='The string passed in as ')],
-)
-def thunk(context):
-    '''Output the config vakue.
-
-    Especially useful when constructing DAGs with root nodes that take inputs which might in
-    other dags come from upstream solids.
-
-    Args:
-        info (ExpectationExecutionInfo)
-
-    Returns:
-        str;
-            The config value passed to the solid.
-    '''
-    return context.solid_config
-
-
-@solid(
-    name='thunk_database_engine',
-    outputs=[OutputDefinition(SqlAlchemyEngineType, description='The db resource.')],
-)
-def thunk_database_engine(context):
-    """Returns the db resource as its output.
-
-    Why? Because we don't currently have a good way to pass contexts around between execution
-    threads. So in order to get a database engine into a Jupyter notebook, we need to serialize
-    it and pass it along.
-    """
-    return context.resources.db
 
 
 @solid(
@@ -230,7 +194,19 @@ def download_from_s3(context):
             if os.path.dirname(target_path):
                 mkdir_p(os.path.dirname(target_path))
 
-            context.resources.s3.download_file(bucket, key, target_path)
+            context.log.info(
+                'Starting download of {bucket}/{key} to {target_path}'.format(
+                    bucket=bucket, key=key, target_path=target_path
+                )
+            )
+
+            headers = context.resources.s3.head_object(Bucket=bucket, Key=key)
+            logger = S3Logger(
+                context.log.debug, bucket, key, target_path, int(headers['ContentLength'])
+            )
+            context.resources.s3.download_file(
+                Bucket=bucket, Key=key, Filename=target_path, Callback=logger
+            )
         results.append(target_path)
     return results
 
@@ -522,7 +498,6 @@ def subsample_spark_dataset(context, data_frame):
     config_field=Field(
         Dict(
             fields={
-                # Probably want to make the region configuable too
                 'on_left': Field(String, description='', default_value='id', is_optional=True),
                 'on_right': Field(String, description='', default_value='id', is_optional=True),
                 'how': Field(String, description='', default_value='inner', is_optional=True),
@@ -730,12 +705,9 @@ westbound_delays = sql_solid(
 )
 
 delays_by_geography = notebook_solid(
-    'delays_by_geo',
-    'Delays by Geography.ipynb',
+    'delays_by_geography',
+    'Delays_by_Geography.ipynb',
     inputs=[
-        InputDefinition(
-            'db_url', String, description='The db_url to use to construct a SQLAlchemy engine.'
-        ),
         InputDefinition(
             'westbound_delays',
             SqlTableName,
@@ -758,14 +730,11 @@ delays_by_geography = notebook_solid(
 
 delays_vs_fares_nb = notebook_solid(
     'fares_vs_delays',
-    'Fares vs. Delays.ipynb',
+    'Fares_vs_Delays.ipynb',
     inputs=[
         InputDefinition(
-            'db_url', String, description='The db_url to use to construct a SQLAlchemy engine.'
-        ),
-        InputDefinition(
             'table_name', SqlTableName, description='The SQL table to use for calcuations.'
-        ),
+        )
     ],
     outputs=[
         OutputDefinition(
@@ -778,14 +747,11 @@ delays_vs_fares_nb = notebook_solid(
 
 sfo_delays_by_destination = notebook_solid(
     'sfo_delays_by_destination',
-    'SFO Delays by Destination.ipynb',
+    'SFO_Delays_by_Destination.ipynb',
     inputs=[
         InputDefinition(
-            'db_url', String, description='The db_url to use to construct a SQLAlchemy engine.'
-        ),
-        InputDefinition(
             'table_name', SqlTableName, description='The SQL table to use for calcuations.'
-        ),
+        )
     ],
     outputs=[
         OutputDefinition(

@@ -10,7 +10,6 @@ import subprocess
 import uuid
 
 import nbformat
-
 import six
 
 from future.utils import raise_from
@@ -18,6 +17,7 @@ from future.utils import raise_from
 import papermill as pm
 from papermill.translators import translate_parameters
 from papermill.iorw import load_notebook_node, write_ipynb
+
 from dagster import (
     DagsterRuntimeCoercionError,
     InputDefinition,
@@ -29,21 +29,20 @@ from dagster import (
     check,
     types,
 )
-
-from dagster.core.types.marshal import serialize_to_file, deserialize_from_file
-from dagster.core.types.runtime import RuntimeType
-
 from dagster.core.definitions.dependency import Solid
-from dagster.core.events import construct_json_event_logger, EventRecord, EventType
 from dagster.core.definitions.environment_configs import construct_environment_config
+from dagster.core.errors import DagsterSubprocessExecutionError
+from dagster.core.events import construct_json_event_logger, EventRecord, EventType
 from dagster.core.execution import yield_pipeline_execution_context
 from dagster.core.execution_context import (
     DagsterLog,
     ExecutionMetadata,
-    PipelineExecutionContext,
-    TransformExecutionContext,
-    AbstractTransformExecutionContext,
+    SystemPipelineExecutionContext,
+    SystemTransformExecutionContext,
 )
+from dagster.core.user_context import AbstractTransformExecutionContext, TransformExecutionContext
+from dagster.core.types.marshal import serialize_to_file, deserialize_from_file
+from dagster.core.types.runtime import RuntimeType
 
 # magic incantation for syncing up notebooks to enclosing virtual environment.
 # I don't claim to understand it.
@@ -64,13 +63,6 @@ class DagstermillInNotebookExecutionContext(AbstractTransformExecutionContext):
     @property
     def run_id(self):
         return self._pipeline_context.run_id
-
-    @property
-    def event_callback(self):
-        return self._pipeline_context.event_callback
-
-    def has_event_callback(self):
-        return self._pipeline_context.has_event_callback
 
     @property
     def environment_config(self):
@@ -97,10 +89,6 @@ class DagstermillInNotebookExecutionContext(AbstractTransformExecutionContext):
         check.not_implemented('Cannot access solid config in dagstermill exploratory context')
 
     @property
-    def step(self):
-        check.not_implemented('Cannot access step in dagstermill exploratory context')
-
-    @property
     def solid_def(self):
         check.not_implemented('Cannot access solid_def in dagstermill exploratory context')
 
@@ -109,27 +97,24 @@ class DagstermillInNotebookExecutionContext(AbstractTransformExecutionContext):
         check.not_implemented('Cannot access solid in dagstermill exploratory context')
 
 
-class DagstermillError(Exception):
+class DagstermillError(DagsterSubprocessExecutionError):
     pass
 
 
 class Manager:
     def __init__(self):
         self.repository_def = None
-        self.solid_def_name = None
-        self.solid_def = None
         self.populated_by_papermill = False
+        self.pipeline_def = None
+        self.solid_def = None
         self.marshal_dir = None
-        self.info = None
+        self.context = None
 
-    def declare_as_solid(self, repository_def, solid_def_name):
+    def register_repository(self, repository_def):
         self.repository_def = repository_def
-        self.solid_def = self.repository_def.solid_def_named(solid_def_name)
-        self.solid_def_name = check.str_param(solid_def_name, 'solid_def_name')
 
-    def define_out_of_pipeline_info(self, context_config):
-        check.str_param(self.solid_def_name, 'solid_def_name')
-        pipeline_def = PipelineDefinition([self.solid_def], name="Ephemeral Notebook Pipeline")
+    def define_out_of_pipeline_context(self, context_config):
+        pipeline_def = PipelineDefinition([], name='Ephemeral Notebook Pipeline')
 
         # BUG: If the context cleans up after itself (e.g. closes a db connection or similar)
         # This will instigate that process *before* return. We are going to have to
@@ -140,22 +125,23 @@ class Manager:
             {} if context_config is None else {'context': context_config},
             ExecutionMetadata(run_id=''),
         ) as pipeline_context:
-            self.info = DagstermillInNotebookExecutionContext(pipeline_context)
-        return self.info
-
-    def get_pipeline(self, name):
-        check.str_param(name, 'name')
-        return self.repository_def.get_pipeline(name)
+            self.context = DagstermillInNotebookExecutionContext(pipeline_context)
+        return self.context
 
     def yield_result(self, value, output_name):
+        if not self.populated_by_papermill:
+            return value
+
+        check.invariant(
+            self.solid_def is not None,
+            "If Dagstermill has been run by papermill, self.solid_def should not be None",
+        )
         if not self.solid_def.has_output(output_name):
             raise DagstermillError(
                 'Solid {solid_name} does not have output named {output_name}'.format(
                     solid_name=self.solid_def.name, output_name=output_name
                 )
             )
-        if not self.populated_by_papermill:
-            return value
 
         runtime_type = self.solid_def.output_def_named(output_name).runtime_type
 
@@ -163,13 +149,27 @@ class Manager:
         pm.record(output_name, write_value(runtime_type, value, out_file))
 
     def populate_context(
-        self, run_id, pipeline_def, marshal_dir, environment_dict, output_log_path
+        self,
+        run_id,
+        solid_def_name,
+        pipeline_def_name,
+        marshal_dir,
+        environment_dict,
+        output_log_path,
     ):
         check.dict_param(environment_dict, 'environment_dict')
-        check.invariant(pipeline_def.has_solid_def(self.solid_def_name))
+        self.populated_by_papermill = True
+        check.invariant(
+            self.repository_def != None,
+            desc='When running Dagstermill notebook in pipeline, '
+            'must register a repository within notebook by calling '
+            '"dm.register_repository(repository_def)"',
+        )
+        self.pipeline_def = self.repository_def.get_pipeline(pipeline_def_name)
+        check.invariant(self.pipeline_def.has_solid_def(solid_def_name))
+        self.solid_def = self.pipeline_def.solid_def_named(solid_def_name)
 
         self.marshal_dir = marshal_dir
-        self.populated_by_papermill = True
         loggers = None
         if output_log_path != 0:
             event_logger = construct_json_event_logger(output_log_path)
@@ -180,22 +180,22 @@ class Manager:
         # See block comment above referencing this issue
         # See https://github.com/dagster-io/dagster/issues/796
         with yield_pipeline_execution_context(
-            pipeline_def, environment_dict, execution_metadata
+            self.pipeline_def, environment_dict, execution_metadata
         ) as pipeline_context:
-            self.info = DagstermillInNotebookExecutionContext(pipeline_context)
+            self.context = DagstermillInNotebookExecutionContext(pipeline_context)
 
-        return self.info
+        return self.context
 
 
 class DagsterTranslator(pm.translators.PythonTranslator):
     @classmethod
     def codify(cls, parameters):
-        assert "dm_context" in parameters
+        assert 'dm_context' in parameters
         content = '{}\n'.format(cls.comment('Parameters'))
-        content += "{}\n".format("import json")
+        content += '{}\n'.format('import json')
         content += '{}\n'.format(
             cls.assign(
-                'info',
+                'context',
                 'dm.populate_context(json.loads(\'{dm_context}\'))'.format(
                     dm_context=parameters['dm_context']
                 ),
@@ -203,7 +203,7 @@ class DagsterTranslator(pm.translators.PythonTranslator):
         )
 
         for name, val in parameters.items():
-            if name == "dm_context":
+            if name == 'dm_context':
                 continue
             dm_unmarshal_call = 'dm.load_parameter("{name}", {val})'.format(
                 name=name, val='"{val}"'.format(val=val) if isinstance(val, str) else val
@@ -214,7 +214,7 @@ class DagsterTranslator(pm.translators.PythonTranslator):
 
 
 MANAGER_FOR_NOTEBOOK_INSTANCE = Manager()
-pm.translators.papermill_translators.register("python", DagsterTranslator)
+pm.translators.papermill_translators.register('python', DagsterTranslator)
 
 
 def is_json_serializable(value):
@@ -238,8 +238,8 @@ def write_value(runtime_type, value, target_file):
         check.failed('Unsupported type {name}'.format(name=runtime_type.name))
 
 
-def declare_as_solid(repo_def, solid_def_name):
-    return MANAGER_FOR_NOTEBOOK_INSTANCE.declare_as_solid(repo_def, solid_def_name)
+def register_repository(repo_def):
+    return MANAGER_FOR_NOTEBOOK_INSTANCE.register_repository(repo_def)
 
 
 def yield_result(value, output_name='result'):
@@ -247,12 +247,11 @@ def yield_result(value, output_name='result'):
 
 
 def populate_context(dm_context_data):
-    check.dict_param(dm_context_data, "dm_context_data")
-    pipeline_def = MANAGER_FOR_NOTEBOOK_INSTANCE.get_pipeline(dm_context_data['pipeline_name'])
-    check.inst(pipeline_def, PipelineDefinition)
+    check.dict_param(dm_context_data, 'dm_context_data')
     return MANAGER_FOR_NOTEBOOK_INSTANCE.populate_context(
         dm_context_data['run_id'],
-        pipeline_def,
+        dm_context_data['solid_def_name'],
+        dm_context_data['pipeline_name'],
         dm_context_data['marshal_dir'],
         dm_context_data['environment_config'],
         dm_context_data['output_log_path'],
@@ -260,6 +259,7 @@ def populate_context(dm_context_data):
 
 
 def load_parameter(input_name, input_value):
+    check.invariant(MANAGER_FOR_NOTEBOOK_INSTANCE.populated_by_papermill, 'populated_by_papermill')
     solid_def = MANAGER_FOR_NOTEBOOK_INSTANCE.solid_def
     input_def = solid_def.input_def_named(input_name)
     return read_value(input_def.runtime_type, input_value)
@@ -282,11 +282,11 @@ def read_value(runtime_type, value):
 
 
 def get_papermill_parameters(transform_context, inputs, output_log_path):
-    check.inst_param(transform_context, 'transform_context', AbstractTransformExecutionContext)
+    check.inst_param(transform_context, 'transform_context', SystemTransformExecutionContext)
     check.param_invariant(
         isinstance(transform_context.environment_dict, dict),
         'transform_context',
-        'TransformExecutionContext must have valid environment_dict',
+        'SystemTransformExecutionContext must have valid environment_dict',
     )
     check.dict_param(inputs, 'inputs', key_type=six.string_types)
 
@@ -297,12 +297,13 @@ def get_papermill_parameters(transform_context, inputs, output_log_path):
         os.makedirs(marshal_dir)
 
     if not transform_context.has_event_callback:
-        transform_context.log.info("get_papermill_parameters.context has no event_callback!")
+        transform_context.log.info('get_papermill_parameters.context has no event_callback!')
         output_log_path = 0  # stands for null
 
     dm_context_dict = {
         'run_id': run_id,
         'pipeline_name': transform_context.pipeline_def.name,
+        'solid_def_name': transform_context.solid_def.name,
         'marshal_dir': marshal_dir,
         # TODO rename to environment_dict
         'environment_config': transform_context.environment_dict,
@@ -315,8 +316,8 @@ def get_papermill_parameters(transform_context, inputs, output_log_path):
     input_def_dict = {inp.name: inp for inp in input_defs}
     for input_name, input_value in inputs.items():
         assert (
-            input_name != "dm_context"
-        ), "Dagstermill solids cannot have inputs named 'dm_context'"
+            input_name != 'dm_context'
+        ), 'Dagstermill solids cannot have inputs named "dm_context"'
         runtime_type = input_def_dict[input_name].runtime_type
         parameter_value = write_value(
             runtime_type, input_value, os.path.join(marshal_dir, 'input-{}'.format(input_name))
@@ -331,11 +332,11 @@ def replace_parameters(context, nb, parameters):
     # Typically, papermill injects the injected-parameters cell *below* the parameters cell
     # but we want to *replace* the parameters cell, which is what this function does.
 
-    """Assigned parameters into the appropiate place in the input notebook
+    '''Assigned parameters into the appropiate place in the input notebook
     Args:
         nb (NotebookNode): Executable notebook object
         parameters (dict): Arbitrary keyword arguments to pass to the notebook parameters.
-    """
+    '''
 
     # Copy the nb object to avoid polluting the input
     nb = copy.deepcopy(nb)
@@ -357,7 +358,7 @@ def replace_parameters(context, nb, parameters):
         # Replace the injected cell with a new version
         before = nb.cells[:injected_cell_index]
         after = nb.cells[injected_cell_index + 1 :]
-        check.int_value_param(param_cell_index, -1, "param_cell_index")
+        check.int_value_param(param_cell_index, -1, 'param_cell_index')
         # We should have blown away the parameters cell if there is an injected-parameters cell
     elif param_cell_index >= 0:
         # Replace the parameter cell with the injected-parameters cell
@@ -367,8 +368,8 @@ def replace_parameters(context, nb, parameters):
         # Inject to the top of the notebook, presumably first cell includes dagstermill import
         context.log.debug(
             (
-                "Warning notebook has no parameters cell, "
-                "so first cell must import dagstermill and call dm.declare_as_solid"
+                'Warning notebook has no parameters cell, '
+                'so first cell must import dagstermill and call dm.register_repo()'
             )
         )
         before = nb.cells[:1]
@@ -380,14 +381,10 @@ def replace_parameters(context, nb, parameters):
     return nb
 
 
-def get_solid_definition():
-    return check.inst_param(MANAGER_FOR_NOTEBOOK_INSTANCE.solid_def, "solid_def", SolidDefinition)
-
-
-def get_info(config=None):
+def get_context(config=None):
     if not MANAGER_FOR_NOTEBOOK_INSTANCE.populated_by_papermill:
-        MANAGER_FOR_NOTEBOOK_INSTANCE.define_out_of_pipeline_info(config)
-    return MANAGER_FOR_NOTEBOOK_INSTANCE.info
+        MANAGER_FOR_NOTEBOOK_INSTANCE.define_out_of_pipeline_context(config)
+    return MANAGER_FOR_NOTEBOOK_INSTANCE.context
 
 
 def _dm_solid_transform(name, notebook_path):
@@ -401,8 +398,10 @@ def _dm_solid_transform(name, notebook_path):
         check.param_invariant(
             isinstance(transform_context.environment_dict, dict),
             'context',
-            'TransformExecutionContext must have valid environment_dict',
+            'SystemTransformExecutionContext must have valid environment_dict',
         )
+
+        system_transform_context = transform_context.get_system_context()
 
         base_dir = '/tmp/dagstermill/{run_id}/'.format(run_id=transform_context.run_id)
         output_notebook_dir = os.path.join(base_dir, 'output_notebooks/')
@@ -419,9 +418,9 @@ def _dm_solid_transform(name, notebook_path):
         try:
             nb = load_notebook_node(notebook_path)
             nb_no_parameters = replace_parameters(
-                transform_context,
+                system_transform_context,
                 nb,
-                get_papermill_parameters(transform_context, inputs, output_log_path),
+                get_papermill_parameters(system_transform_context, inputs, output_log_path),
             )
             intermediate_path = os.path.join(
                 output_notebook_dir, '{prefix}-inter.ipynb'.format(prefix=str(uuid.uuid4()))
@@ -431,10 +430,14 @@ def _dm_solid_transform(name, notebook_path):
             with open(output_log_path, 'a') as f:
                 f.close()
 
-            process = subprocess.Popen(['papermill', intermediate_path, temp_path])
+            process = subprocess.Popen(
+                ['papermill', '--log-output', '--log-level', 'ERROR', intermediate_path, temp_path],
+                stderr=subprocess.PIPE,
+            )
 
+            _stdout, stderr = process.communicate()
             while process.poll() is None:  # while subprocess alive
-                if transform_context.event_callback:
+                if system_transform_context.event_callback:
                     with open(output_log_path, 'r') as ff:
                         current_time = os.path.getmtime(output_log_path)
                         while process.poll() is None:
@@ -448,30 +451,32 @@ def _dm_solid_transform(name, notebook_path):
                                 event_record_dict['event_type'] = EventType(
                                     event_record_dict['event_type']
                                 )
-                                transform_context.event_callback(EventRecord(**event_record_dict))
+                                system_transform_context.event_callback(
+                                    EventRecord(**event_record_dict)
+                                )
                                 current_time = new_time
 
             if process.returncode != 0:
                 raise DagstermillError(
                     'There was an error when Papermill tried to execute the notebook. '
-                    'The process stderr is {stderr}'.format(stderr=process.stderr)
+                    'The process stderr is \'{stderr}\''.format(stderr=stderr)
                 )
 
             output_nb = pm.read_notebook(temp_path)
 
-            transform_context.log.debug(
+            system_transform_context.log.debug(
                 'Notebook execution complete for {name}. Data is {data}'.format(
                     name=name, data=output_nb.data
                 )
             )
 
-            transform_context.events.step_materialization(
-                transform_context.step.key,
-                "{name} output notebook".format(name=transform_context.solid.name),
+            system_transform_context.events.step_materialization(
+                system_transform_context.step.key,
+                '{name} output notebook'.format(name=transform_context.solid.name),
                 temp_path,
             )
 
-            for output_def in transform_context.solid_def.output_defs:
+            for output_def in system_transform_context.solid_def.output_defs:
                 if output_def.name in output_nb.data:
 
                     value = read_value(output_def.runtime_type, output_nb.data[output_def.name])

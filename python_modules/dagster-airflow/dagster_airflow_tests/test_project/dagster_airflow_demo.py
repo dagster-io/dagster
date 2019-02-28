@@ -27,6 +27,11 @@ def count_letters(word):
     return dict(counts)
 
 
+@lambda_solid()
+def error_solid():
+    raise Exception('Unusual error')
+
+
 def define_demo_execution_pipeline():
     return PipelineDefinition(
         name='demo_pipeline',
@@ -35,7 +40,15 @@ def define_demo_execution_pipeline():
     )
 
 
+def define_demo_error_pipeline():
+    return PipelineDefinition(name='demo_error_pipeline', solids=[error_solid])
+
+
 def define_demo_execution_repo():
     return RepositoryDefinition(
-        name='demo_execution_repo', pipeline_dict={'demo_pipeline': define_demo_execution_pipeline}
+        name='demo_execution_repo',
+        pipeline_dict={
+            'demo_pipeline': define_demo_execution_pipeline,
+            'demo_error_pipeline': define_demo_error_pipeline,
+        },
     )

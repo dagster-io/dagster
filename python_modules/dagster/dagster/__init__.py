@@ -8,7 +8,8 @@ from dagster.core.execution import (
     execute_pipeline_iterator,
 )
 
-from dagster.core.execution_context import ExecutionContext, ExecutionMetadata
+from dagster.core.execution_context import ExecutionMetadata
+from dagster.core.user_context import ExecutionContext
 
 from dagster.core.definitions import (
     DependencyDefinition,
@@ -31,7 +32,6 @@ from dagster.core.errors import (
     DagsterExecutionStepExecutionError,
     DagsterExpectationFailedError,
     DagsterInvalidDefinitionError,
-    DagsterInvalidSubplanExecutionError,
     DagsterInvariantViolationError,
     DagsterRuntimeCoercionError,
     DagsterTypeError,
@@ -100,7 +100,6 @@ __all__ = [
     'DagsterExecutionStepExecutionError',
     'DagsterExpectationFailedError',
     'DagsterInvalidDefinitionError',
-    'DagsterInvalidSubplanExecutionError',
     'DagsterInvariantViolationError',
     'DagsterRuntimeCoercionError',
     'DagsterTypeError',

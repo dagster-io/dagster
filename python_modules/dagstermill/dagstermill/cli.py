@@ -1,8 +1,11 @@
 from collections import namedtuple
+import copy
 import os
 import re
 
 import click
+from papermill.iorw import load_notebook_node, write_ipynb
+import nbformat
 
 from dagster import check
 from dagster.cli.dynamic_loader import (
@@ -41,10 +44,19 @@ def get_module_target_function(repo_target_info):
 
 
 def get_notebook_scaffolding(register_repo_info):
-    check.str_param(register_repo_info.import_statement, 'register_repo_info.import_statement')
-    check.str_param(
-        register_repo_info.declaration_statement, 'register_repo_info.declaration_statement'
-    )
+    if register_repo_info is None:  # do not register repo
+        first_cell_source = '"import dagstermill as dm"'
+    else:
+        check.str_param(register_repo_info.import_statement, 'register_repo_info.import_statement')
+        check.str_param(
+            register_repo_info.declaration_statement, 'register_repo_info.declaration_statement'
+        )
+        first_cell_source = '''"import dagstermill as dm\\n",
+        "{import_statement}\\n",
+        "{declaration_statement}"'''.format(
+            import_statement=register_repo_info.import_statement,
+            declaration_statement=register_repo_info.declaration_statement,
+        )
 
     starting_notebook_init = '''
     {{
@@ -55,9 +67,7 @@ def get_notebook_scaffolding(register_repo_info):
     "metadata": {{}},
     "outputs": [],
     "source": [
-        "import dagstermill as dm\\n",
-        "{import_statement}\\n",
-        "{declaration_statement}"
+        {first_cell_source}
     ]
     }},
     {{
@@ -70,6 +80,7 @@ def get_notebook_scaffolding(register_repo_info):
     }},
     "outputs": [],
     "source": [
+        "context = dm.get_context()"
     ]
     }}
     ],
@@ -79,35 +90,81 @@ def get_notebook_scaffolding(register_repo_info):
     "nbformat": 4,
     "nbformat_minor": 2
     }}'''
-    return starting_notebook_init.format(
+    return starting_notebook_init.format(first_cell_source=first_cell_source)
+
+
+@click.command(name='register-notebook', help=('Registers repository in existing notebook'))
+@repository_target_argument
+@click.option('--notebook', '-note', type=click.STRING, help='Path to notebook')
+def retroactively_scaffold_notebook(notebook, **kwargs):
+    execute_retroactive_scaffold(notebook, **kwargs)
+
+
+def execute_retroactive_scaffold(notebook_path, **kwargs):
+    nb = load_notebook_node(notebook_path)
+    new_nb = copy.deepcopy(nb)
+    register_repo_info = get_register_repo_info(kwargs, allow_none=False)
+
+    cell_source = 'import dagstermill as dm\n{import_statement}\n{declaration_statement}'.format(
         import_statement=register_repo_info.import_statement,
         declaration_statement=register_repo_info.declaration_statement,
     )
+
+    newcell = nbformat.v4.new_code_cell(source=cell_source)
+    newcell.metadata['tags'] = ['injected-repo-registration']
+    new_nb.cells = [newcell] + nb.cells
+    write_ipynb(new_nb, notebook_path)
 
 
 @click.command(name='create-notebook', help=('Creates new dagstermill notebook.'))
 @repository_target_argument
 @click.option('--notebook', '-note', type=click.STRING, help="Name of notebook")
 @click.option(
-    '--solid-name',
-    '-s',
-    default="",
-    type=click.STRING,
-    help=(
-        'Name of solid that represents notebook in the repository. '
-        'If empty, defaults to notebook name.'
-    ),
-)
-@click.option(
     '--force-overwrite',
     is_flag=True,
     help="Will force overwrite any existing notebook or file with the same name.",
 )
-def create_notebook(notebook, solid_name, force_overwrite, **kwargs):
-    execute_create_notebook(notebook, solid_name, force_overwrite, **kwargs)
+def create_notebook(notebook, force_overwrite, **kwargs):
+    execute_create_notebook(notebook, force_overwrite, **kwargs)
 
 
-def execute_create_notebook(notebook, solid_name, force_overwrite, **kwargs):
+def get_register_repo_info(cli_args, allow_none=True):
+    def all_none(kwargs):
+        for value in kwargs.values():
+            if value is not None:
+                return False
+        return True
+
+    scaffolding_with_repo = True
+    if all_none(cli_args):
+        if os.path.exists(os.path.join(os.getcwd(), 'repository.yml')):
+            cli_args['repository_yaml'] = 'repository.yml'
+        elif allow_none:  # register_repo_info can remain None
+            scaffolding_with_repo = False
+
+    register_repo_info = None
+    if scaffolding_with_repo:
+        repository_target_info = load_target_info_from_cli_args(cli_args)
+        module_target_info = get_module_target_function(repository_target_info)
+
+        if module_target_info:
+            module = module_target_info.module_name
+            fn_name = module_target_info.fn_name
+            RegisterRepoInfo = namedtuple(
+                'RegisterRepoInfo', 'import_statement declaration_statement'
+            )
+            register_repo_info = RegisterRepoInfo(
+                "from {module} import {fn_name}".format(module=module, fn_name=fn_name),
+                "dm.register_repository({fn_name}())".format(fn_name=fn_name),
+            )
+        else:
+            raise click.UsageError(
+                "Cannot instantiate notebook with repository definition given by a function from a file"
+            )
+    return register_repo_info
+
+
+def execute_create_notebook(notebook, force_overwrite, **kwargs):
     if not re.match(r'^[a-zA-Z0-9\-_\\/]+$', notebook):
         raise click.BadOptionUsage(
             notebook,
@@ -135,27 +192,7 @@ def execute_create_notebook(notebook, solid_name, force_overwrite, **kwargs):
             ).format(notebook_path=notebook_path),
             abort=True,
         )
-
-    if not solid_name:
-        solid_name = os.path.basename(notebook_path).split(".")[0]
-
-    repository_target_info = load_target_info_from_cli_args(kwargs)
-    module_target_info = get_module_target_function(repository_target_info)
-
-    if module_target_info:
-        module = module_target_info.module_name
-        fn_name = module_target_info.fn_name
-        RegisterRepoInfo = namedtuple('RegisterRepoInfo', 'import_statement declaration_statement')
-        register_repo_info = RegisterRepoInfo(
-            "from {module} import {fn_name}".format(module=module, fn_name=fn_name),
-            "dm.declare_as_solid({fn_name}(), '{solid_name}')".format(
-                fn_name=fn_name, solid_name=solid_name
-            ),
-        )
-    else:
-        raise click.UsageError(
-            "Cannot instantiate notebook with repository definition given by a function from a file"
-        )
+    register_repo_info = get_register_repo_info(kwargs)
 
     with open(notebook_path, 'w') as f:
         f.write(get_notebook_scaffolding(register_repo_info))
@@ -163,8 +200,9 @@ def execute_create_notebook(notebook, solid_name, force_overwrite, **kwargs):
 
 
 def create_dagstermill_cli():
-    group = click.Group(name="create-notebook")
+    group = click.Group(name="dagstermill")
     group.add_command(create_notebook)
+    group.add_command(retroactively_scaffold_notebook)
     return group
 
 

@@ -21,16 +21,17 @@ from dagster import (
     lambda_solid,
 )
 
-from airline_demo.solids import sql_solid, download_from_s3, ingest_csv_to_spark, thunk, unzip_file
-from airline_demo.pipelines import define_lambda_resource, define_tempfile_resource
-from airline_demo.utils import create_s3_session, create_spark_session_local
+from airline_demo.solids import sql_solid, download_from_s3, ingest_csv_to_spark, unzip_file
+from airline_demo.resources import spark_session_local, tempfile_resource, unsigned_s3_session
+
+from .marks import nettest, postgres, redshift, skip, spark
 
 
 def _tempfile_context():
     return {
         'test': PipelineContextDefinition(
             context_fn=lambda info: ExecutionContext.console_logging(log_level=logging.DEBUG),
-            resources={'tempfile': define_tempfile_resource()},
+            resources={'tempfile': tempfile_resource},
         )
     }
 
@@ -39,10 +40,7 @@ def _s3_context():
     return {
         'test': PipelineContextDefinition(
             context_fn=lambda info: ExecutionContext.console_logging(log_level=logging.DEBUG),
-            resources={
-                's3': define_lambda_resource(create_s3_session, signed=False),
-                'tempfile': define_tempfile_resource(),
-            },
+            resources={'s3': unsigned_s3_session, 'tempfile': tempfile_resource},
         )
     }
 
@@ -51,7 +49,7 @@ def _spark_context():
     return {
         'test': PipelineContextDefinition(
             context_fn=lambda info: ExecutionContext.console_logging(log_level=logging.DEBUG),
-            resources={'spark': define_lambda_resource(create_spark_session_local)},
+            resources={'spark': spark_session_local},
         )
     }
 
@@ -76,17 +74,7 @@ def test_sql_solid():
     # TODO: test execution?
 
 
-def test_thunk():
-    result = execute_solid(
-        PipelineDefinition([thunk]),
-        'thunk',
-        environment_dict={'solids': {'thunk': {'config': 'foo'}}},
-    )
-    assert result.success
-    assert result.transformed_value() == 'foo'
-
-
-@pytest.mark.nettest
+@nettest
 def test_download_from_s3():
     result = execute_solid(
         PipelineDefinition([download_from_s3], context_definitions=_s3_context()),
@@ -109,7 +97,7 @@ def test_download_from_s3():
         assert fd.read() == 'test\n'
 
 
-@pytest.mark.nettest
+@nettest
 def test_download_from_s3_tempfile():
     result = execute_solid(
         PipelineDefinition([download_from_s3], context_definitions=_s3_context()),
@@ -159,7 +147,7 @@ def test_unzip_file_tempfile():
     assert [not os.path.isfile(v) for v in result.transformed_value()]
 
 
-@pytest.mark.spark
+@spark
 def test_ingest_csv_to_spark():
     @lambda_solid
     def nonce():
@@ -180,28 +168,28 @@ def test_ingest_csv_to_spark():
     assert result.transformed_value().head()[0] == '1'
 
 
-@pytest.mark.spark
-@pytest.mark.postgres
-@pytest.mark.skip
+@postgres
+@skip
+@spark
 def test_load_data_to_postgres_from_spark_postgres():
     raise NotImplementedError()
 
 
-@pytest.mark.nettest
-@pytest.mark.spark
-@pytest.mark.redshift
-@pytest.mark.skip
+@nettest
+@redshift
+@skip
+@spark
 def test_load_data_to_redshift_from_spark():
     raise NotImplementedError()
 
 
-@pytest.mark.spark
-@pytest.mark.skip
+@skip
+@spark
 def test_subsample_spark_dataset():
     raise NotImplementedError()
 
 
-@pytest.mark.spark
-@pytest.mark.skip
+@skip
+@spark
 def test_join_spark_data_frame():
     raise NotImplementedError()

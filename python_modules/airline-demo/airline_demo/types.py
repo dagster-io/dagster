@@ -1,14 +1,15 @@
 """Type definitions for the airline_demo."""
 
-from collections import namedtuple
 
 import os
+
+from collections import namedtuple
 
 import sqlalchemy
 
 from pyspark.sql import DataFrame
 
-from dagster import dagster_type, as_dagster_type
+from dagster import as_dagster_type, dagster_type, Dict, Field, String
 from dagster.core.types.runtime import PythonObjectType, Stringish
 from dagster.utils import safe_isfile
 
@@ -42,3 +43,27 @@ class FileExistsAtPath(Stringish):
     def coerce_runtime_value(self, value):
         value = super(FileExistsAtPath, self).coerce_runtime_value(value)
         return self.throw_if_false(safe_isfile, value)
+
+
+RedshiftConfigData = Dict(
+    {
+        'redshift_username': Field(String),
+        'redshift_password': Field(String),
+        'redshift_hostname': Field(String),
+        'redshift_db_name': Field(String),
+        's3_temp_dir': Field(String),
+    }
+)
+
+
+DbInfo = namedtuple('DbInfo', 'engine url jdbc_url dialect load_table')
+
+
+PostgresConfigData = Dict(
+    {
+        'postgres_username': Field(String),
+        'postgres_password': Field(String),
+        'postgres_hostname': Field(String),
+        'postgres_db_name': Field(String),
+    }
+)

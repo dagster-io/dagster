@@ -2,7 +2,7 @@
 
 We distill the process of adding a new event by examining how we added the new event `StepMaterialization` that is emitted whenever we materialize anything in a solid (currently only called for materializating output notebooks in Dagstermill.)
 
-The `context` object (type `TransformExecutionContext`) that is passed into the transform function of a solid has an attribute `info.context` (type `RuntimeExecutionContext`). The `context` object has an attribute `events` that is an instantiation of the `ExecutionEvents()` class (in the file `dagster.core.events`). To trigger an event that is consumed by the GraphQL API, we call a method of the `ExecutionEvents` class, such as `context.events.step_materialization_event(**kwargs)`. Thus we must add this event to the `ExecutionEvents` class as below:
+The `context` object (type `SystemTransformExecutionContext`) that is passed into the transform function of a solid has an attribute `context.events` that is an instantiation of the `ExecutionEvents()` class (in the file `dagster.core.events`). To trigger an event that is consumed by the GraphQL API, we call a method of the `ExecutionEvents` class, such as `context.events.step_materialization_event(**kwargs)`. Thus we must add this event to the `ExecutionEvents` class as below:
 
 `python_modules/dagster/dagster/core/events.py`
 
@@ -21,7 +21,7 @@ class ExecutionEvents()
         )
 ```
 
-When `ExecutionEvents()` is created, its `self.context` points to the corresponding `RuntimeExecutionContext` that contains it. Thus this function simply logs the event. However notice that the other arguments we're passing into the logger (such as `step_key` or `file_name` are stored as part of meta-information in the Structured Logger log message). Normally if the logger is just writing to the console, then this meta-information is just pretty-printed to the console. However, if there is a `event_callback` in the `RuntimeExecutionContext`, then we have that the logger message is converted to an `EventRecord` (by the function `construct_event_record(logger_message)`), which is passed into the `event_callback` (which might be provided by Dagit, for example).
+When `ExecutionEvents()` is created, its `self.context` points to the corresponding `RuntimeExecutionContext` that contains it. Thus this function simply logs the event. However notice that the other arguments we're passing into the logger (such as `step_key` or `file_name` are stored as part of meta-information in the Structured Logger log message). Normally if the logger is just writing to the console, then this meta-information is just pretty-printed to the console. However, if there is a `event_callback` in the `SystemTransformExecutionContext`, then we have that the logger message is converted to an `EventRecord` (by the function `construct_event_record(logger_message)`), which is passed into the `event_callback` (which might be provided by Dagit, for example).
 
 Thus we need to make a corresponding EventRecord class that corresponds to our new event.
 
@@ -86,6 +86,7 @@ The fields `file_name` and `file_location` are fields in the corresponding Graph
 elif event.event_type == EventType.STEP_MATERIALIZATION:
     return info.schema.type_named('StepMaterializationEvent')(
         step=info.schema.type_named('ExecutionStep')(
+            pipeline_run.execution_plan,
             pipeline_run.execution_plan.get_step_by_key(event.step_key)
         ),
         file_name=event.file_name,

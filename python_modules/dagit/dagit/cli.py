@@ -125,7 +125,7 @@ def host_dagit_ui(log, log_dir, watch, repository_container, sync, host, port):
     if watch:
         observer = Observer()
         handler = ReloaderHandler(repository_container)
-        observer.schedule(handler, os.path.dirname(os.path.abspath(os.getcwd())), recursive=True)
+        observer.schedule(handler, os.path.abspath(os.getcwd()), recursive=True)
         observer.start()
     try:
         app = create_app(

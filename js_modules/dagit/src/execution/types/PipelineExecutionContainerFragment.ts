@@ -149,6 +149,24 @@ export interface PipelineExecutionContainerFragment_configTypes_CompositeConfigT
   isNullable: boolean;
 }
 
+export interface PipelineExecutionContainerFragment_configTypes_CompositeConfigType_fields_configType_ListConfigType_innerTypes_EnumConfigType {
+  __typename: "EnumConfigType" | "CompositeConfigType" | "RegularConfigType" | "NullableConfigType";
+  key: string;
+}
+
+export interface PipelineExecutionContainerFragment_configTypes_CompositeConfigType_fields_configType_ListConfigType_innerTypes_ListConfigType_ofType {
+  __typename: "EnumConfigType" | "CompositeConfigType" | "RegularConfigType" | "ListConfigType" | "NullableConfigType";
+  key: string;
+}
+
+export interface PipelineExecutionContainerFragment_configTypes_CompositeConfigType_fields_configType_ListConfigType_innerTypes_ListConfigType {
+  __typename: "ListConfigType";
+  key: string;
+  ofType: PipelineExecutionContainerFragment_configTypes_CompositeConfigType_fields_configType_ListConfigType_innerTypes_ListConfigType_ofType;
+}
+
+export type PipelineExecutionContainerFragment_configTypes_CompositeConfigType_fields_configType_ListConfigType_innerTypes = PipelineExecutionContainerFragment_configTypes_CompositeConfigType_fields_configType_ListConfigType_innerTypes_EnumConfigType | PipelineExecutionContainerFragment_configTypes_CompositeConfigType_fields_configType_ListConfigType_innerTypes_ListConfigType;
+
 export interface PipelineExecutionContainerFragment_configTypes_CompositeConfigType_fields_configType_ListConfigType_ofType {
   __typename: "EnumConfigType" | "CompositeConfigType" | "RegularConfigType" | "ListConfigType" | "NullableConfigType";
   key: string;
@@ -160,6 +178,7 @@ export interface PipelineExecutionContainerFragment_configTypes_CompositeConfigT
   name: string | null;
   isList: boolean;
   isNullable: boolean;
+  innerTypes: PipelineExecutionContainerFragment_configTypes_CompositeConfigType_fields_configType_ListConfigType_innerTypes[];
   ofType: PipelineExecutionContainerFragment_configTypes_CompositeConfigType_fields_configType_ListConfigType_ofType;
 }
 
