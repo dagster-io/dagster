@@ -177,6 +177,8 @@ def download_from_s3(context):
         str:
             The path to the downloaded object.
     '''
+    filesystem = context.resources.filesystem
+
     results = []
     for file_ in context.solid_config:
         bucket = file_['bucket']
@@ -186,7 +188,7 @@ def download_from_s3(context):
         if target_path is None:
             target_path = context.resources.tempfile.tempfile().name
 
-        if file_['skip_if_present'] and safe_isfile(target_path):
+        if file_['skip_if_present'] and filesystem.is_file(target_path):
             context.log.info(
                 'Skipping download, file already present at {target_path}'.format(
                     target_path=target_path
@@ -194,7 +196,7 @@ def download_from_s3(context):
             )
         else:
             if os.path.dirname(target_path):
-                mkdir_p(os.path.dirname(target_path))
+                mkdir_p(os.path.dirname(target_path))  # Need a decent filesystem solution to this
 
             context.log.info(
                 'Starting download of {bucket}/{key} to {target_path}'.format(
@@ -206,9 +208,10 @@ def download_from_s3(context):
             logger = S3Logger(
                 context.log.debug, bucket, key, target_path, int(headers['ContentLength'])
             )
-            context.resources.s3.download_file(
-                Bucket=bucket, Key=key, Filename=target_path, Callback=logger
-            )
+            with filesystem.write(target_path) as file_obj:
+                context.resources.s3.download_fileobj(
+                    Bucket=bucket, Key=key, Fileobj=file_obj, Callback=logger
+                )
         results.append(target_path)
     return results
 
@@ -293,13 +296,7 @@ def upload_to_s3(context, file_path):
         )
     ],
 )
-def unzip_file(
-    context,
-    archive_paths,
-    archive_members,
-):
-
-
+def unzip_file(context, archive_paths, archive_members):
     def extract(context, archive_path, zip_ref, archive_member, destination_dir, skip_if_present):
         filesystem = context.resources.filesystem
 
@@ -340,26 +337,40 @@ def unzip_file(
 
         return target_path
 
+    filesystem = context.resources.filesystem
     skip_if_present = context.solid_config['skip_if_present']
 
     results = []
     for (i, archive_path) in enumerate(archive_paths):
-        destination_dir = (
-            os.path.dirname(archive_path)
-        )
+        destination_dir = os.path.dirname(archive_path)
         if archive_members:
             archive_member = archive_members[i]
         else:
             archive_member = None
 
-        with zipfile.ZipFile(archive_path, 'r') as zip_ref:
-            if archive_member is not None:
-                target_path = extract(context, archive_path, zip_ref, archive_member, destination_dir, skip_if_present)
-                results.append(target_path)
-            else:
-                for archive_member in zip_ref.namelist():
-                    target_path = extract(context, archive_path, zip_ref, archive_member, destination_dir, skip_if_present)
+        with filesystem.read(archive_path) as file_obj:
+            with zipfile.ZipFile(file_obj, 'r') as zip_ref:
+                if archive_member is not None:
+                    target_path = extract(
+                        context,
+                        archive_path,
+                        zip_ref,
+                        archive_member,
+                        destination_dir,
+                        skip_if_present,
+                    )
                     results.append(target_path)
+                else:
+                    for archive_member in zip_ref.namelist():
+                        target_path = extract(
+                            context,
+                            archive_path,
+                            zip_ref,
+                            archive_member,
+                            destination_dir,
+                            skip_if_present,
+                        )
+                        results.append(target_path)
     return results
 
 

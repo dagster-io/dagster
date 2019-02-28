@@ -246,7 +246,7 @@ class S3FilesystemManager(AbstractFilesystemManager):
         yield io.BytesIO(res['Body'].read())
 
     def join(self, *path_fragments):
-        return '/'.join(*path_fragments)
+        return '/'.join(path_fragments)
 
 
 @resource
