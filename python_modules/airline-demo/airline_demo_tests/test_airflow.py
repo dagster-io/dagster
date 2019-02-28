@@ -1,4 +1,5 @@
 import datetime
+import logging
 import os
 
 from airflow.models import TaskInstance
@@ -41,4 +42,5 @@ class TestInMemoryAirflowDagExecution:
         for task in tasks:
             ti = TaskInstance(task=task, execution_date=execution_date)
             context = ti.get_template_context()
+            task._log = logging
             task.execute(context)
