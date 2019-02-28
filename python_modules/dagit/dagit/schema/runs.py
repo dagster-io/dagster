@@ -41,7 +41,7 @@ class DauphinPipelineRun(dauphin.ObjectType):
             pipeline, self._pipeline_run.execution_plan
         )
 
-    def resolve_config(self, graphene_info):
+    def resolve_config(self, _graphene_info):
         return self._pipeline_run.config
 
 
