@@ -9,7 +9,6 @@ import uuid
 
 from dagster import check
 from dagster.utils import merge_dicts
-from dagster.utils.logging import define_colored_console_logger
 
 from .definitions.expectation import ExpectationDefinition
 from .definitions.input import InputDefinition
@@ -19,8 +18,6 @@ from .files import FileStore
 from .log import DagsterLog
 from .system_config.objects import EnvironmentConfig
 from .types.marshal import PersistenceStrategy
-
-DEFAULT_LOGGERS = [define_colored_console_logger('dagster')]
 
 
 class ExecutionMetadata(namedtuple('_ExecutionMetadata', 'run_id tags event_callback loggers')):
@@ -47,7 +44,7 @@ class SystemPipelineExecutionContextData(
         '_SystemPipelineExecutionContextData',
         (
             'execution_metadata resources environment_config persistence_strategy pipeline_def '
-            'files event_callback'
+            'files'
         ),
     )
 ):
@@ -64,7 +61,6 @@ class SystemPipelineExecutionContextData(
         persistence_strategy,
         pipeline_def,
         files,
-        event_callback=None,
     ):
         from .definitions.pipeline import PipelineDefinition
 
@@ -82,12 +78,15 @@ class SystemPipelineExecutionContextData(
             ),
             pipeline_def=check.inst_param(pipeline_def, 'pipeline_def', PipelineDefinition),
             files=check.inst_param(files, 'files', FileStore),
-            event_callback=check.opt_callable_param(event_callback, 'event_callback'),
         )
 
     @property
     def run_id(self):
         return self.execution_metadata.run_id
+
+    @property
+    def event_callback(self):
+        return self.execution_metadata.event_callback
 
     @property
     def environment_dict(self):
@@ -102,13 +101,14 @@ class SystemPipelineExecutionContext(object):
             pipeline_context_data, 'pipeline_context_data', SystemPipelineExecutionContextData
         )
         self._tags = check.dict_param(tags, 'tags')
-        self._log = check.inst_param(log, 'log', DagsterLog) if log else DEFAULT_LOGGERS
+        self._log = check.inst_param(log, 'log', DagsterLog)
         self._events = ExecutionEvents(pipeline_context_data.pipeline_def.name, self._log)
 
     def for_step(self, step):
         from .execution_plan.objects import ExecutionStep
 
         check.inst_param(step, 'step', ExecutionStep)
+
         tags = merge_dicts(self.tags, step.tags)
         log = DagsterLog(self.run_id, tags, self.log.loggers)
         return SystemStepExecutionContext(self._pipeline_context_data, tags, log, step)
