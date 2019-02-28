@@ -22,6 +22,8 @@ from dagster.core.execution_context import (
     SystemStepExecutionContext,
 )
 
+from .intermediates_manager import IntermediatesManager
+
 from .objects import (
     ExecutionPlan,
     ExecutionStep,
@@ -43,6 +45,7 @@ def _all_inputs_covered(step, intermediates_manager):
 def start_inprocess_executor(pipeline_context, execution_plan, intermediates_manager):
     check.inst_param(pipeline_context, 'pipeline_context', SystemPipelineExecutionContext)
     check.inst_param(execution_plan, 'execution_plan', ExecutionPlan)
+    check.inst_param(intermediates_manager, 'intermediates_manager', IntermediatesManager)
 
     step_levels = execution_plan.topological_step_levels()
 
@@ -75,11 +78,13 @@ def start_inprocess_executor(pipeline_context, execution_plan, intermediates_man
                 yield step_event
 
 
-def _create_input_values(step, manager):
+def _create_input_values(step, intermediates_manager):
+    check.inst_param(intermediates_manager, 'intermediates_manager', IntermediatesManager)
+
     input_values = {}
     for step_input in step.step_inputs:
         prev_output_handle = step_input.prev_output_handle
-        input_value = manager.get_value(prev_output_handle)
+        input_value = intermediates_manager.get_value(prev_output_handle)
         input_values[step_input.name] = input_value
     return input_values
 
@@ -87,6 +92,7 @@ def _create_input_values(step, manager):
 def execute_step_in_memory(step_context, inputs, intermediates_manager):
     check.inst_param(step_context, 'step_context', SystemStepExecutionContext)
     check.dict_param(inputs, 'inputs', key_type=str)
+    check.inst_param(intermediates_manager, 'intermediates_manager', IntermediatesManager)
 
     try:
         for step_event in check.generator(
@@ -142,6 +148,7 @@ def _error_check_step_output_values(step, step_output_values):
 def _execute_steps_core_loop(step_context, inputs, intermediates_manager):
     check.inst_param(step_context, 'step_context', SystemStepExecutionContext)
     check.dict_param(inputs, 'inputs', key_type=str)
+    check.inst_param(intermediates_manager, 'intermediates_manager', IntermediatesManager)
 
     evaluated_inputs = {}
     # do runtime type checks of inputs versus step inputs
@@ -162,10 +169,11 @@ def _execute_steps_core_loop(step_context, inputs, intermediates_manager):
 
 
 def _create_step_event(step_context, step_output_value, intermediates_manager):
-    step = step_context.step
-    check.inst_param(step, 'step', ExecutionStep)
+    check.inst_param(step_context, 'step_context', SystemStepExecutionContext)
     check.inst_param(step_output_value, 'step_output_value', StepOutputValue)
+    check.inst_param(intermediates_manager, 'intermediates_manager', IntermediatesManager)
 
+    step = step_context.step
     step_output = step.step_output_named(step_output_value.output_name)
 
     try:

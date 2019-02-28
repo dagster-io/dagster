@@ -406,7 +406,6 @@ def construct_pipeline_execution_context(
                 environment_config.context.persistence
             ),
             files=LocalTempFileStore(execution_metadata.run_id),
-            event_callback=execution_metadata.event_callback,
         ),
         tags=tags,
         log=log,
