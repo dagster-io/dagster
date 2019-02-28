@@ -20,6 +20,12 @@ class FileStore(six.with_metaclass(ABCMeta)):  # pylint: disable=no-init
         pass
 
 
+def check_path_comps(path_comps):
+    path_list = check.list_param(list(path_comps), 'path_comps', of_type=str)
+    check.param_invariant(path_list, 'path_list', 'Must have at least one comp')
+    return path_list
+
+
 class LocalTempFileStore(FileStore):
     def __init__(self, run_id):
         check.str_param(run_id, 'run_id')
@@ -28,8 +34,7 @@ class LocalTempFileStore(FileStore):
 
     @contextmanager
     def writeable_binary_stream(self, *path_comps):
-        path_list = check.list_param(list(path_comps), 'path_comps', of_type=str)
-        check.param_invariant(path_list, 'path_list', 'Must have at least one comp')
+        path_list = check_path_comps(path_comps)
 
         target_dir = os.path.join(self.root, *path_list[:-1])
         mkdir_p(target_dir)
@@ -41,16 +46,14 @@ class LocalTempFileStore(FileStore):
 
     @contextmanager
     def readable_binary_stream(self, *path_comps):
-        path_list = check.list_param(list(path_comps), 'path_comps', of_type=str)
-        check.param_invariant(path_list, 'path_list', 'Must have at least one comp')
+        path_list = check_path_comps(path_comps)
 
         target_path = os.path.join(self.root, *path_list)
         with open(target_path, 'rb') as ff:
             yield ff
 
     def has_file(self, *path_comps):
-        path_list = check.list_param(list(path_comps), 'path_comps', of_type=str)
-        check.param_invariant(path_list, 'path_list', 'Must have at least one comp')
+        path_list = check_path_comps(path_comps)
 
         target_path = os.path.join(self.root, *path_list)
 
