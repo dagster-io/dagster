@@ -1,7 +1,28 @@
 0.3.3
 
+   - New features
+      - Dagit can launch Jupyter to explore and execute Dagstermill output notebooks.
+
    - API Additions and Changes
-      - Removed step, environment_config, event_callback, has_event_callback, persistence_strategy, events, and execution_metadata properties from user-facing context objects.
+      - Removed ``step``, ``environment_config``, ``event_callback``, ``has_event_callback``,
+        ``persistence_strategy``, ``events``, and ``execution_metadata properties`` from user-facing
+        context objects.
+      - Removed ``solid_subset`` parameter to ``execute_pipeline``.
+      - ``check.inst`` and associated methods take type tuples.
+
+   - Bug fixes
+      - #849: Dagit watches fewer files and runs faster.
+      - #856: Execution steps are displayed in order in Dagit.
+      - #863, #865: Dagstermill errors are reported.
+      - #873: Dagit provides visual feedback as soon as pipelines are executed.
+      - #871: Pipeline validation errors appear in Dagit.
+      - #872: Dagit logs stream reliably.
+
+   - GraphQL schema changes
+      - ``StartSubplanExecutionInvalidStepsError`` and ``InvalidSubplanExecutionError`` replaced
+         with more exact ``StartSubplanExecutionInvalidStepError`` and 
+         ``InvalidSubplanMissingInputError``
+
 0.3.2
 
    - New features
