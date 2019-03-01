@@ -153,7 +153,7 @@ Let's take a look at how one of these library solids is defined:
         ),
         description='Downloads an object from S3.',
         outputs=[
-            OutputDefinition(List(FileExistsAtPath), description='The path to the downloaded object.')
+            OutputDefinition(List(Path), description='The path to the downloaded object.')
         ],
     )
     def download_from_s3(context):
@@ -245,24 +245,6 @@ order to understand what values are required, or what they do -- enabling more c
 
 ![Download pipeline config docs](img/download_pipeline_config_docs.png)
 
-### Custom types
-
-Note that the output of this solid is also a List -- in this case, a `List(FileExistsAtPath)`. We've
-defined a custom output type to illustrate the richness of the Dagster type system:
-
-    from dagster.core.types.runtime import Stringish
-    from dagster.utils import safe_isfile
-
-    class FileExistsAtPath(Stringish):
-        def __init__(self):
-            super(FileExistsAtPath, self).__init__(description='A path at which a file actually exists')
-
-        def coerce_runtime_value(self, value):
-            value = super(FileExistsAtPath, self).coerce_runtime_value(value)
-            return self.throw_if_false(safe_isfile, value)
-
-By overriding `coerce_runtime_value` to check if a file actually exists at the specified path, we
-can lever the type system to make runtime guarantees about the integrity of our pipeline.
 
 ### Robust solids for development workflows
 
