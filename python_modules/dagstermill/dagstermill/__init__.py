@@ -150,10 +150,13 @@ class Manager:
                 pm.record(output_name, value)
             elif runtime_type_str == 'pickle':
                 out_file = os.path.join(self.marshal_dir, 'output-{}'.format(output_name))
-                serialize_to_file(PickleSerializationStrategy, value, out_file)
+                serialize_to_file(PickleSerializationStrategy(), value, out_file)
                 pm.record(output_name, out_file)
             else:
-                raise DagstermillError('Output Definition requires repo registration')
+                raise DagstermillError(
+                    'Output Definition for output {output_name} requires repo registration '
+                    'since it has a complex serialization format'.format(output_name=output_name)
+                )
         else:
             if not self.solid_def.has_output(output_name):
                 raise DagstermillError(
@@ -185,19 +188,19 @@ class Manager:
 
         if self.repository_def is None:
             for _, input_def_str in input_def_str_dict.items():
-                check.invariant(
-                    input_def_str != None,
-                    desc='If Dagstermill solids have inputs that require serialization strategies '
-                    'that are not pickling, then you must register a repository within notebook '
-                    'by calling dm.register_repository(repository_def)',
-                )
+                if input_def_str is None:
+                    raise DagstermillError(
+                        'If Dagstermill solids have inputs that require serialization strategies '
+                        'that are not pickling, then you must register a repository within '
+                        'notebook by calling dm.register_repository(repository_def)'
+                    )
             for _, output_def_str in output_def_str_dict.items():
-                check.invariant(
-                    output_def_str != None,
-                    desc='If Dagstermill solids have outputs that require serialization strategies '
-                    'that are not pickling, then you must register a repository within notebook '
-                    'by calling dm.register_repository(repository_def).',
-                )
+                if output_def_str is None:
+                    raise DagstermillError(
+                        'If Dagstermill solids have outputs that require serialization strategies '
+                        'that are not pickling, then you must register a repository within notebook '
+                        'by calling dm.register_repository(repository_def).'
+                    )
             self.pipeline_def = PipelineDefinition([], name='Dummy Pipeline (No Repo Registration)')
             self.input_def_str_dict = input_def_str_dict
             self.output_def_str_dict = output_def_str_dict
@@ -205,8 +208,6 @@ class Manager:
                 self.pipeline_def, {}, ExecutionMetadata(run_id=run_id)
             ) as pipeline_context:
                 self.context = DagstermillInNotebookExecutionContext(pipeline_context)
-            print(self.input_def_str_dict)
-            print(self.output_def_str_dict)
         else:
             self.pipeline_def = self.repository_def.get_pipeline(pipeline_def_name)
             check.invariant(self.pipeline_def.has_solid_def(solid_def_name))
@@ -337,7 +338,7 @@ def load_parameter(input_name, input_value):
                 input_def_str_dict[input_name] == 'pickle',
                 'input type serialization strategy must be pickling if its not a value',
             )
-            return deserialize_from_file(PickleSerializationStrategy, input_value)
+            return deserialize_from_file(PickleSerializationStrategy(), input_value)
     else:
         solid_def = MANAGER_FOR_NOTEBOOK_INSTANCE.solid_def
         input_def = solid_def.input_def_named(input_name)
