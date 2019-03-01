@@ -414,7 +414,7 @@ PyPI, preferably in the form of a ~/.pypirc file as follows:
     password: <password>
 '''
     )
-    assert '\nwheel' in subprocess.check_output(['pip', 'list']), (
+    assert '\nwheel' in subprocess.check_output(['pip', 'list']).decode('utf-8'), (
         'You must have wheel installed in order to build packages for release -- run '
         '`pip install wheel`.'
     )
