@@ -292,7 +292,7 @@ def upload_to_s3(context, file_path):
     description='Extracts an archive member from a zip archive.',
     outputs=[
         OutputDefinition(
-            List(archive_path), description='The path to the unzipped archive member.'
+            List(Path), description='The path to the unzipped archive member.'
         )
     ],
 )
