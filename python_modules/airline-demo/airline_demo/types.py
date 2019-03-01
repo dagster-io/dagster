@@ -69,4 +69,6 @@ PostgresConfigData = Dict(
 )
 
 
-S3ConfigData = Dict({'s3_bucket_name': Field(String), 'signed': Field(Bool, default_value=False, is_optional=True)})
+S3ConfigData = Dict(
+    {'s3_bucket_name': Field(String), 'signed': Field(Bool, default_value=False, is_optional=True)}
+)

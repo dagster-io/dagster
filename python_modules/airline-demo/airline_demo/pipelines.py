@@ -87,7 +87,12 @@ airflow_context = PipelineContextDefinition(
     },
 )
 
-CONTEXT_DEFINITIONS = {'test': test_context, 'local': local_context, 'prod': prod_context, 'airflow': airflow_context}
+CONTEXT_DEFINITIONS = {
+    'test': test_context,
+    'local': local_context,
+    'prod': prod_context,
+    'airflow': airflow_context,
+}
 
 
 def define_airline_demo_download_pipeline():

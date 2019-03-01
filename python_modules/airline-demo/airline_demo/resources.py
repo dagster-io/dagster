@@ -208,7 +208,6 @@ class S3FilesystemManager(AbstractFilesystemManager):
         if not self.signed:
             self.client.meta.events.register('choose-signer.s3.*', disable_signing)
 
-
     def is_dir(self, path):
         try:
             self.client.head_object(Bucket=self.s3_bucket_name, Key=path)
@@ -236,7 +235,12 @@ class S3FilesystemManager(AbstractFilesystemManager):
             yield file_obj
             file_obj.seek(0)
             if not self.signed:
-                self.client.upload_fileobj(Fileobj=file_obj, Bucket=self.s3_bucket_name, Key=path, ExtraArgs={'ACL': 'public-read'})
+                self.client.upload_fileobj(
+                    Fileobj=file_obj,
+                    Bucket=self.s3_bucket_name,
+                    Key=path,
+                    ExtraArgs={'ACL': 'public-read'},
+                )
             else:
                 self.client.upload_fileobj(Fileobj=file_obj, Bucket=self.s3_bucket_name, Key=path)
 
@@ -256,4 +260,7 @@ def local_filesystem_resource(_init_context):
 
 @resource(config_field=Field(S3ConfigData))
 def s3_filesystem_resource(init_context):
-    yield S3FilesystemManager(s3_bucket_name=init_context.resource_config['s3_bucket_name'], signed=init_context.resource_config['signed'])
+    yield S3FilesystemManager(
+        s3_bucket_name=init_context.resource_config['s3_bucket_name'],
+        signed=init_context.resource_config['signed'],
+    )
