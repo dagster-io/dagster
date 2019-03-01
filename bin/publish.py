@@ -23,7 +23,7 @@ def _which(exe):
 def get_publish_comands(additional_steps=None, nightly=False):
     publish_commands = (
         ['rm -rf dist']
-        + (additional_steps or [])
+        + ([additional_steps] if additional_steps else [])
         + [
             'python setup.py sdist bdist_wheel{nightly}'.format(
                 nightly=' --nightly' if nightly else ''
