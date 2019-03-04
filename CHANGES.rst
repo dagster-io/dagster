@@ -1,3 +1,8 @@
+0.3.4
+
+  - API Additions and Changes:
+      - ExecutionMetadata has been renamed to RunConfig
+
 0.3.3
 
    - New features
