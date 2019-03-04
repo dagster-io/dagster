@@ -20,11 +20,15 @@ from .system_config.objects import EnvironmentConfig
 from .types.marshal import PersistenceStrategy
 
 
+def make_new_run_id():
+    return str(uuid.uuid4())
+
+
 class ExecutionMetadata(namedtuple('_ExecutionMetadata', 'run_id tags event_callback loggers')):
     def __new__(cls, run_id=None, tags=None, event_callback=None, loggers=None):
         return super(ExecutionMetadata, cls).__new__(
             cls,
-            run_id=check.str_param(run_id, 'run_id') if run_id else str(uuid.uuid4()),
+            run_id=check.str_param(run_id, 'run_id') if run_id else make_new_run_id(),
             tags=check.opt_dict_param(tags, 'tags', key_type=str, value_type=str),
             event_callback=check.opt_callable_param(event_callback, 'event_callback'),
             loggers=check.opt_list_param(loggers, 'loggers'),
