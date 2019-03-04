@@ -102,11 +102,15 @@ class ForkedProcessPipelineFactory(
 
 
 def execute_serializable_execution_plan(
-    pipeline_factory, environment_dict, run_config, step_executions
+    pipeline_factory, environment_dict, serializable_execution_metadata, step_executions
 ):
     check.inst_param(pipeline_factory, 'pipeline_factory', PipelineFactory)
     check.dict_param(environment_dict, 'enviroment_dict', key_type=str)
-    check.inst_param(run_config, 'run_config', SerializableExecutionMetadata)
+    check.inst_param(
+        serializable_execution_metadata,
+        'serializable_execution_metadata',
+        SerializableExecutionMetadata,
+    )
     check.list_param(step_executions, 'step_executions', of_type=StepExecution)
 
     step_events = execute_marshalling(
@@ -115,7 +119,9 @@ def execute_serializable_execution_plan(
         step_keys=list_pull(step_executions, 'step_key'),
         inputs_to_marshal=input_marshalling_dict_from_step_executions(step_executions),
         outputs_to_marshal={se.step_key: se.marshalled_outputs for se in step_executions},
-        run_config=RunConfig(run_id=run_config.run_id, tags=run_config.tags),
+        run_config=RunConfig(
+            run_id=serializable_execution_metadata.run_id, tags=serializable_execution_metadata.tags
+        ),
         throw_on_user_error=False,
     )
 

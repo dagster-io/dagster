@@ -458,7 +458,7 @@ def _execute_marshalling_or_error(args, dauphin_pipeline, evaluate_value_result)
     step_events = execute_serializable_execution_plan(
         ForkedProcessPipelineFactory(pipeline_fn=dauphin_pipeline.get_dagster_pipeline),
         environment_dict=environment_dict,
-        run_config=SerializableExecutionMetadata(
+        serializable_execution_metadata=SerializableExecutionMetadata(
             run_id=args.run_config.run_id, tags=args.run_config.tags
         ),
         step_executions=args.step_executions,
