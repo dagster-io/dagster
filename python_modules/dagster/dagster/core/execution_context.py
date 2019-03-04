@@ -20,6 +20,15 @@ from .system_config.objects import EnvironmentConfig
 from .types.marshal import PersistenceStrategy
 
 
+class InProcessExecutorConfig:
+    pass
+
+
+class MultiprocessExecutorConfig:
+    def __init__(self, pipeline_fn):
+        self.pipeline_fn = check.callable_param(pipeline_fn, 'pipeline_fn')
+
+
 def make_new_run_id():
     return str(uuid.uuid4())
 

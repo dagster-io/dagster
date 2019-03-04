@@ -5,7 +5,10 @@ from dagster import check
 from dagster.utils import mkdir_p
 from dagster.core.errors import DagsterSubprocessExecutionError
 
-from dagster.core.execution_context import SystemPipelineExecutionContext
+from dagster.core.execution_context import (
+    MultiprocessExecutorConfig,
+    SystemPipelineExecutionContext,
+)
 
 from .create import create_execution_plan_core
 from .intermediates_manager import FileSystemIntermediateManager
@@ -137,11 +140,6 @@ def _create_input_values(step_input_meta_dict, manager):
         input_value = manager.get_value(prev_output_handle_meta)
         input_values[step_input_name] = input_value
     return input_values
-
-
-class MultiprocessExecutorConfig:
-    def __init__(self, pipeline_fn):
-        self.pipeline_fn = pipeline_fn
 
 
 def _all_inputs_covered(step, intermediates_manager):

@@ -30,6 +30,8 @@ from .definitions.environment_configs import construct_environment_config
 
 from .execution_context import (
     RunConfig,
+    InProcessExecutorConfig,
+    MultiprocessExecutorConfig,
     SystemPipelineExecutionContextData,
     SystemPipelineExecutionContext,
 )
@@ -54,10 +56,7 @@ from .execution_plan.objects import (
     StepKind,
 )
 
-from .execution_plan.multiprocessing_engine import (
-    multiprocess_execute_plan,
-    MultiprocessExecutorConfig,
-)
+from .execution_plan.multiprocessing_engine import multiprocess_execute_plan
 
 from .execution_plan.simple_engine import start_inprocess_executor
 
@@ -529,10 +528,6 @@ def execute_pipeline_iterator(
             pipeline_context.events.pipeline_success()
         else:
             pipeline_context.events.pipeline_failure()
-
-
-class InProcessExecutorConfig:
-    pass
 
 
 def execute_pipeline(
