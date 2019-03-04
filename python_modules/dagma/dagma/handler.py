@@ -8,7 +8,7 @@ from io import BytesIO
 from dagster import check, PipelineDefinition
 from dagster.core.execution import (
     construct_pipeline_execution_context,
-    ExecutionMetadata,
+    RunConfiguration,
     ExecutionContext,
 )
 from dagster.core.execution_context import SystemPipelineExecutionContext
@@ -59,7 +59,7 @@ def aws_lambda_handler(event, _context):
     resources = deserialize(resources_object['Body'].read())
     execution_context = construct_pipeline_execution_context(
         pipeline=PipelineDefinition(name='dummy', solids=[]),
-        execution_metadata=ExecutionMetadata(run_id=run_id),
+        run_configuration=RunConfiguration(run_id=run_id),
         execution_context=ExecutionContext(loggers=[logger]),
         resources=resources,
         environment_config={},

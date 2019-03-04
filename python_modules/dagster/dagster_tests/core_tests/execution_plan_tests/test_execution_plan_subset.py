@@ -4,7 +4,7 @@ from dagster import (
     OutputDefinition,
     PipelineDefinition,
     Result,
-    ExecutionMetadata,
+    RunConfiguration,
     lambda_solid,
     solid,
     types,
@@ -154,7 +154,7 @@ def test_reentrant_execute_plan():
     execution_plan = create_execution_plan(pipeline_def)
 
     step_events = execute_plan(
-        execution_plan, execution_metadata=ExecutionMetadata(tags={'foo': 'bar'})
+        execution_plan, run_configuration=RunConfiguration(tags={'foo': 'bar'})
     )
 
     assert called['yup']

@@ -6,7 +6,7 @@ import uuid
 
 from graphql.execution.base import ResolveInfo
 
-from dagster import ExecutionMetadata, check
+from dagster import RunConfiguration, check
 from dagster.core.execution_plan.objects import ExecutionStepEventType
 from dagster.core.execution_plan.plan_subset import MarshalledOutput, MarshalledInput, StepExecution
 
@@ -198,11 +198,7 @@ def get_execution_plan(graphene_info, selector, config):
         return config_or_error.chain(
             lambda evaluate_value_result: graphene_info.schema.type_named('ExecutionPlan')(
                 pipeline,
-                create_execution_plan(
-                    pipeline.get_dagster_pipeline(),
-                    evaluate_value_result.value,
-                    ExecutionMetadata(),
-                ),
+                create_execution_plan(pipeline.get_dagster_pipeline(), evaluate_value_result.value),
             )
         )
 
@@ -222,7 +218,7 @@ def start_pipeline_execution(graphene_info, selector, config):
         def _start_execution(validated_config_either):
             new_run_id = str(uuid.uuid4())
             execution_plan = create_execution_plan(
-                pipeline.get_dagster_pipeline(), validated_config_either.value, ExecutionMetadata()
+                pipeline.get_dagster_pipeline(), validated_config_either.value
             )
             run = pipeline_run_storage.create_run(new_run_id, selector, env_config, execution_plan)
             pipeline_run_storage.add_run(run)
@@ -355,10 +351,10 @@ def step_executions_from_graphql_inputs(step_key, marshalled_inputs, marshalled_
 class SubplanExecutionArgs(
     namedtuple(
         '_SubplanExecutionArgs',
-        'graphene_info pipeline_name env_config step_executions execution_metadata',
+        'graphene_info pipeline_name env_config step_executions run_configuration',
     )
 ):
-    def __new__(cls, graphene_info, pipeline_name, env_config, step_executions, execution_metadata):
+    def __new__(cls, graphene_info, pipeline_name, env_config, step_executions, run_configuration):
         return super(SubplanExecutionArgs, cls).__new__(
             cls,
             graphene_info=check.inst_param(graphene_info, 'graphene_info', ResolveInfo),
@@ -367,8 +363,8 @@ class SubplanExecutionArgs(
             step_executions=check.list_param(
                 step_executions, 'step_executions', of_type=StepExecution
             ),
-            execution_metadata=check.inst_param(
-                execution_metadata, 'execution_metadata', ExecutionMetadata
+            run_configuration=check.inst_param(
+                run_configuration, 'run_configuration', RunConfiguration
             ),
         )
 
@@ -421,7 +417,7 @@ def _execute_marshalling_or_error(args, dauphin_pipeline, evaluate_value_result)
         execution_plan = create_execution_plan(
             dauphin_pipeline.get_dagster_pipeline(),
             environment_dict=environment_dict,
-            execution_metadata=args.execution_metadata,
+            run_configuration=args.run_configuration,
             subset_info=ExecutionPlanSubsetInfo.with_input_marshalling(
                 args.step_keys, input_marshalling_dict_from_step_executions(args.step_executions)
             ),
@@ -459,14 +455,14 @@ def _execute_marshalling_or_error(args, dauphin_pipeline, evaluate_value_result)
             )
         )
 
-    check.invariant(not args.execution_metadata.loggers)
-    check.invariant(not args.execution_metadata.event_callback)
+    check.invariant(not args.run_configuration.loggers)
+    check.invariant(not args.run_configuration.event_callback)
 
     step_events = execute_serializable_execution_plan(
         ForkedProcessPipelineFactory(pipeline_fn=dauphin_pipeline.get_dagster_pipeline),
         environment_dict=environment_dict,
-        execution_metadata=SerializableExecutionMetadata(
-            run_id=args.execution_metadata.run_id, tags=args.execution_metadata.tags
+        run_configuration=SerializableExecutionMetadata(
+            run_id=args.run_configuration.run_id, tags=args.run_configuration.tags
         ),
         step_executions=args.step_executions,
     )

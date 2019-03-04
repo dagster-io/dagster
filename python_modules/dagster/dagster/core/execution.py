@@ -29,7 +29,7 @@ from .definitions.utils import DEFAULT_OUTPUT
 from .definitions.environment_configs import construct_environment_config
 
 from .execution_context import (
-    ExecutionMetadata,
+    RunConfiguration,
     SystemPipelineExecutionContextData,
     SystemPipelineExecutionContext,
 )
@@ -260,40 +260,40 @@ class SolidExecutionResult(object):
                 return result.step_failure_data.dagster_error
 
 
-def check_execution_metadata_param(execution_metadata):
+def check_run_configuration_param(run_configuration):
     return (
-        check.inst_param(execution_metadata, 'execution_metadata', ExecutionMetadata)
-        if execution_metadata
-        else ExecutionMetadata()
+        check.inst_param(run_configuration, 'run_configuration', RunConfiguration)
+        if run_configuration
+        else RunConfiguration()
     )
 
 
 def create_execution_plan(
-    pipeline, environment_dict=None, execution_metadata=None, subset_info=None, added_outputs=None
+    pipeline, environment_dict=None, run_configuration=None, subset_info=None, added_outputs=None
 ):
     check.inst_param(pipeline, 'pipeline', PipelineDefinition)
     environment_dict = check.opt_dict_param(environment_dict, 'environment_dict', key_type=str)
-    execution_metadata = check_execution_metadata_param(execution_metadata)
-    check.inst_param(execution_metadata, 'execution_metadata', ExecutionMetadata)
+    run_configuration = check_run_configuration_param(run_configuration)
+    check.inst_param(run_configuration, 'run_configuration', RunConfiguration)
     check.opt_inst_param(subset_info, 'subset_info', ExecutionPlanSubsetInfo)
     check.opt_inst_param(added_outputs, 'added_outputs', ExecutionPlanAddedOutputs)
 
     with yield_pipeline_execution_context(
-        pipeline, environment_dict, execution_metadata
+        pipeline, environment_dict, run_configuration
     ) as pipeline_context:
         return create_execution_plan_core(pipeline_context, subset_info, added_outputs)
 
 
-def get_tags(user_context_params, execution_metadata, pipeline):
+def get_tags(user_context_params, run_configuration, pipeline):
     check.inst_param(user_context_params, 'user_context_params', ExecutionContext)
-    check.opt_inst_param(execution_metadata, 'execution_metadata', ExecutionMetadata)
+    check.opt_inst_param(run_configuration, 'run_configuration', RunConfiguration)
     check.inst_param(pipeline, 'pipeline', PipelineDefinition)
 
     base_tags = merge_dicts({'pipeline': pipeline.name}, user_context_params.tags)
 
-    if execution_metadata and execution_metadata.tags:
+    if run_configuration and run_configuration.tags:
         user_keys = set(user_context_params.tags.keys())
-        provided_keys = set(execution_metadata.tags.keys())
+        provided_keys = set(run_configuration.tags.keys())
         if not user_keys.isdisjoint(provided_keys):
             raise DagsterInvariantViolationError(
                 (
@@ -303,7 +303,7 @@ def get_tags(user_context_params, execution_metadata, pipeline):
                 ).format(user_keys=user_keys, provided_keys=provided_keys)
             )
 
-        return merge_dicts(base_tags, execution_metadata.tags)
+        return merge_dicts(base_tags, run_configuration.tags)
     else:
         return base_tags
 
@@ -352,10 +352,10 @@ def _create_persistence_strategy(persistence_config):
 
 
 @contextmanager
-def yield_pipeline_execution_context(pipeline_def, environment_dict, execution_metadata):
+def yield_pipeline_execution_context(pipeline_def, environment_dict, run_configuration):
     check.inst_param(pipeline_def, 'pipeline_def', PipelineDefinition)
     check.dict_param(environment_dict, 'environment_dict', key_type=str)
-    check.inst_param(execution_metadata, 'execution_metadata', ExecutionMetadata)
+    check.inst_param(run_configuration, 'run_configuration', RunConfiguration)
 
     environment_config = create_environment_config(pipeline_def, environment_dict)
 
@@ -365,7 +365,7 @@ def yield_pipeline_execution_context(pipeline_def, environment_dict, execution_m
         InitContext(
             context_config=environment_config.context.config,
             pipeline_def=pipeline_def,
-            run_id=execution_metadata.run_id,
+            run_id=run_configuration.run_id,
         )
     )
 
@@ -377,51 +377,51 @@ def yield_pipeline_execution_context(pipeline_def, environment_dict, execution_m
             context_definition,
             environment_config,
             execution_context,
-            execution_metadata.run_id,
+            run_configuration.run_id,
         ) as resources:
             yield construct_pipeline_execution_context(
-                execution_metadata, execution_context, pipeline_def, resources, environment_config
+                run_configuration, execution_context, pipeline_def, resources, environment_config
             )
 
 
 def construct_pipeline_execution_context(
-    execution_metadata, execution_context, pipeline, resources, environment_config
+    run_configuration, execution_context, pipeline, resources, environment_config
 ):
-    check.inst_param(execution_metadata, 'execution_metadata', ExecutionMetadata)
+    check.inst_param(run_configuration, 'run_configuration', RunConfiguration)
     check.inst_param(execution_context, 'execution_context', ExecutionContext)
     check.inst_param(pipeline, 'pipeline', PipelineDefinition)
     check.inst_param(environment_config, 'environment_config', EnvironmentConfig)
 
-    loggers = _create_loggers(execution_metadata, execution_context)
-    tags = get_tags(execution_context, execution_metadata, pipeline)
-    log = DagsterLog(execution_metadata.run_id, tags, loggers)
+    loggers = _create_loggers(run_configuration, execution_context)
+    tags = get_tags(execution_context, run_configuration, pipeline)
+    log = DagsterLog(run_configuration.run_id, tags, loggers)
 
     return SystemPipelineExecutionContext(
         SystemPipelineExecutionContextData(
             pipeline_def=pipeline,
-            execution_metadata=execution_metadata,
+            run_configuration=run_configuration,
             resources=resources,
             environment_config=environment_config,
             persistence_strategy=_create_persistence_strategy(
                 environment_config.context.persistence
             ),
-            files=LocalTempFileStore(execution_metadata.run_id),
+            files=LocalTempFileStore(run_configuration.run_id),
         ),
         tags=tags,
         log=log,
     )
 
 
-def _create_loggers(execution_metadata, execution_context):
-    check.inst_param(execution_metadata, 'execution_metadata', ExecutionMetadata)
+def _create_loggers(run_configuration, execution_context):
+    check.inst_param(run_configuration, 'run_configuration', RunConfiguration)
     check.inst_param(execution_context, 'execution_context', ExecutionContext)
 
-    if execution_metadata.event_callback:
+    if run_configuration.event_callback:
         return execution_context.loggers + [
-            construct_event_logger(execution_metadata.event_callback)
+            construct_event_logger(run_configuration.event_callback)
         ]
-    elif execution_metadata.loggers:
-        return execution_context.loggers + execution_metadata.loggers
+    elif run_configuration.loggers:
+        return execution_context.loggers + run_configuration.loggers
     else:
         return execution_context.loggers
 
@@ -481,7 +481,7 @@ def execute_pipeline_iterator(
     pipeline,
     environment_dict=None,
     throw_on_user_error=True,
-    execution_metadata=None,
+    run_configuration=None,
     executor_config=None,
 ):
     '''Returns iterator that yields :py:class:`SolidExecutionResult` for each
@@ -497,10 +497,10 @@ def execute_pipeline_iterator(
     check.inst_param(pipeline, 'pipeline', PipelineDefinition)
     environment_dict = check.opt_dict_param(environment_dict, 'environment_dict')
     check.bool_param(throw_on_user_error, 'throw_on_user_error')
-    execution_metadata = check_execution_metadata_param(execution_metadata)
+    run_configuration = check_run_configuration_param(run_configuration)
 
     with yield_pipeline_execution_context(
-        pipeline, environment_dict, execution_metadata
+        pipeline, environment_dict, run_configuration
     ) as pipeline_context:
 
         pipeline_context.events.pipeline_start()
@@ -549,7 +549,7 @@ def execute_pipeline(
     pipeline,
     environment_dict=None,
     throw_on_user_error=True,
-    execution_metadata=None,
+    run_configuration=None,
     executor_config=None,
 ):
     '''
@@ -573,17 +573,17 @@ def execute_pipeline(
     check.inst_param(pipeline, 'pipeline', PipelineDefinition)
     environment_dict = check.opt_dict_param(environment_dict, 'environment_dict')
     check.bool_param(throw_on_user_error, 'throw_on_user_error')
-    execution_metadata = check_execution_metadata_param(execution_metadata)
+    run_configuration = check_run_configuration_param(run_configuration)
 
     return PipelineExecutionResult(
         pipeline,
-        execution_metadata.run_id,
+        run_configuration.run_id,
         list(
             execute_pipeline_iterator(
                 pipeline=pipeline,
                 environment_dict=environment_dict,
                 throw_on_user_error=throw_on_user_error,
-                execution_metadata=execution_metadata,
+                run_configuration=run_configuration,
                 executor_config=executor_config,
             )
         ),
@@ -640,18 +640,18 @@ def execute_marshalling(
     inputs_to_marshal=None,
     outputs_to_marshal=None,
     environment_dict=None,
-    execution_metadata=None,
+    run_configuration=None,
     throw_on_user_error=True,
     executor_config=None,
 ):
     check.inst_param(pipeline, 'pipeline', PipelineDefinition)
     check.list_param(step_keys, 'step_keys', of_type=str)
     environment_dict = check.opt_dict_param(environment_dict, 'environment_dict')
-    execution_metadata = check_execution_metadata_param(execution_metadata)
+    run_configuration = check_run_configuration_param(run_configuration)
     check.bool_param(throw_on_user_error, 'throw_on_user_error')
 
     with yield_pipeline_execution_context(
-        pipeline, environment_dict, execution_metadata
+        pipeline, environment_dict, run_configuration
     ) as pipeline_context:
         return list(
             invoke_executor_on_plan(
@@ -674,17 +674,17 @@ def execute_marshalling(
 def execute_plan(
     execution_plan,
     environment_dict=None,
-    execution_metadata=None,
+    run_configuration=None,
     throw_on_user_error=True,
     executor_config=None,
 ):
     check.inst_param(execution_plan, 'execution_plan', ExecutionPlan)
     environment_dict = check.opt_dict_param(environment_dict, 'environment_dict')
 
-    execution_metadata = check_execution_metadata_param(execution_metadata)
+    run_configuration = check_run_configuration_param(run_configuration)
 
     with yield_pipeline_execution_context(
-        execution_plan.pipeline_def, environment_dict, execution_metadata
+        execution_plan.pipeline_def, environment_dict, run_configuration
     ) as pipeline_context:
         return list(
             invoke_executor_on_plan(
