@@ -24,9 +24,9 @@ def make_new_run_id():
     return str(uuid.uuid4())
 
 
-class ExecutionMetadata(namedtuple('_ExecutionMetadata', 'run_id tags event_callback loggers')):
+class RunConfig(namedtuple('_RunConfig', 'run_id tags event_callback loggers')):
     def __new__(cls, run_id=None, tags=None, event_callback=None, loggers=None):
-        return super(ExecutionMetadata, cls).__new__(
+        return super(RunConfig, cls).__new__(
             cls,
             run_id=check.str_param(run_id, 'run_id') if run_id else make_new_run_id(),
             tags=check.opt_dict_param(tags, 'tags', key_type=str, value_type=str),
@@ -35,7 +35,7 @@ class ExecutionMetadata(namedtuple('_ExecutionMetadata', 'run_id tags event_call
         )
 
     def with_tags(self, **tags):
-        return ExecutionMetadata(
+        return RunConfig(
             run_id=self.run_id,
             event_callback=self.event_callback,
             loggers=self.loggers,
@@ -46,10 +46,7 @@ class ExecutionMetadata(namedtuple('_ExecutionMetadata', 'run_id tags event_call
 class SystemPipelineExecutionContextData(
     namedtuple(
         '_SystemPipelineExecutionContextData',
-        (
-            'execution_metadata resources environment_config persistence_strategy pipeline_def '
-            'files'
-        ),
+        ('run_config resources environment_config persistence_strategy pipeline_def ' 'files'),
     )
 ):
     '''
@@ -58,21 +55,13 @@ class SystemPipelineExecutionContextData(
     '''
 
     def __new__(
-        cls,
-        execution_metadata,
-        resources,
-        environment_config,
-        persistence_strategy,
-        pipeline_def,
-        files,
+        cls, run_config, resources, environment_config, persistence_strategy, pipeline_def, files
     ):
         from .definitions.pipeline import PipelineDefinition
 
         return super(SystemPipelineExecutionContextData, cls).__new__(
             cls,
-            execution_metadata=check.inst_param(
-                execution_metadata, 'execution_metadata', ExecutionMetadata
-            ),
+            run_config=check.inst_param(run_config, 'run_config', RunConfig),
             resources=resources,
             environment_config=check.inst_param(
                 environment_config, 'environment_config', EnvironmentConfig
@@ -86,11 +75,11 @@ class SystemPipelineExecutionContextData(
 
     @property
     def run_id(self):
-        return self.execution_metadata.run_id
+        return self.run_config.run_id
 
     @property
     def event_callback(self):
-        return self.execution_metadata.event_callback
+        return self.run_config.event_callback
 
     @property
     def environment_dict(self):
@@ -118,8 +107,8 @@ class SystemPipelineExecutionContext(object):
         return SystemStepExecutionContext(self._pipeline_context_data, tags, log, step)
 
     @property
-    def execution_metadata(self):
-        return self._pipeline_context_data.execution_metadata
+    def run_config(self):
+        return self._pipeline_context_data.run_config
 
     @property
     def resources(self):

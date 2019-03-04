@@ -22,7 +22,7 @@ from .simple_engine import start_inprocess_executor
 
 
 def _execute_in_child_process(
-    queue, executor_config, environment_dict, execution_metadata, step_key, input_meta_dict
+    queue, executor_config, environment_dict, run_config, step_key, input_meta_dict
 ):
     from dagster.core.execution import yield_pipeline_execution_context
 
@@ -31,7 +31,7 @@ def _execute_in_child_process(
     pipeline = executor_config.pipeline_fn()
 
     with yield_pipeline_execution_context(
-        pipeline, environment_dict, execution_metadata.with_tags(pid=str(os.getpid()))
+        pipeline, environment_dict, run_config.with_tags(pid=str(os.getpid()))
     ) as pipeline_context:
 
         intermediates_manager = FileSystemIntermediateManager(pipeline_context.files)
@@ -72,7 +72,7 @@ def execute_step_out_of_process(executor_config, step_context, step, intermediat
     queue = multiprocessing.Queue()
 
     check.invariant(
-        not step_context.execution_metadata.loggers,
+        not step_context.run_config.loggers,
         'Cannot inject loggers via ExecutionMetadata with the Multiprocess executor',
     )
 
@@ -82,7 +82,7 @@ def execute_step_out_of_process(executor_config, step_context, step, intermediat
             queue,
             executor_config,
             step_context.environment_dict,
-            step_context.execution_metadata,
+            step_context.run_config,
             step.key,
             {step_input.name: step_input.prev_output_handle for step_input in step.step_inputs},
         ),

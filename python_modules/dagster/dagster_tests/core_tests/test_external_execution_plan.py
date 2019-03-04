@@ -17,7 +17,7 @@ from dagster.core.errors import (
     DagsterInvalidSubplanOutputNotFoundError,
 )
 
-from dagster.core.execution import ExecutionMetadata, execute_marshalling
+from dagster.core.execution import execute_marshalling
 
 from dagster.core.execution_plan.objects import StepKind
 from dagster.core.execution_plan.plan_subset import MarshalledOutput
@@ -176,7 +176,6 @@ def test_external_execution_marshal_output_code_error():
             pipeline,
             ['return_one.transform', 'add_one.transform'],
             outputs_to_marshal=outputs_to_marshal,
-            execution_metadata=ExecutionMetadata(),
             throw_on_user_error=True,
         )
 
@@ -186,7 +185,6 @@ def test_external_execution_marshal_output_code_error():
         pipeline,
         ['return_one.transform', 'add_one.transform'],
         outputs_to_marshal=outputs_to_marshal,
-        execution_metadata=ExecutionMetadata(),
         throw_on_user_error=False,
     )
 
@@ -203,12 +201,7 @@ def test_external_execution_output_code_error_throw_on_user_error():
     pipeline = define_inty_pipeline()
 
     with pytest.raises(Exception) as exc_info:
-        execute_marshalling(
-            pipeline,
-            ['user_throw_exception.transform'],
-            execution_metadata=ExecutionMetadata(),
-            throw_on_user_error=True,
-        )
+        execute_marshalling(pipeline, ['user_throw_exception.transform'], throw_on_user_error=True)
 
     assert str(exc_info.value) == 'whoops'
 
@@ -217,10 +210,7 @@ def test_external_execution_output_code_error_no_throw_on_user_error():
     pipeline = define_inty_pipeline()
 
     step_events = execute_marshalling(
-        pipeline,
-        ['user_throw_exception.transform'],
-        execution_metadata=ExecutionMetadata(),
-        throw_on_user_error=False,
+        pipeline, ['user_throw_exception.transform'], throw_on_user_error=False
     )
 
     assert len(step_events) == 1
@@ -235,7 +225,7 @@ def test_external_execution_unsatisfied_input_error():
     pipeline = define_inty_pipeline()
 
     with pytest.raises(DagsterInvalidSubplanMissingInputError) as exc_info:
-        execute_marshalling(pipeline, ['add_one.transform'], execution_metadata=ExecutionMetadata())
+        execute_marshalling(pipeline, ['add_one.transform'])
 
     assert exc_info.value.pipeline_name == 'basic_external_plan_execution'
     assert exc_info.value.step_keys == ['add_one.transform']
