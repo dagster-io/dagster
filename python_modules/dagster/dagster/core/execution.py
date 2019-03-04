@@ -471,7 +471,7 @@ def get_resource_or_gen(pipeline_def, context_definition, resource_name, environ
 
 
 def execute_pipeline_iterator(
-    pipeline, environment_dict=None, throw_on_user_error=True, run_config=None, executor_config=None
+    pipeline, environment_dict=None, throw_on_user_error=True, run_config=None
 ):
     '''Returns iterator that yields :py:class:`SolidExecutionResult` for each
     solid executed in the pipeline.
@@ -518,7 +518,7 @@ def execute_pipeline_iterator(
         pipeline_success = True
 
         for step_event in invoke_executor_on_plan(
-            pipeline_context, execution_plan, throw_on_user_error, executor_config
+            pipeline_context, execution_plan, throw_on_user_error
         ):
             if step_event.is_step_failure:
                 pipeline_success = False
@@ -530,9 +530,7 @@ def execute_pipeline_iterator(
             pipeline_context.events.pipeline_failure()
 
 
-def execute_pipeline(
-    pipeline, environment_dict=None, throw_on_user_error=True, run_config=None, executor_config=None
-):
+def execute_pipeline(pipeline, environment_dict=None, throw_on_user_error=True, run_config=None):
     '''
     "Synchronous" version of :py:func:`execute_pipeline_iterator`.
 
@@ -565,7 +563,6 @@ def execute_pipeline(
                 environment_dict=environment_dict,
                 throw_on_user_error=throw_on_user_error,
                 run_config=run_config,
-                executor_config=executor_config,
             )
         ),
     )
@@ -594,20 +591,15 @@ class PipelineConfigEvaluationError(Exception):
         super(PipelineConfigEvaluationError, self).__init__(error_msg, *args, **kwargs)
 
 
-def invoke_executor_on_plan(pipeline_context, execution_plan, throw_on_user_error, executor_config):
-    if executor_config is None:
-        executor_config = InProcessExecutorConfig()
-
-    if isinstance(executor_config, InProcessExecutorConfig):
+def invoke_executor_on_plan(pipeline_context, execution_plan, throw_on_user_error):
+    if isinstance(pipeline_context.executor_config, InProcessExecutorConfig):
         step_events_gen = start_inprocess_executor(
             pipeline_context, execution_plan, InMemoryIntermediatesManager()
         )
-    elif isinstance(executor_config, MultiprocessExecutorConfig):
-        step_events_gen = multiprocess_execute_plan(
-            executor_config, pipeline_context, execution_plan
-        )
+    elif isinstance(pipeline_context.executor_config, MultiprocessExecutorConfig):
+        step_events_gen = multiprocess_execute_plan(pipeline_context, execution_plan)
     else:
-        check.failed('Unsupported config {}'.format(executor_config))
+        check.failed('Unsupported config {}'.format(pipeline_context.executor_config))
 
     for step_event in step_events_gen:
         if throw_on_user_error and step_event.is_step_failure:
@@ -623,7 +615,6 @@ def execute_marshalling(
     environment_dict=None,
     run_config=None,
     throw_on_user_error=True,
-    executor_config=None,
 ):
     check.inst_param(pipeline, 'pipeline', PipelineDefinition)
     check.list_param(step_keys, 'step_keys', of_type=str)
@@ -647,18 +638,11 @@ def execute_marshalling(
                     ),
                 ),
                 throw_on_user_error=throw_on_user_error,
-                executor_config=executor_config,
             )
         )
 
 
-def execute_plan(
-    execution_plan,
-    environment_dict=None,
-    run_config=None,
-    throw_on_user_error=True,
-    executor_config=None,
-):
+def execute_plan(execution_plan, environment_dict=None, run_config=None, throw_on_user_error=True):
     check.inst_param(execution_plan, 'execution_plan', ExecutionPlan)
     environment_dict = check.opt_dict_param(environment_dict, 'environment_dict')
 
@@ -669,10 +653,7 @@ def execute_plan(
     ) as pipeline_context:
         return list(
             invoke_executor_on_plan(
-                pipeline_context,
-                execution_plan,
-                throw_on_user_error=throw_on_user_error,
-                executor_config=executor_config,
+                pipeline_context, execution_plan, throw_on_user_error=throw_on_user_error
             )
         )
 
