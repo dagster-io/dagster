@@ -6,7 +6,7 @@ import uuid
 
 from graphql.execution.base import ResolveInfo
 
-from dagster import RunConfiguration, check
+from dagster import RunConfig, check
 from dagster.core.execution_plan.objects import ExecutionStepEventType
 from dagster.core.execution_plan.plan_subset import MarshalledOutput, MarshalledInput, StepExecution
 
@@ -350,11 +350,10 @@ def step_executions_from_graphql_inputs(step_key, marshalled_inputs, marshalled_
 
 class SubplanExecutionArgs(
     namedtuple(
-        '_SubplanExecutionArgs',
-        'graphene_info pipeline_name env_config step_executions run_configuration',
+        '_SubplanExecutionArgs', 'graphene_info pipeline_name env_config step_executions run_config'
     )
 ):
-    def __new__(cls, graphene_info, pipeline_name, env_config, step_executions, run_configuration):
+    def __new__(cls, graphene_info, pipeline_name, env_config, step_executions, run_config):
         return super(SubplanExecutionArgs, cls).__new__(
             cls,
             graphene_info=check.inst_param(graphene_info, 'graphene_info', ResolveInfo),
@@ -363,9 +362,7 @@ class SubplanExecutionArgs(
             step_executions=check.list_param(
                 step_executions, 'step_executions', of_type=StepExecution
             ),
-            run_configuration=check.inst_param(
-                run_configuration, 'run_configuration', RunConfiguration
-            ),
+            run_config=check.inst_param(run_config, 'run_config', RunConfig),
         )
 
     @property
@@ -417,7 +414,7 @@ def _execute_marshalling_or_error(args, dauphin_pipeline, evaluate_value_result)
         execution_plan = create_execution_plan(
             dauphin_pipeline.get_dagster_pipeline(),
             environment_dict=environment_dict,
-            run_configuration=args.run_configuration,
+            run_config=args.run_config,
             subset_info=ExecutionPlanSubsetInfo.with_input_marshalling(
                 args.step_keys, input_marshalling_dict_from_step_executions(args.step_executions)
             ),
@@ -455,14 +452,14 @@ def _execute_marshalling_or_error(args, dauphin_pipeline, evaluate_value_result)
             )
         )
 
-    check.invariant(not args.run_configuration.loggers)
-    check.invariant(not args.run_configuration.event_callback)
+    check.invariant(not args.run_config.loggers)
+    check.invariant(not args.run_config.event_callback)
 
     step_events = execute_serializable_execution_plan(
         ForkedProcessPipelineFactory(pipeline_fn=dauphin_pipeline.get_dagster_pipeline),
         environment_dict=environment_dict,
-        run_configuration=SerializableExecutionMetadata(
-            run_id=args.run_configuration.run_id, tags=args.run_configuration.tags
+        run_config=SerializableExecutionMetadata(
+            run_id=args.run_config.run_id, tags=args.run_config.tags
         ),
         step_executions=args.step_executions,
     )

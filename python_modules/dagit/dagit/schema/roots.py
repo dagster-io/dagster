@@ -1,6 +1,6 @@
 from dagit.schema import dauphin
 from dagit.schema import model
-from dagster.core.execution import ExecutionSelector, RunConfiguration
+from dagster.core.execution import ExecutionSelector, RunConfig
 from ..version import __version__
 
 
@@ -151,7 +151,7 @@ class DauphinExecutionMetadata(dauphin.InputObjectType):
             for tag in self.tags:  # pylint: disable=E1133
                 tags[tag['key']] = tag['value']
 
-        return RunConfiguration(run_id=self.runId, tags=tags)
+        return RunConfig(run_id=self.runId, tags=tags)
 
 
 class DauphinStartSubplanExecution(dauphin.Mutation):

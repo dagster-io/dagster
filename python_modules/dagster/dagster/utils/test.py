@@ -16,7 +16,7 @@ from dagster import (
 
 from dagster.core.execution import (
     ExecutionContext,
-    RunConfiguration,
+    RunConfig,
     construct_pipeline_execution_context,
     create_environment_config,
 )
@@ -28,7 +28,7 @@ def create_test_pipeline_execution_context(loggers=None, resources=None, tags=No
     run_id = str(uuid.uuid4())
     pipeline_def = PipelineDefinition(name='test_legacy_context', solids=[])
     return construct_pipeline_execution_context(
-        run_configuration=RunConfiguration(run_id, tags=tags, loggers=loggers),
+        run_config=RunConfig(run_id, tags=tags, loggers=loggers),
         pipeline=pipeline_def,
         execution_context=ExecutionContext(),
         resources=resources,

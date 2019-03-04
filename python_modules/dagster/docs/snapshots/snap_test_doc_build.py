@@ -836,7 +836,7 @@ snapshots['test_build_all_docs 4'] = '''
 </li>
       <li><a href="apidocs/decorators.html#dagster.MultipleResults.results">results (dagster.MultipleResults attribute)</a>
 </li>
-      <li><a href="apidocs/execution.html#dagster.RunConfiguration">RunConfiguration (class in dagster)</a>
+      <li><a href="apidocs/execution.html#dagster.RunConfig">RunConfig (class in dagster)</a>
 </li>
       <li><a href="apidocs/definitions.html#dagster.InputDefinition.runtime_type">runtime_type (dagster.InputDefinition attribute)</a>
 
@@ -2383,7 +2383,7 @@ Executing pipelines and solids.
 .. autoclass:: PipelineExecutionResult
    :members:
 
-.. autoclass:: RunConfiguration 
+.. autoclass:: RunConfig 
    :members:
 
 .. autoclass:: SolidExecutionResult
@@ -20540,7 +20540,7 @@ snapshots['test_build_all_docs 53'] = '''
 <p>Executing pipelines and solids.</p>
 <dl class="function">
 <dt id="dagster.execute_pipeline">
-<code class="descclassname">dagster.</code><code class="descname">execute_pipeline</code><span class="sig-paren">(</span><em>pipeline</em>, <em>environment_dict=None</em>, <em>throw_on_user_error=True</em>, <em>run_configuration=None</em>, <em>executor_config=None</em><span class="sig-paren">)</span><a class="headerlink" href="#dagster.execute_pipeline" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">dagster.</code><code class="descname">execute_pipeline</code><span class="sig-paren">(</span><em>pipeline</em>, <em>environment_dict=None</em>, <em>throw_on_user_error=True</em>, <em>run_config=None</em>, <em>executor_config=None</em><span class="sig-paren">)</span><a class="headerlink" href="#dagster.execute_pipeline" title="Permalink to this definition">¶</a></dt>
 <dd><p>“Synchronous” version of <a class="reference internal" href="#dagster.execute_pipeline_iterator" title="dagster.execute_pipeline_iterator"><code class="xref py py-func docutils literal notranslate"><span class="pre">execute_pipeline_iterator()</span></code></a>.</p>
 <p>Note: throw_on_user_error is very useful in testing contexts when not testing for error
 conditions</p>
@@ -20565,7 +20565,7 @@ returning the py:class:<cite>SolidExecutionResult</cite> in an error-state.</li>
 
 <dl class="function">
 <dt id="dagster.execute_pipeline_iterator">
-<code class="descclassname">dagster.</code><code class="descname">execute_pipeline_iterator</code><span class="sig-paren">(</span><em>pipeline</em>, <em>environment_dict=None</em>, <em>throw_on_user_error=True</em>, <em>run_configuration=None</em>, <em>executor_config=None</em><span class="sig-paren">)</span><a class="headerlink" href="#dagster.execute_pipeline_iterator" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">dagster.</code><code class="descname">execute_pipeline_iterator</code><span class="sig-paren">(</span><em>pipeline</em>, <em>environment_dict=None</em>, <em>throw_on_user_error=True</em>, <em>run_config=None</em>, <em>executor_config=None</em><span class="sig-paren">)</span><a class="headerlink" href="#dagster.execute_pipeline_iterator" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns iterator that yields <a class="reference internal" href="#dagster.SolidExecutionResult" title="dagster.SolidExecutionResult"><code class="xref py py-class docutils literal notranslate"><span class="pre">SolidExecutionResult</span></code></a> for each
 solid executed in the pipeline.</p>
 <p>This is intended to allow the caller to do things between each executed
@@ -20637,8 +20637,8 @@ SystemPipelineExecutionContextCreationData although that seemed excessively verb
 </dd></dl>
 
 <dl class="class">
-<dt id="dagster.RunConfiguration">
-<em class="property">class </em><code class="descclassname">dagster.</code><code class="descname">RunConfiguration</code><a class="headerlink" href="#dagster.RunConfiguration" title="Permalink to this definition">¶</a></dt>
+<dt id="dagster.RunConfig">
+<em class="property">class </em><code class="descclassname">dagster.</code><code class="descname">RunConfig</code><a class="headerlink" href="#dagster.RunConfig" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="class">

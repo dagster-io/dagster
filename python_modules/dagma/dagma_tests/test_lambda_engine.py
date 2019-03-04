@@ -18,7 +18,7 @@ from dagster import (
     lambda_solid,
     PipelineContextDefinition,
     PipelineDefinition,
-    RunConfiguration,
+    RunConfig,
     ResourceDefinition,
 )
 from dagster.core.execution import (
@@ -93,8 +93,8 @@ TEST_ENVIRONMENT = {
 
 
 def run_test_pipeline(pipeline):
-    run_configuration = RunConfiguration(run_id=str(uuid.uuid4()))
-    with yield_pipeline_execution_context(pipeline, TEST_ENVIRONMENT, run_configuration) as context:
+    run_config = RunConfig(run_id=str(uuid.uuid4()))
+    with yield_pipeline_execution_context(pipeline, TEST_ENVIRONMENT, run_config) as context:
         execution_plan = create_execution_plan_core(context)
         return execute_plan(context, execution_plan)
 

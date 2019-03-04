@@ -36,7 +36,7 @@ from dagster.core.events import construct_json_event_logger, EventRecord, EventT
 from dagster.core.execution import yield_pipeline_execution_context
 from dagster.core.execution_context import (
     DagsterLog,
-    RunConfiguration,
+    RunConfig,
     SystemPipelineExecutionContext,
     SystemTransformExecutionContext,
 )
@@ -123,7 +123,7 @@ class Manager:
         with yield_pipeline_execution_context(
             pipeline_def,
             {} if context_config is None else {'context': context_config},
-            RunConfiguration(run_id=''),
+            RunConfig(run_id=''),
         ) as pipeline_context:
             self.context = DagstermillInNotebookExecutionContext(pipeline_context)
         return self.context
@@ -176,11 +176,11 @@ class Manager:
             loggers = [event_logger]
         # do not include event_callback in ExecutionMetadata,
         # since that'll be taken care of by side-channel established by event_logger
-        run_configuration = RunConfiguration(run_id, loggers=loggers)
+        run_config = RunConfig(run_id, loggers=loggers)
         # See block comment above referencing this issue
         # See https://github.com/dagster-io/dagster/issues/796
         with yield_pipeline_execution_context(
-            self.pipeline_def, environment_dict, run_configuration
+            self.pipeline_def, environment_dict, run_config
         ) as pipeline_context:
             self.context = DagstermillInNotebookExecutionContext(pipeline_context)
 

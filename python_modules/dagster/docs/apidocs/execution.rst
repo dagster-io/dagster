@@ -15,7 +15,7 @@ Executing pipelines and solids.
 .. autoclass:: PipelineExecutionResult
    :members:
 
-.. autoclass:: RunConfiguration 
+.. autoclass:: RunConfig 
    :members:
 
 .. autoclass:: SolidExecutionResult

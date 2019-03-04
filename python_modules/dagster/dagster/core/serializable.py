@@ -6,7 +6,7 @@ import six
 from dagster import check
 
 from .execution import execute_marshalling
-from .execution_context import RunConfiguration
+from .execution_context import RunConfig
 from .execution_plan.objects import ExecutionStepEvent, ExecutionStepEventType
 from .execution_plan.plan_subset import StepExecution
 
@@ -102,11 +102,11 @@ class ForkedProcessPipelineFactory(
 
 
 def execute_serializable_execution_plan(
-    pipeline_factory, environment_dict, run_configuration, step_executions
+    pipeline_factory, environment_dict, run_config, step_executions
 ):
     check.inst_param(pipeline_factory, 'pipeline_factory', PipelineFactory)
     check.dict_param(environment_dict, 'enviroment_dict', key_type=str)
-    check.inst_param(run_configuration, 'run_configuration', SerializableExecutionMetadata)
+    check.inst_param(run_config, 'run_config', SerializableExecutionMetadata)
     check.list_param(step_executions, 'step_executions', of_type=StepExecution)
 
     step_events = execute_marshalling(
@@ -115,9 +115,7 @@ def execute_serializable_execution_plan(
         step_keys=list_pull(step_executions, 'step_key'),
         inputs_to_marshal=input_marshalling_dict_from_step_executions(step_executions),
         outputs_to_marshal={se.step_key: se.marshalled_outputs for se in step_executions},
-        run_configuration=RunConfiguration(
-            run_id=run_configuration.run_id, tags=run_configuration.tags
-        ),
+        run_config=RunConfig(run_id=run_config.run_id, tags=run_config.tags),
         throw_on_user_error=False,
     )
 

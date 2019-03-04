@@ -6,11 +6,7 @@ import boto3
 from io import BytesIO
 
 from dagster import check, PipelineDefinition
-from dagster.core.execution import (
-    construct_pipeline_execution_context,
-    RunConfiguration,
-    ExecutionContext,
-)
+from dagster.core.execution import construct_pipeline_execution_context, RunConfig, ExecutionContext
 from dagster.core.execution_context import SystemPipelineExecutionContext
 from dagster.core.execution_plan.objects import ExecutionStepEvent
 from dagster.core.execution_plan.simple_engine import execute_step_in_memory
@@ -59,7 +55,7 @@ def aws_lambda_handler(event, _context):
     resources = deserialize(resources_object['Body'].read())
     execution_context = construct_pipeline_execution_context(
         pipeline=PipelineDefinition(name='dummy', solids=[]),
-        run_configuration=RunConfiguration(run_id=run_id),
+        run_config=RunConfig(run_id=run_id),
         execution_context=ExecutionContext(loggers=[logger]),
         resources=resources,
         environment_config={},

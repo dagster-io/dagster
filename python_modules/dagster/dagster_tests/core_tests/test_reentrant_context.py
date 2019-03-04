@@ -5,7 +5,7 @@ from dagster import (
     ExecutionContext,
     PipelineContextDefinition,
     PipelineDefinition,
-    RunConfiguration,
+    RunConfig,
     execute_pipeline,
     solid,
 )
@@ -14,7 +14,7 @@ from dagster import (
 def test_injected_run_id():
     run_id = 'kdjfkdjfkd'
     pipeline_def = PipelineDefinition(name='injected_run_id', solids=[])
-    result = execute_pipeline(pipeline_def, run_configuration=RunConfiguration(run_id=run_id))
+    result = execute_pipeline(pipeline_def, run_config=RunConfig(run_id=run_id))
 
     assert result.success
     assert result.run_id == run_id
@@ -29,7 +29,7 @@ def test_injected_tags():
         called['yup'] = True
 
     pipeline_def = PipelineDefinition(name='injected_run_id', solids=[check_tags])
-    result = execute_pipeline(pipeline_def, run_configuration=RunConfiguration(tags={'foo': 'bar'}))
+    result = execute_pipeline(pipeline_def, run_config=RunConfig(tags={'foo': 'bar'}))
 
     assert result.success
     assert called['yup']
@@ -53,7 +53,7 @@ def test_user_injected_tags():
         context_definitions={'default': PipelineContextDefinition(context_fn=_create_context)},
     )
 
-    result = execute_pipeline(pipeline_def, run_configuration=RunConfiguration(tags={'foo': 'bar'}))
+    result = execute_pipeline(pipeline_def, run_config=RunConfig(tags={'foo': 'bar'}))
 
     assert result.success
     assert called['yup']
@@ -78,4 +78,4 @@ def test_user_injected_tags_collision():
     )
 
     with pytest.raises(DagsterInvariantViolationError, match='You have specified'):
-        execute_pipeline(pipeline_def, run_configuration=RunConfiguration(tags={'foo': 'bar'}))
+        execute_pipeline(pipeline_def, run_config=RunConfig(tags={'foo': 'bar'}))
