@@ -2,7 +2,6 @@ import multiprocessing
 import os
 
 from dagster import check
-from dagster.utils import mkdir_p
 from dagster.core.errors import DagsterSubprocessExecutionError
 
 from dagster.core.execution_context import (
@@ -20,7 +19,6 @@ from .objects import (
     StepOutputData,
     ExecutionStepEventType,
 )
-from .plan_subset import ExecutionPlanSubsetInfo
 from .simple_engine import start_inprocess_executor
 
 
@@ -38,17 +36,10 @@ def _execute_in_child_process(queue, environment_dict, run_config, step_key, inp
 
         intermediates_manager = FileSystemIntermediateManager(pipeline_context.files)
 
-        inputs_for_step = _create_input_values(input_meta_dict, intermediates_manager)
-
-        inputs_to_inject = {step_key: inputs_for_step}
-
-        execution_plan = create_execution_plan_core(
-            pipeline_context,
-            subset_info=ExecutionPlanSubsetInfo.with_input_values([step_key], inputs_to_inject),
-        )
+        execution_plan = create_execution_plan_core(pipeline_context)
 
         for step_event in start_inprocess_executor(
-            pipeline_context, execution_plan, intermediates_manager
+            pipeline_context, execution_plan, intermediates_manager, step_keys_to_execute=[step_key]
         ):
             data_to_put = {
                 'event_type': step_event.event_type,
@@ -152,11 +143,6 @@ def multiprocess_execute_plan(pipeline_context, execution_plan):
     check.inst_param(execution_plan, 'execution_plan', ExecutionPlan)
 
     step_levels = execution_plan.topological_step_levels()
-
-    # TODO where to put in xplat way?
-    # TODO probably manage in pipeline execution context?
-    root_dir = '/tmp/dagster/runs/{run_id}'.format(run_id=pipeline_context.run_id)
-    mkdir_p(root_dir)
 
     intermediates_manager = FileSystemIntermediateManager(pipeline_context.files)
 

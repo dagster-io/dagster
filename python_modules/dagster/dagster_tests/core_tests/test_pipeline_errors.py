@@ -4,7 +4,6 @@ from dagster import (
     DagsterInvariantViolationError,
     DependencyDefinition,
     ExecutionContext,
-    InProcessExecutorConfig,
     InputDefinition,
     OutputDefinition,
     PipelineContextDefinition,

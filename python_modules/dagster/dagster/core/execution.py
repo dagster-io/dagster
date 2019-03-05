@@ -41,13 +41,7 @@ from .errors import DagsterInvariantViolationError
 
 from .events import construct_event_logger
 
-from .execution_plan.create import (
-    ExecutionPlanAddedOutputs,
-    ExecutionPlanSubsetInfo,
-    create_execution_plan_core,
-)
-
-from .execution_plan.intermediates_manager import InMemoryIntermediatesManager
+from .execution_plan.create import create_execution_plan_core
 
 from .execution_plan.objects import (
     ExecutionPlan,
@@ -260,23 +254,23 @@ class SolidExecutionResult(object):
 
 
 def check_run_config_param(run_config):
-    return check.inst_param(run_config, 'run_config', RunConfig) if run_config else RunConfig()
+    return (
+        check.inst_param(run_config, 'run_config', RunConfig)
+        if run_config
+        else RunConfig(executor_config=InProcessExecutorConfig())
+    )
 
 
-def create_execution_plan(
-    pipeline, environment_dict=None, run_config=None, subset_info=None, added_outputs=None
-):
+def create_execution_plan(pipeline, environment_dict=None, run_config=None):
     check.inst_param(pipeline, 'pipeline', PipelineDefinition)
     environment_dict = check.opt_dict_param(environment_dict, 'environment_dict', key_type=str)
     run_config = check_run_config_param(run_config)
     check.inst_param(run_config, 'run_config', RunConfig)
-    check.opt_inst_param(subset_info, 'subset_info', ExecutionPlanSubsetInfo)
-    check.opt_inst_param(added_outputs, 'added_outputs', ExecutionPlanAddedOutputs)
 
     with yield_pipeline_execution_context(
         pipeline, environment_dict, run_config
     ) as pipeline_context:
-        return create_execution_plan_core(pipeline_context, subset_info, added_outputs)
+        return create_execution_plan_core(pipeline_context)
 
 
 def get_tags(user_context_params, run_config, pipeline):
@@ -578,10 +572,13 @@ class PipelineConfigEvaluationError(Exception):
         super(PipelineConfigEvaluationError, self).__init__(error_msg, *args, **kwargs)
 
 
-def invoke_executor_on_plan(pipeline_context, execution_plan):
+def invoke_executor_on_plan(pipeline_context, execution_plan, step_keys_to_execute=None):
     if isinstance(pipeline_context.executor_config, InProcessExecutorConfig):
         step_events_gen = start_inprocess_executor(
-            pipeline_context, execution_plan, InMemoryIntermediatesManager()
+            pipeline_context,
+            execution_plan,
+            pipeline_context.run_config.executor_config.inmem_intermediates_manager,
+            step_keys_to_execute,
         )
     elif isinstance(pipeline_context.executor_config, MultiprocessExecutorConfig):
         step_events_gen = multiprocess_execute_plan(pipeline_context, execution_plan)
@@ -590,38 +587,6 @@ def invoke_executor_on_plan(pipeline_context, execution_plan):
 
     for step_event in step_events_gen:
         yield step_event
-
-
-def execute_marshalling(
-    pipeline,
-    step_keys,
-    inputs_to_marshal=None,
-    outputs_to_marshal=None,
-    environment_dict=None,
-    run_config=None,
-):
-    check.inst_param(pipeline, 'pipeline', PipelineDefinition)
-    check.list_param(step_keys, 'step_keys', of_type=str)
-    environment_dict = check.opt_dict_param(environment_dict, 'environment_dict')
-    run_config = check_run_config_param(run_config)
-
-    with yield_pipeline_execution_context(
-        pipeline, environment_dict, run_config
-    ) as pipeline_context:
-        return list(
-            invoke_executor_on_plan(
-                pipeline_context,
-                execution_plan=create_execution_plan_core(
-                    pipeline_context,
-                    subset_info=ExecutionPlanSubsetInfo.with_input_marshalling(
-                        step_keys, inputs_to_marshal
-                    ),
-                    added_outputs=ExecutionPlanAddedOutputs.with_output_marshalling(
-                        outputs_to_marshal
-                    ),
-                ),
-            )
-        )
 
 
 def execute_plan(execution_plan, environment_dict=None, run_config=None):

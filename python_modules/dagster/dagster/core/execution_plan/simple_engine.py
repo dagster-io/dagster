@@ -19,7 +19,6 @@ from dagster.core.errors import (
 
 from dagster.core.execution_context import (
     ExecutorConfig,
-    InProcessExecutorConfig,
     SystemPipelineExecutionContext,
     SystemStepExecutionContext,
 )
@@ -44,10 +43,14 @@ def _all_inputs_covered(step, intermediates_manager):
     return True
 
 
-def start_inprocess_executor(pipeline_context, execution_plan, intermediates_manager):
+def start_inprocess_executor(
+    pipeline_context, execution_plan, intermediates_manager, step_keys_to_execute=None
+):
     check.inst_param(pipeline_context, 'pipeline_context', SystemPipelineExecutionContext)
     check.inst_param(execution_plan, 'execution_plan', ExecutionPlan)
     check.inst_param(intermediates_manager, 'intermediates_manager', IntermediatesManager)
+
+    step_key_set = None if step_keys_to_execute is None else set(step_keys_to_execute)
 
     check.param_invariant(
         isinstance(pipeline_context.executor_config, ExecutorConfig),
@@ -65,6 +68,9 @@ def start_inprocess_executor(pipeline_context, execution_plan, intermediates_man
 
     for step_level in step_levels:
         for step in step_level:
+            if step_key_set and step.key not in step_key_set:
+                continue
+
             step_context = pipeline_context.for_step(step)
 
             if not _all_inputs_covered(step, intermediates_manager):
