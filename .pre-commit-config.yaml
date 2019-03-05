@@ -1,4 +1,5 @@
--   repo: https://github.com/pre-commit/mirrors-yapf
-    sha: v0.22.0
+-   repo: https://github.com/ambv/black
+    rev: stable
     hooks:
-    -   id: yapf
+    - id: black
+      language_version: python3.6
