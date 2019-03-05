@@ -2,7 +2,7 @@ import sys
 
 import pytest
 
-from dagster import execute_pipeline
+from dagster import execute_pipeline, RunConfig
 
 from dagstermill import DagstermillError
 from dagstermill.examples.repository import (
@@ -66,7 +66,7 @@ def test_notebook_dag():
 def test_error_notebook():
     with pytest.raises(DagstermillError, match='Someone set up us the bomb'):
         execute_pipeline(define_error_pipeline())
-    res = execute_pipeline(define_error_pipeline(), throw_on_user_error=False)
+    res = execute_pipeline(define_error_pipeline(), run_config=RunConfig.nonthrowing_in_process())
     assert not res.success
     assert res.step_event_list[0].event_type.value == 'STEP_FAILURE'
 

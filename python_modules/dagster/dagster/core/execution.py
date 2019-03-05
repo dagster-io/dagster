@@ -470,9 +470,7 @@ def get_resource_or_gen(pipeline_def, context_definition, resource_name, environ
     )
 
 
-def execute_pipeline_iterator(
-    pipeline, environment_dict=None, throw_on_user_error=True, run_config=None
-):
+def execute_pipeline_iterator(pipeline, environment_dict=None, run_config=None):
     '''Returns iterator that yields :py:class:`SolidExecutionResult` for each
     solid executed in the pipeline.
 
@@ -485,7 +483,6 @@ def execute_pipeline_iterator(
     '''
     check.inst_param(pipeline, 'pipeline', PipelineDefinition)
     environment_dict = check.opt_dict_param(environment_dict, 'environment_dict')
-    check.bool_param(throw_on_user_error, 'throw_on_user_error')
     run_config = check_run_config_param(run_config)
 
     with yield_pipeline_execution_context(
@@ -517,9 +514,7 @@ def execute_pipeline_iterator(
 
         pipeline_success = True
 
-        for step_event in invoke_executor_on_plan(
-            pipeline_context, execution_plan, throw_on_user_error
-        ):
+        for step_event in invoke_executor_on_plan(pipeline_context, execution_plan):
             if step_event.is_step_failure:
                 pipeline_success = False
             yield step_event
@@ -530,7 +525,7 @@ def execute_pipeline_iterator(
             pipeline_context.events.pipeline_failure()
 
 
-def execute_pipeline(pipeline, environment_dict=None, throw_on_user_error=True, run_config=None):
+def execute_pipeline(pipeline, environment_dict=None, run_config=None):
     '''
     "Synchronous" version of :py:func:`execute_pipeline_iterator`.
 
@@ -540,10 +535,6 @@ def execute_pipeline(pipeline, environment_dict=None, throw_on_user_error=True, 
     Parameters:
       pipeline (PipelineDefinition): Pipeline to run
       environment (dict): The enviroment that parameterizes this run
-      throw_on_user_error (bool):
-        throw_on_user_error makes the function throw when an error is encoutered rather than
-        returning the py:class:`SolidExecutionResult` in an error-state.
-
 
     Returns:
       PipelineExecutionResult
@@ -551,7 +542,6 @@ def execute_pipeline(pipeline, environment_dict=None, throw_on_user_error=True, 
 
     check.inst_param(pipeline, 'pipeline', PipelineDefinition)
     environment_dict = check.opt_dict_param(environment_dict, 'environment_dict')
-    check.bool_param(throw_on_user_error, 'throw_on_user_error')
     run_config = check_run_config_param(run_config)
 
     return PipelineExecutionResult(
@@ -559,10 +549,7 @@ def execute_pipeline(pipeline, environment_dict=None, throw_on_user_error=True, 
         run_config.run_id,
         list(
             execute_pipeline_iterator(
-                pipeline=pipeline,
-                environment_dict=environment_dict,
-                throw_on_user_error=throw_on_user_error,
-                run_config=run_config,
+                pipeline=pipeline, environment_dict=environment_dict, run_config=run_config
             )
         ),
     )
@@ -591,7 +578,7 @@ class PipelineConfigEvaluationError(Exception):
         super(PipelineConfigEvaluationError, self).__init__(error_msg, *args, **kwargs)
 
 
-def invoke_executor_on_plan(pipeline_context, execution_plan, throw_on_user_error):
+def invoke_executor_on_plan(pipeline_context, execution_plan):
     if isinstance(pipeline_context.executor_config, InProcessExecutorConfig):
         step_events_gen = start_inprocess_executor(
             pipeline_context, execution_plan, InMemoryIntermediatesManager()
@@ -602,8 +589,6 @@ def invoke_executor_on_plan(pipeline_context, execution_plan, throw_on_user_erro
         check.failed('Unsupported config {}'.format(pipeline_context.executor_config))
 
     for step_event in step_events_gen:
-        if throw_on_user_error and step_event.is_step_failure:
-            step_event.reraise_user_error()
         yield step_event
 
 
@@ -614,13 +599,11 @@ def execute_marshalling(
     outputs_to_marshal=None,
     environment_dict=None,
     run_config=None,
-    throw_on_user_error=True,
 ):
     check.inst_param(pipeline, 'pipeline', PipelineDefinition)
     check.list_param(step_keys, 'step_keys', of_type=str)
     environment_dict = check.opt_dict_param(environment_dict, 'environment_dict')
     run_config = check_run_config_param(run_config)
-    check.bool_param(throw_on_user_error, 'throw_on_user_error')
 
     with yield_pipeline_execution_context(
         pipeline, environment_dict, run_config
@@ -637,25 +620,19 @@ def execute_marshalling(
                         outputs_to_marshal
                     ),
                 ),
-                throw_on_user_error=throw_on_user_error,
             )
         )
 
 
-def execute_plan(execution_plan, environment_dict=None, run_config=None, throw_on_user_error=True):
+def execute_plan(execution_plan, environment_dict=None, run_config=None):
     check.inst_param(execution_plan, 'execution_plan', ExecutionPlan)
     environment_dict = check.opt_dict_param(environment_dict, 'environment_dict')
-
     run_config = check_run_config_param(run_config)
 
     with yield_pipeline_execution_context(
         execution_plan.pipeline_def, environment_dict, run_config
     ) as pipeline_context:
-        return list(
-            invoke_executor_on_plan(
-                pipeline_context, execution_plan, throw_on_user_error=throw_on_user_error
-            )
-        )
+        return list(invoke_executor_on_plan(pipeline_context, execution_plan))
 
 
 def create_environment_config(pipeline, environment_dict=None):

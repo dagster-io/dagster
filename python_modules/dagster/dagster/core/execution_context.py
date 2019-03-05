@@ -25,12 +25,14 @@ class ExecutorConfig:
 
 
 class InProcessExecutorConfig(ExecutorConfig):
-    pass
+    def __init__(self, throw_on_user_error=True):
+        self.throw_on_user_error = check.bool_param(throw_on_user_error, 'throw_on_user_error')
 
 
 class MultiprocessExecutorConfig(ExecutorConfig):
     def __init__(self, pipeline_fn):
         self.pipeline_fn = check.callable_param(pipeline_fn, 'pipeline_fn')
+        self.throw_on_user_error = False
 
 
 def make_new_run_id():
@@ -51,6 +53,10 @@ class RunConfig(namedtuple('_RunConfig', 'run_id tags event_callback loggers exe
                 executor_config, 'executor_config', ExecutorConfig, InProcessExecutorConfig()
             ),
         )
+
+    @staticmethod
+    def nonthrowing_in_process():
+        return RunConfig(executor_config=InProcessExecutorConfig(throw_on_user_error=False))
 
     def with_tags(self, **tags):
         return RunConfig(

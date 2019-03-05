@@ -183,20 +183,12 @@ def test_invalid_context():
     with pytest.raises(
         PipelineConfigEvaluationError, match='Undefined field "not_found" at path root:context'
     ):
-        execute_pipeline(
-            default_context_pipeline,
-            environment_dict=environment_context_not_found,
-            throw_on_user_error=True,
-        )
+        execute_pipeline(default_context_pipeline, environment_dict=environment_context_not_found)
 
     environment_field_name_mismatch = {'context': {'default': {'config': {'unexpected': 'value'}}}}
 
     with pytest.raises(PipelineConfigEvaluationError, match='Undefined field "unexpected"'):
-        execute_pipeline(
-            default_context_pipeline,
-            environment_dict=environment_field_name_mismatch,
-            throw_on_user_error=True,
-        )
+        execute_pipeline(default_context_pipeline, environment_dict=environment_field_name_mismatch)
 
     with_argful_context_pipeline = PipelineDefinition(
         solids=[never_transform],
@@ -217,11 +209,7 @@ def test_invalid_context():
             'root:context:default:config Expected: "{ string_field: String }"'
         ),
     ):
-        execute_pipeline(
-            with_argful_context_pipeline,
-            environment_dict=environment_no_config_error,
-            throw_on_user_error=True,
-        )
+        execute_pipeline(with_argful_context_pipeline, environment_dict=environment_no_config_error)
 
     environment_type_mismatch_error = {'context': {'default': {'config': {'string_field': 1}}}}
 
@@ -234,7 +222,5 @@ def test_invalid_context():
         ),
     ):
         execute_pipeline(
-            with_argful_context_pipeline,
-            environment_dict=environment_type_mismatch_error,
-            throw_on_user_error=True,
+            with_argful_context_pipeline, environment_dict=environment_type_mismatch_error
         )

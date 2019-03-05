@@ -6,7 +6,7 @@ import six
 from dagster import check
 
 from .execution import execute_marshalling
-from .execution_context import RunConfig
+from .execution_context import RunConfig, InProcessExecutorConfig
 from .execution_plan.objects import ExecutionStepEvent, ExecutionStepEventType
 from .execution_plan.plan_subset import StepExecution
 
@@ -120,9 +120,10 @@ def execute_serializable_execution_plan(
         inputs_to_marshal=input_marshalling_dict_from_step_executions(step_executions),
         outputs_to_marshal={se.step_key: se.marshalled_outputs for se in step_executions},
         run_config=RunConfig(
-            run_id=serializable_execution_metadata.run_id, tags=serializable_execution_metadata.tags
+            run_id=serializable_execution_metadata.run_id,
+            tags=serializable_execution_metadata.tags,
+            executor_config=InProcessExecutorConfig(throw_on_user_error=False),
         ),
-        throw_on_user_error=False,
     )
 
     return list(map(_to_serializable_step_event, step_events))

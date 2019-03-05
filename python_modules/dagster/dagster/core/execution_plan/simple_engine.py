@@ -18,6 +18,8 @@ from dagster.core.errors import (
 )
 
 from dagster.core.execution_context import (
+    ExecutorConfig,
+    InProcessExecutorConfig,
     SystemPipelineExecutionContext,
     SystemStepExecutionContext,
 )
@@ -47,6 +49,14 @@ def start_inprocess_executor(pipeline_context, execution_plan, intermediates_man
     check.inst_param(execution_plan, 'execution_plan', ExecutionPlan)
     check.inst_param(intermediates_manager, 'intermediates_manager', IntermediatesManager)
 
+    check.param_invariant(
+        isinstance(pipeline_context.executor_config, ExecutorConfig),
+        'pipeline_context',
+        'Expected executor_config to be ExecutorConfig got {}'.format(
+            pipeline_context.executor_config
+        ),
+    )
+
     step_levels = execution_plan.topological_step_levels()
 
     # It would be good to implement a reference tracking algorithm here so we could
@@ -74,6 +84,11 @@ def start_inprocess_executor(pipeline_context, execution_plan, intermediates_man
                 execute_step_in_memory(step_context, input_values, intermediates_manager)
             ):
                 check.inst(step_event, ExecutionStepEvent)
+                if (
+                    pipeline_context.executor_config.throw_on_user_error
+                    and step_event.is_step_failure
+                ):
+                    step_event.reraise_user_error()
 
                 yield step_event
 

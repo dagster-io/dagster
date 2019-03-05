@@ -4,6 +4,8 @@ from dagster import (
     DependencyDefinition,
     InputDefinition,
     Int,
+    RunConfig,
+    InProcessExecutorConfig,
     OutputDefinition,
     PipelineDefinition,
     lambda_solid,
@@ -116,14 +118,13 @@ def test_external_execution_input_marshal_code_error():
             pipeline,
             ['add_one.transform'],
             inputs_to_marshal={'add_one.transform': {'num': 'nope'}},
-            throw_on_user_error=True,
         )
 
     step_events = execute_marshalling(
         pipeline,
         ['add_one.transform'],
         inputs_to_marshal={'add_one.transform': {'num': 'nope'}},
-        throw_on_user_error=False,
+        run_config=RunConfig.nonthrowing_in_process(),
     )
 
     assert len(step_events) == 1
@@ -176,7 +177,6 @@ def test_external_execution_marshal_output_code_error():
             pipeline,
             ['return_one.transform', 'add_one.transform'],
             outputs_to_marshal=outputs_to_marshal,
-            throw_on_user_error=True,
         )
 
     assert 'No such file or directory' in str(exc_info.value)
@@ -185,7 +185,7 @@ def test_external_execution_marshal_output_code_error():
         pipeline,
         ['return_one.transform', 'add_one.transform'],
         outputs_to_marshal=outputs_to_marshal,
-        throw_on_user_error=False,
+        run_config=RunConfig.nonthrowing_in_process(),
     )
 
     assert len(step_events) == 3
@@ -201,7 +201,7 @@ def test_external_execution_output_code_error_throw_on_user_error():
     pipeline = define_inty_pipeline()
 
     with pytest.raises(Exception) as exc_info:
-        execute_marshalling(pipeline, ['user_throw_exception.transform'], throw_on_user_error=True)
+        execute_marshalling(pipeline, ['user_throw_exception.transform'])
 
     assert str(exc_info.value) == 'whoops'
 
@@ -210,7 +210,7 @@ def test_external_execution_output_code_error_no_throw_on_user_error():
     pipeline = define_inty_pipeline()
 
     step_events = execute_marshalling(
-        pipeline, ['user_throw_exception.transform'], throw_on_user_error=False
+        pipeline, ['user_throw_exception.transform'], run_config=RunConfig.nonthrowing_in_process()
     )
 
     assert len(step_events) == 1
