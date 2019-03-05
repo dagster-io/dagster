@@ -20,19 +20,43 @@ from .system_config.objects import EnvironmentConfig
 from .types.marshal import PersistenceStrategy
 
 
+class ExecutorConfig:
+    pass
+
+
+class InProcessExecutorConfig(ExecutorConfig):
+    def __init__(self, throw_on_user_error=True):
+        self.throw_on_user_error = check.bool_param(throw_on_user_error, 'throw_on_user_error')
+
+
+class MultiprocessExecutorConfig(ExecutorConfig):
+    def __init__(self, pipeline_fn):
+        self.pipeline_fn = check.callable_param(pipeline_fn, 'pipeline_fn')
+        self.throw_on_user_error = False
+
+
 def make_new_run_id():
     return str(uuid.uuid4())
 
 
-class RunConfig(namedtuple('_RunConfig', 'run_id tags event_callback loggers')):
-    def __new__(cls, run_id=None, tags=None, event_callback=None, loggers=None):
+class RunConfig(namedtuple('_RunConfig', 'run_id tags event_callback loggers executor_config')):
+    def __new__(
+        cls, run_id=None, tags=None, event_callback=None, loggers=None, executor_config=None
+    ):
         return super(RunConfig, cls).__new__(
             cls,
             run_id=check.str_param(run_id, 'run_id') if run_id else make_new_run_id(),
             tags=check.opt_dict_param(tags, 'tags', key_type=str, value_type=str),
             event_callback=check.opt_callable_param(event_callback, 'event_callback'),
             loggers=check.opt_list_param(loggers, 'loggers'),
+            executor_config=check.opt_inst_param(
+                executor_config, 'executor_config', ExecutorConfig, InProcessExecutorConfig()
+            ),
         )
+
+    @staticmethod
+    def nonthrowing_in_process():
+        return RunConfig(executor_config=InProcessExecutorConfig(throw_on_user_error=False))
 
     def with_tags(self, **tags):
         return RunConfig(
@@ -40,13 +64,14 @@ class RunConfig(namedtuple('_RunConfig', 'run_id tags event_callback loggers')):
             event_callback=self.event_callback,
             loggers=self.loggers,
             tags=merge_dicts(self.tags, tags),
+            executor_config=self.executor_config,
         )
 
 
 class SystemPipelineExecutionContextData(
     namedtuple(
         '_SystemPipelineExecutionContextData',
-        ('run_config resources environment_config persistence_strategy pipeline_def ' 'files'),
+        'run_config resources environment_config persistence_strategy pipeline_def files',
     )
 ):
     '''
@@ -105,6 +130,10 @@ class SystemPipelineExecutionContext(object):
         tags = merge_dicts(self.tags, step.tags)
         log = DagsterLog(self.run_id, tags, self.log.loggers)
         return SystemStepExecutionContext(self._pipeline_context_data, tags, log, step)
+
+    @property
+    def executor_config(self):
+        return self.run_config.executor_config
 
     @property
     def run_config(self):

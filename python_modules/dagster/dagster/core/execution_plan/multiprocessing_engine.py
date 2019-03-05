@@ -5,7 +5,10 @@ from dagster import check
 from dagster.utils import mkdir_p
 from dagster.core.errors import DagsterSubprocessExecutionError
 
-from dagster.core.execution_context import SystemPipelineExecutionContext
+from dagster.core.execution_context import (
+    MultiprocessExecutorConfig,
+    SystemPipelineExecutionContext,
+)
 
 from .create import create_execution_plan_core
 from .intermediates_manager import FileSystemIntermediateManager
@@ -21,14 +24,13 @@ from .plan_subset import ExecutionPlanSubsetInfo
 from .simple_engine import start_inprocess_executor
 
 
-def _execute_in_child_process(
-    queue, executor_config, environment_dict, run_config, step_key, input_meta_dict
-):
+def _execute_in_child_process(queue, environment_dict, run_config, step_key, input_meta_dict):
     from dagster.core.execution import yield_pipeline_execution_context
 
+    check.inst(run_config.executor_config, MultiprocessExecutorConfig)
     check.dict_param(input_meta_dict, 'input_meta_data', key_type=str, value_type=StepOutputHandle)
 
-    pipeline = executor_config.pipeline_fn()
+    pipeline = run_config.executor_config.pipeline_fn()
 
     with yield_pipeline_execution_context(
         pipeline, environment_dict, run_config.with_tags(pid=str(os.getpid()))
@@ -68,7 +70,7 @@ def _execute_in_child_process(
     queue.close()
 
 
-def execute_step_out_of_process(executor_config, step_context, step, intermediates_manager):
+def execute_step_out_of_process(step_context, step, intermediates_manager):
     queue = multiprocessing.Queue()
 
     check.invariant(
@@ -80,7 +82,6 @@ def execute_step_out_of_process(executor_config, step_context, step, intermediat
         target=_execute_in_child_process,
         args=(
             queue,
-            executor_config,
             step_context.environment_dict,
             step_context.run_config,
             step.key,
@@ -139,11 +140,6 @@ def _create_input_values(step_input_meta_dict, manager):
     return input_values
 
 
-class MultiprocessExecutorConfig:
-    def __init__(self, pipeline_fn):
-        self.pipeline_fn = pipeline_fn
-
-
 def _all_inputs_covered(step, intermediates_manager):
     for step_input in step.step_inputs:
         if not intermediates_manager.has_value(step_input.prev_output_handle):
@@ -151,8 +147,7 @@ def _all_inputs_covered(step, intermediates_manager):
     return True
 
 
-def multiprocess_execute_plan(executor_config, pipeline_context, execution_plan):
-    check.inst_param(executor_config, 'executor_config', MultiprocessExecutorConfig)
+def multiprocess_execute_plan(pipeline_context, execution_plan):
     check.inst_param(pipeline_context, 'pipeline_context', SystemPipelineExecutionContext)
     check.inst_param(execution_plan, 'execution_plan', ExecutionPlan)
 
@@ -185,9 +180,7 @@ def multiprocess_execute_plan(executor_config, pipeline_context, execution_plan)
                 continue
 
             for step_event in check.generator(
-                execute_step_out_of_process(
-                    executor_config, step_context, step, intermediates_manager
-                )
+                execute_step_out_of_process(step_context, step, intermediates_manager)
             ):
                 check.inst(step_event, ExecutionStepEvent)
                 yield step_event

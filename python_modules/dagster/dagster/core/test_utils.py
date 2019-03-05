@@ -2,9 +2,11 @@ from dagster import (
     DagsterEvaluateConfigValueError,
     DagsterInvariantViolationError,
     ExecutionContext,
+    InProcessExecutorConfig,
     PipelineDefinition,
     PipelineContextDefinition,
     Result,
+    RunConfig,
     SolidDefinition,
     check,
     execute_pipeline,
@@ -44,7 +46,9 @@ def execute_single_solid_in_isolation(
             ),
         ),
         environment_dict=single_solid_environment,
-        throw_on_user_error=throw_on_user_error,
+        run_config=RunConfig(
+            executor_config=InProcessExecutorConfig(throw_on_user_error=throw_on_user_error)
+        ),
     )
 
     return pipeline_result

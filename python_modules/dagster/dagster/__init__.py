@@ -8,7 +8,12 @@ from dagster.core.execution import (
     execute_pipeline_iterator,
 )
 
-from dagster.core.execution_context import RunConfig
+from dagster.core.execution_context import (
+    InProcessExecutorConfig,
+    MultiprocessExecutorConfig,
+    RunConfig,
+)
+
 from dagster.core.user_context import ExecutionContext
 
 from dagster.core.definitions import (
