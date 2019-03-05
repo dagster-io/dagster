@@ -188,28 +188,24 @@ class Manager:
         self.solid_def_name = solid_def_name
         self.marshal_dir = marshal_dir
 
-        print('populating context')
-        print(self.repository_def)
-
         if self.repository_def is None:
-            print('hi')
-            for _, runtime_type_enum in input_name_type_dict.items():
+            self.pipeline_def = PipelineDefinition([], name='Dummy Pipeline (No Repo Registration)')
+            self.input_name_type_dict = dict_to_enum(input_name_type_dict)
+            self.output_name_type_dict = dict_to_enum(output_name_type_dict)
+            for _, runtime_type_enum in self.input_name_type_dict.items():
                 if runtime_type_enum == SerializableRuntimeType.NONE:
                     raise DagstermillError(
                         'If Dagstermill solids have inputs that require serialization strategies '
                         'that are not pickling, then you must register a repository within '
                         'notebook by calling dm.register_repository(repository_def)'
                     )
-            for _, runtime_type_enum in output_name_type_dict.items():
+            for _, runtime_type_enum in self.output_name_type_dict.items():
                 if runtime_type_enum == SerializableRuntimeType.NONE:
                     raise DagstermillError(
                         'If Dagstermill solids have outputs that require serialization strategies '
                         'that are not pickling, then you must register a repository within notebook '
                         'by calling dm.register_repository(repository_def).'
                     )
-            self.pipeline_def = PipelineDefinition([], name='Dummy Pipeline (No Repo Registration)')
-            self.input_name_type_dict = dict_to_enum(input_name_type_dict)
-            self.output_name_type_dict = dict_to_enum(output_name_type_dict)
             with yield_pipeline_execution_context(
                 self.pipeline_def, {}, RunConfig(run_id=run_id)
             ) as pipeline_context:
@@ -450,8 +446,6 @@ def get_papermill_parameters(transform_context, inputs, output_log_path):
 
     dm_context_dict['output_name_type_dict'] = output_name_type_dict
 
-    print(dm_context_dict)
-
     parameters['dm_context'] = json.dumps(dm_context_dict, sort_keys=True)
 
     return parameters
@@ -476,7 +470,6 @@ def replace_parameters(context, nb, parameters):
     # papermill method choosed translator based on kernel_name and language,
     # but we just call the DagsterTranslator
     # translate_parameters(kernel_name, language, parameters)
-
     newcell = nbformat.v4.new_code_cell(source=param_content)
     newcell.metadata['tags'] = ['injected-parameters']
 
@@ -564,7 +557,6 @@ def _dm_solid_transform(name, notebook_path):
                 ['papermill', '--log-output', '--log-level', 'ERROR', intermediate_path, temp_path],
                 stderr=subprocess.PIPE,
             )
-
             _stdout, stderr = process.communicate()
             while process.poll() is None:  # while subprocess alive
                 if system_transform_context.event_callback:
