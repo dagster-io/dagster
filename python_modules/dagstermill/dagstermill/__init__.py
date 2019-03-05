@@ -188,7 +188,11 @@ class Manager:
         self.solid_def_name = solid_def_name
         self.marshal_dir = marshal_dir
 
+        print('populating context')
+        print(self.repository_def)
+
         if self.repository_def is None:
+            print('hi')
             for _, runtime_type_enum in input_name_type_dict.items():
                 if runtime_type_enum == SerializableRuntimeType.NONE:
                     raise DagstermillError(
@@ -270,11 +274,11 @@ def is_json_serializable(value):
         return False
 
 
-class SerializableRuntimeType(str, Enum):
+class SerializableRuntimeType(Enum):
     SCALAR = 'scalar'
     ANY = 'any'
     PICKLE_SERIALIZATION_STRATEGY = 'pickle'
-    NONE = None
+    NONE = ''
 
 
 def runtime_type_to_enum(runtime_type):
@@ -445,6 +449,8 @@ def get_papermill_parameters(transform_context, inputs, output_log_path):
         ).value
 
     dm_context_dict['output_name_type_dict'] = output_name_type_dict
+
+    print(dm_context_dict)
 
     parameters['dm_context'] = json.dumps(dm_context_dict, sort_keys=True)
 
