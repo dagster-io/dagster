@@ -29,6 +29,7 @@ from dagster import (
     SolidDefinition,
     check,
     types,
+    RunConfig,
 )
 from dagster.core.types.marshal import PickleSerializationStrategy
 from dagster.core.definitions.dependency import Solid
@@ -206,7 +207,7 @@ class Manager:
             self.input_name_type_dict = dict_to_enum(input_name_type_dict)
             self.output_name_type_dict = dict_to_enum(output_name_type_dict)
             with yield_pipeline_execution_context(
-                self.pipeline_def, {}, ExecutionMetadata(run_id=run_id)
+                self.pipeline_def, {}, RunConfig(run_id=run_id)
             ) as pipeline_context:
                 self.context = DagstermillInNotebookExecutionContext(pipeline_context)
         else:
@@ -220,7 +221,7 @@ class Manager:
                 loggers = [event_logger]
             # do not include event_callback in ExecutionMetadata,
             # since that'll be taken care of by side-channel established by event_logger
-            execution_metadata = ExecutionMetadata(run_id, loggers=loggers)
+            execution_metadata = RunConfig(run_id, loggers=loggers)
             # See block comment above referencing this issue
             # See https://github.com/dagster-io/dagster/issues/796
             with yield_pipeline_execution_context(

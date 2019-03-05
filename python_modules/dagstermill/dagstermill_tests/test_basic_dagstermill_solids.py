@@ -88,5 +88,7 @@ def test_no_repo_registration_error():
         match='If Dagstermill solids have outputs that require serialization strategies',
     ):
         execute_pipeline(define_no_repo_registration_error_pipeline())
-    res = execute_pipeline(define_no_repo_registration_error_pipeline(), throw_on_user_error=False)
+    res = execute_pipeline(
+        define_no_repo_registration_error_pipeline(), run_config=RunConfig.nonthrowing_in_process()
+    )
     assert not res.success
