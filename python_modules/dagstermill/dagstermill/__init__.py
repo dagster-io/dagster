@@ -29,7 +29,6 @@ from dagster import (
     SolidDefinition,
     check,
     types,
-    RunConfig,
 )
 from dagster.core.types.marshal import PickleSerializationStrategy
 from dagster.core.definitions.dependency import Solid
@@ -306,8 +305,8 @@ def output_name_serialization_enum(runtime_type):
     return runtime_type_to_enum(runtime_type)
 
 
-def dict_to_enum(dict):
-    return {k: SerializableRuntimeType(v) for k, v in dict.items()}
+def dict_to_enum(runtime_type_dict):
+    return {k: SerializableRuntimeType(v) for k, v in runtime_type_dict.items()}
 
 
 def write_value(runtime_type, value, target_file):

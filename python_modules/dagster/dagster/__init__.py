@@ -131,7 +131,7 @@ __all__ = [
     'PythonObjectType',
     'Selector',
     'String',
-    'SerializationStrategy'
+    'SerializationStrategy',
     # type creation
     'as_dagster_type',
     'dagster_type',
