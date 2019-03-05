@@ -2,6 +2,9 @@
 
 
 import os
+import pickle
+import shutil
+import tempfile
 
 from collections import namedtuple
 
@@ -10,8 +13,8 @@ import sqlalchemy
 from pyspark.sql import DataFrame
 
 from dagster import as_dagster_type, Bool, dagster_type, Dict, Field, String
-from dagster.core.types.runtime import PythonObjectType, Stringish
-from dagster.utils import safe_isfile
+from dagster.core.types.marshal import SerializationStrategy
+from dagster.core.types.runtime import Stringish
 
 
 AirlineDemoResources = namedtuple(
@@ -20,9 +23,33 @@ AirlineDemoResources = namedtuple(
 )
 
 
+class SparkDataFrameSerializationStrategy(SerializationStrategy):
+    def serialize_value(self, step_context, value, write_file_obj):
+        pickle_file_dir = step_context.resources.tempfile.tempdir()
+        shutil.rmtree(pickle_file_dir)
+        value.rdd.saveAsPickleFile(pickle_file_dir)
+
+        with tempfile.NamedTemporaryFile() as archive_file_obj:
+            archive_file_path = archive_file_obj.name
+            shutil.make_archive(archive_file_path, 'zip', pickle_file_dir)
+            with open(archive_file_path, 'rb') as archive_file_read_obj:
+                write_file_obj.write(archive_file_read_obj.read())
+
+    def deserialize_value(self, step_context, read_file_obj):
+        with tempfile.NamedTemporaryFile() as archive_file_obj:
+            archive_file_obj.write(read_file_obj.read())
+            pickle_file_dir = step_context.resources.tempfile.tempdir()
+            shutil.unpack_archive(archive_file_obj.name, pickle_file_dir)
+            return step_context.resources.spark.pickleFile(pickle_file_dir).toDF()
+
+
 SparkDataFrameType = as_dagster_type(
-    DataFrame, name='SparkDataFrameType', description='A Pyspark data frame.'
+    DataFrame,
+    name='SparkDataFrameType',
+    description='A Pyspark data frame.',
+    serialization_strategy=SparkDataFrameSerializationStrategy(),
 )
+
 
 SqlAlchemyEngineType = as_dagster_type(
     sqlalchemy.engine.Connectable,
