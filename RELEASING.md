@@ -43,7 +43,8 @@ preferable to invest in these tools rather than to complicate the release proces
 
     python bin/publish.py publish
 
-7. Manually switch the default ReadTheDocs version to the newly built docs.
+7. Manually switch the default ReadTheDocs version to the newly built docs:
+   [https://readthedocs.org/dashboard/dagster/versions/](https://readthedocs.org/dashboard/dagster/versions/)
 
 
 ### PyPI credentials
