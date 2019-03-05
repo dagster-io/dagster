@@ -1,6 +1,7 @@
 from __future__ import absolute_import, division, print_function, unicode_literals
 from builtins import *  # pylint: disable=W0622,W0401
 from collections import namedtuple
+from enum import Enum
 
 import base64
 import copy
@@ -110,8 +111,8 @@ class Manager:
         self.solid_def = None
         self.marshal_dir = None
         self.context = None
-        self.input_def_str_dict = None
-        self.output_def_str_dict = None
+        self.input_name_type_dict = None
+        self.output_name_type_dict = None
         self.solid_def_name = None
 
     def register_repository(self, repository_def):
@@ -137,18 +138,18 @@ class Manager:
             return value
 
         if self.solid_def is None:
-            if output_name not in self.output_def_str_dict:
+            if output_name not in self.output_name_type_dict:
                 raise DagstermillError(
                     'Solid {solid_name} does not have output named {output_name}'.format(
                         solid_name=self.solid_def_name, output_name=output_name
                     )
                 )
-            runtime_type_str = self.output_def_str_dict[output_name]
-            if runtime_type_str == 'scalar':
+            runtime_type_enum = self.output_name_type_dict[output_name]
+            if runtime_type_enum == SerializableRuntimeType.SCALAR:
                 pm.record(output_name, value)
-            elif runtime_type_str == 'any' and is_json_serializable(value):
+            elif runtime_type_enum == SerializableRuntimeType.ANY and is_json_serializable(value):
                 pm.record(output_name, value)
-            elif runtime_type_str == 'pickle':
+            elif runtime_type_enum == SerializableRuntimeType.PICKLE_SERIALIZATION_STRATEGY:
                 out_file = os.path.join(self.marshal_dir, 'output-{}'.format(output_name))
                 serialize_to_file(PickleSerializationStrategy(), value, out_file)
                 pm.record(output_name, out_file)
@@ -178,8 +179,8 @@ class Manager:
         marshal_dir,
         environment_dict,
         output_log_path,
-        input_def_str_dict,
-        output_def_str_dict,
+        input_name_type_dict,
+        output_name_type_dict,
     ):
         check.dict_param(environment_dict, 'environment_dict')
         self.populated_by_papermill = True
@@ -187,23 +188,23 @@ class Manager:
         self.marshal_dir = marshal_dir
 
         if self.repository_def is None:
-            for _, input_def_str in input_def_str_dict.items():
-                if input_def_str is None:
+            for _, runtime_type_enum in input_name_type_dict.items():
+                if runtime_type_enum == SerializableRuntimeType.NONE:
                     raise DagstermillError(
                         'If Dagstermill solids have inputs that require serialization strategies '
                         'that are not pickling, then you must register a repository within '
                         'notebook by calling dm.register_repository(repository_def)'
                     )
-            for _, output_def_str in output_def_str_dict.items():
-                if output_def_str is None:
+            for _, runtime_type_enum in output_name_type_dict.items():
+                if runtime_type_enum == SerializableRuntimeType.NONE:
                     raise DagstermillError(
                         'If Dagstermill solids have outputs that require serialization strategies '
                         'that are not pickling, then you must register a repository within notebook '
                         'by calling dm.register_repository(repository_def).'
                     )
             self.pipeline_def = PipelineDefinition([], name='Dummy Pipeline (No Repo Registration)')
-            self.input_def_str_dict = input_def_str_dict
-            self.output_def_str_dict = output_def_str_dict
+            self.input_name_type_dict = dict_to_enum(input_name_type_dict)
+            self.output_name_type_dict = dict_to_enum(output_name_type_dict)
             with yield_pipeline_execution_context(
                 self.pipeline_def, {}, ExecutionMetadata(run_id=run_id)
             ) as pipeline_context:
@@ -268,24 +269,44 @@ def is_json_serializable(value):
         return False
 
 
-def output_runtime_type_dict_conversion(runtime_type):
+class SerializableRuntimeType(str, Enum):
+    SCALAR = 'scalar'
+    ANY = 'any'
+    PICKLE_SERIALIZATION_STRATEGY = 'pickle'
+    NONE = None
+
+
+def runtime_type_to_enum(runtime_type):
     if runtime_type.is_scalar:
-        return 'scalar'
+        return SerializableRuntimeType.SCALAR
     elif runtime_type.is_any:
-        return 'any'
-    elif runtime_type.serialization_strategy:
-        if isinstance(runtime_type.serialization_strategy, PickleSerializationStrategy):
-            return 'pickle'
-    return None
+        return SerializableRuntimeType.ANY
+    elif runtime_type.serialization_strategy and isinstance(
+        runtime_type.serialization_strategy, PickleSerializationStrategy
+    ):
+        return SerializableRuntimeType.PICKLE_SERIALIZATION_STRATEGY
+
+    return SerializableRuntimeType.NONE
 
 
-def runtime_type_dict_conversion(runtime_type, value):
-    if runtime_type.is_scalar or (runtime_type.is_any and is_json_serializable(value)):
-        return 'value'
-    elif runtime_type.serialization_strategy:
-        if isinstance(runtime_type.serialization_strategy, PickleSerializationStrategy):
-            return 'pickle'
-    return None
+def input_name_serialization_enum(runtime_type, value):
+    runtime_type_enum = runtime_type_to_enum(runtime_type)
+
+    if runtime_type_enum == SerializableRuntimeType.ANY:
+        if is_json_serializable(value):
+            return runtime_type_enum
+        else:
+            return SerializableRuntimeType.NONE
+
+    return runtime_type_enum
+
+
+def output_name_serialization_enum(runtime_type):
+    return runtime_type_to_enum(runtime_type)
+
+
+def dict_to_enum(dict):
+    return {k: SerializableRuntimeType(v) for k, v in dict.items()}
 
 
 def write_value(runtime_type, value, target_file):
@@ -318,8 +339,8 @@ def populate_context(dm_context_data):
         dm_context_data['marshal_dir'],
         dm_context_data['environment_config'],
         dm_context_data['output_log_path'],
-        dm_context_data['input_def_str_dict'],
-        dm_context_data['output_def_str_dict'],
+        dm_context_data['input_name_type_dict'],
+        dm_context_data['output_name_type_dict'],
     )
 
 
@@ -327,18 +348,22 @@ def load_parameter(input_name, input_value):
     check.invariant(MANAGER_FOR_NOTEBOOK_INSTANCE.populated_by_papermill, 'populated_by_papermill')
     if MANAGER_FOR_NOTEBOOK_INSTANCE.solid_def is None:
         check.invariant(
-            MANAGER_FOR_NOTEBOOK_INSTANCE.input_def_str_dict,
-            'input_def_str_dict must not be None if solid_def is not defined!',
+            MANAGER_FOR_NOTEBOOK_INSTANCE.input_name_type_dict,
+            'input_name_type_dict must not be None if solid_def is not defined!',
         )
-        input_def_str_dict = MANAGER_FOR_NOTEBOOK_INSTANCE.input_def_str_dict
-        if input_def_str_dict[input_name] == 'value':
+        input_name_type_dict = MANAGER_FOR_NOTEBOOK_INSTANCE.input_name_type_dict
+        runtime_type_enum = input_name_type_dict[input_name]
+        if (
+            runtime_type_enum == SerializableRuntimeType.SCALAR
+            or runtime_type_enum == SerializableRuntimeType.ANY
+        ):
             return input_value
-        else:
-            check.invariant(
-                input_def_str_dict[input_name] == 'pickle',
-                'input type serialization strategy must be pickling if its not a value',
-            )
+        elif runtime_type_enum == SerializableRuntimeType.PICKLE_SERIALIZATION_STRATEGY:
             return deserialize_from_file(PickleSerializationStrategy(), input_value)
+        else:
+            raise DagstermillError(
+                "loading parameter {input_name} resulted in an error".format(input_name=input_name)
+            )
     else:
         solid_def = MANAGER_FOR_NOTEBOOK_INSTANCE.solid_def
         input_def = solid_def.input_def_named(input_name)
@@ -391,9 +416,8 @@ def get_papermill_parameters(transform_context, inputs, output_log_path):
     }
 
     parameters = {}
-    # dict(dm_context=json.dumps(dm_context_dict, sort_keys=True))
 
-    input_def_str_dict = {}
+    input_name_type_dict = {}
 
     input_defs = transform_context.solid_def.input_defs
     input_def_dict = {inp.name: inp for inp in input_defs}
@@ -406,18 +430,20 @@ def get_papermill_parameters(transform_context, inputs, output_log_path):
             runtime_type, input_value, os.path.join(marshal_dir, 'input-{}'.format(input_name))
         )
         parameters[input_name] = parameter_value
-        input_def_str_dict[input_name] = runtime_type_dict_conversion(runtime_type, input_value)
+        input_name_type_dict[input_name] = input_name_serialization_enum(
+            runtime_type, input_value
+        ).value
 
-    dm_context_dict['input_def_str_dict'] = input_def_str_dict
+    dm_context_dict['input_name_type_dict'] = input_name_type_dict
 
-    output_def_str_dict = {}
+    output_name_type_dict = {}
     output_defs = transform_context.solid_def.output_defs
     for output_def in output_defs:
-        output_def_str_dict[output_def.name] = output_runtime_type_dict_conversion(
+        output_name_type_dict[output_def.name] = output_name_serialization_enum(
             output_def.runtime_type
-        )
+        ).value
 
-    dm_context_dict['output_def_str_dict'] = output_def_str_dict
+    dm_context_dict['output_name_type_dict'] = output_name_type_dict
 
     parameters['dm_context'] = json.dumps(dm_context_dict, sort_keys=True)
 
