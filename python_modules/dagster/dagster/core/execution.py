@@ -95,12 +95,12 @@ class PipelineExecutionResult(object):
         step_events_by_solid_by_kind = defaultdict(lambda: defaultdict(list))
 
         for step_event in step_event_list:
-            solid_name = step_event.step.solid.name
+            solid_name = step_event.solid_name
             if solid_name not in solid_set:
                 solid_order.append(solid_name)
                 solid_set.add(solid_name)
 
-            step_events_by_solid_by_kind[solid_name][step_event.step.kind].append(step_event)
+            step_events_by_solid_by_kind[solid_name][step_event.step_kind].append(step_event)
 
         solid_result_dict = OrderedDict()
 
@@ -244,13 +244,13 @@ class SolidExecutionResult(object):
             return None
 
     @property
-    def dagster_error(self):
-        '''Returns exception that happened during this solid's execution, if any'''
+    def failure_data(self):
+        '''Returns the failing step's data that happened during this solid's execution, if any'''
         for result in itertools.chain(
             self.input_expectations, self.output_expectations, self.transforms
         ):
             if result.event_type == ExecutionStepEventType.STEP_FAILURE:
-                return result.step_failure_data.dagster_error
+                return result.step_failure_data
 
 
 def check_run_config_param(run_config):
@@ -581,6 +581,7 @@ def invoke_executor_on_plan(pipeline_context, execution_plan, step_keys_to_execu
             step_keys_to_execute,
         )
     elif isinstance(pipeline_context.executor_config, MultiprocessExecutorConfig):
+        check.invariant(not step_keys_to_execute, 'subplan not supported for multiprocess yet')
         step_events_gen = multiprocess_execute_plan(pipeline_context, execution_plan)
     else:
         check.failed('Unsupported config {}'.format(pipeline_context.executor_config))

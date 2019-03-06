@@ -122,11 +122,6 @@ def execute_solids(pipeline_def, solid_names, inputs=None, environment_dict=None
     stubbed_pipeline = build_pipeline_with_input_stubs(sub_pipeline, inputs)
     result = execute_pipeline(stubbed_pipeline, environment_dict)
 
-    if not result.success:
-        for solid_result in result.solid_result_list:
-            if not solid_result.success:
-                solid_result.reraise_user_error()
-
     return {sr.solid.name: sr for sr in result.solid_result_list}
 
 

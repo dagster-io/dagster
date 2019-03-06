@@ -2,7 +2,6 @@ import multiprocessing
 import os
 
 from dagster import check
-from dagster.core.errors import DagsterSubprocessExecutionError
 
 from dagster.core.execution_context import (
     MultiprocessExecutorConfig,
@@ -11,57 +10,47 @@ from dagster.core.execution_context import (
 
 from .create import create_execution_plan_core
 from .intermediates_manager import FileSystemIntermediateManager
-from .objects import (
-    ExecutionPlan,
-    ExecutionStepEvent,
-    StepFailureData,
-    StepOutputHandle,
-    StepOutputData,
-    ExecutionStepEventType,
-)
+from .objects import ExecutionPlan, ExecutionStepEvent
 from .simple_engine import start_inprocess_executor
 
 
-def _execute_in_child_process(queue, environment_dict, run_config, step_key, input_meta_dict):
+CHILD_PROCESS_DONE_SENTINEL = 'CHILD_PROCESS_DONE_SENTINEL'
+CHILD_PROCESS_SYSTEM_ERROR_SENTINEL = 'CHILD_PROCESS_SYSTEM_ERROR_SENTINEL'
+
+
+def _execute_in_child_process(queue, environment_dict, run_config, step_key):
     from dagster.core.execution import yield_pipeline_execution_context
 
     check.inst(run_config.executor_config, MultiprocessExecutorConfig)
-    check.dict_param(input_meta_dict, 'input_meta_data', key_type=str, value_type=StepOutputHandle)
 
     pipeline = run_config.executor_config.pipeline_fn()
 
-    with yield_pipeline_execution_context(
-        pipeline, environment_dict, run_config.with_tags(pid=str(os.getpid()))
-    ) as pipeline_context:
+    try:
 
-        intermediates_manager = FileSystemIntermediateManager(pipeline_context.files)
+        with yield_pipeline_execution_context(
+            pipeline, environment_dict, run_config.with_tags(pid=str(os.getpid()))
+        ) as pipeline_context:
 
-        execution_plan = create_execution_plan_core(pipeline_context)
+            intermediates_manager = FileSystemIntermediateManager(pipeline_context.files)
 
-        for step_event in start_inprocess_executor(
-            pipeline_context, execution_plan, intermediates_manager, step_keys_to_execute=[step_key]
-        ):
-            data_to_put = {
-                'event_type': step_event.event_type,
-                'step_output_data': {
-                    'step_output_handle': step_event.step_output_data.step_output_handle,
-                    'value_repr': step_event.step_output_data.value_repr,
-                }
-                if step_event.event_type == ExecutionStepEventType.STEP_OUTPUT
-                else None,
-                # TODO actually marshal data
-                'step_failure_data': None,
-                'step_key': step_event.step.key,
-                'tags': step_event.tags,
-            }
+            execution_plan = create_execution_plan_core(pipeline_context)
 
-            queue.put(data_to_put)
+            for step_event in start_inprocess_executor(
+                pipeline_context,
+                execution_plan,
+                intermediates_manager,
+                step_keys_to_execute=[step_key],
+            ):
+                queue.put(step_event)
 
-    queue.put('DONE')
-    queue.close()
+        queue.put(CHILD_PROCESS_DONE_SENTINEL)
+    except:  # pylint: disable=bare-except
+        queue.put(CHILD_PROCESS_SYSTEM_ERROR_SENTINEL)
+    finally:
+        queue.close()
 
 
-def execute_step_out_of_process(step_context, step, intermediates_manager):
+def execute_step_out_of_process(step_context, step):
     queue = multiprocessing.Queue()
 
     check.invariant(
@@ -71,53 +60,18 @@ def execute_step_out_of_process(step_context, step, intermediates_manager):
 
     process = multiprocessing.Process(
         target=_execute_in_child_process,
-        args=(
-            queue,
-            step_context.environment_dict,
-            step_context.run_config,
-            step.key,
-            {step_input.name: step_input.prev_output_handle for step_input in step.step_inputs},
-        ),
+        args=(queue, step_context.environment_dict, step_context.run_config, step.key),
     )
 
     process.start()
     while process.is_alive():
         result = queue.get()
-        if result == 'DONE':
+        if result == CHILD_PROCESS_DONE_SENTINEL:
             break
-        event_type = result['event_type']
+        if result == CHILD_PROCESS_SYSTEM_ERROR_SENTINEL:
+            raise Exception('unexpected error in child process')
 
-        # TODO: should we filter out? Need to think about the relationship between pipelines
-        # and subplans
-        if step.key != result['step_key']:
-            continue
-
-        check.invariant(step.key == result['step_key'])
-
-        if event_type == ExecutionStepEventType.STEP_OUTPUT:
-            yield ExecutionStepEvent(
-                event_type=ExecutionStepEventType.STEP_OUTPUT,
-                step=step,
-                step_output_data=StepOutputData(
-                    result['step_output_data']['step_output_handle'],
-                    result['step_output_data']['value_repr'],
-                    intermediates_manager,
-                ),
-                step_failure_data=None,
-                tags=result['tags'],
-            )
-        elif event_type == ExecutionStepEventType.STEP_FAILURE:
-            try:
-                # This is pretty hacky for now but it works
-                raise DagsterSubprocessExecutionError('TODO')
-            except DagsterSubprocessExecutionError as dagster_error:
-                yield ExecutionStepEvent(
-                    event_type=ExecutionStepEventType.STEP_FAILURE,
-                    step=step,
-                    step_output_data=None,
-                    step_failure_data=StepFailureData(dagster_error=dagster_error),
-                    tags=result['tags'],
-                )
+        yield result
 
     # Do something reasonable on total process failure
     process.join()
@@ -165,8 +119,6 @@ def multiprocess_execute_plan(pipeline_context, execution_plan):
                 )
                 continue
 
-            for step_event in check.generator(
-                execute_step_out_of_process(step_context, step, intermediates_manager)
-            ):
+            for step_event in check.generator(execute_step_out_of_process(step_context, step)):
                 check.inst(step_event, ExecutionStepEvent)
                 yield step_event

@@ -61,7 +61,8 @@ snapshots['test_user_error_pipeline 1'] = {
         'stepEvents': [
             {
                 '__typename': 'StepFailureEvent',
-                'errorMessage': 'Error occured during step throw_a_thing.transform',
+                'errorMessage': '''Exception: bad programmer, bad
+''',
                 'step': {
                     'key': 'throw_a_thing.transform'
                 },
@@ -81,7 +82,8 @@ snapshots['test_user_code_error_subplan 1'] = {
         'stepEvents': [
             {
                 '__typename': 'StepFailureEvent',
-                'errorMessage': 'Error occured during step throw_a_thing.transform',
+                'errorMessage': '''Exception: bad programmer, bad
+''',
                 'step': {
                     'key': 'throw_a_thing.transform'
                 },

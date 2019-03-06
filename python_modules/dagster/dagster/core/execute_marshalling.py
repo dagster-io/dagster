@@ -169,7 +169,7 @@ def marshal_outputs(
         for event in events:
             if event.is_successful_output:
                 successful_outputs.add(
-                    StepOutputHandle(event.step.key, event.step_output_data.output_name)
+                    StepOutputHandle(event.step_key, event.step_output_data.output_name)
                 )
 
         for step_key, marshalled_outputs in outputs_to_marshal.items():
