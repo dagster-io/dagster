@@ -30,7 +30,6 @@ from dagster import (
     check,
     types,
 )
-from dagster.core.types.marshal import PickleSerializationStrategy
 from dagster.core.definitions.dependency import Solid
 from dagster.core.definitions.environment_configs import construct_environment_config
 from dagster.core.errors import DagsterSubprocessExecutionError
@@ -43,7 +42,11 @@ from dagster.core.execution_context import (
     SystemTransformExecutionContext,
 )
 from dagster.core.user_context import AbstractTransformExecutionContext, TransformExecutionContext
-from dagster.core.types.marshal import serialize_to_file, deserialize_from_file
+from dagster.core.types.marshal import (
+    serialize_to_file,
+    deserialize_from_file,
+    PickleSerializationStrategy,
+)
 from dagster.core.types.runtime import RuntimeType
 
 # magic incantation for syncing up notebooks to enclosing virtual environment.
@@ -149,7 +152,7 @@ class Manager:
                 pm.record(output_name, value)
             elif runtime_type_enum == SerializableRuntimeType.ANY and is_json_serializable(value):
                 pm.record(output_name, value)
-            elif runtime_type_enum == SerializableRuntimeType.PICKLE_SERIALIZATION_STRATEGY:
+            elif runtime_type_enum == SerializableRuntimeType.PICKLE_SERIALIZABLE:
                 out_file = os.path.join(self.marshal_dir, 'output-{}'.format(output_name))
                 serialize_to_file(PickleSerializationStrategy(), value, out_file)
                 pm.record(output_name, out_file)
@@ -215,7 +218,7 @@ class Manager:
             self.solid_def = self.pipeline_def.solid_def_named(solid_def_name)
 
             loggers = None
-            if output_log_path != 0:
+            if output_log_path != 0:  # there is no output log
                 event_logger = construct_json_event_logger(output_log_path)
                 loggers = [event_logger]
             # do not include event_callback in ExecutionMetadata,
@@ -272,7 +275,8 @@ def is_json_serializable(value):
 class SerializableRuntimeType(Enum):
     SCALAR = 'scalar'
     ANY = 'any'
-    PICKLE_SERIALIZATION_STRATEGY = 'pickle'
+    PICKLE_SERIALIZABLE = 'pickle'
+    JSON_SERIALIZABLE = 'json'
     NONE = ''
 
 
@@ -284,7 +288,7 @@ def runtime_type_to_enum(runtime_type):
     elif runtime_type.serialization_strategy and isinstance(
         runtime_type.serialization_strategy, PickleSerializationStrategy
     ):
-        return SerializableRuntimeType.PICKLE_SERIALIZATION_STRATEGY
+        return SerializableRuntimeType.PICKLE_SERIALIZABLE
 
     return SerializableRuntimeType.NONE
 
@@ -294,7 +298,7 @@ def input_name_serialization_enum(runtime_type, value):
 
     if runtime_type_enum == SerializableRuntimeType.ANY:
         if is_json_serializable(value):
-            return runtime_type_enum
+            return SerializableRuntimeType.JSON_SERIALIZABLE
         else:
             return SerializableRuntimeType.NONE
 
@@ -348,17 +352,17 @@ def load_parameter(input_name, input_value):
     check.invariant(MANAGER_FOR_NOTEBOOK_INSTANCE.populated_by_papermill, 'populated_by_papermill')
     if MANAGER_FOR_NOTEBOOK_INSTANCE.solid_def is None:
         check.invariant(
-            MANAGER_FOR_NOTEBOOK_INSTANCE.input_name_type_dict,
+            MANAGER_FOR_NOTEBOOK_INSTANCE.input_name_type_dict is not None,
             'input_name_type_dict must not be None if solid_def is not defined!',
         )
         input_name_type_dict = MANAGER_FOR_NOTEBOOK_INSTANCE.input_name_type_dict
         runtime_type_enum = input_name_type_dict[input_name]
         if (
             runtime_type_enum == SerializableRuntimeType.SCALAR
-            or runtime_type_enum == SerializableRuntimeType.ANY
+            or runtime_type_enum == SerializableRuntimeType.JSON_SERIALIZABLE
         ):
             return input_value
-        elif runtime_type_enum == SerializableRuntimeType.PICKLE_SERIALIZATION_STRATEGY:
+        elif runtime_type_enum == SerializableRuntimeType.PICKLE_SERIALIZABLE:
             return deserialize_from_file(PickleSerializationStrategy(), input_value)
         else:
             raise DagstermillError(
@@ -403,7 +407,7 @@ def get_papermill_parameters(transform_context, inputs, output_log_path):
 
     if not transform_context.has_event_callback:
         transform_context.log.info('get_papermill_parameters.context has no event_callback!')
-        output_log_path = 0  # stands for null
+        output_log_path = 0  # stands for null, since None gets json encoded as 'null'
 
     dm_context_dict = {
         'run_id': run_id,
