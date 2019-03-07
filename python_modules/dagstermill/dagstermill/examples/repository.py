@@ -1,4 +1,5 @@
 import os
+import pandas as pd
 
 import dagstermill as dm
 
@@ -14,6 +15,8 @@ from dagster import (
     check,
     lambda_solid,
     solid,
+    as_dagster_type,
+    SerializationStrategy,
 )
 
 from dagster import RepositoryDefinition
@@ -165,6 +168,33 @@ def define_tutorial_pipeline():
     )
 
 
+class ComplexSerializationStrategy(SerializationStrategy):
+    def serialize_value(self, value, write_file_obj):
+        pass
+
+    def deserialize_value(self, read_file_obj):
+        pass
+
+
+complex_serialization_strategy = ComplexSerializationStrategy()
+
+ComplexDagsterType = as_dagster_type(
+    pd.DataFrame, serialization_strategy=complex_serialization_strategy
+)
+
+
+def no_repo_reg_solid():
+    return dm.define_dagstermill_solid(
+        'no_repo_reg',
+        nb_test_path('no_repo_reg_error'),
+        outputs=[OutputDefinition(name='df', dagster_type=ComplexDagsterType)],
+    )
+
+
+def define_no_repo_registration_error_pipeline():
+    return PipelineDefinition(name='repo_registration_error', solids=[no_repo_reg_solid()])
+
+
 def define_example_repository():
     return RepositoryDefinition(
         name='notebook_repo',
@@ -175,5 +205,6 @@ def define_example_repository():
             'test_add_pipeline': define_add_pipeline,
             'test_notebook_dag': define_test_notebook_dag_pipeline,
             'tutorial_pipeline': define_tutorial_pipeline,
+            'repo_registration_error': define_no_repo_registration_error_pipeline,
         },
     )

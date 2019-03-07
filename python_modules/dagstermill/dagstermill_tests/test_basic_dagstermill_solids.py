@@ -12,6 +12,7 @@ from dagstermill.examples.repository import (
     define_hello_world_with_output_pipeline,
     define_test_notebook_dag_pipeline,
     define_tutorial_pipeline,
+    define_no_repo_registration_error_pipeline,
 )
 
 
@@ -78,3 +79,16 @@ def test_tutorial_pipeline():
         pipeline, {'context': {'default': {'config': {'log_level': 'DEBUG'}}}}
     )
     assert result.success
+
+
+@notebook_test
+def test_no_repo_registration_error():
+    with pytest.raises(
+        DagstermillError,
+        match='If Dagstermill solids have outputs that require serialization strategies',
+    ):
+        execute_pipeline(define_no_repo_registration_error_pipeline())
+    res = execute_pipeline(
+        define_no_repo_registration_error_pipeline(), run_config=RunConfig.nonthrowing_in_process()
+    )
+    assert not res.success
