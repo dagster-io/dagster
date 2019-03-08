@@ -1,4 +1,4 @@
-import os
+import os, shutil, contextlib, tempfile
 
 import dagstermill as dm
 
@@ -16,7 +16,7 @@ from dagster import (
     solid,
 )
 
-from dagster import RepositoryDefinition
+from dagster import RepositoryDefinition, PipelineContextDefinition, resource, ResourceDefinition
 
 
 def nb_test_path(name):
@@ -165,6 +165,51 @@ def define_tutorial_pipeline():
     )
 
 
+@solid_definition
+def hello_world_resource_solid():
+    return dm.define_dagstermill_solid('hello_world_resource', nb_test_path('hello_world_resource'))
+
+
+class TrivialManager(object):
+    def __init__(self):
+        self.closed = False
+        self.used = False
+
+    def use(self):
+        if self.closed:
+            raise ValueError("The resource has been closed already!")
+
+        self.used = True
+
+    def close(self):
+        self.closed = True
+
+
+@contextlib.contextmanager
+def _trivial_manager():
+    manager = TrivialManager()
+    try:
+        yield manager
+    finally:
+        manager.close()
+
+
+@resource
+def trivial_resource(_init_context):
+    with _trivial_manager() as manager:
+        yield manager
+
+
+def define_resource_pipeline():
+    return PipelineDefinition(
+        name='resource_pipeline',
+        solids=[hello_world_resource_solid],
+        context_definitions={
+            'local': PipelineContextDefinition(resources={'file_manager': trivial_resource})
+        },
+    )
+
+
 def define_example_repository():
     return RepositoryDefinition(
         name='notebook_repo',
@@ -172,6 +217,7 @@ def define_example_repository():
             'error_pipeline': define_error_pipeline,
             'hello_world_pipeline': define_hello_world_pipeline,
             'hello_world_with_output_pipeline': define_hello_world_with_output_pipeline,
+            'resource_pipeline': define_resource_pipeline,
             'test_add_pipeline': define_add_pipeline,
             'test_notebook_dag': define_test_notebook_dag_pipeline,
             'tutorial_pipeline': define_tutorial_pipeline,

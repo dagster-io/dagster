@@ -78,3 +78,7 @@ def test_tutorial_pipeline():
         pipeline, {'context': {'default': {'config': {'log_level': 'DEBUG'}}}}
     )
     assert result.success
+
+@notebook_test
+def test_resources_notebook():
+    with pytest.raises()
