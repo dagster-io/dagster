@@ -206,6 +206,8 @@ class Manager:
         ) as pipeline_context:
             self.context = DagstermillInNotebookExecutionContext(pipeline_context)
 
+        # Below is all for resources in notebook to work
+
         pipeline_def = self.pipeline_def
         environment_config = self.context.environment_config
         context_def = pipeline_def.context_definitions[environment_config.context.name]
@@ -215,20 +217,15 @@ class Manager:
             resource_obj_or_gen = get_resource_or_gen(
                 pipeline_def, context_def, resource_name, environment_config, run_id
             )
-            # pylint: disable=no-member
-            # pylint can't analyze the decorator
-            # print("Before __enter__")
             resource_obj = with_maybe_gen(resource_obj_or_gen)
-            # print("After __enter__")
             new_resources[resource_name] = resource_obj
+
+        self.context.resource_obj_dict = new_resources
 
         context_name = environment_config.context.name
         resources_type = pipeline_def.context_definitions[context_name].resources_type
-        # print("Before assigning")
         self.context.resources_type = resources_type
-        self.context.resource_obj_dict = new_resources
-        # self.context.resources = resources_type(**new_resources)
-        # print("After assigning")
+
         return self.context
 
 
@@ -299,7 +296,7 @@ def yield_result(value, output_name='result'):
 
 def populate_context(dm_context_data):
     check.dict_param(dm_context_data, 'dm_context_data')
-    ret = MANAGER_FOR_NOTEBOOK_INSTANCE.populate_context(
+    return MANAGER_FOR_NOTEBOOK_INSTANCE.populate_context(
         dm_context_data['run_id'],
         dm_context_data['solid_def_name'],
         dm_context_data['pipeline_name'],
@@ -307,7 +304,6 @@ def populate_context(dm_context_data):
         dm_context_data['environment_config'],
         dm_context_data['output_log_path'],
     )
-    return ret
 
 
 def load_parameter(input_name, input_value):
@@ -540,6 +536,8 @@ def _dm_solid_transform(name, notebook_path):
         finally:
             if do_cleanup and os.path.exists(temp_path):
                 os.remove(temp_path)
+
+            # In here, clean-up the resources? Below code is some spaghetti code ...
 
             # step_execution_context = transform_context.get_system_context()
             # pipeline_def = step_execution_context.pipeline_def
