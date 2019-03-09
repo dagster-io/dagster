@@ -347,7 +347,9 @@ def _create_persistence_strategy(persistence_config):
 
 
 @contextmanager
-def yield_pipeline_execution_context(pipeline_def, environment_dict, run_config):
+def yield_pipeline_execution_context(
+    pipeline_def, environment_dict, run_config, no_resource_flag=False
+):
     check.inst_param(pipeline_def, 'pipeline_def', PipelineDefinition)
     check.dict_param(environment_dict, 'environment_dict', key_type=str)
     check.inst_param(run_config, 'run_config', RunConfig)
@@ -367,16 +369,22 @@ def yield_pipeline_execution_context(pipeline_def, environment_dict, run_config)
     with with_maybe_gen(ec_or_gen) as execution_context:
         check.inst(execution_context, ExecutionContext)
 
-        with _create_resources(
-            pipeline_def,
-            context_definition,
-            environment_config,
-            execution_context,
-            run_config.run_id,
-        ) as resources:
+        if no_resource_flag:
+            resources = None
             yield construct_pipeline_execution_context(
                 run_config, execution_context, pipeline_def, resources, environment_config
             )
+        else:
+            with _create_resources(
+                pipeline_def,
+                context_definition,
+                environment_config,
+                execution_context,
+                run_config.run_id,
+            ) as resources:
+                yield construct_pipeline_execution_context(
+                    run_config, execution_context, pipeline_def, resources, environment_config
+                )
 
 
 def construct_pipeline_execution_context(

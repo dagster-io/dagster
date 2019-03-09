@@ -33,7 +33,11 @@ from dagster.core.definitions.dependency import Solid
 from dagster.core.definitions.environment_configs import construct_environment_config
 from dagster.core.errors import DagsterSubprocessExecutionError
 from dagster.core.events import construct_json_event_logger, EventRecord, EventType
-from dagster.core.execution import yield_pipeline_execution_context
+from dagster.core.execution import (
+    yield_pipeline_execution_context,
+    with_maybe_gen,
+    get_resource_or_gen,
+)
 from dagster.core.execution_context import (
     DagsterLog,
     RunConfig,
@@ -53,6 +57,9 @@ from dagster.core.types.runtime import RuntimeType
 class DagstermillInNotebookExecutionContext(AbstractTransformExecutionContext):
     def __init__(self, pipeline_context):
         self._pipeline_context = pipeline_context
+        self._resources = None
+        self._resources_type = None
+        self.resource_obj_dict = None
 
     def has_tag(self, key):
         return self._pipeline_context.has_tag(key)
@@ -74,7 +81,21 @@ class DagstermillInNotebookExecutionContext(AbstractTransformExecutionContext):
 
     @property
     def resources(self):
+        if self._resources:
+            return self._resources
         return self._pipeline_context.resources
+
+    @resources.setter
+    def resources(self, value):
+        self._resources = value
+
+    @property
+    def resources_type(self):
+        return self._resources_type
+
+    @resources_type.setter
+    def resources_type(self, value):
+        self._resources_type = value
 
     @property
     def log(self):
@@ -124,6 +145,7 @@ class Manager:
             pipeline_def,
             {} if context_config is None else {'context': context_config},
             RunConfig(run_id=''),
+            no_resource_flag=True,
         ) as pipeline_context:
             self.context = DagstermillInNotebookExecutionContext(pipeline_context)
         return self.context
@@ -180,10 +202,33 @@ class Manager:
         # See block comment above referencing this issue
         # See https://github.com/dagster-io/dagster/issues/796
         with yield_pipeline_execution_context(
-            self.pipeline_def, environment_dict, run_config
+            self.pipeline_def, environment_dict, run_config, no_resource_flag=True
         ) as pipeline_context:
             self.context = DagstermillInNotebookExecutionContext(pipeline_context)
 
+        pipeline_def = self.pipeline_def
+        environment_config = self.context.environment_config
+        context_def = pipeline_def.context_definitions[environment_config.context.name]
+
+        new_resources = {}
+        for resource_name in context_def.resources.keys():
+            resource_obj_or_gen = get_resource_or_gen(
+                pipeline_def, context_def, resource_name, environment_config, run_id
+            )
+            # pylint: disable=no-member
+            # pylint can't analyze the decorator
+            # print("Before __enter__")
+            resource_obj = with_maybe_gen(resource_obj_or_gen)
+            # print("After __enter__")
+            new_resources[resource_name] = resource_obj
+
+        context_name = environment_config.context.name
+        resources_type = pipeline_def.context_definitions[context_name].resources_type
+        # print("Before assigning")
+        self.context.resources_type = resources_type
+        self.context.resource_obj_dict = new_resources
+        # self.context.resources = resources_type(**new_resources)
+        # print("After assigning")
         return self.context
 
 
@@ -192,6 +237,7 @@ class DagsterTranslator(pm.translators.PythonTranslator):
     def codify(cls, parameters):
         assert 'dm_context' in parameters
         content = '{}\n'.format(cls.comment('Parameters'))
+        content += '{}\n'.format('import dagstermill as dm')
         content += '{}\n'.format('import json')
         content += '{}\n'.format(
             cls.assign(
@@ -201,6 +247,11 @@ class DagsterTranslator(pm.translators.PythonTranslator):
                 ),
             )
         )
+        enter_resources_str = '''entered_resources = {}
+for resource_name, resource_obj in context.resource_obj_dict.items():
+    entered_resources[resource_name] = resource_obj.__enter__()
+context.resources = context.resources_type(**entered_resources)'''
+        content += enter_resources_str
 
         for name, val in parameters.items():
             if name == 'dm_context':
@@ -248,7 +299,7 @@ def yield_result(value, output_name='result'):
 
 def populate_context(dm_context_data):
     check.dict_param(dm_context_data, 'dm_context_data')
-    return MANAGER_FOR_NOTEBOOK_INSTANCE.populate_context(
+    ret = MANAGER_FOR_NOTEBOOK_INSTANCE.populate_context(
         dm_context_data['run_id'],
         dm_context_data['solid_def_name'],
         dm_context_data['pipeline_name'],
@@ -256,6 +307,7 @@ def populate_context(dm_context_data):
         dm_context_data['environment_config'],
         dm_context_data['output_log_path'],
     )
+    return ret
 
 
 def load_parameter(input_name, input_value):
@@ -430,6 +482,8 @@ def _dm_solid_transform(name, notebook_path):
             with open(output_log_path, 'a') as f:
                 f.close()
 
+            print('jupyter notebook {}'.format(temp_path))
+
             process = subprocess.Popen(
                 ['papermill', '--log-output', '--log-level', 'ERROR', intermediate_path, temp_path],
                 stderr=subprocess.PIPE,
@@ -486,6 +540,20 @@ def _dm_solid_transform(name, notebook_path):
         finally:
             if do_cleanup and os.path.exists(temp_path):
                 os.remove(temp_path)
+
+            # step_execution_context = transform_context.get_system_context()
+            # pipeline_def = step_execution_context.pipeline_def
+            # environment_config = step_execution_context.environment_config
+            # context_def = pipeline_def.context_definitions[environment_config.context.name]
+            # run_id = step_execution_context.run_config.run_id
+
+            # for resource_name in context_def.resources.keys():
+            #     resource_obj_or_gen = get_resource_or_gen(
+            #         pipeline_def, context_def, resource_name, environment_config, run_id
+            #     )
+            #     # pylint: disable=no-member
+            #     # pylint can't analyze the decorator
+            #     with_maybe_gen(resource_obj_or_gen).__exit__(None, None, None)
 
     return _t_fn
 

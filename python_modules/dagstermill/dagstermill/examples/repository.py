@@ -179,9 +179,11 @@ class TrivialManager(object):
         if self.closed:
             raise ValueError("The resource has been closed already!")
 
+        print("Just used the trivial manager!")
         self.used = True
 
     def close(self):
+        print("Just closed the trivial manager!")
         self.closed = True
 
 
