@@ -12,6 +12,7 @@ from dagstermill.examples.repository import (
     define_hello_world_with_output_pipeline,
     define_test_notebook_dag_pipeline,
     define_tutorial_pipeline,
+    define_resource_pipeline,
 )
 
 
@@ -79,6 +80,8 @@ def test_tutorial_pipeline():
     )
     assert result.success
 
+
 @notebook_test
 def test_resources_notebook():
-    with pytest.raises()
+    result = execute_pipeline(define_resource_pipeline())
+    assert result.success
