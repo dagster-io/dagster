@@ -247,7 +247,9 @@ class DagsterTranslator(pm.translators.PythonTranslator):
         enter_resources_str = '''entered_resources = {}
 for resource_name, resource_obj in context.resource_obj_dict.items():
     entered_resources[resource_name] = resource_obj.__enter__()
-context.resources = context.resources_type(**entered_resources)'''
+if context.resources_type:
+    context.resources = context.resources_type(**entered_resources)
+'''
         content += enter_resources_str
 
         for name, val in parameters.items():
