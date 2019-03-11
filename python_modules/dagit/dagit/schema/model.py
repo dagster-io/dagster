@@ -7,7 +7,7 @@ import uuid
 from graphql.execution.base import ResolveInfo
 
 from dagster import RunConfig, check
-from dagster.core.execution_plan.objects import ExecutionStepEventType
+from dagster.core.execution_plan.objects import ExecutionStepEventType, ExecutionStepEvent
 from dagster.core.execute_marshalling import MarshalledOutput, MarshalledInput, StepExecution
 
 from dagster.core.errors import (
@@ -18,14 +18,9 @@ from dagster.core.errors import (
     DagsterInvalidSubplanOutputNotFoundError,
 )
 
-from dagster.core.execution import ExecutionSelector, create_execution_plan
+from dagster.core.execution import ExecutionSelector, create_execution_plan, InProcessExecutorConfig
+from dagster.core.execute_marshalling import execute_marshalling
 
-from dagster.core.serializable import (
-    ForkedProcessPipelineFactory,
-    SerializableExecutionMetadata,
-    SerializableStepEvents,
-    execute_serializable_execution_plan,
-)
 from dagster.core.types.evaluator import evaluate_config_value, EvaluateValueResult
 
 from dagster.utils.error import serializable_error_info_from_exc_info
@@ -407,6 +402,22 @@ def _chain_config_or_error_from_pipeline(args, dauphin_pipeline):
     )
 
 
+from collections import defaultdict
+
+
+def list_pull(alist, key):
+    return list(map(lambda elem: getattr(elem, key), alist))
+
+
+def input_marshalling_dict_from_step_executions(step_executions):
+    check.list_param(step_executions, 'step_executions', of_type=StepExecution)
+    inputs_to_marshal = defaultdict(dict)
+    for step_execution in step_executions:
+        for input_name, marshalling_key in step_execution.marshalled_inputs:
+            inputs_to_marshal[step_execution.step_key][input_name] = marshalling_key
+    return dict(inputs_to_marshal)
+
+
 def _execute_marshalling_or_error(args, dauphin_pipeline, evaluate_value_result):
     check.inst_param(args, 'args', SubplanExecutionArgs)
     check.inst_param(dauphin_pipeline, 'dauphin_pipeline', DauphinPipeline)
@@ -421,14 +432,17 @@ def _execute_marshalling_or_error(args, dauphin_pipeline, evaluate_value_result)
             environment_dict=environment_dict,
             run_config=RunConfig(run_id=args.run_id, tags=args.tags),
         )
-
-        step_events = execute_serializable_execution_plan(
-            ForkedProcessPipelineFactory(pipeline_fn=dauphin_pipeline.get_dagster_pipeline),
+        step_events = execute_marshalling(
+            dauphin_pipeline.get_dagster_pipeline(),
             environment_dict=environment_dict,
-            serializable_execution_metadata=SerializableExecutionMetadata(
-                run_id=args.run_id, tags=args.tags
+            step_keys=list_pull(args.step_executions, 'step_key'),
+            inputs_to_marshal=input_marshalling_dict_from_step_executions(args.step_executions),
+            outputs_to_marshal={se.step_key: se.marshalled_outputs for se in args.step_executions},
+            run_config=RunConfig(
+                run_id=args.run_id,
+                tags=args.tags,
+                executor_config=InProcessExecutorConfig(throw_on_user_error=False),
             ),
-            step_executions=args.step_executions,
         )
 
         return _type_of(args, 'StartSubplanExecutionSuccess')(
@@ -482,7 +496,7 @@ def _execute_marshalling_or_error(args, dauphin_pipeline, evaluate_value_result)
 
 
 def _create_dauphin_step_event(execution_plan, step_event):
-    check.inst_param(step_event, 'step_event', SerializableStepEvents)
+    check.inst_param(step_event, 'step_event', ExecutionStepEvent)
 
     step = execution_plan.get_step_by_key(step_event.step_key)
 
@@ -490,14 +504,14 @@ def _create_dauphin_step_event(execution_plan, step_event):
         return DauphinSuccessfulStepOutputEvent(
             success=True,
             step=DauphinExecutionStep(execution_plan, step),
-            output_name=step_event.output_name,
-            value_repr=step_event.value_repr,
+            output_name=step_event.step_output_data.output_name,
+            value_repr=step_event.step_output_data.value_repr,
         )
     elif step_event.event_type == ExecutionStepEventType.STEP_FAILURE:
         return DauphinStepFailureEvent(
             success=False,
             step=DauphinExecutionStep(execution_plan, step),
-            error_message=step_event.error_message,
+            error_message=step_event.step_failure_data.error_message,
         )
     else:
         check.failed('{step_event} unsupported'.format(step_event=step_event))
