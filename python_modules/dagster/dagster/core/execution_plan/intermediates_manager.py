@@ -51,6 +51,15 @@ class IntermediatesManager(six.with_metaclass(ABCMeta)):  # pylint: disable=no-i
     def has_value(self, step_output_handle):
         pass
 
+    def all_inputs_covered(self, step):
+        from .objects import ExecutionStep
+
+        check.inst_param(step, 'step', ExecutionStep)
+        for step_input in step.step_inputs:
+            if not self.has_value(step_input.prev_output_handle):
+                return False
+        return True
+
 
 class InMemoryIntermediatesManager(IntermediatesManager):
     def __init__(self):

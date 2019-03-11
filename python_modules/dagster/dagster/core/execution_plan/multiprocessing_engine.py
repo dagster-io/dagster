@@ -67,13 +67,6 @@ def _create_input_values(step_input_meta_dict, manager):
     return input_values
 
 
-def _all_inputs_covered(step, intermediates_manager):
-    for step_input in step.step_inputs:
-        if not intermediates_manager.has_value(step_input.prev_output_handle):
-            return False
-    return True
-
-
 def multiprocess_execute_plan(pipeline_context, execution_plan):
     check.inst_param(pipeline_context, 'pipeline_context', SystemPipelineExecutionContext)
     check.inst_param(execution_plan, 'execution_plan', ExecutionPlan)
@@ -90,7 +83,7 @@ def multiprocess_execute_plan(pipeline_context, execution_plan):
         for step in step_level:
             step_context = pipeline_context.for_step(step)
 
-            if not _all_inputs_covered(step, intermediates_manager):
+            if not intermediates_manager.all_inputs_covered(step):
                 expected_outputs = [ni.prev_output_handle for ni in step.step_inputs]
 
                 step_context.log.debug(

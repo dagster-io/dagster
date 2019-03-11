@@ -1,4 +1,5 @@
 import os
+import time
 import pytest
 from dagster.core.execution_plan.child_process_executor import (
     ChildProcessCommand,
@@ -6,6 +7,7 @@ from dagster.core.execution_plan.child_process_executor import (
     ChildProcessStartEvent,
     ChildProcessDoneEvent,
     ChildProcessException,
+    ChildProcessCrashException,
 )
 
 
@@ -24,6 +26,18 @@ class AnError(Exception):
 class ThrowAnErrorCommand(ChildProcessCommand):  # pylint: disable=no-init
     def execute(self):
         raise AnError('Oh noes!')
+
+
+class CrashyCommand(ChildProcessCommand):  # pylint: disable=no-init
+    def execute(self):
+        # access inner API to simulate hard crash
+        os._exit(1)  # pylint: disable=protected-access
+
+
+class LongRunningCommand(ChildProcessCommand):  # pylint: disable=no-init
+    def execute(self):
+        time.sleep(1.0)
+        yield 1
 
 
 def test_basic_child_process_command():
@@ -52,3 +66,13 @@ def test_child_process_uncaught_exception():
         list(execute_child_process_command(ThrowAnErrorCommand()))
 
     assert 'AnError' in str(excinfo.value)
+
+
+def test_child_process_crashy_process():
+    with pytest.raises(ChildProcessCrashException):
+        list(execute_child_process_command(CrashyCommand()))
+
+
+@pytest.mark.skip('too long')
+def test_long_running_command():
+    list(execute_child_process_command(LongRunningCommand()))

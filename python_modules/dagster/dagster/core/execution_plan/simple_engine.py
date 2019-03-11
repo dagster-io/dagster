@@ -76,7 +76,7 @@ def start_inprocess_executor(
 
             step_context = pipeline_context.for_step(step)
 
-            if not _all_inputs_covered(step, intermediates_manager):
+            if not intermediates_manager.all_inputs_covered(step):
                 expected_outputs = [ni.prev_output_handle for ni in step.step_inputs]
 
                 step_context.log.info(
