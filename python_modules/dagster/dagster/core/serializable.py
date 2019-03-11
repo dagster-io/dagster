@@ -5,10 +5,9 @@ import six
 
 from dagster import check
 
-from .execution import execute_marshalling
+from .execute_marshalling import execute_marshalling, StepExecution
 from .execution_context import RunConfig, InProcessExecutorConfig
 from .execution_plan.objects import ExecutionStepEvent, ExecutionStepEventType
-from .execution_plan.plan_subset import StepExecution
 
 
 class SerializableExecutionMetadata(namedtuple('_SerializableExecutionMetadata', 'run_id tags')):
@@ -86,7 +85,7 @@ class PipelineFactory(six.with_metaclass(ABCMeta)):  # pylint: disable=no-init
     Made this a factory protocol so that we can reconstruct pipelines in other
     processes through different means. We may want to reconstruct a pipeline
     from the information that is the passed to dagit rather than relying
-    on pickling to remote a function over to another process. 
+    on pickling to remote a function over to another process.
     '''
 
     @abstractmethod
@@ -111,6 +110,7 @@ def execute_serializable_execution_plan(
         'serializable_execution_metadata',
         SerializableExecutionMetadata,
     )
+
     check.list_param(step_executions, 'step_executions', of_type=StepExecution)
 
     step_events = execute_marshalling(

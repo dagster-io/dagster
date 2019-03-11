@@ -503,6 +503,11 @@ class DagsterOperator(ModifiedDockerOperator):
             raw_res = super(DagsterOperator, self).execute(context)
             res = json.loads(raw_res)
 
+            if res.get('errors'):
+                raise AirflowException(
+                    'Internal error in GraphQL request. Response: {}'.format(res)
+                )
+
             res_type = res['data']['startSubplanExecution']['__typename']
 
             if res_type == 'PipelineConfigValidationInvalid':
@@ -510,16 +515,21 @@ class DagsterOperator(ModifiedDockerOperator):
                 raise AirflowException(
                     'Pipeline configuration invalid:\n{errors}'.format(errors='\n'.join(errors))
                 )
-            elif res['data']['startSubplanExecution']['hasFailures']:
-                errors = [
-                    step['errorMessage']
-                    for step in res['data']['startSubplanExecution']['stepEvents']
-                    if not step['success']
-                ]
-                raise AirflowException(
-                    'Subplan execution failed:\n{errors}'.format(errors='\n'.join(errors))
-                )
-            return res
+
+            if res_type == 'StartSubplanExecutionSuccess':
+                if res['data']['startSubplanExecution']['hasFailures']:
+                    errors = [
+                        step['errorMessage']
+                        for step in res['data']['startSubplanExecution']['stepEvents']
+                        if not step['success']
+                    ]
+                    raise AirflowException(
+                        'Subplan execution failed:\n{errors}'.format(errors='\n'.join(errors))
+                    )
+                return res
+
+            raise AirflowException('Unhandled error type. Response: {}'.format(res))
+
         except JSONDecodeError:  # This is the bad case where we don't get a GraphQL response
             raise AirflowException(raw_res)
         finally:

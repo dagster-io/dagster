@@ -1,6 +1,6 @@
 from dagit.schema import dauphin
 from dagit.schema import model
-from dagster.core.execution import ExecutionSelector, RunConfig
+from dagster.core.execution import ExecutionSelector
 from ..version import __version__
 
 
@@ -145,14 +145,6 @@ class DauphinExecutionMetadata(dauphin.InputObjectType):
     runId = dauphin.String()
     tags = dauphin.List(dauphin.NonNull(DauphinExecutionTag))
 
-    def to_metadata(self):
-        tags = {}
-        if tags:
-            for tag in self.tags:  # pylint: disable=E1133
-                tags[tag['key']] = tag['value']
-
-        return RunConfig(run_id=self.runId, tags=tags)
-
 
 class DauphinStartSubplanExecution(dauphin.Mutation):
     class Meta:
@@ -182,7 +174,7 @@ class DauphinStartSubplanExecution(dauphin.Mutation):
                         kwargs['stepExecutions'],
                     )
                 ),
-                kwargs['executionMetadata'].to_metadata(),
+                kwargs['executionMetadata'],
             )
         )
 
