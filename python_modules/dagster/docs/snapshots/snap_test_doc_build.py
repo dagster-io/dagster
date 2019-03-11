@@ -594,8 +594,6 @@ snapshots['test_build_all_docs 4'] = '''
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="apidocs/types.html#module-dagster">dagster (module)</a>
 </li>
-      <li><a href="apidocs/execution.html#dagster.SolidExecutionResult.dagster_error">dagster_error (dagster.SolidExecutionResult attribute)</a>
-</li>
       <li><a href="apidocs/types.html#dagster.dagster_type">dagster_type() (in module dagster)</a>
 </li>
       <li><a href="apidocs/errors.html#dagster.DagsterExpectationFailedError">DagsterExpectationFailedError</a>
@@ -612,10 +610,10 @@ snapshots['test_build_all_docs 4'] = '''
 </li>
       <li><a href="apidocs/definitions.html#dagster.PipelineDefinition.dependencies">dependencies (dagster.PipelineDefinition attribute)</a>
 </li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="apidocs/definitions.html#dagster.PipelineDefinition.dependency_structure">dependency_structure (dagster.PipelineDefinition attribute)</a>
 </li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="apidocs/definitions.html#dagster.DependencyDefinition">DependencyDefinition (class in dagster)</a>
 </li>
       <li><a href="apidocs/definitions.html#dagster.DependencyDefinition.description">description (dagster.DependencyDefinition attribute)</a>
@@ -670,10 +668,12 @@ snapshots['test_build_all_docs 4'] = '''
 <h2 id="F">F</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="apidocs/definitions.html#dagster.Field">Field() (in module dagster)</a>
+      <li><a href="apidocs/execution.html#dagster.SolidExecutionResult.failure_data">failure_data (dagster.SolidExecutionResult attribute)</a>
 </li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="apidocs/definitions.html#dagster.Field">Field() (in module dagster)</a>
+</li>
       <li><a href="apidocs/decorators.html#dagster.MultipleResults.from_dict">from_dict() (dagster.MultipleResults static method)</a>
 </li>
   </ul></td>
@@ -20656,9 +20656,9 @@ SystemPipelineExecutionContextCreationData although that seemed excessively verb
 </dd></dl>
 
 <dl class="attribute">
-<dt id="dagster.SolidExecutionResult.dagster_error">
-<code class="descname">dagster_error</code><a class="headerlink" href="#dagster.SolidExecutionResult.dagster_error" title="Permalink to this definition">¶</a></dt>
-<dd><p>Returns exception that happened during this solid’s execution, if any</p>
+<dt id="dagster.SolidExecutionResult.failure_data">
+<code class="descname">failure_data</code><a class="headerlink" href="#dagster.SolidExecutionResult.failure_data" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the failing step’s data that happened during this solid’s execution, if any</p>
 </dd></dl>
 
 <dl class="attribute">

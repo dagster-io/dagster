@@ -66,15 +66,15 @@ def _to_serializable_step_event(step_event):
     if step_event.is_successful_output:
         return SerializableStepOutputEvent(
             event_type=step_event.event_type,
-            step_key=step_event.step.key,
+            step_key=step_event.step_key,
             output_name=step_event.step_output_data.output_name,
             value_repr=step_event.step_output_data.value_repr,
         )
     elif step_event.is_step_failure:
         return SerializableStepFailureEvent(
             event_type=step_event.event_type,
-            step_key=step_event.step.key,
-            error_message=str(step_event.step_failure_data.dagster_error),
+            step_key=step_event.step_key,
+            error_message=step_event.step_failure_data.error_message,
         )
 
     check.failed('Unsupported step_event type {}'.format(step_event))

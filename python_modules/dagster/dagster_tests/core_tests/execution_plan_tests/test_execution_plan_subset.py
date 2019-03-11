@@ -42,11 +42,11 @@ def test_execution_plan_simple_two_steps():
     step_events = execute_plan(execution_plan)
     assert len(step_events) == 2
 
-    assert step_events[0].step.key == 'return_one.transform'
+    assert step_events[0].step_key == 'return_one.transform'
     assert step_events[0].is_successful_output
     assert step_events[0].step_output_data.get_value() == 1
 
-    assert step_events[1].step.key == 'add_one.transform'
+    assert step_events[1].step_key == 'add_one.transform'
     assert step_events[1].is_successful_output
     assert step_events[1].step_output_data.get_value() == 2
 
@@ -63,10 +63,10 @@ def test_execution_plan_two_outputs():
 
     step_events = execute_plan(execution_plan)
 
-    assert step_events[0].step.key == 'return_one_two.transform'
+    assert step_events[0].step_key == 'return_one_two.transform'
     assert step_events[0].step_output_data.get_value() == 1
     assert step_events[0].step_output_data.output_name == 'num_one'
-    assert step_events[1].step.key == 'return_one_two.transform'
+    assert step_events[1].step_key == 'return_one_two.transform'
     assert step_events[1].step_output_data.get_value() == 2
     assert step_events[1].step_output_data.output_name == 'num_two'
 

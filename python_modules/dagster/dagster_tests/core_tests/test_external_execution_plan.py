@@ -11,7 +11,6 @@ from dagster import (
 )
 
 from dagster.core.errors import (
-    DagsterExecutionStepExecutionError,
     DagsterExecutionStepNotFoundError,
     DagsterInvalidSubplanInputNotFoundError,
     DagsterInvalidSubplanMissingInputError,
@@ -72,7 +71,7 @@ def test_basic_pipeline_external_plan_execution():
     assert len(step_events) == 1
 
     transform_step_output_event = step_events[0]
-    assert transform_step_output_event.kind == StepKind.TRANSFORM
+    assert transform_step_output_event.step_kind == StepKind.TRANSFORM
     assert transform_step_output_event.is_successful_output
     assert transform_step_output_event.step_output_data.output_name == 'result'
     assert transform_step_output_event.step_output_data.get_value() == 6
@@ -198,10 +197,9 @@ def test_external_execution_output_code_error_no_throw_on_user_error():
 
     assert len(step_events) == 1
     step_event = step_events[0]
-    assert isinstance(
-        step_event.step_failure_data.dagster_error, DagsterExecutionStepExecutionError
-    )
-    assert str(step_event.step_failure_data.dagster_error.user_exception) == 'whoops'
+    assert step_event.step_failure_data
+    assert step_event.step_failure_data.error_cls_name == 'Exception'
+    assert step_event.step_failure_data.error_message == 'Exception: whoops\n'
 
 
 def test_external_execution_unsatisfied_input_error():
