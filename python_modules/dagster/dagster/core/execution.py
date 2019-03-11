@@ -389,11 +389,12 @@ ResourceContextCreationInfo = namedtuple(
 )
 
 
-def dagstermill_lifecycle_begin(pipeline_def, environment_dict, run_config):
+def dagstermill_lifecycle_begin(_pipeline_def, _environment_dict, _run_config):
+    pass
 
-    ec_gen, context_definition, environment_config = _create_ec_gen_info(
-        pipeline_def, environment_dict, run_config
-    )
+    # ec_gen, context_definition, environment_config = _create_ec_gen_info(
+    #     pipeline_def, environment_dict, run_config
+    # )
 
     # ec_gen.__enter__
 
@@ -405,8 +406,9 @@ def dagstermill_lifecycle_begin(pipeline_def, environment_dict, run_config):
     # return construct_pipeline_execution_context(...)
 
 
-def dagstermill_lifecycle_end(pipeline_def, environment_dict, run_config):
+def dagstermill_lifecycle_end(_pipeline_def, _environment_dict, _run_config):
     # unroll with __exits
+    pass
 
 
 @contextmanager
