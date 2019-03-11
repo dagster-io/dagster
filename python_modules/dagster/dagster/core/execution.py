@@ -347,11 +347,23 @@ def _create_persistence_strategy(persistence_config):
 
 
 @contextmanager
-def yield_pipeline_execution_context(pipeline_def, environment_dict, run_config):
+def _yield_execution_context_gen(pipeline_def, environment_dict, run_config):
     check.inst_param(pipeline_def, 'pipeline_def', PipelineDefinition)
     check.dict_param(environment_dict, 'environment_dict', key_type=str)
     check.inst_param(run_config, 'run_config', RunConfig)
 
+    ec_gen, context_definition, environment_config = _create_ec_gen_info(
+        pipeline_def, environment_dict, run_config
+    )
+
+    with ec_gen as execution_context:
+        yield ResourceContextCreationInfo(
+            execution_context, context_definition, environment_config, pipeline_def, run_config
+        )
+
+
+# Probably should return a struct here
+def _create_ec_gen_info(pipeline_def, environment_dict, run_config):
     environment_config = create_environment_config(pipeline_def, environment_dict)
 
     context_definition = pipeline_def.context_definitions[environment_config.context.name]
@@ -364,18 +376,56 @@ def yield_pipeline_execution_context(pipeline_def, environment_dict, run_config)
         )
     )
 
-    with with_maybe_gen(ec_or_gen) as execution_context:
-        check.inst(execution_context, ExecutionContext)
+    ec_gen = with_maybe_gen(ec_or_gen)
+    return ec_gen, context_definition, environment_config
 
-        with _create_resources(
-            pipeline_def,
-            context_definition,
-            environment_config,
-            execution_context,
-            run_config.run_id,
-        ) as resources:
+
+from collections import namedtuple
+
+
+ResourceContextCreationInfo = namedtuple(
+    'ResourceContextCreationInfo',
+    'execution_context context_definition environment_config pipeline_def run_config',
+)
+
+
+def dagstermill_lifecycle_begin(pipeline_def, environment_dict, run_config):
+
+    ec_gen, context_definition, environment_config = _create_ec_gen_info(
+        pipeline_def, environment_dict, run_config
+    )
+
+    # ec_gen.__enter__
+
+    # _create_resource_gens(...)
+
+    # unclear if we can reuse ExitStack or if we effectively have to reimplement it
+    # foreach resource_gen resource_gen.__enter__()
+
+    # return construct_pipeline_execution_context(...)
+
+
+def dagstermill_lifecycle_end(pipeline_def, environment_dict, run_config):
+    # unroll with __exits
+
+
+@contextmanager
+def yield_pipeline_execution_context(pipeline_def, environment_dict, run_config):
+    check.inst_param(pipeline_def, 'pipeline_def', PipelineDefinition)
+    check.dict_param(environment_dict, 'environment_dict', key_type=str)
+    check.inst_param(run_config, 'run_config', RunConfig)
+
+    with _yield_execution_context_gen(
+        pipeline_def, environment_dict, run_config
+    ) as resource_creation_info:
+        check.inst(resource_creation_info, ResourceContextCreationInfo)
+        with _yield_resources(resource_creation_info) as resources:
             yield construct_pipeline_execution_context(
-                run_config, execution_context, pipeline_def, resources, environment_config
+                run_config,
+                resource_creation_info.execution_context,
+                pipeline_def,
+                resources,
+                resource_creation_info.environment_config,
             )
 
 
@@ -419,13 +469,10 @@ def _create_loggers(run_config, execution_context):
         return execution_context.loggers
 
 
-@contextmanager
-def _create_resources(pipeline_def, context_def, environment, execution_context, run_id):
-    if not context_def.resources:
-        yield execution_context.resources
-        return
+def _create_resource_gens(resource_creation_info):
+    check.inst_param(resource_creation_info, 'resource_creation_info', ResourceContextCreationInfo)
+    execution_context, context_def, environment, pipeline_def, run_config = resource_creation_info
 
-    resources = {}
     check.invariant(
         not execution_context.resources,
         (
@@ -435,35 +482,57 @@ def _create_resources(pipeline_def, context_def, environment, execution_context,
         ),
     )
 
-    # See https://bit.ly/2zIXyqw
-    # The "ExitStack" allows one to stack up N context managers and then yield
-    # something. We do this so that resources can cleanup after themselves. We
-    # can potentially have many resources so we need to use this abstraction.
+    run_id = run_config.run_id
+
+    resource_gens = {}
+
+    for resource_name in context_def.resources.keys():
+        resource_gens[resource_name] = with_maybe_gen(
+            get_resource_or_gen(pipeline_def, context_def, resource_name, environment, run_id)
+        )
+
+    return resource_gens
+
+
+@contextmanager
+def _yield_resources(resource_creation_info):
+    check.inst_param(resource_creation_info, 'resource_creation_info', ResourceContextCreationInfo)
+
+    execution_context, context_def, environment_config, pipeline_def, _run_config = (
+        resource_creation_info
+    )
+
+    if not context_def.resources:
+        yield execution_context.resources
+        return
+
+    resource_gens = _create_resource_gens(resource_creation_info)
+    resources = {}
+
     with ExitStack() as stack:
-        for resource_name in context_def.resources.keys():
-            resource_obj_or_gen = get_resource_or_gen(
-                pipeline_def, context_def, resource_name, environment, run_id
-            )
+        for resource_name, resource_gen in resource_gens.items():
+            resources[resource_name] = stack.enter_context(resource_gen)
 
-            resource_obj = stack.enter_context(with_maybe_gen(resource_obj_or_gen))
-
-            resources[resource_name] = resource_obj
-
-        context_name = environment.context.name
+        context_name = environment_config.context.name
 
         resources_type = pipeline_def.context_definitions[context_name].resources_type
-        yield resources_type(**resources)
+        resources_object = resources_type(**resources)
+        yield resources_object
+
+    return
 
 
-def get_resource_or_gen(pipeline_def, context_definition, resource_name, environment, run_id):
+def get_resource_or_gen(
+    pipeline_def, context_definition, resource_name, environment_config, run_id
+):
     resource_def = context_definition.resources[resource_name]
     # Need to do default values
-    resource_config = environment.context.resources.get(resource_name, {}).get('config')
+    resource_config = environment_config.context.resources.get(resource_name, {}).get('config')
     return resource_def.resource_fn(
         InitResourceContext(
             pipeline_def=pipeline_def,
             resource_def=resource_def,
-            context_config=environment.context.config,
+            context_config=environment_config.context.config,
             resource_config=resource_config,
             run_id=run_id,
         )
