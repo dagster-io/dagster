@@ -11,41 +11,6 @@ from dagster import PipelineDefinition, RepositoryDefinition, check
 
 from dagster.utils import load_yaml_from_path
 
-if sys.version_info[0] >= 3:
-    import reloader
-
-    # The reloader module allows us to specify a blacklist of modules not to reload,
-    # but we want something a bit more flexible. We only want to reload the user's
-    # pipeline code, not dagster imports, installed packages, or parts of the python
-    # install. Some of these things (like numpy) actually cannot be reloaded.
-    #
-    # Note: We cannot hot-reload Dagster itself. Re-loading RepositoryDefinition, etc.
-    # in user code causes `instanceof` checks to fail since this code still references
-    # the original copies of RespositoryDefinition, etc.
-    #
-
-    # allow use of protected member
-    # pylint: disable=W0212
-    _reload = reloader._reload
-
-    def conditional_reload(m, visited):
-        if "/usr/local" in m.__file__ or "site-packages" in m.__file__:
-            return
-        if m.__name__.startswith("dagster.core") or m.__name__.startswith("dagster.utils"):
-            return
-        _reload(m, visited)
-
-    reloader._reload = conditional_reload
-else:
-
-    class ReloaderStub:
-        def reload(self, module):
-            pass
-
-        def enable(self):
-            sys.stderr.write('Hot-reloading only supports Python 3+')
-
-    reloader = ReloaderStub()
 
 INFO_FIELDS = set(['repository_yaml', 'pipeline_name', 'python_file', 'fn_name', 'module_name'])
 
@@ -232,7 +197,7 @@ class DynamicObject:
 
     def load(self):
         if self.loaded:
-            reloader.reload(self.module)
+            return
         self.loaded = True
 
         fn = getattr(self.module, self.fn_name)
@@ -260,7 +225,6 @@ class DynamicObject:
 
 
 def load_file_target_function(file_target_function):
-    reloader.enable()
     check.inst_param(file_target_function, 'file_target_function', FileTargetFunction)
     module_name = os.path.splitext(os.path.basename(file_target_function.python_file))[0]
     module = imp.load_source(module_name, file_target_function.python_file)
@@ -268,7 +232,6 @@ def load_file_target_function(file_target_function):
 
 
 def load_module_target_function(module_target_function):
-    reloader.enable()
     check.inst_param(module_target_function, 'module_target_function', ModuleTargetFunction)
     module = importlib.import_module(module_target_function.module_name)
     return DynamicObject(module, module_target_function.module_name, module_target_function.fn_name)

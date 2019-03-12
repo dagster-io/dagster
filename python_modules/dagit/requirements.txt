@@ -17,4 +17,3 @@ nbconvert>=5.4.0
 pyrsistent>=0.14.8
 pyyaml>=3.12
 six>=1.11.0
-watchdog>=0.8.3
