@@ -159,24 +159,10 @@ def create_pipeline_loading_mode_data(pipeline_target_info):
 LoaderEntrypoint = namedtuple('LoaderEntrypoint', 'module module_name fn_name')
 
 
-def perform_load(entry, coerce_to_repo=False):
+def perform_load(entry):
     fn = getattr(entry.module, entry.fn_name)
     check.is_callable(fn)
-    obj = fn()
-
-    # Eventually this class will be generic and not coupled to
-    # Pipeline / Repository types. Tracking this issue here:
-    # https://github.com/dagster-io/dagster/issues/246
-    if coerce_to_repo:
-        if isinstance(obj, RepositoryDefinition):
-            return obj
-        elif isinstance(obj, PipelineDefinition):
-            return RepositoryDefinition(name=EMPHERMAL_NAME, pipeline_dict={obj.name: lambda: obj})
-        else:
-            raise InvalidPipelineLoadingComboError(
-                'entry point must return a repository or pipeline'
-            )
-    return obj
+    return fn()
 
 
 def entrypoint_from_file_target(python_file, fn_name):
@@ -196,7 +182,14 @@ EMPHERMAL_NAME = '<<unnamed>>'
 def load_repository_from_target_info(repo_target_info):
     check.inst_param(repo_target_info, 'repo_target_info', RepositoryTargetInfo)
     entrypoint = entrypoint_from_repo_target_info(repo_target_info)
-    return check.inst(perform_load(entrypoint, True), RepositoryDefinition)
+    obj = perform_load(entrypoint)
+
+    if isinstance(obj, RepositoryDefinition):
+        return obj
+    elif isinstance(obj, PipelineDefinition):
+        return RepositoryDefinition(name=EMPHERMAL_NAME, pipeline_dict={obj.name: lambda: obj})
+    else:
+        raise InvalidPipelineLoadingComboError('entry point must return a repository or pipeline')
 
 
 def load_pipeline_from_target_info(pipeline_target_info):
