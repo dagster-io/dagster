@@ -18,32 +18,19 @@ PipelineTargetInfo = namedtuple(
 )
 
 
-class RepositoryTargetMode(Enum):
-    YAML_FILE = 0
-    MODULE = 1
-    FILE = 2
-
-
 RepositoryTargetInfo = namedtuple(
     'RepositoryTargetInfo', 'repository_yaml module_name python_file fn_name'
 )
 
 
 class PipelineTargetMode(Enum):
-    PIPELINE_PYTHON_FILE = 0
-    PIPELINE_MODULE = 1
+    PIPELINE = 1
     REPOSITORY = 2
 
-
-FileTargetFunction = namedtuple('FileTargetFunction', 'python_file fn_name')
-
-ModuleTargetFunction = namedtuple('ModuleTargetFunction', 'module_name fn_name')
 
 RepositoryData = namedtuple('RepositoryData', 'entrypoint pipeline_name')
 
 PipelineLoadingModeData = namedtuple('PipelineLoadingModeData', 'mode data')
-
-RepositoryLoadingModeData = namedtuple('RepositoryLoadingModeData', 'mode data')
 
 
 class InvalidPipelineLoadingComboError(Exception):
@@ -84,33 +71,25 @@ def repo_load_invariant(condition):
         raise InvalidRepositoryLoadingComboError()
 
 
-def create_repository_loading_mode_data(repo_target_info):
+def entrypoint_from_repo_target_info(repo_target_info):
     check.inst_param(repo_target_info, 'repo_target_info', RepositoryTargetInfo)
 
     if repo_target_info.repository_yaml:
         repo_load_invariant(repo_target_info.module_name is None)
         repo_load_invariant(repo_target_info.python_file is None)
         repo_load_invariant(repo_target_info.fn_name is None)
-        return RepositoryLoadingModeData(
-            mode=RepositoryTargetMode.YAML_FILE, data=repo_target_info.repository_yaml
-        )
+        return entrypoint_from_yaml(repo_target_info.repository_yaml)
     elif repo_target_info.module_name and repo_target_info.fn_name:
         repo_load_invariant(repo_target_info.repository_yaml is None)
         repo_load_invariant(repo_target_info.python_file is None)
-        return RepositoryLoadingModeData(
-            mode=RepositoryTargetMode.MODULE,
-            data=ModuleTargetFunction(
-                module_name=repo_target_info.module_name, fn_name=repo_target_info.fn_name
-            ),
+        return entrypoint_from_module_target(
+            module_name=repo_target_info.module_name, fn_name=repo_target_info.fn_name
         )
     elif repo_target_info.python_file and repo_target_info.fn_name:
         repo_load_invariant(repo_target_info.repository_yaml is None)
         repo_load_invariant(repo_target_info.module_name is None)
-        return RepositoryLoadingModeData(
-            mode=RepositoryTargetMode.FILE,
-            data=FileTargetFunction(
-                python_file=repo_target_info.python_file, fn_name=repo_target_info.fn_name
-            ),
+        return entrypoint_from_file_target(
+            python_file=repo_target_info.python_file, fn_name=repo_target_info.fn_name
         )
     else:
         raise InvalidRepositoryLoadingComboError()
@@ -123,35 +102,35 @@ def create_pipeline_loading_mode_data(pipeline_target_info):
         return PipelineLoadingModeData(
             mode=PipelineTargetMode.REPOSITORY,
             data=RepositoryData(
-                entrypoint=entrypoint_from_file_target(FileTargetFunction(
+                entrypoint=entrypoint_from_file_target(
                     python_file=pipeline_target_info.python_file,
                     fn_name=pipeline_target_info.fn_name,
-                )),
+                ),
                 pipeline_name=pipeline_target_info.pipeline_name,
             ),
         )
     elif check_info_fields(pipeline_target_info, 'module_name', 'fn_name', 'pipeline_name'):
         return PipelineLoadingModeData(
-            mode=PipelineTargetMode.REPOSITORY_MODULE,
+            mode=PipelineTargetMode.REPOSITORY,
             data=RepositoryData(
-                entrypoint=entrypoint_from_module_target(ModuleTargetFunction(
+                entrypoint=entrypoint_from_module_target(
                     module_name=pipeline_target_info.module_name,
                     fn_name=pipeline_target_info.fn_name,
-                )),
+                ),
                 pipeline_name=pipeline_target_info.pipeline_name,
             ),
         )
     elif check_info_fields(pipeline_target_info, 'python_file', 'fn_name'):
         return PipelineLoadingModeData(
-            mode=PipelineTargetMode.PIPELINE_PYTHON_FILE,
-            data=FileTargetFunction(
+            mode=PipelineTargetMode.PIPELINE,
+            data=entrypoint_from_file_target(
                 python_file=pipeline_target_info.python_file, fn_name=pipeline_target_info.fn_name
             ),
         )
     elif check_info_fields(pipeline_target_info, 'module_name', 'fn_name'):
         return PipelineLoadingModeData(
-            mode=PipelineTargetMode.PIPELINE_MODULE,
-            data=ModuleTargetFunction(
+            mode=PipelineTargetMode.PIPELINE,
+            data=entrypoint_from_module_target(
                 module_name=pipeline_target_info.module_name, fn_name=pipeline_target_info.fn_name
             ),
         )
@@ -167,7 +146,7 @@ def create_pipeline_loading_mode_data(pipeline_target_info):
         check.invariant(pipeline_target_info.repository_yaml is not None)
 
         return PipelineLoadingModeData(
-            mode=PipelineTargetMode.REPOSITORY_YAML_FILE,
+            mode=PipelineTargetMode.REPOSITORY,
             data=RepositoryData(
                 entrypoint=entrypoint_from_yaml(pipeline_target_info.repository_yaml),
                 pipeline_name=pipeline_target_info.pipeline_name,
@@ -177,10 +156,10 @@ def create_pipeline_loading_mode_data(pipeline_target_info):
         raise InvalidPipelineLoadingComboError()
 
 
-ModuleEntry = namedtuple('ModuleEntry', 'module module_name fn_name')
+LoaderEntrypoint = namedtuple('LoaderEntrypoint', 'module module_name fn_name')
 
 
-def perform_load(entry, coerce_to_repo = False):
+def perform_load(entry, coerce_to_repo=False):
     fn = getattr(entry.module, entry.fn_name)
     check.is_callable(fn)
     obj = fn()
@@ -192,9 +171,7 @@ def perform_load(entry, coerce_to_repo = False):
         if isinstance(obj, RepositoryDefinition):
             return obj
         elif isinstance(obj, PipelineDefinition):
-            return RepositoryDefinition(
-                name=EMPHERMAL_NAME, pipeline_dict={obj.name: lambda: obj}
-            )
+            return RepositoryDefinition(name=EMPHERMAL_NAME, pipeline_dict={obj.name: lambda: obj})
         else:
             raise InvalidPipelineLoadingComboError(
                 'entry point must return a repository or pipeline'
@@ -202,17 +179,15 @@ def perform_load(entry, coerce_to_repo = False):
     return obj
 
 
-def entrypoint_from_file_target(file_target_function):
-    check.inst_param(file_target_function, 'file_target_function', FileTargetFunction)
-    module_name = os.path.splitext(os.path.basename(file_target_function.python_file))[0]
-    module = imp.load_source(module_name, file_target_function.python_file)
-    return ModuleEntry(module, module_name, file_target_function.fn_name)
+def entrypoint_from_file_target(python_file, fn_name):
+    module_name = os.path.splitext(os.path.basename(python_file))[0]
+    module = imp.load_source(module_name, python_file)
+    return LoaderEntrypoint(module, module_name, fn_name)
 
 
-def entrypoint_from_module_target(module_target_function):
-    check.inst_param(module_target_function, 'module_target_function', ModuleTargetFunction)
-    module = importlib.import_module(module_target_function.module_name)
-    return ModuleEntry(module, module_target_function.module_name, module_target_function.fn_name)
+def entrypoint_from_module_target(module_name, fn_name):
+    module = importlib.import_module(module_name)
+    return LoaderEntrypoint(module, module_name, fn_name)
 
 
 EMPHERMAL_NAME = '<<unnamed>>'
@@ -220,17 +195,7 @@ EMPHERMAL_NAME = '<<unnamed>>'
 
 def load_repository_from_target_info(repo_target_info):
     check.inst_param(repo_target_info, 'repo_target_info', RepositoryTargetInfo)
-    mode_data = create_repository_loading_mode_data(repo_target_info)
-
-    if mode_data.mode == RepositoryTargetMode.YAML_FILE:
-        entrypoint = entrypoint_from_yaml(mode_data.data)
-    elif mode_data.mode == RepositoryTargetMode.MODULE:
-        entrypoint = entrypoint_from_module_target(mode_data.data)
-    elif mode_data.mode == RepositoryTargetMode.FILE:
-        entrypoint = entrypoint_from_file_target(mode_data.data)
-    else:
-        check.failed('should not reach')
-
+    entrypoint = entrypoint_from_repo_target_info(repo_target_info)
     return check.inst(perform_load(entrypoint, True), RepositoryDefinition)
 
 
@@ -242,10 +207,8 @@ def load_pipeline_from_target_info(pipeline_target_info):
     if mode_data.mode == PipelineTargetMode.REPOSITORY:
         repository = check.inst(perform_load(mode_data.data.entrypoint), RepositoryDefinition)
         return repository.get_pipeline(mode_data.data.pipeline_name)
-    elif mode_data.mode == PipelineTargetMode.PIPELINE_PYTHON_FILE:
-        return check.inst(perform_load(entrypoint_from_file_target(mode_data.data)), PipelineDefinition)
-    elif mode_data.mode == PipelineTargetMode.PIPELINE_MODULE:
-        return check.inst(perform_load(entrypoint_from_module_target(mode_data.data)), PipelineDefinition)
+    elif mode_data.mode == PipelineTargetMode.PIPELINE:
+        return check.inst(perform_load(mode_data.data), PipelineDefinition)
     else:
         check.failed('Should never reach')
 
@@ -260,11 +223,11 @@ def entrypoint_from_yaml(file_path):
     fn_name = check.str_elem(repository_config, 'fn')
 
     if module_name:
-        return entrypoint_from_module_target(ModuleTargetFunction(module_name, fn_name))
+        return entrypoint_from_module_target(module_name, fn_name)
     else:
         # rebase file in config off of the path in the config file
         file_name = os.path.join(os.path.dirname(os.path.abspath(file_path)), file_name)
-        return entrypoint_from_file_target(FileTargetFunction(file_name, fn_name))
+        return entrypoint_from_file_target(file_name, fn_name)
 
 
 def apply_click_params(command, *click_params):

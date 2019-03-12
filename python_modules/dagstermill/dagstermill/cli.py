@@ -12,31 +12,26 @@ from dagster.cli.dynamic_loader import (
     repository_target_argument,
     load_target_info_from_cli_args,
     RepositoryTargetInfo,
-    create_repository_loading_mode_data,
+    entrypoint_from_module_target,
     load_yaml_from_path,
-    ModuleTargetFunction,
     InvalidRepositoryLoadingComboError,
 )
 from dagster.utils import safe_isfile
 
 
-def get_module_target_function(repo_target_info):
+def get_acceptable_entrypoint(repo_target_info):
     check.inst_param(repo_target_info, 'repo_target_info', RepositoryTargetInfo)
     if repo_target_info.repository_yaml:
-        mode_data = create_repository_loading_mode_data(repo_target_info)
-        file_path = mode_data.data
-        check.str_param(file_path, 'file_path')
-        config = load_yaml_from_path(file_path)
+        check.str_param(repo_target_info.repository_yaml, 'repository_yaml')
+        config = load_yaml_from_path(repo_target_info.repository_yaml)
         repository_config = check.dict_elem(config, 'repository')
         module_name = check.opt_str_elem(repository_config, 'module')
         fn_name = check.str_elem(repository_config, 'fn')
         if module_name:
-            return ModuleTargetFunction(module_name=module_name, fn_name=fn_name)
+            return entrypoint_from_module_target(module_name, fn_name)
         return None
     elif repo_target_info.module_name and repo_target_info.fn_name:
-        return ModuleTargetFunction(
-            module_name=repo_target_info.module_name, fn_name=repo_target_info.fn_name
-        )
+        return entrypoint_from_module_target(repo_target_info.module_name, repo_target_info.fn_name)
     elif repo_target_info.python_file and repo_target_info.fn_name:
         return None
     else:
@@ -145,11 +140,11 @@ def get_register_repo_info(cli_args, allow_none=True):
     register_repo_info = None
     if scaffolding_with_repo:
         repository_target_info = load_target_info_from_cli_args(cli_args)
-        module_target_info = get_module_target_function(repository_target_info)
+        entrypoint = get_acceptable_entrypoint(repository_target_info)
 
-        if module_target_info:
-            module = module_target_info.module_name
-            fn_name = module_target_info.fn_name
+        if entrypoint:
+            module = entrypoint.module_name
+            fn_name = entrypoint.fn_name
             RegisterRepoInfo = namedtuple(
                 'RegisterRepoInfo', 'import_statement declaration_statement'
             )

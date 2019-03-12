@@ -96,9 +96,7 @@ def _do_setup(name='dagit'):
             # 'pre-commit'>=1.10.1',
         ],
         scripts=["dagit-watch"],
-        entry_points={
-            "console_scripts": ['dagit = dagit.cli:main']
-        },
+        entry_points={"console_scripts": ['dagit = dagit.cli:main']},
     )
 
 

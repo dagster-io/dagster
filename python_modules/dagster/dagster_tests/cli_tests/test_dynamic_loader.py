@@ -1,21 +1,18 @@
 import pytest
+import imp
+import importlib
 
 from dagster import PipelineDefinition, RepositoryDefinition, lambda_solid
 
 from dagster.cli.dynamic_loader import (
-    FileTargetFunction,
     InvalidPipelineLoadingComboError,
     PipelineLoadingModeData,
-    ModuleTargetFunction,
     PipelineTargetInfo,
     PipelineTargetMode,
-    RepositoryModuleData,
-    RepositoryPythonFileData,
-    RepositoryLoadingModeData,
     RepositoryTargetInfo,
-    RepositoryTargetMode,
-    RepositoryYamlData,
-    create_repository_loading_mode_data,
+    LoaderEntrypoint,
+    RepositoryData,
+    entrypoint_from_repo_target_info,
     create_pipeline_loading_mode_data,
     load_pipeline_from_target_info,
     load_repository_from_target_info,
@@ -25,23 +22,23 @@ from dagster.utils import script_relative_path
 
 
 def test_repository_python_file():
+    python_file = script_relative_path('bar_repo.py')
+    module = imp.load_source('bar_repo', python_file)
+
     mode_data = create_pipeline_loading_mode_data(
         PipelineTargetInfo(
             module_name=None,
             pipeline_name='foo',
-            python_file='bar_repo.py',
+            python_file=python_file,
             fn_name='define_bar_repo',
             repository_yaml=None,
         )
     )
 
     assert mode_data == PipelineLoadingModeData(
-        mode=PipelineTargetMode.REPOSITORY_PYTHON_FILE,
-        data=RepositoryPythonFileData(
-            file_target_function=FileTargetFunction(
-                python_file='bar_repo.py', fn_name='define_bar_repo'
-            ),
-            pipeline_name='foo',
+        mode=PipelineTargetMode.REPOSITORY,
+        data=RepositoryData(
+            entrypoint=LoaderEntrypoint(module, 'bar_repo', 'define_bar_repo'), pipeline_name='foo'
         ),
     )
 
@@ -50,7 +47,7 @@ def test_repository_python_file():
             PipelineTargetInfo(
                 module_name='kdjfkd',
                 pipeline_name='foo',
-                python_file='bar_repo.py',
+                python_file=script_relative_path('bar_repo.py'),
                 fn_name='define_bar_repo',
                 repository_yaml=None,
             )
@@ -61,7 +58,7 @@ def test_repository_python_file():
             PipelineTargetInfo(
                 module_name=None,
                 pipeline_name='foo',
-                python_file='bar_repo.py',
+                python_file=script_relative_path('bar_repo.py'),
                 fn_name='define_bar_repo',
                 repository_yaml='kjdfkdjf',
             )
@@ -69,9 +66,10 @@ def test_repository_python_file():
 
 
 def test_repository_module():
+    module = importlib.import_module('dagster')
     mode_data = create_pipeline_loading_mode_data(
         PipelineTargetInfo(
-            module_name='bar_module',
+            module_name='dagster',
             pipeline_name='foo',
             python_file=None,
             fn_name='define_bar_repo',
@@ -80,37 +78,37 @@ def test_repository_module():
     )
 
     assert mode_data == PipelineLoadingModeData(
-        mode=PipelineTargetMode.REPOSITORY_MODULE,
-        data=RepositoryModuleData(
-            module_target_function=ModuleTargetFunction(
-                module_name='bar_module', fn_name='define_bar_repo'
-            ),
-            pipeline_name='foo',
+        mode=PipelineTargetMode.REPOSITORY,
+        data=RepositoryData(
+            entrypoint=LoaderEntrypoint(module, 'dagster', 'define_bar_repo'), pipeline_name='foo'
         ),
     )
 
 
 def test_pipeline_python_file():
+    python_file = script_relative_path('foo_pipeline.py')
+    module = imp.load_source('foo_pipeline', python_file)
+
     mode_data = create_pipeline_loading_mode_data(
         PipelineTargetInfo(
             module_name=None,
             fn_name='define_pipeline',
             pipeline_name=None,
-            python_file='foo.py',
+            python_file=python_file,
             repository_yaml=None,
         )
     )
 
     assert mode_data == PipelineLoadingModeData(
-        mode=PipelineTargetMode.PIPELINE_PYTHON_FILE,
-        data=FileTargetFunction(python_file='foo.py', fn_name='define_pipeline'),
+        mode=PipelineTargetMode.PIPELINE,
+        data=LoaderEntrypoint(module, 'foo_pipeline', 'define_pipeline'),
     )
 
 
 def test_pipeline_module():
     mode_data = create_pipeline_loading_mode_data(
         PipelineTargetInfo(
-            module_name='foo_module',
+            module_name='dagster',
             fn_name='define_pipeline',
             pipeline_name=None,
             python_file=None,
@@ -119,23 +117,30 @@ def test_pipeline_module():
     )
 
     assert mode_data == PipelineLoadingModeData(
-        mode=PipelineTargetMode.PIPELINE_MODULE,
-        data=ModuleTargetFunction(module_name='foo_module', fn_name='define_pipeline'),
+        mode=PipelineTargetMode.PIPELINE,
+        data=LoaderEntrypoint(importlib.import_module('dagster'), 'dagster', 'define_pipeline'),
     )
 
 
 def test_yaml_file():
+    module = importlib.import_module('dagster.tutorials.intro_tutorial.repos')
+
     assert create_pipeline_loading_mode_data(
         PipelineTargetInfo(
             module_name=None,
             pipeline_name='foobar',
             python_file=None,
             fn_name=None,
-            repository_yaml='some_file.yml',
+            repository_yaml=script_relative_path('repository.yml'),
         )
     ) == PipelineLoadingModeData(
-        mode=PipelineTargetMode.REPOSITORY_YAML_FILE,
-        data=RepositoryYamlData(repository_yaml='some_file.yml', pipeline_name='foobar'),
+        mode=PipelineTargetMode.REPOSITORY,
+        data=RepositoryData(
+            entrypoint=LoaderEntrypoint(
+                module, 'dagster.tutorials.intro_tutorial.repos', 'define_repo'
+            ),
+            pipeline_name='foobar',
+        ),
     )
 
     with pytest.raises(InvalidPipelineLoadingComboError):
@@ -262,30 +267,34 @@ def test_loader_from_default_repository_file_yaml():
     assert pipeline.name == 'foo'
 
 
-def test_repo_mode_data():
-    assert create_repository_loading_mode_data(
+def test_repo_entrypoints():
+    module = importlib.import_module('dagster.tutorials.intro_tutorial.repos')
+    assert entrypoint_from_repo_target_info(
         RepositoryTargetInfo(
-            repository_yaml='foo.yaml', module_name=None, python_file=None, fn_name=None
+            repository_yaml=script_relative_path('repository.yml'),
+            module_name=None,
+            python_file=None,
+            fn_name=None,
         )
-    ) == RepositoryLoadingModeData(mode=RepositoryTargetMode.YAML_FILE, data='foo.yaml')
+    ) == LoaderEntrypoint(module, 'dagster.tutorials.intro_tutorial.repos', 'define_repo')
 
-    assert create_repository_loading_mode_data(
+    module = importlib.import_module('dagster')
+    assert entrypoint_from_repo_target_info(
         RepositoryTargetInfo(
-            repository_yaml=None, module_name='foo', python_file=None, fn_name='define_bar_repo'
+            repository_yaml=None, module_name='dagster', python_file=None, fn_name='define_bar_repo'
         )
-    ) == RepositoryLoadingModeData(
-        mode=RepositoryTargetMode.MODULE,
-        data=ModuleTargetFunction(module_name='foo', fn_name='define_bar_repo'),
-    )
+    ) == LoaderEntrypoint(module, 'dagster', 'define_bar_repo')
 
-    assert create_repository_loading_mode_data(
+    python_file = script_relative_path('bar_repo.py')
+    module = imp.load_source('bar_repo', python_file)
+    assert entrypoint_from_repo_target_info(
         RepositoryTargetInfo(
-            repository_yaml=None, module_name=None, python_file='foo.py', fn_name='define_bar_repo'
+            repository_yaml=None,
+            module_name=None,
+            python_file=python_file,
+            fn_name='define_bar_repo',
         )
-    ) == RepositoryLoadingModeData(
-        mode=RepositoryTargetMode.FILE,
-        data=FileTargetFunction(python_file='foo.py', fn_name='define_bar_repo'),
-    )
+    ) == LoaderEntrypoint(module, 'bar_repo', 'define_bar_repo')
 
 
 def test_repo_yaml_module_dynamic_load():
