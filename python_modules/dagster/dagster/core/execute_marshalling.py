@@ -61,8 +61,8 @@ def execute_marshalling(
         isinstance(run_config.executor_config, InProcessExecutorConfig),
         'run_config',
         (
-            'In order for this function to work properly you must provide an '
-            'you must use the in process executor for now'
+            'In order for this function to work properly you must provide an executor config: '
+            'for now, you must use the InProcessExecutorConfig'
         ),
     )
 
