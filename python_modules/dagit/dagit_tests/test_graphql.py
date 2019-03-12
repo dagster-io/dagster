@@ -1678,7 +1678,7 @@ subscription subscribeTest($runId: ID!) {
         __typename
         messages {
             __typename
-            ... on ExecutionStepEvent {
+            ... on MessageEvent {
                 step {key }
             }
         }

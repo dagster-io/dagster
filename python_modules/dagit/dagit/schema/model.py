@@ -245,7 +245,9 @@ def get_pipeline_run_observable(graphene_info, run_id, after=None):
         return run.observable_after_cursor(after).map(
             lambda events: graphene_info.schema.type_named('PipelineRunLogsSubscriptionPayload')(
                 messages=[
-                    pipeline_run_event_type.from_dagster_event(graphene_info, event, pipeline)
+                    pipeline_run_event_type.from_dagster_event(
+                        graphene_info, event, pipeline, run.execution_plan
+                    )
                     for event in events
                 ]
             )
