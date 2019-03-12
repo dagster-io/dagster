@@ -506,7 +506,7 @@ Redshift cluster or our local Postgres in test:
         config_field=Field(Dict(fields={'table_name': Field(String, description='')})),
     )
     def load_data_to_database_from_spark(context, data_frame):
-        context.resources.db_info.load_table(data_frame, context.config['table_name'])
+        context.resources.db_info.load_table(data_frame, context.solid_config['table_name'])
         return data_frame
 
 Note how using the `db_info` resource simplifies this operation. There's no need to pollute the

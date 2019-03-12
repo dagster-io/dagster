@@ -468,7 +468,7 @@ def normalize_weather_na_values(_context, data_frame):
     config_field=Field(Dict(fields={'table_name': Field(String, description='')})),
 )
 def load_data_to_database_from_spark(context, data_frame):
-    context.resources.db_info.load_table(data_frame, context.config['table_name'])
+    context.resources.db_info.load_table(data_frame, context.solid_config['table_name'])
     return data_frame
 
 
@@ -525,8 +525,8 @@ def join_spark_data_frames(context, left_data_frame, right_data_frame):
     return left_data_frame.join(
         right_data_frame,
         on=(
-            getattr(left_data_frame, context.config['on_left'])
-            == getattr(right_data_frame, context.config['on_right'])
+            getattr(left_data_frame, context.solid_config['on_left'])
+            == getattr(right_data_frame, context.solid_config['on_right'])
         ),
         how=context.solid_config['how'],
     )
