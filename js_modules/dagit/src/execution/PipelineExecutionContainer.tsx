@@ -185,7 +185,7 @@ export default class PipelineExecutionContainer extends React.Component<
           .join("\n\n")}`;
       }
 
-      alert(message);
+      window.alert(message);
     }
   };
 
