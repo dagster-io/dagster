@@ -2,7 +2,6 @@
 ARGS=()
 WATCH="1"
 for var in "$@"; do
-    # Ignore known bad arguments
     if [ "$var" == '--no-watch' ]; then
       WATCH="0"
     else
@@ -11,7 +10,7 @@ for var in "$@"; do
 done
 
 if [ "$WATCH" = "1" ]; then
-  echo "Watching for file changes."
+  echo "Watching for file changes..."
   watchmedo auto-restart -p="*.py" -R dagit-cli -- "$@"
 else
   dagit-cli "${ARGS[@]}"
