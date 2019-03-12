@@ -18,7 +18,7 @@ from dagster.cli.dynamic_loader import (
     create_repository_loading_mode_data,
     create_pipeline_loading_mode_data,
     load_pipeline_from_target_info,
-    load_repository_object_from_target_info,
+    load_repository_from_target_info,
 )
 
 from dagster.utils import script_relative_path
@@ -289,70 +289,70 @@ def test_repo_mode_data():
 
 
 def test_repo_yaml_module_dynamic_load():
-    repository = load_repository_object_from_target_info(
+    repository = load_repository_from_target_info(
         RepositoryTargetInfo(
             repository_yaml=script_relative_path('repository_module.yml'),
             module_name=None,
             python_file=None,
             fn_name=None,
         )
-    ).load()
+    )
 
     assert isinstance(repository, RepositoryDefinition)
     assert repository.name == 'demo_repository'
 
 
 def test_repo_yaml_file_dynamic_load():
-    repository = load_repository_object_from_target_info(
+    repository = load_repository_from_target_info(
         RepositoryTargetInfo(
             repository_yaml=script_relative_path('repository_file.yml'),
             module_name=None,
             python_file=None,
             fn_name=None,
         )
-    ).load()
+    )
 
     assert isinstance(repository, RepositoryDefinition)
     assert repository.name == 'bar'
 
 
 def test_repo_module_dynamic_load():
-    repository = load_repository_object_from_target_info(
+    repository = load_repository_from_target_info(
         RepositoryTargetInfo(
             repository_yaml=None,
             module_name='dagster.tutorials.intro_tutorial.repos',
             python_file=None,
             fn_name='define_repo_demo_pipeline',
         )
-    ).load()
+    )
 
     assert isinstance(repository, RepositoryDefinition)
     assert repository.name == '<<unnamed>>'
 
 
 def test_repo_file_dynamic_load():
-    repository = load_repository_object_from_target_info(
+    repository = load_repository_from_target_info(
         RepositoryTargetInfo(
             repository_yaml=None,
             module_name=None,
             python_file=script_relative_path('test_dynamic_loader.py'),
             fn_name='define_bar_repo',
         )
-    ).load()
+    )
 
     assert isinstance(repository, RepositoryDefinition)
     assert repository.name == 'bar'
 
 
 def test_repo_module_dynamic_load_from_pipeline():
-    repository = load_repository_object_from_target_info(
+    repository = load_repository_from_target_info(
         RepositoryTargetInfo(
             repository_yaml=None,
             module_name='dagster.tutorials.intro_tutorial.repos',
             python_file=None,
             fn_name='define_repo_demo_pipeline',
         )
-    ).load()
+    )
 
     assert isinstance(repository, RepositoryDefinition)
     assert repository.name == '<<unnamed>>'
@@ -360,14 +360,14 @@ def test_repo_module_dynamic_load_from_pipeline():
 
 
 def test_repo_file_dynamic_load_from_pipeline():
-    repository = load_repository_object_from_target_info(
+    repository = load_repository_from_target_info(
         RepositoryTargetInfo(
             repository_yaml=None,
             module_name=None,
             python_file=script_relative_path('test_dynamic_loader.py'),
             fn_name='define_foo_pipeline',
         )
-    ).load()
+    )
 
     assert isinstance(repository, RepositoryDefinition)
     assert repository.name == '<<unnamed>>'

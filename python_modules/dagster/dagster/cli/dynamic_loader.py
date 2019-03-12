@@ -1,7 +1,6 @@
 from collections import namedtuple
 from enum import Enum
 import imp
-import sys
 import importlib
 import os
 
@@ -240,9 +239,8 @@ def load_module_target_function(module_target_function):
 EMPHERMAL_NAME = '<<unnamed>>'
 
 
-def load_repository_object_from_target_info(repo_target_info):
+def load_repository_from_target_info(repo_target_info):
     check.inst_param(repo_target_info, 'repo_target_info', RepositoryTargetInfo)
-
     mode_data = create_repository_loading_mode_data(repo_target_info)
 
     if mode_data.mode == RepositoryTargetMode.YAML_FILE:
@@ -255,14 +253,7 @@ def load_repository_object_from_target_info(repo_target_info):
         check.failed('should not reach')
 
     dynamic_obj.coerce_to_repo = True
-    return dynamic_obj
-
-
-def load_repository_from_target_info(repo_target_info):
-    check.inst_param(repo_target_info, 'repo_target_info', RepositoryTargetInfo)
-    return check.inst(
-        load_repository_object_from_target_info(repo_target_info).load(), RepositoryDefinition
-    )
+    return check.inst(dynamic_obj.load(), RepositoryDefinition)
 
 
 def load_pipeline_from_target_info(pipeline_target_info):
