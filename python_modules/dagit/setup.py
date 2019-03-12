@@ -82,6 +82,8 @@ def _do_setup(name='dagit'):
             'gevent==1.3.7',
             'graphql-ws>=0.3.0',
             'pyrsistent>=0.14.8',
+            # watchdog
+            'watchdog>=0.8.3',
             # notebooks support
             'nbconvert>=5.4.0',
             # dev/test - Installed via dev-requirements.txt
