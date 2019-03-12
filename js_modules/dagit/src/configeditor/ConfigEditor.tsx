@@ -114,17 +114,17 @@ export default class ConfigEditor extends React.Component<IConfigEditorProps> {
 
 injectGlobal`
   .react-codemirror2 {
-    overflow-y: scroll;
-    && {
-      width: 100%;
-      flex: 1;
-    }
+    height: 100%;
+    flex: 1;
+    position: relative;
   }
-  .CodeMirror {
-    && {
-      height: 100%;
-      width: 100%;
-    }
+  .react-codemirror2 .CodeMirror {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: initial;
   }
   .cm-whitespace {
     /*
