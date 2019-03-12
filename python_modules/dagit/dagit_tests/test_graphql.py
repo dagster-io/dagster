@@ -1411,7 +1411,7 @@ def test_query_execution_plan_errors():
     result = execute_dagster_graphql(
         define_context(),
         EXECUTION_PLAN_QUERY,
-        {'config': 2_334_893, 'pipeline': {'name': 'pandas_hello_world'}},
+        {'config': 2334893, 'pipeline': {'name': 'pandas_hello_world'}},
     )
 
     assert not result.errors
