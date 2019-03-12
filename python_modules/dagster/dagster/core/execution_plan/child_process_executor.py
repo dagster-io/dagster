@@ -57,14 +57,7 @@ def execute_command_in_child_process(queue, command):
         queue.close()
 
 
-def flush_queue(queue):
-    events = []
-    while not queue.empty():
-        events.append(queue.get(block=False))
-    return events
-
-
-TICK = 20.0 * 1.0 / 1000.0
+TICK = 20.0 * 1.0 / 1000.0  # 20 MS
 
 PROCESS_DEAD_AND_QUEUE_EMPTY = 'PROCESS_DEAD_AND_QUEUE_EMPTY'
 
@@ -77,14 +70,18 @@ def get_next_event(process, queue):
     '''
     while True:
         try:
-            return queue.get(block=False)
+            return queue.get(block=True, timeout=TICK)
         except multiprocessing.queues.Empty:
-            if process.is_alive():
-                # processing still going
-                # sleep a bit and try to get the item out of the queue again
-                time.sleep(TICK)
-            else:
-                return PROCESS_DEAD_AND_QUEUE_EMPTY
+            if not process.is_alive():
+                # There is a possibility that after the last queue.get the
+                # process created another event and then died. In that case
+                # we want to continue draining the queue.
+                try:
+                    return queue.get(block=False)
+                except multiprocessing.queues.Empty:
+                    # If the queue empty we know that there are no more events
+                    # and that the process has died.
+                    return PROCESS_DEAD_AND_QUEUE_EMPTY
 
     check.failed('unreachable')
 
@@ -100,8 +97,6 @@ def execute_child_process_command(command, return_process_events=False):
     )
 
     process.start()
-
-    time.sleep(TICK)
 
     completed_properly = False
 
