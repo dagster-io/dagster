@@ -48,7 +48,7 @@ class DagsterUserCodeExecutionError(DagsterUserError):
     output_type = step.step_output_dict[output_name].runtime_type
     try:
         context.persistence_strategy.write_value(
-            output_type.serialization_strategy, output['path'], result.step_output_data.value
+            context, output_type.serialization_strategy, output['path'], result.step_output_data.value
         )
     except Exception as e:  # pylint: disable=broad-except
         raise_from(
