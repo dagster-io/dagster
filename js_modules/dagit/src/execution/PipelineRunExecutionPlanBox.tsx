@@ -3,6 +3,7 @@ import styled from "styled-components";
 import { Colors, Spinner, Intent } from "@blueprintjs/core";
 import { IStepState, IStepMaterialization } from "./RunMetadataProvider";
 import { Materialization } from "./Materialization";
+import { formatElapsedTime } from "../Util";
 
 interface IExecutionPlanBoxProps {
   state: IStepState;
@@ -17,10 +18,6 @@ interface IExecutionPlanBoxProps {
 
 interface IExecutionPlanBoxState {
   v: number;
-}
-
-function twoDigit(v: number) {
-  return `${v < 10 ? "0" : ""}${v}`;
 }
 
 export class ExecutionPlanBox extends React.Component<
@@ -163,24 +160,7 @@ const ExecutionStateDot = styled.div<{ state: IStepState }>`
 `;
 
 const ExecutionTime = ({ elapsed }: { elapsed: number }) => {
-  let text = "";
-
-  if (elapsed < 1000) {
-    // < 1 second, show "X msec"
-    text = `${Math.ceil(elapsed)} msec`;
-  } else {
-    // < 1 hour, show "42:12"
-    const sec = Math.floor(elapsed / 1000) % 60;
-    const min = Math.floor(elapsed / 1000 / 60) % 60;
-    const hours = Math.floor(elapsed / 1000 / 60 / 60);
-
-    if (hours > 0) {
-      text = `${hours}:${twoDigit(min)}:${twoDigit(sec)}`;
-    } else {
-      text = `${min}:${twoDigit(sec)}`;
-    }
-  }
-
+  let text = formatElapsedTime(elapsed);
   // Note: Adding a min-width prevents the size of the execution plan box from
   // shifting /slightly/ as the elapsed time increments.
   return (
@@ -228,9 +208,8 @@ const ExecutionPlanBoxContainer = styled.div<{ state: IStepState }>`
   color: ${Colors.DARK_GRAY3};
   padding: 4px;
   padding-right: 10px;
-  margin: 6px;
-  margin-left: 15px;
-  margin-bottom: 0;
+  margin: 3px;
+  margin-left: 12px;
   display: inline-flex;
   min-width: 150px;
   align-items: center;
