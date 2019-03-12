@@ -49,8 +49,6 @@ export default class LogsFilterProvider<
           message
           timestamp
           level
-        }
-        ... on ExecutionStepEvent {
           step {
             name
           }
@@ -92,7 +90,7 @@ export default class LogsFilterProvider<
 
       if (filter.text) {
         if (filter.text.startsWith("step:")) {
-          return "step" in node && node["step"].name === filter.text.substr(5);
+          return node.step && node.step.name === filter.text.substr(5);
         } else {
           return node.message.toLowerCase().includes(textLower);
         }

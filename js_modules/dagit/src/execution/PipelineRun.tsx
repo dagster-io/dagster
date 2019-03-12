@@ -82,6 +82,7 @@ export class PipelineRun extends React.Component<
     const errorNode = this.props.pipelineRun.logs.nodes.find(
       node =>
         node.__typename === "ExecutionStepFailureEvent" &&
+        node.step != null &&
         node.step.name === step
     ) as PipelineRunFragment_logs_nodes_ExecutionStepFailureEvent;
 

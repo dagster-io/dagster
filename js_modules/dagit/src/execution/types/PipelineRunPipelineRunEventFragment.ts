@@ -7,11 +7,17 @@ import { LogLevel } from "./../../types/globalTypes";
 // GraphQL fragment: PipelineRunPipelineRunEventFragment
 // ====================================================
 
+export interface PipelineRunPipelineRunEventFragment_LogMessageEvent_step {
+  __typename: "ExecutionStep";
+  name: string;
+}
+
 export interface PipelineRunPipelineRunEventFragment_LogMessageEvent {
-  __typename: "LogMessageEvent" | "PipelineStartEvent" | "PipelineSuccessEvent" | "PipelineFailureEvent" | "PipelineProcessStartEvent";
+  __typename: "LogMessageEvent" | "PipelineStartEvent" | "PipelineSuccessEvent" | "PipelineFailureEvent" | "ExecutionStepStartEvent" | "ExecutionStepSuccessEvent" | "PipelineProcessStartEvent";
   message: string;
   timestamp: string;
   level: LogLevel;
+  step: PipelineRunPipelineRunEventFragment_LogMessageEvent_step | null;
 }
 
 export interface PipelineRunPipelineRunEventFragment_ExecutionStepFailureEvent_step {
@@ -30,21 +36,22 @@ export interface PipelineRunPipelineRunEventFragment_ExecutionStepFailureEvent {
   message: string;
   timestamp: string;
   level: LogLevel;
-  step: PipelineRunPipelineRunEventFragment_ExecutionStepFailureEvent_step;
+  step: PipelineRunPipelineRunEventFragment_ExecutionStepFailureEvent_step | null;
   error: PipelineRunPipelineRunEventFragment_ExecutionStepFailureEvent_error;
 }
 
-export interface PipelineRunPipelineRunEventFragment_ExecutionStepStartEvent_step {
+export interface PipelineRunPipelineRunEventFragment_PipelineProcessStartedEvent_step {
   __typename: "ExecutionStep";
   name: string;
 }
 
-export interface PipelineRunPipelineRunEventFragment_ExecutionStepStartEvent {
-  __typename: "ExecutionStepStartEvent" | "ExecutionStepSuccessEvent";
+export interface PipelineRunPipelineRunEventFragment_PipelineProcessStartedEvent {
+  __typename: "PipelineProcessStartedEvent";
   message: string;
   timestamp: string;
   level: LogLevel;
-  step: PipelineRunPipelineRunEventFragment_ExecutionStepStartEvent_step;
+  step: PipelineRunPipelineRunEventFragment_PipelineProcessStartedEvent_step | null;
+  processId: number;
 }
 
 export interface PipelineRunPipelineRunEventFragment_StepMaterializationEvent_step {
@@ -57,17 +64,9 @@ export interface PipelineRunPipelineRunEventFragment_StepMaterializationEvent {
   message: string;
   timestamp: string;
   level: LogLevel;
-  step: PipelineRunPipelineRunEventFragment_StepMaterializationEvent_step;
+  step: PipelineRunPipelineRunEventFragment_StepMaterializationEvent_step | null;
   fileLocation: string;
   fileName: string;
 }
 
-export interface PipelineRunPipelineRunEventFragment_PipelineProcessStartedEvent {
-  __typename: "PipelineProcessStartedEvent";
-  message: string;
-  timestamp: string;
-  level: LogLevel;
-  processId: number;
-}
-
-export type PipelineRunPipelineRunEventFragment = PipelineRunPipelineRunEventFragment_LogMessageEvent | PipelineRunPipelineRunEventFragment_ExecutionStepFailureEvent | PipelineRunPipelineRunEventFragment_ExecutionStepStartEvent | PipelineRunPipelineRunEventFragment_StepMaterializationEvent | PipelineRunPipelineRunEventFragment_PipelineProcessStartedEvent;
+export type PipelineRunPipelineRunEventFragment = PipelineRunPipelineRunEventFragment_LogMessageEvent | PipelineRunPipelineRunEventFragment_ExecutionStepFailureEvent | PipelineRunPipelineRunEventFragment_PipelineProcessStartedEvent | PipelineRunPipelineRunEventFragment_StepMaterializationEvent;

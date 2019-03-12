@@ -53,7 +53,7 @@ function extractMetadataFromLogs(
       metadata.startedPipelineAt = Number.parseInt(log.timestamp);
     }
 
-    if ("step" in log) {
+    if (log.step) {
       const name = log.step.name;
       const timestamp = Number.parseInt(log.timestamp, 10);
 
@@ -108,6 +108,9 @@ export default class RunMetadataProvider extends React.Component<
         ... on MessageEvent {
           message
           timestamp
+          step {
+            name
+          }
         }
         ... on PipelineProcessStartedEvent {
           processId
@@ -118,11 +121,6 @@ export default class RunMetadataProvider extends React.Component<
           }
           fileLocation
           fileName
-        }
-        ... on ExecutionStepEvent {
-          step {
-            name
-          }
         }
       }
     `
