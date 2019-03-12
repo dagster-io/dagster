@@ -1419,7 +1419,7 @@ def test_query_execution_plan_errors():
     assert result.data['executionPlan']['__typename'] == 'PipelineConfigValidationInvalid'
 
     result = execute_dagster_graphql(
-        define_context(), EXECUTION_PLAN_QUERY, {'config': 2_334_893, 'pipeline': {'name': 'nope'}}
+        define_context(), EXECUTION_PLAN_QUERY, {'config': 2334893, 'pipeline': {'name': 'nope'}}
     )
 
     assert not result.errors
