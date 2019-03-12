@@ -1619,13 +1619,24 @@ def test_basic_start_pipeline_execution_and_subscribe():
         context, parse(SUBSCRIPTION_QUERY), variables={'runId': run_id}
     )
 
-    messages = []
-    subscription.subscribe(messages.append)
+    subscribe_results = []
+    subscription.subscribe(subscribe_results.append)
 
-    for m in messages:
-        assert not m.errors
-        assert m.data
-        assert m.data['pipelineRunLogs']
+    assert len(subscribe_results) == 1
+
+    subscribe_result = subscribe_results[0]
+
+    assert not subscribe_result.errors
+    assert subscribe_result.data
+    assert subscribe_result.data['pipelineRunLogs']
+    log_messages = []
+    for message in subscribe_result.data['pipelineRunLogs']['messages']:
+        if message['__typename'] == 'LogMessageEvent':
+            log_messages.append(message)
+
+    # skip the first one was we know it is not associatied with a step
+    for log_message in log_messages[1:]:
+        assert log_message['step']['key']
 
 
 def test_subscription_query_error():
@@ -1678,7 +1689,8 @@ subscription subscribeTest($runId: ID!) {
         __typename
         messages {
             __typename
-            ... on ExecutionStepEvent {
+            ... on MessageEvent {
+                message
                 step {key }
             }
         }
