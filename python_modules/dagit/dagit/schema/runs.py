@@ -95,10 +95,9 @@ class DauphinLogMessageConnection(dauphin.ObjectType):
 
     def resolve_nodes(self, graphene_info):
         pipeline = model.get_pipeline_or_raise(graphene_info, self._pipeline_run.selector)
-        execution_plan = self._pipeline_run.execution_plan
         return [
             graphene_info.schema.type_named('PipelineRunEvent').from_dagster_event(
-                graphene_info, log, pipeline, execution_plan
+                graphene_info, log, pipeline, self._pipeline_run.execution_plan
             )
             for log in self._logs
         ]

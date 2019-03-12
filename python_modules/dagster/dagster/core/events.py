@@ -310,6 +310,7 @@ def logger_to_kwargs(logger_message):
         'event_type': event_type,
         'run_id': logger_message.meta['run_id'],
         'timestamp': logger_message.record.created,
+        'step_key': logger_message.meta.get('step_key'),
     }
 
     event_cls = EVENT_CLS_LOOKUP[event_type]
@@ -317,7 +318,6 @@ def logger_to_kwargs(logger_message):
         return dict(base_args, pipeline_name=logger_message.meta['pipeline'])
     elif issubclass(event_cls, ExecutionStepEventRecord):
         step_args = {
-            'step_key': logger_message.meta['step_key'],
             'pipeline_name': logger_message.meta['pipeline'],
             'solid_name': logger_message.meta['solid'],
             'solid_definition_name': logger_message.meta['solid_definition'],

@@ -1411,7 +1411,7 @@ def test_query_execution_plan_errors():
     result = execute_dagster_graphql(
         define_context(),
         EXECUTION_PLAN_QUERY,
-        {'config': 2334893, 'pipeline': {'name': 'pandas_hello_world'}},
+        {'config': 2_334_893, 'pipeline': {'name': 'pandas_hello_world'}},
     )
 
     assert not result.errors
@@ -1419,7 +1419,7 @@ def test_query_execution_plan_errors():
     assert result.data['executionPlan']['__typename'] == 'PipelineConfigValidationInvalid'
 
     result = execute_dagster_graphql(
-        define_context(), EXECUTION_PLAN_QUERY, {'config': 2334893, 'pipeline': {'name': 'nope'}}
+        define_context(), EXECUTION_PLAN_QUERY, {'config': 2_334_893, 'pipeline': {'name': 'nope'}}
     )
 
     assert not result.errors
@@ -1562,7 +1562,9 @@ def test_basic_start_pipeline_execution_config_failure():
         START_PIPELINE_EXECUTION_QUERY,
         variables={
             'pipeline': {'name': 'pandas_hello_world'},
-            'config': {'solids': {'sum_solid': {'inputs': {'num': {'csv': {'path': 384938439}}}}}},
+            'config': {
+                'solids': {'sum_solid': {'inputs': {'num': {'csv': {'path': 384_938_439}}}}}
+            },
         },
     )
 
@@ -1619,13 +1621,24 @@ def test_basic_start_pipeline_execution_and_subscribe():
         context, parse(SUBSCRIPTION_QUERY), variables={'runId': run_id}
     )
 
-    messages = []
-    subscription.subscribe(messages.append)
+    subscribe_results = []
+    subscription.subscribe(subscribe_results.append)
 
-    for m in messages:
-        assert not m.errors
-        assert m.data
-        assert m.data['pipelineRunLogs']
+    assert len(subscribe_results) == 1
+
+    subscribe_result = subscribe_results[0]
+
+    assert not subscribe_result.errors
+    assert subscribe_result.data
+    assert subscribe_result.data['pipelineRunLogs']
+    log_messages = []
+    for message in subscribe_result.data['pipelineRunLogs']['messages']:
+        if message['__typename'] == 'LogMessageEvent':
+            log_messages.append(message)
+
+    # skip the first one was we know it is not associatied with a step
+    for log_message in log_messages[1:]:
+        assert log_message['step']['key']
 
 
 def test_subscription_query_error():
@@ -1679,6 +1692,7 @@ subscription subscribeTest($runId: ID!) {
         messages {
             __typename
             ... on MessageEvent {
+                message
                 step {key }
             }
         }
@@ -1878,7 +1892,9 @@ def test_start_subplan_invalid_config(snapshot):
         START_EXECUTION_PLAN_QUERY,
         variables={
             'pipelineName': 'pandas_hello_world',
-            'config': {'solids': {'sum_solid': {'inputs': {'num': {'csv': {'path': 384938439}}}}}},
+            'config': {
+                'solids': {'sum_solid': {'inputs': {'num': {'csv': {'path': 384_938_439}}}}}
+            },
             'stepExecutions': [{'stepKey': 'sum_solid.transform'}],
             'executionMetadata': {'runId': 'kdjkfjdfd'},
         },
