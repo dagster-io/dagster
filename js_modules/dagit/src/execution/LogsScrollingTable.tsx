@@ -317,20 +317,11 @@ const OverflowBanner = styled.div`
   background: ${Colors.LIGHT_GRAY3};
   border-top-left-radius: 4px;
   border-top-right-radius: 4px;
-`;
-
-const OverflowOption = styled.a`
   padding: 2px 12px;
-  line-height: 19px;
   color: ${Colors.BLACK};
   &:hover {
     color: ${Colors.BLACK};
     background: ${Colors.LIGHT_GRAY1};
-    text-decoration: none;
-  }
-  border-right: 1px solid ${Colors.GRAY3};
-  &:last-child {
-    border-right: 0;
   }
 `;
 
@@ -367,18 +358,6 @@ class OverflowDetectingCell extends React.Component<
     window.alert(el.firstChild && el.firstChild.textContent);
   };
 
-  onCopy = () => {
-    const el = ReactDOM.findDOMNode(this);
-    const sel = document.getSelection();
-    if (!el || !sel) return;
-    const range = document.createRange();
-    range.selectNode(el);
-    sel.removeAllRanges();
-    sel.addRange(range);
-    document.execCommand("copy");
-    sel.removeAllRanges();
-  };
-
   render() {
     const { level, style } = this.props;
 
@@ -389,7 +368,7 @@ class OverflowDetectingCell extends React.Component<
           <>
             <OverflowFade level={level} />
             <OverflowBanner onClick={this.onView}>
-              View Entire Message
+              View Full Message
             </OverflowBanner>
           </>
         )}
