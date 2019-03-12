@@ -9,7 +9,7 @@ def test_basic_introspection():
 
     repo_path = script_relative_path('./repository.yml')
 
-    result = subprocess.check_output(['dagit', '-q', query, '-y', repo_path])
+    result = subprocess.check_output(['dagit-cli', '-q', query, '-y', repo_path])
 
     result_data = json.loads(result.decode())
     assert result_data['data']
@@ -20,7 +20,7 @@ def test_basic_pipelines():
 
     repo_path = script_relative_path('./repository.yml')
 
-    result = subprocess.check_output(['dagit', '-q', query, '-y', repo_path])
+    result = subprocess.check_output(['dagit-cli', '-q', query, '-y', repo_path])
 
     result_data = json.loads(result.decode())
     assert result_data['data']
@@ -31,7 +31,7 @@ def test_basic_variables():
     variables = '{"pipelineName": "pandas_hello_world"}'
     repo_path = script_relative_path('./repository.yml')
 
-    result = subprocess.check_output(['dagit', '-q', query, '-v', variables, '-y', repo_path])
+    result = subprocess.check_output(['dagit-cli', '-q', query, '-v', variables, '-y', repo_path])
     result_data = json.loads(result.decode())
     assert result_data['data']
 
@@ -83,7 +83,7 @@ def test_start_execution():
     repo_path = script_relative_path('./repository.yml')
 
     result = subprocess.check_output(
-        ['dagit', '-q', START_PIPELINE_EXECUTION_QUERY, '-v', variables, '-y', repo_path]
+        ['dagit-cli', '-q', START_PIPELINE_EXECUTION_QUERY, '-v', variables, '-y', repo_path]
     )
     decoded = result.decode()
     try:

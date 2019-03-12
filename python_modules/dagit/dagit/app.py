@@ -17,8 +17,8 @@ from flask_sockets import Sockets
 from graphql.execution.executors.gevent import GeventExecutor as Executor
 from nbconvert import HTMLExporter
 
-from dagster import check
-from dagster.cli.dynamic_loader import DynamicObject, load_repository_object_from_target_info
+from dagster import check, RepositoryDefinition
+from dagster.cli.dynamic_loader import load_repository_from_target_info
 
 from .pipeline_execution_manager import MultiprocessingExecutionManager, SynchronousExecutionManager
 from .schema import create_schema
@@ -35,27 +35,18 @@ class RepositoryContainer(object):
     '''
 
     def __init__(self, repository_target_info=None, repository=None):
+        self.repo_error = None
         if repository_target_info is not None:
             self.repository_target_info = repository_target_info
-            self.repo_dynamic_obj = check.inst(
-                load_repository_object_from_target_info(repository_target_info), DynamicObject
-            )
-            self.repo = None
-            self.repo_error = None
-            self.reload()
+            try:
+                self.repo = check.inst(
+                    load_repository_from_target_info(repository_target_info), RepositoryDefinition
+                )
+            except:  # pylint: disable=W0702
+                self.repo_error = sys.exc_info()
         elif repository is not None:
             self.repository_target_info = None
             self.repo = repository
-            self.repo_error = None
-
-    def reload(self):
-        if not self.repo_dynamic_obj:
-            return
-        try:
-            self.repo = self.repo_dynamic_obj.load()
-            self.repo_error = None
-        except:  # pylint: disable=W0702
-            self.repo_error = sys.exc_info()
 
     @property
     def repository(self):

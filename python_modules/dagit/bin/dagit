@@ -1,0 +1,17 @@
+#!/bin/bash
+ARGS=()
+WATCH="1"
+for var in "$@"; do
+    if [ "$var" == '--no-watch' ]; then
+      WATCH="0"
+    else
+      ARGS+=("$var")
+    fi
+done
+
+if [ "$WATCH" = "1" ]; then
+  echo "Watching for file changes..."
+  watchmedo auto-restart -p="*.py" -R dagit-cli -- "$@"
+else
+  dagit-cli "${ARGS[@]}"
+fi
