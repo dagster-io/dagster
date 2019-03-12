@@ -3,7 +3,6 @@ from collections import namedtuple
 import multiprocessing
 import os
 import sys
-import time
 
 import six
 
@@ -67,6 +66,9 @@ def get_next_event(process, queue):
     This function polls the process until it returns a valid
     item or returns PROCESS_DEAD_AND_QUEUE_EMPTY if it is in
     a state where the process has terminated and the queue is empty
+
+    Warning: if the child process is in an infinite loop. This will
+    also infinitely loop.
     '''
     while True:
         try:
@@ -124,7 +126,7 @@ def execute_child_process_command(command, return_process_events=False):
             yield event
 
     if not completed_properly:
-        # TODO Gather up stderr
+        # TODO Gather up stderr and the process exit code
         raise ChildProcessCrashException()
 
     process.join()
