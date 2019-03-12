@@ -235,6 +235,7 @@ class LogsScrollingTableSized extends React.Component<
           columnCount={3}
           width={this.props.width}
           height={this.props.height}
+          autoContainerWidth={true}
           deferredMeasurementCache={this.cache}
           rowHeight={this.cache.rowHeight}
           rowCount={this.props.nodes.length}
@@ -277,7 +278,7 @@ const Cell = styled.div<{ level: LogLevel }>`
     }[props.level])};
 `;
 
-const OverflowFade = styled.div`
+const OverflowFade = styled.div<{ level: LogLevel }>`
   position: absolute;
   bottom: 0;
   left: 0;
@@ -287,8 +288,24 @@ const OverflowFade = styled.div`
   pointer-events: none;
   background: linear-gradient(
     to bottom,
-    rgba(245, 248, 250, 0) 0%,
-    rgba(245, 248, 250, 255) 100%
+    ${props =>
+        ({
+          [LogLevel.DEBUG]: `rgba(245, 248, 250, 0)`,
+          [LogLevel.INFO]: `rgba(245, 248, 250, 0)`,
+          [LogLevel.WARNING]: `rgba(240, 241, 237, 0)`,
+          [LogLevel.ERROR]: `rgba(243, 236, 239, 0)`,
+          [LogLevel.CRITICAL]: `rgba(243, 236, 239, 0)`
+        }[props.level])}
+      0%,
+    ${props =>
+        ({
+          [LogLevel.DEBUG]: `rgba(245, 248, 250, 255)`,
+          [LogLevel.INFO]: `rgba(245, 248, 250, 255)`,
+          [LogLevel.WARNING]: `rgba(240, 241, 237, 255)`,
+          [LogLevel.ERROR]: `rgba(243, 236, 239, 255)`,
+          [LogLevel.CRITICAL]: `rgba(243, 236, 239, 255)`
+        }[props.level])}
+      100%
   );
 `;
 const OverflowBanner = styled.div`
@@ -354,7 +371,7 @@ class OverflowDetectingCell extends React.Component<
         {this.props.children}
         {this.state.isOverflowing && (
           <>
-            <OverflowFade />
+            <OverflowFade level={level} />
             <OverflowBanner onClick={this.onCopy}>
               Copy entire message
             </OverflowBanner>

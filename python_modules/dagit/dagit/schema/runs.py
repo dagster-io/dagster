@@ -3,6 +3,7 @@ from __future__ import absolute_import
 from dagster import check
 from dagster.core.events import EventRecord, EventType
 from dagster.utils.logging import CRITICAL, DEBUG, ERROR, INFO, WARNING, check_valid_level_param
+from dagster.core.execution_plan.objects import ExecutionPlan
 
 from dagster.utils.error import SerializableErrorInfo
 from dagit import pipeline_run_storage
@@ -76,6 +77,7 @@ class DauphinMessageEvent(dauphin.Interface):
     message = dauphin.NonNull(dauphin.String)
     timestamp = dauphin.NonNull(dauphin.String)
     level = dauphin.NonNull('LogLevel')
+    step = dauphin.Field('ExecutionStep')
 
 
 class DauphinLogMessageConnection(dauphin.ObjectType):
@@ -95,7 +97,7 @@ class DauphinLogMessageConnection(dauphin.ObjectType):
         pipeline = model.get_pipeline_or_raise(graphene_info, self._pipeline_run.selector)
         return [
             graphene_info.schema.type_named('PipelineRunEvent').from_dagster_event(
-                graphene_info, log, pipeline
+                graphene_info, log, pipeline, self._pipeline_run.execution_plan
             )
             for log in self._logs
         ]
@@ -166,29 +168,22 @@ class DauphinPipelineProcessStartedEvent(dauphin.ObjectType):
     process_id = dauphin.NonNull(dauphin.Int)
 
 
-class DauphinExecutionStepEvent(dauphin.Interface):
-    class Meta:
-        name = 'ExecutionStepEvent'
-
-    step = dauphin.NonNull('ExecutionStep')
-
-
 class DauphinExecutionStepStartEvent(dauphin.ObjectType):
     class Meta:
         name = 'ExecutionStepStartEvent'
-        interfaces = (DauphinMessageEvent, DauphinExecutionStepEvent)
+        interfaces = (DauphinMessageEvent,)
 
 
 class DauphinExecutionStepSuccessEvent(dauphin.ObjectType):
     class Meta:
         name = 'ExecutionStepSuccessEvent'
-        interfaces = (DauphinMessageEvent, DauphinExecutionStepEvent)
+        interfaces = (DauphinMessageEvent,)
 
 
 class DauphinExecutionStepFailureEvent(dauphin.ObjectType):
     class Meta:
         name = 'ExecutionStepFailureEvent'
-        interfaces = (DauphinMessageEvent, DauphinExecutionStepEvent)
+        interfaces = (DauphinMessageEvent,)
 
     error = dauphin.NonNull('PythonError')
 
@@ -196,7 +191,7 @@ class DauphinExecutionStepFailureEvent(dauphin.ObjectType):
 class DauphinStepMaterializationEvent(dauphin.ObjectType):
     class Meta:
         name = 'StepMaterializationEvent'
-        interfaces = (DauphinMessageEvent, DauphinExecutionStepEvent)
+        interfaces = (DauphinMessageEvent,)
 
     file_name = dauphin.NonNull(dauphin.String)
     file_location = dauphin.NonNull(dauphin.String)
@@ -220,74 +215,66 @@ class DauphinPipelineRunEvent(dauphin.Union):
         )
 
     @staticmethod
-    def from_dagster_event(graphene_info, event, pipeline):
+    def from_dagster_event(graphene_info, event, dauphin_pipeline, execution_plan):
         check.inst_param(event, 'event', EventRecord)
-        check.inst_param(pipeline, 'pipeline', graphene_info.schema.type_named('Pipeline'))
+        check.inst_param(
+            dauphin_pipeline, 'dauphin_pipeline', graphene_info.schema.type_named('Pipeline')
+        )
+        check.inst_param(execution_plan, 'execution_plan', ExecutionPlan)
+
         pipeline_run = graphene_info.context.pipeline_runs.get_run_by_id(event.run_id)
-        run = DauphinPipelineRun(pipeline_run)
+        dauphin_run = DauphinPipelineRun(pipeline_run)
+
+        dauphin_step = (
+            graphene_info.schema.type_named('ExecutionStep')(
+                pipeline_run.execution_plan,
+                pipeline_run.execution_plan.get_step_by_key(event.step_key),
+            )
+            if event.step_key
+            else None
+        )
 
         basic_params = {
-            'run': run,
+            'run': dauphin_run,
             'message': event.user_message,
             'timestamp': int(event.timestamp * 1000),
             'level': DauphinLogLevel.from_level(event.level),
+            'step': dauphin_step,
         }
 
         if event.event_type == EventType.PIPELINE_START:
             return graphene_info.schema.type_named('PipelineStartEvent')(
-                pipeline=pipeline, **basic_params
+                pipeline=dauphin_pipeline, **basic_params
             )
         elif event.event_type == EventType.PIPELINE_SUCCESS:
             return graphene_info.schema.type_named('PipelineSuccessEvent')(
-                pipeline=pipeline, **basic_params
+                pipeline=dauphin_pipeline, **basic_params
             )
         elif event.event_type == EventType.PIPELINE_FAILURE:
             return graphene_info.schema.type_named('PipelineFailureEvent')(
-                pipeline=pipeline, **basic_params
+                pipeline=dauphin_pipeline, **basic_params
             )
         elif event.event_type == EventType.PIPELINE_PROCESS_START:
             return graphene_info.schema.type_named('PipelineProcessStartEvent')(
-                pipeline=pipeline, **basic_params
+                pipeline=dauphin_pipeline, **basic_params
             )
         elif event.event_type == EventType.PIPELINE_PROCESS_STARTED:
             return graphene_info.schema.type_named('PipelineProcessStartedEvent')(
-                pipeline=pipeline, process_id=event.process_id, **basic_params
+                pipeline=dauphin_pipeline, process_id=event.process_id, **basic_params
             )
         elif event.event_type == EventType.EXECUTION_PLAN_STEP_START:
-            return graphene_info.schema.type_named('ExecutionStepStartEvent')(
-                step=graphene_info.schema.type_named('ExecutionStep')(
-                    pipeline_run.execution_plan,
-                    pipeline_run.execution_plan.get_step_by_key(event.step_key),
-                ),
-                **basic_params
-            )
+            return graphene_info.schema.type_named('ExecutionStepStartEvent')(**basic_params)
         elif event.event_type == EventType.EXECUTION_PLAN_STEP_SUCCESS:
-            return graphene_info.schema.type_named('ExecutionStepSuccessEvent')(
-                step=graphene_info.schema.type_named('ExecutionStep')(
-                    pipeline_run.execution_plan,
-                    pipeline_run.execution_plan.get_step_by_key(event.step_key),
-                ),
-                **basic_params
-            )
+            return graphene_info.schema.type_named('ExecutionStepSuccessEvent')(**basic_params)
         elif event.event_type == EventType.EXECUTION_PLAN_STEP_FAILURE:
             check.inst(event.error_info, SerializableErrorInfo)
             return graphene_info.schema.type_named('ExecutionStepFailureEvent')(
-                step=graphene_info.schema.type_named('ExecutionStep')(
-                    pipeline_run.execution_plan,
-                    pipeline_run.execution_plan.get_step_by_key(event.step_key),
-                ),
                 error=graphene_info.schema.type_named('PythonError')(event.error_info),
                 **basic_params
             )
         elif event.event_type == EventType.STEP_MATERIALIZATION:
             return graphene_info.schema.type_named('StepMaterializationEvent')(
-                step=graphene_info.schema.type_named('ExecutionStep')(
-                    pipeline_run.execution_plan,
-                    pipeline_run.execution_plan.get_step_by_key(event.step_key),
-                ),
-                file_name=event.file_name,
-                file_location=event.file_location,
-                **basic_params
+                file_name=event.file_name, file_location=event.file_location, **basic_params
             )
         else:
             return graphene_info.schema.type_named('LogMessageEvent')(**basic_params)
