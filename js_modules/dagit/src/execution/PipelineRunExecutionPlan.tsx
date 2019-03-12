@@ -5,6 +5,7 @@ import { Colors } from "@blueprintjs/core";
 import { PipelineRunExecutionPlanFragment } from "./types/PipelineRunExecutionPlanFragment";
 import { ExecutionPlanBox } from "./PipelineRunExecutionPlanBox";
 import { IRunMetadataDict, IStepState } from "./RunMetadataProvider";
+import { formatElapsedTime } from "../Util";
 
 interface IPipelineRunExecutionPlanProps {
   run: PipelineRunExecutionPlanFragment;
@@ -97,6 +98,16 @@ export default class PipelineRunExecutionPlan extends React.Component<
               />
             );
           })}
+          {runMetadata.exitedAt && runMetadata.startedProcessAt && (
+            <ExecutionTimelineMessage>
+              <ExecutionTimelineDot completed={startDone} />
+              <span>
+                {`Process exited in ${formatElapsedTime(
+                  runMetadata.exitedAt - runMetadata.startedProcessAt
+                )}`}
+              </span>
+            </ExecutionTimelineMessage>
+          )}
         </ExecutionPlanContainerInner>
       </ExecutionPlanContainer>
     );
@@ -111,9 +122,9 @@ const ExecutionPlanContainer = styled.div`
 `;
 
 const ExecutionPlanContainerInner = styled.div`
-  margin-top: 15px;
+  margin-top: 10px;
   position: relative;
-  margin-bottom: 15px;
+  margin-bottom: 10px;
   display: flex;
   flex-direction: column;
   align-items: flex-start;
@@ -125,6 +136,8 @@ const ExecutionTimelineMessage = styled.div`
   align-items: center;
   position: relative;
   color: ${Colors.LIGHT_GRAY2};
+  margin-top: 3px;
+  margin-bottom: 3px;
   z-index: 2;
 `;
 
