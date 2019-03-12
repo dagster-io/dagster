@@ -14,6 +14,19 @@ export interface PipelineExecutionContainerFragment_runs_logs_nodes_LogMessageEv
   level: LogLevel;
 }
 
+export interface PipelineExecutionContainerFragment_runs_logs_nodes_ExecutionStepStartEvent_step {
+  __typename: "ExecutionStep";
+  name: string;
+}
+
+export interface PipelineExecutionContainerFragment_runs_logs_nodes_ExecutionStepStartEvent {
+  __typename: "ExecutionStepStartEvent" | "ExecutionStepSuccessEvent";
+  message: string;
+  timestamp: string;
+  level: LogLevel;
+  step: PipelineExecutionContainerFragment_runs_logs_nodes_ExecutionStepStartEvent_step;
+}
+
 export interface PipelineExecutionContainerFragment_runs_logs_nodes_ExecutionStepFailureEvent_step {
   __typename: "ExecutionStep";
   name: string;
@@ -34,14 +47,6 @@ export interface PipelineExecutionContainerFragment_runs_logs_nodes_ExecutionSte
   error: PipelineExecutionContainerFragment_runs_logs_nodes_ExecutionStepFailureEvent_error;
 }
 
-export interface PipelineExecutionContainerFragment_runs_logs_nodes_PipelineProcessStartedEvent {
-  __typename: "PipelineProcessStartedEvent";
-  message: string;
-  timestamp: string;
-  level: LogLevel;
-  processId: number;
-}
-
 export interface PipelineExecutionContainerFragment_runs_logs_nodes_StepMaterializationEvent_step {
   __typename: "ExecutionStep";
   name: string;
@@ -57,20 +62,15 @@ export interface PipelineExecutionContainerFragment_runs_logs_nodes_StepMaterial
   fileName: string;
 }
 
-export interface PipelineExecutionContainerFragment_runs_logs_nodes_ExecutionStepStartEvent_step {
-  __typename: "ExecutionStep";
-  name: string;
-}
-
-export interface PipelineExecutionContainerFragment_runs_logs_nodes_ExecutionStepStartEvent {
-  __typename: "ExecutionStepStartEvent" | "ExecutionStepSuccessEvent";
+export interface PipelineExecutionContainerFragment_runs_logs_nodes_PipelineProcessStartedEvent {
+  __typename: "PipelineProcessStartedEvent";
   message: string;
   timestamp: string;
   level: LogLevel;
-  step: PipelineExecutionContainerFragment_runs_logs_nodes_ExecutionStepStartEvent_step;
+  processId: number;
 }
 
-export type PipelineExecutionContainerFragment_runs_logs_nodes = PipelineExecutionContainerFragment_runs_logs_nodes_LogMessageEvent | PipelineExecutionContainerFragment_runs_logs_nodes_ExecutionStepFailureEvent | PipelineExecutionContainerFragment_runs_logs_nodes_PipelineProcessStartedEvent | PipelineExecutionContainerFragment_runs_logs_nodes_StepMaterializationEvent | PipelineExecutionContainerFragment_runs_logs_nodes_ExecutionStepStartEvent;
+export type PipelineExecutionContainerFragment_runs_logs_nodes = PipelineExecutionContainerFragment_runs_logs_nodes_LogMessageEvent | PipelineExecutionContainerFragment_runs_logs_nodes_ExecutionStepStartEvent | PipelineExecutionContainerFragment_runs_logs_nodes_ExecutionStepFailureEvent | PipelineExecutionContainerFragment_runs_logs_nodes_StepMaterializationEvent | PipelineExecutionContainerFragment_runs_logs_nodes_PipelineProcessStartedEvent;
 
 export interface PipelineExecutionContainerFragment_runs_logs_pageInfo {
   __typename: "PageInfo";

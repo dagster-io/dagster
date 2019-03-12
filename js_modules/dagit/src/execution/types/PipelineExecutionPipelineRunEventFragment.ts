@@ -34,12 +34,17 @@ export interface PipelineExecutionPipelineRunEventFragment_ExecutionStepFailureE
   error: PipelineExecutionPipelineRunEventFragment_ExecutionStepFailureEvent_error;
 }
 
-export interface PipelineExecutionPipelineRunEventFragment_PipelineProcessStartedEvent {
-  __typename: "PipelineProcessStartedEvent";
+export interface PipelineExecutionPipelineRunEventFragment_ExecutionStepStartEvent_step {
+  __typename: "ExecutionStep";
+  name: string;
+}
+
+export interface PipelineExecutionPipelineRunEventFragment_ExecutionStepStartEvent {
+  __typename: "ExecutionStepStartEvent" | "ExecutionStepSuccessEvent";
   message: string;
   timestamp: string;
   level: LogLevel;
-  processId: number;
+  step: PipelineExecutionPipelineRunEventFragment_ExecutionStepStartEvent_step;
 }
 
 export interface PipelineExecutionPipelineRunEventFragment_StepMaterializationEvent_step {
@@ -57,17 +62,12 @@ export interface PipelineExecutionPipelineRunEventFragment_StepMaterializationEv
   fileName: string;
 }
 
-export interface PipelineExecutionPipelineRunEventFragment_ExecutionStepStartEvent_step {
-  __typename: "ExecutionStep";
-  name: string;
-}
-
-export interface PipelineExecutionPipelineRunEventFragment_ExecutionStepStartEvent {
-  __typename: "ExecutionStepStartEvent" | "ExecutionStepSuccessEvent";
+export interface PipelineExecutionPipelineRunEventFragment_PipelineProcessStartedEvent {
+  __typename: "PipelineProcessStartedEvent";
   message: string;
   timestamp: string;
   level: LogLevel;
-  step: PipelineExecutionPipelineRunEventFragment_ExecutionStepStartEvent_step;
+  processId: number;
 }
 
-export type PipelineExecutionPipelineRunEventFragment = PipelineExecutionPipelineRunEventFragment_LogMessageEvent | PipelineExecutionPipelineRunEventFragment_ExecutionStepFailureEvent | PipelineExecutionPipelineRunEventFragment_PipelineProcessStartedEvent | PipelineExecutionPipelineRunEventFragment_StepMaterializationEvent | PipelineExecutionPipelineRunEventFragment_ExecutionStepStartEvent;
+export type PipelineExecutionPipelineRunEventFragment = PipelineExecutionPipelineRunEventFragment_LogMessageEvent | PipelineExecutionPipelineRunEventFragment_ExecutionStepFailureEvent | PipelineExecutionPipelineRunEventFragment_ExecutionStepStartEvent | PipelineExecutionPipelineRunEventFragment_StepMaterializationEvent | PipelineExecutionPipelineRunEventFragment_PipelineProcessStartedEvent;
