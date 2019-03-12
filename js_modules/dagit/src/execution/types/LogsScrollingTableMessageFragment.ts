@@ -30,7 +30,7 @@ export interface LogsScrollingTableMessageFragment_ExecutionStepFailureEvent {
   message: string;
   timestamp: string;
   level: LogLevel;
-  step: LogsScrollingTableMessageFragment_ExecutionStepFailureEvent_step;
+  step: LogsScrollingTableMessageFragment_ExecutionStepFailureEvent_step | null;
   error: LogsScrollingTableMessageFragment_ExecutionStepFailureEvent_error;
 }
 

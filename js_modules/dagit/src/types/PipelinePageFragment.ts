@@ -11,6 +11,12 @@ export interface PipelinePageFragment_PythonError {
   stack: string[];
 }
 
+export interface PipelinePageFragment_InvalidDefinitionError {
+  __typename: "InvalidDefinitionError";
+  message: string;
+  stack: string[];
+}
+
 export interface PipelinePageFragment_PipelineConnection_nodes_contexts_config_configType_EnumConfigType_innerTypes_EnumConfigType_innerTypes {
   __typename: "EnumConfigType" | "CompositeConfigType" | "RegularConfigType" | "ListConfigType" | "NullableConfigType";
   key: string;
@@ -563,4 +569,4 @@ export interface PipelinePageFragment_PipelineConnection {
   nodes: PipelinePageFragment_PipelineConnection_nodes[];
 }
 
-export type PipelinePageFragment = PipelinePageFragment_PythonError | PipelinePageFragment_PipelineConnection;
+export type PipelinePageFragment = PipelinePageFragment_PythonError | PipelinePageFragment_InvalidDefinitionError | PipelinePageFragment_PipelineConnection;

@@ -49,6 +49,9 @@ export default class LogsFilterProvider<
           message
           timestamp
           level
+          step {
+            name
+          }
         }
       }
     `
@@ -79,18 +82,21 @@ export default class LogsFilterProvider<
       return;
     }
 
-    let nextResults = [];
-
     const textLower = filter.text.toLowerCase();
 
-    for (let nextCursor = 0; nextCursor < nodes.length; nextCursor++) {
-      const node = nodes[nextCursor];
-      if (!filter.levels[node.level]) continue;
-      if (filter.since && Number(node.timestamp) < filter.since) continue;
-      if (filter.text && !node.message.toLowerCase().includes(textLower))
-        continue;
-      nextResults.push(node);
-    }
+    const nextResults = nodes.filter(node => {
+      if (!filter.levels[node.level]) return false;
+      if (filter.since && Number(node.timestamp) < filter.since) return false;
+
+      if (filter.text) {
+        if (filter.text.startsWith("step:")) {
+          return node.step && node.step.name === filter.text.substr(5);
+        } else {
+          return node.message.toLowerCase().includes(textLower);
+        }
+      }
+      return true;
+    });
 
     this.setState({ results: nextResults });
   };

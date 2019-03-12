@@ -14,7 +14,8 @@ import PipelineExecutionRoot from "./execution/PipelineExecutionRoot";
 import {
   PipelinePageFragment,
   PipelinePageFragment_PythonError,
-  PipelinePageFragment_PipelineConnection_nodes
+  PipelinePageFragment_PipelineConnection_nodes,
+  PipelinePageFragment_InvalidDefinitionError
 } from "./types/PipelinePageFragment";
 
 export type IPipelinePageMatch = match<{
@@ -73,6 +74,10 @@ export default class PipelinePage extends React.Component<IPipelinePageProps> {
           message
           stack
         }
+        ... on InvalidDefinitionError {
+          message
+          stack
+        }
         ... on PipelineConnection {
           nodes {
             ...PipelineExplorerFragment
@@ -93,10 +98,16 @@ export default class PipelinePage extends React.Component<IPipelinePageProps> {
   render() {
     const { history, match, pipelinesOrError } = this.props;
 
-    let error: PipelinePageFragment_PythonError | null = null;
+    let error:
+      | PipelinePageFragment_PythonError
+      | PipelinePageFragment_InvalidDefinitionError
+      | null = null;
     let pipelines: Array<PipelinePageFragment_PipelineConnection_nodes> = [];
 
-    if (pipelinesOrError.__typename === "PythonError") {
+    if (
+      pipelinesOrError.__typename === "PythonError" ||
+      pipelinesOrError.__typename === "InvalidDefinitionError"
+    ) {
       error = pipelinesOrError;
     } else {
       pipelines = pipelinesOrError.nodes;
