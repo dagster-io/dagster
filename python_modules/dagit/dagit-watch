@@ -1,2 +1,0 @@
-#!/bin/bash
-watchmedo auto-restart -p="*.py" -R dagit -- "$@"
