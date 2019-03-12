@@ -1890,9 +1890,7 @@ def test_start_subplan_invalid_config(snapshot):
         START_EXECUTION_PLAN_QUERY,
         variables={
             'pipelineName': 'pandas_hello_world',
-            'config': {
-                'solids': {'sum_solid': {'inputs': {'num': {'csv': {'path': 384_938_439}}}}}
-            },
+            'config': {'solids': {'sum_solid': {'inputs': {'num': {'csv': {'path': 384938439}}}}}},
             'stepExecutions': [{'stepKey': 'sum_solid.transform'}],
             'executionMetadata': {'runId': 'kdjkfjdfd'},
         },
