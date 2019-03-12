@@ -1562,9 +1562,7 @@ def test_basic_start_pipeline_execution_config_failure():
         START_PIPELINE_EXECUTION_QUERY,
         variables={
             'pipeline': {'name': 'pandas_hello_world'},
-            'config': {
-                'solids': {'sum_solid': {'inputs': {'num': {'csv': {'path': 384_938_439}}}}}
-            },
+            'config': {'solids': {'sum_solid': {'inputs': {'num': {'csv': {'path': 384938439}}}}}},
         },
     )
 
