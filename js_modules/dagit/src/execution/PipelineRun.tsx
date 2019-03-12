@@ -103,7 +103,9 @@ export class PipelineRun extends React.Component<
               runMetadata={metadata}
               onShowStateDetails={this.onShowStateDetails}
               onApplyStepFilter={stepName =>
-                this.setState({ logsFilter: { ...logsFilter, text: stepName } })
+                this.setState({
+                  logsFilter: { ...logsFilter, text: `step:${stepName}` }
+                })
               }
             />
           )}
