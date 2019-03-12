@@ -223,9 +223,9 @@ class DauphinPipelineRunEvent(dauphin.Union):
         check.inst_param(execution_plan, 'execution_plan', ExecutionPlan)
 
         pipeline_run = graphene_info.context.pipeline_runs.get_run_by_id(event.run_id)
-        run = DauphinPipelineRun(pipeline_run)
+        dauphin_run = DauphinPipelineRun(pipeline_run)
 
-        step = (
+        dauphin_step = (
             graphene_info.schema.type_named('ExecutionStep')(
                 pipeline_run.execution_plan,
                 pipeline_run.execution_plan.get_step_by_key(event.step_key),
@@ -235,11 +235,11 @@ class DauphinPipelineRunEvent(dauphin.Union):
         )
 
         basic_params = {
-            'run': run,
+            'run': dauphin_run,
             'message': event.user_message,
             'timestamp': int(event.timestamp * 1000),
             'level': DauphinLogLevel.from_level(event.level),
-            'step': step,
+            'step': dauphin_step,
         }
 
         if event.event_type == EventType.PIPELINE_START:
