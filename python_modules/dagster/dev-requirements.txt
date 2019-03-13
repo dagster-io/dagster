@@ -1,4 +1,4 @@
-black==18.6b4; python_version >= '3.6'
+black==18.69b0; python_version >= '3.6'
 pylint==2.2.2; python_version >= '3.6'
 pytest==4.0.2
 pytest-cov==2.6.0
