@@ -16,6 +16,6 @@ graphql-ws>=0.3.0
 nbconvert>=5.4.0
 pyrsistent>=0.14.8
 # pyyaml pinned for compatibility with docker-compose
-pyyaml==3.13
+pyyaml==4.2b1
 six>=1.11.0
 watchdog>=0.8.3
