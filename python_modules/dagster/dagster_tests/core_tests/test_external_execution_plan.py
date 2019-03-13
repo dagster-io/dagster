@@ -68,7 +68,7 @@ def test_basic_pipeline_external_plan_execution():
 
         int_type = resolve_to_runtime_type(Int)
 
-        serialize_to_file(int_type.serialization_strategy, 5, temp_path)
+        serialize_to_file(int_type.serialization_strategy, None, 5, temp_path)
 
         step_events = execute_marshalling(
             pipeline,
@@ -77,7 +77,7 @@ def test_basic_pipeline_external_plan_execution():
             outputs_to_marshal={'add_one.transform': [MarshalledOutput('result', write_path)]},
         )
 
-        assert deserialize_from_file(int_type.serialization_strategy, write_path) == 6
+        assert deserialize_from_file(int_type.serialization_strategy, None, write_path) == 6
 
     assert len(step_events) == 1
 
