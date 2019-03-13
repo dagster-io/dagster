@@ -60,7 +60,7 @@ def _do_setup(name='dagit'):
             # 'click>=6.7',
             # 'coloredlogs>=10.0',
             # 'graphviz>=0.8.3',
-            'pyyaml>=3.12',
+            'pyyaml==5.1',
             # core (not explicitly expressed atm)
             'six>=1.11.0',
             # cli
