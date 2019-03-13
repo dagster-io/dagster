@@ -16,6 +16,7 @@ from .definitions.output import OutputDefinition
 from .events import ExecutionEvents
 from .files import FileStore
 from .log import DagsterLog
+from .runs import RunStorage, InMemoryRunStorage
 from .system_config.objects import EnvironmentConfig
 from .types.marshal import PersistenceStrategy
 
@@ -47,9 +48,17 @@ def make_new_run_id():
     return str(uuid.uuid4())
 
 
-class RunConfig(namedtuple('_RunConfig', 'run_id tags event_callback loggers executor_config')):
+class RunConfig(
+    namedtuple('_RunConfig', 'run_id tags event_callback loggers executor_config run_storage')
+):
     def __new__(
-        cls, run_id=None, tags=None, event_callback=None, loggers=None, executor_config=None
+        cls,
+        run_id=None,
+        tags=None,
+        event_callback=None,
+        loggers=None,
+        executor_config=None,
+        run_storage=None,
     ):
         return super(RunConfig, cls).__new__(
             cls,
@@ -59,6 +68,9 @@ class RunConfig(namedtuple('_RunConfig', 'run_id tags event_callback loggers exe
             loggers=check.opt_list_param(loggers, 'loggers'),
             executor_config=check.opt_inst_param(
                 executor_config, 'executor_config', ExecutorConfig, InProcessExecutorConfig()
+            ),
+            run_storage=check.opt_inst_param(
+                run_storage, 'run_storage', RunStorage, InMemoryRunStorage()
             ),
         )
 

@@ -1,5 +1,5 @@
 from __future__ import absolute_import
-from collections import namedtuple
+from collections import namedtuple, defaultdict
 import sys
 import uuid
 
@@ -23,6 +23,7 @@ from dagster.core.execute_marshalling import execute_marshalling
 
 from dagster.core.types.evaluator import evaluate_config_value, EvaluateValueResult
 
+from dagster.utils import list_pull
 from dagster.utils.error import serializable_error_info_from_exc_info
 
 from .config_types import to_dauphin_config_type
@@ -402,13 +403,6 @@ def _chain_config_or_error_from_pipeline(args, dauphin_pipeline):
         )
         .value()
     )
-
-
-from collections import defaultdict
-
-
-def list_pull(alist, key):
-    return list(map(lambda elem: getattr(elem, key), alist))
 
 
 def input_marshalling_dict_from_step_executions(step_executions):

@@ -238,6 +238,16 @@ def opt_bool_param(obj, param_name, default=None):
     return default if obj is None else obj
 
 
+def is_list(obj_list, of_type=None, desc=None):
+    if not isinstance(obj_list, list):
+        raise_with_traceback(_type_mismatch_error(obj_list, list, desc))
+
+    if not of_type:
+        return obj_list
+
+    return _check_list_items(obj_list, of_type)
+
+
 def list_param(obj_list, param_name, of_type=None):
     if not isinstance(obj_list, list):
         raise_with_traceback(_param_type_mismatch_exception(obj_list, list, param_name))

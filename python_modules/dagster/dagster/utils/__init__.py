@@ -1,3 +1,5 @@
+# For some reason pylint is not finding the Mapping class
+from collections import Mapping  # pylint: disable=no-name-in-module
 import contextlib
 import errno
 import inspect
@@ -123,3 +125,14 @@ def make_readonly_value(value):
         return frozendict({key: make_readonly_value(value) for key, value in value.items()})
     else:
         return value
+
+
+def get_prop_or_key(elem, key):
+    if isinstance(elem, Mapping):
+        return elem.get(key)
+    else:
+        return getattr(elem, key)
+
+
+def list_pull(alist, key):
+    return list(map(lambda elem: get_prop_or_key(elem, key), alist))
