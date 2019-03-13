@@ -62,9 +62,7 @@ def docker_image(docker_client):
     except docker.errors.ImageNotFound:
         check.failed(
             'Couldn\'t find docker image {image} required for test: please run the script at '
-            '{script_path}'.format(
-                image=IMAGE, script_path=script_relative_path('../build.sh')
-            )
+            '{script_path}'.format(image=IMAGE, script_path=script_relative_path('../build.sh'))
         )
 
     return IMAGE

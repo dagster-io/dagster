@@ -35,14 +35,11 @@ class SparkDataFrameSerializationStrategy(SerializationStrategy):
         shutil.rmtree(pickle_file_dir)
         value.rdd.saveAsPickleFile(pickle_file_dir)
 
-
         archive_file_obj = tempfile.NamedTemporaryFile(delete=False)
         try:
             archive_file_obj.close()
             archive_file_path = archive_file_obj.name
-            zipfile_path = shutil.make_archive(
-                archive_file_path, 'zip', pickle_file_dir
-            )
+            zipfile_path = shutil.make_archive(archive_file_path, 'zip', pickle_file_dir)
             try:
                 with open(zipfile_path, 'rb') as archive_file_read_obj:
                     write_file_obj.write(archive_file_read_obj.read())
@@ -72,9 +69,7 @@ class SparkDataFrameSerializationStrategy(SerializationStrategy):
                 os.remove(archive_file_obj.name)
             except FileNotFoundError:
                 pass
-        rdd = pipeline_context.resources.spark.sparkContext.pickleFile(
-            pickle_file_dir
-        )
+        rdd = pipeline_context.resources.spark.sparkContext.pickleFile(pickle_file_dir)
         return rdd.toDF()
 
 

@@ -31,19 +31,13 @@ def test_spark_data_frame_serialization():
         df = spark.createDataFrame([('Foo', 1), ('Bar', 2)])
 
         with tempfile.NamedTemporaryFile() as tempfile_obj:
-            serialization_strategy.serialize_value(
-                pipeline_context, df, tempfile_obj
-            )
+            serialization_strategy.serialize_value(pipeline_context, df, tempfile_obj)
 
             tempfile_obj.seek(0)
 
-            new_df = serialization_strategy.deserialize_value(
-                pipeline_context, tempfile_obj
-            )
+            new_df = serialization_strategy.deserialize_value(pipeline_context, tempfile_obj)
 
-            assert set(map(lambda x: x[0], new_df.collect())) == \
-                set(['Bar', 'Foo'])
-            assert set(map(lambda x: x[1], new_df.collect())) == \
-                set([1, 2])
+            assert set(map(lambda x: x[0], new_df.collect())) == set(['Bar', 'Foo'])
+            assert set(map(lambda x: x[1], new_df.collect())) == set([1, 2])
     finally:
         tempfile_.close()
