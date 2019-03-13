@@ -39,7 +39,8 @@ class SparkDataFrameSerializationStrategy(SerializationStrategy):
         with tempfile.NamedTemporaryFile() as archive_file_obj:
             archive_file_obj.write(read_file_obj.read())
             pickle_file_dir = step_context.resources.tempfile.tempdir()
-            shutil.unpack_archive(archive_file_obj.name, pickle_file_dir)
+            # FIXME this breaks on py2
+            shutil.unpack_archive(archive_file_obj.name, pickle_file_dir, 'zip')
             return step_context.resources.spark.pickleFile(pickle_file_dir).toDF()
 
 
