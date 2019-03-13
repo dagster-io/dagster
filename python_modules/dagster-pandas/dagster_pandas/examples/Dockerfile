@@ -13,7 +13,7 @@ WORKDIR /tmp/
 # ADD dagster dagster
 # ADD dagit dagit
 
-RUN pip install --upgrade pip && pip install dagster && pip install dagit
+RUN pip install --upgrade pip && pip install dagster && pip install dagit && pip install dagster-pandas
 
 ADD . .
 
