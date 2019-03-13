@@ -62,7 +62,7 @@ def _do_setup(name='dagster'):
             'coloredlogs>=10.0',
             'graphviz>=0.8.3',
             # pyyaml pinned for compatibility with docker-compose
-            'pyyaml==3.13',
+            'pyyaml==4.2b1',
             # core (not explicitly expressed atm)
             'six>=1.11.0',
             'toposort>=1.5',
