@@ -12,7 +12,7 @@ first production pipelines in the system. Comments and suggestions are enthusias
 
 ## Getting started
 
-To run the airline demo pipelines locally, you'll need
+To run the airline demo pipelines locally, you'll need:
 
 - An Internet connection
 - AWS credentials in the ordinary [boto3 credential chain](https://boto3.amazonaws.com/v1/documentation/api/latest/guide/configuration.html)
@@ -20,6 +20,11 @@ To run the airline demo pipelines locally, you'll need
 - A running Postgres database available at `postgresql://test:test@127.0.0.1:5432/test`. (A
   docker-compose file is provided in this repo; run `docker-compose up` from the root of the
   airline demo.)
+
+To run the pipelines on Airflow, you'll also need:
+
+- An Airflow installation
+- Docker
 
 Use pip to install the demo's Python requirements:
 
