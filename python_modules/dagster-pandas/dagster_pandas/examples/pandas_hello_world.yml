@@ -1,0 +1,7 @@
+solids:
+  sum_solid:
+    inputs:
+      num:
+        csv:
+          path: "data/num.csv"
+
