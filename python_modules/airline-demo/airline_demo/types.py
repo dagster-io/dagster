@@ -2,6 +2,7 @@
 
 import shutil
 import tempfile
+import zipfile
 
 from collections import namedtuple
 
@@ -36,8 +37,10 @@ class SparkDataFrameSerializationStrategy(SerializationStrategy):
         with tempfile.NamedTemporaryFile() as archive_file_obj:
             archive_file_obj.write(read_file_obj.read())
             pickle_file_dir = pipeline_context.resources.tempfile.tempdir()
-            # FIXME this breaks on py2
-            shutil.unpack_archive(archive_file_obj.name, pickle_file_dir, 'zip')
+            # We don't use the ZipFile context manager here because of py2
+            zipfile_obj = zipfile.ZipFile(archive_file_obj.name)
+            zipfile_obj.extractall(pickle_file_dir)
+            zipfile_obj.close()
             return pipeline_context.resources.spark.pickleFile(pickle_file_dir).toDF()
 
 
