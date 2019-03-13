@@ -23,7 +23,6 @@ from dagster import (
     check,
     solid,
 )
-from dagster.utils import safe_isfile
 from dagstermill import define_dagstermill_solid
 
 from .types import SparkDataFrameType, SqlTableName
@@ -163,9 +162,7 @@ def sql_solid(name, select_statement, materialization_strategy, table_name=None,
         )
     ),
     description='Downloads an object from S3.',
-    outputs=[
-        OutputDefinition(List(Path), description='The path to the downloaded object.')
-    ],
+    outputs=[OutputDefinition(List(Path), description='The path to the downloaded object.')],
 )
 def download_from_s3(context):
     '''Download an object from s3.
@@ -290,11 +287,7 @@ def upload_to_s3(context, file_path):
         )
     ),
     description='Extracts an archive member from a zip archive.',
-    outputs=[
-        OutputDefinition(
-            List(Path), description='The path to the unzipped archive member.'
-        )
-    ],
+    outputs=[OutputDefinition(List(Path), description='The path to the unzipped archive member.')],
 )
 def unzip_file(context, archive_paths, archive_members):
     def extract(context, archive_path, zip_ref, archive_member, destination_dir, skip_if_present):

@@ -1,8 +1,5 @@
 """Type definitions for the airline_demo."""
 
-
-import os
-import pickle
 import shutil
 import tempfile
 
@@ -12,7 +9,7 @@ import sqlalchemy
 
 from pyspark.sql import DataFrame
 
-from dagster import as_dagster_type, Bool, dagster_type, Dict, Field, String
+from dagster import as_dagster_type, Bool, Dict, Field, String
 from dagster.core.types.marshal import SerializationStrategy
 from dagster.core.types.runtime import Stringish
 

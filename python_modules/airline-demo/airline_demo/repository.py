@@ -1,3 +1,5 @@
+'''Repository definition for the airline demo pipelines.'''
+
 from dagster import RepositoryDefinition
 
 from .pipelines import (
