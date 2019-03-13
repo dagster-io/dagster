@@ -60,6 +60,8 @@ def _do_setup(name='dagit'):
             # 'click>=6.7',
             # 'coloredlogs>=10.0',
             # 'graphviz>=0.8.3',
+
+            # pyyaml pinned for compatibility with docker-compose
             'pyyaml==3.13',
             # core (not explicitly expressed atm)
             'six>=1.11.0',

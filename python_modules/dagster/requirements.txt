@@ -7,6 +7,7 @@ funcsigs==1.0.0
 # future pinned to range for compatibility with Airflow
 future>=0.16.0, <0.17a0
 graphviz>=0.8.3
+# pyyaml pinned for compatibility with docker-compose
 pyyaml==3.13
 six>=1.11.0
 toposort>=1.5
