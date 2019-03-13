@@ -24,8 +24,8 @@ AirlineDemoResources = namedtuple(
 
 
 class SparkDataFrameSerializationStrategy(SerializationStrategy):
-    def serialize_value(self, step_context, value, write_file_obj):
-        pickle_file_dir = step_context.resources.tempfile.tempdir()
+    def serialize_value(self, pipeline_context, value, write_file_obj):
+        pickle_file_dir = pipeline_context.resources.tempfile.tempdir()
         shutil.rmtree(pickle_file_dir)
         value.rdd.saveAsPickleFile(pickle_file_dir)
 
@@ -35,13 +35,13 @@ class SparkDataFrameSerializationStrategy(SerializationStrategy):
             with open(archive_file_path, 'rb') as archive_file_read_obj:
                 write_file_obj.write(archive_file_read_obj.read())
 
-    def deserialize_value(self, step_context, read_file_obj):
+    def deserialize_value(self, pipeline_context, read_file_obj):
         with tempfile.NamedTemporaryFile() as archive_file_obj:
             archive_file_obj.write(read_file_obj.read())
-            pickle_file_dir = step_context.resources.tempfile.tempdir()
+            pickle_file_dir = pipeline_context.resources.tempfile.tempdir()
             # FIXME this breaks on py2
             shutil.unpack_archive(archive_file_obj.name, pickle_file_dir, 'zip')
-            return step_context.resources.spark.pickleFile(pickle_file_dir).toDF()
+            return pipeline_context.resources.spark.pickleFile(pickle_file_dir).toDF()
 
 
 SparkDataFrameType = as_dagster_type(
