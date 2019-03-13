@@ -1,4 +1,3 @@
-import multiprocessing
 import os
 
 from dagster import check
@@ -8,27 +7,29 @@ from dagster.core.execution_context import (
     SystemPipelineExecutionContext,
 )
 
+
 from .create import create_execution_plan_core
 from .intermediates_manager import FileSystemIntermediateManager
 from .objects import ExecutionPlan, ExecutionStepEvent
 from .simple_engine import start_inprocess_executor
 
-
-CHILD_PROCESS_DONE_SENTINEL = 'CHILD_PROCESS_DONE_SENTINEL'
-CHILD_PROCESS_SYSTEM_ERROR_SENTINEL = 'CHILD_PROCESS_SYSTEM_ERROR_SENTINEL'
+from .child_process_executor import ChildProcessCommand, execute_child_process_command
 
 
-def _execute_in_child_process(queue, environment_dict, run_config, step_key):
-    from dagster.core.execution import yield_pipeline_execution_context
+class InProcessExecutorChildProcessCommand(ChildProcessCommand):
+    def __init__(self, environment_dict, run_config, step_key):
+        self.environment_dict = environment_dict
+        self.run_config = run_config
+        self.step_key = step_key
 
-    check.inst(run_config.executor_config, MultiprocessExecutorConfig)
+    def execute(self):
+        from dagster.core.execution import yield_pipeline_execution_context
 
-    pipeline = run_config.executor_config.pipeline_fn()
-
-    try:
+        check.inst(self.run_config.executor_config, MultiprocessExecutorConfig)
+        pipeline = self.run_config.executor_config.pipeline_fn()
 
         with yield_pipeline_execution_context(
-            pipeline, environment_dict, run_config.with_tags(pid=str(os.getpid()))
+            pipeline, self.environment_dict, self.run_config.with_tags(pid=str(os.getpid()))
         ) as pipeline_context:
 
             intermediates_manager = FileSystemIntermediateManager(pipeline_context.files)
@@ -39,42 +40,23 @@ def _execute_in_child_process(queue, environment_dict, run_config, step_key):
                 pipeline_context,
                 execution_plan,
                 intermediates_manager,
-                step_keys_to_execute=[step_key],
+                step_keys_to_execute=[self.step_key],
             ):
-                queue.put(step_event)
-
-        queue.put(CHILD_PROCESS_DONE_SENTINEL)
-    except:  # pylint: disable=bare-except
-        queue.put(CHILD_PROCESS_SYSTEM_ERROR_SENTINEL)
-    finally:
-        queue.close()
+                yield step_event
 
 
 def execute_step_out_of_process(step_context, step):
-    queue = multiprocessing.Queue()
-
     check.invariant(
         not step_context.run_config.loggers,
-        'Cannot inject loggers via ExecutionMetadata with the Multiprocess executor',
+        'Cannot inject loggers via RunConfig with the Multiprocess executor',
     )
 
-    process = multiprocessing.Process(
-        target=_execute_in_child_process,
-        args=(queue, step_context.environment_dict, step_context.run_config, step.key),
+    command = InProcessExecutorChildProcessCommand(
+        step_context.environment_dict, step_context.run_config, step.key
     )
 
-    process.start()
-    while process.is_alive():
-        result = queue.get()
-        if result == CHILD_PROCESS_DONE_SENTINEL:
-            break
-        if result == CHILD_PROCESS_SYSTEM_ERROR_SENTINEL:
-            raise Exception('unexpected error in child process')
-
-        yield result
-
-    # Do something reasonable on total process failure
-    process.join()
+    for step_event in execute_child_process_command(command):
+        yield step_event
 
 
 def _create_input_values(step_input_meta_dict, manager):
@@ -83,13 +65,6 @@ def _create_input_values(step_input_meta_dict, manager):
         input_value = manager.get_value(prev_output_handle_meta)
         input_values[step_input_name] = input_value
     return input_values
-
-
-def _all_inputs_covered(step, intermediates_manager):
-    for step_input in step.step_inputs:
-        if not intermediates_manager.has_value(step_input.prev_output_handle):
-            return False
-    return True
 
 
 def multiprocess_execute_plan(pipeline_context, execution_plan):
@@ -108,7 +83,7 @@ def multiprocess_execute_plan(pipeline_context, execution_plan):
         for step in step_level:
             step_context = pipeline_context.for_step(step)
 
-            if not _all_inputs_covered(step, intermediates_manager):
+            if not intermediates_manager.all_inputs_covered(step):
                 expected_outputs = [ni.prev_output_handle for ni in step.step_inputs]
 
                 step_context.log.debug(
