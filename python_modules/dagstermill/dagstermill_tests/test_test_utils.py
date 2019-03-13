@@ -45,4 +45,3 @@ def test_double_fail():
         always_fail()
 
     assert has_been_called['times'] == 2
-
