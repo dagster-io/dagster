@@ -5,25 +5,14 @@ import pytest
 
 from dagster import execute_pipeline
 from dagster.utils import script_relative_path
+from dagstermill import DagstermillError
 
 from dagster_pandas.examples import (
     define_pandas_papermill_pandas_hello_world_pipeline,
     define_papermill_pandas_hello_world_pipeline,
 )
 
-
-def notebook_test(f):
-    # mark this with the "notebook_test" tag so that they can be all be skipped
-    # (for performance reasons) and mark them as python3 only
-    return pytest.mark.notebook_test(
-        pytest.mark.skipif(
-            sys.version_info < (3, 5),
-            reason='''Notebooks execute in their own process and hardcode what "kernel" they use.
-        All of the development notebooks currently use the python3 "kernel" so they will
-        not be executable in a container that only have python2.7 (e.g. in CircleCI)
-        ''',
-        )(f)
-    )
+from dagstermill.test_utils import notebook_test
 
 
 @pytest.mark.skip('Must ship over run id to notebook process')
