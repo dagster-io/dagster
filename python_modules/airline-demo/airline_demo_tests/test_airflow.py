@@ -65,7 +65,6 @@ def test_uncontainerized_ingest_dag_execution_with_airflow_config():
         # this is a nested dict of step_key -> input_name -> marshalling_key
         inputs_to_marshal = defaultdict(lambda: defaultdict(dict))
 
-
         for step in solid_steps:
             for step_input in step.step_inputs:
                 step_input_key = (
@@ -86,9 +85,10 @@ def test_uncontainerized_ingest_dag_execution_with_airflow_config():
             for step_output in step.step_outputs:
                 outputs_to_marshal[step.key].append(
                     MarshalledOutput(
-                        step_output.name, _key_for_marshalled_result(
+                        step_output.name,
+                        _key_for_marshalled_result(
                             step.key, step_output.name, prepend_run_id=False
-                        ).format(tmp='/tmp/results', sep='/')
+                        ).format(tmp='/tmp/results', sep='/'),
                     )
                 )
 
@@ -108,7 +108,7 @@ def test_uncontainerized_ingest_dag_execution_with_airflow_config():
             key = _key_for_marshalled_result(
                 execution_step_event.step_key,
                 execution_step_event.step_output_data.output_name,
-                prepend_run_id=False
+                prepend_run_id=False,
             ).format(tmp='/tmp/results', sep='/')
 
 

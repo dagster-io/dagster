@@ -392,9 +392,7 @@ def ingest_csv_to_spark(context, input_csv):
     )
     # parquet compat
     renamed_columns = [
-        re.sub(PARQUET_SPECIAL_CHARACTERS, '', column_name)
-        for column_name
-        in data_frame.columns
+        re.sub(PARQUET_SPECIAL_CHARACTERS, '', column_name) for column_name in data_frame.columns
     ]
     return data_frame.toDF(*renamed_columns)
 
@@ -453,7 +451,7 @@ def replace_values_spark(data_frame, old, new):
             description='The pyspark DataFrame containing NA values to normalize.',
         )
     ],
-    outputs=[OutputDefinition(SparkDataFrameType)]
+    outputs=[OutputDefinition(SparkDataFrameType)],
 )
 def normalize_weather_na_values(_context, data_frame):
     return replace_values_spark(data_frame, 'M', None)
