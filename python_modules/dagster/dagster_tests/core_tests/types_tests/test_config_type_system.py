@@ -227,13 +227,13 @@ def test_single_nested_config():
 def test_single_nested_config_undefined_errors():
     with pytest.raises(
         DagsterEvaluateConfigValueError,
-        match='Value dkjfdk at path root:nested must be dict. Expected: "{ int_field: Int }".',
+        match='Value at path root:nested must be dict. Expected: "{ int_field: Int }".',
     ):
         _validate(_single_nested_config(), {'nested': 'dkjfdk'})
 
     with pytest.raises(
         DagsterEvaluateConfigValueError,
-        match='Value "dkjfdk" at path root:nested:int_field is not valid. Expected "Int"',
+        match='Value at path root:nested:int_field is not valid. Expected "Int"',
     ):
         _validate(_single_nested_config(), {'nested': {'int_field': 'dkjfdk'}})
 
@@ -248,10 +248,7 @@ def test_single_nested_config_undefined_errors():
 
     with pytest.raises(
         DagsterEvaluateConfigValueError,
-        match=(
-            'Value "{\'too_nested\': \'dkjfdk\'}" at path root:nested:int_field is not valid. '
-            'Expected "Int"'
-        ),
+        match='Value at path root:nested:int_field is not valid. Expected "Int"',
     ):
         _validate(_single_nested_config(), {'nested': {'int_field': {'too_nested': 'dkjfdk'}}})
 

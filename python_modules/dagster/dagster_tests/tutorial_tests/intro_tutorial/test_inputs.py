@@ -41,7 +41,7 @@ def test_hello_typed_inputs():
 def test_hello_typed_bad_structure():
     with pytest.raises(
         PipelineConfigEvaluationError,
-        match=('Value for selector type String.InputSchema must be a dict got '),
+        match=('Value for selector type String.InputSchema must be a dict'),
     ):
         execute_pipeline(
             define_hello_typed_inputs_pipeline(),
