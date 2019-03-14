@@ -23,7 +23,7 @@ def _which(exe):
 def get_publish_comands(additional_steps=None, nightly=False):
     publish_commands = (
         ['rm -rf dist']
-        + (additional_steps or [])
+        + ([additional_steps] if additional_steps else [])
         + [
             'python setup.py sdist bdist_wheel{nightly}'.format(
                 nightly=' --nightly' if nightly else ''
@@ -414,7 +414,7 @@ PyPI, preferably in the form of a ~/.pypirc file as follows:
     password: <password>
 '''
     )
-    assert '\nwheel' in subprocess.check_output(['pip', 'list']), (
+    assert '\nwheel' in subprocess.check_output(['pip', 'list']).decode('utf-8'), (
         'You must have wheel installed in order to build packages for release -- run '
         '`pip install wheel`.'
     )
@@ -437,9 +437,18 @@ PyPI, preferably in the form of a ~/.pypirc file as follows:
         check_git_status()
     else:
         version = check_versions(nightly=True)
+
     print('Publishing packages to PyPI...')
+
     if nightly:
-        version = increment_nightly_versions()
+        tags = subprocess.check_output(['git', 'tag']).decode('utf-8').split('\n')
+        versions = [packaging.version.parse(tag) for tag in tags]
+
+        if max(versions) > packaging.version.parse(version['__version__']):
+            version = {'__version__': str(max(versions)), '__nightly__': 'dev0'}
+            set_new_version(str(max(versions)))
+        else:
+            version = increment_nightly_versions()
         commit_new_version(
             '{version}{nightly}'.format(
                 version=version['__version__'], nightly=version['__nightly__']

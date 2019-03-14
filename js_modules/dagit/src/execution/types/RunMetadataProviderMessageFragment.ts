@@ -5,16 +5,28 @@
 // GraphQL fragment: RunMetadataProviderMessageFragment
 // ====================================================
 
+export interface RunMetadataProviderMessageFragment_LogMessageEvent_step {
+  __typename: "ExecutionStep";
+  name: string;
+}
+
 export interface RunMetadataProviderMessageFragment_LogMessageEvent {
-  __typename: "LogMessageEvent" | "PipelineStartEvent" | "PipelineSuccessEvent" | "PipelineFailureEvent" | "PipelineProcessStartEvent";
+  __typename: "LogMessageEvent" | "PipelineStartEvent" | "PipelineSuccessEvent" | "PipelineFailureEvent" | "ExecutionStepStartEvent" | "ExecutionStepSuccessEvent" | "ExecutionStepFailureEvent" | "PipelineProcessStartEvent";
   message: string;
   timestamp: string;
+  step: RunMetadataProviderMessageFragment_LogMessageEvent_step | null;
+}
+
+export interface RunMetadataProviderMessageFragment_PipelineProcessStartedEvent_step {
+  __typename: "ExecutionStep";
+  name: string;
 }
 
 export interface RunMetadataProviderMessageFragment_PipelineProcessStartedEvent {
   __typename: "PipelineProcessStartedEvent";
   message: string;
   timestamp: string;
+  step: RunMetadataProviderMessageFragment_PipelineProcessStartedEvent_step | null;
   processId: number;
 }
 
@@ -27,21 +39,9 @@ export interface RunMetadataProviderMessageFragment_StepMaterializationEvent {
   __typename: "StepMaterializationEvent";
   message: string;
   timestamp: string;
-  step: RunMetadataProviderMessageFragment_StepMaterializationEvent_step;
+  step: RunMetadataProviderMessageFragment_StepMaterializationEvent_step | null;
   fileLocation: string;
   fileName: string;
 }
 
-export interface RunMetadataProviderMessageFragment_ExecutionStepStartEvent_step {
-  __typename: "ExecutionStep";
-  name: string;
-}
-
-export interface RunMetadataProviderMessageFragment_ExecutionStepStartEvent {
-  __typename: "ExecutionStepStartEvent" | "ExecutionStepSuccessEvent" | "ExecutionStepFailureEvent";
-  message: string;
-  timestamp: string;
-  step: RunMetadataProviderMessageFragment_ExecutionStepStartEvent_step;
-}
-
-export type RunMetadataProviderMessageFragment = RunMetadataProviderMessageFragment_LogMessageEvent | RunMetadataProviderMessageFragment_PipelineProcessStartedEvent | RunMetadataProviderMessageFragment_StepMaterializationEvent | RunMetadataProviderMessageFragment_ExecutionStepStartEvent;
+export type RunMetadataProviderMessageFragment = RunMetadataProviderMessageFragment_LogMessageEvent | RunMetadataProviderMessageFragment_PipelineProcessStartedEvent | RunMetadataProviderMessageFragment_StepMaterializationEvent;

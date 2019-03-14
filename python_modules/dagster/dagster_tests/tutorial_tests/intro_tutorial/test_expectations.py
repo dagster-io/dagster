@@ -1,6 +1,6 @@
 import pytest
 
-from dagster import DagsterExpectationFailedError, execute_pipeline
+from dagster import DagsterExpectationFailedError, execute_pipeline, RunConfig
 from dagster.tutorials.intro_tutorial.expectations import define_expectations_tutorial_pipeline
 
 
@@ -34,7 +34,7 @@ def test_intro_tutorial_expectations_step_two_fails_soft():
     result = execute_pipeline(
         define_expectations_tutorial_pipeline(),
         define_failing_environment_config(),
-        throw_on_user_error=False,
+        run_config=RunConfig.nonthrowing_in_process(),
     )
 
     assert not result.success

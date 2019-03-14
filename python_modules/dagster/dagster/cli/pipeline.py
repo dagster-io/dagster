@@ -9,7 +9,7 @@ import click
 from dagster import PipelineDefinition, check
 
 from dagster.core.definitions import Solid
-from dagster.core.execution import execute_pipeline_iterator
+from dagster.core.execution import execute_pipeline
 from dagster.core.execution_plan.create import solids_in_topological_order
 from dagster.graphviz import build_graphviz_graph
 from dagster.utils import load_yaml_from_glob_list
@@ -310,9 +310,7 @@ def do_execute_command(pipeline, env_file_list, printer):
 
     env_config = load_yaml_from_glob_list(env_file_list) if env_file_list else {}
 
-    pipeline_iter = execute_pipeline_iterator(pipeline, env_config)
-
-    process_results_for_console(pipeline_iter)
+    execute_pipeline(pipeline, env_config)
 
 
 @click.command(
@@ -341,14 +339,3 @@ def do_scaffold_command(pipeline, printer, skip_optional):
     config_dict = scaffold_pipeline_config(pipeline, skip_optional=skip_optional)
     yaml_string = yaml.dump(config_dict, default_flow_style=False)
     printer(yaml_string)
-
-
-def process_results_for_console(pipeline_iter):
-    step_events = []
-
-    for step_event in pipeline_iter:
-        if step_event.is_step_failure:
-            step_event.reraise_user_error()
-        step_events.append(step_event)
-
-    return step_events

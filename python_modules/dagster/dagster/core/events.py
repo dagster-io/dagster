@@ -124,7 +124,9 @@ def construct_event_type(event_type):
 
 
 class EventRecord(object):
-    def __init__(self, error_info, message, level, user_message, event_type, run_id, timestamp):
+    def __init__(
+        self, error_info, message, level, user_message, event_type, run_id, timestamp, step_key=None
+    ):
         self._error_info = check.opt_inst_param(error_info, 'error_info', SerializableErrorInfo)
         self._message = check.str_param(message, 'message')
         self._level = check_valid_level_param(level)
@@ -132,6 +134,7 @@ class EventRecord(object):
         self._event_type = check.inst_param(event_type, 'event_type', EventType)
         self._run_id = check.str_param(run_id, 'run_id')
         self._timestamp = check.float_param(timestamp, 'timestamp')
+        self._step_key = check.opt_str_param(step_key, 'step_key')
 
     @property
     def message(self):
@@ -161,6 +164,10 @@ class EventRecord(object):
     def error_info(self):
         return self._error_info
 
+    @property
+    def step_key(self):
+        return self._step_key
+
     def to_dict(self):
         return {
             'run_id': self.run_id,
@@ -170,6 +177,7 @@ class EventRecord(object):
             'event_type': self.event_type.value,
             'timestamp': self.timestamp,
             'error_info': self._error_info,
+            'step_key': self._step_key,
         }
 
 
@@ -189,18 +197,13 @@ class PipelineEventRecord(EventRecord):
 
 
 class ExecutionStepEventRecord(EventRecord):
-    def __init__(self, step_key, pipeline_name, solid_name, solid_definition_name, **kwargs):
+    def __init__(self, pipeline_name, solid_name, solid_definition_name, **kwargs):
         super(ExecutionStepEventRecord, self).__init__(**kwargs)
-        self._step_key = check.str_param(step_key, 'step_key')
         self._pipeline_name = check.str_param(pipeline_name, 'pipeline_name')
         self._solid_name = check.str_param(solid_name, 'solid_name')
         self._solid_definition_name = check.str_param(
             solid_definition_name, 'solid_definition_name'
         )
-
-    @property
-    def step_key(self):
-        return self._step_key
 
     @property
     def pipeline_name(self):
@@ -307,6 +310,7 @@ def logger_to_kwargs(logger_message):
         'event_type': event_type,
         'run_id': logger_message.meta['run_id'],
         'timestamp': logger_message.record.created,
+        'step_key': logger_message.meta.get('step_key'),
     }
 
     event_cls = EVENT_CLS_LOOKUP[event_type]
@@ -314,7 +318,6 @@ def logger_to_kwargs(logger_message):
         return dict(base_args, pipeline_name=logger_message.meta['pipeline'])
     elif issubclass(event_cls, ExecutionStepEventRecord):
         step_args = {
-            'step_key': logger_message.meta['step_key'],
             'pipeline_name': logger_message.meta['pipeline'],
             'solid_name': logger_message.meta['solid'],
             'solid_definition_name': logger_message.meta['solid_definition'],

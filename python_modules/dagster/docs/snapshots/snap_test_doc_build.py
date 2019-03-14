@@ -594,8 +594,6 @@ snapshots['test_build_all_docs 4'] = '''
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="apidocs/types.html#module-dagster">dagster (module)</a>
 </li>
-      <li><a href="apidocs/execution.html#dagster.SolidExecutionResult.dagster_error">dagster_error (dagster.SolidExecutionResult attribute)</a>
-</li>
       <li><a href="apidocs/types.html#dagster.dagster_type">dagster_type() (in module dagster)</a>
 </li>
       <li><a href="apidocs/errors.html#dagster.DagsterExpectationFailedError">DagsterExpectationFailedError</a>
@@ -612,10 +610,10 @@ snapshots['test_build_all_docs 4'] = '''
 </li>
       <li><a href="apidocs/definitions.html#dagster.PipelineDefinition.dependencies">dependencies (dagster.PipelineDefinition attribute)</a>
 </li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="apidocs/definitions.html#dagster.PipelineDefinition.dependency_structure">dependency_structure (dagster.PipelineDefinition attribute)</a>
 </li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="apidocs/definitions.html#dagster.DependencyDefinition">DependencyDefinition (class in dagster)</a>
 </li>
       <li><a href="apidocs/definitions.html#dagster.DependencyDefinition.description">description (dagster.DependencyDefinition attribute)</a>
@@ -652,11 +650,9 @@ snapshots['test_build_all_docs 4'] = '''
 </li>
       <li><a href="apidocs/utilities.html#dagster.execute_solids">execute_solids() (in module dagster)</a>
 </li>
-      <li><a href="apidocs/execution.html#dagster.ExecutionContext">ExecutionContext (class in dagster)</a>
-</li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="apidocs/execution.html#dagster.ExecutionMetadata">ExecutionMetadata (class in dagster)</a>
+      <li><a href="apidocs/execution.html#dagster.ExecutionContext">ExecutionContext (class in dagster)</a>
 </li>
       <li><a href="apidocs/definitions.html#dagster.ExpectationDefinition.expectation_fn">expectation_fn (dagster.ExpectationDefinition attribute)</a>
 </li>
@@ -672,10 +668,12 @@ snapshots['test_build_all_docs 4'] = '''
 <h2 id="F">F</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="apidocs/definitions.html#dagster.Field">Field() (in module dagster)</a>
+      <li><a href="apidocs/execution.html#dagster.SolidExecutionResult.failure_data">failure_data (dagster.SolidExecutionResult attribute)</a>
 </li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="apidocs/definitions.html#dagster.Field">Field() (in module dagster)</a>
+</li>
       <li><a href="apidocs/decorators.html#dagster.MultipleResults.from_dict">from_dict() (dagster.MultipleResults static method)</a>
 </li>
   </ul></td>
@@ -837,6 +835,8 @@ snapshots['test_build_all_docs 4'] = '''
       <li><a href="apidocs/execution.html#dagster.PipelineExecutionResult.result_list">result_list (dagster.PipelineExecutionResult attribute)</a>
 </li>
       <li><a href="apidocs/decorators.html#dagster.MultipleResults.results">results (dagster.MultipleResults attribute)</a>
+</li>
+      <li><a href="apidocs/execution.html#dagster.RunConfig">RunConfig (class in dagster)</a>
 </li>
       <li><a href="apidocs/definitions.html#dagster.InputDefinition.runtime_type">runtime_type (dagster.InputDefinition attribute)</a>
 
@@ -2383,7 +2383,7 @@ Executing pipelines and solids.
 .. autoclass:: PipelineExecutionResult
    :members:
 
-.. autoclass:: ExecutionMetadata
+.. autoclass:: RunConfig 
    :members:
 
 .. autoclass:: SolidExecutionResult
@@ -20540,7 +20540,7 @@ snapshots['test_build_all_docs 53'] = '''
 <p>Executing pipelines and solids.</p>
 <dl class="function">
 <dt id="dagster.execute_pipeline">
-<code class="descclassname">dagster.</code><code class="descname">execute_pipeline</code><span class="sig-paren">(</span><em>pipeline</em>, <em>environment_dict=None</em>, <em>throw_on_user_error=True</em>, <em>execution_metadata=None</em>, <em>executor_config=None</em><span class="sig-paren">)</span><a class="headerlink" href="#dagster.execute_pipeline" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">dagster.</code><code class="descname">execute_pipeline</code><span class="sig-paren">(</span><em>pipeline</em>, <em>environment_dict=None</em>, <em>run_config=None</em><span class="sig-paren">)</span><a class="headerlink" href="#dagster.execute_pipeline" title="Permalink to this definition">¶</a></dt>
 <dd><p>“Synchronous” version of <a class="reference internal" href="#dagster.execute_pipeline_iterator" title="dagster.execute_pipeline_iterator"><code class="xref py py-func docutils literal notranslate"><span class="pre">execute_pipeline_iterator()</span></code></a>.</p>
 <p>Note: throw_on_user_error is very useful in testing contexts when not testing for error
 conditions</p>
@@ -20551,8 +20551,6 @@ conditions</p>
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
 <li><strong>pipeline</strong> (<a class="reference internal" href="definitions.html#dagster.PipelineDefinition" title="dagster.PipelineDefinition"><em>PipelineDefinition</em></a>) – Pipeline to run</li>
 <li><strong>environment</strong> (<em>dict</em>) – The enviroment that parameterizes this run</li>
-<li><strong>throw_on_user_error</strong> (<em>bool</em>) – throw_on_user_error makes the function throw when an error is encoutered rather than
-returning the py:class:<cite>SolidExecutionResult</cite> in an error-state.</li>
 </ul>
 </td>
 </tr>
@@ -20565,7 +20563,7 @@ returning the py:class:<cite>SolidExecutionResult</cite> in an error-state.</li>
 
 <dl class="function">
 <dt id="dagster.execute_pipeline_iterator">
-<code class="descclassname">dagster.</code><code class="descname">execute_pipeline_iterator</code><span class="sig-paren">(</span><em>pipeline</em>, <em>environment_dict=None</em>, <em>throw_on_user_error=True</em>, <em>execution_metadata=None</em>, <em>executor_config=None</em><span class="sig-paren">)</span><a class="headerlink" href="#dagster.execute_pipeline_iterator" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">dagster.</code><code class="descname">execute_pipeline_iterator</code><span class="sig-paren">(</span><em>pipeline</em>, <em>environment_dict=None</em>, <em>run_config=None</em><span class="sig-paren">)</span><a class="headerlink" href="#dagster.execute_pipeline_iterator" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns iterator that yields <a class="reference internal" href="#dagster.SolidExecutionResult" title="dagster.SolidExecutionResult"><code class="xref py py-class docutils literal notranslate"><span class="pre">SolidExecutionResult</span></code></a> for each
 solid executed in the pipeline.</p>
 <p>This is intended to allow the caller to do things between each executed
@@ -20637,8 +20635,8 @@ SystemPipelineExecutionContextCreationData although that seemed excessively verb
 </dd></dl>
 
 <dl class="class">
-<dt id="dagster.ExecutionMetadata">
-<em class="property">class </em><code class="descclassname">dagster.</code><code class="descname">ExecutionMetadata</code><a class="headerlink" href="#dagster.ExecutionMetadata" title="Permalink to this definition">¶</a></dt>
+<dt id="dagster.RunConfig">
+<em class="property">class </em><code class="descclassname">dagster.</code><code class="descname">RunConfig</code><a class="headerlink" href="#dagster.RunConfig" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="class">
@@ -20658,9 +20656,9 @@ SystemPipelineExecutionContextCreationData although that seemed excessively verb
 </dd></dl>
 
 <dl class="attribute">
-<dt id="dagster.SolidExecutionResult.dagster_error">
-<code class="descname">dagster_error</code><a class="headerlink" href="#dagster.SolidExecutionResult.dagster_error" title="Permalink to this definition">¶</a></dt>
-<dd><p>Returns exception that happened during this solid’s execution, if any</p>
+<dt id="dagster.SolidExecutionResult.failure_data">
+<code class="descname">failure_data</code><a class="headerlink" href="#dagster.SolidExecutionResult.failure_data" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the failing step’s data that happened during this solid’s execution, if any</p>
 </dd></dl>
 
 <dl class="attribute">

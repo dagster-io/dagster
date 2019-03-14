@@ -2,6 +2,7 @@ from contextlib import contextmanager
 import sys
 
 from future.utils import raise_from
+import six
 
 from dagster import check
 
@@ -18,9 +19,14 @@ from dagster.core.errors import (
 )
 
 from dagster.core.execution_context import (
+    ExecutorConfig,
     SystemPipelineExecutionContext,
     SystemStepExecutionContext,
 )
+
+from dagster.utils.error import serializable_error_info_from_exc_info
+
+from .intermediates_manager import IntermediatesManager
 
 from .objects import (
     ExecutionPlan,
@@ -40,9 +46,22 @@ def _all_inputs_covered(step, intermediates_manager):
     return True
 
 
-def start_inprocess_executor(pipeline_context, execution_plan, intermediates_manager):
+def start_inprocess_executor(
+    pipeline_context, execution_plan, intermediates_manager, step_keys_to_execute=None
+):
     check.inst_param(pipeline_context, 'pipeline_context', SystemPipelineExecutionContext)
     check.inst_param(execution_plan, 'execution_plan', ExecutionPlan)
+    check.inst_param(intermediates_manager, 'intermediates_manager', IntermediatesManager)
+
+    step_key_set = None if step_keys_to_execute is None else set(step_keys_to_execute)
+
+    check.param_invariant(
+        isinstance(pipeline_context.executor_config, ExecutorConfig),
+        'pipeline_context',
+        'Expected executor_config to be ExecutorConfig got {}'.format(
+            pipeline_context.executor_config
+        ),
+    )
 
     step_levels = execution_plan.topological_step_levels()
 
@@ -52,9 +71,12 @@ def start_inprocess_executor(pipeline_context, execution_plan, intermediates_man
 
     for step_level in step_levels:
         for step in step_level:
+            if step_key_set and step.key not in step_key_set:
+                continue
+
             step_context = pipeline_context.for_step(step)
 
-            if not _all_inputs_covered(step, intermediates_manager):
+            if not intermediates_manager.all_inputs_covered(step):
                 expected_outputs = [ni.prev_output_handle for ni in step.step_inputs]
 
                 step_context.log.info(
@@ -71,15 +93,22 @@ def start_inprocess_executor(pipeline_context, execution_plan, intermediates_man
                 execute_step_in_memory(step_context, input_values, intermediates_manager)
             ):
                 check.inst(step_event, ExecutionStepEvent)
+                if (
+                    pipeline_context.executor_config.throw_on_user_error
+                    and step_event.is_step_failure
+                ):
+                    step_event.reraise_user_error()
 
                 yield step_event
 
 
-def _create_input_values(step, manager):
+def _create_input_values(step, intermediates_manager):
+    check.inst_param(intermediates_manager, 'intermediates_manager', IntermediatesManager)
+
     input_values = {}
     for step_input in step.step_inputs:
         prev_output_handle = step_input.prev_output_handle
-        input_value = manager.get_value(prev_output_handle)
+        input_value = intermediates_manager.get_value(prev_output_handle)
         input_values[step_input.name] = input_value
     return input_values
 
@@ -87,6 +116,7 @@ def _create_input_values(step, manager):
 def execute_step_in_memory(step_context, inputs, intermediates_manager):
     check.inst_param(step_context, 'step_context', SystemStepExecutionContext)
     check.dict_param(inputs, 'inputs', key_type=str)
+    check.inst_param(intermediates_manager, 'intermediates_manager', IntermediatesManager)
 
     try:
         for step_event in check.generator(
@@ -102,9 +132,27 @@ def execute_step_in_memory(step_context, inputs, intermediates_manager):
             yield step_event
     except DagsterError as dagster_error:
         step_context.log.error(str(dagster_error))
+
+        exc_info = (
+            # pylint does not know original_exc_info exists is is_user_code_error is true
+            # pylint: disable=no-member
+            dagster_error.original_exc_info
+            if dagster_error.is_user_code_error
+            else sys.exc_info()
+        )
+
+        if step_context.executor_config.throw_on_user_error:
+            six.reraise(*exc_info)
+
+        error_info = serializable_error_info_from_exc_info(exc_info)
+
         yield ExecutionStepEvent.step_failure_event(
             step_context=step_context,
-            step_failure_data=StepFailureData(dagster_error=dagster_error),
+            step_failure_data=StepFailureData(
+                error_message=error_info.message,
+                error_cls_name=exc_info[0].__name__,  # 0 is the exception type
+                stack=error_info.stack,
+            ),
         )
         return
 
@@ -142,6 +190,7 @@ def _error_check_step_output_values(step, step_output_values):
 def _execute_steps_core_loop(step_context, inputs, intermediates_manager):
     check.inst_param(step_context, 'step_context', SystemStepExecutionContext)
     check.dict_param(inputs, 'inputs', key_type=str)
+    check.inst_param(intermediates_manager, 'intermediates_manager', IntermediatesManager)
 
     evaluated_inputs = {}
     # do runtime type checks of inputs versus step inputs
@@ -162,10 +211,11 @@ def _execute_steps_core_loop(step_context, inputs, intermediates_manager):
 
 
 def _create_step_event(step_context, step_output_value, intermediates_manager):
-    step = step_context.step
-    check.inst_param(step, 'step', ExecutionStep)
+    check.inst_param(step_context, 'step_context', SystemStepExecutionContext)
     check.inst_param(step_output_value, 'step_output_value', StepOutputValue)
+    check.inst_param(intermediates_manager, 'intermediates_manager', IntermediatesManager)
 
+    step = step_context.step
     step_output = step.step_output_named(step_output_value.output_name)
 
     try:

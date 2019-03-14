@@ -6,9 +6,9 @@ import uuid
 
 from graphql.execution.base import ResolveInfo
 
-from dagster import ExecutionMetadata, check
-from dagster.core.execution_plan.objects import ExecutionStepEventType
-from dagster.core.execution_plan.plan_subset import MarshalledOutput, MarshalledInput, StepExecution
+from dagster import RunConfig, check
+from dagster.core.execution_plan.objects import ExecutionStepEventType, ExecutionStepEvent
+from dagster.core.execute_marshalling import MarshalledOutput, MarshalledInput, StepExecution
 
 from dagster.core.errors import (
     DagsterInvalidDefinitionError,
@@ -18,20 +18,9 @@ from dagster.core.errors import (
     DagsterInvalidSubplanOutputNotFoundError,
 )
 
-from dagster.core.execution import (
-    ExecutionPlanAddedOutputs,
-    ExecutionPlanSubsetInfo,
-    ExecutionSelector,
-    create_execution_plan,
-)
+from dagster.core.execution import ExecutionSelector, create_execution_plan, InProcessExecutorConfig
+from dagster.core.execute_marshalling import execute_marshalling
 
-from dagster.core.serializable import (
-    ForkedProcessPipelineFactory,
-    SerializableExecutionMetadata,
-    SerializableStepEvents,
-    execute_serializable_execution_plan,
-    input_marshalling_dict_from_step_executions,
-)
 from dagster.core.types.evaluator import evaluate_config_value, EvaluateValueResult
 
 from dagster.utils.error import serializable_error_info_from_exc_info
@@ -198,11 +187,7 @@ def get_execution_plan(graphene_info, selector, config):
         return config_or_error.chain(
             lambda evaluate_value_result: graphene_info.schema.type_named('ExecutionPlan')(
                 pipeline,
-                create_execution_plan(
-                    pipeline.get_dagster_pipeline(),
-                    evaluate_value_result.value,
-                    ExecutionMetadata(),
-                ),
+                create_execution_plan(pipeline.get_dagster_pipeline(), evaluate_value_result.value),
             )
         )
 
@@ -222,7 +207,7 @@ def start_pipeline_execution(graphene_info, selector, config):
         def _start_execution(validated_config_either):
             new_run_id = str(uuid.uuid4())
             execution_plan = create_execution_plan(
-                pipeline.get_dagster_pipeline(), validated_config_either.value, ExecutionMetadata()
+                pipeline.get_dagster_pipeline(), validated_config_either.value
             )
             run = pipeline_run_storage.create_run(new_run_id, selector, env_config, execution_plan)
             pipeline_run_storage.add_run(run)
@@ -260,7 +245,9 @@ def get_pipeline_run_observable(graphene_info, run_id, after=None):
         return run.observable_after_cursor(after).map(
             lambda events: graphene_info.schema.type_named('PipelineRunLogsSubscriptionPayload')(
                 messages=[
-                    pipeline_run_event_type.from_dagster_event(graphene_info, event, pipeline)
+                    pipeline_run_event_type.from_dagster_event(
+                        graphene_info, event, pipeline, run.execution_plan
+                    )
                     for event in events
                 ]
             )
@@ -355,10 +342,19 @@ def step_executions_from_graphql_inputs(step_key, marshalled_inputs, marshalled_
 class SubplanExecutionArgs(
     namedtuple(
         '_SubplanExecutionArgs',
-        'graphene_info pipeline_name env_config step_executions execution_metadata',
+        'graphene_info pipeline_name env_config step_executions run_id tags',
     )
 ):
-    def __new__(cls, graphene_info, pipeline_name, env_config, step_executions, execution_metadata):
+    def __new__(
+        cls, graphene_info, pipeline_name, env_config, step_executions, graphql_execution_metadata
+    ):
+        tags = {}
+        if 'tags' in graphql_execution_metadata:
+            for tag in graphql_execution_metadata['tags']:
+                tags[tag['key']] = tag['value']
+
+        run_id = graphql_execution_metadata.get('runId')
+
         return super(SubplanExecutionArgs, cls).__new__(
             cls,
             graphene_info=check.inst_param(graphene_info, 'graphene_info', ResolveInfo),
@@ -367,9 +363,8 @@ class SubplanExecutionArgs(
             step_executions=check.list_param(
                 step_executions, 'step_executions', of_type=StepExecution
             ),
-            execution_metadata=check.inst_param(
-                execution_metadata, 'execution_metadata', ExecutionMetadata
-            ),
+            run_id=run_id,
+            tags=tags,
         )
 
     @property
@@ -409,6 +404,22 @@ def _chain_config_or_error_from_pipeline(args, dauphin_pipeline):
     )
 
 
+from collections import defaultdict
+
+
+def list_pull(alist, key):
+    return list(map(lambda elem: getattr(elem, key), alist))
+
+
+def input_marshalling_dict_from_step_executions(step_executions):
+    check.list_param(step_executions, 'step_executions', of_type=StepExecution)
+    inputs_to_marshal = defaultdict(dict)
+    for step_execution in step_executions:
+        for input_name, marshalling_key in step_execution.marshalled_inputs:
+            inputs_to_marshal[step_execution.step_key][input_name] = marshalling_key
+    return dict(inputs_to_marshal)
+
+
 def _execute_marshalling_or_error(args, dauphin_pipeline, evaluate_value_result):
     check.inst_param(args, 'args', SubplanExecutionArgs)
     check.inst_param(dauphin_pipeline, 'dauphin_pipeline', DauphinPipeline)
@@ -417,15 +428,33 @@ def _execute_marshalling_or_error(args, dauphin_pipeline, evaluate_value_result)
     environment_dict = evaluate_value_result.value
 
     try:
-        outputs_to_marshal = {se.step_key: se.marshalled_outputs for se in args.step_executions}
+        # TODO this only exists to thread to _create_dauphin_step
         execution_plan = create_execution_plan(
             dauphin_pipeline.get_dagster_pipeline(),
             environment_dict=environment_dict,
-            execution_metadata=args.execution_metadata,
-            subset_info=ExecutionPlanSubsetInfo.with_input_marshalling(
-                args.step_keys, input_marshalling_dict_from_step_executions(args.step_executions)
+            run_config=RunConfig(run_id=args.run_id, tags=args.tags),
+        )
+        step_events = execute_marshalling(
+            dauphin_pipeline.get_dagster_pipeline(),
+            environment_dict=environment_dict,
+            step_keys=list_pull(args.step_executions, 'step_key'),
+            inputs_to_marshal=input_marshalling_dict_from_step_executions(args.step_executions),
+            outputs_to_marshal={se.step_key: se.marshalled_outputs for se in args.step_executions},
+            run_config=RunConfig(
+                run_id=args.run_id,
+                tags=args.tags,
+                executor_config=InProcessExecutorConfig(throw_on_user_error=False),
             ),
-            added_outputs=ExecutionPlanAddedOutputs.with_output_marshalling(outputs_to_marshal),
+        )
+
+        return _type_of(args, 'StartSubplanExecutionSuccess')(
+            pipeline=dauphin_pipeline,
+            has_failures=any(
+                se for se in step_events if se.event_type == ExecutionStepEventType.STEP_FAILURE
+            ),
+            step_events=list(
+                map(lambda se: _create_dauphin_step_event(execution_plan, se), step_events)
+            ),
         )
 
     except DagsterInvalidSubplanMissingInputError as invalid_subplan_error:
@@ -459,31 +488,17 @@ def _execute_marshalling_or_error(args, dauphin_pipeline, evaluate_value_result)
             )
         )
 
-    check.invariant(not args.execution_metadata.loggers)
-    check.invariant(not args.execution_metadata.event_callback)
-
-    step_events = execute_serializable_execution_plan(
-        ForkedProcessPipelineFactory(pipeline_fn=dauphin_pipeline.get_dagster_pipeline),
-        environment_dict=environment_dict,
-        execution_metadata=SerializableExecutionMetadata(
-            run_id=args.execution_metadata.run_id, tags=args.execution_metadata.tags
-        ),
-        step_executions=args.step_executions,
-    )
-
-    return _type_of(args, 'StartSubplanExecutionSuccess')(
-        pipeline=dauphin_pipeline,
-        has_failures=any(
-            se for se in step_events if se.event_type == ExecutionStepEventType.STEP_FAILURE
-        ),
-        step_events=list(
-            map(lambda se: _create_dauphin_step_event(execution_plan, se), step_events)
-        ),
-    )
+    # This is a debatable idea. For debugging things like the the airflow plugin, it is
+    # nicer to have richer information flowed across the serialization boundary. However
+    # it is an inferior unit testing experience, so there are tradeoffs here.
+    except Exception:  # pylint: disable=broad-except
+        return EitherError(
+            _type_of(args, 'PythonError')(serializable_error_info_from_exc_info(sys.exc_info()))
+        )
 
 
 def _create_dauphin_step_event(execution_plan, step_event):
-    check.inst_param(step_event, 'step_event', SerializableStepEvents)
+    check.inst_param(step_event, 'step_event', ExecutionStepEvent)
 
     step = execution_plan.get_step_by_key(step_event.step_key)
 
@@ -491,14 +506,14 @@ def _create_dauphin_step_event(execution_plan, step_event):
         return DauphinSuccessfulStepOutputEvent(
             success=True,
             step=DauphinExecutionStep(execution_plan, step),
-            output_name=step_event.output_name,
-            value_repr=step_event.value_repr,
+            output_name=step_event.step_output_data.output_name,
+            value_repr=step_event.step_output_data.value_repr,
         )
     elif step_event.event_type == ExecutionStepEventType.STEP_FAILURE:
         return DauphinStepFailureEvent(
             success=False,
             step=DauphinExecutionStep(execution_plan, step),
-            error_message=step_event.error_message,
+            error_message=step_event.step_failure_data.error_message,
         )
     else:
         check.failed('{step_event} unsupported'.format(step_event=step_event))

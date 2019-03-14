@@ -9,45 +9,77 @@ import uuid
 
 from dagster import check
 from dagster.utils import merge_dicts
-from dagster.utils.logging import define_colored_console_logger
 
 from .definitions.expectation import ExpectationDefinition
 from .definitions.input import InputDefinition
 from .definitions.output import OutputDefinition
 from .events import ExecutionEvents
+from .files import FileStore
 from .log import DagsterLog
 from .system_config.objects import EnvironmentConfig
 from .types.marshal import PersistenceStrategy
 
-DEFAULT_LOGGERS = [define_colored_console_logger('dagster')]
+
+class ExecutorConfig:
+    pass
 
 
-class ExecutionMetadata(namedtuple('_ExecutionMetadata', 'run_id tags event_callback loggers')):
-    def __new__(cls, run_id=None, tags=None, event_callback=None, loggers=None):
-        return super(ExecutionMetadata, cls).__new__(
+class InProcessExecutorConfig(ExecutorConfig):
+    def __init__(self, throw_on_user_error=True, inmem_intermediates_manager=None):
+        from .execution_plan.intermediates_manager import InMemoryIntermediatesManager
+
+        self.throw_on_user_error = check.bool_param(throw_on_user_error, 'throw_on_user_error')
+        self.inmem_intermediates_manager = check.opt_inst_param(
+            inmem_intermediates_manager,
+            'inmem_intermediates_manager',
+            InMemoryIntermediatesManager,
+            InMemoryIntermediatesManager(),
+        )
+
+
+class MultiprocessExecutorConfig(ExecutorConfig):
+    def __init__(self, pipeline_fn):
+        self.pipeline_fn = check.callable_param(pipeline_fn, 'pipeline_fn')
+        self.throw_on_user_error = False
+
+
+def make_new_run_id():
+    return str(uuid.uuid4())
+
+
+class RunConfig(namedtuple('_RunConfig', 'run_id tags event_callback loggers executor_config')):
+    def __new__(
+        cls, run_id=None, tags=None, event_callback=None, loggers=None, executor_config=None
+    ):
+        return super(RunConfig, cls).__new__(
             cls,
-            run_id=check.str_param(run_id, 'run_id') if run_id else str(uuid.uuid4()),
+            run_id=check.str_param(run_id, 'run_id') if run_id else make_new_run_id(),
             tags=check.opt_dict_param(tags, 'tags', key_type=str, value_type=str),
             event_callback=check.opt_callable_param(event_callback, 'event_callback'),
             loggers=check.opt_list_param(loggers, 'loggers'),
+            executor_config=check.opt_inst_param(
+                executor_config, 'executor_config', ExecutorConfig, InProcessExecutorConfig()
+            ),
         )
 
+    @staticmethod
+    def nonthrowing_in_process():
+        return RunConfig(executor_config=InProcessExecutorConfig(throw_on_user_error=False))
+
     def with_tags(self, **tags):
-        return ExecutionMetadata(
+        return RunConfig(
             run_id=self.run_id,
             event_callback=self.event_callback,
             loggers=self.loggers,
             tags=merge_dicts(self.tags, tags),
+            executor_config=self.executor_config,
         )
 
 
 class SystemPipelineExecutionContextData(
     namedtuple(
         '_SystemPipelineExecutionContextData',
-        (
-            'execution_metadata resources environment_config persistence_strategy pipeline_def '
-            'event_callback'
-        ),
+        'run_config resources environment_config persistence_strategy pipeline_def files',
     )
 ):
     '''
@@ -56,21 +88,13 @@ class SystemPipelineExecutionContextData(
     '''
 
     def __new__(
-        cls,
-        execution_metadata,
-        resources,
-        environment_config,
-        persistence_strategy,
-        pipeline_def,
-        event_callback=None,
+        cls, run_config, resources, environment_config, persistence_strategy, pipeline_def, files
     ):
         from .definitions.pipeline import PipelineDefinition
 
         return super(SystemPipelineExecutionContextData, cls).__new__(
             cls,
-            execution_metadata=check.inst_param(
-                execution_metadata, 'execution_metadata', ExecutionMetadata
-            ),
+            run_config=check.inst_param(run_config, 'run_config', RunConfig),
             resources=resources,
             environment_config=check.inst_param(
                 environment_config, 'environment_config', EnvironmentConfig
@@ -79,12 +103,16 @@ class SystemPipelineExecutionContextData(
                 persistence_strategy, 'persistence_strategy', PersistenceStrategy
             ),
             pipeline_def=check.inst_param(pipeline_def, 'pipeline_def', PipelineDefinition),
-            event_callback=check.opt_callable_param(event_callback, 'event_callback'),
+            files=check.inst_param(files, 'files', FileStore),
         )
 
     @property
     def run_id(self):
-        return self.execution_metadata.run_id
+        return self.run_config.run_id
+
+    @property
+    def event_callback(self):
+        return self.run_config.event_callback
 
     @property
     def environment_dict(self):
@@ -99,20 +127,25 @@ class SystemPipelineExecutionContext(object):
             pipeline_context_data, 'pipeline_context_data', SystemPipelineExecutionContextData
         )
         self._tags = check.dict_param(tags, 'tags')
-        self._log = check.inst_param(log, 'log', DagsterLog) if log else DEFAULT_LOGGERS
+        self._log = check.inst_param(log, 'log', DagsterLog)
         self._events = ExecutionEvents(pipeline_context_data.pipeline_def.name, self._log)
 
     def for_step(self, step):
         from .execution_plan.objects import ExecutionStep
 
         check.inst_param(step, 'step', ExecutionStep)
+
         tags = merge_dicts(self.tags, step.tags)
         log = DagsterLog(self.run_id, tags, self.log.loggers)
         return SystemStepExecutionContext(self._pipeline_context_data, tags, log, step)
 
     @property
-    def execution_metadata(self):
-        return self._pipeline_context_data.execution_metadata
+    def executor_config(self):
+        return self.run_config.executor_config
+
+    @property
+    def run_config(self):
+        return self._pipeline_context_data.run_config
 
     @property
     def resources(self):
@@ -164,6 +197,10 @@ class SystemPipelineExecutionContext(object):
     @property
     def log(self):
         return self._log
+
+    @property
+    def files(self):
+        return self._pipeline_context_data.files
 
 
 class SystemStepExecutionContext(SystemPipelineExecutionContext):

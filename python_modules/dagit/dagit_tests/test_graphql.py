@@ -1619,13 +1619,24 @@ def test_basic_start_pipeline_execution_and_subscribe():
         context, parse(SUBSCRIPTION_QUERY), variables={'runId': run_id}
     )
 
-    messages = []
-    subscription.subscribe(messages.append)
+    subscribe_results = []
+    subscription.subscribe(subscribe_results.append)
 
-    for m in messages:
-        assert not m.errors
-        assert m.data
-        assert m.data['pipelineRunLogs']
+    assert len(subscribe_results) == 1
+
+    subscribe_result = subscribe_results[0]
+
+    assert not subscribe_result.errors
+    assert subscribe_result.data
+    assert subscribe_result.data['pipelineRunLogs']
+    log_messages = []
+    for message in subscribe_result.data['pipelineRunLogs']['messages']:
+        if message['__typename'] == 'LogMessageEvent':
+            log_messages.append(message)
+
+    # skip the first one was we know it is not associatied with a step
+    for log_message in log_messages[1:]:
+        assert log_message['step']['key']
 
 
 def test_subscription_query_error():
@@ -1678,7 +1689,8 @@ subscription subscribeTest($runId: ID!) {
         __typename
         messages {
             __typename
-            ... on ExecutionStepEvent {
+            ... on MessageEvent {
+                message
                 step {key }
             }
         }
@@ -1968,7 +1980,9 @@ def test_start_subplan_invalid_output_name(snapshot):
     snapshot.assert_match(result.data)
 
 
-def test_start_subplan_invalid_input_path(snapshot):
+# Currently this raises a normal python error because the file not found
+# error is hit outside the execution plan system
+def test_start_subplan_invalid_input_path():
     hardcoded_uuid = '160b56ba-c9a6-4111-ab4e-a7ab364eb031'
 
     result = execute_dagster_graphql(
@@ -1989,13 +2003,12 @@ def test_start_subplan_invalid_input_path(snapshot):
 
     assert not result.errors
     assert result.data
-    assert result.data['startSubplanExecution']['__typename'] == 'StartSubplanExecutionSuccess'
-    step_events_data = result.data['startSubplanExecution']['stepEvents']
-    assert step_events_data[0]['success'] is False
-    snapshot.assert_match(result.data)
+    assert result.data['startSubplanExecution']['__typename'] == 'PythonError'
 
 
-def test_start_subplan_invalid_output_path(snapshot):
+# Currently this raises a normal python error because the file not found
+# error is hit outside the execution plan system
+def test_start_subplan_invalid_output_path():
     with get_temp_file_name() as num_df_file:
         num_df = pd.read_csv(script_relative_path('num.csv'))
 
@@ -2029,20 +2042,7 @@ def test_start_subplan_invalid_output_path(snapshot):
 
         assert not result.errors
         assert result.data
-        assert result.data['startSubplanExecution']['__typename'] == 'StartSubplanExecutionSuccess'
-        step_events_data = result.data['startSubplanExecution']['stepEvents']
-        assert len(step_events_data) == 3
-        assert [step_event['step']['key'] for step_event in step_events_data] == [
-            'sum_solid.transform.unmarshal-input.num',
-            'sum_solid.transform',
-            'sum_solid.transform.marshal-output.result',
-        ]
-
-        assert step_events_data[0]['success']
-        assert step_events_data[1]['success']
-        assert not step_events_data[2]['success']
-
-        snapshot.assert_match(result.data)
+        assert result.data['startSubplanExecution']['__typename'] == 'PythonError'
 
 
 def test_invalid_subplan_missing_inputs(snapshot):

@@ -34,6 +34,13 @@ python -m pytest python_modules/dagit
 pip install -e python_modules/dagster-ge
 python -m pytest python_modules/dagster-ge
 
+# This is supposedly being fixed, but right now airflow requires you to set a
+# flag before install to choose between GPL and non-GPL dependencies
+SLUGIFY_USES_TEXT_UNIDECODE=yes pip install -e python_modules/dagster-airflow
+pip install -r python_modules/dagster-airflow/dev-requirements.txt
+
+airflow initdb
+
 pip install -e python_modules/airline-demo
 pip install -r python_modules/airline-demo/dev-requirements.txt
 

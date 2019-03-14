@@ -9,7 +9,7 @@ import time
 import gevent
 import six
 
-from dagster import check, ExecutionMetadata, PipelineDefinition, execute_pipeline
+from dagster import check, RunConfig, PipelineDefinition, execute_pipeline, InProcessExecutorConfig
 from dagster.core.events import PipelineEventRecord, EventType
 from dagster.utils.error import serializable_error_info_from_exc_info, SerializableErrorInfo
 from dagster.utils.logging import level_from_string
@@ -87,10 +87,13 @@ class SynchronousExecutionManager(PipelineExecutionManager):
             return execute_pipeline(
                 pipeline,
                 pipeline_run.config,
-                execution_metadata=ExecutionMetadata(
-                    pipeline_run.run_id, event_callback=pipeline_run.handle_new_event
+                run_config=RunConfig(
+                    pipeline_run.run_id,
+                    event_callback=pipeline_run.handle_new_event,
+                    executor_config=InProcessExecutorConfig(
+                        throw_on_user_error=throw_on_user_error
+                    ),
                 ),
-                throw_on_user_error=throw_on_user_error,
             )
         except:  # pylint: disable=W0702
             if throw_on_user_error:
@@ -255,7 +258,11 @@ def execute_pipeline_through_queue(
 
     message_queue.put(ProcessStartedSentinel(os.getpid()))
 
-    execution_metadata = ExecutionMetadata(run_id, event_callback=message_queue.put)
+    run_config = RunConfig(
+        run_id,
+        event_callback=message_queue.put,
+        executor_config=InProcessExecutorConfig(throw_on_user_error=False),
+    )
 
     from .app import RepositoryContainer
 
@@ -274,8 +281,7 @@ def execute_pipeline_through_queue(
                 solid_subset
             ),
             environment_dict,
-            execution_metadata=execution_metadata,
-            throw_on_user_error=False,
+            run_config=run_config,
         )
         return result
     except:  # pylint: disable=W0702

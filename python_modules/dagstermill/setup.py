@@ -42,7 +42,7 @@ def _do_setup(name='dagstermill'):
         ],
         install_requires=[
             # standard python 2/3 compatability things
-            'enum34>=1.1.6',
+            'enum-compat==0.0.2',
             'future>=0.16.0, <0.17.0a0',
             'ipykernel>=4.9.0',
             'papermill>=0.18.0',

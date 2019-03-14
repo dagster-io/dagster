@@ -15,8 +15,8 @@ from dagster import (
 )
 
 from dagster.core.execution import (
-    ExecutionMetadata,
     ExecutionContext,
+    RunConfig,
     construct_pipeline_execution_context,
     create_environment_config,
 )
@@ -28,7 +28,7 @@ def create_test_pipeline_execution_context(loggers=None, resources=None, tags=No
     run_id = str(uuid.uuid4())
     pipeline_def = PipelineDefinition(name='test_legacy_context', solids=[])
     return construct_pipeline_execution_context(
-        execution_metadata=ExecutionMetadata(run_id, tags=tags, loggers=loggers),
+        run_config=RunConfig(run_id, tags=tags, loggers=loggers),
         pipeline=pipeline_def,
         execution_context=ExecutionContext(),
         resources=resources,
@@ -121,11 +121,6 @@ def execute_solids(pipeline_def, solid_names, inputs=None, environment_dict=None
     sub_pipeline = pipeline_def.build_sub_pipeline(solid_names)
     stubbed_pipeline = build_pipeline_with_input_stubs(sub_pipeline, inputs)
     result = execute_pipeline(stubbed_pipeline, environment_dict)
-
-    if not result.success:
-        for solid_result in result.solid_result_list:
-            if not solid_result.success:
-                solid_result.reraise_user_error()
 
     return {sr.solid.name: sr for sr in result.solid_result_list}
 

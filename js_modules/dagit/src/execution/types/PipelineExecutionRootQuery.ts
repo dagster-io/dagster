@@ -7,11 +7,17 @@ import { PipelineRunStatus, LogLevel, StepKind } from "./../../types/globalTypes
 // GraphQL query operation: PipelineExecutionRootQuery
 // ====================================================
 
+export interface PipelineExecutionRootQuery_pipeline_runs_logs_nodes_LogMessageEvent_step {
+  __typename: "ExecutionStep";
+  name: string;
+}
+
 export interface PipelineExecutionRootQuery_pipeline_runs_logs_nodes_LogMessageEvent {
-  __typename: "LogMessageEvent" | "PipelineStartEvent" | "PipelineSuccessEvent" | "PipelineFailureEvent" | "PipelineProcessStartEvent";
+  __typename: "LogMessageEvent" | "PipelineStartEvent" | "PipelineSuccessEvent" | "PipelineFailureEvent" | "ExecutionStepStartEvent" | "ExecutionStepSuccessEvent" | "PipelineProcessStartEvent";
   message: string;
   timestamp: string;
   level: LogLevel;
+  step: PipelineExecutionRootQuery_pipeline_runs_logs_nodes_LogMessageEvent_step | null;
 }
 
 export interface PipelineExecutionRootQuery_pipeline_runs_logs_nodes_ExecutionStepFailureEvent_step {
@@ -30,8 +36,13 @@ export interface PipelineExecutionRootQuery_pipeline_runs_logs_nodes_ExecutionSt
   message: string;
   timestamp: string;
   level: LogLevel;
-  step: PipelineExecutionRootQuery_pipeline_runs_logs_nodes_ExecutionStepFailureEvent_step;
+  step: PipelineExecutionRootQuery_pipeline_runs_logs_nodes_ExecutionStepFailureEvent_step | null;
   error: PipelineExecutionRootQuery_pipeline_runs_logs_nodes_ExecutionStepFailureEvent_error;
+}
+
+export interface PipelineExecutionRootQuery_pipeline_runs_logs_nodes_PipelineProcessStartedEvent_step {
+  __typename: "ExecutionStep";
+  name: string;
 }
 
 export interface PipelineExecutionRootQuery_pipeline_runs_logs_nodes_PipelineProcessStartedEvent {
@@ -39,6 +50,7 @@ export interface PipelineExecutionRootQuery_pipeline_runs_logs_nodes_PipelinePro
   message: string;
   timestamp: string;
   level: LogLevel;
+  step: PipelineExecutionRootQuery_pipeline_runs_logs_nodes_PipelineProcessStartedEvent_step | null;
   processId: number;
 }
 
@@ -52,25 +64,12 @@ export interface PipelineExecutionRootQuery_pipeline_runs_logs_nodes_StepMateria
   message: string;
   timestamp: string;
   level: LogLevel;
-  step: PipelineExecutionRootQuery_pipeline_runs_logs_nodes_StepMaterializationEvent_step;
+  step: PipelineExecutionRootQuery_pipeline_runs_logs_nodes_StepMaterializationEvent_step | null;
   fileLocation: string;
   fileName: string;
 }
 
-export interface PipelineExecutionRootQuery_pipeline_runs_logs_nodes_ExecutionStepStartEvent_step {
-  __typename: "ExecutionStep";
-  name: string;
-}
-
-export interface PipelineExecutionRootQuery_pipeline_runs_logs_nodes_ExecutionStepStartEvent {
-  __typename: "ExecutionStepStartEvent" | "ExecutionStepSuccessEvent";
-  message: string;
-  timestamp: string;
-  level: LogLevel;
-  step: PipelineExecutionRootQuery_pipeline_runs_logs_nodes_ExecutionStepStartEvent_step;
-}
-
-export type PipelineExecutionRootQuery_pipeline_runs_logs_nodes = PipelineExecutionRootQuery_pipeline_runs_logs_nodes_LogMessageEvent | PipelineExecutionRootQuery_pipeline_runs_logs_nodes_ExecutionStepFailureEvent | PipelineExecutionRootQuery_pipeline_runs_logs_nodes_PipelineProcessStartedEvent | PipelineExecutionRootQuery_pipeline_runs_logs_nodes_StepMaterializationEvent | PipelineExecutionRootQuery_pipeline_runs_logs_nodes_ExecutionStepStartEvent;
+export type PipelineExecutionRootQuery_pipeline_runs_logs_nodes = PipelineExecutionRootQuery_pipeline_runs_logs_nodes_LogMessageEvent | PipelineExecutionRootQuery_pipeline_runs_logs_nodes_ExecutionStepFailureEvent | PipelineExecutionRootQuery_pipeline_runs_logs_nodes_PipelineProcessStartedEvent | PipelineExecutionRootQuery_pipeline_runs_logs_nodes_StepMaterializationEvent;
 
 export interface PipelineExecutionRootQuery_pipeline_runs_logs_pageInfo {
   __typename: "PageInfo";

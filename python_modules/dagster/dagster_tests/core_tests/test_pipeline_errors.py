@@ -9,6 +9,7 @@ from dagster import (
     PipelineContextDefinition,
     PipelineDefinition,
     Result,
+    RunConfig,
     SolidDefinition,
     check,
     execute_pipeline,
@@ -16,7 +17,6 @@ from dagster import (
 )
 
 from dagster.core.test_utils import execute_single_solid_in_isolation, single_output_transform
-from dagster.core.errors import DagsterExecutionStepExecutionError
 
 
 def silencing_default_context():
@@ -51,7 +51,7 @@ def create_root_transform_failure_solid(name):
 
 def test_transform_failure_pipeline():
     pipeline = silencing_pipeline(solids=[create_root_transform_failure_solid('failing')])
-    pipeline_result = execute_pipeline(pipeline, throw_on_user_error=False)
+    pipeline_result = execute_pipeline(pipeline, run_config=RunConfig.nonthrowing_in_process())
 
     assert not pipeline_result.success
 
@@ -59,7 +59,7 @@ def test_transform_failure_pipeline():
 
     assert len(result_list) == 1
     assert not result_list[0].success
-    assert result_list[0].dagster_error
+    assert result_list[0].failure_data
 
 
 def test_failure_midstream():
@@ -83,14 +83,13 @@ def test_failure_midstream():
             'C': {'A': DependencyDefinition(solid_a.name), 'B': DependencyDefinition(solid_b.name)}
         },
     )
-    pipeline_result = execute_pipeline(pipeline, throw_on_user_error=False)
+    pipeline_result = execute_pipeline(pipeline, run_config=RunConfig.nonthrowing_in_process())
 
     assert pipeline_result.result_for_solid('A').success
     assert pipeline_result.result_for_solid('B').success
     assert not pipeline_result.result_for_solid('C').success
-    assert isinstance(
-        pipeline_result.result_for_solid('C').dagster_error, DagsterExecutionStepExecutionError
-    )
+
+    assert pipeline_result.result_for_solid('C').failure_data.error_cls_name == 'CheckError'
 
 
 def test_do_not_yield_result():

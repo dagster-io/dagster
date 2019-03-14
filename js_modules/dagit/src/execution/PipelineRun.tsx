@@ -84,6 +84,7 @@ export class PipelineRun extends React.Component<
     const errorNode = this.props.run.logs.nodes.find(
       node =>
         node.__typename === "ExecutionStepFailureEvent" &&
+        node.step != null &&
         node.step.name === step
     ) as PipelineRunFragment_logs_nodes_ExecutionStepFailureEvent;
 
@@ -105,7 +106,9 @@ export class PipelineRun extends React.Component<
               runMetadata={metadata}
               onShowStateDetails={this.onShowStateDetails}
               onApplyStepFilter={stepName =>
-                this.setState({ logsFilter: { ...logsFilter, text: stepName } })
+                this.setState({
+                  logsFilter: { ...logsFilter, text: `step:${stepName}` }
+                })
               }
             />
           )}
