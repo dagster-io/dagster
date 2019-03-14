@@ -67,7 +67,7 @@ def _do_setup(name='dagster'):
             'six>=1.11.0',
             'toposort>=1.5',
             # dev/test - Installed via dev-requirements.txt
-            # 'pylint>=2.2.2',
+            # 'pylint>=2.3.0',
             # 'pytest>=3.5.1',
             # 'recommonmark>=0.4.0',
             # 'rope>=0.10.7',
