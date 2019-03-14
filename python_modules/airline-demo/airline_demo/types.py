@@ -31,15 +31,15 @@ AirlineDemoResources = namedtuple(
 
 class SparkDataFrameSerializationStrategy(SerializationStrategy):
     def serialize_value(self, pipeline_context, value, write_file_obj):
-        pickle_file_dir = pipeline_context.resources.tempfile.tempdir()
-        shutil.rmtree(pickle_file_dir)
-        value.rdd.saveAsPickleFile(pickle_file_dir)
+        parquet_dir = pipeline_context.resources.tempfile.tempdir()
+        shutil.rmtree(parquet_dir)
+        value.write.parquet(parquet_dir)
 
         archive_file_obj = tempfile.NamedTemporaryFile(delete=False)
         try:
             archive_file_obj.close()
             archive_file_path = archive_file_obj.name
-            zipfile_path = shutil.make_archive(archive_file_path, 'zip', pickle_file_dir)
+            zipfile_path = shutil.make_archive(archive_file_path, 'zip', parquet_dir)
             try:
                 with open(zipfile_path, 'rb') as archive_file_read_obj:
                     write_file_obj.write(archive_file_read_obj.read())
@@ -59,18 +59,17 @@ class SparkDataFrameSerializationStrategy(SerializationStrategy):
         try:
             archive_file_obj.write(read_file_obj.read())
             archive_file_obj.close()
-            pickle_file_dir = pipeline_context.resources.tempfile.tempdir()
+            parquet_dir = pipeline_context.resources.tempfile.tempdir()
             # We don't use the ZipFile context manager here because of py2
             zipfile_obj = zipfile.ZipFile(archive_file_obj.name)
-            zipfile_obj.extractall(pickle_file_dir)
+            zipfile_obj.extractall(parquet_dir)
             zipfile_obj.close()
         finally:
             try:
                 os.remove(archive_file_obj.name)
             except FileNotFoundError:
                 pass
-        rdd = pipeline_context.resources.spark.sparkContext.pickleFile(pickle_file_dir)
-        return rdd.toDF()
+        return pipeline_context.resources.spark.read.parquet(parquet_dir)
 
 
 SparkDataFrameType = as_dagster_type(
