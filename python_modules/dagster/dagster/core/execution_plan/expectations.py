@@ -7,7 +7,6 @@ from dagster.core.execution_context import (
     SystemPipelineExecutionContext,
 )
 from dagster.core.user_context import ExpectationExecutionContext
-from dagster.utils import merge_dicts
 
 from .objects import (
     ExecutionStep,
