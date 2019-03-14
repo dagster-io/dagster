@@ -3,6 +3,8 @@
   - API Additions and Changes:
       - ExecutionMetadata has been renamed to RunConfig
       - throw_on_user_error no longer top level argument to execute_pipeline. Part of InProcessExecutorConfig
+      - We no longer include values of configs in config parsing error exception to prevent
+        accidental logging of sensitive information that might be in config files.
   - Dagit improvements
       - Show total execution time at the bottom of the execution pane
       - Remove extra scrollbars in Windows and Mac with external mouse

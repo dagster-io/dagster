@@ -19,7 +19,7 @@ snapshots['test_start_subplan_invalid_config 1'] = {
         '__typename': 'PipelineConfigValidationInvalid',
         'errors': [
             {
-                'message': 'Value "384938439" at path root:solids:sum_solid:inputs:num:csv:path is not valid. Expected "Path"'
+                'message': 'Value at path root:solids:sum_solid:inputs:num:csv:path is not valid. Expected "Path"'
             }
         ],
         'pipeline': {
