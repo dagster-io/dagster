@@ -2,6 +2,13 @@
 
   - API Additions and Changes:
       - ExecutionMetadata has been renamed to RunConfig
+      - throw_on_user_error no longer top level argument to execute_pipeline. Part of InProcessExecutorConfig
+  - Dagit improvements
+      - Show total execution time at the bottom of the execution pane
+      - Remove extra scrollbars in Windows and Mac with external mouse
+      - New dynamics for multiple runs in dagit; run history; better tabbing behavior.
+  - Dagstermill improvements
+      - Repo registration is now optional; "Hello, World" examples are now boilerplate free.
 
 0.3.3
 
