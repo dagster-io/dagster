@@ -41,6 +41,8 @@ def test_uncontainerized_download_dag_execution_with_airflow_config():
 
 
 def test_uncontainerized_ingest_dag_execution_with_airflow_config():
+    # TODO factor this machinery into a test helper in dagster-airflow,
+    # rewrite marshalling scaffolding helpers to be cleaner
     pipeline = define_airline_demo_ingest_pipeline()
     config_object = load_yaml_from_glob_list(
         [
