@@ -375,7 +375,9 @@ def load_parameter(input_name, input_value):
         ):
             return input_value
         elif runtime_type_enum == SerializableRuntimeType.PICKLE_SERIALIZABLE:
-            return deserialize_from_file(PickleSerializationStrategy(), input_value)
+            return deserialize_from_file(
+                PickleSerializationStrategy(), MANAGER_FOR_NOTEBOOK_INSTANCE.context, input_value
+            )
         else:
             raise DagstermillError(
                 "loading parameter {input_name} resulted in an error".format(input_name=input_name)
@@ -393,7 +395,9 @@ def read_value(runtime_type, value):
     elif runtime_type.is_any and is_json_serializable(value):
         return value
     elif runtime_type.serialization_strategy:
-        return deserialize_from_file(runtime_type.serialization_strategy, value)
+        return deserialize_from_file(
+            runtime_type.serialization_strategy, MANAGER_FOR_NOTEBOOK_INSTANCE.context, value
+        )
     else:
         check.failed(
             'Unsupported type {name}: no persistence strategy defined'.format(
