@@ -156,7 +156,12 @@ class Manager:
                 pm.record(output_name, value)
             elif runtime_type_enum == SerializableRuntimeType.PICKLE_SERIALIZABLE:
                 out_file = os.path.join(self.marshal_dir, 'output-{}'.format(output_name))
-                serialize_to_file(PickleSerializationStrategy(), value, out_file)
+                serialize_to_file(
+                    PickleSerializationStrategy(),
+                    MANAGER_FOR_NOTEBOOK_INSTANCE.context,
+                    value,
+                    out_file,
+                )
                 pm.record(output_name, out_file)
             else:
                 raise DagstermillError(
@@ -322,7 +327,12 @@ def write_value(runtime_type, value, target_file):
     elif runtime_type.is_any and is_json_serializable(value):
         return value
     elif runtime_type.serialization_strategy:
-        serialize_to_file(runtime_type.serialization_strategy, value, target_file)
+        serialize_to_file(
+            runtime_type.serialization_strategy,
+            MANAGER_FOR_NOTEBOOK_INSTANCE.context,
+            value,
+            target_file,
+        )
         return target_file
     else:
         check.failed('Unsupported type {name}'.format(name=runtime_type.name))
