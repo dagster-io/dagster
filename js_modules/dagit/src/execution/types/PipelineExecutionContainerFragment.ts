@@ -99,12 +99,19 @@ export interface PipelineExecutionContainerFragment_runs_executionPlan {
   steps: PipelineExecutionContainerFragment_runs_executionPlan_steps[];
 }
 
+export interface PipelineExecutionContainerFragment_runs_pipeline {
+  __typename: "Pipeline";
+  name: string;
+}
+
 export interface PipelineExecutionContainerFragment_runs {
   __typename: "PipelineRun";
   runId: string;
   status: PipelineRunStatus;
   logs: PipelineExecutionContainerFragment_runs_logs;
   executionPlan: PipelineExecutionContainerFragment_runs_executionPlan;
+  config: string;
+  pipeline: PipelineExecutionContainerFragment_runs_pipeline;
 }
 
 export interface PipelineExecutionContainerFragment_environmentType {

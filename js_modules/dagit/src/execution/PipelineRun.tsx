@@ -17,9 +17,11 @@ import { PanelDivider } from "../PanelDivider";
 import PythonErrorInfo from "../PythonErrorInfo";
 import RunMetadataProvider from "./RunMetadataProvider";
 import LogsToolbar from "./LogsToolbar";
+import { PipelineRunExecutionPlanFragment_executionPlan } from "./types/PipelineRunExecutionPlanFragment";
 
 interface IPipelineRunProps {
-  pipelineRun: PipelineRunFragment;
+  plan: PipelineRunExecutionPlanFragment_executionPlan;
+  run: PipelineRunFragment;
 }
 
 interface IPipelineRunState {
@@ -79,7 +81,7 @@ export class PipelineRun extends React.Component<
   };
 
   onShowStateDetails = (step: string) => {
-    const errorNode = this.props.pipelineRun.logs.nodes.find(
+    const errorNode = this.props.run.logs.nodes.find(
       node =>
         node.__typename === "ExecutionStepFailureEvent" &&
         node.step != null &&
@@ -93,14 +95,14 @@ export class PipelineRun extends React.Component<
 
   render() {
     const { logsFilter, logsVH, highlightedError } = this.state;
-    const { logs } = this.props.pipelineRun;
+    const { logs } = this.props.run;
 
     return (
       <PipelineRunWrapper>
         <RunMetadataProvider logs={logs.nodes}>
           {metadata => (
             <PipelineRunExecutionPlan
-              run={this.props.pipelineRun}
+              run={this.props.run}
               runMetadata={metadata}
               onShowStateDetails={this.onShowStateDetails}
               onApplyStepFilter={stepName =>

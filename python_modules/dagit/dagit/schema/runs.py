@@ -22,6 +22,7 @@ class DauphinPipelineRun(dauphin.ObjectType):
     pipeline = dauphin.NonNull('Pipeline')
     logs = dauphin.NonNull('LogMessageConnection')
     executionPlan = dauphin.NonNull('ExecutionPlan')
+    config = dauphin.NonNull(dauphin.String)
 
     def __init__(self, pipeline_run):
         super(DauphinPipelineRun, self).__init__(
@@ -40,6 +41,9 @@ class DauphinPipelineRun(dauphin.ObjectType):
         return graphene_info.schema.type_named('ExecutionPlan')(
             pipeline, self._pipeline_run.execution_plan
         )
+
+    def resolve_config(self, _graphene_info):
+        return self._pipeline_run.config
 
 
 class DauphinLogLevel(dauphin.Enum):

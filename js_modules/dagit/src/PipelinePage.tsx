@@ -104,13 +104,10 @@ export default class PipelinePage extends React.Component<IPipelinePageProps> {
       | null = null;
     let pipelines: Array<PipelinePageFragment_PipelineConnection_nodes> = [];
 
-    if (
-      pipelinesOrError.__typename === "PythonError" ||
-      pipelinesOrError.__typename === "InvalidDefinitionError"
-    ) {
-      error = pipelinesOrError;
-    } else {
+    if (pipelinesOrError.__typename === "PipelineConnection") {
       pipelines = pipelinesOrError.nodes;
+    } else {
+      error = pipelinesOrError;
     }
 
     const selectedTab = TABS.find(t => t.slug === match.params.tab) || TABS[0];

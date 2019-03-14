@@ -6,7 +6,7 @@ import { WebsocketStatusContext } from "../WebsocketStatus";
 
 interface IExecutionStartButtonProps {
   executing: boolean;
-  onClick: () => void;
+  onClick: (event: React.MouseEvent<HTMLDivElement, MouseEvent>) => void;
 }
 
 interface IExecutionStartButtonState {
@@ -31,9 +31,9 @@ export default class ExecutionStartButton extends React.Component<
     this._mounted = false;
   }
 
-  onClick = async () => {
+  onClick = async (event: React.MouseEvent<HTMLDivElement, MouseEvent>) => {
     this.setState({ starting: true });
-    await this.props.onClick();
+    await this.props.onClick(event);
     setTimeout(() => {
       if (!this._mounted) return;
       this.setState({ starting: false });
@@ -46,35 +46,36 @@ export default class ExecutionStartButton extends React.Component<
         {websocketStatus => {
           if (this.props.executing || this.state.starting) {
             return (
-              <IconWrapper
+              <Wrapper
                 role="button"
                 title={"Pipeline execution is in progress..."}
               >
-                <Spinner intent={Intent.NONE} size={39} />
-              </IconWrapper>
+                <div style={{ marginRight: 5 }}>
+                  <Spinner intent={Intent.NONE} size={17} />
+                </div>
+                Running...
+              </Wrapper>
             );
           }
 
           if (websocketStatus !== WebSocket.OPEN) {
             return (
-              <IconWrapper
-                role="button"
-                disabled={true}
-                title={"Dagit is disconnected"}
-              >
-                <Icon icon={IconNames.OFFLINE} iconSize={40} />
-              </IconWrapper>
+              <Wrapper role="button" title={"Start pipeline execution"}>
+                <Icon icon={IconNames.OFFLINE} iconSize={17} />
+                Start Execution
+              </Wrapper>
             );
           }
 
           return (
-            <IconWrapper
+            <Wrapper
               role="button"
               title={"Start pipeline execution"}
               onClick={this.onClick}
             >
-              <Icon icon={IconNames.PLAY} iconSize={40} />
-            </IconWrapper>
+              <Icon icon={IconNames.PLAY} iconSize={17} />
+              Start Execution
+            </Wrapper>
           );
         }}
       </WebsocketStatusContext.Consumer>
@@ -82,11 +83,12 @@ export default class ExecutionStartButton extends React.Component<
   }
 }
 
-const IconWrapper = styled.div<{ disabled?: boolean }>`
-  flex: 0 1 0;
-  width: 60px;
-  height: 60px;
-  border-radius: 30px;
+const Wrapper = styled.div<{ disabled?: boolean }>`
+  width: 150px;
+  height: 30px;
+  border-radius: 3px;
+  margin-left: 6px;
+  flex-shrink: 0;
   background: ${({ disabled }) =>
     disabled
       ? "linear-gradient(to bottom, rgb(145, 145, 145) 30%, rgb(130, 130, 130) 100%);"
@@ -95,9 +97,6 @@ const IconWrapper = styled.div<{ disabled?: boolean }>`
   border-top: 1px solid rgba(255,255,255,0.25);
   border-bottom: 1px solid rgba(0,0,0,0.25);
   transition: background 200ms linear;
-  position: absolute;
-  top: 20px;
-  right: 20px;
   justify-content: center;
   align-items: center;
   display: flex;

@@ -7,7 +7,7 @@ interface IPythonErrorInfoProps {
   centered?: boolean;
   error: {
     message: string;
-    stack: string[];
+    stack?: string[];
   };
 }
 
@@ -21,7 +21,7 @@ export default class PythonErrorInfo extends React.Component<
     return (
       <Wrapper>
         <ErrorHeader>{message}</ErrorHeader>
-        <Trace>{stack.join("")}</Trace>
+        <Trace>{stack ? stack.join("") : "No Stack Provided."}</Trace>
         {this.props.showReload && (
           <Button icon="refresh" onClick={() => window.location.reload()}>
             Reload
