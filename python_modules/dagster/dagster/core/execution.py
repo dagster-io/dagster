@@ -263,7 +263,6 @@ def _create_config_value(config_type, config_input):
     except DagsterEvaluateValueError as e:
         raise DagsterTypeError(
             'Invalid config value on type {config_type}: {error_msg}'.format(
-                value=config_input,
                 config_type=config_type.name,
                 error_msg=','.join(e.args),
             )
