@@ -8,10 +8,9 @@ import tempfile
 
 try:
     import airflow.plugins_manager
+    import docker
 except ImportError:
     pass
-
-import docker
 import pytest
 
 from dagster import check
