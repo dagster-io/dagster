@@ -34,22 +34,27 @@ python -m pytest python_modules/dagit
 pip install -e python_modules/dagster-ge
 python -m pytest python_modules/dagster-ge
 
-# This is supposedly being fixed, but right now airflow requires you to set a
-# flag before install to choose between GPL and non-GPL dependencies
-SLUGIFY_USES_TEXT_UNIDECODE=yes pip install -e python_modules/dagster-airflow
-pip install -r python_modules/dagster-airflow/dev-requirements.txt
+# commented out for now until we can conditionally do this based on python version
+# and pyyaml version conflict issues
+if 0; then
 
-airflow initdb
+  # This is supposedly being fixed, but right now airflow requires you to set a
+  # flag before install to choose between GPL and non-GPL dependencies
+  SLUGIFY_USES_TEXT_UNIDECODE=yes pip install -e python_modules/dagster-airflow
+  pip install -r python_modules/dagster-airflow/dev-requirements.txt
 
-pip install -e python_modules/airline-demo
-pip install -r python_modules/airline-demo/dev-requirements.txt
+  airflow initdb
 
-pushd python_modules/airline-demo
-docker-compose up --detach
-popd
-pushd python_modules
-make test_airline
-popd
+  pip install -e python_modules/airline-demo
+  pip install -r python_modules/airline-demo/dev-requirements.txt
+
+  pushd python_modules/airline-demo
+  docker-compose up --detach
+  popd
+  pushd python_modules
+  make test_airline
+  popd
+fi
 
 pushd python_modules
 make rebuild_dagit
