@@ -1,8 +1,5 @@
+import sys
 import tempfile
-
-import pyspark
-
-from pyspark.sql import Row
 
 from airline_demo.resources import spark_session_local, tempfile_resource
 from airline_demo.types import SparkDataFrameSerializationStrategy
@@ -21,7 +18,10 @@ class MockPipelineContext(object):
 
 def test_spark_data_frame_serialization():
     spark = spark_session_local.resource_fn(None)
-    tempfile_ = tempfile_resource.resource_fn(None).__next__()
+    if sys.version_info > (3,):
+        tempfile_ = tempfile_resource.resource_fn(None).__next__()
+    else:
+        tempfile_ = tempfile_resource.resource_fn(None).next()
 
     try:
         serialization_strategy = SparkDataFrameSerializationStrategy()
