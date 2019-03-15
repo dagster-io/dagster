@@ -402,11 +402,12 @@ def publish(nightly):
     """
     print(
         '''WARNING: This will fail (or hang forever) unless you have credentials available to
-PyPI, preferably in the form of a ~/.pypirc file as follows:
+PyPI, preferably in the form of a ~/.pypirc file as follows (see: 
+https://docs.python.org/2/distutils/packageindex.html#pypirc):
 
     [distutils]
     index-servers =
-    pypi
+        pypi
 
     [pypi]
     repository: https://upload.pypi.org/legacy/
