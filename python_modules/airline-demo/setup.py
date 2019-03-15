@@ -30,7 +30,6 @@ setup(
     install_requires=[
         'boto3==1.9.47',
         'dagster',
-        'dagster_airflow',
         'dagstermill',
         'descartes==1.1.0',
         'geopandas==0.4.0',
@@ -43,4 +42,9 @@ setup(
         'sqlalchemy-redshift==0.7.1',
         'SQLAlchemy-Utils==0.33.8',
     ],
+    extras_require={
+        'airflow': [
+            'dagster_airflow',
+        ]
+    }
 )
