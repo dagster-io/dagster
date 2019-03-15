@@ -18,6 +18,7 @@ from dagster import (
     solid,
     as_dagster_type,
     SerializationStrategy,
+    RepositoryDefinition,
 )
 from dagster_pandas import DataFrame
 
