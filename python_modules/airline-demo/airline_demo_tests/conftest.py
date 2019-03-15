@@ -6,7 +6,11 @@ import subprocess
 import sys
 import tempfile
 
-import airflow.plugins_manager
+try:
+    import airflow.plugins_manager
+except ImportError:
+    pass
+
 import docker
 import pytest
 
@@ -14,7 +18,10 @@ from dagster import check
 from dagster.core.execution import create_execution_plan
 from dagster.utils import load_yaml_from_glob_list, mkdir_p, pushd, script_relative_path
 
-from dagster_airflow import scaffold_airflow_dag
+try:
+    from dagster_airflow import scaffold_airflow_dag
+except ImportError:
+    pass
 
 from .utils import reload_module
 
