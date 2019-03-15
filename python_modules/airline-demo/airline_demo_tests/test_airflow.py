@@ -64,6 +64,8 @@ def coalesce_execution_steps(execution_plan):
         steps[solid_name] += list(solid_steps)
 
     return [(solid_name, steps[solid_name]) for solid_name in solid_order]
+
+
 ##################################################################################################
 
 
