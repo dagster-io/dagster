@@ -14,6 +14,19 @@ for arg in sys.argv[1:]:
     else:
         command.append(arg)
 
+# Use watchdog's python API to auto-restart the dagit-cli process when
+# python files in the current directory change. This is a slightly modified
+# version of the code in watchdog's `watchmedo` CLI. We've modified the
+# KeyboardInterupt handler below to call handler.stop() before tearing
+# down the observer so that repeated Ctrl-C's don't cause the process to
+# exit and leave dagit-cli dangling.
+#
+# Original source:
+# https://github.com/gorakhargosh/watchdog/blob/master/src/watchdog/watchmedo.py#L124
+#
+# Issue:
+# https://github.com/gorakhargosh/watchdog/issues/543
+
 handler = AutoRestartTrick(command=command,
                            patterns=["*.py"],
                            ignore_patterns=[],
