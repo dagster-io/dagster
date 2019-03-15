@@ -4,18 +4,24 @@ import os
 
 from collections import defaultdict
 
-from airflow.models import TaskInstance
+try:
+    from airflow.models import TaskInstance
+except ImportError:
+    pass
 
 from dagster import execute_pipeline, RunConfig
 from dagster.core.execute_marshalling import execute_marshalling, MarshalledOutput
 from dagster.core.execution import yield_pipeline_execution_context
 from dagster.core.execution_plan import create_execution_plan_core
 from dagster.utils import load_yaml_from_glob_list, mkdir_p, script_relative_path
-from dagster_airflow.scaffold import (
-    coalesce_execution_steps,
-    _key_for_marshalled_result,
-    _step_executions_key,
-)
+
+try:
+    from dagster_airflow.scaffold import (
+        coalesce_execution_steps,
+        _key_for_marshalled_result,
+    )
+except ImportError:
+    pass
 
 from airline_demo.pipelines import (
     define_airline_demo_download_pipeline,
