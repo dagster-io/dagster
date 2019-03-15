@@ -172,10 +172,7 @@ def test_ingest_csv_to_spark():
     def nonce():
         return input_csv
 
-    @solid(
-        name='first_value',
-        inputs=[InputDefinition('data_frame', SparkDataFrameType)],
-    )
+    @solid(name='first_value', inputs=[InputDefinition('data_frame', SparkDataFrameType)])
     def first_value(_context, data_frame):
         return data_frame.head()[0]
 
@@ -193,7 +190,7 @@ def test_ingest_csv_to_spark():
     assert result.success
     assert isinstance(
         result.result_for_solid('ingest_csv_to_spark').transformed_value(),
-        pyspark.sql.dataframe.DataFrame
+        pyspark.sql.dataframe.DataFrame,
     )
     assert result.result_for_solid('first_value').transformed_value() == '1'
 
