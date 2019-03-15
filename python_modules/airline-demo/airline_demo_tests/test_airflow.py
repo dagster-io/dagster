@@ -22,53 +22,16 @@ from airline_demo.pipelines import (
     define_airline_demo_warehouse_pipeline,
 )
 
+try:
+    from dagster_airflow.scaffold import _key_for_marshalled_result, coalesce_execution_steps
+except ImportError:
+    pass
+
 from .marks import airflow
 from .utils import import_module_from_path
 
 
-##################################################################################################
-# Redefined instead of imported from dagster_airflow so that we can run tests on py37 before airflow
-# is py37 compatible
-def _key_for_marshalled_result(step_key, result_name, prepend_run_id=True):
-    return (
-        '{tmp}'
-        + '{sep}'
-        + ('{run_id_prefix}' if prepend_run_id else '')
-        + _normalize_key(step_key)
-        + '___'
-        + _normalize_key(result_name)
-        + '.pickle'
-    )
-
-
-def _coalesce_solid_order(execution_plan):
-    solid_order = [s.tags['solid'] for s in execution_plan.topological_steps()]
-    reversed_coalesced_solid_order = []
-    for solid in reversed(solid_order):
-        if solid in reversed_coalesced_solid_order:
-            continue
-        reversed_coalesced_solid_order.append(solid)
-    return [x for x in reversed(reversed_coalesced_solid_order)]
-
-
-def coalesce_execution_steps(execution_plan):
-    '''Groups execution steps by solid, in topological order of the solids.'''
-
-    solid_order = _coalesce_solid_order(execution_plan)
-
-    steps = defaultdict(list)
-
-    for solid_name, solid_steps in itertools.groupby(
-        execution_plan.topological_steps(), lambda x: x.tags['solid']
-    ):
-        steps[solid_name] += list(solid_steps)
-
-    return [(solid_name, steps[solid_name]) for solid_name in solid_order]
-
-
-##################################################################################################
-
-
+@airflow
 def test_uncontainerized_download_dag_execution_with_airflow_config():
     config_object = load_yaml_from_glob_list(
         [
@@ -82,6 +45,7 @@ def test_uncontainerized_download_dag_execution_with_airflow_config():
     assert result.success
 
 
+@airflow
 def test_uncontainerized_ingest_dag_execution_with_airflow_config():
     mkdir_p('/tmp/results')
     # TODO factor this machinery into a test helper in dagster-airflow,
@@ -155,6 +119,7 @@ def test_uncontainerized_ingest_dag_execution_with_airflow_config():
             ).format(tmp='/tmp/results/', sep='')
 
 
+@airflow
 def test_uncontainerized_warehouse_dag_execution_with_airflow_config():
     config_object = load_yaml_from_glob_list(
         [
