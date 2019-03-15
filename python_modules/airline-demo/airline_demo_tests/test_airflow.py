@@ -10,7 +10,7 @@ from dagster import execute_pipeline, RunConfig
 from dagster.core.execute_marshalling import execute_marshalling, MarshalledOutput
 from dagster.core.execution import yield_pipeline_execution_context
 from dagster.core.execution_plan import create_execution_plan_core
-from dagster.utils import load_yaml_from_glob_list, script_relative_path
+from dagster.utils import load_yaml_from_glob_list, mkdir_p, script_relative_path
 from dagster_airflow.scaffold import (
     coalesce_execution_steps,
     _key_for_marshalled_result,
@@ -41,6 +41,7 @@ def test_uncontainerized_download_dag_execution_with_airflow_config():
 
 
 def test_uncontainerized_ingest_dag_execution_with_airflow_config():
+    mkdir_p('/tmp/results')
     # TODO factor this machinery into a test helper in dagster-airflow,
     # rewrite marshalling scaffolding helpers to be cleaner
     pipeline = define_airline_demo_ingest_pipeline()
