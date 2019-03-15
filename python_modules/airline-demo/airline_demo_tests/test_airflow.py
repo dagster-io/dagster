@@ -76,7 +76,7 @@ def test_uncontainerized_ingest_dag_execution_with_airflow_config():
 
                 inputs_to_marshal[step.key][step_input.name] = _key_for_marshalled_result(
                     *step_input_key, prepend_run_id=False
-                ).format(tmp='/tmp/results', sep='/')
+                ).format(tmp='/tmp/results/', sep='')
 
         # this is a dict of step_key -> [MarshalledOutput]
         outputs_to_marshal = defaultdict(list)
@@ -88,7 +88,7 @@ def test_uncontainerized_ingest_dag_execution_with_airflow_config():
                         step_output.name,
                         _key_for_marshalled_result(
                             step.key, step_output.name, prepend_run_id=False
-                        ).format(tmp='/tmp/results', sep='/'),
+                        ).format(tmp='/tmp/results/', sep=''),
                     )
                 )
 
@@ -109,7 +109,7 @@ def test_uncontainerized_ingest_dag_execution_with_airflow_config():
                 execution_step_event.step_key,
                 execution_step_event.step_output_data.output_name,
                 prepend_run_id=False,
-            ).format(tmp='/tmp/results', sep='/')
+            ).format(tmp='/tmp/results/', sep='')
 
 
 def test_uncontainerized_warehouse_dag_execution_with_airflow_config():
