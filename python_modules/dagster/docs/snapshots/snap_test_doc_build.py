@@ -307,46 +307,45 @@ snapshots['test_build_all_docs 3'] = '''
 development environment.</p>
 <div class="section" id="local-development-setup">
 <h2>Local development setup<a class="headerlink" href="#local-development-setup" title="Permalink to this headline">¶</a></h2>
-<ol class="arabic simple">
-<li>Install Python 3.6.</li>
-</ol>
+<ol class="arabic">
+<li><p class="first">Install Python. Python 3.6 or above recommended.</p>
 <blockquote>
-<div><ul class="simple">
-<li>You can’t use Python 3.7+ yet because of <a class="reference external" href="https://github.com/apache/arrow/issues/1125">https://github.com/apache/arrow/issues/1125</a></li>
-</ul>
+<div><p>Note: If you use Python 3.7 dagster-airflow will not install and run properly
+as airflow</p>
 </div></blockquote>
-<ol class="arabic simple" start="2">
-<li>Create and activate a virtualenv</li>
+</li>
+<li><p class="first">Create and activate a virtualenv.</p>
+</li>
 </ol>
 <div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$</span> python3 -m venv dagsterenv
 <span class="gp">$</span> <span class="nb">source</span> dagsterenv/bin/activate
 </pre></div>
 </div>
-<ol class="arabic simple" start="3">
-<li>Install dagster locally and install dev tools</li>
+<p>3. Run the script dev_env_setup.sh at repo root. This sets up a full
+dagster developer environment with all modules and runs tests that
+do not require heavy external dependencies such as docker. This will
+take a few minutes.</p>
+<blockquote>
+<div>$ ./dev_env_setup.sh</div></blockquote>
+<ol class="arabic" start="4">
+<li><p class="first">Run some tests manually to make sure things are working.</p>
+<blockquote>
+<div><p>$ pytest python_modules/dagster/dagster_tests</p>
+</div></blockquote>
+</li>
 </ol>
-<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$</span> git clone git@github.com:dagster-io/dagster.git
-<span class="gp">$</span> <span class="nb">cd</span> dagster/python_modules
-<span class="gp">$</span> pip install -e ./dagit
-<span class="gp">$</span> pip install -e ./dagster
-<span class="gp">$</span> pip install -r ./dagster/dev-requirements.txt
+<p>Have fun coding!</p>
+<div class="section" id="running-dagit-webapp-in-development">
+<h3>Running dagit webapp in development<a class="headerlink" href="#running-dagit-webapp-in-development" title="Permalink to this headline">¶</a></h3>
+<p>For development, run the dagit GraphQL server on a different port than the
+webapp, from any directory that contains a repository.yml file. For example:</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$</span> <span class="nb">cd</span> dagster/python_modules/dagster/dagster/dagster_examples
+<span class="gp">$</span> dagit -p <span class="m">3333</span>
 </pre></div>
 </div>
-<ol class="arabic simple" start="4">
-<li>Install dagit webapp dependencies</li>
-</ol>
+<p>Run the local development (autoreloading, etc.) version of the webapp.</p>
 <div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$</span> <span class="nb">cd</span> dagster/python_modules/dagit/dagit/webapp
-<span class="gp">$</span> yarn install
-</pre></div>
-</div>
-<ol class="arabic simple" start="5">
-<li>Run tests</li>
-</ol>
-<p>We use tox to manage test environments for python.</p>
-<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$</span> <span class="nb">cd</span> dagster/python_modules/dagster
-<span class="gp">$</span> tox
-<span class="gp">$</span> <span class="nb">cd</span> dagster/python_modules/dagit
-<span class="gp">$</span> tox
+<span class="gp">$</span> <span class="nv">REACT_APP_GRAPHQL_URI</span><span class="o">=</span><span class="s2">&quot;http://localhost:3333/graphql&quot;</span> yarn start
 </pre></div>
 </div>
 <p>To run JavaScript tests for the dagit frontend, you can run:</p>
@@ -362,19 +361,6 @@ something.</p>
 <p>Check that the change is sensible and run <code class="docutils literal notranslate"><span class="pre">yarn</span> <span class="pre">run</span> <span class="pre">jest</span> <span class="pre">-u</span></code> to update the
 snapshot to the new result. You can also update snapshots interactively
 when you are in <code class="docutils literal notranslate"><span class="pre">--watch</span></code> mode.</p>
-<div class="section" id="running-dagit-webapp-in-development">
-<h3>Running dagit webapp in development<a class="headerlink" href="#running-dagit-webapp-in-development" title="Permalink to this headline">¶</a></h3>
-<p>For development, run the dagit GraphQL server on a different port than the
-webapp, from any directory that contains a repository.yml file. For example:</p>
-<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$</span> <span class="nb">cd</span> dagster/python_modules/dagster/dagster/dagster_examples
-<span class="gp">$</span> dagit -p <span class="m">3333</span>
-</pre></div>
-</div>
-<p>Run the local development (autoreloading, etc.) version of the webapp.</p>
-<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$</span> <span class="nb">cd</span> dagster/python_modules/dagit/dagit/webapp
-<span class="gp">$</span> <span class="nv">REACT_APP_GRAPHQL_URI</span><span class="o">=</span><span class="s2">&quot;http://localhost:3333/graphql&quot;</span> yarn start
-</pre></div>
-</div>
 </div>
 <div class="section" id="releasing">
 <h3>Releasing<a class="headerlink" href="#releasing" title="Permalink to this headline">¶</a></h3>
@@ -1911,43 +1897,47 @@ development environment.
 Local development setup
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-1. Install Python 3.6.
-  * You can't use Python 3.7+ yet because of https://github.com/apache/arrow/issues/1125
+1. Install Python. Python 3.6 or above recommended.
 
-2. Create and activate a virtualenv
+    Note: If you use Python 3.7 dagster-airflow will not install and run properly
+    as airflow 
+
+2. Create and activate a virtualenv.
 
 .. code-block:: console
 
     $ python3 -m venv dagsterenv
     $ source dagsterenv/bin/activate
 
-3. Install dagster locally and install dev tools
+3. Run the script dev_env_setup.sh at repo root. This sets up a full
+dagster developer environment with all modules and runs tests that
+do not require heavy external dependencies such as docker. This will
+take a few minutes.
+
+    $ ./dev_env_setup.sh
+
+4. Run some tests manually to make sure things are working.
+
+    $ pytest python_modules/dagster/dagster_tests
+
+Have fun coding!
+
+Running dagit webapp in development
+-------------------------------------
+For development, run the dagit GraphQL server on a different port than the
+webapp, from any directory that contains a repository.yml file. For example:
 
 .. code-block:: console
 
-    $ git clone git@github.com:dagster-io/dagster.git
-    $ cd dagster/python_modules
-    $ pip install -e ./dagit
-    $ pip install -e ./dagster
-    $ pip install -r ./dagster/dev-requirements.txt
+    $ cd dagster/python_modules/dagster/dagster/dagster_examples
+    $ dagit -p 3333
 
-4. Install dagit webapp dependencies
+Run the local development (autoreloading, etc.) version of the webapp.
 
 .. code-block:: console
 
     $ cd dagster/python_modules/dagit/dagit/webapp
-    $ yarn install
-
-5. Run tests
-
-We use tox to manage test environments for python.
-
-.. code-block:: console
-
-    $ cd dagster/python_modules/dagster
-    $ tox
-    $ cd dagster/python_modules/dagit
-    $ tox
+    $ REACT_APP_GRAPHQL_URI="http://localhost:3333/graphql" yarn start
 
 To run JavaScript tests for the dagit frontend, you can run:
 
@@ -1966,23 +1956,6 @@ something.
 Check that the change is sensible and run ``yarn run jest -u`` to update the
 snapshot to the new result. You can also update snapshots interactively
 when you are in ``--watch`` mode.
-
-Running dagit webapp in development
--------------------------------------
-For development, run the dagit GraphQL server on a different port than the
-webapp, from any directory that contains a repository.yml file. For example:
-
-.. code-block:: console
-
-    $ cd dagster/python_modules/dagster/dagster/dagster_examples
-    $ dagit -p 3333
-
-Run the local development (autoreloading, etc.) version of the webapp.
-
-.. code-block:: console
-
-    $ cd dagster/python_modules/dagit/dagit/webapp
-    $ REACT_APP_GRAPHQL_URI="http://localhost:3333/graphql" yarn start
 
 Releasing
 -----------
