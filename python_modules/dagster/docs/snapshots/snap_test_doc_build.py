@@ -314,7 +314,7 @@ development environment.</p>
 as airflow is not Python 3.7 compatible. Until [AIRFLOW-2876](<a class="reference external" href="https://github.com/apache/airflow/pull/3723">https://github.com/apache/airflow/pull/3723</a>)
 is resolved (expected in 1.10.3), Airflow (and, as a consequence, dagster-airflow)
 is incompatible with Python 3.7.</p>
-<p>The rest of the modules will work properlly so you can ignore this error and develop the rest
+<p>The rest of the modules will work properly so you can ignore this error and develop the rest
 of the modules.</p>
 </div></blockquote>
 </li>
@@ -1908,7 +1908,7 @@ Local development setup
     is resolved (expected in 1.10.3), Airflow (and, as a consequence, dagster-airflow)
     is incompatible with Python 3.7.
 
-    The rest of the modules will work properlly so you can ignore this error and develop the rest
+    The rest of the modules will work properly so you can ignore this error and develop the rest
     of the modules.
 
 2. Create and activate a virtualenv.
