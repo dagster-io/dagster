@@ -15,14 +15,23 @@ import pytest
 from dagster import (
     DependencyDefinition,
     ExecutionContext,
+    InputDefinition,
     PipelineContextDefinition,
     PipelineDefinition,
     execute_solid,
+    execute_pipeline,
     lambda_solid,
+    solid,
 )
 
+from airline_demo.resources import (
+    local_filesystem_resource,
+    spark_session_local,
+    tempfile_resource,
+    unsigned_s3_session,
+)
 from airline_demo.solids import sql_solid, download_from_s3, ingest_csv_to_spark, unzip_file
-from airline_demo.resources import spark_session_local, tempfile_resource, unsigned_s3_session
+from airline_demo.types import SparkDataFrameType
 
 from .marks import nettest, postgres, redshift, skip, spark
 
@@ -31,7 +40,7 @@ def _tempfile_context():
     return {
         'test': PipelineContextDefinition(
             context_fn=lambda info: ExecutionContext.console_logging(log_level=logging.DEBUG),
-            resources={'tempfile': tempfile_resource},
+            resources={'tempfile': tempfile_resource, 'filesystem': local_filesystem_resource},
         )
     }
 
@@ -40,7 +49,11 @@ def _s3_context():
     return {
         'test': PipelineContextDefinition(
             context_fn=lambda info: ExecutionContext.console_logging(log_level=logging.DEBUG),
-            resources={'s3': unsigned_s3_session, 'tempfile': tempfile_resource},
+            resources={
+                'filesystem': local_filesystem_resource,
+                's3': unsigned_s3_session,
+                'tempfile': tempfile_resource,
+            },
         )
     }
 
@@ -49,7 +62,11 @@ def _spark_context():
     return {
         'test': PipelineContextDefinition(
             context_fn=lambda info: ExecutionContext.console_logging(log_level=logging.DEBUG),
-            resources={'spark': spark_session_local},
+            resources={
+                'filesystem': local_filesystem_resource,
+                'spark': spark_session_local,
+                'tempfile': tempfile_resource,
+            },
         )
     }
 
@@ -149,23 +166,36 @@ def test_unzip_file_tempfile():
 
 @spark
 def test_ingest_csv_to_spark():
+    input_csv = os.path.join(os.path.dirname(__file__), 'data/test.csv')
+
     @lambda_solid
     def nonce():
-        return None
+        return input_csv
 
-    result = execute_solid(
+    @solid(
+        name='first_value',
+        inputs=[InputDefinition('data_frame', SparkDataFrameType)],
+    )
+    def first_value(_context, data_frame):
+        return data_frame.head()[0]
+
+    result = execute_pipeline(
         PipelineDefinition(
-            [nonce, ingest_csv_to_spark],
-            dependencies={'ingest_csv_to_spark': {'input_csv': DependencyDefinition('nonce')}},
+            [nonce, ingest_csv_to_spark, first_value],
+            dependencies={
+                'ingest_csv_to_spark': {'input_csv': DependencyDefinition('nonce')},
+                'first_value': {'data_frame': DependencyDefinition('ingest_csv_to_spark')},
+            },
             context_definitions=_spark_context(),
         ),
-        'ingest_csv_to_spark',
-        inputs={'input_csv': os.path.join(os.path.dirname(__file__), 'data/test.csv')},
         environment_dict={'context': {'test': {}}},
     )
     assert result.success
-    assert isinstance(result.transformed_value(), pyspark.sql.dataframe.DataFrame)
-    assert result.transformed_value().head()[0] == '1'
+    assert isinstance(
+        result.result_for_solid('ingest_csv_to_spark').transformed_value(),
+        pyspark.sql.dataframe.DataFrame
+    )
+    assert result.result_for_solid('first_value').transformed_value() == '1'
 
 
 @postgres
