@@ -877,6 +877,10 @@ jobs:
             pushd python_modules/airline-demo
             docker-compose up -d
       - run:
+          name: Set up py35 (!?)
+          command: |
+            pyenv global 3.5.2
+      - run:
           name: Run airline-demo Tests
           command: |
             cd python_modules/airline-demo
