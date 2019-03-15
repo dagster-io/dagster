@@ -14,6 +14,9 @@ Local development setup
     is resolved (expected in 1.10.3), Airflow (and, as a consequence, dagster-airflow)
     is incompatible with Python 3.7.
 
+    The rest of the modules will work properlly so you can ignore this error and develop the rest
+    of the modules.
+
 2. Create and activate a virtualenv.
 
 .. code-block:: console
