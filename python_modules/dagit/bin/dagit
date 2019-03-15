@@ -1,9 +1,11 @@
 #!/bin/bash
 ARGS=()
-WATCH="1"
+WATCH="0"
 for var in "$@"; do
     if [ "$var" == '--no-watch' ]; then
       WATCH="0"
+    if [ "$var" == '--watch' ]; then
+      WATCH="1"
     else
       ARGS+=("$var")
     fi
