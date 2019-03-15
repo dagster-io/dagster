@@ -88,7 +88,7 @@ def _do_setup(name='dagit'):
             # notebooks support
             'nbconvert>=5.4.0',
             # dev/test - Installed via dev-requirements.txt
-            # 'pylint>=1.8.4',
+            # 'pylint>=2.3.0',
             # 'pytest>=3.5.1',
             # 'recommonmark>=0.4.0',
             # 'rope>=0.10.7',

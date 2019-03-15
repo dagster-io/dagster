@@ -1,4 +1,4 @@
-pylint==2.2.2; python_version >= '3.6'
+pylint>=2.3.0; python_version >= '3.6'
 pre-commit==1.10.1
 pytest==4.0.2
 pytest-cov==2.6.0
