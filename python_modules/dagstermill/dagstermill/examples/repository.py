@@ -166,10 +166,10 @@ def define_tutorial_pipeline():
 
 
 class ComplexSerializationStrategy(SerializationStrategy):
-    def serialize_value(self, context, value, write_file_obj):
+    def serialize_value(self, pipeline_context, value, write_file_obj):
         pass
 
-    def deserialize_value(self, context, read_file_obj):
+    def deserialize_value(self, pipeline_context, read_file_obj):
         pass
 
 
