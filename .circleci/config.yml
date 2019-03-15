@@ -620,7 +620,8 @@ jobs:
           name: Install Dependencies
           command: |
             sudo pip install -U 'pip<19.0' # see: https://github.com/pypa/pip/issues/6163
-            sudo pip install tox
+            sudo pip install tox tox-pyenv
+            pyenv local 3.6.3
       - run:
           name: Setup AIRFLOW_HOME
           command: |
