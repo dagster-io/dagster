@@ -1,19 +1,54 @@
-#!/bin/bash
-ARGS=()
-WATCH="0"
-for var in "$@"; do
-    if [ "$var" == '--no-watch' ]; then
-      WATCH="0"
-    if [ "$var" == '--watch' ]; then
-      WATCH="1"
-    else
-      ARGS+=("$var")
-    fi
-done
+#!/usr/bin/env python
+import sys
+import time
+import signal
+from watchdog.observers import Observer
+from watchdog.tricks import AutoRestartTrick
 
-if [ "$WATCH" = "1" ]; then
-  echo "Watching for file changes..."
-  watchmedo auto-restart -p="*.py" -R dagit-cli -- "$@"
-else
-  dagit-cli "${ARGS[@]}"
-fi
+# Build the dagit-cli command, omitting the --no-watch arg if present
+watch = True
+command = ["dagit-cli"]
+for arg in sys.argv[1:]:
+    if arg == "--no-watch":
+        watch = False
+    else:
+        command.append(arg)
+
+# Use watchdog's python API to auto-restart the dagit-cli process when
+# python files in the current directory change. This is a slightly modified
+# version of the code in watchdog's `watchmedo` CLI. We've modified the
+# KeyboardInterupt handler below to call handler.stop() before tearing
+# down the observer so that repeated Ctrl-C's don't cause the process to
+# exit and leave dagit-cli dangling.
+#
+# Original source:
+# https://github.com/gorakhargosh/watchdog/blob/master/src/watchdog/watchmedo.py#L124
+#
+# Issue:
+# https://github.com/gorakhargosh/watchdog/issues/543
+
+handler = AutoRestartTrick(command=command,
+                           patterns=["*.py"],
+                           ignore_patterns=[],
+                           ignore_directories=[],
+                           stop_signal=signal.SIGINT,
+                           kill_after=0.5)
+handler.start()
+
+if watch:
+    print("Watching for file changes...")
+    observer = Observer(timeout=1)
+    observer.schedule(handler, ".", True)
+    observer.start()
+
+try:
+    while True:
+        time.sleep(1)
+except KeyboardInterrupt:
+    handler.stop()
+    if watch:
+        observer.stop()
+
+handler.stop()
+if watch:
+    observer.join()
