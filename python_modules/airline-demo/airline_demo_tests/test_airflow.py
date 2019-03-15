@@ -135,7 +135,7 @@ def test_uncontainerized_warehouse_dag_execution_with_airflow_config():
 
 @airflow
 class TestInMemoryAirflow_0DownloadDagExecution:
-    pipeline = define_airline_demo_download_pipeline
+    pipeline = define_airline_demo_download_pipeline()
     config = [
         script_relative_path(os.path.join('..', 'environments', 'airflow_base.yml')),
         script_relative_path(os.path.join('..', 'environments', 'local_fast_download.yml')),

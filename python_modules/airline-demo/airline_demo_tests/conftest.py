@@ -176,7 +176,7 @@ def scaffold_dag(request, airflow_test):
     on the classes to make this more reusable.
     '''
     docker_image, dags_path, _ = airflow_test
-    pipeline = getattr(request.cls, 'pipeline')()
+    pipeline = getattr(request.cls, 'pipeline')
     env_config = load_yaml_from_glob_list(getattr(request.cls, 'config'))
 
     tempdir = tempfile.gettempdir()
