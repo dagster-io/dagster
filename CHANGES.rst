@@ -1,3 +1,6 @@
+0.3.5
+   - Dagit now defaults to --no-watch; run dagit --watch for (process-based) autoreloading.
+
 0.3.4
 
   - API Additions and Changes:
