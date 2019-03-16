@@ -171,7 +171,7 @@ class TestInMemoryAirflow_0DownloadDagExecution:
 
 @airflow
 class TestInMemoryAirflow_1IngestExecution:
-    pipeline = define_airline_demo_ingest_pipeline
+    pipeline = define_airline_demo_ingest_pipeline()
     config = [
         script_relative_path(os.path.join('..', 'environments', 'airflow_base.yml')),
         script_relative_path(os.path.join('..', 'environments', 'local_ingest.yml')),
