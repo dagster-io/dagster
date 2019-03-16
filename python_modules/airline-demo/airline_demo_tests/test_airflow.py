@@ -146,7 +146,7 @@ class TestInMemoryAirflow_0DownloadDagExecution:
 
         execution_date = datetime.datetime.utcnow()
 
-        import_module_from_path('demo_pipeline_static__scaffold', static_path)
+        import_module_from_path('airline_demo_download_pipeline_static__scaffold', static_path)
         demo_pipeline = import_module_from_path('demo_pipeline', editable_path)
 
         _dag, tasks = demo_pipeline.make_dag(
@@ -182,7 +182,7 @@ class TestInMemoryAirflow_1IngestExecution:
 
         execution_date = datetime.datetime.utcnow()
 
-        import_module_from_path('demo_pipeline_static__scaffold', static_path)
+        import_module_from_path('airline_demo_ingest_pipeline_static__scaffold', static_path)
         demo_pipeline = import_module_from_path('demo_pipeline', editable_path)
 
         _dag, tasks = demo_pipeline.make_dag(
