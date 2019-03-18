@@ -1,5 +1,6 @@
 # pylint: disable=redefined-outer-name
 import datetime
+import logging
 import os
 import shutil
 import subprocess
@@ -9,20 +10,22 @@ import tempfile
 try:
     import airflow.plugins_manager
     import docker
+    from airflow.models import TaskInstance
 except ImportError:
     pass
+
 import pytest
 
 from dagster import check
 from dagster.core.execution import create_execution_plan
-from dagster.utils import load_yaml_from_glob_list, mkdir_p, pushd, script_relative_path
+from dagster.utils import load_yaml_from_glob_list, mkdir_p, script_relative_path
 
 try:
     from dagster_airflow import scaffold_airflow_dag
 except ImportError:
     pass
 
-from .utils import reload_module
+from .utils import import_module_from_path, reload_module
 
 
 IMAGE = 'airline-demo-airflow'
@@ -178,11 +181,7 @@ def airflow_test(docker_image, dags_path, plugins_path, host_tmp_dir):
 
 @pytest.fixture(scope='class')
 def scaffold_dag(request, airflow_test):
-    '''Scaffolds an Airflow dag and installs it.
-
-    We should probably use test classes for these tests and set attributes like pipeline/env_config
-    on the classes to make this more reusable.
-    '''
+    '''Scaffolds an Airflow dag and installs it.'''
     docker_image, dags_path, _ = airflow_test
     pipeline = getattr(request.cls, 'pipeline')
     env_config = load_yaml_from_glob_list(getattr(request.cls, 'config'))
@@ -243,3 +242,38 @@ def scaffold_dag(request, airflow_test):
         )
     except (FileNotFoundError, OSError):
         pass
+
+
+@pytest.fixture(scope='class')
+def in_memory_airflow_run(_request, scaffold_dag):
+    pipeline_name, _p, _d, static_path, editable_path = scaffold_dag
+
+    execution_date = datetime.datetime.utcnow()
+
+    import_module_from_path(
+        '{pipeline_name}_static__scaffold'.format(pipeline_name=pipeline_name), static_path
+    )
+    demo_pipeline = import_module_from_path('demo_pipeline', editable_path)
+
+    _dag, tasks = demo_pipeline.make_dag(
+        dag_id=demo_pipeline.DAG_ID,
+        dag_description=demo_pipeline.DAG_DESCRIPTION,
+        dag_kwargs=dict(default_args=demo_pipeline.DEFAULT_ARGS, **demo_pipeline.DAG_KWARGS),
+        s3_conn_id=demo_pipeline.S3_CONN_ID,
+        operator_kwargs={
+            'persist_intermediate_results_to_s3': True,
+            's3_bucket_name': 'dagster-lambda-execution',
+            'network_mode': 'container:db',
+        },
+        host_tmp_dir=demo_pipeline.HOST_TMP_DIR,
+    )
+
+    results = []
+    # These are in topo order already
+    for task in tasks:
+        ti = TaskInstance(task=task, execution_date=execution_date)
+        context = ti.get_template_context()
+        task._log = logging  # pylint: disable=protected-access
+        results.append(task.execute(context))
+
+    return results
