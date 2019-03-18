@@ -1,15 +1,16 @@
 from __future__ import print_function
 
+import os
+
 import pytest
 
+from dagster.core.runs import base_run_directory
 from dagster.cli.pipeline import (
     execute_print_command,
     execute_list_command,
     execute_execute_command,
     execute_scaffold_command,
 )
-
-
 from dagster.cli.dynamic_loader import InvalidRepositoryLoadingComboError
 
 from dagster.utils import script_relative_path
@@ -156,3 +157,37 @@ def test_scaffold_command():
 
         cli_args['print_only_required'] = False
         execute_scaffold_command(cli_args=cli_args, print_fn=no_print)
+
+
+def test_default_filesystem_run_storage():
+    cli_args = {
+        'repository_yaml': script_relative_path('repository_file.yml'),
+        'pipeline_name': ('foo',),
+        'python_file': None,
+        'module_name': None,
+        'fn_name': None,
+    }
+    result = execute_execute_command(env=None, cli_args=cli_args, print_fn=no_print)
+    assert result.success
+
+    run_dir = os.path.join(base_run_directory(), result.run_id)
+
+    assert os.path.isdir(run_dir)
+
+
+def test_override_with_inmem_storage():
+    cli_args = {
+        'repository_yaml': script_relative_path('repository_file.yml'),
+        'pipeline_name': ('foo',),
+        'python_file': None,
+        'module_name': None,
+        'fn_name': None,
+    }
+    result = execute_execute_command(
+        env=[script_relative_path('inmem_env.yml')], cli_args=cli_args, print_fn=no_print
+    )
+    assert result.success
+
+    run_dir = os.path.join(base_run_directory(), result.run_id)
+
+    assert not os.path.exists(run_dir)

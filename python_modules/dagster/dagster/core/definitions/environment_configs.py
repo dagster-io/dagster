@@ -9,6 +9,7 @@ from dagster.core.system_config.objects import (
     ExecutionConfig,
     ExpectationsConfig,
     SolidConfig,
+    StorageConfig,
 )
 
 from dagster.core.types import Bool, Field, List, NamedDict, NamedSelector, Dict
@@ -200,6 +201,12 @@ def define_environment_cls(creation_data):
                     '{pipeline_name}.ExpectationsConfig'.format(pipeline_name=pipeline_name)
                 )
             ),
+            'storage': Field(
+                define_storage_config_cls(
+                    '{pipeline_name}.StorageConfig'.format(pipeline_name=pipeline_name)
+                ),
+                is_optional=True,
+            ),
             'execution': Field(
                 define_execution_config_cls(
                     '{pipeline_name}.ExecutionConfig'.format(pipeline_name=pipeline_name)
@@ -214,6 +221,24 @@ def define_expectations_config_cls(name):
 
     return SystemNamedDict(
         name, fields={'evaluate': Field(Bool, is_optional=True, default_value=True)}
+    )
+
+
+def define_storage_config_cls(name):
+    check.str_param(name, 'name')
+
+    return SystemNamedSelector(
+        name,
+        {
+            'inmem': Field(
+                SystemNamedDict('{parent_name}.InMem'.format(parent_name=name), {}),
+                is_optional=True,
+            ),
+            'filesystem': Field(
+                SystemNamedDict('{parent_name}.Files'.format(parent_name=name), {}),
+                is_optional=True,
+            ),
+        },
     )
 
 
@@ -323,8 +348,17 @@ def construct_environment_config(config_value):
         execution=ExecutionConfig(**config_value['execution']),
         expectations=ExpectationsConfig(**config_value['expectations']),
         context=construct_context_config(config_value['context']),
+        storage=construct_storage_config(config_value.get('storage')),
         original_config_dict=config_value,
     )
+
+
+def construct_storage_config(config_value):
+    if config_value:
+        storage_key, storage_value = single_item(config_value)
+        return StorageConfig(storage_key, storage_value)
+    else:
+        return StorageConfig(None, None)
 
 
 def construct_context_config(config_value):

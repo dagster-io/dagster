@@ -117,8 +117,8 @@ def execute_child_process_command(command, return_process_events=False):
             completed_properly = True
         elif isinstance(event, ChildProcessSystemErrorEvent):
             raise ChildProcessException(
-                'Uncaught exception in process {pid} with message "{message}"'.format(
-                    pid=event.pid, message=event.error_info.message
+                'Uncaught exception in process {pid} with message "{message}" and error info {error_info}'.format(
+                    pid=event.pid, message=event.error_info.message, error_info=event.error_info
                 ),
                 error_info=event.error_info,
             )

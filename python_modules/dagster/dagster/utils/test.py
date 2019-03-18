@@ -21,6 +21,9 @@ from dagster.core.execution import (
     create_environment_config,
 )
 
+from dagster.core.execution_plan.intermediates_manager import InMemoryIntermediatesManager
+from dagster.core.runs import InMemoryRunStorage
+
 from dagster.core.utility_solids import define_stub_solid
 
 
@@ -33,6 +36,8 @@ def create_test_pipeline_execution_context(loggers=None, resources=None, tags=No
         execution_context=ExecutionContext(),
         resources=resources,
         environment_config=create_environment_config(pipeline_def),
+        run_storage=InMemoryRunStorage(),
+        intermediates_manager=InMemoryIntermediatesManager(),
     )
 
 

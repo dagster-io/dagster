@@ -34,14 +34,23 @@ class SolidConfig(namedtuple('_SolidConfig', 'config inputs outputs')):
 
 
 class EnvironmentConfig(
-    namedtuple('_EnvironmentConfig', 'context solids expectations execution original_config_dict')
+    namedtuple(
+        '_EnvironmentConfig', 'context solids expectations execution storage original_config_dict'
+    )
 ):
     def __new__(
-        cls, solids=None, context=None, expectations=None, execution=None, original_config_dict=None
+        cls,
+        solids=None,
+        context=None,
+        expectations=None,
+        execution=None,
+        storage=None,
+        original_config_dict=None,
     ):
         check.opt_inst_param(context, 'context', ContextConfig)
         check.opt_inst_param(expectations, 'expectations', ExpectationsConfig)
         check.opt_inst_param(execution, 'execution', ExecutionConfig)
+        check.opt_inst_param(storage, 'storage', StorageConfig)
         check.opt_dict_param(original_config_dict, 'original_config_dict')
 
         if context is None:
@@ -59,6 +68,7 @@ class EnvironmentConfig(
             solids=check.opt_dict_param(solids, 'solids', key_type=str, value_type=SolidConfig),
             expectations=expectations,
             execution=execution,
+            storage=storage,
             original_config_dict=original_config_dict,
         )
 
@@ -74,3 +84,7 @@ class ExecutionConfig(namedtuple('_ExecutionConfig', '')):
     def __new__(cls):
 
         return super(ExecutionConfig, cls).__new__(cls)
+
+
+class StorageConfig(namedtuple('_FilesConfig', 'name config')):
+    pass

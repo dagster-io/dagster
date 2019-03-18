@@ -16,7 +16,7 @@ from .definitions.output import OutputDefinition
 from .events import ExecutionEvents
 from .files import FileStore
 from .log import DagsterLog
-from .runs import RunStorage, InMemoryRunStorage
+from .runs import RunStorageMode
 from .system_config.objects import EnvironmentConfig
 from .types.marshal import PersistenceStrategy
 
@@ -26,16 +26,8 @@ class ExecutorConfig:
 
 
 class InProcessExecutorConfig(ExecutorConfig):
-    def __init__(self, throw_on_user_error=True, inmem_intermediates_manager=None):
-        from .execution_plan.intermediates_manager import InMemoryIntermediatesManager
-
+    def __init__(self, throw_on_user_error=True):
         self.throw_on_user_error = check.bool_param(throw_on_user_error, 'throw_on_user_error')
-        self.inmem_intermediates_manager = check.opt_inst_param(
-            inmem_intermediates_manager,
-            'inmem_intermediates_manager',
-            InMemoryIntermediatesManager,
-            InMemoryIntermediatesManager(),
-        )
 
 
 class MultiprocessExecutorConfig(ExecutorConfig):
@@ -49,7 +41,7 @@ def make_new_run_id():
 
 
 class RunConfig(
-    namedtuple('_RunConfig', 'run_id tags event_callback loggers executor_config run_storage')
+    namedtuple('_RunConfig', ('run_id tags event_callback loggers executor_config storage_mode'))
 ):
     def __new__(
         cls,
@@ -58,20 +50,19 @@ class RunConfig(
         event_callback=None,
         loggers=None,
         executor_config=None,
-        run_storage=None,
+        storage_mode=None,
     ):
+
         return super(RunConfig, cls).__new__(
             cls,
             run_id=check.str_param(run_id, 'run_id') if run_id else make_new_run_id(),
             tags=check.opt_dict_param(tags, 'tags', key_type=str, value_type=str),
             event_callback=check.opt_callable_param(event_callback, 'event_callback'),
             loggers=check.opt_list_param(loggers, 'loggers'),
-            executor_config=check.opt_inst_param(
-                executor_config, 'executor_config', ExecutorConfig, InProcessExecutorConfig()
-            ),
-            run_storage=check.opt_inst_param(
-                run_storage, 'run_storage', RunStorage, InMemoryRunStorage()
-            ),
+            executor_config=check.inst_param(executor_config, 'executor_config', ExecutorConfig)
+            if executor_config
+            else InProcessExecutorConfig(),
+            storage_mode=check.opt_inst_param(storage_mode, 'storage_mode', RunStorageMode),
         )
 
     @staticmethod
@@ -85,13 +76,17 @@ class RunConfig(
             loggers=self.loggers,
             tags=merge_dicts(self.tags, tags),
             executor_config=self.executor_config,
+            storage_mode=self.storage_mode,
         )
 
 
 class SystemPipelineExecutionContextData(
     namedtuple(
         '_SystemPipelineExecutionContextData',
-        'run_config resources environment_config persistence_strategy pipeline_def files',
+        (
+            'run_config resources environment_config persistence_strategy pipeline_def storage '
+            'run_storage intermediates_manager'
+        ),
     )
 ):
     '''
@@ -100,7 +95,15 @@ class SystemPipelineExecutionContextData(
     '''
 
     def __new__(
-        cls, run_config, resources, environment_config, persistence_strategy, pipeline_def, files
+        cls,
+        run_config,
+        resources,
+        environment_config,
+        persistence_strategy,
+        pipeline_def,
+        storage,
+        run_storage,
+        intermediates_manager,
     ):
         from .definitions.pipeline import PipelineDefinition
 
@@ -115,7 +118,10 @@ class SystemPipelineExecutionContextData(
                 persistence_strategy, 'persistence_strategy', PersistenceStrategy
             ),
             pipeline_def=check.inst_param(pipeline_def, 'pipeline_def', PipelineDefinition),
-            files=check.inst_param(files, 'files', FileStore),
+            storage=check.inst_param(storage, 'storage', FileStore),
+            # TODO typecheck
+            run_storage=run_storage,
+            intermediates_manager=intermediates_manager,
         )
 
     @property
@@ -211,8 +217,16 @@ class SystemPipelineExecutionContext(object):
         return self._log
 
     @property
-    def files(self):
-        return self._pipeline_context_data.files
+    def storage(self):
+        return self._pipeline_context_data.storage
+
+    @property
+    def run_storage(self):
+        return self._pipeline_context_data.run_storage
+
+    @property
+    def intermediates_manager(self):
+        return self._pipeline_context_data.intermediates_manager
 
 
 class SystemStepExecutionContext(SystemPipelineExecutionContext):

@@ -6,7 +6,7 @@ import six
 
 from dagster import check
 
-from dagster.core.files import FileStore
+from dagster.core.files import LocalTempFileStore
 
 
 class StepOutputHandle(namedtuple('_StepOutputHandle', 'step_key output_name')):
@@ -85,8 +85,8 @@ class InMemoryIntermediatesManager(IntermediatesManager):
 # will likely be to inject a different type of execution step that threads
 # the manager
 class FileSystemIntermediateManager(IntermediatesManager):
-    def __init__(self, files):
-        self._files = check.inst_param(files, 'files', FileStore)
+    def __init__(self, run_id):
+        self._files = LocalTempFileStore(run_id)
 
     def _get_path_comps(self, step_output_handle):
         return ['intermediates', step_output_handle.step_key, step_output_handle.output_name]

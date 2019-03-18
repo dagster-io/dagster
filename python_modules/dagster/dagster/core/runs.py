@@ -1,6 +1,8 @@
 from collections import namedtuple, OrderedDict
+from enum import Enum
 import json
 import os
+
 import shutil
 
 from dagster import check
@@ -31,7 +33,7 @@ class RunStorage:
     pass
 
 
-class FilesystemRunStorage(RunStorage):
+class FileSystemRunStorage(RunStorage):
     def __init__(self, base_dir=None):
         self._base_dir = check.opt_str_param(base_dir, 'base_dir', base_run_directory())
         mkdir_p(base_run_directory())
@@ -39,6 +41,11 @@ class FilesystemRunStorage(RunStorage):
 
     def write_dagster_run_meta(self, dagster_run_meta):
         check.inst_param(dagster_run_meta, 'dagster_run_meta', DagsterRunMeta)
+
+        run_dir = os.path.join(self._base_dir, dagster_run_meta.run_id)
+
+        mkdir_p(run_dir)
+
         with open(self._meta_file, 'a+') as ff:
             ff.write(json.dumps(dagster_run_meta._asdict()) + '\n')
 
@@ -96,3 +103,8 @@ class InMemoryRunStorage(RunStorage):
 
     def nuke(self):
         self._run_metas = OrderedDict()
+
+
+class RunStorageMode(Enum):
+    IN_MEMORY = 'IN_MEMORY'
+    FILESYSTEM = 'FILESYSTEM'

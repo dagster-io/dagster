@@ -11,7 +11,7 @@ from dagster import PipelineDefinition, check, RunConfig
 from dagster.core.definitions import Solid
 from dagster.core.execution import execute_pipeline
 from dagster.core.execution_plan.create import solids_in_topological_order
-from dagster.core.runs import FilesystemRunStorage
+from dagster.core.runs import RunStorageMode
 from dagster.graphviz import build_graphviz_graph
 from dagster.utils import load_yaml_from_glob_list
 from dagster.utils.indenting_printer import IndentingPrinter
@@ -301,7 +301,7 @@ def pipeline_execute_command(env, **kwargs):
 
 def execute_execute_command(env, cli_args, print_fn):
     pipeline = create_pipeline_from_cli_args(cli_args)
-    do_execute_command(pipeline, env, print_fn)
+    return do_execute_command(pipeline, env, print_fn)
 
 
 def do_execute_command(pipeline, env_file_list, printer):
@@ -311,10 +311,14 @@ def do_execute_command(pipeline, env_file_list, printer):
 
     environment_dict = load_yaml_from_glob_list(env_file_list) if env_file_list else {}
 
-    execute_pipeline(
+    # Here we detect if the user has specified a storage element in the environment
+    # dictionary. If they have not, we default to using the filesystem in this context.
+    run_storage_mode = None if 'storage' in environment_dict else RunStorageMode.FILESYSTEM
+
+    return execute_pipeline(
         pipeline,
         environment_dict=environment_dict,
-        run_config=RunConfig(run_storage=FilesystemRunStorage()),
+        run_config=RunConfig(storage_mode=run_storage_mode),
     )
 
 

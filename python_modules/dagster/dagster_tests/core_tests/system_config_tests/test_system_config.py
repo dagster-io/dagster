@@ -744,3 +744,25 @@ def test_mix_required_inputs():
 
     assert 'left' in inputs_fields_dict
     assert not 'right' in inputs_fields_dict
+
+
+def test_files_default_config():
+    pipeline_def = PipelineDefinition(name='pipeline', solids=[])
+
+    env_type = pipeline_def.environment_type
+    assert 'storage' in env_type.fields
+
+    config_value = throwing_evaluate_config_value(env_type, {})
+
+    assert 'storage' not in config_value
+
+
+def test_storage_inmem_config():
+    pipeline_def = PipelineDefinition(name='pipeline', solids=[])
+
+    env_type = pipeline_def.environment_type
+    assert 'storage' in env_type.fields
+
+    config_value = throwing_evaluate_config_value(env_type, {'storage': {'inmem': {}}})
+
+    assert config_value['storage'] == {'inmem': {}}

@@ -443,8 +443,9 @@ def test_no_env_missing_required_error_handling():
         'Missing required field  "solids" at document config root. Expected: "{ context?: '
         'NoEnvMissingRequiredError.ContextConfig execution?: '
         'NoEnvMissingRequiredError.ExecutionConfig expectations?: '
-        'NoEnvMissingRequiredError.ExpectationsConfig solids: '
-        'NoEnvMissingRequiredError.SolidsConfigDictionary }"'
+        'NoEnvMissingRequiredError.ExpectationsConfig '
+        'solids: NoEnvMissingRequiredError.SolidsConfigDictionary '
+        'storage?: NoEnvMissingRequiredError.StorageConfig }"'
     ) in pe.message
 
 

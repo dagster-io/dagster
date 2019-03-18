@@ -61,7 +61,7 @@ from .init_context import InitContext, InitResourceContext
 
 from .log import DagsterLog
 
-from .runs import DagsterRunMeta
+from .runs import DagsterRunMeta, FileSystemRunStorage, InMemoryRunStorage, RunStorageMode
 
 from .system_config.objects import EnvironmentConfig
 
@@ -346,29 +346,88 @@ def _create_persistence_strategy(persistence_config):
         check.failed('Unsupported persistence key: {}'.format(persistence_key))
 
 
+def construct_run_storage(run_config, _init_context, environment_config):
+    '''
+    Construct the run storage for this pipeline. Our rules are the following:
+
+    If the called has specified a run_storage_factory_fn, we use for creating
+    the run storage.
+
+    Then we fallback to config.
+
+    If there is no config, we default to in memory storage. This is mostly so
+    that tests default to in-memory.
+    '''
+    if run_config.storage_mode:
+        if run_config.storage_mode == RunStorageMode.FILESYSTEM:
+            return FileSystemRunStorage()
+        elif run_config.storage_mode == RunStorageMode.IN_MEMORY:
+            return InMemoryRunStorage()
+        else:
+            check.failed('Unexpectd enum {}'.format(run_config.storage_mode))
+    elif environment_config.storage.name == 'filesystem':
+        return FileSystemRunStorage()
+    elif environment_config.storage.name == 'inmem':
+        return InMemoryRunStorage()
+    elif environment_config.storage.name is None:
+        return InMemoryRunStorage()
+    else:
+        raise DagsterInvariantViolationError(
+            'Invalid storage specified {}'.format(environment_config.storage.name)
+        )
+
+
+def construct_intermediates_manager(run_config, init_context, environment_config):
+    from .execution_plan.intermediates_manager import (
+        FileSystemIntermediateManager,
+        InMemoryIntermediatesManager,
+    )
+
+    if run_config.storage_mode:
+        if run_config.storage_mode == RunStorageMode.FILESYSTEM:
+            return FileSystemIntermediateManager(init_context.run_id)
+        elif run_config.storage_mode == RunStorageMode.IN_MEMORY:
+            return InMemoryIntermediatesManager()
+        else:
+            check.failed('Unexpectd enum {}'.format(run_config.storage_mode))
+    elif environment_config.storage.name == 'filesystem':
+
+        return FileSystemIntermediateManager(init_context.run_id)
+    elif environment_config.storage.name == 'inmem':
+        return InMemoryIntermediatesManager()
+    elif environment_config.storage.name is None:
+        return InMemoryIntermediatesManager()
+    else:
+        raise DagsterInvariantViolationError(
+            'Invalid storage specified {}'.format(environment_config.storage.name)
+        )
+
+
 @contextmanager
 def yield_pipeline_execution_context(pipeline_def, environment_dict, run_config):
     check.inst_param(pipeline_def, 'pipeline_def', PipelineDefinition)
     check.dict_param(environment_dict, 'environment_dict', key_type=str)
     check.inst_param(run_config, 'run_config', RunConfig)
 
-    run_config.run_storage.write_dagster_run_meta(
+    environment_config = create_environment_config(pipeline_def, environment_dict)
+
+    context_definition = pipeline_def.context_definitions[environment_config.context.name]
+
+    init_context = InitContext(
+        context_config=environment_config.context.config,
+        pipeline_def=pipeline_def,
+        run_id=run_config.run_id,
+    )
+
+    run_storage = construct_run_storage(run_config, init_context, environment_config)
+
+    run_storage.write_dagster_run_meta(
         DagsterRunMeta(
             run_id=run_config.run_id, timestamp=time.time(), pipeline_name=pipeline_def.name
         )
     )
 
-    environment_config = create_environment_config(pipeline_def, environment_dict)
-
-    context_definition = pipeline_def.context_definitions[environment_config.context.name]
-
-    ec_or_gen = context_definition.context_fn(
-        InitContext(
-            context_config=environment_config.context.config,
-            pipeline_def=pipeline_def,
-            run_id=run_config.run_id,
-        )
-    )
+    ec_or_gen = context_definition.context_fn(init_context)
 
     with as_ensured_single_gen(ec_or_gen) as execution_context:
         check.inst(execution_context, ExecutionContext)
@@ -381,12 +440,24 @@ def yield_pipeline_execution_context(pipeline_def, environment_dict, run_config)
             run_config.run_id,
         ) as resources:
             yield construct_pipeline_execution_context(
-                run_config, execution_context, pipeline_def, resources, environment_config
+                run_config,
+                execution_context,
+                pipeline_def,
+                resources,
+                environment_config,
+                run_storage,
+                construct_intermediates_manager(run_config, init_context, environment_config),
             )
 
 
 def construct_pipeline_execution_context(
-    run_config, execution_context, pipeline, resources, environment_config
+    run_config,
+    execution_context,
+    pipeline,
+    resources,
+    environment_config,
+    run_storage,
+    intermediates_manager,
 ):
     check.inst_param(run_config, 'run_config', RunConfig)
     check.inst_param(execution_context, 'execution_context', ExecutionContext)
@@ -406,7 +477,9 @@ def construct_pipeline_execution_context(
             persistence_strategy=_create_persistence_strategy(
                 environment_config.context.persistence
             ),
-            files=LocalTempFileStore(run_config.run_id),
+            storage=LocalTempFileStore(run_config.run_id),
+            run_storage=run_storage,
+            intermediates_manager=intermediates_manager,
         ),
         tags=tags,
         log=log,
@@ -589,7 +662,7 @@ def invoke_executor_on_plan(pipeline_context, execution_plan, step_keys_to_execu
         step_events_gen = start_inprocess_executor(
             pipeline_context,
             execution_plan,
-            pipeline_context.run_config.executor_config.inmem_intermediates_manager,
+            pipeline_context.intermediates_manager,
             step_keys_to_execute,
         )
     elif isinstance(pipeline_context.executor_config, MultiprocessExecutorConfig):
