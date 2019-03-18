@@ -98,6 +98,13 @@ def host_tmp_dir():
     return '/tmp/results'
 
 
+@pytest.fixture(scope='class'):
+def clean_results_dir(host_tmp_dir):
+    subprocess.check_output(['rm', '-rf', os.path.join(host_tmp_dir, '')])
+    yield host_tmp_dir
+    subprocess.check_output(['rm', '-rf', os.path.join(host_tmp_dir, '')])
+
+
 @pytest.fixture(scope='module')
 def airflow_test(docker_image, dags_path, plugins_path, host_tmp_dir):
     '''Install the docker-airflow plugin & reload airflow.operators so the plugin is available.'''
