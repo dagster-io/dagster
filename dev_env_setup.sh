@@ -6,6 +6,7 @@
 # pyenv is recommended for managing different python versions on your machine
 #
 # Most dagster developers use venv for virtual environment management
+#!/bin/bash -ex
 
 pip install --upgrade pip
 pip install -r bin/requirements.txt
