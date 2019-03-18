@@ -31,6 +31,10 @@ from .marks import airflow
 from .utils import import_module_from_path
 
 
+####################################################################################################
+# These tests are "uncontainerized" because they simulate (to greater or lesser fidelity) the
+# execution of containerized Airflow DAG nodes, but without the roundtrip through the Airflow and
+# Docker machinery
 @airflow
 def test_uncontainerized_download_dag_execution_with_airflow_config():
     config_object = load_yaml_from_glob_list(
@@ -133,6 +137,10 @@ def test_uncontainerized_warehouse_dag_execution_with_airflow_config():
     assert result.success
 
 
+####################################################################################################
+# These tests are "in-memory" because although they use the Airflow APIs to execute dockerized
+# DAG nodes, they don't run through the full Airflow machinery (a separate scheduler and executor
+# process, or even the single-node out-of-process invocation of `airflow test`)
 @airflow
 class TestInMemoryAirflow_0DownloadDagExecution:
     pipeline = define_airline_demo_download_pipeline()
@@ -203,3 +211,6 @@ class TestInMemoryAirflow_1IngestExecution:
             context = ti.get_template_context()
             task._log = logging  # pylint: disable=protected-access
             task.execute(context)
+
+
+####################################################################################################
