@@ -19,6 +19,7 @@ from collections import defaultdict, OrderedDict
 from contextlib import contextmanager
 import inspect
 import itertools
+import time
 
 from contextlib2 import ExitStack
 from dagster import check
@@ -59,6 +60,8 @@ from .files import LocalTempFileStore
 from .init_context import InitContext, InitResourceContext
 
 from .log import DagsterLog
+
+from .runs import DagsterRunMeta
 
 from .system_config.objects import EnvironmentConfig
 
@@ -345,6 +348,12 @@ def yield_pipeline_execution_context(pipeline_def, environment_dict, run_config)
     check.inst_param(pipeline_def, 'pipeline_def', PipelineDefinition)
     check.dict_param(environment_dict, 'environment_dict', key_type=str)
     check.inst_param(run_config, 'run_config', RunConfig)
+
+    run_config.run_storage.write_dagster_run_meta(
+        DagsterRunMeta(
+            run_id=run_config.run_id, timestamp=time.time(), pipeline_name=pipeline_def.name
+        )
+    )
 
     environment_config = create_environment_config(pipeline_def, environment_dict)
 

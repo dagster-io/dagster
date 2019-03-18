@@ -18,6 +18,9 @@ def load_yaml_from_glob_list(glob_list):
     for env_file_pattern in glob_list:
         all_files_list.extend(glob.glob(env_file_pattern))
 
+    if not all_files_list:
+        raise Exception('Config file(s) not found at path(s) {}'.format(glob_list))
+
     return merge_yamls(all_files_list)
 
 
