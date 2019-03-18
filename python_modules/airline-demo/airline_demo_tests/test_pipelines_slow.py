@@ -59,7 +59,7 @@ def test_pipeline_warehouse():
                             'config': {
                                 'postgres_username': 'test',
                                 'postgres_password': 'test',
-                                'postgres_hostname': 'localhost',
+                                'postgres_hostname': '127.0.0.1',
                                 'postgres_db_name': 'test',
                             }
                         }
