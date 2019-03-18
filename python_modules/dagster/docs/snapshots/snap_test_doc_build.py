@@ -325,13 +325,19 @@ of the modules.</p>
 <span class="gp">$</span> <span class="nb">source</span> dagsterenv/bin/activate
 </pre></div>
 </div>
-<p>3. Run the script dev_env_setup.sh at repo root. This sets up a full
+<ol class="arabic simple" start="3">
+<li>Install yarn. If you are on macOS, this should be:</li>
+</ol>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$</span> brew install yarn
+</pre></div>
+</div>
+<p>4. Run the script dev_env_setup.sh at repo root. This sets up a full
 dagster developer environment with all modules and runs tests that
 do not require heavy external dependencies such as docker. This will
 take a few minutes.</p>
 <blockquote>
 <div>$ ./dev_env_setup.sh</div></blockquote>
-<ol class="arabic" start="4">
+<ol class="arabic" start="5">
 <li><p class="first">Run some tests manually to make sure things are working.</p>
 <blockquote>
 <div><p>$ pytest python_modules/dagster/dagster_tests</p>
@@ -343,17 +349,18 @@ take a few minutes.</p>
 <h3>Running dagit webapp in development<a class="headerlink" href="#running-dagit-webapp-in-development" title="Permalink to this headline">¶</a></h3>
 <p>For development, run the dagit GraphQL server on a different port than the
 webapp, from any directory that contains a repository.yml file. For example:</p>
-<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$</span> <span class="nb">cd</span> dagster/python_modules/dagster/dagster/dagster_examples
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$</span> <span class="nb">cd</span> dagster/python_modules/dagster/dagster/tutorials/intro_tutorial
 <span class="gp">$</span> dagit -p <span class="m">3333</span>
 </pre></div>
 </div>
-<p>Run the local development (autoreloading, etc.) version of the webapp.</p>
-<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$</span> <span class="nb">cd</span> dagster/python_modules/dagit/dagit/webapp
-<span class="gp">$</span> <span class="nv">REACT_APP_GRAPHQL_URI</span><span class="o">=</span><span class="s2">&quot;http://localhost:3333/graphql&quot;</span> yarn start
+<p>Keep this running. Then, in another terminal, run the local development
+(autoreloading, etc.) version of the webapp:</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$</span> <span class="nb">cd</span> dagster/js_modules/dagit
+<span class="gp">$</span> make dev_webapp
 </pre></div>
 </div>
 <p>To run JavaScript tests for the dagit frontend, you can run:</p>
-<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$</span> <span class="nb">cd</span> dagster/python_modules/dagit/dagit/webapp
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$</span> <span class="nb">cd</span> dagster/js_modules/dagit
 <span class="gp">$</span> yarn <span class="nb">test</span>
 </pre></div>
 </div>
@@ -1918,14 +1925,20 @@ Local development setup
     $ python3 -m venv dagsterenv
     $ source dagsterenv/bin/activate
 
-3. Run the script dev_env_setup.sh at repo root. This sets up a full
+3. Install yarn. If you are on macOS, this should be:
+
+.. code-block:: console
+
+    $ brew install yarn
+
+4. Run the script dev_env_setup.sh at repo root. This sets up a full
 dagster developer environment with all modules and runs tests that
 do not require heavy external dependencies such as docker. This will
 take a few minutes.
 
     $ ./dev_env_setup.sh
 
-4. Run some tests manually to make sure things are working.
+5. Run some tests manually to make sure things are working.
 
     $ pytest python_modules/dagster/dagster_tests
 
@@ -1938,21 +1951,22 @@ webapp, from any directory that contains a repository.yml file. For example:
 
 .. code-block:: console
 
-    $ cd dagster/python_modules/dagster/dagster/dagster_examples
+    $ cd dagster/python_modules/dagster/dagster/tutorials/intro_tutorial
     $ dagit -p 3333
 
-Run the local development (autoreloading, etc.) version of the webapp.
+Keep this running. Then, in another terminal, run the local development 
+(autoreloading, etc.) version of the webapp:
 
 .. code-block:: console
 
-    $ cd dagster/python_modules/dagit/dagit/webapp
-    $ REACT_APP_GRAPHQL_URI="http://localhost:3333/graphql" yarn start
+    $ cd dagster/js_modules/dagit
+    $ make dev_webapp
 
 To run JavaScript tests for the dagit frontend, you can run:
 
 .. code-block:: console
 
-    $ cd dagster/python_modules/dagit/dagit/webapp
+    $ cd dagster/js_modules/dagit
     $ yarn test
 
 In webapp development it's handy to run ``yarn run jest --watch`` to have an
