@@ -27,6 +27,7 @@ from .utils import reload_module
 
 IMAGE = 'airline-demo-airflow'
 
+CIRCLECI = os.getenv('CIRCLECI')
 
 # py2 compat
 try:
@@ -187,6 +188,7 @@ def scaffold_dag(request, airflow_test):
         image=docker_image,
         output_path=tempdir,
         dag_kwargs={'default_args': {'start_date': datetime.datetime(1900, 1, 1)}},
+        operator_kwargs={'network_mode': 'container:db'} if CIRCLECI else {}
     )
 
     # Ensure that the scaffolded files parse correctly
