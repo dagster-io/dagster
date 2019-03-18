@@ -245,7 +245,7 @@ def scaffold_dag(request, airflow_test):
 
 
 @pytest.fixture(scope='class')
-def in_memory_airflow_run(_request, scaffold_dag):
+def in_memory_airflow_run(scaffold_dag):
     pipeline_name, _p, _d, static_path, editable_path = scaffold_dag
 
     execution_date = datetime.datetime.utcnow()
