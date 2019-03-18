@@ -98,7 +98,7 @@ def host_tmp_dir():
     return '/tmp/results'
 
 
-@pytest.fixture(scope='class'):
+@pytest.fixture(scope='class')
 def clean_results_dir(host_tmp_dir):
     subprocess.check_output(['rm', '-rf', os.path.join(host_tmp_dir, '')])
     yield host_tmp_dir
