@@ -313,7 +313,7 @@ def _ensure_gen(thing_or_gen):
 
 @contextmanager
 def as_ensured_single_gen(thing_or_gen):
-     '''Wraps the output of a user provided function that may yield or return a value and
+    '''Wraps the output of a user provided function that may yield or return a value and
     returns a generator that asserts it only yields a single value.
     '''
     gen = _ensure_gen(thing_or_gen)
