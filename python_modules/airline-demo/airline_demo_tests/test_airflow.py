@@ -165,6 +165,7 @@ class TestInMemoryAirflow_0DownloadDagExecution:
             operator_kwargs={
                 'persist_intermediate_results_to_s3': True,
                 's3_bucket_name': 'dagster-lambda-execution',
+                'network_mode': 'container:db',
             },
             host_tmp_dir=demo_pipeline.HOST_TMP_DIR,
         )
@@ -201,6 +202,7 @@ class TestInMemoryAirflow_1IngestExecution:
             operator_kwargs={
                 'persist_intermediate_results_to_s3': True,
                 's3_bucket_name': 'dagster-lambda-execution',
+                'network_mode': 'container:db',
             },
             host_tmp_dir=demo_pipeline.HOST_TMP_DIR,
         )
