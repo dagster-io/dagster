@@ -789,7 +789,7 @@ jobs:
             tox -e $TOXENV
             docker login -u $DOCKERHUB_USERNAME -p $DOCKERHUB_PASSWORD
             docker push dagster/cci-test
-          no_output_timeout: 15m
+          no_output_timeout: 25m
       - run:
           command: mv python_modules/airline-demo/.coverage python_modules/airline-demo/.coverage.airline-demo.${CIRCLE_BUILD_NUM}
       - persist_to_workspace:
@@ -838,7 +838,7 @@ jobs:
           command: |
             cd python_modules/airline-demo
             tox -e $TOXENV
-          no_output_timeout: 15m
+          no_output_timeout: 25m
       - run:
           command: mv python_modules/airline-demo/.coverage python_modules/airline-demo/.coverage.airline-demo.${CIRCLE_BUILD_NUM}
       - persist_to_workspace:
@@ -891,7 +891,7 @@ jobs:
           command: |
             cd python_modules/airline-demo
             tox -e $TOXENV
-          no_output_timeout: 15m
+          no_output_timeout: 25m
       - run:
           command: mv python_modules/airline-demo/.coverage python_modules/airline-demo/.coverage.airline-demo.${CIRCLE_BUILD_NUM}
       - persist_to_workspace:
