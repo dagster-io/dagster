@@ -10,7 +10,7 @@ try:
 except ImportError:
     pass
 
-from dagster import execute_pipeline, RunConfig
+from dagster import RunConfig
 from dagster.core.execute_marshalling import execute_marshalling, MarshalledOutput
 from dagster.core.execution import yield_pipeline_execution_context
 from dagster.core.execution_plan import create_execution_plan_core
