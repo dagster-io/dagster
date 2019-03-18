@@ -154,7 +154,7 @@ class TestInMemoryAirflow_0DownloadDagExecution:
             dag_description=demo_pipeline.DAG_DESCRIPTION,
             dag_kwargs=dict(default_args=demo_pipeline.DEFAULT_ARGS, **demo_pipeline.DAG_KWARGS),
             s3_conn_id=demo_pipeline.S3_CONN_ID,
-            modified_docker_operator_kwargs={
+            operator_kwargs={
                 'persist_intermediate_results_to_s3': True,
                 's3_bucket_name': 'dagster-lambda-execution',
             },
@@ -190,7 +190,7 @@ class TestInMemoryAirflow_1IngestExecution:
             dag_description=demo_pipeline.DAG_DESCRIPTION,
             dag_kwargs=dict(default_args=demo_pipeline.DEFAULT_ARGS, **demo_pipeline.DAG_KWARGS),
             s3_conn_id=demo_pipeline.S3_CONN_ID,
-            modified_docker_operator_kwargs={
+            operator_kwargs={
                 'persist_intermediate_results_to_s3': True,
                 's3_bucket_name': 'dagster-lambda-execution',
             },
