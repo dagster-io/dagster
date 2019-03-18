@@ -46,17 +46,4 @@ export class MockedProvider extends React.Component<
       </ApolloProvider>
     );
   }
-
-  public componentWillUnmount() {
-    if (!this.state.client.queryManager) {
-      return;
-    }
-    const scheduler = this.state.client.queryManager.scheduler;
-    Object.keys(scheduler.registeredQueries).forEach(queryId => {
-      scheduler.stopPollingQuery(queryId);
-    });
-    Object.keys(scheduler.intervalQueries).forEach((interval: any) => {
-      scheduler.fetchQueriesOnInterval(interval);
-    });
-  }
 }
