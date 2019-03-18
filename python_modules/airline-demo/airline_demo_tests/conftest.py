@@ -98,14 +98,8 @@ def plugins_path(airflow_home):
 def host_tmp_dir():
     '''We don't clean this up / make it a context manager because it may already exist...'''
     mkdir_p('/tmp/results')
-    return '/tmp/results'
-
-
-@pytest.fixture(scope='class')
-def clean_results_dir(host_tmp_dir):
-    subprocess.check_output(['rm', '-rf', os.path.join(host_tmp_dir, '')])
-    yield host_tmp_dir
-    subprocess.check_output(['rm', '-rf', os.path.join(host_tmp_dir, '')])
+    yield '/tmp/results'
+    subprocess.check_output(['rm', '-rf', '/tmp/results/*'])
 
 
 @pytest.fixture(scope='module')

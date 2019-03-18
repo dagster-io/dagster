@@ -95,7 +95,7 @@ def _uncontainerized_pipeline_execute(pipeline, config_object):
 
 class TestUncontainerizedDagExecution:
     @airflow
-    def test_uncontainerized_download_dag_execution_with_airflow_config(clean_results_dir):
+    def test_uncontainerized_download_dag_execution_with_airflow_config(host_tmp_dir):
         pipeline = define_airline_demo_download_pipeline()
         config_object = load_yaml_from_glob_list(
             [
@@ -107,7 +107,7 @@ class TestUncontainerizedDagExecution:
         _uncontainerized_pipeline_execute(pipeline, config_object)
 
     @airflow
-    def test_uncontainerized_ingest_dag_execution_with_airflow_config(clean_results_dir):
+    def test_uncontainerized_ingest_dag_execution_with_airflow_config(host_tmp_dir):
         mkdir_p('/tmp/results')
         pipeline = define_airline_demo_ingest_pipeline()
         config_object = load_yaml_from_glob_list(
@@ -120,7 +120,7 @@ class TestUncontainerizedDagExecution:
         _uncontainerized_pipeline_execute(pipeline, config_object)
 
     @airflow
-    def test_uncontainerized_warehouse_dag_execution_with_airflow_config(clean_results_dir):
+    def test_uncontainerized_warehouse_dag_execution_with_airflow_config(host_tmp_dir):
         pipeline = define_airline_demo_warehouse_pipeline()
         config_object = load_yaml_from_glob_list(
             [
