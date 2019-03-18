@@ -31,37 +31,7 @@ from .marks import airflow
 from .utils import import_module_from_path
 
 
-####################################################################################################
-# These tests are "uncontainerized" because they simulate (to greater or lesser fidelity) the
-# execution of containerized Airflow DAG nodes, but without the roundtrip through the Airflow and
-# Docker machinery
-@airflow
-def test_uncontainerized_download_dag_execution_with_airflow_config():
-    config_object = load_yaml_from_glob_list(
-        [
-            script_relative_path('../environments/airflow_base.yml'),
-            script_relative_path('../environments/local_fast_download.yml'),
-        ]
-    )
-
-    result = execute_pipeline(define_airline_demo_download_pipeline(), config_object)
-
-    assert result.success
-
-
-@airflow
-def test_uncontainerized_ingest_dag_execution_with_airflow_config():
-    mkdir_p('/tmp/results')
-    # TODO factor this machinery into a test helper in dagster-airflow,
-    # rewrite marshalling scaffolding helpers to be cleaner
-    pipeline = define_airline_demo_ingest_pipeline()
-    config_object = load_yaml_from_glob_list(
-        [
-            script_relative_path('../environments/airflow_base.yml'),
-            script_relative_path('../environments/local_ingest.yml'),
-        ]
-    )
-
+def _uncontainerized_pipeline_execute(pipeline, config_object):
     with yield_pipeline_execution_context(pipeline, config_object, RunConfig()) as pipeline_context:
         execution_plan = create_execution_plan_core(pipeline_context)
 
@@ -123,8 +93,40 @@ def test_uncontainerized_ingest_dag_execution_with_airflow_config():
             ).format(tmp='/tmp/results/', sep='')
 
 
+####################################################################################################
+# These tests are "uncontainerized" because they simulate (to greater or lesser fidelity) the
+# execution of containerized Airflow DAG nodes, but without the roundtrip through the Airflow and
+# Docker machinery
+@airflow
+def test_uncontainerized_download_dag_execution_with_airflow_config():
+    pipeline = define_airline_demo_download_pipeline()
+    config_object = load_yaml_from_glob_list(
+        [
+            script_relative_path('../environments/airflow_base.yml'),
+            script_relative_path('../environments/local_fast_download.yml'),
+        ]
+    )
+
+    _uncontainerized_pipeline_execute(pipeline, config_object)
+
+
+@airflow
+def test_uncontainerized_ingest_dag_execution_with_airflow_config():
+    mkdir_p('/tmp/results')
+    pipeline = define_airline_demo_ingest_pipeline()
+    config_object = load_yaml_from_glob_list(
+        [
+            script_relative_path('../environments/airflow_base.yml'),
+            script_relative_path('../environments/local_ingest.yml'),
+        ]
+    )
+
+    _uncontainerized_pipeline_execute(pipeline, config_object)
+
+
 @airflow
 def test_uncontainerized_warehouse_dag_execution_with_airflow_config():
+    pipeline = define_airline_demo_warehouse_pipeline()
     config_object = load_yaml_from_glob_list(
         [
             script_relative_path('../environments/airflow_base.yml'),
@@ -132,9 +134,7 @@ def test_uncontainerized_warehouse_dag_execution_with_airflow_config():
         ]
     )
 
-    result = execute_pipeline(define_airline_demo_warehouse_pipeline(), config_object)
-
-    assert result.success
+    _uncontainerized_pipeline_execute(pipeline, config_object)
 
 
 ####################################################################################################
