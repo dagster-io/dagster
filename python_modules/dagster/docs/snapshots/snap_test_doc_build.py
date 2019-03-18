@@ -1992,6 +1992,8 @@ Running a live html version of the docs can expedite documentation development.
 
     $ cd python_modules/dagster/docs
     $ make livehtml
+
+
 '''
 
 snapshots['test_build_all_docs 11'] = '''.. image:: https://user-images.githubusercontent.com/28738937/44878798-b6e17e00-ac5c-11e8-8d25-2e47e5a53418.png
