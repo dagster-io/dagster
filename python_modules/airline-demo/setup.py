@@ -37,7 +37,7 @@ setup(
         'matplotlib==2.2.4; python_version < "3.5"',
         # pyproj is required by geopandas, but something is wrong with the
         # wheel for 2.0.2
-        'pyproj==2.0.2',
+        'pyproj==2.0.1',
         'pyspark==2.4.0',
         'sqlalchemy-redshift==0.7.1',
         'SQLAlchemy-Utils==0.33.8',
