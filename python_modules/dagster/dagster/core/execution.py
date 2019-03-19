@@ -348,7 +348,7 @@ def _create_persistence_strategy(persistence_config):
         check.failed('Unsupported persistence key: {}'.format(persistence_key))
 
 
-def construct_run_storage(run_config, _init_context, environment_config):
+def construct_run_storage(run_config, environment_config):
     '''
     Construct the run storage for this pipeline. Our rules are the following:
 
@@ -360,6 +360,9 @@ def construct_run_storage(run_config, _init_context, environment_config):
     If there is no config, we default to in memory storage. This is mostly so
     that tests default to in-memory.
     '''
+    check.inst_param(run_config, 'run_config', RunConfig)
+    check.inst_param(environment_config, 'environment_config', EnvironmentConfig)
+
     if run_config.storage_mode:
         if run_config.storage_mode == RunStorageMode.FILESYSTEM:
             return FileSystemRunStorage()
@@ -380,6 +383,9 @@ def construct_run_storage(run_config, _init_context, environment_config):
 
 
 def construct_intermediates_manager(run_config, init_context, environment_config):
+    check.inst_param(run_config, 'run_config', RunConfig)
+    check.inst_param(init_context, 'init_context', InitContext)
+    check.inst_param(environment_config, 'environment_config', EnvironmentConfig)
 
     if run_config.storage_mode:
         if run_config.storage_mode == RunStorageMode.FILESYSTEM:
@@ -411,18 +417,18 @@ def yield_pipeline_execution_context(pipeline_def, environment_dict, run_config)
 
     context_definition = pipeline_def.context_definitions[environment_config.context.name]
 
-    init_context = InitContext(
-        context_config=environment_config.context.config,
-        pipeline_def=pipeline_def,
-        run_id=run_config.run_id,
-    )
-
-    run_storage = construct_run_storage(run_config, init_context, environment_config)
+    run_storage = construct_run_storage(run_config, environment_config)
 
     run_storage.write_dagster_run_meta(
         DagsterRunMeta(
             run_id=run_config.run_id, timestamp=time.time(), pipeline_name=pipeline_def.name
         )
+    )
+
+    init_context = InitContext(
+        context_config=environment_config.context.config,
+        pipeline_def=pipeline_def,
+        run_id=run_config.run_id,
     )
 
     ec_or_gen = context_definition.context_fn(init_context)

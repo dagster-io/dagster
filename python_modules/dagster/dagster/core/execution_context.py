@@ -15,7 +15,7 @@ from .definitions.input import InputDefinition
 from .definitions.output import OutputDefinition
 from .events import ExecutionEvents
 from .log import DagsterLog
-from .runs import RunStorageMode
+from .runs import RunStorageMode, RunStorage
 from .system_config.objects import EnvironmentConfig
 from .types.marshal import PersistenceStrategy
 
@@ -103,7 +103,8 @@ class SystemPipelineExecutionContextData(
         run_storage,
         intermediates_manager,
     ):
-        from .definitions.pipeline import PipelineDefinition
+        from .definitions import PipelineDefinition
+        from .execution_plan.intermediates_manager import IntermediatesManager
 
         return super(SystemPipelineExecutionContextData, cls).__new__(
             cls,
@@ -116,9 +117,10 @@ class SystemPipelineExecutionContextData(
                 persistence_strategy, 'persistence_strategy', PersistenceStrategy
             ),
             pipeline_def=check.inst_param(pipeline_def, 'pipeline_def', PipelineDefinition),
-            # TODO typecheck
-            run_storage=run_storage,
-            intermediates_manager=intermediates_manager,
+            run_storage=check.inst_param(run_storage, 'run_storage', RunStorage),
+            intermediates_manager=check.inst_param(
+                intermediates_manager, 'intermediates_manager', IntermediatesManager
+            ),
         )
 
     @property

@@ -354,6 +354,7 @@ def construct_environment_config(config_value):
 
 
 def construct_storage_config(config_value):
+    check.opt_dict_param(config_value, 'config_value', key_type=str)
     if config_value:
         storage_key, storage_value = single_item(config_value)
         return StorageConfig(storage_key, storage_value)
