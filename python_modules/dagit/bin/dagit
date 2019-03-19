@@ -2,7 +2,7 @@
 import sys
 import time
 import signal
-import os
+import subprocess
 from watchdog.observers import Observer
 from watchdog.tricks import AutoRestartTrick
 
@@ -17,7 +17,12 @@ for arg in sys.argv[1:]:
 
 # If not using watch mode, just call the command
 if not watch:
-    os.execvp(command[0], command)
+    code = 0
+    try:
+        code = subprocess.call(command)
+    except KeyboardInterrupt:
+        pass
+    sys.exit(code)
 
 
 # Use watchdog's python API to auto-restart the dagit-cli process when
