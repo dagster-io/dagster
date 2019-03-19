@@ -85,11 +85,6 @@ from .user_context import ExecutionContext
 
 class PipelineExecutionResult(object):
     '''Result of execution of the whole pipeline. Returned eg by :py:func:`execute_pipeline`.
-
-    Attributes:
-        pipeline (PipelineDefinition): Pipeline that was executed
-        context (ExecutionContext): ExecutionContext of that particular Pipeline run.
-        result_list (list[SolidExecutionResult]): List of results for each pipeline solid.
     '''
 
     def __init__(self, pipeline, run_id, step_event_list):

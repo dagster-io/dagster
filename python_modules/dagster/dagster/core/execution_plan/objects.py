@@ -48,6 +48,13 @@ class StepOutputData:
         return self._value_repr
 
     def get_value(self):
+        # For now we are disallowing getting the value for anything
+        # except the in-memory version of this. get_value will need to put
+        # on higher level object that will have access to pipeline_context
+
+        from dagster.core.intermediates_manager import InMemoryIntermediatesManager
+
+        check.inst(self._intermediates_manager, InMemoryIntermediatesManager)
         return self._intermediates_manager.get_intermediate(self.step_output_handle)
 
 
