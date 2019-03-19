@@ -36,6 +36,7 @@
     "react-virtualized": "^9.21.0",
     "styled-components": "^3.3.3",
     "subscriptions-transport-ws": "^0.9.15",
+    "ts-node": "^8.0.3",
     "yaml": "^1.0.1",
     "yaml-language-server": "^0.0.19"
   },
@@ -80,9 +81,9 @@
     "jest": "jest -w 1",
     "check-prettier": "prettier --list-different \"./src/**/*.tsx\"",
     "ts": "tsc -p .",
-    "download-schema": "apollo schema:download --endpoint $REACT_APP_GRAPHQL_URI ./src/schema.json",
-    "generate-types": "apollo codegen:generate --queries \"./src/**/*.tsx\" --target typescript types --localSchemaFile ./src/schema.json --globalTypesFile ./src/types/globalTypes.ts",
-    "watch-types": "apollo codegen:generate --queries \"./src/**/*.tsx\" --target typescript types --localSchemaFile ./src/schema.json  --globalTypesFile ./src/types/globalTypes.ts --watch"
+    "download-schema": "ts-node -O '{\"module\": \"commonjs\"}' ./src/scripts/DownloadSchema.tsx",
+    "generate-types": "apollo codegen:generate --queries \"./src/**/*.tsx\" --target typescript types --localSchemaFile ./src/schema.graphql --globalTypesFile ./src/types/globalTypes.ts",
+    "watch-types": "apollo codegen:generate --queries \"./src/**/*.tsx\" --target typescript types --localSchemaFile ./src/schema.graphql  --globalTypesFile ./src/types/globalTypes.ts --watch"
   },
   "jest": {
     "collectCoverage": true,

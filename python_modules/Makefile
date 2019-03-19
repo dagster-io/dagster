@@ -39,6 +39,9 @@ dagster_yapf:
 test_airline:
 	cd airline-demo; pytest -vv -s -W ignore:::psycopg2 -m "not slow and not py3"
 
+intro_tutorial:
+	cd dagster/dagster/tutorials/intro_tutorial; dagit -p 3333
+
 clean:
 	find . -name \*.pyc -delete
 	rm -rf ./dagster/docs/_build
