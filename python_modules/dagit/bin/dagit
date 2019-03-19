@@ -2,6 +2,7 @@
 import sys
 import time
 import signal
+import os
 from watchdog.observers import Observer
 from watchdog.tricks import AutoRestartTrick
 
@@ -13,6 +14,11 @@ for arg in sys.argv[1:]:
         watch = False
     else:
         command.append(arg)
+
+# If not using watch mode, just call the command
+if not watch:
+    os.execvp(command[0], command)
+
 
 # Use watchdog's python API to auto-restart the dagit-cli process when
 # python files in the current directory change. This is a slightly modified
@@ -35,20 +41,17 @@ handler = AutoRestartTrick(command=command,
                            kill_after=0.5)
 handler.start()
 
-if watch:
-    print("Watching for file changes...")
-    observer = Observer(timeout=1)
-    observer.schedule(handler, ".", True)
-    observer.start()
+print("Watching for file changes...")
+observer = Observer(timeout=1)
+observer.schedule(handler, ".", True)
+observer.start()
 
 try:
     while True:
         time.sleep(1)
 except KeyboardInterrupt:
     handler.stop()
-    if watch:
-        observer.stop()
+    observer.stop()
 
 handler.stop()
-if watch:
-    observer.join()
+observer.join()
