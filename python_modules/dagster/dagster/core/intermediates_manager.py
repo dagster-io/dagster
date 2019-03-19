@@ -1,6 +1,5 @@
 from abc import ABCMeta, abstractmethod
 from collections import namedtuple
-import pickle
 
 import six
 
@@ -27,18 +26,6 @@ class StepOutputHandle(namedtuple('_StepOutputHandle', 'step_key output_name')):
             step_key=check.str_param(step_key, 'step_key'),
             output_name=check.str_param(output_name, 'output_name'),
         )
-
-
-def read_pickle_file(path):
-    check.str_param(path, 'path')
-    with open(path, 'rb') as ff:
-        return pickle.load(ff)
-
-
-def write_pickle_file(path, value):
-    check.str_param(path, 'path')
-    with open(path, 'wb') as ff:
-        return pickle.dump(value, ff)
 
 
 class IntermediatesManager(six.with_metaclass(ABCMeta)):  # pylint: disable=no-init
@@ -85,7 +72,7 @@ class ObjectStoreIntermediatesManager(IntermediatesManager):
     def __init__(self, object_store):
         self._object_store = check.inst_param(object_store, 'object_store', ObjectStore)
 
-    def _get_path_comps(self, step_output_handle):
+    def _get_paths(self, step_output_handle):
         return ['intermediates', step_output_handle.step_key, step_output_handle.output_name]
 
     def get_intermediate(self, context, runtime_type, step_output_handle):
@@ -95,9 +82,7 @@ class ObjectStoreIntermediatesManager(IntermediatesManager):
         check.invariant(self.has_intermediate(context, step_output_handle))
 
         return self._object_store.get_object(
-            context=context,
-            runtime_type=runtime_type,
-            paths=self._get_path_comps(step_output_handle),
+            context=context, runtime_type=runtime_type, paths=self._get_paths(step_output_handle)
         )
 
     def set_intermediate(self, context, runtime_type, step_output_handle, value):
@@ -110,11 +95,11 @@ class ObjectStoreIntermediatesManager(IntermediatesManager):
             obj=value,
             context=context,
             runtime_type=runtime_type,
-            paths=self._get_path_comps(step_output_handle),
+            paths=self._get_paths(step_output_handle),
         )
 
     def has_intermediate(self, context, step_output_handle):
         check.inst_param(context, 'context', SystemPipelineExecutionContext)
         check.inst_param(step_output_handle, 'step_output_handle', StepOutputHandle)
 
-        return self._object_store.has_object(context, self._get_path_comps(step_output_handle))
+        return self._object_store.has_object(context, self._get_paths(step_output_handle))

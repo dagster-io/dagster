@@ -8,7 +8,7 @@ from dagster.core.execution_context import (
     SystemPipelineExecutionContext,
     SystemStepExecutionContext,
 )
-from dagster.core.intermediates_manager import StepOutputHandle
+from dagster.core.intermediates_manager import StepOutputHandle, InMemoryIntermediatesManager
 from dagster.core.types.runtime import RuntimeType
 from dagster.core.utils import toposort
 from dagster.utils import merge_dicts
@@ -52,8 +52,6 @@ class StepOutputData:
         # For now we are disallowing getting the value for anything
         # except the in-memory version of this. get_value will need to put
         # on higher level object that will have access to pipeline_context
-
-        from dagster.core.intermediates_manager import InMemoryIntermediatesManager
 
         check.inst(self._intermediates_manager, InMemoryIntermediatesManager)
         return self._intermediates_manager.get_intermediate(
