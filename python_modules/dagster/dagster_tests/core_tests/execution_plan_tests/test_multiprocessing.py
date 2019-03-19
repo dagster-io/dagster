@@ -8,6 +8,7 @@ from dagster import (
 )
 
 from dagster.core.execution import InProcessExecutorConfig, MultiprocessExecutorConfig
+from dagster.core.runs import RunStorageMode
 
 
 def test_diamond_simple_execution():
@@ -26,7 +27,10 @@ def test_diamond_multi_execution():
     pipeline = define_diamond_pipeline()
     result = execute_pipeline(
         pipeline,
-        run_config=RunConfig(executor_config=MultiprocessExecutorConfig(define_diamond_pipeline)),
+        run_config=RunConfig(
+            executor_config=MultiprocessExecutorConfig(define_diamond_pipeline),
+            storage_mode=RunStorageMode.FILESYSTEM,
+        ),
     )
     assert result.success
     assert result.result_for_solid('adder').transformed_value() == 11
@@ -91,6 +95,9 @@ def test_error_pipeline_multiprocess():
     pipeline = define_error_pipeline()
     result = execute_pipeline(
         pipeline,
-        run_config=RunConfig(executor_config=MultiprocessExecutorConfig(define_error_pipeline)),
+        run_config=RunConfig(
+            executor_config=MultiprocessExecutorConfig(define_error_pipeline),
+            storage_mode=RunStorageMode.FILESYSTEM,
+        ),
     )
     assert not result.success

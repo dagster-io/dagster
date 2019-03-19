@@ -1,3 +1,9 @@
+0.3.6
+   - There is now a new configuration section "storage" which can configure whether or not the execution
+     should use the filesystem to store intermediate values or just store those values in memory.
+   - Similarily, there is a new configuration for RunConfig that where the user can specify
+     intermediate value storage via an API.
+
 0.3.5
    - Dagit now defaults to --watch; run dagit --no-watch to disable (process-based) autoreloading.
 

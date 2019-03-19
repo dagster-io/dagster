@@ -66,8 +66,6 @@ def execute_marshalling(
         ),
     )
 
-    intermediates_manager = run_config.executor_config.inmem_intermediates_manager
-
     with yield_pipeline_execution_context(
         pipeline, environment_dict, run_config
     ) as pipeline_context:
@@ -77,6 +75,8 @@ def execute_marshalling(
         do_error_checking(
             inputs_to_marshal, execution_plan, pipeline_context, step_keys, outputs_to_marshal
         )
+
+        intermediates_manager = pipeline_context.intermediates_manager
 
         unmarshal_inputs(inputs_to_marshal, execution_plan, pipeline_context, intermediates_manager)
 

@@ -5,17 +5,68 @@ import tempfile
 import time
 import shutil
 
-from dagster.core.runs import FilesystemRunStorage, DagsterRunMeta, InMemoryRunStorage
+from dagster import PipelineDefinition, solid, RunConfig, execute_pipeline
+from dagster.core.runs import (
+    DagsterRunMeta,
+    FileSystemRunStorage,
+    InMemoryRunStorage,
+    RunStorageMode,
+    base_run_directory,
+)
 
 
 @contextmanager
 def temp_run_storage():
     try:
         base_dir = tempfile.mkdtemp()
-        yield FilesystemRunStorage(base_dir)
+        yield FileSystemRunStorage(base_dir)
     finally:
         if os.path.exists(base_dir):
             shutil.rmtree(base_dir)
+
+
+def test_filesystem_run_storage_from_run_config():
+    @solid
+    def check_run_storage(context):
+        assert isinstance(context.get_system_context().run_storage, FileSystemRunStorage)
+
+    pipeline = PipelineDefinition(name='filesystem_run_storage_test', solids=[check_run_storage])
+
+    result = execute_pipeline(
+        pipeline, run_config=RunConfig(storage_mode=RunStorageMode.FILESYSTEM)
+    )
+
+    assert result.success
+
+    assert os.path.isdir(os.path.join(base_run_directory(), result.run_id))
+
+
+def test_default_run_storage():
+    @solid
+    def check_run_storage(context):
+        assert isinstance(context.get_system_context().run_storage, InMemoryRunStorage)
+
+    pipeline = PipelineDefinition(name='default_run_storage_test', solids=[check_run_storage])
+
+    result = execute_pipeline(pipeline)
+
+    assert result.success
+
+    assert not os.path.exists(os.path.join(base_run_directory(), result.run_id))
+
+
+def test_config_specified_filesystem_run_storage():
+    @solid
+    def check_run_storage(context):
+        assert isinstance(context.get_system_context().run_storage, FileSystemRunStorage)
+
+    pipeline = PipelineDefinition(name='default_run_storage_test', solids=[check_run_storage])
+
+    result = execute_pipeline(pipeline, environment_dict={'storage': {'filesystem': {}}})
+
+    assert result.success
+
+    assert os.path.exists(os.path.join(base_run_directory(), result.run_id))
 
 
 def test_empty_storage():
@@ -28,7 +79,7 @@ def test_filesystem_persist_one_run():
         do_test_single_write_read(run_storage)
 
 
-def test_inmemory_persist_one_run():
+def test_in_memory_persist_one_run():
     do_test_single_write_read(InMemoryRunStorage())
 
 

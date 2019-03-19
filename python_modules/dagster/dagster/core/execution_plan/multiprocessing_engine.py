@@ -9,7 +9,6 @@ from dagster.core.execution_context import (
 
 
 from .create import create_execution_plan_core
-from .intermediates_manager import FileSystemIntermediateManager
 from .objects import ExecutionPlan, ExecutionStepEvent
 from .simple_engine import start_inprocess_executor
 
@@ -32,14 +31,12 @@ class InProcessExecutorChildProcessCommand(ChildProcessCommand):
             pipeline, self.environment_dict, self.run_config.with_tags(pid=str(os.getpid()))
         ) as pipeline_context:
 
-            intermediates_manager = FileSystemIntermediateManager(pipeline_context.files)
-
             execution_plan = create_execution_plan_core(pipeline_context)
 
             for step_event in start_inprocess_executor(
                 pipeline_context,
                 execution_plan,
-                intermediates_manager,
+                pipeline_context.intermediates_manager,
                 step_keys_to_execute=[self.step_key],
             ):
                 yield step_event
@@ -49,6 +46,10 @@ def execute_step_out_of_process(step_context, step):
     check.invariant(
         not step_context.run_config.loggers,
         'Cannot inject loggers via RunConfig with the Multiprocess executor',
+    )
+
+    check.invariant(
+        not step_context.event_callback, 'Cannot use event_callback across this process currently'
     )
 
     command = InProcessExecutorChildProcessCommand(
@@ -73,7 +74,7 @@ def multiprocess_execute_plan(pipeline_context, execution_plan):
 
     step_levels = execution_plan.topological_step_levels()
 
-    intermediates_manager = FileSystemIntermediateManager(pipeline_context.files)
+    intermediates_manager = pipeline_context.intermediates_manager
 
     # It would be good to implement a reference tracking algorithm here so we could
     # garbage collection results that are no longer needed by any steps
