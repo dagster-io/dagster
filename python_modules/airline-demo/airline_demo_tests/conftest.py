@@ -98,6 +98,7 @@ def plugins_path(airflow_home):
 def host_tmp_dir():
     '''We don't clean this up / make it a context manager because it may already exist...'''
     mkdir_p('/tmp/results')
+    subprocess.check_output(['rm', '-rf', '/tmp/results/*'])
     yield '/tmp/results'
     subprocess.check_output(['rm', '-rf', '/tmp/results/*'])
 
