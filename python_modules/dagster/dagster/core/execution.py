@@ -46,6 +46,7 @@ from .execution_plan.create import create_execution_plan_core
 from .execution_plan.intermediates_manager import (
     FileSystemIntermediateManager,
     InMemoryIntermediatesManager,
+    IntermediatesManager,
 )
 
 from .execution_plan.objects import (
@@ -63,7 +64,13 @@ from .init_context import InitContext, InitResourceContext
 
 from .log import DagsterLog
 
-from .runs import DagsterRunMeta, FileSystemRunStorage, InMemoryRunStorage, RunStorageMode
+from .runs import (
+    DagsterRunMeta,
+    FileSystemRunStorage,
+    InMemoryRunStorage,
+    RunStorage,
+    RunStorageMode,
+)
 
 from .system_config.objects import EnvironmentConfig
 
@@ -467,6 +474,8 @@ def construct_pipeline_execution_context(
     check.inst_param(execution_context, 'execution_context', ExecutionContext)
     check.inst_param(pipeline, 'pipeline', PipelineDefinition)
     check.inst_param(environment_config, 'environment_config', EnvironmentConfig)
+    check.inst_param(run_storage, 'run_storage', RunStorage)
+    check.inst_param(intermediates_manager, 'intermediates_manager', IntermediatesManager)
 
     loggers = _create_loggers(run_config, execution_context)
     tags = get_tags(execution_context, run_config, pipeline)
