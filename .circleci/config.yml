@@ -693,6 +693,12 @@ jobs:
             cd js_modules/dagit
             yarn run check-prettier
 
+  # We are using the machine executor in order to avoid the pitfalls catalogued at
+  # https://circleci.com/docs/2.0/building-docker-images/#separation-of-environments.
+  # Specifically, we want to be able to network the Docker containers created by the
+  # Airflow DagsterOperator with the Postgres database we spin up using docker-compose (which
+  # persists after individual DagsterOperators complete), and we want to be able to mount host
+  # directories into the DagsterOperator containers.
   airline-demo-py36:
     machine:
       docker_layer_caching: true
