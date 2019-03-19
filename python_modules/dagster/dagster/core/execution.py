@@ -65,6 +65,8 @@ from .intermediates_manager import (
 
 from .log import DagsterLog
 
+from .object_store import FileSystemObjectStore
+
 from .runs import (
     DagsterRunMeta,
     FileSystemRunStorage,
@@ -388,9 +390,6 @@ def construct_run_storage(run_config, environment_config):
         raise DagsterInvariantViolationError(
             'Invalid storage specified {}'.format(environment_config.storage.storage_mode)
         )
-
-
-from .object_store import FileSystemObjectStore
 
 
 def construct_intermediates_manager(run_config, init_context, environment_config):

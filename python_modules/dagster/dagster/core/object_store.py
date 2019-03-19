@@ -5,7 +5,11 @@ from dagster import check, seven
 from dagster.utils import mkdir_p
 
 
-class FileSystemObjectStore:
+class ObjectStore:
+    pass
+
+
+class FileSystemObjectStore(ObjectStore):
     def __init__(self, run_id):
         check.str_param(run_id, 'run_id')
         self.root = os.path.join(

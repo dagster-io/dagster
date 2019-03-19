@@ -6,7 +6,8 @@ import six
 
 from dagster import check
 
-from .object_store import FileSystemObjectStore
+
+from .object_store import ObjectStore
 
 
 class StepOutputHandle(namedtuple('_StepOutputHandle', 'step_key output_name')):
@@ -80,7 +81,7 @@ class InMemoryIntermediatesManager(IntermediatesManager):
 
 class ObjectStoreIntermediatesManager(IntermediatesManager):
     def __init__(self, object_store):
-        self._object_store = object_store
+        self._object_store = check.inst_param(object_store, 'object_store', ObjectStore)
 
     def _get_path_comps(self, step_output_handle):
         return ['intermediates', step_output_handle.step_key, step_output_handle.output_name]
