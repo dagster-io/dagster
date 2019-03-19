@@ -4,6 +4,7 @@ workflows:
   version: 2
   test:
     jobs:
+
       # Required for merge
 
       - dagit-webapp:
@@ -692,51 +693,65 @@ jobs:
             cd js_modules/dagit
             yarn run check-prettier
 
-  airline-demo-py36: &airline-demo-template
-    <<: *dagster-template
-    docker:
-      - image: dagster/cci-test:3.6
-        auth:
-          username: $DOCKERHUB_USERNAME
-          password: $DOCKERHUB_PASSWORD
-      - image: circleci/postgres:9.6.2-alpine
-        environment:
-          POSTGRES_USER: test
-          POSTGRES_PASSWORD: test
-          POSTGRES_DB: test
+  airline-demo-py36:
+    machine:
+      docker_layer_caching: true
     environment:
       TOXENV: py36
-
+      SLUGIFY_USES_TEXT_UNIDECODE: 'yes'
+      PYTHON_VERSION: "3.6.3"
+      AIRFLOW_HOME: "/home/circleci/airflow"
+    working_directory: ~/repo
     steps:
       - checkout
-
+      - run:
+          name: Install py36
+          command: |
+            pyenv install 3.6.3
+      - run:
+          name: Build Dockerfile
+          command: |
+            pushd python_modules/airline-demo/
+            . build.sh
+            popd
       - run:
           name: Install Dependencies
           command: |
-            sudo pip install tox
-
+            sudo pip install -U 'pip<19.0' # see: https://github.com/pypa/pip/issues/6163
+            sudo pip install tox tox-pyenv
+            pyenv local 3.6.3
+      - run:
+          name: Setup AIRFLOW_HOME
+          command: |
+            mkdir -p /home/circleci/airflow
+      - run:
+          name: Docker-compose for db
+          command: |
+            pushd python_modules/airline-demo
+            docker-compose up -d
       - run:
           name: Run airline-demo Tests
           command: |
             cd python_modules/airline-demo
             tox -e $TOXENV
-
+            docker login -u $DOCKERHUB_USERNAME -p $DOCKERHUB_PASSWORD
+            docker push dagster/cci-test
       - run:
           command: mv python_modules/airline-demo/.coverage python_modules/airline-demo/.coverage.airline-demo.${CIRCLE_BUILD_NUM}
-
       - persist_to_workspace:
           root: python_modules/airline-demo/
           paths:
             - .coverage*
 
   airline-demo-py37:
-    <<: *airline-demo-template
     docker:
-      # FIXME: https://github.com/dagster-io/dagster/issues/521
+      # FIXME: https://github.com/dagster-io/dagster/issues/521 
       - image: schrockn/cci-test:3.7.2
         auth:
           username: $DOCKERHUB_USERNAME
           password: $DOCKERHUB_PASSWORD
+        environment:
+          SLUGIFY_USES_TEXT_UNIDECODE: 'yes'
       - image: circleci/postgres:9.6.2-alpine
         environment:
           POSTGRES_USER: test
@@ -744,36 +759,118 @@ jobs:
           POSTGRES_DB: test
     environment:
       TOXENV: py37
+    steps:
+      - checkout
+      - run:
+          name: Install Dependencies
+          command: |
+            sudo pip install tox
+      - run:
+          name: Run airline-demo Tests
+          command: |
+            cd python_modules/airline-demo
+            tox -e $TOXENV
+      - run:
+          command: mv python_modules/airline-demo/.coverage python_modules/airline-demo/.coverage.airline-demo.${CIRCLE_BUILD_NUM}
+      - persist_to_workspace:
+          root: python_modules/airline-demo/
+          paths:
+            - .coverage*
 
   airline-demo-py35:
-    <<: *airline-demo-template
-    docker:
-      - image: dagster/cci-test:3.5
-        auth:
-          username: $DOCKERHUB_USERNAME
-          password: $DOCKERHUB_PASSWORD
-      - image: circleci/postgres:9.6.2-alpine
-        environment:
-          POSTGRES_USER: test
-          POSTGRES_PASSWORD: test
-          POSTGRES_DB: test
+    machine:
+      docker_layer_caching: true
     environment:
       TOXENV: py35
+      SLUGIFY_USES_TEXT_UNIDECODE: 'yes'
+      PYTHON_VERSION: "3.5.2"
+      AIRFLOW_HOME: "/home/circleci/airflow"
+    working_directory: ~/repo
+    steps:
+      - checkout
+      - run:
+          name: Build Dockerfile
+          command: |
+            pushd python_modules/airline-demo/
+            . build.sh
+            popd
+      - run:
+          name: Install Dependencies
+          command: |
+            sudo pip install -U 'pip<19.0' # see: https://github.com/pypa/pip/issues/6163
+            sudo pip install tox
+      - run:
+          name: Setup AIRFLOW_HOME
+          command: |
+            mkdir -p /home/circleci/airflow
+      - run:
+          name: Docker-compose for db
+          command: |
+            pushd python_modules/airline-demo
+            docker-compose up -d
+      - run:
+          name: Set up py35 (!?)
+          command: |
+            pyenv global 3.5.2
+      - run:
+          name: Run airline-demo Tests
+          command: |
+            cd python_modules/airline-demo
+            tox -e $TOXENV
+      - run:
+          command: mv python_modules/airline-demo/.coverage python_modules/airline-demo/.coverage.airline-demo.${CIRCLE_BUILD_NUM}
+      - persist_to_workspace:
+          root: python_modules/airline-demo/
+          paths:
+            - .coverage*
 
   airline-demo-py27:
-    <<: *airline-demo-template
-    docker:
-      - image: dagster/cci-test:2.7
-        auth:
-          username: $DOCKERHUB_USERNAME
-          password: $DOCKERHUB_PASSWORD
-      - image: circleci/postgres:9.6.2-alpine
-        environment:
-          POSTGRES_USER: test
-          POSTGRES_PASSWORD: test
-          POSTGRES_DB: test
+    machine:
+      docker_layer_caching: true
     environment:
       TOXENV: py27
+      SLUGIFY_USES_TEXT_UNIDECODE: 'yes'
+      PYTHON_VERSION: "2.7.12"
+      AIRFLOW_HOME: "/home/circleci/airflow"
+    working_directory: ~/repo
+    steps:
+      - checkout
+      - run:
+          name: Install py27-dev
+          command: |
+            sudo apt-get install python2.7-dev
+      - run:
+          name: Build Dockerfile
+          command: |
+            pushd python_modules/airline-demo/
+            . build.sh
+            popd
+      - run:
+          name: Install Dependencies
+          command: |
+            sudo pip install -U 'pip<19.0' # see: https://github.com/pypa/pip/issues/6163
+            sudo pip install tox tox-pyenv
+            pyenv local 2.7.12
+      - run:
+          name: Setup AIRFLOW_HOME
+          command: |
+            mkdir -p /home/circleci/airflow
+      - run:
+          name: Docker-compose for db
+          command: |
+            pushd python_modules/airline-demo
+            docker-compose up -d
+      - run:
+          name: Run airline-demo Tests
+          command: |
+            cd python_modules/airline-demo
+            tox -e $TOXENV
+      - run:
+          command: mv python_modules/airline-demo/.coverage python_modules/airline-demo/.coverage.airline-demo.${CIRCLE_BUILD_NUM}
+      - persist_to_workspace:
+          root: python_modules/airline-demo/
+          paths:
+            - .coverage*
 
   coverage:
     docker:
