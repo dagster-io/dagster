@@ -9,7 +9,7 @@ from dagster.core.errors import (
 )
 
 from .definitions import PipelineDefinition
-from .execution_plan.intermediates_manager import StepOutputHandle
+from .intermediates_manager import StepOutputHandle
 
 from .execution import (
     check_run_config_param,

@@ -1,6 +1,5 @@
 from abc import ABCMeta, abstractmethod
 from collections import namedtuple
-from contextlib import contextmanager
 import pickle
 import os
 
@@ -14,7 +13,7 @@ from dagster.utils import mkdir_p
 class StepOutputHandle(namedtuple('_StepOutputHandle', 'step_key output_name')):
     @staticmethod
     def from_step(step, output_name):
-        from .objects import ExecutionStep
+        from .execution_plan.objects import ExecutionStep
 
         check.inst_param(step, 'step', ExecutionStep)
 
@@ -54,7 +53,7 @@ class IntermediatesManager(six.with_metaclass(ABCMeta)):  # pylint: disable=no-i
         pass
 
     def all_inputs_covered(self, step):
-        from .objects import ExecutionStep
+        from .execution_plan.objects import ExecutionStep
 
         check.inst_param(step, 'step', ExecutionStep)
         for step_input in step.step_inputs:
@@ -80,10 +79,9 @@ class InMemoryIntermediatesManager(IntermediatesManager):
         return step_output_handle in self.values
 
 
-class FileStoreIntermediatesManager(IntermediatesManager):
+class ObjectStoreIntermediatesManager(IntermediatesManager):
     def __init__(self, run_id):
         self._object_store = NewTempObjectStore(run_id)
-        # self._files = LocalTempFileStore(run_id)
 
     def _get_path_comps(self, step_output_handle):
         return ['intermediates', step_output_handle.step_key, step_output_handle.output_name]
@@ -144,4 +142,3 @@ class NewTempObjectStore:
     def has_object(self, _cxt, paths):
         target_path = os.path.join(self.root, *paths)
         return os.path.exists(target_path)
-

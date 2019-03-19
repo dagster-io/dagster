@@ -104,7 +104,7 @@ class SystemPipelineExecutionContextData(
         intermediates_manager,
     ):
         from .definitions import PipelineDefinition
-        from .execution_plan.intermediates_manager import IntermediatesManager
+        from .intermediates_manager import IntermediatesManager
 
         return super(SystemPipelineExecutionContextData, cls).__new__(
             cls,

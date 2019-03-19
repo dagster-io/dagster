@@ -43,11 +43,6 @@ from .events import construct_event_logger
 
 from .execution_plan.create import create_execution_plan_core
 
-from .execution_plan.intermediates_manager import (
-    FileStoreIntermediatesManager,
-    InMemoryIntermediatesManager,
-    IntermediatesManager,
-)
 
 from .execution_plan.objects import (
     ExecutionPlan,
@@ -61,6 +56,12 @@ from .execution_plan.multiprocessing_engine import multiprocess_execute_plan
 from .execution_plan.simple_engine import start_inprocess_executor
 
 from .init_context import InitContext, InitResourceContext
+
+from .intermediates_manager import (
+    ObjectStoreIntermediatesManager,
+    InMemoryIntermediatesManager,
+    IntermediatesManager,
+)
 
 from .log import DagsterLog
 
@@ -396,14 +397,14 @@ def construct_intermediates_manager(run_config, init_context, environment_config
 
     if run_config.storage_mode:
         if run_config.storage_mode == RunStorageMode.FILESYSTEM:
-            return FileStoreIntermediatesManager(init_context.run_id)
+            return ObjectStoreIntermediatesManager(init_context.run_id)
         elif run_config.storage_mode == RunStorageMode.IN_MEMORY:
             return InMemoryIntermediatesManager()
         else:
             check.failed('Unexpected enum {}'.format(run_config.storage_mode))
     elif environment_config.storage.storage_mode == 'filesystem':
 
-        return FileStoreIntermediatesManager(init_context.run_id)
+        return ObjectStoreIntermediatesManager(init_context.run_id)
     elif environment_config.storage.storage_mode == 'in_memory':
         return InMemoryIntermediatesManager()
     elif environment_config.storage.storage_mode is None:

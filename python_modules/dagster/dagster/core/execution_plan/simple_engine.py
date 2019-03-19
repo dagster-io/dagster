@@ -24,9 +24,9 @@ from dagster.core.execution_context import (
     SystemStepExecutionContext,
 )
 
-from dagster.utils.error import serializable_error_info_from_exc_info
+from dagster.core.intermediates_manager import IntermediatesManager
 
-from .intermediates_manager import IntermediatesManager
+from dagster.utils.error import serializable_error_info_from_exc_info
 
 from .objects import (
     ExecutionPlan,

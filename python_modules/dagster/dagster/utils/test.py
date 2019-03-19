@@ -21,7 +21,7 @@ from dagster.core.execution import (
     create_environment_config,
 )
 
-from dagster.core.execution_plan.intermediates_manager import InMemoryIntermediatesManager
+from dagster.core.intermediates_manager import InMemoryIntermediatesManager
 from dagster.core.runs import InMemoryRunStorage
 
 from dagster.core.utility_solids import define_stub_solid
