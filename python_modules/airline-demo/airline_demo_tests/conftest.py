@@ -242,7 +242,7 @@ def scaffold_dag(request, airflow_test):
         pass
 
 
-@pytest.fixture(scope='class')
+@pytest.fixture(scope='function')
 def clean_results_dir():
     subprocess.check_output(['rm', '-rf', '/tmp/results/*'])
     yield '/tmp/results'
@@ -250,7 +250,7 @@ def clean_results_dir():
 
 
 @pytest.fixture(scope='class')
-def in_memory_airflow_run(scaffold_dag, clean_results_dir):
+def in_memory_airflow_run(scaffold_dag):
     pipeline_name, _p, _d, static_path, editable_path = scaffold_dag
 
     execution_date = datetime.datetime.utcnow()

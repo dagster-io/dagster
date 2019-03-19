@@ -23,7 +23,7 @@ class TestInMemoryAirflow_0DownloadDagExecution:
         script_relative_path(os.path.join('..', 'environments', 'local_fast_download.yml')),
     ]
 
-    def test_airflow_run_download_pipeline(self, in_memory_airflow_run):
+    def test_airflow_run_download_pipeline(self, in_memory_airflow_run, clean_results_dir):
         pass
 
 
@@ -35,7 +35,7 @@ class TestInMemoryAirflow_1IngestExecution:
         script_relative_path(os.path.join('..', 'environments', 'local_ingest.yml')),
     ]
 
-    def test_airflow_run_ingest_pipeline(self, in_memory_airflow_run):
+    def test_airflow_run_ingest_pipeline(self, in_memory_airflow_run, clean_results_dir):
         pass
 
 
@@ -47,7 +47,7 @@ class TestInMemoryAirflow_2WarehouseExecution:
         script_relative_path(os.path.join('..', 'environments', 'local_warehouse.yml')),
     ]
 
-    def test_airflow_run_warehouse_pipeline(self, in_memory_airflow_run):
+    def test_airflow_run_warehouse_pipeline(self, in_memory_airflow_run, clean_results_dir):
         pass
 
 
