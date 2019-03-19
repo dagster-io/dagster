@@ -1,13 +1,12 @@
 from abc import ABCMeta, abstractmethod
 from collections import namedtuple
 import pickle
-import os
 
 import six
 
 from dagster import check
-from dagster import seven
-from dagster.utils import mkdir_p
+
+from .object_store import FileSystemObjectStore
 
 
 class StepOutputHandle(namedtuple('_StepOutputHandle', 'step_key output_name')):
@@ -81,7 +80,7 @@ class InMemoryIntermediatesManager(IntermediatesManager):
 
 class ObjectStoreIntermediatesManager(IntermediatesManager):
     def __init__(self, run_id):
-        self._object_store = NewTempObjectStore(run_id)
+        self._object_store = FileSystemObjectStore(run_id)
 
     def _get_path_comps(self, step_output_handle):
         return ['intermediates', step_output_handle.step_key, step_output_handle.output_name]
@@ -107,38 +106,3 @@ class ObjectStoreIntermediatesManager(IntermediatesManager):
             _cxt=None, paths=self._get_path_comps(step_output_handle)
         )
 
-
-class NewTempObjectStore:
-    def __init__(self, run_id):
-        check.str_param(run_id, 'run_id')
-        self.root = os.path.join(
-            seven.get_system_temp_directory(), 'dagster', 'runs', run_id, 'files'
-        )
-
-    def set_object(self, obj, _cxt, _runtime_type, paths):
-        check.list_param(paths, 'paths', of_type=str)
-        check.param_invariant(len(paths) > 0, 'paths')
-
-        if len(paths) > 1:
-            target_dir = os.path.join(self.root, *paths[:-1])
-            mkdir_p(target_dir)
-            target_path = os.path.join(target_dir, paths[-1])
-        else:
-            check.invariant(len(paths) == 1)
-            target_path = os.path.join(target_dir, paths[0])
-
-        check.invariant(not os.path.exists(target_path))
-        with open(target_path, 'wb') as ff:
-            # Hardcode pickle for now
-            pickle.dump(obj, ff)
-
-    def get_object(self, _cxt, _runtime_type, paths):
-        check.list_param(paths, 'paths', of_type=str)
-        check.param_invariant(len(paths) > 0, 'paths')
-        target_path = os.path.join(self.root, *paths)
-        with open(target_path, 'rb') as ff:
-            return pickle.load(ff)
-
-    def has_object(self, _cxt, paths):
-        target_path = os.path.join(self.root, *paths)
-        return os.path.exists(target_path)
