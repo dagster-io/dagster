@@ -37,12 +37,16 @@ from .execution_context import (
     SystemPipelineExecutionContext,
 )
 
-
 from .errors import DagsterInvariantViolationError
 
 from .events import construct_event_logger
 
 from .execution_plan.create import create_execution_plan_core
+
+from .execution_plan.intermediates_manager import (
+    FileSystemIntermediateManager,
+    InMemoryIntermediatesManager,
+)
 
 from .execution_plan.objects import (
     ExecutionPlan,
@@ -376,10 +380,6 @@ def construct_run_storage(run_config, _init_context, environment_config):
 
 
 def construct_intermediates_manager(run_config, init_context, environment_config):
-    from .execution_plan.intermediates_manager import (
-        FileSystemIntermediateManager,
-        InMemoryIntermediatesManager,
-    )
 
     if run_config.storage_mode:
         if run_config.storage_mode == RunStorageMode.FILESYSTEM:
