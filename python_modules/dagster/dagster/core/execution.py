@@ -390,6 +390,9 @@ def construct_run_storage(run_config, environment_config):
         )
 
 
+from .object_store import FileSystemObjectStore
+
+
 def construct_intermediates_manager(run_config, init_context, environment_config):
     check.inst_param(run_config, 'run_config', RunConfig)
     check.inst_param(init_context, 'init_context', InitContext)

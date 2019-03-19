@@ -105,4 +105,3 @@ class ObjectStoreIntermediatesManager(IntermediatesManager):
         return self._object_store.has_object(
             _cxt=None, paths=self._get_path_comps(step_output_handle)
         )
-
