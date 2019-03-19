@@ -80,9 +80,10 @@ class InMemoryIntermediatesManager(IntermediatesManager):
         return step_output_handle in self.values
 
 
-class FileSystemIntermediatesManager(IntermediatesManager):
+class FileStoreIntermediatesManager(IntermediatesManager):
     def __init__(self, run_id):
-        self._files = LocalTempFileStore(run_id)
+        self._object_store = NewTempObjectStore(run_id)
+        # self._files = LocalTempFileStore(run_id)
 
     def _get_path_comps(self, step_output_handle):
         return ['intermediates', step_output_handle.step_key, step_output_handle.output_name]
@@ -91,60 +92,56 @@ class FileSystemIntermediatesManager(IntermediatesManager):
         check.inst_param(step_output_handle, 'step_output_handle', StepOutputHandle)
         check.invariant(self.has_value(step_output_handle))
 
-        with self._files.readable_binary_stream(*self._get_path_comps(step_output_handle)) as ff:
-            return pickle.load(ff)
+        return self._object_store.get_object(
+            _cxt=None, _runtime_type=None, paths=self._get_path_comps(step_output_handle)
+        )
 
     def set_intermediate(self, step_output_handle, value):
         check.inst_param(step_output_handle, 'step_output_handle', StepOutputHandle)
         check.invariant(not self.has_value(step_output_handle))
 
-        with self._files.writeable_binary_stream(*self._get_path_comps(step_output_handle)) as ff:
-            pickle.dump(value, ff)
+        return self._object_store.set_object(
+            obj=value, _cxt=None, _runtime_type=None, paths=self._get_path_comps(step_output_handle)
+        )
 
     def has_value(self, step_output_handle):
-        return self._files.has_file(*self._get_path_comps(step_output_handle))
+        return self._object_store.has_object(
+            _cxt=None, paths=self._get_path_comps(step_output_handle)
+        )
 
 
-def check_path_comps(path_comps):
-    path_list = check.list_param(list(path_comps), 'path_comps', of_type=str)
-    check.param_invariant(path_list, 'path_list', 'Must have at least one comp')
-    return path_list
-
-
-class LocalTempFileStore:
+class NewTempObjectStore:
     def __init__(self, run_id):
         check.str_param(run_id, 'run_id')
         self.root = os.path.join(
             seven.get_system_temp_directory(), 'dagster', 'runs', run_id, 'files'
         )
 
-    @contextmanager
-    def writeable_binary_stream(self, *path_comps):
-        path_list = check_path_comps(path_comps)
+    def set_object(self, obj, _cxt, _runtime_type, paths):
+        check.list_param(paths, 'paths', of_type=str)
+        check.param_invariant(len(paths) > 0, 'paths')
 
-        target_dir = os.path.join(self.root, *path_list[:-1])
-        mkdir_p(target_dir)
+        if len(paths) > 1:
+            target_dir = os.path.join(self.root, *paths[:-1])
+            mkdir_p(target_dir)
+            target_path = os.path.join(target_dir, paths[-1])
+        else:
+            check.invariant(len(paths) == 1)
+            target_path = os.path.join(target_dir, paths[0])
 
-        target_path = os.path.join(target_dir, path_list[-1])
         check.invariant(not os.path.exists(target_path))
         with open(target_path, 'wb') as ff:
-            yield ff
+            # Hardcode pickle for now
+            pickle.dump(obj, ff)
 
-    @contextmanager
-    def readable_binary_stream(self, *path_comps):
-        path_list = check_path_comps(path_comps)
-
-        target_path = os.path.join(self.root, *path_list)
+    def get_object(self, _cxt, _runtime_type, paths):
+        check.list_param(paths, 'paths', of_type=str)
+        check.param_invariant(len(paths) > 0, 'paths')
+        target_path = os.path.join(self.root, *paths)
         with open(target_path, 'rb') as ff:
-            yield ff
+            return pickle.load(ff)
 
-    def has_file(self, *path_comps):
-        path_list = check_path_comps(path_comps)
+    def has_object(self, _cxt, paths):
+        target_path = os.path.join(self.root, *paths)
+        return os.path.exists(target_path)
 
-        target_path = os.path.join(self.root, *path_list)
-
-        if os.path.exists(target_path):
-            check.invariant(os.path.isfile(target_path))
-            return True
-        else:
-            return False

@@ -44,7 +44,7 @@ from .events import construct_event_logger
 from .execution_plan.create import create_execution_plan_core
 
 from .execution_plan.intermediates_manager import (
-    FileSystemIntermediatesManager,
+    FileStoreIntermediatesManager,
     InMemoryIntermediatesManager,
     IntermediatesManager,
 )
@@ -396,14 +396,14 @@ def construct_intermediates_manager(run_config, init_context, environment_config
 
     if run_config.storage_mode:
         if run_config.storage_mode == RunStorageMode.FILESYSTEM:
-            return FileSystemIntermediatesManager(init_context.run_id)
+            return FileStoreIntermediatesManager(init_context.run_id)
         elif run_config.storage_mode == RunStorageMode.IN_MEMORY:
             return InMemoryIntermediatesManager()
         else:
             check.failed('Unexpected enum {}'.format(run_config.storage_mode))
     elif environment_config.storage.storage_mode == 'filesystem':
 
-        return FileSystemIntermediatesManager(init_context.run_id)
+        return FileStoreIntermediatesManager(init_context.run_id)
     elif environment_config.storage.storage_mode == 'in_memory':
         return InMemoryIntermediatesManager()
     elif environment_config.storage.storage_mode is None:
