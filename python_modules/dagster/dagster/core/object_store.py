@@ -4,6 +4,9 @@ import pickle
 from dagster import check, seven
 from dagster.utils import mkdir_p
 
+from .execution_context import SystemPipelineExecutionContext
+from .types.runtime import RuntimeType
+
 
 class ObjectStore:
     pass
@@ -17,6 +20,8 @@ class FileSystemObjectStore(ObjectStore):
         )
 
     def set_object(self, obj, context, runtime_type, paths):  # pylint: disable=unused-argument
+        check.inst_param(context, 'context', SystemPipelineExecutionContext)
+        check.inst_param(runtime_type, 'runtime_type', RuntimeType)
         check.list_param(paths, 'paths', of_type=str)
         check.param_invariant(len(paths) > 0, 'paths')
 

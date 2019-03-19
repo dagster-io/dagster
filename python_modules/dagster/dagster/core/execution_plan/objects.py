@@ -48,6 +48,7 @@ class StepOutputData:
         return self._value_repr
 
     def get_value(self):
+        # FIXME:
         # For now we are disallowing getting the value for anything
         # except the in-memory version of this. get_value will need to put
         # on higher level object that will have access to pipeline_context

@@ -87,7 +87,9 @@ def execute_marshalling(
                     # dep in subset, we're fine
                     continue
 
-                if intermediates_manager.has_value(step_input.prev_output_handle):
+                if intermediates_manager.has_intermediate(
+                    pipeline_context, step_input.prev_output_handle
+                ):
                     # dep preset in intermediates manager
                     continue
 

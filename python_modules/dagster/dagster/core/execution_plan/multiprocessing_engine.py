@@ -76,7 +76,7 @@ def multiprocess_execute_plan(pipeline_context, execution_plan):
         for step in step_level:
             step_context = pipeline_context.for_step(step)
 
-            if not intermediates_manager.all_inputs_covered(step):
+            if not intermediates_manager.all_inputs_covered(step_context, step):
                 expected_outputs = [ni.prev_output_handle for ni in step.step_inputs]
 
                 step_context.log.debug(

@@ -39,13 +39,6 @@ from .objects import (
 )
 
 
-def _all_inputs_covered(step, intermediates_manager):
-    for step_input in step.step_inputs:
-        if not intermediates_manager.has_value(step_input.prev_output_handle):
-            return False
-    return True
-
-
 def start_inprocess_executor(
     pipeline_context, execution_plan, intermediates_manager, step_keys_to_execute=None
 ):
@@ -76,7 +69,7 @@ def start_inprocess_executor(
 
             step_context = pipeline_context.for_step(step)
 
-            if not intermediates_manager.all_inputs_covered(step):
+            if not intermediates_manager.all_inputs_covered(step_context, step):
                 expected_outputs = [ni.prev_output_handle for ni in step.step_inputs]
 
                 step_context.log.info(

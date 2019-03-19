@@ -51,15 +51,15 @@ class IntermediatesManager(six.with_metaclass(ABCMeta)):  # pylint: disable=no-i
         pass
 
     @abstractmethod
-    def has_value(self, step_output_handle):
+    def has_intermediate(self, context, step_output_handle):
         pass
 
-    def all_inputs_covered(self, step):
+    def all_inputs_covered(self, context, step):
         from .execution_plan.objects import ExecutionStep
 
         check.inst_param(step, 'step', ExecutionStep)
         for step_input in step.step_inputs:
-            if not self.has_value(step_input.prev_output_handle):
+            if not self.has_intermediate(context, step_input.prev_output_handle):
                 return False
         return True
 
@@ -76,7 +76,7 @@ class InMemoryIntermediatesManager(IntermediatesManager):
         check.inst_param(step_output_handle, 'step_output_handle', StepOutputHandle)
         self.values[step_output_handle] = value
 
-    def has_value(self, step_output_handle):
+    def has_intermediate(self, context, step_output_handle):
         check.inst_param(step_output_handle, 'step_output_handle', StepOutputHandle)
         return step_output_handle in self.values
 
@@ -92,7 +92,7 @@ class ObjectStoreIntermediatesManager(IntermediatesManager):
         check.inst_param(context, 'context', SystemPipelineExecutionContext)
         check.inst_param(runtime_type, 'runtime_type', RuntimeType)
         check.inst_param(step_output_handle, 'step_output_handle', StepOutputHandle)
-        check.invariant(self.has_value(step_output_handle))
+        check.invariant(self.has_intermediate(context, step_output_handle))
 
         return self._object_store.get_object(
             context=context,
@@ -104,16 +104,17 @@ class ObjectStoreIntermediatesManager(IntermediatesManager):
         check.inst_param(context, 'context', SystemPipelineExecutionContext)
         check.inst_param(runtime_type, 'runtime_type', RuntimeType)
         check.inst_param(step_output_handle, 'step_output_handle', StepOutputHandle)
-        check.invariant(not self.has_value(step_output_handle))
+        check.invariant(not self.has_intermediate(context, step_output_handle))
 
         return self._object_store.set_object(
             obj=value,
-            context=None,
-            runtime_type=None,
+            context=context,
+            runtime_type=runtime_type,
             paths=self._get_path_comps(step_output_handle),
         )
 
-    def has_value(self, step_output_handle):
-        return self._object_store.has_object(
-            _cxt=None, paths=self._get_path_comps(step_output_handle)
-        )
+    def has_intermediate(self, context, step_output_handle):
+        check.inst_param(context, 'context', SystemPipelineExecutionContext)
+        check.inst_param(step_output_handle, 'step_output_handle', StepOutputHandle)
+
+        return self._object_store.has_object(context, self._get_path_comps(step_output_handle))
