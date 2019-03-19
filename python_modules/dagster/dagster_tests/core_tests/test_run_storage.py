@@ -79,7 +79,7 @@ def test_filesystem_persist_one_run():
         do_test_single_write_read(run_storage)
 
 
-def test_inmemory_persist_one_run():
+def test_in_memory_persist_one_run():
     do_test_single_write_read(InMemoryRunStorage())
 
 

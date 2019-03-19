@@ -175,7 +175,7 @@ def test_default_filesystem_run_storage():
     assert os.path.isdir(run_dir)
 
 
-def test_override_with_inmem_storage():
+def test_override_with_in_memory_storage():
     cli_args = {
         'repository_yaml': script_relative_path('repository_file.yml'),
         'pipeline_name': ('foo',),
@@ -184,7 +184,7 @@ def test_override_with_inmem_storage():
         'fn_name': None,
     }
     result = execute_execute_command(
-        env=[script_relative_path('inmem_env.yml')], cli_args=cli_args, print_fn=no_print
+        env=[script_relative_path('in_memory_env.yml')], cli_args=cli_args, print_fn=no_print
     )
     assert result.success
 

@@ -44,7 +44,7 @@ from .events import construct_event_logger
 from .execution_plan.create import create_execution_plan_core
 
 from .execution_plan.intermediates_manager import (
-    FileSystemIntermediateManager,
+    FileSystemIntermediatesManager,
     InMemoryIntermediatesManager,
     IntermediatesManager,
 )
@@ -376,16 +376,16 @@ def construct_run_storage(run_config, environment_config):
         elif run_config.storage_mode == RunStorageMode.IN_MEMORY:
             return InMemoryRunStorage()
         else:
-            check.failed('Unexpectd enum {}'.format(run_config.storage_mode))
-    elif environment_config.storage.name == 'filesystem':
+            check.failed('Unexpected enum {}'.format(run_config.storage_mode))
+    elif environment_config.storage.storage_mode == 'filesystem':
         return FileSystemRunStorage()
-    elif environment_config.storage.name == 'inmem':
+    elif environment_config.storage.storage_mode == 'in_memory':
         return InMemoryRunStorage()
-    elif environment_config.storage.name is None:
+    elif environment_config.storage.storage_mode is None:
         return InMemoryRunStorage()
     else:
         raise DagsterInvariantViolationError(
-            'Invalid storage specified {}'.format(environment_config.storage.name)
+            'Invalid storage specified {}'.format(environment_config.storage.storage_mode)
         )
 
 
@@ -396,21 +396,21 @@ def construct_intermediates_manager(run_config, init_context, environment_config
 
     if run_config.storage_mode:
         if run_config.storage_mode == RunStorageMode.FILESYSTEM:
-            return FileSystemIntermediateManager(init_context.run_id)
+            return FileSystemIntermediatesManager(init_context.run_id)
         elif run_config.storage_mode == RunStorageMode.IN_MEMORY:
             return InMemoryIntermediatesManager()
         else:
-            check.failed('Unexpectd enum {}'.format(run_config.storage_mode))
-    elif environment_config.storage.name == 'filesystem':
+            check.failed('Unexpected enum {}'.format(run_config.storage_mode))
+    elif environment_config.storage.storage_mode == 'filesystem':
 
-        return FileSystemIntermediateManager(init_context.run_id)
-    elif environment_config.storage.name == 'inmem':
+        return FileSystemIntermediatesManager(init_context.run_id)
+    elif environment_config.storage.storage_mode == 'in_memory':
         return InMemoryIntermediatesManager()
-    elif environment_config.storage.name is None:
+    elif environment_config.storage.storage_mode is None:
         return InMemoryIntermediatesManager()
     else:
         raise DagsterInvariantViolationError(
-            'Invalid storage specified {}'.format(environment_config.storage.name)
+            'Invalid storage specified {}'.format(environment_config.storage.storage_mode)
         )
 
 

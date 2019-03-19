@@ -40,7 +40,7 @@ def make_new_run_id():
 
 
 class RunConfig(
-    namedtuple('_RunConfig', ('run_id tags event_callback loggers executor_config storage_mode'))
+    namedtuple('_RunConfig', 'run_id tags event_callback loggers executor_config storage_mode')
 ):
     def __new__(
         cls,

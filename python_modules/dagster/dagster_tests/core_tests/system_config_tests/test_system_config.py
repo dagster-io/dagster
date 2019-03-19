@@ -757,12 +757,12 @@ def test_files_default_config():
     assert 'storage' not in config_value
 
 
-def test_storage_inmem_config():
+def test_storage_in_memory_config():
     pipeline_def = PipelineDefinition(name='pipeline', solids=[])
 
     env_type = pipeline_def.environment_type
     assert 'storage' in env_type.fields
 
-    config_value = throwing_evaluate_config_value(env_type, {'storage': {'inmem': {}}})
+    config_value = throwing_evaluate_config_value(env_type, {'storage': {'in_memory': {}}})
 
-    assert config_value['storage'] == {'inmem': {}}
+    assert config_value['storage'] == {'in_memory': {}}

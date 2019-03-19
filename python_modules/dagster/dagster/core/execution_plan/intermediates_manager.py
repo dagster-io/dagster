@@ -7,6 +7,7 @@ import os
 import six
 
 from dagster import check
+from dagster import seven
 from dagster.utils import mkdir_p
 
 
@@ -79,13 +80,7 @@ class InMemoryIntermediatesManager(IntermediatesManager):
         return step_output_handle in self.values
 
 
-# TODO: This should go through persistence and serialization infrastructure
-# Fixing this requires getting the type information (serialization_strategy is
-# a property of runtime type) of the step output you are dealing with. As things
-# are structured now we construct the inputs before execution. The fix to this
-# will likely be to inject a different type of execution step that threads
-# the manager
-class FileSystemIntermediateManager(IntermediatesManager):
+class FileSystemIntermediatesManager(IntermediatesManager):
     def __init__(self, run_id):
         self._files = LocalTempFileStore(run_id)
 
@@ -119,19 +114,12 @@ def check_path_comps(path_comps):
 class LocalTempFileStore:
     def __init__(self, run_id):
         check.str_param(run_id, 'run_id')
-        self.root = os.path.join('/tmp', 'dagster', 'runs', run_id, 'files')
-        self._created = False
-
-    def ensure_root_exists(self):
-        if not self._created:
-            mkdir_p(self.root)
-
-        self._created = True
+        self.root = os.path.join(
+            seven.get_system_temp_directory(), 'dagster', 'runs', run_id, 'files'
+        )
 
     @contextmanager
     def writeable_binary_stream(self, *path_comps):
-        self.ensure_root_exists()
-
         path_list = check_path_comps(path_comps)
 
         target_dir = os.path.join(self.root, *path_list[:-1])
@@ -144,8 +132,6 @@ class LocalTempFileStore:
 
     @contextmanager
     def readable_binary_stream(self, *path_comps):
-        self.ensure_root_exists()
-
         path_list = check_path_comps(path_comps)
 
         target_path = os.path.join(self.root, *path_list)
@@ -153,8 +139,6 @@ class LocalTempFileStore:
             yield ff
 
     def has_file(self, *path_comps):
-        self.ensure_root_exists()
-
         path_list = check_path_comps(path_comps)
 
         target_path = os.path.join(self.root, *path_list)

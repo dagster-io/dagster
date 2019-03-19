@@ -82,9 +82,13 @@ class ExpectationsConfig(namedtuple('_ExpecationsConfig', 'evaluate')):
 
 class ExecutionConfig(namedtuple('_ExecutionConfig', '')):
     def __new__(cls):
-
         return super(ExecutionConfig, cls).__new__(cls)
 
 
-class StorageConfig(namedtuple('_FilesConfig', 'name config')):
-    pass
+class StorageConfig(namedtuple('_FilesConfig', 'storage_mode storage_config')):
+    def __new__(cls, storage_mode, storage_config):
+        return super(StorageConfig, cls).__new__(
+            cls,
+            storage_mode=check.opt_str_param(storage_mode, 'storage_mode'),
+            storage_config=check.opt_dict_param(storage_config, 'storage_config', key_type=str),
+        )
