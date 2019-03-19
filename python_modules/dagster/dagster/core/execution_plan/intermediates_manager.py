@@ -42,11 +42,11 @@ def write_pickle_file(path, value):
 
 class IntermediatesManager(six.with_metaclass(ABCMeta)):  # pylint: disable=no-init
     @abstractmethod
-    def get_value(self, step_output_handle):
+    def get_intermediate(self, step_output_handle):
         pass
 
     @abstractmethod
-    def set_value(self, step_output_handle, value):
+    def set_intermediate(self, step_output_handle, value):
         pass
 
     @abstractmethod
@@ -67,11 +67,11 @@ class InMemoryIntermediatesManager(IntermediatesManager):
     def __init__(self):
         self.values = {}
 
-    def get_value(self, step_output_handle):
+    def get_intermediate(self, step_output_handle):
         check.inst_param(step_output_handle, 'step_output_handle', StepOutputHandle)
         return self.values[step_output_handle]
 
-    def set_value(self, step_output_handle, value):
+    def set_intermediate(self, step_output_handle, value):
         check.inst_param(step_output_handle, 'step_output_handle', StepOutputHandle)
         self.values[step_output_handle] = value
 
@@ -87,14 +87,14 @@ class FileSystemIntermediatesManager(IntermediatesManager):
     def _get_path_comps(self, step_output_handle):
         return ['intermediates', step_output_handle.step_key, step_output_handle.output_name]
 
-    def get_value(self, step_output_handle):
+    def get_intermediate(self, step_output_handle):
         check.inst_param(step_output_handle, 'step_output_handle', StepOutputHandle)
         check.invariant(self.has_value(step_output_handle))
 
         with self._files.readable_binary_stream(*self._get_path_comps(step_output_handle)) as ff:
             return pickle.load(ff)
 
-    def set_value(self, step_output_handle, value):
+    def set_intermediate(self, step_output_handle, value):
         check.inst_param(step_output_handle, 'step_output_handle', StepOutputHandle)
         check.invariant(not self.has_value(step_output_handle))
 

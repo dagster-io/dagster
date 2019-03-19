@@ -63,7 +63,7 @@ def execute_step_out_of_process(step_context, step):
 def _create_input_values(step_input_meta_dict, manager):
     input_values = {}
     for step_input_name, prev_output_handle_meta in step_input_meta_dict.items():
-        input_value = manager.get_value(prev_output_handle_meta)
+        input_value = manager.get_intermediate(prev_output_handle_meta)
         input_values[step_input_name] = input_value
     return input_values
 

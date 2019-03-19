@@ -108,7 +108,7 @@ def _create_input_values(step, intermediates_manager):
     input_values = {}
     for step_input in step.step_inputs:
         prev_output_handle = step_input.prev_output_handle
-        input_value = intermediates_manager.get_value(prev_output_handle)
+        input_value = intermediates_manager.get_intermediate(prev_output_handle)
         input_values[step_input.name] = input_value
     return input_values
 
@@ -224,7 +224,7 @@ def _create_step_event(step_context, step_output_value, intermediates_manager):
             step=step, output_name=step_output_value.output_name
         )
 
-        intermediates_manager.set_value(step_output_handle, value)
+        intermediates_manager.set_intermediate(step_output_handle, value)
 
         return ExecutionStepEvent.step_output_event(
             step_context=step_context,

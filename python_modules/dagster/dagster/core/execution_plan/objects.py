@@ -49,7 +49,7 @@ class StepOutputData:
         return self._value_repr
 
     def get_value(self):
-        return self._intermediates_manager.get_value(self.step_output_handle)
+        return self._intermediates_manager.get_intermediate(self.step_output_handle)
 
 
 class StepFailureData(namedtuple('_StepFailureData', 'error_message error_cls_name stack')):
