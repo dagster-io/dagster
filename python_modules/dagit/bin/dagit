@@ -8,10 +8,15 @@ from watchdog.tricks import AutoRestartTrick
 
 # Build the dagit-cli command, omitting the --no-watch arg if present
 watch = True
-command = ["dagit-cli"]
+command = ['dagit-cli']
 for arg in sys.argv[1:]:
-    if arg == "--no-watch":
+    if arg == '--no-watch':
         watch = False
+    elif arg == '-q':
+        print(
+            'WARNING: Dagit will not exit after your query has completed. '
+            'Run `dagit-cli -q` if this is the behavior you are looking for.'
+        )
     else:
         command.append(arg)
 
@@ -33,12 +38,14 @@ if not watch:
 # Issue:
 # https://github.com/gorakhargosh/watchdog/issues/543
 
-handler = AutoRestartTrick(command=command,
-                           patterns=["*.py"],
-                           ignore_patterns=[],
-                           ignore_directories=[],
-                           stop_signal=signal.SIGINT,
-                           kill_after=0.5)
+handler = AutoRestartTrick(
+    command=command,
+    patterns=['*.py'],
+    ignore_patterns=[],
+    ignore_directories=[],
+    stop_signal=signal.SIGINT,
+    kill_after=0.5,
+)
 handler.start()
 
 print("Watching for file changes...")
