@@ -4,7 +4,7 @@ import {
   defaultDataIdFromObject
 } from "apollo-cache-inmemory";
 // this is a require cause otherwise it breaks
-const { __schema } = require("./schema.json");
+const { __schema } = require("./filteredSchema.json");
 
 const fragmentMatcher = new IntrospectionFragmentMatcher({
   introspectionQueryResultData: {
