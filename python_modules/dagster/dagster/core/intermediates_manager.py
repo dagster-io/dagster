@@ -79,8 +79,8 @@ class InMemoryIntermediatesManager(IntermediatesManager):
 
 
 class ObjectStoreIntermediatesManager(IntermediatesManager):
-    def __init__(self, run_id):
-        self._object_store = FileSystemObjectStore(run_id)
+    def __init__(self, object_store):
+        self._object_store = object_store
 
     def _get_path_comps(self, step_output_handle):
         return ['intermediates', step_output_handle.step_key, step_output_handle.output_name]

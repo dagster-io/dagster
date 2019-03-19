@@ -400,14 +400,14 @@ def construct_intermediates_manager(run_config, init_context, environment_config
 
     if run_config.storage_mode:
         if run_config.storage_mode == RunStorageMode.FILESYSTEM:
-            return ObjectStoreIntermediatesManager(init_context.run_id)
+            return ObjectStoreIntermediatesManager(FileSystemObjectStore(init_context.run_id))
         elif run_config.storage_mode == RunStorageMode.IN_MEMORY:
             return InMemoryIntermediatesManager()
         else:
             check.failed('Unexpected enum {}'.format(run_config.storage_mode))
     elif environment_config.storage.storage_mode == 'filesystem':
 
-        return ObjectStoreIntermediatesManager(init_context.run_id)
+        return ObjectStoreIntermediatesManager(FileSystemObjectStore(init_context.run_id))
     elif environment_config.storage.storage_mode == 'in_memory':
         return InMemoryIntermediatesManager()
     elif environment_config.storage.storage_mode is None:
