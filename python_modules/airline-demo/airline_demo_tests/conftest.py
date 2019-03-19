@@ -39,6 +39,11 @@ except NameError:
     FileNotFoundError = IOError
 
 
+# TODO: Figure out a good way to inject run ids here -- the issue is that different pipelines have
+# implicit dependencies on each other. Make those explicit! (Probably lose the "download" pipeline/
+# collapse it into the ingest pipeline)
+
+
 @pytest.fixture(scope='module')
 def airflow_home():
     '''Check that AIRFLOW_HOME is set, and return it'''
