@@ -8,12 +8,15 @@ from __future__ import print_function
 import ast
 import errno
 import json
+import os
 import sys
 
 from contextlib import contextmanager
+from copy import deepcopy
 from textwrap import TextWrapper
 
 from airflow.exceptions import AirflowException
+from airflow.hooks.S3_hook import S3Hook
 from airflow.operators.docker_operator import DockerOperator
 from airflow.plugins_manager import AirflowPlugin
 from airflow.utils.file import TemporaryDirectory
@@ -26,7 +29,7 @@ else:
     from StringIO import StringIO  # pylint:disable=import-error
 
 if sys.version_info.major >= 3:
-    from json.decoder import JSONDecodeError
+    from json.decoder import JSONDecodeError  # pylint:disable=ungrouped-imports
 else:
     JSONDecodeError = ValueError
 
@@ -41,6 +44,8 @@ DAGSTER_OPERATOR_COMMAND_TEMPLATE = '''-q '
 '''.strip(
     '\n'
 )
+
+DOCKER_TEMPDIR = '/tmp/results'
 
 QUERY_TEMPLATE = '''
 mutation(
@@ -111,78 +116,21 @@ mutation(
     '\n'
 )
 
-# FIXME need to support comprehensive error handling here
-
-# ... on PipelineConfigValidationInvalid {
-#     pipeline {
-#         name
-#     }
-#     errors {
-#         message
-#         path
-#         stack {
-#         entries {
-#             __typename
-#             ... on EvaluationStackPathEntry {
-#             field {
-#                 name
-#                 description
-#                 configType {
-#                 key
-#                 name
-#                 description
-#                 }
-#                 defaultValue
-#                 isOptional
-#             }
-#             }
-#         }
-#         }
-#         reason
-#     }
-#     }
-#     ... on StartSubplanExecutionInvalidStepsError {
-#     invalidStepKeys
-#     }
-#     ... on StartSubplanExecutionInvalidOutputError {
-#     step {
-#         key
-#         inputs {
-#         name
-#         type {
-#             key
-#             name
-#         }
-#         }
-#         outputs {
-#         name
-#         type {
-#             key
-#             name
-#         }
-#         }
-#         solid {
-#         name
-#         definition {
-#             name
-#         }
-#         inputs {
-#             solid {
-#             name
-#             }
-#             definition {
-#             name
-#             }
-#         }
-#         }
-#         kind
-#     }
-#     }
-# }
-# }
-
+# TODO need better error handling for PythonError, StartSubplanExecutionInvalidStepsError,
+# StartSubplanExecutionInvalidOutputError, ...?
 
 LINE_LENGTH = 100
+
+
+def mkdir_p(path):
+    try:
+        os.makedirs(path)
+    except OSError as exc:  # Python >2.5
+        if exc.errno == errno.EEXIST and os.path.isdir(path):
+            pass
+        else:
+            raise
+
 
 # We include this directly to avoid taking the dependency on dagster
 class IndentingBlockPrinter(object):
@@ -259,6 +207,43 @@ class IndentingBlockPrinter(object):
         return self.buffer.getvalue()
 
 
+# not using abc because of six
+class IntermediateValueManager(object):
+    def init(self):
+        raise NotImplementedError()
+
+    def get_file(self, key, file_obj):
+        raise NotImplementedError()
+
+    def put_file(self, key, file_obj):
+        raise NotImplementedError()
+
+
+class S3IntermediateValueManager(IntermediateValueManager):
+    def __init__(self, s3_hook, s3_bucket_name):
+        self.s3_hook = s3_hook
+        self.s3_bucket_name = s3_bucket_name
+
+    def init(self):
+        assert self.s3_hook.check_for_bucket(self.s3_bucket_name), (
+            'If persist_intermediate_results_to_s3 is set, you must also set a valid '
+            's3_bucket_name: could not find bucket \'{bucket_name}\'.'.format(
+                bucket_name=self.s3_bucket_name
+            )
+        )
+
+    def get_file(self, key, file_obj):
+        return self.s3_hook.get_conn().download_fileobj(
+            Bucket=self.s3_bucket_name, Key=key, Fileobj=file_obj
+        )
+
+    def put_file(self, key, file_obj):
+        return self.s3_hook.get_conn().upload_fileobj(
+            Bucket=self.s3_bucket_name, Key=key, Fileobj=file_obj
+        )
+
+
+# pylint: disable=len-as-condition
 class ModifiedDockerOperator(DockerOperator):
     """ModifiedDockerOperator supports host temporary directories on OSX.
 
@@ -366,6 +351,8 @@ class DagsterOperator(ModifiedDockerOperator):
         docker_from_env=True,
         s3_conn_id=None,
         persist_intermediate_results_to_s3=False,
+        s3_bucket_name=None,
+        host_tmp_dir=None,
         *args,
         **kwargs
     ):
@@ -377,8 +364,22 @@ class DagsterOperator(ModifiedDockerOperator):
         self.docker_conn_id_set = kwargs.get('docker_conn_id') is not None
         self.s3_conn_id = s3_conn_id
         self.persist_intermediate_results_to_s3 = persist_intermediate_results_to_s3
-
+        self.s3_bucket_name = s3_bucket_name
+        self.intermediate_value_manager = None
         self._run_id = None
+        self._s3_hook = None
+
+        if self.persist_intermediate_results_to_s3:
+            assert isinstance(self.s3_bucket_name, STRING_TYPES), (
+                'You must set a valid s3_bucket_name if persist_intermediate_results_to_s3 is set. '
+                'Got: {value} of type {type_}.'.format(
+                    value=self.s3_bucket_name, type_=type(self.s3_bucket_name)
+                )
+            )
+            self.intermediate_value_manager = S3IntermediateValueManager(
+                self.s3_hook, self.s3_bucket_name
+            )
+            self.intermediate_value_manager.init()
 
         # We don't use dagster.check here to avoid taking the dependency.
         for attr_ in ['config', 'pipeline_name']:
@@ -389,10 +390,21 @@ class DagsterOperator(ModifiedDockerOperator):
                 )
             )
 
-        assert isinstance(self._step_executions, dict), (
-            'Bad value for DagsterOperator step_executions: expected a dict and got {value} of '
-            'type {type_}'.format(value=self._step_executions, type_=type(self._step_executions))
-        )
+        if self._step_executions is not None:
+            assert isinstance(self._step_executions, list), (
+                'Bad value for DagsterOperator step_executions: expected a list of dicts and got '
+                '{value} of type {type_}'.format(
+                    value=self._step_executions, type_=type(self._step_executions)
+                )
+            )
+
+            for index, step_execution in enumerate(self._step_executions):
+                assert isinstance(step_execution, dict), (
+                    'Bad value for DagsterOperator step_executions: expected a list of dicts and '
+                    'got {value} of type {type_} at index {index}'.format(
+                        value=step_execution, type_=type(step_execution), index=index
+                    )
+                )
 
         # These shenanigans are so we can override DockerOperator.get_hook in order to configure
         # a docker client using docker.from_env, rather than messing with the logic of
@@ -400,11 +412,20 @@ class DagsterOperator(ModifiedDockerOperator):
         if not self.docker_conn_id_set:
             try:
                 from_env().version()
-            except:
+            except:  # pylint: disable=bare-except
                 pass
             else:
                 kwargs['docker_conn_id'] = True
 
+        assert isinstance(host_tmp_dir, STRING_TYPES), 'Must set a host_tmp_dir for DagsterOperator'
+        # We do this because log lines won't necessarily be emitted in order (!) -- so we can't
+        # just check the last log line to see if it's JSON.
+        kwargs['xcom_all'] = True
+        kwargs['host_tmp_dir'] = host_tmp_dir
+
+        if 'network_mode' not in kwargs:
+            # FIXME: this is not the best test to see if we're running on Docker for Mac
+            kwargs['network_mode'] = 'host' if sys.platform != 'darwin' else 'bridge'
         super(DagsterOperator, self).__init__(*args, **kwargs)
 
     @property
@@ -415,56 +436,101 @@ class DagsterOperator(ModifiedDockerOperator):
             return self._run_id
 
     @property
-    def step_executions(self):
+    def safe_run_id(self):
+        '''Run_id with colons escaped so we can use it to name Docker volumes.'''
+        return self.run_id.replace('_', '__').replace(':', '_')
+
+    @property
+    def s3_hook(self):
+        if self._s3_hook:
+            return self._s3_hook
+
+        if self.s3_conn_id:
+            self._s3_hook = S3Hook(aws_conn_id=self.s3_conn_id)
+        else:
+            self._s3_hook = S3Hook()
+
+        return self._s3_hook
+
+    @property
+    def run_id_prefix(self):
+        return (self.safe_run_id + '_') if self.safe_run_id else ''
+
+    def get_step_executions(self, tmp=DOCKER_TEMPDIR, sep='/'):
         if not self._step_executions:
+            return {}
+
+        res = deepcopy(self._step_executions)
+        for step_execution in res:
+            for input_ in step_execution['inputs']:
+                input_['key'] = input_['key'].format(
+                    tmp=tmp, sep=sep, run_id_prefix=self.run_id_prefix
+                )
+            for output in step_execution['outputs']:
+                output['key'] = output['key'].format(
+                    tmp=tmp, sep=sep, run_id_prefix=self.run_id_prefix
+                )
+        return res
+
+    @property
+    def step_executions_query_fragment(self):  # pylint: disable=too-many-locals
+        step_executions = self.get_step_executions()
+
+        if not step_executions:
             return ''
 
-        inputs = self._step_executions['inputs']
-        n_inputs = len(inputs)
-        outputs = self._step_executions['outputs']
-        n_outputs = len(outputs)
-        step_key = self._step_executions['step_key']
+        n_step_executions = len(step_executions)
+
         printer = IndentingBlockPrinter(indent_level=2)
 
         printer.line('[')
         with printer.with_indent():
-            printer.line('{{')
-            with printer.with_indent():
-                printer.line('stepKey: "{step_key}"'.format(step_key=step_key))
-                printer.line('marshalledInputs: [')
-                with printer.with_indent():
-                    for i, step_input in enumerate(inputs):
-                        input_name = step_input['input_name']
-                        key = step_input['key']
+            for idx, step_execution in enumerate(step_executions):
+                inputs = step_execution['inputs']
+                n_inputs = len(inputs)
+                outputs = step_execution['outputs']
+                n_outputs = len(outputs)
+                step_key = step_execution['step_key']
 
-                        printer.line('{{')
-                        with printer.with_indent():
-                            printer.line('inputName: "{input_name}",'.format(input_name=input_name))
-                            printer.line('key: "{key}"'.format(key=key))
-                        printer.line('}}}}{comma}'.format(comma=',' if i < n_inputs - 1 else ''))
-                printer.line(']')
-                printer.line('marshalledOutputs: ')
+                printer.line('{')
                 with printer.with_indent():
-                    for i, step_output in enumerate(outputs):
-                        output_name = step_output['output_name']
-                        key = step_output['key']
-                        printer.line('{{')
-                        with printer.with_indent():
-                            printer.line(
-                                'outputName: "{output_name}",'.format(output_name=output_name)
-                            )
-                            printer.line('key: "{key}"'.format(key=key))
-                        printer.line('}}}}{comma}'.format(comma=',' if i < n_outputs - 1 else ''))
-            printer.line('}}')
+                    printer.line('stepKey: "{step_key}"'.format(step_key=step_key))
+                    printer.line('marshalledInputs: [')
+                    with printer.with_indent():
+                        for i, step_input in enumerate(inputs):
+                            input_name = step_input['input_name']
+                            key = step_input['key']
+
+                            printer.line('{')
+                            with printer.with_indent():
+                                printer.line(
+                                    'inputName: "{input_name}",'.format(input_name=input_name)
+                                )
+                                printer.line('key: "{key}"'.format(key=key))
+                            printer.line('}}{comma}'.format(comma=',' if i < n_inputs - 1 else ''))
+                    printer.line(']')
+                    printer.line('marshalledOutputs: ')
+                    with printer.with_indent():
+                        for i, step_output in enumerate(outputs):
+                            output_name = step_output['output_name']
+                            key = step_output['key']
+                            printer.line('{')
+                            with printer.with_indent():
+                                printer.line(
+                                    'outputName: "{output_name}",'.format(output_name=output_name)
+                                )
+                                printer.line('key: "{key}"'.format(key=key))
+                            printer.line('}}{comma}'.format(comma=',' if i < n_outputs - 1 else ''))
+                printer.line('}}{comma}'.format(comma=',' if idx < n_step_executions - 1 else ''))
         printer.line(']')
-        return printer.read().format(run_id_prefix=self.run_id)
+        return printer.read()
 
     @property
     def query(self):
         return QUERY_TEMPLATE.format(
             config=self.config.strip('\n'),
             run_id=self.run_id,
-            step_executions=self.step_executions,
+            step_executions=self.step_executions_query_fragment,
             pipeline_name=self.pipeline_name,
         )
 
@@ -490,18 +556,74 @@ class DagsterOperator(ModifiedDockerOperator):
     @contextmanager
     def get_host_tmp_dir(self):
         # FIXME: need to figure out what to do here. We probably want to provide some knobs to
-        # govern whether intermediate result materializations get cleaned up or not.
-        yield self.host_tmp_dir
+        # govern whether intermediate result materializations get cleaned up or not. We could do
+        # this by adding dummy start and end nodes to the scaffolded DAG that act as a context
+        # manager for the run. This won't work when we're running on more than one worker though
+        # -- here we'll need some kind of hook. S3 by default.
+        mkdir_p(self.host_tmp_dir.format(safe_run_id=self.safe_run_id))
+        yield self.host_tmp_dir.format(safe_run_id=self.safe_run_id)
 
     def execute(self, context):
         if 'dag_run' in context and context['dag_run'] is not None:
             self._run_id = context['dag_run'].run_id
         try:
-            # FIXME implement intermediate result persistence to S3
-
             self.log.debug('Executing with query: {query}'.format(query=self.query))
+
+            with self.get_host_tmp_dir() as tmp:
+                step_executions = self.get_step_executions(tmp=tmp, sep=os.sep)
+
+            if self.persist_intermediate_results_to_s3:
+                # Some inputs may be coming from steps executing in this invocation
+                seen = set()
+                for step_execution in step_executions:
+                    self.log.info(
+                        'Processing step executions for step: {key}'.format(
+                            key=step_execution['step_key']
+                        )
+                    )
+                    for output in step_execution['outputs']:
+                        seen.add(os.path.basename(output['key']))
+
+                for step_execution in step_executions:
+                    for input_ in step_execution['inputs']:
+                        source_key = os.path.basename(input_['key'])
+                        if source_key in seen:
+                            self.log.info('Skipping input: {key}'.format(key=source_key))
+                            continue
+
+                        # Questionable
+                        if os.path.isfile(input_['key']):
+                            self.log.info(
+                                'Skipping input: {key} (already present)'.format(key=source_key)
+                            )
+                            continue
+
+                        self.log.info('Downloading key: {key}'.format(key=source_key))
+                        with open(input_['key'], 'wb') as file_obj:
+                            self.intermediate_value_manager.get_file(
+                                key=source_key, file_obj=file_obj
+                            )
+
             raw_res = super(DagsterOperator, self).execute(context)
-            res = json.loads(raw_res)
+            self.log.info('Finished executing container.')
+            res = None
+
+            # FIXME
+            # Unfortunately, log lines don't necessarily come back in order...
+            # This is error-prone, if something else logs JSON
+            lines = list(reversed(raw_res.decode('utf-8').split('\n')))
+            last_line = lines[0]
+
+            for line in lines:
+                try:
+                    res = json.loads(line)
+                    break
+                # If we don't get a GraphQL response, check the next line
+                except JSONDecodeError:
+                    continue
+
+            if res is None:
+                raise AirflowException('Unhandled error type. Response: {}'.format(last_line))
 
             if res.get('errors'):
                 raise AirflowException(
@@ -517,6 +639,7 @@ class DagsterOperator(ModifiedDockerOperator):
                 )
 
             if res_type == 'StartSubplanExecutionSuccess':
+                self.log.info('Subplan execution succeeded.')
                 if res['data']['startSubplanExecution']['hasFailures']:
                     errors = [
                         step['errorMessage']
@@ -526,12 +649,23 @@ class DagsterOperator(ModifiedDockerOperator):
                     raise AirflowException(
                         'Subplan execution failed:\n{errors}'.format(errors='\n'.join(errors))
                     )
+
+                for step_execution in step_executions:
+                    for output in step_execution['outputs']:
+                        assert os.path.isfile(output['key'])
+
+                if self.persist_intermediate_results_to_s3:
+                    for step_execution in step_executions:
+                        for output in step_execution['outputs']:
+                            dest_key = os.path.basename(output['key'])
+                            self.log.info('Uploading key: {key}'.format(key=dest_key))
+                            with open(output['key'], 'rb') as file_obj:
+                                self.intermediate_value_manager.put_file(
+                                    key=dest_key, file_obj=file_obj
+                                )
+
                 return res
 
-            raise AirflowException('Unhandled error type. Response: {}'.format(res))
-
-        except JSONDecodeError:  # This is the bad case where we don't get a GraphQL response
-            raise AirflowException(raw_res)
         finally:
             self._run_id = None
 

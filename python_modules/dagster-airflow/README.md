@@ -79,7 +79,7 @@ you'll need to push your Docker image to a Docker registry so that remote instan
 pull the image.
 
 For most production applications, you'll probably want to use a private Docker registry, rather
-than the public DockerHub, to store your containerized pipelines. =
+than the public DockerHub, to store your containerized pipelines.
 
 We'll see later on how to set dagster-airflow up to pull images from the registry of your choice.
 
