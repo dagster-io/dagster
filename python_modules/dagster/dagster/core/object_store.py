@@ -4,6 +4,8 @@ import pickle
 from dagster import check, seven
 from dagster.utils import mkdir_p
 
+from .execution_context import SystemPipelineExecutionContext
+
 
 class ObjectStore:
     pass

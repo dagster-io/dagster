@@ -6,6 +6,7 @@ import six
 
 from dagster import check
 
+from .execution_context import SystemPipelineExecutionContext
 
 from .object_store import ObjectStore
 
@@ -41,7 +42,7 @@ def write_pickle_file(path, value):
 
 class IntermediatesManager(six.with_metaclass(ABCMeta)):  # pylint: disable=no-init
     @abstractmethod
-    def get_intermediate(self, step_output_handle):
+    def get_intermediate(self, context, runtime_type, step_output_handle):
         pass
 
     @abstractmethod
@@ -66,7 +67,7 @@ class InMemoryIntermediatesManager(IntermediatesManager):
     def __init__(self):
         self.values = {}
 
-    def get_intermediate(self, step_output_handle):
+    def get_intermediate(self, _context, _runtime_type, step_output_handle):
         check.inst_param(step_output_handle, 'step_output_handle', StepOutputHandle)
         return self.values[step_output_handle]
 
@@ -86,12 +87,16 @@ class ObjectStoreIntermediatesManager(IntermediatesManager):
     def _get_path_comps(self, step_output_handle):
         return ['intermediates', step_output_handle.step_key, step_output_handle.output_name]
 
-    def get_intermediate(self, step_output_handle):
+    def get_intermediate(self, context, runtime_type, step_output_handle):
+        from .types.runtime import RuntimeType
+
+        check.inst_param(context, 'context', SystemPipelineExecutionContext)
+        check.inst_param(runtime_type, 'runtime_type', RuntimeType)
         check.inst_param(step_output_handle, 'step_output_handle', StepOutputHandle)
         check.invariant(self.has_value(step_output_handle))
 
         return self._object_store.get_object(
-            _cxt=None, _runtime_type=None, paths=self._get_path_comps(step_output_handle)
+            _cxt=context, _runtime_type=runtime_type, paths=self._get_path_comps(step_output_handle)
         )
 
     def set_intermediate(self, step_output_handle, value):
