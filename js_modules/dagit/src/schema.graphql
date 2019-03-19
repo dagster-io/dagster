@@ -6,22 +6,7 @@ type CompositeConfigType implements ConfigType {
   isNullable: Boolean!
   isList: Boolean!
   isSelector: Boolean!
-
-  """
-  
-  True if the system defines it and it is the same type across pipelines.
-  Examples include "Int" and "String."
-  """
   isBuiltin: Boolean!
-
-  """
-  
-  Dagster generates types for base elements of the config system (e.g. the solids and
-  context field of the base environment). These types are always present
-  and are typically not relevant to an end user. This flag allows tool authors to
-  filter out those types by default.
-  
-  """
   isSystemGenerated: Boolean!
   fields: [ConfigTypeField!]!
 }
@@ -34,22 +19,7 @@ interface ConfigType {
   isNullable: Boolean!
   isList: Boolean!
   isSelector: Boolean!
-
-  """
-  
-  True if the system defines it and it is the same type across pipelines.
-  Examples include "Int" and "String."
-  """
   isBuiltin: Boolean!
-
-  """
-  
-  Dagster generates types for base elements of the config system (e.g. the solids and
-  context field of the base environment). These types are always present
-  and are typically not relevant to an end user. This flag allows tool authors to
-  filter out those types by default.
-  
-  """
   isSystemGenerated: Boolean!
 }
 
@@ -80,22 +50,7 @@ type EnumConfigType implements ConfigType {
   isNullable: Boolean!
   isList: Boolean!
   isSelector: Boolean!
-
-  """
-  
-  True if the system defines it and it is the same type across pipelines.
-  Examples include "Int" and "String."
-  """
   isBuiltin: Boolean!
-
-  """
-  
-  Dagster generates types for base elements of the config system (e.g. the solids and
-  context field of the base environment). These types are always present
-  and are typically not relevant to an end user. This flag allows tool authors to
-  filter out those types by default.
-  
-  """
   isSystemGenerated: Boolean!
   values: [EnumConfigValue!]!
 }
@@ -143,10 +98,6 @@ type ExecutionPlan {
 
 union ExecutionPlanResult = ExecutionPlan | PipelineConfigValidationInvalid | PipelineNotFoundError
 
-"""
-This type represents the fields necessary to identify a
-        pipeline or pipeline subset.
-"""
 input ExecutionSelector {
   name: String!
   solidSubset: [String!]
@@ -247,22 +198,7 @@ type ListConfigType implements ConfigType & WrappingConfigType {
   isNullable: Boolean!
   isList: Boolean!
   isSelector: Boolean!
-
-  """
-  
-  True if the system defines it and it is the same type across pipelines.
-  Examples include "Int" and "String."
-  """
   isBuiltin: Boolean!
-
-  """
-  
-  Dagster generates types for base elements of the config system (e.g. the solids and
-  context field of the base environment). These types are always present
-  and are typically not relevant to an end user. This flag allows tool authors to
-  filter out those types by default.
-  
-  """
   isSystemGenerated: Boolean!
   ofType: ConfigType!
 }
@@ -341,22 +277,7 @@ type NullableConfigType implements ConfigType & WrappingConfigType {
   isNullable: Boolean!
   isList: Boolean!
   isSelector: Boolean!
-
-  """
-  
-  True if the system defines it and it is the same type across pipelines.
-  Examples include "Int" and "String."
-  """
   isBuiltin: Boolean!
-
-  """
-  
-  Dagster generates types for base elements of the config system (e.g. the solids and
-  context field of the base environment). These types are always present
-  and are typically not relevant to an end user. This flag allows tool authors to
-  filter out those types by default.
-  
-  """
   isSystemGenerated: Boolean!
   ofType: ConfigType!
 }
@@ -408,11 +329,6 @@ type Pipeline {
   runs: [PipelineRun!]!
 }
 
-"""
-This type is used when passing in a configuration object
-        for pipeline configuration. This is any-typed in the GraphQL type system,
-        but must conform to the constraints of the dagster config type system
-"""
 scalar PipelineConfig
 
 interface PipelineConfigValidationError {
@@ -499,7 +415,6 @@ type PipelineRunLogsSubscriptionPayload {
   messages: [PipelineRunEvent!]!
 }
 
-"""An enumeration."""
 enum PipelineRunStatus {
   NOT_STARTED
   STARTED
@@ -554,22 +469,7 @@ type RegularConfigType implements ConfigType {
   isNullable: Boolean!
   isList: Boolean!
   isSelector: Boolean!
-
-  """
-  
-  True if the system defines it and it is the same type across pipelines.
-  Examples include "Int" and "String."
-  """
   isBuiltin: Boolean!
-
-  """
-  
-  Dagster generates types for base elements of the config system (e.g. the solids and
-  context field of the base environment). These types are always present
-  and are typically not relevant to an end user. This flag allows tool authors to
-  filter out those types by default.
-  
-  """
   isSystemGenerated: Boolean!
 }
 
@@ -704,35 +604,12 @@ type StepFailureEvent implements StepEvent {
 }
 
 enum StepKind {
-  """This is the user-defined transform step"""
   TRANSFORM
-
-  """Expectation defined on an input"""
   INPUT_EXPECTATION
-
-  """Expectation defined on an output"""
   OUTPUT_EXPECTATION
-
-  """
-  Sometimes we fan out compute on identical values (e.g. multiple expectations
-  in parallel). We synthesize these in a join step to consolidate to a single
-  output that the next computation can depend on.
-  """
   JOIN
-
-  """
-  This is a special system-defined step to serialize an intermediate value if the pipeline is configured to do that.
-  """
   SERIALIZE
-
-  """
-  Special system-defined step to represent an input specified in the environment
-  """
   INPUT_THUNK
-
-  """
-  Special system-defined step to represent an output materialization specified in the environment
-  """
   MATERIALIZATION_THUNK
   UNMARSHAL_INPUT
   MARSHAL_OUTPUT

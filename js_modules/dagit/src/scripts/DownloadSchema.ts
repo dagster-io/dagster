@@ -3,7 +3,7 @@ import { getIntrospectionQuery, buildClientSchema, printSchema } from "graphql";
 import { writeFileSync } from "fs";
 
 const result = execSync(
-  `dagit --no-watch -q '${getIntrospectionQuery()}'`
+  `dagit --no-watch -q '${getIntrospectionQuery({ descriptions: false })}'`
 ).toString();
 
 const schemaJson = JSON.parse(result).data;
