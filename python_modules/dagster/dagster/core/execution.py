@@ -312,7 +312,10 @@ def _ensure_gen(thing_or_gen):
 
 
 @contextmanager
-def with_maybe_gen(thing_or_gen):
+def as_ensured_single_gen(thing_or_gen):
+    '''Wraps the output of a user provided function that may yield or return a value and
+    returns a generator that asserts it only yields a single value.
+    '''
     gen = _ensure_gen(thing_or_gen)
 
     try:
@@ -367,7 +370,7 @@ def yield_pipeline_execution_context(pipeline_def, environment_dict, run_config)
         )
     )
 
-    with with_maybe_gen(ec_or_gen) as execution_context:
+    with as_ensured_single_gen(ec_or_gen) as execution_context:
         check.inst(execution_context, ExecutionContext)
 
         with _create_resources(
@@ -448,7 +451,7 @@ def _create_resources(pipeline_def, context_def, environment, execution_context,
                 pipeline_def, context_def, resource_name, environment, run_id
             )
 
-            resource_obj = stack.enter_context(with_maybe_gen(resource_obj_or_gen))
+            resource_obj = stack.enter_context(as_ensured_single_gen(resource_obj_or_gen))
 
             resources[resource_name] = resource_obj
 
