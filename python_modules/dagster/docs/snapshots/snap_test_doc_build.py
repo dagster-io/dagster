@@ -573,12 +573,8 @@ snapshots['test_build_all_docs 4'] = '''
 </li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="apidocs/execution.html#dagster.PipelineExecutionResult.context">context (dagster.PipelineExecutionResult attribute)</a>
-
-      <ul>
-        <li><a href="apidocs/execution.html#dagster.SolidExecutionResult.context">(dagster.SolidExecutionResult attribute)</a>
+      <li><a href="apidocs/execution.html#dagster.SolidExecutionResult.context">context (dagster.SolidExecutionResult attribute)</a>
 </li>
-      </ul></li>
       <li><a href="apidocs/definitions.html#dagster.PipelineDefinition.context_definitions">context_definitions (dagster.PipelineDefinition attribute)</a>
 </li>
       <li><a href="apidocs/definitions.html#dagster.PipelineContextDefinition.context_fn">context_fn (dagster.PipelineContextDefinition attribute)</a>
@@ -795,14 +791,12 @@ snapshots['test_build_all_docs 4'] = '''
 </li>
       <li><a href="apidocs/types.html#dagster.Path">Path (in module dagster)</a>
 </li>
-      <li><a href="apidocs/execution.html#dagster.PipelineExecutionResult.pipeline">pipeline (dagster.PipelineExecutionResult attribute)</a>
-</li>
       <li><a href="apidocs/definitions.html#dagster.RepositoryDefinition.pipeline_dict">pipeline_dict (dagster.RepositoryDefinition attribute)</a>
+</li>
+      <li><a href="apidocs/errors.html#dagster.PipelineConfigEvaluationError">PipelineConfigEvaluationError</a>
 </li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="apidocs/errors.html#dagster.PipelineConfigEvaluationError">PipelineConfigEvaluationError</a>
-</li>
       <li><a href="apidocs/definitions.html#dagster.PipelineContextDefinition">PipelineContextDefinition (class in dagster)</a>
 </li>
       <li><a href="apidocs/definitions.html#dagster.PipelineDefinition">PipelineDefinition (class in dagster)</a>
@@ -829,8 +823,6 @@ snapshots['test_build_all_docs 4'] = '''
 </li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="apidocs/execution.html#dagster.PipelineExecutionResult.result_list">result_list (dagster.PipelineExecutionResult attribute)</a>
-</li>
       <li><a href="apidocs/decorators.html#dagster.MultipleResults.results">results (dagster.MultipleResults attribute)</a>
 </li>
       <li><a href="apidocs/execution.html#dagster.RunConfig">RunConfig (class in dagster)</a>
@@ -20592,24 +20584,6 @@ SystemPipelineExecutionContextCreationData although that seemed excessively verb
 <dt id="dagster.PipelineExecutionResult">
 <em class="property">class </em><code class="descclassname">dagster.</code><code class="descname">PipelineExecutionResult</code><span class="sig-paren">(</span><em>pipeline</em>, <em>run_id</em>, <em>step_event_list</em><span class="sig-paren">)</span><a class="headerlink" href="#dagster.PipelineExecutionResult" title="Permalink to this definition">¶</a></dt>
 <dd><p>Result of execution of the whole pipeline. Returned eg by <a class="reference internal" href="#dagster.execute_pipeline" title="dagster.execute_pipeline"><code class="xref py py-func docutils literal notranslate"><span class="pre">execute_pipeline()</span></code></a>.</p>
-<dl class="attribute">
-<dt id="dagster.PipelineExecutionResult.pipeline">
-<code class="descname">pipeline</code><a class="headerlink" href="#dagster.PipelineExecutionResult.pipeline" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>PipelineDefinition</em> – Pipeline that was executed</p>
-</dd></dl>
-
-<dl class="attribute">
-<dt id="dagster.PipelineExecutionResult.context">
-<code class="descname">context</code><a class="headerlink" href="#dagster.PipelineExecutionResult.context" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>ExecutionContext</em> – ExecutionContext of that particular Pipeline run.</p>
-</dd></dl>
-
-<dl class="attribute">
-<dt id="dagster.PipelineExecutionResult.result_list">
-<code class="descname">result_list</code><a class="headerlink" href="#dagster.PipelineExecutionResult.result_list" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>list[SolidExecutionResult]</em> – List of results for each pipeline solid.</p>
-</dd></dl>
-
 <dl class="method">
 <dt id="dagster.PipelineExecutionResult.result_for_solid">
 <code class="descname">result_for_solid</code><span class="sig-paren">(</span><em>name</em><span class="sig-paren">)</span><a class="headerlink" href="#dagster.PipelineExecutionResult.result_for_solid" title="Permalink to this definition">¶</a></dt>

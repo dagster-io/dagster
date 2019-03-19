@@ -8,11 +8,10 @@ from dagster.core.execution_context import (
     SystemPipelineExecutionContext,
     SystemStepExecutionContext,
 )
+from dagster.core.intermediates_manager import StepOutputHandle, InMemoryIntermediatesManager
 from dagster.core.types.runtime import RuntimeType
 from dagster.core.utils import toposort
 from dagster.utils import merge_dicts
-
-from .intermediates_manager import StepOutputHandle
 
 
 class StepOutputValue(namedtuple('_StepOutputValue', 'output_name value')):
@@ -49,7 +48,15 @@ class StepOutputData:
         return self._value_repr
 
     def get_value(self):
-        return self._intermediates_manager.get_value(self.step_output_handle)
+        # FIXME:
+        # For now we are disallowing getting the value for anything
+        # except the in-memory version of this. get_value will need to put
+        # on higher level object that will have access to pipeline_context
+
+        check.inst(self._intermediates_manager, InMemoryIntermediatesManager)
+        return self._intermediates_manager.get_intermediate(
+            context=None, runtime_type=None, step_output_handle=self.step_output_handle
+        )
 
 
 class StepFailureData(namedtuple('_StepFailureData', 'error_message error_cls_name stack')):

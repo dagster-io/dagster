@@ -43,11 +43,6 @@ from .events import construct_event_logger
 
 from .execution_plan.create import create_execution_plan_core
 
-from .execution_plan.intermediates_manager import (
-    FileSystemIntermediatesManager,
-    InMemoryIntermediatesManager,
-    IntermediatesManager,
-)
 
 from .execution_plan.objects import (
     ExecutionPlan,
@@ -62,7 +57,15 @@ from .execution_plan.simple_engine import start_inprocess_executor
 
 from .init_context import InitContext, InitResourceContext
 
+from .intermediates_manager import (
+    ObjectStoreIntermediatesManager,
+    InMemoryIntermediatesManager,
+    IntermediatesManager,
+)
+
 from .log import DagsterLog
+
+from .object_store import FileSystemObjectStore
 
 from .runs import (
     DagsterRunMeta,
@@ -82,11 +85,6 @@ from .user_context import ExecutionContext
 
 class PipelineExecutionResult(object):
     '''Result of execution of the whole pipeline. Returned eg by :py:func:`execute_pipeline`.
-
-    Attributes:
-        pipeline (PipelineDefinition): Pipeline that was executed
-        context (ExecutionContext): ExecutionContext of that particular Pipeline run.
-        result_list (list[SolidExecutionResult]): List of results for each pipeline solid.
     '''
 
     def __init__(self, pipeline, run_id, step_event_list):
@@ -396,14 +394,14 @@ def construct_intermediates_manager(run_config, init_context, environment_config
 
     if run_config.storage_mode:
         if run_config.storage_mode == RunStorageMode.FILESYSTEM:
-            return FileSystemIntermediatesManager(init_context.run_id)
+            return ObjectStoreIntermediatesManager(FileSystemObjectStore(init_context.run_id))
         elif run_config.storage_mode == RunStorageMode.IN_MEMORY:
             return InMemoryIntermediatesManager()
         else:
             check.failed('Unexpected enum {}'.format(run_config.storage_mode))
     elif environment_config.storage.storage_mode == 'filesystem':
 
-        return FileSystemIntermediatesManager(init_context.run_id)
+        return ObjectStoreIntermediatesManager(FileSystemObjectStore(init_context.run_id))
     elif environment_config.storage.storage_mode == 'in_memory':
         return InMemoryIntermediatesManager()
     elif environment_config.storage.storage_mode is None:
