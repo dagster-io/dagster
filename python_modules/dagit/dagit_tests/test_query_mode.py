@@ -15,6 +15,18 @@ def test_basic_introspection():
     assert result_data['data']
 
 
+def test_no_watch_mode():
+    query = '{ __schema { types { name } } }'
+
+    repo_path = script_relative_path('./repository.yml')
+
+    # Runs the dagit wrapper instead of dagit-cli to ensure it still runs sync with --no-watch
+    result = subprocess.check_output(['dagit', '--no-watch', '-q', query, '-y', repo_path])
+
+    result_data = json.loads(result.decode())
+    assert result_data['data']
+
+
 def test_basic_pipelines():
     query = '{ pipelines { nodes { name } } }'
 

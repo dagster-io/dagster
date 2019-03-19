@@ -4,7 +4,6 @@ workflows:
   version: 2
   test:
     jobs:
-
       # Required for merge
 
       - dagit-webapp:
@@ -673,7 +672,7 @@ jobs:
           name: Install Dependencies
           command: |
             cd js_modules/dagit
-            yarn
+            yarn install --offline
 
       - run:
           name: Run Typescript
@@ -733,7 +732,7 @@ jobs:
   airline-demo-py37:
     <<: *airline-demo-template
     docker:
-      # FIXME: https://github.com/dagster-io/dagster/issues/521 
+      # FIXME: https://github.com/dagster-io/dagster/issues/521
       - image: schrockn/cci-test:3.7.2
         auth:
           username: $DOCKERHUB_USERNAME
