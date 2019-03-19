@@ -98,9 +98,7 @@ def plugins_path(airflow_home):
 def host_tmp_dir():
     '''We don't clean this up / make it a context manager because it may already exist...'''
     mkdir_p('/tmp/results')
-    subprocess.check_output(['rm', '-rf', '/tmp/results/*'])
     yield '/tmp/results'
-    subprocess.check_output(['rm', '-rf', '/tmp/results/*'])
 
 
 @pytest.fixture(scope='module')
@@ -240,7 +238,14 @@ def scaffold_dag(request, airflow_test):
 
 
 @pytest.fixture(scope='class')
-def in_memory_airflow_run(scaffold_dag):
+def clean_results_dir():
+    subprocess.check_output(['rm', '-rf', '/tmp/results/*'])
+    yield '/tmp/results'
+    subprocess.check_output(['rm', '-rf', '/tmp/results/*'])
+
+
+@pytest.fixture(scope='class')
+def in_memory_airflow_run(scaffold_dag, clean_results_dir):
     pipeline_name, _p, _d, static_path, editable_path = scaffold_dag
 
     execution_date = datetime.datetime.utcnow()
