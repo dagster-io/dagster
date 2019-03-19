@@ -14,7 +14,6 @@ from .definitions.expectation import ExpectationDefinition
 from .definitions.input import InputDefinition
 from .definitions.output import OutputDefinition
 from .events import ExecutionEvents
-from .files import FileStore
 from .log import DagsterLog
 from .runs import RunStorageMode
 from .system_config.objects import EnvironmentConfig
@@ -84,7 +83,7 @@ class SystemPipelineExecutionContextData(
     namedtuple(
         '_SystemPipelineExecutionContextData',
         (
-            'run_config resources environment_config persistence_strategy pipeline_def storage '
+            'run_config resources environment_config persistence_strategy pipeline_def '
             'run_storage intermediates_manager'
         ),
     )
@@ -101,7 +100,6 @@ class SystemPipelineExecutionContextData(
         environment_config,
         persistence_strategy,
         pipeline_def,
-        storage,
         run_storage,
         intermediates_manager,
     ):
@@ -118,7 +116,6 @@ class SystemPipelineExecutionContextData(
                 persistence_strategy, 'persistence_strategy', PersistenceStrategy
             ),
             pipeline_def=check.inst_param(pipeline_def, 'pipeline_def', PipelineDefinition),
-            storage=check.inst_param(storage, 'storage', FileStore),
             # TODO typecheck
             run_storage=run_storage,
             intermediates_manager=intermediates_manager,
@@ -215,10 +212,6 @@ class SystemPipelineExecutionContext(object):
     @property
     def log(self):
         return self._log
-
-    @property
-    def storage(self):
-        return self._pipeline_context_data.storage
 
     @property
     def run_storage(self):

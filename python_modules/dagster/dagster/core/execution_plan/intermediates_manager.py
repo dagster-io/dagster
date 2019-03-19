@@ -1,12 +1,13 @@
 from abc import ABCMeta, abstractmethod
 from collections import namedtuple
+from contextlib import contextmanager
 import pickle
+import os
 
 import six
 
 from dagster import check
-
-from dagster.core.files import LocalTempFileStore
+from dagster.utils import mkdir_p
 
 
 class StepOutputHandle(namedtuple('_StepOutputHandle', 'step_key output_name')):
@@ -107,3 +108,59 @@ class FileSystemIntermediateManager(IntermediatesManager):
 
     def has_value(self, step_output_handle):
         return self._files.has_file(*self._get_path_comps(step_output_handle))
+
+
+def check_path_comps(path_comps):
+    path_list = check.list_param(list(path_comps), 'path_comps', of_type=str)
+    check.param_invariant(path_list, 'path_list', 'Must have at least one comp')
+    return path_list
+
+
+class LocalTempFileStore:
+    def __init__(self, run_id):
+        check.str_param(run_id, 'run_id')
+        self.root = os.path.join('/tmp', 'dagster', 'runs', run_id, 'files')
+        self._created = False
+
+    def ensure_root_exists(self):
+        if not self._created:
+            mkdir_p(self.root)
+
+        self._created = True
+
+    @contextmanager
+    def writeable_binary_stream(self, *path_comps):
+        self.ensure_root_exists()
+
+        path_list = check_path_comps(path_comps)
+
+        target_dir = os.path.join(self.root, *path_list[:-1])
+        mkdir_p(target_dir)
+
+        target_path = os.path.join(target_dir, path_list[-1])
+        check.invariant(not os.path.exists(target_path))
+        with open(target_path, 'wb') as ff:
+            yield ff
+
+    @contextmanager
+    def readable_binary_stream(self, *path_comps):
+        self.ensure_root_exists()
+
+        path_list = check_path_comps(path_comps)
+
+        target_path = os.path.join(self.root, *path_list)
+        with open(target_path, 'rb') as ff:
+            yield ff
+
+    def has_file(self, *path_comps):
+        self.ensure_root_exists()
+
+        path_list = check_path_comps(path_comps)
+
+        target_path = os.path.join(self.root, *path_list)
+
+        if os.path.exists(target_path):
+            check.invariant(os.path.isfile(target_path))
+            return True
+        else:
+            return False
