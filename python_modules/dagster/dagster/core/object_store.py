@@ -16,7 +16,7 @@ class FileSystemObjectStore(ObjectStore):
             seven.get_system_temp_directory(), 'dagster', 'runs', run_id, 'files'
         )
 
-    def set_object(self, obj, _cxt, _runtime_type, paths):
+    def set_object(self, obj, context, runtime_type, paths):  # pylint: disable=unused-argument
         check.list_param(paths, 'paths', of_type=str)
         check.param_invariant(len(paths) > 0, 'paths')
 
@@ -33,7 +33,7 @@ class FileSystemObjectStore(ObjectStore):
             # Hardcode pickle for now
             pickle.dump(obj, ff)
 
-    def get_object(self, _cxt, _runtime_type, paths):
+    def get_object(self, context, runtime_type, paths):  # pylint: disable=unused-argument
         check.list_param(paths, 'paths', of_type=str)
         check.param_invariant(len(paths) > 0, 'paths')
         target_path = os.path.join(self.root, *paths)

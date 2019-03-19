@@ -183,7 +183,11 @@ def marshal_outputs(
                 if step_output_handle not in successful_outputs:
                     continue
 
-                output_value = intermediates_manager.get_intermediate(step_output_handle)
+                output_value = intermediates_manager.get_intermediate(
+                    context=pipeline_context,
+                    runtime_type=step_output.runtime_type,
+                    step_output_handle=step_output_handle,
+                )
                 pipeline_context.persistence_strategy.write_value(
                     step_output.runtime_type.serialization_strategy,
                     marshalled_output.marshalling_key,
@@ -201,4 +205,9 @@ def unmarshal_inputs(inputs_to_marshal, execution_plan, pipeline_context, interm
                 input_value = pipeline_context.persistence_strategy.read_value(
                     step_input.runtime_type.serialization_strategy, marshalling_key
                 )
-                intermediates_manager.set_intermediate(step_output_handle, input_value)
+                intermediates_manager.set_intermediate(
+                    context=pipeline_context,
+                    runtime_type=step_input.runtime_type,
+                    step_output_handle=step_output_handle,
+                    value=input_value,
+                )

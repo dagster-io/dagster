@@ -60,14 +60,6 @@ def execute_step_out_of_process(step_context, step):
         yield step_event
 
 
-def _create_input_values(step_input_meta_dict, manager):
-    input_values = {}
-    for step_input_name, prev_output_handle_meta in step_input_meta_dict.items():
-        input_value = manager.get_intermediate(prev_output_handle_meta)
-        input_values[step_input_name] = input_value
-    return input_values
-
-
 def multiprocess_execute_plan(pipeline_context, execution_plan):
     check.inst_param(pipeline_context, 'pipeline_context', SystemPipelineExecutionContext)
     check.inst_param(execution_plan, 'execution_plan', ExecutionPlan)

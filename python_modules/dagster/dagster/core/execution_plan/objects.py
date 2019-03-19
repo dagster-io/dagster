@@ -55,7 +55,9 @@ class StepOutputData:
         from dagster.core.intermediates_manager import InMemoryIntermediatesManager
 
         check.inst(self._intermediates_manager, InMemoryIntermediatesManager)
-        return self._intermediates_manager.get_intermediate(self.step_output_handle)
+        return self._intermediates_manager.get_intermediate(
+            context=None, runtime_type=None, step_output_handle=self.step_output_handle
+        )
 
 
 class StepFailureData(namedtuple('_StepFailureData', 'error_message error_cls_name stack')):
