@@ -18,6 +18,6 @@ RUN pip install dagit/
 
 ADD . .
 
-ENTRYPOINT [ "dagit", "--no-watch" ]
+ENTRYPOINT [ "dagit-cli" ]
 
 EXPOSE 3000

@@ -7,18 +7,19 @@ from airflow.exceptions import AirflowException
 from dagster_airflow.dagster_plugin import DagsterOperator
 
 
-def test_init_modified_docker_operator():
+def test_init_modified_docker_operator(temp_dir):
     DagsterOperator(
         image='dagster-airflow-demo',
         api_version='auto',
         task_id='nonce',
         config='',
         pipeline_name='',
-        step_executions={},
+        step_executions=None,
+        host_tmp_dir=temp_dir,
     )
 
 
-def test_modified_docker_operator_bad_docker_conn():
+def test_modified_docker_operator_bad_docker_conn(temp_dir):
     operator = DagsterOperator(
         image='dagster-airflow-demo',
         api_version='auto',
@@ -27,7 +28,8 @@ def test_modified_docker_operator_bad_docker_conn():
         command='--help',
         config='',
         pipeline_name='',
-        step_executions={},
+        step_executions=None,
+        host_tmp_dir=temp_dir,
     )
 
     with pytest.raises(AirflowException, match='The conn_id `foo_conn` isn\'t defined'):
@@ -43,9 +45,9 @@ def test_modified_docker_operator_env(temp_dir):
         command='--help',
         config='',
         pipeline_name='',
-        step_executions={},
+        step_executions=None,
     )
-    with pytest.raises(AirflowException, match='Show this message'):
+    with pytest.raises(AirflowException, match='Unhandled error type'):
         operator.execute({})
 
 
@@ -58,7 +60,7 @@ def test_modified_docker_operator_bad_command(temp_dir):
         command='gargle bargle',
         config='',
         pipeline_name='',
-        step_executions={},
+        step_executions=None,
     )
     with pytest.raises(AirflowException, match='\'StatusCode\': 2}'):
         operator.execute({})
@@ -87,10 +89,10 @@ def test_modified_docker_operator_url(temp_dir):
             command='--help',
             config='',
             pipeline_name='',
-            step_executions={},
+            step_executions=None,
         )
 
-        with pytest.raises(AirflowException, match='Show this message'):
+        with pytest.raises(AirflowException, match='Unhandled error type'):
             operator.execute({})
 
     finally:

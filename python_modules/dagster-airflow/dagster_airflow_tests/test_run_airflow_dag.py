@@ -1,15 +1,27 @@
 import datetime
+import itertools
 import os
 import subprocess
+import sys
+import tempfile
 
 import pytest
 
 from airflow.exceptions import AirflowException
 from airflow.models import TaskInstance
 
-from dagster_airflow.scaffold import _key_for_marshalled_result, _normalize_key
+from dagster_airflow.scaffold import (
+    coalesce_execution_steps,
+    _key_for_marshalled_result,
+    _normalize_key,
+)
 
 from .utils import import_module_from_path
+
+if sys.platform == 'darwin':
+    TEMP_DIR = '/tmp'
+else:
+    TEMP_DIR = tempfile.gettempdir()
 
 
 def test_unit_run_airflow_dag_steps(scaffold_dag):
@@ -17,17 +29,30 @@ def test_unit_run_airflow_dag_steps(scaffold_dag):
 
     pipeline_name, execution_plan, execution_date, _s, _e = scaffold_dag
 
-    for step in execution_plan.topological_steps():
-        task_id = _normalize_key(step.key)
+    for (solid_name, solid_steps) in coalesce_execution_steps(execution_plan):
+        task_id = solid_name
 
-        for step_input in step.step_inputs:
-            assert os.path.isfile(
-                _key_for_marshalled_result(
+        step_output_keys = set([])
+        for step in solid_steps:
+            for step_output in step.step_outputs:
+                step_output_keys.add((step.key, step_output.name))
+
+        for solid_step in solid_steps:
+            for step_input in solid_step.step_inputs:
+                step_input_key = (
                     step_input.prev_output_handle.step_key,
                     step_input.prev_output_handle.output_name,
-                    prepend_run_id=False,
                 )
-            )
+                if step_input_key in step_output_keys:
+                    continue
+
+                assert os.path.isfile(
+                    _key_for_marshalled_result(
+                        step_input.prev_output_handle.step_key,
+                        step_input.prev_output_handle.output_name,
+                        prepend_run_id=False,
+                    ).format(tmp=os.path.join(TEMP_DIR, 'results', ''), sep='')
+                )
 
         try:
             res = subprocess.check_output(
@@ -38,12 +63,15 @@ def test_unit_run_airflow_dag_steps(scaffold_dag):
 
         assert 'EXECUTION_PLAN_STEP_SUCCESS' in str(res)
 
-        for step_output in step.step_outputs:
-            assert 'for output {output_name}'.format(output_name=step_output.name) in str(res)
+        for solid_step in solid_steps:
+            for step_output in solid_step.step_outputs:
+                assert 'for output {output_name}'.format(output_name=step_output.name) in str(res)
 
-            assert os.path.isfile(
-                _key_for_marshalled_result(step.key, step_output.name, prepend_run_id=False)
-            )
+                assert os.path.isfile(
+                    _key_for_marshalled_result(
+                        solid_step.key, step_output.name, prepend_run_id=False
+                    ).format(tmp=os.path.join(TEMP_DIR, 'results', ''), sep='')
+                )
 
 
 def test_run_airflow_dag(scaffold_dag):
@@ -60,7 +88,7 @@ def test_run_airflow_dag(scaffold_dag):
         dag_description=demo_pipeline.DAG_DESCRIPTION,
         dag_kwargs=dict(default_args=demo_pipeline.DEFAULT_ARGS, **demo_pipeline.DAG_KWARGS),
         s3_conn_id=demo_pipeline.S3_CONN_ID,
-        modified_docker_operator_kwargs=demo_pipeline.MODIFIED_DOCKER_OPERATOR_KWARGS,
+        operator_kwargs=demo_pipeline.OPERATOR_KWARGS,
         host_tmp_dir=demo_pipeline.HOST_TMP_DIR,
     )
 
@@ -85,7 +113,7 @@ def test_run_airflow_error_dag(scaffold_error_dag):
         dag_description=demo_pipeline.DAG_DESCRIPTION,
         dag_kwargs=dict(default_args=demo_pipeline.DEFAULT_ARGS, **demo_pipeline.DAG_KWARGS),
         s3_conn_id=demo_pipeline.S3_CONN_ID,
-        modified_docker_operator_kwargs=demo_pipeline.MODIFIED_DOCKER_OPERATOR_KWARGS,
+        operator_kwargs=demo_pipeline.OPERATOR_KWARGS,
         host_tmp_dir=demo_pipeline.HOST_TMP_DIR,
     )
 
