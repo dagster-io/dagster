@@ -1,6 +1,6 @@
 from __future__ import absolute_import, unicode_literals
 
-from dagster.seven import json
+from dagster.seven import json_ as json
 from dagster.tutorials.intro_tutorial.repos import define_repo
 
 from dagit import app

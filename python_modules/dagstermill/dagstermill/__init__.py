@@ -47,7 +47,7 @@ from dagster.core.types.marshal import (
     PickleSerializationStrategy,
 )
 from dagster.core.types.runtime import RuntimeType
-from dagster.seven import json
+from dagster.seven import json_ as json
 
 # magic incantation for syncing up notebooks to enclosing virtual environment.
 # I don't claim to understand it.

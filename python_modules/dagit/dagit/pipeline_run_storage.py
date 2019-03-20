@@ -12,7 +12,7 @@ from dagster import check
 from dagster.core.events import EventRecord, EventType
 from dagster.core.execution import ExecutionSelector
 from dagster.core.execution_plan.objects import ExecutionPlan
-from dagster.seven import json
+from dagster.seven import json_ as json
 
 
 class PipelineRunStatus(Enum):

@@ -17,7 +17,7 @@ import cloudpickle as pickle
 from dagster import check
 from dagster.core.execution_context import SystemPipelineExecutionContext
 from dagster.core.execution_plan.objects import ExecutionPlan
-from dagster.seven import json
+from dagster.seven import json_ as json
 from dagster.utils.zip import zip_folder
 
 from .config import ASSUME_ROLE_POLICY_DOCUMENT, BUCKET_POLICY_DOCUMENT_TEMPLATE

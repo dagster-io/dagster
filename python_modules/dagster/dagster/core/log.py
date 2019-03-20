@@ -4,7 +4,7 @@ import logging
 import uuid
 
 from dagster import check
-from dagster.seven import json
+from dagster.seven import json_ as json
 
 DAGSTER_META_KEY = 'dagster_meta'
 

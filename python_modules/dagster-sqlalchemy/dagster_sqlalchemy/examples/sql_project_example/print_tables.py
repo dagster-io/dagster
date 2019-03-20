@@ -2,7 +2,7 @@ import pandas as pd
 import sqlalchemy as sa
 
 from dagster import check
-from dagster.seven import json
+from dagster.seven import json_ as json
 
 if __name__ == '__main__':
     config_obj = json.load(open('config.json'))

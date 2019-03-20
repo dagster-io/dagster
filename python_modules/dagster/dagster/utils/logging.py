@@ -10,7 +10,7 @@ from logging import CRITICAL, DEBUG, ERROR, INFO, WARNING
 import coloredlogs
 
 from dagster import check
-from dagster.seven import json
+from dagster.seven import json_ as json
 
 VALID_LEVELS = set([CRITICAL, DEBUG, ERROR, INFO, WARNING])
 

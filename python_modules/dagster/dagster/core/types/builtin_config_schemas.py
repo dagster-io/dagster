@@ -1,7 +1,7 @@
 import pickle
 
 from dagster import check
-from dagster.seven import json
+from dagster.seven import json_ as json
 
 from .config import ConfigTypeAttributes, Path, Int, String, Bool, Any, Float
 from .config_schema import make_bare_input_schema, input_selector_schema, output_selector_schema

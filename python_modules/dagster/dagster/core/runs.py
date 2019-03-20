@@ -5,7 +5,7 @@ from collections import namedtuple, OrderedDict
 from enum import Enum
 
 from dagster import check, seven
-from dagster.seven import json
+from dagster.seven import json_ as json
 from dagster.utils import mkdir_p, list_pull
 
 
