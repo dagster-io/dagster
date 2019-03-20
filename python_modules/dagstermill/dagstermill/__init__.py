@@ -205,8 +205,8 @@ class Manager:
                 if runtime_type_enum == SerializableRuntimeType.NONE:
                     raise DagstermillError(
                         'If Dagstermill solids have outputs that require serialization strategies '
-                        'that are not pickling, then you must register a repository within notebook '
-                        'by calling dm.register_repository(repository_def).'
+                        'that are not pickling, then you must register a repository within '
+                        'notebook by calling dm.register_repository(repository_def).'
                     )
             with yield_pipeline_execution_context(
                 self.pipeline_def, {}, RunConfig(run_id=run_id)
