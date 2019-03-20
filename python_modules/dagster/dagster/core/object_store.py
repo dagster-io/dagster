@@ -45,6 +45,6 @@ class FileSystemObjectStore(ObjectStore):
         with open(target_path, 'rb') as ff:
             return pickle.load(ff)
 
-    def has_object(self, _cxt, paths):
+    def has_object(self, context, paths):  # pylint: disable=unused-argument
         target_path = os.path.join(self.root, *paths)
         return os.path.exists(target_path)
