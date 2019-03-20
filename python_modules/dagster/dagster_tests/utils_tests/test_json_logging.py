@@ -1,4 +1,4 @@
-from dagster.seven import json_ as json
+import json
 from dagster.utils.logging import define_json_file_logger, DEBUG, INFO
 from dagster.utils.test import create_test_pipeline_execution_context, get_temp_file_name
 

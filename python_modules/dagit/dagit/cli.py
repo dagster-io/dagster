@@ -1,16 +1,17 @@
+import json
 import os
 import sys
+
+import click
 
 from gevent import pywsgi
 from geventwebsocket.handler import WebSocketHandler
 from graphql import graphql
 from graphql.execution.executors.gevent import GeventExecutor as Executor
-import click
 
 
-from dagster import check
+from dagster import check, seven
 from dagster.cli.dynamic_loader import repository_target_argument, load_target_info_from_cli_args
-from dagster.seven import json_ as json
 
 from .app import create_app, RepositoryContainer
 from .pipeline_execution_manager import SynchronousExecutionManager
@@ -51,7 +52,7 @@ def execute_query_from_cli(repository_container, query, variables):
         executor=Executor(),
     )
 
-    print(json.dumps(result.to_dict()))
+    print(seven.json.dumps(result.to_dict()))
 
 
 @click.command(

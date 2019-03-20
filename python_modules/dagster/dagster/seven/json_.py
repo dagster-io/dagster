@@ -1,14 +1,9 @@
 # pylint: disable=unused-import
-from functools import partial
-import sys
+from __future__ import absolute_import
 
-from json import dump as dump_, dumps as dumps_, load, loads, JSONDecoder, JSONEncoder
+from json import dump as dump_, dumps as dumps_
 
 try:
     from json import JSONDecodeError
 except ImportError:
     JSONDecodeError = ValueError
-
-dump = partial(dump_, sort_keys=True)
-
-dumps = partial(dumps_, sort_keys=True)

@@ -1,3 +1,5 @@
+import json
+
 import pytest
 
 from dagster import (
@@ -18,7 +20,6 @@ from dagster.core.definitions.environment_configs import (
 from dagster.core.execution import create_environment_config, create_execution_plan
 from dagster.core.execution_plan.materialization_thunk import MATERIALIZATION_THUNK_OUTPUT
 from dagster.core.execution_plan.objects import StepOutputHandle
-from dagster.seven import json_ as json
 from dagster.utils.test import get_temp_file_name, get_temp_file_names
 
 

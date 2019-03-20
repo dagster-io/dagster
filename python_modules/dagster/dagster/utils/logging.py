@@ -9,8 +9,7 @@ from logging import CRITICAL, DEBUG, ERROR, INFO, WARNING
 
 import coloredlogs
 
-from dagster import check
-from dagster.seven import json_ as json
+from dagster import check, seven
 
 VALID_LEVELS = set([CRITICAL, DEBUG, ERROR, INFO, WARNING])
 
@@ -47,7 +46,7 @@ class JsonFileHandler(logging.Handler):
             log_dict.update(dagster_meta_dict)
 
             with open(self.json_path, 'a') as ff:
-                text_line = json.dumps(log_dict)
+                text_line = seven.json.dumps(log_dict)
                 ff.write(text_line + '\n')
         # Need to catch Exception here, so disabling lint
         except Exception as e:  # pylint: disable=W0703
@@ -79,7 +78,7 @@ class JsonEventLoggerHandler(logging.Handler):
         try:
             event_record = self.construct_event_record(record)
             with open(self.json_path, 'a') as ff:
-                text_line = json.dumps(event_record.to_dict())
+                text_line = seven.json.dumps(event_record.to_dict())
                 ff.write(text_line + '\n')
 
         # Need to catch Exception here, so disabling lint

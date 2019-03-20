@@ -1,7 +1,7 @@
+import json
 import pickle
 
-from dagster import check
-from dagster.seven import json_ as json
+from dagster import check, seven
 
 from .config import ConfigTypeAttributes, Path, Int, String, Bool, Any, Float
 from .config_schema import make_bare_input_schema, input_selector_schema, output_selector_schema
@@ -55,7 +55,7 @@ def define_builtin_scalar_output_schema(scalar_name):
     def _builtin_output_schema(file_type, file_options, runtime_value):
         if file_type == 'json':
             json_file_path = file_options['path']
-            json_value = json.dumps({'value': runtime_value})
+            json_value = seven.json.dumps({'value': runtime_value})
             with open(json_file_path, 'w') as ff:
                 ff.write(json_value)
         elif file_type == 'pickle':

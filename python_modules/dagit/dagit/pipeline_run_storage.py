@@ -1,18 +1,19 @@
-from collections import OrderedDict
-from enum import Enum
 import os
 import time
 
-from rx import Observable
+from collections import OrderedDict
+from enum import Enum
+
 import gevent
 import gevent.lock
 import pyrsistent
 
-from dagster import check
+from rx import Observable
+
+from dagster import check, seven
 from dagster.core.events import EventRecord, EventType
 from dagster.core.execution import ExecutionSelector
 from dagster.core.execution_plan.objects import ExecutionPlan
-from dagster.seven import json_ as json
 
 
 class PipelineRunStatus(Enum):
@@ -153,7 +154,7 @@ class LogFilePipelineRun(InMemoryPipelineRun):
         metadata_file = '{}.json'.format(self._file_prefix)
         with open(metadata_file, 'w', encoding="utf-8") as f:
             f.write(
-                json.dumps(
+                seven.json.dumps(
                     {
                         'run_id': self.run_id,
                         'pipeline_name': self.selector.name,
