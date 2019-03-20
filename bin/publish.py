@@ -14,7 +14,7 @@ import packaging.version
 
 from itertools import groupby
 
-from .pypirc import RCParser
+from .pypirc import ConfigFileError, RCParser
 
 
 PYPIRC_EXCEPTION_MESSAGE = '''You must have credentials available to PyPI in the form of a ~/.pypirc'
@@ -420,7 +420,7 @@ def publish(nightly):
     try:
         assert RCParser.from_file().get_repository_config()
     except:
-        raise Exception(PYPIRC_EXCEPTION_MESSAGE)
+        raise ConfigFileError(PYPIRC_EXCEPTION_MESSAGE)
 
     assert '\nwheel' in subprocess.check_output(['pip', 'list']).decode('utf-8'), (
         'You must have wheel installed in order to build packages for release -- run '
