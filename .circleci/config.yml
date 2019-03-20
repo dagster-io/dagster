@@ -4,7 +4,6 @@ workflows:
   version: 2
   test:
     jobs:
-
       # Required for merge
 
       - dagit-webapp:
@@ -664,7 +663,7 @@ jobs:
 
   dagit-webapp:
     docker:
-      - image: circleci/node:10.6
+      - image: circleci/python:3.7.2-node
     working_directory: ~/repo
     steps:
       - checkout
@@ -672,6 +671,10 @@ jobs:
       - run:
           name: Install Dependencies
           command: |
+            sudo pip install -r python_modules/dagster/dev-requirements.txt -qqq
+            sudo pip install -e python_modules/dagster -qqq
+            sudo pip install -e python_modules/dagit -qqq
+            sudo pip install -r python_modules/dagit/dev-requirements.txt -qqq
             cd js_modules/dagit
             yarn install --offline
 
@@ -693,6 +696,13 @@ jobs:
             cd js_modules/dagit
             yarn run check-prettier
 
+      - run:
+          name: Check GraphQL schema artifacts
+          command: |
+            cd js_modules/dagit
+            yarn download-schema
+            git diff --exit-code
+
   # We are using the machine executor in order to avoid the pitfalls catalogued at
   # https://circleci.com/docs/2.0/building-docker-images/#separation-of-environments.
   # Specifically, we want to be able to network the Docker containers created by the
@@ -704,7 +714,7 @@ jobs:
       docker_layer_caching: true
     environment:
       TOXENV: py36
-      SLUGIFY_USES_TEXT_UNIDECODE: 'yes'
+      SLUGIFY_USES_TEXT_UNIDECODE: "yes"
       PYTHON_VERSION: "3.6.3"
       AIRFLOW_HOME: "/home/circleci/airflow"
     working_directory: ~/repo
@@ -751,13 +761,13 @@ jobs:
 
   airline-demo-py37:
     docker:
-      # FIXME: https://github.com/dagster-io/dagster/issues/521 
+      # FIXME: https://github.com/dagster-io/dagster/issues/521
       - image: schrockn/cci-test:3.7.2
         auth:
           username: $DOCKERHUB_USERNAME
           password: $DOCKERHUB_PASSWORD
         environment:
-          SLUGIFY_USES_TEXT_UNIDECODE: 'yes'
+          SLUGIFY_USES_TEXT_UNIDECODE: "yes"
       - image: circleci/postgres:9.6.2-alpine
         environment:
           POSTGRES_USER: test
@@ -788,7 +798,7 @@ jobs:
       docker_layer_caching: true
     environment:
       TOXENV: py35
-      SLUGIFY_USES_TEXT_UNIDECODE: 'yes'
+      SLUGIFY_USES_TEXT_UNIDECODE: "yes"
       PYTHON_VERSION: "3.5.2"
       AIRFLOW_HOME: "/home/circleci/airflow"
     working_directory: ~/repo
@@ -835,7 +845,7 @@ jobs:
       docker_layer_caching: true
     environment:
       TOXENV: py27
-      SLUGIFY_USES_TEXT_UNIDECODE: 'yes'
+      SLUGIFY_USES_TEXT_UNIDECODE: "yes"
       PYTHON_VERSION: "2.7.12"
       AIRFLOW_HOME: "/home/circleci/airflow"
     working_directory: ~/repo
