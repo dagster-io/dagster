@@ -14,6 +14,22 @@ import packaging.version
 
 from itertools import groupby
 
+from .pypirc import RCParser
+
+
+PYPIRC_EXCEPTION_MESSAGE = '''You must have credentials available to PyPI in the form of a ~/.pypirc'
+'file (see: https://docs.python.org/2/distutils/packageindex.html#pypirc):
+
+    [distutils]
+    index-servers =
+        pypi
+
+    [pypi]
+    repository: https://upload.pypi.org/legacy/
+    username: <username>
+    password: <password>
+'''
+
 
 def _which(exe):
     # https://github.com/PyCQA/pylint/issues/73
@@ -400,21 +416,12 @@ def publish(nightly):
     tags and Python versions) are not in lockstep, if the current commit is not tagged, or if
     there are untracked changes.
     """
-    print(
-        '''WARNING: This will fail (or hang forever) unless you have credentials available to
-PyPI, preferably in the form of a ~/.pypirc file as follows (see: 
-https://docs.python.org/2/distutils/packageindex.html#pypirc):
 
-    [distutils]
-    index-servers =
-        pypi
+    try:
+        assert RCParser.from_file().get_repository_config()
+    except:
+        raise Exception(PYPIRC_EXCEPTION_MESSAGE)
 
-    [pypi]
-    repository: https://upload.pypi.org/legacy/
-    username: <username>
-    password: <password>
-'''
-    )
     assert '\nwheel' in subprocess.check_output(['pip', 'list']).decode('utf-8'), (
         'You must have wheel installed in order to build packages for release -- run '
         '`pip install wheel`.'
