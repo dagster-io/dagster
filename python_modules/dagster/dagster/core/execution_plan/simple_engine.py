@@ -45,6 +45,7 @@ def start_inprocess_executor(
     check.inst_param(pipeline_context, 'pipeline_context', SystemPipelineExecutionContext)
     check.inst_param(execution_plan, 'execution_plan', ExecutionPlan)
     check.inst_param(intermediates_manager, 'intermediates_manager', IntermediatesManager)
+    check.opt_list_param(step_keys_to_execute, 'step_keys_to_execute', of_type=str)
 
     step_key_set = None if step_keys_to_execute is None else set(step_keys_to_execute)
 

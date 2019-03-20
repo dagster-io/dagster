@@ -676,8 +676,9 @@ def invoke_executor_on_plan(pipeline_context, execution_plan, step_keys_to_execu
             step_keys_to_execute,
         )
     elif isinstance(pipeline_context.executor_config, MultiprocessExecutorConfig):
-        check.invariant(not step_keys_to_execute, 'subplan not supported for multiprocess yet')
-        step_events_gen = multiprocess_execute_plan(pipeline_context, execution_plan)
+        step_events_gen = multiprocess_execute_plan(
+            pipeline_context, execution_plan, step_keys_to_execute
+        )
     else:
         check.failed('Unsupported config {}'.format(pipeline_context.executor_config))
 

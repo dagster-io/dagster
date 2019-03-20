@@ -289,3 +289,50 @@ def test_using_file_system_for_subplan():
     assert get_step_output(add_one_step_events, 'add_one.transform')
     assert has_output_value(run_id, 'add_one.transform')
     assert get_output_value(run_id, 'add_one.transform', Int) == 2
+
+
+from dagster.core.execution import MultiprocessExecutorConfig
+
+
+def test_using_file_system_for_subplan_multiprocessing():
+    pipeline = define_inty_pipeline()
+
+    environment_dict = {'storage': {'filesystem': {}}}
+
+    execution_plan = create_execution_plan(pipeline, environment_dict=environment_dict)
+
+    assert execution_plan.get_step_by_key('return_one.transform')
+
+    step_keys = ['return_one.transform']
+
+    run_id = str(uuid.uuid4())
+
+    return_one_step_events = list(
+        execute_plan_subset(
+            execution_plan,
+            environment_dict=environment_dict,
+            run_config=RunConfig(
+                run_id=run_id, executor_config=MultiprocessExecutorConfig(define_inty_pipeline)
+            ),
+            step_keys_to_execute=step_keys,
+        )
+    )
+
+    assert get_step_output(return_one_step_events, 'return_one.transform')
+    assert has_output_value(run_id, 'return_one.transform')
+    assert get_output_value(run_id, 'return_one.transform', Int) == 1
+
+    add_one_step_events = list(
+        execute_plan_subset(
+            execution_plan,
+            environment_dict=environment_dict,
+            run_config=RunConfig(
+                run_id=run_id, executor_config=MultiprocessExecutorConfig(define_inty_pipeline)
+            ),
+            step_keys_to_execute=['add_one.transform'],
+        )
+    )
+
+    assert get_step_output(add_one_step_events, 'add_one.transform')
+    assert has_output_value(run_id, 'add_one.transform')
+    assert get_output_value(run_id, 'add_one.transform', Int) == 2
