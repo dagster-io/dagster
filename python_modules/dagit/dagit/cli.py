@@ -1,12 +1,14 @@
 import json
 import os
 import sys
+import warnings
+
+import click
 
 from gevent import pywsgi
 from geventwebsocket.handler import WebSocketHandler
 from graphql import graphql
 from graphql.execution.executors.gevent import GeventExecutor as Executor
-import click
 
 
 from dagster import check
@@ -77,8 +79,13 @@ def execute_query_from_cli(repository_container, query, variables):
 @click.option('--log-dir', help="Directory to record logs to", default='dagit_run_logs/')
 @click.option('--query', '-q', type=click.STRING)
 @click.option('--variables', '-v', type=click.STRING)
+@click.option(
+    '--no-watch',
+    is_flag=True,
+    help='Disable autoreloading when there are changes to the repo/pipeline being served',
+)
 @click.version_option(version=__version__)
-def ui(host, port, sync, log, log_dir, query, variables, **kwargs):
+def ui(host, port, sync, log, log_dir, query, variables, no_watch=False, **kwargs):
     repository_target_info = load_target_info_from_cli_args(kwargs)
 
     sys.path.append(os.getcwd())
@@ -90,6 +97,11 @@ def ui(host, port, sync, log, log_dir, query, variables, **kwargs):
         if variables:
             raise Exception('if you specify --variables/-v you need to specify --query/-q')
 
+    if no_watch:
+        warnings.warn(
+            'Do not set no_watch when calling the Dagit Python CLI directly -- this flag is a no-op'
+            'at this level and should be set when invoking dagit/bin/dagit.'
+        )
     host_dagit_ui(log, log_dir, repository_container, sync, host, port)
 
 
