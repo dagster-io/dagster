@@ -1,6 +1,14 @@
 import os
 import pickle
 
+from io import BytesIO
+
+try:
+    import boto3
+    import botocore
+except ImportError:
+    pass
+
 from dagster import check, seven
 from dagster.utils import mkdir_p
 
@@ -47,6 +55,72 @@ class FileSystemObjectStore(ObjectStore):
         with open(target_path, 'rb') as ff:
             return pickle.load(ff)
 
-    def has_object(self, _cxt, paths):
+    def has_object(self, context, paths):  # pylint: disable=unused-argument
         target_path = os.path.join(self.root, *paths)
         return os.path.exists(target_path)
+
+
+class S3ObjectStore(ObjectStore):
+    def __init__(self, s3_bucket, run_id):
+        check.str_param(run_id, 'run_id')
+
+        self.s3 = boto3.client('s3')
+        self.bucket = s3_bucket
+        self.run_id = run_id
+
+        self.s3.head_bucket(Bucket=self.bucket)
+
+        self.root = 'dagster/runs/{run_id}/files'.format(run_id=self.run_id)
+
+    def _key_for_paths(self, paths):
+        return '/'.join([self.root, *paths])
+
+    def set_object(self, obj, context, runtime_type, paths):
+        check.inst_param(context, 'context', SystemPipelineExecutionContext)
+        check.inst_param(runtime_type, 'runtime_type', RuntimeType)
+        check.list_param(paths, 'paths', of_type=str)
+        check.param_invariant(len(paths) > 0, 'paths')
+
+        key = self._key_for_paths(paths)
+
+        check.invariant(
+            not self.has_object(context, paths), 'Key already exists: {key}!'.format(key=key)
+        )
+
+        with BytesIO() as bytes_io:
+            # Hardcode pickle for now
+            pickle.dump(obj, bytes_io)
+            bytes_io.seek(0)
+            self.s3.put_object(Bucket=self.bucket, Key=key, Body=bytes_io)
+
+        return obj
+
+    def get_object(self, context, runtime_type, paths):
+        check.inst_param(context, 'context', SystemPipelineExecutionContext)
+        check.inst_param(runtime_type, 'runtime_type', RuntimeType)
+        check.list_param(paths, 'paths', of_type=str)
+        check.param_invariant(len(paths) > 0, 'paths')
+
+        key = self._key_for_paths(paths)
+
+        return pickle.loads(self.s3.get_object(Bucket=self.bucket, Key=key)['Body'].read())
+
+    def has_object(self, context, paths):  # pylint: disable=unused-argument
+        key = self._key_for_paths(paths)
+
+        try:
+            self.s3.head_object(Bucket=self.bucket, Key=key)
+            return True
+        except botocore.exceptions.ClientError as exc:
+            if 'Error' in exc.response:
+                if 'Code' in exc.response['Error']:
+                    if exc.response['Error']['Code'] == '404':
+                        return False
+
+    def rm_object(self, context, paths):
+        if not self.has_object(context, paths):
+            return
+
+        key = self._key_for_paths(paths)
+        self.s3.delete_object(Bucket=self.bucket, Key=key)
+        return
