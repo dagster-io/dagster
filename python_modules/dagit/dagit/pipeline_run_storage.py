@@ -174,7 +174,7 @@ class LogFilePipelineRun(InMemoryPipelineRun):
             # Going to do the less error-prone, simpler, but slower strategy:
             # open, append, close for every log message for now
             with open(self._log_file, 'a', encoding='utf-8') as log_file_handle:
-                log_file_handle.write(json.dumps(new_event.to_dict()))
+                log_file_handle.write(seven.json.dumps(new_event.to_dict()))
                 log_file_handle.write('\n')
 
 
