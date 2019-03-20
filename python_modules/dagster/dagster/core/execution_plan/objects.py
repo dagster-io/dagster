@@ -49,6 +49,7 @@ class StepOutputData:
 
     def get_value(self):
         # FIXME:
+        # https://github.com/dagster-io/dagster/issues/953
         # For now we are disallowing getting the value for anything
         # except the in-memory version of this. get_value will need to put
         # on higher level object that will have access to pipeline_context
