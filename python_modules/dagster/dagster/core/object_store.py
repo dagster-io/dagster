@@ -69,7 +69,14 @@ class FileSystemObjectStore(ObjectStore):
 
     def has_object(self, context, paths):  # pylint: disable=unused-argument
         target_path = os.path.join(self.root, *paths)
-        return os.path.exists(target_path)
+        return os.path.isfile(target_path)
+
+    def rm_object(self, context, paths):  # pylint: disable=unused-argument
+        target_path = os.path.join(self.root, *paths)
+        if not self.has_object(context, paths):
+            return
+        os.unlink(target_path)
+        return
 
 
 class S3ObjectStore(ObjectStore):
