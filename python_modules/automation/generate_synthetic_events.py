@@ -152,8 +152,8 @@ def run(s3_bucket, s3_prefix, start_date, end_date, num_files, num_events_per_fi
                 zip(event_files, dates),
             )
 
-    for f in event_files:
-        os.unlink(f)
+        for f in event_files:
+            os.unlink(f)
 
 
 if __name__ == "__main__":
