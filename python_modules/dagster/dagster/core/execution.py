@@ -686,15 +686,16 @@ def invoke_executor_on_plan(pipeline_context, execution_plan, step_keys_to_execu
         yield step_event
 
 
-def execute_plan(execution_plan, environment_dict=None, run_config=None):
+def execute_plan(execution_plan, environment_dict=None, run_config=None, step_keys_to_execute=None):
     check.inst_param(execution_plan, 'execution_plan', ExecutionPlan)
     environment_dict = check.opt_dict_param(environment_dict, 'environment_dict')
     run_config = check_run_config_param(run_config)
+    check.opt_list_param(step_keys_to_execute, 'step_keys_to_execute', of_type=str)
 
     with yield_pipeline_execution_context(
         execution_plan.pipeline_def, environment_dict, run_config
     ) as pipeline_context:
-        return list(invoke_executor_on_plan(pipeline_context, execution_plan))
+        return list(invoke_executor_on_plan(pipeline_context, execution_plan, step_keys_to_execute))
 
 
 def create_environment_config(pipeline, environment_dict=None):
@@ -707,23 +708,6 @@ def create_environment_config(pipeline, environment_dict=None):
         raise PipelineConfigEvaluationError(pipeline, result.errors, environment_dict)
 
     return construct_environment_config(result.value)
-
-
-def execute_plan_subset(execution_plan, environment_dict, run_config, step_keys_to_execute):
-    check.inst_param(execution_plan, 'execution_plan', ExecutionPlan)
-    environment_dict = check.opt_dict_param(environment_dict, 'environment_dict')
-    run_config = check_run_config_param(run_config)
-    check.list_param(step_keys_to_execute, 'step_keys_to_execute', of_type=str)
-
-    with yield_pipeline_execution_context(
-        execution_plan.pipeline_def, environment_dict, run_config
-    ) as pipeline_context:
-        for step_event in invoke_executor_on_plan(
-            pipeline_context,
-            execution_plan=execution_plan,
-            step_keys_to_execute=step_keys_to_execute,
-        ):
-            yield step_event
 
 
 class ExecutionSelector(object):

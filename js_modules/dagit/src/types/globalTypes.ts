@@ -21,9 +21,6 @@ export enum LogLevel {
   WARNING = "WARNING",
 }
 
-/**
- * An enumeration.
- */
 export enum PipelineRunStatus {
   FAILURE = "FAILURE",
   NOT_STARTED = "NOT_STARTED",
@@ -43,10 +40,6 @@ export enum StepKind {
   UNMARSHAL_INPUT = "UNMARSHAL_INPUT",
 }
 
-/**
- * This type represents the fields necessary to identify a
- *         pipeline or pipeline subset.
- */
 export interface ExecutionSelector {
   name: string;
   solidSubset?: string[] | null;

@@ -146,6 +146,28 @@ class DauphinExecutionMetadata(dauphin.InputObjectType):
     tags = dauphin.List(dauphin.NonNull(DauphinExecutionTag))
 
 
+class DauphinExecutePlan(dauphin.Mutation):
+    class Meta:
+        name = 'ExecutePlan'
+
+    class Arguments:
+        pipelineName = dauphin.NonNull(dauphin.String)
+        config = dauphin.Argument('PipelineConfig')
+        stepKeys = dauphin.List(dauphin.NonNull(dauphin.String))
+        executionMetadata = dauphin.Argument(dauphin.NonNull(DauphinExecutionMetadata))
+
+    Output = dauphin.NonNull('ExecutePlanResult')
+
+    def mutate(self, graphene_info, **kwargs):
+        return model.do_execute_plan(
+            graphene_info,
+            kwargs['pipelineName'],
+            kwargs.get('config'),
+            kwargs['executionMetadata'],
+            kwargs.get('stepKeys'),
+        )
+
+
 class DauphinStartSubplanExecution(dauphin.Mutation):
     class Meta:
         name = 'StartSubplanExecution'
@@ -187,6 +209,8 @@ class DauphinMutation(dauphin.ObjectType):
     # TODO this name should indicate that this is synchronous
     # https://github.com/dagster-io/dagster/issues/810
     start_subplan_execution = DauphinStartSubplanExecution.Field()
+
+    execute_plan = DauphinExecutePlan.Field()
 
 
 class DauphinSubscription(dauphin.ObjectType):
