@@ -60,13 +60,16 @@ def execute_step_out_of_process(step_context, step):
         yield step_event
 
 
-def multiprocess_execute_plan(pipeline_context, execution_plan):
+def multiprocess_execute_plan(pipeline_context, execution_plan, step_keys_to_execute=None):
     check.inst_param(pipeline_context, 'pipeline_context', SystemPipelineExecutionContext)
     check.inst_param(execution_plan, 'execution_plan', ExecutionPlan)
+    check.opt_list_param(step_keys_to_execute, 'step_keys_to_execute', of_type=str)
 
     step_levels = execution_plan.topological_step_levels()
 
     intermediates_manager = pipeline_context.intermediates_manager
+
+    step_key_set = None if step_keys_to_execute is None else set(step_keys_to_execute)
 
     # It would be good to implement a reference tracking algorithm here so we could
     # garbage collection results that are no longer needed by any steps
@@ -74,6 +77,9 @@ def multiprocess_execute_plan(pipeline_context, execution_plan):
 
     for step_level in step_levels:
         for step in step_level:
+            if step_key_set and step.key not in step_key_set:
+                continue
+
             step_context = pipeline_context.for_step(step)
 
             if not intermediates_manager.all_inputs_covered(step_context, step):

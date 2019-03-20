@@ -1,3 +1,4 @@
+import uuid
 import pytest
 
 from dagster import (
@@ -18,7 +19,12 @@ from dagster.core.errors import (
 )
 
 from dagster.core.execute_marshalling import execute_marshalling, MarshalledOutput
-
+from dagster.core.object_store import FileSystemObjectStore
+from dagster.core.execution import (
+    ExecutionStepEventType,
+    create_execution_plan,
+    execute_plan_subset,
+)
 from dagster.core.execution_plan.objects import StepKind
 from dagster.core.types.runtime import resolve_to_runtime_type
 
@@ -218,3 +224,115 @@ def test_external_execution_unsatisfied_input_error():
         "step_keys ['add_one.transform']. You have failed to provide the required input num for "
         "step add_one.transform."
     )
+
+
+def get_step_output(step_events, step_key, output_name='result'):
+    for step_event in step_events:
+        if (
+            step_event.event_type == ExecutionStepEventType.STEP_OUTPUT
+            and step_event.step_key == step_key
+            and step_event.step_output_data.output_name == output_name
+        ):
+            return step_event
+    return None
+
+
+# This should go away with https://github.com/dagster-io/dagster/issues/953
+def has_output_value(run_id, step_key, output_name='result'):
+    paths = ['intermediates', step_key, output_name]
+    object_store = FileSystemObjectStore(run_id)
+    return object_store.has_object(context=None, paths=paths)
+
+
+# This should go away with https://github.com/dagster-io/dagster/issues/953
+def get_output_value(run_id, step_key, runtime_type, output_name='result'):
+    object_store = FileSystemObjectStore(run_id)
+    paths = ['intermediates', step_key, output_name]
+    return object_store.get_object(context=None, runtime_type=runtime_type, paths=paths)
+
+
+def test_using_file_system_for_subplan():
+    pipeline = define_inty_pipeline()
+
+    environment_dict = {'storage': {'filesystem': {}}}
+
+    execution_plan = create_execution_plan(pipeline, environment_dict=environment_dict)
+
+    assert execution_plan.get_step_by_key('return_one.transform')
+
+    step_keys = ['return_one.transform']
+
+    run_id = str(uuid.uuid4())
+
+    return_one_step_events = list(
+        execute_plan_subset(
+            execution_plan,
+            environment_dict=environment_dict,
+            run_config=RunConfig(run_id=run_id),
+            step_keys_to_execute=step_keys,
+        )
+    )
+
+    assert get_step_output(return_one_step_events, 'return_one.transform')
+    assert has_output_value(run_id, 'return_one.transform')
+    assert get_output_value(run_id, 'return_one.transform', Int) == 1
+
+    add_one_step_events = list(
+        execute_plan_subset(
+            execution_plan,
+            environment_dict=environment_dict,
+            run_config=RunConfig(run_id=run_id),
+            step_keys_to_execute=['add_one.transform'],
+        )
+    )
+
+    assert get_step_output(add_one_step_events, 'add_one.transform')
+    assert has_output_value(run_id, 'add_one.transform')
+    assert get_output_value(run_id, 'add_one.transform', Int) == 2
+
+
+from dagster.core.execution import MultiprocessExecutorConfig
+
+
+def test_using_file_system_for_subplan_multiprocessing():
+    pipeline = define_inty_pipeline()
+
+    environment_dict = {'storage': {'filesystem': {}}}
+
+    execution_plan = create_execution_plan(pipeline, environment_dict=environment_dict)
+
+    assert execution_plan.get_step_by_key('return_one.transform')
+
+    step_keys = ['return_one.transform']
+
+    run_id = str(uuid.uuid4())
+
+    return_one_step_events = list(
+        execute_plan_subset(
+            execution_plan,
+            environment_dict=environment_dict,
+            run_config=RunConfig(
+                run_id=run_id, executor_config=MultiprocessExecutorConfig(define_inty_pipeline)
+            ),
+            step_keys_to_execute=step_keys,
+        )
+    )
+
+    assert get_step_output(return_one_step_events, 'return_one.transform')
+    assert has_output_value(run_id, 'return_one.transform')
+    assert get_output_value(run_id, 'return_one.transform', Int) == 1
+
+    add_one_step_events = list(
+        execute_plan_subset(
+            execution_plan,
+            environment_dict=environment_dict,
+            run_config=RunConfig(
+                run_id=run_id, executor_config=MultiprocessExecutorConfig(define_inty_pipeline)
+            ),
+            step_keys_to_execute=['add_one.transform'],
+        )
+    )
+
+    assert get_step_output(add_one_step_events, 'add_one.transform')
+    assert has_output_value(run_id, 'add_one.transform')
+    assert get_output_value(run_id, 'add_one.transform', Int) == 2
