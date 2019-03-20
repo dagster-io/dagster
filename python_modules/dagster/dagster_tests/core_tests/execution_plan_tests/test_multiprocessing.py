@@ -35,6 +35,7 @@ def test_diamond_multi_execution():
     assert result.success
 
     # FIXME: be able to get this value
+    # https://github.com/dagster-io/dagster/issues/953
     # assert result.result_for_solid('adder').transformed_value() == 11
 
     pids_by_solid = {}
