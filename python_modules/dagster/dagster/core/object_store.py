@@ -73,7 +73,7 @@ class S3ObjectStore(ObjectStore):
         self.root = 'dagster/runs/{run_id}/files'.format(run_id=self.run_id)
 
     def _key_for_paths(self, paths):
-        return '/'.join([self.root, *paths])
+        return '/'.join([self.root] + paths)
 
     def set_object(self, obj, context, runtime_type, paths):
         check.inst_param(context, 'context', SystemPipelineExecutionContext)
