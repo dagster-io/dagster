@@ -11,3 +11,9 @@ def get_system_temp_directory():
     else:
         # On unix variants we use /tmp per convention
         return '/tmp'
+
+
+try:
+    FileNotFoundError = FileNotFoundError  # pylint:disable=redefined-builtin
+except NameError:
+    FileNotFoundError = IOError

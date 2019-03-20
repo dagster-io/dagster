@@ -17,7 +17,7 @@ from flask_sockets import Sockets
 from graphql.execution.executors.gevent import GeventExecutor as Executor
 from nbconvert import HTMLExporter
 
-from dagster import check, RepositoryDefinition
+from dagster import check, RepositoryDefinition, seven
 from dagster.cli.dynamic_loader import load_repository_from_target_info
 
 from .pipeline_execution_manager import MultiprocessingExecutionManager, SynchronousExecutionManager
@@ -89,7 +89,7 @@ def static_view(path, file):
 def index_view(_path):
     try:
         return send_file(os.path.join(os.path.dirname(__file__), './webapp/build/index.html'))
-    except FileNotFoundError:
+    except seven.FileNotFoundError:
         text = '''<p>Can't find webapp files. Probably webapp isn't built. If you are using
         dagit, then probably it's a corrupted installation or a bug. However, if you are
         developing dagit locally, you problem can be fixed as follows:</p>
