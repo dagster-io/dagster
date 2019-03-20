@@ -697,7 +697,7 @@ jobs:
             yarn run check-prettier
 
       - run:
-          name: Check GraphQL schema artifacts
+          name: Check GraphQL schema artifacts in sync
           command: |
             cd js_modules/dagit
             yarn download-schema
