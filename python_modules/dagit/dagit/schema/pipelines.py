@@ -25,6 +25,7 @@ class DauphinPipeline(dauphin.ObjectType):
 
     name = dauphin.NonNull(dauphin.String)
     description = dauphin.String()
+    testing = dauphin.String()
     solids = dauphin.non_null_list('Solid')
     contexts = dauphin.non_null_list('PipelineContext')
     environment_type = dauphin.NonNull('ConfigType')
