@@ -1,17 +1,5 @@
-import tempfile
-import os
-import sys
-
-
-def get_system_temp_directory():
-    if sys.platform == 'win32':
-        # On windows tempfile.gettempdir() returns the local of the temp
-        # directory that should be able to persist between runs
-        return tempfile.gettempdir()
-    else:
-        # On unix variants we use /tmp per convention
-        return '/tmp'
-
+from .json import dump, dumps, JSONDecodeError
+from .temp_dir import get_system_temp_directory
 
 try:
     FileNotFoundError = FileNotFoundError  # pylint:disable=redefined-builtin
