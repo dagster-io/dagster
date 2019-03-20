@@ -97,11 +97,11 @@ def ui(host, port, sync, log, log_dir, query, variables, no_watch=False, **kwarg
         if variables:
             raise Exception('if you specify --variables/-v you need to specify --query/-q')
 
-    if no_watch:
-        warnings.warn(
-            'Do not set no_watch when calling the Dagit Python CLI directly -- this flag is a no-op'
-            'at this level and should be set when invoking dagit/bin/dagit.'
-        )
+    check.invariant(
+        not no_watch,
+        'Do not set no_watch when calling the Dagit Python CLI directly -- this flag is a no-op'
+        'at this level and should be set only when invoking dagit/bin/dagit.',
+    )
     host_dagit_ui(log, log_dir, repository_container, sync, host, port)
 
 
