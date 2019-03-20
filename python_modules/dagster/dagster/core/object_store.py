@@ -1,13 +1,10 @@
 import os
 import pickle
 
+from abc import ABCMeta, abstractmethod
 from io import BytesIO
 
-try:
-    import boto3
-    import botocore
-except ImportError:
-    pass
+import six
 
 from dagster import check, seven
 from dagster.utils import mkdir_p
@@ -16,8 +13,23 @@ from .execution_context import SystemPipelineExecutionContext
 from .types.runtime import RuntimeType
 
 
+@six.add_metaclass(ABCMeta)
 class ObjectStore:
-    pass
+    @abstractmethod
+    def set_object(self, obj, context, runtime_type, paths):
+        pass
+
+    @abstractmethod
+    def get_object(self, context, runtime_type, paths):
+        pass
+
+    @abstractmethod
+    def has_object(self, context, paths):
+        pass
+
+    @abstractmethod
+    def rm_object(self, context, paths):
+        pass
 
 
 class FileSystemObjectStore(ObjectStore):
@@ -62,6 +74,14 @@ class FileSystemObjectStore(ObjectStore):
 
 class S3ObjectStore(ObjectStore):
     def __init__(self, s3_bucket, run_id):
+        try:
+            import boto3
+            import botocore  # pylint: disable=unused-import
+        except ImportError:
+            raise check.CheckError(
+                'boto3 and botocore must both be available for import in order to instantiate '
+                'an S3ObjectStore'
+            )
         check.str_param(run_id, 'run_id')
 
         self.s3 = boto3.client('s3')
@@ -111,11 +131,10 @@ class S3ObjectStore(ObjectStore):
         try:
             self.s3.head_object(Bucket=self.bucket, Key=key)
             return True
-        except botocore.exceptions.ClientError as exc:
-            if 'Error' in exc.response:
-                if 'Code' in exc.response['Error']:
-                    if exc.response['Error']['Code'] == '404':
-                        return False
+        except botocore.exceptions.ClientError as exc:  # pylint: disable=undefined-variable
+            if exc.response.get('Error', {}).get('Code') == '404':
+                return False
+            raise
 
     def rm_object(self, context, paths):
         if not self.has_object(context, paths):
