@@ -1,6 +1,6 @@
-import json
 import subprocess
 
+from dagster.seven import json
 from dagster.utils import script_relative_path
 
 

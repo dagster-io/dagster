@@ -1,4 +1,3 @@
-import json
 import os
 import sys
 
@@ -11,6 +10,7 @@ import click
 
 from dagster import check
 from dagster.cli.dynamic_loader import repository_target_argument, load_target_info_from_cli_args
+from dagster.seven import json
 
 from .app import create_app, RepositoryContainer
 from .pipeline_execution_manager import SynchronousExecutionManager

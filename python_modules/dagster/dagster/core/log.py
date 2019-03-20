@@ -1,11 +1,10 @@
 import datetime
-import json
 import itertools
 import logging
 import uuid
 
 from dagster import check
-
+from dagster.seven import json
 
 DAGSTER_META_KEY = 'dagster_meta'
 

@@ -1,14 +1,16 @@
 from __future__ import absolute_import
-from collections import namedtuple
+
 import copy
-import json
 import logging
-from logging import CRITICAL, DEBUG, ERROR, INFO, WARNING
 import traceback
+
+from collections import namedtuple
+from logging import CRITICAL, DEBUG, ERROR, INFO, WARNING
 
 import coloredlogs
 
 from dagster import check
+from dagster.seven import json
 
 VALID_LEVELS = set([CRITICAL, DEBUG, ERROR, INFO, WARNING])
 

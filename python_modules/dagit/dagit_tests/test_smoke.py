@@ -1,8 +1,10 @@
 from __future__ import absolute_import, unicode_literals
-import json
+
+from dagster.seven import json
+from dagster.tutorials.intro_tutorial.repos import define_repo
+
 from dagit import app
 from dagit.pipeline_run_storage import PipelineRunStorage
-from dagster.tutorials.intro_tutorial.repos import define_repo
 
 
 def test_smoke_app():

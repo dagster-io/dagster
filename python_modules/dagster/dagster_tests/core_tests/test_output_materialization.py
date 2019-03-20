@@ -1,5 +1,3 @@
-import json
-
 import pytest
 
 from dagster import (
@@ -13,19 +11,15 @@ from dagster import (
     solid,
     types,
 )
-
-from dagster.utils.test import get_temp_file_name, get_temp_file_names
-
 from dagster.core.definitions.environment_configs import (
     solid_has_config_entry,
     solid_has_configurable_outputs,
 )
-
 from dagster.core.execution import create_environment_config, create_execution_plan
-
-from dagster.core.execution_plan.objects import StepOutputHandle
-
 from dagster.core.execution_plan.materialization_thunk import MATERIALIZATION_THUNK_OUTPUT
+from dagster.core.execution_plan.objects import StepOutputHandle
+from dagster.seven import json
+from dagster.utils.test import get_temp_file_name, get_temp_file_names
 
 
 def single_int_output_pipeline():

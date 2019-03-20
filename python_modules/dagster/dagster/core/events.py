@@ -1,9 +1,8 @@
 from collections import namedtuple
 from enum import Enum
-import json
 
 from dagster import check
-
+from dagster.seven import json
 from dagster.utils import merge_dicts
 from dagster.utils.error import serializable_error_info_from_exc_info, SerializableErrorInfo
 

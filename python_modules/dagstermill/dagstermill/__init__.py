@@ -5,7 +5,6 @@ from enum import Enum
 
 import base64
 import copy
-import json
 import os
 import subprocess
 import uuid
@@ -48,6 +47,7 @@ from dagster.core.types.marshal import (
     PickleSerializationStrategy,
 )
 from dagster.core.types.runtime import RuntimeType
+from dagster.seven import json
 
 # magic incantation for syncing up notebooks to enclosing virtual environment.
 # I don't claim to understand it.

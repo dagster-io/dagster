@@ -1,14 +1,12 @@
-from collections import namedtuple, OrderedDict
-from enum import Enum
-import json
 import os
-
 import shutil
 
-from dagster import check
-from dagster.utils import mkdir_p, list_pull
+from collections import namedtuple, OrderedDict
+from enum import Enum
 
-from dagster import seven
+from dagster import check, seven
+from dagster.seven import json
+from dagster.utils import mkdir_p, list_pull
 
 
 def base_run_directory():

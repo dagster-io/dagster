@@ -1,9 +1,9 @@
 import copy
-import json
 
 import great_expectations as ge
 
 from dagster import check
+from dagster.seven import json
 from dagster.core.definitions import ExpectationDefinition, ExpectationResult
 
 

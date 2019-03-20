@@ -1,6 +1,5 @@
 from collections import OrderedDict
 from enum import Enum
-import json
 import os
 import time
 
@@ -13,6 +12,7 @@ from dagster import check
 from dagster.core.events import EventRecord, EventType
 from dagster.core.execution import ExecutionSelector
 from dagster.core.execution_plan.objects import ExecutionPlan
+from dagster.seven import json
 
 
 class PipelineRunStatus(Enum):
