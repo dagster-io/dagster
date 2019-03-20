@@ -31,6 +31,8 @@ class FileSystemObjectStore(ObjectStore):
             target_path = os.path.join(target_dir, paths[-1])
         else:
             check.invariant(len(paths) == 1)
+            target_dir = self.root
+            mkdir_p(target_dir)
             target_path = os.path.join(target_dir, paths[0])
 
         check.invariant(not os.path.exists(target_path))
