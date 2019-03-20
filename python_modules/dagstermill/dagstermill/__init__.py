@@ -449,7 +449,7 @@ def get_papermill_parameters(transform_context, inputs, output_log_path):
 
     dm_context_dict['output_name_type_dict'] = output_name_type_dict
 
-    parameters['dm_context'] = json.dumps(dm_context_dict, sort_keys=True)
+    parameters['dm_context'] = json.dumps(dm_context_dict)
 
     return parameters
 
