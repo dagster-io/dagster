@@ -42,6 +42,9 @@ test_airline:
 intro_tutorial:
 	cd dagster/dagster/tutorials/intro_tutorial; dagit -p 3333
 
+docs:
+	pytest --snapshot-update dagster
+
 clean:
 	find . -name \*.pyc -delete
 	rm -rf ./dagster/docs/_build
