@@ -193,7 +193,7 @@ class S3ObjectStore(ObjectStore):
     def copy_object_from_prev_run(
         self, context, previous_run_id, paths
     ):  # pylint: disable=unused-argument
-        check.failed('not supported: TODO for max. put issue number here')
+        check.not_implemented('not supported: TODO for max. put issue number here')
 
 
 def get_fs_paths(step_key, output_name):
