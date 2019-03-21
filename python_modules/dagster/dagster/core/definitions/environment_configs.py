@@ -12,7 +12,7 @@ from dagster.core.system_config.objects import (
     StorageConfig,
 )
 
-from dagster.core.types import Bool, Field, List, NamedDict, NamedSelector, Dict
+from dagster.core.types import Bool, Dict, Field, List, NamedDict, NamedSelector, String
 from dagster.core.types.config import ConfigType, ConfigTypeAttributes
 from dagster.core.types.default_applier import apply_default_values
 from dagster.core.types.field_utils import check_opt_field_param, FieldImpl
@@ -236,6 +236,12 @@ def define_storage_config_cls(name):
             ),
             'filesystem': Field(
                 SystemNamedDict('{parent_name}.Files'.format(parent_name=name), {}),
+                is_optional=True,
+            ),
+            's3': Field(
+                SystemNamedDict(
+                    '{parent_name}.S3'.format(parent_name=name), {'s3_bucket': Field(String)}
+                ),
                 is_optional=True,
             ),
         },

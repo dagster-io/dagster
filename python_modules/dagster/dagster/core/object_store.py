@@ -176,3 +176,20 @@ def get_filesystem_intermediate(run_id, step_key, runtime_type, output_name='res
 def has_filesystem_intermediate(run_id, step_key, output_name='result'):
     object_store = FileSystemObjectStore(run_id)
     return object_store.has_object(context=None, paths=get_fs_paths(step_key, output_name))
+
+
+def get_s3_intermediate(context, s3_bucket, run_id, step_key, runtime_type, output_name='result'):
+    object_store = S3ObjectStore(s3_bucket, run_id)
+    return object_store.get_object(
+        context=context, runtime_type=runtime_type, paths=get_fs_paths(step_key, output_name)
+    )
+
+
+def has_s3_intermediate(context, s3_bucket, run_id, step_key, output_name='result'):
+    object_store = S3ObjectStore(s3_bucket, run_id)
+    return object_store.has_object(context=context, paths=get_fs_paths(step_key, output_name))
+
+
+def rm_s3_intermediate(context, s3_bucket, run_id, step_key, output_name='result'):
+    object_store = S3ObjectStore(s3_bucket, run_id)
+    return object_store.rm_object(context=context, paths=get_fs_paths(step_key, output_name))
