@@ -24741,7 +24741,9 @@ happened during the computation.</p>
 39
 40
 41
-42</pre></div></td><td class="code"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">log_num</span><span class="p">(</span><span class="n">context</span><span class="p">,</span> <span class="n">num</span><span class="p">):</span>
+42</pre></div></td><td class="code"><div class="highlight"><pre><span></span>
+<span class="nd">@solid</span><span class="p">(</span><span class="n">inputs</span><span class="o">=</span><span class="p">[</span><span class="n">InputDefinition</span><span class="p">(</span><span class="s1">&#39;num&#39;</span><span class="p">,</span> <span class="n">dagster_type</span><span class="o">=</span><span class="n">Int</span><span class="p">)])</span>
+<span class="k">def</span> <span class="nf">log_num</span><span class="p">(</span><span class="n">context</span><span class="p">,</span> <span class="n">num</span><span class="p">):</span>
     <span class="n">context</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;num </span><span class="si">{num}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">num</span><span class="o">=</span><span class="n">num</span><span class="p">))</span>
     <span class="k">return</span> <span class="n">num</span>
 
@@ -24754,8 +24756,6 @@ happened during the computation.</p>
 
 <span class="k">def</span> <span class="nf">define_multiple_outputs_step_one_pipeline</span><span class="p">():</span>
     <span class="k">return</span> <span class="n">PipelineDefinition</span><span class="p">(</span>
-        <span class="n">name</span><span class="o">=</span><span class="s1">&#39;multiple_outputs_step_one_pipeline&#39;</span><span class="p">,</span>
-        <span class="n">solids</span><span class="o">=</span><span class="p">[</span><span class="n">return_dict_results</span><span class="p">,</span> <span class="n">log_num</span><span class="p">,</span> <span class="n">log_num_squared</span><span class="p">],</span>
 <span class="nd">@solid</span><span class="p">(</span>
     <span class="n">outputs</span><span class="o">=</span><span class="p">[</span>
         <span class="n">OutputDefinition</span><span class="p">(</span><span class="n">dagster_type</span><span class="o">=</span><span class="n">Int</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;out_one&#39;</span><span class="p">),</span>
@@ -24765,24 +24765,24 @@ happened during the computation.</p>
 <span class="k">def</span> <span class="nf">return_dict_results</span><span class="p">(</span><span class="n">_context</span><span class="p">):</span>
     <span class="k">return</span> <span class="n">MultipleResults</span><span class="o">.</span><span class="n">from_dict</span><span class="p">({</span><span class="s1">&#39;out_one&#39;</span><span class="p">:</span> <span class="mi">23</span><span class="p">,</span> <span class="s1">&#39;out_two&#39;</span><span class="p">:</span> <span class="mi">45</span><span class="p">})</span>
 
+    <span class="k">return</span> <span class="n">PipelineDefinition</span><span class="p">(</span>
+        <span class="n">name</span><span class="o">=</span><span class="s1">&#39;multiple_outputs_step_one_pipeline&#39;</span><span class="p">,</span>
         <span class="n">solids</span><span class="o">=</span><span class="p">[</span><span class="n">return_dict_results</span><span class="p">,</span> <span class="n">log_num</span><span class="p">,</span> <span class="n">log_num_squared</span><span class="p">],</span>
         <span class="n">dependencies</span><span class="o">=</span><span class="p">{</span>
-            <span class="s1">&#39;log_num&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;num&#39;</span><span class="p">:</span> <span class="n">DependencyDefinition</span><span class="p">(</span><span class="n">solid</span><span class="o">=</span><span class="s1">&#39;return_dict_results&#39;</span><span class="p">,</span> <span class="n">output</span><span class="o">=</span><span class="s1">&#39;out_one&#39;</span><span class="p">)},</span>
+            <span class="s1">&#39;log_num&#39;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s1">&#39;num&#39;</span><span class="p">:</span> <span class="n">DependencyDefinition</span><span class="p">(</span>
+                    <span class="n">solid</span><span class="o">=</span><span class="s1">&#39;return_dict_results&#39;</span><span class="p">,</span> <span class="n">output</span><span class="o">=</span><span class="s1">&#39;out_one&#39;</span>
+                <span class="p">)</span>
+            <span class="p">},</span>
             <span class="s1">&#39;log_num_squared&#39;</span><span class="p">:</span> <span class="p">{</span>
-                <span class="s1">&#39;num&#39;</span><span class="p">:</span> <span class="n">DependencyDefinition</span><span class="p">(</span><span class="n">solid</span><span class="o">=</span><span class="s1">&#39;return_dict_results&#39;</span><span class="p">,</span> <span class="n">output</span><span class="o">=</span><span class="s1">&#39;out_two&#39;</span><span class="p">)</span>
+                <span class="s1">&#39;num&#39;</span><span class="p">:</span> <span class="n">DependencyDefinition</span><span class="p">(</span>
+                    <span class="n">solid</span><span class="o">=</span><span class="s1">&#39;return_dict_results&#39;</span><span class="p">,</span> <span class="n">output</span><span class="o">=</span><span class="s1">&#39;out_two&#39;</span>
+                <span class="p">)</span>
             <span class="p">},</span>
         <span class="p">},</span>
     <span class="p">)</span>
 
 
-<span class="k">def</span> <span class="nf">define_multiple_outputs_step_two_pipeline</span><span class="p">():</span>
-    <span class="k">return</span> <span class="n">PipelineDefinition</span><span class="p">(</span>
-        <span class="n">name</span><span class="o">=</span><span class="s1">&#39;multiple_outputs_step_two_pipeline&#39;</span><span class="p">,</span>
-        <span class="n">solids</span><span class="o">=</span><span class="p">[</span><span class="n">yield_outputs</span><span class="p">,</span> <span class="n">log_num</span><span class="p">,</span> <span class="n">log_num_squared</span><span class="p">],</span>
-        <span class="n">dependencies</span><span class="o">=</span><span class="p">{</span>
-            <span class="s1">&#39;log_num&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;num&#39;</span><span class="p">:</span> <span class="n">DependencyDefinition</span><span class="p">(</span><span class="s1">&#39;yield_outputs&#39;</span><span class="p">,</span> <span class="s1">&#39;out_one&#39;</span><span class="p">)},</span>
-            <span class="s1">&#39;log_num_squared&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;num&#39;</span><span class="p">:</span> <span class="n">DependencyDefinition</span><span class="p">(</span><span class="s1">&#39;yield_outputs&#39;</span><span class="p">,</span> <span class="s1">&#39;out_two&#39;</span><span class="p">)},</span>
-        <span class="p">},</span>
 </pre></div>
 </td></tr></table></div>
 </div>
@@ -24885,8 +24885,13 @@ and then execute that pipeline.</p>
 25
 26
 27
-28</pre></div></td><td class="code"><div class="highlight"><pre><span></span><span class="nd">@solid</span><span class="p">(</span>
-    <span class="n">config_field</span><span class="o">=</span><span class="n">Field</span><span class="p">(</span><span class="n">String</span><span class="p">,</span> <span class="n">description</span><span class="o">=</span><span class="s1">&#39;Should be either out_one or out_two&#39;</span><span class="p">),</span>
+28
+29
+30
+31</pre></div></td><td class="code"><div class="highlight"><pre><span></span><span class="nd">@solid</span><span class="p">(</span>
+    <span class="n">config_field</span><span class="o">=</span><span class="n">Field</span><span class="p">(</span>
+        <span class="n">String</span><span class="p">,</span> <span class="n">description</span><span class="o">=</span><span class="s1">&#39;Should be either out_one or out_two&#39;</span>
+    <span class="p">),</span>
     <span class="n">outputs</span><span class="o">=</span><span class="p">[</span>
         <span class="n">OutputDefinition</span><span class="p">(</span><span class="n">dagster_type</span><span class="o">=</span><span class="n">Int</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;out_one&#39;</span><span class="p">,</span> <span class="n">optional</span><span class="o">=</span><span class="kc">True</span><span class="p">),</span>
         <span class="n">OutputDefinition</span><span class="p">(</span><span class="n">dagster_type</span><span class="o">=</span><span class="n">Int</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;out_two&#39;</span><span class="p">,</span> <span class="n">optional</span><span class="o">=</span><span class="kc">True</span><span class="p">),</span>
@@ -24900,19 +24905,20 @@ and then execute that pipeline.</p>
     <span class="k">else</span><span class="p">:</span>
         <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s1">&#39;invalid config&#39;</span><span class="p">)</span>
 
-
-<span class="nd">@solid</span><span class="p">(</span><span class="n">inputs</span><span class="o">=</span><span class="p">[</span><span class="n">InputDefinition</span><span class="p">(</span><span class="s1">&#39;num&#39;</span><span class="p">,</span> <span class="n">dagster_type</span><span class="o">=</span><span class="n">Int</span><span class="p">)])</span>
-
-
-<span class="k">def</span> <span class="nf">define_multiple_outputs_step_three_pipeline</span><span class="p">():</span>
     <span class="k">return</span> <span class="n">PipelineDefinition</span><span class="p">(</span>
-        <span class="n">name</span><span class="o">=</span><span class="s1">&#39;multiple_outputs_step_three_pipeline&#39;</span><span class="p">,</span>
-        <span class="n">solids</span><span class="o">=</span><span class="p">[</span><span class="n">conditional</span><span class="p">,</span> <span class="n">log_num</span><span class="p">,</span> <span class="n">log_num_squared</span><span class="p">],</span>
+        <span class="n">name</span><span class="o">=</span><span class="s1">&#39;multiple_outputs_step_two_pipeline&#39;</span><span class="p">,</span>
+        <span class="n">solids</span><span class="o">=</span><span class="p">[</span><span class="n">yield_outputs</span><span class="p">,</span> <span class="n">log_num</span><span class="p">,</span> <span class="n">log_num_squared</span><span class="p">],</span>
         <span class="n">dependencies</span><span class="o">=</span><span class="p">{</span>
-            <span class="s1">&#39;log_num&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;num&#39;</span><span class="p">:</span> <span class="n">DependencyDefinition</span><span class="p">(</span><span class="s1">&#39;conditional&#39;</span><span class="p">,</span> <span class="s1">&#39;out_one&#39;</span><span class="p">)},</span>
-            <span class="s1">&#39;log_num_squared&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;num&#39;</span><span class="p">:</span> <span class="n">DependencyDefinition</span><span class="p">(</span><span class="s1">&#39;conditional&#39;</span><span class="p">,</span> <span class="s1">&#39;out_two&#39;</span><span class="p">)},</span>
+            <span class="s1">&#39;log_num&#39;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s1">&#39;num&#39;</span><span class="p">:</span> <span class="n">DependencyDefinition</span><span class="p">(</span><span class="s1">&#39;yield_outputs&#39;</span><span class="p">,</span> <span class="s1">&#39;out_one&#39;</span><span class="p">)</span>
+            <span class="p">},</span>
+            <span class="s1">&#39;log_num_squared&#39;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s1">&#39;num&#39;</span><span class="p">:</span> <span class="n">DependencyDefinition</span><span class="p">(</span><span class="s1">&#39;yield_outputs&#39;</span><span class="p">,</span> <span class="s1">&#39;out_two&#39;</span><span class="p">)</span>
+            <span class="p">},</span>
         <span class="p">},</span>
     <span class="p">)</span>
+
+
 </pre></div>
 </td></tr></table></div>
 </div>
