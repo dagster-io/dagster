@@ -8,6 +8,7 @@ from dagster import check
 
 from .execution_context import SystemPipelineExecutionContext
 from .object_store import ObjectStore
+from .runs import RunStorageMode
 from .types.runtime import RuntimeType
 
 
@@ -57,7 +58,9 @@ class IntermediatesManager(six.with_metaclass(ABCMeta)):  # pylint: disable=no-i
 
 class InMemoryIntermediatesManager(IntermediatesManager):
     def __init__(self):
+
         self.values = {}
+        self.storage_mode = RunStorageMode.IN_MEMORY
 
     # Note:
     # For the in-memory manager context and runtime are currently optional
@@ -78,6 +81,8 @@ class InMemoryIntermediatesManager(IntermediatesManager):
         check.inst_param(step_output_handle, 'step_output_handle', StepOutputHandle)
         self.values[step_output_handle] = value
 
+        return str(id(self.values[step_output_handle]))
+
     def has_intermediate(self, context, step_output_handle):
         check.opt_inst_param(context, 'context', SystemPipelineExecutionContext)
         check.inst_param(step_output_handle, 'step_output_handle', StepOutputHandle)
@@ -90,6 +95,7 @@ class InMemoryIntermediatesManager(IntermediatesManager):
 class ObjectStoreIntermediatesManager(IntermediatesManager):
     def __init__(self, object_store):
         self._object_store = check.inst_param(object_store, 'object_store', ObjectStore)
+        self.storage_mode = self._object_store.storage_mode
 
     def _get_paths(self, step_output_handle):
         return ['intermediates', step_output_handle.step_key, step_output_handle.output_name]

@@ -140,6 +140,17 @@ type ExecutionStepOutput {
   type: RuntimeType!
 }
 
+type ExecutionStepOutputEvent implements MessageEvent {
+  run: PipelineRun!
+  message: String!
+  timestamp: String!
+  level: LogLevel!
+  step: ExecutionStep
+  outputName: String!
+  storageMode: String!
+  storageObjectId: String!
+}
+
 type ExecutionStepStartEvent implements MessageEvent {
   run: PipelineRun!
   message: String!
@@ -406,7 +417,7 @@ type PipelineRun {
   config: String!
 }
 
-union PipelineRunEvent = LogMessageEvent | PipelineStartEvent | PipelineSuccessEvent | PipelineFailureEvent | ExecutionStepStartEvent | ExecutionStepSuccessEvent | ExecutionStepFailureEvent | PipelineProcessStartEvent | PipelineProcessStartedEvent | StepMaterializationEvent
+union PipelineRunEvent = LogMessageEvent | PipelineStartEvent | PipelineSuccessEvent | PipelineFailureEvent | ExecutionStepStartEvent | ExecutionStepSuccessEvent | ExecutionStepOutputEvent | ExecutionStepFailureEvent | PipelineProcessStartEvent | PipelineProcessStartedEvent | StepMaterializationEvent
 
 type PipelineRunLogsSubscriptionPayload {
   messages: [PipelineRunEvent!]!

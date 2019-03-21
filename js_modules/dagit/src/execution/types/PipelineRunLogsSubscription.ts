@@ -19,7 +19,7 @@ export interface PipelineRunLogsSubscription_pipelineRunLogs_messages_LogMessage
 }
 
 export interface PipelineRunLogsSubscription_pipelineRunLogs_messages_LogMessageEvent {
-  __typename: "LogMessageEvent" | "PipelineStartEvent" | "PipelineSuccessEvent" | "PipelineFailureEvent" | "ExecutionStepStartEvent" | "ExecutionStepSuccessEvent" | "PipelineProcessStartEvent";
+  __typename: "LogMessageEvent" | "PipelineStartEvent" | "PipelineSuccessEvent" | "PipelineFailureEvent" | "ExecutionStepStartEvent" | "ExecutionStepSuccessEvent" | "ExecutionStepOutputEvent" | "PipelineProcessStartEvent";
   run: PipelineRunLogsSubscription_pipelineRunLogs_messages_LogMessageEvent_run;
   message: string;
   timestamp: string;

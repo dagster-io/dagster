@@ -7,6 +7,7 @@ from snapshottest import Snapshot
 
 snapshots = Snapshot()
 
+<<<<<<< HEAD:python_modules/dagit/dagit_tests/graphql/snapshots/snap_test_misc.py
 snapshots['test_invalid_config_execute_plan 1'] = {
     'executePlan': {
         '__typename': 'PipelineConfigValidationInvalid',
@@ -68,12 +69,93 @@ snapshots['test_success_whole_execution_plan 1'] = {
                 'valueRepr': '''   num1  num2  sum  sum_sq
 0     1     2    3       9
 1     3     4    7      49'''
+=======
+snapshots['test_query_execution_plan_snapshot 1'] = {
+    'executionPlan': {
+        '__typename': 'ExecutionPlan',
+        'pipeline': {
+            'name': 'pandas_hello_world'
+        },
+        'steps': [
+            {
+                'inputs': [
+                ],
+                'kind': 'INPUT_THUNK',
+                'name': 'sum_solid.num.input_thunk',
+                'outputs': [
+                    {
+                        'name': 'input_thunk_output',
+                        'type': {
+                            'name': 'PandasDataFrame'
+                        }
+                    }
+                ],
+                'solid': {
+                    'name': 'sum_solid'
+                }
+            },
+            {
+                'inputs': [
+                    {
+                        'dependsOn': {
+                            'name': 'sum_solid.num.input_thunk'
+                        },
+                        'name': 'num',
+                        'type': {
+                            'name': 'PandasDataFrame'
+                        }
+                    }
+                ],
+                'kind': 'TRANSFORM',
+                'name': 'sum_solid.transform',
+                'outputs': [
+                    {
+                        'name': 'result',
+                        'type': {
+                            'name': 'PandasDataFrame'
+                        }
+                    }
+                ],
+                'solid': {
+                    'name': 'sum_solid'
+                }
+            },
+            {
+                'inputs': [
+                    {
+                        'dependsOn': {
+                            'name': 'sum_solid.transform'
+                        },
+                        'name': 'sum_df',
+                        'type': {
+                            'name': 'PandasDataFrame'
+                        }
+                    }
+                ],
+                'kind': 'TRANSFORM',
+                'name': 'sum_sq_solid.transform',
+                'outputs': [
+                    {
+                        'name': 'result',
+                        'type': {
+                            'name': 'PandasDataFrame'
+                        }
+                    }
+                ],
+                'solid': {
+                    'name': 'sum_sq_solid'
+                }
+>>>>>>> Consolidated PR #969:python_modules/dagit/dagit_tests/snapshots/snap_test_graphql.py
             }
         ]
     }
 }
 
+<<<<<<< HEAD:python_modules/dagit/dagit_tests/graphql/snapshots/snap_test_misc.py
 snapshots['test_success_whole_execution_plan_with_filesystem_config 1'] = {
+=======
+snapshots['test_successful_two_part_execute_plan 1'] = {
+>>>>>>> Consolidated PR #969:python_modules/dagit/dagit_tests/snapshots/snap_test_graphql.py
     'executePlan': {
         '__typename': 'ExecutePlanSuccess',
         'hasFailures': False,
