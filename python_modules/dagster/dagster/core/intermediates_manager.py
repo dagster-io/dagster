@@ -59,15 +59,27 @@ class InMemoryIntermediatesManager(IntermediatesManager):
     def __init__(self):
         self.values = {}
 
+    # Note:
+    # For the in-memory manager context and runtime are currently optional
+    # because they are not strictly required. So we allow one to access
+    # these values in places where those are not immediately avaiable
+    # but one wants to inspect intermediates. This is useful in test contexts
+    # especially
+
     def get_intermediate(self, context, runtime_type, step_output_handle):
+        check.opt_inst_param(context, 'context', SystemPipelineExecutionContext)
+        check.opt_inst_param(runtime_type, 'runtime_type', RuntimeType)
         check.inst_param(step_output_handle, 'step_output_handle', StepOutputHandle)
         return self.values[step_output_handle]
 
     def set_intermediate(self, context, runtime_type, step_output_handle, value):
+        check.opt_inst_param(context, 'context', SystemPipelineExecutionContext)
+        check.opt_inst_param(runtime_type, 'runtime_type', RuntimeType)
         check.inst_param(step_output_handle, 'step_output_handle', StepOutputHandle)
         self.values[step_output_handle] = value
 
     def has_intermediate(self, context, step_output_handle):
+        check.opt_inst_param(context, 'context', SystemPipelineExecutionContext)
         check.inst_param(step_output_handle, 'step_output_handle', StepOutputHandle)
         return step_output_handle in self.values
 
