@@ -1,15 +1,16 @@
-from collections import OrderedDict
-from enum import Enum
-import json
 import os
 import time
 
-from rx import Observable
+from collections import OrderedDict
+from enum import Enum
+
 import gevent
 import gevent.lock
 import pyrsistent
 
-from dagster import check
+from rx import Observable
+
+from dagster import check, seven
 from dagster.core.events import EventRecord, EventType
 from dagster.core.execution import ExecutionSelector
 from dagster.core.execution_plan.objects import ExecutionPlan
@@ -153,15 +154,14 @@ class LogFilePipelineRun(InMemoryPipelineRun):
         metadata_file = '{}.json'.format(self._file_prefix)
         with open(metadata_file, 'w', encoding="utf-8") as f:
             f.write(
-                json.dumps(
+                seven.json.dumps(
                     {
                         'run_id': self.run_id,
                         'pipeline_name': self.selector.name,
                         'pipeline_solid_subset': self.selector.solid_subset,
                         'config': self.config,
                         'execution_plan': 'TODO',
-                    },
-                    sort_keys=True,
+                    }
                 )
             )
 
@@ -174,7 +174,7 @@ class LogFilePipelineRun(InMemoryPipelineRun):
             # Going to do the less error-prone, simpler, but slower strategy:
             # open, append, close for every log message for now
             with open(self._log_file, 'a', encoding='utf-8') as log_file_handle:
-                log_file_handle.write(json.dumps(new_event.to_dict(), sort_keys=True))
+                log_file_handle.write(seven.json.dumps(new_event.to_dict()))
                 log_file_handle.write('\n')
 
 

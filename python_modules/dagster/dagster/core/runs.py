@@ -1,14 +1,12 @@
-from collections import namedtuple, OrderedDict
-from enum import Enum
 import json
 import os
-
 import shutil
 
-from dagster import check
-from dagster.utils import mkdir_p, list_pull
+from collections import namedtuple, OrderedDict
+from enum import Enum
 
-from dagster import seven
+from dagster import check, seven
+from dagster.utils import mkdir_p, list_pull
 
 
 def base_run_directory():
@@ -47,7 +45,7 @@ class FileSystemRunStorage(RunStorage):
         mkdir_p(run_dir)
 
         with open(self._meta_file, 'a+') as ff:
-            ff.write(json.dumps(dagster_run_meta._asdict()) + '\n')
+            ff.write(seven.json.dumps(dagster_run_meta._asdict()) + '\n')
 
     def get_run_ids(self):
         return list_pull(self.get_run_metas(), 'run_id')

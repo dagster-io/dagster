@@ -1,6 +1,7 @@
 import json
 import subprocess
 
+from dagster import seven
 from dagster.utils import script_relative_path
 
 
@@ -85,7 +86,7 @@ mutation ($pipeline: ExecutionSelector!, $config: PipelineConfig) {
 def test_start_execution():
     path = script_relative_path('./num.csv')
 
-    variables = json.dumps(
+    variables = seven.json.dumps(
         {
             "pipeline": {"name": "pandas_hello_world"},
             "config": {"solids": {"sum_solid": {"inputs": {"num": {"csv": {"path": path}}}}}},

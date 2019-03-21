@@ -10,7 +10,7 @@ from graphql import graphql
 from graphql.execution.executors.gevent import GeventExecutor as Executor
 
 
-from dagster import check
+from dagster import check, seven
 from dagster.cli.dynamic_loader import repository_target_argument, load_target_info_from_cli_args
 
 from .app import create_app, RepositoryContainer
@@ -52,7 +52,7 @@ def execute_query_from_cli(repository_container, query, variables):
         executor=Executor(),
     )
 
-    print(json.dumps(result.to_dict(), sort_keys=True))
+    print(seven.json.dumps(result.to_dict()))
 
 
 @click.command(

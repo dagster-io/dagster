@@ -1,9 +1,9 @@
-from collections import namedtuple
-from enum import Enum
 import json
 
-from dagster import check
+from collections import namedtuple
+from enum import Enum
 
+from dagster import check, seven
 from dagster.utils import merge_dicts
 from dagster.utils.error import serializable_error_info_from_exc_info, SerializableErrorInfo
 
@@ -94,7 +94,7 @@ class ExecutionEvents(namedtuple('_ExecutionEvents', 'pipeline_name log')):
             event_type=EventType.EXECUTION_PLAN_STEP_FAILURE.value,
             step_key=step_key,
             # We really need a better serialization story here
-            error_info=json.dumps(serializable_error_info_from_exc_info(exc_info), sort_keys=True),
+            error_info=seven.json.dumps(serializable_error_info_from_exc_info(exc_info)),
         )
 
     def step_materialization(self, step_key, file_name, file_location):
