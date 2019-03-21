@@ -331,59 +331,11 @@ class DauphinStepFailureEvent(dauphin.ObjectType):
     error_message = dauphin.Field(dauphin.NonNull(dauphin.String))
 
 
-class DauphinStartSubplanExecutionSuccess(dauphin.ObjectType):
+class DauphinInvalidStepError(dauphin.ObjectType):
     class Meta:
-        name = 'StartSubplanExecutionSuccess'
-
-    pipeline = dauphin.Field(dauphin.NonNull('Pipeline'))
-    has_failures = dauphin.Field(dauphin.NonNull(dauphin.Boolean))
-    step_events = dauphin.non_null_list(DauphinStepEvent)
-
-
-class DauphinStartSubplanExecutionInvalidStepError(dauphin.ObjectType):
-    class Meta:
-        name = 'StartSubplanExecutionInvalidStepError'
+        name = 'InvalidStepError'
 
     invalid_step_key = dauphin.NonNull(dauphin.String)
-
-
-class DauphinStartSubplanExecutionInvalidInputError(dauphin.ObjectType):
-    class Meta:
-        name = 'StartSubplanExecutionInvalidInputError'
-
-    step_key = dauphin.NonNull(dauphin.String)
-    invalid_input_name = dauphin.NonNull(dauphin.String)
-
-
-class DauphinStartSubplanExecutionInvalidOutputError(dauphin.ObjectType):
-    class Meta:
-        name = 'StartSubplanExecutionInvalidOutputError'
-
-    step_key = dauphin.NonNull(dauphin.String)
-    invalid_output_name = dauphin.NonNull(dauphin.String)
-
-
-class DauphinInvalidSubplanMissingInputError(dauphin.ObjectType):
-    class Meta:
-        name = 'InvalidSubplanMissingInputError'
-
-    step_key = dauphin.NonNull(dauphin.String)
-    missing_input_name = dauphin.NonNull(dauphin.String)
-
-
-class DauphinStartSubplanExecutionResult(dauphin.Union):
-    class Meta:
-        name = 'StartSubplanExecutionResult'
-        types = (
-            DauphinInvalidSubplanMissingInputError,
-            DauphinPipelineConfigValidationInvalid,
-            DauphinPipelineNotFoundError,
-            DauphinPythonError,
-            DauphinStartSubplanExecutionInvalidInputError,
-            DauphinStartSubplanExecutionInvalidOutputError,
-            DauphinStartSubplanExecutionInvalidStepError,
-            DauphinStartSubplanExecutionSuccess,
-        )
 
 
 class DauphinExecutePlanSuccess(dauphin.ObjectType):
@@ -402,6 +354,7 @@ class DauphinExecutePlanResult(dauphin.Union):
             DauphinExecutePlanSuccess,
             DauphinPipelineConfigValidationInvalid,
             DauphinPipelineNotFoundError,
+            DauphinInvalidStepError,
         )
 
 
