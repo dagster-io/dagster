@@ -106,3 +106,4 @@ class InMemoryRunStorage(RunStorage):
 class RunStorageMode(Enum):
     IN_MEMORY = 'IN_MEMORY'
     FILESYSTEM = 'FILESYSTEM'
+    S3 = 'S3'

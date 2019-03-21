@@ -14,7 +14,7 @@ export interface PipelineExecutionContainerFragment_runs_logs_nodes_LogMessageEv
 }
 
 export interface PipelineExecutionContainerFragment_runs_logs_nodes_LogMessageEvent {
-  __typename: "LogMessageEvent" | "PipelineStartEvent" | "PipelineSuccessEvent" | "PipelineFailureEvent" | "ExecutionStepStartEvent" | "ExecutionStepSuccessEvent" | "PipelineProcessStartEvent";
+  __typename: "LogMessageEvent" | "PipelineStartEvent" | "PipelineSuccessEvent" | "PipelineFailureEvent" | "ExecutionStepStartEvent" | "ExecutionStepSuccessEvent" | "ExecutionStepOutputEvent" | "PipelineProcessStartEvent";
   message: string;
   timestamp: string;
   level: LogLevel;

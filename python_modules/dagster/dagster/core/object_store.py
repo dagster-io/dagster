@@ -10,6 +10,7 @@ from dagster import check, seven
 from dagster.utils import mkdir_p
 
 from .execution_context import SystemPipelineExecutionContext
+from .runs import RunStorageMode
 from .types.runtime import RuntimeType
 
 
@@ -48,6 +49,7 @@ class ObjectStore:
 class FileSystemObjectStore(ObjectStore):
     def __init__(self, run_id):
         check.str_param(run_id, 'run_id')
+        self.storage_mode = RunStorageMode.FILESYSTEM
         self.root = os.path.join(
             seven.get_system_temp_directory(), 'dagster', 'runs', run_id, 'files'
         )
@@ -72,6 +74,8 @@ class FileSystemObjectStore(ObjectStore):
         with open(target_path, 'wb') as ff:
             # Hardcode pickle for now
             pickle.dump(obj, ff)
+
+        return target_path
 
     def get_object(self, context, runtime_type, paths):  # pylint: disable=unused-argument
         check.list_param(paths, 'paths', of_type=str)
@@ -104,6 +108,7 @@ class S3ObjectStore(ObjectStore):
         self.s3.head_bucket(Bucket=self.bucket)
 
         self.root = 'dagster/runs/{run_id}/files'.format(run_id=self.run_id)
+        self.storage_mode = RunStorageMode.S3
 
     def _key_for_paths(self, paths):
         return '/'.join([self.root] + paths)
@@ -127,7 +132,7 @@ class S3ObjectStore(ObjectStore):
             bytes_io.seek(0)
             self.s3.put_object(Bucket=self.bucket, Key=key, Body=bytes_io)
 
-        return obj
+        return 's3://{bucket}/{key}'.format(bucket=self.bucket, key=key)
 
     def get_object(self, context, runtime_type, paths):
         ensure_boto_requirements()
