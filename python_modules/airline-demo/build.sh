@@ -2,6 +2,10 @@
 # For the avoidance of doubt, this script is meant to be run with the airline-demo directory as pwd
 # Builds the Docker image for Airflow and scaffolds the DAGs
 
+rm -rf dagster && \
+rm -rf dagit && \
+rm -rf dagstermill && \
+\
 cp -R ../dagster . && \
 cp -R ../dagit . && \
 cp -R ../dagstermill . && \
