@@ -204,40 +204,6 @@ snapshots['test_user_code_error_subplan 1'] = {
     }
 }
 
-snapshots['test_successful_execute_plan 1'] = {
-    'executePlan': {
-        '__typename': 'ExecutePlanSuccess',
-        'hasFailures': False,
-        'pipeline': {
-            'name': 'pandas_hello_world'
-        },
-        'stepEvents': [
-            {
-                '__typename': 'SuccessfulStepOutputEvent',
-                'outputName': 'input_thunk_output',
-                'step': {
-                    'key': 'sum_solid.num.input_thunk'
-                },
-                'success': True,
-                'valueRepr': '''   num1  num2
-0     1     2
-1     3     4'''
-            },
-            {
-                '__typename': 'SuccessfulStepOutputEvent',
-                'outputName': 'result',
-                'step': {
-                    'key': 'sum_solid.transform'
-                },
-                'success': True,
-                'valueRepr': '''   num1  num2  sum
-0     1     2    3
-1     3     4    7'''
-            }
-        ]
-    }
-}
-
 snapshots['test_successful_two_part_execute_plan 1'] = {
     'executePlan': {
         '__typename': 'ExecutePlanSuccess',

@@ -12,7 +12,7 @@ from dagster.utils import mkdir_p
 
 from .execution_context import SystemPipelineExecutionContext
 from .runs import RunStorageMode
-from .types.runtime import RuntimeType
+from .types.runtime import RuntimeType, resolve_to_runtime_type
 
 
 def ensure_boto_requirements():
@@ -84,6 +84,8 @@ class FileSystemObjectStore(ObjectStore):
 
     def get_object(self, context, runtime_type, paths):  # pylint: disable=unused-argument
         check.list_param(paths, 'paths', of_type=str)
+        check.inst_param(runtime_type, 'runtime_type', RuntimeType)
+
         check.param_invariant(len(paths) > 0, 'paths')
         target_path = os.path.join(self.root, *paths)
         with open(target_path, 'rb') as ff:
@@ -200,10 +202,12 @@ def get_fs_paths(step_key, output_name):
     return ['intermediates', step_key, output_name]
 
 
-def get_filesystem_intermediate(run_id, step_key, runtime_type, output_name='result'):
+def get_filesystem_intermediate(run_id, step_key, dagster_type, output_name='result'):
     object_store = FileSystemObjectStore(run_id)
     return object_store.get_object(
-        context=None, runtime_type=runtime_type, paths=get_fs_paths(step_key, output_name)
+        context=None,
+        runtime_type=resolve_to_runtime_type(dagster_type),
+        paths=get_fs_paths(step_key, output_name),
     )
 
 
@@ -212,10 +216,12 @@ def has_filesystem_intermediate(run_id, step_key, output_name='result'):
     return object_store.has_object(context=None, paths=get_fs_paths(step_key, output_name))
 
 
-def get_s3_intermediate(context, s3_bucket, run_id, step_key, runtime_type, output_name='result'):
+def get_s3_intermediate(context, s3_bucket, run_id, step_key, dagster_type, output_name='result'):
     object_store = S3ObjectStore(s3_bucket, run_id)
     return object_store.get_object(
-        context=context, runtime_type=runtime_type, paths=get_fs_paths(step_key, output_name)
+        context=context,
+        runtime_type=resolve_to_runtime_type(dagster_type),
+        paths=get_fs_paths(step_key, output_name),
     )
 
 
