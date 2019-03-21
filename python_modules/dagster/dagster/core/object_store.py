@@ -160,3 +160,19 @@ class S3ObjectStore(ObjectStore):
         key = self._key_for_paths(paths)
         self.s3.delete_object(Bucket=self.bucket, Key=key)
         return
+
+
+def get_fs_paths(step_key, output_name):
+    return ['intermediates', step_key, output_name]
+
+
+def get_filesystem_intermediate(run_id, step_key, runtime_type, output_name='result'):
+    object_store = FileSystemObjectStore(run_id)
+    return object_store.get_object(
+        context=None, runtime_type=runtime_type, paths=get_fs_paths(step_key, output_name)
+    )
+
+
+def has_filesystem_intermediate(run_id, step_key, output_name='result'):
+    object_store = FileSystemObjectStore(run_id)
+    return object_store.has_object(context=None, paths=get_fs_paths(step_key, output_name))

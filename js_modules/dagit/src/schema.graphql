@@ -86,6 +86,14 @@ type EvaluationStackPathEntry {
   field: ConfigTypeField!
 }
 
+union ExecutePlanResult = ExecutePlanSuccess | PipelineConfigValidationInvalid | PipelineNotFoundError
+
+type ExecutePlanSuccess {
+  pipeline: Pipeline!
+  hasFailures: Boolean!
+  stepEvents: [StepEvent!]!
+}
+
 input ExecutionMetadata {
   runId: String
   tags: [ExecutionTag!]
@@ -267,6 +275,7 @@ type MissingFieldConfigError implements PipelineConfigValidationError {
 type Mutation {
   startPipelineExecution(config: PipelineConfig, pipeline: ExecutionSelector!): StartPipelineExecutionResult!
   startSubplanExecution(config: PipelineConfig, executionMetadata: ExecutionMetadata!, pipelineName: String!, stepExecutions: [StepExecution!]!): StartSubplanExecutionResult!
+  executePlan(config: PipelineConfig, executionMetadata: ExecutionMetadata!, pipelineName: String!, stepKeys: [String!]): ExecutePlanResult!
 }
 
 type NullableConfigType implements ConfigType & WrappingConfigType {

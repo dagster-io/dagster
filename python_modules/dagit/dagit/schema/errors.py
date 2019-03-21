@@ -386,6 +386,25 @@ class DauphinStartSubplanExecutionResult(dauphin.Union):
         )
 
 
+class DauphinExecutePlanSuccess(dauphin.ObjectType):
+    class Meta:
+        name = 'ExecutePlanSuccess'
+
+    pipeline = dauphin.Field(dauphin.NonNull('Pipeline'))
+    has_failures = dauphin.Field(dauphin.NonNull(dauphin.Boolean))
+    step_events = dauphin.non_null_list(DauphinStepEvent)
+
+
+class DauphinExecutePlanResult(dauphin.Union):
+    class Meta:
+        name = 'ExecutePlanResult'
+        types = (
+            DauphinExecutePlanSuccess,
+            DauphinPipelineConfigValidationInvalid,
+            DauphinPipelineNotFoundError,
+        )
+
+
 class DauphinConfigTypeNotFoundError(dauphin.ObjectType):
     class Meta:
         name = 'ConfigTypeNotFoundError'

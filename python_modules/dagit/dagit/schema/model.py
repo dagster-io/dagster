@@ -18,7 +18,13 @@ from dagster.core.errors import (
     DagsterInvalidSubplanOutputNotFoundError,
 )
 
-from dagster.core.execution import ExecutionSelector, create_execution_plan, InProcessExecutorConfig
+from dagster.core.execution import (
+    ExecutionSelector,
+    InProcessExecutorConfig,
+    create_execution_plan,
+    execute_plan,
+)
+from dagster.core.runs import RunStorageMode
 from dagster.core.execute_marshalling import execute_marshalling
 
 from dagster.core.types.evaluator import evaluate_config_value, EvaluateValueResult
@@ -371,6 +377,91 @@ class SubplanExecutionArgs(
     @property
     def step_keys(self):
         return [se.step_key for se in self.step_executions]
+
+
+ExecutePlanArgs = namedtuple(
+    'ExecutePlanArgs', 'graphene_info pipeline_name environment_dict execution_metadata step_keys'
+)
+
+
+def do_execute_plan(graphene_info, pipeline_name, environment_dict, execution_metadata, step_keys):
+    execute_plan_args = ExecutePlanArgs(
+        graphene_info=graphene_info,
+        pipeline_name=pipeline_name,
+        environment_dict=environment_dict,
+        execution_metadata=execution_metadata,
+        step_keys=step_keys,
+    )
+    return (
+        _pipeline_or_error_from_container(
+            graphene_info,
+            graphene_info.context.repository_container,
+            ExecutionSelector(pipeline_name),
+        )
+        .chain(
+            lambda dauphin_pipeline: _execute_plan_resolve_config(
+                execute_plan_args, dauphin_pipeline
+            )
+        )
+        .value()
+    )
+
+
+def _execute_plan_resolve_config(execution_subplan_args, dauphin_pipeline):
+    return (
+        _config_or_error_from_pipeline(
+            execution_subplan_args.graphene_info,
+            dauphin_pipeline,
+            execution_subplan_args.environment_dict,
+        )
+        .chain(
+            lambda evaluate_env_config_result: _execute_plan_chain_actual_execute_or_error(
+                execution_subplan_args, dauphin_pipeline, evaluate_env_config_result
+            )
+        )
+        .value()
+    )
+
+
+def _execute_plan_chain_actual_execute_or_error(
+    execute_plan_args, dauphin_pipeline, _evaluate_env_config_result
+):
+    graphql_execution_metadata = execute_plan_args.execution_metadata
+    run_id = graphql_execution_metadata.get('runId')
+    tags = {}
+    if 'tags' in graphql_execution_metadata:
+        for tag in graphql_execution_metadata['tags']:
+            tags[tag['key']] = tag['value']
+
+    run_storage_mode = (
+        None if 'storage' in execute_plan_args.environment_dict else RunStorageMode.FILESYSTEM
+    )
+
+    run_config = RunConfig(run_id=run_id, tags=tags, storage_mode=run_storage_mode)
+    execution_plan = create_execution_plan(
+        pipeline=dauphin_pipeline.get_dagster_pipeline(),
+        environment_dict=execute_plan_args.environment_dict,
+        run_config=run_config,
+    )
+
+    step_events = list(
+        execute_plan(
+            execution_plan=execution_plan,
+            environment_dict=execute_plan_args.environment_dict,
+            run_config=run_config,
+            step_keys_to_execute=execute_plan_args.step_keys,
+        )
+    )
+
+    return execute_plan_args.graphene_info.schema.type_named('ExecutePlanSuccess')(
+        pipeline=dauphin_pipeline,
+        has_failures=any(
+            se for se in step_events if se.event_type == ExecutionStepEventType.STEP_FAILURE
+        ),
+        step_events=list(
+            map(lambda se: _create_dauphin_step_event(execution_plan, se), step_events)
+        ),
+    )
 
 
 def start_subplan_execution(args):
