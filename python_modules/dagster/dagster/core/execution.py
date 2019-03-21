@@ -65,7 +65,7 @@ from .intermediates_manager import (
 
 from .log import DagsterLog
 
-from .object_store import FileSystemObjectStore
+from .object_store import FileSystemObjectStore, S3ObjectStore
 
 from .runs import (
     DagsterRunMeta,
@@ -379,6 +379,9 @@ def construct_run_storage(run_config, environment_config):
         return FileSystemRunStorage()
     elif environment_config.storage.storage_mode == 'in_memory':
         return InMemoryRunStorage()
+    elif environment_config.storage.storage_mode == 's3':
+        # TODO: Revisit whether we want to use S3 run storage
+        return InMemoryRunStorage()
     elif environment_config.storage.storage_mode is None:
         return InMemoryRunStorage()
     else:
@@ -397,13 +400,24 @@ def construct_intermediates_manager(run_config, init_context, environment_config
             return ObjectStoreIntermediatesManager(FileSystemObjectStore(init_context.run_id))
         elif run_config.storage_mode == RunStorageMode.IN_MEMORY:
             return InMemoryIntermediatesManager()
+        elif run_config.storage_mode == RunStorageMode.S3:
+            return ObjectStoreIntermediatesManager(
+                S3ObjectStore(
+                    environment_config.storage.storage_config['s3_bucket'], init_context.run_id
+                )
+            )
         else:
             check.failed('Unexpected enum {}'.format(run_config.storage_mode))
     elif environment_config.storage.storage_mode == 'filesystem':
-
         return ObjectStoreIntermediatesManager(FileSystemObjectStore(init_context.run_id))
     elif environment_config.storage.storage_mode == 'in_memory':
         return InMemoryIntermediatesManager()
+    elif environment_config.storage.storage_mode == 's3':
+        return ObjectStoreIntermediatesManager(
+            S3ObjectStore(
+                environment_config.storage.storage_config['s3_bucket'], init_context.run_id
+            )
+        )
     elif environment_config.storage.storage_mode is None:
         return InMemoryIntermediatesManager()
     else:
