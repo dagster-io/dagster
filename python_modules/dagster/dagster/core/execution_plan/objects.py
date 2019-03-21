@@ -186,12 +186,13 @@ class StepInput(namedtuple('_StepInput', 'name runtime_type prev_output_handle')
         )
 
 
-class StepOutput(namedtuple('_StepOutput', 'name runtime_type')):
-    def __new__(cls, name, runtime_type):
+class StepOutput(namedtuple('_StepOutput', 'name runtime_type optional')):
+    def __new__(cls, name, runtime_type, optional):
         return super(StepOutput, cls).__new__(
             cls,
             name=check.str_param(name, 'name'),
             runtime_type=check.inst_param(runtime_type, 'runtime_type', RuntimeType),
+            optional=check.bool_param(optional, 'optional'),
         )
 
 

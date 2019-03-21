@@ -131,7 +131,10 @@ def test_multiple_outputs_only_emit_one():
     solid = SolidDefinition(
         name='multiple_outputs',
         inputs=[],
-        outputs=[OutputDefinition(name='output_one'), OutputDefinition(name='output_two')],
+        outputs=[
+            OutputDefinition(name='output_one'),
+            OutputDefinition(name='output_two', optional=True),
+        ],
         transform_fn=_t_fn,
     )
 
@@ -191,3 +194,20 @@ def test_multiple_outputs_only_emit_one():
         match='Did not find result for solid downstream_two in pipeline execution result',
     ):
         result.result_for_solid('downstream_two')
+
+
+def test_missing_non_optional_output_fails():
+    def _t_fn(*_args):
+        yield Result(output_name='output_one', value='foo')
+
+    solid = SolidDefinition(
+        name='multiple_outputs',
+        inputs=[],
+        outputs=[OutputDefinition(name='output_one'), OutputDefinition(name='output_two')],
+        transform_fn=_t_fn,
+    )
+
+    pipeline = PipelineDefinition(solids=[solid])
+
+    with pytest.raises(DagsterInvariantViolationError):
+        execute_pipeline(pipeline)

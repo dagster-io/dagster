@@ -31,7 +31,9 @@ def _create_input_thunk_execution_step(pipeline_context, solid, input_def, input
         pipeline_context=pipeline_context,
         key=solid.name + '.' + input_def.name + '.input_thunk',
         step_inputs=[],
-        step_outputs=[StepOutput(name=INPUT_THUNK_OUTPUT, runtime_type=input_def.runtime_type)],
+        step_outputs=[
+            StepOutput(name=INPUT_THUNK_OUTPUT, runtime_type=input_def.runtime_type, optional=False)
+        ],
         compute_fn=_fn,
         kind=StepKind.INPUT_THUNK,
         solid=solid,

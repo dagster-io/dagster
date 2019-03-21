@@ -159,15 +159,13 @@ def _error_check_step_output_values(step, step_output_values):
     check.inst_param(step, 'step', ExecutionStep)
     check.generator_param(step_output_values, 'step_output_values')
 
+    output_names = list([output_def.name for output_def in step.step_outputs])
     seen_outputs = set()
     for step_output_value in step_output_values:
         if not step.has_step_output(step_output_value.output_name):
-            output_names = list(
-                [output_def.name for output_def in step.solid.definition.output_defs]
-            )
             raise DagsterInvariantViolationError(
-                'Core transform for {step.solid.name} returned an output '
-                '{step_output_value.output_name} that does not exist. The available '
+                'Core transform for solid "{step.solid.name}" returned an output '
+                '"{step_output_value.output_name}" that does not exist. The available '
                 'outputs are {output_names}'.format(
                     step=step, step_output_value=step_output_value, output_names=output_names
                 )
@@ -175,14 +173,23 @@ def _error_check_step_output_values(step, step_output_values):
 
         if step_output_value.output_name in seen_outputs:
             raise DagsterInvariantViolationError(
-                'Core transform for {step.solid.name} returned an output '
-                '{step_output_value.output_name} multiple times'.format(
+                'Core transform for solid "{step.solid.name}" returned an output '
+                '"{step_output_value.output_name}" multiple times'.format(
                     step=step, step_output_value=step_output_value
                 )
             )
 
         yield step_output_value
         seen_outputs.add(step_output_value.output_name)
+
+    for step_output_def in step.step_outputs:
+        if not step_output_def.name in seen_outputs and not step_output_def.optional:
+            raise DagsterInvariantViolationError(
+                'Core transform for solid "{step.solid.name}" did not return an output '
+                'for non-optional output "{step_output_def.name}"'.format(
+                    step=step, step_output_def=step_output_def
+                )
+            )
 
 
 def _execute_steps_core_loop(step_context, inputs, intermediates_manager):
