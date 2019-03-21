@@ -15,6 +15,7 @@ lazy val global = (project in file("."))
   )
 
 lazy val circeVersion = "0.11.1"
+lazy val awsVersion = "1.7.4"
 
 lazy val events = project
   .settings(
@@ -33,7 +34,7 @@ lazy val events = project
         "org.apache.spark" %% "spark-core" % "2.4.0" % "provided",
         "org.apache.spark" %% "spark-sql" % "2.4.0" % "provided",
         "com.github.scopt" %% "scopt" % "4.0.0-RC2",
-        "com.amazonaws" % "aws-java-sdk" % "1.11.520",
+        "com.amazonaws" % "aws-java-sdk" % awsVersion,
         "io.circe" %% "circe-parser" % "0.11.1",
         "io.circe" %% "circe-generic" % "0.11.1",
         "io.circe" %% "circe-generic-extras" % "0.11.1"
