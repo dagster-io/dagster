@@ -2,10 +2,16 @@ import os
 import shutil
 import uuid
 
+import pytest
+
 from dagster import PipelineDefinition, RunConfig, seven
 from dagster.core.execution import yield_pipeline_execution_context
 from dagster.core.object_store import FileSystemObjectStore, S3ObjectStore
 from dagster.core.types.runtime import Bool
+
+
+def aws_credentials_present():
+    return os.getenv('AWS_ACCESS_KEY_ID') and os.getenv('AWS_SECRET_ACCESS_KEY')
 
 
 def test_file_system_object_store():
@@ -31,6 +37,8 @@ def test_file_system_object_store():
             pass
 
 
+@pytest.mark.nettest
+@pytest.mark.skipif(not aws_credentials_present(), reason='Couldn\'t find AWS credentials')
 def test_s3_object_store():
     run_id = str(uuid.uuid4())
 

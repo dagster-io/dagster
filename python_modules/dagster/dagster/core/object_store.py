@@ -13,6 +13,19 @@ from .execution_context import SystemPipelineExecutionContext
 from .types.runtime import RuntimeType
 
 
+def ensure_boto_requirements():
+    try:
+        import boto3
+        import botocore  # pylint: disable=unused-import
+    except ImportError:
+        raise check.CheckError(
+            'boto3 and botocore must both be available for import in order to make use of '
+            'an S3ObjectStore'
+        )
+
+    return (boto3, botocore)
+
+
 @six.add_metaclass(ABCMeta)
 class ObjectStore:
     @abstractmethod
@@ -81,17 +94,10 @@ class FileSystemObjectStore(ObjectStore):
 
 class S3ObjectStore(ObjectStore):
     def __init__(self, s3_bucket, run_id):
-        try:
-            import boto3
-            import botocore  # pylint: disable=unused-import
-        except ImportError:
-            raise check.CheckError(
-                'boto3 and botocore must both be available for import in order to instantiate '
-                'an S3ObjectStore'
-            )
+        boto3, botocore = ensure_boto_requirements()
         check.str_param(run_id, 'run_id')
 
-        self.s3 = boto3.client('s3')
+        self.s3 = boto3.client('s3')  # pylint: disable=undefined-variable
         self.bucket = s3_bucket
         self.run_id = run_id
 
@@ -103,6 +109,7 @@ class S3ObjectStore(ObjectStore):
         return '/'.join([self.root] + paths)
 
     def set_object(self, obj, context, runtime_type, paths):
+        boto3, botocore = ensure_boto_requirements()
         check.inst_param(context, 'context', SystemPipelineExecutionContext)
         check.inst_param(runtime_type, 'runtime_type', RuntimeType)
         check.list_param(paths, 'paths', of_type=str)
@@ -123,6 +130,7 @@ class S3ObjectStore(ObjectStore):
         return obj
 
     def get_object(self, context, runtime_type, paths):
+        boto3, botocore = ensure_boto_requirements()
         check.inst_param(context, 'context', SystemPipelineExecutionContext)
         check.inst_param(runtime_type, 'runtime_type', RuntimeType)
         check.list_param(paths, 'paths', of_type=str)
@@ -133,6 +141,7 @@ class S3ObjectStore(ObjectStore):
         return pickle.loads(self.s3.get_object(Bucket=self.bucket, Key=key)['Body'].read())
 
     def has_object(self, context, paths):  # pylint: disable=unused-argument
+        boto3, botocore = ensure_boto_requirements()
         key = self._key_for_paths(paths)
 
         try:
@@ -144,6 +153,7 @@ class S3ObjectStore(ObjectStore):
             raise
 
     def rm_object(self, context, paths):
+        boto3, botocore = ensure_boto_requirements()
         if not self.has_object(context, paths):
             return
 
