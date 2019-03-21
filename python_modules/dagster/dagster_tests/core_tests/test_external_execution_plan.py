@@ -29,8 +29,8 @@ from dagster.core.object_store import (
 )
 from dagster.core.execution import ExecutionStepEventType, create_execution_plan, execute_plan
 from dagster.core.execution_plan.objects import StepKind
-from dagster.core.types.runtime import resolve_to_runtime_type
 
+from dagster.core.types.runtime import resolve_to_runtime_type
 from dagster.core.types.marshal import serialize_to_file, deserialize_from_file
 
 from dagster.utils.test import get_temp_file_names
@@ -329,8 +329,6 @@ def test_using_file_system_for_subplan_multiprocessing():
 @aws
 @nettest
 def test_using_s3_for_subplan(s3_bucket):
-    int_type = resolve_to_runtime_type(Int)
-
     pipeline = define_inty_pipeline()
 
     environment_dict = {'storage': {'s3': {'s3_bucket': s3_bucket}}}
@@ -358,10 +356,7 @@ def test_using_s3_for_subplan(s3_bucket):
             pipeline, environment_dict, RunConfig(run_id=run_id)
         ) as context:
             assert has_s3_intermediate(context, s3_bucket, run_id, 'return_one.transform')
-            assert (
-                get_s3_intermediate(context, s3_bucket, run_id, 'return_one.transform', int_type)
-                == 1
-            )
+            assert get_s3_intermediate(context, s3_bucket, run_id, 'return_one.transform', Int) == 1
 
         add_one_step_events = list(
             execute_plan(
@@ -377,9 +372,7 @@ def test_using_s3_for_subplan(s3_bucket):
             pipeline, environment_dict, RunConfig(run_id=run_id)
         ) as context:
             assert has_s3_intermediate(context, s3_bucket, run_id, 'add_one.transform')
-            assert (
-                get_s3_intermediate(context, s3_bucket, run_id, 'add_one.transform', int_type) == 2
-            )
+            assert get_s3_intermediate(context, s3_bucket, run_id, 'add_one.transform', Int) == 2
     finally:
         with yield_pipeline_execution_context(
             pipeline, environment_dict, RunConfig(run_id=run_id)
