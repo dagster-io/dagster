@@ -13,14 +13,14 @@ from .types.runtime import RuntimeType
 
 class StepOutputHandle(namedtuple('_StepOutputHandle', 'step_key output_name')):
     @staticmethod
-    def from_step(step, output_name):
+    def from_step(step, output_name='result'):
         from .execution_plan.objects import ExecutionStep
 
         check.inst_param(step, 'step', ExecutionStep)
 
         return StepOutputHandle(step.key, output_name)
 
-    def __new__(cls, step_key, output_name):
+    def __new__(cls, step_key, output_name='result'):
         return super(StepOutputHandle, cls).__new__(
             cls,
             step_key=check.str_param(step_key, 'step_key'),
@@ -39,6 +39,10 @@ class IntermediatesManager(six.with_metaclass(ABCMeta)):  # pylint: disable=no-i
 
     @abstractmethod
     def has_intermediate(self, context, step_output_handle):
+        pass
+
+    @abstractmethod
+    def copy_intermediate_from_prev_run(self, context, previous_run_id, step_output_handle):
         pass
 
     def all_inputs_covered(self, context, step):
@@ -66,6 +70,9 @@ class InMemoryIntermediatesManager(IntermediatesManager):
     def has_intermediate(self, context, step_output_handle):
         check.inst_param(step_output_handle, 'step_output_handle', StepOutputHandle)
         return step_output_handle in self.values
+
+    def copy_intermediate_from_prev_run(self, context, previous_run_id, step_output_handle):
+        check.failed('not implemented in in memory')
 
 
 class ObjectStoreIntermediatesManager(IntermediatesManager):
@@ -103,3 +110,8 @@ class ObjectStoreIntermediatesManager(IntermediatesManager):
         check.inst_param(step_output_handle, 'step_output_handle', StepOutputHandle)
 
         return self._object_store.has_object(context, self._get_paths(step_output_handle))
+
+    def copy_intermediate_from_prev_run(self, context, previous_run_id, step_output_handle):
+        return self._object_store.copy_object_from_prev_run(
+            context, previous_run_id, self._get_paths(step_output_handle)
+        )

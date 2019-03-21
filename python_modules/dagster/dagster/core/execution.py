@@ -462,6 +462,7 @@ def yield_pipeline_execution_context(pipeline_def, environment_dict, run_config)
             execution_context,
             run_config.run_id,
         ) as resources:
+
             yield construct_pipeline_execution_context(
                 run_config,
                 execution_context,
@@ -709,6 +710,15 @@ def execute_plan(execution_plan, environment_dict=None, run_config=None, step_ke
     with yield_pipeline_execution_context(
         execution_plan.pipeline_def, environment_dict, run_config
     ) as pipeline_context:
+
+        if run_config.reexecution_config:
+            for step_output_handle in run_config.reexecution_config.step_output_handles:
+                pipeline_context.intermediates_manager.copy_intermediate_from_prev_run(
+                    pipeline_context,
+                    run_config.reexecution_config.previous_run_id,
+                    step_output_handle,
+                )
+
         return list(invoke_executor_on_plan(pipeline_context, execution_plan, step_keys_to_execute))
 
 

@@ -39,8 +39,17 @@ def make_new_run_id():
     return str(uuid.uuid4())
 
 
+class ReexecutionConfig:
+    def __init__(self, previous_run_id, step_output_handles):
+        self.previous_run_id = previous_run_id
+        self.step_output_handles = step_output_handles
+
+
 class RunConfig(
-    namedtuple('_RunConfig', 'run_id tags event_callback loggers executor_config storage_mode')
+    namedtuple(
+        '_RunConfig',
+        'run_id tags event_callback loggers executor_config storage_mode reexecution_config',
+    )
 ):
     def __new__(
         cls,
@@ -50,6 +59,7 @@ class RunConfig(
         loggers=None,
         executor_config=None,
         storage_mode=None,
+        reexecution_config=None,
     ):
 
         return super(RunConfig, cls).__new__(
@@ -62,21 +72,18 @@ class RunConfig(
             if executor_config
             else InProcessExecutorConfig(),
             storage_mode=check.opt_inst_param(storage_mode, 'storage_mode', RunStorageMode),
+            reexecution_config=check.opt_inst_param(
+                reexecution_config, 'reexecution_config', ReexecutionConfig
+            ),
         )
 
     @staticmethod
     def nonthrowing_in_process():
         return RunConfig(executor_config=InProcessExecutorConfig(throw_on_user_error=False))
 
-    def with_tags(self, **tags):
-        return RunConfig(
-            run_id=self.run_id,
-            event_callback=self.event_callback,
-            loggers=self.loggers,
-            tags=merge_dicts(self.tags, tags),
-            executor_config=self.executor_config,
-            storage_mode=self.storage_mode,
-        )
+    def with_tags(self, **new_tags):
+        new_tags = merge_dicts(self.tags, new_tags)
+        return RunConfig(**merge_dicts(self._asdict(), {'tags': new_tags}))
 
 
 class SystemPipelineExecutionContextData(
