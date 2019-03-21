@@ -2,8 +2,6 @@ import os
 import shutil
 import uuid
 
-import pytest
-
 from dagster import PipelineDefinition, RunConfig, seven
 from dagster.core.execution import yield_pipeline_execution_context
 from dagster.core.object_store import FileSystemObjectStore, S3ObjectStore
