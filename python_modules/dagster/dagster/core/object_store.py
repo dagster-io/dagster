@@ -1,5 +1,6 @@
 import os
 import pickle
+import shutil
 
 from abc import ABCMeta, abstractmethod
 from io import BytesIO
@@ -45,12 +46,27 @@ class ObjectStore:
         pass
 
 
+def get_run_files_directory(run_id):
+    return os.path.join(seven.get_system_temp_directory(), 'dagster', 'runs', run_id, 'files')
+
+
+def get_valid_target_path(base_dir, paths):
+    if len(paths) > 1:
+        target_dir = os.path.join(base_dir, *paths[:-1])
+        mkdir_p(target_dir)
+        return os.path.join(target_dir, paths[-1])
+    else:
+        check.invariant(len(paths) == 1)
+        target_dir = base_dir
+        mkdir_p(target_dir)
+        return os.path.join(target_dir, paths[0])
+
+
 class FileSystemObjectStore(ObjectStore):
     def __init__(self, run_id):
-        check.str_param(run_id, 'run_id')
-        self.root = os.path.join(
-            seven.get_system_temp_directory(), 'dagster', 'runs', run_id, 'files'
-        )
+        self.run_id = check.str_param(run_id, 'run_id')
+        self.storage_mode = RunStorageMode.FILESYSTEM
+        self.root = get_run_files_directory(run_id)
 
     def set_object(self, obj, context, runtime_type, paths):  # pylint: disable=unused-argument
         check.inst_param(context, 'context', SystemPipelineExecutionContext)
@@ -58,15 +74,7 @@ class FileSystemObjectStore(ObjectStore):
         check.list_param(paths, 'paths', of_type=str)
         check.param_invariant(len(paths) > 0, 'paths')
 
-        if len(paths) > 1:
-            target_dir = os.path.join(self.root, *paths[:-1])
-            mkdir_p(target_dir)
-            target_path = os.path.join(target_dir, paths[-1])
-        else:
-            check.invariant(len(paths) == 1)
-            target_dir = self.root
-            mkdir_p(target_dir)
-            target_path = os.path.join(target_dir, paths[0])
+        target_path = get_valid_target_path(self.root, paths)
 
         check.invariant(not os.path.exists(target_path))
         with open(target_path, 'wb') as ff:
@@ -90,6 +98,26 @@ class FileSystemObjectStore(ObjectStore):
             return
         os.unlink(target_path)
         return
+
+    def copy_object_from_prev_run(
+        self, context, previous_run_id, paths
+    ):  # pylint: disable=unused-argument
+        prev_run_files_dir = get_run_files_directory(previous_run_id)
+        check.invariant(os.path.isdir(prev_run_files_dir))
+
+        copy_from_path = os.path.join(prev_run_files_dir, *paths)
+        copy_to_path = get_valid_target_path(self.root, paths)
+
+        check.invariant(
+            not os.path.exists(copy_to_path), 'Path already exists {}'.format(copy_to_path)
+        )
+
+        if os.path.isfile(copy_from_path):
+            shutil.copy(copy_from_path, copy_to_path)
+        elif os.path.isdir(copy_from_path):
+            shutil.copytree(copy_from_path, copy_to_path)
+        else:
+            check.failed('should not get here')
 
 
 class S3ObjectStore(ObjectStore):
@@ -160,6 +188,11 @@ class S3ObjectStore(ObjectStore):
         key = self._key_for_paths(paths)
         self.s3.delete_object(Bucket=self.bucket, Key=key)
         return
+
+    def copy_object_from_prev_run(
+        self, context, previous_run_id, paths
+    ):  # pylint: disable=unused-argument
+        check.failed('not supported: TODO for max. put issue number here')
 
 
 def get_fs_paths(step_key, output_name):
