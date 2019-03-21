@@ -1,9 +1,11 @@
+from abc import abstractmethod, ABCMeta
+from collections import namedtuple, OrderedDict
+from enum import Enum
 import json
 import os
 import shutil
 
-from collections import namedtuple, OrderedDict
-from enum import Enum
+import six
 
 from dagster import check, seven
 from dagster.utils import mkdir_p, list_pull
@@ -27,8 +29,30 @@ class DagsterRunMeta(namedtuple('_DagsterRunMeta', 'run_id timestamp pipeline_na
         )
 
 
-class RunStorage:
-    pass
+class RunStorage(six.with_metaclass(ABCMeta)):  # pylint: disable=no-init
+    @abstractmethod
+    def write_dagster_run_meta(self, dagster_run_meta):
+        pass
+
+    def has_run(self, run_id):
+        check.str_param(run_id, 'run_id')
+        return run_id in self.get_run_ids()
+
+    @abstractmethod
+    def get_run_ids(self):
+        pass
+
+    @abstractmethod
+    def get_run_metas(self):
+        pass
+
+    @abstractmethod
+    def get_run_meta(self, run_id):
+        pass
+
+    @abstractmethod
+    def nuke(self):
+        pass
 
 
 class FileSystemRunStorage(RunStorage):
@@ -87,6 +111,7 @@ class InMemoryRunStorage(RunStorage):
         self._run_metas = OrderedDict()
 
     def write_dagster_run_meta(self, dagster_run_meta):
+        check.inst_param(dagster_run_meta, 'dagster_run_meta', DagsterRunMeta)
         self._run_metas[dagster_run_meta.run_id] = dagster_run_meta
 
     def get_run_ids(self):
