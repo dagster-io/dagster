@@ -484,3 +484,10 @@ snapshots['test_success_whole_execution_plan_with_in_memory_config 1'] = {
         ]
     }
 }
+
+snapshots['test_step_not_found_error_execute_plan 1'] = {
+    'executePlan': {
+        '__typename': 'InvalidStepError',
+        'invalidStepKey': 'nope'
+    }
+}

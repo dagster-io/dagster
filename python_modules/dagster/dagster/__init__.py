@@ -35,6 +35,7 @@ from dagster.core.definitions.decorators import MultipleResults, lambda_solid, s
 
 from dagster.core.errors import (
     DagsterExecutionStepExecutionError,
+    DagsterExecutionStepNotFoundError,
     DagsterExpectationFailedError,
     DagsterInvalidDefinitionError,
     DagsterInvariantViolationError,
