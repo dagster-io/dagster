@@ -101,7 +101,7 @@ object EventPipeline {
     val backend: StorageBackend = (conf.localPath, conf.s3Bucket, conf.s3Prefix) match {
       case (None, Some(bucket), Some(prefix)) => S3StorageBackend(bucket, prefix)
       case (Some(path), None, None) => LocalStorageBackend(path)
-      case _ => throw new Exception("Error, invalid arguments")
+      case _ => throw new IllegalArgumentException("Error, invalid arguments")
     }
 
     val events = readEvents(backend, conf.date)
@@ -148,6 +148,6 @@ object EventPipelineConfig {
   }
 
   def parse(args: Array[String]): EventPipelineConfig = parser.parse(args, EventPipelineConfig()).getOrElse {
-    throw new FatalError("Incorrect options")
+    throw FatalError("Incorrect options")
   }
 }
