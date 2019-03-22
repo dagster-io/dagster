@@ -16,20 +16,9 @@ from .marks import db, nettest, py3, spark
 @py3
 @spark
 def test_all_airline_pipelines():
-    download_config_object = load_yaml_from_globs(
-        script_relative_path('../environments/local_base.yml'),
-        script_relative_path('../environments/local_fast_download.yml'),
-    )
-
-    result_download = execute_pipeline(
-        define_airline_demo_download_pipeline(), download_config_object
-    )
-
-    assert result_download.success
-
     ingest_config_object = load_yaml_from_globs(
         script_relative_path('../environments/local_base.yml'),
-        script_relative_path('../environments/local_ingest.yml'),
+        script_relative_path('../environments/local_fast_ingest.yml'),
     )
 
     result_ingest = execute_pipeline(define_airline_demo_ingest_pipeline(), ingest_config_object)

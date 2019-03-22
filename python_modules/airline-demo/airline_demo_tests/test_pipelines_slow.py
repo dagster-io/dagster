@@ -14,21 +14,6 @@ from airline_demo.pipelines import (
 from .marks import db, nettest, slow, spark
 
 
-@nettest
-@slow
-def test_pipeline_download():
-    config_object = load_yaml_from_glob_list(
-        [
-            script_relative_path('../environments/local_base.yml'),
-            script_relative_path('../environments/local_fast_download.yml'),
-        ]
-    )
-
-    result = execute_pipeline(define_airline_demo_download_pipeline(), config_object)
-
-    assert result.success
-
-
 @slow
 @spark
 def test_pipeline_ingest():
