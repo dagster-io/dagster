@@ -10,10 +10,15 @@ from logging import CRITICAL, DEBUG, ERROR, INFO, WARNING
 import coloredlogs
 
 from dagster import check, seven
+from dagster.core.types.config import Enum, EnumValue
 
 VALID_LEVELS = set([CRITICAL, DEBUG, ERROR, INFO, WARNING])
 
 LOOKUP = {'CRITICAL': CRITICAL, 'DEBUG': DEBUG, 'ERROR': ERROR, 'INFO': INFO, 'WARNING': WARNING}
+
+VALID_LEVEL_STRINGS = ['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL']
+
+LogLevelEnum = Enum('log_level', list(map(EnumValue, VALID_LEVEL_STRINGS)))
 
 
 def level_from_string(string):

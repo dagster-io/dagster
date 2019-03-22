@@ -2,12 +2,12 @@ from collections import namedtuple
 
 from dagster import check
 
-from dagster.core.types import Field, Dict, String
+from dagster.core.types import Field, Dict
 from dagster.core.types.field_utils import check_opt_field_param
 from dagster.core.user_context import ExecutionContext
 from dagster.core.system_config.objects import DEFAULT_CONTEXT_NAME
 
-from dagster.utils.logging import level_from_string, define_colored_console_logger
+from dagster.utils.logging import LogLevelEnum, level_from_string, define_colored_console_logger
 
 from .resource import ResourceDefinition
 
@@ -100,9 +100,7 @@ def _default_context_fn(init_context):
 
 
 def _default_config_field():
-    return Field(
-        Dict({'log_level': Field(dagster_type=String, is_optional=True, default_value='INFO')})
-    )
+    return Field(Dict({'log_level': Field(LogLevelEnum, is_optional=True, default_value='INFO')}))
 
 
 def default_pipeline_context_definitions():
