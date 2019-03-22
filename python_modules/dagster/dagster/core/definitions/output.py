@@ -16,11 +16,11 @@ class OutputDefinition(object):
         name (str): Name of the output. Defaults to "result".
         expectations List[ExpectationDefinition]: Expectations for this output.
         description (str): Description of the output. Optional.
-        optional (bool): If this output is optional. Optional, defaults to false.
+        is_optional (bool): If this output is optional. Optional, defaults to false.
     '''
 
     def __init__(
-        self, dagster_type=None, name=None, expectations=None, description=None, optional=False
+        self, dagster_type=None, name=None, expectations=None, description=None, is_optional=False
     ):
         self.name = check_valid_name(check.opt_str_param(name, 'name', DEFAULT_OUTPUT))
 
@@ -31,7 +31,7 @@ class OutputDefinition(object):
         )
         self.description = check.opt_str_param(description, 'description')
 
-        self.optional = check.opt_bool_param(optional, 'optional')
+        self.optional = check.bool_param(is_optional, 'is_optional')
 
     @property
     def descriptive_key(self):
