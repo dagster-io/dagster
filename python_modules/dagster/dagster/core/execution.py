@@ -723,7 +723,7 @@ def _check_reexecution_config(pipeline_context, execution_plan, run_config):
 
     if not pipeline_context.run_storage.has_run(previous_run_id):
         raise DagsterRunNotFoundError(
-            'Run id {} set as previous run id was not found run storage'.format(previous_run_id),
+            'Run id {} set as previous run id was not found in run storage'.format(previous_run_id),
             invalid_run_id=previous_run_id,
         )
 
