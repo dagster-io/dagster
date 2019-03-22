@@ -192,7 +192,7 @@ def test_successful_start_subplan(snapshot):
 
     with get_temp_file_name() as num_df_file:
         with get_temp_file_name() as out_df_file:
-            num_df = pd.read_csv(script_relative_path('num.csv'))
+            num_df = pd.read_csv(script_relative_path('../num.csv'))
 
             with open(num_df_file, 'wb') as ff:
                 pickle.dump(num_df, ff)
@@ -414,7 +414,7 @@ def test_start_subplan_invalid_input_path():
 # error is hit outside the execution plan system
 def test_start_subplan_invalid_output_path():
     with get_temp_file_name() as num_df_file:
-        num_df = pd.read_csv(script_relative_path('num.csv'))
+        num_df = pd.read_csv(script_relative_path('../num.csv'))
 
         with open(num_df_file, 'wb') as ff:
             pickle.dump(num_df, ff)

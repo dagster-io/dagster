@@ -84,7 +84,7 @@ mutation ($pipeline: ExecutionSelector!, $config: PipelineConfig) {
 
 
 def test_start_execution():
-    path = script_relative_path('./num.csv')
+    path = script_relative_path('num.csv')
 
     variables = seven.json.dumps(
         {
