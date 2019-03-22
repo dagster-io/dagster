@@ -75,24 +75,6 @@ prod_context = PipelineContextDefinition(
 CONTEXT_DEFINITIONS = {'test': test_context, 'local': local_context, 'prod': prod_context}
 
 
-def define_airline_demo_download_pipeline():
-    solids = [download_from_s3, unzip_file]
-    dependencies = {
-        SolidInstance('download_from_s3', alias='download_archives'): {},
-        SolidInstance('unzip_file', alias='unzip_archives'): {
-            'archive_paths': DependencyDefinition('download_archives')
-        },
-        SolidInstance('download_from_s3', alias='download_q2_sfo_weather'): {},
-    }
-
-    return PipelineDefinition(
-        name='airline_demo_download_pipeline',
-        context_definitions=CONTEXT_DEFINITIONS,
-        solids=solids,
-        dependencies=dependencies,
-    )
-
-
 def define_airline_demo_ingest_pipeline():
     solids = [
         canonicalize_column_names,
