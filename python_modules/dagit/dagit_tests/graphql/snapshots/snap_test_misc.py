@@ -253,3 +253,10 @@ snapshots['test_successful_two_part_execute_plan 2'] = {
         ]
     }
 }
+
+snapshots['test_step_not_found_error_execute_plan 1'] = {
+    'executePlan': {
+        '__typename': 'InvalidStepError',
+        'invalidStepKey': 'nope'
+    }
+}

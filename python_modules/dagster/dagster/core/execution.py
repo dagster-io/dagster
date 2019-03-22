@@ -683,6 +683,11 @@ class PipelineConfigEvaluationError(Exception):
 
 
 def invoke_executor_on_plan(pipeline_context, execution_plan, step_keys_to_execute=None):
+    if step_keys_to_execute:
+        for step_key in step_keys_to_execute:
+            if not execution_plan.has_step(step_key):
+                raise DagsterExecutionStepNotFoundError(step_key=step_key)
+
     if isinstance(pipeline_context.executor_config, InProcessExecutorConfig):
         step_events_gen = start_inprocess_executor(
             pipeline_context,

@@ -86,7 +86,7 @@ type EvaluationStackPathEntry {
   field: ConfigTypeField!
 }
 
-union ExecutePlanResult = ExecutePlanSuccess | PipelineConfigValidationInvalid | PipelineNotFoundError
+union ExecutePlanResult = ExecutePlanSuccess | PipelineConfigValidationInvalid | PipelineNotFoundError | InvalidStepError
 
 type ExecutePlanSuccess {
   pipeline: Pipeline!
@@ -193,9 +193,8 @@ type InvalidDefinitionError implements Error {
   stack: [String!]!
 }
 
-type InvalidSubplanMissingInputError {
-  stepKey: String!
-  missingInputName: String!
+type InvalidStepError {
+  invalidStepKey: String!
 }
 
 type ListConfigType implements ConfigType & WrappingConfigType {
@@ -246,16 +245,6 @@ type LogMessageEvent implements MessageEvent {
   step: ExecutionStep
 }
 
-input MarshalledInput {
-  inputName: String!
-  key: String!
-}
-
-input MarshalledOutput {
-  outputName: String!
-  key: String!
-}
-
 interface MessageEvent {
   run: PipelineRun!
   message: String!
@@ -274,7 +263,6 @@ type MissingFieldConfigError implements PipelineConfigValidationError {
 
 type Mutation {
   startPipelineExecution(config: PipelineConfig, pipeline: ExecutionSelector!): StartPipelineExecutionResult!
-  startSubplanExecution(config: PipelineConfig, executionMetadata: ExecutionMetadata!, pipelineName: String!, stepExecutions: [StepExecution!]!): StartSubplanExecutionResult!
   executePlan(config: PipelineConfig, executionMetadata: ExecutionMetadata!, pipelineName: String!, stepKeys: [String!]): ExecutePlanResult!
 }
 
@@ -573,37 +561,9 @@ type StartPipelineExecutionSuccess {
   run: PipelineRun!
 }
 
-type StartSubplanExecutionInvalidInputError {
-  stepKey: String!
-  invalidInputName: String!
-}
-
-type StartSubplanExecutionInvalidOutputError {
-  stepKey: String!
-  invalidOutputName: String!
-}
-
-type StartSubplanExecutionInvalidStepError {
-  invalidStepKey: String!
-}
-
-union StartSubplanExecutionResult = InvalidSubplanMissingInputError | PipelineConfigValidationInvalid | PipelineNotFoundError | PythonError | StartSubplanExecutionInvalidInputError | StartSubplanExecutionInvalidOutputError | StartSubplanExecutionInvalidStepError | StartSubplanExecutionSuccess
-
-type StartSubplanExecutionSuccess {
-  pipeline: Pipeline!
-  hasFailures: Boolean!
-  stepEvents: [StepEvent!]!
-}
-
 interface StepEvent {
   step: ExecutionStep!
   success: Boolean!
-}
-
-input StepExecution {
-  stepKey: String!
-  marshalledInputs: [MarshalledInput!]
-  marshalledOutputs: [MarshalledOutput!]
 }
 
 type StepFailureEvent implements StepEvent {
