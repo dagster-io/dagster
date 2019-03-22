@@ -203,9 +203,10 @@ def _execute_steps_core_loop(step_context, inputs, intermediates_manager):
     step_context.events.execution_plan_step_start(step.key)
 
     try:
-        step_output_value_iterator = check.generator(
-            _iterate_step_output_values_within_boundary(step_context, evaluated_inputs)
-        )
+        with time_execution_scope() as timer_result:
+            step_output_value_iterator = check.generator(
+                _iterate_step_output_values_within_boundary(step_context, evaluated_inputs)
+            )
 
         for step_output_value in check.generator(
             _error_check_step_output_values(step_context.step, step_output_value_iterator)
@@ -213,13 +214,15 @@ def _execute_steps_core_loop(step_context, inputs, intermediates_manager):
 
             yield _create_step_event(step_context, step_output_value, intermediates_manager)
 
+        step_context.events.execution_plan_step_success(step.key, timer_result.millis)
+
     except DagsterError as e:
+        # The step compute_fn and output error checking both raise exceptions. Catch
+        # and re-throw these to ensure that the step is always marked as failed.
         step_context.events.execution_plan_step_failure(step.key, sys.exc_info())
         stack_trace = get_formatted_stack_trace(e)
         step_context.log.error(str(e), stack_trace=stack_trace)
-        raise e
-
-    step_context.events.execution_plan_step_success(step.key, timer_result.millis)
+        six.reraise(*sys.exc_info())
 
 
 def _create_step_event(step_context, step_output_value, intermediates_manager):
@@ -309,8 +312,7 @@ def _execution_step_error_boundary(step_context, msg, **kwargs):
     check.str_param(msg, 'msg')
 
     try:
-        with time_execution_scope() as timer_result:
-            yield
+        yield
     except Exception as e:  # pylint: disable=W0703
         if isinstance(e, DagsterError):
             raise e
