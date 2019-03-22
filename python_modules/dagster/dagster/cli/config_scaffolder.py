@@ -47,5 +47,7 @@ def scaffold_type(config_type, skip_optional=True):
         return defaults[config_type.name]
     elif config_type.is_list:
         return []
+    elif config_type.is_enum:
+        return ''
     else:
         check.failed('Do not know how to scaffold {type_name}'.format(type_name=config_type.name))
