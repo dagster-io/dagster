@@ -37,7 +37,7 @@ from .execution_context import (
     SystemPipelineExecutionContext,
 )
 
-from .errors import DagsterInvariantViolationError
+from .errors import DagsterInvariantViolationError, DagsterExecutionStepNotFoundError
 
 from .events import construct_event_logger
 
@@ -706,6 +706,13 @@ def execute_plan(execution_plan, environment_dict=None, run_config=None, step_ke
     environment_dict = check.opt_dict_param(environment_dict, 'environment_dict')
     run_config = check_run_config_param(run_config)
     check.opt_list_param(step_keys_to_execute, 'step_keys_to_execute', of_type=str)
+
+    if step_keys_to_execute:
+        for step_key in step_keys_to_execute:
+            if not execution_plan.has_step(step_key):
+                raise DagsterExecutionStepNotFoundError(
+                    'Execution plan does not contain step "{}"'.format(step_key), step_key=step_key
+                )
 
     with yield_pipeline_execution_context(
         execution_plan.pipeline_def, environment_dict, run_config
