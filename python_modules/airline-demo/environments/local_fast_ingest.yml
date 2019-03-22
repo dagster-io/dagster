@@ -96,30 +96,6 @@ solids:
     inputs:
       archive_member:
         value: Origin_and_Destination_Survey_DB1BTicket_2018_2.csv
-  ingest_april_on_time_data:
-    inputs:
-      input_csv: source_data/On_Time_Reporting_Carrier_On_Time_Performance_(1987_present)_2018_4.csv
-  ingest_june_on_time_data:
-    inputs:
-      input_csv: source_data/On_Time_Reporting_Carrier_On_Time_Performance_(1987_present)_2018_6.csv
-  ingest_master_cord_data:
-    inputs:
-      input_csv: source_data/954834304_T_MASTER_CORD.csv
-  ingest_may_on_time_data:
-    inputs:
-      input_csv: source_data/On_Time_Reporting_Carrier_On_Time_Performance_(1987_present)_2018_5.csv
-  ingest_q2_coupon_data:
-    inputs:
-      input_csv: source_data/Origin_and_Destination_Survey_DB1BCoupon_2018_2.csv
-  ingest_q2_market_data:
-    inputs:
-      input_csv: source_data/Origin_and_Destination_Survey_DB1BMarket_2018_2.csv
-  ingest_q2_sfo_weather:
-    inputs:
-      input_csv: source_data/sfo_q2_weather.txt
-  ingest_q2_ticket_data:
-    inputs:
-      input_csv: source_data/Origin_and_Destination_Survey_DB1BTicket_2018_2.csv
   join_q2_on_time_data_to_dest_cord_data:
     config:
       how: left_outer

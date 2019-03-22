@@ -118,14 +118,30 @@ def define_airline_demo_ingest_pipeline():
         SolidInstance('unzip_file', alias='unzip_q2_ticket_data'): {
             'archive_path': DependencyDefinition('download_q2_ticket_data')
         },
-        SolidInstance('ingest_csv_to_spark', alias='ingest_april_on_time_data'): {},
-        SolidInstance('ingest_csv_to_spark', alias='ingest_may_on_time_data'): {},
-        SolidInstance('ingest_csv_to_spark', alias='ingest_june_on_time_data'): {},
-        SolidInstance('ingest_csv_to_spark', alias='ingest_q2_sfo_weather'): {},
-        SolidInstance('ingest_csv_to_spark', alias='ingest_q2_coupon_data'): {},
-        SolidInstance('ingest_csv_to_spark', alias='ingest_q2_market_data'): {},
-        SolidInstance('ingest_csv_to_spark', alias='ingest_q2_ticket_data'): {},
-        SolidInstance('ingest_csv_to_spark', alias='ingest_master_cord_data'): {},
+        SolidInstance('ingest_csv_to_spark', alias='ingest_april_on_time_data'): {
+            'input_csv': DependencyDefinition('unzip_april_on_time_data')
+        },
+        SolidInstance('ingest_csv_to_spark', alias='ingest_may_on_time_data'): {
+            'input_csv': DependencyDefinition('unzip_may_on_time_data')
+        },
+        SolidInstance('ingest_csv_to_spark', alias='ingest_june_on_time_data'): {
+            'input_csv': DependencyDefinition('unzip_june_on_time_data')
+        },
+        SolidInstance('ingest_csv_to_spark', alias='ingest_q2_sfo_weather'): {
+            'input_csv': DependencyDefinition('download_q2_sfo_weather')
+        },
+        SolidInstance('ingest_csv_to_spark', alias='ingest_q2_coupon_data'): {
+            'input_csv': DependencyDefinition('unzip_q2_coupon_data')
+        },
+        SolidInstance('ingest_csv_to_spark', alias='ingest_q2_market_data'): {
+            'input_csv': DependencyDefinition('unzip_q2_market_data')
+        },
+        SolidInstance('ingest_csv_to_spark', alias='ingest_q2_ticket_data'): {
+            'input_csv': DependencyDefinition('unzip_q2_ticket_data')
+        },
+        SolidInstance('ingest_csv_to_spark', alias='ingest_master_cord_data'): {
+            'input_csv': DependencyDefinition('unzip_master_cord_data')
+        },
         SolidInstance('union_spark_data_frames', alias='combine_april_may_on_time_data'): {
             'left_data_frame': DependencyDefinition('ingest_april_on_time_data'),
             'right_data_frame': DependencyDefinition('ingest_may_on_time_data'),
