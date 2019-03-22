@@ -113,11 +113,10 @@ workflows:
             - dagster-ge-py35
             - dagster-ge-py27
             # https://github.com/apache/airflow/pull/3723
-            # https://github.com/dagster-io/dagster/issues/922
             # - dagster-airflow-py37
-            # - dagster-airflow-py36
-            # - dagster-airflow-py35
-            # - dagster-airflow-py27
+            - dagster-airflow-py36
+            - dagster-airflow-py35
+            - dagster-airflow-py27
             - dagma-py37
             - dagma-py36
             - dagma-py35
