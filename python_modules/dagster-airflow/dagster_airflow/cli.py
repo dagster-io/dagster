@@ -5,12 +5,38 @@ import click
 from six import string_types
 
 from dagster import check
-from dagster.cli.dynamic_loader import pipeline_target_command
+from dagster.cli.dynamic_loader import apply_click_params, pipeline_target_command
 from dagster.cli.pipeline import create_pipeline_from_cli_args, REPO_TARGET_WARNING
 from dagster.utils import load_yaml_from_glob_list
 
 from .scaffold import scaffold_airflow_dag
 from .version import __version__
+
+
+def env_target(f):
+    return apply_click_params(
+        f,
+        click.option(
+            '-e',
+            '--env',
+            type=click.STRING,
+            multiple=True,
+            help=(
+                'Specify one or more environment files. These can also be file patterns. '
+                'If more than one environment file is captured then those files are merged. '
+                'Files listed first take precendence. They will smash the values of subsequent '
+                'files at the key-level granularity. If the file is a pattern then you must '
+                'enclose it in double quotes'
+                '\n\nExample: '
+                'dagster-airflow scaffold airline_demo_download_pipeline -e '
+                '"environments/download/local_*.yml"'
+                '\n\nYou can also specify multiple files:'
+                '\n\nExample: '
+                'dagster-airflow scaffold airline_demo_download_pipeline -e environments/local_base.yml '
+                '-e environments/local_fast_download.yml'
+            ),
+        ),
+    )
 
 
 @click.command(
@@ -33,26 +59,7 @@ from .version import __version__
         '$AIRFLOW_HOME. Will error if $AIRFLOW_HOME is not set'
     ),
 )
-@click.option(
-    '-e',
-    '--env',
-    type=click.STRING,
-    multiple=True,
-    help=(
-        'Specify one or more environment files. These can also be file patterns. '
-        'If more than one environment file is captured then those files are merged. '
-        'Files listed first take precendence. They will smash the values of subsequent '
-        'files at the key-level granularity. If the file is a pattern then you must '
-        'enclose it in double quotes'
-        '\n\nExample: '
-        'dagster-airflow scaffold airline_demo_download_pipeline -e '
-        '"environments/download/local_*.yml"'
-        '\n\nYou can also specify multiple files:'
-        '\n\nExample: '
-        'dagster-airflow scaffold airline_demo_download_pipeline -e environments/local_base.yml '
-        '-e environments/local_fast_download.yml'
-    ),
-)
+@env_target
 def scaffold(env, install, image, **cli_args):
     check.invariant(isinstance(env, tuple))
     env = list(env)
@@ -93,26 +100,7 @@ def scaffold(env, install, image, **cli_args):
         '$AIRFLOW_HOME. Will error if $AIRFLOW_HOME is not set'
     ),
 )
-@click.option(
-    '-e',
-    '--env',
-    type=click.STRING,
-    multiple=True,
-    help=(
-        'Specify one or more environment files. These can also be file patterns. '
-        'If more than one environment file is captured then those files are merged. '
-        'Files listed first take precendence. They will smash the values of subsequent '
-        'files at the key-level granularity. If the file is a pattern then you must '
-        'enclose it in double quotes'
-        '\n\nExample: '
-        'dagster-airflow scaffold airline_demo_download_pipeline -e '
-        '"environments/download/local_*.yml"'
-        '\n\nYou can also specify multiple files:'
-        '\n\nExample: '
-        'dagster-airflow scaffold airline_demo_download_pipeline -e environments/local_base.yml '
-        '-e environments/local_fast_download.yml'
-    ),
-)
+@env_target
 def regenerate(env, install, image, **cli_args):
     check.invariant(isinstance(env, tuple))
     env = list(env)
