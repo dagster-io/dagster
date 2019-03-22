@@ -1,6 +1,9 @@
+import uuid
+
 import pytest
 
 from dagster import (
+    DagsterExecutionStepNotFoundError,
     DependencyDefinition,
     InputDefinition,
     Int,
@@ -10,21 +13,22 @@ from dagster import (
     lambda_solid,
 )
 
-from dagster.core.errors import (
-    DagsterExecutionStepNotFoundError,
-    DagsterInvalidSubplanInputNotFoundError,
-    DagsterInvalidSubplanMissingInputError,
-    DagsterInvalidSubplanOutputNotFoundError,
+from dagster.core.execution import (
+    MultiprocessExecutorConfig,
+    yield_pipeline_execution_context,
+    ExecutionStepEventType,
+    create_execution_plan,
+    execute_plan,
+)
+from dagster.core.object_store import (
+    get_filesystem_intermediate,
+    has_filesystem_intermediate,
+    get_s3_intermediate,
+    has_s3_intermediate,
+    rm_s3_intermediate,
 )
 
-from dagster.core.execute_marshalling import execute_marshalling, MarshalledOutput
-
-from dagster.core.execution_plan.objects import StepKind
-from dagster.core.types.runtime import resolve_to_runtime_type
-
-from dagster.core.types.marshal import serialize_to_file, deserialize_from_file
-
-from dagster.utils.test import get_temp_file_names
+from ..marks import aws, nettest
 
 
 def define_inty_pipeline():
@@ -48,173 +52,205 @@ def define_inty_pipeline():
     return pipeline
 
 
-def test_basic_pipeline_external_plan_execution():
+def get_step_output(step_events, step_key, output_name='result'):
+    for step_event in step_events:
+        if (
+            step_event.event_type == ExecutionStepEventType.STEP_OUTPUT
+            and step_event.step_key == step_key
+            and step_event.step_output_data.output_name == output_name
+        ):
+            return step_event
+    return None
+
+
+def test_using_file_system_for_subplan():
     pipeline = define_inty_pipeline()
 
-    with get_temp_file_names(2) as temp_files:
+    environment_dict = {'storage': {'filesystem': {}}}
 
-        temp_path, write_path = temp_files  # pylint: disable=W0632
+    execution_plan = create_execution_plan(pipeline, environment_dict=environment_dict)
 
-        int_type = resolve_to_runtime_type(Int)
+    assert execution_plan.get_step_by_key('return_one.transform')
 
-        serialize_to_file(int_type.serialization_strategy, 5, temp_path)
+    step_keys = ['return_one.transform']
 
-        step_events = execute_marshalling(
-            pipeline,
-            ['add_one.transform'],
-            inputs_to_marshal={'add_one.transform': {'num': temp_path}},
-            outputs_to_marshal={'add_one.transform': [MarshalledOutput('result', write_path)]},
+    run_id = str(uuid.uuid4())
+
+    return_one_step_events = list(
+        execute_plan(
+            execution_plan,
+            environment_dict=environment_dict,
+            run_config=RunConfig(run_id=run_id),
+            step_keys_to_execute=step_keys,
+        )
+    )
+
+    assert get_step_output(return_one_step_events, 'return_one.transform')
+    assert has_filesystem_intermediate(run_id, 'return_one.transform')
+    assert get_filesystem_intermediate(run_id, 'return_one.transform', Int) == 1
+
+    add_one_step_events = list(
+        execute_plan(
+            execution_plan,
+            environment_dict=environment_dict,
+            run_config=RunConfig(run_id=run_id),
+            step_keys_to_execute=['add_one.transform'],
+        )
+    )
+
+    assert get_step_output(add_one_step_events, 'add_one.transform')
+    assert has_filesystem_intermediate(run_id, 'add_one.transform')
+    assert get_filesystem_intermediate(run_id, 'add_one.transform', Int) == 2
+
+
+def test_using_file_system_for_subplan_multiprocessing():
+    pipeline = define_inty_pipeline()
+
+    environment_dict = {'storage': {'filesystem': {}}}
+
+    execution_plan = create_execution_plan(pipeline, environment_dict=environment_dict)
+
+    assert execution_plan.get_step_by_key('return_one.transform')
+
+    step_keys = ['return_one.transform']
+
+    run_id = str(uuid.uuid4())
+
+    return_one_step_events = list(
+        execute_plan(
+            execution_plan,
+            environment_dict=environment_dict,
+            run_config=RunConfig(
+                run_id=run_id, executor_config=MultiprocessExecutorConfig(define_inty_pipeline)
+            ),
+            step_keys_to_execute=step_keys,
+        )
+    )
+
+    assert get_step_output(return_one_step_events, 'return_one.transform')
+    assert has_filesystem_intermediate(run_id, 'return_one.transform')
+    assert get_filesystem_intermediate(run_id, 'return_one.transform', Int) == 1
+
+    add_one_step_events = list(
+        execute_plan(
+            execution_plan,
+            environment_dict=environment_dict,
+            run_config=RunConfig(
+                run_id=run_id, executor_config=MultiprocessExecutorConfig(define_inty_pipeline)
+            ),
+            step_keys_to_execute=['add_one.transform'],
+        )
+    )
+
+    assert get_step_output(add_one_step_events, 'add_one.transform')
+    assert has_filesystem_intermediate(run_id, 'add_one.transform')
+    assert get_filesystem_intermediate(run_id, 'add_one.transform', Int) == 2
+
+
+@aws
+@nettest
+def test_using_s3_for_subplan(s3_bucket):
+    pipeline = define_inty_pipeline()
+
+    environment_dict = {'storage': {'s3': {'s3_bucket': s3_bucket}}}
+
+    execution_plan = create_execution_plan(pipeline, environment_dict=environment_dict)
+
+    assert execution_plan.get_step_by_key('return_one.transform')
+
+    step_keys = ['return_one.transform']
+
+    run_id = str(uuid.uuid4())
+
+    try:
+        return_one_step_events = list(
+            execute_plan(
+                execution_plan,
+                environment_dict=environment_dict,
+                run_config=RunConfig(run_id=run_id),
+                step_keys_to_execute=step_keys,
+            )
         )
 
-        assert deserialize_from_file(int_type.serialization_strategy, write_path) == 6
+        assert get_step_output(return_one_step_events, 'return_one.transform')
+        with yield_pipeline_execution_context(
+            pipeline, environment_dict, RunConfig(run_id=run_id)
+        ) as context:
+            assert has_s3_intermediate(context, s3_bucket, run_id, 'return_one.transform')
+            assert get_s3_intermediate(context, s3_bucket, run_id, 'return_one.transform', Int) == 1
 
-    assert len(step_events) == 1
-
-    transform_step_output_event = step_events[0]
-    assert transform_step_output_event.step_kind == StepKind.TRANSFORM
-    assert transform_step_output_event.is_successful_output
-    assert transform_step_output_event.step_output_data.output_name == 'result'
-    assert transform_step_output_event.step_output_data.get_value() == 6
-
-
-def test_external_execution_marshal_wrong_input_error():
-    pipeline = define_inty_pipeline()
-
-    with pytest.raises(DagsterInvalidSubplanInputNotFoundError) as exc_info:
-        execute_marshalling(
-            pipeline,
-            ['add_one.transform'],
-            inputs_to_marshal={'add_one.transform': {'nope': 'nope'}},
+        add_one_step_events = list(
+            execute_plan(
+                execution_plan,
+                environment_dict=environment_dict,
+                run_config=RunConfig(run_id=run_id),
+                step_keys_to_execute=['add_one.transform'],
+            )
         )
 
-    assert str(exc_info.value) == 'Input nope on add_one.transform does not exist.'
-    assert exc_info.value.pipeline_name == pipeline.name
-    assert exc_info.value.step_keys == ['add_one.transform']
+        assert get_step_output(add_one_step_events, 'add_one.transform')
+        with yield_pipeline_execution_context(
+            pipeline, environment_dict, RunConfig(run_id=run_id)
+        ) as context:
+            assert has_s3_intermediate(context, s3_bucket, run_id, 'add_one.transform')
+            assert get_s3_intermediate(context, s3_bucket, run_id, 'add_one.transform', Int) == 2
+    finally:
+        with yield_pipeline_execution_context(
+            pipeline, environment_dict, RunConfig(run_id=run_id)
+        ) as context:
+            rm_s3_intermediate(context, s3_bucket, run_id, 'return_one.transform')
+            rm_s3_intermediate(context, s3_bucket, run_id, 'add_one.transform')
 
 
-def test_external_execution_step_for_input_missing():
+def test_execute_step_wrong_step_key():
     pipeline = define_inty_pipeline()
+
+    execution_plan = create_execution_plan(pipeline)
 
     with pytest.raises(DagsterExecutionStepNotFoundError) as exc_info:
-        execute_marshalling(
-            pipeline, ['add_one.transform'], inputs_to_marshal={'nope': {'nope': 'nope'}}
-        )
+        execute_plan(execution_plan, step_keys_to_execute=['nope'])
 
     assert exc_info.value.step_key == 'nope'
 
+    assert str(exc_info.value) == 'Execution plan does not contain step "nope"'
 
-def test_external_execution_input_marshal_code_error():
+
+# We can improve error handling here when
+# https://github.com/dagster-io/dagster/issues/932
+# is done
+def test_using_file_system_for_subplan_missing_input():
     pipeline = define_inty_pipeline()
 
-    with pytest.raises(IOError):
-        execute_marshalling(
-            pipeline,
-            ['add_one.transform'],
-            inputs_to_marshal={'add_one.transform': {'num': 'nope'}},
-        )
+    environment_dict = {'storage': {'filesystem': {}}}
 
-    # This throws outside of the normal execution process for now so this is expected
-    with pytest.raises(IOError):
-        execute_marshalling(
-            pipeline,
-            ['add_one.transform'],
-            inputs_to_marshal={'add_one.transform': {'num': 'nope'}},
-            run_config=RunConfig.nonthrowing_in_process(),
-        )
+    execution_plan = create_execution_plan(pipeline, environment_dict=environment_dict)
+
+    run_id = str(uuid.uuid4())
+
+    step_events = execute_plan(
+        execution_plan,
+        environment_dict=environment_dict,
+        run_config=RunConfig(run_id=run_id),
+        step_keys_to_execute=['add_one.transform'],
+    )
+
+    assert not step_events
+    assert not has_filesystem_intermediate(run_id, 'add_one.transform')
 
 
-def test_external_execution_step_for_output_missing():
+def test_using_file_system_for_subplan_invalid_step():
     pipeline = define_inty_pipeline()
+
+    environment_dict = {'storage': {'filesystem': {}}}
+
+    execution_plan = create_execution_plan(pipeline, environment_dict=environment_dict)
+
+    run_id = str(uuid.uuid4())
 
     with pytest.raises(DagsterExecutionStepNotFoundError):
-        execute_marshalling(
-            pipeline,
-            ['add_one.transform'],
-            inputs_to_marshal={'add_one.transform': {'num': 'nope'}},
-            outputs_to_marshal={'nope': [MarshalledOutput('nope', 'nope')]},
+        execute_plan(
+            execution_plan,
+            environment_dict=environment_dict,
+            run_config=RunConfig(run_id=run_id),
+            step_keys_to_execute=['nope'],
         )
-
-
-def test_external_execution_output_missing():
-    pipeline = define_inty_pipeline()
-
-    with pytest.raises(DagsterInvalidSubplanOutputNotFoundError):
-        execute_marshalling(
-            pipeline,
-            ['add_one.transform'],
-            outputs_to_marshal={'add_one.transform': [MarshalledOutput('nope', 'nope')]},
-        )
-
-
-def test_external_execution_marshal_output_code_error():
-    pipeline = define_inty_pipeline()
-
-    # guaranteed that folder does not exist
-    hardcoded_uuid = '83fb4ace-5cab-459d-99b6-2ca9808c54a1'
-
-    outputs_to_marshal = {
-        'add_one.transform': [
-            MarshalledOutput(
-                output_name='result', marshalling_key='{uuid}/{uuid}'.format(uuid=hardcoded_uuid)
-            )
-        ]
-    }
-
-    with pytest.raises(IOError) as exc_info:
-        execute_marshalling(
-            pipeline,
-            ['return_one.transform', 'add_one.transform'],
-            outputs_to_marshal=outputs_to_marshal,
-        )
-
-    assert 'No such file or directory' in str(exc_info.value)
-
-    # This throws outside of the normal execution process for now so this is expected
-    with pytest.raises(IOError) as exc_info:
-        execute_marshalling(
-            pipeline,
-            ['return_one.transform', 'add_one.transform'],
-            outputs_to_marshal=outputs_to_marshal,
-            run_config=RunConfig.nonthrowing_in_process(),
-        )
-
-
-def test_external_execution_output_code_error_throw_on_user_error():
-    pipeline = define_inty_pipeline()
-
-    with pytest.raises(Exception) as exc_info:
-        execute_marshalling(pipeline, ['user_throw_exception.transform'])
-
-    assert str(exc_info.value) == 'whoops'
-
-
-def test_external_execution_output_code_error_no_throw_on_user_error():
-    pipeline = define_inty_pipeline()
-
-    step_events = execute_marshalling(
-        pipeline, ['user_throw_exception.transform'], run_config=RunConfig.nonthrowing_in_process()
-    )
-
-    assert len(step_events) == 1
-    step_event = step_events[0]
-    assert step_event.step_failure_data
-    assert step_event.step_failure_data.error_cls_name == 'Exception'
-    assert step_event.step_failure_data.error_message == 'Exception: whoops\n'
-
-
-def test_external_execution_unsatisfied_input_error():
-    pipeline = define_inty_pipeline()
-
-    with pytest.raises(DagsterInvalidSubplanMissingInputError) as exc_info:
-        execute_marshalling(pipeline, ['add_one.transform'])
-
-    assert exc_info.value.pipeline_name == 'basic_external_plan_execution'
-    assert exc_info.value.step_keys == ['add_one.transform']
-    assert exc_info.value.step.key == 'add_one.transform'
-    assert exc_info.value.input_name == 'num'
-
-    assert str(exc_info.value) == (
-        "You have specified a subset execution on pipeline basic_external_plan_execution with "
-        "step_keys ['add_one.transform']. You have failed to provide the required input num for "
-        "step add_one.transform."
-    )

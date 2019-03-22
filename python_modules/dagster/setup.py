@@ -53,7 +53,7 @@ def _do_setup(name='dagster'):
         packages=find_packages(exclude=['dagster_tests']),
         install_requires=[
             # standard python 2/3 compatability things
-            'enum34>=1.1.6',
+            'enum-compat==0.0.2',
             'future>=0.16.0, <0.17a0',  # pinned to range for compatibility with Airflow
             'funcsigs==1.0.0',  # pinned for compatibility with existing Airflow installs
             'contextlib2>=0.5.5',
@@ -61,12 +61,13 @@ def _do_setup(name='dagster'):
             'click>=6.7',
             'coloredlogs>=10.0',
             'graphviz>=0.8.3',
-            'pyyaml>=3.12',
+            # pyyaml pinned for compatibility with docker-compose
+            'pyyaml==4.2b1',
             # core (not explicitly expressed atm)
             'six>=1.11.0',
             'toposort>=1.5',
             # dev/test - Installed via dev-requirements.txt
-            # 'pylint>=1.8.4',
+            # 'pylint>=2.3.0',
             # 'pytest>=3.5.1',
             # 'recommonmark>=0.4.0',
             # 'rope>=0.10.7',
@@ -77,7 +78,7 @@ def _do_setup(name='dagster'):
             # 'twine>=1.11.0',
             # 'pre-commit'>=1.10.1',
         ],
-        extras_require={":python_version>'3'": ["reloader>=0.6"]},
+        extras_require={":python_version>'3'": ["reloader>=0.6"], "aws": ["boto3>=1.9.117"]},
         entry_points={"console_scripts": ['dagster = dagster.cli:main']},
     )
 

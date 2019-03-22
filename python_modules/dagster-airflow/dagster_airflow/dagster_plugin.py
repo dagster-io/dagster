@@ -8,10 +8,10 @@ from __future__ import print_function
 import ast
 import errno
 import json
+import os
 import sys
 
 from contextlib import contextmanager
-from textwrap import TextWrapper
 
 from airflow.exceptions import AirflowException
 from airflow.operators.docker_operator import DockerOperator
@@ -21,12 +21,7 @@ from docker import APIClient, from_env
 
 
 if sys.version_info.major >= 3:
-    from io import StringIO  # pylint:disable=import-error
-else:
-    from StringIO import StringIO  # pylint:disable=import-error
-
-if sys.version_info.major >= 3:
-    from json.decoder import JSONDecodeError
+    from json.decoder import JSONDecodeError  # pylint:disable=ungrouped-imports
 else:
     JSONDecodeError = ValueError
 
@@ -42,20 +37,28 @@ DAGSTER_OPERATOR_COMMAND_TEMPLATE = '''-q '
     '\n'
 )
 
+DOCKER_TEMPDIR = '/tmp/results'
+
+DEFAULT_ENVIRONMENT = {
+    'AWS_ACCESS_KEY_ID': os.getenv('AWS_ACCESS_KEY_ID'),
+    'AWS_SECRET_ACCESS_KEY': os.getenv('AWS_SECRET_ACCESS_KEY'),
+}
+
+# TODO need to enrich error handling as we enrich the ultimate union type for executePlan
 QUERY_TEMPLATE = '''
 mutation(
   $config: PipelineConfig = {config},
-  $stepExecutions: [StepExecution!] = {step_executions},
   $pipelineName: String = "{pipeline_name}",
   $runId: String = "{run_id}"
+  $stepKeys: [String!] = {step_keys}
 ) {{
-  startSubplanExecution(
+  executePlan(
     config: $config,
     executionMetadata: {{
       runId: $runId
     }},
     pipelineName: $pipelineName,
-    stepExecutions: $stepExecutions,
+    stepKeys: $stepKeys,
   ) {{
     __typename
     ... on PipelineConfigValidationInvalid {{
@@ -69,7 +72,12 @@ mutation(
         reason
       }}
     }}
-    ... on StartSubplanExecutionSuccess {{
+    ... on PipelineNotFoundError {{
+        message
+        stack
+        pipelineName
+    }}
+    ... on ExecutePlanSuccess {{
       pipeline {{
         name
       }}
@@ -101,164 +109,57 @@ mutation(
         }}
       }}
     }}
-    ... on PythonError {{
-        message
-        stack
-    }}
   }}
 }}
 '''.strip(
     '\n'
 )
 
-# FIXME need to support comprehensive error handling here
-
-# ... on PipelineConfigValidationInvalid {
-#     pipeline {
-#         name
-#     }
-#     errors {
-#         message
-#         path
-#         stack {
-#         entries {
-#             __typename
-#             ... on EvaluationStackPathEntry {
-#             field {
-#                 name
-#                 description
-#                 configType {
-#                 key
-#                 name
-#                 description
-#                 }
-#                 defaultValue
-#                 isOptional
-#             }
-#             }
-#         }
-#         }
-#         reason
-#     }
-#     }
-#     ... on StartSubplanExecutionInvalidStepsError {
-#     invalidStepKeys
-#     }
-#     ... on StartSubplanExecutionInvalidOutputError {
-#     step {
-#         key
-#         inputs {
-#         name
-#         type {
-#             key
-#             name
-#         }
-#         }
-#         outputs {
-#         name
-#         type {
-#             key
-#             name
-#         }
-#         }
-#         solid {
-#         name
-#         definition {
-#             name
-#         }
-#         inputs {
-#             solid {
-#             name
-#             }
-#             definition {
-#             name
-#             }
-#         }
-#         }
-#         kind
-#     }
-#     }
-# }
-# }
-
-
 LINE_LENGTH = 100
 
+
 # We include this directly to avoid taking the dependency on dagster
-class IndentingBlockPrinter(object):
-    def __init__(self, line_length=LINE_LENGTH, indent_level=4, current_indent=0):
-        assert isinstance(current_indent, int)
-        assert isinstance(indent_level, int)
-        assert isinstance(indent_level, int)
-        self.buffer = StringIO()
-        self.line_length = line_length
-        self.current_indent = current_indent
-        self.indent_level = indent_level
-        self.printer = lambda x: self.buffer.write(x + '\n')
-
-        self._line_so_far = ''
-
-    def append(self, text):
-        assert isinstance(text, STRING_TYPES)
-        self._line_so_far += text
-
-    def line(self, text):
-        assert isinstance(text, STRING_TYPES)
-        self.printer(self.current_indent_str + self._line_so_far + text)
-        self._line_so_far = ''
-
-    @property
-    def current_indent_str(self):
-        return ' ' * self.current_indent
-
-    def blank_line(self):
-        assert not self._line_so_far, 'Cannot throw away appended strings by calling blank_line'
-        self.printer('')
-
-    def increase_indent(self):
-        self.current_indent += self.indent_level
-
-    def decrease_indent(self):
-        if self.indent_level and self.current_indent <= 0:
-            raise Exception('indent cannot be negative')
-        self.current_indent -= self.indent_level
-
-    @contextmanager
-    def with_indent(self, text=None):
-        if text is not None:
-            self.line(text)
-        self.increase_indent()
-        yield
-        self.decrease_indent()
-
-    def __enter__(self):
-        return self
-
-    def __exit__(self, _exception_type, _exception_value, _traceback):
-        self.buffer.close()
-
-    def block(self, text, prefix=''):
-        '''Automagically wrap a block of text.'''
-        assert isinstance(text, STRING_TYPES)
-        wrapper = TextWrapper(
-            width=self.line_length - len(self.current_indent_str),
-            initial_indent=prefix,
-            subsequent_indent=prefix,
-            break_long_words=False,
-            break_on_hyphens=False,
-        )
-        for line in wrapper.wrap(text):
-            self.line(line)
-
-    def comment(self, text):
-        assert isinstance(text, STRING_TYPES)
-        self.block(text, prefix='# ')
-
-    def read(self):
-        '''Get the value of the backing StringIO.'''
-        return self.buffer.getvalue()
+def mkdir_p(path):
+    try:
+        os.makedirs(path)
+    except OSError as exc:  # Python >2.5
+        if exc.errno == errno.EEXIST and os.path.isdir(path):
+            pass
+        else:
+            raise
 
 
+def parse_raw_res(raw_res):
+    res = None
+    # FIXME
+    # Unfortunately, log lines don't necessarily come back in order...
+    # This is error-prone, if something else logs JSON
+    lines = list(reversed(raw_res.decode('utf-8').split('\n')))
+    last_line = lines[0]
+
+    for line in lines:
+        try:
+            res = json.loads(line)
+            break
+        # If we don't get a GraphQL response, check the next line
+        except JSONDecodeError:
+            continue
+
+    return (res, last_line)
+
+
+def handle_errors(res, last_line):
+    if res is None:
+        raise AirflowException('Unhandled error type. Response: {}'.format(last_line))
+
+    if res.get('errors'):
+        raise AirflowException('Internal error in GraphQL request. Response: {}'.format(res))
+
+    if not res.get('data', {}).get('executePlan', {}).get('__typename'):
+        raise AirflowException('Unexpected response type. Response: {}'.format(res))
+
+
+# pylint: disable=len-as-condition
 class ModifiedDockerOperator(DockerOperator):
     """ModifiedDockerOperator supports host temporary directories on OSX.
 
@@ -270,7 +171,7 @@ class ModifiedDockerOperator(DockerOperator):
     :type host_tmp_dir: str
     """
 
-    def __init__(self, host_tmp_dir=None, **kwargs):
+    def __init__(self, host_tmp_dir='/tmp', **kwargs):
         self.host_tmp_dir = host_tmp_dir
         kwargs['xcom_push'] = True
         super(ModifiedDockerOperator, self).__init__(**kwargs)
@@ -362,22 +263,17 @@ class DagsterOperator(ModifiedDockerOperator):
         step=None,
         config=None,
         pipeline_name=None,
-        step_executions=None,
-        docker_from_env=True,
-        s3_conn_id=None,
-        persist_intermediate_results_to_s3=False,
+        step_keys=None,
+        s3_bucket_name=None,
         *args,
         **kwargs
     ):
         self.step = step
         self.config = config
         self.pipeline_name = pipeline_name
-        self._step_executions = step_executions
-        self.docker_from_env = docker_from_env
+        self.step_keys = step_keys
         self.docker_conn_id_set = kwargs.get('docker_conn_id') is not None
-        self.s3_conn_id = s3_conn_id
-        self.persist_intermediate_results_to_s3 = persist_intermediate_results_to_s3
-
+        self.s3_bucket_name = s3_bucket_name
         self._run_id = None
 
         # We don't use dagster.check here to avoid taking the dependency.
@@ -389,9 +285,29 @@ class DagsterOperator(ModifiedDockerOperator):
                 )
             )
 
-        assert isinstance(self._step_executions, dict), (
-            'Bad value for DagsterOperator step_executions: expected a dict and got {value} of '
-            'type {type_}'.format(value=self._step_executions, type_=type(self._step_executions))
+        if self.step_keys is None:
+            self.step_keys = []
+
+        assert isinstance(self.step_keys, list), (
+            'Bad value for DagsterOperator step_keys: expected a list and got {value} of '
+            'type {type_}'.format(value=self.step_keys, type_=type(self.step_keys))
+        )
+
+        bad_keys = []
+        for ix, step_key in enumerate(self.step_keys):
+            if not isinstance(step, STRING_TYPES):
+                bad_keys.append((ix, step_key))
+        assert (
+            not bad_keys
+        ), 'Bad values for DagsterOperator step_keys (expected only strings): {bad_values}'.format(
+            bad_values=', '.join(
+                [
+                    '{value} of type {type_} at index {idx}'.format(
+                        value=bad_key[1], type_=type(bad_key[1]), idx=bad_key[0]
+                    )
+                    for bad_key in bad_keys
+                ]
+            )
         )
 
         # These shenanigans are so we can override DockerOperator.get_hook in order to configure
@@ -400,10 +316,21 @@ class DagsterOperator(ModifiedDockerOperator):
         if not self.docker_conn_id_set:
             try:
                 from_env().version()
-            except:
+            except:  # pylint: disable=bare-except
                 pass
             else:
                 kwargs['docker_conn_id'] = True
+
+        # We do this because log lines won't necessarily be emitted in order (!) -- so we can't
+        # just check the last log line to see if it's JSON.
+        kwargs['xcom_all'] = True
+
+        if 'network_mode' not in kwargs:
+            # FIXME: this is not the best test to see if we're running on Docker for Mac
+            kwargs['network_mode'] = 'host' if sys.platform != 'darwin' else 'bridge'
+
+        if 'environment' not in kwargs:
+            kwargs['environment'] = DEFAULT_ENVIRONMENT
 
         super(DagsterOperator, self).__init__(*args, **kwargs)
 
@@ -415,56 +342,16 @@ class DagsterOperator(ModifiedDockerOperator):
             return self._run_id
 
     @property
-    def step_executions(self):
-        if not self._step_executions:
-            return ''
-
-        inputs = self._step_executions['inputs']
-        n_inputs = len(inputs)
-        outputs = self._step_executions['outputs']
-        n_outputs = len(outputs)
-        step_key = self._step_executions['step_key']
-        printer = IndentingBlockPrinter(indent_level=2)
-
-        printer.line('[')
-        with printer.with_indent():
-            printer.line('{{')
-            with printer.with_indent():
-                printer.line('stepKey: "{step_key}"'.format(step_key=step_key))
-                printer.line('marshalledInputs: [')
-                with printer.with_indent():
-                    for i, step_input in enumerate(inputs):
-                        input_name = step_input['input_name']
-                        key = step_input['key']
-
-                        printer.line('{{')
-                        with printer.with_indent():
-                            printer.line('inputName: "{input_name}",'.format(input_name=input_name))
-                            printer.line('key: "{key}"'.format(key=key))
-                        printer.line('}}}}{comma}'.format(comma=',' if i < n_inputs - 1 else ''))
-                printer.line(']')
-                printer.line('marshalledOutputs: ')
-                with printer.with_indent():
-                    for i, step_output in enumerate(outputs):
-                        output_name = step_output['output_name']
-                        key = step_output['key']
-                        printer.line('{{')
-                        with printer.with_indent():
-                            printer.line(
-                                'outputName: "{output_name}",'.format(output_name=output_name)
-                            )
-                            printer.line('key: "{key}"'.format(key=key))
-                        printer.line('}}}}{comma}'.format(comma=',' if i < n_outputs - 1 else ''))
-            printer.line('}}')
-        printer.line(']')
-        return printer.read().format(run_id_prefix=self.run_id)
-
-    @property
     def query(self):
+        step_keys = '[{quoted_step_keys}]'.format(
+            quoted_step_keys=', '.join(
+                ['"{step_key}"'.format(step_key=step_key) for step_key in self.step_keys]
+            )
+        )
         return QUERY_TEMPLATE.format(
             config=self.config.strip('\n'),
             run_id=self.run_id,
-            step_executions=self.step_executions,
+            step_keys=step_keys,
             pipeline_name=self.pipeline_name,
         )
 
@@ -487,51 +374,54 @@ class DagsterOperator(ModifiedDockerOperator):
 
         return _DummyHook()
 
-    @contextmanager
-    def get_host_tmp_dir(self):
-        # FIXME: need to figure out what to do here. We probably want to provide some knobs to
-        # govern whether intermediate result materializations get cleaned up or not.
-        yield self.host_tmp_dir
-
     def execute(self, context):
-        if 'dag_run' in context and context['dag_run'] is not None:
+        if 'run_id' in self.params:
+            self._run_id = self.params['run_id']
+        elif 'dag_run' in context and context['dag_run'] is not None:
             self._run_id = context['dag_run'].run_id
+
         try:
-            # FIXME implement intermediate result persistence to S3
-
             self.log.debug('Executing with query: {query}'.format(query=self.query))
+
             raw_res = super(DagsterOperator, self).execute(context)
-            res = json.loads(raw_res)
+            self.log.info('Finished executing container.')
+            (res, last_line) = parse_raw_res(raw_res)
 
-            if res.get('errors'):
-                raise AirflowException(
-                    'Internal error in GraphQL request. Response: {}'.format(res)
-                )
+            handle_errors(res, last_line)
 
-            res_type = res['data']['startSubplanExecution']['__typename']
+            res_data = res['data']['executePlan']
+
+            res_type = res_data['__typename']
 
             if res_type == 'PipelineConfigValidationInvalid':
-                errors = [err['message'] for err in res['data']['startSubplanExecution']['errors']]
+                errors = [err['message'] for err in res_data['errors']]
                 raise AirflowException(
                     'Pipeline configuration invalid:\n{errors}'.format(errors='\n'.join(errors))
                 )
 
-            if res_type == 'StartSubplanExecutionSuccess':
-                if res['data']['startSubplanExecution']['hasFailures']:
+            if res_type == 'PipelineNotFoundError':
+                raise AirflowException(
+                    'Pipeline {pipeline_name} not found: {message}:\n{stack_entries}'.format(
+                        pipeline_name=res_data['pipelineName'],
+                        message=res_data['message'],
+                        stack_entries='\n'.join(res_data['stack']),
+                    )
+                )
+
+            if res_type == 'ExecutePlanSuccess':
+                self.log.info('Plan execution succeeded.')
+                if res_data['hasFailures']:
                     errors = [
                         step['errorMessage']
-                        for step in res['data']['startSubplanExecution']['stepEvents']
+                        for step in res_data['stepEvents']
                         if not step['success']
                     ]
                     raise AirflowException(
                         'Subplan execution failed:\n{errors}'.format(errors='\n'.join(errors))
                     )
+
                 return res
 
-            raise AirflowException('Unhandled error type. Response: {}'.format(res))
-
-        except JSONDecodeError:  # This is the bad case where we don't get a GraphQL response
-            raise AirflowException(raw_res)
         finally:
             self._run_id = None
 

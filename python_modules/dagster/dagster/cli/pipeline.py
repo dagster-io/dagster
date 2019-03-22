@@ -6,11 +6,12 @@ import yaml
 
 import click
 
-from dagster import PipelineDefinition, check
+from dagster import PipelineDefinition, check, RunConfig
 
 from dagster.core.definitions import Solid
 from dagster.core.execution import execute_pipeline
 from dagster.core.execution_plan.create import solids_in_topological_order
+from dagster.core.runs import RunStorageMode
 from dagster.graphviz import build_graphviz_graph
 from dagster.utils import load_yaml_from_glob_list
 from dagster.utils.indenting_printer import IndentingPrinter
@@ -27,13 +28,13 @@ from .dynamic_loader import (
 )
 
 
-def create_pipeline_cli():
+def create_pipeline_cli_group():
     group = click.Group(name="pipeline")
-    group.add_command(list_command)
-    group.add_command(print_command)
-    group.add_command(graphviz_command)
-    group.add_command(execute_command)
-    group.add_command(scaffold_command)
+    group.add_command(pipeline_list_command)
+    group.add_command(pipeline_print_command)
+    group.add_command(pipeline_graphviz_command)
+    group.add_command(pipeline_execute_command)
+    group.add_command(pipeline_scaffold_command)
     return group
 
 
@@ -47,7 +48,7 @@ REPO_TARGET_WARNING = (
     help="List the pipelines in a repository. {warning}".format(warning=REPO_TARGET_WARNING),
 )
 @repository_target_argument
-def list_command(**kwargs):
+def pipeline_list_command(**kwargs):
     return execute_list_command(kwargs, click.echo)
 
 
@@ -142,7 +143,7 @@ def get_pipeline_instructions(command_name):
 )
 @click.option('--verbose', is_flag=True)
 @pipeline_target_command
-def print_command(verbose, **cli_args):
+def pipeline_print_command(verbose, **cli_args):
     return execute_print_command(verbose, cli_args, click.echo)
 
 
@@ -252,7 +253,7 @@ def format_argument_dict(arg_def_dict):
 )
 @click.option('--only-solids', is_flag=True)
 @pipeline_target_command
-def graphviz_command(only_solids, **kwargs):
+def pipeline_graphviz_command(only_solids, **kwargs):
     pipeline = create_pipeline_from_cli_args(kwargs)
     build_graphviz_graph(pipeline, only_solids).view(cleanup=True)
 
@@ -292,7 +293,7 @@ LOGGING_DICT = {
         '-e pandas_hello_world/env.yml'
     ),
 )
-def execute_command(env, **kwargs):
+def pipeline_execute_command(env, **kwargs):
     check.invariant(isinstance(env, tuple))
     env = list(env)
     execute_execute_command(env, kwargs, click.echo)
@@ -300,7 +301,7 @@ def execute_command(env, **kwargs):
 
 def execute_execute_command(env, cli_args, print_fn):
     pipeline = create_pipeline_from_cli_args(cli_args)
-    do_execute_command(pipeline, env, print_fn)
+    return do_execute_command(pipeline, env, print_fn)
 
 
 def do_execute_command(pipeline, env_file_list, printer):
@@ -308,9 +309,17 @@ def do_execute_command(pipeline, env_file_list, printer):
     env_file_list = check.opt_list_param(env_file_list, 'env_file_list', of_type=str)
     check.callable_param(printer, 'printer')
 
-    env_config = load_yaml_from_glob_list(env_file_list) if env_file_list else {}
+    environment_dict = load_yaml_from_glob_list(env_file_list) if env_file_list else {}
 
-    execute_pipeline(pipeline, env_config)
+    # Here we detect if the user has specified a storage element in the environment
+    # dictionary. If they have not, we default to using the filesystem in this context.
+    run_storage_mode = None if 'storage' in environment_dict else RunStorageMode.FILESYSTEM
+
+    return execute_pipeline(
+        pipeline,
+        environment_dict=environment_dict,
+        run_config=RunConfig(storage_mode=run_storage_mode),
+    )
 
 
 @click.command(
@@ -321,7 +330,7 @@ def do_execute_command(pipeline, env_file_list, printer):
 )
 @pipeline_target_command
 @click.option('-p', '--print-only-required', default=False, is_flag=True)
-def scaffold_command(**kwargs):
+def pipeline_scaffold_command(**kwargs):
     execute_scaffold_command(kwargs, click.echo)
 
 

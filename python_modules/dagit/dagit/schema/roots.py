@@ -146,36 +146,25 @@ class DauphinExecutionMetadata(dauphin.InputObjectType):
     tags = dauphin.List(dauphin.NonNull(DauphinExecutionTag))
 
 
-class DauphinStartSubplanExecution(dauphin.Mutation):
+class DauphinExecutePlan(dauphin.Mutation):
     class Meta:
-        name = 'StartSubplanExecution'
+        name = 'ExecutePlan'
 
     class Arguments:
         pipelineName = dauphin.NonNull(dauphin.String)
         config = dauphin.Argument('PipelineConfig')
-        stepExecutions = dauphin.non_null_list(DauphinStepExecution)
+        stepKeys = dauphin.List(dauphin.NonNull(dauphin.String))
         executionMetadata = dauphin.Argument(dauphin.NonNull(DauphinExecutionMetadata))
 
-    Output = dauphin.NonNull('StartSubplanExecutionResult')
+    Output = dauphin.NonNull('ExecutePlanResult')
 
     def mutate(self, graphene_info, **kwargs):
-        return model.start_subplan_execution(
-            model.SubplanExecutionArgs(
-                graphene_info,
-                kwargs['pipelineName'],
-                kwargs.get('config'),
-                list(
-                    map(
-                        lambda data: model.step_executions_from_graphql_inputs(
-                            data['stepKey'],
-                            data.get('marshalledInputs', []),
-                            data.get('marshalledOutputs', []),
-                        ),
-                        kwargs['stepExecutions'],
-                    )
-                ),
-                kwargs['executionMetadata'],
-            )
+        return model.do_execute_plan(
+            graphene_info,
+            kwargs['pipelineName'],
+            kwargs.get('config'),
+            kwargs['executionMetadata'],
+            kwargs.get('stepKeys'),
         )
 
 
@@ -184,9 +173,7 @@ class DauphinMutation(dauphin.ObjectType):
         name = 'Mutation'
 
     start_pipeline_execution = DauphinStartPipelineExecutionMutation.Field()
-    # TODO this name should indicate that this is synchronous
-    # https://github.com/dagster-io/dagster/issues/810
-    start_subplan_execution = DauphinStartSubplanExecution.Field()
+    execute_plan = DauphinExecutePlan.Field()
 
 
 class DauphinSubscription(dauphin.ObjectType):

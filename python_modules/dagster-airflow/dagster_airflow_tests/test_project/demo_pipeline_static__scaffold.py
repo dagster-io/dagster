@@ -49,58 +49,19 @@ CONFIG = '''
 
 PIPELINE_NAME = 'demo_pipeline'
 
-STEP_EXECUTIONS_MULTIPLY__THE__WORD_WORD_INPUT__THUNK = {
-    'step_key': 'multiply_the_word.word.input_thunk',
-    'inputs': [
-    ],
-    'outputs': [
-        {
-            'output_name': 'input_thunk_output',
-            'key': '/tmp/results/{run_id_prefix}multiply__the__word_word_input__thunk___input__thunk__output.pickle'
-        },
-    ]
-}
-
-STEP_EXECUTIONS_MULTIPLY__THE__WORD_TRANSFORM = {
-    'step_key': 'multiply_the_word.transform',
-    'inputs': [
-        {
-            'input_name': 'word',
-            'key': '/tmp/results/{run_id_prefix}multiply__the__word_word_input__thunk___input__thunk__output.pickle'
-        },
-    ],
-    'outputs': [
-        {
-            'output_name': 'result',
-            'key': '/tmp/results/{run_id_prefix}multiply__the__word_transform___result.pickle'
-        },
-    ]
-}
-
-STEP_EXECUTIONS_COUNT__LETTERS_TRANSFORM = {
-    'step_key': 'count_letters.transform',
-    'inputs': [
-        {
-            'input_name': 'word',
-            'key': '/tmp/results/{run_id_prefix}multiply__the__word_transform___result.pickle'
-        },
-    ],
-    'outputs': [
-        {
-            'output_name': 'result',
-            'key': '/tmp/results/{run_id_prefix}count__letters_transform___result.pickle'
-        },
-    ]
-}
-
+STEPS_FOR_MULTIPLY_THE_WORD = [
+    'multiply_the_word.word.input_thunk',
+    'multiply_the_word.transform',
+]
+STEPS_FOR_COUNT_LETTERS = [
+    'count_letters.transform',
+]
 
 def make_dag(
     dag_id,
     dag_description,
     dag_kwargs,
-    s3_conn_id,
-    modified_docker_operator_kwargs,
-    host_tmp_dir
+    operator_kwargs,
 ):
     dag = DAG(
         dag_id=dag_id,
@@ -110,49 +71,32 @@ def make_dag(
 
     tasks = []
 
-    multiply__the__word_word_input__thunk_task = DagsterOperator(
-        step='multiply_the_word.word.input_thunk',
+    multiply_the_word_task = DagsterOperator(
+        step='multiply_the_word',
         config=CONFIG,
         dag=dag,
         tmp_dir='/tmp/results',
-        host_tmp_dir=host_tmp_dir,
         image='dagster-airflow-demo',
-        task_id='multiply__the__word_word_input__thunk',
-        s3_conn_id=s3_conn_id,
+        task_id='multiply_the_word',
         pipeline_name=PIPELINE_NAME,
-        step_executions=STEP_EXECUTIONS_MULTIPLY__THE__WORD_WORD_INPUT__THUNK,
+        step_keys=STEPS_FOR_MULTIPLY_THE_WORD,
+        **operator_kwargs
     )
-    tasks.append(multiply__the__word_word_input__thunk_task)
+    tasks.append(multiply_the_word_task)
 
-    multiply__the__word_transform_task = DagsterOperator(
-        step='multiply_the_word.transform',
+    count_letters_task = DagsterOperator(
+        step='count_letters',
         config=CONFIG,
         dag=dag,
         tmp_dir='/tmp/results',
-        host_tmp_dir=host_tmp_dir,
         image='dagster-airflow-demo',
-        task_id='multiply__the__word_transform',
-        s3_conn_id=s3_conn_id,
+        task_id='count_letters',
         pipeline_name=PIPELINE_NAME,
-        step_executions=STEP_EXECUTIONS_MULTIPLY__THE__WORD_TRANSFORM,
+        step_keys=STEPS_FOR_COUNT_LETTERS,
+        **operator_kwargs
     )
-    tasks.append(multiply__the__word_transform_task)
+    tasks.append(count_letters_task)
 
-    count__letters_transform_task = DagsterOperator(
-        step='count_letters.transform',
-        config=CONFIG,
-        dag=dag,
-        tmp_dir='/tmp/results',
-        host_tmp_dir=host_tmp_dir,
-        image='dagster-airflow-demo',
-        task_id='count__letters_transform',
-        s3_conn_id=s3_conn_id,
-        pipeline_name=PIPELINE_NAME,
-        step_executions=STEP_EXECUTIONS_COUNT__LETTERS_TRANSFORM,
-    )
-    tasks.append(count__letters_transform_task)
-
-    multiply__the__word_word_input__thunk_task.set_downstream(multiply__the__word_transform_task)
-    multiply__the__word_transform_task.set_downstream(count__letters_transform_task)
+    multiply_the_word_task.set_downstream(count_letters_task)
 
     return (dag, tasks)

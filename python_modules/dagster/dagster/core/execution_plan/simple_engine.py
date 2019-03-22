@@ -24,9 +24,9 @@ from dagster.core.execution_context import (
     SystemStepExecutionContext,
 )
 
-from dagster.utils.error import serializable_error_info_from_exc_info
+from dagster.core.intermediates_manager import IntermediatesManager
 
-from .intermediates_manager import IntermediatesManager
+from dagster.utils.error import serializable_error_info_from_exc_info
 
 from .objects import (
     ExecutionPlan,
@@ -39,19 +39,13 @@ from .objects import (
 )
 
 
-def _all_inputs_covered(step, intermediates_manager):
-    for step_input in step.step_inputs:
-        if not intermediates_manager.has_value(step_input.prev_output_handle):
-            return False
-    return True
-
-
 def start_inprocess_executor(
     pipeline_context, execution_plan, intermediates_manager, step_keys_to_execute=None
 ):
     check.inst_param(pipeline_context, 'pipeline_context', SystemPipelineExecutionContext)
     check.inst_param(execution_plan, 'execution_plan', ExecutionPlan)
     check.inst_param(intermediates_manager, 'intermediates_manager', IntermediatesManager)
+    check.opt_list_param(step_keys_to_execute, 'step_keys_to_execute', of_type=str)
 
     step_key_set = None if step_keys_to_execute is None else set(step_keys_to_execute)
 
@@ -76,7 +70,7 @@ def start_inprocess_executor(
 
             step_context = pipeline_context.for_step(step)
 
-            if not _all_inputs_covered(step, intermediates_manager):
+            if not intermediates_manager.all_inputs_covered(step_context, step):
                 expected_outputs = [ni.prev_output_handle for ni in step.step_inputs]
 
                 step_context.log.info(
@@ -87,7 +81,7 @@ def start_inprocess_executor(
                 )
                 continue
 
-            input_values = _create_input_values(step, intermediates_manager)
+            input_values = _create_input_values(step_context, intermediates_manager)
 
             for step_event in check.generator(
                 execute_step_in_memory(step_context, input_values, intermediates_manager)
@@ -102,13 +96,17 @@ def start_inprocess_executor(
                 yield step_event
 
 
-def _create_input_values(step, intermediates_manager):
+def _create_input_values(step_context, intermediates_manager):
     check.inst_param(intermediates_manager, 'intermediates_manager', IntermediatesManager)
+
+    step = step_context.step
 
     input_values = {}
     for step_input in step.step_inputs:
         prev_output_handle = step_input.prev_output_handle
-        input_value = intermediates_manager.get_value(prev_output_handle)
+        input_value = intermediates_manager.get_intermediate(
+            step_context, step_input.runtime_type, prev_output_handle
+        )
         input_values[step_input.name] = input_value
     return input_values
 
@@ -199,15 +197,30 @@ def _execute_steps_core_loop(step_context, inputs, intermediates_manager):
             step_context.step, input_name, input_value
         )
 
-    step_output_value_iterator = check.generator(
-        _iterate_step_output_values_within_boundary(step_context, evaluated_inputs)
-    )
+    step = step_context.step
+    step_context.events.execution_plan_step_start(step.key)
 
-    for step_output_value in check.generator(
-        _error_check_step_output_values(step_context.step, step_output_value_iterator)
-    ):
+    try:
+        with time_execution_scope() as timer_result:
+            step_output_value_iterator = check.generator(
+                _iterate_step_output_values_within_boundary(step_context, evaluated_inputs)
+            )
 
-        yield _create_step_event(step_context, step_output_value, intermediates_manager)
+        for step_output_value in check.generator(
+            _error_check_step_output_values(step_context.step, step_output_value_iterator)
+        ):
+
+            yield _create_step_event(step_context, step_output_value, intermediates_manager)
+
+        step_context.events.execution_plan_step_success(step.key, timer_result.millis)
+
+    except DagsterError as e:
+        # The step compute_fn and output error checking both raise exceptions. Catch
+        # and re-throw these to ensure that the step is always marked as failed.
+        step_context.events.execution_plan_step_failure(step.key, sys.exc_info())
+        stack_trace = get_formatted_stack_trace(e)
+        step_context.log.error(str(e), stack_trace=stack_trace)
+        six.reraise(*sys.exc_info())
 
 
 def _create_step_event(step_context, step_output_value, intermediates_manager):
@@ -224,7 +237,19 @@ def _create_step_event(step_context, step_output_value, intermediates_manager):
             step=step, output_name=step_output_value.output_name
         )
 
-        intermediates_manager.set_value(step_output_handle, value)
+        object_key = intermediates_manager.set_intermediate(
+            context=step_context,
+            runtime_type=step_output.runtime_type,
+            step_output_handle=step_output_handle,
+            value=value,
+        )
+
+        step_context.events.execution_plan_step_output(
+            step_key=step.key,
+            output_name=step_output_handle.output_name,
+            storage_mode=intermediates_manager.storage_mode.value,
+            storage_object_id=object_key,
+        )
 
         return ExecutionStepEvent.step_output_event(
             step_context=step_context,
@@ -296,19 +321,9 @@ def _execution_step_error_boundary(step_context, msg, **kwargs):
     check.inst_param(step_context, 'step_context', SystemStepExecutionContext)
     check.str_param(msg, 'msg')
 
-    step = step_context.step
-    step_context.events.execution_plan_step_start(step.key)
     try:
-        with time_execution_scope() as timer_result:
-            yield
-
-        step_context.events.execution_plan_step_success(step.key, timer_result.millis)
+        yield
     except Exception as e:  # pylint: disable=W0703
-        step_context.events.execution_plan_step_failure(step.key, sys.exc_info())
-
-        stack_trace = get_formatted_stack_trace(e)
-        step_context.log.error(str(e), stack_trace=stack_trace)
-
         if isinstance(e, DagsterError):
             raise e
         else:

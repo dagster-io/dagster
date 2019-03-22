@@ -10,6 +10,7 @@ from dagster import (
     Int,
     OutputDefinition,
     PipelineDefinition,
+    RepositoryDefinition,
     SolidDefinition,
     SolidInstance,
     check,
@@ -18,8 +19,7 @@ from dagster import (
     as_dagster_type,
     SerializationStrategy,
 )
-
-from dagster import RepositoryDefinition
+from dagster_pandas import DataFrame
 
 
 def nb_test_path(name):
@@ -126,9 +126,6 @@ def define_error_pipeline():
         name='error_pipeline',
         solids=[dm.define_dagstermill_solid('error_solid', nb_test_path('error_notebook'))],
     )
-
-
-from dagster_pandas import DataFrame
 
 
 @solid_definition

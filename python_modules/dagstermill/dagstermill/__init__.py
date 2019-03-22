@@ -1,7 +1,4 @@
 from __future__ import absolute_import, division, print_function, unicode_literals
-from builtins import *  # pylint: disable=W0622,W0401
-from collections import namedtuple
-from enum import Enum
 
 import base64
 import copy
@@ -9,6 +6,10 @@ import json
 import os
 import subprocess
 import uuid
+
+from builtins import *  # pylint: disable=W0622,W0401
+from collections import namedtuple
+from enum import Enum
 
 import nbformat
 import six
@@ -28,6 +29,7 @@ from dagster import (
     PipelineDefinition,
     SolidDefinition,
     check,
+    seven,
     types,
 )
 from dagster.core.definitions.dependency import Solid
@@ -205,8 +207,8 @@ class Manager:
                 if runtime_type_enum == SerializableRuntimeType.NONE:
                     raise DagstermillError(
                         'If Dagstermill solids have outputs that require serialization strategies '
-                        'that are not pickling, then you must register a repository within notebook '
-                        'by calling dm.register_repository(repository_def).'
+                        'that are not pickling, then you must register a repository within '
+                        'notebook by calling dm.register_repository(repository_def).'
                     )
             with yield_pipeline_execution_context(
                 self.pipeline_def, {}, RunConfig(run_id=run_id)
@@ -266,7 +268,7 @@ pm.translators.papermill_translators.register('python', DagsterTranslator)
 
 def is_json_serializable(value):
     try:
-        json.dumps(value)
+        seven.json.dumps(value)
         return True
     except TypeError:
         return False
@@ -449,7 +451,7 @@ def get_papermill_parameters(transform_context, inputs, output_log_path):
 
     dm_context_dict['output_name_type_dict'] = output_name_type_dict
 
-    parameters['dm_context'] = json.dumps(dm_context_dict, sort_keys=True)
+    parameters['dm_context'] = seven.json.dumps(dm_context_dict)
 
     return parameters
 

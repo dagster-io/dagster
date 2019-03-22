@@ -9,9 +9,10 @@ from dagster.core.system_config.objects import (
     ExecutionConfig,
     ExpectationsConfig,
     SolidConfig,
+    StorageConfig,
 )
 
-from dagster.core.types import Bool, Field, List, NamedDict, NamedSelector, Dict
+from dagster.core.types import Bool, Dict, Field, List, NamedDict, NamedSelector, String
 from dagster.core.types.config import ConfigType, ConfigTypeAttributes
 from dagster.core.types.default_applier import apply_default_values
 from dagster.core.types.field_utils import check_opt_field_param, FieldImpl
@@ -200,6 +201,12 @@ def define_environment_cls(creation_data):
                     '{pipeline_name}.ExpectationsConfig'.format(pipeline_name=pipeline_name)
                 )
             ),
+            'storage': Field(
+                define_storage_config_cls(
+                    '{pipeline_name}.StorageConfig'.format(pipeline_name=pipeline_name)
+                ),
+                is_optional=True,
+            ),
             'execution': Field(
                 define_execution_config_cls(
                     '{pipeline_name}.ExecutionConfig'.format(pipeline_name=pipeline_name)
@@ -214,6 +221,30 @@ def define_expectations_config_cls(name):
 
     return SystemNamedDict(
         name, fields={'evaluate': Field(Bool, is_optional=True, default_value=True)}
+    )
+
+
+def define_storage_config_cls(name):
+    check.str_param(name, 'name')
+
+    return SystemNamedSelector(
+        name,
+        {
+            'in_memory': Field(
+                SystemNamedDict('{parent_name}.InMem'.format(parent_name=name), {}),
+                is_optional=True,
+            ),
+            'filesystem': Field(
+                SystemNamedDict('{parent_name}.Files'.format(parent_name=name), {}),
+                is_optional=True,
+            ),
+            's3': Field(
+                SystemNamedDict(
+                    '{parent_name}.S3'.format(parent_name=name), {'s3_bucket': Field(String)}
+                ),
+                is_optional=True,
+            ),
+        },
     )
 
 
@@ -323,8 +354,18 @@ def construct_environment_config(config_value):
         execution=ExecutionConfig(**config_value['execution']),
         expectations=ExpectationsConfig(**config_value['expectations']),
         context=construct_context_config(config_value['context']),
+        storage=construct_storage_config(config_value.get('storage')),
         original_config_dict=config_value,
     )
+
+
+def construct_storage_config(config_value):
+    check.opt_dict_param(config_value, 'config_value', key_type=str)
+    if config_value:
+        storage_mode, storage_config = single_item(config_value)
+        return StorageConfig(storage_mode, storage_config)
+    else:
+        return StorageConfig(None, None)
 
 
 def construct_context_config(config_value):

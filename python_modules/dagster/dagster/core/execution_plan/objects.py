@@ -8,11 +8,10 @@ from dagster.core.execution_context import (
     SystemPipelineExecutionContext,
     SystemStepExecutionContext,
 )
+from dagster.core.intermediates_manager import StepOutputHandle, InMemoryIntermediatesManager
 from dagster.core.types.runtime import RuntimeType
 from dagster.core.utils import toposort
 from dagster.utils import merge_dicts
-
-from .intermediates_manager import StepOutputHandle
 
 
 class StepOutputValue(namedtuple('_StepOutputValue', 'output_name value')):
@@ -49,7 +48,16 @@ class StepOutputData:
         return self._value_repr
 
     def get_value(self):
-        return self._intermediates_manager.get_value(self.step_output_handle)
+        # FIXME:
+        # https://github.com/dagster-io/dagster/issues/953
+        # For now we are disallowing getting the value for anything
+        # except the in-memory version of this. get_value will need to put
+        # on higher level object that will have access to pipeline_context
+
+        check.inst(self._intermediates_manager, InMemoryIntermediatesManager)
+        return self._intermediates_manager.get_intermediate(
+            context=None, runtime_type=None, step_output_handle=self.step_output_handle
+        )
 
 
 class StepFailureData(namedtuple('_StepFailureData', 'error_message error_cls_name stack')):
@@ -65,6 +73,21 @@ class StepFailureData(namedtuple('_StepFailureData', 'error_message error_cls_na
 class ExecutionStepEventType(Enum):
     STEP_OUTPUT = 'STEP_OUTPUT'
     STEP_FAILURE = 'STEP_FAILURE'
+
+
+def get_step_output_event(events, step_key, output_name='result'):
+    check.list_param(events, 'events', of_type=ExecutionStepEvent)
+    check.str_param(step_key, 'step_key')
+    check.str_param(output_name, 'output_name')
+
+    for event in events:
+        if (
+            event.event_type == ExecutionStepEventType.STEP_OUTPUT
+            and event.step_key == step_key
+            and event.step_output_data.output_name == output_name
+        ):
+            return event
+    return None
 
 
 class ExecutionStepEvent(

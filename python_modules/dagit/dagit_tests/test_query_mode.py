@@ -1,6 +1,7 @@
 import json
 import subprocess
 
+from dagster import seven
 from dagster.utils import script_relative_path
 
 
@@ -10,6 +11,18 @@ def test_basic_introspection():
     repo_path = script_relative_path('./repository.yml')
 
     result = subprocess.check_output(['dagit-cli', '-q', query, '-y', repo_path])
+
+    result_data = json.loads(result.decode())
+    assert result_data['data']
+
+
+def test_no_watch_mode():
+    query = '{ __schema { types { name } } }'
+
+    repo_path = script_relative_path('./repository.yml')
+
+    # Runs the dagit wrapper instead of dagit-cli to ensure it still runs sync with --no-watch
+    result = subprocess.check_output(['dagit', '--no-watch', '-q', query, '-y', repo_path])
 
     result_data = json.loads(result.decode())
     assert result_data['data']
@@ -71,9 +84,9 @@ mutation ($pipeline: ExecutionSelector!, $config: PipelineConfig) {
 
 
 def test_start_execution():
-    path = script_relative_path('./num.csv')
+    path = script_relative_path('num.csv')
 
-    variables = json.dumps(
+    variables = seven.json.dumps(
         {
             "pipeline": {"name": "pandas_hello_world"},
             "config": {"solids": {"sum_solid": {"inputs": {"num": {"csv": {"path": path}}}}}},

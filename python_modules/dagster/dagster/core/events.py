@@ -1,9 +1,9 @@
-from collections import namedtuple
-from enum import Enum
 import json
 
-from dagster import check
+from collections import namedtuple
+from enum import Enum
 
+from dagster import check, seven
 from dagster.utils import merge_dicts
 from dagster.utils.error import serializable_error_info_from_exc_info, SerializableErrorInfo
 
@@ -29,6 +29,7 @@ class EventType(Enum):
 
     EXECUTION_PLAN_STEP_SUCCESS = 'EXECUTION_PLAN_STEP_SUCCESS'
     EXECUTION_PLAN_STEP_START = 'EXECUTION_PLAN_STEP_START'
+    EXECUTION_PLAN_STEP_OUTPUT = 'EXECUTION_PLAN_STEP_OUTPUT'
     EXECUTION_PLAN_STEP_FAILURE = 'EXECUTION_PLAN_STEP_FAILURE'
 
     STEP_MATERIALIZATION = 'STEP_MATERIALIZATION'
@@ -74,6 +75,29 @@ class ExecutionEvents(namedtuple('_ExecutionEvents', 'pipeline_name log')):
             step_key=step_key,
         )
 
+    def execution_plan_step_output(self, step_key, output_name, storage_mode, storage_object_id):
+        check.str_param(step_key, 'step_key')
+        check.str_param(output_name, 'output_name')
+        check.str_param(storage_mode, 'storage_mode')
+        check.str_param(storage_object_id, 'storage_object_id')
+
+        self.log.info(
+            (
+                'Execution step {step_key} emitted output {output_name}. Storage mode: '
+                '{storage_mode} at storage_object_id {storage_object_id}'
+            ).format(
+                step_key=step_key,
+                output_name=output_name,
+                storage_mode=storage_mode,
+                storage_object_id=storage_object_id,
+            ),
+            event_type=EventType.EXECUTION_PLAN_STEP_OUTPUT.value,
+            step_key=step_key,
+            output_name=output_name,
+            storage_mode=storage_mode,
+            storage_object_id=storage_object_id,
+        )
+
     def execution_plan_step_success(self, step_key, millis):
         check.str_param(step_key, 'step_key')
         check.float_param(millis, 'millis')
@@ -94,7 +118,7 @@ class ExecutionEvents(namedtuple('_ExecutionEvents', 'pipeline_name log')):
             event_type=EventType.EXECUTION_PLAN_STEP_FAILURE.value,
             step_key=step_key,
             # We really need a better serialization story here
-            error_info=json.dumps(serializable_error_info_from_exc_info(exc_info), sort_keys=True),
+            error_info=seven.json.dumps(serializable_error_info_from_exc_info(exc_info)),
         )
 
     def step_materialization(self, step_key, file_name, file_location):
@@ -245,6 +269,26 @@ class ExecutionStepSuccessRecord(ExecutionStepEventRecord):
         return orig
 
 
+class ExecutionStepOutputRecord(ExecutionStepEventRecord):
+    def __init__(self, output_name, storage_mode, storage_object_id, **kwargs):
+        super(ExecutionStepOutputRecord, self).__init__(**kwargs)
+        self._output_name = check.str_param(output_name, 'output_name')
+        self._storage_mode = check.str_param(storage_mode, 'storage_mode')
+        self._storage_object_id = check.str_param(storage_object_id, 'storage_object_id')
+
+    @property
+    def output_name(self):
+        return self._output_name
+
+    @property
+    def storage_mode(self):
+        return self._storage_mode
+
+    @property
+    def storage_object_id(self):
+        return self._storage_object_id
+
+
 class LogMessageRecord(EventRecord):
     pass
 
@@ -272,13 +316,14 @@ class StepMaterializationRecord(ExecutionStepEventRecord):
 
 EVENT_CLS_LOOKUP = {
     EventType.EXECUTION_PLAN_STEP_FAILURE: ExecutionStepEventRecord,
+    EventType.EXECUTION_PLAN_STEP_OUTPUT: ExecutionStepOutputRecord,
     EventType.EXECUTION_PLAN_STEP_START: ExecutionStepEventRecord,
     EventType.EXECUTION_PLAN_STEP_SUCCESS: ExecutionStepSuccessRecord,
     EventType.PIPELINE_FAILURE: PipelineEventRecord,
     EventType.PIPELINE_START: PipelineEventRecord,
     EventType.PIPELINE_SUCCESS: PipelineEventRecord,
-    EventType.UNCATEGORIZED: LogMessageRecord,
     EventType.STEP_MATERIALIZATION: StepMaterializationRecord,
+    EventType.UNCATEGORIZED: LogMessageRecord,
 }
 
 PIPELINE_EVENTS = {EventType.PIPELINE_FAILURE, EventType.PIPELINE_START, EventType.PIPELINE_SUCCESS}
@@ -327,6 +372,10 @@ def logger_to_kwargs(logger_message):
         if event_cls == StepMaterializationRecord:
             step_args['file_name'] = logger_message.meta['file_name']
             step_args['file_location'] = logger_message.meta['file_location']
+        if event_cls == ExecutionStepOutputRecord:
+            step_args['output_name'] = logger_message.meta['output_name']
+            step_args['storage_mode'] = logger_message.meta['storage_mode']
+            step_args['storage_object_id'] = logger_message.meta['storage_object_id']
 
         return merge_dicts(base_args, step_args)
     else:

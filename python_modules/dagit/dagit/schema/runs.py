@@ -22,6 +22,7 @@ class DauphinPipelineRun(dauphin.ObjectType):
     pipeline = dauphin.NonNull('Pipeline')
     logs = dauphin.NonNull('LogMessageConnection')
     executionPlan = dauphin.NonNull('ExecutionPlan')
+    config = dauphin.NonNull(dauphin.String)
 
     def __init__(self, pipeline_run):
         super(DauphinPipelineRun, self).__init__(
@@ -40,6 +41,9 @@ class DauphinPipelineRun(dauphin.ObjectType):
         return graphene_info.schema.type_named('ExecutionPlan')(
             pipeline, self._pipeline_run.execution_plan
         )
+
+    def resolve_config(self, _graphene_info):
+        return self._pipeline_run.config
 
 
 class DauphinLogLevel(dauphin.Enum):
@@ -174,6 +178,16 @@ class DauphinExecutionStepStartEvent(dauphin.ObjectType):
         interfaces = (DauphinMessageEvent,)
 
 
+class DauphinExecutionStepOutputEvent(dauphin.ObjectType):
+    class Meta:
+        name = 'ExecutionStepOutputEvent'
+        interfaces = (DauphinMessageEvent,)
+
+    output_name = dauphin.NonNull(dauphin.String)
+    storage_mode = dauphin.NonNull(dauphin.String)
+    storage_object_id = dauphin.NonNull(dauphin.String)
+
+
 class DauphinExecutionStepSuccessEvent(dauphin.ObjectType):
     class Meta:
         name = 'ExecutionStepSuccessEvent'
@@ -208,6 +222,7 @@ class DauphinPipelineRunEvent(dauphin.Union):
             DauphinPipelineFailureEvent,
             DauphinExecutionStepStartEvent,
             DauphinExecutionStepSuccessEvent,
+            DauphinExecutionStepOutputEvent,
             DauphinExecutionStepFailureEvent,
             DauphinPipelineProcessStartEvent,
             DauphinPipelineProcessStartedEvent,
@@ -266,6 +281,13 @@ class DauphinPipelineRunEvent(dauphin.Union):
             return graphene_info.schema.type_named('ExecutionStepStartEvent')(**basic_params)
         elif event.event_type == EventType.EXECUTION_PLAN_STEP_SUCCESS:
             return graphene_info.schema.type_named('ExecutionStepSuccessEvent')(**basic_params)
+        elif event.event_type == EventType.EXECUTION_PLAN_STEP_OUTPUT:
+            return graphene_info.schema.type_named('ExecutionStepOutputEvent')(
+                output_name=event.output_name,
+                storage_mode=event.storage_mode,
+                storage_object_id=event.storage_object_id,
+                **basic_params
+            )
         elif event.event_type == EventType.EXECUTION_PLAN_STEP_FAILURE:
             check.inst(event.error_info, SerializableErrorInfo)
             return graphene_info.schema.type_named('ExecutionStepFailureEvent')(

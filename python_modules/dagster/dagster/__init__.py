@@ -14,6 +14,8 @@ from dagster.core.execution_context import (
     RunConfig,
 )
 
+from dagster.core.runs import RunStorageMode
+
 from dagster.core.user_context import ExecutionContext
 
 from dagster.core.definitions import (
@@ -35,6 +37,7 @@ from dagster.core.definitions.decorators import MultipleResults, lambda_solid, s
 
 from dagster.core.errors import (
     DagsterExecutionStepExecutionError,
+    DagsterExecutionStepNotFoundError,
     DagsterExpectationFailedError,
     DagsterInvalidDefinitionError,
     DagsterInvariantViolationError,

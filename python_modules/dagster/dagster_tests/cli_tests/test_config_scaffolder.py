@@ -69,6 +69,7 @@ def test_basic_solids_config():
         'solids': {'required_field_solid': {'config': {'required_int': 0}}},
         'expectations': {'evaluate': True},
         'execution': {},
+        'storage': {'filesystem': {}, 'in_memory': {}, 's3': {'s3_bucket': ''}},
     }
 
 
@@ -106,4 +107,5 @@ def test_two_contexts():
         'solids': {},
         'expectations': {'evaluate': True},
         'execution': {},
+        'storage': {'filesystem': {}, 'in_memory': {}, 's3': {'s3_bucket': ''}},
     }

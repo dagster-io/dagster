@@ -1,21 +1,16 @@
 import datetime
-import json
 import itertools
 import logging
 import uuid
 
-from dagster import check
-
+from dagster import check, seven
 
 DAGSTER_META_KEY = 'dagster_meta'
 
 
 def _kv_message(all_items):
     return ' '.join(
-        [
-            '{key}={value}'.format(key=key, value=json.dumps(value, sort_keys=True))
-            for key, value in all_items
-        ]
+        ['{key}={value}'.format(key=key, value=seven.json.dumps(value)) for key, value in all_items]
     )
 
 

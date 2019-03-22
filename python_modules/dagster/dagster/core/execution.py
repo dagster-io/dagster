@@ -19,6 +19,7 @@ from collections import defaultdict, OrderedDict
 from contextlib import contextmanager
 import inspect
 import itertools
+import time
 
 from contextlib2 import ExitStack
 from dagster import check
@@ -36,12 +37,17 @@ from .execution_context import (
     SystemPipelineExecutionContext,
 )
 
-
-from .errors import DagsterInvariantViolationError
+from .errors import (
+    DagsterExecutionStepNotFoundError,
+    DagsterInvariantViolationError,
+    DagsterRunNotFoundError,
+    DagsterStepOutputNotFoundError,
+)
 
 from .events import construct_event_logger
 
 from .execution_plan.create import create_execution_plan_core
+
 
 from .execution_plan.objects import (
     ExecutionPlan,
@@ -54,11 +60,25 @@ from .execution_plan.multiprocessing_engine import multiprocess_execute_plan
 
 from .execution_plan.simple_engine import start_inprocess_executor
 
-from .files import LocalTempFileStore
-
 from .init_context import InitContext, InitResourceContext
 
+from .intermediates_manager import (
+    ObjectStoreIntermediatesManager,
+    InMemoryIntermediatesManager,
+    IntermediatesManager,
+)
+
 from .log import DagsterLog
+
+from .object_store import FileSystemObjectStore, S3ObjectStore
+
+from .runs import (
+    DagsterRunMeta,
+    FileSystemRunStorage,
+    InMemoryRunStorage,
+    RunStorage,
+    RunStorageMode,
+)
 
 from .system_config.objects import EnvironmentConfig
 
@@ -70,11 +90,6 @@ from .user_context import ExecutionContext
 
 class PipelineExecutionResult(object):
     '''Result of execution of the whole pipeline. Returned eg by :py:func:`execute_pipeline`.
-
-    Attributes:
-        pipeline (PipelineDefinition): Pipeline that was executed
-        context (ExecutionContext): ExecutionContext of that particular Pipeline run.
-        result_list (list[SolidExecutionResult]): List of results for each pipeline solid.
     '''
 
     def __init__(self, pipeline, run_id, step_event_list):
@@ -309,7 +324,10 @@ def _ensure_gen(thing_or_gen):
 
 
 @contextmanager
-def with_maybe_gen(thing_or_gen):
+def as_ensured_single_gen(thing_or_gen):
+    '''Wraps the output of a user provided function that may yield or return a value and
+    returns a generator that asserts it only yields a single value.
+    '''
     gen = _ensure_gen(thing_or_gen)
 
     try:
@@ -340,6 +358,79 @@ def _create_persistence_strategy(persistence_config):
         check.failed('Unsupported persistence key: {}'.format(persistence_key))
 
 
+def construct_run_storage(run_config, environment_config):
+    '''
+    Construct the run storage for this pipeline. Our rules are the following:
+
+    If the called has specified a run_storage_factory_fn, we use for creating
+    the run storage.
+
+    Then we fallback to config.
+
+    If there is no config, we default to in memory storage. This is mostly so
+    that tests default to in-memory.
+    '''
+    check.inst_param(run_config, 'run_config', RunConfig)
+    check.inst_param(environment_config, 'environment_config', EnvironmentConfig)
+
+    if run_config.storage_mode:
+        if run_config.storage_mode == RunStorageMode.FILESYSTEM:
+            return FileSystemRunStorage()
+        elif run_config.storage_mode == RunStorageMode.IN_MEMORY:
+            return InMemoryRunStorage()
+        else:
+            check.failed('Unexpected enum {}'.format(run_config.storage_mode))
+    elif environment_config.storage.storage_mode == 'filesystem':
+        return FileSystemRunStorage()
+    elif environment_config.storage.storage_mode == 'in_memory':
+        return InMemoryRunStorage()
+    elif environment_config.storage.storage_mode == 's3':
+        # TODO: Revisit whether we want to use S3 run storage
+        return InMemoryRunStorage()
+    elif environment_config.storage.storage_mode is None:
+        return InMemoryRunStorage()
+    else:
+        raise DagsterInvariantViolationError(
+            'Invalid storage specified {}'.format(environment_config.storage.storage_mode)
+        )
+
+
+def construct_intermediates_manager(run_config, init_context, environment_config):
+    check.inst_param(run_config, 'run_config', RunConfig)
+    check.inst_param(init_context, 'init_context', InitContext)
+    check.inst_param(environment_config, 'environment_config', EnvironmentConfig)
+
+    if run_config.storage_mode:
+        if run_config.storage_mode == RunStorageMode.FILESYSTEM:
+            return ObjectStoreIntermediatesManager(FileSystemObjectStore(init_context.run_id))
+        elif run_config.storage_mode == RunStorageMode.IN_MEMORY:
+            return InMemoryIntermediatesManager()
+        elif run_config.storage_mode == RunStorageMode.S3:
+            return ObjectStoreIntermediatesManager(
+                S3ObjectStore(
+                    environment_config.storage.storage_config['s3_bucket'], init_context.run_id
+                )
+            )
+        else:
+            check.failed('Unexpected enum {}'.format(run_config.storage_mode))
+    elif environment_config.storage.storage_mode == 'filesystem':
+        return ObjectStoreIntermediatesManager(FileSystemObjectStore(init_context.run_id))
+    elif environment_config.storage.storage_mode == 'in_memory':
+        return InMemoryIntermediatesManager()
+    elif environment_config.storage.storage_mode == 's3':
+        return ObjectStoreIntermediatesManager(
+            S3ObjectStore(
+                environment_config.storage.storage_config['s3_bucket'], init_context.run_id
+            )
+        )
+    elif environment_config.storage.storage_mode is None:
+        return InMemoryIntermediatesManager()
+    else:
+        raise DagsterInvariantViolationError(
+            'Invalid storage specified {}'.format(environment_config.storage.storage_mode)
+        )
+
+
 @contextmanager
 def yield_pipeline_execution_context(pipeline_def, environment_dict, run_config):
     check.inst_param(pipeline_def, 'pipeline_def', PipelineDefinition)
@@ -350,15 +441,23 @@ def yield_pipeline_execution_context(pipeline_def, environment_dict, run_config)
 
     context_definition = pipeline_def.context_definitions[environment_config.context.name]
 
-    ec_or_gen = context_definition.context_fn(
-        InitContext(
-            context_config=environment_config.context.config,
-            pipeline_def=pipeline_def,
-            run_id=run_config.run_id,
+    run_storage = construct_run_storage(run_config, environment_config)
+
+    run_storage.write_dagster_run_meta(
+        DagsterRunMeta(
+            run_id=run_config.run_id, timestamp=time.time(), pipeline_name=pipeline_def.name
         )
     )
 
-    with with_maybe_gen(ec_or_gen) as execution_context:
+    init_context = InitContext(
+        context_config=environment_config.context.config,
+        pipeline_def=pipeline_def,
+        run_id=run_config.run_id,
+    )
+
+    ec_or_gen = context_definition.context_fn(init_context)
+
+    with as_ensured_single_gen(ec_or_gen) as execution_context:
         check.inst(execution_context, ExecutionContext)
 
         with _create_resources(
@@ -368,18 +467,33 @@ def yield_pipeline_execution_context(pipeline_def, environment_dict, run_config)
             execution_context,
             run_config.run_id,
         ) as resources:
+
             yield construct_pipeline_execution_context(
-                run_config, execution_context, pipeline_def, resources, environment_config
+                run_config,
+                execution_context,
+                pipeline_def,
+                resources,
+                environment_config,
+                run_storage,
+                construct_intermediates_manager(run_config, init_context, environment_config),
             )
 
 
 def construct_pipeline_execution_context(
-    run_config, execution_context, pipeline, resources, environment_config
+    run_config,
+    execution_context,
+    pipeline,
+    resources,
+    environment_config,
+    run_storage,
+    intermediates_manager,
 ):
     check.inst_param(run_config, 'run_config', RunConfig)
     check.inst_param(execution_context, 'execution_context', ExecutionContext)
     check.inst_param(pipeline, 'pipeline', PipelineDefinition)
     check.inst_param(environment_config, 'environment_config', EnvironmentConfig)
+    check.inst_param(run_storage, 'run_storage', RunStorage)
+    check.inst_param(intermediates_manager, 'intermediates_manager', IntermediatesManager)
 
     loggers = _create_loggers(run_config, execution_context)
     tags = get_tags(execution_context, run_config, pipeline)
@@ -394,7 +508,8 @@ def construct_pipeline_execution_context(
             persistence_strategy=_create_persistence_strategy(
                 environment_config.context.persistence
             ),
-            files=LocalTempFileStore(run_config.run_id),
+            run_storage=run_storage,
+            intermediates_manager=intermediates_manager,
         ),
         tags=tags,
         log=log,
@@ -439,7 +554,7 @@ def _create_resources(pipeline_def, context_def, environment, execution_context,
                 pipeline_def, context_def, resource_name, environment, run_id
             )
 
-            resource_obj = stack.enter_context(with_maybe_gen(resource_obj_or_gen))
+            resource_obj = stack.enter_context(as_ensured_single_gen(resource_obj_or_gen))
 
             resources[resource_name] = resource_obj
 
@@ -573,16 +688,22 @@ class PipelineConfigEvaluationError(Exception):
 
 
 def invoke_executor_on_plan(pipeline_context, execution_plan, step_keys_to_execute=None):
+    if step_keys_to_execute:
+        for step_key in step_keys_to_execute:
+            if not execution_plan.has_step(step_key):
+                raise DagsterExecutionStepNotFoundError(step_key=step_key)
+
     if isinstance(pipeline_context.executor_config, InProcessExecutorConfig):
         step_events_gen = start_inprocess_executor(
             pipeline_context,
             execution_plan,
-            pipeline_context.run_config.executor_config.inmem_intermediates_manager,
+            pipeline_context.intermediates_manager,
             step_keys_to_execute,
         )
     elif isinstance(pipeline_context.executor_config, MultiprocessExecutorConfig):
-        check.invariant(not step_keys_to_execute, 'subplan not supported for multiprocess yet')
-        step_events_gen = multiprocess_execute_plan(pipeline_context, execution_plan)
+        step_events_gen = multiprocess_execute_plan(
+            pipeline_context, execution_plan, step_keys_to_execute
+        )
     else:
         check.failed('Unsupported config {}'.format(pipeline_context.executor_config))
 
@@ -590,15 +711,74 @@ def invoke_executor_on_plan(pipeline_context, execution_plan, step_keys_to_execu
         yield step_event
 
 
-def execute_plan(execution_plan, environment_dict=None, run_config=None):
+def _check_reexecution_config(pipeline_context, execution_plan, run_config):
+    check.invariant(pipeline_context.run_storage)
+
+    if run_config.storage_mode == RunStorageMode.IN_MEMORY:
+        raise DagsterInvariantViolationError(
+            'Cannot specifiy IN_MEMORY in run storage mode when attempting reexecution.'
+        )
+
+    previous_run_id = run_config.reexecution_config.previous_run_id
+
+    if not pipeline_context.run_storage.has_run(previous_run_id):
+        raise DagsterRunNotFoundError(
+            'Run id {} set as previous run id was not found in run storage'.format(previous_run_id),
+            invalid_run_id=previous_run_id,
+        )
+
+    for step_output_handle in run_config.reexecution_config.step_output_handles:
+        if not execution_plan.has_step(step_output_handle.step_key):
+            raise DagsterExecutionStepNotFoundError(
+                (
+                    'Step {step_key} was specified as a step from a previous run. '
+                    'It does not exist.'
+                ).format(step_key=step_output_handle.step_key),
+                step_key=step_output_handle.step_key,
+            )
+
+        step = execution_plan.get_step_by_key(step_output_handle.step_key)
+        if not step.has_step_output(step_output_handle.output_name):
+            raise DagsterStepOutputNotFoundError(
+                (
+                    'You specified a step_output_handle in the ReexecutionConfig that does '
+                    'not exist: Step {step_key} does not have output {output_name}.'
+                ).format(
+                    step_key=step_output_handle.step_key, output_name=step_output_handle.output_name
+                ),
+                step_key=step_output_handle.step_key,
+                output_name=step_output_handle.output_name,
+            )
+
+
+def execute_plan(execution_plan, environment_dict=None, run_config=None, step_keys_to_execute=None):
     check.inst_param(execution_plan, 'execution_plan', ExecutionPlan)
     environment_dict = check.opt_dict_param(environment_dict, 'environment_dict')
     run_config = check_run_config_param(run_config)
+    check.opt_list_param(step_keys_to_execute, 'step_keys_to_execute', of_type=str)
+
+    if step_keys_to_execute:
+        for step_key in step_keys_to_execute:
+            if not execution_plan.has_step(step_key):
+                raise DagsterExecutionStepNotFoundError(
+                    'Execution plan does not contain step "{}"'.format(step_key), step_key=step_key
+                )
 
     with yield_pipeline_execution_context(
         execution_plan.pipeline_def, environment_dict, run_config
     ) as pipeline_context:
-        return list(invoke_executor_on_plan(pipeline_context, execution_plan))
+
+        if run_config.reexecution_config:
+            _check_reexecution_config(pipeline_context, execution_plan, run_config)
+
+            for step_output_handle in run_config.reexecution_config.step_output_handles:
+                pipeline_context.intermediates_manager.copy_intermediate_from_prev_run(
+                    pipeline_context,
+                    run_config.reexecution_config.previous_run_id,
+                    step_output_handle,
+                )
+
+        return list(invoke_executor_on_plan(pipeline_context, execution_plan, step_keys_to_execute))
 
 
 def create_environment_config(pipeline, environment_dict=None):

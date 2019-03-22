@@ -112,8 +112,9 @@ def test_dataframe_csv_missing_inputs():
     assert (
         'Missing required field  "solids" at document config root. Expected: "{ context?: '
         'MissingInputs.ContextConfig execution?: MissingInputs.ExecutionConfig '
-        'expectations?: MissingInputs.ExpectationsConfig solids: '
-        'MissingInputs.SolidsConfigDictionary }"'
+        'expectations?: MissingInputs.ExpectationsConfig '
+        'solids: MissingInputs.SolidsConfigDictionary '
+        'storage?: MissingInputs.StorageConfig }"'
     ) in str(exc_info.value)
 
     assert 'yup' not in called
