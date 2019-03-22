@@ -6,7 +6,6 @@ from dagster.utils import script_relative_path
 from dagster.utils.yaml_utils import load_yaml_from_glob_list
 
 from airline_demo.pipelines import (
-    define_airline_demo_download_pipeline,
     define_airline_demo_ingest_pipeline,
     define_airline_demo_warehouse_pipeline,
 )
