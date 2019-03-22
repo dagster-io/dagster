@@ -695,4 +695,3 @@ mutation ($pipeline: ExecutionSelector!, $config: PipelineConfig) {
     }
 }
 '''
-
