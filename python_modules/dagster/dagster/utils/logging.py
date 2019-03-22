@@ -18,9 +18,7 @@ LOOKUP = {'CRITICAL': CRITICAL, 'DEBUG': DEBUG, 'ERROR': ERROR, 'INFO': INFO, 'W
 
 VALID_LEVEL_STRINGS = list(LOOKUP.keys())
 
-LogLevelEnum = Enum(
-    'log_level', list(map(lambda str: EnumValue(config_value=str), VALID_LEVEL_STRINGS))
-)
+LogLevelEnum = Enum('log_level', list(map(EnumValue, VALID_LEVEL_STRINGS)))
 
 
 def level_from_string(string):
