@@ -78,9 +78,7 @@ def scaffold(env, install, image, **cli_args):
     help=(
         'Regenerate a dagster pipeline for use with airflow. Generates only the static file (to '
         'keep up with changes in the source pipeline definition or config), but does not touch the '
-        'editable file.' {warning}'.format(
-            warning=REPO_TARGET_WARNING
-        )
+        'editable file. {warning}'.format(warning=REPO_TARGET_WARNING)
     ),
 )
 @click.option(
