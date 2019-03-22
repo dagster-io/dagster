@@ -13,6 +13,7 @@ import {
   GridCellProps
 } from "react-virtualized";
 import { IconNames } from "@blueprintjs/icons";
+import { showCustomAlert } from "../CustomAlertProvider";
 
 interface ILogsScrollingTableProps {
   nodes: LogsScrollingTableMessageFragment[];
@@ -355,7 +356,9 @@ class OverflowDetectingCell extends React.Component<
 
   onView = () => {
     const el = ReactDOM.findDOMNode(this) as HTMLElement;
-    window.alert(el.firstChild && el.firstChild.textContent);
+    const message = el.firstChild && el.firstChild.textContent;
+    if (!message) return;
+    showCustomAlert({ message });
   };
 
   render() {

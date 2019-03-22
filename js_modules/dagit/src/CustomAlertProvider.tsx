@@ -2,10 +2,12 @@ import * as React from "react";
 import { Button, Dialog, Classes, Colors } from "@blueprintjs/core";
 import styled from "styled-components";
 
-window.alert = message => {
+const SHOW_ALERT_EVENT = "show-alert";
+
+export const showCustomAlert = (opts: { message: string }) => {
   document.dispatchEvent(
-    new CustomEvent("show-alert", {
-      detail: message
+    new CustomEvent(SHOW_ALERT_EVENT, {
+      detail: opts.message
     })
   );
 };
@@ -19,7 +21,7 @@ export default class CustomAlertProvider extends React.Component<
   };
 
   componentDidMount() {
-    document.addEventListener("show-alert", (e: CustomEvent) => {
+    document.addEventListener(SHOW_ALERT_EVENT, (e: CustomEvent) => {
       this.setState({ text: e.detail });
     });
   }
@@ -29,7 +31,7 @@ export default class CustomAlertProvider extends React.Component<
       <Dialog
         icon="info-sign"
         onClose={() => this.setState({ text: null })}
-        style={{ width: "80vw", maxWidth: 1400 }}
+        style={{ width: "auto", maxWidth: "80vw" }}
         title={"Error"}
         usePortal={true}
         isOpen={!!this.state.text}
