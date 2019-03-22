@@ -48,6 +48,6 @@ def scaffold_type(config_type, skip_optional=True):
     elif config_type.is_list:
         return []
     elif config_type.is_enum:
-        return ''
+        return '|'.join(map(lambda v: v.config_value, config_type.enum_values))
     else:
         check.failed('Do not know how to scaffold {type_name}'.format(type_name=config_type.name))
