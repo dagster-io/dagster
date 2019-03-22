@@ -197,15 +197,30 @@ def _execute_steps_core_loop(step_context, inputs, intermediates_manager):
             step_context.step, input_name, input_value
         )
 
-    step_output_value_iterator = check.generator(
-        _iterate_step_output_values_within_boundary(step_context, evaluated_inputs)
-    )
+    step = step_context.step
+    step_context.events.execution_plan_step_start(step.key)
 
-    for step_output_value in check.generator(
-        _error_check_step_output_values(step_context.step, step_output_value_iterator)
-    ):
+    try:
+        with time_execution_scope() as timer_result:
+            step_output_value_iterator = check.generator(
+                _iterate_step_output_values_within_boundary(step_context, evaluated_inputs)
+            )
 
-        yield _create_step_event(step_context, step_output_value, intermediates_manager)
+        for step_output_value in check.generator(
+            _error_check_step_output_values(step_context.step, step_output_value_iterator)
+        ):
+
+            yield _create_step_event(step_context, step_output_value, intermediates_manager)
+
+        step_context.events.execution_plan_step_success(step.key, timer_result.millis)
+
+    except DagsterError as e:
+        # The step compute_fn and output error checking both raise exceptions. Catch
+        # and re-throw these to ensure that the step is always marked as failed.
+        step_context.events.execution_plan_step_failure(step.key, sys.exc_info())
+        stack_trace = get_formatted_stack_trace(e)
+        step_context.log.error(str(e), stack_trace=stack_trace)
+        six.reraise(*sys.exc_info())
 
 
 def _create_step_event(step_context, step_output_value, intermediates_manager):
@@ -299,19 +314,9 @@ def _execution_step_error_boundary(step_context, msg, **kwargs):
     check.inst_param(step_context, 'step_context', SystemStepExecutionContext)
     check.str_param(msg, 'msg')
 
-    step = step_context.step
-    step_context.events.execution_plan_step_start(step.key)
     try:
-        with time_execution_scope() as timer_result:
-            yield
-
-        step_context.events.execution_plan_step_success(step.key, timer_result.millis)
+        yield
     except Exception as e:  # pylint: disable=W0703
-        step_context.events.execution_plan_step_failure(step.key, sys.exc_info())
-
-        stack_trace = get_formatted_stack_trace(e)
-        step_context.log.error(str(e), stack_trace=stack_trace)
-
         if isinstance(e, DagsterError):
             raise e
         else:
