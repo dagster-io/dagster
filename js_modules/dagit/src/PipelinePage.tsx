@@ -10,6 +10,7 @@ import { PipelineJumpBar } from "./PipelineJumpComponents";
 import PythonErrorInfo from "./PythonErrorInfo";
 import PipelineExplorer from "./PipelineExplorer";
 import PipelineExecutionRoot from "./execution/PipelineExecutionRoot";
+import CustomAlertProvider from "./CustomAlertProvider";
 
 import {
   PipelinePageFragment,
@@ -162,6 +163,7 @@ export default class PipelinePage extends React.Component<IPipelinePageProps> {
         }
       >
         {body}
+        <CustomAlertProvider />
       </Page>
     );
   }

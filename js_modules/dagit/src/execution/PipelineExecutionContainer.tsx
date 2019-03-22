@@ -8,6 +8,7 @@ import * as yaml from "yaml";
 import RunBar from "./RunBar";
 import RunSubscriptionProvider from "./RunSubscriptionProvider";
 import { titleForRun } from "./ExecutionUtils";
+import { showCustomAlert } from "../CustomAlertProvider";
 
 import {
   applyChangesToSession,
@@ -128,7 +129,7 @@ export default class PipelineExecutionContainer extends React.Component<
           .join("\n\n")}`;
       }
 
-      alert(message);
+      showCustomAlert({ message });
     }
   };
 

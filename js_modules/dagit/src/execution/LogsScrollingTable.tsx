@@ -13,6 +13,7 @@ import {
   GridCellProps
 } from "react-virtualized";
 import { IconNames } from "@blueprintjs/icons";
+import { showCustomAlert } from "../CustomAlertProvider";
 
 interface ILogsScrollingTableProps {
   nodes: LogsScrollingTableMessageFragment[];
@@ -315,10 +316,12 @@ const OverflowBanner = styled.div`
   transform: translateX(-50%);
   user-select: none;
   background: ${Colors.LIGHT_GRAY3};
-  padding: 2px 12px;
   border-top-left-radius: 4px;
   border-top-right-radius: 4px;
+  padding: 2px 12px;
+  color: ${Colors.BLACK};
   &:hover {
+    color: ${Colors.BLACK};
     background: ${Colors.LIGHT_GRAY1};
   }
 `;
@@ -351,16 +354,11 @@ class OverflowDetectingCell extends React.Component<
     }
   }
 
-  onCopy = () => {
-    const el = ReactDOM.findDOMNode(this);
-    const sel = document.getSelection();
-    if (!el || !sel) return;
-    const range = document.createRange();
-    range.selectNode(el);
-    sel.removeAllRanges();
-    sel.addRange(range);
-    document.execCommand("copy");
-    sel.removeAllRanges();
+  onView = () => {
+    const el = ReactDOM.findDOMNode(this) as HTMLElement;
+    const message = el.firstChild && el.firstChild.textContent;
+    if (!message) return;
+    showCustomAlert({ message });
   };
 
   render() {
@@ -372,8 +370,8 @@ class OverflowDetectingCell extends React.Component<
         {this.state.isOverflowing && (
           <>
             <OverflowFade level={level} />
-            <OverflowBanner onClick={this.onCopy}>
-              Copy entire message
+            <OverflowBanner onClick={this.onView}>
+              View Full Message
             </OverflowBanner>
           </>
         )}
