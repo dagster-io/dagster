@@ -82,6 +82,8 @@ class FileSystemObjectStore(ObjectStore):
             # Hardcode pickle for now
             pickle.dump(obj, ff)
 
+        return target_path
+
     def get_object(self, context, runtime_type, paths):  # pylint: disable=unused-argument
         check.list_param(paths, 'paths', of_type=str)
         check.inst_param(runtime_type, 'runtime_type', RuntimeType)
@@ -135,6 +137,7 @@ class S3ObjectStore(ObjectStore):
         self.s3.head_bucket(Bucket=self.bucket)
 
         self.root = 'dagster/runs/{run_id}/files'.format(run_id=self.run_id)
+        self.storage_mode = RunStorageMode.S3
 
     def _key_for_paths(self, paths):
         return '/'.join([self.root] + paths)
@@ -158,7 +161,7 @@ class S3ObjectStore(ObjectStore):
             bytes_io.seek(0)
             self.s3.put_object(Bucket=self.bucket, Key=key, Body=bytes_io)
 
-        return obj
+        return 's3://{bucket}/{key}'.format(bucket=self.bucket, key=key)
 
     def get_object(self, context, runtime_type, paths):
         ensure_boto_requirements()

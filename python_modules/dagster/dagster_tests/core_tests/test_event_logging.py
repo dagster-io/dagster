@@ -80,6 +80,12 @@ def test_single_solid_pipeline_success():
     assert start_event.pipeline_name == 'single_solid_pipeline'
     assert start_event.solid_name == 'solid_one'
 
+    output_event = single_event(events, EventType.EXECUTION_PLAN_STEP_OUTPUT)
+    assert output_event
+    assert output_event.output_name == 'result'
+    assert output_event.storage_mode == 'IN_MEMORY'
+    assert int(output_event.storage_object_id)
+
     assert start_event.solid_definition_name == 'solid_one'
     success_event = single_event(events, EventType.EXECUTION_PLAN_STEP_SUCCESS)
     assert success_event.pipeline_name == 'single_solid_pipeline'

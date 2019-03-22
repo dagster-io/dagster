@@ -178,6 +178,16 @@ class DauphinExecutionStepStartEvent(dauphin.ObjectType):
         interfaces = (DauphinMessageEvent,)
 
 
+class DauphinExecutionStepOutputEvent(dauphin.ObjectType):
+    class Meta:
+        name = 'ExecutionStepOutputEvent'
+        interfaces = (DauphinMessageEvent,)
+
+    output_name = dauphin.NonNull(dauphin.String)
+    storage_mode = dauphin.NonNull(dauphin.String)
+    storage_object_id = dauphin.NonNull(dauphin.String)
+
+
 class DauphinExecutionStepSuccessEvent(dauphin.ObjectType):
     class Meta:
         name = 'ExecutionStepSuccessEvent'
@@ -212,6 +222,7 @@ class DauphinPipelineRunEvent(dauphin.Union):
             DauphinPipelineFailureEvent,
             DauphinExecutionStepStartEvent,
             DauphinExecutionStepSuccessEvent,
+            DauphinExecutionStepOutputEvent,
             DauphinExecutionStepFailureEvent,
             DauphinPipelineProcessStartEvent,
             DauphinPipelineProcessStartedEvent,
@@ -270,6 +281,13 @@ class DauphinPipelineRunEvent(dauphin.Union):
             return graphene_info.schema.type_named('ExecutionStepStartEvent')(**basic_params)
         elif event.event_type == EventType.EXECUTION_PLAN_STEP_SUCCESS:
             return graphene_info.schema.type_named('ExecutionStepSuccessEvent')(**basic_params)
+        elif event.event_type == EventType.EXECUTION_PLAN_STEP_OUTPUT:
+            return graphene_info.schema.type_named('ExecutionStepOutputEvent')(
+                output_name=event.output_name,
+                storage_mode=event.storage_mode,
+                storage_object_id=event.storage_object_id,
+                **basic_params
+            )
         elif event.event_type == EventType.EXECUTION_PLAN_STEP_FAILURE:
             check.inst(event.error_info, SerializableErrorInfo)
             return graphene_info.schema.type_named('ExecutionStepFailureEvent')(

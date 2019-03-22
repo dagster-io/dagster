@@ -1,6 +1,8 @@
 import os
+import pickle
 import sys
 import uuid
+
 
 from graphql import parse
 
@@ -16,7 +18,7 @@ from dagster import (
 
 from dagster.core.types.config import ALL_CONFIG_BUILTINS
 
-from dagster.utils import script_relative_path
+from dagster.utils import script_relative_path, merge_dicts
 
 from dagster_pandas import DataFrame
 
@@ -629,7 +631,7 @@ def test_basic_sync_execution_no_config():
     assert not has_event_of_type(logs, 'PipelineFailureEvent')
 
 
-def test_basic_sync_execution():
+def test_basic_inmemory_sync_execution():
     context = define_context()
     result = execute_dagster_graphql(
         context,
@@ -650,6 +652,49 @@ def test_basic_sync_execution():
     assert not has_event_of_type(logs, 'PipelineFailureEvent')
 
     assert first_event_of_type(logs, 'PipelineStartEvent')['level'] == 'INFO'
+
+    sum_solid_output = get_step_output_event(logs, 'sum_solid.transform')
+    assert sum_solid_output['step']['key'] == 'sum_solid.transform'
+
+
+def test_basic_filesystem_sync_execution():
+    context = define_context()
+    result = execute_dagster_graphql(
+        context,
+        START_PIPELINE_EXECUTION_QUERY,
+        variables={
+            'config': merge_dicts(
+                pandas_hello_world_solids_config(), {'storage': {'filesystem': {}}}
+            ),
+            'pipeline': {'name': 'pandas_hello_world'},
+        },
+    )
+
+    assert not result.errors
+    assert result.data
+
+    logs = result.data['startPipelineExecution']['run']['logs']['nodes']
+    assert isinstance(logs, list)
+    assert has_event_of_type(logs, 'PipelineStartEvent')
+    assert has_event_of_type(logs, 'PipelineSuccessEvent')
+    assert not has_event_of_type(logs, 'PipelineFailureEvent')
+
+    assert first_event_of_type(logs, 'PipelineStartEvent')['level'] == 'INFO'
+
+    sum_solid_output = get_step_output_event(logs, 'sum_solid.transform')
+    assert sum_solid_output['step']['key'] == 'sum_solid.transform'
+    assert sum_solid_output['outputName'] == 'result'
+    assert sum_solid_output['storageMode'] == 'FILESYSTEM'
+    output_path = sum_solid_output['storageObjectId']
+
+    assert os.path.exists(output_path)
+
+    with open(output_path, 'rb') as ff:
+        df = pickle.load(ff)
+        expected_value_repr = '''   num1  num2  sum
+0     1     2    3
+1     3     4    7'''
+        assert str(df) == expected_value_repr
 
 
 def first_event_of_type(logs, message_type):
@@ -681,6 +726,12 @@ mutation ($pipeline: ExecutionSelector!, $config: PipelineConfig) {
                         ... on ExecutionStepStartEvent {
                             step { kind }
                         }
+                        ... on ExecutionStepOutputEvent {
+                            step { key kind }
+                            outputName
+                            storageMode
+                            storageObjectId
+                        }
                     }
                 }
             }
@@ -695,3 +746,15 @@ mutation ($pipeline: ExecutionSelector!, $config: PipelineConfig) {
     }
 }
 '''
+
+
+def get_step_output_event(logs, step_key, output_name='result'):
+    for log in logs:
+        if (
+            log['__typename'] == 'ExecutionStepOutputEvent'
+            and log['step']['key'] == step_key
+            and log['outputName'] == output_name
+        ):
+            return log
+
+    check.failed('Could not find output')

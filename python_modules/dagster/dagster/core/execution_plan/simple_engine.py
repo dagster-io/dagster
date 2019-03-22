@@ -237,11 +237,18 @@ def _create_step_event(step_context, step_output_value, intermediates_manager):
             step=step, output_name=step_output_value.output_name
         )
 
-        intermediates_manager.set_intermediate(
+        object_key = intermediates_manager.set_intermediate(
             context=step_context,
             runtime_type=step_output.runtime_type,
             step_output_handle=step_output_handle,
             value=value,
+        )
+
+        step_context.events.execution_plan_step_output(
+            step_key=step.key,
+            output_name=step_output_handle.output_name,
+            storage_mode=intermediates_manager.storage_mode.value,
+            storage_object_id=object_key,
         )
 
         return ExecutionStepEvent.step_output_event(
