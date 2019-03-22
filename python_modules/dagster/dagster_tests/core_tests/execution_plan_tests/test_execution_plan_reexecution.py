@@ -124,7 +124,7 @@ def test_execution_plan_wrong_run_id():
 
     assert str(
         exc_info.value
-    ) == 'Run id {} set as previous run id was not found run storage'.format(unrun_id)
+    ) == 'Run id {} set as previous run id was not found in run storage'.format(unrun_id)
 
     assert exc_info.value.invalid_run_id == unrun_id
 
