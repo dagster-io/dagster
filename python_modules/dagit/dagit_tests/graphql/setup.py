@@ -76,7 +76,7 @@ def sum_sq_solid(sum_df):
 def pandas_hello_world_solids_config():
     return {
         'solids': {
-            'sum_solid': {'inputs': {'num': {'csv': {'path': script_relative_path('num.csv')}}}}
+            'sum_solid': {'inputs': {'num': {'csv': {'path': script_relative_path('../num.csv')}}}}
         }
     }
 

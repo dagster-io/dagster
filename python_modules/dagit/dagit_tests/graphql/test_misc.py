@@ -514,7 +514,7 @@ def test_basic_start_pipeline_execution_and_subscribe():
             'config': {
                 'solids': {
                     'sum_solid': {
-                        'inputs': {'num': {'csv': {'path': script_relative_path('num.csv')}}}
+                        'inputs': {'num': {'csv': {'path': script_relative_path('../num.csv')}}}
                     }
                 }
             },
