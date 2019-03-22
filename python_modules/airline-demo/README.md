@@ -32,11 +32,10 @@ Then just run dagit from the root of the repo:
 
 ## Pipelines and config
 
-The demo defines a single repository with three pipelines, in `airline_demo/pipelines.py`:
+The demo defines a single repository with two pipelines, in `airline_demo/pipelines.py`:
 
-- **airline_demo_download_pipeline** grabs data archives from S3 and unzips them.
-- **airline_demo_ingest_pipeline** reads the raw data into Spark, performs some typical
-  manipulations on the data, and then loads tables into a data warehouse.
+- **airline_demo_ingest_pipeline** grabs data archives from S3 and unzips them, reads the raw data
+into Spark, performs some typical manipulations on the data, and then loads tables into a data warehouse.
 - **airline_demo_warehouse_pipeline** performs typical in-warehouse analysis and manipulations
   using SQL, and then generates and archives analysis artifacts and plots using Jupyter notebooks.
 
@@ -59,12 +58,13 @@ For instance, to run only those tests that do not require Spark, you can run:
 
     pytest -m "not spark"
 
-## The download pipeline
+## The ingest pipeline
 
-![Download pipeline](img/download_pipeline.png)
+<!-- FIXME -->
+<!-- ![Download pipeline](img/ingest_pipeline.png) -->
 
-The `airline_demo_download_pipeline` models the first stage of most data science workflows, in
-which raw data is consumed from a variety of sources. 
+The `airline_demo_ingest_pipeline` models the first stage of most project-oriented data science
+workflows, in which raw data is consumed from a variety of sources. 
 
 For demo purposes, we've put our source files in a publicly-readable S3 repository. In practice,
 these might be files in S3 or other cloud storage systems; publicly available datasets downloaded
@@ -73,7 +73,7 @@ over http; or batch files in an SFTP drop.
 ### Running the pipeline locally with test config
 
 If you want to start by running this pipeline, try the config fragment in
-`environments/local_fast_download.yml`. The first time you run this pipeline, you'll likely see a
+`environments/local_fast_ingest.yml`. The first time you run this pipeline, you'll likely see a
 bunch of log lines in the terminal running dagit as Spark dependencies are resolved.
 
 This config fragment points to cut-down versions of the original data files on S3. It can be good
@@ -83,38 +83,27 @@ cut-down or synthetic data sets -- for example, data issues that may only appear
 or at scale -- this practice will allow you to verify the integrity of your pipeline construction
 and to catch at least some semantic issues.
 
-![Download pipeline run](img/download_pipeline_run.png)
+<!-- FIXME -->
+<!-- ![Download pipeline run](img/ingest_pipeline_run.png) -->
 
-### Defining a pipeline with library solids
+### Defining a pipeline with reusable solids
 
-Let's start by looking at the pipeline definition (in `airline_demo/pipelines.py`):
+Let's start by looking at the pipeline definition (in `airline_demo/pipelines.py`). where you'll see
+that we rely heavily on `SolidInstance` to build our pipeline, for example:
 
-    def define_airline_demo_download_pipeline():
-        solids = [download_from_s3, unzip_file]
-        dependencies = {
-            SolidInstance('download_from_s3', alias='download_archives'): {},
-            SolidInstance('unzip_file', alias='unzip_archives'): {
-                'archive_paths': DependencyDefinition('download_archives')
-            },
-            SolidInstance('download_from_s3', alias='download_q2_sfo_weather'): {},
-        }
+    SolidInstance('unzip_file', alias='unzip_may_on_time_data'): {
+        'archive_path': DependencyDefinition('download_may_on_time_data')
+    }
 
-        return PipelineDefinition(
-            name='airline_demo_download_pipeline',
-            context_definitions=CONTEXT_DEFINITIONS,
-            solids=solids,
-            dependencies=dependencies,
-        )
-
-The first thing to note is that we're relying on `SolidInstance` to build our pipeline by defining
-aliased instances (`download_archives`, `unzip_archives`, `download_q2_sfo_weather`) of
-reusable library solids (`download_from_s3`, `unzip_file`).
+This API lets us define aliased instances (`unzip_may_on_time_data`) of reusable library solids
+(`unzip_file`).
 
 In general, you won't want every data science user in your organization to have to roll their own
 implementation of common functionality like downloading and unzipping files. Instead, you'll want to
 abstract common functionality into reusable solids, separating task-specific parameters out into
 declarative config, and building up a library of building blocks for new data pipelines.
 
+<<<<<<< HEAD
 ### Implementing a library solid with List-typed inputs and outputs
 
 Let's take a look at how one of these library solids is defined:
@@ -217,21 +206,27 @@ very pipeline -- the output of `download_q2_sfo_weather` does not need to be unz
 defined a separate alias (still using the same library solid -- and underlying List type -- for
 maximum flexibility).
 
+=======
+>>>>>>> 82fd05e1... Stopgap for README
 ### Strongly typed config and outputs
 
-Each entry in the config list for our solid specifies everything we need to know to download a
-file from S3 (at least in our toy example). In YAML, an entry in the config looks like this:
+The config for each of our solids specifies everything it needs in order to interact with the
+external environment. In YAML, an entry in the config for one of our solids aliasing
+`download_from_s3` looks like this:
 
-    - bucket: dagster-airline-demo-source-data
-      key: test/On_Time_Reporting_Carrier_On_Time_Performance_1987_present_2018_4.zip
-      skip_if_present: false
-      target_path: source_data/On_Time_Reporting_Carrier_On_Time_Performance_1987_present_2018_4.zip
+  download_master_cord_data:
+    config:
+      bucket: dagster-airline-demo-source-data
+      key: 954834304_T_MASTER_CORD.zip
+      skip_if_present: true
+      target_path: source_data/954834304_T_MASTER_CORD.zip
 
 Because each of these values is strongly typed, we'll get rich error information in the dagit
 config editor (or when running pipelines from the command line) when a config value is incorrectly
 specified.
 
-![Download pipeline bad config](img/download_pipeline_bad_config.png)
+<!-- FIXME -->
+<!-- ![Download pipeline bad config](img/download_pipeline_bad_config.png) -->
 
 While this may seem like a mere convenience, in production contexts it can dramatically reduce
 avoidable errors. Consider boto3's [S3.Client.put_object](https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/s3.html#S3.Client.put_object)
@@ -243,7 +238,8 @@ By setting the `description` on each of our config members, we also get easily n
 documentation in dagit. Users of library solids no longer need to investigate implementations in
 order to understand what values are required, or what they do -- enabling more confident reuse.
 
-![Download pipeline config docs](img/download_pipeline_config_docs.png)
+<!-- FIXME -->
+<!-- ![Download pipeline config docs](img/download_pipeline_config_docs.png) -->
 
 ### Custom types
 
@@ -284,19 +280,12 @@ with a short feedback cycle and to write and run tests against pipeline code.
 ### Running on production data
 
 Don't worry, we've got plenty of big(gish) data to run through this pipeline. Instead of the
-`local_fast_download.yml` config fragment, use `local_full_download.yml` -- but be prepared to wait!
+`local_fast_ingest.yml` config fragment, use `local_full_ingest.yml` -- but be prepared to wait!
 In practice, you can use this pattern to run your Dagster pipelines against synthetic, anonymized,
 or subsampled datasets in test and development environments.
 
-## The ingest pipeline
-
-![Ingest pipeline](img/ingest_pipeline.png)
-
-The `airline_demo_ingest_pipeline` models the ingestion stage of a typical data science workflow,
-in which raw data is normalized, scrubbed, munged, and finally loaded into a production system
-that supports general purpose queries. We've chosen to use Spark to perform these transformations.
-
-### Context definitions: using configurable resources to interact with the external world
+<!-- FIXME -->
+<!-- ### Context definitions: using configurable resources to interact with the external world
 
 In practice, you'll want to run your pipelines in environments that vary widely in their available
 facilities. For example, when running an ingestion pipeline locally for test or development, you
@@ -407,18 +396,19 @@ Finally, we bring it all together in the `define_postgres_db_info_resource` func
 
 Note that by setting the strongly typed `config_field` parameter, we now have typeahead
 support in dagit and rich error messages for the configuration of our external resources. This can
-be extremely valuable in the case of notoriously complex configuration formats, such as Spark's.
+be extremely valuable in the case of notoriously complex configuration formats, such as Spark's. -->
 
-![Ingest pipeline resource config](img/ingest_pipeline_resource_config.png)
+<!-- FIXME -->
+<!-- ![Ingest pipeline resource config](img/ingest_pipeline_resource_config.png) -->
 
 ### Ingesting data to Spark data frames
 
-The root nodes of the ingestion pipeline are all aliases of the `ingest_csv_to_spark` solid,
+The ingestion pipeline contains a number of aliases of the `ingest_csv_to_spark` solid,
 independently configured with their inputs, e.g.:
 
-ingest_april_on_time_data:
-  inputs:
-    input_csv: source_data/On_Time_Reporting_Carrier_On_Time_Performance_(1987_present)_2018_4.csv
+    ingest_april_on_time_data:
+    inputs:
+        input_csv: source_data/On_Time_Reporting_Carrier_On_Time_Performance_(1987_present)_2018_4.csv
 
 Note the type signature of these solids.
 
@@ -439,7 +429,8 @@ The transformation solids that follow all use the SparkDataFrameType for their i
 You might also build DAGs where Pandas data frames, or some other in-memory Python object, are the
 common intermediate representation.
 
-### Implicit dependencies between pipelines
+<!-- FIXME -->
+<!-- ### Implicit dependencies between pipelines
 
 We configured the ingestion pipeline by specifying paths to source .csv files for each root node of
 the DAG. But we know that in order for these files to be where we expect them, the download pipeline
@@ -467,7 +458,7 @@ library solids and resources for internal clients, focusing on making their exis
 available to pipeline authors. They will also likely be responsible for deploying and orchestrating
 pipelines in production. Analysts and data scientists will tend to write pipelines that connect
 library solid, as well as logic in familiar tools (like SQL and Jupyter) that can be easily wrapped
-by utility solids.
+by utility solids. -->
 
 ### Abstract building blocks for specific transformations
 
