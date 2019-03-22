@@ -12,7 +12,6 @@ import os
 import sys
 
 from contextlib import contextmanager
-from textwrap import TextWrapper
 
 from airflow.exceptions import AirflowException
 from airflow.operators.docker_operator import DockerOperator
@@ -20,12 +19,6 @@ from airflow.plugins_manager import AirflowPlugin
 from airflow.utils.file import TemporaryDirectory
 from docker import APIClient, from_env
 
-
-# We don't use seven to avoid taking the dependency
-if sys.version_info.major >= 3:
-    from io import StringIO  # pylint:disable=import-error
-else:
-    from StringIO import StringIO  # pylint:disable=import-error
 
 if sys.version_info.major >= 3:
     from json.decoder import JSONDecodeError  # pylint:disable=ungrouped-imports
@@ -310,7 +303,7 @@ class DagsterOperator(ModifiedDockerOperator):
             bad_values=', '.join(
                 [
                     '{value} of type {type_} at index {idx}'.format(
-                        value=bad_key[1], type_=type(bad_key[1], idx=bad_key[0])
+                        value=bad_key[1], type_=type(bad_key[1]), idx=bad_key[0]
                     )
                     for bad_key in bad_keys
                 ]
@@ -381,7 +374,7 @@ class DagsterOperator(ModifiedDockerOperator):
 
         return _DummyHook()
 
-    def execute(self, context, **kwargs):
+    def execute(self, context):
         if 'run_id' in self.params:
             self._run_id = self.params['run_id']
         elif 'dag_run' in context and context['dag_run'] is not None:
