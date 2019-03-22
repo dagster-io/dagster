@@ -112,9 +112,7 @@ def test_run_airflow_dag(scaffold_dag):
         dag_id=demo_pipeline.DAG_ID,
         dag_description=demo_pipeline.DAG_DESCRIPTION,
         dag_kwargs=dict(default_args=demo_pipeline.DEFAULT_ARGS, **demo_pipeline.DAG_KWARGS),
-        s3_conn_id=demo_pipeline.S3_CONN_ID,
         operator_kwargs=demo_pipeline.OPERATOR_KWARGS,
-        host_tmp_dir=demo_pipeline.HOST_TMP_DIR,
     )
 
     # These are in topo order already
@@ -137,9 +135,7 @@ def test_run_airflow_error_dag(scaffold_error_dag):
         dag_id=demo_pipeline.DAG_ID,
         dag_description=demo_pipeline.DAG_DESCRIPTION,
         dag_kwargs=dict(default_args=demo_pipeline.DEFAULT_ARGS, **demo_pipeline.DAG_KWARGS),
-        s3_conn_id=demo_pipeline.S3_CONN_ID,
         operator_kwargs=demo_pipeline.OPERATOR_KWARGS,
-        host_tmp_dir=demo_pipeline.HOST_TMP_DIR,
     )
 
     # These are in topo order already

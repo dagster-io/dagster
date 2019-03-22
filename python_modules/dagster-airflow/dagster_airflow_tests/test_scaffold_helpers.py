@@ -31,17 +31,6 @@ def test_split_lines():
     assert _split_lines('foo\nbar\n') == ['foo', 'bar,']
 
 
-def test_key_for_marshalled_result():
-    assert (
-        _key_for_marshalled_result('foo.bar_baz', 'zip_zowie.quux', prepend_run_id=False)
-        == '{tmp}{sep}foo_bar__baz___zip__zowie_quux.pickle'
-    )
-    assert (
-        _key_for_marshalled_result('foo.bar_baz', 'zip_zowie.quux')
-        == '{tmp}{sep}{run_id_prefix}foo_bar__baz___zip__zowie_quux.pickle'
-    )
-
-
 def test_format_config():
     with pytest.raises(check.CheckError):
         _format_config('')
