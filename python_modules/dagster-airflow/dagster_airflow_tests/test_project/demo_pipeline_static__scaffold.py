@@ -49,55 +49,19 @@ CONFIG = '''
 
 PIPELINE_NAME = 'demo_pipeline'
 
-STEP_EXECUTIONS_MULTIPLY_THE_WORD = [
-    {
-        'step_key': 'multiply_the_word.word.input_thunk',
-        'inputs': [
-        ],
-        'outputs': [
-            {
-                'output_name': 'input_thunk_output',
-                'key': '{tmp}{sep}{run_id_prefix}multiply__the__word_word_input__thunk___input__thunk__output.pickle'
-            },
-        ]
-    },
-    {
-        'step_key': 'multiply_the_word.transform',
-        'inputs': [
-        ],
-        'outputs': [
-            {
-                'output_name': 'result',
-                'key': '{tmp}{sep}{run_id_prefix}multiply__the__word_transform___result.pickle'
-            },
-        ]
-    },
+STEPS_FOR_MULTIPLY_THE_WORD = [
+    'multiply_the_word.word.input_thunk',
+    'multiply_the_word.transform',
 ]
-STEP_EXECUTIONS_COUNT_LETTERS = [
-    {
-        'step_key': 'count_letters.transform',
-        'inputs': [
-            {
-                'input_name': 'word',
-                'key': '{tmp}{sep}{run_id_prefix}multiply__the__word_transform___result.pickle'
-            },
-        ],
-        'outputs': [
-            {
-                'output_name': 'result',
-                'key': '{tmp}{sep}{run_id_prefix}count__letters_transform___result.pickle'
-            },
-        ]
-    },
+STEPS_FOR_COUNT_LETTERS = [
+    'count_letters.transform',
 ]
 
 def make_dag(
     dag_id,
     dag_description,
     dag_kwargs,
-    s3_conn_id,
     operator_kwargs,
-    host_tmp_dir
 ):
     dag = DAG(
         dag_id=dag_id,
@@ -112,12 +76,10 @@ def make_dag(
         config=CONFIG,
         dag=dag,
         tmp_dir='/tmp/results',
-        host_tmp_dir=host_tmp_dir,
         image='dagster-airflow-demo',
         task_id='multiply_the_word',
-        s3_conn_id=s3_conn_id,
         pipeline_name=PIPELINE_NAME,
-        step_executions=STEP_EXECUTIONS_MULTIPLY_THE_WORD,
+        step_keys=STEPS_FOR_MULTIPLY_THE_WORD,
         **operator_kwargs
     )
     tasks.append(multiply_the_word_task)
@@ -127,12 +89,10 @@ def make_dag(
         config=CONFIG,
         dag=dag,
         tmp_dir='/tmp/results',
-        host_tmp_dir=host_tmp_dir,
         image='dagster-airflow-demo',
         task_id='count_letters',
-        s3_conn_id=s3_conn_id,
         pipeline_name=PIPELINE_NAME,
-        step_executions=STEP_EXECUTIONS_COUNT_LETTERS,
+        step_keys=STEPS_FOR_COUNT_LETTERS,
         **operator_kwargs
     )
     tasks.append(count_letters_task)
