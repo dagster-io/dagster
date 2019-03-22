@@ -1,5 +1,4 @@
 import os
-import pickle
 import shutil
 
 from abc import ABCMeta, abstractmethod
@@ -176,6 +175,7 @@ class S3ObjectStore(ObjectStore):
         key = self._key_for_paths(paths)
 
         return runtime_type.serialization_strategy.deserialize_value(
+            # pylint: disable=protected-access
             self.s3.get_object(Bucket=self.bucket, Key=key)['Body']._raw_stream
         )
 
