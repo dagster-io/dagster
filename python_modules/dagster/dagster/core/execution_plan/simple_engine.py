@@ -199,16 +199,15 @@ def _execute_steps_core_loop(step_context, inputs, intermediates_manager):
             step_context.step, input_name, input_value
         )
 
-    error_str = 'Error occured during step {key}'.format(key=step_context.step.key)
-    with _execution_step_error_boundary(step_context, error_str):
-        step_output_value_iterator = check.generator(
-            _iterate_step_output_values(step_context, evaluated_inputs)
-        )
+    step_output_value_iterator = check.generator(
+        _iterate_step_output_values_within_boundary(step_context, evaluated_inputs)
+    )
 
-        for step_output_value in check.generator(
-            _error_check_step_output_values(step_context.step, step_output_value_iterator)
-        ):
-            yield _create_step_event(step_context, step_output_value, intermediates_manager)
+    for step_output_value in check.generator(
+        _error_check_step_output_values(step_context.step, step_output_value_iterator)
+    ):
+
+        yield _create_step_event(step_context, step_output_value, intermediates_manager)
 
 
 def _create_step_event(step_context, step_output_value, intermediates_manager):
@@ -271,15 +270,17 @@ def _get_evaluated_input(step, input_name, input_value):
         )
 
 
-def _iterate_step_output_values(step_context, evaluated_inputs):
+def _iterate_step_output_values_within_boundary(step_context, evaluated_inputs):
     check.inst_param(step_context, 'step_context', SystemStepExecutionContext)
     check.dict_param(evaluated_inputs, 'evaluated_inputs', key_type=str)
 
-    gen = check.opt_generator(step_context.step.compute_fn(step_context, evaluated_inputs))
+    error_str = 'Error occured during step {key}'.format(key=step_context.step.key)
+    with _execution_step_error_boundary(step_context, error_str):
+        gen = check.opt_generator(step_context.step.compute_fn(step_context, evaluated_inputs))
 
-    if gen is not None:
-        for step_output_value in gen:
-            yield step_output_value
+        if gen is not None:
+            for step_output_value in gen:
+                yield step_output_value
 
 
 @contextmanager
