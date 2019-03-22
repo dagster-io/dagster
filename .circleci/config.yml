@@ -64,14 +64,12 @@ workflows:
       # see: https://github.com/apache/airflow/pull/3723
       # - dagster-airflow-py37:
       #     context: coveralls
-      # Airflow CI temporarily disabled. See:
-      # https://github.com/dagster-io/dagster/issues/922
-      # - dagster-airflow-py36:
-      #     context: coveralls
-      # - dagster-airflow-py35:
-      #     context: coveralls
-      # - dagster-airflow-py27:
-      #     context: coveralls
+      - dagster-airflow-py36:
+          context: coveralls
+      - dagster-airflow-py35:
+          context: coveralls
+      - dagster-airflow-py27:
+          context: coveralls
       - dagma-py37:
           context: coveralls
       - dagma-py36:
