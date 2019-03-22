@@ -397,50 +397,7 @@ def _make_static_scaffold(pipeline_name, env_config, execution_plan, image, edit
         return printer.read()
 
 
-# pylint: disable=too-many-locals
-def scaffold_airflow_dag(
-    pipeline, env_config, image, output_path=None, dag_kwargs=None, operator_kwargs=None
-):
-    '''Scaffold a new Airflow DAG based on a PipelineDefinition and config.
-
-    Creates an "editable" scaffold (intended for end user modification) and a "static" scaffold.
-    The editable scaffold imports the static scaffold and defines the Airflow DAG. As a rule, both
-    scaffold files need to be present in your Airflow DAG directory (by default, this is
-    $AIRFLOW_HOME/dags)in order to be correctly parsed by Airflow.
-
-    Note that an Airflow DAG corresponds to a Dagster execution plan, since many different
-    execution plans may be created when a PipelineDefinition is parametrized by various config
-    values. You may want to create multiple Airflow DAGs corresponding to, e.g., test and
-    production configs of your Dagster pipelines.
-
-    Parameters:
-        pipeline (dagster.PipelineDefinition): Pipeline to use to construct the Airflow DAG.
-        env_config (dict): The config to use to construct the Airflow DAG.
-        image (str): The name of the Docker image in which your pipeline has been containerized.
-        output_path (Union[Tuple[str, str], str, None]): Optionally specify the path at which to
-            write the scaffolded files. If this parameter is a tuple of absolute paths, the static
-            scaffold will be written to the first member of the tuple and the editable scaffold
-            will be written to the second member of the tuple. If this parameter is a path to a
-            directory, the scaffold files will be written to that directory as
-            '{pipeline_name}_static__scaffold.py' and '{pipeline_name}_editable__scaffold.py'
-            respectively. If this parameter is None, the scaffolds will be written to the present
-            working directory.
-        dag_kwargs (dict, optional): Any additional keyword arguments to pass to the ``airflow.DAG``
-            constructor. If `dag_kwargs.default_args` is set, values set there will smash the
-            values in ``dagster_airflow.scaffold.DEFAULT_ARGS``. Default: None.
-        operator_kwargs (dict, optional): Any additional keyword arguments to pass to the
-            ``DagsterOperator`` constructor. These will be passed through to the underlying
-            ``ModifiedDockerOperator``. Default: None
-    Returns:
-        (str, str): Paths to the static and editable scaffold files.
-    '''
-    check.inst_param(pipeline, 'pipeline', PipelineDefinition)
-    check.opt_dict_param(env_config, 'env_config', key_type=str)
-    dag_kwargs = check.opt_dict_param(dag_kwargs, 'dag_kwargs', key_type=str)
-
-    pipeline_name = pipeline.name
-    pipeline_description = pipeline.description
-
+def _generate_output_paths(pipeline_name, output_path):
     if output_path is None:
         static_path = os.path.join(
             os.getcwd(), '{pipeline_name}_static__scaffold.py'.format(pipeline_name=pipeline_name)
@@ -504,6 +461,65 @@ def scaffold_airflow_dag(
             )
         )
 
+    return (static_path, editable_path)
+
+
+# pylint: disable=too-many-locals
+def scaffold_airflow_dag(
+    pipeline,
+    env_config,
+    image,
+    output_path=None,
+    dag_kwargs=None,
+    operator_kwargs=None,
+    regenerate=False,
+):
+    '''Scaffold a new Airflow DAG based on a PipelineDefinition and config.
+
+    Creates an "editable" scaffold (intended for end user modification) and a "static" scaffold.
+    The editable scaffold imports the static scaffold and defines the Airflow DAG. As a rule, both
+    scaffold files need to be present in your Airflow DAG directory (by default, this is
+    $AIRFLOW_HOME/dags) in order to be correctly parsed by Airflow.
+
+    Note that an Airflow DAG corresponds to a Dagster execution plan, since many different
+    execution plans may be created when a PipelineDefinition is parametrized by various config
+    values. You may want to create multiple Airflow DAGs corresponding to, e.g., test and
+    production configs of your Dagster pipelines.
+
+    Parameters:
+        pipeline (dagster.PipelineDefinition): Pipeline to use to construct the Airflow DAG.
+        env_config (dict): The config to use to construct the Airflow DAG.
+        image (str): The name of the Docker image in which your pipeline has been containerized.
+        output_path (Union[Tuple[str, str], str, None]): Optionally specify the path at which to
+            write the scaffolded files. If this parameter is a tuple of absolute paths, the static
+            scaffold will be written to the first member of the tuple and the editable scaffold
+            will be written to the second member of the tuple. If this parameter is a path to a
+            directory, the scaffold files will be written to that directory as
+            '{pipeline_name}_static__scaffold.py' and '{pipeline_name}_editable__scaffold.py'
+            respectively. If this parameter is None, the scaffolds will be written to the present
+            working directory. Default: None.
+        dag_kwargs (dict, optional): Any additional keyword arguments to pass to the ``airflow.DAG``
+            constructor. If `dag_kwargs.default_args` is set, values set there will smash the
+            values in ``dagster_airflow.scaffold.DEFAULT_ARGS``. Default: None.
+        operator_kwargs (dict, optional): Any additional keyword arguments to pass to the
+            ``DagsterOperator`` constructor. These will be passed through to the underlying
+            ``ModifiedDockerOperator``. Default: None
+        regenerate (bool): If true, write only the static scaffold. Default: False.
+
+    Returns:
+        (str, str): Paths to the static and editable scaffold files.
+    '''
+    check.inst_param(pipeline, 'pipeline', PipelineDefinition)
+    check.opt_dict_param(env_config, 'env_config', key_type=str)
+    dag_kwargs = check.opt_dict_param(dag_kwargs, 'dag_kwargs', key_type=str)
+    operator_kwargs = check.opt_dict_param(operator_kwargs, 'operator_kwargs', key_type=str)
+    check.bool_param(regenerate, 'regenerate')
+
+    pipeline_name = pipeline.name
+    pipeline_description = pipeline.description
+
+    static_path, editable_path = _generate_output_paths(pipeline_name, output_path)
+
     execution_plan = create_execution_plan(pipeline, env_config)
 
     default_args = dict(
@@ -523,19 +539,21 @@ def scaffold_airflow_dag(
         editable_scaffold=editable_scaffold_module_name,
     )
 
-    editable_scaffold = _make_editable_scaffold(
-        pipeline_name=pipeline_name,
-        pipeline_description=pipeline_description,
-        env_config=env_config,
-        static_scaffold=static_scaffold_module_name,
-        default_args=default_args,
-        operator_kwargs=operator_kwargs,
-    )
+    if not regenerate:
+        editable_scaffold = _make_editable_scaffold(
+            pipeline_name=pipeline_name,
+            pipeline_description=pipeline_description,
+            env_config=env_config,
+            static_scaffold=static_scaffold_module_name,
+            default_args=default_args,
+            operator_kwargs=operator_kwargs,
+        )
 
     with open(static_path, 'w') as static_fd:
         static_fd.write(static_scaffold)
 
-    with open(editable_path, 'w') as editable_fd:
-        editable_fd.write(editable_scaffold)
+    if not regenerate:
+        with open(editable_path, 'w') as editable_fd:
+            editable_fd.write(editable_scaffold)
 
     return (static_path, editable_path)
