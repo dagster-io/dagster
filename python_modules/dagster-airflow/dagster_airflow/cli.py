@@ -13,8 +13,27 @@ from .scaffold import scaffold_airflow_dag
 from .version import __version__
 
 
-def env_target(f):
-    return apply_click_params(
+def scaffold_target(f):
+    f = apply_click_params(
+        f,
+        click.option(
+            '--image',
+            help='The Docker image to use to run your pipeline with airflow.',
+            required=True,
+        ),
+    )
+    f = apply_click_params(
+        f,
+        click.option(
+            '--install',
+            is_flag=True,
+            help=(
+                'If the --install flag is set, automatically copy the scaffolded DAG files to '
+                '$AIRFLOW_HOME. Will error if $AIRFLOW_HOME is not set'
+            ),
+        ),
+    )
+    f = apply_click_params(
         f,
         click.option(
             '-e',
@@ -32,76 +51,16 @@ def env_target(f):
                 '"environments/download/local_*.yml"'
                 '\n\nYou can also specify multiple files:'
                 '\n\nExample: '
-                'dagster-airflow scaffold airline_demo_download_pipeline -e environments/local_base.yml '
-                '-e environments/local_fast_download.yml'
+                'dagster-airflow scaffold airline_demo_download_pipeline -e '
+                'environments/local_base.yml -e environments/local_fast_download.yml'
             ),
         ),
     )
 
-
-@click.command(
-    name='scaffold',
-    help=(
-        'Scaffold a dagster pipeline for use with airflow. {warning}'.format(
-            warning=REPO_TARGET_WARNING
-        )
-    ),
-)
-@click.option(
-    '--image', help='The Docker image to use to run your pipeline with airflow.', required=True
-)
-@pipeline_target_command
-@click.option(
-    '--install',
-    is_flag=True,
-    help=(
-        'If the --install flag is set, automatically copy the scaffolded DAG files to '
-        '$AIRFLOW_HOME. Will error if $AIRFLOW_HOME is not set'
-    ),
-)
-@env_target
-def scaffold(env, install, image, **cli_args):
-    check.invariant(isinstance(env, tuple))
-    env = list(env)
-
-    check.str_param(image, 'image')
-
-    if install:
-        airflow_home = os.getenv('AIRFLOW_HOME')
-        check.invariant(isinstance(airflow_home, string_types))
-        output_path = os.path.join(os.path.abspath(airflow_home), 'dags')
-    else:
-        output_path = None
-
-    pipeline = create_pipeline_from_cli_args(cli_args)
-
-    env_config = load_yaml_from_glob_list(env)
-
-    scaffold_airflow_dag(pipeline, env_config, image=image, output_path=output_path)
+    return f
 
 
-@click.command(
-    name='regenerate',
-    help=(
-        'Regenerate a dagster pipeline for use with airflow. Generates only the static file (to '
-        'keep up with changes in the source pipeline definition or config), but does not touch the '
-        'editable file. {warning}'.format(warning=REPO_TARGET_WARNING)
-    ),
-)
-@click.option(
-    '--image', help='The Docker image to use to run your pipeline with airflow.', required=True
-)
-@pipeline_target_command
-@click.option(
-    '--install',
-    is_flag=True,
-    help=(
-        'If the --install flag is set, automatically copy the scaffolded DAG files to '
-        '$AIRFLOW_HOME. Will error if $AIRFLOW_HOME is not set'
-    ),
-)
-@env_target
-def regenerate(env, install, image, **cli_args):
+def do_scaffold(env, install, image, cli_args, regenerate=False):
     check.invariant(isinstance(env, tuple))
     env = list(env)
 
@@ -119,8 +78,36 @@ def regenerate(env, install, image, **cli_args):
     env_config = load_yaml_from_glob_list(env)
 
     scaffold_airflow_dag(
-        pipeline, env_config, image=image, output_path=output_path, regenerate=True
+        pipeline, env_config, image=image, output_path=output_path, regenerate=regenerate
     )
+
+
+@click.command(
+    name='scaffold',
+    help=(
+        'Scaffold a dagster pipeline for use with airflow. {warning}'.format(
+            warning=REPO_TARGET_WARNING
+        )
+    ),
+)
+@pipeline_target_command
+@scaffold_target
+def scaffold(env, install, image, **cli_args):
+    do_scaffold(env, install, image, cli_args)
+
+
+@click.command(
+    name='regenerate',
+    help=(
+        'Regenerate a dagster pipeline for use with airflow. Generates only the static file (to '
+        'keep up with changes in the source pipeline definition or config), but does not touch the '
+        'editable file. {warning}'.format(warning=REPO_TARGET_WARNING)
+    ),
+)
+@pipeline_target_command
+@scaffold_target
+def regenerate(env, install, image, **cli_args):
+    do_scaffold(env, install, image, cli_args, regenerate=True)
 
 
 def create_dagster_airflow_cli():
