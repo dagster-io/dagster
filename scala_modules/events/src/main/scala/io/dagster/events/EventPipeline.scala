@@ -33,9 +33,7 @@ package io.dagster.events
   * We currently use AWS 1.7.4 and hadoop-aws 2.7.1 as these are known to be compatible and work with Spark 2.4.0.
   */
 
-import java.io.InputStream
-
-import org.apache.spark.sql.SparkSession
+import org.apache.spark.sql.{Dataset, SparkSession}
 import java.util.Date
 
 import com.amazonaws.auth.BasicAWSCredentials
@@ -45,7 +43,7 @@ import model._
 import scala.reflect.internal.FatalError
 import scala.collection.JavaConversions._
 import scala.io.Source
-import models.Event
+import models.{Event, LocalStorageBackend, S3StorageBackend, StorageBackend}
 
 
 object EventPipeline {
@@ -54,18 +52,15 @@ object EventPipeline {
     spark.sparkContext.getConf.get("spark.hadoop.fs.s3a.access.key"),
     spark.sparkContext.getConf.get("spark.hadoop.fs.s3a.secret.key")
   ))
-  final lazy val datePathFormatter = new java.text.SimpleDateFormat("yyyy/MM/dd")
 
+  import spark.implicits._
 
-  def getS3Objects(bucket: String, prefix: String, date: Date): Seq[String] = {
+  def getS3Objects(backend: S3StorageBackend, date: Date): Seq[String] = {
     // We first retrieve a list of S3 filenames under our bucket prefix, then process.
     // See: https://tech.kinja.com/how-not-to-pull-from-s3-using-apache-spark-1704509219
-
-    val formattedDate = datePathFormatter.format(date)
-    val s3prefix = s"$prefix/raw/$formattedDate/"
     val request = new ListObjectsRequest()
-    request.setBucketName(bucket)
-    request.setPrefix(s3prefix)
+    request.setBucketName(backend.bucket)
+    request.setPrefix(backend.getInputPath(date))
 
     s3Client
       .listObjects(request)
@@ -74,37 +69,60 @@ object EventPipeline {
       .map(_.getKey)
   }
 
+  def readEvents(backend: StorageBackend, date: Date): Dataset[Event] = {
+    // Read event records from either S3 or from local path
+    val records = backend match {
+      case l: LocalStorageBackend => spark.read.textFile(l.getInputPath(date))
+      case s: S3StorageBackend => {
+        val objectKeys = spark.sparkContext.parallelize(getS3Objects(s, date))
+
+        spark.createDataset(
+          objectKeys.flatMap {
+            key => Source.fromInputStream(s3Client.getObject(s.bucket, key).getObjectContent).getLines
+          }
+        )
+      }
+      case _ => spark.emptyDataset[String]
+    }
+    records.flatMap(Event.fromString)
+  }
+
   def main(args: Array[String]) {
     // Parse command line arguments
     val conf = EventPipelineConfig.parse(args)
 
-    val objectKeys = getS3Objects(conf.s3Bucket, conf.s3Prefix, conf.date)
+    // Except either local or S3
+    require(
+      conf.localPath.isDefined ^ (conf.s3Bucket.isDefined & conf.s3Prefix.isDefined),
+      "Only one of local-path or S3 bucket/prefix may be defined"
+    )
 
-    // Read event records from S3 date partition
-    val records = spark.sparkContext.parallelize(objectKeys)
-      .flatMap {
-        key =>
-          Source.fromInputStream(s3Client.getObject(conf.s3Bucket, key).getObjectContent: InputStream).getLines
-      }
-      .flatMap(Event.fromString)
+    // Create an ADT StorageBackend to abstract away which we're talking to
+    val backend: StorageBackend = (conf.localPath, conf.s3Bucket, conf.s3Prefix) match {
+      case (None, Some(bucket), Some(prefix)) => S3StorageBackend(bucket, prefix)
+      case (Some(path), None, None) => LocalStorageBackend(path)
+      case _ => throw new IllegalArgumentException("Error, invalid arguments")
+    }
+
+    val events = readEvents(backend, conf.date)
 
     // Print a few records
-    records
-      .take(100)
+    events
+      .take(20)
       .foreach(println)
 
     // Write event records to S3 as Parquet
-    import spark.implicits._
-    records
+    events
       .toDF()
       .write
-      .parquet(s"s3a://${conf.s3Bucket}/${conf.s3Prefix}/output/${datePathFormatter.format(conf.date)}")
+      .parquet(backend.getOutputPath(conf.date))
   }
 }
 
 case class EventPipelineConfig(
-  s3Bucket: String = "",
-  s3Prefix: String = "",
+  s3Bucket: Option[String] = None,
+  s3Prefix: Option[String] = None,
+  localPath: Option[String] = None,
   date: Date = new Date()
 )
 
@@ -113,14 +131,16 @@ object EventPipelineConfig {
 
   val parser = new scopt.OptionParser[EventPipelineConfig]("EventPipeline") {
     opt[String]("s3-bucket")
-      .required()
-      .action((x, c) => c.copy(s3Bucket = x))
+      .action((x, c) => c.copy(s3Bucket = Some(x)))
       .text("S3 bucket to read")
 
     opt[String]("s3-prefix")
-      .required()
-      .action((x, c) => c.copy(s3Prefix = x))
+      .action((x, c) => c.copy(s3Prefix = Some(x)))
       .text("S3 prefix to read")
+
+    opt[String]("local-path")
+      .action((x, c) => c.copy(localPath = Some(x)))
+      .text("Local path prefix")
 
     opt[String]("date")
       .required()
@@ -128,6 +148,6 @@ object EventPipelineConfig {
   }
 
   def parse(args: Array[String]): EventPipelineConfig = parser.parse(args, EventPipelineConfig()).getOrElse {
-    throw new FatalError("Incorrect options")
+    throw FatalError("Incorrect options")
   }
 }
