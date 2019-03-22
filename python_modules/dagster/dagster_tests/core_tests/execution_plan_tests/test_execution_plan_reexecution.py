@@ -204,8 +204,8 @@ def test_execution_plan_wrong_invalid_output_name():
         )
 
     assert str(exc_info.value) == (
-        'Output of previous was run was set to step add_one.transform output not_an_output. '
-        'This output does in exist in that step.'
+        'You specified a step_output_handle in the ReexecutionConfig that does not exist: '
+        'Step add_one.transform does not have output not_an_output.'
     )
 
     assert exc_info.value.step_key == 'add_one.transform'

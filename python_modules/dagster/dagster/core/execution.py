@@ -716,7 +716,7 @@ def _check_reexecution_config(pipeline_context, execution_plan, run_config):
 
     if run_config.storage_mode == RunStorageMode.IN_MEMORY:
         raise DagsterInvariantViolationError(
-            'Cannot specifiy IN_MEMORY run storage mode when attempting reexecution.'
+            'Cannot specifiy IN_MEMORY in run storage mode when attempting reexecution.'
         )
 
     previous_run_id = run_config.reexecution_config.previous_run_id
@@ -741,8 +741,8 @@ def _check_reexecution_config(pipeline_context, execution_plan, run_config):
         if not step.has_step_output(step_output_handle.output_name):
             raise DagsterStepOutputNotFoundError(
                 (
-                    'Output of previous was run was set to step {step_key} output {output_name}. '
-                    'This output does in exist in that step.'
+                    'You specified a step_output_handle in the ReexecutionConfig that does '
+                    'not exist: Step {step_key} does not have output {output_name}.'
                 ).format(
                     step_key=step_output_handle.step_key, output_name=step_output_handle.output_name
                 ),
