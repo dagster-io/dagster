@@ -274,6 +274,7 @@ type MissingFieldConfigError implements PipelineConfigValidationError {
 
 type Mutation {
   startPipelineExecution(config: PipelineConfig, pipeline: ExecutionSelector!): StartPipelineExecutionResult!
+  startPlanExecution(config: PipelineConfig, executionMetadata: ExecutionMetadata, pipeline: ExecutionSelector!, reexecutionConfig: ReexecutionConfig, stepKeys: [String!]): StartPlanExecutionResult!
   executePlan(config: PipelineConfig, executionMetadata: ExecutionMetadata!, pipelineName: String!, stepKeys: [String!]): ExecutePlanResult!
 }
 
@@ -469,6 +470,11 @@ type Query {
   executionPlan(pipeline: ExecutionSelector!, config: PipelineConfig): ExecutionPlanResult!
 }
 
+input ReexecutionConfig {
+  previousRunId: String!
+  stepOutputHandles: [StepOutputHandle!]!
+}
+
 type RegularConfigType implements ConfigType {
   key: String!
   name: String
@@ -572,6 +578,12 @@ type StartPipelineExecutionSuccess {
   run: PipelineRun!
 }
 
+union StartPlanExecutionResult = StartPlanExecutionSuccess | PipelineConfigValidationInvalid | PipelineNotFoundError
+
+type StartPlanExecutionSuccess {
+  run: PipelineRun!
+}
+
 interface StepEvent {
   step: ExecutionStep!
   success: Boolean!
@@ -603,6 +615,11 @@ type StepMaterializationEvent implements MessageEvent {
   step: ExecutionStep
   fileName: String!
   fileLocation: String!
+}
+
+input StepOutputHandle {
+  stepKey: String!
+  outputName: String!
 }
 
 type Subscription {

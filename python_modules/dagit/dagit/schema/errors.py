@@ -306,6 +306,23 @@ class DauphinStartPipelineExecutionResult(dauphin.Union):
         )
 
 
+class DauphinStartPlanExecutionSuccess(dauphin.ObjectType):
+    class Meta:
+        name = 'StartPlanExecutionSuccess'
+
+    run = dauphin.Field(dauphin.NonNull('PipelineRun'))
+
+
+class DauphinStartPlanExecutionResult(dauphin.Union):
+    class Meta:
+        name = 'StartPlanExecutionResult'
+        types = (
+            DauphinStartPlanExecutionSuccess,
+            DauphinPipelineConfigValidationInvalid,
+            DauphinPipelineNotFoundError,
+        )
+
+
 class DauphinStepEvent(dauphin.Interface):
     class Meta:
         name = 'StepEvent'

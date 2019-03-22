@@ -10,6 +10,7 @@ import gevent
 import six
 
 from dagster import check, RunConfig, PipelineDefinition, execute_pipeline, InProcessExecutorConfig
+from dagster.core.execution import execute_plan, RunStorageMode
 from dagster.core.events import PipelineEventRecord, EventType
 from dagster.utils.error import serializable_error_info_from_exc_info, SerializableErrorInfo
 from dagster.utils.logging import level_from_string
@@ -19,6 +20,9 @@ from .pipeline_run_storage import PipelineRun
 
 class PipelineExecutionManager(object):
     def execute_pipeline(self, repository_container, pipeline, pipeline_run, throw_on_user_error):
+        raise NotImplementedError()
+
+    def execute_plan(self, repository_container, pipeline, pipeline_run, throw_on_user_error):
         raise NotImplementedError()
 
 
@@ -94,6 +98,35 @@ class SynchronousExecutionManager(PipelineExecutionManager):
                         throw_on_user_error=throw_on_user_error
                     ),
                 ),
+            )
+        except:  # pylint: disable=W0702
+            if throw_on_user_error:
+                six.reraise(*sys.exc_info())
+
+            pipeline_run.handle_new_event(
+                build_synthetic_pipeline_error_record(
+                    pipeline_run.run_id,
+                    serializable_error_info_from_exc_info(sys.exc_info()),
+                    pipeline.name,
+                )
+            )
+
+    def execute_plan(self, repository_container, pipeline, pipeline_run, throw_on_user_error):
+        check.inst_param(pipeline, 'pipeline', PipelineDefinition)
+        try:
+            return execute_plan(
+                pipeline_run.execution_plan,
+                environment_dict=pipeline_run.config,
+                run_config=RunConfig(
+                    pipeline_run.run_id,
+                    event_callback=pipeline_run.handle_new_event,
+                    executor_config=InProcessExecutorConfig(
+                        throw_on_user_error=throw_on_user_error
+                    ),
+                    reexecution_config=pipeline_run.reexecution_config,
+                    storage_mode=RunStorageMode.FILESYSTEM,
+                ),
+                step_keys_to_execute=pipeline_run.step_keys,
             )
         except:  # pylint: disable=W0702
             if throw_on_user_error:
@@ -240,6 +273,9 @@ class MultiprocessingExecutionManager(PipelineExecutionManager):
         with self._processes_lock:
             process = RunProcessWrapper(pipeline_run, p, message_queue)
             self._processes.append(process)
+
+    def execute_plan(self, repository_container, pipeline, pipeline_run, throw_on_user_error):
+        raise NotImplementedError()
 
 
 class RunProcessWrapper(namedtuple('RunProcessWrapper', 'pipeline_run process message_queue')):

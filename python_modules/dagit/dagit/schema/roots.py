@@ -105,6 +105,32 @@ class DauphinStartPipelineExecutionMutation(dauphin.Mutation):
         )
 
 
+class DauphinStartPlanExecutionMutation(dauphin.Mutation):
+    class Meta:
+        name = 'StartPlanExecutionMutation'
+
+    class Arguments:
+        pipeline = dauphin.NonNull('ExecutionSelector')
+        config = dauphin.Argument('PipelineConfig')
+        stepKeys = dauphin.List(dauphin.NonNull(dauphin.String))
+        executionMetadata = dauphin.Argument('ExecutionMetadata')
+        reexecutionConfig = dauphin.Argument('ReexecutionConfig')
+
+    Output = dauphin.NonNull('StartPlanExecutionResult')
+
+    def mutate(self, graphene_info, **kwargs):
+        return model.start_plan_execution(
+            graphene_info,
+            kwargs['pipeline'].to_selector(),
+            kwargs.get('config'),
+            kwargs.get('stepKeys'),
+            kwargs.get('executionMetadata'),
+            kwargs['reexecutionConfig'].to_reexecution_config()
+            if 'reexecutionConfig' in kwargs
+            else None,
+        )
+
+
 class DauphinExecutionTag(dauphin.InputObjectType):
     class Meta:
         name = 'ExecutionTag'
@@ -173,6 +199,7 @@ class DauphinMutation(dauphin.ObjectType):
         name = 'Mutation'
 
     start_pipeline_execution = DauphinStartPipelineExecutionMutation.Field()
+    start_plan_execution = DauphinStartPlanExecutionMutation.Field()
     execute_plan = DauphinExecutePlan.Field()
 
 
@@ -202,10 +229,41 @@ class DauphinExecutionSelector(dauphin.InputObjectType):
     class Meta:
         name = 'ExecutionSelector'
         description = '''This type represents the fields necessary to identify a
-        pipeline or pipeline subset.'''
+        pipeline or subset of solids in a pipeline.'''
 
     name = dauphin.NonNull(dauphin.String)
     solidSubset = dauphin.List(dauphin.NonNull(dauphin.String))
 
     def to_selector(self):
         return ExecutionSelector(self.name, self.solidSubset)
+
+
+class DauphinStepOutputHandle(dauphin.InputObjectType):
+    class Meta:
+        name = 'StepOutputHandle'
+
+    stepKey = dauphin.NonNull(dauphin.String)
+    outputName = dauphin.NonNull(dauphin.String)
+
+
+class DauphinReexecutionConfig(dauphin.InputObjectType):
+    class Meta:
+        name = 'ReexecutionConfig'
+
+    previousRunId = dauphin.NonNull(dauphin.String)
+    stepOutputHandles = dauphin.non_null_list(DauphinStepOutputHandle)
+
+    def to_reexecution_config(self):
+        from dagster.core.execution_context import ReexecutionConfig
+        from dagster.core.intermediates_manager import StepOutputHandle
+
+        handles = []
+        # graphene reliably confuses pylint
+        for graphql_step_output_handle in self.stepOutputHandles:  # pylint: disable=not-an-iterable
+            handles.append(
+                StepOutputHandle(
+                    graphql_step_output_handle.stepKey, graphql_step_output_handle.outputName
+                )
+            )
+
+        return ReexecutionConfig(self.previousRunId, handles)

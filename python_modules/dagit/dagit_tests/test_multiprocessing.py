@@ -39,7 +39,12 @@ def test_running():
     }
     selector = ExecutionSelector('pandas_hello_world')
     pipeline_run = InMemoryPipelineRun(
-        run_id, selector, env_config, create_execution_plan(pipeline, env_config)
+        run_id,
+        selector,
+        env_config,
+        create_execution_plan(pipeline, env_config),
+        step_keys=None,
+        reexecution_config=None,
     )
     execution_manager = MultiprocessingExecutionManager()
     execution_manager.execute_pipeline(
@@ -75,7 +80,12 @@ def test_failing():
     }
     selector = ExecutionSelector('pandas_hello_world')
     pipeline_run = InMemoryPipelineRun(
-        run_id, selector, env_config, create_execution_plan(pipeline, env_config)
+        run_id,
+        selector,
+        env_config,
+        create_execution_plan(pipeline, env_config),
+        step_keys=None,
+        reexecution_config=None,
     )
     execution_manager = MultiprocessingExecutionManager()
     execution_manager.execute_pipeline(
@@ -104,7 +114,12 @@ def test_execution_crash():
     }
     selector = ExecutionSelector('pandas_hello_world')
     pipeline_run = InMemoryPipelineRun(
-        run_id, selector, env_config, create_execution_plan(pipeline, env_config)
+        run_id,
+        selector,
+        env_config,
+        create_execution_plan(pipeline, env_config),
+        step_keys=None,
+        reexecution_config=None,
     )
     execution_manager = MultiprocessingExecutionManager()
     execution_manager.execute_pipeline(

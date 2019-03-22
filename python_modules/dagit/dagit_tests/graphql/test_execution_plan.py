@@ -324,3 +324,169 @@ mutation (
     }
 }
 '''
+
+
+def test_basic_start_execution_plan():
+    result = execute_dagster_graphql(
+        define_context(),
+        START_PLAN_EXECUTION,
+        variables={
+            'pipeline': {'name': 'pandas_hello_world'},
+            'config': pandas_hello_world_solids_config(),
+        },
+    )
+
+    assert not result.errors
+    assert result.data
+
+    # just test existence
+    assert result.data['startPlanExecution']['__typename'] == 'StartPlanExecutionSuccess'
+    assert uuid.UUID(result.data['startPlanExecution']['run']['runId'])
+    assert result.data['startPlanExecution']['run']['pipeline']['name'] == 'pandas_hello_world'
+
+
+def test_basic_start_execution_plan_set_run_id():
+    run_id = str(uuid.uuid4())
+    result = execute_dagster_graphql(
+        define_context(),
+        START_PLAN_EXECUTION,
+        variables={
+            'pipeline': {'name': 'pandas_hello_world'},
+            'config': pandas_hello_world_solids_config(),
+            'executionMetadata': {'runId': run_id},
+        },
+    )
+
+    assert not result.errors
+    assert result.data
+
+    # just test existence
+    assert result.data['startPlanExecution']['__typename'] == 'StartPlanExecutionSuccess'
+    assert result.data['startPlanExecution']['run']['runId'] == run_id
+    assert result.data['startPlanExecution']['run']['pipeline']['name'] == 'pandas_hello_world'
+
+
+def test_successful_two_parts_start_execute_plan():
+    # no snapshots in here because we query a dynamic run id
+
+    run_id = str(uuid.uuid4())
+    result_one = execute_dagster_graphql(
+        define_context(),
+        START_PLAN_EXECUTION,
+        variables={
+            'pipeline': {'name': 'pandas_hello_world'},
+            'config': pandas_hello_world_solids_config(),
+            'stepKeys': ['sum_solid.num.input_thunk', 'sum_solid.transform'],
+            'executionMetadata': {'runId': run_id},
+        },
+    )
+
+    assert result_one.data['startPlanExecution']['__typename'] == 'StartPlanExecutionSuccess'
+
+    result_two = execute_dagster_graphql(
+        define_context(),
+        START_PLAN_EXECUTION,
+        variables={
+            'pipeline': {'name': 'pandas_hello_world'},
+            'config': pandas_hello_world_solids_config(),
+            'stepKeys': ['sum_sq_solid.transform'],
+            'executionMetadata': {'runId': run_id},
+        },
+    )
+
+    assert result_two.data['startPlanExecution']['__typename'] == 'StartPlanExecutionSuccess'
+
+    expected_value_repr = '''   num1  num2  sum  sum_sq
+0     1     2    3       9
+1     3     4    7      49'''
+
+    assert has_filesystem_intermediate(run_id, 'sum_sq_solid.transform')
+    assert (
+        str(get_filesystem_intermediate(run_id, 'sum_sq_solid.transform', DataFrame))
+        == expected_value_repr
+    )
+
+
+def test_basic_start_execution_plan_reexecution():
+    run_id = str(uuid.uuid4())
+    first_result = execute_dagster_graphql(
+        define_context(),
+        START_PLAN_EXECUTION,
+        variables={
+            'pipeline': {'name': 'pandas_hello_world'},
+            'config': pandas_hello_world_solids_config(),
+            'executionMetadata': {'runId': run_id},
+        },
+    )
+
+    expected_value_repr = '''   num1  num2  sum  sum_sq
+0     1     2    3       9
+1     3     4    7      49'''
+
+    assert first_result.data['startPlanExecution']['__typename'] == 'StartPlanExecutionSuccess'
+
+    assert has_filesystem_intermediate(run_id, 'sum_solid.num.input_thunk', 'input_thunk_output')
+    assert has_filesystem_intermediate(run_id, 'sum_solid.transform')
+    assert has_filesystem_intermediate(run_id, 'sum_sq_solid.transform')
+    assert (
+        str(get_filesystem_intermediate(run_id, 'sum_sq_solid.transform', DataFrame))
+        == expected_value_repr
+    )
+
+    result = execute_dagster_graphql(
+        define_context(),
+        START_PLAN_EXECUTION,
+        variables={
+            'pipeline': {'name': 'pandas_hello_world'},
+            'config': pandas_hello_world_solids_config(),
+            'reexecutionConfig': {
+                'previousRunId': run_id,
+                'stepOutputHandles': [{'stepKey': 'sum_solid.transform', 'outputName': 'result'}],
+            },
+            'stepKeys': ['sum_sq_solid.transform'],
+        },
+    )
+
+    assert result.data['startPlanExecution']['__typename'] == 'StartPlanExecutionSuccess'
+    assert result.data['startPlanExecution']['run']['runId']
+    next_run_id = result.data['startPlanExecution']['run']['runId']
+    assert result.data['startPlanExecution']['run']['pipeline']['name'] == 'pandas_hello_world'
+
+    assert not has_filesystem_intermediate(
+        next_run_id, 'sum_solid.num.input_thunk', 'input_thunk_output'
+    )
+    assert has_filesystem_intermediate(next_run_id, 'sum_solid.transform')
+    assert has_filesystem_intermediate(next_run_id, 'sum_sq_solid.transform')
+    assert (
+        str(get_filesystem_intermediate(next_run_id, 'sum_sq_solid.transform', DataFrame))
+        == expected_value_repr
+    )
+
+
+START_PLAN_EXECUTION = '''
+mutation(
+    $pipeline: ExecutionSelector!,
+    $config: PipelineConfig,
+    $stepKeys: [String!]
+    $executionMetadata: ExecutionMetadata
+    $reexecutionConfig: ReexecutionConfig) {
+
+    startPlanExecution(
+        pipeline: $pipeline
+        config: $config
+        stepKeys: $stepKeys
+        executionMetadata: $executionMetadata
+        reexecutionConfig: $reexecutionConfig
+    ) {
+        __typename
+        ... on StartPlanExecutionSuccess {
+            run {
+                runId
+                pipeline {
+                    name
+                }
+            }
+        }
+    }
+}
+'''
