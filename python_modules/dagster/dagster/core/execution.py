@@ -37,7 +37,12 @@ from .execution_context import (
     SystemPipelineExecutionContext,
 )
 
-from .errors import DagsterInvariantViolationError, DagsterExecutionStepNotFoundError
+from .errors import (
+    DagsterExecutionStepNotFoundError,
+    DagsterInvariantViolationError,
+    DagsterRunNotFoundError,
+    DagsterStepOutputNotFoundError,
+)
 
 from .events import construct_event_logger
 
@@ -706,6 +711,46 @@ def invoke_executor_on_plan(pipeline_context, execution_plan, step_keys_to_execu
         yield step_event
 
 
+def _check_reexecution_config(pipeline_context, execution_plan, run_config):
+    check.invariant(pipeline_context.run_storage)
+
+    if run_config.storage_mode == RunStorageMode.IN_MEMORY:
+        raise DagsterInvariantViolationError(
+            'Cannot specifiy IN_MEMORY in run storage mode when attempting reexecution.'
+        )
+
+    previous_run_id = run_config.reexecution_config.previous_run_id
+
+    if not pipeline_context.run_storage.has_run(previous_run_id):
+        raise DagsterRunNotFoundError(
+            'Run id {} set as previous run id was not found in run storage'.format(previous_run_id),
+            invalid_run_id=previous_run_id,
+        )
+
+    for step_output_handle in run_config.reexecution_config.step_output_handles:
+        if not execution_plan.has_step(step_output_handle.step_key):
+            raise DagsterExecutionStepNotFoundError(
+                (
+                    'Step {step_key} was specified as a step from a previous run. '
+                    'It does not exist.'
+                ).format(step_key=step_output_handle.step_key),
+                step_key=step_output_handle.step_key,
+            )
+
+        step = execution_plan.get_step_by_key(step_output_handle.step_key)
+        if not step.has_step_output(step_output_handle.output_name):
+            raise DagsterStepOutputNotFoundError(
+                (
+                    'You specified a step_output_handle in the ReexecutionConfig that does '
+                    'not exist: Step {step_key} does not have output {output_name}.'
+                ).format(
+                    step_key=step_output_handle.step_key, output_name=step_output_handle.output_name
+                ),
+                step_key=step_output_handle.step_key,
+                output_name=step_output_handle.output_name,
+            )
+
+
 def execute_plan(execution_plan, environment_dict=None, run_config=None, step_keys_to_execute=None):
     check.inst_param(execution_plan, 'execution_plan', ExecutionPlan)
     environment_dict = check.opt_dict_param(environment_dict, 'environment_dict')
@@ -724,6 +769,8 @@ def execute_plan(execution_plan, environment_dict=None, run_config=None, step_ke
     ) as pipeline_context:
 
         if run_config.reexecution_config:
+            _check_reexecution_config(pipeline_context, execution_plan, run_config)
+
             for step_output_handle in run_config.reexecution_config.step_output_handles:
                 pipeline_context.intermediates_manager.copy_intermediate_from_prev_run(
                     pipeline_context,
