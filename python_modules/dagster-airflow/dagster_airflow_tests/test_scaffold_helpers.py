@@ -7,7 +7,6 @@ from dagster.utils import script_relative_path
 from dagster_airflow.scaffold import (
     _bad_import,
     _format_config,
-    _key_for_marshalled_result,
     _is_py,
     _normalize_key,
     _split_lines,

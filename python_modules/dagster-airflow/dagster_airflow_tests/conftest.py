@@ -176,15 +176,30 @@ def airflow_test(docker_image, dags_path, plugins_path, host_tmp_dir):
 
 
 @pytest.fixture(scope='module')
-def scaffold_dag(airflow_test):
+def pipeline():
+    yield define_demo_execution_pipeline()
+
+
+@pytest.fixture(scope='module')
+def env_config(s3_bucket):
+    config = load_yaml_from_path(script_relative_path('test_project/env.yml'))
+    config['storage'] = {'s3': {'s3_bucket': s3_bucket}}
+    yield config
+
+
+@pytest.fixture(scope='session')
+def s3_bucket():
+    yield 'dagster-airflow-scratch'
+
+
+@pytest.fixture(scope='module')
+def scaffold_dag(airflow_test, pipeline, env_config):
     '''Scaffolds an Airflow dag and installs it.
 
     We should probably use test classes for these tests and set attributes like pipeline/env_config
     on the classes to make this more reusable.
     '''
     docker_image, dags_path, _ = airflow_test
-    pipeline = define_demo_execution_pipeline()
-    env_config = load_yaml_from_path(script_relative_path('test_project/env.yml'))
 
     tempdir = tempfile.gettempdir()
 

@@ -1,4 +1,3 @@
-# This requirements.txt file is included for illustrative purposes
-
-# dagster=='0.3.1'
-# dagit=='0.3.1'
+boto3>='1.9.119'
+dagit>='0.3.4'
+dagster>='0.3.4'

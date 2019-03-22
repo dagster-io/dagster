@@ -53,21 +53,8 @@ def _split_lines(lines):
     return (lines.strip('\n') + ',').split('\n')
 
 
-def _key_for_marshalled_result(step_key, result_name, prepend_run_id=True):
-    '''Standardizes keys for marshalled inputs and outputs.'''
-    return (
-        '{tmp}'
-        + '{sep}'
-        + ('{run_id_prefix}' if prepend_run_id else '')
-        + _normalize_key(step_key)
-        + '___'
-        + _normalize_key(result_name)
-        + '.pickle'
-    )
-
-
-def _step_executions_key(solid_name):
-    return 'STEP_EXECUTIONS_' + solid_name.upper()
+def _steps_for_key(solid_name):
+    return 'STEPS_FOR_' + solid_name.upper()
 
 
 def _format_config(config):
@@ -270,23 +257,6 @@ def _make_editable_scaffold(
             printer.line('}')
             printer.blank_line()
 
-        printer.comment(
-            'Set your S3 connection id here, if you do not want to use the default ``aws_default`` '
-            'connection.'
-        )
-        printer.line('S3_CONN_ID = \'aws_default\'')
-        printer.blank_line()
-
-        printer.comment(
-            (
-                'Set the host directory to mount into {tmp} on the containers. May be a '
-                'template including the `safe_run_id` to support multiple simultaneous runs '
-                '(recommended). Note that you must change this for Windows!'
-            ).format(tmp=DOCKER_TEMPDIR)
-        )
-        printer.line('HOST_TMP_DIR = \'{tmp}{{safe_run_id}}\''.format(tmp=DOCKER_TEMPDIR))
-        printer.blank_line()
-
         # This is the canonical way to hide globals from import, but not from Airflow's DagBag
         printer.line(
             '# The \'unusual_prefix\' ensures that the following code will be executed only when'
@@ -302,9 +272,7 @@ def _make_editable_scaffold(
                 printer.line('dag_id=DAG_ID,')
                 printer.line('dag_description=DAG_DESCRIPTION,')
                 printer.line('dag_kwargs=dict(default_args=DEFAULT_ARGS, **DAG_KWARGS),')
-                printer.line('s3_conn_id=S3_CONN_ID,')
                 printer.line('operator_kwargs=OPERATOR_KWARGS,')
-                printer.line('host_tmp_dir=HOST_TMP_DIR,')
             printer.line(')')
 
         return printer.read()
@@ -355,66 +323,12 @@ def _make_static_scaffold(pipeline_name, env_config, execution_plan, image, edit
         printer.blank_line()
 
         for (solid_name, solid_steps) in coalesce_execution_steps(execution_plan):
-            step_executions_key = _step_executions_key(solid_name)
+            steps_for_key = _steps_for_key(solid_name)
 
-            printer.line(
-                '{step_executions_key} = ['.format(step_executions_key=step_executions_key)
-            )
-
-            # Need to not marshal/unmarshal intermediates -- just:
-            # - All inputs that aren't the output of some other process
-
-            step_output_keys = set([])
-            for step in solid_steps:
-                for step_output in step.step_outputs:
-                    step_output_keys.add(_key_for_marshalled_result(step.key, step_output.name))
-
-            for step in solid_steps:
-                with printer.with_indent():
-                    printer.line('{')
-                    with printer.with_indent():
-                        printer.line('\'step_key\': \'{step_key}\','.format(step_key=step.key))
-                        printer.line('\'inputs\': [')
-                        for step_input in step.step_inputs:
-                            step_input_key = _key_for_marshalled_result(
-                                step_input.prev_output_handle.step_key,
-                                step_input.prev_output_handle.output_name,
-                            )
-
-                            if step_input_key in step_output_keys:
-                                continue
-
-                            with printer.with_indent():
-                                printer.line('{')
-                                with printer.with_indent():
-                                    printer.line(
-                                        '\'input_name\': \'{input_name}\','.format(
-                                            input_name=step_input.name
-                                        )
-                                    )
-                                    printer.line('\'key\': \'{key}\''.format(key=step_input_key))
-                                printer.line('},')
-                        printer.line('],')
-                        printer.line('\'outputs\': [')
-                        for step_output in step.step_outputs:
-                            with printer.with_indent():
-                                printer.line('{')
-                                with printer.with_indent():
-                                    printer.line(
-                                        '\'output_name\': \'{output_name}\','.format(
-                                            output_name=step_output.name
-                                        )
-                                    )
-                                    printer.line(
-                                        '\'key\': \'{key}\''.format(
-                                            key=_key_for_marshalled_result(
-                                                step.key, step_output.name
-                                            )
-                                        )
-                                    )
-                                printer.line('},')
-                        printer.line(']')
-                    printer.line('},')
+            printer.line('{steps_for_key} = ['.format(steps_for_key=steps_for_key))
+            with printer.with_indent():
+                for step in solid_steps:
+                    printer.line('\'{step_key}\','.format(step_key=step.key))
             printer.line(']')
         printer.blank_line()
 
@@ -423,9 +337,7 @@ def _make_static_scaffold(pipeline_name, env_config, execution_plan, image, edit
             printer.line('dag_id,')
             printer.line('dag_description,')
             printer.line('dag_kwargs,')
-            printer.line('s3_conn_id,')
             printer.line('operator_kwargs,')
-            printer.line('host_tmp_dir')
         printer.line('):')
         with printer.with_indent():
             printer.line('dag = DAG(')
@@ -440,7 +352,7 @@ def _make_static_scaffold(pipeline_name, env_config, execution_plan, image, edit
             printer.blank_line()
 
             for (solid_name, solid_steps) in coalesce_execution_steps(execution_plan):
-                step_executions_key = _step_executions_key(solid_name)
+                steps_for_key = _steps_for_key(solid_name)
 
                 printer.line(
                     '{airflow_step_key}_task = DagsterOperator('.format(airflow_step_key=solid_name)
@@ -450,18 +362,12 @@ def _make_static_scaffold(pipeline_name, env_config, execution_plan, image, edit
                     printer.line('config=CONFIG,')
                     printer.line('dag=dag,')
                     printer.line('tmp_dir=\'{tmp}\','.format(tmp=DOCKER_TEMPDIR))
-                    printer.line('host_tmp_dir=host_tmp_dir,')
                     printer.line('image=\'{image}\','.format(image=image))
                     printer.line(
                         'task_id=\'{airflow_step_key}\','.format(airflow_step_key=solid_name)
                     )
-                    printer.line('s3_conn_id=s3_conn_id,')
                     printer.line('pipeline_name=PIPELINE_NAME,')
-                    printer.line(
-                        'step_executions={step_executions_key},'.format(
-                            step_executions_key=step_executions_key
-                        )
-                    )
+                    printer.line('step_keys={steps_for_key},'.format(steps_for_key=steps_for_key))
                     printer.line('**operator_kwargs')  # py 2
                 printer.line(')')
                 printer.line(
