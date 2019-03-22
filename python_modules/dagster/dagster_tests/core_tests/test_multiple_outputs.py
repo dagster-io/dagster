@@ -133,7 +133,7 @@ def test_multiple_outputs_only_emit_one():
         inputs=[],
         outputs=[
             OutputDefinition(name='output_one'),
-            OutputDefinition(name='output_two', optional=True),
+            OutputDefinition(name='output_two', is_optional=True),
         ],
         transform_fn=_t_fn,
     )

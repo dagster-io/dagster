@@ -34,12 +34,10 @@ def return_dict_results(_context):
 
 
 @solid(
-    config_field=Field(
-        String, description='Should be either out_one or out_two'
-    ),
+    config_field=Field(String, description='Should be either out_one or out_two'),
     outputs=[
-        OutputDefinition(dagster_type=Int, name='out_one', optional=True),
-        OutputDefinition(dagster_type=Int, name='out_two', optional=True),
+        OutputDefinition(dagster_type=Int, name='out_one', is_optional=True),
+        OutputDefinition(dagster_type=Int, name='out_two', is_optional=True),
     ],
 )
 def conditional(context):
@@ -68,15 +66,9 @@ def define_multiple_outputs_step_one_pipeline():
         name='multiple_outputs_step_one_pipeline',
         solids=[return_dict_results, log_num, log_num_squared],
         dependencies={
-            'log_num': {
-                'num': DependencyDefinition(
-                    solid='return_dict_results', output='out_one'
-                )
-            },
+            'log_num': {'num': DependencyDefinition(solid='return_dict_results', output='out_one')},
             'log_num_squared': {
-                'num': DependencyDefinition(
-                    solid='return_dict_results', output='out_two'
-                )
+                'num': DependencyDefinition(solid='return_dict_results', output='out_two')
             },
         },
     )
@@ -87,12 +79,8 @@ def define_multiple_outputs_step_two_pipeline():
         name='multiple_outputs_step_two_pipeline',
         solids=[yield_outputs, log_num, log_num_squared],
         dependencies={
-            'log_num': {
-                'num': DependencyDefinition('yield_outputs', 'out_one')
-            },
-            'log_num_squared': {
-                'num': DependencyDefinition('yield_outputs', 'out_two')
-            },
+            'log_num': {'num': DependencyDefinition('yield_outputs', 'out_one')},
+            'log_num_squared': {'num': DependencyDefinition('yield_outputs', 'out_two')},
         },
     )
 
@@ -103,8 +91,6 @@ def define_multiple_outputs_step_three_pipeline():
         solids=[conditional, log_num, log_num_squared],
         dependencies={
             'log_num': {'num': DependencyDefinition('conditional', 'out_one')},
-            'log_num_squared': {
-                'num': DependencyDefinition('conditional', 'out_two')
-            },
+            'log_num_squared': {'num': DependencyDefinition('conditional', 'out_two')},
         },
     )
