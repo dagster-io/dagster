@@ -379,3 +379,16 @@ def test_using_s3_for_subplan(s3_bucket):
         ) as context:
             rm_s3_intermediate(context, s3_bucket, run_id, 'return_one.transform')
             rm_s3_intermediate(context, s3_bucket, run_id, 'add_one.transform')
+
+
+def test_execute_step_wrong_step_key():
+    pipeline = define_inty_pipeline()
+
+    execution_plan = create_execution_plan(pipeline)
+
+    with pytest.raises(DagsterExecutionStepNotFoundError) as exc_info:
+        execute_plan(execution_plan, step_keys_to_execute=['nope'])
+
+    assert exc_info.value.step_key == 'nope'
+
+    assert str(exc_info.value) == 'Execution plan does not contain step "nope"'
