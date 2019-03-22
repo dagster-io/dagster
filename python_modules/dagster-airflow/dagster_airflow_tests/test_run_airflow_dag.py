@@ -1,21 +1,23 @@
 import datetime
-import itertools
+import json
 import os
 import subprocess
 import sys
 import tempfile
+import uuid
 
 import pytest
 
 from airflow.exceptions import AirflowException
 from airflow.models import TaskInstance
 
-from dagster_airflow.scaffold import (
-    coalesce_execution_steps,
-    _key_for_marshalled_result,
-    _normalize_key,
-)
+from dagster import RunConfig
+from dagster.core.execution import yield_pipeline_execution_context
+from dagster.core.object_store import has_s3_intermediate
 
+from dagster_airflow.scaffold import coalesce_execution_steps
+
+from .marks import aws, nettest
 from .utils import import_module_from_path
 
 if sys.platform == 'darwin':
@@ -24,10 +26,17 @@ else:
     TEMP_DIR = tempfile.gettempdir()
 
 
-def test_unit_run_airflow_dag_steps(scaffold_dag):
+@aws
+@nettest
+def test_unit_run_airflow_dag_steps(scaffold_dag, pipeline, env_config, s3_bucket):
     '''This test runs the steps in the sample Airflow DAG using the ``airflow test`` API.'''
 
+    # import pdb
+
+    # pdb.set_trace()
     pipeline_name, execution_plan, execution_date, _s, _e = scaffold_dag
+
+    run_id = str(uuid.uuid4())
 
     for (solid_name, solid_steps) in coalesce_execution_steps(execution_plan):
         task_id = solid_name
@@ -46,32 +55,48 @@ def test_unit_run_airflow_dag_steps(scaffold_dag):
                 if step_input_key in step_output_keys:
                     continue
 
-                assert os.path.isfile(
-                    _key_for_marshalled_result(
+                with yield_pipeline_execution_context(
+                    pipeline, env_config, RunConfig(run_id=run_id)
+                ) as context:
+                    assert has_s3_intermediate(
+                        context,
+                        s3_bucket,
+                        run_id,
                         step_input.prev_output_handle.step_key,
                         step_input.prev_output_handle.output_name,
-                        prepend_run_id=False,
-                    ).format(tmp=os.path.join(TEMP_DIR, 'results', ''), sep='')
-                )
+                    )
 
         try:
             res = subprocess.check_output(
-                ['airflow', 'test', pipeline_name, task_id, execution_date]
+                [
+                    'airflow',
+                    'test',
+                    '-tp',
+                    json.dumps({'run_id': run_id}),
+                    pipeline_name,
+                    task_id,
+                    execution_date,
+                ]
             )
         except subprocess.CalledProcessError as cpe:
             raise Exception('Process failed with output {}'.format(cpe.output))
 
-        assert 'EXECUTION_PLAN_STEP_SUCCESS' in str(res)
+        assert 'ExecutePlanSuccess' in str(res)
 
         for solid_step in solid_steps:
             for step_output in solid_step.step_outputs:
-                assert 'for output {output_name}'.format(output_name=step_output.name) in str(res)
+                with yield_pipeline_execution_context(
+                    pipeline, env_config, RunConfig(run_id=run_id)
+                ) as context:
+                    assert has_s3_intermediate(
+                        context, s3_bucket, run_id, solid_step.key, step_output.name
+                    )
 
-                assert os.path.isfile(
-                    _key_for_marshalled_result(
-                        solid_step.key, step_output.name, prepend_run_id=False
-                    ).format(tmp=os.path.join(TEMP_DIR, 'results', ''), sep='')
-                )
+                # assert os.path.isfile(
+                #     _key_for_marshalled_result(
+                #         solid_step.key, step_output.name, prepend_run_id=False
+                #     ).format(tmp=os.path.join(TEMP_DIR, 'results', ''), sep='')
+                # )
 
 
 def test_run_airflow_dag(scaffold_dag):

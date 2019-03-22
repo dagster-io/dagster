@@ -7,19 +7,17 @@ from airflow.exceptions import AirflowException
 from dagster_airflow.dagster_plugin import DagsterOperator
 
 
-def test_init_modified_docker_operator(temp_dir):
+def test_init_modified_docker_operator():
     DagsterOperator(
         image='dagster-airflow-demo',
         api_version='auto',
         task_id='nonce',
         config='',
         pipeline_name='',
-        step_executions=None,
-        host_tmp_dir=temp_dir,
     )
 
 
-def test_modified_docker_operator_bad_docker_conn(temp_dir):
+def test_modified_docker_operator_bad_docker_conn():
     operator = DagsterOperator(
         image='dagster-airflow-demo',
         api_version='auto',
@@ -28,39 +26,33 @@ def test_modified_docker_operator_bad_docker_conn(temp_dir):
         command='--help',
         config='',
         pipeline_name='',
-        step_executions=None,
-        host_tmp_dir=temp_dir,
     )
 
     with pytest.raises(AirflowException, match='The conn_id `foo_conn` isn\'t defined'):
         operator.execute({})
 
 
-def test_modified_docker_operator_env(temp_dir):
+def test_modified_docker_operator_env():
     operator = DagsterOperator(
         image='dagster-airflow-demo',
         api_version='auto',
         task_id='nonce',
-        host_tmp_dir=temp_dir,
         command='--help',
         config='',
         pipeline_name='',
-        step_executions=None,
     )
     with pytest.raises(AirflowException, match='Unhandled error type'):
         operator.execute({})
 
 
-def test_modified_docker_operator_bad_command(temp_dir):
+def test_modified_docker_operator_bad_command():
     operator = DagsterOperator(
         image='dagster-airflow-demo',
         api_version='auto',
         task_id='nonce',
-        host_tmp_dir=temp_dir,
         command='gargle bargle',
         config='',
         pipeline_name='',
-        step_executions=None,
     )
     with pytest.raises(AirflowException, match='\'StatusCode\': 2}'):
         operator.execute({})
@@ -68,7 +60,7 @@ def test_modified_docker_operator_bad_command(temp_dir):
 
 # This is an artifact of the way that Circle sets up the remote Docker environment
 @pytest.mark.skip_on_circle
-def test_modified_docker_operator_url(temp_dir):
+def test_modified_docker_operator_url():
     try:
         docker_host = os.getenv('DOCKER_HOST')
         docker_tls_verify = os.getenv('DOCKER_TLS_VERIFY')
@@ -85,11 +77,9 @@ def test_modified_docker_operator_url(temp_dir):
             docker_url=docker_host or 'unix:///var/run/docker.sock',
             tls_hostname=docker_host if docker_tls_verify else False,
             tls_ca_cert=docker_cert_path,
-            host_tmp_dir=temp_dir,
             command='--help',
             config='',
             pipeline_name='',
-            step_executions=None,
         )
 
         with pytest.raises(AirflowException, match='Unhandled error type'):
