@@ -9,6 +9,7 @@ import uuid
 
 from dagster import check
 from dagster.utils import merge_dicts
+from dagster.core.errors import DagsterInvariantViolationError
 
 from .definitions.expectation import ExpectationDefinition
 from .definitions.input import InputDefinition
@@ -61,6 +62,14 @@ class RunConfig(
         storage_mode=None,
         reexecution_config=None,
     ):
+        if (
+            isinstance(executor_config, MultiprocessExecutorConfig)
+            and storage_mode is RunStorageMode.IN_MEMORY
+        ):
+            raise DagsterInvariantViolationError(
+                'Can not create a RunConfig with executor_config MultiProcessExecutorConfig and '
+                'storage_mode RunStorageMode.IN_MEMORY'
+            )
 
         return super(RunConfig, cls).__new__(
             cls,
