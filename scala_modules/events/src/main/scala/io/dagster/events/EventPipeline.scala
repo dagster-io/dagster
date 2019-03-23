@@ -33,26 +33,23 @@ package io.dagster.events
   * We currently use AWS 1.7.4 and hadoop-aws 2.7.1 as these are known to be compatible and work with Spark 2.4.0.
   */
 
-import org.apache.spark.sql.{Dataset, SparkSession}
+import java.io.File
+
+import org.apache.spark.sql.Dataset
 import java.util.Date
 
-import com.amazonaws.auth.BasicAWSCredentials
 import com.amazonaws.services.s3._
 import model._
 
 import scala.reflect.internal.FatalError
 import scala.collection.JavaConversions._
 import scala.io.Source
-import models.{Event, LocalStorageBackend, S3StorageBackend, StorageBackend}
+import models._
+
+import scala.reflect.io.Directory
 
 
-object EventPipeline {
-  final lazy val spark = SparkSession.builder.appName("EventPipeline").getOrCreate()
-  final lazy val s3Client = new AmazonS3Client(new BasicAWSCredentials(
-    spark.sparkContext.getConf.get("spark.hadoop.fs.s3a.access.key"),
-    spark.sparkContext.getConf.get("spark.hadoop.fs.s3a.secret.key")
-  ))
-
+object EventPipeline extends SparkJob {
   import spark.implicits._
 
   def getS3Objects(backend: S3StorageBackend, date: Date): Seq[String] = {
@@ -87,8 +84,7 @@ object EventPipeline {
     records.flatMap(Event.fromString)
   }
 
-  def main(args: Array[String]) {
-    // Parse command line arguments
+  override def run(args: Array[String]) {
     val conf = EventPipelineConfig.parse(args)
 
     // Except either local or S3
@@ -106,10 +102,27 @@ object EventPipeline {
 
     val events = readEvents(backend, conf.date)
 
-    // Print a few records
+    // Print a few records in debug logging
     events
       .take(20)
-      .foreach(println)
+      .foreach(log.debug)
+
+    // Ensure output path is empty
+    val outputPath = backend.getOutputPath(conf.date)
+    backend match {
+      case l: LocalStorageBackend => {
+        log.info(s"Removing local output files at $outputPath")
+        val file = new File(outputPath)
+        if (file.exists && file.isDirectory) {
+          Directory(file).deleteRecursively()
+        }
+      }
+      case s: S3StorageBackend => {
+        log.info(s"Removing contents of S3 bucket at path s3://${s.bucket}/$outputPath")
+        val request = new DeleteObjectRequest(s.bucket, outputPath)
+        s3Client.deleteObject(request)
+      }
+    }
 
     // Write event records to S3 as Parquet
     events
