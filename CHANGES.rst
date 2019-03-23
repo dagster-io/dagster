@@ -3,6 +3,8 @@
      should use the filesystem to store intermediate values or just store those values in memory.
    - Similarily, there is a new configuration for RunConfig that where the user can specify
      intermediate value storage via an API.
+   - API Additions and Changes
+      - ``OutputDefinition`` now contains an explicit ``is_optional`` parameter and defaults to being not optional.
 
 0.3.5
    - Dagit now defaults to --watch; run dagit --no-watch to disable (process-based) autoreloading.

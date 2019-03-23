@@ -70,7 +70,9 @@ def decorate_with_output_materializations(pipeline_context, solid, output_def, s
                 ],
                 step_outputs=[
                     StepOutput(
-                        name=MATERIALIZATION_THUNK_OUTPUT, runtime_type=output_def.runtime_type
+                        name=MATERIALIZATION_THUNK_OUTPUT,
+                        runtime_type=output_def.runtime_type,
+                        optional=output_def.optional,
                     )
                 ],
                 kind=StepKind.MATERIALIZATION_THUNK,

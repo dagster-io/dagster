@@ -707,6 +707,8 @@ snapshots['test_build_all_docs 4'] = '''
 </li>
       <li><a href="apidocs/types.html#dagster.Int">Int (in module dagster)</a>
 </li>
+      <li><a href="apidocs/definitions.html#dagster.OutputDefinition.is_optional">is_optional (dagster.OutputDefinition attribute)</a>
+</li>
       <li><a href="apidocs/definitions.html#dagster.RepositoryDefinition.iterate_over_pipelines">iterate_over_pipelines() (dagster.RepositoryDefinition method)</a>
 </li>
   </ul></td>
@@ -19776,7 +19778,7 @@ Inputs are values within the dagster type system that are created from previous 
 
 <dl class="class">
 <dt id="dagster.OutputDefinition">
-<em class="property">class </em><code class="descclassname">dagster.</code><code class="descname">OutputDefinition</code><span class="sig-paren">(</span><em>dagster_type=None</em>, <em>name=None</em>, <em>expectations=None</em>, <em>description=None</em><span class="sig-paren">)</span><a class="headerlink" href="#dagster.OutputDefinition" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">dagster.</code><code class="descname">OutputDefinition</code><span class="sig-paren">(</span><em>dagster_type=None</em>, <em>name=None</em>, <em>expectations=None</em>, <em>description=None</em>, <em>is_optional=False</em><span class="sig-paren">)</span><a class="headerlink" href="#dagster.OutputDefinition" title="Permalink to this definition">¶</a></dt>
 <dd><p>An OutputDefinition represents an output from a solid. Solids can have multiple
 outputs. In those cases the outputs must be named. Frequently solids have only one
 output, and so the user can construct a single OutputDefinition that will have
@@ -19803,6 +19805,12 @@ the default name of “result”.</p>
 <dt id="dagster.OutputDefinition.description">
 <code class="descname">description</code><a class="headerlink" href="#dagster.OutputDefinition.description" title="Permalink to this definition">¶</a></dt>
 <dd><p><em>str</em> – Description of the output. Optional.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="dagster.OutputDefinition.is_optional">
+<code class="descname">is_optional</code><a class="headerlink" href="#dagster.OutputDefinition.is_optional" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>bool</em> – If this output is optional. Optional, defaults to false.</p>
 </dd></dl>
 
 </dd></dl>
@@ -24885,8 +24893,8 @@ and then execute that pipeline.</p>
         <span class="n">String</span><span class="p">,</span> <span class="n">description</span><span class="o">=</span><span class="s1">&#39;Should be either out_one or out_two&#39;</span>
     <span class="p">),</span>
     <span class="n">outputs</span><span class="o">=</span><span class="p">[</span>
-        <span class="n">OutputDefinition</span><span class="p">(</span><span class="n">dagster_type</span><span class="o">=</span><span class="n">Int</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;out_one&#39;</span><span class="p">),</span>
-        <span class="n">OutputDefinition</span><span class="p">(</span><span class="n">dagster_type</span><span class="o">=</span><span class="n">Int</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;out_two&#39;</span><span class="p">),</span>
+        <span class="n">OutputDefinition</span><span class="p">(</span><span class="n">dagster_type</span><span class="o">=</span><span class="n">Int</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;out_one&#39;</span><span class="p">,</span> <span class="n">is_optional</span><span class="o">=</span><span class="kc">True</span><span class="p">),</span>
+        <span class="n">OutputDefinition</span><span class="p">(</span><span class="n">dagster_type</span><span class="o">=</span><span class="n">Int</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;out_two&#39;</span><span class="p">,</span> <span class="n">is_optional</span><span class="o">=</span><span class="kc">True</span><span class="p">),</span>
     <span class="p">],</span>
 <span class="p">)</span>
 <span class="k">def</span> <span class="nf">conditional</span><span class="p">(</span><span class="n">context</span><span class="p">):</span>
