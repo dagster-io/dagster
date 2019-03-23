@@ -346,6 +346,9 @@ def _create_persistence_strategy(persistence_config):
         check.failed('Unsupported persistence key: {}'.format(persistence_key))
 
 
+ECGenInfo = namedtuple('ECGenInfo', 'environment_config context_definition, ec_gen')
+
+
 def _create_ec_gen_info(pipeline_def, environment_dict, run_config):
     environment_config = create_environment_config(pipeline_def, environment_dict)
 
@@ -361,7 +364,7 @@ def _create_ec_gen_info(pipeline_def, environment_dict, run_config):
 
     ec_gen = with_maybe_gen(ec_or_gen)
 
-    return environment_config, context_definition, ec_gen
+    return ECGenInfo(environment_config, context_definition, ec_gen)
 
 
 ResourceContextCreationInfo = namedtuple(
@@ -376,22 +379,16 @@ def _yield_pipeline_context_gen(pipeline_def, environment_dict, run_config):
     check.dict_param(environment_dict, 'environment_dict', key_type=str)
     check.inst_param(run_config, 'run_config', RunConfig)
 
-    environment_config, context_definition, ec_gen = _create_ec_gen_info(
-        pipeline_def, environment_dict, run_config
-    )
+    ec_gen_info = _create_ec_gen_info(pipeline_def, environment_dict, run_config)
 
-    with ec_gen as execution_context:
+    with ec_gen_info.ec_gen as execution_context:
         yield ResourceContextCreationInfo(
-            execution_context, context_definition, environment_config, pipeline_def, run_config
+            execution_context,
+            ec_gen_info.context_definition,
+            ec_gen_info.environment_config,
+            pipeline_def,
+            run_config,
         )
-
-
-def dagstermill_lifecycle_begin():
-    pass
-
-
-def dagstermill_lifecycle_end():
-    pass
 
 
 @contextmanager
@@ -442,6 +439,28 @@ def construct_pipeline_execution_context(
     )
 
 
+@contextmanager
+def yield_pipeline_execution_context_no_resources(pipeline_def, environment_dict, run_config):
+    no_resources = None
+    with _yield_pipeline_context_gen(
+        pipeline_def, environment_dict, run_config
+    ) as resource_creation_info:
+        yield construct_pipeline_execution_context(
+            run_config,
+            resource_creation_info.execution_context,
+            pipeline_def,
+            no_resources,
+            resource_creation_info.environment_config,
+        )
+
+
+@contextmanager
+def yield_blank_pipeline_execution_context(environment_dict={}):
+    pipeline_def = PipelineDefinition([], name='Blank Pipeline Def')
+    run_config = RunConfig(run_id='')
+    yield yield_pipeline_execution_context_no_resources(pipeline_def, environment_dict, run_config)
+
+
 def _create_loggers(run_config, execution_context):
     check.inst_param(run_config, 'run_config', RunConfig)
     check.inst_param(execution_context, 'execution_context', ExecutionContext)
@@ -476,6 +495,11 @@ def _create_resource_gens(resource_creation_info):
     return resource_gens
 
 
+def _get_resources_type(pipeline_def, environment_config):
+    context_name = environment_config.context.name
+    return pipeline_def.context_definitions[context_name].resources_type
+
+
 @contextmanager
 def _yield_resources(resource_creation_info):
     check.inst_param(resource_creation_info, 'resource_creation_info', ResourceContextCreationInfo)
@@ -487,7 +511,7 @@ def _yield_resources(resource_creation_info):
         return
 
     resource_gens = _create_resource_gens(resource_creation_info)
-
+    resources_type = _get_resources_type(pipeline_def, environment_config)
     resources = {}
 
     # See https://bit.ly/2zIXyqw
@@ -498,9 +522,6 @@ def _yield_resources(resource_creation_info):
         for resource_name, resource_gen in resource_gens.items():
             resources[resource_name] = stack.enter_context(resource_gen)
 
-        context_name = environment_config.context.name
-
-        resources_type = pipeline_def.context_definitions[context_name].resources_type
         resources_object = resources_type(**resources)
         yield resources_object
 

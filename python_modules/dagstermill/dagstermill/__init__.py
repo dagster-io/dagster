@@ -35,8 +35,11 @@ from dagster.core.errors import DagsterSubprocessExecutionError
 from dagster.core.events import construct_json_event_logger, EventRecord, EventType
 from dagster.core.execution import (
     yield_pipeline_execution_context,
-    with_maybe_gen,
-    get_resource_or_gen,
+    yield_pipeline_execution_context_no_resources,
+    yield_blank_pipeline_execution_context,
+    _create_resource_gens,
+    _get_resources_type,
+    _yield_pipeline_context_gen,
 )
 from dagster.core.execution_context import (
     DagsterLog,
@@ -59,7 +62,7 @@ class DagstermillInNotebookExecutionContext(AbstractTransformExecutionContext):
         self._pipeline_context = pipeline_context
         self._resources = None
         self._resources_type = None
-        self.resource_obj_dict = None
+        self._resource_gens = None
 
     def has_tag(self, key):
         return self._pipeline_context.has_tag(key)
@@ -96,6 +99,14 @@ class DagstermillInNotebookExecutionContext(AbstractTransformExecutionContext):
     @resources_type.setter
     def resources_type(self, value):
         self._resources_type = value
+
+    @property
+    def resource_gens(self):
+        return self._resource_gens
+
+    @resource_gens.setter
+    def resource_gens(self, value):
+        self._resource_gens = value
 
     @property
     def log(self):
@@ -135,19 +146,9 @@ class Manager:
         self.repository_def = repository_def
 
     def define_out_of_pipeline_context(self, context_config):
-        pipeline_def = PipelineDefinition([], name='Ephemeral Notebook Pipeline')
-
-        # BUG: If the context cleans up after itself (e.g. closes a db connection or similar)
-        # This will instigate that process *before* return. We are going to have to
-        # manage this manually (without an if block) in order to make this work.
-        # See https://github.com/dagster-io/dagster/issues/796
-        with yield_pipeline_execution_context(
-            pipeline_def,
-            {} if context_config is None else {'context': context_config},
-            RunConfig(run_id=''),
-            no_resource_flag=True,
-        ) as pipeline_context:
-            self.context = DagstermillInNotebookExecutionContext(pipeline_context)
+        environment_dict = {} if context_config is None else {'context': context_config}
+        pipeline_context = yield_blank_pipeline_execution_context(environment_dict)
+        self.context = DagstermillInNotebookExecutionContext(pipeline_context)
         return self.context
 
     def yield_result(self, value, output_name):
@@ -199,36 +200,39 @@ class Manager:
         # do not include event_callback in ExecutionMetadata,
         # since that'll be taken care of by side-channel established by event_logger
         run_config = RunConfig(run_id, loggers=loggers)
-        # See block comment above referencing this issue
-        # See https://github.com/dagster-io/dagster/issues/796
-        with yield_pipeline_execution_context(
+        with yield_pipeline_execution_context_no_resources(
             self.pipeline_def, environment_dict, run_config
         ) as pipeline_context:
-
-            pipeline_context = construct_pipeline_execution_context(run_config)
             self.context = DagstermillInNotebookExecutionContext(pipeline_context)
 
         # Below is all for resources in notebook to work
+        with _yield_pipeline_context_gen(
+            self.pipeline_def, environment_dict, run_config
+        ) as resource_creation_info:
+            resource_gens = _create_resource_gens(resource_creation_info)
+            self.context.resource_gens = resource_gens
 
-        pipeline_def = self.pipeline_def
-        environment_config = self.context.environment_config
-        context_def = pipeline_def.context_definitions[environment_config.context.name]
-
-        new_resources = {}
-        for resource_name in context_def.resources.keys():
-            resource_obj_or_gen = get_resource_or_gen(
-                pipeline_def, context_def, resource_name, environment_config, run_id
-            )
-            resource_obj = with_maybe_gen(resource_obj_or_gen)
-            new_resources[resource_name] = resource_obj
-
-        self.context.resource_obj_dict = new_resources
-
-        context_name = environment_config.context.name
-        resources_type = pipeline_def.context_definitions[context_name].resources_type
-        self.context.resources_type = resources_type
+        self.context.resources_type = _get_resources_type(
+            self.pipeline_def, self.context.environment_config
+        )
 
         return self.context
+
+
+def dagstermill_lifecycle_begin(resource_gens, resources_type):
+    entered_resources = {}
+    for resource_name, resource_gen in resource_gens.items():
+        entered_resources[resource_name] = resource_gen.__enter__()
+    if resources_type:
+        resources_object = resources_type(**entered_resources)
+    else:
+        resources_object = entered_resources
+    return resources_object, entered_resources
+
+
+def dagstermill_lifecycle_end(entered_resources):
+    for resource_name, entered_resource in entered_resources.items():
+        entered_resource.__exit__()
 
 
 class DagsterTranslator(pm.translators.PythonTranslator):
@@ -238,6 +242,7 @@ class DagsterTranslator(pm.translators.PythonTranslator):
         content = '{}\n'.format(cls.comment('Parameters'))
         content += '{}\n'.format('import dagstermill as dm')
         content += '{}\n'.format('import json')
+        content += '{}\n'.format('import atexit')
         content += '{}\n'.format(
             cls.assign(
                 'context',
@@ -246,11 +251,9 @@ class DagsterTranslator(pm.translators.PythonTranslator):
                 ),
             )
         )
-        enter_resources_str = '''entered_resources = {}
-for resource_name, resource_obj in context.resource_obj_dict.items():
-    entered_resources[resource_name] = resource_obj.__enter__()
-if context.resources_type:
-    context.resources = context.resources_type(**entered_resources)
+        enter_resources_str = '''_resources, _entered_resources = dm.dagstermill_lifecycle_begin(context.resource_gens, context.resources_type)
+context.resources = _resources
+atexit.register(dm.dagstermill_lifecycle_end, _entered_resources)
 '''
         content += enter_resources_str
 
@@ -540,22 +543,6 @@ def _dm_solid_transform(name, notebook_path):
         finally:
             if do_cleanup and os.path.exists(temp_path):
                 os.remove(temp_path)
-
-            # In here, clean-up the resources? Below code is some spaghetti code ...
-
-            # step_execution_context = transform_context.get_system_context()
-            # pipeline_def = step_execution_context.pipeline_def
-            # environment_config = step_execution_context.environment_config
-            # context_def = pipeline_def.context_definitions[environment_config.context.name]
-            # run_id = step_execution_context.run_config.run_id
-
-            # for resource_name in context_def.resources.keys():
-            #     resource_obj_or_gen = get_resource_or_gen(
-            #         pipeline_def, context_def, resource_name, environment_config, run_id
-            #     )
-            #     # pylint: disable=no-member
-            #     # pylint can't analyze the decorator
-            #     with_maybe_gen(resource_obj_or_gen).__exit__(None, None, None)
 
     return _t_fn
 
