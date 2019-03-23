@@ -747,8 +747,8 @@ jobs:
           command: |
             cd python_modules/airline-demo
             tox -e $TOXENV
-            docker login -u $DOCKERHUB_USERNAME -p $DOCKERHUB_PASSWORD
-            docker push dagster/airline-demo-airflow
+            # docker login -u $DOCKERHUB_USERNAME -p $DOCKERHUB_PASSWORD
+            # docker push dagster/airline-demo-airflow
       - run:
           command: mv python_modules/airline-demo/.coverage python_modules/airline-demo/.coverage.airline-demo.${CIRCLE_BUILD_NUM}
       - persist_to_workspace:
