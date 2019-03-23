@@ -10,9 +10,10 @@ sealed trait StorageBackend {
   def inputPath: String
   def outputPath: String
 
-  protected def createFullPath(inputOrOutput: String): (String, Date) => String = (prefix, date) => {
-    s"$prefix/$inputOrOutput/${dateFormatter.format(date)}"
-  }
+  protected def createFullPath(inputOrOutput: String): (String, Date) => String =
+    (prefix, date) => {
+      s"$prefix/$inputOrOutput/${dateFormatter.format(date)}"
+    }
 }
 
 final case class LocalStorageBackend(path: String, date: Date) extends StorageBackend {

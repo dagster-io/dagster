@@ -1,9 +1,8 @@
-  package io.dagster.events.models
+package io.dagster.events.models
 
 import cats.syntax.either._
-import io.circe.{Decoder, HCursor, parser}
+import io.circe.{parser, Decoder, HCursor}
 import io.circe.generic.semiauto.deriveDecoder
-
 
 case class EventCookies(
   session: String,
@@ -55,7 +54,6 @@ case class Event(
   location: EventLocation
 )
 
-
 object Event {
   import EventLocation._
   import EventCookies._
@@ -95,4 +93,3 @@ object Event {
   }
   def fromString(a: String): Option[Event] = parser.decode[Event](a).toOption
 }
-

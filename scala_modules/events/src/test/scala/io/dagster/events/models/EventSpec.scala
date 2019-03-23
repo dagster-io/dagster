@@ -21,8 +21,8 @@ class EventSpec extends FlatSpec with Matchers {
   )
 
   "EventLocation" should "parse" in {
-        val json =
-          """
+    val json =
+      """
             |[
             |  "20.28527",
             |  "-103.42897",
@@ -46,7 +46,8 @@ class EventSpec extends FlatSpec with Matchers {
   }
 
   "Event" should "parse" in {
-    val json = """
+    val json =
+      """
               |{
               |  "environment": "production",
               |  "method": "GET",
