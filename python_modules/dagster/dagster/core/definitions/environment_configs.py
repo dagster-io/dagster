@@ -365,8 +365,7 @@ def construct_storage_config(config_value):
     if config_value:
         storage_mode, storage_config = single_item(config_value)
         return StorageConfig(storage_mode, storage_config)
-    else:
-        return StorageConfig(None, None)
+    return StorageConfig(None, None)
 
 
 def construct_context_config(config_value):
