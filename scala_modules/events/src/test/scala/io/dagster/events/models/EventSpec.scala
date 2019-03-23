@@ -1,9 +1,5 @@
 package io.dagster.events.models
 
-import cats.syntax.either._
-import io.circe._
-import io.circe.parser._
-import io.circe.generic.semiauto._
 import org.scalatest.{FlatSpec, Matchers}
 
 class EventSpec extends FlatSpec with Matchers {

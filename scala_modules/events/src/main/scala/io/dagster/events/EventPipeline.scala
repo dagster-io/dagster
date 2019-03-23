@@ -33,26 +33,22 @@ package io.dagster.events
   * We currently use AWS 1.7.4 and hadoop-aws 2.7.1 as these are known to be compatible and work with Spark 2.4.0.
   */
 
-import org.apache.spark.sql.{Dataset, SparkSession}
+import java.io.File
+
+import org.apache.spark.sql.Dataset
 import java.util.Date
 
-import com.amazonaws.auth.BasicAWSCredentials
-import com.amazonaws.services.s3._
-import model._
+import com.amazonaws.services.s3.model.{DeleteObjectRequest, ListObjectsRequest, S3ObjectSummary}
 
-import scala.reflect.internal.FatalError
 import scala.collection.JavaConversions._
 import scala.io.Source
-import models.{Event, LocalStorageBackend, S3StorageBackend, StorageBackend}
+import scala.reflect.io.Directory
+import scala.reflect.internal.FatalError
+
+import models._
 
 
-object EventPipeline {
-  final lazy val spark = SparkSession.builder.appName("EventPipeline").getOrCreate()
-  final lazy val s3Client = new AmazonS3Client(new BasicAWSCredentials(
-    spark.sparkContext.getConf.get("spark.hadoop.fs.s3a.access.key"),
-    spark.sparkContext.getConf.get("spark.hadoop.fs.s3a.secret.key")
-  ))
-
+object EventPipeline extends SparkJob {
   import spark.implicits._
 
   def getS3Objects(backend: S3StorageBackend, date: Date): Seq[String] = {
@@ -60,7 +56,7 @@ object EventPipeline {
     // See: https://tech.kinja.com/how-not-to-pull-from-s3-using-apache-spark-1704509219
     val request = new ListObjectsRequest()
     request.setBucketName(backend.bucket)
-    request.setPrefix(backend.getInputPath(date))
+    request.setPrefix(backend.inputPath)
 
     s3Client
       .listObjects(request)
@@ -72,8 +68,8 @@ object EventPipeline {
   def readEvents(backend: StorageBackend, date: Date): Dataset[Event] = {
     // Read event records from either S3 or from local path
     val records = backend match {
-      case l: LocalStorageBackend => spark.read.textFile(l.getInputPath(date))
-      case s: S3StorageBackend => {
+      case l: LocalStorageBackend => spark.read.textFile(l.inputPath)
+      case s: S3StorageBackend    =>
         val objectKeys = spark.sparkContext.parallelize(getS3Objects(s, date))
 
         spark.createDataset(
@@ -81,14 +77,11 @@ object EventPipeline {
             key => Source.fromInputStream(s3Client.getObject(s.bucket, key).getObjectContent).getLines
           }
         )
-      }
-      case _ => spark.emptyDataset[String]
     }
     records.flatMap(Event.fromString)
   }
 
-  def main(args: Array[String]) {
-    // Parse command line arguments
+  override def run(args: Array[String]) {
     val conf = EventPipelineConfig.parse(args)
 
     // Except either local or S3
@@ -99,23 +92,48 @@ object EventPipeline {
 
     // Create an ADT StorageBackend to abstract away which we're talking to
     val backend: StorageBackend = (conf.localPath, conf.s3Bucket, conf.s3Prefix) match {
-      case (None, Some(bucket), Some(prefix)) => S3StorageBackend(bucket, prefix)
-      case (Some(path), None, None) => LocalStorageBackend(path)
+      case (None, Some(bucket), Some(prefix)) => S3StorageBackend(bucket, prefix, conf.date)
+      case (Some(path), None, None)           => LocalStorageBackend(path, conf.date)
       case _ => throw new IllegalArgumentException("Error, invalid arguments")
     }
 
     val events = readEvents(backend, conf.date)
 
-    // Print a few records
+    // Print a few records in debug logging
     events
       .take(20)
-      .foreach(println)
+      .foreach(log.debug)
 
-    // Write event records to S3 as Parquet
+    // Ensure output path is empty
+    backend match {
+      case _: LocalStorageBackend =>
+        val file = new File(backend.outputPath)
+        if (file.exists && file.isDirectory) {
+          log.info(s"Removing local output files at ${backend.outputPath}")
+          Directory(file).deleteRecursively()
+        }
+
+      case s: S3StorageBackend =>
+        val objs = s3Client.listObjects(s.bucket, s.outputPath).getObjectSummaries
+        if (!objs.isEmpty) {
+          log.info(s"Removing contents of S3 output at path ${s.outputURI}")
+          objs.foreach { obj: S3ObjectSummary =>
+            log.info(s"Deleting S3 object ${obj.getKey}")
+            val request = new DeleteObjectRequest(s.bucket, obj.getKey)
+            s3Client.deleteObject(request)
+          }
+        }
+    }
+
+    // Write event records as Parquet
+    val parquetOutputLocation = backend match {
+      case l: LocalStorageBackend => l.outputPath
+      case s: S3StorageBackend => s.outputURI
+    }
     events
       .toDF()
       .write
-      .parquet(backend.getOutputPath(conf.date))
+      .parquet(parquetOutputLocation)
   }
 }
 
