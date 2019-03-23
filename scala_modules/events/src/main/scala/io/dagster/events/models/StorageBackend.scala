@@ -1,7 +1,8 @@
 package io.dagster.events.models
 
 import java.util.Date
-
+import java.io.File
+import scala.reflect.io.Directory
 
 sealed trait StorageBackend {
   final val inputPrefix = "raw"
