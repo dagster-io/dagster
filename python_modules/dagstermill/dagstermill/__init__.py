@@ -202,8 +202,10 @@ class Manager:
         # See block comment above referencing this issue
         # See https://github.com/dagster-io/dagster/issues/796
         with yield_pipeline_execution_context(
-            self.pipeline_def, environment_dict, run_config, no_resource_flag=True
+            self.pipeline_def, environment_dict, run_config
         ) as pipeline_context:
+
+            pipeline_context = construct_pipeline_execution_context(run_config)
             self.context = DagstermillInNotebookExecutionContext(pipeline_context)
 
         # Below is all for resources in notebook to work
