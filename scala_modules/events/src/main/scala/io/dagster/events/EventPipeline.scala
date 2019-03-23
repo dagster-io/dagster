@@ -57,7 +57,7 @@ object EventPipeline extends SparkJob {
     // See: https://tech.kinja.com/how-not-to-pull-from-s3-using-apache-spark-1704509219
     val request = new ListObjectsRequest()
     request.setBucketName(backend.bucket)
-    request.setPrefix(backend.getInputPath(date))
+    request.setPrefix(backend.inputPath)
 
     s3Client
       .listObjects(request)
@@ -69,8 +69,8 @@ object EventPipeline extends SparkJob {
   def readEvents(backend: StorageBackend, date: Date): Dataset[Event] = {
     // Read event records from either S3 or from local path
     val records = backend match {
-      case l: LocalStorageBackend => spark.read.textFile(l.getInputPath(date))
-      case s: S3StorageBackend => {
+      case l: LocalStorageBackend => spark.read.textFile(l.inputPath)
+      case s: S3StorageBackend =>
         val objectKeys = spark.sparkContext.parallelize(getS3Objects(s, date))
 
         spark.createDataset(
@@ -78,8 +78,6 @@ object EventPipeline extends SparkJob {
             key => Source.fromInputStream(s3Client.getObject(s.bucket, key).getObjectContent).getLines
           }
         )
-      }
-      case _ => spark.emptyDataset[String]
     }
     records.flatMap(Event.fromString)
   }
@@ -94,9 +92,9 @@ object EventPipeline extends SparkJob {
     )
 
     // Create an ADT StorageBackend to abstract away which we're talking to
-    val backend: StorageBackend = (conf.localPath, conf.s3Bucket, conf.s3Prefix) match {
-      case (None, Some(bucket), Some(prefix)) => S3StorageBackend(bucket, prefix)
-      case (Some(path), None, None) => LocalStorageBackend(path)
+    val backend: StorageBackend = (conf.localPath, conf.s3Bucket, conf.s3Prefix, conf.date) match {
+      case (None, Some(bucket), Some(prefix), date) => S3StorageBackend(bucket, prefix, date)
+      case (Some(path), None, None, date)           => LocalStorageBackend(path, date)
       case _ => throw new IllegalArgumentException("Error, invalid arguments")
     }
 
@@ -108,27 +106,36 @@ object EventPipeline extends SparkJob {
       .foreach(log.debug)
 
     // Ensure output path is empty
-    val outputPath = backend.getOutputPath(conf.date)
     backend match {
       case l: LocalStorageBackend => {
-        log.info(s"Removing local output files at $outputPath")
-        val file = new File(outputPath)
+        val file = new File(backend.outputPath)
         if (file.exists && file.isDirectory) {
+          log.info(s"Removing local output files at ${backend.outputPath}")
           Directory(file).deleteRecursively()
         }
       }
       case s: S3StorageBackend => {
-        log.info(s"Removing contents of S3 bucket at path s3://${s.bucket}/$outputPath")
-        val request = new DeleteObjectRequest(s.bucket, outputPath)
-        s3Client.deleteObject(request)
+        val objs = s3Client.listObjects(s.bucket, s.outputPath).getObjectSummaries
+        if (!objs.isEmpty) {
+          log.info(s"Removing contents of S3 output at path ${s.outputURI}")
+          objs.foreach { obj: S3ObjectSummary =>
+            log.info(s"Deleting S3 object ${obj.getKey}")
+            val request = new DeleteObjectRequest(s.bucket, obj.getKey)
+            s3Client.deleteObject(request)
+          }
+        }
       }
     }
 
-    // Write event records to S3 as Parquet
+    // Write event records as Parquet
+    val parquetOutputLocation = backend match {
+      case l: LocalStorageBackend => l.outputPath
+      case s: S3StorageBackend => s.outputURI
+    }
     events
       .toDF()
       .write
-      .parquet(backend.getOutputPath(conf.date))
+      .parquet(parquetOutputLocation)
   }
 }
 
