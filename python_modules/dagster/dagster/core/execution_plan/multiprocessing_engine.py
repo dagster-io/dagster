@@ -85,7 +85,7 @@ def multiprocess_execute_plan(pipeline_context, execution_plan, step_keys_to_exe
             if not intermediates_manager.all_inputs_covered(step_context, step):
                 expected_outputs = [ni.prev_output_handle for ni in step.step_inputs]
 
-                step_context.log.debug(
+                step_context.log.error(
                     (
                         'Not all inputs covered for {step}. Not executing.'
                         'Outputs need for inputs {expected_outputs}'
