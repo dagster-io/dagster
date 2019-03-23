@@ -1,5 +1,4 @@
-import os, shutil, contextlib, tempfile
-
+import os, contextlib
 import dagstermill as dm
 
 from dagster import (
@@ -16,7 +15,7 @@ from dagster import (
     solid,
 )
 
-from dagster import RepositoryDefinition, PipelineContextDefinition, resource, ResourceDefinition
+from dagster import RepositoryDefinition, PipelineContextDefinition, resource
 
 
 def nb_test_path(name):

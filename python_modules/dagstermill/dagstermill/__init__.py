@@ -231,7 +231,7 @@ def dagstermill_lifecycle_begin(resource_gens, resources_type):
 
 
 def dagstermill_lifecycle_end(entered_resources):
-    for resource_name, entered_resource in entered_resources.items():
+    for entered_resource in entered_resources.values():
         entered_resource.__exit__()
 
 
