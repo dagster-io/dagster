@@ -38,15 +38,14 @@ import java.io.File
 import org.apache.spark.sql.Dataset
 import java.util.Date
 
-import com.amazonaws.services.s3._
-import model._
+import com.amazonaws.services.s3.model.{DeleteObjectRequest, ListObjectsRequest, S3ObjectSummary}
 
-import scala.reflect.internal.FatalError
 import scala.collection.JavaConversions._
 import scala.io.Source
-import models._
-
 import scala.reflect.io.Directory
+import scala.reflect.internal.FatalError
+
+import models._
 
 
 object EventPipeline extends SparkJob {
@@ -70,7 +69,7 @@ object EventPipeline extends SparkJob {
     // Read event records from either S3 or from local path
     val records = backend match {
       case l: LocalStorageBackend => spark.read.textFile(l.inputPath)
-      case s: S3StorageBackend =>
+      case s: S3StorageBackend    =>
         val objectKeys = spark.sparkContext.parallelize(getS3Objects(s, date))
 
         spark.createDataset(
@@ -92,9 +91,9 @@ object EventPipeline extends SparkJob {
     )
 
     // Create an ADT StorageBackend to abstract away which we're talking to
-    val backend: StorageBackend = (conf.localPath, conf.s3Bucket, conf.s3Prefix, conf.date) match {
-      case (None, Some(bucket), Some(prefix), date) => S3StorageBackend(bucket, prefix, date)
-      case (Some(path), None, None, date)           => LocalStorageBackend(path, date)
+    val backend: StorageBackend = (conf.localPath, conf.s3Bucket, conf.s3Prefix) match {
+      case (None, Some(bucket), Some(prefix)) => S3StorageBackend(bucket, prefix, conf.date)
+      case (Some(path), None, None)           => LocalStorageBackend(path, conf.date)
       case _ => throw new IllegalArgumentException("Error, invalid arguments")
     }
 
@@ -107,14 +106,14 @@ object EventPipeline extends SparkJob {
 
     // Ensure output path is empty
     backend match {
-      case l: LocalStorageBackend => {
+      case _: LocalStorageBackend =>
         val file = new File(backend.outputPath)
         if (file.exists && file.isDirectory) {
           log.info(s"Removing local output files at ${backend.outputPath}")
           Directory(file).deleteRecursively()
         }
-      }
-      case s: S3StorageBackend => {
+
+      case s: S3StorageBackend =>
         val objs = s3Client.listObjects(s.bucket, s.outputPath).getObjectSummaries
         if (!objs.isEmpty) {
           log.info(s"Removing contents of S3 output at path ${s.outputURI}")
@@ -124,7 +123,6 @@ object EventPipeline extends SparkJob {
             s3Client.deleteObject(request)
           }
         }
-      }
     }
 
     // Write event records as Parquet
