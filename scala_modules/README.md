@@ -1,9 +1,17 @@
 # Introduction
+This project is our collection of Scala modules.
 
-This project is our collection of Scala modules. You will almost certainly want to use IntelliJ IDEA to work on this project.
+## Requirements
+* IntelliJ IDEA
+* IntelliJ Scalafmt Plugin 
+* Spark 2.4.0+
 
-We'll eventually add `scalastyle` - for now, this is the only major editor config to put in place: [Case Class Definition Style](https://stackoverflow.com/a/26880974)
+Spark is expected to be a provided dependency, so you should have a working Spark install somewhere, and `$SPARK_HOME` should be set in your environment.
 
-Spark is expected to be a provided dependency, so you should have a working Spark install somewhere
-on `$SPARK_HOME`.
+You should use IntelliJ IDEA (CE is fine). We use the [scalafmt](https://scalameta.org/scalafmt/) IntelliJ IDEA plugin, configured to update on file save, and `scalastyle` 
 
+Some editor config to put in place: [Case Class Definition Style](https://stackoverflow.com/a/26880974)
+
+We follow the Twitter [Effective Scala](http://twitter.github.io/effectivescala/) style guide.
+
+ 

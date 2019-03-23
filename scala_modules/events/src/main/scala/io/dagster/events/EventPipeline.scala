@@ -1,4 +1,3 @@
-package io.dagster.events
 /** This package provides a simple hello world example for reading JSON events from S3 and writing those events back to
   * S3 as parquet.
   *
@@ -32,23 +31,23 @@ package io.dagster.events
   *
   * We currently use AWS 1.7.4 and hadoop-aws 2.7.1 as these are known to be compatible and work with Spark 2.4.0.
   */
+package io.dagster.events
 
 import java.io.File
 
 import org.apache.spark.sql.Dataset
 import java.util.Date
-
 import com.amazonaws.services.s3.model.{DeleteObjectRequest, ListObjectsRequest, S3ObjectSummary}
-
-import scala.collection.JavaConversions._
-import scala.io.Source
 import scala.reflect.io.Directory
 import scala.reflect.internal.FatalError
+import scala.collection.JavaConversions._
+import scala.io.Source
 
 import models._
 
-
 object EventPipeline extends SparkJob {
+  final val numSampleEvents = 20
+
   import spark.implicits._
 
   def getS3Objects(backend: S3StorageBackend, date: Date): Seq[String] = {
@@ -69,12 +68,14 @@ object EventPipeline extends SparkJob {
     // Read event records from either S3 or from local path
     val records = backend match {
       case l: LocalStorageBackend => spark.read.textFile(l.inputPath)
-      case s: S3StorageBackend    =>
+      case s: S3StorageBackend =>
         val objectKeys = spark.sparkContext.parallelize(getS3Objects(s, date))
 
         spark.createDataset(
-          objectKeys.flatMap {
-            key => Source.fromInputStream(s3Client.getObject(s.bucket, key).getObjectContent).getLines
+          objectKeys.flatMap { key =>
+            Source
+              .fromInputStream(s3Client.getObject(s.bucket, key).getObjectContent)
+              .getLines
           }
         )
     }
@@ -91,17 +92,19 @@ object EventPipeline extends SparkJob {
     )
 
     // Create an ADT StorageBackend to abstract away which we're talking to
-    val backend: StorageBackend = (conf.localPath, conf.s3Bucket, conf.s3Prefix) match {
-      case (None, Some(bucket), Some(prefix)) => S3StorageBackend(bucket, prefix, conf.date)
-      case (Some(path), None, None)           => LocalStorageBackend(path, conf.date)
-      case _ => throw new IllegalArgumentException("Error, invalid arguments")
-    }
+    val backend: StorageBackend =
+      (conf.localPath, conf.s3Bucket, conf.s3Prefix) match {
+        case (None, Some(bucket), Some(prefix)) =>
+          S3StorageBackend(bucket, prefix, conf.date)
+        case (Some(path), None, None) => LocalStorageBackend(path, conf.date)
+        case _                        => throw new IllegalArgumentException("Error, invalid arguments")
+      }
 
     val events = readEvents(backend, conf.date)
 
     // Print a few records in debug logging
     events
-      .take(20)
+      .take(numSampleEvents)
       .foreach(log.debug)
 
     // Ensure output path is empty
@@ -114,7 +117,8 @@ object EventPipeline extends SparkJob {
         }
 
       case s: S3StorageBackend =>
-        val objs = s3Client.listObjects(s.bucket, s.outputPath).getObjectSummaries
+        val objs =
+          s3Client.listObjects(s.bucket, s.outputPath).getObjectSummaries
         if (!objs.isEmpty) {
           log.info(s"Removing contents of S3 output at path ${s.outputURI}")
           objs.foreach { obj: S3ObjectSummary =>
@@ -128,7 +132,7 @@ object EventPipeline extends SparkJob {
     // Write event records as Parquet
     val parquetOutputLocation = backend match {
       case l: LocalStorageBackend => l.outputPath
-      case s: S3StorageBackend => s.outputURI
+      case s: S3StorageBackend    => s.outputURI
     }
     events
       .toDF()
@@ -165,7 +169,8 @@ object EventPipelineConfig {
       .action((x, c) => c.copy(date = dateFormat.parse(x)))
   }
 
-  def parse(args: Array[String]): EventPipelineConfig = parser.parse(args, EventPipelineConfig()).getOrElse {
-    throw FatalError("Incorrect options")
-  }
+  def parse(args: Array[String]): EventPipelineConfig =
+    parser.parse(args, EventPipelineConfig()).getOrElse {
+      throw FatalError("Incorrect options")
+    }
 }
