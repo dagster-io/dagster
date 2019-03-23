@@ -49,7 +49,10 @@ class ReexecutionConfig:
 class RunConfig(
     namedtuple(
         '_RunConfig',
-        'run_id tags event_callback loggers executor_config storage_mode reexecution_config',
+        (
+            'run_id tags event_callback loggers executor_config storage_mode reexecution_config '
+            'step_keys_to_execute'
+        ),
     )
 ):
     def __new__(
@@ -61,6 +64,7 @@ class RunConfig(
         executor_config=None,
         storage_mode=None,
         reexecution_config=None,
+        step_keys_to_execute=None,
     ):
         if (
             isinstance(executor_config, MultiprocessExecutorConfig)
@@ -70,6 +74,8 @@ class RunConfig(
                 'Can not create a RunConfig with executor_config MultiProcessExecutorConfig and '
                 'storage_mode RunStorageMode.IN_MEMORY'
             )
+
+        check.opt_list_param(step_keys_to_execute, 'step_keys_to_execute', of_type=str)
 
         return super(RunConfig, cls).__new__(
             cls,
@@ -84,6 +90,7 @@ class RunConfig(
             reexecution_config=check.opt_inst_param(
                 reexecution_config, 'reexecution_config', ReexecutionConfig
             ),
+            step_keys_to_execute=step_keys_to_execute,
         )
 
     @staticmethod

@@ -1,8 +1,6 @@
 from __future__ import absolute_import
 from collections import namedtuple
 import sys
-import uuid
-
 
 from graphql.execution.base import ResolveInfo
 
@@ -11,6 +9,7 @@ from dagster import RunConfig, check
 from dagster.core.execution_plan.objects import ExecutionStepEventType, ExecutionStepEvent
 from dagster.core.errors import DagsterInvalidDefinitionError
 from dagster.core.execution import ExecutionSelector, create_execution_plan, execute_plan
+from dagster.core.execution_context import ReexecutionConfig, make_new_run_id
 from dagster.core.runs import RunStorageMode
 from dagster.core.types.evaluator import evaluate_config_value
 
@@ -187,20 +186,64 @@ def get_execution_plan(graphene_info, selector, config):
     return pipeline_or_error.chain(create_plan).value()
 
 
-def start_pipeline_execution(graphene_info, selector, config):
+def start_pipeline_execution(
+    graphene_info,
+    selector,
+    environment_dict,
+    step_keys_to_execute,
+    reexecution_config,
+    graphql_execution_metadata,
+):
     check.inst_param(graphene_info, 'graphene_info', ResolveInfo)
     check.inst_param(selector, 'selector', ExecutionSelector)
+    check.opt_dict_param(environment_dict, 'environment_dict', key_type=str)
+    check.opt_list_param(step_keys_to_execute, 'step_keys_to_execute', of_type=str)
+    check.opt_inst_param(reexecution_config, 'reexecution_config', ReexecutionConfig)
+    graphql_execution_metadata = check.opt_dict_param(
+        graphql_execution_metadata, 'graphql_execution_metadata'
+    )
+
+    run_id = graphql_execution_metadata.get('runId')
+
     pipeline_run_storage = graphene_info.context.pipeline_runs
-    env_config = config
 
     def get_config_and_start_execution(pipeline):
         def _start_execution(validated_config_either):
-            new_run_id = str(uuid.uuid4())
+            new_run_id = run_id if run_id else make_new_run_id()
             execution_plan = create_execution_plan(
                 pipeline.get_dagster_pipeline(), validated_config_either.value
             )
-            run = pipeline_run_storage.create_run(new_run_id, selector, env_config, execution_plan)
+            run = pipeline_run_storage.create_run(
+                new_run_id,
+                selector,
+                environment_dict,
+                execution_plan,
+                reexecution_config,
+                step_keys_to_execute,
+            )
             pipeline_run_storage.add_run(run)
+
+            if step_keys_to_execute:
+                for step_key in step_keys_to_execute:
+                    if not execution_plan.has_step(step_key):
+                        return graphene_info.schema.type_named('InvalidStepError')(
+                            invalid_step_key=step_key
+                        )
+
+            if reexecution_config and reexecution_config.step_output_handles:
+                for step_output_handle in reexecution_config.step_output_handles:
+                    if not execution_plan.has_step(step_output_handle.step_key):
+                        return graphene_info.schema.type_named('InvalidStepError')(
+                            invalid_step_key=step_output_handle.step_key
+                        )
+
+                    step = execution_plan.get_step_by_key(step_output_handle.step_key)
+
+                    if not step.has_step_output(step_output_handle.output_name):
+                        return graphene_info.schema.type_named('InvalidOutputError')(
+                            step_key=step_output_handle.step_key,
+                            invalid_output_name=step_output_handle.output_name,
+                        )
 
             graphene_info.context.execution_manager.execute_pipeline(
                 graphene_info.context.repository_container,
@@ -208,11 +251,12 @@ def start_pipeline_execution(graphene_info, selector, config):
                 run,
                 throw_on_user_error=graphene_info.context.throw_on_user_error,
             )
+
             return graphene_info.schema.type_named('StartPipelineExecutionSuccess')(
                 run=graphene_info.schema.type_named('PipelineRun')(run)
             )
 
-        config_or_error = _config_or_error_from_pipeline(graphene_info, pipeline, env_config)
+        config_or_error = _config_or_error_from_pipeline(graphene_info, pipeline, environment_dict)
         return config_or_error.chain(_start_execution)
 
     pipeline_or_error = _pipeline_or_error_from_container(
@@ -358,16 +402,20 @@ def _execute_plan_resolve_config(execution_subplan_args, dauphin_pipeline):
     )
 
 
+def tags_from_graphql_execution_metadata(graphql_execution_metadata):
+    tags = {}
+    if 'tags' in graphql_execution_metadata:
+        for tag in graphql_execution_metadata['tags']:
+            tags[tag['key']] = tag['value']
+    return tags
+
+
 def _execute_plan_chain_actual_execute_or_error(
     execute_plan_args, dauphin_pipeline, _evaluate_env_config_result
 ):
     graphql_execution_metadata = execute_plan_args.execution_metadata
     run_id = graphql_execution_metadata.get('runId')
-    tags = {}
-    if 'tags' in graphql_execution_metadata:
-        for tag in graphql_execution_metadata['tags']:
-            tags[tag['key']] = tag['value']
-
+    tags = tags_from_graphql_execution_metadata(graphql_execution_metadata)
     run_storage_mode = (
         None if 'storage' in execute_plan_args.environment_dict else RunStorageMode.FILESYSTEM
     )

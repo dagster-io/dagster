@@ -249,3 +249,135 @@ def test_execution_plan_reexecution_with_in_memory():
             run_config=in_memory_run_config,
             step_keys_to_execute=['add_two.transform'],
         )
+
+
+def test_pipeline_step_key_subset_execution():
+    pipeline_def = define_addy_pipeline()
+
+    old_run_id = str(uuid.uuid4())
+    environment_dict = {'solids': {'add_one': {'inputs': {'num': {'value': 3}}}}}
+    result = execute_pipeline(
+        pipeline_def,
+        environment_dict=environment_dict,
+        run_config=RunConfig(storage_mode=RunStorageMode.FILESYSTEM, run_id=old_run_id),
+    )
+
+    assert result.success
+    assert get_filesystem_intermediate(result.run_id, 'add_one.transform', Int) == 4
+    assert get_filesystem_intermediate(result.run_id, 'add_two.transform', Int) == 6
+
+    ## re-execute add_two
+
+    new_run_id = str(uuid.uuid4())
+
+    pipeline_reexecution_result = execute_pipeline(
+        pipeline_def,
+        environment_dict=environment_dict,
+        run_config=RunConfig(
+            run_id=new_run_id,
+            reexecution_config=ReexecutionConfig(
+                previous_run_id=result.run_id,
+                step_output_handles=[StepOutputHandle('add_one.transform')],
+            ),
+            storage_mode=RunStorageMode.FILESYSTEM,
+            step_keys_to_execute=['add_two.transform'],
+        ),
+    )
+
+    assert pipeline_reexecution_result.success
+
+    step_events = pipeline_reexecution_result.step_event_list
+    assert step_events
+
+    assert get_filesystem_intermediate(new_run_id, 'add_one.transform', Int) == 4
+    assert get_filesystem_intermediate(new_run_id, 'add_two.transform', Int) == 6
+
+    assert not get_step_output_event(step_events, 'add_one.transform')
+    assert get_step_output_event(step_events, 'add_two.transform')
+
+
+def test_pipeline_step_key_subset_execution_wrong_step_key_in_subset():
+    pipeline_def = define_addy_pipeline()
+    old_run_id = str(uuid.uuid4())
+    environment_dict = {'solids': {'add_one': {'inputs': {'num': {'value': 3}}}}}
+    result = execute_pipeline(
+        pipeline_def,
+        environment_dict=environment_dict,
+        run_config=RunConfig(storage_mode=RunStorageMode.FILESYSTEM, run_id=old_run_id),
+    )
+    assert result.success
+
+    new_run_id = str(uuid.uuid4())
+
+    with pytest.raises(DagsterExecutionStepNotFoundError):
+        execute_pipeline(
+            pipeline_def,
+            environment_dict=environment_dict,
+            run_config=RunConfig(
+                run_id=new_run_id,
+                reexecution_config=ReexecutionConfig(
+                    previous_run_id=result.run_id,
+                    step_output_handles=[StepOutputHandle('add_one.transform')],
+                ),
+                storage_mode=RunStorageMode.FILESYSTEM,
+                step_keys_to_execute=['nope'],
+            ),
+        )
+
+
+def test_pipeline_step_key_subset_execution_wrong_step_key_in_step_output_handles():
+    pipeline_def = define_addy_pipeline()
+    old_run_id = str(uuid.uuid4())
+    environment_dict = {'solids': {'add_one': {'inputs': {'num': {'value': 3}}}}}
+    result = execute_pipeline(
+        pipeline_def,
+        environment_dict=environment_dict,
+        run_config=RunConfig(storage_mode=RunStorageMode.FILESYSTEM, run_id=old_run_id),
+    )
+    assert result.success
+
+    new_run_id = str(uuid.uuid4())
+
+    with pytest.raises(DagsterExecutionStepNotFoundError):
+        execute_pipeline(
+            pipeline_def,
+            environment_dict=environment_dict,
+            run_config=RunConfig(
+                run_id=new_run_id,
+                reexecution_config=ReexecutionConfig(
+                    previous_run_id=result.run_id,
+                    step_output_handles=[StepOutputHandle('invalid_in_step_output_handles')],
+                ),
+                storage_mode=RunStorageMode.FILESYSTEM,
+                step_keys_to_execute=['add_two.transform'],
+            ),
+        )
+
+
+def test_pipeline_step_key_subset_execution_wrong_output_name_in_step_output_handles():
+    pipeline_def = define_addy_pipeline()
+    old_run_id = str(uuid.uuid4())
+    environment_dict = {'solids': {'add_one': {'inputs': {'num': {'value': 3}}}}}
+    result = execute_pipeline(
+        pipeline_def,
+        environment_dict=environment_dict,
+        run_config=RunConfig(storage_mode=RunStorageMode.FILESYSTEM, run_id=old_run_id),
+    )
+    assert result.success
+
+    new_run_id = str(uuid.uuid4())
+
+    with pytest.raises(DagsterStepOutputNotFoundError):
+        execute_pipeline(
+            pipeline_def,
+            environment_dict=environment_dict,
+            run_config=RunConfig(
+                run_id=new_run_id,
+                reexecution_config=ReexecutionConfig(
+                    previous_run_id=result.run_id,
+                    step_output_handles=[StepOutputHandle('add_one.transform', 'invalid_output')],
+                ),
+                storage_mode=RunStorageMode.FILESYSTEM,
+                step_keys_to_execute=['add_two.transform'],
+            ),
+        )

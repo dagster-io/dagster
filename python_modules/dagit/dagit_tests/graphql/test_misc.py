@@ -17,6 +17,7 @@ from dagster import (
 )
 
 from dagster.core.types.config import ALL_CONFIG_BUILTINS
+from dagster.core.object_store import has_filesystem_intermediate, get_filesystem_intermediate
 
 from dagster.utils import script_relative_path, merge_dicts
 
@@ -709,8 +710,20 @@ def has_event_of_type(logs, message_type):
 
 
 START_PIPELINE_EXECUTION_QUERY = '''
-mutation ($pipeline: ExecutionSelector!, $config: PipelineConfig) {
-    startPipelineExecution(pipeline: $pipeline, config: $config) {
+mutation (
+    $pipeline: ExecutionSelector!,
+    $config: PipelineConfig,
+    $stepKeys: [String!],
+    $executionMetadata: ExecutionMetadata,
+    $reexecutionConfig: ReexecutionConfig
+) {
+    startPipelineExecution(
+        pipeline: $pipeline,
+        config: $config,
+        stepKeys: $stepKeys,
+        executionMetadata: $executionMetadata,
+        reexecutionConfig: $reexecutionConfig
+    ) {
         __typename
         ... on StartPipelineExecutionSuccess {
             run {
@@ -747,6 +760,119 @@ mutation ($pipeline: ExecutionSelector!, $config: PipelineConfig) {
 }
 '''
 
+START_PIPELINE_EXECUTION_SNAPSHOT_QUERY = '''
+mutation (
+    $pipeline: ExecutionSelector!,
+    $config: PipelineConfig,
+    $stepKeys: [String!],
+    $executionMetadata: ExecutionMetadata,
+    $reexecutionConfig: ReexecutionConfig
+) {
+    startPipelineExecution(
+        pipeline: $pipeline,
+        config: $config,
+        stepKeys: $stepKeys,
+        executionMetadata: $executionMetadata,
+        reexecutionConfig: $reexecutionConfig
+    ) {
+        __typename
+        ... on StartPipelineExecutionSuccess {
+            run {
+                pipeline { name }
+                logs {
+                    nodes {
+                        __typename
+                        ... on MessageEvent {
+                            level
+                        }
+                        ... on ExecutionStepStartEvent {
+                            step { kind }
+                        }
+                        ... on ExecutionStepOutputEvent {
+                            step { key kind }
+                            outputName
+                            storageMode
+                        }
+                    }
+                }
+            }
+        }
+        ... on PipelineConfigValidationInvalid {
+            pipeline { name }
+            errors { message }
+        }
+        ... on PipelineNotFoundError {
+            pipelineName
+        }
+        ... on InvalidStepError {
+            invalidStepKey
+        }
+        ... on InvalidOutputError {
+            stepKey
+            invalidOutputName
+        }
+    }
+}
+'''
+
+START_PIPELINE_EXECUTION_QUERY = '''
+mutation (
+    $pipeline: ExecutionSelector!,
+    $config: PipelineConfig,
+    $stepKeys: [String!],
+    $executionMetadata: ExecutionMetadata,
+    $reexecutionConfig: ReexecutionConfig
+) {
+    startPipelineExecution(
+        pipeline: $pipeline,
+        config: $config,
+        stepKeys: $stepKeys,
+        executionMetadata: $executionMetadata,
+        reexecutionConfig: $reexecutionConfig
+    ) {
+        __typename
+        ... on StartPipelineExecutionSuccess {
+            run {
+                runId
+                pipeline { name }
+                logs {
+                    nodes {
+                        __typename
+                        ... on MessageEvent {
+                            message
+                            level
+                        }
+                        ... on ExecutionStepStartEvent {
+                            step { kind }
+                        }
+                        ... on ExecutionStepOutputEvent {
+                            step { key kind }
+                            outputName
+                            storageMode
+                            storageObjectId
+                        }
+                    }
+                }
+            }
+        }
+        ... on PipelineConfigValidationInvalid {
+            pipeline { name }
+            errors { message }
+        }
+        ... on PipelineNotFoundError {
+            pipelineName
+        }
+        ... on InvalidStepError {
+            invalidStepKey
+        }
+        ... on InvalidOutputError {
+            stepKey
+            invalidOutputName
+        }
+    }
+}
+'''
+
 
 def get_step_output_event(logs, step_key, output_name='result'):
     for log in logs:
@@ -757,4 +883,183 @@ def get_step_output_event(logs, step_key, output_name='result'):
         ):
             return log
 
-    check.failed('Could not find output')
+    return None
+
+
+def test_successful_pipeline_reexecution(snapshot):
+    run_id = str(uuid.uuid4())
+    result_one = execute_dagster_graphql(
+        define_context(),
+        START_PIPELINE_EXECUTION_SNAPSHOT_QUERY,
+        variables={
+            'pipeline': {'name': 'pandas_hello_world'},
+            'config': pandas_hello_world_solids_config(),
+            'executionMetadata': {'runId': run_id},
+        },
+    )
+
+    assert (
+        result_one.data['startPipelineExecution']['__typename'] == 'StartPipelineExecutionSuccess'
+    )
+
+    snapshot.assert_match(result_one.data)
+
+    expected_value_repr = '''   num1  num2  sum  sum_sq
+0     1     2    3       9
+1     3     4    7      49'''
+
+    assert has_filesystem_intermediate(run_id, 'sum_solid.num.input_thunk', 'input_thunk_output')
+    assert has_filesystem_intermediate(run_id, 'sum_solid.transform')
+    assert has_filesystem_intermediate(run_id, 'sum_sq_solid.transform')
+    assert (
+        str(get_filesystem_intermediate(run_id, 'sum_sq_solid.transform', DataFrame))
+        == expected_value_repr
+    )
+
+    new_run_id = str(uuid.uuid4())
+
+    result_two = execute_dagster_graphql(
+        define_context(),
+        START_PIPELINE_EXECUTION_SNAPSHOT_QUERY,
+        variables={
+            'pipeline': {'name': 'pandas_hello_world'},
+            'config': pandas_hello_world_solids_config(),
+            'stepKeys': ['sum_sq_solid.transform'],
+            'executionMetadata': {'runId': new_run_id},
+            'reexecutionConfig': {
+                'previousRunId': run_id,
+                'stepOutputHandles': [{'stepKey': 'sum_solid.transform', 'outputName': 'result'}],
+            },
+        },
+    )
+
+    query_result = result_two.data['startPipelineExecution']
+    assert query_result['__typename'] == 'StartPipelineExecutionSuccess'
+    logs = query_result['run']['logs']['nodes']
+
+    assert isinstance(logs, list)
+    assert has_event_of_type(logs, 'PipelineStartEvent')
+    assert has_event_of_type(logs, 'PipelineSuccessEvent')
+    assert not has_event_of_type(logs, 'PipelineFailureEvent')
+
+    assert not get_step_output_event(logs, 'sum_solid.transform')
+    assert get_step_output_event(logs, 'sum_sq_solid.transform')
+
+    snapshot.assert_match(result_two.data)
+
+    assert not has_filesystem_intermediate(
+        new_run_id, 'sum_solid.num.input_thunk', 'input_thunk_output'
+    )
+    assert has_filesystem_intermediate(new_run_id, 'sum_solid.transform')
+    assert has_filesystem_intermediate(new_run_id, 'sum_sq_solid.transform')
+    assert (
+        str(get_filesystem_intermediate(new_run_id, 'sum_sq_solid.transform', DataFrame))
+        == expected_value_repr
+    )
+
+
+def test_pipeline_reexecution_invalid_step_in_subset():
+    run_id = str(uuid.uuid4())
+    execute_dagster_graphql(
+        define_context(),
+        START_PIPELINE_EXECUTION_SNAPSHOT_QUERY,
+        variables={
+            'pipeline': {'name': 'pandas_hello_world'},
+            'config': pandas_hello_world_solids_config(),
+            'executionMetadata': {'runId': run_id},
+        },
+    )
+
+    new_run_id = str(uuid.uuid4())
+
+    result_two = execute_dagster_graphql(
+        define_context(),
+        START_PIPELINE_EXECUTION_SNAPSHOT_QUERY,
+        variables={
+            'pipeline': {'name': 'pandas_hello_world'},
+            'config': pandas_hello_world_solids_config(),
+            'stepKeys': ['nope'],
+            'executionMetadata': {'runId': new_run_id},
+            'reexecutionConfig': {
+                'previousRunId': run_id,
+                'stepOutputHandles': [{'stepKey': 'sum_solid.transform', 'outputName': 'result'}],
+            },
+        },
+    )
+
+    query_result = result_two.data['startPipelineExecution']
+    assert query_result['__typename'] == 'InvalidStepError'
+    assert query_result['invalidStepKey'] == 'nope'
+
+
+def test_pipeline_reexecution_invalid_step_in_step_output_handle():
+    run_id = str(uuid.uuid4())
+    execute_dagster_graphql(
+        define_context(),
+        START_PIPELINE_EXECUTION_SNAPSHOT_QUERY,
+        variables={
+            'pipeline': {'name': 'pandas_hello_world'},
+            'config': pandas_hello_world_solids_config(),
+            'executionMetadata': {'runId': run_id},
+        },
+    )
+
+    new_run_id = str(uuid.uuid4())
+
+    result_two = execute_dagster_graphql(
+        define_context(),
+        START_PIPELINE_EXECUTION_SNAPSHOT_QUERY,
+        variables={
+            'pipeline': {'name': 'pandas_hello_world'},
+            'config': pandas_hello_world_solids_config(),
+            'stepKeys': ['sum_sq_solid.transform'],
+            'executionMetadata': {'runId': new_run_id},
+            'reexecutionConfig': {
+                'previousRunId': run_id,
+                'stepOutputHandles': [
+                    {'stepKey': 'invalid_in_step_output_handle', 'outputName': 'result'}
+                ],
+            },
+        },
+    )
+
+    query_result = result_two.data['startPipelineExecution']
+    assert query_result['__typename'] == 'InvalidStepError'
+    assert query_result['invalidStepKey'] == 'invalid_in_step_output_handle'
+
+
+def test_pipeline_reexecution_invalid_output_in_step_output_handle():
+    run_id = str(uuid.uuid4())
+    execute_dagster_graphql(
+        define_context(),
+        START_PIPELINE_EXECUTION_SNAPSHOT_QUERY,
+        variables={
+            'pipeline': {'name': 'pandas_hello_world'},
+            'config': pandas_hello_world_solids_config(),
+            'executionMetadata': {'runId': run_id},
+        },
+    )
+
+    new_run_id = str(uuid.uuid4())
+
+    result_two = execute_dagster_graphql(
+        define_context(),
+        START_PIPELINE_EXECUTION_SNAPSHOT_QUERY,
+        variables={
+            'pipeline': {'name': 'pandas_hello_world'},
+            'config': pandas_hello_world_solids_config(),
+            'stepKeys': ['sum_sq_solid.transform'],
+            'executionMetadata': {'runId': new_run_id},
+            'reexecutionConfig': {
+                'previousRunId': run_id,
+                'stepOutputHandles': [
+                    {'stepKey': 'sum_solid.transform', 'outputName': 'invalid_output'}
+                ],
+            },
+        },
+    )
+
+    query_result = result_two.data['startPipelineExecution']
+    assert query_result['__typename'] == 'InvalidOutputError'
+    assert query_result['stepKey'] == 'sum_solid.transform'
+    assert query_result['invalidOutputName'] == 'invalid_output'

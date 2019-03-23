@@ -204,6 +204,11 @@ type InvalidDefinitionError implements Error {
   stack: [String!]!
 }
 
+type InvalidOutputError {
+  stepKey: String!
+  invalidOutputName: String!
+}
+
 type InvalidStepError {
   invalidStepKey: String!
 }
@@ -273,7 +278,7 @@ type MissingFieldConfigError implements PipelineConfigValidationError {
 }
 
 type Mutation {
-  startPipelineExecution(config: PipelineConfig, pipeline: ExecutionSelector!): StartPipelineExecutionResult!
+  startPipelineExecution(config: PipelineConfig, executionMetadata: ExecutionMetadata, pipeline: ExecutionSelector!, reexecutionConfig: ReexecutionConfig, stepKeys: [String!]): StartPipelineExecutionResult!
   executePlan(config: PipelineConfig, executionMetadata: ExecutionMetadata!, pipelineName: String!, stepKeys: [String!]): ExecutePlanResult!
 }
 
@@ -469,6 +474,11 @@ type Query {
   executionPlan(pipeline: ExecutionSelector!, config: PipelineConfig): ExecutionPlanResult!
 }
 
+input ReexecutionConfig {
+  previousRunId: String!
+  stepOutputHandles: [StepOutputHandle!]!
+}
+
 type RegularConfigType implements ConfigType {
   key: String!
   name: String
@@ -566,7 +576,7 @@ type SolidNotFoundError implements Error {
   solidName: String!
 }
 
-union StartPipelineExecutionResult = StartPipelineExecutionSuccess | PipelineConfigValidationInvalid | PipelineNotFoundError
+union StartPipelineExecutionResult = InvalidStepError | InvalidOutputError | PipelineConfigValidationInvalid | PipelineNotFoundError | StartPipelineExecutionSuccess
 
 type StartPipelineExecutionSuccess {
   run: PipelineRun!
@@ -603,6 +613,11 @@ type StepMaterializationEvent implements MessageEvent {
   step: ExecutionStep
   fileName: String!
   fileLocation: String!
+}
+
+input StepOutputHandle {
+  stepKey: String!
+  outputName: String!
 }
 
 type Subscription {
