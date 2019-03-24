@@ -24,7 +24,8 @@ from .solid import SolidDefinition
 
 
 def SystemNamedDict(name, fields, description=None):
-    """A SystemNamedDict object is simply a NamedDict intended for internal (dagster) use"""
+    '''A SystemNamedDict object is simply a NamedDict intended for internal (dagster) use.
+    '''
     return NamedDict(name, fields, description, ConfigTypeAttributes(is_system_config=True))
 
 

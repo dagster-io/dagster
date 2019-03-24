@@ -188,12 +188,12 @@ def Dict(fields):
 
 
 def Selector(fields):
-    """Selectors are used when you want to be able present several different options to the user but
+    '''Selectors are used when you want to be able present several different options to the user but
     force them to select one. For example, it would not make much sense to allow them
     to say that a single input should be sourced from a csv and a parquet file: They must choose.
 
     Note that in other type systems this might be called an "input union."
-    """
+    '''
 
     class _Selector(_ConfigSelector):
         def __init__(self):
