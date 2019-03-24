@@ -20119,7 +20119,7 @@ data assets.</p>
 <p>Solids should be implemented as idempotent, parameterizable, non-destructive functions.
 Data computations with these properties are much easier to test, reason about, and operate.</p>
 <p>The inputs and outputs are gradually, optionally typed by the dagster type system. Types
-can be user-defined and can represent entites as varied as scalars, dataframe, database
+can be user-defined and can represent entities as varied as scalars, dataframe, database
 tables, and so forth. They can represent pure in-memory objects, or handles to assets
 on disk or in external resources.</p>
 <p>A solid is a generalized abstraction that could take many forms.</p>

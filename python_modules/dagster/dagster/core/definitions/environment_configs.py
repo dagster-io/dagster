@@ -24,6 +24,8 @@ from .solid import SolidDefinition
 
 
 def SystemNamedDict(name, fields, description=None):
+    '''A SystemNamedDict object is simply a NamedDict intended for internal (dagster) use.
+    '''
     return NamedDict(name, fields, description, ConfigTypeAttributes(is_system_config=True))
 
 
@@ -136,12 +138,11 @@ def define_solid_config_cls(name, config_field, inputs_field, outputs_field):
     check_opt_field_param(inputs_field, 'inputs_field')
     check_opt_field_param(outputs_field, 'outputs_field')
 
-    return NamedDict(
+    return SystemNamedDict(
         name,
         remove_none_entries(
             {'config': config_field, 'inputs': inputs_field, 'outputs': outputs_field}
         ),
-        type_attributes=ConfigTypeAttributes(is_system_config=True),
     )
 
 
@@ -344,7 +345,7 @@ def define_solid_dictionary_cls(name, creation_data):
 
 def define_execution_config_cls(name):
     check.str_param(name, 'name')
-    return NamedDict(name, {}, type_attributes=ConfigTypeAttributes(is_system_config=True))
+    return SystemNamedDict(name, {})
 
 
 def construct_environment_config(config_value):
