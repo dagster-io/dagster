@@ -192,7 +192,7 @@ def Selector(fields):
     force them to select one. For example, it would not make much sense to allow them
     to say that a single input should be sourced from a csv and a parquet file: They must choose.
 
-    Note that in other type systems this might be called an “input union.”
+    Note that in other type systems this might be called an "input union."
     """
 
     class _Selector(_ConfigSelector):
