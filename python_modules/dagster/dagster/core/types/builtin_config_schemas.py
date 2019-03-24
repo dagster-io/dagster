@@ -5,20 +5,21 @@ from dagster import check, seven
 
 from .config import ConfigTypeAttributes, Path, Int, String, Bool, Any, Float
 from .config_schema import make_bare_input_schema, input_selector_schema, output_selector_schema
-from .field_utils import FieldImpl, Dict, SystemNamedSelector
+from .field_utils import FieldImpl, Dict, NamedSelector
 
 
 def define_builtin_scalar_input_schema(scalar_name, config_scalar_type):
     check.str_param(scalar_name, 'scalar_name')
 
     @input_selector_schema(
-        SystemNamedSelector(
+        NamedSelector(
             scalar_name + '.InputSchema',
             {
                 'value': FieldImpl(config_scalar_type),
                 'json': define_path_dict_field(),
                 'pickle': define_path_dict_field(),
             },
+            type_attributes=ConfigTypeAttributes(is_system_config=True),
         )
     )
     def _builtin_input_schema(file_type, file_options):
@@ -44,9 +45,10 @@ def define_path_dict_field():
 def define_builtin_scalar_output_schema(scalar_name):
     check.str_param(scalar_name, 'scalar_name')
 
-    schema_cls = SystemNamedSelector(
+    schema_cls = NamedSelector(
         scalar_name + '.MaterializationSchema',
         {'json': define_path_dict_field(), 'pickle': define_path_dict_field()},
+        type_attributes=ConfigTypeAttributes(is_system_config=True),
     )
 
     @output_selector_schema(schema_cls)
