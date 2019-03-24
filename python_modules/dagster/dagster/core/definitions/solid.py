@@ -22,7 +22,7 @@ class SolidDefinition(object):
     Data computations with these properties are much easier to test, reason about, and operate.
 
     The inputs and outputs are gradually, optionally typed by the dagster type system. Types
-    can be user-defined and can represent entites as varied as scalars, dataframe, database
+    can be user-defined and can represent entities as varied as scalars, dataframe, database
     tables, and so forth. They can represent pure in-memory objects, or handles to assets
     on disk or in external resources.
 

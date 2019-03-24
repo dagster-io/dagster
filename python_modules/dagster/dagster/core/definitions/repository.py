@@ -51,7 +51,7 @@ class RepositoryDefinition(object):
 
         Returns:
             PipelineDefinition: Instance of PipelineDefinition with that name.
-'''
+        '''
         check.str_param(name, 'name')
 
         if name in self._pipeline_cache:
