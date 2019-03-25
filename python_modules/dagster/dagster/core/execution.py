@@ -83,7 +83,6 @@ from .runs import (
 from .system_config.objects import EnvironmentConfig
 
 from .types.evaluator import EvaluationError, evaluate_config_value, friendly_string_for_error
-from .types.marshal import FilePersistencePolicy
 
 from .user_context import ExecutionContext
 
@@ -347,17 +346,6 @@ def as_ensured_single_gen(thing_or_gen):
     check.invariant(stopped, 'Must yield one item. Yielded more than one item')
 
 
-def _create_persistence_strategy(persistence_config):
-    check.dict_param(persistence_config, 'persistence_config', key_type=str)
-
-    persistence_key, _config_value = list(persistence_config.items())[0]
-
-    if persistence_key == 'file':
-        return FilePersistencePolicy()
-    else:
-        check.failed('Unsupported persistence key: {}'.format(persistence_key))
-
-
 def construct_run_storage(run_config, environment_config):
     '''
     Construct the run storage for this pipeline. Our rules are the following:
@@ -505,9 +493,6 @@ def construct_pipeline_execution_context(
             run_config=run_config,
             resources=resources,
             environment_config=environment_config,
-            persistence_strategy=_create_persistence_strategy(
-                environment_config.context.persistence
-            ),
             run_storage=run_storage,
             intermediates_manager=intermediates_manager,
         ),

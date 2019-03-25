@@ -118,10 +118,6 @@ class LegacyContextAdapter(object):
         return self._pipeline_context.tags
 
     @property
-    def persistence_strategy(self):
-        return self._pipeline_context.persistence_strategy
-
-    @property
     def events(self):
         return self._pipeline_context.events
 

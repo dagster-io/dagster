@@ -18,7 +18,6 @@ from .events import ExecutionEvents
 from .log import DagsterLog
 from .runs import RunStorageMode, RunStorage
 from .system_config.objects import EnvironmentConfig
-from .types.marshal import PersistenceStrategy
 
 
 class ExecutorConfig:
@@ -106,7 +105,7 @@ class SystemPipelineExecutionContextData(
     namedtuple(
         '_SystemPipelineExecutionContextData',
         (
-            'run_config resources environment_config persistence_strategy pipeline_def '
+            'run_config resources environment_config pipeline_def '
             'run_storage intermediates_manager'
         ),
     )
@@ -121,7 +120,6 @@ class SystemPipelineExecutionContextData(
         run_config,
         resources,
         environment_config,
-        persistence_strategy,
         pipeline_def,
         run_storage,
         intermediates_manager,
@@ -135,9 +133,6 @@ class SystemPipelineExecutionContextData(
             resources=resources,
             environment_config=check.inst_param(
                 environment_config, 'environment_config', EnvironmentConfig
-            ),
-            persistence_strategy=check.inst_param(
-                persistence_strategy, 'persistence_strategy', PersistenceStrategy
             ),
             pipeline_def=check.inst_param(pipeline_def, 'pipeline_def', PipelineDefinition),
             run_storage=check.inst_param(run_storage, 'run_storage', RunStorage),
@@ -214,10 +209,6 @@ class SystemPipelineExecutionContext(object):
     def get_tag(self, key):
         check.str_param(key, 'key')
         return self._tags[key]
-
-    @property
-    def persistence_strategy(self):
-        return self._pipeline_context_data.persistence_strategy
 
     @property
     def pipeline_def(self):
