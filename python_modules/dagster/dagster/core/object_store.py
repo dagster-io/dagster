@@ -267,3 +267,11 @@ def has_s3_intermediate(context, s3_bucket, run_id, step_key, output_name='resul
 def rm_s3_intermediate(context, s3_bucket, run_id, step_key, output_name='result'):
     object_store = S3ObjectStore(s3_bucket, run_id)
     return object_store.rm_object(context=context, paths=get_fs_paths(step_key, output_name))
+
+
+def construct_type_registry(pipeline_def):
+    return {
+        type_obj: type_obj.storage_overrides
+        for type_obj in pipeline_def._runtime_type_dict.values()
+    }
+
