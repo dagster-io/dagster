@@ -119,17 +119,15 @@ def test_double_type_name():
     )
 
 
-class KeyOneNameOneType(ConfigType):
-    def __init__(self):
-        super(KeyOneNameOneType, self).__init__(key='KeyOne', name='NameOne')
-
-
-class KeyOneNameTwoType(ConfigType):
-    def __init__(self):
-        super(KeyOneNameTwoType, self).__init__(key='KeyOne', name='NameTwo')
-
-
 def test_double_type_key():
+    class KeyOneNameOneType(ConfigType):
+        def __init__(self):
+            super(KeyOneNameOneType, self).__init__(key='KeyOne', name='NameOne')
+
+    class KeyOneNameTwoType(ConfigType):
+        def __init__(self):
+            super(KeyOneNameTwoType, self).__init__(key='KeyOne', name='NameTwo')
+
     @solid(config_field=Field(KeyOneNameOneType))
     def solid_one(_context):
         raise Exception('should not execute')
