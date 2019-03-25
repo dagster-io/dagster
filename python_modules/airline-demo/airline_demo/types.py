@@ -2,6 +2,9 @@
 
 
 import os
+import shutil
+import tempfile
+import zipfile
 
 from collections import namedtuple
 
@@ -9,8 +12,9 @@ import sqlalchemy
 
 from pyspark.sql import DataFrame
 
-from dagster import as_dagster_type, dagster_type, Dict, Field, String
-from dagster.core.types.runtime import PythonObjectType, Stringish
+from dagster import as_dagster_type, Dict, Field, String
+from dagster.core.types.marshal import SerializationStrategy
+from dagster.core.types.runtime import Stringish
 from dagster.utils import safe_isfile
 
 
@@ -20,8 +24,54 @@ AirlineDemoResources = namedtuple(
 )
 
 
+class SparkDataFrameSerializationStrategy(SerializationStrategy):
+    def serialize_value(self, _context, value, write_file_obj):
+        parquet_dir = tempfile.mkdtemp()
+        shutil.rmtree(parquet_dir)
+        value.write.parquet(parquet_dir)
+
+        archive_file_obj = tempfile.NamedTemporaryFile(delete=False)
+        try:
+            archive_file_obj.close()
+            archive_file_path = archive_file_obj.name
+            zipfile_path = shutil.make_archive(archive_file_path, 'zip', parquet_dir)
+            try:
+                with open(zipfile_path, 'rb') as archive_file_read_obj:
+                    write_file_obj.write(archive_file_read_obj.read())
+            finally:
+                try:
+                    os.remove(zipfile_path)
+                except FileNotFoundError:
+                    pass
+        finally:
+            try:
+                os.remove(archive_file_obj.name)
+            except FileNotFoundError:
+                pass
+
+    def deserialize_value(self, context, read_file_obj):
+        archive_file_obj = tempfile.NamedTemporaryFile(delete=False)
+        try:
+            archive_file_obj.write(read_file_obj.read())
+            archive_file_obj.close()
+            parquet_dir = tempfile.mkdtemp()
+            # We don't use the ZipFile context manager here because of py2
+            zipfile_obj = zipfile.ZipFile(archive_file_obj.name)
+            zipfile_obj.extractall(parquet_dir)
+            zipfile_obj.close()
+        finally:
+            try:
+                os.remove(archive_file_obj.name)
+            except FileNotFoundError:
+                pass
+        return context.resources.spark.read.parquet(parquet_dir)
+
+
 SparkDataFrameType = as_dagster_type(
-    DataFrame, name='SparkDataFrameType', description='A Pyspark data frame.'
+    DataFrame,
+    name='SparkDataFrameType',
+    description='A Pyspark data frame.',
+    serialization_strategy=SparkDataFrameSerializationStrategy(),
 )
 
 SqlAlchemyEngineType = as_dagster_type(
