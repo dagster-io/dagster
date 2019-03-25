@@ -96,10 +96,10 @@ class frozendict(dict):
     # By default pickle will iteratively call __setitem__ for restoring dict
     # Overriding __reduce__ allows us to ensure __setstate__ is used instead
     def __reduce__(self):
-        return (frozendict, (), self.__dict__)
+        return (frozendict, (), dict(self))
 
     def __setstate__(self, state):
-        self.__dict__ = state  # pylint:disable=attribute-defined-outside-init
+        self.__init__(state)
 
     __setitem__ = __readonly__
     __delitem__ = __readonly__
