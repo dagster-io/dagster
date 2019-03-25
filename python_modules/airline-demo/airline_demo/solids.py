@@ -1,6 +1,7 @@
 '''A fully fleshed out demo dagster repository with many configurable options.'''
 
 import os
+import re
 import zipfile
 
 from sqlalchemy import text
@@ -26,6 +27,9 @@ from dagstermill import define_dagstermill_solid
 
 from .types import FileExistsAtPath, SparkDataFrameType, SqlAlchemyEngineType, SqlTableName
 from .utils import mkdir_p, S3Logger
+
+
+PARQUET_SPECIAL_CHARACTERS = r'[ ,;{}()\n\t=]'
 
 
 def _notebook_path(name):
@@ -331,7 +335,12 @@ def ingest_csv_to_spark(context, input_csv):
         )
         .load(input_csv)
     )
-    return data_frame
+
+    # parquet compat
+    renamed_columns = [
+        re.sub(PARQUET_SPECIAL_CHARACTERS, '', column_name) for column_name in data_frame.columns
+    ]
+    return data_frame.toDF(*renamed_columns)
 
 
 def rename_spark_dataframe_columns(data_frame, fn):
