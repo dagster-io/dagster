@@ -87,10 +87,18 @@ class PipelineProcessStartedEvent(PipelineEventRecord):
         return self._process_id
 
 
+DAGIT_DEFAULT_STORAGE_MODE = RunStorageMode.FILESYSTEM
+
+
+def get_storage_mode(environment_dict):
+    return None if 'storage' in environment_dict else DAGIT_DEFAULT_STORAGE_MODE
+
+
 class SynchronousExecutionManager(PipelineExecutionManager):
     def execute_pipeline(self, repository_container, pipeline, pipeline_run, throw_on_user_error):
         check.inst_param(pipeline, 'pipeline', PipelineDefinition)
         try:
+
             return execute_pipeline(
                 pipeline,
                 pipeline_run.config,
@@ -102,7 +110,7 @@ class SynchronousExecutionManager(PipelineExecutionManager):
                     ),
                     reexecution_config=pipeline_run.reexecution_config,
                     step_keys_to_execute=pipeline_run.step_keys_to_execute,
-                    storage_mode=RunStorageMode.FILESYSTEM,
+                    storage_mode=get_storage_mode(pipeline_run.config),
                 ),
             )
         except:  # pylint: disable=W0702
@@ -286,7 +294,7 @@ def execute_pipeline_through_queue(
         executor_config=InProcessExecutorConfig(throw_on_user_error=False),
         reexecution_config=reexecution_config,
         step_keys_to_execute=step_keys_to_execute,
-        storage_mode=RunStorageMode.FILESYSTEM,
+        storage_mode=get_storage_mode(environment_dict),
     )
 
     from .app import RepositoryContainer
