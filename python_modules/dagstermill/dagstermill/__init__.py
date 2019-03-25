@@ -156,7 +156,12 @@ class Manager:
                 pm.record(output_name, value)
             elif runtime_type_enum == SerializableRuntimeType.PICKLE_SERIALIZABLE:
                 out_file = os.path.join(self.marshal_dir, 'output-{}'.format(output_name))
-                serialize_to_file(PickleSerializationStrategy(), value, out_file)
+                serialize_to_file(
+                    MANAGER_FOR_NOTEBOOK_INSTANCE.context,
+                    PickleSerializationStrategy(),
+                    value,
+                    out_file,
+                )
                 pm.record(output_name, out_file)
             else:
                 raise DagstermillError(
@@ -322,7 +327,12 @@ def write_value(runtime_type, value, target_file):
     elif runtime_type.is_any and is_json_serializable(value):
         return value
     elif runtime_type.serialization_strategy:
-        serialize_to_file(runtime_type.serialization_strategy, value, target_file)
+        serialize_to_file(
+            MANAGER_FOR_NOTEBOOK_INSTANCE.context,
+            runtime_type.serialization_strategy,
+            value,
+            target_file,
+        )
         return target_file
     else:
         check.failed('Unsupported type {name}'.format(name=runtime_type.name))
@@ -365,7 +375,9 @@ def load_parameter(input_name, input_value):
         ):
             return input_value
         elif runtime_type_enum == SerializableRuntimeType.PICKLE_SERIALIZABLE:
-            return deserialize_from_file(PickleSerializationStrategy(), input_value)
+            return deserialize_from_file(
+                MANAGER_FOR_NOTEBOOK_INSTANCE.context, PickleSerializationStrategy(), input_value
+            )
         else:
             raise DagstermillError(
                 "loading parameter {input_name} resulted in an error".format(input_name=input_name)
@@ -383,7 +395,9 @@ def read_value(runtime_type, value):
     elif runtime_type.is_any and is_json_serializable(value):
         return value
     elif runtime_type.serialization_strategy:
-        return deserialize_from_file(runtime_type.serialization_strategy, value)
+        return deserialize_from_file(
+            MANAGER_FOR_NOTEBOOK_INSTANCE.context, runtime_type.serialization_strategy, value
+        )
     else:
         check.failed(
             'Unsupported type {name}: no persistence strategy defined'.format(
