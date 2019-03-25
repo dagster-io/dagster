@@ -120,7 +120,7 @@ type ExecutionStep {
   kind: StepKind!
 }
 
-type ExecutionStepFailureEvent implements MessageEvent {
+type ExecutionStepFailureEvent implements MessageEvent & StepEvent {
   run: PipelineRun!
   message: String!
   timestamp: String!
@@ -140,7 +140,7 @@ type ExecutionStepOutput {
   type: RuntimeType!
 }
 
-type ExecutionStepOutputEvent implements MessageEvent {
+type ExecutionStepOutputEvent implements MessageEvent & StepEvent {
   run: PipelineRun!
   message: String!
   timestamp: String!
@@ -149,9 +149,10 @@ type ExecutionStepOutputEvent implements MessageEvent {
   outputName: String!
   storageMode: String!
   storageObjectId: String!
+  valueRepr: String!
 }
 
-type ExecutionStepStartEvent implements MessageEvent {
+type ExecutionStepStartEvent implements MessageEvent & StepEvent {
   run: PipelineRun!
   message: String!
   timestamp: String!
@@ -159,7 +160,7 @@ type ExecutionStepStartEvent implements MessageEvent {
   step: ExecutionStep
 }
 
-type ExecutionStepSuccessEvent implements MessageEvent {
+type ExecutionStepSuccessEvent implements MessageEvent & StepEvent {
   run: PipelineRun!
   message: String!
   timestamp: String!
@@ -583,14 +584,7 @@ type StartPipelineExecutionSuccess {
 }
 
 interface StepEvent {
-  step: ExecutionStep!
-  success: Boolean!
-}
-
-type StepFailureEvent implements StepEvent {
-  step: ExecutionStep!
-  success: Boolean!
-  errorMessage: String!
+  step: ExecutionStep
 }
 
 enum StepKind {
@@ -622,13 +616,6 @@ input StepOutputHandle {
 
 type Subscription {
   pipelineRunLogs(runId: ID!, after: Cursor): PipelineRunLogsSubscriptionPayload!
-}
-
-type SuccessfulStepOutputEvent implements StepEvent {
-  step: ExecutionStep!
-  success: Boolean!
-  outputName: String!
-  valueRepr: String!
 }
 
 interface WrappingConfigType {

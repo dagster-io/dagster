@@ -6,7 +6,7 @@ from graphql.execution.base import ResolveInfo
 
 from dagster import RunConfig, check
 
-from dagster.core.execution_plan.objects import ExecutionStepEventType, ExecutionStepEvent
+from dagster.core.events.execution import ExecutionStepEventType, ExecutionStepEvent
 from dagster.core.errors import DagsterInvalidDefinitionError
 from dagster.core.execution import ExecutionSelector, create_execution_plan, execute_plan
 from dagster.core.execution_context import ReexecutionConfig, make_new_run_id
@@ -16,7 +16,7 @@ from dagster.core.types.evaluator import evaluate_config_value
 from dagster.utils.error import serializable_error_info_from_exc_info
 
 from .config_types import to_dauphin_config_type
-from .errors import DauphinSuccessfulStepOutputEvent, DauphinStepFailureEvent
+
 from .execution import DauphinExecutionStep
 from .runtime_types import to_dauphin_runtime_type
 from .utils import EitherValue, EitherError
@@ -455,25 +455,37 @@ def _execute_plan_chain_actual_execute_or_error(
 
 
 def _create_dauphin_step_event(execution_plan, step_event):
+    from .runs import (
+        DauphinExecutionStepOutputEvent,
+        DauphinExecutionStepSuccessEvent,
+        DauphinExecutionStepFailureEvent,
+        DauphinExecutionStepStartEvent,
+    )
+
     check.inst_param(step_event, 'step_event', ExecutionStepEvent)
 
     step = execution_plan.get_step_by_key(step_event.step_key)
 
-    if step_event.event_type == ExecutionStepEventType.STEP_OUTPUT:
-        return DauphinSuccessfulStepOutputEvent(
-            success=True,
+    if step_event.event_type == ExecutionStepEventType.STEP_START:
+        return DauphinExecutionStepStartEvent(step=DauphinExecutionStep(execution_plan, step))
+    elif step_event.event_type == ExecutionStepEventType.STEP_OUTPUT:
+        return DauphinExecutionStepOutputEvent(
             step=DauphinExecutionStep(execution_plan, step),
             output_name=step_event.step_output_data.output_name,
+            storage_object_id=step_event.step_output_data.storage_object_id,
+            storage_mode=step_event.step_output_data.storage_mode,
             value_repr=step_event.step_output_data.value_repr,
         )
     elif step_event.event_type == ExecutionStepEventType.STEP_FAILURE:
-        return DauphinStepFailureEvent(
-            success=False,
+        return DauphinExecutionStepFailureEvent(
             step=DauphinExecutionStep(execution_plan, step),
-            error_message=step_event.step_failure_data.error_message,
+            error=step_event.step_failure_data.error,
         )
+    elif step_event.event_type == ExecutionStepEventType.STEP_SUCCESS:
+        return DauphinExecutionStepSuccessEvent(step=DauphinExecutionStep(execution_plan, step))
+
     else:
-        check.failed('{step_event} unsupported'.format(step_event=step_event))
+        check.failed('Unsupported step event: {step_event}'.format(step_event=step_event))
 
 
 def _type_of(args, type_name):

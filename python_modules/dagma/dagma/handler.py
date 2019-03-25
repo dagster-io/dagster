@@ -8,8 +8,8 @@ from io import BytesIO
 from dagster import check, PipelineDefinition
 from dagster.core.execution import construct_pipeline_execution_context, RunConfig, ExecutionContext
 from dagster.core.execution_context import SystemPipelineExecutionContext
-from dagster.core.execution_plan.objects import ExecutionStepEvent
 from dagster.core.execution_plan.simple_engine import execute_step_in_memory
+from dagster.core.events.execution import ExecutionStepEvent
 
 from .serialize import deserialize, serialize
 from .utils import get_input_key, get_resources_key, get_step_key, LambdaInvocationPayload

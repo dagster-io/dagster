@@ -24,6 +24,8 @@ from dagster.core.execution_context import (
     SystemStepExecutionContext,
 )
 
+from dagster.core.events.execution import ExecutionStepEvent, ExecutionStepEventType
+
 from dagster.core.intermediates_manager import IntermediatesManager
 
 from dagster.utils.error import serializable_error_info_from_exc_info
@@ -31,11 +33,11 @@ from dagster.utils.error import serializable_error_info_from_exc_info
 from .objects import (
     ExecutionPlan,
     ExecutionStep,
-    ExecutionStepEvent,
     StepOutputHandle,
     StepOutputValue,
     StepOutputData,
     StepFailureData,
+    StepSuccessData,
 )
 
 
@@ -120,13 +122,14 @@ def execute_step_in_memory(step_context, inputs, intermediates_manager):
         for step_event in check.generator(
             _execute_steps_core_loop(step_context, inputs, intermediates_manager)
         ):
-            step_context.log.info(
-                'Step {step} emitted {value} for output {output}'.format(
-                    step=step_context.step.key,
-                    value=step_event.step_output_data.value_repr,
-                    output=step_event.step_output_data.output_name,
+            if step_event.event_type is ExecutionStepEventType.STEP_OUTPUT:
+                step_context.log.info(
+                    'Step {step} emitted {value} for output {output}'.format(
+                        step=step_context.step.key,
+                        value=step_event.step_output_data.value_repr,
+                        output=step_event.step_output_data.output_name,
+                    )
                 )
-            )
             yield step_event
     except DagsterError as dagster_error:
         step_context.log.error(str(dagster_error))
@@ -145,12 +148,7 @@ def execute_step_in_memory(step_context, inputs, intermediates_manager):
         error_info = serializable_error_info_from_exc_info(user_facing_exc_info)
 
         yield ExecutionStepEvent.step_failure_event(
-            step_context=step_context,
-            step_failure_data=StepFailureData(
-                error_message=error_info.message,
-                error_cls_name=user_facing_exc_info[0].__name__,  # 0 is the exception type
-                stack=error_info.stack,
-            ),
+            step_context=step_context, step_failure_data=StepFailureData(error=error_info)
         )
         return
 
@@ -204,8 +202,7 @@ def _execute_steps_core_loop(step_context, inputs, intermediates_manager):
             step_context.step, input_name, input_value
         )
 
-    step = step_context.step
-    step_context.events.execution_plan_step_start(step.key)
+    yield ExecutionStepEvent.step_start_event(step_context)
 
     try:
         with time_execution_scope() as timer_result:
@@ -219,20 +216,11 @@ def _execute_steps_core_loop(step_context, inputs, intermediates_manager):
 
             yield _create_step_event(step_context, step_output_value, intermediates_manager)
 
-        step_context.events.execution_plan_step_success(step.key, timer_result.millis)
+        yield ExecutionStepEvent.step_success_event(
+            step_context, StepSuccessData(time_ms=timer_result.millis)
+        )
 
     except DagsterError as dagster_error:
-        # The step compute_fn and output error checking both raise exceptions. Catch
-        # and re-throw these to ensure that the step is always marked as failed.
-
-        user_facing_exc_info = (
-            # pylint does not know original_exc_info exists is is_user_code_error is true
-            # pylint: disable=no-member
-            dagster_error.original_exc_info
-            if dagster_error.is_user_code_error
-            else sys.exc_info()
-        )
-        step_context.events.execution_plan_step_failure(step.key, user_facing_exc_info)
         stack_trace = get_formatted_stack_trace(dagster_error)
         step_context.log.error(str(dagster_error), stack_trace=stack_trace)
         six.reraise(*sys.exc_info())
@@ -259,19 +247,13 @@ def _create_step_event(step_context, step_output_value, intermediates_manager):
             value=value,
         )
 
-        step_context.events.execution_plan_step_output(
-            step_key=step.key,
-            output_name=step_output_handle.output_name,
-            storage_mode=intermediates_manager.storage_mode.value,
-            storage_object_id=object_key,
-        )
-
         return ExecutionStepEvent.step_output_event(
             step_context=step_context,
             step_output_data=StepOutputData(
                 step_output_handle=step_output_handle,
                 value_repr=repr(value),
-                intermediates_manager=intermediates_manager,
+                storage_object_id=object_key,
+                storage_mode_value=intermediates_manager.storage_mode.value,
             ),
         )
     except DagsterRuntimeCoercionError as e:

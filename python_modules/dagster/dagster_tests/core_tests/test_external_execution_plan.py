@@ -16,10 +16,10 @@ from dagster import (
 from dagster.core.execution import (
     MultiprocessExecutorConfig,
     yield_pipeline_execution_context,
-    ExecutionStepEventType,
     create_execution_plan,
     execute_plan,
 )
+from dagster.core.events.execution import ExecutionStepEventType
 from dagster.core.object_store import (
     get_filesystem_intermediate,
     has_filesystem_intermediate,

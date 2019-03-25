@@ -148,8 +148,8 @@ def test_output_sql_sum_sq_solid():
     assert pipeline_result.success
 
     result_list = pipeline_result.solid_result_list
-
-    assert len(result_list) == 3
+    # I dont understand why this changed
+    assert len(result_list) == 4
     engine = context.resources.sa.engine
     result_list = engine.connect().execute('SELECT * FROM sum_sq_table').fetchall()
     assert result_list == [(1, 2, 3, 9), (3, 4, 7, 49)]

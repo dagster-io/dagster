@@ -44,17 +44,13 @@ from .errors import (
     DagsterStepOutputNotFoundError,
 )
 
-from .events import construct_event_logger
+from .events.logging import construct_event_logger
 
 from .execution_plan.create import create_execution_plan_core
 
 
-from .execution_plan.objects import (
-    ExecutionPlan,
-    ExecutionStepEvent,
-    ExecutionStepEventType,
-    StepKind,
-)
+from .execution_plan.objects import ExecutionPlan, StepKind
+from .events.execution import ExecutionStepEvent, ExecutionStepEventType
 
 from .execution_plan.multiprocessing_engine import multiprocess_execute_plan
 
@@ -91,12 +87,13 @@ class PipelineExecutionResult(object):
     '''Result of execution of the whole pipeline. Returned eg by :py:func:`execute_pipeline`.
     '''
 
-    def __init__(self, pipeline, run_id, step_event_list):
+    def __init__(self, pipeline, run_id, step_event_list, pipeline_context):
         self.pipeline = check.inst_param(pipeline, 'pipeline', PipelineDefinition)
         self.run_id = check.str_param(run_id, 'run_id')
         self.step_event_list = check.list_param(
             step_event_list, 'step_event_list', of_type=ExecutionStepEvent
         )
+        self.pipeline_context = pipeline_context
 
         solid_result_dict = self._context_solid_result_dict(step_event_list)
 
@@ -122,6 +119,7 @@ class PipelineExecutionResult(object):
             solid_result_dict[solid_name] = SolidExecutionResult(
                 self.pipeline.solid_named(solid_name),
                 dict(step_events_by_solid_by_kind[solid_name]),
+                self.pipeline_context,
             )
         return solid_result_dict
 
@@ -163,11 +161,12 @@ class SolidExecutionResult(object):
       solid (SolidDefinition): Solid for which this result is
     '''
 
-    def __init__(self, solid, step_events_by_kind):
+    def __init__(self, solid, step_events_by_kind, pipeline_context):
         self.solid = check.inst_param(solid, 'solid', Solid)
         self.step_events_by_kind = check.dict_param(
             step_events_by_kind, 'step_events_by_kind', key_type=StepKind, value_type=list
         )
+        self.pipeline_context = pipeline_context
 
     @property
     def transform(self):
@@ -185,28 +184,6 @@ class SolidExecutionResult(object):
     @property
     def output_expectations(self):
         return self.step_events_by_kind.get(StepKind.OUTPUT_EXPECTATION, [])
-
-    @staticmethod
-    def from_step_events(pipeline_context, step_events):
-        check.inst_param(pipeline_context, 'pipeline_context', SystemPipelineExecutionContext)
-        step_events = check.list_param(step_events, 'step_events', ExecutionStepEvent)
-        if step_events:
-            step_events_by_kind = defaultdict(list)
-
-            solid = None
-            for result in step_events:
-                if solid is None:
-                    solid = result.step.solid
-                check.invariant(result.step.solid is solid, 'Must all be from same solid')
-
-            for result in step_events:
-                step_events_by_kind[result.kind].append(result)
-
-            return SolidExecutionResult(
-                solid=step_events[0].step.solid, step_events_by_kind=dict(step_events_by_kind)
-            )
-        else:
-            check.failed("Cannot create SolidExecutionResult from empty list")
 
     @property
     def success(self):
@@ -226,8 +203,9 @@ class SolidExecutionResult(object):
         Returns None if execution result isn't a success.'''
         if self.success and self.transforms:
             return {
-                result.step_output_data.output_name: result.step_output_data.get_value()
+                result.step_output_data.output_name: self.get_value(result.step_output_data)
                 for result in self.transforms
+                if result.is_successful_output
             }
         else:
             return None
@@ -246,8 +224,11 @@ class SolidExecutionResult(object):
 
         if self.success:
             for result in self.transforms:
-                if result.step_output_data.output_name == output_name:
-                    return result.step_output_data.get_value()
+                if (
+                    result.is_successful_output
+                    and result.step_output_data.output_name == output_name
+                ):
+                    return self.get_value(result.step_output_data)
             raise DagsterInvariantViolationError(
                 (
                     'Did not find result {output_name} in solid {self.solid.name} '
@@ -256,6 +237,13 @@ class SolidExecutionResult(object):
             )
         else:
             return None
+
+    def get_value(self, step_output_data):
+        return self.pipeline_context.intermediates_manager.get_intermediate(
+            context=self.pipeline_context,
+            runtime_type=None,
+            step_output_handle=step_output_data.step_output_handle,
+        )
 
     @property
     def failure_data(self):
@@ -564,6 +552,47 @@ def get_resource_or_gen(pipeline_def, context_definition, resource_name, environ
     )
 
 
+def _execute_pipeline_iterator(pipeline_context):
+    pipeline_context.events.pipeline_start()
+
+    execution_plan = create_execution_plan_core(pipeline_context)
+
+    steps = execution_plan.topological_steps()
+
+    if not steps:
+        pipeline_context.log.debug(
+            'Pipeline {pipeline} has no nodes and no execution will happen'.format(
+                pipeline=pipeline_context.pipeline_def.display_name
+            )
+        )
+        pipeline_context.events.pipeline_success()
+        return
+
+    _setup_reexecution(pipeline_context.run_config, pipeline_context, execution_plan)
+
+    pipeline_context.log.debug(
+        'About to execute the compute node graph in the following order {order}'.format(
+            order=[step.key for step in steps]
+        )
+    )
+
+    check.invariant(len(steps[0].step_inputs) == 0)
+
+    pipeline_success = True
+
+    for step_event in invoke_executor_on_plan(
+        pipeline_context, execution_plan, pipeline_context.run_config.step_keys_to_execute
+    ):
+        if step_event.is_step_failure:
+            pipeline_success = False
+        yield step_event
+
+    if pipeline_success:
+        pipeline_context.events.pipeline_success()
+    else:
+        pipeline_context.events.pipeline_failure()
+
+
 def execute_pipeline_iterator(pipeline, environment_dict=None, run_config=None):
     '''Returns iterator that yields :py:class:`SolidExecutionResult` for each
     solid executed in the pipeline.
@@ -582,45 +611,7 @@ def execute_pipeline_iterator(pipeline, environment_dict=None, run_config=None):
     with yield_pipeline_execution_context(
         pipeline, environment_dict, run_config
     ) as pipeline_context:
-
-        pipeline_context.events.pipeline_start()
-
-        execution_plan = create_execution_plan_core(pipeline_context)
-
-        steps = execution_plan.topological_steps()
-
-        if not steps:
-            pipeline_context.log.debug(
-                'Pipeline {pipeline} has no nodes and no execution will happen'.format(
-                    pipeline=pipeline.display_name
-                )
-            )
-            pipeline_context.events.pipeline_success()
-            return
-
-        _setup_reexecution(run_config, pipeline_context, execution_plan)
-
-        pipeline_context.log.debug(
-            'About to execute the compute node graph in the following order {order}'.format(
-                order=[step.key for step in steps]
-            )
-        )
-
-        check.invariant(len(steps[0].step_inputs) == 0)
-
-        pipeline_success = True
-
-        for step_event in invoke_executor_on_plan(
-            pipeline_context, execution_plan, run_config.step_keys_to_execute
-        ):
-            if step_event.is_step_failure:
-                pipeline_success = False
-            yield step_event
-
-        if pipeline_success:
-            pipeline_context.events.pipeline_success()
-        else:
-            pipeline_context.events.pipeline_failure()
+        return _execute_pipeline_iterator(pipeline_context)
 
 
 def execute_pipeline(pipeline, environment_dict=None, run_config=None):
@@ -642,15 +633,15 @@ def execute_pipeline(pipeline, environment_dict=None, run_config=None):
     environment_dict = check.opt_dict_param(environment_dict, 'environment_dict')
     run_config = check_run_config_param(run_config)
 
-    return PipelineExecutionResult(
-        pipeline,
-        run_config.run_id,
-        list(
-            execute_pipeline_iterator(
-                pipeline=pipeline, environment_dict=environment_dict, run_config=run_config
-            )
-        ),
-    )
+    with yield_pipeline_execution_context(
+        pipeline, environment_dict, run_config
+    ) as pipeline_context:
+        return PipelineExecutionResult(
+            pipeline,
+            run_config.run_id,
+            list(_execute_pipeline_iterator(pipeline_context)),
+            pipeline_context,
+        )
 
 
 class PipelineConfigEvaluationError(Exception):

@@ -40,15 +40,16 @@ def test_execution_plan_simple_two_steps():
     assert execution_plan.get_step_by_key('add_one.transform')
 
     step_events = execute_plan(execution_plan)
-    assert len(step_events) == 2
+    out_events = [ev for ev in step_events if ev.is_successful_output]
+    assert len(out_events) == 2
 
-    assert step_events[0].step_key == 'return_one.transform'
-    assert step_events[0].is_successful_output
-    assert step_events[0].step_output_data.get_value() == 1
+    assert out_events[0].step_key == 'return_one.transform'
+    assert out_events[0].is_successful_output
+    assert out_events[0].step_output_data.value_repr == '1'
 
-    assert step_events[1].step_key == 'add_one.transform'
-    assert step_events[1].is_successful_output
-    assert step_events[1].step_output_data.get_value() == 2
+    assert out_events[1].step_key == 'add_one.transform'
+    assert out_events[1].is_successful_output
+    assert out_events[1].step_output_data.value_repr == '2'
 
 
 def test_execution_plan_two_outputs():
@@ -62,13 +63,14 @@ def test_execution_plan_two_outputs():
     execution_plan = create_execution_plan(pipeline_def)
 
     step_events = execute_plan(execution_plan)
+    out_events = [ev for ev in step_events if ev.is_successful_output]
 
-    assert step_events[0].step_key == 'return_one_two.transform'
-    assert step_events[0].step_output_data.get_value() == 1
-    assert step_events[0].step_output_data.output_name == 'num_one'
-    assert step_events[1].step_key == 'return_one_two.transform'
-    assert step_events[1].step_output_data.get_value() == 2
-    assert step_events[1].step_output_data.output_name == 'num_two'
+    assert out_events[0].step_key == 'return_one_two.transform'
+    assert out_events[0].step_output_data.value_repr == '1'
+    assert out_events[0].step_output_data.output_name == 'num_one'
+    assert out_events[1].step_key == 'return_one_two.transform'
+    assert out_events[1].step_output_data.value_repr == '2'
+    assert out_events[1].step_output_data.output_name == 'num_two'
 
 
 def test_reentrant_execute_plan():
@@ -84,8 +86,9 @@ def test_reentrant_execute_plan():
     execution_plan = create_execution_plan(pipeline_def)
 
     step_events = execute_plan(execution_plan, run_config=RunConfig(tags={'foo': 'bar'}))
+    out_events = [ev for ev in step_events if ev.is_successful_output]
 
     assert called['yup']
-    assert len(step_events) == 1
+    assert len(out_events) == 1
 
-    assert step_events[0].tags['foo'] == 'bar'
+    assert out_events[0].tags['foo'] == 'bar'

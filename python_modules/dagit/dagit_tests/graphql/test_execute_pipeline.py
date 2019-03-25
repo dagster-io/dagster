@@ -150,7 +150,10 @@ def test_subscription_query_error():
     assert step_run_log_entry
     # Confirm that it is the user stack
 
-    assert step_run_log_entry['message'] == 'Execution of throw_a_thing.transform failed'
+    assert (
+        step_run_log_entry['message']
+        == 'ExecutionStepEventType.STEP_FAILURE for step throw_a_thing.transform'
+    )
     assert step_run_log_entry['error']
     assert isinstance(step_run_log_entry['error']['stack'], list)
 
@@ -224,8 +227,8 @@ def test_basic_inmemory_sync_execution():
     assert not has_event_of_type(logs, 'PipelineFailureEvent')
 
     assert first_event_of_type(logs, 'PipelineStartEvent')['level'] == 'INFO'
-
     sum_solid_output = get_step_output_event(logs, 'sum_solid.transform')
+
     assert sum_solid_output['step']['key'] == 'sum_solid.transform'
 
 

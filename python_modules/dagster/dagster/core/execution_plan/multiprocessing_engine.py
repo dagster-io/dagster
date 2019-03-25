@@ -6,10 +6,10 @@ from dagster.core.execution_context import (
     MultiprocessExecutorConfig,
     SystemPipelineExecutionContext,
 )
-
+from dagster.core.events.execution import ExecutionStepEvent
 
 from .create import create_execution_plan_core
-from .objects import ExecutionPlan, ExecutionStepEvent
+from .objects import ExecutionPlan
 from .simple_engine import start_inprocess_executor
 
 from .child_process_executor import ChildProcessCommand, execute_child_process_command
