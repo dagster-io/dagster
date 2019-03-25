@@ -13,6 +13,7 @@ from dagster import (
     Field,
     String,
     NamedDict,
+    ConfigType,
 )
 
 from dagster.core.utility_solids import define_stub_solid
@@ -100,14 +101,45 @@ def test_invalid_item_in_solid_list():
         PipelineDefinition(solids=['not_a_solid'])
 
 
-def test_double_type():
-    @solid(config_field=Field(NamedDict('Name', {'some_field': Field(String)})))
+def test_double_type_name():
+    @solid(config_field=Field(NamedDict('SomeTypeName', {'some_field': Field(String)})))
     def solid_one(_context):
         raise Exception('should not execute')
 
-    @solid(config_field=Field(NamedDict('Name', {'some_field': Field(String)})))
+    @solid(config_field=Field(NamedDict('SomeTypeName', {'another_field': Field(String)})))
     def solid_two(_context):
         raise Exception('should not execute')
 
-    with pytest.raises(DagsterInvalidDefinitionError, match='Type names must be unique.'):
+    with pytest.raises(DagsterInvalidDefinitionError) as exc_info:
         PipelineDefinition(solids=[solid_one, solid_two])
+
+    assert str(exc_info.value) == (
+        'Type names must be unique. You have constructed two different instances of '
+        'types with the same name "SomeTypeName".'
+    )
+
+
+def test_double_type_key():
+    class KeyOneNameOneType(ConfigType):
+        def __init__(self):
+            super(KeyOneNameOneType, self).__init__(key='KeyOne', name='NameOne')
+
+    class KeyOneNameTwoType(ConfigType):
+        def __init__(self):
+            super(KeyOneNameTwoType, self).__init__(key='KeyOne', name='NameTwo')
+
+    @solid(config_field=Field(KeyOneNameOneType))
+    def solid_one(_context):
+        raise Exception('should not execute')
+
+    @solid(config_field=Field(KeyOneNameTwoType))
+    def solid_two(_context):
+        raise Exception('should not execute')
+
+    with pytest.raises(DagsterInvalidDefinitionError) as exc_info:
+        PipelineDefinition(solids=[solid_one, solid_two])
+
+    assert str(exc_info.value) == (
+        'Type keys must be unique. You have constructed two different instances of types '
+        'with the same key "KeyOne".'
+    )
