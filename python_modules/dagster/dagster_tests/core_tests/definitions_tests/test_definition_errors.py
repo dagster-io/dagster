@@ -101,13 +101,18 @@ def test_invalid_item_in_solid_list():
 
 
 def test_double_type():
-    @solid(config_field=Field(NamedDict('Name', {'some_field': Field(String)})))
+    @solid(config_field=Field(NamedDict('SomeTypeName', {'some_field': Field(String)})))
     def solid_one(_context):
         raise Exception('should not execute')
 
-    @solid(config_field=Field(NamedDict('Name', {'some_field': Field(String)})))
+    @solid(config_field=Field(NamedDict('SomeTypeName', {'another_field': Field(String)})))
     def solid_two(_context):
         raise Exception('should not execute')
 
-    with pytest.raises(DagsterInvalidDefinitionError, match='Type names must be unique.'):
+    with pytest.raises(DagsterInvalidDefinitionError) as exc_info:
         PipelineDefinition(solids=[solid_one, solid_two])
+
+    assert str(exc_info.value) == (
+        'Type names must be unique. You have constructed two different instances of '
+        'types with the same name "SomeTypeName".'
+    )
