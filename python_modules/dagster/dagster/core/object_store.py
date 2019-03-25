@@ -83,7 +83,7 @@ class FileSystemObjectStore(ObjectStore):
         # object store into the serializer and b) to provide sugar for the common case where
         # we don't need to do anything other than open the target path as a binary file
         with open(target_path, 'wb') as ff:
-            runtime_type.serialization_strategy.serialize_value(obj, ff)
+            runtime_type.serialization_strategy.serialize_value(context, obj, ff)
 
         return target_path
 
@@ -94,7 +94,7 @@ class FileSystemObjectStore(ObjectStore):
         check.param_invariant(len(paths) > 0, 'paths')
         target_path = os.path.join(self.root, *paths)
         with open(target_path, 'rb') as ff:
-            return runtime_type.serialization_strategy.deserialize_value(ff)
+            return runtime_type.serialization_strategy.deserialize_value(context, ff)
 
     def has_object(self, context, paths):  # pylint: disable=unused-argument
         target_path = os.path.join(self.root, *paths)
@@ -159,7 +159,7 @@ class S3ObjectStore(ObjectStore):
         )
 
         with BytesIO() as bytes_io:
-            runtime_type.serialization_strategy.serialize_value(obj, bytes_io)
+            runtime_type.serialization_strategy.serialize_value(context, obj, bytes_io)
             bytes_io.seek(0)
             self.s3.put_object(Bucket=self.bucket, Key=key, Body=bytes_io)
 
@@ -175,7 +175,7 @@ class S3ObjectStore(ObjectStore):
         key = self._key_for_paths(paths)
 
         return runtime_type.serialization_strategy.deserialize_value(
-            BytesIO(self.s3.get_object(Bucket=self.bucket, Key=key)['Body'].read())
+            context, BytesIO(self.s3.get_object(Bucket=self.bucket, Key=key)['Body'].read())
         )
 
     def has_object(self, context, paths):  # pylint: disable=unused-argument
