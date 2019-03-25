@@ -47,7 +47,7 @@ def test_file_system_object_store():
     finally:
         try:
             shutil.rmtree(object_store.root)
-        except (seven.FileNotFoundError, OSError):
+        except seven.FileNotFoundError:
             pass
 
 
@@ -70,7 +70,7 @@ def test_file_system_object_store_with_custom_serializer():
     finally:
         try:
             shutil.rmtree(object_store.root)
-        except (seven.FileNotFoundError, OSError):
+        except seven.FileNotFoundError:
             pass
 
 
@@ -122,7 +122,4 @@ def test_s3_object_store_with_custom_serializer():
         assert object_store.has_object(context, ['foo'])
         assert object_store.get_object(context, LowercaseString.inst(), ['foo']) == 'foo'
     finally:
-        try:
-            shutil.rmtree(object_store.root)
-        except seven.FileNotFoundError:
-            pass
+        object_store.rm_object(context, ['foo'])
