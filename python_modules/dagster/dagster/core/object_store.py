@@ -1,5 +1,4 @@
 import os
-import pickle
 import shutil
 
 from abc import ABCMeta, abstractmethod
@@ -78,9 +77,13 @@ class FileSystemObjectStore(ObjectStore):
         target_path = get_valid_target_path(self.root, paths)
 
         check.invariant(not os.path.exists(target_path))
+        # This is not going to be right in the general case, e.g. for types like Spark
+        # datasets/dataframes, which naturally serialize to
+        # union(parquet_file, directory([parquet_file])) -- we will need a) to pass the
+        # object store into the serializer and b) to provide sugar for the common case where
+        # we don't need to do anything other than open the target path as a binary file
         with open(target_path, 'wb') as ff:
-            # Hardcode pickle for now
-            pickle.dump(obj, ff)
+            runtime_type.serialization_strategy.serialize_value(obj, ff)
 
         return target_path
 
@@ -91,7 +94,7 @@ class FileSystemObjectStore(ObjectStore):
         check.param_invariant(len(paths) > 0, 'paths')
         target_path = os.path.join(self.root, *paths)
         with open(target_path, 'rb') as ff:
-            return pickle.load(ff)
+            return runtime_type.serialization_strategy.deserialize_value(ff)
 
     def has_object(self, context, paths):  # pylint: disable=unused-argument
         target_path = os.path.join(self.root, *paths)
@@ -156,8 +159,7 @@ class S3ObjectStore(ObjectStore):
         )
 
         with BytesIO() as bytes_io:
-            # Hardcode pickle for now
-            pickle.dump(obj, bytes_io)
+            runtime_type.serialization_strategy.serialize_value(obj, bytes_io)
             bytes_io.seek(0)
             self.s3.put_object(Bucket=self.bucket, Key=key, Body=bytes_io)
 
@@ -172,7 +174,9 @@ class S3ObjectStore(ObjectStore):
 
         key = self._key_for_paths(paths)
 
-        return pickle.loads(self.s3.get_object(Bucket=self.bucket, Key=key)['Body'].read())
+        return runtime_type.serialization_strategy.deserialize_value(
+            BytesIO(self.s3.get_object(Bucket=self.bucket, Key=key)['Body'].read())
+        )
 
     def has_object(self, context, paths):  # pylint: disable=unused-argument
         _, botocore = ensure_boto_requirements()
