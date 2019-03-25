@@ -93,8 +93,12 @@ class frozendict(dict):
     def __readonly__(self, *args, **kwargs):
         raise RuntimeError("Cannot modify ReadOnlyDict")
 
-    # By default pickle will iteratively call __setitem__ for restoring dict
-    # Overriding __reduce__ allows us to ensure __setstate__ is used instead
+    # https://docs.python.org/3/library/pickle.html#object.__reduce__
+    #
+    # For a dict, the default behavior for pickle is to iteratively call __setitem__ (see 5th item in __reduce__ tuple).
+    # Since we want to disable __setitem__ and still inherit dict, we override this behavior by defining __reduce__.
+    # We return the 3rd item in the tuple, which is passed to __setstate__ allowing us to restore the frozendict.
+
     def __reduce__(self):
         return (frozendict, (), dict(self))
 
