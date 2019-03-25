@@ -1,7 +1,6 @@
 from __future__ import absolute_import
 from collections import namedtuple
 import copy
-import multiprocessing
 import os
 import sys
 import time
@@ -13,6 +12,7 @@ from dagster import check, RunConfig, PipelineDefinition, execute_pipeline, InPr
 from dagster.core.events import PipelineEventRecord, EventType
 from dagster.utils.error import serializable_error_info_from_exc_info, SerializableErrorInfo
 from dagster.utils.logging import level_from_string
+from dagster.utils import get_multiprocessing_context
 
 from .pipeline_run_storage import PipelineRun
 
@@ -124,15 +124,7 @@ class ProcessStartedSentinel(object):
 
 class MultiprocessingExecutionManager(PipelineExecutionManager):
     def __init__(self):
-        # Set execution method to spawn, to avoid fork and to have same behavior between platforms.
-        # Older versions are stuck with whatever is the default on their platform (fork on
-        # Unix-like and spawn on windows)
-        #
-        # https://docs.python.org/3/library/multiprocessing.html#multiprocessing.get_context
-        if hasattr(multiprocessing, 'get_context'):
-            self._multiprocessing_context = multiprocessing.get_context('spawn')
-        else:
-            self._multiprocessing_context = multiprocessing
+        self._multiprocessing_context = get_multiprocessing_context()
         self._processes_lock = self._multiprocessing_context.Lock()
         self._processes = []
         # This is actually a reverse semaphore. We keep track of number of

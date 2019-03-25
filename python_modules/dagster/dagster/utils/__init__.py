@@ -6,6 +6,7 @@ import inspect
 import os
 import re
 import yaml
+import multiprocessing
 
 from dagster import check
 
@@ -92,6 +93,14 @@ class frozendict(dict):
     def __readonly__(self, *args, **kwargs):
         raise RuntimeError("Cannot modify ReadOnlyDict")
 
+    # By default pickle will iteratively call __setitem__ for restoring dict
+    # Overriding __reduce__ allows us to ensure __setstate__ is used instead
+    def __reduce__(self):
+        return (frozendict, (), self.__dict__)
+
+    def __setstate__(self, state):
+        self.__dict__ = state  # pylint:disable=attribute-defined-outside-init
+
     __setitem__ = __readonly__
     __delitem__ = __readonly__
     pop = __readonly__
@@ -136,3 +145,15 @@ def get_prop_or_key(elem, key):
 
 def list_pull(alist, key):
     return list(map(lambda elem: get_prop_or_key(elem, key), alist))
+
+
+def get_multiprocessing_context():
+    # Set execution method to spawn, to avoid fork and to have same behavior between platforms.
+    # Older versions are stuck with whatever is the default on their platform (fork on
+    # Unix-like and spawn on windows)
+    #
+    # https://docs.python.org/3/library/multiprocessing.html#multiprocessing.get_context
+    if hasattr(multiprocessing, 'get_context'):
+        return multiprocessing.get_context('spawn')
+    else:
+        return multiprocessing

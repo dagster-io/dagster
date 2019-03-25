@@ -8,6 +8,7 @@ import six
 
 from dagster import check
 from dagster.utils.error import serializable_error_info_from_exc_info, SerializableErrorInfo
+from dagster.utils import get_multiprocessing_context
 
 ChildProcessStartEvent = namedtuple('ChildProcessStartEvent', 'pid')
 ChildProcessDoneEvent = namedtuple('ChildProcessDoneEvent', 'pid')
@@ -92,9 +93,10 @@ def execute_child_process_command(command, return_process_events=False):
     check.inst_param(command, 'command', ChildProcessCommand)
     check.bool_param(return_process_events, 'return_process_events')
 
-    queue = multiprocessing.Queue()
+    multiprocessing_context = get_multiprocessing_context()
+    queue = multiprocessing_context.Queue()
 
-    process = multiprocessing.Process(
+    process = multiprocessing_context.Process(
         target=execute_command_in_child_process, args=(queue, command)
     )
 
