@@ -20375,26 +20375,6 @@ at runtime.</p>
 <dd><p>This is base class for any exception that is meant to wrap an Exception
 thrown by user code. It wraps that existing user code. The original_exc_info
 argument to the ctor is meant to be a sys.exc_info at the site of constructor.</p>
-<p>Example:</p>
-<p>output_type = step.step_output_dict[output_name].runtime_type
-try:</p>
-<blockquote>
-<div><dl class="docutils">
-<dt>context.persistence_strategy.write_value(</dt>
-<dd>output_type.serialization_strategy, output[‘path’], result.step_output_data.value</dd>
-</dl>
-<p>)</p>
-</div></blockquote>
-<dl class="docutils">
-<dt>except Exception as e:  # pylint: disable=broad-except</dt>
-<dd><dl class="first docutils">
-<dt>raise_from(</dt>
-<dd>DagsterExecutionStepExecutionError(…)
-e,</dd>
-</dl>
-<p class="last">)</p>
-</dd>
-</dl>
 </dd></dl>
 
 <dl class="exception">

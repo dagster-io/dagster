@@ -42,20 +42,6 @@ class DagsterUserCodeExecutionError(DagsterUserError):
     This is base class for any exception that is meant to wrap an Exception
     thrown by user code. It wraps that existing user code. The original_exc_info
     argument to the ctor is meant to be a sys.exc_info at the site of constructor.
-
-    Example:
-
-    output_type = step.step_output_dict[output_name].runtime_type
-    try:
-        context.persistence_strategy.write_value(
-            output_type.serialization_strategy, output['path'], result.step_output_data.value
-        )
-    except Exception as e:  # pylint: disable=broad-except
-        raise_from(
-            DagsterExecutionStepExecutionError(...)
-            e,
-        )
-
     '''
 
     def __init__(self, *args, **kwargs):
