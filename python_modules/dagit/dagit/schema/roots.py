@@ -89,6 +89,31 @@ class DauphinQuery(dauphin.ObjectType):
         return model.get_execution_plan(graphene_info, pipeline.to_selector(), config)
 
 
+class DauphinStepOutputHandle(dauphin.InputObjectType):
+    class Meta:
+        name = 'StepOutputHandle'
+
+    stepKey = dauphin.NonNull(dauphin.String)
+    outputName = dauphin.NonNull(dauphin.String)
+
+
+class DauphinReexecutionConfig(dauphin.InputObjectType):
+    class Meta:
+        name = 'ReexecutionConfig'
+
+    previousRunId = dauphin.NonNull(dauphin.String)
+    stepOutputHandles = dauphin.non_null_list(DauphinStepOutputHandle)
+
+    def to_reexecution_config(self):
+        from dagster.core.execution_context import ReexecutionConfig
+        from dagster.core.intermediates_manager import StepOutputHandle
+
+        return ReexecutionConfig(
+            self.previousRunId,
+            list(map(lambda g: StepOutputHandle(g.stepKey, g.outputName), self.stepOutputHandles)),
+        )
+
+
 class DauphinStartPipelineExecutionMutation(dauphin.Mutation):
     class Meta:
         name = 'StartPipelineExecutionMutation'
@@ -96,12 +121,25 @@ class DauphinStartPipelineExecutionMutation(dauphin.Mutation):
     class Arguments:
         pipeline = dauphin.NonNull('ExecutionSelector')
         config = dauphin.Argument('PipelineConfig')
+        stepKeys = dauphin.List(dauphin.NonNull(dauphin.String))
+        executionMetadata = dauphin.Argument('ExecutionMetadata')
+        reexecutionConfig = dauphin.Argument('ReexecutionConfig')
 
     Output = dauphin.NonNull('StartPipelineExecutionResult')
 
     def mutate(self, graphene_info, **kwargs):
+        reexecution_config = (
+            kwargs['reexecutionConfig'].to_reexecution_config()
+            if 'reexecutionConfig' in kwargs
+            else None
+        )
         return model.start_pipeline_execution(
-            graphene_info, kwargs['pipeline'].to_selector(), kwargs.get('config')
+            graphene_info,
+            kwargs['pipeline'].to_selector(),
+            kwargs.get('config'),
+            kwargs.get('stepKeys'),
+            reexecution_config,
+            kwargs.get('executionMetadata'),
         )
 
 

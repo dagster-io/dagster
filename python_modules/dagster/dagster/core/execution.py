@@ -613,6 +613,8 @@ def execute_pipeline_iterator(pipeline, environment_dict=None, run_config=None):
             pipeline_context.events.pipeline_success()
             return
 
+        _setup_reexecution(run_config, pipeline_context, execution_plan)
+
         pipeline_context.log.debug(
             'About to execute the compute node graph in the following order {order}'.format(
                 order=[step.key for step in steps]
@@ -623,7 +625,9 @@ def execute_pipeline_iterator(pipeline, environment_dict=None, run_config=None):
 
         pipeline_success = True
 
-        for step_event in invoke_executor_on_plan(pipeline_context, execution_plan):
+        for step_event in invoke_executor_on_plan(
+            pipeline_context, execution_plan, run_config.step_keys_to_execute
+        ):
             if step_event.is_step_failure:
                 pipeline_success = False
             yield step_event
@@ -768,17 +772,19 @@ def execute_plan(execution_plan, environment_dict=None, run_config=None, step_ke
         execution_plan.pipeline_def, environment_dict, run_config
     ) as pipeline_context:
 
-        if run_config.reexecution_config:
-            _check_reexecution_config(pipeline_context, execution_plan, run_config)
-
-            for step_output_handle in run_config.reexecution_config.step_output_handles:
-                pipeline_context.intermediates_manager.copy_intermediate_from_prev_run(
-                    pipeline_context,
-                    run_config.reexecution_config.previous_run_id,
-                    step_output_handle,
-                )
+        _setup_reexecution(run_config, pipeline_context, execution_plan)
 
         return list(invoke_executor_on_plan(pipeline_context, execution_plan, step_keys_to_execute))
+
+
+def _setup_reexecution(run_config, pipeline_context, execution_plan):
+    if run_config.reexecution_config:
+        _check_reexecution_config(pipeline_context, execution_plan, run_config)
+
+        for step_output_handle in run_config.reexecution_config.step_output_handles:
+            pipeline_context.intermediates_manager.copy_intermediate_from_prev_run(
+                pipeline_context, run_config.reexecution_config.previous_run_id, step_output_handle
+            )
 
 
 def create_environment_config(pipeline, environment_dict=None):

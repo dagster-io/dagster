@@ -9,6 +9,7 @@ from dagster import (
 from dagster.cli.dynamic_loader import RepositoryTargetInfo
 from dagster.core.events import EventType
 from dagster.core.execution import create_execution_plan, ExecutionSelector
+from dagster.core.execution_context import make_new_run_id
 from dagster.utils import script_relative_path
 import dagster_pandas as dagster_pd
 
@@ -22,7 +23,7 @@ def get_events_of_type(events, event_type):
 
 
 def test_running():
-    run_id = 'run-1'
+    run_id = make_new_run_id()
     repository_container = RepositoryContainer(
         RepositoryTargetInfo(
             repository_yaml=None,
@@ -39,7 +40,12 @@ def test_running():
     }
     selector = ExecutionSelector('pandas_hello_world')
     pipeline_run = InMemoryPipelineRun(
-        run_id, selector, env_config, create_execution_plan(pipeline, env_config)
+        run_id,
+        selector,
+        env_config,
+        create_execution_plan(pipeline, env_config),
+        reexecution_config=None,
+        step_keys_to_execute=None,
     )
     execution_manager = MultiprocessingExecutionManager()
     execution_manager.execute_pipeline(
@@ -58,7 +64,7 @@ def test_running():
 
 
 def test_failing():
-    run_id = 'run-1'
+    run_id = make_new_run_id()
     repository_container = RepositoryContainer(
         RepositoryTargetInfo(
             repository_yaml=None,
@@ -75,7 +81,12 @@ def test_failing():
     }
     selector = ExecutionSelector('pandas_hello_world')
     pipeline_run = InMemoryPipelineRun(
-        run_id, selector, env_config, create_execution_plan(pipeline, env_config)
+        run_id,
+        selector,
+        env_config,
+        create_execution_plan(pipeline, env_config),
+        reexecution_config=None,
+        step_keys_to_execute=None,
     )
     execution_manager = MultiprocessingExecutionManager()
     execution_manager.execute_pipeline(
@@ -87,7 +98,7 @@ def test_failing():
 
 
 def test_execution_crash():
-    run_id = 'run-1'
+    run_id = make_new_run_id()
     repository_container = RepositoryContainer(
         RepositoryTargetInfo(
             repository_yaml=None,
@@ -104,7 +115,12 @@ def test_execution_crash():
     }
     selector = ExecutionSelector('pandas_hello_world')
     pipeline_run = InMemoryPipelineRun(
-        run_id, selector, env_config, create_execution_plan(pipeline, env_config)
+        run_id,
+        selector,
+        env_config,
+        create_execution_plan(pipeline, env_config),
+        reexecution_config=None,
+        step_keys_to_execute=None,
     )
     execution_manager = MultiprocessingExecutionManager()
     execution_manager.execute_pipeline(

@@ -296,13 +296,30 @@ class DauphinStartPipelineExecutionSuccess(dauphin.ObjectType):
     run = dauphin.Field(dauphin.NonNull('PipelineRun'))
 
 
+class DauphinInvalidStepError(dauphin.ObjectType):
+    class Meta:
+        name = 'InvalidStepError'
+
+    invalid_step_key = dauphin.NonNull(dauphin.String)
+
+
+class DauphinInvalidOutputError(dauphin.ObjectType):
+    class Meta:
+        name = 'InvalidOutputError'
+
+    step_key = dauphin.NonNull(dauphin.String)
+    invalid_output_name = dauphin.NonNull(dauphin.String)
+
+
 class DauphinStartPipelineExecutionResult(dauphin.Union):
     class Meta:
         name = 'StartPipelineExecutionResult'
         types = (
-            DauphinStartPipelineExecutionSuccess,
+            DauphinInvalidStepError,
+            DauphinInvalidOutputError,
             DauphinPipelineConfigValidationInvalid,
             DauphinPipelineNotFoundError,
+            DauphinStartPipelineExecutionSuccess,
         )
 
 
@@ -329,13 +346,6 @@ class DauphinStepFailureEvent(dauphin.ObjectType):
         interfaces = (DauphinStepEvent,)
 
     error_message = dauphin.Field(dauphin.NonNull(dauphin.String))
-
-
-class DauphinInvalidStepError(dauphin.ObjectType):
-    class Meta:
-        name = 'InvalidStepError'
-
-    invalid_step_key = dauphin.NonNull(dauphin.String)
 
 
 class DauphinExecutePlanSuccess(dauphin.ObjectType):

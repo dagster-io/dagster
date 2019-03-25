@@ -13,6 +13,7 @@ from rx import Observable
 from dagster import check, seven
 from dagster.core.events import EventRecord, EventType
 from dagster.core.execution import ExecutionSelector
+from dagster.core.execution_context import ReexecutionConfig
 from dagster.core.execution_plan.objects import ExecutionPlan
 
 
@@ -51,7 +52,9 @@ class PipelineRunStorage(object):
 
 
 class PipelineRun(object):
-    def __init__(self, run_id, selector, env_config, execution_plan):
+    def __init__(
+        self, run_id, selector, env_config, execution_plan, reexecution_config, step_keys_to_execute
+    ):
         self.__subscribers = []
 
         self._status = PipelineRunStatus.NOT_STARTED
@@ -59,6 +62,11 @@ class PipelineRun(object):
         self._selector = check.inst_param(selector, 'selector', ExecutionSelector)
         self._env_config = check.opt_dict_param(env_config, 'environment_config', key_type=str)
         self._execution_plan = check.inst_param(execution_plan, 'execution_plan', ExecutionPlan)
+        self._reexecution_config = check.opt_inst_param(
+            reexecution_config, 'reexecution_config', ReexecutionConfig
+        )
+        check.opt_list_param(step_keys_to_execute, 'step_keys_to_execute', of_type=str)
+        self._step_keys_to_execute = step_keys_to_execute
 
     @property
     def run_id(self):
@@ -83,6 +91,14 @@ class PipelineRun(object):
     @property
     def execution_plan(self):
         return self._execution_plan
+
+    @property
+    def reexecution_config(self):
+        return self._reexecution_config
+
+    @property
+    def step_keys_to_execute(self):
+        return self._step_keys_to_execute
 
     def logs_after(self, cursor):
         raise NotImplementedError()

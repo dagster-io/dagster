@@ -9,7 +9,14 @@ import time
 import gevent
 import six
 
-from dagster import check, RunConfig, PipelineDefinition, execute_pipeline, InProcessExecutorConfig
+from dagster import (
+    InProcessExecutorConfig,
+    PipelineDefinition,
+    RunConfig,
+    RunStorageMode,
+    check,
+    execute_pipeline,
+)
 from dagster.core.events import PipelineEventRecord, EventType
 from dagster.utils.error import serializable_error_info_from_exc_info, SerializableErrorInfo
 from dagster.utils.logging import level_from_string
@@ -80,10 +87,18 @@ class PipelineProcessStartedEvent(PipelineEventRecord):
         return self._process_id
 
 
+DAGIT_DEFAULT_STORAGE_MODE = RunStorageMode.FILESYSTEM
+
+
+def get_storage_mode(environment_dict):
+    return None if 'storage' in environment_dict else DAGIT_DEFAULT_STORAGE_MODE
+
+
 class SynchronousExecutionManager(PipelineExecutionManager):
     def execute_pipeline(self, repository_container, pipeline, pipeline_run, throw_on_user_error):
         check.inst_param(pipeline, 'pipeline', PipelineDefinition)
         try:
+
             return execute_pipeline(
                 pipeline,
                 pipeline_run.config,
@@ -93,6 +108,9 @@ class SynchronousExecutionManager(PipelineExecutionManager):
                     executor_config=InProcessExecutorConfig(
                         throw_on_user_error=throw_on_user_error
                     ),
+                    reexecution_config=pipeline_run.reexecution_config,
+                    step_keys_to_execute=pipeline_run.step_keys_to_execute,
+                    storage_mode=get_storage_mode(pipeline_run.config),
                 ),
             )
         except:  # pylint: disable=W0702
@@ -231,7 +249,12 @@ class MultiprocessingExecutionManager(PipelineExecutionManager):
                 pipeline_run.selector.solid_subset,
                 pipeline_run.config,
             ),
-            kwargs={'run_id': pipeline_run.run_id, 'message_queue': message_queue},
+            kwargs={
+                'run_id': pipeline_run.run_id,
+                'message_queue': message_queue,
+                'reexecution_config': pipeline_run.reexecution_config,
+                'step_keys_to_execute': pipeline_run.step_keys_to_execute,
+            },
         )
 
         pipeline_run.handle_new_event(build_process_start_event(pipeline_run.run_id, pipeline.name))
@@ -250,7 +273,14 @@ class RunProcessWrapper(namedtuple('RunProcessWrapper', 'pipeline_run process me
 
 
 def execute_pipeline_through_queue(
-    repository_info, pipeline_name, solid_subset, environment_dict, run_id, message_queue
+    repository_info,
+    pipeline_name,
+    solid_subset,
+    environment_dict,
+    run_id,
+    message_queue,
+    reexecution_config,
+    step_keys_to_execute,
 ):
     """
     Execute pipeline using message queue as a transport
@@ -262,6 +292,9 @@ def execute_pipeline_through_queue(
         run_id,
         event_callback=message_queue.put,
         executor_config=InProcessExecutorConfig(throw_on_user_error=False),
+        reexecution_config=reexecution_config,
+        step_keys_to_execute=step_keys_to_execute,
+        storage_mode=get_storage_mode(environment_dict),
     )
 
     from .app import RepositoryContainer

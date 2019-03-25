@@ -8,6 +8,10 @@ import { ExecutionSelector, PipelineRunStatus, LogLevel, StepKind } from "./../.
 // GraphQL mutation operation: StartPipelineExecution
 // ====================================================
 
+export interface StartPipelineExecution_startPipelineExecution_InvalidStepError {
+  __typename: "InvalidStepError" | "InvalidOutputError";
+}
+
 export interface StartPipelineExecution_startPipelineExecution_StartPipelineExecutionSuccess_run_pipeline {
   __typename: "Pipeline";
   name: string;
@@ -135,7 +139,7 @@ export interface StartPipelineExecution_startPipelineExecution_PipelineConfigVal
   errors: StartPipelineExecution_startPipelineExecution_PipelineConfigValidationInvalid_errors[];
 }
 
-export type StartPipelineExecution_startPipelineExecution = StartPipelineExecution_startPipelineExecution_StartPipelineExecutionSuccess | StartPipelineExecution_startPipelineExecution_PipelineNotFoundError | StartPipelineExecution_startPipelineExecution_PipelineConfigValidationInvalid;
+export type StartPipelineExecution_startPipelineExecution = StartPipelineExecution_startPipelineExecution_InvalidStepError | StartPipelineExecution_startPipelineExecution_StartPipelineExecutionSuccess | StartPipelineExecution_startPipelineExecution_PipelineNotFoundError | StartPipelineExecution_startPipelineExecution_PipelineConfigValidationInvalid;
 
 export interface StartPipelineExecution {
   startPipelineExecution: StartPipelineExecution_startPipelineExecution;
