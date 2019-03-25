@@ -191,15 +191,6 @@ def _gather_all_schemas(solid_defs):
                 yield ct
 
 
-# def create_dup_type_error_message(key, type_one, type_two):
-#     return (
-#         'Type names must be unique. You have construct two instances of types with the same name '
-#         '{name} but have different instances. Instance one {inst_one}. Instance two {inst_two}'
-#     ).format(name=name, inst_one=type_one, inst_two=type_two)
-
-# from dagster.core.types.type_printer import print_config_type_to_string
-
-
 def construct_config_type_dictionary(solid_defs, context_definitions, environment_type):
     check.list_param(solid_defs, 'solid_defs', SolidDefinition)
     check.dict_param(
@@ -235,12 +226,9 @@ def construct_config_type_dictionary(solid_defs, context_definitions, environmen
             if type(config_type) is not type(type_dict_by_key[key]):
                 raise DagsterInvalidDefinitionError(
                     (
-                        'Type keys must be unique. You have construct two instances of types '
-                        'with the same key {key} but have different instances. Instance one '
-                        '{inst_one}. Instance two {inst_two}'
-                    ).format(
-                        key=key, inst_one=type(config_type), inst_two=type(type_dict_by_key[key])
-                    )
+                        'Type keys must be unique. You have constructed two different '
+                        'instances of types with the same key "{key}".'
+                    ).format(key=key)
                 )
 
         else:
