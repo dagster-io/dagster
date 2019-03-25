@@ -175,7 +175,7 @@ class S3ObjectStore(ObjectStore):
         key = self._key_for_paths(paths)
 
         return runtime_type.serialization_strategy.deserialize_value(
-            BytesIO(self.s3.get_object(Bucket=self.bucket, Key=key)['Body'])
+            BytesIO(self.s3.get_object(Bucket=self.bucket, Key=key)['Body'].read())
         )
 
     def has_object(self, context, paths):  # pylint: disable=unused-argument
