@@ -105,7 +105,6 @@ def create_expectation_step(
     check.inst_param(inout_def, 'inout_def', (InputDefinition, OutputDefinition))
 
     value_type = inout_def.runtime_type
-    optional = inout_def.optional if inout_def is OutputDefinition else False
 
     return ExecutionStep(
         pipeline_context=pipeline_context,
@@ -118,7 +117,8 @@ def create_expectation_step(
             )
         ],
         step_outputs=[
-            StepOutput(name=EXPECTATION_VALUE_OUTPUT, runtime_type=value_type, optional=optional)
+            # Expectation value output is optional since we omit if the expectation fails
+            StepOutput(name=EXPECTATION_VALUE_OUTPUT, runtime_type=value_type, optional=True)
         ],
         compute_fn=_create_expectation_lambda(
             solid, inout_def, expectation_def, EXPECTATION_VALUE_OUTPUT

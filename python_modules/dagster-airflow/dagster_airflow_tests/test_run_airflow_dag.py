@@ -1,10 +1,10 @@
 import datetime
 import json
-import os
 import subprocess
 import sys
 import tempfile
 import uuid
+from collections import namedtuple
 
 import pytest
 
@@ -116,9 +116,11 @@ def test_run_airflow_dag(scaffold_dag):
     )
 
     # These are in topo order already
+    run_id = str(uuid.uuid4())
     for task in tasks:
         ti = TaskInstance(task=task, execution_date=execution_date)
         context = ti.get_template_context()
+        context['dag_run'] = namedtuple('_', 'run_id')(run_id=run_id)
         task.execute(context)
 
 

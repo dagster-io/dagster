@@ -16,6 +16,7 @@ from dagster.core.errors import (
     DagsterRuntimeCoercionError,
     DagsterExecutionStepExecutionError,
     DagsterTypeError,
+    DagsterStepOutputNotFoundError,
 )
 
 from dagster.core.execution_context import (
@@ -70,14 +71,17 @@ def start_inprocess_executor(
 
             step_context = pipeline_context.for_step(step)
 
-            if not intermediates_manager.all_inputs_covered(step_context, step):
-                expected_outputs = [ni.prev_output_handle for ni in step.step_inputs]
+            uncovered_inputs = intermediates_manager.uncovered_inputs(step_context, step)
+            if uncovered_inputs:
+                # In partial pipeline execution, we may end up here without having validated the
+                # missing dependent outputs were optional
+                _assert_missing_inputs_optional(uncovered_inputs, execution_plan, step.key)
 
                 step_context.log.info(
                     (
-                        'Not all inputs covered for {step}. Not executing. Output need for '
-                        'inputs {expected_outputs}'
-                    ).format(expected_outputs=expected_outputs, step=step.key)
+                        'Not all inputs covered for {step}. Not executing. Output missing for '
+                        'inputs: {uncovered_inputs}'
+                    ).format(uncovered_inputs=uncovered_inputs, step=step.key)
                 )
                 continue
 
@@ -94,6 +98,21 @@ def start_inprocess_executor(
                     step_event.reraise_user_error()
 
                 yield step_event
+
+
+def _assert_missing_inputs_optional(uncovered_inputs, execution_plan, step_key):
+    nonoptionals = [
+        handle for handle in uncovered_inputs if not execution_plan.get_step_output(handle).optional
+    ]
+    if nonoptionals:
+        raise DagsterStepOutputNotFoundError(
+            (
+                'When executing {step} discovered required outputs missing '
+                'from previous step: {nonoptionals}'
+            ).format(nonoptionals=nonoptionals, step=step_key),
+            step_key=nonoptionals[0].step_key,
+            output_name=nonoptionals[0].output_name,
+        )
 
 
 def _create_input_values(step_context, intermediates_manager):
@@ -184,11 +203,13 @@ def _error_check_step_output_values(step, step_output_values):
 
     for step_output_def in step.step_outputs:
         if not step_output_def.name in seen_outputs and not step_output_def.optional:
-            raise DagsterInvariantViolationError(
+            raise DagsterStepOutputNotFoundError(
                 'Core transform for solid "{step.solid.name}" did not return an output '
                 'for non-optional output "{step_output_def.name}"'.format(
                     step=step, step_output_def=step_output_def
-                )
+                ),
+                step_key=step.key,
+                output_name=step_output_def.name,
             )
 
 
