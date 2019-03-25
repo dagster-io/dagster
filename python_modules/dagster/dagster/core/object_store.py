@@ -175,6 +175,10 @@ class S3ObjectStore(ObjectStore):
         key = self._key_for_paths(paths)
 
         return runtime_type.serialization_strategy.deserialize_value(
+            # We use the _raw_stream instead of the StreamingBody wrapper because the wrapper
+            # doesn't support the full file-like API -- for example, pickle.load expects to find
+            # .read() and readline(), but only .read() is defined on StreamingBody. Some libraries
+            # solve this by writing their own thin wrappers around StreamingBody.
             # pylint: disable=protected-access
             self.s3.get_object(Bucket=self.bucket, Key=key)['Body']._raw_stream
         )
