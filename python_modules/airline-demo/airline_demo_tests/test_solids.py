@@ -22,7 +22,12 @@ from dagster import (
 )
 
 from airline_demo.solids import sql_solid, download_from_s3, ingest_csv_to_spark, unzip_file
-from airline_demo.resources import spark_session_local, tempfile_resource, unsigned_s3_session
+from airline_demo.resources import (
+    spark_session_local,
+    tempfile_resource,
+    unsigned_s3_session,
+    s3_download_manager,
+)
 
 from .marks import nettest, postgres, redshift, skip, spark
 
@@ -40,7 +45,11 @@ def _s3_context():
     return {
         'test': PipelineContextDefinition(
             context_fn=lambda info: ExecutionContext.console_logging(log_level=logging.DEBUG),
-            resources={'s3': unsigned_s3_session, 'tempfile': tempfile_resource},
+            resources={
+                's3': unsigned_s3_session,
+                'tempfile': tempfile_resource,
+                'download_manager': s3_download_manager,
+            },
         )
     }
 
@@ -80,15 +89,21 @@ def test_download_from_s3():
         PipelineDefinition([download_from_s3], context_definitions=_s3_context()),
         'download_from_s3',
         environment_dict={
-            'context': {'test': {}},
-            'solids': {
-                'download_from_s3': {
-                    'config': {
-                        'bucket': 'dagster-airline-demo-source-data',
-                        'key': 'test/test_file',
+            'context': {
+                'test': {
+                    'resources': {
+                        'download_manager': {
+                            'config': {
+                                'skip_if_present': False,
+                                'bucket': 'dagster-airline-demo-source-data',
+                                'key': 'test',
+                                'target_folder': 'test',
+                            }
+                        }
                     }
                 }
             },
+            'solids': {'download_from_s3': {'config': {'target_file': 'test_file'}}},
         },
     )
     assert result.success

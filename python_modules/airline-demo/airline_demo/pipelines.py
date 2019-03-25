@@ -14,6 +14,7 @@ from .resources import (
     spark_session_local,
     tempfile_resource,
     unsigned_s3_session,
+    s3_download_manager,
 )
 from .solids import (
     average_sfo_outbound_avg_delays_by_destination,
@@ -46,6 +47,7 @@ test_context = PipelineContextDefinition(
         's3': unsigned_s3_session,
         'db_info': redshift_db_info_resource,
         'tempfile': tempfile_resource,
+        'download_manager': s3_download_manager,
     },
 )
 
@@ -57,6 +59,7 @@ local_context = PipelineContextDefinition(
         's3': unsigned_s3_session,
         'db_info': postgres_db_info_resource,
         'tempfile': tempfile_resource,
+        'download_manager': s3_download_manager,
     },
 )
 
