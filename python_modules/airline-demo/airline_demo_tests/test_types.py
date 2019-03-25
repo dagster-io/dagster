@@ -2,91 +2,104 @@ import os
 import shutil
 import uuid
 
+
+from dagster.core.execution import yield_pipeline_execution_context
 from dagster.core.object_store import FileSystemObjectStore, get_valid_target_path, S3ObjectStore
 
 from airline_demo.resources import spark_session_local
 from airline_demo.types import SparkDataFrameType
 
 
-class MockResources(object):
-    def __init__(self, spark):
-        self.spark = spark
-
-
-class MockPipelineContext(object):
-    def __init__(self, spark):
-        self.resources = MockResources(spark)
-
-
 def test_spark_data_frame_serialization_file_system():
-    run_id = str(uuid.uuid4())
+    path_to_test_csv = os.path.join(os.path.dirname(__file__), 'data/test.csv')
 
-    def set_object(self, obj, _context, _runtime_type, paths):
-        target_path = get_valid_target_path(self.root, paths)
-        obj.write.parquet('file://' + target_path)
-        return target_path
+    @lambda_solid
+    def nonce():
+        return path_to_test_csv
 
-    def get_object(self, context, _runtime_type, paths):
-        return context.resources.spark.read.parquet(get_valid_target_path(self.root, paths))
-
-    object_store = FileSystemObjectStore(
-        run_id=run_id,
-        types_to_register={
-            SparkDataFrameType: {'get_object': get_object, 'set_object': set_object}
-        },
+    pipeline_def = PipelineDefinition(
+        [nonce, ingest_csv_to_spark],
+        dependencies={'ingest_csv_to_spark': {'input_csv': DependencyDefinition('nonce')}},
+        context_definitions=_spark_context(),
     )
 
-    spark = spark_session_local.resource_fn(None)
-    pipeline_context = MockPipelineContext(spark)
-
-    df = spark.createDataFrame([('Foo', 1), ('Bar', 2)])
-
-    try:
-        object_store.set_value(df, pipeline_context, SparkDataFrameType, ['df'])
-
-        assert os.path.isdir(os.path.join(object_store.root, 'df'))
-        assert os.path.isfile(os.path.join(object_store.root, 'df', '_SUCCESS'))
-
-        new_df = object_store.get_value(pipeline_context, SparkDataFrameType, ['df'])
-
-        assert set(map(lambda x: x[0], new_df.collect())) == set(['Bar', 'Foo'])
-        assert set(map(lambda x: x[1], new_df.collect())) == set([1, 2])
-    finally:
-        shutil.rmtree(object_store.root)
+    # assert result.success
+    # assert isinstance(result.transformed_value(), pyspark.sql.dataframe.DataFrame)
+    # assert result.transformed_value().head()[0] == '1'
 
 
-def test_spark_data_frame_serialization_s3():
-    run_id = str(uuid.uuid4())
+#     with yield_pipeline_execution_context(pipeline_def):
+#         pass
 
-    def set_object(self, obj, _context, _runtime_type, paths):
-        target_path = self._key_for_paths(paths)
-        obj.write.parquet('s3a://' + target_path)
-        return target_path
+#     run_id = str(uuid.uuid4())
 
-    def get_object(self, context, _runtime_type, paths):
-        return context.resources.spark.read.parquet('s3a://' + self._key_for_paths(paths))
+#     def set_object(self, obj, _context, _runtime_type, paths):
+#         target_path = get_valid_target_path(self.root, paths)
+#         obj.write.parquet('file://' + target_path)
+#         return target_path
 
-    object_store = FileSystemObjectStore(
-        run_id=run_id,
-        types_to_register={
-            SparkDataFrameType: {'get_object': get_object, 'set_object': set_object}
-        },
-    )
+#     def get_object(self, context, _runtime_type, paths):
+#         return context.resources.spark.read.parquet(get_valid_target_path(self.root, paths))
 
-    spark = spark_session_local.resource_fn(None)
-    pipeline_context = MockPipelineContext(spark)
+#     object_store = FileSystemObjectStore(
+#         run_id=run_id,
+#         types_to_register={
+#             SparkDataFrameType: {'get_object': get_object, 'set_object': set_object}
+#         },
+#     )
 
-    df = spark.createDataFrame([('Foo', 1), ('Bar', 2)])
+#     spark = spark_session_local.resource_fn(None)
+#     pipeline_context = MockPipelineContext(spark)
 
-    try:
-        object_store.set_value(df, pipeline_context, SparkDataFrameType, ['df'])
+#     df = spark.createDataFrame([('Foo', 1), ('Bar', 2)])
 
-        # assert os.path.isdir(os.path.join(object_store.root, 'df'))
-        # assert os.path.isfile(os.path.join(object_store.root, 'df', '_SUCCESS'))
+#     try:
+#         object_store.set_value(df, pipeline_context, SparkDataFrameType, ['df'])
 
-        new_df = object_store.get_value(pipeline_context, SparkDataFrameType, ['df'])
+#         assert os.path.isdir(os.path.join(object_store.root, 'df'))
+#         assert os.path.isfile(os.path.join(object_store.root, 'df', '_SUCCESS'))
 
-        assert set(map(lambda x: x[0], new_df.collect())) == set(['Bar', 'Foo'])
-        assert set(map(lambda x: x[1], new_df.collect())) == set([1, 2])
-    finally:
-        shutil.rmtree(object_store.root)
+#         new_df = object_store.get_value(pipeline_context, SparkDataFrameType, ['df'])
+
+#         assert set(map(lambda x: x[0], new_df.collect())) == set(['Bar', 'Foo'])
+#         assert set(map(lambda x: x[1], new_df.collect())) == set([1, 2])
+#     finally:
+#         shutil.rmtree(object_store.root)
+
+
+# def test_spark_data_frame_serialization_s3():
+#     run_id = str(uuid.uuid4())
+
+#     def set_object(self, obj, _context, _runtime_type, paths):
+#         target_path = self._key_for_paths(paths)
+#         obj.write.parquet('s3a://' + target_path)
+#         return target_path
+
+#     def get_object(self, context, _runtime_type, paths):
+#         return context.resources.spark.read.parquet('s3a://' + self._key_for_paths(paths))
+
+#     object_store = S3ObjectStore(
+#         run_id=run_id,
+#         s3_bucket='dagster-'
+#         types_to_register={
+#             SparkDataFrameType: {'get_object': get_object, 'set_object': set_object}
+#         },
+#     )
+
+#     spark = spark_session_local.resource_fn(None)
+#     pipeline_context = MockPipelineContext(spark)
+
+#     df = spark.createDataFrame([('Foo', 1), ('Bar', 2)])
+
+#     try:
+#         object_store.set_value(df, pipeline_context, SparkDataFrameType, ['df'])
+
+#         # assert os.path.isdir(os.path.join(object_store.root, 'df'))
+#         # assert os.path.isfile(os.path.join(object_store.root, 'df', '_SUCCESS'))
+
+#         new_df = object_store.get_value(pipeline_context, SparkDataFrameType, ['df'])
+
+#         assert set(map(lambda x: x[0], new_df.collect())) == set(['Bar', 'Foo'])
+#         assert set(map(lambda x: x[1], new_df.collect())) == set([1, 2])
+#     finally:
+#         shutil.rmtree(object_store.root)

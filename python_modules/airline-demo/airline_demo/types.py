@@ -1,11 +1,6 @@
 """Type definitions for the airline_demo."""
 
 
-import os
-import shutil
-import tempfile
-import zipfile
-
 from collections import namedtuple
 
 import sqlalchemy
@@ -13,7 +8,8 @@ import sqlalchemy
 from pyspark.sql import DataFrame
 
 from dagster import as_dagster_type, Dict, Field, String
-from dagster.core.types.marshal import SerializationStrategy
+from dagster.core.object_store import get_valid_target_path
+from dagster.core.runs import RunStorageMode
 from dagster.core.types.runtime import Stringish
 from dagster.utils import safe_isfile
 
@@ -24,8 +20,40 @@ AirlineDemoResources = namedtuple(
 )
 
 
+def filesystem_set_spark_data_frame(self, obj, _context, _runtime_type, paths):
+    target_path = get_valid_target_path(self.root, paths)
+    obj.write.parquet('file://' + target_path)
+    return target_path
+
+
+def filesystem_get_spark_data_frame(self, context, _runtime_type, paths):
+    return context.resources.spark.read.parquet(get_valid_target_path(self.root, paths))
+
+
+def s3_set_spark_data_frame(self, obj, _context, _runtime_type, paths):
+    target_path = self._key_for_paths(paths)
+    obj.write.parquet('s3a://' + target_path)
+    return target_path
+
+
+def s3_get_spark_data_frame(self, context, _runtime_type, paths):
+    return context.resources.spark.read.parquet('s3a://' + self._key_for_paths(paths))
+
+
 SparkDataFrameType = as_dagster_type(
-    DataFrame, name='SparkDataFrameType', description='A Pyspark data frame.'
+    DataFrame,
+    name='SparkDataFrameType',
+    description='A Pyspark data frame.',
+    storage_overrides={
+        RunStorageMode.S3: {
+            'get_object': s3_get_spark_data_frame,
+            'set_object': s3_set_spark_data_frame,
+        },
+        RunStorageMode.FILESYSTEM: {
+            'get_object': filesystem_get_spark_data_frame,
+            'set_object': filesystem_set_spark_data_frame,
+        },
+    },
 )
 
 
