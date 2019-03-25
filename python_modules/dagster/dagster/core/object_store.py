@@ -2,6 +2,8 @@ import os
 import shutil
 
 from abc import ABCMeta, abstractmethod
+from collections import defaultdict
+from functools import partial
 from io import BytesIO
 
 import six
@@ -29,6 +31,19 @@ def ensure_boto_requirements():
 
 @six.add_metaclass(ABCMeta)
 class ObjectStore:
+    def __init__(self, types_to_register=None):
+        types_to_register = check.opt_dict_param(types_to_register, 'types_to_register')
+        self.TYPE_REGISTRY = defaultdict(dict)
+
+        for type_to_register, methods_to_register in types_to_register.items():
+            self.register_type(type_to_register, methods_to_register)
+
+    def register_type(self, type_to_register, methods_to_register):
+        if type_to_register in self.TYPE_REGISTRY:
+            return
+        for method_name, method in methods_to_register.items():
+            self.TYPE_REGISTRY[type_to_register][method_name] = partial(method, self)
+
     @abstractmethod
     def set_object(self, obj, context, runtime_type, paths):
         pass
@@ -44,6 +59,14 @@ class ObjectStore:
     @abstractmethod
     def rm_object(self, context, paths):
         pass
+
+    def set_value(self, obj, context, runtime_type, paths):
+        method = self.TYPE_REGISTRY.get(runtime_type, {}).get('set_object', self.set_object)
+        return method(obj, context, runtime_type, paths)
+
+    def get_value(self, context, runtime_type, paths):
+        method = self.TYPE_REGISTRY.get(runtime_type, {}).get('get_object', self.get_object)
+        return method(context, runtime_type, paths)
 
 
 def get_run_files_directory(run_id):
@@ -63,10 +86,12 @@ def get_valid_target_path(base_dir, paths):
 
 
 class FileSystemObjectStore(ObjectStore):
-    def __init__(self, run_id):
+    def __init__(self, run_id, types_to_register=None):
         self.run_id = check.str_param(run_id, 'run_id')
         self.storage_mode = RunStorageMode.FILESYSTEM
         self.root = get_run_files_directory(run_id)
+
+        super(FileSystemObjectStore, self).__init__(types_to_register)
 
     def set_object(self, obj, context, runtime_type, paths):  # pylint: disable=unused-argument
         check.inst_param(context, 'context', SystemPipelineExecutionContext)
@@ -129,7 +154,7 @@ class FileSystemObjectStore(ObjectStore):
 
 
 class S3ObjectStore(ObjectStore):
-    def __init__(self, s3_bucket, run_id):
+    def __init__(self, s3_bucket, run_id, types_to_register=None):
         boto3, _ = ensure_boto_requirements()
         check.str_param(run_id, 'run_id')
 
@@ -141,6 +166,8 @@ class S3ObjectStore(ObjectStore):
 
         self.root = 'dagster/runs/{run_id}/files'.format(run_id=self.run_id)
         self.storage_mode = RunStorageMode.S3
+
+        super(S3ObjectStore, self).__init__(types_to_register)
 
     def _key_for_paths(self, paths):
         return '/'.join([self.root] + paths)

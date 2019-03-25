@@ -24,49 +24,10 @@ AirlineDemoResources = namedtuple(
 )
 
 
-class SparkDataFrameParquetSerializationStrategy(SerializationStrategy):
-    def serialize_value(self, _context, value, write_file_obj):
-        parquet_dir = tempfile.mkdtemp()
-        shutil.rmtree(parquet_dir)
-        value.write.parquet(parquet_dir)
-
-        archive_file_obj = tempfile.NamedTemporaryFile(delete=False)
-        try:
-            archive_file_obj.close()
-            archive_file_path = archive_file_obj.name
-            zipfile_path = shutil.make_archive(archive_file_path, 'zip', parquet_dir)
-            try:
-                with open(zipfile_path, 'rb') as archive_file_read_obj:
-                    write_file_obj.write(archive_file_read_obj.read())
-            finally:
-                if os.path.isfile(zipfile_path):
-                    os.remove(zipfile_path)
-        finally:
-            if os.path.isfile(archive_file_obj.name):
-                os.remove(archive_file_obj.name)
-
-    def deserialize_value(self, context, read_file_obj):
-        archive_file_obj = tempfile.NamedTemporaryFile(delete=False)
-        try:
-            archive_file_obj.write(read_file_obj.read())
-            archive_file_obj.close()
-            parquet_dir = tempfile.mkdtemp()
-            # We don't use the ZipFile context manager here because of py2
-            zipfile_obj = zipfile.ZipFile(archive_file_obj.name)
-            zipfile_obj.extractall(parquet_dir)
-            zipfile_obj.close()
-        finally:
-            if os.path.isfile(archive_file_obj.name):
-                os.remove(archive_file_obj.name)
-        return context.resources.spark.read.parquet(parquet_dir)
-
-
 SparkDataFrameType = as_dagster_type(
-    DataFrame,
-    name='SparkDataFrameType',
-    description='A Pyspark data frame.',
-    serialization_strategy=SparkDataFrameParquetSerializationStrategy(),
+    DataFrame, name='SparkDataFrameType', description='A Pyspark data frame.'
 )
+
 
 SqlAlchemyEngineType = as_dagster_type(
     sqlalchemy.engine.Connectable,
