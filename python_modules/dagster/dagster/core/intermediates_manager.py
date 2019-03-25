@@ -106,7 +106,7 @@ class ObjectStoreIntermediatesManager(IntermediatesManager):
         check.inst_param(step_output_handle, 'step_output_handle', StepOutputHandle)
         check.invariant(self.has_intermediate(context, step_output_handle))
 
-        return self._object_store.get_object(
+        return self._object_store.get_value(
             context=context, runtime_type=runtime_type, paths=self._get_paths(step_output_handle)
         )
 
@@ -116,7 +116,7 @@ class ObjectStoreIntermediatesManager(IntermediatesManager):
         check.inst_param(step_output_handle, 'step_output_handle', StepOutputHandle)
         check.invariant(not self.has_intermediate(context, step_output_handle))
 
-        return self._object_store.set_object(
+        return self._object_store.set_value(
             obj=value,
             context=context,
             runtime_type=runtime_type,

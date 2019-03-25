@@ -1,44 +1,55 @@
-import sys
-import tempfile
+import os
+import shutil
+import uuid
 
-from airline_demo.resources import spark_session_local, tempfile_resource
-from airline_demo.types import SparkDataFrameSerializationStrategy
+from dagster.core.object_store import FileSystemObjectStore, get_valid_target_path
+
+from airline_demo.resources import spark_session_local
+from airline_demo.types import SparkDataFrameType
 
 
 class MockResources(object):
-    def __init__(self, spark, tempfile_):
+    def __init__(self, spark):
         self.spark = spark
-        self.tempfile = tempfile_
 
 
 class MockPipelineContext(object):
-    def __init__(self, spark, tempfile_):
-        self.resources = MockResources(spark, tempfile_)
+    def __init__(self, spark):
+        self.resources = MockResources(spark)
 
 
-def test_spark_data_frame_serialization():
+def test_spark_data_frame_serialization_file_systemn():
+    run_id = str(uuid.uuid4())
+
+    def set_object(self, obj, _context, _runtime_type, paths):
+        target_path = get_valid_target_path(self.root, paths)
+        obj.write.parquet('file://' + target_path)
+        return target_path
+
+    def get_object(self, context, _runtime_type, paths):
+        return context.resources.spark.read.parquet(get_valid_target_path(self.root, paths))
+
+    object_store = FileSystemObjectStore(
+        run_id=run_id,
+        types_to_register={
+            SparkDataFrameType: {'get_object': get_object, 'set_object': set_object}
+        },
+    )
+
     spark = spark_session_local.resource_fn(None)
-    if sys.version_info > (3,):
-        tempfile_ = tempfile_resource.resource_fn(None).__next__()
-    else:
-        tempfile_ = tempfile_resource.resource_fn(None).next()
+    pipeline_context = MockPipelineContext(spark)
+
+    df = spark.createDataFrame([('Foo', 1), ('Bar', 2)])
 
     try:
-        serialization_strategy = SparkDataFrameSerializationStrategy()
+        object_store.set_value(df, pipeline_context, SparkDataFrameType, ['df'])
 
-        pipeline_context = MockPipelineContext(spark, tempfile_)
+        assert os.path.isdir(os.path.join(object_store.root, 'df'))
+        assert os.path.isfile(os.path.join(object_store.root, 'df', '_SUCCESS'))
 
-        df = spark.createDataFrame([('Foo', 1), ('Bar', 2)])
-
-        with tempfile.NamedTemporaryFile(delete=False) as tempfile_obj:
-            serialization_strategy.serialize_value(pipeline_context, df, tempfile_obj)
-
-            tempfile_obj.close()
-
-        with open(tempfile_obj.name, 'r+b') as tempfile_obj:
-            new_df = serialization_strategy.deserialize_value(pipeline_context, tempfile_obj)
+        new_df = object_store.get_value(pipeline_context, SparkDataFrameType, ['df'])
 
         assert set(map(lambda x: x[0], new_df.collect())) == set(['Bar', 'Foo'])
         assert set(map(lambda x: x[1], new_df.collect())) == set([1, 2])
     finally:
-        tempfile_.close()
+        shutil.rmtree(object_store.root)
