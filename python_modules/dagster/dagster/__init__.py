@@ -63,10 +63,10 @@ from dagster.core.types import (
     output_schema,
     output_selector_schema,
     Path,
+    PermissiveDict,
     PythonObjectType,
     Selector,
     String,
-    UntypedDict,
 )
 
 from dagster.core.types.decorator import dagster_type, as_dagster_type
@@ -132,11 +132,11 @@ __all__ = [
     'output_schema',
     'output_selector_schema',
     'Path',
+    'PermissiveDict',
     'PythonObjectType',
     'Selector',
     'String',
     'SerializationStrategy',
-    'UntypedDict',
     # type creation
     'as_dagster_type',
     'dagster_type',

@@ -6,7 +6,7 @@ from .config_schema import (
     output_selector_schema,
 )
 from .field import Field
-from .field_utils import Dict, NamedDict, Selector, NamedSelector, UntypedDict
+from .field_utils import Dict, NamedDict, Selector, NamedSelector, PermissiveDict
 from .runtime import PythonObjectType
 from .wrapping import Nullable, List
 

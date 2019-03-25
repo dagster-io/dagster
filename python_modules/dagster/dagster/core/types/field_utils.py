@@ -132,8 +132,8 @@ class _ConfigComposite(_ConfigHasFields):
         return True
 
     @property
-    def is_typed(self):
-        return True
+    def is_permissive_composite(self):
+        return False
 
 
 class _ConfigSelector(_ConfigHasFields):
@@ -191,16 +191,16 @@ def Dict(fields):
     return _Dict
 
 
-def UntypedDict(fields=None):
-    '''An untyped dict will permit the user to partially specify the permitted fields. Any fields
+def PermissiveDict(fields=None):
+    '''A permissive dict will permit the user to partially specify the permitted fields. Any fields
     that are specified and passed in will be type checked. Other fields will be allowed, but
     will be ignored by the type checker.
     '''
 
-    class _UntypedDict(_ConfigComposite):
+    class _PermissiveDict(_ConfigComposite):
         def __init__(self):
-            key = 'UntypedDict.' + str(DictCounter.get_next_count())
-            super(_UntypedDict, self).__init__(
+            key = 'PermissiveDict.' + str(DictCounter.get_next_count())
+            super(_PermissiveDict, self).__init__(
                 name=None,
                 key=key,
                 fields=fields or dict(),
@@ -209,10 +209,10 @@ def UntypedDict(fields=None):
             )
 
         @property
-        def is_typed(self):
-            return False
+        def is_permissive_composite(self):
+            return True
 
-    return _UntypedDict
+    return _PermissiveDict
 
 
 def Selector(fields):
