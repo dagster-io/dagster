@@ -7,3 +7,9 @@ context:
           postgres_password: test
           postgres_hostname: localhost
           postgres_db_name: test
+      download_manager:
+        config:
+          bucket: dagster-airline-demo-source-data
+          key: test
+          skip_if_present: True
+          target_folder: source_data

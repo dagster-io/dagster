@@ -5,7 +5,8 @@ import tempfile
 
 from pyspark.sql import SparkSession
 
-from dagster import Field, resource
+from dagster import Field, resource, check, Dict, String, Path, Bool
+from dagster.utils import safe_isfile, mkdir_p
 
 from .types import DbInfo, PostgresConfigData, RedshiftConfigData
 from .utils import (
@@ -14,7 +15,69 @@ from .utils import (
     create_redshift_db_url,
     create_redshift_engine,
     create_s3_session,
+    S3Logger,
 )
+
+
+class S3DownloadManager:
+    def __init__(self, bucket, key, target_folder, skip_if_present):
+        self.bucket = check.str_param(bucket, 'bucket')
+        self.key = check.str_param(key, 'key')
+        self.target_folder = check.str_param(target_folder, 'target_folder')
+        self.skip_if_present = check.bool_param(skip_if_present, 'skip_if_present')
+
+    def download_file(self, context, target_file):
+        check.str_param(target_file, 'target_file')
+
+        target_path = os.path.join(self.target_folder, target_file)
+
+        if self.skip_if_present and safe_isfile(target_path):
+            context.log.info(
+                'Skipping download, file already present at {target_path}'.format(
+                    target_path=target_path
+                )
+            )
+        else:
+            full_key = self.key + '/' + target_file
+            if os.path.dirname(target_path):
+                mkdir_p(os.path.dirname(target_path))
+
+            context.log.info(
+                'Starting download of {bucket}/{key} to {target_path}'.format(
+                    bucket=self.bucket, key=full_key, target_path=target_path
+                )
+            )
+
+            headers = context.resources.s3.head_object(Bucket=self.bucket, Key=full_key)
+            logger = S3Logger(
+                context.log.debug, self.bucket, full_key, target_path, int(headers['ContentLength'])
+            )
+            context.resources.s3.download_file(
+                Bucket=self.bucket, Key=full_key, Filename=target_path, Callback=logger
+            )
+
+        return target_path
+
+
+@resource(
+    config_field=Field(
+        Dict(
+            {
+                'bucket': Field(String),
+                'key': Field(String),
+                'target_folder': Field(Path),
+                'skip_if_present': Field(Bool),
+            }
+        )
+    )
+)
+def s3_download_manager(init_context):
+    return S3DownloadManager(
+        bucket=init_context.resource_config['bucket'],
+        key=init_context.resource_config['key'],
+        target_folder=init_context.resource_config['target_folder'],
+        skip_if_present=init_context.resource_config['skip_if_present'],
+    )
 
 
 @resource

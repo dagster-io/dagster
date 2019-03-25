@@ -137,24 +137,9 @@ def sql_solid(name, select_statement, materialization_strategy, table_name=None,
     config_field=Field(
         Dict(
             fields={
-                # Probably want to make the region configuable too
-                'bucket': Field(String, description='The S3 bucket in which to look for the key.'),
-                'key': Field(String, description='The key to download.'),
-                'skip_if_present': Field(
-                    Bool,
-                    description=(
-                        'If True, and a file already exists at the path described by the '
-                        'target_path config value, if present, or the key, then the solid '
-                        'will no-op.'
-                    ),
-                    default_value=False,
-                    is_optional=True,
-                ),
-                'target_path': Field(
-                    Path,
-                    description=('If present, specifies the path at which to download the object.'),
-                    is_optional=True,
-                ),
+                'target_file': Field(
+                    Path, description=('Specifies the path at which to download the object.')
+                )
             }
         )
     ),
@@ -171,38 +156,9 @@ def download_from_s3(context):
         str:
             The path to the downloaded object.
     '''
-    file_ = context.solid_config
-    bucket = file_['bucket']
-    key = file_['key']
-    target_path = file_.get('target_path') or key
-
-    if target_path is None:
-        target_path = context.resources.tempfile.tempfile().name
-
-    if file_['skip_if_present'] and safe_isfile(target_path):
-        context.log.info(
-            'Skipping download, file already present at {target_path}'.format(
-                target_path=target_path
-            )
-        )
-    else:
-        if os.path.dirname(target_path):
-            mkdir_p(os.path.dirname(target_path))
-
-        context.log.info(
-            'Starting download of {bucket}/{key} to {target_path}'.format(
-                bucket=bucket, key=key, target_path=target_path
-            )
-        )
-
-        headers = context.resources.s3.head_object(Bucket=bucket, Key=key)
-        logger = S3Logger(
-            context.log.debug, bucket, key, target_path, int(headers['ContentLength'])
-        )
-        context.resources.s3.download_file(
-            Bucket=bucket, Key=key, Filename=target_path, Callback=logger
-        )
-    return target_path
+    target_file = context.solid_config['target_file']
+    # TODO: error here caused terrible, terrible error message
+    return context.resources.download_manager.download_file(context, target_file)
 
 
 @solid(

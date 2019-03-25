@@ -331,6 +331,7 @@ def _execution_step_error_boundary(step_context, msg, **kwargs):
     try:
         yield
     except Exception as e:  # pylint: disable=W0703
+        step_context.log.error('Inner error in step execution ' + str(e))
         if isinstance(e, DagsterError):
             raise e
         else:
