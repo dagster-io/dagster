@@ -24,7 +24,7 @@ AirlineDemoResources = namedtuple(
 )
 
 
-class SparkDataFrameSerializationStrategy(SerializationStrategy):
+class SparkDataFrameParquetSerializationStrategy(SerializationStrategy):
     def serialize_value(self, _context, value, write_file_obj):
         parquet_dir = tempfile.mkdtemp()
         shutil.rmtree(parquet_dir)
@@ -39,15 +39,11 @@ class SparkDataFrameSerializationStrategy(SerializationStrategy):
                 with open(zipfile_path, 'rb') as archive_file_read_obj:
                     write_file_obj.write(archive_file_read_obj.read())
             finally:
-                try:
+                if os.path.isfile(zipfile_path):
                     os.remove(zipfile_path)
-                except FileNotFoundError:
-                    pass
         finally:
-            try:
+            if os.path.isfile(archive_file_obj.name):
                 os.remove(archive_file_obj.name)
-            except FileNotFoundError:
-                pass
 
     def deserialize_value(self, context, read_file_obj):
         archive_file_obj = tempfile.NamedTemporaryFile(delete=False)
@@ -60,10 +56,8 @@ class SparkDataFrameSerializationStrategy(SerializationStrategy):
             zipfile_obj.extractall(parquet_dir)
             zipfile_obj.close()
         finally:
-            try:
+            if os.path.isfile(archive_file_obj.name):
                 os.remove(archive_file_obj.name)
-            except FileNotFoundError:
-                pass
         return context.resources.spark.read.parquet(parquet_dir)
 
 
@@ -71,7 +65,7 @@ SparkDataFrameType = as_dagster_type(
     DataFrame,
     name='SparkDataFrameType',
     description='A Pyspark data frame.',
-    serialization_strategy=SparkDataFrameSerializationStrategy(),
+    serialization_strategy=SparkDataFrameParquetSerializationStrategy(),
 )
 
 SqlAlchemyEngineType = as_dagster_type(
