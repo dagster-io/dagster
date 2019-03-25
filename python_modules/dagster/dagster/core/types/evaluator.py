@@ -454,10 +454,16 @@ def validate_composite_config_value(composite_type, config_value, stack):
     defined_fields = set(fields.keys())
     incoming_fields = set(config_value.keys())
 
-    for received_field in incoming_fields:
-        if received_field not in defined_fields:
-            yield create_field_not_defined_error(composite_type, stack, received_field)
+    # Here, we support untyped dictionaries. In cases where we know the set of permissible keys a
+    # priori, we validate against the config. For untyped dictionaries, we give the user an escape
+    # hatch where they can specify arbitrary key-value pairs...
+    if composite_type.is_typed:
+        for received_field in incoming_fields:
+            if received_field not in defined_fields:
+                yield create_field_not_defined_error(composite_type, stack, received_field)
 
+    # ...However, for any fields the user *has* told us about, we validate against their config
+    # specification.
     for expected_field, field_def in fields.items():
         if expected_field in incoming_fields:
             for error in _validate_config(

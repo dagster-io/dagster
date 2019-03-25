@@ -63,6 +63,13 @@ def apply_defaults_to_composite_type(composite_type, config_value):
         elif not field_def.is_optional:
             check.failed('Missing non-optional composite member not caught in validation')
 
+    # For untyped composite fields, we skip applying defaults because these fields are unknown to us
+    if not composite_type.is_typed:
+        defined_fields = set(fields.keys())
+        extra_fields = incoming_fields - defined_fields
+        for extra_field in extra_fields:
+            processed_fields[extra_field] = config_value[extra_field]
+
     return processed_fields
 
 

@@ -66,6 +66,7 @@ from dagster.core.types import (
     PythonObjectType,
     Selector,
     String,
+    UntypedDict,
 )
 
 from dagster.core.types.decorator import dagster_type, as_dagster_type
@@ -135,6 +136,7 @@ __all__ = [
     'Selector',
     'String',
     'SerializationStrategy',
+    'UntypedDict',
     # type creation
     'as_dagster_type',
     'dagster_type',

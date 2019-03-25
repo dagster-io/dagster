@@ -131,6 +131,10 @@ class _ConfigComposite(_ConfigHasFields):
     def is_composite(self):
         return True
 
+    @property
+    def is_typed(self):
+        return True
+
 
 class _ConfigSelector(_ConfigHasFields):
     @property
@@ -185,6 +189,30 @@ def Dict(fields):
             )
 
     return _Dict
+
+
+def UntypedDict(fields=None):
+    '''An untyped dict will permit the user to partially specify the permitted fields. Any fields
+    that are specified and passed in will be type checked. Other fields will be allowed, but
+    will be ignored by the type checker.
+    '''
+
+    class _UntypedDict(_ConfigComposite):
+        def __init__(self):
+            key = 'UntypedDict.' + str(DictCounter.get_next_count())
+            super(_UntypedDict, self).__init__(
+                name=None,
+                key=key,
+                fields=fields or dict(),
+                description='A configuration dictionary with typed fields',
+                type_attributes=ConfigTypeAttributes(is_builtin=True),
+            )
+
+        @property
+        def is_typed(self):
+            return False
+
+    return _UntypedDict
 
 
 def Selector(fields):
