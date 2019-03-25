@@ -47,7 +47,7 @@ def test_file_system_object_store():
     finally:
         try:
             shutil.rmtree(object_store.root)
-        except seven.FileNotFoundError:
+        except (seven.FileNotFoundError, OSError):
             pass
 
 
@@ -70,7 +70,7 @@ def test_file_system_object_store_with_custom_serializer():
     finally:
         try:
             shutil.rmtree(object_store.root)
-        except seven.FileNotFoundError:
+        except (seven.FileNotFoundError, OSError):
             pass
 
 
