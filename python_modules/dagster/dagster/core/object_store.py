@@ -128,13 +128,6 @@ class FileSystemObjectStore(ObjectStore):
             check.failed('should not get here')
 
 
-class StreamingBodyWrapper(BytesIO):
-    '''Wraps the body returned from an S3 request in a BytesIO object.'''
-
-    def __init__(self, streaming_body):
-        super(StreamingBodyWrapper, self).__init__(streaming_body.read())
-
-
 class S3ObjectStore(ObjectStore):
     def __init__(self, s3_bucket, run_id):
         boto3, _ = ensure_boto_requirements()
@@ -182,7 +175,7 @@ class S3ObjectStore(ObjectStore):
         key = self._key_for_paths(paths)
 
         return runtime_type.serialization_strategy.deserialize_value(
-            StreamingBodyWrapper(self.s3.get_object(Bucket=self.bucket, Key=key)['Body'])
+            BytesIO(self.s3.get_object(Bucket=self.bucket, Key=key)['Body'])
         )
 
     def has_object(self, context, paths):  # pylint: disable=unused-argument
