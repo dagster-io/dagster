@@ -39,22 +39,25 @@ RUN { \
 RUN ln -svT "/usr/lib/jvm/java-8-openjdk-$(dpkg --print-architecture)" /docker-java-home
 ENV JAVA_HOME /docker-java-home
 
-# Updated from base image
-ENV JAVA_VERSION 8u212
-ENV JAVA_DEBIAN_VERSION 8u212-b01-1~deb9u1 
+ENV JAVA_VERSION 8u181
+ENV JAVA_DEBIAN_VERSION 8u181-b13-2~deb9u1
 
 RUN set -ex; \
+	\
 	# deal with slim variants not having man page directories (which causes "update-alternatives" to fail)
 	if [ ! -d /usr/share/man/man1 ]; then \
 	mkdir -p /usr/share/man/man1; \
 	fi; \
+	\
 	apt-get update; \
 	apt-get install -y --no-install-recommends \
 	openjdk-8-jdk-headless="$JAVA_DEBIAN_VERSION" \
 	; \
 	rm -rf /var/lib/apt/lists/*; \
+	\
 	# verify that "docker-java-home" returns what we expect
 	[ "$(readlink -f "$JAVA_HOME")" = "$(docker-java-home)" ]; \
+	\
 	# update-alternatives so that future installs of other OpenJDK versions don't change /usr/bin/java
 	update-alternatives --get-selections | awk -v home="$(readlink -f "$JAVA_HOME")" 'index($3, home) == 1 { $2 = "manual"; print | "update-alternatives --set-selections" }'; \
 	# ... and verify that it actually worked for one of the alternatives we care about
@@ -66,9 +69,26 @@ RUN mkdir -p /tmp/results
 
 WORKDIR /tmp/
 
+ADD dagster/requirements.txt dagster_requirements.txt
+RUN pip install -r dagster_requirements.txt
+
+ADD dagit/requirements.txt dagit_requirements.txt
+RUN pip install -r dagit_requirements.txt
+
+ADD dagstermill/requirements.txt dagstermill_requirements.txt
+RUN pip install -r dagstermill_requirements.txt
+
 ADD requirements.txt .
 
 RUN pip install -r requirements.txt
+
+ADD dagster dagster
+ADD dagit dagit
+ADD dagstermill dagstermill
+
+RUN pip install -e dagster/
+RUN pip install -e dagit/
+RUN pip install -e dagstermill/
 
 ADD . .
 

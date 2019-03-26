@@ -1,4 +1,5 @@
 boto3==1.9.47
+dagit
 dagster
 dagstermill
 descartes==1.1.0
