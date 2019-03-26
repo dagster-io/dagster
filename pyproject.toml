@@ -16,5 +16,5 @@ exclude = '''
   | python_modules/dagster/dagster/tutorials/
   | snapshots/
   | __scaffold\.py
-/)
+)/
 '''
