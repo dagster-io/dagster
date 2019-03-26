@@ -25,7 +25,7 @@ lazy val events = project
         val oldStrategy = (assemblyMergeStrategy in assembly).value
         oldStrategy(x)
     },
-    // So, this is fun. Spark depends on hadoop-spark, which transitively depends on aws-java-sdk 1.7.4.
+    // So, this is fun. Spark depends on hadoop-aws, which transitively depends on aws-java-sdk 1.7.4.
     // We want to use 1.11.525 because otherwise we have to explicitly handle the credentials chain in client code, and
     // We want to be use the default credentials chain provider.
     //
