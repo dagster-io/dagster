@@ -49,8 +49,9 @@ class ObjectStore(six.with_metaclass(ABCMeta)):
             return
         for method_name in self._override_methods:
             if hasattr(storage_override, method_name):
+                # Black magic; unbind and then rebind the method
                 self.TYPE_REGISTRY[type_to_register][method_name] = partial(
-                    getattr(storage_override, method_name), self
+                    getattr(storage_override, method_name).__func__, self
                 )
 
     @abstractmethod

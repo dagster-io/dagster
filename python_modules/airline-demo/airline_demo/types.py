@@ -22,7 +22,7 @@ AirlineDemoResources = namedtuple(
 
 class SparkDataFrameS3StorageOverride(S3ObjectStore):
     def __init__(self, *args, **kwargs):
-        super(SparkDataFrameS3StorageOverride, self).__init__(*args, **kwargs)
+        pass
 
     def set_object(self, obj, _context, _runtime_type, paths):
         target_path = self._key_for_paths(paths)
@@ -35,7 +35,7 @@ class SparkDataFrameS3StorageOverride(S3ObjectStore):
 
 class SparkDataFrameFilesystemStorageOverride(FileSystemObjectStore):
     def __init__(self, *args, **kwargs):
-        super(SparkDataFrameFilesystemStorageOverride, self).__init__(*args, **kwargs)
+        pass
 
     def set_object(self, obj, _context, _runtime_type, paths):
         target_path = get_valid_target_path(self.root, paths)
@@ -51,8 +51,8 @@ SparkDataFrameType = as_dagster_type(
     name='SparkDataFrameType',
     description='A Pyspark data frame.',
     storage_overrides={
-        RunStorageMode.S3: SparkDataFrameS3StorageOverride,
-        RunStorageMode.FILESYSTEM: SparkDataFrameFilesystemStorageOverride,
+        RunStorageMode.S3: SparkDataFrameS3StorageOverride(),
+        RunStorageMode.FILESYSTEM: SparkDataFrameFilesystemStorageOverride(),
     },
 )
 

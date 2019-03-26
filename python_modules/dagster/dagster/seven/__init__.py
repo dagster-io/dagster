@@ -1,3 +1,5 @@
+'''Internal py2/3 compatibility library. A little more than six.'''
+
 import sys
 
 from .json import dump, dumps, JSONDecodeError
