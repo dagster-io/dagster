@@ -14,7 +14,7 @@ lazy val global = (project in file("."))
   )
 
 lazy val circeVersion = "0.11.1"
-lazy val awsVersion = "1.7.4"
+lazy val awsVersion = "1.11.525"
 
 lazy val events = project
   .settings(
@@ -25,6 +25,17 @@ lazy val events = project
         val oldStrategy = (assemblyMergeStrategy in assembly).value
         oldStrategy(x)
     },
+    // So, this is fun. Spark depends on hadoop-spark, which transitively depends on aws-java-sdk 1.7.4.
+    // We want to use 1.11.525 because otherwise we have to explicitly handle the credentials chain in client code, and
+    // We want to be use the default credentials chain provider.
+    //
+    // To make this version of the AWS jar available to this codebase, we shade it so that it does not conflict with the
+    // version needed by Spark.
+    //
+    // These rules apply at jar assembly time, so code can still import com.amazonaws... as before.
+    assemblyShadeRules in assembly := Seq(
+      ShadeRule.rename("com.amazonaws.**" -> "shaded.@0").inAll
+    ),
     resolvers += Resolver.sonatypeRepo("releases"),
     libraryDependencies ++= Seq(
       scalaTest          % Test,
