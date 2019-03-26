@@ -12,9 +12,10 @@ from six import StringIO
 
 from dagster.utils.indenting_printer import IndentingPrinter
 
+import sys
 
 SPARK_VERSION = "v2.4.0"
-TABLE_REGEX = r"### (.{,20}?)\n\n(<table.*?>.*?<\/table>)"
+TABLE_REGEX = r"### (.{,30}?)\n\n(<table.*?>.*?<\/table>)"
 
 
 class IndentingBufferPrinter(IndentingPrinter):
@@ -50,13 +51,6 @@ class SparkConfig:
     @property
     def split_path(self):
         return self.path.split('.')
-
-    @property
-    def path_length(self):
-        return len(self.split_path)
-
-    def __repr__(self):
-        return 'SparkConfig(%s)' % self.path
 
     def print(self, printer):
         printer.append('Field(')
@@ -123,6 +117,7 @@ def main():
 
     result = SparkConfigNode()
     for s in spark_configs:
+        print(s.path, file=sys.stderr)
         key_path = s.split_path
         d = result
         while key_path:
