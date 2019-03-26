@@ -1,5 +1,4 @@
 /* tslint:disable */
-/* eslint-disable */
 // This file was automatically generated and should not be edited.
 
 import { PipelineRunStatus, LogLevel, StepKind } from "./../../types/globalTypes";
@@ -187,6 +186,7 @@ export type PipelineExecutionRootQuery_pipeline_configTypes_CompositeConfigType_
 export interface PipelineExecutionRootQuery_pipeline_configTypes_CompositeConfigType_fields {
   __typename: "ConfigTypeField";
   name: string;
+  description: string | null;
   isOptional: boolean;
   configType: PipelineExecutionRootQuery_pipeline_configTypes_CompositeConfigType_fields_configType;
 }
