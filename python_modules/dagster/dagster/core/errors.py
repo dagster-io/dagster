@@ -131,6 +131,12 @@ class DagsterStepOutputNotFoundError(Exception):
 
 
 class DagsterPY4JTribalKnowledgeException(Exception):
+    '''
+    The sole purpose of this class is to catalog and note the strange conditions
+    under which py4j exceptions are raised. This is just a place to encode
+    insitutional knowledge.
+    '''
+
     pass
 
 
