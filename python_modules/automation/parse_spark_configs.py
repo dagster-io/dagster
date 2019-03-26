@@ -66,7 +66,7 @@ class SparkConfig:
             printer.append("description='''")
             printer.append(self.meaning)
             printer.line("''',")
-            printer.line("default_value='{}',".format(self.default))
+            # printer.line("default_value='{}',".format(self.default))
         printer.append(')')
 
 
