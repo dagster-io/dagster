@@ -137,8 +137,6 @@ class DagsterPY4JTribalKnowledgeException(Exception):
     insitutional knowledge.
     '''
 
-    pass
-
 
 HAS_P4J = True
 try:
