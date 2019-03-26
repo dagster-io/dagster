@@ -61,6 +61,8 @@ class SparkConfig:
             printer.append(self.meaning)
             printer.line("''',")
             # printer.line("default_value='{}',".format(self.default))
+            printer.line('is_optional=True,')
+
         printer.append(')')
 
 
