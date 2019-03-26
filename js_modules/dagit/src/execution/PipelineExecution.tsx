@@ -5,6 +5,7 @@ import { Colors } from "@blueprintjs/core";
 import { ApolloConsumer } from "react-apollo";
 
 import { PipelineRun, PipelineRunEmpty } from "./PipelineRun";
+import { PipelineRunPreview } from "./PipelineRunPreview";
 import { PanelDivider } from "../PanelDivider";
 import PipelineSolidSelector from "./PipelineSolidSelector";
 import ConfigEditor from "../configeditor/ConfigEditor";
@@ -145,9 +146,13 @@ export default class PipelineExecution extends React.Component<
         />
         <Split>
           {currentRun ? (
-            <PipelineRun plan={currentRun.executionPlan} run={currentRun} />
+            <PipelineRun run={currentRun} />
           ) : (
-            <PipelineRunEmpty />
+            <PipelineRunPreview
+              pipelineName={pipeline.name}
+              solidSubset={currentSession.solidSubset}
+              configCode={currentSession.config}
+            />
           )}
         </Split>
       </PipelineExecutionWrapper>

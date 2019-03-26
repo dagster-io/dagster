@@ -12,8 +12,8 @@ interface IExecutionPlanBoxProps {
   elapsed: number | undefined;
   delay: number;
   materializations: IStepMaterialization[];
-  onShowStateDetails: (stepName: string) => void;
-  onApplyStepFilter: (stepName: string) => void;
+  onShowStateDetails?: (stepName: string) => void;
+  onApplyStepFilter?: (stepName: string) => void;
 }
 
 interface IExecutionPlanBoxState {
@@ -100,13 +100,15 @@ export class ExecutionPlanBox extends React.Component<
           state={state}
           className={state}
           style={{ transitionDelay: `${delay}ms` }}
-          onClick={() => onApplyStepFilter(name)}
+          onClick={() => onApplyStepFilter && onApplyStepFilter(name)}
         >
           <ExecutionFinishedFlash
             style={{ transitionDelay: `${delay}ms` }}
             success={state === IStepState.SUCCEEDED}
           />
-          <ExeuctionStateWrap onClick={() => onShowStateDetails(name)}>
+          <ExeuctionStateWrap
+            onClick={() => onShowStateDetails && onShowStateDetails(name)}
+          >
             {state === IStepState.RUNNING ? (
               <Spinner intent={Intent.NONE} size={11} />
             ) : (

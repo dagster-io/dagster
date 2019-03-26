@@ -88,7 +88,7 @@ function subsetDescription(
   return `${solidSubset.length} solids`;
 }
 
-class PipelineSolidSelector extends React.Component<
+class PipelineSolidSelector extends React.PureComponent<
   IPipelineSolidSelectorInnerProps,
   IPipelineSolidSelectorState
 > {

@@ -8,7 +8,7 @@ import LogsFilterProvider, {
   DefaultLogFilter
 } from "./LogsFilterProvider";
 import LogsScrollingTable from "./LogsScrollingTable";
-import PipelineRunExecutionPlan from "./PipelineRunExecutionPlan";
+import ExecutionPlan from "./ExecutionPlan";
 import {
   PipelineRunFragment,
   PipelineRunFragment_logs_nodes_ExecutionStepFailureEvent
@@ -17,10 +17,8 @@ import { PanelDivider } from "../PanelDivider";
 import PythonErrorInfo from "../PythonErrorInfo";
 import RunMetadataProvider from "./RunMetadataProvider";
 import LogsToolbar from "./LogsToolbar";
-import { PipelineRunExecutionPlanFragment_executionPlan } from "./types/PipelineRunExecutionPlanFragment";
 
 interface IPipelineRunProps {
-  plan: PipelineRunExecutionPlanFragment_executionPlan;
   run: PipelineRunFragment;
 }
 
@@ -53,11 +51,13 @@ export class PipelineRun extends React.Component<
             }
           }
         }
-        ...PipelineRunExecutionPlanFragment
+        executionPlan {
+          ...ExecutionPlanFragment
+        }
       }
 
       ${RunMetadataProvider.fragments.RunMetadataProviderMessageFragment}
-      ${PipelineRunExecutionPlan.fragments.PipelineRunExecutionPlanFragment}
+      ${ExecutionPlan.fragments.ExecutionPlanFragment}
       ${LogsFilterProvider.fragments.LogsFilterProviderMessageFragment}
       ${LogsScrollingTable.fragments.LogsScrollingTableMessageFragment}
     `,
@@ -101,9 +101,9 @@ export class PipelineRun extends React.Component<
       <PipelineRunWrapper>
         <RunMetadataProvider logs={logs.nodes}>
           {metadata => (
-            <PipelineRunExecutionPlan
-              run={this.props.run}
+            <ExecutionPlan
               runMetadata={metadata}
+              executionPlan={this.props.run.executionPlan}
               onShowStateDetails={this.onShowStateDetails}
               onApplyStepFilter={stepName =>
                 this.setState({
@@ -154,10 +154,8 @@ export class PipelineRunEmpty extends React.Component {
       <PipelineRunWrapper>
         <NonIdealState
           icon={IconNames.SEND_TO_GRAPH}
-          title="No Run Data"
-          description={
-            "Provide configuration and click Play to execute the pipeline."
-          }
+          title="No Execution Plan"
+          description={"Provide valid configuration to see an execution plan."}
         />
       </PipelineRunWrapper>
     );

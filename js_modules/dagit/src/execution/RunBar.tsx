@@ -8,6 +8,7 @@ import { IExecutionSessionChanges, IExecutionSession } from "../LocalStorage";
 import { RunBarRunFragment } from "./types/RunBarRunFragment";
 import RunHistory from "./RunHistory";
 import { titleForRun } from "./ExecutionUtils";
+import { isEqual, pick } from "lodash";
 import * as YAML from "yaml";
 
 interface IRunBarProps {
@@ -33,6 +34,13 @@ export default class RunBar extends React.Component<IRunBarProps> {
       ${RunHistory.fragments.RunHistoryRunFragment}
     `
   };
+
+  shouldComponentUpdate(nextProps: IRunBarProps) {
+    // RunBar can't be a PureComponent because the on* function props need to be
+    // defined inline in the parent. Avoid rendering on every keystroke here.
+    const keys = ["executing", "currentSession", "sessions", "runs"];
+    return !isEqual(pick(nextProps, keys), pick(this.props, keys));
+  }
 
   render() {
     const {

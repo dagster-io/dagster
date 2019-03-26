@@ -2,43 +2,58 @@ import * as React from "react";
 import gql from "graphql-tag";
 import styled from "styled-components";
 import { Colors } from "@blueprintjs/core";
-import { PipelineRunExecutionPlanFragment } from "./types/PipelineRunExecutionPlanFragment";
-import { ExecutionPlanBox } from "./PipelineRunExecutionPlanBox";
-import { IRunMetadataDict, IStepState } from "./RunMetadataProvider";
+import { ExecutionPlanFragment } from "./types/ExecutionPlanFragment";
+import { ExecutionPlanBox } from "./ExecutionPlanBox";
+import {
+  IRunMetadataDict,
+  IStepState,
+  IStepMetadata
+} from "./RunMetadataProvider";
 import { formatElapsedTime } from "../Util";
 
-interface IPipelineRunExecutionPlanProps {
-  run: PipelineRunExecutionPlanFragment;
-  runMetadata: IRunMetadataDict;
-  onApplyStepFilter: (step: string) => void;
-  onShowStateDetails: (step: string) => void;
+interface IExecutionPlanProps {
+  executionPlan: ExecutionPlanFragment;
+  runMetadata?: IRunMetadataDict;
+  onApplyStepFilter?: (step: string) => void;
+  onShowStateDetails?: (step: string) => void;
 }
 
-export default class PipelineRunExecutionPlan extends React.Component<
-  IPipelineRunExecutionPlanProps
+const EMPTY_RUN_METADATA: IRunMetadataDict = {
+  steps: {}
+};
+
+const EMPTY_STEP_METADATA: IStepMetadata = {
+  state: IStepState.WAITING,
+  start: undefined,
+  elapsed: undefined,
+  transitionedAt: 0,
+  materializations: []
+};
+
+export default class ExecutionPlan extends React.PureComponent<
+  IExecutionPlanProps
 > {
   static fragments = {
-    PipelineRunExecutionPlanFragment: gql`
-      fragment PipelineRunExecutionPlanFragment on PipelineRun {
-        executionPlan {
-          steps {
+    ExecutionPlanFragment: gql`
+      fragment ExecutionPlanFragment on ExecutionPlan {
+        steps {
+          name
+          solid {
             name
-            solid {
-              name
-            }
-            kind
           }
+          kind
         }
       }
     `
   };
 
   render() {
+    const haveRun = !!this.props.runMetadata;
     const {
       onApplyStepFilter,
       onShowStateDetails,
-      runMetadata,
-      run: { executionPlan }
+      runMetadata = EMPTY_RUN_METADATA,
+      executionPlan
     } = this.props;
 
     const stepsOrderedByTransitionTime = Object.keys(runMetadata.steps).sort(
@@ -48,29 +63,32 @@ export default class PipelineRunExecutionPlan extends React.Component<
     );
 
     let startDone = false;
-    let startText = (
-      <span>
-        {`Process starting`}
-        <AnimatedEllipsis />
-      </span>
-    );
-    if (runMetadata.processId) {
+    let startText = null;
+
+    if (haveRun) {
       startText = (
         <span>
-          {`Process (PID ${runMetadata.processId})`}
+          {`Process starting`}
           <AnimatedEllipsis />
         </span>
       );
+      if (runMetadata.processId) {
+        startText = (
+          <span>
+            {`Process (PID ${runMetadata.processId})`}
+            <AnimatedEllipsis />
+          </span>
+        );
+      }
+      if (runMetadata.startedPipelineAt) {
+        startDone = true;
+        startText = (
+          <span>
+            {`Process (PID ${runMetadata.processId}) began pipeline execution`}
+          </span>
+        );
+      }
     }
-    if (runMetadata.startedPipelineAt) {
-      startDone = true;
-      startText = (
-        <span>
-          {`Process (PID ${runMetadata.processId}) began pipeline execution`}
-        </span>
-      );
-    }
-
     return (
       <ExecutionPlanContainer>
         <ExecutionPlanContainerInner>
@@ -80,9 +98,8 @@ export default class PipelineRunExecutionPlan extends React.Component<
           </ExecutionTimelineMessage>
           {executionPlan.steps.map(step => {
             const delay = stepsOrderedByTransitionTime.indexOf(step.name) * 100;
-            const metadata = runMetadata.steps[step.name] || {
-              state: IStepState.WAITING
-            };
+            const metadata =
+              runMetadata.steps[step.name] || EMPTY_STEP_METADATA;
 
             return (
               <ExecutionPlanBox
