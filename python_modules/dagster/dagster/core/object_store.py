@@ -29,20 +29,30 @@ def ensure_boto_requirements():
     return (boto3, botocore)
 
 
-@six.add_metaclass(ABCMeta)
+@six.with_metaclass(ABCMeta)
 class ObjectStore:
+    _override_methods = ['set_object', 'get_object', 'has_object', 'rm_object']
+
     def __init__(self, types_to_register=None):
-        types_to_register = check.opt_dict_param(types_to_register, 'types_to_register')
+        types_to_register = check.opt_dict_param(
+            types_to_register, 'types_to_register', key_type=RuntimeType, value_type=ObjectStore
+        )
         self.TYPE_REGISTRY = defaultdict(dict)
 
-        for type_to_register, methods_to_register in types_to_register.items():
-            self.register_type(type_to_register, methods_to_register)
+        for type_to_register, storage_override in types_to_register.items():
+            self.register_type(type_to_register, storage_override)
 
-    def register_type(self, type_to_register, methods_to_register):
+    def register_type(self, type_to_register, storage_override):
+        check.inst_param(type_to_register, 'type_to_register', RuntimeType)
+        check.inst_param(storage_override, 'storage_override', ObjectStore)
+
         if type_to_register in self.TYPE_REGISTRY:
             return
-        for method_name, method in methods_to_register.items():
-            self.TYPE_REGISTRY[type_to_register][method_name] = partial(method, self)
+        for method_name in self._override_methods:
+            if hasattr(storage_override, method_name):
+                self.TYPE_REGISTRY[type_to_register][method_name] = partial(
+                    getattr(storage_override, method_name), self
+                )
 
     @abstractmethod
     def set_object(self, obj, context, runtime_type, paths):
@@ -271,6 +281,7 @@ def rm_s3_intermediate(context, s3_bucket, run_id, step_key, output_name='result
 
 def construct_type_registry(pipeline_def, storage_mode):
     return {
-        type_obj: type_obj.storage_overrides.get(storage_mode, {})
+        type_obj: type_obj.storage_overrides.get(storage_mode)
         for type_obj in pipeline_def.all_runtime_types()
+        if type_obj.storage_overrides.get(storage_mode)
     }
