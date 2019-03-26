@@ -12,23 +12,22 @@ first production pipelines in the system. Comments and suggestions are enthusias
 
 ## Getting started
 
-To run the airline demo pipelines locally, you'll need
+### Running the airline demo in Docker
+
+To run the demo in Docker, you'll need:
 
 - An Internet connection
-- AWS credentials in the ordinary [boto3 credential chain](https://boto3.amazonaws.com/v1/documentation/api/latest/guide/configuration.html)
-- An [Apache Spark](https://spark.apache.org/downloads.html) install
-- A running Postgres database available at `postgresql://test:test@127.0.0.1:5432/test`. (A
-  docker-compose file is provided in this repo; run `docker-compose up` from the root of the
-  airline demo.)
+- AWS credentials in the ordinary environment variables 
+  (`AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY`)
+- Docker and docker-compose
+- Nothing running on ports 5432 and 3000, by default (edit `docker-compose.yml` to change this
+  if needed)
 
-Use pip to install the demo's Python requirements:
+From the root of the repo, run:
 
-    pip install -e .
+    docker-compose up
 
-Then just run dagit from the root of the repo:
-
-    dagit
-
+Then just navigate to [http://0.0.0.0:3000/](http://0.0.0.0:3000/) in your browser.
 
 ## Pipelines and config
 
