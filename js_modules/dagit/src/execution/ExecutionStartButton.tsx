@@ -60,8 +60,14 @@ export default class ExecutionStartButton extends React.Component<
 
           if (websocketStatus !== WebSocket.OPEN) {
             return (
-              <Wrapper role="button" title={"Start pipeline execution"}>
-                <Icon icon={IconNames.OFFLINE} iconSize={17} />
+              <Wrapper
+                disabled={true}
+                role="button"
+                title={"The dagit server is offline"}
+              >
+                <div style={{ marginRight: 5 }}>
+                  <Icon icon={IconNames.OFFLINE} iconSize={17} />
+                </div>
                 Start Execution
               </Wrapper>
             );
