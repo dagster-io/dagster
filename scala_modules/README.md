@@ -14,4 +14,5 @@ Some editor config to put in place: [Case Class Definition Style](https://stacko
 
 We follow the Twitter [Effective Scala](http://twitter.github.io/effectivescala/) style guide.
 
+Saving this here for future reference: [Spark + S3](https://medium.com/@subhojit20_27731/apache-spark-and-amazon-s3-gotchas-and-best-practices-a767242f3d98)
  

@@ -37,6 +37,7 @@ import java.io.File
 
 import org.apache.spark.sql.Dataset
 import java.util.Date
+import com.amazonaws.services.s3.AmazonS3ClientBuilder
 import com.amazonaws.services.s3.model.{DeleteObjectRequest, ListObjectsRequest, S3ObjectSummary}
 import scala.reflect.io.Directory
 import scala.reflect.internal.FatalError
@@ -57,7 +58,7 @@ object EventPipeline extends SparkJob {
     request.setBucketName(backend.bucket)
     request.setPrefix(backend.inputPath)
 
-    s3Client
+    AmazonS3ClientBuilder.defaultClient
       .listObjects(request)
       .getObjectSummaries
       .toList
@@ -69,15 +70,18 @@ object EventPipeline extends SparkJob {
     val records = backend match {
       case l: LocalStorageBackend => spark.read.textFile(l.inputPath)
       case s: S3StorageBackend =>
-        val objectKeys = spark.sparkContext.parallelize(getS3Objects(s, date))
+        getS3Objects(s, date)
+          .toDS()
+          .mapPartitions { part =>
+            // S3 client objects are not serializable, so we need to instantiate each on the executors, not on the master.
+            val client = AmazonS3ClientBuilder.defaultClient
+            part.flatMap { key =>
+              Source
+                .fromInputStream(client.getObject(s.bucket, key).getObjectContent)
+                .getLines
 
-        spark.createDataset(
-          objectKeys.flatMap { key =>
-            Source
-              .fromInputStream(s3Client.getObject(s.bucket, key).getObjectContent)
-              .getLines
+            }
           }
-        )
     }
     records.flatMap(Event.fromString)
   }
@@ -117,6 +121,7 @@ object EventPipeline extends SparkJob {
         }
 
       case s: S3StorageBackend =>
+        val s3Client = AmazonS3ClientBuilder.defaultClient
         val objs =
           s3Client.listObjects(s.bucket, s.outputPath).getObjectSummaries
         if (!objs.isEmpty) {
@@ -151,7 +156,7 @@ case class EventPipelineConfig(
 object EventPipelineConfig {
   val dateFormat = new java.text.SimpleDateFormat("yyyy-MM-dd")
 
-  val parser = new scopt.OptionParser[EventPipelineConfig]("EventPipeline") {
+  val parser: scopt.OptionParser[EventPipelineConfig] = new scopt.OptionParser[EventPipelineConfig]("EventPipeline") {
     opt[String]("s3-bucket")
       .action((x, c) => c.copy(s3Bucket = Some(x)))
       .text("S3 bucket to read")
