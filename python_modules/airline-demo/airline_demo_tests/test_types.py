@@ -45,7 +45,7 @@ def test_spark_data_frame_serialization_file_system():
 
     assert result.success
     result_dir = os.path.join(
-        object_store.root, 'intermediates', 'ingest_spark_to_csv.transform', 'result'
+        object_store.root, 'intermediates', 'ingest_csv_to_spark.transform', 'result'
     )
 
     assert '_SUCCESS' in os.listdir(result_dir)
