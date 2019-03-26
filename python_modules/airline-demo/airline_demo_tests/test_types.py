@@ -90,7 +90,7 @@ def test_spark_data_frame_serialization_s3():
                 object_store.root.strip(object_store.bucket).strip('/'),
                 'files',
                 'intermediates',
-                'ingest_spark_to_csv.transform',
+                'ingest_csv_to_spark.transform',
                 'result',
                 '_SUCCESS',
             ]
