@@ -1,4 +1,7 @@
+from contextlib import contextmanager
 from enum import Enum
+
+import six
 
 from dagster import check
 
@@ -125,3 +128,68 @@ class DagsterStepOutputNotFoundError(Exception):
         self.step_key = check.str_param(kwargs.pop('step_key'), 'step_key')
         self.output_name = check.str_param(kwargs.pop('output_name'), 'output_name')
         super(DagsterStepOutputNotFoundError, self).__init__(*args, **kwargs)
+
+
+class DagsterPY4JTribalKnowledgeException(Exception):
+    '''
+    The sole purpose of this class is to catalog and note the strange conditions
+    under which py4j exceptions are raised. This is just a place to encode
+    insitutional knowledge.
+    '''
+
+
+HAS_P4J = True
+try:
+    import py4j
+except ImportError:
+    HAS_P4J = False
+
+TRIBAL_KNOWLEDGE_ERROR_MESSAGE = '''
+Congratulations, you have managed to encountered an error out of Py4J. These
+error messages are often quite inscrutable and nearly impossible to act upon
+in a meaningful way without serious investigation. As a result, we have
+created this generic wrapper exceptions whose sole purpose in life is to document
+all the different error conditions that have been reported as py4j errors
+in the hopes that others can benefit from these joyous explorations.
+
+Note: The original exception is reraised along with DagsterPY4JTribalKnowledgeException 
+in python 3.
+
+Case 1:
+
+An error of the form: 
+---------
+py4j.protocol.Py4JError: An error occurred while calling o44.__getstate__. Trace:
+py4j.Py4JException: Method __getstate__([]) does not exist
+        at py4j.reflection.ReflectionEngine.getMethod(ReflectionEngine.java:318)
+        at py4j.reflection.ReflectionEngine.getMethod(ReflectionEngine.java:326)
+        at py4j.Gateway.invoke(Gateway.java:274)
+        at py4j.commands.AbstractCommand.invokeMethod(AbstractCommand.java:132)
+        at py4j.commands.CallCommand.execute(CallCommand.java:79)
+        at py4j.GatewayConnection.run(GatewayConnection.java:238)
+        at java.lang.Thread.run(Thread.java:748)
+---------
+
+We have encountered this while attempting to pickle an unpickable object that proxies
+into the JVM (such as a spark dataframe).
+
+
+Original Error Text:
+{original_error_text}
+'''
+
+
+@contextmanager
+def py4j_error_boundary():
+    if HAS_P4J:
+        try:
+            yield
+        except py4j.protocol.Py4JError as py4j_error:
+            six.raise_from(
+                DagsterPY4JTribalKnowledgeException(
+                    TRIBAL_KNOWLEDGE_ERROR_MESSAGE.format(original_error_text=str(py4j_error))
+                ),
+                py4j_error,
+            )
+    else:
+        yield
