@@ -746,7 +746,7 @@ jobs:
           name: Docker-compose for db
           command: |
             pushd python_modules/airline-demo
-            docker-compose up -d
+            docker-compose up db -d
       - run:
           name: Run airline-demo Tests
           command: |
@@ -829,7 +829,7 @@ jobs:
           name: Docker-compose for db
           command: |
             pushd python_modules/airline-demo
-            docker-compose up -d
+            docker-compose up db -d
       - run:
           name: Set up py35 (!?)
           command: |
@@ -885,7 +885,7 @@ jobs:
           name: Docker-compose for db
           command: |
             pushd python_modules/airline-demo
-            docker-compose up -d
+            docker-compose up db -d
       - run:
           name: Run airline-demo Tests
           command: |
