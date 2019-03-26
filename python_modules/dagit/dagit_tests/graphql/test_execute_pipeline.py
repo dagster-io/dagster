@@ -148,6 +148,13 @@ def test_subscription_query_error():
     )
 
     assert step_run_log_entry
+    # Confirm that it is the user stack
+
+    assert step_run_log_entry['message'] == 'Execution of throw_a_thing.transform failed'
+    assert step_run_log_entry['error']
+    assert isinstance(step_run_log_entry['error']['stack'], list)
+
+    assert 'bad programmer' in step_run_log_entry['error']['stack'][-1]
 
 
 def _get_step_run_log_entry(pipeline_run_logs, step_key, typename):
@@ -166,6 +173,12 @@ subscription subscribeTest($runId: ID!) {
             ... on MessageEvent {
                 message
                 step {key }
+            }
+            ... on ExecutionStepFailureEvent {
+                error {
+                    message
+                    stack
+                }
             }
         }
     }

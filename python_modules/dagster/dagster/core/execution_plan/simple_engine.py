@@ -131,7 +131,7 @@ def execute_step_in_memory(step_context, inputs, intermediates_manager):
     except DagsterError as dagster_error:
         step_context.log.error(str(dagster_error))
 
-        exc_info = (
+        user_facing_exc_info = (
             # pylint does not know original_exc_info exists is is_user_code_error is true
             # pylint: disable=no-member
             dagster_error.original_exc_info
@@ -140,15 +140,15 @@ def execute_step_in_memory(step_context, inputs, intermediates_manager):
         )
 
         if step_context.executor_config.throw_on_user_error:
-            six.reraise(*exc_info)
+            six.reraise(*user_facing_exc_info)
 
-        error_info = serializable_error_info_from_exc_info(exc_info)
+        error_info = serializable_error_info_from_exc_info(user_facing_exc_info)
 
         yield ExecutionStepEvent.step_failure_event(
             step_context=step_context,
             step_failure_data=StepFailureData(
                 error_message=error_info.message,
-                error_cls_name=exc_info[0].__name__,  # 0 is the exception type
+                error_cls_name=user_facing_exc_info[0].__name__,  # 0 is the exception type
                 stack=error_info.stack,
             ),
         )
@@ -221,12 +221,20 @@ def _execute_steps_core_loop(step_context, inputs, intermediates_manager):
 
         step_context.events.execution_plan_step_success(step.key, timer_result.millis)
 
-    except DagsterError as e:
+    except DagsterError as dagster_error:
         # The step compute_fn and output error checking both raise exceptions. Catch
         # and re-throw these to ensure that the step is always marked as failed.
-        step_context.events.execution_plan_step_failure(step.key, sys.exc_info())
-        stack_trace = get_formatted_stack_trace(e)
-        step_context.log.error(str(e), stack_trace=stack_trace)
+
+        user_facing_exc_info = (
+            # pylint does not know original_exc_info exists is is_user_code_error is true
+            # pylint: disable=no-member
+            dagster_error.original_exc_info
+            if dagster_error.is_user_code_error
+            else sys.exc_info()
+        )
+        step_context.events.execution_plan_step_failure(step.key, user_facing_exc_info)
+        stack_trace = get_formatted_stack_trace(dagster_error)
+        step_context.log.error(str(dagster_error), stack_trace=stack_trace)
         six.reraise(*sys.exc_info())
 
 
