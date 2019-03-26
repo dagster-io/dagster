@@ -694,10 +694,11 @@ jobs:
             yarn run check-prettier
 
       - run:
-          name: Check GraphQL schema artifacts in sync
+          name: Check GraphQL artifacts in sync
           command: |
             cd js_modules/dagit
             yarn download-schema
+            yarn generate-types
             git diff --exit-code
 
   # We are using the machine executor in order to avoid the pitfalls catalogued at
