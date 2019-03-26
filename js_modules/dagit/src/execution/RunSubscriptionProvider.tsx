@@ -76,41 +76,46 @@ export default class RunSubscriptionProvider extends React.Component<
   }
 
   handleNewMessages = (result: PipelineRunLogsSubscription) => {
-    const runId = result.pipelineRunLogs.messages[0].run.runId;
-    const id = `PipelineRun.${runId}`;
+    if (result.pipelineRunLogs.__typename == 'PipelineRunLogsSubscriptionMissingRunIdFailure') {
+      return;
+    } else if (result.pipelineRunLogs.__typename == 'PipelineRunLogsSubscriptionSuccess') {
+      const messages = result.pipelineRunLogs.messages
+      const runId = messages[0].run.runId;
+      const id = `PipelineRun.${runId}`;
 
-    let localData: PipelineRunLogsUpdateFragment | null = this.props.client.readFragment(
-      {
+      let localData: PipelineRunLogsUpdateFragment | null = this.props.client.readFragment(
+        {
+          fragmentName: "PipelineRunLogsUpdateFragment",
+          fragment: PIPELINE_RUN_LOGS_UPDATE_FRAGMENT,
+          id
+        }
+      );
+      if (localData === null) {
+        return;
+      }
+      localData = produce(
+        localData as PipelineRunLogsUpdateFragment,
+        draftData => {
+          messages.forEach(message => {
+            draftData.logs.nodes.push(message);
+            if (message.__typename === "PipelineProcessStartEvent") {
+              draftData.status = PipelineRunStatus.STARTED;
+            } else if (message.__typename === "PipelineSuccessEvent") {
+              draftData.status = PipelineRunStatus.SUCCESS;
+            } else if (message.__typename === "PipelineFailureEvent") {
+              draftData.status = PipelineRunStatus.FAILURE;
+            }
+          });
+        }
+      );
+
+      this.props.client.writeFragment({
         fragmentName: "PipelineRunLogsUpdateFragment",
         fragment: PIPELINE_RUN_LOGS_UPDATE_FRAGMENT,
-        id
-      }
-    );
-    if (localData === null) {
-      return;
+        id,
+        data: localData
+      });
     }
-    localData = produce(
-      localData as PipelineRunLogsUpdateFragment,
-      draftData => {
-        result.pipelineRunLogs.messages.forEach(message => {
-          draftData.logs.nodes.push(message);
-          if (message.__typename === "PipelineProcessStartEvent") {
-            draftData.status = PipelineRunStatus.STARTED;
-          } else if (message.__typename === "PipelineSuccessEvent") {
-            draftData.status = PipelineRunStatus.SUCCESS;
-          } else if (message.__typename === "PipelineFailureEvent") {
-            draftData.status = PipelineRunStatus.FAILURE;
-          }
-        });
-      }
-    );
-
-    this.props.client.writeFragment({
-      fragmentName: "PipelineRunLogsUpdateFragment",
-      fragment: PIPELINE_RUN_LOGS_UPDATE_FRAGMENT,
-      id,
-      data: localData
-    });
   };
 
   render() {
@@ -135,13 +140,19 @@ const PIPELINE_RUN_LOGS_UPDATE_FRAGMENT = gql`
 const PIPELINE_RUN_LOGS_SUBSCRIPTION = gql`
   subscription PipelineRunLogsSubscription($runId: ID!, $after: Cursor) {
     pipelineRunLogs(runId: $runId, after: $after) {
-      messages {
-        ... on MessageEvent {
-          run {
-            runId
+      __typename
+      ... on PipelineRunLogsSubscriptionSuccess {
+        messages {
+          ... on MessageEvent {
+            run {
+              runId
+            }
+            ...PipelineExecutionPipelineRunEventFragment
           }
-          ...PipelineExecutionPipelineRunEventFragment
         }
+      }
+      ... on PipelineRunLogsSubscriptionMissingRunIdFailure {
+        missingRunId
       }
     }
   }
