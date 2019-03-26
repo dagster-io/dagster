@@ -47,12 +47,12 @@ def scaffold_target(f):
                 'files at the key-level granularity. If the file is a pattern then you must '
                 'enclose it in double quotes'
                 '\n\nExample: '
-                'dagster-airflow scaffold airline_demo_download_pipeline -e '
+                'dagster-airflow scaffold airline_demo_ingest_pipeline -e '
                 '"environments/download/local_*.yml"'
                 '\n\nYou can also specify multiple files:'
                 '\n\nExample: '
-                'dagster-airflow scaffold airline_demo_download_pipeline -e '
-                'environments/local_base.yml -e environments/local_fast_download.yml'
+                'dagster-airflow scaffold airline_demo_ingest_pipeline -e '
+                'environments/local_base.yml -e environments/local_fast_ingest.yml'
             ),
         ),
     )

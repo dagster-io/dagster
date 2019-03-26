@@ -1,9 +1,18 @@
-db:
-  image: postgres:11
-  container_name: db
-  ports:
-    - "5432:5432"
-  environment:
-    POSTGRES_PASSWORD: "test"
-    POSTGRES_USER: "test"
-    POSTGRES_DB: "test"
+version: "3"
+
+services:
+  db:
+    image: "postgres:11"
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_PASSWORD: "test"
+      POSTGRES_USER: "test"
+      POSTGRES_DB: "test"
+  dagit:
+    image: "dagster/airline-demo-airflow"
+    ports:
+      - "3000:3000"
+    command: "-p 3000 -h 0.0.0.0"
+    environment:
+      - PYTHONUNBUFFERED=1
