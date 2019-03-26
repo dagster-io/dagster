@@ -20,7 +20,7 @@ ChildProcessEvents = (ChildProcessStartEvent, ChildProcessDoneEvent, ChildProces
 # Inherit from this class in order to use this library. The object must be pickable
 # and you instantiate it and pass it to execute_command_in_child_process. execute()
 # is invoked in a child process
-class ChildProcessCommand(six.with_metaclass(ABCMeta):  # pylint: disable=no-init
+class ChildProcessCommand(six.with_metaclass(ABCMeta)):  # pylint: disable=no-init
     @abstractmethod
     def execute(self):
         pass
