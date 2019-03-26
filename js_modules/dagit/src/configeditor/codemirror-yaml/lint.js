@@ -3,19 +3,15 @@ var CodeMirror = require("codemirror");
 
 var GUTTER_ID = "CodeMirror-lint-markers";
 
-function showTooltip(e, content) {
+function showTooltip(e, content, node) {
   var tt = document.createElement("div");
+  var nodeRect = node.getBoundingClientRect();
+
   tt.className = "CodeMirror-lint-tooltip";
   tt.appendChild(content.cloneNode(true));
   document.body.appendChild(tt);
-
-  function position(e) {
-    if (!tt.parentNode) return CodeMirror.off(document, "mousemove", position);
-    tt.style.top = Math.max(0, e.clientY - tt.offsetHeight - 5) + "px";
-    tt.style.left = e.clientX + 5 + "px";
-  }
-  CodeMirror.on(document, "mousemove", position);
-  position(e);
+  tt.style.top = nodeRect.top - tt.clientHeight - 5 + "px";
+  tt.style.left = nodeRect.left + 5 + "px";
   if (tt.style.opacity != null) tt.style.opacity = 1;
   return tt;
 }
