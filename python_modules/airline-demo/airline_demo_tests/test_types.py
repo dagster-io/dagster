@@ -2,7 +2,7 @@ import sys
 import tempfile
 
 from airline_demo.resources import spark_session_local, tempfile_resource
-from airline_demo.types import SparkDataFrameSerializationStrategy
+from airline_demo.types import SparkDataFrameParquetSerializationStrategy
 
 
 class MockResources(object):
@@ -24,7 +24,7 @@ def test_spark_data_frame_serialization():
         tempfile_ = tempfile_resource.resource_fn(None).next()
 
     try:
-        serialization_strategy = SparkDataFrameSerializationStrategy()
+        serialization_strategy = SparkDataFrameParquetSerializationStrategy()
 
         pipeline_context = MockPipelineContext(spark, tempfile_)
 
