@@ -164,7 +164,7 @@ class S3ObjectStore(ObjectStore):
 
         self.s3.head_bucket(Bucket=self.bucket)
 
-        self.root = 'dagster/runs/{run_id}/files'.format(run_id=self.run_id)
+        self.root = '{bucket}/runs/{run_id}/files'.format(bucket=self.bucket, run_id=self.run_id)
         self.storage_mode = RunStorageMode.S3
 
         super(S3ObjectStore, self).__init__(types_to_register)
@@ -269,9 +269,8 @@ def rm_s3_intermediate(context, s3_bucket, run_id, step_key, output_name='result
     return object_store.rm_object(context=context, paths=get_fs_paths(step_key, output_name))
 
 
-def construct_type_registry(pipeline_def):
+def construct_type_registry(pipeline_def, storage_mode):
     return {
-        type_obj: type_obj.storage_overrides
+        type_obj: type_obj.storage_overrides.get(storage_mode, {})
         for type_obj in pipeline_def._runtime_type_dict.values()
     }
-

@@ -366,6 +366,9 @@ def construct_run_storage(run_config, environment_config):
             return FileSystemRunStorage()
         elif run_config.storage_mode == RunStorageMode.IN_MEMORY:
             return InMemoryRunStorage()
+        elif run_config.storage_mode == RunStorageMode.S3:
+            # TODO: Revisit whether we want to use S3 run storage
+            return InMemoryRunStorage()
         else:
             check.failed('Unexpected enum {}'.format(run_config.storage_mode))
     elif environment_config.storage.storage_mode == 'filesystem':
@@ -392,7 +395,10 @@ def construct_intermediates_manager(run_config, init_context, environment_config
     if run_config.storage_mode:
         if run_config.storage_mode == RunStorageMode.FILESYSTEM:
             return ObjectStoreIntermediatesManager(
-                FileSystemObjectStore(init_context.run_id, construct_type_registry(pipeline_def))
+                FileSystemObjectStore(
+                    init_context.run_id,
+                    construct_type_registry(pipeline_def, RunStorageMode.FILESYSTEM),
+                )
             )
         elif run_config.storage_mode == RunStorageMode.IN_MEMORY:
             return InMemoryIntermediatesManager()
@@ -401,14 +407,17 @@ def construct_intermediates_manager(run_config, init_context, environment_config
                 S3ObjectStore(
                     environment_config.storage.storage_config['s3_bucket'],
                     init_context.run_id,
-                    construct_type_registry(pipeline_def),
+                    construct_type_registry(pipeline_def, RunStorageMode.S3),
                 )
             )
         else:
             check.failed('Unexpected enum {}'.format(run_config.storage_mode))
     elif environment_config.storage.storage_mode == 'filesystem':
         return ObjectStoreIntermediatesManager(
-            FileSystemObjectStore(init_context.run_id, construct_type_registry(pipeline_def))
+            FileSystemObjectStore(
+                init_context.run_id,
+                construct_type_registry(pipeline_def, RunStorageMode.FILESYSTEM),
+            )
         )
     elif environment_config.storage.storage_mode == 'in_memory':
         return InMemoryIntermediatesManager()
@@ -417,7 +426,7 @@ def construct_intermediates_manager(run_config, init_context, environment_config
             S3ObjectStore(
                 environment_config.storage.storage_config['s3_bucket'],
                 init_context.run_id,
-                construct_type_registry(pipeline_def),
+                construct_type_registry(pipeline_def, RunStorageMode.S3),
             )
         )
     elif environment_config.storage.storage_mode is None:
