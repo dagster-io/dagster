@@ -48,6 +48,7 @@ export default class ExecutionStartButton extends React.Component<
             return (
               <Wrapper
                 role="button"
+                state="running"
                 title={"Pipeline execution is in progress..."}
               >
                 <div style={{ marginRight: 5 }}>
@@ -61,7 +62,7 @@ export default class ExecutionStartButton extends React.Component<
           if (websocketStatus !== WebSocket.OPEN) {
             return (
               <Wrapper
-                disabled={true}
+                state="disabled"
                 role="button"
                 title={"The dagit server is offline"}
               >
@@ -76,6 +77,7 @@ export default class ExecutionStartButton extends React.Component<
           return (
             <Wrapper
               role="button"
+              state="ready"
               title={"Start pipeline execution"}
               onClick={this.onClick}
             >
@@ -89,16 +91,21 @@ export default class ExecutionStartButton extends React.Component<
   }
 }
 
-const Wrapper = styled.div<{ disabled?: boolean }>`
+const Wrapper = styled.div<{ state: "ready" | "disabled" | "running" }>`
   width: 150px;
   height: 30px;
   border-radius: 3px;
   margin-left: 6px;
   flex-shrink: 0;
-  background: ${({ disabled }) =>
-    disabled
-      ? "linear-gradient(to bottom, rgb(145, 145, 145) 30%, rgb(130, 130, 130) 100%);"
-      : "linear-gradient(to bottom, rgb(36, 145, 235) 30%, rgb(27, 112, 187) 100%);"}
+  background: ${({ state }) =>
+    ({
+      disabled:
+        "linear-gradient(to bottom, rgb(145, 145, 145) 30%, rgb(130, 130, 130) 100%);",
+      ready:
+        "linear-gradient(to bottom, rgb(36, 145, 235) 30%, rgb(27, 112, 187) 100%);",
+      running:
+        "linear-gradient(to bottom, rgb(21, 89, 150) 30%, rgb(21, 89, 150) 100%);"
+    }[state])}
   box-shadow: 0 2px 4px rgba(0,0,0,0.3);
   border-top: 1px solid rgba(255,255,255,0.25);
   border-bottom: 1px solid rgba(0,0,0,0.25);
@@ -106,15 +113,21 @@ const Wrapper = styled.div<{ disabled?: boolean }>`
   justify-content: center;
   align-items: center;
   display: flex;
-  color: ${({ disabled }) => (disabled ? "rgba(255,255,255,0.5)" : "white")};;
-  cursor: ${({ disabled }) => (disabled ? "normal" : "pointer")};
+  color: ${({ state }) =>
+    state === "disabled" ? "rgba(255,255,255,0.5)" : "white"};
+  cursor: ${({ state }) => (state !== "ready" ? "normal" : "pointer")};
   z-index: 2;
 
   &:hover {
-    background: ${({ disabled }) =>
-      disabled
-        ? "linear-gradient(to bottom, rgb(145, 145, 145) 30%, rgb(130, 130, 130) 100%);"
-        : "linear-gradient(to bottom, rgb(27, 112, 187) 30%, rgb(21, 89, 150) 100%);"}
+    background: ${({ state }) =>
+      ({
+        disabled:
+          "linear-gradient(to bottom, rgb(145, 145, 145) 30%, rgb(130, 130, 130) 100%);",
+        ready:
+          "linear-gradient(to bottom, rgb(27, 112, 187) 30%, rgb(21, 89, 150) 100%);",
+        running:
+          "linear-gradient(to bottom, rgb(21, 89, 150) 30%, rgb(21, 89, 150) 100%);"
+      }[state])}
   }
 
   &:active {
