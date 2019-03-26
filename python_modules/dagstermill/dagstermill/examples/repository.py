@@ -165,7 +165,7 @@ def define_tutorial_pipeline():
     )
 
 
-class ComplexSerializationStrategy(SerializationStrategy):
+class ComplexSerializationStrategy(SerializationStrategy):  # pylint: disable=no-init
     def serialize_value(self, context, value, write_file_obj):
         pass
 

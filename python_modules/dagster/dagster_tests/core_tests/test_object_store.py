@@ -11,7 +11,7 @@ from dagster.core.types.runtime import Bool, RuntimeType
 from ..marks import aws, nettest
 
 
-class UppercaseSerializationStrategy(SerializationStrategy):
+class UppercaseSerializationStrategy(SerializationStrategy):  # pylint: disable=no-init
     def serialize_value(self, _context, value, write_file_obj):
         return write_file_obj.write(bytes(value.upper().encode('utf-8')))
 
