@@ -7,8 +7,7 @@ from dagster import check
 from dagster.core.errors import py4j_error_boundary
 
 
-@six.add_metaclass(ABCMeta)
-class SerializationStrategy:
+class SerializationStrategy(six.with_metaclass(ABCMeta)):
     @abstractmethod
     def serialize_value(self, context, value, write_file_obj):
         pass

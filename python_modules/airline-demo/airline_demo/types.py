@@ -21,6 +21,9 @@ AirlineDemoResources = namedtuple(
 
 
 class SparkDataFrameS3StorageOverride(S3ObjectStore):
+    def __init__(self, *args, **kwargs):
+        super(SparkDataFrameS3StorageOverride, self).__init__(*args, **kwargs)
+
     def set_object(self, obj, _context, _runtime_type, paths):
         target_path = self._key_for_paths(paths)
         obj.write.parquet('s3a://' + target_path)
@@ -31,6 +34,9 @@ class SparkDataFrameS3StorageOverride(S3ObjectStore):
 
 
 class SparkDataFrameFilesystemStorageOverride(FileSystemObjectStore):
+    def __init__(self, *args, **kwargs):
+        super(SparkDataFrameFilesystemStorageOverride, self).__init__(*args, **kwargs)
+
     def set_object(self, obj, _context, _runtime_type, paths):
         target_path = get_valid_target_path(self.root, paths)
         obj.write.parquet('file://' + target_path)

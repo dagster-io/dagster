@@ -29,8 +29,7 @@ def ensure_boto_requirements():
     return (boto3, botocore)
 
 
-@six.with_metaclass(ABCMeta)
-class ObjectStore:
+class ObjectStore(six.with_metaclass(ABCMeta)):
     _override_methods = ['set_object', 'get_object', 'has_object', 'rm_object']
 
     def __init__(self, types_to_register=None):
