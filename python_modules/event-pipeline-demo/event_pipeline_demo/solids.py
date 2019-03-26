@@ -14,8 +14,7 @@ from dagster import (
 from dagster import DagsterUserCodeExecutionError
 from dagster.core.types.runtime import Stringish
 
-from .configs import define_local_spark_config
-from .configs_spark import parse_spark_config
+from .configs import define_local_spark_config, parse_spark_config
 from .utils import run_spark_subprocess
 
 
