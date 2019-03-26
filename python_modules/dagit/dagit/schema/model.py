@@ -2,6 +2,8 @@ from __future__ import absolute_import
 from collections import namedtuple
 import sys
 
+from rx import Observable
+
 from graphql.execution.base import ResolveInfo
 
 from dagster import RunConfig, check
@@ -271,13 +273,22 @@ def get_pipeline_run_observable(graphene_info, run_id, after=None):
     check.opt_str_param(after, 'after')
     pipeline_run_storage = graphene_info.context.pipeline_runs
     run = pipeline_run_storage.get_run_by_id(run_id)
+
     if not run:
-        raise Exception('No run with such id: {run_id}'.format(run_id=run_id))
+
+        def _get_error_observable(observer):
+            observer.on_next(
+                graphene_info.schema.type_named('PipelineRunLogsSubscriptionMissingRunIdFailure')(
+                    missingRunId=run_id
+                )
+            )
+
+        return Observable.create(_get_error_observable)  # pylint: disable=E1101
 
     def get_observable(pipeline):
         pipeline_run_event_type = graphene_info.schema.type_named('PipelineRunEvent')
         return run.observable_after_cursor(after).map(
-            lambda events: graphene_info.schema.type_named('PipelineRunLogsSubscriptionPayload')(
+            lambda events: graphene_info.schema.type_named('PipelineRunLogsSubscriptionSuccess')(
                 messages=[
                     pipeline_run_event_type.from_dagster_event(
                         graphene_info, event, pipeline, run.execution_plan
