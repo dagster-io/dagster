@@ -24,6 +24,13 @@ setup(
         'Operating System :: OS Independent',
     ],
     packages=find_packages(exclude=['test']),
-    install_requires=['boto3==1.9.47', 'click>=6.7', 'random_useragent>=1.0', 'faker>=1.0.4'],
+    install_requires=[
+        'boto3==1.9.47',
+        'click>=6.7',
+        'faker>=1.0.4',
+        'pytablereader',
+        'random_useragent>=1.0',
+        'requests',
+    ],
     entry_points={"console_scripts": ['generate_synthetic_events = generate_synthetic_events:run']},
 )

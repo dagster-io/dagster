@@ -13,8 +13,8 @@ from six import StringIO
 from dagster.utils.indenting_printer import IndentingPrinter
 
 
-SPARK_VERSION = 'v2.4.0'
-TABLE_REGEX = r'### (.{,20}?)\n\n(<table.*?>.*?<\/table>)'
+SPARK_VERSION = "v2.4.0"
+TABLE_REGEX = r"### (.{,20}?)\n\n(<table.*?>.*?<\/table>)"
 
 
 class IndentingBufferPrinter(IndentingPrinter):
@@ -63,10 +63,10 @@ class SparkConfig:
         with printer.with_indent():
             printer.line('')
             printer.line('String,')
-            printer.append('description=\'\'\'')
+            printer.append("description='''")
             printer.append(self.meaning)
-            printer.line('\'\'\',')
-            printer.line('default_value=\'{}\','.format(self.default))
+            printer.line("''',")
+            printer.line("default_value='{}',".format(self.default))
         printer.append(')')
 
 
@@ -94,7 +94,7 @@ class SparkConfigNode:
                     with printer.with_indent():
                         for i, (k, v) in enumerate(retdict.items()):
                             with printer.with_indent():
-                                printer.append('\'{}\': '.format(k))
+                                printer.append("'{}': ".format(k))
                             v.print(printer)
 
                             printer.line(',')
@@ -118,11 +118,8 @@ def main():
         parsed_table = list(ptr.HtmlTableTextLoader(table).load())[0]
         df = parsed_table.as_dataframe()
         for _, row in df.iterrows():
-            s = SparkConfig(row['Property Name'], row['Default'], name + ': ' + row['Meaning'])
+            s = SparkConfig(row['Property Name'], row['Default'], name + ": " + row['Meaning'])
             spark_configs.append(s)
-
-    # Put longest keys into the tree first
-    sorted_configs = sorted(spark_configs, key=lambda s: s.path_length, reverse=True)
 
     result = SparkConfigNode()
     for s in spark_configs:
@@ -136,9 +133,9 @@ def main():
         d.value = s
 
     with IndentingBufferPrinter() as printer:
-        printer.line('\'\'\'NOTE: THIS FILE IS AUTO-GENERATED. DO NOT EDIT')
+        printer.line("'''NOTE: THIS FILE IS AUTO-GENERATED. DO NOT EDIT")
         printer.blank_line()
-        printer.line('\'\'\'')
+        printer.line("'''")
         printer.blank_line()
         printer.blank_line()
         printer.line('from dagster import Field, PermissiveDict, String')
@@ -153,4 +150,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-

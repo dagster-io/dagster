@@ -1,4 +1,6 @@
 boto3==1.9.47
 click>=6.7
-random_useragent>=1.0
 faker>=1.0.4
+pytablereader
+random_useragent>=1.0
+requests
