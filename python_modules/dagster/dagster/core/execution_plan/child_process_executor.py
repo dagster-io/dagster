@@ -6,7 +6,7 @@ import sys
 
 import six
 
-from dagster import check, seven
+from dagster import check
 from dagster.utils.error import serializable_error_info_from_exc_info, SerializableErrorInfo
 from dagster.utils import get_multiprocessing_context
 

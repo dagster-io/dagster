@@ -8,6 +8,9 @@ from dagster.core.errors import py4j_error_boundary
 
 
 class SerializationStrategy(six.with_metaclass(ABCMeta)):
+    def __init__(self, *args, **kwargs):
+        pass
+
     @abstractmethod
     def serialize_value(self, context, value, write_file_obj):
         pass
@@ -18,6 +21,9 @@ class SerializationStrategy(six.with_metaclass(ABCMeta)):
 
 
 class PickleSerializationStrategy(SerializationStrategy):
+    def __init__(self, *args, **kwargs):
+        pass
+
     def serialize_value(self, _context, value, write_file_obj):
         with py4j_error_boundary():
             pickle.dump(value, write_file_obj)
