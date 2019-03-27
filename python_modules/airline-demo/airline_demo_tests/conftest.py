@@ -264,7 +264,7 @@ def clean_results_dir():
 @pytest.fixture(scope='session')
 def db():
     with pushd(script_relative_path('../')):
-        subprocess.check_output(['docker-compose', 'up', 'db'])
+        subprocess.check_output(['docker-compose', 'up', 'db', '-d'])
 
     yield
 
