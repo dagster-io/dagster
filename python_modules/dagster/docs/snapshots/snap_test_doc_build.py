@@ -345,6 +345,14 @@ take a few minutes.</p>
 </li>
 </ol>
 <p>Have fun coding!</p>
+<ol class="arabic simple" start="6">
+<li>Set up pre-commit hooks</li>
+</ol>
+<p>We use black to enforce a consistent code style. To set up a pre-commit hook, just run:</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$</span> pre-commit install
+</pre></div>
+</div>
+<p>(The <cite>pre-commit</cite> package is installed in dagster’s dev-requirements.)</p>
 <div class="section" id="running-dagit-webapp-in-development">
 <h3>Running dagit webapp in development<a class="headerlink" href="#running-dagit-webapp-in-development" title="Permalink to this headline">¶</a></h3>
 <p>For development, run the dagit GraphQL server on a different port than the
@@ -1937,6 +1945,16 @@ take a few minutes.
     $ pytest python_modules/dagster/dagster_tests
 
 Have fun coding!
+
+6. Set up pre-commit hooks
+
+We use black to enforce a consistent code style. To set up a pre-commit hook, just run:
+
+.. code-block:: console
+
+    $ pre-commit install
+
+(The `pre-commit` package is installed in dagster's dev-requirements.)
 
 Running dagit webapp in development
 -------------------------------------
