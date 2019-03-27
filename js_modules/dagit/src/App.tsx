@@ -1,45 +1,35 @@
 import * as React from "react";
 import gql from "graphql-tag";
 import { Query, QueryResult } from "react-apollo";
-import { Route, Switch } from "react-router";
+import { Route } from "react-router";
 import { BrowserRouter } from "react-router-dom";
-import { History } from "history";
 import Loading from "./Loading";
-import PipelinePage, { IPipelinePageMatch } from "./PipelinePage";
+import PipelinePage from "./PipelinePage";
 import { AppQuery } from "./types/AppQuery";
 
 export default class App extends React.Component {
   public render() {
     return (
-      <Query query={APP_QUERY}>
-        {(queryResult: QueryResult<AppQuery, any>) => (
-          <Loading queryResult={queryResult}>
-            {data => (
-              <BrowserRouter>
-                <Switch>
-                  <Route
-                    path="/:pipeline?/:tab?"
-                    render={({
-                      match,
-                      history
-                    }: {
-                      match: IPipelinePageMatch;
-                      history: History;
-                    }) => (
-                      <PipelinePage
-                        pipelinesOrError={data.pipelinesOrError}
-                        history={history}
-                        match={match}
-                      />
-                    )}
-                  />
-                  />
-                </Switch>
-              </BrowserRouter>
-            )}
-          </Loading>
-        )}
-      </Query>
+      <BrowserRouter>
+        <Query query={APP_QUERY}>
+          {(queryResult: QueryResult<AppQuery, any>) => (
+            <Loading queryResult={queryResult}>
+              {data => (
+                <Route
+                  path="/:pipeline?/:tab?"
+                  render={({ match, history }) => (
+                    <PipelinePage
+                      pipelinesOrError={data.pipelinesOrError}
+                      history={history}
+                      match={match}
+                    />
+                  )}
+                />
+              )}
+            </Loading>
+          )}
+        </Query>
+      </BrowserRouter>
     );
   }
 }

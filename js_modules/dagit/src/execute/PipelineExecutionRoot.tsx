@@ -1,5 +1,6 @@
 import * as React from "react";
 import gql from "graphql-tag";
+import { match } from "react-router";
 import PipelineExecutionContainer from "./PipelineExecutionContainer";
 import { QueryResult, Query, ApolloConsumer } from "react-apollo";
 import { StorageProvider } from "../LocalStorage";
@@ -7,47 +8,42 @@ import { PipelineExecutionRootQuery } from "./types/PipelineExecutionRootQuery";
 import Loading from "../Loading";
 
 interface IPipelineExecutionRootProps {
-  pipeline: string;
+  match: match<{ pipelineName: string }>;
 }
 
 export default class PipelineExecutionRoot extends React.Component<
   IPipelineExecutionRootProps
 > {
   render() {
+    const { pipelineName } = this.props.match.params;
+
     return (
-      <ApolloConsumer>
-        {client => (
-          <StorageProvider namespace={this.props.pipeline}>
-            {({ data, onSave }) => (
-              <Query
-                query={PIPELINE_EXECUTION_ROOT_QUERY}
-                fetchPolicy="cache-and-network"
-                partialRefetch={true}
-                variables={{
-                  name: this.props.pipeline,
-                  solidSubset: data.sessions[data.current].solidSubset
-                }}
-              >
-                {(
-                  queryResult: QueryResult<PipelineExecutionRootQuery, any>
-                ) => (
-                  <Loading queryResult={queryResult}>
-                    {result => (
-                      <PipelineExecutionContainer
-                        data={data}
-                        onSave={onSave}
-                        client={client}
-                        pipeline={result.pipeline}
-                        currentSession={data.sessions[data.current]}
-                      />
-                    )}
-                  </Loading>
+      <StorageProvider namespace={pipelineName} key={pipelineName}>
+        {({ data, onSave }) => (
+          <Query
+            query={PIPELINE_EXECUTION_ROOT_QUERY}
+            fetchPolicy="cache-and-network"
+            partialRefetch={true}
+            variables={{
+              name: pipelineName,
+              solidSubset: data.sessions[data.current].solidSubset
+            }}
+          >
+            {(queryResult: QueryResult<PipelineExecutionRootQuery, any>) => (
+              <Loading queryResult={queryResult}>
+                {result => (
+                  <PipelineExecutionContainer
+                    data={data}
+                    onSave={onSave}
+                    pipeline={result.pipeline}
+                    currentSession={data.sessions[data.current]}
+                  />
                 )}
-              </Query>
+              </Loading>
             )}
-          </StorageProvider>
+          </Query>
         )}
-      </ApolloConsumer>
+      </StorageProvider>
     );
   }
 }

@@ -5,10 +5,7 @@ import {
   ConfigEditorPipelineFragment,
   ConfigEditorPipelineFragment_configTypes_CompositeConfigType_fields_configType_ListConfigType_innerTypes
 } from "./types/ConfigEditorPipelineFragment";
-import {
-  ConfigEditorCheckConfigQuery,
-  ConfigEditorCheckConfigQueryVariables
-} from "./types/ConfigEditorCheckConfigQuery";
+import { ConfigEditorValidationFragment } from "./types/ConfigEditorValidationFragment";
 import * as YAML from "yaml";
 
 export const CONFIG_EDITOR_PIPELINE_FRAGMENT = gql`
@@ -61,29 +58,23 @@ export const CONFIG_EDITOR_PIPELINE_FRAGMENT = gql`
   }
 `;
 
-export const CONFIG_EDITOR_CHECK_CONFIG_QUERY = gql`
-  query ConfigEditorCheckConfigQuery(
-    $pipeline: ExecutionSelector!
-    $config: PipelineConfig!
-  ) {
-    isPipelineConfigValid(pipeline: $pipeline, config: $config) {
-      __typename
-
-      ... on PipelineConfigValidationInvalid {
-        errors {
-          reason
-          message
-          stack {
-            entries {
-              __typename
-              ... on EvaluationStackPathEntry {
-                field {
-                  name
-                }
+export const CONFIG_EDITOR_VALIDATION_FRAGMENT = gql`
+  fragment ConfigEditorValidationFragment on PipelineConfigValidationResult {
+    __typename
+    ... on PipelineConfigValidationInvalid {
+      errors {
+        reason
+        message
+        stack {
+          entries {
+            __typename
+            ... on EvaluationStackPathEntry {
+              field {
+                name
               }
-              ... on EvaluationStackListItemEntry {
-                listIndex
-              }
+            }
+            ... on EvaluationStackListItemEntry {
+              listIndex
             }
           }
         }
@@ -92,40 +83,23 @@ export const CONFIG_EDITOR_CHECK_CONFIG_QUERY = gql`
   }
 `;
 
-export async function checkConfig(
-  client: ApolloClient<any>,
-  config: any,
-  pipeline: { name: string; solidSubset: string[] | null }
+export async function responseToValidationResult(
+  config: object,
+  response: ConfigEditorValidationFragment
 ): Promise<ValidationResult> {
-  if (config === null) {
-    return { isValid: true };
-  }
-  const {
-    data: { isPipelineConfigValid }
-  } = await client.query<
-    ConfigEditorCheckConfigQuery,
-    ConfigEditorCheckConfigQueryVariables
-  >({
-    query: CONFIG_EDITOR_CHECK_CONFIG_QUERY,
-    variables: { pipeline, config },
-    fetchPolicy: "no-cache"
-  });
-
-  if (isPipelineConfigValid.__typename !== "PipelineConfigValidationInvalid") {
+  if (response.__typename !== "PipelineConfigValidationInvalid") {
     return { isValid: true };
   }
 
-  const errors = isPipelineConfigValid.errors.map(
-    ({ message, reason, stack }) => ({
-      message: message,
-      reason: reason,
-      path: stack.entries.map(entry =>
-        entry.__typename === "EvaluationStackPathEntry"
-          ? entry.field.name
-          : `${entry.listIndex}`
-      )
-    })
-  );
+  const errors = response.errors.map(({ message, reason, stack }) => ({
+    message: message,
+    reason: reason,
+    path: stack.entries.map(entry =>
+      entry.__typename === "EvaluationStackPathEntry"
+        ? entry.field.name
+        : `${entry.listIndex}`
+    )
+  }));
 
   // Errors at the top level have no stack path because they are not within any
   // dicts. To avoid highlighting the entire editor, associate them with the first

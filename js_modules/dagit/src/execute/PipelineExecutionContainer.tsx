@@ -1,9 +1,6 @@
 import * as React from "react";
 import gql from "graphql-tag";
-import { ApolloClient } from "apollo-client";
-import { DataProxy } from "apollo-cache";
-import produce from "immer";
-import { Mutation, FetchResult } from "react-apollo";
+import { Mutation } from "react-apollo";
 import * as yaml from "yaml";
 import TabBar from "./TabBar";
 import { showCustomAlert } from "../CustomAlertProvider";
@@ -27,7 +24,6 @@ import {
 const YAML_SYNTAX_INVALID = `The YAML you provided couldn't be parsed. Please fix the syntax errors and try again.`;
 
 interface IPipelineExecutionContainerProps {
-  client: ApolloClient<any>;
   pipeline: PipelineExecutionContainerFragment;
   currentSession: IExecutionSession;
   data: IStorageData;
@@ -93,7 +89,7 @@ export default class PipelineExecutionContainer extends React.Component<
         key={pipeline.name}
         mutation={START_PIPELINE_EXECUTION_MUTATION}
       >
-        {(startPipelineExecution, { loading }) => (
+        {startPipelineExecution => (
           <>
             <TabBar
               sessions={this.props.data.sessions}

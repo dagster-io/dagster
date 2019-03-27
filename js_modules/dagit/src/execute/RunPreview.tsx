@@ -1,139 +1,111 @@
 import * as React from "react";
-import * as YAML from "yaml";
-import gql from "graphql-tag";
 import styled from "styled-components";
-import { NonIdealState } from "@blueprintjs/core";
+import gql from "graphql-tag";
+import { NonIdealState, Colors, Icon } from "@blueprintjs/core";
 import { IconNames } from "@blueprintjs/icons";
-import ApolloClient from "apollo-client";
-import { ApolloConsumer } from "react-apollo";
 import ExecutionPlan from "../ExecutionPlan";
+import { RunPreviewExecutionPlanResultFragment } from "./types/RunPreviewExecutionPlanResultFragment";
 import {
-  ExecutionPlanPreviewQuery,
-  ExecutionPlanPreviewQueryVariables
-} from "./types/ExecutionPlanPreviewQuery";
-
-export const EXECUTION_PLAN_PREVIEW_QUERY = gql`
-  query ExecutionPlanPreviewQuery(
-    $pipeline: ExecutionSelector!
-    $config: PipelineConfig!
-  ) {
-    executionPlan(pipeline: $pipeline, config: $config) {
-      __typename
-      ... on ExecutionPlan {
-        ...ExecutionPlanFragment
-      }
-      ... on PipelineNotFoundError {
-        message
-      }
-    }
-  }
-
-  ${ExecutionPlan.fragments.ExecutionPlanFragment}
-`;
+  RunPreviewConfigValidationFragment,
+  RunPreviewConfigValidationFragment_PipelineConfigValidationInvalid_errors
+} from "./types/RunPreviewConfigValidationFragment";
 
 interface IRunPreviewProps {
-  pipelineName: string;
-  solidSubset: string[] | null;
-  configCode: string;
+  plan?: RunPreviewExecutionPlanResultFragment;
+  validation?: RunPreviewConfigValidationFragment;
 }
 
-interface IRunPreviewState {
-  data: ExecutionPlanPreviewQuery | null;
-}
-
-export class RunPreviewConnected extends React.Component<
-  IRunPreviewProps & { client: ApolloClient<any> },
-  IRunPreviewState
-> {
-  _fetchTimer: NodeJS.Timeout;
-  _mounted = false;
-  state: IRunPreviewState = {
-    data: null
+export class RunPreview extends React.Component<IRunPreviewProps> {
+  static fragments = {
+    RunPreviewConfigValidationFragment: gql`
+      fragment RunPreviewConfigValidationFragment on PipelineConfigValidationResult {
+        __typename
+        ... on PipelineConfigValidationInvalid {
+          errors {
+            reason
+            message
+          }
+        }
+      }
+    `,
+    RunPreviewExecutionPlanResultFragment: gql`
+      fragment RunPreviewExecutionPlanResultFragment on ExecutionPlanResult {
+        __typename
+        ... on ExecutionPlan {
+          ...ExecutionPlanFragment
+        }
+        ... on PipelineNotFoundError {
+          message
+        }
+      }
+      ${ExecutionPlan.fragments.ExecutionPlanFragment}
+    `
   };
 
-  componentDidMount() {
-    this._mounted = true;
-    this.fetchPlan();
-  }
-
-  componentDidUpdate(prevProps: IRunPreviewProps) {
-    if (
-      prevProps.configCode !== this.props.configCode ||
-      prevProps.pipelineName !== this.props.pipelineName ||
-      prevProps.solidSubset !== this.props.solidSubset
-    ) {
-      this.fetchPlanSoon();
-    }
-  }
-
-  componentWillUnmount() {
-    clearTimeout(this._fetchTimer);
-    this._mounted = false;
-  }
-
-  fetchPlanSoon() {
-    clearTimeout(this._fetchTimer);
-    this._fetchTimer = setTimeout(() => this.fetchPlan(), 250);
-  }
-
-  async fetchPlan() {
-    let config = null;
-    try {
-      config = YAML.parse(this.props.configCode);
-    } catch (err) {
-      // no-op
-    }
-
-    if (!config) {
-      this.setState({ data: null });
-      return;
-    }
-
-    const { data } = await this.props.client.query<
-      ExecutionPlanPreviewQuery,
-      ExecutionPlanPreviewQueryVariables
-    >({
-      query: EXECUTION_PLAN_PREVIEW_QUERY,
-      variables: {
-        config,
-        pipeline: {
-          name: this.props.pipelineName,
-          solidSubset: this.props.solidSubset
-        }
-      },
-      fetchPolicy: "no-cache"
-    });
-
-    if (!this._mounted) return;
-    this.setState({ data });
-  }
-
   render() {
-    const { data } = this.state;
+    const { plan, validation } = this.props;
 
-    return data && data.executionPlan.__typename === "ExecutionPlan" ? (
-      <ExecutionPlan executionPlan={data.executionPlan} />
+    let errors: RunPreviewConfigValidationFragment_PipelineConfigValidationInvalid_errors[] = [];
+    if (
+      validation &&
+      validation.__typename === "PipelineConfigValidationInvalid"
+    ) {
+      errors = validation.errors;
+    }
+
+    return plan && plan.__typename === "ExecutionPlan" ? (
+      <ExecutionPlan executionPlan={plan} />
     ) : (
-      <NonIdealState
-        icon={IconNames.SEND_TO_GRAPH}
-        title="No Execution Plan"
-        description={"Provide valid configuration to see an execution plan."}
-      />
+      <NonIdealWrap>
+        <NonIdealState
+          icon={IconNames.SEND_TO_GRAPH}
+          title="No Execution Plan"
+          description={
+            errors.length
+              ? `Fix the ${errors.length.toLocaleString()} ${
+                  errors.length == 1 ? "error" : "errors"
+                } below to preview the execution plan.`
+              : `Provide valid configuration to see an execution plan.`
+          }
+        />
+        <ErrorsWrap>
+          {errors.map((e, idx) => (
+            <ErrorRow key={idx}>
+              <div style={{ paddingRight: 8 }}>
+                <Icon icon="error" iconSize={14} color={Colors.RED4} />
+              </div>
+              {e.message}
+            </ErrorRow>
+          ))}
+        </ErrorsWrap>
+      </NonIdealWrap>
     );
   }
 }
 
-export const RunPreview: React.FC<IRunPreviewProps> = props => (
-  <PreviewWrapper>
-    <ApolloConsumer>
-      {client => <RunPreviewConnected client={client} {...props} />}
-    </ApolloConsumer>
-  </PreviewWrapper>
-);
-
-const PreviewWrapper = styled.div`
+const NonIdealWrap = styled.div`
   display: flex;
   flex-direction: column;
-  flex: 1 1;
-  min-height: 0;
+  padding-top: 12vh;
+  overflow: scroll;
+`;
+const ErrorsWrap = styled.div`
+  padding-top: 2vh;
+  margin: 20px;
+  font-size: 0.9em;
+  color: ${Colors.BLACK};
+`;
+
+const ErrorRow = styled.div`
+  text-align: left;
+  white-space: pre-wrap;
+  word-break: break-word;
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+  background: #eee;
+  border-radius: 4px;
+  padding: 10px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+  margin-bottom: 8px;
 `;

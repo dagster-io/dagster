@@ -9,14 +9,20 @@ import { PanelDivider } from "../PanelDivider";
 import SolidSelector from "./SolidSelector";
 import ConfigEditor from "../configeditor/ConfigEditor";
 import {
+  PreviewConfigQuery,
+  PreviewConfigQueryVariables
+} from "./types/PreviewConfigQuery";
+
+import {
   IExecutionSession,
   IExecutionSessionChanges,
   SESSION_CONFIG_PLACEHOLDER
 } from "../LocalStorage";
 import {
   CONFIG_EDITOR_PIPELINE_FRAGMENT,
+  CONFIG_EDITOR_VALIDATION_FRAGMENT,
   scaffoldConfig,
-  checkConfig
+  responseToValidationResult
 } from "../configeditor/ConfigEditorUtils";
 
 import { PipelineExecutionPipelineFragment } from "./types/PipelineExecutionPipelineFragment";
@@ -31,6 +37,7 @@ interface IPipelineExecutionProps {
 
 interface IPipelineExecutionState {
   editorVW: number;
+  preview: PreviewConfigQuery | null;
 }
 
 export default class PipelineExecution extends React.Component<
@@ -50,16 +57,24 @@ export default class PipelineExecution extends React.Component<
     `
   };
 
-  state = {
-    editorVW: 50
+  state: IPipelineExecutionState = {
+    editorVW: 75,
+    preview: null
   };
 
+  mounted = false;
+
   componentDidMount() {
+    this.mounted = true;
     this.ensureSessionStateValid();
   }
 
   componentDidUpdate() {
     this.ensureSessionStateValid();
+  }
+
+  componentWillUnmount() {
+    this.mounted = false;
   }
 
   ensureSessionStateValid() {
@@ -88,6 +103,7 @@ export default class PipelineExecution extends React.Component<
 
   render() {
     const { pipeline, currentSession } = this.props;
+    const { preview } = this.state;
 
     if (!currentSession) {
       return <span />;
@@ -95,20 +111,37 @@ export default class PipelineExecution extends React.Component<
 
     return (
       <PipelineExecutionWrapper>
-        <Split width={this.state.editorVW}>
+        <Split width={this.state.editorVW} style={{ flexShrink: 0 }}>
           <ApolloConsumer>
             {client => (
               <ConfigEditor
-                configCode={currentSession.config}
-                onConfigChange={this.onConfigChange}
                 readOnly={false}
                 pipeline={pipeline}
-                checkConfig={json =>
-                  checkConfig(client, json, {
-                    name: pipeline.name,
-                    solidSubset: currentSession.solidSubset
-                  })
-                }
+                configCode={currentSession.config}
+                onConfigChange={this.onConfigChange}
+                checkConfig={async config => {
+                  const { data } = await client.query<
+                    PreviewConfigQuery,
+                    PreviewConfigQueryVariables
+                  >({
+                    fetchPolicy: "no-cache",
+                    query: PREVIEW_CONFIG_QUERY,
+                    variables: {
+                      config,
+                      pipeline: {
+                        name: pipeline.name,
+                        solidSubset: currentSession.solidSubset
+                      }
+                    }
+                  });
+
+                  this.setState({ preview: data });
+
+                  return responseToValidationResult(
+                    config,
+                    data.isPipelineConfigValid
+                  );
+                }}
               />
             )}
           </ApolloConsumer>
@@ -125,16 +158,37 @@ export default class PipelineExecution extends React.Component<
           onMove={(vw: number) => this.setState({ editorVW: vw })}
         />
         <Split>
-          <RunPreview
-            pipelineName={pipeline.name}
-            solidSubset={currentSession.solidSubset}
-            configCode={currentSession.config}
-          />
+          {preview ? (
+            <RunPreview
+              plan={preview.executionPlan}
+              validation={preview.isPipelineConfigValid}
+            />
+          ) : (
+            <RunPreview />
+          )}
         </Split>
       </PipelineExecutionWrapper>
     );
   }
 }
+
+const PREVIEW_CONFIG_QUERY = gql`
+  query PreviewConfigQuery(
+    $pipeline: ExecutionSelector!
+    $config: PipelineConfig!
+  ) {
+    isPipelineConfigValid(pipeline: $pipeline, config: $config) {
+      ...ConfigEditorValidationFragment
+      ...RunPreviewConfigValidationFragment
+    }
+    executionPlan(pipeline: $pipeline, config: $config) {
+      ...RunPreviewExecutionPlanResultFragment
+    }
+  }
+  ${RunPreview.fragments.RunPreviewConfigValidationFragment}
+  ${RunPreview.fragments.RunPreviewExecutionPlanResultFragment}
+  ${CONFIG_EDITOR_VALIDATION_FRAGMENT}
+`;
 
 const PipelineExecutionWrapper = styled.div`
   flex: 1 1;

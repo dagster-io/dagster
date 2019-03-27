@@ -1,4 +1,5 @@
 import * as React from "react";
+import { match } from "react-router";
 import gql from "graphql-tag";
 import { QueryResult, Query, ApolloConsumer } from "react-apollo";
 import { NonIdealState } from "@blueprintjs/core";
@@ -9,14 +10,15 @@ import Loading from "../Loading";
 import RunSubscriptionProvider from "./RunSubscriptionProvider";
 
 interface IPipelineRunRootProps {
-  pipeline: string;
-  runId: string;
+  match: match<{ pipelineName: string; runId: string }>;
 }
 
 export default class PipelineRunRoot extends React.Component<
   IPipelineRunRootProps
 > {
   render() {
+    const { runId } = this.props.match.params;
+
     return (
       <ApolloConsumer>
         {client => (
@@ -24,7 +26,7 @@ export default class PipelineRunRoot extends React.Component<
             query={PIPELINE_RUN_ROOT_QUERY}
             fetchPolicy="cache-and-network"
             partialRefetch={true}
-            variables={{ runId: this.props.runId }}
+            variables={{ runId }}
           >
             {(queryResult: QueryResult<PipelineRunRootQuery, any>) => (
               <Loading queryResult={queryResult}>

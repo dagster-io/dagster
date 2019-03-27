@@ -1,48 +1,39 @@
 import * as React from "react";
+import { match } from "react-router";
 import gql from "graphql-tag";
 import RunHistory from "./RunHistory";
-import { QueryResult, Query, ApolloConsumer } from "react-apollo";
-import { StorageProvider } from "../LocalStorage";
+import { QueryResult, Query } from "react-apollo";
 import { PipelineRunsRootQuery } from "./types/PipelineRunsRootQuery";
 import Loading from "../Loading";
 
 interface IPipelineExecutionRootProps {
-  pipeline: string;
+  match: match<{ pipelineName: string }>;
 }
 
 export default class PipelineRunsRoot extends React.Component<
   IPipelineExecutionRootProps
 > {
   render() {
+    const { pipelineName } = this.props.match.params;
+
     return (
-      <ApolloConsumer>
-        {client => (
-          <StorageProvider namespace={this.props.pipeline}>
-            {({ data, onSave }) => (
-              <Query
-                query={PIPELINE_RUNS_ROOT_QUERY}
-                fetchPolicy="cache-and-network"
-                partialRefetch={true}
-                variables={{
-                  name: this.props.pipeline,
-                  solidSubset: data.sessions[data.current].solidSubset
-                }}
-              >
-                {(queryResult: QueryResult<PipelineRunsRootQuery, any>) => (
-                  <Loading queryResult={queryResult}>
-                    {result => (
-                      <RunHistory
-                        pipelineName={result.pipeline.name}
-                        runs={result.pipeline.runs}
-                      />
-                    )}
-                  </Loading>
-                )}
-              </Query>
+      <Query
+        query={PIPELINE_RUNS_ROOT_QUERY}
+        fetchPolicy="cache-and-network"
+        partialRefetch={true}
+        variables={{ name: pipelineName }}
+      >
+        {(queryResult: QueryResult<PipelineRunsRootQuery, any>) => (
+          <Loading queryResult={queryResult}>
+            {result => (
+              <RunHistory
+                pipelineName={result.pipeline.name}
+                runs={result.pipeline.runs}
+              />
             )}
-          </StorageProvider>
+          </Loading>
         )}
-      </ApolloConsumer>
+      </Query>
     );
   }
 }

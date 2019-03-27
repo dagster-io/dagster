@@ -450,7 +450,7 @@ export type ValidationResult =
       errors: Array<ValidationError>;
     };
 
-export type LintJson = (json: any) => Promise<ValidationResult>;
+export type LintJson = (json: object) => Promise<ValidationResult>;
 
 type ValidationError = {
   message: string;
@@ -489,7 +489,7 @@ CodeMirror.registerHelper(
     });
 
     if (doc.errors.length === 0) {
-      const json = doc.toJSON();
+      const json = doc.toJSON() || {};
       const validationResult = await checkConfig(json);
       if (!validationResult.isValid) {
         validationResult.errors.forEach(error => {
