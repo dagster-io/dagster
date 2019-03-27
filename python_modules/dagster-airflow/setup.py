@@ -50,7 +50,7 @@ def _do_setup(name='dagster-airflow'):
             # docker api
             'docker==3.7.0',
             # aws
-            'boto3==1.9.103',
+            'boto3==1.9.*',
         ],
         entry_points={"console_scripts": ['dagster-airflow = dagster_airflow.cli:main']},
     )
