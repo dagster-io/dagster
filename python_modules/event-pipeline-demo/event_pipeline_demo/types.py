@@ -1,4 +1,4 @@
-"""Type definitions for the airline_demo."""
+'''Type definitions for the event pipeline demo'''
 
 from dagster import Enum, EnumValue
 

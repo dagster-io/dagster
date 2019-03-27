@@ -1,5 +1,3 @@
-'''A fully fleshed out demo dagster repository with many configurable options.'''
-
 from dagster import check, InputDefinition, OutputDefinition, Result, SolidDefinition
 from dagster import DagsterUserCodeExecutionError
 
