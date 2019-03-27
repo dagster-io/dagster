@@ -6,18 +6,3 @@
       language_version: "python3.6"
       pass_filenames: false
       always_run: true
-      exclude: >
-        build
-        | buck-out
-        | dist
-        | _build
-        | \.eggs
-        | \.git
-        | \.hg
-        | \.mypy_cache
-        | \.nox
-        | \.tox
-        | \.venv
-        | python_modules/dagster/dagster/tutorials
-        | snapshots
-        | python_modules/dagster-airflow/dagster_airflow_tests/test_project
