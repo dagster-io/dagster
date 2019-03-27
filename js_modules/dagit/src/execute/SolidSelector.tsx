@@ -165,7 +165,7 @@ class SolidSelector extends React.PureComponent<
 
   handleSave = () => {
     const { highlighted } = this.state;
-    this.props.onChange(highlighted.length > 0 ? highlighted : null);
+    this.props.onChange(highlighted.length > 0 ? [...highlighted] : null);
     this.setState({ open: false, highlighted: [] });
   };
 

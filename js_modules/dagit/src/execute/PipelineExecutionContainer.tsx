@@ -24,7 +24,7 @@ import {
 const YAML_SYNTAX_INVALID = `The YAML you provided couldn't be parsed. Please fix the syntax errors and try again.`;
 
 interface IPipelineExecutionContainerProps {
-  pipeline: PipelineExecutionContainerFragment;
+  pipeline: PipelineExecutionContainerFragment | "loading";
   currentSession: IExecutionSession;
   data: IStorageData;
   onSave: (data: IStorageData) => void;
@@ -62,6 +62,7 @@ export default class PipelineExecutionContainer extends React.Component<
 
   buildExecutionVariables = () => {
     const { currentSession, pipeline } = this.props;
+    if (pipeline === "loading") return;
 
     let config = {};
     try {
@@ -84,9 +85,9 @@ export default class PipelineExecutionContainer extends React.Component<
 
   render() {
     const { currentSession, pipeline } = this.props;
+
     return (
       <Mutation<StartPipelineExecution, StartPipelineExecutionVariables>
-        key={pipeline.name}
         mutation={START_PIPELINE_EXECUTION_MUTATION}
       >
         {startPipelineExecution => (
@@ -99,7 +100,7 @@ export default class PipelineExecutionContainer extends React.Component<
               onRemoveSession={this.handleRemoveSession}
               onSaveSession={this.handleSaveSession}
               onExecute={async event => {
-                if (!currentSession) return;
+                if (!currentSession || pipeline === "loading") return;
 
                 const variables = this.buildExecutionVariables();
                 if (!variables) return;
@@ -119,7 +120,7 @@ export default class PipelineExecutionContainer extends React.Component<
                   );
                 } else {
                   let message = `${
-                    this.props.pipeline.name
+                    pipeline.name
                   } cannot not be executed with the provided config.`;
 
                   if ("errors" in obj) {
@@ -133,8 +134,8 @@ export default class PipelineExecutionContainer extends React.Component<
               }}
             />
             <PipelineExecution
-              pipeline={this.props.pipeline}
-              currentSession={this.props.currentSession}
+              pipeline={pipeline}
+              currentSession={currentSession}
               onSaveSession={this.handleSaveSession}
             />
           </>

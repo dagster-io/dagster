@@ -23,7 +23,7 @@ import { LintJson as YamlModeLintJson } from "./codemirror-yaml/mode";
 import { debounce } from "../Util";
 
 interface IConfigEditorProps {
-  pipeline: ConfigEditorPipelineFragment;
+  pipeline: ConfigEditorPipelineFragment | "loading";
   checkConfig: YamlModeLintJson;
   configCode: string;
   onConfigChange: (newValue: string) => void;
