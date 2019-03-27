@@ -48,8 +48,6 @@ class TypeStoragePlugin(six.with_metaclass(ABCMeta)):  # pylint: disable=no-init
 
 
 class ObjectStore(six.with_metaclass(ABCMeta)):
-    _override_methods = ['set_object', 'get_object', 'has_object', 'rm_object']
-
     def __init__(self, types_to_register=None):
         types_to_register = check.opt_dict_param(
             types_to_register,
@@ -65,8 +63,11 @@ class ObjectStore(six.with_metaclass(ABCMeta)):
     def register_type(self, type_to_register, type_storage_plugin):
         check.inst_param(type_to_register, 'type_to_register', RuntimeType)
         check.subclass_param(type_storage_plugin, 'type_storage_plugin', TypeStoragePlugin)
-
-        self.TYPE_REGISTRY[type_to_register] = type_storage_plugin
+        check.invariant(
+            type_to_register.name is not None,
+            'Cannot register a type storage plugin for an anonymous type',
+        )
+        self.TYPE_REGISTRY[type_to_register.name] = type_storage_plugin
 
     @abstractmethod
     def set_object(self, obj, context, runtime_type, paths):
@@ -85,8 +86,8 @@ class ObjectStore(six.with_metaclass(ABCMeta)):
         pass
 
     def set_value(self, obj, context, runtime_type, paths):
-        if runtime_type in self.TYPE_REGISTRY:
-            return self.TYPE_REGISTRY[runtime_type].set_object(
+        if runtime_type.name is not None and runtime_type.name in self.TYPE_REGISTRY:
+            return self.TYPE_REGISTRY[runtime_type.name].set_object(
                 self, obj, context, runtime_type, paths
             )
         return self.set_object(obj, context, runtime_type, paths)
