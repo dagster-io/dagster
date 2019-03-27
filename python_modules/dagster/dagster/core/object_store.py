@@ -29,10 +29,6 @@ def ensure_boto_requirements():
     return (boto3, botocore)
 
 
-def none():
-    return None
-
-
 class TypeStoragePlugin(six.with_metaclass(ABCMeta)):  # pylint: disable=no-init
     '''Base class for storage plugins.
 
@@ -62,7 +58,7 @@ class ObjectStore(six.with_metaclass(ABCMeta)):
             key_type=RuntimeType,
             value_class=TypeStoragePlugin,
         )
-        self.TYPE_REGISTRY = defaultdict(none)
+        self.TYPE_REGISTRY = {}
 
         for type_to_register, type_storage_plugin in types_to_register.items():
             self.register_type(type_to_register, type_storage_plugin)
