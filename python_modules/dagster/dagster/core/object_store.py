@@ -2,7 +2,6 @@ import os
 import shutil
 
 from abc import ABCMeta, abstractmethod
-from collections import defaultdict
 from io import BytesIO
 
 import six
