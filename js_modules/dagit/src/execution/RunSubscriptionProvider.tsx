@@ -76,7 +76,14 @@ export default class RunSubscriptionProvider extends React.Component<
   }
 
   handleNewMessages = (result: PipelineRunLogsSubscription) => {
-    const runId = result.pipelineRunLogs.messages[0].run.runId;
+    if (
+      result.pipelineRunLogs.__typename ==
+      "PipelineRunLogsSubscriptionMissingRunIdFailure"
+    ) {
+      return;
+    }
+    const messages = result.pipelineRunLogs.messages;
+    const runId = messages[0].run.runId;
     const id = `PipelineRun.${runId}`;
 
     let localData: PipelineRunLogsUpdateFragment | null = this.props.client.readFragment(
@@ -92,7 +99,7 @@ export default class RunSubscriptionProvider extends React.Component<
     localData = produce(
       localData as PipelineRunLogsUpdateFragment,
       draftData => {
-        result.pipelineRunLogs.messages.forEach(message => {
+        messages.forEach(message => {
           draftData.logs.nodes.push(message);
           if (message.__typename === "PipelineProcessStartEvent") {
             draftData.status = PipelineRunStatus.STARTED;
@@ -135,13 +142,19 @@ const PIPELINE_RUN_LOGS_UPDATE_FRAGMENT = gql`
 const PIPELINE_RUN_LOGS_SUBSCRIPTION = gql`
   subscription PipelineRunLogsSubscription($runId: ID!, $after: Cursor) {
     pipelineRunLogs(runId: $runId, after: $after) {
-      messages {
-        ... on MessageEvent {
-          run {
-            runId
+      __typename
+      ... on PipelineRunLogsSubscriptionSuccess {
+        messages {
+          ... on MessageEvent {
+            run {
+              runId
+            }
+            ...PipelineExecutionPipelineRunEventFragment
           }
-          ...PipelineExecutionPipelineRunEventFragment
         }
+      }
+      ... on PipelineRunLogsSubscriptionMissingRunIdFailure {
+        missingRunId
       }
     }
   }
