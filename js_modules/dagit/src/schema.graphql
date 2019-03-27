@@ -428,6 +428,14 @@ type PipelineRunLogsSubscriptionPayload {
   messages: [PipelineRunEvent!]!
 }
 
+type PipelineRunNotFoundError implements Error {
+  message: String!
+  stack: [String!]!
+  runId: String!
+}
+
+union PipelineRunOrError = PipelineRun | PipelineRunNotFoundError
+
 enum PipelineRunStatus {
   NOT_STARTED
   STARTED
@@ -469,7 +477,7 @@ type Query {
   configTypeOrError(pipelineName: String!, configTypeName: String!): ConfigTypeOrError!
   runtimeTypeOrError(pipelineName: String!, runtimeTypeName: String!): RuntimeTypeOrError!
   pipelineRuns: [PipelineRun!]!
-  pipelineRun(runId: ID!): PipelineRun
+  pipelineRunOrError(runId: ID!): PipelineRunOrError!
   isPipelineConfigValid(pipeline: ExecutionSelector!, config: PipelineConfig): PipelineConfigValidationResult!
   executionPlan(pipeline: ExecutionSelector!, config: PipelineConfig): ExecutionPlanResult!
 }

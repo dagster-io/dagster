@@ -52,6 +52,19 @@ class DauphinPipelineNotFoundError(dauphin.ObjectType):
         self.message = 'Pipeline {pipeline_name} does not exist'.format(pipeline_name=pipeline_name)
 
 
+class DauphinPipelineRunNotFoundError(dauphin.ObjectType):
+    class Meta:
+        name = 'PipelineRunNotFoundError'
+        interfaces = (DauphinError,)
+
+    run_id = dauphin.NonNull(dauphin.String)
+
+    def __init__(self, run_id):
+        super(DauphinPipelineRunNotFoundError, self).__init__()
+        self.run_id = check.str_param(run_id, 'run_id')
+        self.message = 'Pipeline run {run_id} does not exist'.format(run_id=run_id)
+
+
 class DauphinSolidNotFoundError(dauphin.ObjectType):
     class Meta:
         name = 'SolidNotFoundError'
@@ -405,4 +418,13 @@ class DauphinRuntimeTypeOrError(dauphin.Union):
             'RegularRuntimeType',
             DauphinPipelineNotFoundError,
             DauphinRuntimeTypeNotFoundError,
+        )
+
+
+class DauphinPipelineRunOrError(dauphin.Union):
+    class Meta:
+        name = 'PipelineRunOrError'
+        types = (
+            'PipelineRun',
+            DauphinPipelineRunNotFoundError,
         )

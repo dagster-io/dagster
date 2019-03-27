@@ -117,9 +117,10 @@ export default class PipelineExecutionContainer extends React.Component<
                 const obj = result.data.startPipelineExecution;
 
                 if (obj.__typename === "StartPipelineExecutionSuccess") {
-                  const run = obj.run.runId;
-
-                  // TODO OPEN THE RUN
+                  window.open(
+                    `/${pipeline.name}/runs/${obj.run.runId}`,
+                    "_blank"
+                  );
                 } else {
                   let message = `${
                     this.props.pipeline.name

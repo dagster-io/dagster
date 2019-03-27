@@ -34,11 +34,11 @@ export default class RunHistory extends React.Component<IRunHistoryProps> {
     return (
       <div>
         {runs.length === 0 ? (
-          <div style={{ margin: 15 }}>
+          <div style={{ marginTop: 100 }}>
             <NonIdealState
               icon="history"
-              title="Run History"
-              description="No runs to display."
+              title="Pipeline Runs"
+              description="No runs to display. Use the Execute tab to start a pipeline."
             />
           </div>
         ) : (

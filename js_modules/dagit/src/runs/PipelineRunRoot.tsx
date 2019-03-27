@@ -24,21 +24,21 @@ export default class PipelineRunRoot extends React.Component<
             query={PIPELINE_RUN_ROOT_QUERY}
             fetchPolicy="cache-and-network"
             partialRefetch={true}
-            variables={{
-              runId: this.props.runId
-            }}
+            variables={{ runId: this.props.runId }}
           >
             {(queryResult: QueryResult<PipelineRunRootQuery, any>) => (
               <Loading queryResult={queryResult}>
-                {({ pipelineRun }) =>
-                  pipelineRun ? (
+                {({ pipelineRunOrError }) =>
+                  pipelineRunOrError.__typename === "PipelineRun" ? (
                     <>
                       <RunSubscriptionProvider
                         client={client}
-                        runLogCursor={pipelineRun.logs.pageInfo.lastCursor}
-                        runId={pipelineRun.runId}
+                        runId={pipelineRunOrError.runId}
+                        runLogCursor={
+                          pipelineRunOrError.logs.pageInfo.lastCursor
+                        }
                       />
-                      <PipelineRun run={pipelineRun} />
+                      <PipelineRun run={pipelineRunOrError} />
                     </>
                   ) : (
                     <NonIdealState
@@ -61,14 +61,18 @@ export default class PipelineRunRoot extends React.Component<
 
 export const PIPELINE_RUN_ROOT_QUERY = gql`
   query PipelineRunRootQuery($runId: ID!) {
-    pipelineRun(runId: $runId) {
-      runId
-      logs {
-        pageInfo {
-          lastCursor
+    pipelineRunOrError(runId: $runId) {
+      __typename
+      ... on PipelineRun {
+        runId
+        status
+        logs {
+          pageInfo {
+            lastCursor
+          }
         }
+        ...PipelineRunFragment
       }
-      ...PipelineRunFragment
     }
   }
 

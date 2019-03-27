@@ -1,8 +1,7 @@
 import * as React from "react";
 import gql from "graphql-tag";
 import styled from "styled-components";
-import { Colors, NonIdealState, Classes, Dialog } from "@blueprintjs/core";
-import { IconNames } from "@blueprintjs/icons";
+import { Colors, Classes, Dialog } from "@blueprintjs/core";
 import LogsFilterProvider, {
   ILogFilter,
   DefaultLogFilter
@@ -23,7 +22,7 @@ interface IPipelineRunProps {
 }
 
 interface IPipelineRunState {
-  logsVH: number;
+  logsVW: number;
   logsFilter: ILogFilter;
   highlightedError?: { message: string; stack: string[] };
 }
@@ -75,9 +74,9 @@ export class PipelineRun extends React.Component<
   };
 
   state = {
-    highlightedError: undefined,
-    logsVH: 40,
-    logsFilter: DefaultLogFilter
+    logsVW: 75,
+    logsFilter: DefaultLogFilter,
+    highlightedError: undefined
   };
 
   onShowStateDetails = (step: string) => {
@@ -94,11 +93,29 @@ export class PipelineRun extends React.Component<
   };
 
   render() {
-    const { logsFilter, logsVH, highlightedError } = this.state;
+    const { logsFilter, logsVW, highlightedError } = this.state;
     const { logs } = this.props.run;
 
     return (
       <PipelineRunWrapper>
+        <LogsContainer style={{ width: `${logsVW}vw` }}>
+          <LogsFilterProvider filter={logsFilter} nodes={logs.nodes}>
+            {({ filteredNodes, busy }) => (
+              <>
+                <LogsToolbar
+                  showSpinner={busy}
+                  filter={logsFilter}
+                  onSetFilter={filter => this.setState({ logsFilter: filter })}
+                />
+                <LogsScrollingTable nodes={filteredNodes} />
+              </>
+            )}
+          </LogsFilterProvider>
+        </LogsContainer>
+        <PanelDivider
+          onMove={(vw: number) => this.setState({ logsVW: vw })}
+          axis="horizontal"
+        />
         <RunMetadataProvider logs={logs.nodes}>
           {metadata => (
             <ExecutionPlan
@@ -113,24 +130,6 @@ export class PipelineRun extends React.Component<
             />
           )}
         </RunMetadataProvider>
-        <PanelDivider
-          onMove={(vh: number) => this.setState({ logsVH: 100 - vh })}
-          axis="vertical"
-        />
-        <LogsContainer style={{ height: `${logsVH}vh` }}>
-          <LogsFilterProvider filter={logsFilter} nodes={logs.nodes}>
-            {({ filteredNodes, busy }) => (
-              <>
-                <LogsToolbar
-                  showSpinner={busy}
-                  filter={logsFilter}
-                  onSetFilter={filter => this.setState({ logsFilter: filter })}
-                />
-                <LogsScrollingTable nodes={filteredNodes} />
-              </>
-            )}
-          </LogsFilterProvider>
-        </LogsContainer>
         <Dialog
           icon="info-sign"
           onClose={() => this.setState({ highlightedError: undefined })}
@@ -147,24 +146,9 @@ export class PipelineRun extends React.Component<
     );
   }
 }
-
-export class PipelineRunEmpty extends React.Component {
-  render() {
-    return (
-      <PipelineRunWrapper>
-        <NonIdealState
-          icon={IconNames.SEND_TO_GRAPH}
-          title="No Execution Plan"
-          description={"Provide valid configuration to see an execution plan."}
-        />
-      </PipelineRunWrapper>
-    );
-  }
-}
-
 const PipelineRunWrapper = styled.div`
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   flex: 1 1;
   min-height: 0;
 `;

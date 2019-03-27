@@ -53,7 +53,7 @@ export default class ExecutionStartButton extends React.Component<
                 <div style={{ marginRight: 5 }}>
                   <Spinner intent={Intent.NONE} size={17} />
                 </div>
-                Running...
+                Starting...
               </Wrapper>
             );
           }

@@ -73,7 +73,7 @@ export class RunPreviewConnected extends React.Component<
 
   fetchPlanSoon() {
     clearTimeout(this._fetchTimer);
-    this._fetchTimer = setTimeout(() => this.fetchPlan(), 1000);
+    this._fetchTimer = setTimeout(() => this.fetchPlan(), 250);
   }
 
   async fetchPlan() {

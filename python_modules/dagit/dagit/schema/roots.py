@@ -30,7 +30,10 @@ class DauphinQuery(dauphin.ObjectType):
         runtimeTypeName=dauphin.Argument(dauphin.NonNull(dauphin.String)),
     )
     pipelineRuns = dauphin.non_null_list('PipelineRun')
-    pipelineRun = dauphin.Field('PipelineRun', runId=dauphin.NonNull(dauphin.ID))
+    
+    pipelineRunOrError = dauphin.Field(
+        dauphin.NonNull('PipelineRunOrError'),
+        runId=dauphin.NonNull(dauphin.ID))
 
     isPipelineConfigValid = dauphin.Field(
         dauphin.NonNull('PipelineConfigValidationResult'),
@@ -79,7 +82,7 @@ class DauphinQuery(dauphin.ObjectType):
     def resolve_pipelineRuns(self, graphene_info):
         return model.get_runs(graphene_info)
 
-    def resolve_pipelineRun(self, graphene_info, runId):
+    def resolve_pipelineRunOrError(self, graphene_info, runId):
         return model.get_run(graphene_info, runId)
 
     def resolve_isPipelineConfigValid(self, graphene_info, pipeline, config):

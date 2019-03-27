@@ -136,7 +136,7 @@ def get_run(graphene_info, runId):
     pipeline_run_storage = graphene_info.context.pipeline_runs
     run = pipeline_run_storage.get_run_by_id(runId)
     if not run:
-        raise Exception('No run with such id: {run_id}'.format(run_id=runId))
+        return graphene_info.schema.type_named('PipelineRunNotFoundError')(runId)
     else:
         return graphene_info.schema.type_named('PipelineRun')(run)
 
