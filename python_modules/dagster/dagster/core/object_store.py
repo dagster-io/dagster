@@ -3,7 +3,6 @@ import shutil
 
 from abc import ABCMeta, abstractmethod
 from collections import defaultdict
-from functools import partial
 from io import BytesIO
 
 import six
