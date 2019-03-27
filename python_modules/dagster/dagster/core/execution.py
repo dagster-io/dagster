@@ -70,7 +70,7 @@ from .intermediates_manager import (
 
 from .log import DagsterLog
 
-from .object_store import FileSystemObjectStore, S3ObjectStore
+from .object_store import FileSystemObjectStore, S3ObjectStore, construct_type_registry
 
 from .runs import (
     DagsterRunMeta,
@@ -366,6 +366,9 @@ def construct_run_storage(run_config, environment_config):
             return FileSystemRunStorage()
         elif run_config.storage_mode == RunStorageMode.IN_MEMORY:
             return InMemoryRunStorage()
+        elif run_config.storage_mode == RunStorageMode.S3:
+            # TODO: Revisit whether we want to use S3 run storage
+            return InMemoryRunStorage()
         else:
             check.failed('Unexpected enum {}'.format(run_config.storage_mode))
     elif environment_config.storage.storage_mode == 'filesystem':
@@ -383,32 +386,47 @@ def construct_run_storage(run_config, environment_config):
         )
 
 
-def construct_intermediates_manager(run_config, init_context, environment_config):
+def construct_intermediates_manager(run_config, init_context, environment_config, pipeline_def):
     check.inst_param(run_config, 'run_config', RunConfig)
     check.inst_param(init_context, 'init_context', InitContext)
     check.inst_param(environment_config, 'environment_config', EnvironmentConfig)
+    check.inst_param(pipeline_def, 'pipeline_def', PipelineDefinition)
 
     if run_config.storage_mode:
         if run_config.storage_mode == RunStorageMode.FILESYSTEM:
-            return ObjectStoreIntermediatesManager(FileSystemObjectStore(init_context.run_id))
+            return ObjectStoreIntermediatesManager(
+                FileSystemObjectStore(
+                    init_context.run_id,
+                    construct_type_registry(pipeline_def, RunStorageMode.FILESYSTEM),
+                )
+            )
         elif run_config.storage_mode == RunStorageMode.IN_MEMORY:
             return InMemoryIntermediatesManager()
         elif run_config.storage_mode == RunStorageMode.S3:
             return ObjectStoreIntermediatesManager(
                 S3ObjectStore(
-                    environment_config.storage.storage_config['s3_bucket'], init_context.run_id
+                    environment_config.storage.storage_config['s3_bucket'],
+                    init_context.run_id,
+                    construct_type_registry(pipeline_def, RunStorageMode.S3),
                 )
             )
         else:
             check.failed('Unexpected enum {}'.format(run_config.storage_mode))
     elif environment_config.storage.storage_mode == 'filesystem':
-        return ObjectStoreIntermediatesManager(FileSystemObjectStore(init_context.run_id))
+        return ObjectStoreIntermediatesManager(
+            FileSystemObjectStore(
+                init_context.run_id,
+                construct_type_registry(pipeline_def, RunStorageMode.FILESYSTEM),
+            )
+        )
     elif environment_config.storage.storage_mode == 'in_memory':
         return InMemoryIntermediatesManager()
     elif environment_config.storage.storage_mode == 's3':
         return ObjectStoreIntermediatesManager(
             S3ObjectStore(
-                environment_config.storage.storage_config['s3_bucket'], init_context.run_id
+                environment_config.storage.storage_config['s3_bucket'],
+                init_context.run_id,
+                construct_type_registry(pipeline_def, RunStorageMode.S3),
             )
         )
     elif environment_config.storage.storage_mode is None:
@@ -463,7 +481,9 @@ def yield_pipeline_execution_context(pipeline_def, environment_dict, run_config)
                 resources,
                 environment_config,
                 run_storage,
-                construct_intermediates_manager(run_config, init_context, environment_config),
+                construct_intermediates_manager(
+                    run_config, init_context, environment_config, pipeline_def
+                ),
             )
 
 

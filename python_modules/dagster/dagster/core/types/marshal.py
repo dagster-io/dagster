@@ -7,8 +7,7 @@ from dagster import check
 from dagster.core.errors import py4j_error_boundary
 
 
-@six.add_metaclass(ABCMeta)
-class SerializationStrategy:
+class SerializationStrategy(six.with_metaclass(ABCMeta)):  # pylint: disable=no-init
     @abstractmethod
     def serialize_value(self, context, value, write_file_obj):
         pass
@@ -18,7 +17,7 @@ class SerializationStrategy:
         pass
 
 
-class PickleSerializationStrategy(SerializationStrategy):
+class PickleSerializationStrategy(SerializationStrategy):  # pylint: disable=no-init
     def serialize_value(self, _context, value, write_file_obj):
         with py4j_error_boundary():
             pickle.dump(value, write_file_obj)

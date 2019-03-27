@@ -1,11 +1,6 @@
 """Type definitions for the airline_demo."""
 
 
-import os
-import shutil
-import tempfile
-import zipfile
-
 from collections import namedtuple
 
 import sqlalchemy
@@ -13,7 +8,8 @@ import sqlalchemy
 from pyspark.sql import DataFrame
 
 from dagster import as_dagster_type, Dict, Field, String
-from dagster.core.types.marshal import SerializationStrategy
+from dagster.core.object_store import get_valid_target_path, TypeStoragePlugin
+from dagster.core.runs import RunStorageMode
 from dagster.core.types.runtime import Stringish
 from dagster.utils import safe_isfile
 
@@ -24,49 +20,40 @@ AirlineDemoResources = namedtuple(
 )
 
 
-class SparkDataFrameParquetSerializationStrategy(SerializationStrategy):
-    def serialize_value(self, _context, value, write_file_obj):
-        parquet_dir = tempfile.mkdtemp()
-        shutil.rmtree(parquet_dir)
-        value.write.parquet(parquet_dir)
+class SparkDataFrameS3StoragePlugin(TypeStoragePlugin):  # pylint: disable=no-init
+    @classmethod
+    def set_object(cls, object_store, obj, _context, _runtime_type, paths):
+        target_path = object_store.key_for_paths(paths)
+        obj.write.parquet('s3a://' + target_path)
+        return target_path
 
-        archive_file_obj = tempfile.NamedTemporaryFile(delete=False)
-        try:
-            archive_file_obj.close()
-            archive_file_path = archive_file_obj.name
-            zipfile_path = shutil.make_archive(archive_file_path, 'zip', parquet_dir)
-            try:
-                with open(zipfile_path, 'rb') as archive_file_read_obj:
-                    write_file_obj.write(archive_file_read_obj.read())
-            finally:
-                if os.path.isfile(zipfile_path):
-                    os.remove(zipfile_path)
-        finally:
-            if os.path.isfile(archive_file_obj.name):
-                os.remove(archive_file_obj.name)
+    @classmethod
+    def get_object(cls, object_store, context, _runtime_type, paths):
+        return context.resources.spark.read.parquet('s3a://' + object_store.key_for_paths(paths))
 
-    def deserialize_value(self, context, read_file_obj):
-        archive_file_obj = tempfile.NamedTemporaryFile(delete=False)
-        try:
-            archive_file_obj.write(read_file_obj.read())
-            archive_file_obj.close()
-            parquet_dir = tempfile.mkdtemp()
-            # We don't use the ZipFile context manager here because of py2
-            zipfile_obj = zipfile.ZipFile(archive_file_obj.name)
-            zipfile_obj.extractall(parquet_dir)
-            zipfile_obj.close()
-        finally:
-            if os.path.isfile(archive_file_obj.name):
-                os.remove(archive_file_obj.name)
-        return context.resources.spark.read.parquet(parquet_dir)
+
+class SparkDataFrameFilesystemStoragePlugin(TypeStoragePlugin):  # pylint: disable=no-init
+    @classmethod
+    def set_object(cls, object_store, obj, _context, _runtime_type, paths):
+        target_path = get_valid_target_path(object_store.root, paths)
+        obj.write.parquet('file://' + target_path)
+        return target_path
+
+    @classmethod
+    def get_object(cls, object_store, context, _runtime_type, paths):
+        return context.resources.spark.read.parquet(get_valid_target_path(object_store.root, paths))
 
 
 SparkDataFrameType = as_dagster_type(
     DataFrame,
     name='SparkDataFrameType',
     description='A Pyspark data frame.',
-    serialization_strategy=SparkDataFrameParquetSerializationStrategy(),
+    storage_plugins={
+        RunStorageMode.S3: SparkDataFrameS3StoragePlugin,
+        RunStorageMode.FILESYSTEM: SparkDataFrameFilesystemStoragePlugin,
+    },
 )
+
 
 SqlAlchemyEngineType = as_dagster_type(
     sqlalchemy.engine.Connectable,

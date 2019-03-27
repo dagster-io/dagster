@@ -15,6 +15,7 @@ from .types.runtime import RuntimeType, resolve_to_runtime_type
 
 
 def ensure_boto_requirements():
+    '''Check that boto3 and botocore are importable -- required for S3ObjectStore.'''
     try:
         import boto3
         import botocore  # pylint: disable=unused-import
@@ -27,8 +28,47 @@ def ensure_boto_requirements():
     return (boto3, botocore)
 
 
-@six.add_metaclass(ABCMeta)
-class ObjectStore:
+class TypeStoragePlugin(six.with_metaclass(ABCMeta)):  # pylint: disable=no-init
+    '''Base class for storage plugins.
+
+    Extend this class for (storage_mode, runtime_type) pairs that need special handling.
+    '''
+
+    @classmethod
+    @abstractmethod
+    def set_object(cls, object_store, obj, context, runtime_type, paths):
+        check.subclass_param(object_store, 'object_store', ObjectStore)
+        return object_store.set_object(obj, context, runtime_type, paths)
+
+    @classmethod
+    @abstractmethod
+    def get_object(cls, object_store, context, runtime_type, paths):
+        check.subclass_param(object_store, 'object_store', ObjectStore)
+        return object_store.get_object(context, runtime_type, paths)
+
+
+class ObjectStore(six.with_metaclass(ABCMeta)):
+    def __init__(self, types_to_register=None):
+        types_to_register = check.opt_dict_param(
+            types_to_register,
+            'types_to_register',
+            key_type=RuntimeType,
+            value_class=TypeStoragePlugin,
+        )
+        self.TYPE_REGISTRY = {}
+
+        for type_to_register, type_storage_plugin in types_to_register.items():
+            self.register_type(type_to_register, type_storage_plugin)
+
+    def register_type(self, type_to_register, type_storage_plugin):
+        check.inst_param(type_to_register, 'type_to_register', RuntimeType)
+        check.subclass_param(type_storage_plugin, 'type_storage_plugin', TypeStoragePlugin)
+        check.invariant(
+            type_to_register.name is not None,
+            'Cannot register a type storage plugin for an anonymous type',
+        )
+        self.TYPE_REGISTRY[type_to_register.name] = type_storage_plugin
+
     @abstractmethod
     def set_object(self, obj, context, runtime_type, paths):
         pass
@@ -44,6 +84,18 @@ class ObjectStore:
     @abstractmethod
     def rm_object(self, context, paths):
         pass
+
+    def set_value(self, obj, context, runtime_type, paths):
+        if runtime_type.name is not None and runtime_type.name in self.TYPE_REGISTRY:
+            return self.TYPE_REGISTRY[runtime_type.name].set_object(
+                self, obj, context, runtime_type, paths
+            )
+        return self.set_object(obj, context, runtime_type, paths)
+
+    def get_value(self, context, runtime_type, paths):
+        if runtime_type in self.TYPE_REGISTRY:
+            return self.TYPE_REGISTRY[runtime_type].get_object(self, context, runtime_type, paths)
+        return self.get_object(context, runtime_type, paths)
 
 
 def get_run_files_directory(run_id):
@@ -63,10 +115,12 @@ def get_valid_target_path(base_dir, paths):
 
 
 class FileSystemObjectStore(ObjectStore):
-    def __init__(self, run_id):
+    def __init__(self, run_id, types_to_register=None):
         self.run_id = check.str_param(run_id, 'run_id')
         self.storage_mode = RunStorageMode.FILESYSTEM
         self.root = get_run_files_directory(run_id)
+
+        super(FileSystemObjectStore, self).__init__(types_to_register)
 
     def set_object(self, obj, context, runtime_type, paths):  # pylint: disable=unused-argument
         check.inst_param(context, 'context', SystemPipelineExecutionContext)
@@ -129,7 +183,7 @@ class FileSystemObjectStore(ObjectStore):
 
 
 class S3ObjectStore(ObjectStore):
-    def __init__(self, s3_bucket, run_id):
+    def __init__(self, s3_bucket, run_id, types_to_register=None):
         boto3, _ = ensure_boto_requirements()
         check.str_param(run_id, 'run_id')
 
@@ -139,10 +193,12 @@ class S3ObjectStore(ObjectStore):
 
         self.s3.head_bucket(Bucket=self.bucket)
 
-        self.root = 'dagster/runs/{run_id}/files'.format(run_id=self.run_id)
+        self.root = '{bucket}/runs/{run_id}/files'.format(bucket=self.bucket, run_id=self.run_id)
         self.storage_mode = RunStorageMode.S3
 
-    def _key_for_paths(self, paths):
+        super(S3ObjectStore, self).__init__(types_to_register)
+
+    def key_for_paths(self, paths):
         return '/'.join([self.root] + paths)
 
     def set_object(self, obj, context, runtime_type, paths):
@@ -152,7 +208,7 @@ class S3ObjectStore(ObjectStore):
         check.list_param(paths, 'paths', of_type=str)
         check.param_invariant(len(paths) > 0, 'paths')
 
-        key = self._key_for_paths(paths)
+        key = self.key_for_paths(paths)
 
         check.invariant(
             not self.has_object(context, paths), 'Key already exists: {key}!'.format(key=key)
@@ -172,7 +228,7 @@ class S3ObjectStore(ObjectStore):
         check.list_param(paths, 'paths', of_type=str)
         check.param_invariant(len(paths) > 0, 'paths')
 
-        key = self._key_for_paths(paths)
+        key = self.key_for_paths(paths)
 
         return runtime_type.serialization_strategy.deserialize_value(
             context, BytesIO(self.s3.get_object(Bucket=self.bucket, Key=key)['Body'].read())
@@ -180,7 +236,7 @@ class S3ObjectStore(ObjectStore):
 
     def has_object(self, context, paths):  # pylint: disable=unused-argument
         _, botocore = ensure_boto_requirements()
-        key = self._key_for_paths(paths)
+        key = self.key_for_paths(paths)
 
         try:
             self.s3.head_object(Bucket=self.bucket, Key=key)
@@ -195,7 +251,7 @@ class S3ObjectStore(ObjectStore):
         if not self.has_object(context, paths):
             return
 
-        key = self._key_for_paths(paths)
+        key = self.key_for_paths(paths)
         self.s3.delete_object(Bucket=self.bucket, Key=key)
         return
 
@@ -240,3 +296,11 @@ def has_s3_intermediate(context, s3_bucket, run_id, step_key, output_name='resul
 def rm_s3_intermediate(context, s3_bucket, run_id, step_key, output_name='result'):
     object_store = S3ObjectStore(s3_bucket, run_id)
     return object_store.rm_object(context=context, paths=get_fs_paths(step_key, output_name))
+
+
+def construct_type_registry(pipeline_def, storage_mode):
+    return {
+        type_obj: type_obj.storage_plugins.get(storage_mode)
+        for type_obj in pipeline_def.all_runtime_types()
+        if type_obj.storage_plugins.get(storage_mode)
+    }

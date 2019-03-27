@@ -11,7 +11,7 @@ from dagster.core.types.runtime import Bool, RuntimeType
 from ..marks import aws, nettest
 
 
-class UppercaseSerializationStrategy(SerializationStrategy):
+class UppercaseSerializationStrategy(SerializationStrategy):  # pylint: disable=no-init
     def serialize_value(self, _context, value, write_file_obj):
         return write_file_obj.write(bytes(value.upper().encode('utf-8')))
 
@@ -81,7 +81,7 @@ def test_s3_object_store():
 
     # FIXME need a dedicated test bucket
     object_store = S3ObjectStore(run_id=run_id, s3_bucket='dagster-airflow-scratch')
-    assert object_store.root == '/'.join(['dagster', 'runs', run_id, 'files'])
+    assert object_store.root == '/'.join(['dagster-airflow-scratch', 'runs', run_id, 'files'])
 
     try:
         with yield_pipeline_execution_context(
