@@ -6,6 +6,7 @@
 from dagster import Bool, Field, Float, Int, PermissiveDict, String
 
 
+# pylint: disable=line-too-long
 def spark_config():
     return Field(
         PermissiveDict(
@@ -1681,3 +1682,5 @@ def spark_config():
         )
     )
 
+
+# pylint: enable=line-too-long

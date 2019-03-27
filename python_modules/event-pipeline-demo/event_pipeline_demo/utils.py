@@ -23,6 +23,7 @@ def run_spark_subprocess(cmd, logger):
                             line = match.groups()[2]
                         msg_queue.put((pipe_name, line))
         finally:
+            # Use None as sentinel for done state, detected by iter() below
             msg_queue.put(None)
 
     p = subprocess.Popen(
@@ -45,4 +46,3 @@ def run_spark_subprocess(cmd, logger):
 
     p.wait()
     return p.returncode
-

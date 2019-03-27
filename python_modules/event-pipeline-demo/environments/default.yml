@@ -1,0 +1,33 @@
+context:
+  default:
+    config:
+      log_level: DEBUG
+         
+solids:
+  event_ingest:
+    config:
+      application_jar: "events-assembly-0.1.0-SNAPSHOT.jar"
+      deploy_mode: "client"
+      main_class: "io.dagster.events.EventPipeline"
+      application_arguments: "--local-path /Users/nate/Desktop/local --date 2019-01-01"            
+      master_url: "local[*]"
+      spark_conf:
+        spark:
+          app:
+            name: "test_app"
+          executor:
+            cores: 1
+
+
+# TODO: set up tests on remote cluster
+#   application_jar: "events-assembly-0.1.0-SNAPSHOT.jar"
+#   deploy_mode: "client"
+#   main_class: "io.dagster.events.EventPipeline"
+#   application_arguments: "--s3-bucket elementl-data --s3-prefix events --date 2019-01-01"            
+#   master_url: "spark://127.0.0.1:7077"
+#   spark_conf:
+#     spark:
+#       app:
+#         name: "foo"
+#       executor:
+#         cores: 1

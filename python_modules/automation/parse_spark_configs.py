@@ -277,11 +277,13 @@ def main():
         printer.line('from dagster import Bool, Field, Float, Int, PermissiveDict, String')
         printer.blank_line()
         printer.blank_line()
+        printer.line('# pylint: disable=line-too-long')
         printer.line('def spark_config():')
         with printer.with_indent():
             printer.append('return ')
             result.print(printer)
-            print(printer.read())
+        printer.line('# pylint: enable=line-too-long')
+        print(printer.read())
 
 
 if __name__ == "__main__":
