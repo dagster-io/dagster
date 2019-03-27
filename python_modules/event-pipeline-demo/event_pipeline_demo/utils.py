@@ -10,7 +10,9 @@ def run_spark_subprocess(cmd, logger):
     function.
     """
 
-    # Spark sometimes logs in log4j format. In those cases, we detect and parse
+    # Spark sometimes logs in log4j format. In those cases, we detect and parse.
+    # Example log line from Spark that this is intended to match:
+    # 2019-03-27 16:00:19 INFO  ContextHandler:781 - Started o.s.j.s.ServletContextHandler...
     log4j_regex = r'^(\d{4}\-\d{2}\-\d{2} \d{2}:\d{2}:\d{2}) ([A-Z]{3,5})(.*?)$'
 
     def reader(pipe, pipe_name, p, msg_queue):

@@ -191,7 +191,7 @@ class SparkConfig:
         printer.append('Field(')
         with printer.with_indent():
             printer.line('')
-            printer.line('{},'.format(config_type))
+            printer.line('{config_type},'.format(config_type=config_type))
             printer.append("description='''")
             printer.append(self.meaning)
             printer.line("''',")
