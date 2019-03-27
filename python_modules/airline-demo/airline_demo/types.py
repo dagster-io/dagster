@@ -8,7 +8,12 @@ import sqlalchemy
 from pyspark.sql import DataFrame
 
 from dagster import as_dagster_type, Dict, Field, String
-from dagster.core.object_store import get_valid_target_path, S3ObjectStore, FileSystemObjectStore
+from dagster.core.object_store import (
+    get_valid_target_path,
+    S3ObjectStore,
+    FileSystemObjectStore,
+    TypeStoragePlugin,
+)
 from dagster.core.runs import RunStorageMode
 from dagster.core.types.runtime import Stringish
 from dagster.utils import safe_isfile
@@ -20,30 +25,28 @@ AirlineDemoResources = namedtuple(
 )
 
 
-class SparkDataFrameS3StorageOverride(S3ObjectStore):
-    def __init__(self, *args, **kwargs):
-        pass
-
-    def set_object(self, obj, _context, _runtime_type, paths):
-        target_path = self._key_for_paths(paths)
+class SparkDataFrameS3StoragePlugin(TypeStoragePlugin):  # pylint: disable=no-init
+    @classmethod
+    def set_object(cls, object_store, obj, _context, _runtime_type, paths):
+        target_path = object_store.key_for_paths(paths)
         obj.write.parquet('s3a://' + target_path)
         return target_path
 
-    def get_object(self, context, _runtime_type, paths):
-        return context.resources.spark.read.parquet('s3a://' + self._key_for_paths(paths))
+    @classmethod
+    def get_object(cls, object_store, context, _runtime_type, paths):
+        return context.resources.spark.read.parquet('s3a://' + object_store.key_for_paths(paths))
 
 
-class SparkDataFrameFilesystemStorageOverride(FileSystemObjectStore):
-    def __init__(self, *args, **kwargs):
-        pass
-
-    def set_object(self, obj, _context, _runtime_type, paths):
-        target_path = get_valid_target_path(self.root, paths)
+class SparkDataFrameFilesystemStorageOverride(TypeStoragePlugin):  # pylint: disable=no-init
+    @classmethod
+    def set_object(cls, object_store, obj, _context, _runtime_type, paths):
+        target_path = get_valid_target_path(object_store.root, paths)
         obj.write.parquet('file://' + target_path)
         return target_path
 
-    def get_object(self, context, _runtime_type, paths):
-        return context.resources.spark.read.parquet(get_valid_target_path(self.root, paths))
+    @classmethod
+    def get_object(cls, object_store, context, _runtime_type, paths):
+        return context.resources.spark.read.parquet(get_valid_target_path(object_store.root, paths))
 
 
 SparkDataFrameType = as_dagster_type(
@@ -51,8 +54,8 @@ SparkDataFrameType = as_dagster_type(
     name='SparkDataFrameType',
     description='A Pyspark data frame.',
     storage_overrides={
-        RunStorageMode.S3: SparkDataFrameS3StorageOverride(),
-        RunStorageMode.FILESYSTEM: SparkDataFrameFilesystemStorageOverride(),
+        RunStorageMode.S3: SparkDataFrameS3StoragePlugin,
+        RunStorageMode.FILESYSTEM: SparkDataFrameFilesystemStorageOverride,
     },
 )
 
