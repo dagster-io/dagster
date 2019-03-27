@@ -28,7 +28,7 @@ setup(
     ],
     packages=find_packages(exclude=['test']),
     install_requires=[
-        'boto3==1.9.47',
+        'boto3==1.9.*',
         'dagster',
         'dagstermill',
         'descartes==1.1.0',
