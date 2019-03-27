@@ -20804,7 +20804,7 @@ snapshots['test_build_all_docs 54'] = '''
 
 <dl class="function">
 <dt id="dagster.as_dagster_type">
-<code class="descclassname">dagster.</code><code class="descname">as_dagster_type</code><span class="sig-paren">(</span><em>existing_type</em>, <em>name=None</em>, <em>description=None</em>, <em>input_schema=None</em>, <em>output_schema=None</em>, <em>serialization_strategy=None</em>, <em>storage_overrides=None</em><span class="sig-paren">)</span><a class="headerlink" href="#dagster.as_dagster_type" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">dagster.</code><code class="descname">as_dagster_type</code><span class="sig-paren">(</span><em>existing_type</em>, <em>name=None</em>, <em>description=None</em>, <em>input_schema=None</em>, <em>output_schema=None</em>, <em>serialization_strategy=None</em>, <em>storage_plugins=None</em><span class="sig-paren">)</span><a class="headerlink" href="#dagster.as_dagster_type" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="attribute">
@@ -20879,7 +20879,7 @@ snapshots['test_build_all_docs 54'] = '''
 
 <dl class="class">
 <dt id="dagster.RuntimeType">
-<em class="property">class </em><code class="descclassname">dagster.</code><code class="descname">RuntimeType</code><span class="sig-paren">(</span><em>key</em>, <em>name</em>, <em>is_builtin=False</em>, <em>description=None</em>, <em>input_schema=None</em>, <em>output_schema=None</em>, <em>serialization_strategy=None</em>, <em>storage_overrides=None</em><span class="sig-paren">)</span><a class="headerlink" href="#dagster.RuntimeType" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">dagster.</code><code class="descname">RuntimeType</code><span class="sig-paren">(</span><em>key</em>, <em>name</em>, <em>is_builtin=False</em>, <em>description=None</em>, <em>input_schema=None</em>, <em>output_schema=None</em>, <em>serialization_strategy=None</em>, <em>storage_plugins=None</em><span class="sig-paren">)</span><a class="headerlink" href="#dagster.RuntimeType" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="attribute">

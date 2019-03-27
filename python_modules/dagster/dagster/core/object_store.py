@@ -300,7 +300,7 @@ def rm_s3_intermediate(context, s3_bucket, run_id, step_key, output_name='result
 
 def construct_type_registry(pipeline_def, storage_mode):
     return {
-        type_obj: type_obj.storage_overrides.get(storage_mode)
+        type_obj: type_obj.storage_plugins.get(storage_mode)
         for type_obj in pipeline_def.all_runtime_types()
-        if type_obj.storage_overrides.get(storage_mode)
+        if type_obj.storage_plugins.get(storage_mode)
     }

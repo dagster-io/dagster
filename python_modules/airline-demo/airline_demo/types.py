@@ -48,7 +48,7 @@ SparkDataFrameType = as_dagster_type(
     DataFrame,
     name='SparkDataFrameType',
     description='A Pyspark data frame.',
-    storage_overrides={
+    storage_plugins={
         RunStorageMode.S3: SparkDataFrameS3StoragePlugin,
         RunStorageMode.FILESYSTEM: SparkDataFrameFilesystemStorageOverride,
     },
