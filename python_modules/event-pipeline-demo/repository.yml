@@ -1,0 +1,3 @@
+repository:
+  module: event_pipeline_demo.repository
+  fn: define_repo
