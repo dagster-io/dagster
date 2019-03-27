@@ -5,11 +5,14 @@ context:
          
 solids:
   event_ingest:
+    inputs:
+      spark_inputs: ["/path/to/inputs"]
     config:
+      spark_outputs: ["/path/to/outputs"]
       application_jar: "events-assembly-0.1.0-SNAPSHOT.jar"
       deploy_mode: "client"
       main_class: "io.dagster.events.EventPipeline"
-      application_arguments: "--local-path /Users/nate/Desktop/local --date 2019-01-01"            
+      application_arguments: "--local-path /path/to/inputs --date 2019-01-01"            
       master_url: "local[*]"
       spark_conf:
         spark:
@@ -28,6 +31,6 @@ solids:
 #   spark_conf:
 #     spark:
 #       app:
-#         name: "foo"
+#         name: "test_app"
 #       executor:
 #         cores: 1
