@@ -32,7 +32,7 @@ class SparkDataFrameS3StoragePlugin(TypeStoragePlugin):  # pylint: disable=no-in
         return context.resources.spark.read.parquet('s3a://' + object_store.key_for_paths(paths))
 
 
-class SparkDataFrameFilesystemStorageOverride(TypeStoragePlugin):  # pylint: disable=no-init
+class SparkDataFrameFilesystemStoragePlugin(TypeStoragePlugin):  # pylint: disable=no-init
     @classmethod
     def set_object(cls, object_store, obj, _context, _runtime_type, paths):
         target_path = get_valid_target_path(object_store.root, paths)
@@ -50,7 +50,7 @@ SparkDataFrameType = as_dagster_type(
     description='A Pyspark data frame.',
     storage_plugins={
         RunStorageMode.S3: SparkDataFrameS3StoragePlugin,
-        RunStorageMode.FILESYSTEM: SparkDataFrameFilesystemStorageOverride,
+        RunStorageMode.FILESYSTEM: SparkDataFrameFilesystemStoragePlugin,
     },
 )
 
