@@ -25,7 +25,7 @@ try:
 except ImportError:
     pass
 
-from .utils import import_module_from_path,
+from .utils import import_module_from_path
 
 
 IMAGE = 'airline-demo-airflow'
