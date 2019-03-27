@@ -93,6 +93,6 @@ RUN pip install -e dagstermill/
 
 ADD . .
 
-ENTRYPOINT [ "dagit", "--no-watch" ]
+ENTRYPOINT [ "dagit", "--no-watch", "-h", "0.0.0.0" ]
 
 EXPOSE 3000

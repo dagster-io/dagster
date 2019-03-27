@@ -29,6 +29,13 @@ From the root of the repo, run:
 
 Then just navigate to [http://0.0.0.0:3000/](http://0.0.0.0:3000/) in your browser.
 
+#### Autoreloading local changes
+
+To autoreload local changes in the Dockerized dagit, from the root of the repo, run:
+
+    docker-compose up -d db
+    docker-compose run --service-ports --entrypoint="dagit -h 0.0.0.0" --volume="$(pwd):/tmp" -d dagit
+
 ## Pipelines and config
 
 The demo defines a single repository with two pipelines, in `airline_demo/pipelines.py`:

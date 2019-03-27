@@ -72,6 +72,6 @@ RUN pip install -r requirements.txt
 
 ADD . .
 
-ENTRYPOINT [ "dagit", "--no-watch" ]
+ENTRYPOINT [ "dagit", "--no-watch", "-h", "0.0.0.0" ]
 
 EXPOSE 3000

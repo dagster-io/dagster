@@ -65,7 +65,7 @@ def sql_solid(name, select_statement, materialization_strategy, table_name=None,
         # 'query': SqlAlchemyQueryType,
         # 'subquery': SqlAlchemySubqueryType,
         # 'result_proxy': SqlAlchemyResultProxyType,
-        # could also materialize as a Pandas table, as a Spark table, as an intermediate file, etc.
+        # could also materialize as a Pandas table, a Spark table, an intermediate file, etc.
     }
 
     if materialization_strategy not in materialization_strategy_output_types:

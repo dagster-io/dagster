@@ -19,10 +19,10 @@ rm -rf dagstermill/dist && \
 rm -rf .tox dist && \
 \
 docker build -t airline-demo-airflow . && \
-docker tag airline-demo-airflow dagster/airline-demo-airflow && \
+docker tag airline-demo-airflow dagster/airline-demo-airflow && 
 \
 docker build -f Dockerfile-test -t airline-demo-airflow-test . && \
-docker tag airline-demo-airflow-test dagster/airline-demo-airflow-test
+docker tag airline-demo-airflow-test dagster/airline-demo-airflow-test && \
 
 rm -rf dagster && \
 rm -rf dagit && \
