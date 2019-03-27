@@ -8,12 +8,7 @@ import sqlalchemy
 from pyspark.sql import DataFrame
 
 from dagster import as_dagster_type, Dict, Field, String
-from dagster.core.object_store import (
-    get_valid_target_path,
-    S3ObjectStore,
-    FileSystemObjectStore,
-    TypeStoragePlugin,
-)
+from dagster.core.object_store import get_valid_target_path, TypeStoragePlugin
 from dagster.core.runs import RunStorageMode
 from dagster.core.types.runtime import Stringish
 from dagster.utils import safe_isfile
