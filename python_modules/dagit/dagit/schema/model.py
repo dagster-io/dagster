@@ -138,7 +138,7 @@ def get_run(graphene_info, runId):
     if not run:
         raise Exception('No run with such id: {run_id}'.format(run_id=runId))
     else:
-        return graphene_info.schema.type_named('PipelineRun')
+        return graphene_info.schema.type_named('PipelineRun')(run)
 
 
 def get_runs(graphene_info):
