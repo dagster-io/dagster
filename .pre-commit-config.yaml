@@ -3,3 +3,18 @@
     hooks:
     - id: black
       language_version: python3.6
+      exclude: >
+        build
+        | buck-out
+        | dist
+        | _build
+        | \.eggs
+        | \.git
+        | \.hg
+        | \.mypy_cache
+        | \.nox
+        | \.tox
+        | \.venv
+        | python_modules/dagster/dagster/tutorials
+        | snapshots
+        | __scaffold\.py
