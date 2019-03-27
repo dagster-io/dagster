@@ -12,11 +12,10 @@ from dagster import (
     RunConfig,
     RunStorageMode,
 )
-from dagster.core.execution import execute_pipeline, yield_pipeline_execution_context
+from dagster.core.execution import execute_pipeline
 from dagster.core.object_store import FileSystemObjectStore, S3ObjectStore
 
 from airline_demo.solids import ingest_csv_to_spark
-from airline_demo.types import SparkDataFrameType, SparkDataFrameFilesystemStorageOverride
 
 from .test_solids import _spark_context
 
