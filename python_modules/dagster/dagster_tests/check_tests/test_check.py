@@ -466,6 +466,9 @@ def test_inst_param():
         check.inst_param(None, 'obj', Bar)
 
     with pytest.raises(ParameterCheckError, match='not a Bar'):
+        check.inst_param(Bar, 'obj', Bar)
+
+    with pytest.raises(ParameterCheckError, match='not a Bar'):
         check.inst_param(Foo(), 'obj', Bar)
 
     with pytest.raises(ParameterCheckError, match=r"not one of \['Bar', 'Foo'\]"):
@@ -490,6 +493,9 @@ def test_opt_inst_param():
     assert check.opt_inst_param(obj, 'obj', Foo) == obj
     assert check.opt_inst_param(None, 'obj', Foo) is None
     assert check.opt_inst_param(None, 'obj', Bar) is None
+
+    with pytest.raises(ParameterCheckError, match='not a Bar'):
+        check.opt_inst_param(Bar, 'obj', Bar)
 
     with pytest.raises(ParameterCheckError, match='not a Bar'):
         check.opt_inst_param(Foo(), 'obj', Bar)
