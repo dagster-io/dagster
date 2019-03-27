@@ -1,5 +1,8 @@
 '''NOTE: THIS FILE IS AUTO-GENERATED. DO NOT EDIT
 
+Produced via:
+  python parse_spark_configs.py > ../event-pipeline-demo/event_pipeline_demo/configs_spark.py
+
 '''
 
 

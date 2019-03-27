@@ -19,7 +19,7 @@ SPARK_VERSION = "v2.4.0"
 TABLE_REGEX = r"### (.{,30}?)\n\n(<table.*?>.*?<\/table>)"
 
 
-class CONFIG_TYPE(Enum):
+class ConfigType(Enum):
     STRING = 'String'
     INT = 'Int'
     FLOAT = 'Float'
@@ -31,76 +31,76 @@ class CONFIG_TYPE(Enum):
 CONFIG_TYPES = {
     #
     # APPLICATION PROPERTIES
-    'spark.app.name': CONFIG_TYPE.STRING,
-    'spark.driver.cores': CONFIG_TYPE.INT,
-    'spark.driver.maxResultSize': CONFIG_TYPE.MEMORY,
-    'spark.driver.memory': CONFIG_TYPE.MEMORY,
-    'spark.driver.memoryOverhead': CONFIG_TYPE.MEMORY,
-    'spark.executor.memory': CONFIG_TYPE.MEMORY,
-    'spark.executor.pyspark.memory': CONFIG_TYPE.MEMORY,
-    'spark.executor.memoryOverhead	': CONFIG_TYPE.MEMORY,
-    'spark.extraListeners': CONFIG_TYPE.STRING,
-    'spark.local.dir': CONFIG_TYPE.STRING,
-    'spark.logConf': CONFIG_TYPE.BOOL,
+    'spark.app.name': ConfigType.STRING,
+    'spark.driver.cores': ConfigType.INT,
+    'spark.driver.maxResultSize': ConfigType.MEMORY,
+    'spark.driver.memory': ConfigType.MEMORY,
+    'spark.driver.memoryOverhead': ConfigType.MEMORY,
+    'spark.executor.memory': ConfigType.MEMORY,
+    'spark.executor.pyspark.memory': ConfigType.MEMORY,
+    'spark.executor.memoryOverhead	': ConfigType.MEMORY,
+    'spark.extraListeners': ConfigType.STRING,
+    'spark.local.dir': ConfigType.STRING,
+    'spark.logConf': ConfigType.BOOL,
     # TODO: Validate against https://spark.apache.org/docs/latest/submitting-applications.html#master-urls
-    'spark.master': CONFIG_TYPE.STRING,
+    'spark.master': ConfigType.STRING,
     # TODO: Validate against client/cluster *only*.
-    'spark.submit.deployMode': CONFIG_TYPE.STRING,
-    'spark.log.callerContext': CONFIG_TYPE.STRING,
-    'spark.driver.supervise': CONFIG_TYPE.BOOL,
+    'spark.submit.deployMode': ConfigType.STRING,
+    'spark.log.callerContext': ConfigType.STRING,
+    'spark.driver.supervise': ConfigType.BOOL,
     #
     # RUNTIME ENVIRONMENT
-    'spark.driver.extraClassPath': CONFIG_TYPE.STRING,
-    'spark.driver.extraJavaOptions': CONFIG_TYPE.STRING,
-    'spark.driver.extraLibraryPath': CONFIG_TYPE.STRING,
-    'spark.driver.userClassPathFirst': CONFIG_TYPE.BOOL,
-    'spark.executor.extraClassPath': CONFIG_TYPE.STRING,
-    'spark.executor.extraJavaOptions': CONFIG_TYPE.STRING,
-    'spark.executor.extraLibraryPath': CONFIG_TYPE.STRING,
-    'spark.executor.logs.rolling.maxRetainedFiles': CONFIG_TYPE.INT,
-    'spark.executor.logs.rolling.enableCompression': CONFIG_TYPE.BOOL,
-    'spark.executor.logs.rolling.maxSize': CONFIG_TYPE.INT,
+    'spark.driver.extraClassPath': ConfigType.STRING,
+    'spark.driver.extraJavaOptions': ConfigType.STRING,
+    'spark.driver.extraLibraryPath': ConfigType.STRING,
+    'spark.driver.userClassPathFirst': ConfigType.BOOL,
+    'spark.executor.extraClassPath': ConfigType.STRING,
+    'spark.executor.extraJavaOptions': ConfigType.STRING,
+    'spark.executor.extraLibraryPath': ConfigType.STRING,
+    'spark.executor.logs.rolling.maxRetainedFiles': ConfigType.INT,
+    'spark.executor.logs.rolling.enableCompression': ConfigType.BOOL,
+    'spark.executor.logs.rolling.maxSize': ConfigType.INT,
     # TODO: Can only be 'time' or 'size'
-    'spark.executor.logs.rolling.strategy': CONFIG_TYPE.STRING,
-    'spark.executor.logs.rolling.time.interval': CONFIG_TYPE.STRING,
-    'spark.executor.userClassPathFirst': CONFIG_TYPE.BOOL,
-    'spark.redaction.regex': CONFIG_TYPE.STRING,
-    'spark.python.profile': CONFIG_TYPE.BOOL,
+    'spark.executor.logs.rolling.strategy': ConfigType.STRING,
+    'spark.executor.logs.rolling.time.interval': ConfigType.STRING,
+    'spark.executor.userClassPathFirst': ConfigType.BOOL,
+    'spark.redaction.regex': ConfigType.STRING,
+    'spark.python.profile': ConfigType.BOOL,
     # TODO: Should be a path?
-    'spark.python.profile.dump': CONFIG_TYPE.STRING,
-    'spark.python.worker.memory': CONFIG_TYPE.MEMORY,
-    'spark.python.worker.reuse': CONFIG_TYPE.BOOL,
-    'spark.files': CONFIG_TYPE.STRING,
-    'spark.submit.pyFiles': CONFIG_TYPE.STRING,
-    'spark.jars': CONFIG_TYPE.STRING,
-    'spark.jars.packages': CONFIG_TYPE.STRING,
-    'spark.jars.excludes': CONFIG_TYPE.STRING,
-    'spark.jars.ivy': CONFIG_TYPE.STRING,
-    'spark.jars.ivySettings': CONFIG_TYPE.STRING,
-    'spark.jars.repositories': CONFIG_TYPE.STRING,
-    'spark.pyspark.driver.python': CONFIG_TYPE.STRING,
-    'spark.pyspark.python': CONFIG_TYPE.STRING,
+    'spark.python.profile.dump': ConfigType.STRING,
+    'spark.python.worker.memory': ConfigType.MEMORY,
+    'spark.python.worker.reuse': ConfigType.BOOL,
+    'spark.files': ConfigType.STRING,
+    'spark.submit.pyFiles': ConfigType.STRING,
+    'spark.jars': ConfigType.STRING,
+    'spark.jars.packages': ConfigType.STRING,
+    'spark.jars.excludes': ConfigType.STRING,
+    'spark.jars.ivy': ConfigType.STRING,
+    'spark.jars.ivySettings': ConfigType.STRING,
+    'spark.jars.repositories': ConfigType.STRING,
+    'spark.pyspark.driver.python': ConfigType.STRING,
+    'spark.pyspark.python': ConfigType.STRING,
     #
     # SHUFFLE BEHAVIOR
-    'spark.reducer.maxSizeInFlight': CONFIG_TYPE.MEMORY,
-    'spark.reducer.maxReqsInFlight': CONFIG_TYPE.INT,
-    'spark.reducer.maxBlocksInFlightPerAddress': CONFIG_TYPE.INT,
-    'spark.maxRemoteBlockSizeFetchToMem': CONFIG_TYPE.INT,
-    'spark.shuffle.compress': CONFIG_TYPE.BOOL,
-    'spark.shuffle.file.buffer': CONFIG_TYPE.MEMORY,
-    'spark.shuffle.io.maxRetries': CONFIG_TYPE.INT,
-    'spark.shuffle.io.numConnectionsPerPeer': CONFIG_TYPE.INT,
-    'spark.shuffle.io.preferDirectBufs': CONFIG_TYPE.BOOL,
-    'spark.shuffle.io.retryWait': CONFIG_TYPE.TIME,
-    'spark.shuffle.service.enabled': CONFIG_TYPE.BOOL,
-    'spark.shuffle.service.port': CONFIG_TYPE.INT,
-    'spark.shuffle.service.index.cache.size': CONFIG_TYPE.MEMORY,
-    'spark.shuffle.maxChunksBeingTransferred': CONFIG_TYPE.INT,
-    'spark.shuffle.sort.bypassMergeThreshold': CONFIG_TYPE.INT,
-    'spark.shuffle.spill.compress': CONFIG_TYPE.BOOL,
-    'spark.shuffle.accurateBlockThreshold': CONFIG_TYPE.INT,
-    'spark.shuffle.registration.timeout': CONFIG_TYPE.INT,
-    'spark.shuffle.registration.maxAttempts': CONFIG_TYPE.INT,
+    'spark.reducer.maxSizeInFlight': ConfigType.MEMORY,
+    'spark.reducer.maxReqsInFlight': ConfigType.INT,
+    'spark.reducer.maxBlocksInFlightPerAddress': ConfigType.INT,
+    'spark.maxRemoteBlockSizeFetchToMem': ConfigType.INT,
+    'spark.shuffle.compress': ConfigType.BOOL,
+    'spark.shuffle.file.buffer': ConfigType.MEMORY,
+    'spark.shuffle.io.maxRetries': ConfigType.INT,
+    'spark.shuffle.io.numConnectionsPerPeer': ConfigType.INT,
+    'spark.shuffle.io.preferDirectBufs': ConfigType.BOOL,
+    'spark.shuffle.io.retryWait': ConfigType.TIME,
+    'spark.shuffle.service.enabled': ConfigType.BOOL,
+    'spark.shuffle.service.port': ConfigType.INT,
+    'spark.shuffle.service.index.cache.size': ConfigType.MEMORY,
+    'spark.shuffle.maxChunksBeingTransferred': ConfigType.INT,
+    'spark.shuffle.sort.bypassMergeThreshold': ConfigType.INT,
+    'spark.shuffle.spill.compress': ConfigType.BOOL,
+    'spark.shuffle.accurateBlockThreshold': ConfigType.INT,
+    'spark.shuffle.registration.timeout': ConfigType.INT,
+    'spark.shuffle.registration.maxAttempts': ConfigType.INT,
     #
     # SPARK UI
     ### TODO
@@ -109,36 +109,36 @@ CONFIG_TYPES = {
     ### TODO
     #
     # MEMORY MANAGEMENT
-    'spark.memory.fraction': CONFIG_TYPE.FLOAT,
-    'spark.memory.storageFraction': CONFIG_TYPE.FLOAT,
-    'spark.memory.offHeap.enabled': CONFIG_TYPE.BOOL,
-    'spark.memory.offHeap.size': CONFIG_TYPE.INT,
-    'spark.memory.useLegacyMode': CONFIG_TYPE.BOOL,
-    'spark.shuffle.memoryFraction': CONFIG_TYPE.FLOAT,
-    'spark.storage.memoryFraction': CONFIG_TYPE.FLOAT,
-    'spark.storage.unrollFraction': CONFIG_TYPE.FLOAT,
-    'spark.storage.replication.proactive': CONFIG_TYPE.BOOL,
-    'spark.cleaner.periodicGC.interval': CONFIG_TYPE.TIME,
-    'spark.cleaner.referenceTracking': CONFIG_TYPE.BOOL,
-    'spark.cleaner.referenceTracking.blocking': CONFIG_TYPE.BOOL,
-    'spark.cleaner.referenceTracking.blocking.shuffle': CONFIG_TYPE.BOOL,
-    'spark.cleaner.referenceTracking.cleanCheckpoints': CONFIG_TYPE.BOOL,
+    'spark.memory.fraction': ConfigType.FLOAT,
+    'spark.memory.storageFraction': ConfigType.FLOAT,
+    'spark.memory.offHeap.enabled': ConfigType.BOOL,
+    'spark.memory.offHeap.size': ConfigType.INT,
+    'spark.memory.useLegacyMode': ConfigType.BOOL,
+    'spark.shuffle.memoryFraction': ConfigType.FLOAT,
+    'spark.storage.memoryFraction': ConfigType.FLOAT,
+    'spark.storage.unrollFraction': ConfigType.FLOAT,
+    'spark.storage.replication.proactive': ConfigType.BOOL,
+    'spark.cleaner.periodicGC.interval': ConfigType.TIME,
+    'spark.cleaner.referenceTracking': ConfigType.BOOL,
+    'spark.cleaner.referenceTracking.blocking': ConfigType.BOOL,
+    'spark.cleaner.referenceTracking.blocking.shuffle': ConfigType.BOOL,
+    'spark.cleaner.referenceTracking.cleanCheckpoints': ConfigType.BOOL,
     #
     # EXECUTION BEHAVIOR
-    'spark.broadcast.blockSize': CONFIG_TYPE.MEMORY,
-    'spark.executor.cores': CONFIG_TYPE.INT,
-    'spark.default.parallelism': CONFIG_TYPE.INT,
-    'spark.executor.heartbeatInterval': CONFIG_TYPE.TIME,
-    'spark.files.fetchTimeout': CONFIG_TYPE.TIME,
-    'spark.files.useFetchCache': CONFIG_TYPE.BOOL,
-    'spark.files.overwrite': CONFIG_TYPE.BOOL,
-    'spark.files.maxPartitionBytes': CONFIG_TYPE.INT,
-    'spark.files.openCostInBytes': CONFIG_TYPE.INT,
-    'spark.hadoop.cloneConf': CONFIG_TYPE.BOOL,
-    'spark.hadoop.validateOutputSpecs': CONFIG_TYPE.BOOL,
-    'spark.storage.memoryMapThreshold': CONFIG_TYPE.MEMORY,
+    'spark.broadcast.blockSize': ConfigType.MEMORY,
+    'spark.executor.cores': ConfigType.INT,
+    'spark.default.parallelism': ConfigType.INT,
+    'spark.executor.heartbeatInterval': ConfigType.TIME,
+    'spark.files.fetchTimeout': ConfigType.TIME,
+    'spark.files.useFetchCache': ConfigType.BOOL,
+    'spark.files.overwrite': ConfigType.BOOL,
+    'spark.files.maxPartitionBytes': ConfigType.INT,
+    'spark.files.openCostInBytes': ConfigType.INT,
+    'spark.hadoop.cloneConf': ConfigType.BOOL,
+    'spark.hadoop.validateOutputSpecs': ConfigType.BOOL,
+    'spark.storage.memoryMapThreshold': ConfigType.MEMORY,
     # TODO: Can only be 1 or 2.
-    'spark.hadoop.mapreduce.fileoutputcommitter.algorithm.version': CONFIG_TYPE.INT,
+    'spark.hadoop.mapreduce.fileoutputcommitter.algorithm.version': ConfigType.INT,
     #
     # NETWORKING
     ### TODO
@@ -186,7 +186,7 @@ class SparkConfig:
         return self.path.split('.')
 
     def print(self, printer):
-        config_type = CONFIG_TYPES.get(self.path, CONFIG_TYPE.STRING).value
+        config_type = CONFIG_TYPES.get(self.path, ConfigType.STRING).value
 
         printer.append('Field(')
         with printer.with_indent():
@@ -271,6 +271,12 @@ def main():
     with IndentingBufferPrinter() as printer:
         printer.line("'''NOTE: THIS FILE IS AUTO-GENERATED. DO NOT EDIT")
         printer.blank_line()
+        printer.line('Produced via:')
+        printer.line(
+            '  python parse_spark_configs.py > '
+            '../event-pipeline-demo/event_pipeline_demo/configs_spark.py'
+        )
+        printer.blank_line()
         printer.line("'''")
         printer.blank_line()
         printer.blank_line()
@@ -283,7 +289,7 @@ def main():
             printer.append('return ')
             result.print(printer)
         printer.line('# pylint: enable=line-too-long')
-        print(printer.read())
+        print(printer.read().strip())
 
 
 if __name__ == "__main__":
