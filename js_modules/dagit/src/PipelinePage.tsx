@@ -2,14 +2,16 @@ import * as React from "react";
 import gql from "graphql-tag";
 import styled from "styled-components";
 import { Link } from "react-router-dom";
-import { Route, match } from "react-router";
+import { Route, match, Switch } from "react-router";
 import { History } from "history";
 import { Colors, NonIdealState, Navbar } from "@blueprintjs/core";
 import Page from "./Page";
 import { PipelineJumpBar } from "./PipelineJumpComponents";
 import PythonErrorInfo from "./PythonErrorInfo";
 import PipelineExplorer from "./PipelineExplorer";
-import PipelineExecutionRoot from "./execution/PipelineExecutionRoot";
+import PipelineExecutionRoot from "./execute/PipelineExecutionRoot";
+import PipelineRunsRoot from "./runs/PipelineRunsRoot";
+import PipelineRunRoot from "./runs/PipelineRunRoot";
 import CustomAlertProvider from "./CustomAlertProvider";
 
 import {
@@ -62,6 +64,28 @@ const TABS = [
     title: "Execute",
     render: (props: IPipelinePageTabProps) => (
       <PipelineExecutionRoot pipeline={props.pipeline.name} />
+    )
+  },
+  {
+    slug: "runs",
+    title: "Runs",
+    render: (props: IPipelinePageTabProps) => (
+      <Switch>
+        <Route
+          path={`${props.match.url}/:runId`}
+          render={({ match }) => (
+            <PipelineRunRoot
+              pipeline={props.pipeline.name}
+              runId={match.params.runId}
+            />
+          )}
+        />
+        <Route
+          exact={true}
+          path={`${props.match.url}`}
+          render={() => <PipelineRunsRoot pipeline={props.pipeline.name} />}
+        />
+      </Switch>
     )
   }
 ];

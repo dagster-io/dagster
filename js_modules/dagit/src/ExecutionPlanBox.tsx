@@ -3,7 +3,7 @@ import styled from "styled-components";
 import { Colors, Spinner, Intent } from "@blueprintjs/core";
 import { IStepState, IStepMaterialization } from "./RunMetadataProvider";
 import { Materialization } from "./Materialization";
-import { formatElapsedTime } from "../Util";
+import { formatElapsedTime } from "./Util";
 
 interface IExecutionPlanBoxProps {
   state: IStepState;

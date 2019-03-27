@@ -1,22 +1,12 @@
 import * as React from "react";
 import gql from "graphql-tag";
-import styled from "styled-components";
-import {
-  Popover,
-  Button,
-  Position,
-  NonIdealState,
-  Menu,
-  MenuItem,
-  Icon
-} from "@blueprintjs/core";
+import { NonIdealState, Menu, MenuItem, Icon } from "@blueprintjs/core";
 import { RunHistoryRunFragment } from "./types/RunHistoryRunFragment";
-import { titleForRun, RunStatus } from "./ExecutionUtils";
+import { titleForRun, RunStatus } from "./RunUtils";
 
 interface IRunHistoryProps {
   runs: RunHistoryRunFragment[];
-  openRunIds: string[];
-  onShowSessionFor: (run: RunHistoryRunFragment) => void;
+  pipelineName: string;
 }
 
 export default class RunHistory extends React.Component<IRunHistoryProps> {
@@ -39,10 +29,10 @@ export default class RunHistory extends React.Component<IRunHistoryProps> {
   };
 
   render() {
-    const { runs, openRunIds } = this.props;
+    const { runs, pipelineName } = this.props;
 
-    const history = (
-      <HistoryPopoverBody>
+    return (
+      <div>
         {runs.length === 0 ? (
           <div style={{ margin: 15 }}>
             <NonIdealState
@@ -56,39 +46,19 @@ export default class RunHistory extends React.Component<IRunHistoryProps> {
             {[...runs].reverse().map(run => (
               <MenuItem
                 key={run.runId}
+                href={`/${pipelineName}/runs/${run.runId}`}
                 text={titleForRun(run)}
-                labelElement={
-                  openRunIds.indexOf(run.runId) !== -1 && (
-                    <Icon icon="eye-open" />
-                  )
-                }
+                // labelElement={
+                //   openRunIds.indexOf(run.runId) !== -1 && (
+                //     <Icon icon="eye-open" />
+                //   )
+                // }
                 icon={<RunStatus status={run.status} />}
-                onClick={() => this.props.onShowSessionFor(run)}
               />
             ))}
           </Menu>
         )}
-      </HistoryPopoverBody>
-    );
-
-    return (
-      <Popover
-        position={Position.BOTTOM_LEFT}
-        content={history}
-        target={
-          <Button
-            style={{ flexShrink: 0, whiteSpace: "nowrap" }}
-            icon="history"
-          />
-        }
-      />
+      </div>
     );
   }
 }
-
-const HistoryPopoverBody = styled.div`
-  width: 200px;
-  min-height: 150px;
-  max-height: 400px;
-  overflow: scroll;
-`;

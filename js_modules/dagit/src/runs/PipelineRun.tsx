@@ -8,14 +8,14 @@ import LogsFilterProvider, {
   DefaultLogFilter
 } from "./LogsFilterProvider";
 import LogsScrollingTable from "./LogsScrollingTable";
-import ExecutionPlan from "./ExecutionPlan";
 import {
   PipelineRunFragment,
   PipelineRunFragment_logs_nodes_ExecutionStepFailureEvent
 } from "./types/PipelineRunFragment";
 import { PanelDivider } from "../PanelDivider";
 import PythonErrorInfo from "../PythonErrorInfo";
-import RunMetadataProvider from "./RunMetadataProvider";
+import ExecutionPlan from "../ExecutionPlan";
+import RunMetadataProvider from "../RunMetadataProvider";
 import LogsToolbar from "./LogsToolbar";
 
 interface IPipelineRunProps {

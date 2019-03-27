@@ -1,6 +1,6 @@
 import * as React from "react";
 import styled from "styled-components";
-import { ROOT_SERVER_URI } from "../Util";
+import { ROOT_SERVER_URI } from "./Util";
 import { Colors, Spinner } from "@blueprintjs/core";
 
 function fileLocationToHref(location: string) {

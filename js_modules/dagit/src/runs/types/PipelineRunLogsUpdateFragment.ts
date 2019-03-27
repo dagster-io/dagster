@@ -1,7 +1,7 @@
 /* tslint:disable */
 // This file was automatically generated and should not be edited.
 
-import { PipelineRunStatus, LogLevel } from "./../../types/globalTypes";
+import { PipelineRunStatus, LogLevel, StepKind } from "./../../types/globalTypes";
 
 // ====================================================
 // GraphQL fragment: PipelineRunLogsUpdateFragment
@@ -76,9 +76,27 @@ export interface PipelineRunLogsUpdateFragment_logs {
   nodes: PipelineRunLogsUpdateFragment_logs_nodes[];
 }
 
+export interface PipelineRunLogsUpdateFragment_executionPlan_steps_solid {
+  __typename: "Solid";
+  name: string;
+}
+
+export interface PipelineRunLogsUpdateFragment_executionPlan_steps {
+  __typename: "ExecutionStep";
+  name: string;
+  solid: PipelineRunLogsUpdateFragment_executionPlan_steps_solid;
+  kind: StepKind;
+}
+
+export interface PipelineRunLogsUpdateFragment_executionPlan {
+  __typename: "ExecutionPlan";
+  steps: PipelineRunLogsUpdateFragment_executionPlan_steps[];
+}
+
 export interface PipelineRunLogsUpdateFragment {
   __typename: "PipelineRun";
   runId: string;
   status: PipelineRunStatus;
   logs: PipelineRunLogsUpdateFragment_logs;
+  executionPlan: PipelineRunLogsUpdateFragment_executionPlan;
 }

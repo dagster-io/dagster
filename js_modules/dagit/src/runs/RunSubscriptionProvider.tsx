@@ -4,75 +4,57 @@ import { ApolloClient } from "apollo-client";
 import produce from "immer";
 import { PipelineRunStatus } from "../types/globalTypes";
 
-import PipelineExecution from "./PipelineExecution";
-import {
-  PipelineExecutionContainerFragment,
-  PipelineExecutionContainerFragment_runs
-} from "./types/PipelineExecutionContainerFragment";
+import { PipelineRun } from "./PipelineRun";
 import { PipelineRunLogsSubscription } from "./types/PipelineRunLogsSubscription";
 import { PipelineRunLogsUpdateFragment } from "./types/PipelineRunLogsUpdateFragment";
 
 interface IRunSubscriptionProviderProps {
   client: ApolloClient<any>;
-  pipeline: PipelineExecutionContainerFragment;
-  run: PipelineExecutionContainerFragment_runs | null;
+  runId: string;
+  runLogCursor: string;
 }
 
 export default class RunSubscriptionProvider extends React.Component<
   IRunSubscriptionProviderProps
 > {
+  _subscriptionRunId: string | null = null;
+  _subscription: ZenObservable.Subscription;
+
   componentDidMount() {
-    this.subscribeToRuns();
+    this.subscribeToRun();
   }
 
   componentDidUpdate() {
-    this.subscribeToRuns();
+    this.subscribeToRun();
   }
 
   componentWillUnmount() {
     this.unsubscribeFromRuns();
   }
 
-  _subscriptions: {
-    [runId: string]: ZenObservable.Subscription;
-  } = {};
+  subscribeToRun() {
+    if (this._subscriptionRunId === this.props.runId) return;
 
-  subscribeToRuns() {
-    const validRuns = this.props.run ? [this.props.run] : [];
-    const validRunIds = new Set(validRuns.map(({ runId }) => runId));
-    const subscribedRunIds = new Set(Object.keys(this._subscriptions));
-    subscribedRunIds.forEach(runId => {
-      if (!validRunIds.has(runId)) {
-        this._subscriptions[runId].unsubscribe();
-        delete this._subscriptions[runId];
+    if (this._subscription) this._subscription.unsubscribe();
+
+    const observable = this.props.client.subscribe({
+      query: PIPELINE_RUN_LOGS_SUBSCRIPTION,
+      variables: {
+        runId: this.props.runId,
+        after: this.props.runLogCursor
       }
     });
 
-    validRuns.forEach(run => {
-      if (this._subscriptions[run.runId]) {
-        return;
+    this._subscription = observable.subscribe({
+      next: msg => {
+        this.handleNewMessages(msg.data);
       }
-      const observable = this.props.client.subscribe({
-        query: PIPELINE_RUN_LOGS_SUBSCRIPTION,
-        variables: {
-          runId: run.runId,
-          after: run.logs.pageInfo.lastCursor
-        }
-      });
-
-      this._subscriptions[run.runId] = observable.subscribe({
-        next: msg => {
-          this.handleNewMessages(msg.data);
-        }
-      });
     });
   }
 
   unsubscribeFromRuns() {
-    Object.keys(this._subscriptions).forEach(runId => {
-      this._subscriptions[runId].unsubscribe();
-      delete this._subscriptions[runId];
-    });
+    this._subscription.unsubscribe();
+    this._subscriptionRunId = null;
   }
 
   handleNewMessages = (result: PipelineRunLogsSubscription) => {
@@ -122,14 +104,16 @@ const PIPELINE_RUN_LOGS_UPDATE_FRAGMENT = gql`
   fragment PipelineRunLogsUpdateFragment on PipelineRun {
     runId
     status
+    ...PipelineRunFragment
     logs {
       nodes {
-        ...PipelineExecutionPipelineRunEventFragment
+        ...PipelineRunPipelineRunEventFragment
       }
     }
   }
 
-  ${PipelineExecution.fragments.PipelineExecutionPipelineRunEventFragment}
+  ${PipelineRun.fragments.PipelineRunFragment}
+  ${PipelineRun.fragments.PipelineRunPipelineRunEventFragment}
 `;
 
 const PIPELINE_RUN_LOGS_SUBSCRIPTION = gql`
@@ -140,11 +124,11 @@ const PIPELINE_RUN_LOGS_SUBSCRIPTION = gql`
           run {
             runId
           }
-          ...PipelineExecutionPipelineRunEventFragment
+          ...PipelineRunPipelineRunEventFragment
         }
       }
     }
   }
 
-  ${PipelineExecution.fragments.PipelineExecutionPipelineRunEventFragment}
+  ${PipelineRun.fragments.PipelineRunPipelineRunEventFragment}
 `;

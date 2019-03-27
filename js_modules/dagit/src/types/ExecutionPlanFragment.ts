@@ -1,7 +1,7 @@
 /* tslint:disable */
 // This file was automatically generated and should not be edited.
 
-import { StepKind } from "./../../types/globalTypes";
+import { StepKind } from "./globalTypes";
 
 // ====================================================
 // GraphQL fragment: ExecutionPlanFragment

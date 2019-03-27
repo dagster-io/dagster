@@ -4,9 +4,9 @@ import gql from "graphql-tag";
 import PipelineGraph from "../graph/PipelineGraph";
 import { QueryResult, Query } from "react-apollo";
 import {
-  PipelineSolidSelectorQuery,
-  PipelineSolidSelectorQuery_pipeline
-} from "./types/PipelineSolidSelectorQuery";
+  SolidSelectorQuery,
+  SolidSelectorQuery_pipeline
+} from "./types/SolidSelectorQuery";
 import Loading from "../Loading";
 import {
   getDagrePipelineLayout,
@@ -16,17 +16,17 @@ import {
 import SVGViewport from "../graph/SVGViewport";
 import { IconNames } from "@blueprintjs/icons";
 
-interface IPipelineSolidSelectorProps {
+interface ISolidSelectorProps {
   pipelineName: string;
   value: string[] | null;
   onChange: (value: string[] | null) => void;
 }
 
-interface IPipelineSolidSelectorInnerProps extends IPipelineSolidSelectorProps {
-  pipeline: PipelineSolidSelectorQuery_pipeline;
+interface ISolidSelectorInnerProps extends ISolidSelectorProps {
+  pipeline: SolidSelectorQuery_pipeline;
 }
 
-interface IPipelineSolidSelectorState {
+interface ISolidSelectorState {
   // True if the modal is open
   open: boolean;
 
@@ -41,7 +41,7 @@ interface IPipelineSolidSelectorState {
 
 function subsetDescription(
   solidSubset: string[] | null,
-  pipeline: PipelineSolidSelectorQuery_pipeline
+  pipeline: SolidSelectorQuery_pipeline
 ) {
   if (
     !solidSubset ||
@@ -88,11 +88,11 @@ function subsetDescription(
   return `${solidSubset.length} solids`;
 }
 
-class PipelineSolidSelector extends React.PureComponent<
-  IPipelineSolidSelectorInnerProps,
-  IPipelineSolidSelectorState
+class SolidSelector extends React.PureComponent<
+  ISolidSelectorInnerProps,
+  ISolidSelectorState
 > {
-  state: IPipelineSolidSelectorState = {
+  state: ISolidSelectorState = {
     open: false,
     highlighted: [],
     toolRectStart: null,
@@ -242,8 +242,8 @@ class PipelineSolidSelector extends React.PureComponent<
   }
 }
 
-export const PIPELINE_SOLID_SELECTOR_QUERY = gql`
-  query PipelineSolidSelectorQuery($name: String!) {
+export const SOLID_SELECTOR_QUERY = gql`
+  query SolidSelectorQuery($name: String!) {
     pipeline(params: { name: $name }) {
       name
       solids {
@@ -255,16 +255,11 @@ export const PIPELINE_SOLID_SELECTOR_QUERY = gql`
   ${PipelineGraph.fragments.PipelineGraphFragment}
 `;
 
-export default (props: IPipelineSolidSelectorProps) => (
-  <Query
-    query={PIPELINE_SOLID_SELECTOR_QUERY}
-    variables={{ name: props.pipelineName }}
-  >
-    {(queryResult: QueryResult<PipelineSolidSelectorQuery, any>) => (
+export default (props: ISolidSelectorProps) => (
+  <Query query={SOLID_SELECTOR_QUERY} variables={{ name: props.pipelineName }}>
+    {(queryResult: QueryResult<SolidSelectorQuery, any>) => (
       <Loading queryResult={queryResult}>
-        {result => (
-          <PipelineSolidSelector {...props} pipeline={result.pipeline} />
-        )}
+        {result => <SolidSelector {...props} pipeline={result.pipeline} />}
       </Loading>
     )}
   </Query>

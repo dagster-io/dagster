@@ -5,7 +5,6 @@ import { IconNames } from "@blueprintjs/icons";
 import { WebsocketStatusContext } from "../WebsocketStatus";
 
 interface IExecutionStartButtonProps {
-  executing: boolean;
   onClick: (event: React.MouseEvent<HTMLDivElement, MouseEvent>) => void;
 }
 
@@ -44,7 +43,7 @@ export default class ExecutionStartButton extends React.Component<
     return (
       <WebsocketStatusContext.Consumer>
         {websocketStatus => {
-          if (this.props.executing || this.state.starting) {
+          if (this.state.starting) {
             return (
               <Wrapper
                 role="button"

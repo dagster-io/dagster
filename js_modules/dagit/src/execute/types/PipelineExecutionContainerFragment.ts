@@ -1,118 +1,9 @@
 /* tslint:disable */
 // This file was automatically generated and should not be edited.
 
-import { PipelineRunStatus, LogLevel, StepKind } from "./../../types/globalTypes";
-
 // ====================================================
 // GraphQL fragment: PipelineExecutionContainerFragment
 // ====================================================
-
-export interface PipelineExecutionContainerFragment_runs_logs_nodes_LogMessageEvent_step {
-  __typename: "ExecutionStep";
-  name: string;
-}
-
-export interface PipelineExecutionContainerFragment_runs_logs_nodes_LogMessageEvent {
-  __typename: "LogMessageEvent" | "PipelineStartEvent" | "PipelineSuccessEvent" | "PipelineFailureEvent" | "ExecutionStepStartEvent" | "ExecutionStepSuccessEvent" | "ExecutionStepOutputEvent" | "PipelineProcessStartEvent";
-  message: string;
-  timestamp: string;
-  level: LogLevel;
-  step: PipelineExecutionContainerFragment_runs_logs_nodes_LogMessageEvent_step | null;
-}
-
-export interface PipelineExecutionContainerFragment_runs_logs_nodes_ExecutionStepFailureEvent_step {
-  __typename: "ExecutionStep";
-  name: string;
-}
-
-export interface PipelineExecutionContainerFragment_runs_logs_nodes_ExecutionStepFailureEvent_error {
-  __typename: "PythonError";
-  stack: string[];
-  message: string;
-}
-
-export interface PipelineExecutionContainerFragment_runs_logs_nodes_ExecutionStepFailureEvent {
-  __typename: "ExecutionStepFailureEvent";
-  message: string;
-  timestamp: string;
-  level: LogLevel;
-  step: PipelineExecutionContainerFragment_runs_logs_nodes_ExecutionStepFailureEvent_step | null;
-  error: PipelineExecutionContainerFragment_runs_logs_nodes_ExecutionStepFailureEvent_error;
-}
-
-export interface PipelineExecutionContainerFragment_runs_logs_nodes_PipelineProcessStartedEvent_step {
-  __typename: "ExecutionStep";
-  name: string;
-}
-
-export interface PipelineExecutionContainerFragment_runs_logs_nodes_PipelineProcessStartedEvent {
-  __typename: "PipelineProcessStartedEvent";
-  message: string;
-  timestamp: string;
-  level: LogLevel;
-  step: PipelineExecutionContainerFragment_runs_logs_nodes_PipelineProcessStartedEvent_step | null;
-  processId: number;
-}
-
-export interface PipelineExecutionContainerFragment_runs_logs_nodes_StepMaterializationEvent_step {
-  __typename: "ExecutionStep";
-  name: string;
-}
-
-export interface PipelineExecutionContainerFragment_runs_logs_nodes_StepMaterializationEvent {
-  __typename: "StepMaterializationEvent";
-  message: string;
-  timestamp: string;
-  level: LogLevel;
-  step: PipelineExecutionContainerFragment_runs_logs_nodes_StepMaterializationEvent_step | null;
-  fileLocation: string;
-  fileName: string;
-}
-
-export type PipelineExecutionContainerFragment_runs_logs_nodes = PipelineExecutionContainerFragment_runs_logs_nodes_LogMessageEvent | PipelineExecutionContainerFragment_runs_logs_nodes_ExecutionStepFailureEvent | PipelineExecutionContainerFragment_runs_logs_nodes_PipelineProcessStartedEvent | PipelineExecutionContainerFragment_runs_logs_nodes_StepMaterializationEvent;
-
-export interface PipelineExecutionContainerFragment_runs_logs_pageInfo {
-  __typename: "PageInfo";
-  lastCursor: any | null;
-}
-
-export interface PipelineExecutionContainerFragment_runs_logs {
-  __typename: "LogMessageConnection";
-  nodes: PipelineExecutionContainerFragment_runs_logs_nodes[];
-  pageInfo: PipelineExecutionContainerFragment_runs_logs_pageInfo;
-}
-
-export interface PipelineExecutionContainerFragment_runs_executionPlan_steps_solid {
-  __typename: "Solid";
-  name: string;
-}
-
-export interface PipelineExecutionContainerFragment_runs_executionPlan_steps {
-  __typename: "ExecutionStep";
-  name: string;
-  solid: PipelineExecutionContainerFragment_runs_executionPlan_steps_solid;
-  kind: StepKind;
-}
-
-export interface PipelineExecutionContainerFragment_runs_executionPlan {
-  __typename: "ExecutionPlan";
-  steps: PipelineExecutionContainerFragment_runs_executionPlan_steps[];
-}
-
-export interface PipelineExecutionContainerFragment_runs_pipeline {
-  __typename: "Pipeline";
-  name: string;
-}
-
-export interface PipelineExecutionContainerFragment_runs {
-  __typename: "PipelineRun";
-  runId: string;
-  status: PipelineRunStatus;
-  logs: PipelineExecutionContainerFragment_runs_logs;
-  executionPlan: PipelineExecutionContainerFragment_runs_executionPlan;
-  config: string;
-  pipeline: PipelineExecutionContainerFragment_runs_pipeline;
-}
 
 export interface PipelineExecutionContainerFragment_environmentType {
   __typename: "EnumConfigType" | "CompositeConfigType" | "RegularConfigType" | "ListConfigType" | "NullableConfigType";
@@ -203,7 +94,6 @@ export type PipelineExecutionContainerFragment_configTypes = PipelineExecutionCo
 export interface PipelineExecutionContainerFragment {
   __typename: "Pipeline";
   name: string;
-  runs: PipelineExecutionContainerFragment_runs[];
   environmentType: PipelineExecutionContainerFragment_environmentType;
   configTypes: PipelineExecutionContainerFragment_configTypes[];
 }

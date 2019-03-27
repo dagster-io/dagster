@@ -6,7 +6,7 @@ import { NonIdealState } from "@blueprintjs/core";
 import { IconNames } from "@blueprintjs/icons";
 import ApolloClient from "apollo-client";
 import { ApolloConsumer } from "react-apollo";
-import ExecutionPlan from "./ExecutionPlan";
+import ExecutionPlan from "../ExecutionPlan";
 import {
   ExecutionPlanPreviewQuery,
   ExecutionPlanPreviewQueryVariables
@@ -31,23 +31,23 @@ export const EXECUTION_PLAN_PREVIEW_QUERY = gql`
   ${ExecutionPlan.fragments.ExecutionPlanFragment}
 `;
 
-interface IPipelineRunPreviewProps {
+interface IRunPreviewProps {
   pipelineName: string;
   solidSubset: string[] | null;
   configCode: string;
 }
 
-interface IPipelineRunPreviewState {
+interface IRunPreviewState {
   data: ExecutionPlanPreviewQuery | null;
 }
 
-export class PipelineRunPreviewConnected extends React.Component<
-  IPipelineRunPreviewProps & { client: ApolloClient<any> },
-  IPipelineRunPreviewState
+export class RunPreviewConnected extends React.Component<
+  IRunPreviewProps & { client: ApolloClient<any> },
+  IRunPreviewState
 > {
   _fetchTimer: NodeJS.Timeout;
   _mounted = false;
-  state: IPipelineRunPreviewState = {
+  state: IRunPreviewState = {
     data: null
   };
 
@@ -56,7 +56,7 @@ export class PipelineRunPreviewConnected extends React.Component<
     this.fetchPlan();
   }
 
-  componentDidUpdate(prevProps: IPipelineRunPreviewProps) {
+  componentDidUpdate(prevProps: IRunPreviewProps) {
     if (
       prevProps.configCode !== this.props.configCode ||
       prevProps.pipelineName !== this.props.pipelineName ||
@@ -123,15 +123,15 @@ export class PipelineRunPreviewConnected extends React.Component<
   }
 }
 
-export const PipelineRunPreview: React.FC<IPipelineRunPreviewProps> = props => (
-  <PipelinePreviewWrapper>
+export const RunPreview: React.FC<IRunPreviewProps> = props => (
+  <PreviewWrapper>
     <ApolloConsumer>
-      {client => <PipelineRunPreviewConnected client={client} {...props} />}
+      {client => <RunPreviewConnected client={client} {...props} />}
     </ApolloConsumer>
-  </PipelinePreviewWrapper>
+  </PreviewWrapper>
 );
 
-const PipelinePreviewWrapper = styled.div`
+const PreviewWrapper = styled.div`
   display: flex;
   flex-direction: column;
   flex: 1 1;

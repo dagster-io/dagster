@@ -2,13 +2,11 @@ import * as React from "react";
 import styled from "styled-components";
 import { Icon, Colors } from "@blueprintjs/core";
 import { IconNames } from "@blueprintjs/icons";
-import { RunStatus } from "./ExecutionUtils";
 
 interface IExecutationTabProps {
   title: string;
   active?: boolean;
   unsaved?: boolean;
-  run?: { status: "SUCCESS" | "NOT_STARTED" | "FAILURE" | "STARTED" };
   onChange?: (title: string) => void;
   onRemove?: () => void;
   onClick: () => void;
@@ -38,30 +36,15 @@ export class ExecutionTab extends React.Component<
   };
 
   render() {
-    const {
-      title,
-      onChange,
-      onClick,
-      onRemove,
-      active,
-      run,
-      unsaved
-    } = this.props;
+    const { title, onChange, onClick, onRemove, active, unsaved } = this.props;
     const { editing } = this.state;
 
-    const Container = run ? RunTabContainer : TabContainer;
-
     return (
-      <Container
+      <TabContainer
         active={active || false}
         onDoubleClick={this.onDoubleClick}
         onClick={onClick}
       >
-        {run && (
-          <div style={{ marginRight: 4 }}>
-            <RunStatus status={run.status} />
-          </div>
-        )}
         {editing ? (
           <input
             ref={this.input}
@@ -86,7 +69,7 @@ export class ExecutionTab extends React.Component<
             <Icon icon={IconNames.CROSS} />
           </RemoveButton>
         )}
-      </Container>
+      </TabContainer>
     );
   }
 }
@@ -118,10 +101,6 @@ const TabContainer = styled.div<{ active: boolean }>`
     outline: none;
   }
   cursor: ${({ active }) => (!active ? "pointer" : "inherit")};
-`;
-
-const RunTabContainer = styled(TabContainer)`
-  font-family: monospace;
 `;
 
 const RemoveButton = styled.div`

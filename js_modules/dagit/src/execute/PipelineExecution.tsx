@@ -4,10 +4,9 @@ import styled from "styled-components";
 import { Colors } from "@blueprintjs/core";
 import { ApolloConsumer } from "react-apollo";
 
-import { PipelineRun, PipelineRunEmpty } from "./PipelineRun";
-import { PipelineRunPreview } from "./PipelineRunPreview";
+import { RunPreview } from "./RunPreview";
 import { PanelDivider } from "../PanelDivider";
-import PipelineSolidSelector from "./PipelineSolidSelector";
+import SolidSelector from "./SolidSelector";
 import ConfigEditor from "../configeditor/ConfigEditor";
 import {
   IExecutionSession,
@@ -21,13 +20,11 @@ import {
 } from "../configeditor/ConfigEditorUtils";
 
 import { PipelineExecutionPipelineFragment } from "./types/PipelineExecutionPipelineFragment";
-import { PipelineExecutionPipelineRunFragment } from "./types/PipelineExecutionPipelineRunFragment";
 
 const CONFIRM_RESET_TO_SCAFFOLD = `Would you like to reset your config to a scaffold based on this subset of the pipeline?`;
 
 interface IPipelineExecutionProps {
   pipeline: PipelineExecutionPipelineFragment;
-  currentRun: PipelineExecutionPipelineRunFragment | null;
   currentSession: IExecutionSession;
   onSaveSession: (session: string, changes: IExecutionSessionChanges) => void;
 }
@@ -50,23 +47,6 @@ export default class PipelineExecution extends React.Component<
         ...ConfigEditorPipelineFragment
       }
       ${CONFIG_EDITOR_PIPELINE_FRAGMENT}
-    `,
-
-    PipelineExecutionPipelineRunFragment: gql`
-      fragment PipelineExecutionPipelineRunFragment on PipelineRun {
-        runId
-        status
-        ...PipelineRunFragment
-      }
-
-      ${PipelineRun.fragments.PipelineRunFragment}
-    `,
-
-    PipelineExecutionPipelineRunEventFragment: gql`
-      fragment PipelineExecutionPipelineRunEventFragment on PipelineRunEvent {
-        ...PipelineRunPipelineRunEventFragment
-      }
-      ${PipelineRun.fragments.PipelineRunPipelineRunEventFragment}
     `
   };
 
@@ -107,7 +87,7 @@ export default class PipelineExecution extends React.Component<
   };
 
   render() {
-    const { pipeline, currentRun, currentSession } = this.props;
+    const { pipeline, currentSession } = this.props;
 
     if (!currentSession) {
       return <span />;
@@ -133,7 +113,7 @@ export default class PipelineExecution extends React.Component<
             )}
           </ApolloConsumer>
           <SessionSettingsFooter className="bp3-dark">
-            <PipelineSolidSelector
+            <SolidSelector
               pipelineName={pipeline.name}
               value={currentSession.solidSubset || null}
               onChange={this.onSolidSubsetChange}
@@ -145,15 +125,11 @@ export default class PipelineExecution extends React.Component<
           onMove={(vw: number) => this.setState({ editorVW: vw })}
         />
         <Split>
-          {currentRun ? (
-            <PipelineRun run={currentRun} />
-          ) : (
-            <PipelineRunPreview
-              pipelineName={pipeline.name}
-              solidSubset={currentSession.solidSubset}
-              configCode={currentSession.config}
-            />
-          )}
+          <RunPreview
+            pipelineName={pipeline.name}
+            solidSubset={currentSession.solidSubset}
+            configCode={currentSession.config}
+          />
         </Split>
       </PipelineExecutionWrapper>
     );

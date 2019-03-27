@@ -9,7 +9,7 @@ import {
   IStepState,
   IStepMetadata
 } from "./RunMetadataProvider";
-import { formatElapsedTime } from "../Util";
+import { formatElapsedTime } from "./Util";
 
 interface IExecutionPlanProps {
   executionPlan: ExecutionPlanFragment;
