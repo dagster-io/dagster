@@ -28,8 +28,6 @@ from .test_project.dagster_airflow_demo import (
     define_demo_execution_pipeline,
 )
 
-from .utils import reload_module
-
 IMAGE = 'dagster-airflow-demo'
 
 
@@ -148,7 +146,7 @@ def airflow_test(docker_image, dags_path, plugins_path, host_tmp_dir):
 
         # Necromancy; follows airflow.operators.__init__
         # This reloads airflow.operators so that the import statement below is possible
-        reload_module(airflow.plugins_manager)
+        seven.reload_module(airflow.plugins_manager)
         for operators_module in airflow.plugins_manager.operators_modules:
             sys.modules[operators_module.__name__] = operators_module
             globals()[operators_module._name] = operators_module  # pylint:disable=protected-access
