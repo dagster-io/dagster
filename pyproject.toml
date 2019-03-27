@@ -15,6 +15,6 @@ exclude = '''
   | \.venv
   | python_modules/dagster/dagster/tutorials
   | snapshots
-  | __scaffold\.py
+  | python_modules/dagster-airflow/dagster_airflow_tests/test_project
 )/
 '''

@@ -1,8 +1,11 @@
--   repo: https://github.com/ambv/black
-    rev: stable
+-   repo: "https://github.com/ambv/black"
+    rev: "18.9b0"
     hooks:
     - id: black
-      language_version: python3.6
+      args: ["--fast", "-v", "-S", "-N", "."]
+      language_version: "python3.6"
+      pass_filenames: false
+      always_run: true
       exclude: >
         build
         | buck-out
@@ -17,4 +20,4 @@
         | \.venv
         | python_modules/dagster/dagster/tutorials
         | snapshots
-        | __scaffold\.py
+        | python_modules/dagster-airflow/dagster_airflow_tests/test_project
