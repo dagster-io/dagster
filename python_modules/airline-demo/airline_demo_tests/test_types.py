@@ -83,7 +83,7 @@ def test_spark_data_frame_serialization_s3():
 
     success_key = '/'.join(
         [
-            object_store.root.strip(object_store.bucket).strip('/'),
+            object_store.root.strip('/'),
             'files',
             'intermediates',
             'ingest_csv_to_spark.transform',
