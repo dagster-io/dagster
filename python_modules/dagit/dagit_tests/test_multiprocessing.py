@@ -129,9 +129,12 @@ def test_execution_crash():
     execution_manager.join()
     assert pipeline_run.status == PipelineRunStatus.FAILURE
     last_log = pipeline_run.all_logs()[-1]
-    assert last_log.message == (
-        'Exception: Pipeline execution process for {run_id} unexpectedly exited\n'
-    ).format(run_id=run_id)
+    print(last_log.message)
+    assert last_log.message.startswith(
+        'Exception: Pipeline execution process for {run_id} unexpectedly exited\n'.format(
+            run_id=run_id
+        )
+    )
 
 
 @lambda_solid(
