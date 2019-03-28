@@ -424,7 +424,4 @@ class DauphinRuntimeTypeOrError(dauphin.Union):
 class DauphinPipelineRunOrError(dauphin.Union):
     class Meta:
         name = 'PipelineRunOrError'
-        types = (
-            'PipelineRun',
-            DauphinPipelineRunNotFoundError,
-        )
+        types = ('PipelineRun', DauphinPipelineRunNotFoundError)

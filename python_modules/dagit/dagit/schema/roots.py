@@ -30,10 +30,10 @@ class DauphinQuery(dauphin.ObjectType):
         runtimeTypeName=dauphin.Argument(dauphin.NonNull(dauphin.String)),
     )
     pipelineRuns = dauphin.non_null_list('PipelineRun')
-    
+
     pipelineRunOrError = dauphin.Field(
-        dauphin.NonNull('PipelineRunOrError'),
-        runId=dauphin.NonNull(dauphin.ID))
+        dauphin.NonNull('PipelineRunOrError'), runId=dauphin.NonNull(dauphin.ID)
+    )
 
     isPipelineConfigValid = dauphin.Field(
         dauphin.NonNull('PipelineConfigValidationResult'),
