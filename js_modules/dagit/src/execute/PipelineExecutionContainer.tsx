@@ -1,6 +1,6 @@
 import * as React from "react";
 import gql from "graphql-tag";
-import { Mutation } from "react-apollo";
+import { Mutation, MutationFn } from "react-apollo";
 import * as yaml from "yaml";
 import TabBar from "./TabBar";
 import { showCustomAlert } from "../CustomAlertProvider";
@@ -15,6 +15,7 @@ import {
   IExecutionSessionChanges
 } from "../LocalStorage";
 import PipelineExecution from "./PipelineExecution";
+import ExecutionStartButton from "./ExecutionStartButton";
 import { PipelineExecutionContainerFragment } from "./types/PipelineExecutionContainerFragment";
 import {
   StartPipelineExecution,
@@ -60,9 +61,51 @@ export default class PipelineExecutionContainer extends React.Component<
     this.props.onSave(applyRemoveSession(this.props.data, session));
   };
 
+  handleExecute = async (
+    startPipelineExecution: MutationFn<
+      StartPipelineExecution,
+      StartPipelineExecutionVariables
+    >
+  ) => {
+    const { pipeline } = this.props;
+    if (pipeline === "loading") {
+      alert(
+        "Dagit is still retrieving pipeline info. Please try again in a moment."
+      );
+      return;
+    }
+
+    const variables = this.buildExecutionVariables();
+    if (!variables) return;
+
+    const result = await startPipelineExecution({ variables });
+    if (!result || !result.data) {
+      alert("No data was returned.");
+      return;
+    }
+
+    const obj = result.data.startPipelineExecution;
+
+    if (obj.__typename === "StartPipelineExecutionSuccess") {
+      window.open(`/${pipeline.name}/runs/${obj.run.runId}`, "_blank");
+    } else {
+      let message = `${
+        pipeline.name
+      } cannot not be executed with the provided config.`;
+
+      if ("errors" in obj) {
+        message += ` Please fix the following errors:\n\n${obj.errors
+          .map(error => error.message)
+          .join("\n\n")}`;
+      }
+
+      showCustomAlert({ message });
+    }
+  };
+
   buildExecutionVariables = () => {
     const { currentSession, pipeline } = this.props;
-    if (pipeline === "loading") return;
+    if (!currentSession || pipeline === "loading") return;
 
     let config = {};
     try {
@@ -99,40 +142,11 @@ export default class PipelineExecutionContainer extends React.Component<
               onCreateSession={this.handleCreateSession}
               onRemoveSession={this.handleRemoveSession}
               onSaveSession={this.handleSaveSession}
-              onExecute={async event => {
-                if (!currentSession || pipeline === "loading") return;
-
-                const variables = this.buildExecutionVariables();
-                if (!variables) return;
-
-                const result = await startPipelineExecution({ variables });
-                if (!result || !result.data) {
-                  alert("No data was returned.");
-                  return;
-                }
-
-                const obj = result.data.startPipelineExecution;
-
-                if (obj.__typename === "StartPipelineExecutionSuccess") {
-                  window.open(
-                    `/${pipeline.name}/runs/${obj.run.runId}`,
-                    "_blank"
-                  );
-                } else {
-                  let message = `${
-                    pipeline.name
-                  } cannot not be executed with the provided config.`;
-
-                  if ("errors" in obj) {
-                    message += ` Please fix the following errors:\n\n${obj.errors
-                      .map(error => error.message)
-                      .join("\n\n")}`;
-                  }
-
-                  showCustomAlert({ message });
-                }
-              }}
-            />
+            >
+              <ExecutionStartButton
+                onClick={() => this.handleExecute(startPipelineExecution)}
+              />
+            </TabBar>
             <PipelineExecution
               pipeline={pipeline}
               currentSession={currentSession}

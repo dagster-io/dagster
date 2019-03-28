@@ -1,15 +1,14 @@
 import * as React from "react";
 import { ExecutionTabs, ExecutionTab } from "./ExecutionTabs";
-import ExecutionStartButton from "./ExecutionStartButton";
 import styled from "styled-components";
 import { Colors } from "@blueprintjs/core";
 import { IExecutionSessionChanges, IExecutionSession } from "../LocalStorage";
 import { isEqual, pick } from "lodash";
 
 interface ITabBarProps {
+  children: React.ReactNode;
   currentSession: IExecutionSession;
   sessions: { [name: string]: IExecutionSession };
-  onExecute: (event: React.MouseEvent<HTMLDivElement, MouseEvent>) => void;
   onCreateSession: (initial?: IExecutionSessionChanges) => void;
   onSelectSession: (session: string) => void;
   onRemoveSession: (session: string) => void;
@@ -26,7 +25,7 @@ export default class TabBar extends React.Component<ITabBarProps> {
 
   render() {
     const {
-      onExecute,
+      children,
       sessions,
       currentSession,
       onSelectSession,
@@ -60,7 +59,7 @@ export default class TabBar extends React.Component<ITabBarProps> {
           />
         </ExecutionTabs>
         <div style={{ flex: 1 }} />
-        <ExecutionStartButton onClick={onExecute} />
+        {children}
       </TabBarContainer>
     );
   }
