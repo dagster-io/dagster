@@ -70,9 +70,9 @@ def test_file_system_object_store():
             PipelineDefinition([]), {}, RunConfig(run_id=run_id)
         ) as context:
             object_store.set_object(True, context, Bool.inst(), ['true'])
+            assert object_store.has_object(context, ['true'])
+            assert object_store.get_object(context, Bool.inst(), ['true']) is True
 
-        assert object_store.has_object(context, ['true'])
-        assert object_store.get_object(context, Bool.inst(), ['true']) is True
     finally:
         try:
             shutil.rmtree(object_store.root)
@@ -118,11 +118,14 @@ def test_s3_object_store():
         ) as context:
             object_store.set_object(True, context, Bool.inst(), ['true'])
 
-        assert object_store.has_object(context, ['true'])
-        assert object_store.get_object(context, Bool.inst(), ['true']) is True
+            assert object_store.has_object(context, ['true'])
+            assert object_store.get_object(context, Bool.inst(), ['true']) is True
 
     finally:
-        object_store.rm_object(context, ['true'])
+        with yield_pipeline_execution_context(
+            PipelineDefinition([]), {}, RunConfig(run_id=run_id)
+        ) as context:
+            object_store.rm_object(context, ['true'])
 
 
 @aws
@@ -139,19 +142,22 @@ def test_s3_object_store_with_custom_serializer():
         ) as context:
             object_store.set_object('foo', context, LowercaseString.inst(), ['foo'])
 
-        assert (
-            object_store.s3.get_object(
-                Bucket=object_store.bucket, Key='/'.join([object_store.root] + ['foo'])
-            )['Body']
-            .read()
-            .decode('utf-8')
-            == 'FOO'
-        )
+            assert (
+                object_store.s3.get_object(
+                    Bucket=object_store.bucket, Key='/'.join([object_store.root] + ['foo'])
+                )['Body']
+                .read()
+                .decode('utf-8')
+                == 'FOO'
+            )
 
-        assert object_store.has_object(context, ['foo'])
-        assert object_store.get_object(context, LowercaseString.inst(), ['foo']) == 'foo'
+            assert object_store.has_object(context, ['foo'])
+            assert object_store.get_object(context, LowercaseString.inst(), ['foo']) == 'foo'
     finally:
-        object_store.rm_object(context, ['foo'])
+        with yield_pipeline_execution_context(
+            PipelineDefinition([]), {}, RunConfig(run_id=run_id)
+        ) as context:
+            object_store.rm_object(context, ['foo'])
 
 
 def test_file_system_object_store_with_type_storage_plugin():
@@ -168,11 +174,14 @@ def test_file_system_object_store_with_type_storage_plugin():
         ) as context:
             object_store.set_object('hello', context, String.inst(), ['obj_name'])
 
-        assert object_store.has_object(context, ['obj_name'])
-        assert object_store.get_object(context, String.inst(), ['obj_name']) == 'hello'
+            assert object_store.has_object(context, ['obj_name'])
+            assert object_store.get_object(context, String.inst(), ['obj_name']) == 'hello'
 
     finally:
-        object_store.rm_object(context, ['obj_name'])
+        with yield_pipeline_execution_context(
+            PipelineDefinition([]), {}, RunConfig(run_id=run_id)
+        ) as context:
+            object_store.rm_object(context, ['obj_name'])
 
 
 @aws
@@ -193,8 +202,11 @@ def test_s3_object_store_with_type_storage_plugin():
         ) as context:
             object_store.set_object('hello', context, String.inst(), ['obj_name'])
 
-        assert object_store.has_object(context, ['obj_name'])
-        assert object_store.get_object(context, String.inst(), ['obj_name']) == 'hello'
+            assert object_store.has_object(context, ['obj_name'])
+            assert object_store.get_object(context, String.inst(), ['obj_name']) == 'hello'
 
     finally:
-        object_store.rm_object(context, ['obj_name'])
+        with yield_pipeline_execution_context(
+            PipelineDefinition([]), {}, RunConfig(run_id=run_id)
+        ) as context:
+            object_store.rm_object(context, ['obj_name'])
