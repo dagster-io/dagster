@@ -88,8 +88,8 @@ def test_failure_midstream():
     assert pipeline_result.result_for_solid('A').success
     assert pipeline_result.result_for_solid('B').success
     assert not pipeline_result.result_for_solid('C').success
-
-    assert pipeline_result.result_for_solid('C').failure_data.error_cls_name == 'CheckError'
+    print(pipeline_result.result_for_solid('C').failure_data.error)
+    assert pipeline_result.result_for_solid('C').failure_data.error.cls_name == 'CheckError'
 
 
 def test_do_not_yield_result():

@@ -44,20 +44,12 @@ from .errors import (
     DagsterStepOutputNotFoundError,
 )
 
-from .events import construct_event_logger
+from .events import DagsterEvent, DagsterEventType
+from .events.logging import construct_event_logger
 
 from .execution_plan.create import create_execution_plan_core
-
-
-from .execution_plan.objects import (
-    ExecutionPlan,
-    ExecutionStepEvent,
-    ExecutionStepEventType,
-    StepKind,
-)
-
+from .execution_plan.objects import ExecutionPlan, StepKind
 from .execution_plan.multiprocessing_engine import multiprocess_execute_plan
-
 from .execution_plan.simple_engine import start_inprocess_executor
 
 from .init_context import InitContext, InitResourceContext
@@ -95,7 +87,7 @@ class PipelineExecutionResult(object):
         self.pipeline = check.inst_param(pipeline, 'pipeline', PipelineDefinition)
         self.run_id = check.str_param(run_id, 'run_id')
         self.step_event_list = check.list_param(
-            step_event_list, 'step_event_list', of_type=ExecutionStepEvent
+            step_event_list, 'step_event_list', of_type=DagsterEvent
         )
         self.reconstruct_context = check.callable_param(reconstruct_context, 'reconstruct_context')
 
@@ -215,6 +207,7 @@ class SolidExecutionResult(object):
                         context, result.step_output_data
                     )
                     for result in self.transforms
+                    if result.is_successful_output
                 }
             return values
         else:
@@ -237,7 +230,10 @@ class SolidExecutionResult(object):
 
         if self.success:
             for result in self.transforms:
-                if result.step_output_data.output_name == output_name:
+                if (
+                    result.is_successful_output
+                    and result.step_output_data.output_name == output_name
+                ):
                     with self.reconstruct_context() as context:
                         value = self._get_value(context, result.step_output_data)
                     return value
@@ -264,7 +260,7 @@ class SolidExecutionResult(object):
         for result in itertools.chain(
             self.input_expectations, self.output_expectations, self.transforms
         ):
-            if result.event_type == ExecutionStepEventType.STEP_FAILURE:
+            if result.event_type == DagsterEventType.STEP_FAILURE:
                 return result.step_failure_data
 
 

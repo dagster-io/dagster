@@ -16,7 +16,7 @@ from dagster import (
     check,
     execute_pipeline,
 )
-from dagster.core.events import PipelineEventRecord, EventType
+from dagster.core.events.logging import PipelineEventRecord, EventType
 from dagster.utils.error import serializable_error_info_from_exc_info, SerializableErrorInfo
 from dagster.utils.logging import level_from_string
 from dagster.utils import get_multiprocessing_context

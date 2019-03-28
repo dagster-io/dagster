@@ -16,37 +16,70 @@ snapshots['test_success_whole_execution_plan 1'] = {
         },
         'stepEvents': [
             {
-                '__typename': 'SuccessfulStepOutputEvent',
+                '__typename': 'ExecutionStepStartEvent',
+                'step': {
+                    'key': 'sum_solid.num.input_thunk'
+                }
+            },
+            {
+                '__typename': 'ExecutionStepOutputEvent',
                 'outputName': 'input_thunk_output',
                 'step': {
                     'key': 'sum_solid.num.input_thunk'
                 },
-                'success': True,
                 'valueRepr': '''   num1  num2
 0     1     2
 1     3     4'''
             },
             {
-                '__typename': 'SuccessfulStepOutputEvent',
+                '__typename': 'ExecutionStepSuccessEvent',
+                'step': {
+                    'key': 'sum_solid.num.input_thunk'
+                }
+            },
+            {
+                '__typename': 'ExecutionStepStartEvent',
+                'step': {
+                    'key': 'sum_solid.transform'
+                }
+            },
+            {
+                '__typename': 'ExecutionStepOutputEvent',
                 'outputName': 'result',
                 'step': {
                     'key': 'sum_solid.transform'
                 },
-                'success': True,
                 'valueRepr': '''   num1  num2  sum
 0     1     2    3
 1     3     4    7'''
             },
             {
-                '__typename': 'SuccessfulStepOutputEvent',
+                '__typename': 'ExecutionStepSuccessEvent',
+                'step': {
+                    'key': 'sum_solid.transform'
+                }
+            },
+            {
+                '__typename': 'ExecutionStepStartEvent',
+                'step': {
+                    'key': 'sum_sq_solid.transform'
+                }
+            },
+            {
+                '__typename': 'ExecutionStepOutputEvent',
                 'outputName': 'result',
                 'step': {
                     'key': 'sum_sq_solid.transform'
                 },
-                'success': True,
                 'valueRepr': '''   num1  num2  sum  sum_sq
 0     1     2    3       9
 1     3     4    7      49'''
+            },
+            {
+                '__typename': 'ExecutionStepSuccessEvent',
+                'step': {
+                    'key': 'sum_sq_solid.transform'
+                }
             }
         ]
     }
@@ -61,37 +94,70 @@ snapshots['test_success_whole_execution_plan_with_filesystem_config 1'] = {
         },
         'stepEvents': [
             {
-                '__typename': 'SuccessfulStepOutputEvent',
+                '__typename': 'ExecutionStepStartEvent',
+                'step': {
+                    'key': 'sum_solid.num.input_thunk'
+                }
+            },
+            {
+                '__typename': 'ExecutionStepOutputEvent',
                 'outputName': 'input_thunk_output',
                 'step': {
                     'key': 'sum_solid.num.input_thunk'
                 },
-                'success': True,
                 'valueRepr': '''   num1  num2
 0     1     2
 1     3     4'''
             },
             {
-                '__typename': 'SuccessfulStepOutputEvent',
+                '__typename': 'ExecutionStepSuccessEvent',
+                'step': {
+                    'key': 'sum_solid.num.input_thunk'
+                }
+            },
+            {
+                '__typename': 'ExecutionStepStartEvent',
+                'step': {
+                    'key': 'sum_solid.transform'
+                }
+            },
+            {
+                '__typename': 'ExecutionStepOutputEvent',
                 'outputName': 'result',
                 'step': {
                     'key': 'sum_solid.transform'
                 },
-                'success': True,
                 'valueRepr': '''   num1  num2  sum
 0     1     2    3
 1     3     4    7'''
             },
             {
-                '__typename': 'SuccessfulStepOutputEvent',
+                '__typename': 'ExecutionStepSuccessEvent',
+                'step': {
+                    'key': 'sum_solid.transform'
+                }
+            },
+            {
+                '__typename': 'ExecutionStepStartEvent',
+                'step': {
+                    'key': 'sum_sq_solid.transform'
+                }
+            },
+            {
+                '__typename': 'ExecutionStepOutputEvent',
                 'outputName': 'result',
                 'step': {
                     'key': 'sum_sq_solid.transform'
                 },
-                'success': True,
                 'valueRepr': '''   num1  num2  sum  sum_sq
 0     1     2    3       9
 1     3     4    7      49'''
+            },
+            {
+                '__typename': 'ExecutionStepSuccessEvent',
+                'step': {
+                    'key': 'sum_sq_solid.transform'
+                }
             }
         ]
     }
@@ -106,37 +172,70 @@ snapshots['test_success_whole_execution_plan_with_in_memory_config 1'] = {
         },
         'stepEvents': [
             {
-                '__typename': 'SuccessfulStepOutputEvent',
+                '__typename': 'ExecutionStepStartEvent',
+                'step': {
+                    'key': 'sum_solid.num.input_thunk'
+                }
+            },
+            {
+                '__typename': 'ExecutionStepOutputEvent',
                 'outputName': 'input_thunk_output',
                 'step': {
                     'key': 'sum_solid.num.input_thunk'
                 },
-                'success': True,
                 'valueRepr': '''   num1  num2
 0     1     2
 1     3     4'''
             },
             {
-                '__typename': 'SuccessfulStepOutputEvent',
+                '__typename': 'ExecutionStepSuccessEvent',
+                'step': {
+                    'key': 'sum_solid.num.input_thunk'
+                }
+            },
+            {
+                '__typename': 'ExecutionStepStartEvent',
+                'step': {
+                    'key': 'sum_solid.transform'
+                }
+            },
+            {
+                '__typename': 'ExecutionStepOutputEvent',
                 'outputName': 'result',
                 'step': {
                     'key': 'sum_solid.transform'
                 },
-                'success': True,
                 'valueRepr': '''   num1  num2  sum
 0     1     2    3
 1     3     4    7'''
             },
             {
-                '__typename': 'SuccessfulStepOutputEvent',
+                '__typename': 'ExecutionStepSuccessEvent',
+                'step': {
+                    'key': 'sum_solid.transform'
+                }
+            },
+            {
+                '__typename': 'ExecutionStepStartEvent',
+                'step': {
+                    'key': 'sum_sq_solid.transform'
+                }
+            },
+            {
+                '__typename': 'ExecutionStepOutputEvent',
                 'outputName': 'result',
                 'step': {
                     'key': 'sum_sq_solid.transform'
                 },
-                'success': True,
                 'valueRepr': '''   num1  num2  sum  sum_sq
 0     1     2    3       9
 1     3     4    7      49'''
+            },
+            {
+                '__typename': 'ExecutionStepSuccessEvent',
+                'step': {
+                    'key': 'sum_sq_solid.transform'
+                }
             }
         ]
     }
@@ -151,26 +250,48 @@ snapshots['test_successful_one_part_execute_plan 1'] = {
         },
         'stepEvents': [
             {
-                '__typename': 'SuccessfulStepOutputEvent',
+                '__typename': 'ExecutionStepStartEvent',
+                'step': {
+                    'key': 'sum_solid.num.input_thunk'
+                }
+            },
+            {
+                '__typename': 'ExecutionStepOutputEvent',
                 'outputName': 'input_thunk_output',
                 'step': {
                     'key': 'sum_solid.num.input_thunk'
                 },
-                'success': True,
                 'valueRepr': '''   num1  num2
 0     1     2
 1     3     4'''
             },
             {
-                '__typename': 'SuccessfulStepOutputEvent',
+                '__typename': 'ExecutionStepSuccessEvent',
+                'step': {
+                    'key': 'sum_solid.num.input_thunk'
+                }
+            },
+            {
+                '__typename': 'ExecutionStepStartEvent',
+                'step': {
+                    'key': 'sum_solid.transform'
+                }
+            },
+            {
+                '__typename': 'ExecutionStepOutputEvent',
                 'outputName': 'result',
                 'step': {
                     'key': 'sum_solid.transform'
                 },
-                'success': True,
                 'valueRepr': '''   num1  num2  sum
 0     1     2    3
 1     3     4    7'''
+            },
+            {
+                '__typename': 'ExecutionStepSuccessEvent',
+                'step': {
+                    'key': 'sum_solid.transform'
+                }
             }
         ]
     }
@@ -185,26 +306,48 @@ snapshots['test_successful_two_part_execute_plan 1'] = {
         },
         'stepEvents': [
             {
-                '__typename': 'SuccessfulStepOutputEvent',
+                '__typename': 'ExecutionStepStartEvent',
+                'step': {
+                    'key': 'sum_solid.num.input_thunk'
+                }
+            },
+            {
+                '__typename': 'ExecutionStepOutputEvent',
                 'outputName': 'input_thunk_output',
                 'step': {
                     'key': 'sum_solid.num.input_thunk'
                 },
-                'success': True,
                 'valueRepr': '''   num1  num2
 0     1     2
 1     3     4'''
             },
             {
-                '__typename': 'SuccessfulStepOutputEvent',
+                '__typename': 'ExecutionStepSuccessEvent',
+                'step': {
+                    'key': 'sum_solid.num.input_thunk'
+                }
+            },
+            {
+                '__typename': 'ExecutionStepStartEvent',
+                'step': {
+                    'key': 'sum_solid.transform'
+                }
+            },
+            {
+                '__typename': 'ExecutionStepOutputEvent',
                 'outputName': 'result',
                 'step': {
                     'key': 'sum_solid.transform'
                 },
-                'success': True,
                 'valueRepr': '''   num1  num2  sum
 0     1     2    3
 1     3     4    7'''
+            },
+            {
+                '__typename': 'ExecutionStepSuccessEvent',
+                'step': {
+                    'key': 'sum_solid.transform'
+                }
             }
         ]
     }
@@ -219,15 +362,26 @@ snapshots['test_successful_two_part_execute_plan 2'] = {
         },
         'stepEvents': [
             {
-                '__typename': 'SuccessfulStepOutputEvent',
+                '__typename': 'ExecutionStepStartEvent',
+                'step': {
+                    'key': 'sum_sq_solid.transform'
+                }
+            },
+            {
+                '__typename': 'ExecutionStepOutputEvent',
                 'outputName': 'result',
                 'step': {
                     'key': 'sum_sq_solid.transform'
                 },
-                'success': True,
                 'valueRepr': '''   num1  num2  sum  sum_sq
 0     1     2    3       9
 1     3     4    7      49'''
+            },
+            {
+                '__typename': 'ExecutionStepSuccessEvent',
+                'step': {
+                    'key': 'sum_sq_solid.transform'
+                }
             }
         ]
     }

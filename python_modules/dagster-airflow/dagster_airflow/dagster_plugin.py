@@ -90,22 +90,15 @@ mutation(
           }}
           kind
         }}
-        success
         __typename
-        ... on SuccessfulStepOutputEvent {{
-          step {{
-            key
-          }}
-          success
+        ... on ExecutionStepOutputEvent {{
           outputName
           valueRepr
         }}
-        ... on StepFailureEvent {{
-          step {{
-            key
+        ... on ExecutionStepFailureEvent {{
+          error {{
+              message
           }}
-          success
-          errorMessage
         }}
       }}
     }}

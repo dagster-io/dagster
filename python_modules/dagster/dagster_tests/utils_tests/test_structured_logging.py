@@ -1,6 +1,6 @@
 from dagster.utils.logging import define_structured_logger, DEBUG
 
-from dagster.core.events import (
+from dagster.core.events.logging import (
     EventType,
     construct_event_record,
     LogMessageRecord,

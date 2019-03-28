@@ -11,7 +11,7 @@ import pyrsistent
 from rx import Observable
 
 from dagster import check, seven
-from dagster.core.events import EventRecord, EventType
+from dagster.core.events.logging import EventRecord, EventType
 from dagster.core.execution import ExecutionSelector
 from dagster.core.execution_context import ReexecutionConfig
 from dagster.core.execution_plan.objects import ExecutionPlan

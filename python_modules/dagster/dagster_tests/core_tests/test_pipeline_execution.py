@@ -481,12 +481,15 @@ def test_pipeline_streaming_iterator():
     )
 
     step_event_iterator = execute_pipeline_iterator(pipeline_def)
+    next(step_event_iterator)  # start step
 
     push_one_step_event = next(step_event_iterator)
     assert push_one_step_event.is_successful_output
     assert push_one_step_event.step_output_data.value_repr == '1'
     assert events == [1]
+    next(step_event_iterator)  # success
 
+    next(step_event_iterator)  # start step
     add_one_step_event = next(step_event_iterator)
     assert add_one_step_event.is_successful_output
     assert add_one_step_event.step_output_data.value_repr == '2'
@@ -508,7 +511,7 @@ def test_pipeline_streaming_multiple_outputs():
     )
 
     step_event_iterator = execute_pipeline_iterator(pipeline_def)
-
+    next(step_event_iterator)  # start
     one_output_step_event = next(step_event_iterator)
     assert one_output_step_event.is_successful_output
     assert one_output_step_event.step_output_data.value_repr == '1'

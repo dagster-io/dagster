@@ -1,11 +1,12 @@
 from __future__ import absolute_import
 
 from dagster import check
-from dagster.core.events import EventRecord, EventType
-from dagster.utils.logging import CRITICAL, DEBUG, ERROR, INFO, WARNING, check_valid_level_param
-from dagster.core.execution_plan.objects import ExecutionPlan
+from dagster.core.events.logging import EventRecord, EventType
+from dagster.core.events import DagsterEventType
 
-from dagster.utils.error import SerializableErrorInfo
+from dagster.utils.logging import CRITICAL, DEBUG, ERROR, INFO, WARNING, check_valid_level_param
+from dagster.core.execution_plan.objects import ExecutionPlan, StepFailureData
+
 from dagit import pipeline_run_storage
 from dagit.pipeline_run_storage import PipelineRunStatus, PipelineRun
 from dagit.schema import dauphin, model
@@ -195,32 +196,40 @@ class DauphinPipelineProcessStartedEvent(dauphin.ObjectType):
     process_id = dauphin.NonNull(dauphin.Int)
 
 
+class DauphinStepEvent(dauphin.Interface):
+    class Meta:
+        name = 'StepEvent'
+
+    step = dauphin.Field('ExecutionStep')
+
+
 class DauphinExecutionStepStartEvent(dauphin.ObjectType):
     class Meta:
         name = 'ExecutionStepStartEvent'
-        interfaces = (DauphinMessageEvent,)
+        interfaces = (DauphinMessageEvent, DauphinStepEvent)
 
 
 class DauphinExecutionStepOutputEvent(dauphin.ObjectType):
     class Meta:
         name = 'ExecutionStepOutputEvent'
-        interfaces = (DauphinMessageEvent,)
+        interfaces = (DauphinMessageEvent, DauphinStepEvent)
 
     output_name = dauphin.NonNull(dauphin.String)
     storage_mode = dauphin.NonNull(dauphin.String)
     storage_object_id = dauphin.NonNull(dauphin.String)
+    value_repr = dauphin.NonNull(dauphin.String)
 
 
 class DauphinExecutionStepSuccessEvent(dauphin.ObjectType):
     class Meta:
         name = 'ExecutionStepSuccessEvent'
-        interfaces = (DauphinMessageEvent,)
+        interfaces = (DauphinMessageEvent, DauphinStepEvent)
 
 
 class DauphinExecutionStepFailureEvent(dauphin.ObjectType):
     class Meta:
         name = 'ExecutionStepFailureEvent'
-        interfaces = (DauphinMessageEvent,)
+        interfaces = (DauphinMessageEvent, DauphinStepEvent)
 
     error = dauphin.NonNull('PythonError')
 
@@ -300,23 +309,37 @@ class DauphinPipelineRunEvent(dauphin.Union):
             return graphene_info.schema.type_named('PipelineProcessStartedEvent')(
                 pipeline=dauphin_pipeline, process_id=event.process_id, **basic_params
             )
-        elif event.event_type == EventType.EXECUTION_PLAN_STEP_START:
-            return graphene_info.schema.type_named('ExecutionStepStartEvent')(**basic_params)
-        elif event.event_type == EventType.EXECUTION_PLAN_STEP_SUCCESS:
-            return graphene_info.schema.type_named('ExecutionStepSuccessEvent')(**basic_params)
-        elif event.event_type == EventType.EXECUTION_PLAN_STEP_OUTPUT:
-            return graphene_info.schema.type_named('ExecutionStepOutputEvent')(
-                output_name=event.output_name,
-                storage_mode=event.storage_mode,
-                storage_object_id=event.storage_object_id,
-                **basic_params
-            )
-        elif event.event_type == EventType.EXECUTION_PLAN_STEP_FAILURE:
-            check.inst(event.error_info, SerializableErrorInfo)
-            return graphene_info.schema.type_named('ExecutionStepFailureEvent')(
-                error=graphene_info.schema.type_named('PythonError')(event.error_info),
-                **basic_params
-            )
+
+        elif event.event_type == EventType.DAGSTER_EVENT:
+            dagster_event = event.dagster_event
+            if dagster_event.event_type == DagsterEventType.STEP_START:
+                return graphene_info.schema.type_named('ExecutionStepStartEvent')(**basic_params)
+
+            elif dagster_event.event_type == DagsterEventType.STEP_SUCCESS:
+                return graphene_info.schema.type_named('ExecutionStepSuccessEvent')(**basic_params)
+            elif dagster_event.event_type == DagsterEventType.STEP_OUTPUT:
+                output_data = event.dagster_event.step_output_data
+                return graphene_info.schema.type_named('ExecutionStepOutputEvent')(
+                    output_name=output_data.output_name,
+                    storage_mode=output_data.storage_mode.value,
+                    storage_object_id=output_data.storage_object_id,
+                    **basic_params
+                )
+            elif dagster_event.event_type == DagsterEventType.STEP_FAILURE:
+                check.inst(dagster_event.step_failure_data, StepFailureData)
+                return graphene_info.schema.type_named('ExecutionStepFailureEvent')(
+                    error=graphene_info.schema.type_named('PythonError')(
+                        dagster_event.step_failure_data.error
+                    ),
+                    **basic_params
+                )
+            else:
+                raise Exception(
+                    ('Unknown DAGSTER_EVENT type {inner_type} found in logs').format(
+                        inner_type=dagster_event.event_type
+                    )
+                )
+
         elif event.event_type == EventType.STEP_MATERIALIZATION:
             return graphene_info.schema.type_named('StepMaterializationEvent')(
                 file_name=event.file_name, file_location=event.file_location, **basic_params

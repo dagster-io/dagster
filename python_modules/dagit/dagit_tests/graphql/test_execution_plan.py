@@ -166,17 +166,17 @@ def test_successful_one_part_execute_plan(snapshot):
     assert query_result['__typename'] == 'ExecutePlanSuccess'
     assert query_result['pipeline']['name'] == 'pandas_hello_world'
     assert query_result['hasFailures'] is False
-    step_events = {
-        step_event['step']['key']: step_event for step_event in query_result['stepEvents']
-    }
-    assert 'sum_solid.transform' in step_events
-    assert step_events['sum_solid.transform']['__typename'] == 'SuccessfulStepOutputEvent'
-    assert step_events['sum_solid.transform']['success'] is True
-    assert step_events['sum_solid.transform']['outputName'] == 'result'
+
+    step_events = query_result['stepEvents']
+    # 0-2 are sum_solid.num.input_thunk
+    assert step_events[3]['step']['key'] == 'sum_solid.transform'
+    assert step_events[4]['__typename'] == 'ExecutionStepOutputEvent'
+    assert step_events[4]['outputName'] == 'result'
     expected_value_repr = '''   num1  num2  sum
 0     1     2    3
 1     3     4    7'''
-    assert step_events['sum_solid.transform']['valueRepr'] == expected_value_repr
+    assert step_events[4]['valueRepr'] == expected_value_repr
+    assert step_events[5]['__typename'] == 'ExecutionStepSuccessEvent'
 
     snapshot.assert_match(result.data)
 
@@ -219,13 +219,12 @@ def test_successful_two_part_execute_plan(snapshot):
     assert query_result['__typename'] == 'ExecutePlanSuccess'
     assert query_result['pipeline']['name'] == 'pandas_hello_world'
     assert query_result['hasFailures'] is False
-    step_events = {
-        step_event['step']['key']: step_event for step_event in query_result['stepEvents']
-    }
-    assert 'sum_sq_solid.transform' in step_events
-    assert step_events['sum_sq_solid.transform']['__typename'] == 'SuccessfulStepOutputEvent'
-    assert step_events['sum_sq_solid.transform']['success'] is True
-    assert step_events['sum_sq_solid.transform']['outputName'] == 'result'
+    step_events = query_result['stepEvents']
+    assert step_events[0]['__typename'] == 'ExecutionStepStartEvent'
+    assert step_events[0]['step']['key'] == 'sum_sq_solid.transform'
+    assert step_events[1]['__typename'] == 'ExecutionStepOutputEvent'
+    assert step_events[1]['outputName'] == 'result'
+    assert step_events[2]['__typename'] == 'ExecutionStepSuccessEvent'
 
     snapshot.assert_match(result_two.data)
 
@@ -303,14 +302,15 @@ mutation (
             hasFailures
             stepEvents {
                 __typename
-                success
                 step { key }
-                ... on SuccessfulStepOutputEvent {
+                ... on ExecutionStepOutputEvent {
                     outputName
                     valueRepr
                 }
-                ... on StepFailureEvent {
-                    errorMessage
+                ... on ExecutionStepFailureEvent {
+                    error {
+                        message
+                    }
                 }
             }
         }

@@ -40,15 +40,16 @@ def test_execution_plan_simple_two_steps():
     assert execution_plan.get_step_by_key('add_one.transform')
 
     step_events = execute_plan(execution_plan)
-    assert len(step_events) == 2
+    # start, out, success, start, out, success
+    assert len(step_events) == 6
 
-    assert step_events[0].step_key == 'return_one.transform'
-    assert step_events[0].is_successful_output
-    assert step_events[0].step_output_data.value_repr == '1'
-
-    assert step_events[1].step_key == 'add_one.transform'
+    assert step_events[1].step_key == 'return_one.transform'
     assert step_events[1].is_successful_output
-    assert step_events[1].step_output_data.value_repr == '2'
+    assert step_events[1].step_output_data.value_repr == '1'
+
+    assert step_events[4].step_key == 'add_one.transform'
+    assert step_events[4].is_successful_output
+    assert step_events[4].step_output_data.value_repr == '2'
 
 
 def test_execution_plan_two_outputs():
@@ -63,12 +64,12 @@ def test_execution_plan_two_outputs():
 
     step_events = execute_plan(execution_plan)
 
-    assert step_events[0].step_key == 'return_one_two.transform'
-    assert step_events[0].step_output_data.value_repr == '1'
-    assert step_events[0].step_output_data.output_name == 'num_one'
     assert step_events[1].step_key == 'return_one_two.transform'
-    assert step_events[1].step_output_data.value_repr == '2'
-    assert step_events[1].step_output_data.output_name == 'num_two'
+    assert step_events[1].step_output_data.value_repr == '1'
+    assert step_events[1].step_output_data.output_name == 'num_one'
+    assert step_events[2].step_key == 'return_one_two.transform'
+    assert step_events[2].step_output_data.value_repr == '2'
+    assert step_events[2].step_output_data.output_name == 'num_two'
 
 
 def test_reentrant_execute_plan():
@@ -86,6 +87,6 @@ def test_reentrant_execute_plan():
     step_events = execute_plan(execution_plan, run_config=RunConfig(tags={'foo': 'bar'}))
 
     assert called['yup']
-    assert len(step_events) == 1
+    assert len(step_events) == 3
 
     assert step_events[0].tags['foo'] == 'bar'
