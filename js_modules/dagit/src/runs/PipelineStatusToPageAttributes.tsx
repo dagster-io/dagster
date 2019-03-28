@@ -1,5 +1,5 @@
 import * as React from "react";
-import { PipelineRunStatus } from "src/types/globalTypes";
+import { PipelineRunStatus } from "../types/globalTypes";
 
 const link = (document.querySelector("link[rel*='icon']") ||
   document.createElement("link")) as HTMLLinkElement;
@@ -9,6 +9,13 @@ document.getElementsByTagName("head")[0].appendChild(link);
 
 const title = document.querySelector("title") as HTMLTitleElement;
 
+const FaviconsForStatus = {
+  [PipelineRunStatus.FAILURE]: "/favicon_failed.ico",
+  [PipelineRunStatus.STARTED]: "/favicon_pending.ico",
+  [PipelineRunStatus.NOT_STARTED]: "/favicon_pending.ico",
+  [PipelineRunStatus.SUCCESS]: "/favicon_success.ico"
+};
+
 export class PipelineStatusToPageAttributes extends React.Component<{
   pipelineName: string;
   runId: string;
@@ -17,21 +24,21 @@ export class PipelineStatusToPageAttributes extends React.Component<{
   componentDidMount() {
     this.updatePageAttributes();
   }
+
   componentDidUpdate() {
     this.updatePageAttributes();
+  }
+
+  componentWillUnmount() {
+    link.href = "/favicon.ico";
+    title.textContent = "Dagit";
   }
 
   updatePageAttributes() {
     const { status, pipelineName, runId } = this.props;
 
     title.textContent = `${pipelineName} ${runId} [${status}]`;
-    link.href =
-      {
-        [PipelineRunStatus.FAILURE]: "/favicon_failed.ico",
-        [PipelineRunStatus.STARTED]: "/favicon_pending.ico",
-        [PipelineRunStatus.NOT_STARTED]: "/favicon_pending.ico",
-        [PipelineRunStatus.SUCCESS]: "/favicon_success.ico"
-      }[this.props.status] || "/favicon.ico";
+    link.href = FaviconsForStatus[this.props.status] || "/favicon.ico";
   }
 
   render() {
