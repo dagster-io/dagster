@@ -473,21 +473,26 @@ def yield_pipeline_execution_context(pipeline_def, environment_dict, run_config)
             execution_context,
             run_config.run_id,
         ) as resources:
+            system_pipeline_context = None
+            try:
+                system_pipeline_context = construct_system_pipeline_execution_context(
+                    run_config,
+                    execution_context,
+                    pipeline_def,
+                    resources,
+                    environment_config,
+                    run_storage,
+                    construct_intermediates_manager(
+                        run_config, init_context, environment_config, pipeline_def
+                    ),
+                )
+                yield system_pipeline_context
+            finally:
+                if system_pipeline_context:
+                    system_pipeline_context.mark_closed()
 
-            yield construct_pipeline_execution_context(
-                run_config,
-                execution_context,
-                pipeline_def,
-                resources,
-                environment_config,
-                run_storage,
-                construct_intermediates_manager(
-                    run_config, init_context, environment_config, pipeline_def
-                ),
-            )
 
-
-def construct_pipeline_execution_context(
+def construct_system_pipeline_execution_context(
     run_config,
     execution_context,
     pipeline,

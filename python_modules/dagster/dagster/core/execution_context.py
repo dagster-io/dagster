@@ -101,12 +101,20 @@ class RunConfig(
         return RunConfig(**merge_dicts(self._asdict(), {'tags': new_tags}))
 
 
+class ClosedState:
+    def __init__(self):
+        self.is_closed = False
+
+    def mark_closed(self):
+        self.is_closed = True
+
+
 class SystemPipelineExecutionContextData(
     namedtuple(
         '_SystemPipelineExecutionContextData',
         (
             'run_config resources environment_config pipeline_def '
-            'run_storage intermediates_manager'
+            'run_storage intermediates_manager closed_state'
         ),
     )
 ):
@@ -139,6 +147,7 @@ class SystemPipelineExecutionContextData(
             intermediates_manager=check.inst_param(
                 intermediates_manager, 'intermediates_manager', IntermediatesManager
             ),
+            closed_state=ClosedState(),
         )
 
     @property
@@ -236,6 +245,17 @@ class SystemPipelineExecutionContext(object):
     @property
     def intermediates_manager(self):
         return self._pipeline_context_data.intermediates_manager
+
+    @property
+    def is_open(self):
+        return not self.is_closed
+
+    @property
+    def is_closed(self):
+        return self._pipeline_context_data.closed_state.is_closed
+
+    def mark_closed(self):
+        return self._pipeline_context_data.closed_state.mark_closed()
 
 
 class SystemStepExecutionContext(SystemPipelineExecutionContext):

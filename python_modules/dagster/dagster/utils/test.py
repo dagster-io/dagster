@@ -17,7 +17,7 @@ from dagster import (
 from dagster.core.execution import (
     ExecutionContext,
     RunConfig,
-    construct_pipeline_execution_context,
+    construct_system_pipeline_execution_context,
     create_environment_config,
 )
 
@@ -30,7 +30,7 @@ from dagster.core.utility_solids import define_stub_solid
 def create_test_pipeline_execution_context(loggers=None, resources=None, tags=None):
     run_id = str(uuid.uuid4())
     pipeline_def = PipelineDefinition(name='test_legacy_context', solids=[])
-    return construct_pipeline_execution_context(
+    return construct_system_pipeline_execution_context(
         run_config=RunConfig(run_id, tags=tags, loggers=loggers),
         pipeline=pipeline_def,
         execution_context=ExecutionContext(),
