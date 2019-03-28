@@ -1,9 +1,8 @@
 import os
-import shutil
 import uuid
 
+import botocore
 import pyspark
-
 
 from dagster import (
     DependencyDefinition,
@@ -94,5 +93,5 @@ def test_spark_data_frame_serialization_s3():
     )
     try:
         assert object_store.s3.get_object(Bucket=object_store.bucket, Key=success_key)
-    except botocore.errorfactory.NoSuchKey:
+    except botocore.exceptions.ClientError:
         raise Exception('Couldn\'t find object at {success_key}'.format(success_key=success_key))
