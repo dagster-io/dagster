@@ -20650,8 +20650,7 @@ SystemPipelineExecutionContextCreationData although that seemed excessively verb
 <code class="descname">transformed_value</code><span class="sig-paren">(</span><em>output_name=\'result\'</em><span class="sig-paren">)</span><a class="headerlink" href="#dagster.SolidExecutionResult.transformed_value" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns transformed value either for DEFAULT_OUTPUT or for the output
 given as output_name. Returns None if execution result isn’t a success.</p>
-<p>Looks up entry via transformed_values which will reconstruct the pipeline context
-on first invocation.</p>
+<p>Reconstructs the pipeline context to materialize value.</p>
 </dd></dl>
 
 <dl class="attribute">
@@ -20659,8 +20658,7 @@ on first invocation.</p>
 <code class="descname">transformed_values</code><a class="headerlink" href="#dagster.SolidExecutionResult.transformed_values" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return dictionary of transformed results, with keys being output names.
 Returns None if execution result isn’t a success.</p>
-<p>Reconstructs the pipeline context to materialize values. Results are memoized so
-only the first call will reconstruct the context.</p>
+<p>Reconstructs the pipeline context to materialize values.</p>
 </dd></dl>
 
 </dd></dl>
