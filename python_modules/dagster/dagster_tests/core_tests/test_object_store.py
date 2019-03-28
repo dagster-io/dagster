@@ -32,26 +32,26 @@ class LowercaseString(RuntimeType):
 class FancyStringFilesystemTypeStoragePlugin(TypeStoragePlugin):  # pylint:disable=no-init
     @classmethod
     def set_object(cls, object_store, obj, context, runtime_type, paths):
-        check.subclass_param(object_store, 'object_store', FileSystemObjectStore)
+        check.inst_param(object_store, 'object_store', FileSystemObjectStore)
         paths.append(obj)
         mkdir_p(os.path.join(object_store.root, *paths))
 
     @classmethod
     def get_object(cls, object_store, context, runtime_type, paths):
-        check.subclass_param(object_store, 'object_store', FileSystemObjectStore)
+        check.inst_param(object_store, 'object_store', FileSystemObjectStore)
         return os.listdir(os.path.join(object_store.root, *paths))[0]
 
 
 class FancyStringS3TypeStoragePlugin(TypeStoragePlugin):  # pylint:disable=no-init
     @classmethod
     def set_object(cls, object_store, obj, context, runtime_type, paths):
-        check.subclass_param(object_store, 'object_store', S3ObjectStore)
+        check.inst_param(object_store, 'object_store', S3ObjectStore)
         paths.append(obj)
         return object_store.set_object('', context, runtime_type, paths)
 
     @classmethod
     def get_object(cls, object_store, context, runtime_type, paths):
-        check.subclass_param(object_store, 'object_store', S3ObjectStore)
+        check.inst_param(object_store, 'object_store', S3ObjectStore)
         return object_store.s3.list_objects(
             Bucket=object_store.bucket, Prefix=object_store.key_for_paths(paths)
         )['Contents'][0]['Key'].split('/')[-1]
