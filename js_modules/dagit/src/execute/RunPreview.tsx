@@ -86,12 +86,12 @@ export class RunPreview extends React.Component<IRunPreviewProps> {
 const NonIdealWrap = styled.div`
   display: flex;
   flex-direction: column;
+  padding: 20px;
   padding-top: 12vh;
   overflow: scroll;
 `;
 const ErrorsWrap = styled.div`
   padding-top: 2vh;
-  margin: 20px;
   font-size: 0.9em;
   color: ${Colors.BLACK};
 `;
