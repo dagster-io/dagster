@@ -45,18 +45,18 @@ const DEFAULT_SESSION: IExecutionSession = {
 };
 
 export function applySelectSession(data: IStorageData, key: string) {
-  data.current = key;
-  return data;
+  return { ...data, current: key };
 }
 
 export function applyRemoveSession(data: IStorageData, key: string) {
-  const idx = Object.keys(data.sessions).indexOf(key);
-  delete data.sessions[key];
-  if (data.current === key) {
-    const remainingKeys = Object.keys(data.sessions);
-    data.current = remainingKeys[idx] || remainingKeys[0];
+  const next = { current: data.current, sessions: { ...data.sessions } };
+  const idx = Object.keys(next.sessions).indexOf(key);
+  delete next.sessions[key];
+  if (next.current === key) {
+    const remainingKeys = Object.keys(next.sessions);
+    next.current = remainingKeys[idx] || remainingKeys[0];
   }
-  return data;
+  return next;
 }
 
 export function applyChangesToSession(
@@ -68,8 +68,11 @@ export function applyChangesToSession(
   if (changes.config && changes.config !== saved.config && saved.runId) {
     changes.configChangedSinceRun = true;
   }
-  Object.assign(saved, changes);
-  return data;
+
+  return {
+    current: data.current,
+    sessions: { ...data.sessions, [key]: { ...saved, ...changes } }
+  };
 }
 
 export function applyCreateSession(
@@ -77,12 +80,17 @@ export function applyCreateSession(
   initial: IExecutionSessionChanges = {}
 ) {
   const key = `s${Date.now()}`;
-  data.sessions[key] = Object.assign({}, DEFAULT_SESSION, initial, {
-    key,
-    configChangedSinceRun: false
-  });
-  data.current = key;
-  return data;
+
+  return {
+    current: key,
+    sessions: {
+      ...data.sessions,
+      [key]: Object.assign({}, DEFAULT_SESSION, initial, {
+        configChangedSinceRun: false,
+        key
+      })
+    }
+  };
 }
 
 // StorageProvider component that vends `IStorageData` via a render prop

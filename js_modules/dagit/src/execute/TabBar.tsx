@@ -35,10 +35,6 @@ export default class TabBar extends React.Component<ITabBarProps> {
       onCreateSession
     } = this.props;
 
-    const openRunIds = Object.keys(sessions)
-      .map(key => sessions[key].runId)
-      .filter(s => !!s) as string[];
-
     return (
       <TabBarContainer className="bp3-dark">
         <ExecutionTabs>
