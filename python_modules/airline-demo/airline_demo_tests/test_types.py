@@ -92,6 +92,7 @@ def test_spark_data_frame_serialization_s3():
             '_SUCCESS',
         ]
     )
-    assert object_store.s3.get_object(
-        Bucket=object_store.bucket, Key=success_key
-    ), 'Couldn\'t find object at {success_key}'.format(success_key=success_key)
+    try:
+        assert object_store.s3.get_object(Bucket=object_store.bucket, Key=success_key)
+    except botocore.errorfactory.NoSuchKey:
+        raise Exception('Couldn\'t find object at {success_key}'.format(success_key=success_key))
