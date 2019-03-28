@@ -22,6 +22,4 @@ def docker_compose_db():
 
     with pushd(script_relative_path('../')):
         subprocess.check_output(['docker-compose', 'stop', 'db'])
-
-
-subprocess.check_output(['docker-compose', 'rm', '-f', 'db'])
+        subprocess.check_output(['docker-compose', 'rm', '-f', 'db'])
