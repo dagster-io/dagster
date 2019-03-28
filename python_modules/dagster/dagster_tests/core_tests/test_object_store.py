@@ -81,7 +81,7 @@ def test_s3_object_store():
 
     # FIXME need a dedicated test bucket
     object_store = S3ObjectStore(run_id=run_id, s3_bucket='dagster-airflow-scratch')
-    assert object_store.root == '/'.join(['dagster-airflow-scratch', 'runs', run_id, 'files'])
+    assert object_store.root == '/'.join(['dagster', 'runs', run_id, 'files'])
 
     try:
         with yield_pipeline_execution_context(
