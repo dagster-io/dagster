@@ -49,6 +49,7 @@ class TypeStoragePlugin(six.with_metaclass(ABCMeta)):  # pylint: disable=no-init
 
 class ObjectStore(six.with_metaclass(ABCMeta)):
     def __init__(self, types_to_register=None):
+        print(f'\n********* Using type_registry: {types_to_register}')
         types_to_register = check.opt_dict_param(
             types_to_register,
             'types_to_register',
@@ -152,7 +153,7 @@ class FileSystemObjectStore(ObjectStore):
 
     def has_object(self, context, paths):  # pylint: disable=unused-argument
         target_path = os.path.join(self.root, *paths)
-        return os.path.isfile(target_path)
+        return os.path.exists(target_path)
 
     def rm_object(self, context, paths):  # pylint: disable=unused-argument
         target_path = os.path.join(self.root, *paths)
