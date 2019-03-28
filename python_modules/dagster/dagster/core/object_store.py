@@ -195,7 +195,7 @@ class S3ObjectStore(ObjectStore):
 
         self.s3.head_bucket(Bucket=self.bucket)
 
-        self.root = 'dagster/runs/{run_id}/files'.format(bucket=self.bucket, run_id=self.run_id)
+        self.root = 'dagster/runs/{run_id}/files'.format(run_id=self.run_id)
         self.storage_mode = RunStorageMode.S3
 
         super(S3ObjectStore, self).__init__(types_to_register)
