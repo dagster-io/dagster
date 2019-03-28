@@ -24,19 +24,21 @@ class SparkDataFrameS3StoragePlugin(TypeStoragePlugin):  # pylint: disable=no-in
     @classmethod
     def set_object(cls, object_store, obj, _context, _runtime_type, paths):
         target_path = object_store.key_for_paths(paths)
-        obj.write.parquet('s3a://' + target_path)
+        obj.write.parquet(object_store.url_for_paths(paths, protocol='s3a://'))
         return target_path
 
     @classmethod
     def get_object(cls, object_store, context, _runtime_type, paths):
-        return context.resources.spark.read.parquet('s3a://' + object_store.key_for_paths(paths))
+        return context.resources.spark.read.parquet(
+            object_store.url_for_paths(paths, protocol='s3a://')
+        )
 
 
 class SparkDataFrameFilesystemStoragePlugin(TypeStoragePlugin):  # pylint: disable=no-init
     @classmethod
     def set_object(cls, object_store, obj, _context, _runtime_type, paths):
         target_path = get_valid_target_path(object_store.root, paths)
-        obj.write.parquet('file://' + target_path)
+        obj.write.parquet(object_store.url_for_paths(paths))
         return target_path
 
     @classmethod

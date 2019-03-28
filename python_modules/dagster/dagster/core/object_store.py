@@ -93,8 +93,10 @@ class ObjectStore(six.with_metaclass(ABCMeta)):
         return self.set_object(obj, context, runtime_type, paths)
 
     def get_value(self, context, runtime_type, paths):
-        if runtime_type in self.TYPE_REGISTRY:
-            return self.TYPE_REGISTRY[runtime_type].get_object(self, context, runtime_type, paths)
+        if runtime_type.name is not None and runtime_type.name in self.TYPE_REGISTRY:
+            return self.TYPE_REGISTRY[runtime_type.name].get_object(
+                self, context, runtime_type, paths
+            )
         return self.get_object(context, runtime_type, paths)
 
 
@@ -121,6 +123,9 @@ class FileSystemObjectStore(ObjectStore):
         self.root = get_run_files_directory(run_id)
 
         super(FileSystemObjectStore, self).__init__(types_to_register)
+
+    def url_for_paths(self, paths):
+        return 'file:///' + '/'.join([self.root] + paths)
 
     def set_object(self, obj, context, runtime_type, paths):  # pylint: disable=unused-argument
         check.inst_param(context, 'context', SystemPipelineExecutionContext)
@@ -193,10 +198,13 @@ class S3ObjectStore(ObjectStore):
 
         self.s3.head_bucket(Bucket=self.bucket)
 
-        self.root = '{bucket}/runs/{run_id}/files'.format(bucket=self.bucket, run_id=self.run_id)
+        self.root = 'dagster/runs/{run_id}/files'.format(run_id=self.run_id)
         self.storage_mode = RunStorageMode.S3
 
         super(S3ObjectStore, self).__init__(types_to_register)
+
+    def url_for_paths(self, paths, protocol='s3://'):
+        return protocol + self.bucket + '/' + self.key_for_paths(paths)
 
     def key_for_paths(self, paths):
         return '/'.join([self.root] + paths)

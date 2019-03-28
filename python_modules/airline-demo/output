@@ -1,0 +1,111 @@
+============================= test session starts ==============================
+platform darwin -- Python 3.6.8, pytest-4.0.2, py-1.8.0, pluggy-0.9.0 -- /Users/max/.virtualenvs/dagster/bin/python3
+cachedir: .pytest_cache
+rootdir: /Users/max/dev/dagster/python_modules/airline-demo, inifile:
+plugins: snapshottest-0.5.0, dependency-0.4.0, cov-2.6.0
+collecting ... collected 16 items
+
+airline_demo_tests/test_airflow.py::TestInMemoryAirflow_0IngestExecution::test_airflow_run_ingest_pipeline 2019-03-28 10:36:42 WARN  NativeCodeLoader:62 - Unable to load native-hadoop library for your platform... using builtin-java classes where applicable
+[2019-03-28 10:36:46,754] {credentials.py:925} INFO - Found credentials in environment variables.
+[2019-03-28 10:36:49,095] {dagster_plugin.py:187} INFO - Starting docker container from image airline-demo-airflow
+[2019-03-28 10:36:55,967] {dagster_plugin.py:231} INFO - Ivy Default Cache set to: /root/.ivy2/cache
+[2019-03-28 10:36:55,968] {dagster_plugin.py:231} INFO - The jars for the packages stored in: /root/.ivy2/jars
+[2019-03-28 10:36:56,037] {dagster_plugin.py:231} INFO - :: loading settings :: url = jar:file:/usr/local/lib/python3.7/site-packages/pyspark/jars/ivy-2.4.0.jar!/org/apache/ivy/core/settings/ivysettings.xml
+[2019-03-28 10:36:56,282] {dagster_plugin.py:231} INFO - com.databricks#spark-avro_2.11 added as a dependency
+[2019-03-28 10:36:56,282] {dagster_plugin.py:231} INFO - com.databricks#spark-redshift_2.11 added as a dependency
+[2019-03-28 10:36:56,282] {dagster_plugin.py:231} INFO - com.databricks#spark-csv_2.11 added as a dependency
+[2019-03-28 10:36:56,283] {dagster_plugin.py:231} INFO - org.postgresql#postgresql added as a dependency
+[2019-03-28 10:36:56,284] {dagster_plugin.py:231} INFO - org.apache.hadoop#hadoop-aws added as a dependency
+[2019-03-28 10:36:56,284] {dagster_plugin.py:231} INFO - com.amazonaws#aws-java-sdk added as a dependency
+[2019-03-28 10:36:56,288] {dagster_plugin.py:231} INFO - :: resolving dependencies :: org.apache.spark#spark-submit-parent-796bf9e1-3120-4c13-ad11-72960e890c2c;1.0
+[2019-03-28 10:36:56,288] {dagster_plugin.py:231} INFO - confs: [default]
+[2019-03-28 10:36:57,203] {dagster_plugin.py:231} INFO - found com.databricks#spark-avro_2.11;3.0.0 in central
+[2019-03-28 10:36:57,471] {dagster_plugin.py:231} INFO - found org.slf4j#slf4j-api;1.7.5 in central
+[2019-03-28 10:36:57,842] {dagster_plugin.py:231} INFO - found org.apache.avro#avro;1.7.6 in central
+[2019-03-28 10:36:57,940] {dagster_plugin.py:231} INFO - found org.codehaus.jackson#jackson-core-asl;1.9.13 in central
+[2019-03-28 10:36:58,049] {dagster_plugin.py:231} INFO - found org.codehaus.jackson#jackson-mapper-asl;1.9.13 in central
+[2019-03-28 10:36:58,259] {dagster_plugin.py:231} INFO - found com.thoughtworks.paranamer#paranamer;2.3 in central
+[2019-03-28 10:36:58,396] {dagster_plugin.py:231} INFO - found org.xerial.snappy#snappy-java;1.0.5 in central
+[2019-03-28 10:36:58,681] {dagster_plugin.py:231} INFO - found org.apache.commons#commons-compress;1.4.1 in central
+[2019-03-28 10:36:58,759] {dagster_plugin.py:231} INFO - found org.tukaani#xz;1.0 in central
+[2019-03-28 10:36:58,840] {dagster_plugin.py:231} INFO - found com.databricks#spark-redshift_2.11;2.0.1 in central
+[2019-03-28 10:36:58,905] {dagster_plugin.py:231} INFO - found com.eclipsesource.minimal-json#minimal-json;0.9.4 in central
+[2019-03-28 10:36:58,982] {dagster_plugin.py:231} INFO - found com.databricks#spark-csv_2.11;1.5.0 in central
+[2019-03-28 10:36:59,209] {dagster_plugin.py:231} INFO - found org.apache.commons#commons-csv;1.1 in central
+[2019-03-28 10:36:59,271] {dagster_plugin.py:231} INFO - found com.univocity#univocity-parsers;1.5.1 in central
+[2019-03-28 10:36:59,470] {dagster_plugin.py:231} INFO - found org.postgresql#postgresql;42.2.5 in central
+[2019-03-28 10:36:59,708] {dagster_plugin.py:231} INFO - found org.apache.hadoop#hadoop-aws;2.6.5 in central
+[2019-03-28 10:36:59,893] {dagster_plugin.py:231} INFO - found org.apache.hadoop#hadoop-common;2.6.5 in central
+[2019-03-28 10:36:59,976] {dagster_plugin.py:231} INFO - found org.apache.hadoop#hadoop-annotations;2.6.5 in central
+[2019-03-28 10:37:00,138] {dagster_plugin.py:231} INFO - found com.google.guava#guava;11.0.2 in central
+[2019-03-28 10:37:00,305] {dagster_plugin.py:231} INFO - found com.google.code.findbugs#jsr305;1.3.9 in central
+[2019-03-28 10:37:00,493] {dagster_plugin.py:231} INFO - found commons-cli#commons-cli;1.2 in central
+[2019-03-28 10:37:00,554] {dagster_plugin.py:231} INFO - found org.apache.commons#commons-math3;3.1.1 in central
+[2019-03-28 10:37:00,716] {dagster_plugin.py:231} INFO - found xmlenc#xmlenc;0.52 in central
+[2019-03-28 10:37:00,807] {dagster_plugin.py:231} INFO - found commons-httpclient#commons-httpclient;3.1 in central
+[2019-03-28 10:37:01,002] {dagster_plugin.py:231} INFO - found commons-logging#commons-logging;1.1.3 in central
+[2019-03-28 10:37:01,078] {dagster_plugin.py:231} INFO - found commons-codec#commons-codec;1.4 in central
+[2019-03-28 10:37:01,269] {dagster_plugin.py:231} INFO - found commons-io#commons-io;2.4 in central
+[2019-03-28 10:37:01,398] {dagster_plugin.py:231} INFO - found commons-net#commons-net;3.1 in central
+[2019-03-28 10:37:01,625] {dagster_plugin.py:231} INFO - found commons-collections#commons-collections;3.2.2 in central
+[2019-03-28 10:37:01,710] {dagster_plugin.py:231} INFO - found javax.servlet#servlet-api;2.5 in central
+[2019-03-28 10:37:02,026] {dagster_plugin.py:231} INFO - found org.mortbay.jetty#jetty;6.1.26 in central
+[2019-03-28 10:37:02,091] {dagster_plugin.py:231} INFO - found org.mortbay.jetty#jetty-util;6.1.26 in central
+[2019-03-28 10:37:02,279] {dagster_plugin.py:231} INFO - found com.sun.jersey#jersey-core;1.9 in central
+[2019-03-28 10:37:02,346] {dagster_plugin.py:231} INFO - found com.sun.jersey#jersey-json;1.9 in central
+[2019-03-28 10:37:02,403] {dagster_plugin.py:231} INFO - found org.codehaus.jettison#jettison;1.1 in central
+[2019-03-28 10:37:02,507] {dagster_plugin.py:231} INFO - found com.sun.xml.bind#jaxb-impl;2.2.3-1 in central
+[2019-03-28 10:37:02,561] {dagster_plugin.py:231} INFO - found javax.xml.bind#jaxb-api;2.2.2 in central
+[2019-03-28 10:37:02,643] {dagster_plugin.py:231} INFO - found javax.xml.stream#stax-api;1.0-2 in central
+[2019-03-28 10:37:02,724] {dagster_plugin.py:231} INFO - found javax.activation#activation;1.1 in central
+[2019-03-28 10:37:02,791] {dagster_plugin.py:231} INFO - found org.codehaus.jackson#jackson-jaxrs;1.9.13 in central
+[2019-03-28 10:37:02,852] {dagster_plugin.py:231} INFO - found org.codehaus.jackson#jackson-xc;1.9.13 in central
+[2019-03-28 10:37:02,923] {dagster_plugin.py:231} INFO - found com.sun.jersey#jersey-server;1.9 in central
+[2019-03-28 10:37:03,146] {dagster_plugin.py:231} INFO - found asm#asm;3.2 in central
+[2019-03-28 10:37:03,236] {dagster_plugin.py:231} INFO - found log4j#log4j;1.2.17 in central
+[2019-03-28 10:37:03,350] {dagster_plugin.py:231} INFO - found net.java.dev.jets3t#jets3t;0.9.0 in central
+[2019-03-28 10:37:03,560] {dagster_plugin.py:231} INFO - found org.apache.httpcomponents#httpclient;4.2.5 in central
+[2019-03-28 10:37:03,743] {dagster_plugin.py:231} INFO - found org.apache.httpcomponents#httpcore;4.2.5 in central
+[2019-03-28 10:37:04,314] {dagster_plugin.py:231} INFO - found com.jamesmurty.utils#java-xmlbuilder;0.4 in central
+[2019-03-28 10:37:04,547] {dagster_plugin.py:231} INFO - found commons-lang#commons-lang;2.6 in central
+[2019-03-28 10:37:04,656] {dagster_plugin.py:231} INFO - found commons-configuration#commons-configuration;1.6 in central
+[2019-03-28 10:37:04,747] {dagster_plugin.py:231} INFO - found commons-digester#commons-digester;1.8 in central
+[2019-03-28 10:37:04,802] {dagster_plugin.py:231} INFO - found commons-beanutils#commons-beanutils;1.7.0 in central
+[2019-03-28 10:37:05,283] {dagster_plugin.py:231} INFO - found commons-beanutils#commons-beanutils-core;1.8.0 in central
+[2019-03-28 10:37:05,424] {dagster_plugin.py:231} INFO - found com.google.protobuf#protobuf-java;2.5.0 in central
+[2019-03-28 10:37:05,484] {dagster_plugin.py:231} INFO - found com.google.code.gson#gson;2.2.4 in central
+[2019-03-28 10:37:05,550] {dagster_plugin.py:231} INFO - found org.apache.hadoop#hadoop-auth;2.6.5 in central
+[2019-03-28 10:37:05,842] {dagster_plugin.py:231} INFO - found org.apache.directory.server#apacheds-kerberos-codec;2.0.0-M15 in central
+[2019-03-28 10:37:06,010] {dagster_plugin.py:231} INFO - found org.apache.directory.server#apacheds-i18n;2.0.0-M15 in central
+[2019-03-28 10:37:06,222] {dagster_plugin.py:231} INFO - found org.apache.directory.api#api-asn1-api;1.0.0-M20 in central
+[2019-03-28 10:37:06,287] {dagster_plugin.py:231} INFO - found org.apache.directory.api#api-util;1.0.0-M20 in central
+[2019-03-28 10:37:06,520] {dagster_plugin.py:231} INFO - found org.apache.curator#curator-framework;2.6.0 in central
+[2019-03-28 10:37:06,602] {dagster_plugin.py:231} INFO - found org.apache.curator#curator-client;2.6.0 in central
+[2019-03-28 10:37:06,672] {dagster_plugin.py:231} INFO - found org.apache.zookeeper#zookeeper;3.4.6 in central
+[2019-03-28 10:37:06,766] {dagster_plugin.py:231} INFO - found jline#jline;0.9.94 in central
+[2019-03-28 10:37:06,836] {dagster_plugin.py:231} INFO - found io.netty#netty;3.6.2.Final in central
+[2019-03-28 10:37:06,923] {dagster_plugin.py:231} INFO - found com.jcraft#jsch;0.1.42 in central
+[2019-03-28 10:37:06,985] {dagster_plugin.py:231} INFO - found org.apache.curator#curator-recipes;2.6.0 in central
+[2019-03-28 10:37:07,119] {dagster_plugin.py:231} INFO - found org.htrace#htrace-core;3.0.4 in central
+[2019-03-28 10:37:07,405] {dagster_plugin.py:231} INFO - found tomcat#jasper-compiler;5.5.23 in central
+[2019-03-28 10:37:07,598] {dagster_plugin.py:231} INFO - found tomcat#jasper-runtime;5.5.23 in central
+[2019-03-28 10:37:07,668] {dagster_plugin.py:231} INFO - found commons-el#commons-el;1.0 in central
+[2019-03-28 10:37:07,783] {dagster_plugin.py:231} INFO - found javax.servlet.jsp#jsp-api;2.1 in central
+[2019-03-28 10:37:08,089] {dagster_plugin.py:231} INFO - found org.slf4j#slf4j-log4j12;1.7.5 in central
+[2019-03-28 10:37:08,255] {dagster_plugin.py:231} INFO - found com.fasterxml.jackson.core#jackson-databind;2.2.3 in central
+[2019-03-28 10:37:08,382] {dagster_plugin.py:231} INFO - found com.fasterxml.jackson.core#jackson-annotations;2.2.3 in central
+[2019-03-28 10:37:08,437] {dagster_plugin.py:231} INFO - found com.fasterxml.jackson.core#jackson-core;2.2.3 in central
+[2019-03-28 10:37:08,492] {dagster_plugin.py:231} INFO - found com.amazonaws#aws-java-sdk;1.7.4 in central
+[2019-03-28 10:37:08,748] {dagster_plugin.py:231} INFO - found joda-time#joda-time;2.10.1 in central
+[2019-03-28 10:37:08,749] {dagster_plugin.py:231} INFO - [2.10.1] joda-time#joda-time;[2.2,)
+[2019-03-28 10:37:08,776] {dagster_plugin.py:231} INFO - downloading https://repo1.maven.org/maven2/com/databricks/spark-avro_2.11/3.0.0/spark-avro_2.11-3.0.0.jar ...
+[2019-03-28 10:37:08,795] {dagster_plugin.py:231} INFO - [SUCCESSFUL ] com.databricks#spark-avro_2.11;3.0.0!spark-avro_2.11.jar (19ms)
+[2019-03-28 10:37:08,796] {dagster_plugin.py:231} INFO - downloading https://repo1.maven.org/maven2/com/databricks/spark-redshift_2.11/2.0.1/spark-redshift_2.11-2.0.1.jar ...
+[2019-03-28 10:37:08,840] {dagster_plugin.py:231} INFO - [SUCCESSFUL ] com.databricks#spark-redshift_2.11;2.0.1!spark-redshift_2.11.jar (44ms)
+[2019-03-28 10:37:08,841] {dagster_plugin.py:231} INFO - downloading https://repo1.maven.org/maven2/com/databricks/spark-csv_2.11/1.5.0/spark-csv_2.11-1.5.0.jar ...
+[2019-03-28 10:37:08,874] {dagster_plugin.py:231} INFO - [SUCCESSFUL ] com.databricks#spark-csv_2.11;1.5.0!spark-csv_2.11.jar (34ms)
+[2019-03-28 10:37:08,875] {dagster_plugin.py:231} INFO - downloading https://repo1.maven.org/maven2/org/postgresql/postgresql/42.2.5/postgresql-42.2.5.jar ...
+[2019-03-28 10:37:08,994] {dagster_plugin.py:231} INFO - [SUCCESSFUL ] org.postgresql#postgresql;42.2.5!postgresql.jar(bundle) (119ms)
+[2019-03-28 10:37:08,996] {dagster_plugin.py:231} INFO - downloading https://repo1.maven.org/maven2/org/apache/hadoop/hadoop-aws/2.6.5/hadoop-aws-2.6.5.jar ...
+[2019-03-28 10:37:09,047] {dagster_plugin.py:231} INFO - [SUCCESSFUL ] org.apache.hadoop#hadoop-aws;2.6.5!hadoop-aws.jar (50ms)
+[2019-03-28 10:37:09,048] {dagster_plugin.py:231} INFO - downloading https://repo1.maven.org/maven2/com/amazonaws/aws-java-sdk/1.7.4/aws-java-sdk-1.7.4.jar ...
