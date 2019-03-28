@@ -32,12 +32,12 @@ class PipelineExecutionManager(object):
 def build_synthetic_pipeline_error_record(run_id, error_info, pipeline_name):
     check.str_param(run_id, 'run_id')
     check.str_param(pipeline_name, 'pipeline_name')
-
     check.inst_param(error_info, 'error_info', SerializableErrorInfo)
+
     return PipelineEventRecord(
         message=error_info.message + '\nStack Trace:\n' + '\n'.join(error_info.stack),
         # Currently it is the user_message that is displayed to the user client side
-        # even though that was not the original intent
+        # in dagit even though that was not the original intent
         user_message=(
             'An exception was thrown during execution that is likely a framework error, '
             'rather than an error in user code.'
