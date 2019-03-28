@@ -97,7 +97,7 @@ class PipelineExecutionResult(object):
         self.step_event_list = check.list_param(
             step_event_list, 'step_event_list', of_type=ExecutionStepEvent
         )
-        self.reconstruct_context = reconstruct_context
+        self.reconstruct_context = check.callable_param(reconstruct_context, 'reconstruct_context')
 
         solid_result_dict = self._context_solid_result_dict(step_event_list)
 
@@ -170,8 +170,7 @@ class SolidExecutionResult(object):
         self.step_events_by_kind = check.dict_param(
             step_events_by_kind, 'step_events_by_kind', key_type=StepKind, value_type=list
         )
-        self.reconstruct_context = reconstruct_context
-        self._memoized_values = None
+        self.reconstruct_context = check.callable_param(reconstruct_context, 'reconstruct_context')
 
     @property
     def transform(self):
@@ -211,15 +210,14 @@ class SolidExecutionResult(object):
         only the first call will reconstruct the context.
         '''
         if self.success and self.transforms:
-            if self._memoized_values is None:
-                with self.reconstruct_context() as context:
-                    self._memoized_values = {
-                        result.step_output_data.output_name: self._get_value(
-                            context, result.step_output_data
-                        )
-                        for result in self.transforms
-                    }
-            return self._memoized_values
+            with self.reconstruct_context() as context:
+                values = {
+                    result.step_output_data.output_name: self._get_value(
+                        context, result.step_output_data
+                    )
+                    for result in self.transforms
+                }
+            return values
         else:
             return None
 
@@ -242,7 +240,10 @@ class SolidExecutionResult(object):
         if self.success:
             for result in self.transforms:
                 if result.step_output_data.output_name == output_name:
-                    return self.transformed_values[output_name]
+                    with self.reconstruct_context() as context:
+                        value = self._get_value(context, result.step_output_data)
+                    return value
+
             raise DagsterInvariantViolationError(
                 (
                     'Did not find result {output_name} in solid {self.solid.name} '
@@ -437,6 +438,7 @@ def construct_intermediates_manager(run_config, environment_config, pipeline_def
         )
 
 
+@contextmanager
 def yield_pipeline_execution_context(pipeline_def, environment_dict, run_config):
     check.inst_param(pipeline_def, 'pipeline_def', PipelineDefinition)
     check.dict_param(environment_dict, 'environment_dict', key_type=str)
@@ -446,13 +448,14 @@ def yield_pipeline_execution_context(pipeline_def, environment_dict, run_config)
     intermediates_manager = construct_intermediates_manager(
         run_config, environment_config, pipeline_def
     )
-    return pipeline_execution_context_manager(
+    with _pipeline_execution_context_manager(
         pipeline_def, environment_config, run_config, intermediates_manager
-    )
+    ) as context:
+        yield context
 
 
 @contextmanager
-def pipeline_execution_context_manager(
+def _pipeline_execution_context_manager(
     pipeline_def, environment_config, run_config, intermediates_manager
 ):
     check.inst_param(pipeline_def, 'pipeline_def', PipelineDefinition)
@@ -658,7 +661,7 @@ def execute_pipeline_iterator(pipeline, environment_dict=None, run_config=None):
         run_config, environment_config, pipeline
     )
 
-    with pipeline_execution_context_manager(
+    with _pipeline_execution_context_manager(
         pipeline, environment_config, run_config, intermediates_manager
     ) as pipeline_context:
         return _execute_pipeline_iterator(pipeline_context)
@@ -687,7 +690,7 @@ def execute_pipeline(pipeline, environment_dict=None, run_config=None):
         run_config, environment_config, pipeline
     )
 
-    with pipeline_execution_context_manager(
+    with _pipeline_execution_context_manager(
         pipeline, environment_config, run_config, intermediates_manager
     ) as pipeline_context:
         step_event_list = list(_execute_pipeline_iterator(pipeline_context))
@@ -696,7 +699,7 @@ def execute_pipeline(pipeline, environment_dict=None, run_config=None):
         pipeline,
         run_config.run_id,
         step_event_list,
-        lambda: pipeline_execution_context_manager(
+        lambda: _pipeline_execution_context_manager(
             pipeline, environment_config, run_config, intermediates_manager
         ),
     )
