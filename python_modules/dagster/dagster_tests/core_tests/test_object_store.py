@@ -65,19 +65,19 @@ def test_file_system_object_store():
         seven.get_system_temp_directory(), 'dagster', 'runs', run_id, 'files'
     )
 
-    try:
-        with yield_pipeline_execution_context(
-            PipelineDefinition([]), {}, RunConfig(run_id=run_id)
-        ) as context:
+    with yield_pipeline_execution_context(
+        PipelineDefinition([]), {}, RunConfig(run_id=run_id)
+    ) as context:
+        try:
             object_store.set_object(True, context, Bool.inst(), ['true'])
             assert object_store.has_object(context, ['true'])
             assert object_store.get_object(context, Bool.inst(), ['true']) is True
 
-    finally:
-        try:
-            shutil.rmtree(object_store.root)
-        except seven.FileNotFoundError:
-            pass
+        finally:
+            try:
+                shutil.rmtree(object_store.root)
+            except seven.FileNotFoundError:
+                pass
 
 
 def test_file_system_object_store_with_custom_serializer():
@@ -85,22 +85,22 @@ def test_file_system_object_store_with_custom_serializer():
 
     object_store = FileSystemObjectStore(run_id=run_id)
 
-    try:
-        with yield_pipeline_execution_context(
-            PipelineDefinition([]), {}, RunConfig(run_id=run_id)
-        ) as context:
+    with yield_pipeline_execution_context(
+        PipelineDefinition([]), {}, RunConfig(run_id=run_id)
+    ) as context:
+        try:
             object_store.set_object('foo', context, LowercaseString.inst(), ['foo'])
 
-        with open(os.path.join(object_store.root, 'foo'), 'rb') as fd:
-            assert fd.read().decode('utf-8') == 'FOO'
+            with open(os.path.join(object_store.root, 'foo'), 'rb') as fd:
+                assert fd.read().decode('utf-8') == 'FOO'
 
-        assert object_store.has_object(context, ['foo'])
-        assert object_store.get_object(context, LowercaseString.inst(), ['foo']) == 'foo'
-    finally:
-        try:
-            shutil.rmtree(object_store.root)
-        except seven.FileNotFoundError:
-            pass
+            assert object_store.has_object(context, ['foo'])
+            assert object_store.get_object(context, LowercaseString.inst(), ['foo']) == 'foo'
+        finally:
+            try:
+                shutil.rmtree(object_store.root)
+            except seven.FileNotFoundError:
+                pass
 
 
 @aws
@@ -112,19 +112,16 @@ def test_s3_object_store():
     object_store = S3ObjectStore(run_id=run_id, s3_bucket='dagster-airflow-scratch')
     assert object_store.root == '/'.join(['dagster', 'runs', run_id, 'files'])
 
-    try:
-        with yield_pipeline_execution_context(
-            PipelineDefinition([]), {}, RunConfig(run_id=run_id)
-        ) as context:
+    with yield_pipeline_execution_context(
+        PipelineDefinition([]), {}, RunConfig(run_id=run_id)
+    ) as context:
+        try:
             object_store.set_object(True, context, Bool.inst(), ['true'])
 
             assert object_store.has_object(context, ['true'])
             assert object_store.get_object(context, Bool.inst(), ['true']) is True
 
-    finally:
-        with yield_pipeline_execution_context(
-            PipelineDefinition([]), {}, RunConfig(run_id=run_id)
-        ) as context:
+        finally:
             object_store.rm_object(context, ['true'])
 
 
@@ -136,10 +133,10 @@ def test_s3_object_store_with_custom_serializer():
     # FIXME need a dedicated test bucket
     object_store = S3ObjectStore(run_id=run_id, s3_bucket='dagster-airflow-scratch')
 
-    try:
-        with yield_pipeline_execution_context(
-            PipelineDefinition([]), {}, RunConfig(run_id=run_id)
-        ) as context:
+    with yield_pipeline_execution_context(
+        PipelineDefinition([]), {}, RunConfig(run_id=run_id)
+    ) as context:
+        try:
             object_store.set_object('foo', context, LowercaseString.inst(), ['foo'])
 
             assert (
@@ -153,10 +150,7 @@ def test_s3_object_store_with_custom_serializer():
 
             assert object_store.has_object(context, ['foo'])
             assert object_store.get_object(context, LowercaseString.inst(), ['foo']) == 'foo'
-    finally:
-        with yield_pipeline_execution_context(
-            PipelineDefinition([]), {}, RunConfig(run_id=run_id)
-        ) as context:
+        finally:
             object_store.rm_object(context, ['foo'])
 
 
@@ -168,19 +162,16 @@ def test_file_system_object_store_with_type_storage_plugin():
         run_id=run_id, types_to_register={String.inst(): FancyStringFilesystemTypeStoragePlugin}
     )
 
-    try:
-        with yield_pipeline_execution_context(
-            PipelineDefinition([]), {}, RunConfig(run_id=run_id)
-        ) as context:
+    with yield_pipeline_execution_context(
+        PipelineDefinition([]), {}, RunConfig(run_id=run_id)
+    ) as context:
+        try:
             object_store.set_object('hello', context, String.inst(), ['obj_name'])
 
             assert object_store.has_object(context, ['obj_name'])
             assert object_store.get_object(context, String.inst(), ['obj_name']) == 'hello'
 
-    finally:
-        with yield_pipeline_execution_context(
-            PipelineDefinition([]), {}, RunConfig(run_id=run_id)
-        ) as context:
+        finally:
             object_store.rm_object(context, ['obj_name'])
 
 
@@ -196,17 +187,14 @@ def test_s3_object_store_with_type_storage_plugin():
         types_to_register={String.inst(): FancyStringS3TypeStoragePlugin},
     )
 
-    try:
-        with yield_pipeline_execution_context(
-            PipelineDefinition([]), {}, RunConfig(run_id=run_id)
-        ) as context:
+    with yield_pipeline_execution_context(
+        PipelineDefinition([]), {}, RunConfig(run_id=run_id)
+    ) as context:
+        try:
             object_store.set_object('hello', context, String.inst(), ['obj_name'])
 
             assert object_store.has_object(context, ['obj_name'])
             assert object_store.get_object(context, String.inst(), ['obj_name']) == 'hello'
 
-    finally:
-        with yield_pipeline_execution_context(
-            PipelineDefinition([]), {}, RunConfig(run_id=run_id)
-        ) as context:
+        finally:
             object_store.rm_object(context, ['obj_name'])
