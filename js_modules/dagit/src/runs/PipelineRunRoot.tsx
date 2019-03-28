@@ -5,6 +5,7 @@ import { QueryResult, Query, ApolloConsumer } from "react-apollo";
 import { NonIdealState } from "@blueprintjs/core";
 import { IconNames } from "@blueprintjs/icons";
 import { PipelineRunRootQuery } from "./types/PipelineRunRootQuery";
+import { PipelineStatusToPageAttributes } from "./PipelineStatusToPageAttributes";
 import { PipelineRun } from "./PipelineRun";
 import Loading from "../Loading";
 import RunSubscriptionProvider from "./RunSubscriptionProvider";
@@ -17,7 +18,7 @@ export default class PipelineRunRoot extends React.Component<
   IPipelineRunRootProps
 > {
   render() {
-    const { runId } = this.props.match.params;
+    const { runId, pipelineName } = this.props.match.params;
 
     return (
       <ApolloConsumer>
@@ -39,6 +40,11 @@ export default class PipelineRunRoot extends React.Component<
                         runLogCursor={
                           pipelineRunOrError.logs.pageInfo.lastCursor
                         }
+                      />
+                      <PipelineStatusToPageAttributes
+                        pipelineName={pipelineName}
+                        runId={pipelineRunOrError.runId}
+                        status={pipelineRunOrError.status}
                       />
                       <PipelineRun run={pipelineRunOrError} />
                     </>
