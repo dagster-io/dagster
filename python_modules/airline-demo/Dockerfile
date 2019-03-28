@@ -66,6 +66,8 @@ RUN set -ex; \
 
 ##################################################################################################
 
+RUN pip install --upgrade pip
+
 RUN mkdir -p /tmp/results
 
 WORKDIR /tmp/
