@@ -45,6 +45,7 @@ export default class RunSubscriptionProvider extends React.Component<
       }
     });
 
+    this._subscriptionRunId = this.props.runId;
     this._subscription = observable.subscribe({
       next: msg => {
         this.handleNewMessages(msg.data);
