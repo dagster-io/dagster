@@ -93,8 +93,10 @@ class ObjectStore(six.with_metaclass(ABCMeta)):
         return self.set_object(obj, context, runtime_type, paths)
 
     def get_value(self, context, runtime_type, paths):
-        if runtime_type in self.TYPE_REGISTRY:
-            return self.TYPE_REGISTRY[runtime_type].get_object(self, context, runtime_type, paths)
+        if runtime_type.name is not None and runtime_type.name in self.TYPE_REGISTRY:
+            return self.TYPE_REGISTRY[runtime_type.name].get_object(
+                self, context, runtime_type, paths
+            )
         return self.get_object(context, runtime_type, paths)
 
 
