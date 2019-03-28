@@ -124,6 +124,9 @@ class FileSystemObjectStore(ObjectStore):
 
         super(FileSystemObjectStore, self).__init__(types_to_register)
 
+    def url_for_paths(self, paths):
+        return 'file://' + '/'.join(paths)
+
     def set_object(self, obj, context, runtime_type, paths):  # pylint: disable=unused-argument
         check.inst_param(context, 'context', SystemPipelineExecutionContext)
         check.inst_param(runtime_type, 'runtime_type', RuntimeType)
@@ -199,6 +202,9 @@ class S3ObjectStore(ObjectStore):
         self.storage_mode = RunStorageMode.S3
 
         super(S3ObjectStore, self).__init__(types_to_register)
+
+    def url_for_paths(self, paths, protocol='s3://'):
+        return protocol + self.bucket + '/' + self.key_for_paths(paths)
 
     def key_for_paths(self, paths):
         return '/'.join([self.root] + paths)
