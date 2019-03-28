@@ -263,7 +263,8 @@ def clean_results_dir():
 
 @pytest.fixture(scope='session')
 def docker_compose_db():
-    if sys.version.major == 3 and sys.version.minor == 7 and CIRCLECI:
+    if sys.version_info.major == 3 and sys.version_info.minor == 7 and CIRCLECI:
+        yield
         return
 
     with pushd(script_relative_path('../')):
