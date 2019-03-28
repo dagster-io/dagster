@@ -14,7 +14,7 @@ from .marks import db, nettest, py3, spark
 @nettest
 @py3
 @spark
-def test_all_airline_pipelines():
+def test_airline_pipeline_0_ingest(docker_compose_db):
     ingest_config_object = load_yaml_from_globs(
         script_relative_path('../environments/local_base.yml'),
         script_relative_path('../environments/local_fast_ingest.yml'),
@@ -24,6 +24,12 @@ def test_all_airline_pipelines():
 
     assert result_ingest.success
 
+
+@db
+@nettest
+@py3
+@spark
+def test_airline_pipeline_1_warehouse(docker_compose_db):
     warehouse_config_object = load_yaml_from_globs(
         script_relative_path('../environments/local_base.yml'),
         script_relative_path('../environments/local_warehouse.yml'),
