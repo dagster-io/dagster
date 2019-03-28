@@ -204,7 +204,7 @@ def scaffold_dag(request, airflow_test):
         image=docker_image,
         output_path=tempdir,
         dag_kwargs={'default_args': {'start_date': datetime.datetime(1900, 1, 1)}},
-        operator_kwargs={'network_mode': 'container:db'} if CIRCLECI else {},
+        operator_kwargs={'network_mode': 'container:db'},
     )
 
     # Ensure that the scaffolded files parse correctly
@@ -262,7 +262,7 @@ def clean_results_dir():
 
 
 @pytest.fixture(scope='session')
-def db():
+def docker_compose_db():
     with pushd(script_relative_path('../')):
         subprocess.check_output(['docker-compose', 'up', '-d', 'db'])
 
@@ -276,7 +276,7 @@ def db():
 
 
 @pytest.fixture(scope='class')
-def in_memory_airflow_run(scaffold_dag, db):
+def in_memory_airflow_run(scaffold_dag, docker_compose_db):
     pipeline_name, _p, _d, static_path, editable_path = scaffold_dag
 
     execution_date = datetime.datetime.utcnow()
