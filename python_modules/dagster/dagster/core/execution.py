@@ -206,8 +206,7 @@ class SolidExecutionResult(object):
         '''Return dictionary of transformed results, with keys being output names.
         Returns None if execution result isn't a success.
 
-        Reconstructs the pipeline context to materialize values. Results are memoized so
-        only the first call will reconstruct the context.
+        Reconstructs the pipeline context to materialize values.
         '''
         if self.success and self.transforms:
             with self.reconstruct_context() as context:
@@ -225,8 +224,7 @@ class SolidExecutionResult(object):
         '''Returns transformed value either for DEFAULT_OUTPUT or for the output
         given as output_name. Returns None if execution result isn't a success.
 
-        Looks up entry via transformed_values which will reconstruct the pipeline context
-        on first invocation.
+        Reconstructs the pipeline context to materialize value.
         '''
         check.str_param(output_name, 'output_name')
 
