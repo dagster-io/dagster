@@ -43,6 +43,16 @@ take a few minutes.
 
 Have fun coding!
 
+6. Set up pre-commit hooks
+
+We use black to enforce a consistent code style. To set up a pre-commit hook, just run:
+
+.. code-block:: console
+
+    $ pre-commit install
+
+(The `pre-commit` package is installed in dagster's dev-requirements.)
+
 Running dagit webapp in development
 -------------------------------------
 For development, run the dagit GraphQL server on a different port than the

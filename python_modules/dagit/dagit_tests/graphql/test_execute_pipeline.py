@@ -103,6 +103,10 @@ def test_basic_start_pipeline_execution_and_subscribe():
     assert not subscribe_result.errors
     assert subscribe_result.data
     assert subscribe_result.data['pipelineRunLogs']
+    assert (
+        subscribe_result.data['pipelineRunLogs']['__typename']
+        == 'PipelineRunLogsSubscriptionSuccess'
+    )
     log_messages = []
     for message in subscribe_result.data['pipelineRunLogs']['messages']:
         if message['__typename'] == 'LogMessageEvent':
@@ -134,17 +138,24 @@ def test_subscription_query_error():
         context, parse(SUBSCRIPTION_QUERY), variables={'runId': run_id}
     )
 
-    messages = []
-    subscription.subscribe(messages.append)
+    subscribe_results = []
+    subscription.subscribe(subscribe_results.append)
 
-    assert len(messages) == 1
-    message = messages[0]
-    assert not message.errors
-    assert message.data
-    assert message.data['pipelineRunLogs']
+    assert len(subscribe_results) == 1
+    subscribe_result = subscribe_results[0]
+    assert not subscribe_result.errors
+    assert subscribe_result.data
+    assert subscribe_result.data['pipelineRunLogs']
+
+    assert (
+        subscribe_result.data['pipelineRunLogs']['__typename']
+        == 'PipelineRunLogsSubscriptionSuccess'
+    )
 
     step_run_log_entry = _get_step_run_log_entry(
-        message.data['pipelineRunLogs'], 'throw_a_thing.transform', 'ExecutionStepFailureEvent'
+        subscribe_result.data['pipelineRunLogs'],
+        'throw_a_thing.transform',
+        'ExecutionStepFailureEvent',
     )
 
     assert step_run_log_entry
@@ -155,6 +166,26 @@ def test_subscription_query_error():
     assert isinstance(step_run_log_entry['error']['stack'], list)
 
     assert 'bad programmer' in step_run_log_entry['error']['stack'][-1]
+
+
+def test_subscribe_bad_run_id():
+    context = define_context(throw_on_user_error=False)
+    run_id = 'nope'
+    subscription = execute_dagster_graphql(
+        context, parse(SUBSCRIPTION_QUERY), variables={'runId': run_id}
+    )
+
+    subscribe_results = []
+    subscription.subscribe(subscribe_results.append)
+
+    assert len(subscribe_results) == 1
+    subscribe_result = subscribe_results[0]
+
+    assert (
+        subscribe_result.data['pipelineRunLogs']['__typename']
+        == 'PipelineRunLogsSubscriptionMissingRunIdFailure'
+    )
+    assert subscribe_result.data['pipelineRunLogs']['missingRunId'] == 'nope'
 
 
 def _get_step_run_log_entry(pipeline_run_logs, step_key, typename):
@@ -168,18 +199,23 @@ SUBSCRIPTION_QUERY = '''
 subscription subscribeTest($runId: ID!) {
     pipelineRunLogs(runId: $runId) {
         __typename
-        messages {
-            __typename
-            ... on MessageEvent {
-                message
-                step {key }
-            }
-            ... on ExecutionStepFailureEvent {
-                error {
+        ... on PipelineRunLogsSubscriptionSuccess {
+            messages {
+                __typename
+                ... on MessageEvent {
                     message
-                    stack
+                    step {key }
+                }
+                ... on ExecutionStepFailureEvent {
+                    error {
+                        message
+                        stack
+                    }
                 }
             }
+        }
+        ... on PipelineRunLogsSubscriptionMissingRunIdFailure {
+            missingRunId
         }
     }
 }

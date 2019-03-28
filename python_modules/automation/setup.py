@@ -25,7 +25,7 @@ setup(
     ],
     packages=find_packages(exclude=['test']),
     install_requires=[
-        'boto3==1.9.47',
+        'boto3==1.9.*',
         'click>=6.7',
         'faker>=1.0.4',
         'pytablereader',

@@ -20,6 +20,7 @@ def _decorate_as_dagster_type(
     input_schema=None,
     output_schema=None,
     serialization_strategy=None,
+    storage_plugins=None,
 ):
     _ObjectType = _create_object_type_class(
         key=key,
@@ -29,6 +30,7 @@ def _decorate_as_dagster_type(
         input_schema=input_schema,
         output_schema=output_schema,
         serialization_strategy=serialization_strategy,
+        storage_plugins=storage_plugins,
     )
 
     type_inst = _ObjectType.inst()
@@ -82,6 +84,7 @@ def as_dagster_type(
     input_schema=None,
     output_schema=None,
     serialization_strategy=None,
+    storage_plugins=None,
 ):
     check.type_param(existing_type, 'existing_type')
     check.opt_str_param(name, 'name')
@@ -89,6 +92,7 @@ def as_dagster_type(
     check.opt_inst_param(input_schema, 'input_schema', InputSchema)
     check.opt_inst_param(output_schema, 'output_schema', OutputSchema)
     check.opt_inst_param(serialization_strategy, 'serialization_strategy', SerializationStrategy)
+    storage_plugins = check.opt_dict_param(storage_plugins, 'storage_plugins')
 
     if serialization_strategy is None:
         serialization_strategy = PickleSerializationStrategy()
@@ -103,4 +107,5 @@ def as_dagster_type(
         input_schema=input_schema,
         output_schema=output_schema,
         serialization_strategy=serialization_strategy,
+        storage_plugins=storage_plugins,
     )

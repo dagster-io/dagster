@@ -345,6 +345,14 @@ take a few minutes.</p>
 </li>
 </ol>
 <p>Have fun coding!</p>
+<ol class="arabic simple" start="6">
+<li>Set up pre-commit hooks</li>
+</ol>
+<p>We use black to enforce a consistent code style. To set up a pre-commit hook, just run:</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$</span> pre-commit install
+</pre></div>
+</div>
+<p>(The <cite>pre-commit</cite> package is installed in dagster’s dev-requirements.)</p>
 <div class="section" id="running-dagit-webapp-in-development">
 <h3>Running dagit webapp in development<a class="headerlink" href="#running-dagit-webapp-in-development" title="Permalink to this headline">¶</a></h3>
 <p>For development, run the dagit GraphQL server on a different port than the
@@ -1937,6 +1945,16 @@ take a few minutes.
     $ pytest python_modules/dagster/dagster_tests
 
 Have fun coding!
+
+6. Set up pre-commit hooks
+
+We use black to enforce a consistent code style. To set up a pre-commit hook, just run:
+
+.. code-block:: console
+
+    $ pre-commit install
+
+(The `pre-commit` package is installed in dagster's dev-requirements.)
 
 Running dagit webapp in development
 -------------------------------------
@@ -20786,7 +20804,7 @@ snapshots['test_build_all_docs 54'] = '''
 
 <dl class="function">
 <dt id="dagster.as_dagster_type">
-<code class="descclassname">dagster.</code><code class="descname">as_dagster_type</code><span class="sig-paren">(</span><em>existing_type</em>, <em>name=None</em>, <em>description=None</em>, <em>input_schema=None</em>, <em>output_schema=None</em>, <em>serialization_strategy=None</em><span class="sig-paren">)</span><a class="headerlink" href="#dagster.as_dagster_type" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">dagster.</code><code class="descname">as_dagster_type</code><span class="sig-paren">(</span><em>existing_type</em>, <em>name=None</em>, <em>description=None</em>, <em>input_schema=None</em>, <em>output_schema=None</em>, <em>serialization_strategy=None</em>, <em>storage_plugins=None</em><span class="sig-paren">)</span><a class="headerlink" href="#dagster.as_dagster_type" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="attribute">
@@ -20861,7 +20879,7 @@ snapshots['test_build_all_docs 54'] = '''
 
 <dl class="class">
 <dt id="dagster.RuntimeType">
-<em class="property">class </em><code class="descclassname">dagster.</code><code class="descname">RuntimeType</code><span class="sig-paren">(</span><em>key</em>, <em>name</em>, <em>is_builtin=False</em>, <em>description=None</em>, <em>input_schema=None</em>, <em>output_schema=None</em>, <em>serialization_strategy=None</em><span class="sig-paren">)</span><a class="headerlink" href="#dagster.RuntimeType" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">dagster.</code><code class="descname">RuntimeType</code><span class="sig-paren">(</span><em>key</em>, <em>name</em>, <em>is_builtin=False</em>, <em>description=None</em>, <em>input_schema=None</em>, <em>output_schema=None</em>, <em>serialization_strategy=None</em>, <em>storage_plugins=None</em><span class="sig-paren">)</span><a class="headerlink" href="#dagster.RuntimeType" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="attribute">

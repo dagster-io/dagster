@@ -277,6 +277,10 @@ type MissingFieldConfigError implements PipelineConfigValidationError {
   field: ConfigTypeField!
 }
 
+type MissingRunIdErrorEvent {
+  invalidRunId: String!
+}
+
 type Mutation {
   startPipelineExecution(config: PipelineConfig, executionMetadata: ExecutionMetadata, pipeline: ExecutionSelector!, reexecutionConfig: ReexecutionConfig, stepKeys: [String!]): StartPipelineExecutionResult!
   executePlan(config: PipelineConfig, executionMetadata: ExecutionMetadata!, pipelineName: String!, stepKeys: [String!]): ExecutePlanResult!
@@ -424,7 +428,13 @@ type PipelineRun {
 
 union PipelineRunEvent = LogMessageEvent | PipelineStartEvent | PipelineSuccessEvent | PipelineFailureEvent | ExecutionStepStartEvent | ExecutionStepSuccessEvent | ExecutionStepOutputEvent | ExecutionStepFailureEvent | PipelineProcessStartEvent | PipelineProcessStartedEvent | StepMaterializationEvent
 
-type PipelineRunLogsSubscriptionPayload {
+type PipelineRunLogsSubscriptionMissingRunIdFailure {
+  missingRunId: String!
+}
+
+union PipelineRunLogsSubscriptionPayload = PipelineRunLogsSubscriptionSuccess | PipelineRunLogsSubscriptionMissingRunIdFailure
+
+type PipelineRunLogsSubscriptionSuccess {
   messages: [PipelineRunEvent!]!
 }
 
