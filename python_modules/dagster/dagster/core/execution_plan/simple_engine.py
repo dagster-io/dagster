@@ -269,9 +269,7 @@ def _create_step_event(step_context, step_output_value, intermediates_manager):
         return ExecutionStepEvent.step_output_event(
             step_context=step_context,
             step_output_data=StepOutputData(
-                step_output_handle=step_output_handle,
-                value_repr=repr(value),
-                intermediates_manager=intermediates_manager,
+                step_output_handle=step_output_handle, value_repr=repr(value)
             ),
         )
     except DagsterRuntimeCoercionError as e:

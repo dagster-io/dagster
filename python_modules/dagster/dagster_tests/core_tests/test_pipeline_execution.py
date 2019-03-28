@@ -210,7 +210,7 @@ def assert_all_results_equivalent(expected_results, result_results):
 
 def test_pipeline_execution_graph_diamond():
     pipeline = PipelineDefinition(solids=create_diamond_solids(), dependencies=diamond_deps())
-    return _do_test(pipeline, lambda: execute_pipeline_iterator(pipeline))
+    return _do_test(pipeline)
 
 
 def test_execute_solid_in_diamond():
@@ -278,14 +278,8 @@ def test_two_root_solid_pipeline_with_partial_dependency_definition():
     assert result.success
 
 
-def _do_test(pipeline, do_execute_pipeline_iter):
-
-    results = list()
-
-    for result in do_execute_pipeline_iter():
-        results.append(result)
-
-    result = PipelineExecutionResult(pipeline, 'kdjfkdjfd', results)
+def _do_test(pipeline):
+    result = execute_pipeline(pipeline)
 
     assert result.result_for_solid('A').transformed_value() == [
         input_set('A_input'),
@@ -490,12 +484,12 @@ def test_pipeline_streaming_iterator():
 
     push_one_step_event = next(step_event_iterator)
     assert push_one_step_event.is_successful_output
-    assert push_one_step_event.step_output_data.get_value() == 1
+    assert push_one_step_event.step_output_data.value_repr == '1'
     assert events == [1]
 
     add_one_step_event = next(step_event_iterator)
     assert add_one_step_event.is_successful_output
-    assert add_one_step_event.step_output_data.get_value() == 2
+    assert add_one_step_event.step_output_data.value_repr == '2'
     assert events == [1, 2]
 
 
@@ -517,12 +511,12 @@ def test_pipeline_streaming_multiple_outputs():
 
     one_output_step_event = next(step_event_iterator)
     assert one_output_step_event.is_successful_output
-    assert one_output_step_event.step_output_data.get_value() == 1
+    assert one_output_step_event.step_output_data.value_repr == '1'
     assert one_output_step_event.step_output_data.output_name == 'one'
     assert events == [1]
 
     two_output_step_event = next(step_event_iterator)
     assert two_output_step_event.is_successful_output
-    assert two_output_step_event.step_output_data.get_value() == 2
+    assert two_output_step_event.step_output_data.value_repr == '2'
     assert two_output_step_event.step_output_data.output_name == 'two'
     assert events == [1, 2]

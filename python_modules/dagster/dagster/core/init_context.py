@@ -10,8 +10,8 @@ from .definitions.resource import ResourceDefinition
 
 class InitContext(namedtuple('_InitContext', 'context_config pipeline_def run_id')):
     '''
-    InitContext is the context object context creation functions In effect, it is 
-    the state available to those functions, and any function that is called 
+    InitContext is the context object context creation functions In effect, it is
+    the state available to those functions, and any function that is called
     prior to pipeline execution, plus the configuration value for that context.
     '''
 
