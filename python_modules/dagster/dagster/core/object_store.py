@@ -125,7 +125,7 @@ class FileSystemObjectStore(ObjectStore):
         super(FileSystemObjectStore, self).__init__(types_to_register)
 
     def url_for_paths(self, paths):
-        return 'file://' + '/'.join(paths)
+        return 'file:///' + '/'.join([self.root] + paths)
 
     def set_object(self, obj, context, runtime_type, paths):  # pylint: disable=unused-argument
         check.inst_param(context, 'context', SystemPipelineExecutionContext)
