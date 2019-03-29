@@ -478,7 +478,7 @@ def _pipeline_execution_context_manager(
     )
 
     intermediates_manager = construct_intermediates_manager(
-        run_config, init_context, environment_config, pipeline_def
+        run_config, environment_config, pipeline_def
     )
 
     ec_or_gen = context_definition.context_fn(init_context)
