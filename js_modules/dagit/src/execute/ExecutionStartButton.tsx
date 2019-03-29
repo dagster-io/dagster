@@ -14,7 +14,7 @@ interface IExecutionStartButtonState {
 
 enum ExecutionButtonStatus {
   Ready = "ready",
-  Running = "running",
+  Starting = "starting",
   Disabled = "disabled"
 }
 
@@ -49,21 +49,7 @@ export default class ExecutionStartButton extends React.Component<
     return (
       <WebsocketStatusContext.Consumer>
         {websocketStatus => {
-          if (this.state.starting) {
-            return (
-              <Wrapper
-                role="button"
-                state={ExecutionButtonStatus.Running}
-                title={"Pipeline execution is in progress..."}
-              >
-                <div style={{ marginRight: 5 }}>
-                  <Spinner intent={Intent.NONE} size={17} />
-                </div>
-                Starting...
-              </Wrapper>
-            );
-          }
-
+          console.log("rendering start button");
           if (websocketStatus !== WebSocket.OPEN) {
             return (
               <Wrapper
@@ -75,6 +61,21 @@ export default class ExecutionStartButton extends React.Component<
                   <Icon icon={IconNames.OFFLINE} iconSize={17} />
                 </div>
                 Start Execution
+              </Wrapper>
+            );
+          }
+
+          if (this.state.starting) {
+            return (
+              <Wrapper
+                role="button"
+                state={ExecutionButtonStatus.Starting}
+                title={"Pipeline execution is in progress..."}
+              >
+                <div style={{ marginRight: 5 }}>
+                  <Spinner intent={Intent.NONE} size={17} />
+                </div>
+                Starting...
               </Wrapper>
             );
           }
@@ -108,7 +109,7 @@ const Wrapper = styled.div<{ state: ExecutionButtonStatus }>`
         "linear-gradient(to bottom, rgb(145, 145, 145) 30%, rgb(130, 130, 130) 100%);",
       ready:
         "linear-gradient(to bottom, rgb(36, 145, 235) 30%, rgb(27, 112, 187) 100%);",
-      running:
+      starting:
         "linear-gradient(to bottom, rgb(21, 89, 150) 30%, rgb(21, 89, 150) 100%);"
     }[state])}
   box-shadow: 0 2px 4px rgba(0,0,0,0.3);
@@ -130,7 +131,7 @@ const Wrapper = styled.div<{ state: ExecutionButtonStatus }>`
           "linear-gradient(to bottom, rgb(145, 145, 145) 30%, rgb(130, 130, 130) 100%);",
         ready:
           "linear-gradient(to bottom, rgb(27, 112, 187) 30%, rgb(21, 89, 150) 100%);",
-        running:
+        starting:
           "linear-gradient(to bottom, rgb(21, 89, 150) 30%, rgb(21, 89, 150) 100%);"
       }[state])}
   }

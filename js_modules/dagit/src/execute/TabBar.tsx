@@ -3,7 +3,6 @@ import { ExecutionTabs, ExecutionTab } from "./ExecutionTabs";
 import styled from "styled-components";
 import { Colors } from "@blueprintjs/core";
 import { IExecutionSessionChanges, IExecutionSession } from "../LocalStorage";
-import { isEqual, pick } from "lodash";
 
 interface ITabBarProps {
   children: React.ReactNode;
@@ -16,13 +15,6 @@ interface ITabBarProps {
 }
 
 export default class TabBar extends React.Component<ITabBarProps> {
-  shouldComponentUpdate(nextProps: ITabBarProps) {
-    // TabBar can't be a PureComponent because the on* function props need to be
-    // defined inline in the parent. Avoid rendering on every keystroke here.
-    const keys = ["executing", "currentSession", "sessions"];
-    return !isEqual(pick(nextProps, keys), pick(this.props, keys));
-  }
-
   render() {
     const {
       children,

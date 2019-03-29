@@ -16,7 +16,10 @@ import "codemirror/addon/dialog/dialog";
 import "./codemirror-yaml/lint"; // Patch lint
 import "codemirror/addon/lint/lint.css";
 import "codemirror/keymap/sublime";
-import { Controlled as CodeMirrorReact } from "react-codemirror2";
+import {
+  Controlled as CodeMirrorReact,
+  IInstance as Editor
+} from "react-codemirror2";
 import { ConfigEditorPipelineFragment } from "./types/ConfigEditorPipelineFragment";
 import "./codemirror-yaml/mode";
 import { LintJson as YamlModeLintJson } from "./codemirror-yaml/mode";
@@ -36,6 +39,15 @@ const performLint = debounce((editor: any) => {
 }, 1000);
 
 export default class ConfigEditor extends React.Component<IConfigEditorProps> {
+  _editor?: Editor;
+
+  componentDidUpdate(prevProps: IConfigEditorProps) {
+    if (!this._editor) return;
+    if (prevProps.pipeline === this.props.pipeline) return;
+    console.log("performLint pipeline assigned");
+    performLint(this._editor);
+  }
+
   render() {
     return (
       <CodeMirrorReact
@@ -93,6 +105,7 @@ export default class ConfigEditor extends React.Component<IConfigEditorProps> {
           } as any
         }
         editorDidMount={editor => {
+          this._editor = editor;
           performLint(editor);
         }}
         onBeforeChange={(editor, data, value) => {
