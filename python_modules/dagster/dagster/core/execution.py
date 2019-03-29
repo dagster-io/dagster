@@ -477,10 +477,6 @@ def _pipeline_execution_context_manager(
         run_id=run_config.run_id,
     )
 
-    intermediates_manager = construct_intermediates_manager(
-        run_config, environment_config, pipeline_def
-    )
-
     ec_or_gen = context_definition.context_fn(init_context)
 
     with as_ensured_single_gen(ec_or_gen) as execution_context:
