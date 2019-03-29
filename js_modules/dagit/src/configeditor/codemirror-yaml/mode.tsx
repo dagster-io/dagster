@@ -313,9 +313,9 @@ CodeMirror.registerHelper(
   "yaml",
   (
     editor: any,
-    options: { pipeline: ConfigEditorPipelineFragment | "loading" }
+    options: { pipeline?: ConfigEditorPipelineFragment }
   ): { list: Array<CodemirrorHint> } => {
-    if (options.pipeline === "loading") return { list: [] };
+    if (!options.pipeline) return { list: [] };
 
     const cur = editor.getCursor();
     const token: CodemirrorToken = editor.getTokenAt(cur);

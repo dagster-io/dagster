@@ -25,7 +25,7 @@ import {
 const YAML_SYNTAX_INVALID = `The YAML you provided couldn't be parsed. Please fix the syntax errors and try again.`;
 
 interface IPipelineExecutionContainerProps {
-  pipeline: PipelineExecutionContainerFragment | "loading";
+  pipeline?: PipelineExecutionContainerFragment;
   currentSession: IExecutionSession;
   data: IStorageData;
   onSave: (data: IStorageData) => void;
@@ -68,7 +68,7 @@ export default class PipelineExecutionContainer extends React.Component<
     >
   ) => {
     const { pipeline } = this.props;
-    if (pipeline === "loading") {
+    if (!pipeline) {
       alert(
         "Dagit is still retrieving pipeline info. Please try again in a moment."
       );
@@ -105,7 +105,7 @@ export default class PipelineExecutionContainer extends React.Component<
 
   buildExecutionVariables = () => {
     const { currentSession, pipeline } = this.props;
-    if (!currentSession || pipeline === "loading") return;
+    if (!currentSession || !pipeline) return;
 
     let config = {};
     try {

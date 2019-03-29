@@ -38,7 +38,7 @@ export default class PipelineExecutionRoot extends React.Component<
                 <PipelineExecutionContainer
                   data={data}
                   onSave={onSave}
-                  pipeline={(result.data && result.data.pipeline) || "loading"}
+                  pipeline={result.data ? result.data.pipeline : undefined}
                   currentSession={data.sessions[data.current]}
                 />
               )}

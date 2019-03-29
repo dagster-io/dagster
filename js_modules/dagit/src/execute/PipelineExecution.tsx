@@ -30,7 +30,7 @@ import { PipelineExecutionPipelineFragment } from "./types/PipelineExecutionPipe
 const CONFIRM_RESET_TO_SCAFFOLD = `Would you like to reset your config to a scaffold based on this subset of the pipeline?`;
 
 interface IPipelineExecutionProps {
-  pipeline: PipelineExecutionPipelineFragment | "loading";
+  pipeline?: PipelineExecutionPipelineFragment;
   currentSession: IExecutionSession;
   onSaveSession: (session: string, changes: IExecutionSessionChanges) => void;
 }
@@ -79,7 +79,7 @@ export default class PipelineExecution extends React.Component<
 
   ensureSessionStateValid() {
     const { onSaveSession, currentSession, pipeline } = this.props;
-    if (pipeline === "loading") return;
+    if (!pipeline) return;
 
     // We have to initialize the sessions in local storage here because the app
     // needs to have the pieline (with the correct subset) in order to scaffold
@@ -121,7 +121,7 @@ export default class PipelineExecution extends React.Component<
                 configCode={currentSession.config}
                 onConfigChange={this.onConfigChange}
                 checkConfig={async config => {
-                  if (pipeline === "loading") return { isValid: true };
+                  if (!pipeline) return { isValid: true };
 
                   const { data } = await client.query<
                     PreviewConfigQuery,
@@ -149,7 +149,7 @@ export default class PipelineExecution extends React.Component<
             )}
           </ApolloConsumer>
           <SessionSettingsFooter className="bp3-dark">
-            {pipeline === "loading" ? (
+            {!pipeline ? (
               <span />
             ) : (
               <SolidSelector
