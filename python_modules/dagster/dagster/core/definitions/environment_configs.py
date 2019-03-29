@@ -236,7 +236,9 @@ def define_storage_config_cls(name):
                 is_optional=True,
             ),
             'filesystem': Field(
-                SystemNamedDict('{parent_name}.Files'.format(parent_name=name), {}),
+                SystemNamedDict(
+                    '{parent_name}.Files'.format(parent_name=name), {'base_dir': Field(String)}
+                ),
                 is_optional=True,
             ),
             's3': Field(

@@ -85,7 +85,7 @@ class ExecutionConfig(namedtuple('_ExecutionConfig', '')):
         return super(ExecutionConfig, cls).__new__(cls)
 
 
-class StorageConfig(namedtuple('_FilesConfig', 'storage_mode storage_config')):
+class StorageConfig(namedtuple('_StorageConfig', 'storage_mode storage_config')):
     def __new__(cls, storage_mode, storage_config):
         return super(StorageConfig, cls).__new__(
             cls,

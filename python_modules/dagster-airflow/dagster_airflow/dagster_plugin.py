@@ -11,6 +11,8 @@ import json
 import os
 import sys
 
+import yaml
+
 from contextlib import contextmanager
 
 from airflow.exceptions import AirflowException
@@ -37,7 +39,7 @@ DAGSTER_OPERATOR_COMMAND_TEMPLATE = '''-q '
     '\n'
 )
 
-DOCKER_TEMPDIR = '/tmp/results'
+DOCKER_TEMPDIR = '/tmp/dagster/unusual-prefix'
 
 DEFAULT_ENVIRONMENT = {
     'AWS_ACCESS_KEY_ID': os.getenv('AWS_ACCESS_KEY_ID'),
@@ -285,6 +287,12 @@ class DagsterOperator(ModifiedDockerOperator):
                 )
             )
 
+        # Tell dagster and docker where to store intermediates on the file system to share
+        # intermediates between step executions
+        config_dict = yaml.load(self.config)
+        config_dict.update({'storage': {'filesystem': {'base_dir': DOCKER_TEMPDIR}}})
+        self.config = yaml.dump(config_dict)
+
         if self.step_keys is None:
             self.step_keys = []
 
@@ -329,8 +337,8 @@ class DagsterOperator(ModifiedDockerOperator):
             # FIXME: this is not the best test to see if we're running on Docker for Mac
             kwargs['network_mode'] = 'host' if sys.platform != 'darwin' else 'bridge'
 
-        if 'environment' not in kwargs:
-            kwargs['environment'] = DEFAULT_ENVIRONMENT
+        # if 'environment' not in kwargs:
+        #     kwargs['environment'] = DEFAULT_ENVIRONMENT
 
         super(DagsterOperator, self).__init__(*args, **kwargs)
 
@@ -381,6 +389,9 @@ class DagsterOperator(ModifiedDockerOperator):
             self._run_id = context['dag_run'].run_id
 
         try:
+            # Tell Docker to mount our intermediates storage directory
+            self.volumes.append('{0}:{0}'.format(DOCKER_TEMPDIR))
+
             self.log.debug('Executing with query: {query}'.format(query=self.query))
 
             raw_res = super(DagsterOperator, self).execute(context)

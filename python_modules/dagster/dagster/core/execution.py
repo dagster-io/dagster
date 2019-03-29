@@ -415,7 +415,9 @@ def construct_intermediates_manager(run_config, environment_config, pipeline_def
     elif environment_config.storage.storage_mode == 'filesystem':
         return ObjectStoreIntermediatesManager(
             FileSystemObjectStore(
-                run_config.run_id, construct_type_registry(pipeline_def, RunStorageMode.FILESYSTEM)
+                run_config.run_id,
+                construct_type_registry(pipeline_def, RunStorageMode.FILESYSTEM),
+                environment_config.storage.storage_config['base_dir'],
             )
         )
     elif environment_config.storage.storage_mode == 'in_memory':

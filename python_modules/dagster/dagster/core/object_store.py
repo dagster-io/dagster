@@ -100,8 +100,12 @@ class ObjectStore(six.with_metaclass(ABCMeta)):
         return self.get_object(context, runtime_type, paths)
 
 
-def get_run_files_directory(run_id):
-    return os.path.join(seven.get_system_temp_directory(), 'dagster', 'runs', run_id, 'files')
+def get_run_files_directory(base_dir, run_id):
+    '''Returns paths of the form:
+
+    base_dir/dagster/runs/<run_id>/files
+    '''
+    return os.path.join(base_dir, 'dagster', 'runs', run_id, 'files')
 
 
 def get_valid_target_path(base_dir, paths):
@@ -117,10 +121,16 @@ def get_valid_target_path(base_dir, paths):
 
 
 class FileSystemObjectStore(ObjectStore):
-    def __init__(self, run_id, types_to_register=None):
+    def __init__(self, run_id, types_to_register=None, base_dir=None):
+        print('**********************************')
+        print(base_dir)
         self.run_id = check.str_param(run_id, 'run_id')
         self.storage_mode = RunStorageMode.FILESYSTEM
-        self.root = get_run_files_directory(run_id)
+
+        self._base_dir = check.opt_str_param(
+            base_dir, 'base_dir', seven.get_system_temp_directory()
+        )
+        self.root = get_run_files_directory(self._base_dir, run_id)
 
         super(FileSystemObjectStore, self).__init__(types_to_register)
 
@@ -169,7 +179,7 @@ class FileSystemObjectStore(ObjectStore):
     def copy_object_from_prev_run(
         self, context, previous_run_id, paths
     ):  # pylint: disable=unused-argument
-        prev_run_files_dir = get_run_files_directory(previous_run_id)
+        prev_run_files_dir = get_run_files_directory(self._base_dir, previous_run_id)
         check.invariant(os.path.isdir(prev_run_files_dir))
 
         copy_from_path = os.path.join(prev_run_files_dir, *paths)

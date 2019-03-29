@@ -5,7 +5,12 @@ import uuid
 from dagster import check, PipelineDefinition, RunConfig, seven
 from dagster.core.execution import yield_pipeline_execution_context
 from dagster.core.types.marshal import SerializationStrategy
-from dagster.core.object_store import FileSystemObjectStore, S3ObjectStore, TypeStoragePlugin
+from dagster.core.object_store import (
+    FileSystemObjectStore,
+    S3ObjectStore,
+    TypeStoragePlugin,
+    get_run_files_directory,
+)
 from dagster.core.types.runtime import Bool, RuntimeType, String
 from dagster.utils import mkdir_p
 
@@ -96,6 +101,31 @@ def test_file_system_object_store_with_custom_serializer():
 
             assert object_store.has_object(context, ['foo'])
             assert object_store.get_object(context, LowercaseString.inst(), ['foo']) == 'foo'
+        finally:
+            try:
+                shutil.rmtree(object_store.root)
+            except seven.FileNotFoundError:
+                pass
+
+
+def test_file_system_object_store_with_base_dir():
+    run_id = str(uuid.uuid4())
+    base_dir = os.path.join('/tmp', str(uuid.uuid4()))
+
+    object_store = FileSystemObjectStore(run_id=run_id, base_dir=base_dir)
+
+    with yield_pipeline_execution_context(
+        PipelineDefinition([]), {}, RunConfig(run_id=run_id)
+    ) as context:
+        try:
+            run_files_directory = get_run_files_directory(base_dir, object_store.run_id)
+            file_path = os.path.join(run_files_directory, 'foo')
+            object_store.set_object('foo', context, LowercaseString.inst(), ['foo'])
+
+            with open(file_path, 'rb') as fd:
+                assert fd.read().decode('utf-8') == 'FOO'
+
+            assert object_store.has_object(context, ['foo'])
         finally:
             try:
                 shutil.rmtree(object_store.root)
