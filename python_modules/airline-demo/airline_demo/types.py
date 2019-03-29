@@ -89,6 +89,20 @@ RedshiftConfigData = Dict(
 )
 
 
+TimeConfigData = Dict(
+    {
+        'utcnow': Field(
+            String,
+            is_optional=True,
+            description=(
+                'Optionally specify \'now\' as a string timestamp in the format prescribed by '
+                'RFC 3339, e.g. "2019-03-29T01:18:17+00:00"'
+            ),
+        )
+    }
+)
+
+
 DbInfo = namedtuple('DbInfo', 'engine url jdbc_url dialect load_table')
 
 

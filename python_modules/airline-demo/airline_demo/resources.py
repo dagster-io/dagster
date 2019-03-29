@@ -1,4 +1,5 @@
 import contextlib
+import datetime
 import os
 import shutil
 import tempfile
@@ -8,7 +9,7 @@ from pyspark.sql import SparkSession
 from dagster import Field, resource, check, Dict, String, Path, Bool
 from dagster.utils import safe_isfile, mkdir_p
 
-from .types import DbInfo, PostgresConfigData, RedshiftConfigData
+from .types import DbInfo, PostgresConfigData, RedshiftConfigData, TimeConfigData
 from .utils import (
     create_postgres_db_url,
     create_postgres_engine,
@@ -178,6 +179,28 @@ def redshift_db_info_resource(init_context):
         dialect='redshift',
         load_table=_do_load,
     )
+
+
+@resource(config_field=Field(TimeConfigData))
+def time_resource(init_context):
+    class TimeResource(object):
+        def __init__(self, utcnow):
+            self._utcnow = utcnow
+
+        @property
+        def utcnow(self):
+            return self._utcnow
+
+    utcnow = init_context.resource_config.get('utcnow')
+    if utcnow is not None:
+        try:
+            utcnow = datetime.datetime.strptime(utcnow, '%Y-%m-%dT%H:%M:%S+00:00')
+        except ValueError:
+            utcnow = None
+    if utcnow is None:
+        utcnow = datetime.datetime.utcnow()
+
+    return TimeResource(utcnow)
 
 
 @resource(config_field=Field(PostgresConfigData))
