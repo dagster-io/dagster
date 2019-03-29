@@ -386,9 +386,8 @@ def construct_run_storage(run_config, environment_config):
         )
 
 
-def construct_intermediates_manager(run_config, init_context, environment_config, pipeline_def):
+def construct_intermediates_manager(run_config, environment_config, pipeline_def):
     check.inst_param(run_config, 'run_config', RunConfig)
-    check.inst_param(init_context, 'init_context', InitContext)
     check.inst_param(environment_config, 'environment_config', EnvironmentConfig)
     check.inst_param(pipeline_def, 'pipeline_def', PipelineDefinition)
 
@@ -396,7 +395,7 @@ def construct_intermediates_manager(run_config, init_context, environment_config
         if run_config.storage_mode == RunStorageMode.FILESYSTEM:
             return ObjectStoreIntermediatesManager(
                 FileSystemObjectStore(
-                    init_context.run_id,
+                    run_config.run_id,
                     construct_type_registry(pipeline_def, RunStorageMode.FILESYSTEM),
                 )
             )
@@ -406,7 +405,7 @@ def construct_intermediates_manager(run_config, init_context, environment_config
             return ObjectStoreIntermediatesManager(
                 S3ObjectStore(
                     environment_config.storage.storage_config['s3_bucket'],
-                    init_context.run_id,
+                    run_config.run_id,
                     construct_type_registry(pipeline_def, RunStorageMode.S3),
                 )
             )
@@ -415,8 +414,7 @@ def construct_intermediates_manager(run_config, init_context, environment_config
     elif environment_config.storage.storage_mode == 'filesystem':
         return ObjectStoreIntermediatesManager(
             FileSystemObjectStore(
-                init_context.run_id,
-                construct_type_registry(pipeline_def, RunStorageMode.FILESYSTEM),
+                run_config.run_id, construct_type_registry(pipeline_def, RunStorageMode.FILESYSTEM)
             )
         )
     elif environment_config.storage.storage_mode == 'in_memory':
@@ -425,7 +423,7 @@ def construct_intermediates_manager(run_config, init_context, environment_config
         return ObjectStoreIntermediatesManager(
             S3ObjectStore(
                 environment_config.storage.storage_config['s3_bucket'],
-                init_context.run_id,
+                run_config.run_id,
                 construct_type_registry(pipeline_def, RunStorageMode.S3),
             )
         )
@@ -481,9 +479,7 @@ def yield_pipeline_execution_context(pipeline_def, environment_dict, run_config)
                 resources,
                 environment_config,
                 run_storage,
-                construct_intermediates_manager(
-                    run_config, init_context, environment_config, pipeline_def
-                ),
+                construct_intermediates_manager(run_config, environment_config, pipeline_def),
             )
 
 
