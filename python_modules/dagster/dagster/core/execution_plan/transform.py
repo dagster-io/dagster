@@ -1,5 +1,5 @@
 from dagster import check
-from dagster.core.definitions import Result, Solid
+from dagster.core.definitions import Result, Solid, Materialization
 from dagster.core.errors import DagsterInvariantViolationError
 from dagster.core.user_context import TransformExecutionContext
 from dagster.core.execution_context import (
@@ -53,20 +53,23 @@ def _yield_transform_results(transform_context, inputs):
         return
 
     for result in gen:
-        if not isinstance(result, Result):
+        if isinstance(result, Result):
+            transform_context.log.info(
+                'Solid {solid} emitted output "{output}" value {value}'.format(
+                    solid=step.solid.name, output=result.output_name, value=repr(result.value)
+                )
+            )
+            yield StepOutputValue(output_name=result.output_name, value=result.value)
+
+        elif isinstance(result, Materialization):
+            yield result
+        else:
             raise DagsterInvariantViolationError(
                 (
                     'Transform for solid {solid_name} yielded {result} rather an '
-                    'an instance of the Result class.'
+                    'an instance of the Result or Materialization class.'
                 ).format(result=repr(result), solid_name=step.solid.name)
             )
-
-        transform_context.log.info(
-            'Solid {solid} emitted output "{output}" value {value}'.format(
-                solid=step.solid.name, output=result.output_name, value=repr(result.value)
-            )
-        )
-        yield StepOutputValue(output_name=result.output_name, value=result.value)
 
 
 def _execute_core_transform(transform_context, inputs):
@@ -85,9 +88,10 @@ def _execute_core_transform(transform_context, inputs):
     )
 
     all_results = []
-    for step_output_value in _yield_transform_results(transform_context, inputs):
-        yield step_output_value
-        all_results.append(step_output_value)
+    for step_output in _yield_transform_results(transform_context, inputs):
+        yield step_output
+        if isinstance(step_output, StepOutputValue):
+            all_results.append(step_output)
 
     if len(all_results) != len(solid.definition.output_defs):
         emitted_result_names = {r.output_name for r in all_results}

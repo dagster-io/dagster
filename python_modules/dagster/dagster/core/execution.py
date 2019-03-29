@@ -625,12 +625,12 @@ def _execute_pipeline_iterator(pipeline_context):
 
     pipeline_success = True
 
-    for step_event in invoke_executor_on_plan(
+    for event in invoke_executor_on_plan(
         pipeline_context, execution_plan, pipeline_context.run_config.step_keys_to_execute
     ):
-        if step_event.is_step_failure:
+        if event.is_step_failure:
             pipeline_success = False
-        yield step_event
+        yield event
 
     if pipeline_success:
         yield DagsterEvent.pipeline_success(pipeline_context)

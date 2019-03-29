@@ -18,6 +18,8 @@ from .resource import ResourceDefinition
 
 from .result import Result
 
+from .materialization import Materialization
+
 from .repository import RepositoryDefinition
 
 from .pipeline import PipelineDefinition, solids_in_topological_order
