@@ -12,6 +12,12 @@ interface IExecutionStartButtonState {
   starting: boolean;
 }
 
+enum ExecutionButtonStatus {
+  Ready = "ready",
+  Running = "running",
+  Disabled = "disabled"
+}
+
 export default class ExecutionStartButton extends React.Component<
   IExecutionStartButtonProps,
   IExecutionStartButtonState
@@ -47,7 +53,7 @@ export default class ExecutionStartButton extends React.Component<
             return (
               <Wrapper
                 role="button"
-                state="running"
+                state={ExecutionButtonStatus.Running}
                 title={"Pipeline execution is in progress..."}
               >
                 <div style={{ marginRight: 5 }}>
@@ -61,8 +67,8 @@ export default class ExecutionStartButton extends React.Component<
           if (websocketStatus !== WebSocket.OPEN) {
             return (
               <Wrapper
-                state="disabled"
                 role="button"
+                state={ExecutionButtonStatus.Disabled}
                 title={"The dagit server is offline"}
               >
                 <div style={{ marginRight: 5 }}>
@@ -76,7 +82,7 @@ export default class ExecutionStartButton extends React.Component<
           return (
             <Wrapper
               role="button"
-              state="ready"
+              state={ExecutionButtonStatus.Ready}
               title={"Start pipeline execution"}
               onClick={this.onClick}
             >
@@ -90,7 +96,7 @@ export default class ExecutionStartButton extends React.Component<
   }
 }
 
-const Wrapper = styled.div<{ state: "ready" | "disabled" | "running" }>`
+const Wrapper = styled.div<{ state: ExecutionButtonStatus }>`
   width: 150px;
   height: 30px;
   border-radius: 3px;
