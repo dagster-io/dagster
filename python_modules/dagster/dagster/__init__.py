@@ -44,6 +44,7 @@ from dagster.core.errors import (
     DagsterRuntimeCoercionError,
     DagsterTypeError,
     DagsterUserCodeExecutionError,
+    DagsterStepOutputNotFoundError,
 )
 
 
@@ -114,6 +115,7 @@ __all__ = [
     'DagsterRuntimeCoercionError',
     'DagsterTypeError',
     'DagsterUserCodeExecutionError',
+    'DagsterStepOutputNotFoundError',
     # Utilities
     'execute_solid',
     'execute_solids',

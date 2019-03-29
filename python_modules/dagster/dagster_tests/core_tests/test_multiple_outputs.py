@@ -2,6 +2,7 @@ import pytest
 
 from dagster import (
     DagsterInvariantViolationError,
+    DagsterStepOutputNotFoundError,
     DependencyDefinition,
     ExpectationDefinition,
     ExpectationResult,
@@ -209,5 +210,5 @@ def test_missing_non_optional_output_fails():
 
     pipeline = PipelineDefinition(solids=[solid])
 
-    with pytest.raises(DagsterInvariantViolationError):
+    with pytest.raises(DagsterStepOutputNotFoundError):
         execute_pipeline(pipeline)
