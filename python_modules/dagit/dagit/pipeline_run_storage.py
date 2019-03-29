@@ -12,6 +12,7 @@ from rx import Observable
 
 from dagster import check, seven
 from dagster.core.events.logging import EventRecord, EventType
+from dagster.core.events import DagsterEventType
 from dagster.core.execution import ExecutionSelector
 from dagster.core.execution_context import ReexecutionConfig
 from dagster.core.execution_plan.objects import ExecutionPlan
@@ -112,12 +113,14 @@ class PipelineRun(object):
     def handle_new_event(self, new_event):
         check.inst_param(new_event, 'new_event', EventRecord)
 
-        if new_event.event_type == EventType.PIPELINE_START:
-            self._status = PipelineRunStatus.STARTED
-        elif new_event.event_type == EventType.PIPELINE_SUCCESS:
-            self._status = PipelineRunStatus.SUCCESS
-        elif new_event.event_type == EventType.PIPELINE_FAILURE:
-            self._status = PipelineRunStatus.FAILURE
+        if new_event.event_type == EventType.DAGSTER_EVENT:
+            event = new_event.dagster_event
+            if event.event_type == DagsterEventType.PIPELINE_START:
+                self._status = PipelineRunStatus.STARTED
+            elif event.event_type == DagsterEventType.PIPELINE_SUCCESS:
+                self._status = PipelineRunStatus.SUCCESS
+            elif event.event_type == DagsterEventType.PIPELINE_FAILURE:
+                self._status = PipelineRunStatus.FAILURE
 
         self.store_event(new_event)
         for subscriber in self.__subscribers:

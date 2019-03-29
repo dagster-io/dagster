@@ -21,10 +21,6 @@ from dagster.core.log import DagsterLog
 class EventType(Enum):
     DAGSTER_EVENT = 'DAGSTER_EVENT'
 
-    PIPELINE_START = 'PIPELINE_START'
-    PIPELINE_SUCCESS = 'PIPELINE_SUCCESS'
-    PIPELINE_FAILURE = 'PIPELINE_FAILURE'
-
     PIPELINE_PROCESS_START = 'PIPELINE_PROCESS_START'
     PIPELINE_PROCESS_STARTED = 'PIPELINE_PROCESS_STARTED'
 
@@ -39,28 +35,6 @@ class ExecutionEvents(namedtuple('_ExecutionEvents', 'pipeline_name log')):
             cls,
             check.str_param(pipeline_name, 'pipeline_name'),
             check.inst_param(log, 'log', DagsterLog),
-        )
-
-    def pipeline_start(self):
-        self.log.info(
-            'Beginning execution of pipeline {pipeline}'.format(pipeline=self.pipeline_name),
-            event_type=EventType.PIPELINE_START.value,
-        )
-
-    def pipeline_success(self):
-        self.log.info(
-            'Completing successful execution of pipeline {pipeline}'.format(
-                pipeline=self.pipeline_name
-            ),
-            event_type=EventType.PIPELINE_SUCCESS.value,
-        )
-
-    def pipeline_failure(self):
-        self.log.info(
-            'Completing failing execution of pipeline {pipeline}'.format(
-                pipeline=self.pipeline_name
-            ),
-            event_type=EventType.PIPELINE_FAILURE.value,
         )
 
     def step_materialization(self, step_key, file_name, file_location):
@@ -208,15 +182,10 @@ class StepMaterializationRecord(EventRecord):
 
 
 EVENT_CLS_LOOKUP = {
-    EventType.PIPELINE_FAILURE: PipelineEventRecord,
-    EventType.PIPELINE_START: PipelineEventRecord,
-    EventType.PIPELINE_SUCCESS: PipelineEventRecord,
     EventType.STEP_MATERIALIZATION: StepMaterializationRecord,
     EventType.DAGSTER_EVENT: DagsterEventRecord,
     EventType.UNCATEGORIZED: LogMessageRecord,
 }
-
-PIPELINE_EVENTS = {EventType.PIPELINE_FAILURE, EventType.PIPELINE_START, EventType.PIPELINE_SUCCESS}
 
 
 def construct_error_info(logger_message):
@@ -249,9 +218,7 @@ def logger_to_kwargs(logger_message):
     }
 
     event_cls = EVENT_CLS_LOOKUP[event_type]
-    if issubclass(event_cls, PipelineEventRecord):
-        return dict(base_args, pipeline_name=logger_message.meta['pipeline'])
-    elif issubclass(event_cls, DagsterEventRecord):
+    if issubclass(event_cls, DagsterEventRecord):
         return dict(
             base_args,
             dagster_event=logger_message.meta['dagster_event'],

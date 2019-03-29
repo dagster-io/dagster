@@ -83,24 +83,22 @@ class PipelineExecutionResult(object):
     '''Result of execution of the whole pipeline. Returned eg by :py:func:`execute_pipeline`.
     '''
 
-    def __init__(self, pipeline, run_id, step_event_list, reconstruct_context):
+    def __init__(self, pipeline, run_id, event_list, reconstruct_context):
         self.pipeline = check.inst_param(pipeline, 'pipeline', PipelineDefinition)
         self.run_id = check.str_param(run_id, 'run_id')
-        self.step_event_list = check.list_param(
-            step_event_list, 'step_event_list', of_type=DagsterEvent
-        )
+        self.event_list = check.list_param(event_list, 'step_event_list', of_type=DagsterEvent)
         self.reconstruct_context = check.callable_param(reconstruct_context, 'reconstruct_context')
 
-        solid_result_dict = self._context_solid_result_dict(step_event_list)
+        solid_result_dict = self._context_solid_result_dict(event_list)
 
         self.solid_result_dict = solid_result_dict
         self.solid_result_list = list(self.solid_result_dict.values())
 
-    def _context_solid_result_dict(self, step_event_list):
+    def _context_solid_result_dict(self, event_list):
         solid_set = set()
         solid_order = []
         step_events_by_solid_by_kind = defaultdict(lambda: defaultdict(list))
-
+        step_event_list = [event for event in event_list if event.is_step_event]
         for step_event in step_event_list:
             solid_name = step_event.solid_name
             if solid_name not in solid_set:
@@ -122,7 +120,11 @@ class PipelineExecutionResult(object):
     @property
     def success(self):
         '''Whether the pipeline execution was successful at all steps'''
-        return all([not step_event.is_step_failure for step_event in self.step_event_list])
+        return all([not step_event.is_step_failure for step_event in self.event_list])
+
+    @property
+    def step_event_list(self):
+        return [event for event in self.event_list if event.is_step_event]
 
     def result_for_solid(self, name):
         '''Get a :py:class:`SolidExecutionResult` for a given solid name.
@@ -596,7 +598,7 @@ def get_resource_or_gen(pipeline_def, context_definition, resource_name, environ
 
 def _execute_pipeline_iterator(pipeline_context):
     check.inst_param(pipeline_context, 'pipeline_context', SystemPipelineExecutionContext)
-    pipeline_context.events.pipeline_start()
+    yield DagsterEvent.pipeline_start(pipeline_context)
 
     execution_plan = create_execution_plan_core(pipeline_context)
 
@@ -608,7 +610,7 @@ def _execute_pipeline_iterator(pipeline_context):
                 pipeline=pipeline_context.pipeline_def.display_name
             )
         )
-        pipeline_context.events.pipeline_success()
+        yield DagsterEvent.pipeline_success(pipeline_context)
         return
 
     _setup_reexecution(pipeline_context.run_config, pipeline_context, execution_plan)
@@ -631,9 +633,9 @@ def _execute_pipeline_iterator(pipeline_context):
         yield step_event
 
     if pipeline_success:
-        pipeline_context.events.pipeline_success()
+        yield DagsterEvent.pipeline_success(pipeline_context)
     else:
-        pipeline_context.events.pipeline_failure()
+        yield DagsterEvent.pipeline_failure(pipeline_context)
 
 
 def execute_pipeline_iterator(pipeline, environment_dict=None, run_config=None):
@@ -687,12 +689,12 @@ def execute_pipeline(pipeline, environment_dict=None, run_config=None):
     with _pipeline_execution_context_manager(
         pipeline, environment_config, run_config, intermediates_manager
     ) as pipeline_context:
-        step_event_list = list(_execute_pipeline_iterator(pipeline_context))
+        event_list = list(_execute_pipeline_iterator(pipeline_context))
 
     return PipelineExecutionResult(
         pipeline,
         run_config.run_id,
-        step_event_list,
+        event_list,
         lambda: _pipeline_execution_context_manager(
             pipeline, environment_config, run_config, intermediates_manager
         ),
@@ -828,6 +830,12 @@ def create_environment_config(pipeline, environment_dict=None):
         raise PipelineConfigEvaluationError(pipeline, result.errors, environment_dict)
 
     return construct_environment_config(result.value)
+
+
+def step_output_event_filter(pipe_iterator):
+    for step_event in pipe_iterator:
+        if step_event.is_successful_output:
+            yield step_event
 
 
 class ExecutionSelector(object):

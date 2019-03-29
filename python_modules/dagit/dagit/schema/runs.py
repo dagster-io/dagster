@@ -289,19 +289,7 @@ class DauphinPipelineRunEvent(dauphin.Union):
             'step': dauphin_step,
         }
 
-        if event.event_type == EventType.PIPELINE_START:
-            return graphene_info.schema.type_named('PipelineStartEvent')(
-                pipeline=dauphin_pipeline, **basic_params
-            )
-        elif event.event_type == EventType.PIPELINE_SUCCESS:
-            return graphene_info.schema.type_named('PipelineSuccessEvent')(
-                pipeline=dauphin_pipeline, **basic_params
-            )
-        elif event.event_type == EventType.PIPELINE_FAILURE:
-            return graphene_info.schema.type_named('PipelineFailureEvent')(
-                pipeline=dauphin_pipeline, **basic_params
-            )
-        elif event.event_type == EventType.PIPELINE_PROCESS_START:
+        if event.event_type == EventType.PIPELINE_PROCESS_START:
             return graphene_info.schema.type_named('PipelineProcessStartEvent')(
                 pipeline=dauphin_pipeline, **basic_params
             )
@@ -332,6 +320,18 @@ class DauphinPipelineRunEvent(dauphin.Union):
                         dagster_event.step_failure_data.error
                     ),
                     **basic_params
+                )
+            elif dagster_event.event_type == DagsterEventType.PIPELINE_START:
+                return graphene_info.schema.type_named('PipelineStartEvent')(
+                    pipeline=dauphin_pipeline, **basic_params
+                )
+            elif dagster_event.event_type == DagsterEventType.PIPELINE_SUCCESS:
+                return graphene_info.schema.type_named('PipelineSuccessEvent')(
+                    pipeline=dauphin_pipeline, **basic_params
+                )
+            elif dagster_event.event_type == DagsterEventType.PIPELINE_FAILURE:
+                return graphene_info.schema.type_named('PipelineFailureEvent')(
+                    pipeline=dauphin_pipeline, **basic_params
                 )
             else:
                 raise Exception(
