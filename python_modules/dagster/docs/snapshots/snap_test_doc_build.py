@@ -20588,7 +20588,7 @@ SystemPipelineExecutionContextCreationData although that seemed excessively verb
 
 <dl class="class">
 <dt id="dagster.PipelineExecutionResult">
-<em class="property">class </em><code class="descclassname">dagster.</code><code class="descname">PipelineExecutionResult</code><span class="sig-paren">(</span><em>pipeline</em>, <em>run_id</em>, <em>step_event_list</em><span class="sig-paren">)</span><a class="headerlink" href="#dagster.PipelineExecutionResult" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">dagster.</code><code class="descname">PipelineExecutionResult</code><span class="sig-paren">(</span><em>pipeline</em>, <em>run_id</em>, <em>step_event_list</em>, <em>reconstruct_context</em><span class="sig-paren">)</span><a class="headerlink" href="#dagster.PipelineExecutionResult" title="Permalink to this definition">¶</a></dt>
 <dd><p>Result of execution of the whole pipeline. Returned eg by <a class="reference internal" href="#dagster.execute_pipeline" title="dagster.execute_pipeline"><code class="xref py py-func docutils literal notranslate"><span class="pre">execute_pipeline()</span></code></a>.</p>
 <dl class="method">
 <dt id="dagster.PipelineExecutionResult.result_for_solid">
@@ -20619,7 +20619,7 @@ SystemPipelineExecutionContextCreationData although that seemed excessively verb
 
 <dl class="class">
 <dt id="dagster.SolidExecutionResult">
-<em class="property">class </em><code class="descclassname">dagster.</code><code class="descname">SolidExecutionResult</code><span class="sig-paren">(</span><em>solid</em>, <em>step_events_by_kind</em><span class="sig-paren">)</span><a class="headerlink" href="#dagster.SolidExecutionResult" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">dagster.</code><code class="descname">SolidExecutionResult</code><span class="sig-paren">(</span><em>solid</em>, <em>step_events_by_kind</em>, <em>reconstruct_context</em><span class="sig-paren">)</span><a class="headerlink" href="#dagster.SolidExecutionResult" title="Permalink to this definition">¶</a></dt>
 <dd><p>Execution result for one solid of the pipeline.</p>
 <dl class="attribute">
 <dt id="dagster.SolidExecutionResult.context">
@@ -20649,7 +20649,8 @@ SystemPipelineExecutionContextCreationData although that seemed excessively verb
 <dt id="dagster.SolidExecutionResult.transformed_value">
 <code class="descname">transformed_value</code><span class="sig-paren">(</span><em>output_name=\'result\'</em><span class="sig-paren">)</span><a class="headerlink" href="#dagster.SolidExecutionResult.transformed_value" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns transformed value either for DEFAULT_OUTPUT or for the output
-given as output_name. Returns None if execution result isn’t a success</p>
+given as output_name. Returns None if execution result isn’t a success.</p>
+<p>Reconstructs the pipeline context to materialize value.</p>
 </dd></dl>
 
 <dl class="attribute">
@@ -20657,6 +20658,7 @@ given as output_name. Returns None if execution result isn’t a success</p>
 <code class="descname">transformed_values</code><a class="headerlink" href="#dagster.SolidExecutionResult.transformed_values" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return dictionary of transformed results, with keys being output names.
 Returns None if execution result isn’t a success.</p>
+<p>Reconstructs the pipeline context to materialize values.</p>
 </dd></dl>
 
 </dd></dl>
