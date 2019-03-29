@@ -19,6 +19,7 @@ class TestInMemoryAirflow_0IngestExecution:
     pipeline = define_airline_demo_ingest_pipeline()
     config = [
         script_relative_path(os.path.join('..', 'environments', 'local_base.yml')),
+        script_relative_path(os.path.join('..', 'environments', 'local_airflow.yml')),
         script_relative_path(os.path.join('..', 'environments', 'local_fast_ingest.yml')),
     ]
 
@@ -31,6 +32,7 @@ class TestInMemoryAirflow_1WarehouseExecution:
     pipeline = define_airline_demo_warehouse_pipeline()
     config = [
         script_relative_path(os.path.join('..', 'environments', 'local_base.yml')),
+        script_relative_path(os.path.join('..', 'environments', 'local_airflow.yml')),
         script_relative_path(os.path.join('..', 'environments', 'local_warehouse.yml')),
     ]
 
