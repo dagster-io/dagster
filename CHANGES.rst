@@ -1,4 +1,6 @@
 0.3.6
+   - Dagit's Execute tab now opens runs in separate browser tabs and a new Runs tab allows you to browse
+     and view historical runs.
    - There is now a new configuration section "storage" which can configure whether or not the execution
      should use the filesystem to store intermediate values or just store those values in memory.
    - Similarily, there is a new configuration for RunConfig that where the user can specify

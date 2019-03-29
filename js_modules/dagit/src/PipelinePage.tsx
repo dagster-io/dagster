@@ -2,15 +2,19 @@ import * as React from "react";
 import gql from "graphql-tag";
 import styled from "styled-components";
 import { Link } from "react-router-dom";
-import { Route, match } from "react-router";
+import { Route, match, Switch } from "react-router";
 import { History } from "history";
-import { Colors, NonIdealState, Navbar } from "@blueprintjs/core";
-import Page from "./Page";
+import { Colors, NonIdealState, Alignment, Navbar } from "@blueprintjs/core";
 import { PipelineJumpBar } from "./PipelineJumpComponents";
 import PythonErrorInfo from "./PythonErrorInfo";
 import PipelineExplorer from "./PipelineExplorer";
-import PipelineExecutionRoot from "./execution/PipelineExecutionRoot";
+import PipelineExecutionRoot from "./execute/PipelineExecutionRoot";
+import PipelineRunsRoot from "./runs/PipelineRunsRoot";
+import PipelineRunRoot from "./runs/PipelineRunRoot";
 import CustomAlertProvider from "./CustomAlertProvider";
+import navBarImage from "./images/nav-logo.png";
+import WebsocketStatus from "./WebsocketStatus";
+import VersionLabel from "./VersionLabel";
 
 import {
   PipelinePageFragment,
@@ -37,32 +41,15 @@ interface IPipelinePageTabProps extends IPipelinePageProps {
 const TABS = [
   {
     slug: "explore",
-    title: "Explore",
-    render: (props: IPipelinePageTabProps) => (
-      <Route
-        path={`${props.match.url}/:solid?`}
-        render={({
-          match
-        }: {
-          match: match<{ solid: string | undefined }>;
-        }) => (
-          <PipelineExplorer
-            history={props.history}
-            pipeline={props.pipeline}
-            solid={props.pipeline.solids.find(
-              s => s.name === match.params.solid
-            )}
-          />
-        )}
-      />
-    )
+    title: "Explore"
   },
   {
     slug: "execute",
-    title: "Execute",
-    render: (props: IPipelinePageTabProps) => (
-      <PipelineExecutionRoot pipeline={props.pipeline.name} />
-    )
+    title: "Execute"
+  },
+  {
+    slug: "runs",
+    title: "Runs"
   }
 ];
 
@@ -121,8 +108,34 @@ export default class PipelinePage extends React.Component<IPipelinePageProps> {
     if (error) {
       body = <PythonErrorInfo error={error} centered={true} />;
     } else if (selectedPipeline && selectedTab) {
-      body = selectedTab.render(
-        Object.assign({ pipeline: selectedPipeline }, this.props)
+      body = (
+        <Switch>
+          <Route
+            path="/:pipelineName/execute"
+            component={PipelineExecutionRoot}
+          />
+          <Route
+            path="/:pipelineName/runs/:runId"
+            component={PipelineRunRoot}
+          />
+          <Route
+            exact={true}
+            path="/:pipelineName/runs"
+            component={PipelineRunsRoot}
+          />
+          <Route
+            path="/:pipelineName/:solid"
+            render={({ match }) => (
+              <PipelineExplorer
+                history={history}
+                pipeline={selectedPipeline}
+                solid={selectedPipeline.solids.find(
+                  s => s.name === match.params.solid
+                )}
+              />
+            )}
+          />
+        </Switch>
       );
     } else {
       body = (
@@ -134,37 +147,45 @@ export default class PipelinePage extends React.Component<IPipelinePageProps> {
     }
 
     return (
-      <Page
-        history={this.props.history}
-        navbarContents={
-          <PipelineNavbar>
-            <PipelineJumpBar
-              pipelines={pipelines}
-              selectedPipeline={selectedPipeline}
-              onItemSelect={pipeline => {
-                history.push(`/${pipeline.name}/${selectedTab.slug}`);
-              }}
-            />
-            {selectedPipeline && <Navbar.Divider />}
-            {selectedPipeline && (
-              <Tabs>
-                {TABS.map(({ slug, title }) => (
-                  <Tab
-                    key={slug}
-                    to={`/${selectedPipeline.name}/${slug}`}
-                    className={selectedTab.slug === slug ? "active" : ""}
-                  >
-                    {title}
-                  </Tab>
-                ))}
-              </Tabs>
-            )}
-          </PipelineNavbar>
-        }
-      >
+      <>
+        <Navbar>
+          <Navbar.Group align={Alignment.LEFT}>
+            <Navbar.Heading onClick={() => history.push("/")}>
+              <img src={navBarImage} style={{ height: 34 }} />
+            </Navbar.Heading>
+            <Navbar.Divider />
+            <PipelineNavbar>
+              <PipelineJumpBar
+                pipelines={pipelines}
+                selectedPipeline={selectedPipeline}
+                onItemSelect={pipeline => {
+                  history.push(`/${pipeline.name}/${selectedTab.slug}`);
+                }}
+              />
+              {selectedPipeline && <Navbar.Divider />}
+              {selectedPipeline && (
+                <Tabs>
+                  {TABS.map(({ slug, title }) => (
+                    <Tab
+                      key={slug}
+                      to={`/${selectedPipeline.name}/${slug}`}
+                      className={selectedTab.slug === slug ? "active" : ""}
+                    >
+                      {title}
+                    </Tab>
+                  ))}
+                </Tabs>
+              )}
+            </PipelineNavbar>
+          </Navbar.Group>
+          <Navbar.Group align={Alignment.RIGHT}>
+            <WebsocketStatus />
+            <VersionLabel />
+          </Navbar.Group>
+        </Navbar>
         {body}
         <CustomAlertProvider />
-      </Page>
+      </>
     );
   }
 }

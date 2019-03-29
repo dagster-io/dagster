@@ -50,8 +50,8 @@ injectGlobal`
   }
 
   html, body, #root {
-    max-width: 100%;
-    min-height: 100%;
+    width: 100vw;
+    height: 100vh;
     overflow: hidden;
     display: flex;
     flex: 1 1;
