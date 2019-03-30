@@ -54,7 +54,7 @@ def _do_setup(name='dagster-sqlalchemy'):
             'Operating System :: OS Independent',
         ],
         packages=find_packages(exclude=['dagster_sqlalchemy_tests']),
-        install_requires=['dagster', 'dagstermill', 'jinja2>=2.8', 'sqlalchemy>=1.2.7'],
+        install_requires=['dagster', 'jinja2>=2.8', 'sqlalchemy>=1.2.7'],
     )
 
 
