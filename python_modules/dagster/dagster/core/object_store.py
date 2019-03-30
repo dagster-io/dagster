@@ -122,8 +122,6 @@ def get_valid_target_path(base_dir, paths):
 
 class FileSystemObjectStore(ObjectStore):
     def __init__(self, run_id, types_to_register=None, base_dir=None):
-        print('**********************************')
-        print(base_dir)
         self.run_id = check.str_param(run_id, 'run_id')
         self.storage_mode = RunStorageMode.FILESYSTEM
 

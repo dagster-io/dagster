@@ -196,11 +196,6 @@ def start_pipeline_execution(
     reexecution_config,
     graphql_execution_metadata,
 ):
-    print('=' * 140)
-    print('environment_dict')
-    print(environment_dict)
-    print('=' * 140)
-
     check.inst_param(graphene_info, 'graphene_info', ResolveInfo)
     check.inst_param(selector, 'selector', ExecutionSelector)
     check.opt_dict_param(environment_dict, 'environment_dict', key_type=str)
