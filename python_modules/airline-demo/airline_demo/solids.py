@@ -291,6 +291,7 @@ def replace_values_spark(data_frame, old, new):
             description='The pyspark DataFrame containing NA values to normalize.',
         )
     ],
+    outputs=[OutputDefinition(SparkDataFrameType)],
 )
 def normalize_weather_na_values(_context, data_frame):
     return replace_values_spark(data_frame, 'M', None)
