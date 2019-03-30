@@ -295,13 +295,8 @@ class DagsterOperator(ModifiedDockerOperator):
 
         # Tell dagster and docker where to store intermediates on the file system to share
         # intermediates between step executions
-        print('*' * 140)
-        print(self.config)
-        print('*' * 140)
         config_dict = yaml.load(self.config)
         config_dict.update({'storage': {'filesystem': {'base_dir': DOCKER_INTERMEDIATES_DIR}}})
-        print(yaml.dump(config_dict))
-        print('*' * 140)
         # self.config = yaml.dump(config_dict)
 
         if self.step_keys is None:
