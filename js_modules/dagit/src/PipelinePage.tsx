@@ -124,13 +124,14 @@ export default class PipelinePage extends React.Component<IPipelinePageProps> {
             component={PipelineRunsRoot}
           />
           <Route
+            // TODO for Ben: I'm sure there is a cleaner and more idiomatic
+            // way to handle these three cases and not hardcode the undefined.
+            // Tracking in https://github.com/dagster-io/dagster/issues/1070
+            //
+            // -- schrockn 03/30/2019
+            exact={true}
             path="/:pipelineName"
             render={({ match }) => (
-              // TODO for Ben: I'm sure there is a cleaner and more idiomatic
-              // way to handle these three cases and not hardcode the undefined.
-              // Tracking in https://github.com/dagster-io/dagster/issues/1070 
-              // 
-              // -- schrockn 03/30/2019
               <PipelineExplorer
                 history={history}
                 pipeline={selectedPipeline}
