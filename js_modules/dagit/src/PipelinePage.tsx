@@ -124,6 +124,17 @@ export default class PipelinePage extends React.Component<IPipelinePageProps> {
             component={PipelineRunsRoot}
           />
           <Route
+            exact={true}
+            path="/:pipelineName/explore"
+            render={({ match }) => (
+              <PipelineExplorer
+                history={history}
+                pipeline={selectedPipeline}
+                solid={undefined}
+              />
+            )}
+            />
+          <Route
             path="/:pipelineName/explore/:solid"
             render={({ match }) => (
               <PipelineExplorer
