@@ -130,10 +130,13 @@ export default class PipelinePage extends React.Component<IPipelinePageProps> {
               <PipelineExplorer
                 history={history}
                 pipeline={selectedPipeline}
+                // TODO for Ben: I'm sure there is a cleaner and more idiomatic
+                // way to handle these two cases and not hardcode the undefined.
+                // -- schrockn 03/30/2019
                 solid={undefined}
               />
             )}
-            />
+          />
           <Route
             path="/:pipelineName/explore/:solid"
             render={({ match }) => (
