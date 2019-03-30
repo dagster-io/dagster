@@ -39,7 +39,7 @@ DAGSTER_OPERATOR_COMMAND_TEMPLATE = '''-q '
     '\n'
 )
 
-DOCKER_TEMPDIR = '/tmp/dagster/unusual-prefix'
+DOCKER_INTERMEDIATES_DIR = '/dagster/unusual-prefix'
 
 DEFAULT_ENVIRONMENT = {
     'AWS_ACCESS_KEY_ID': os.getenv('AWS_ACCESS_KEY_ID'),
@@ -206,8 +206,14 @@ class ModifiedDockerOperator(DockerOperator):
             self.environment['AIRFLOW_TMP_DIR'] = self.tmp_dir
             self.volumes.append('{0}:{1}'.format(host_tmp_dir, self.tmp_dir))
 
+            # Tell Docker to mount our intermediates storage directory
+            host_intermediates_path = '/tmp' + DOCKER_INTERMEDIATES_DIR
+            self.volumes.append('{0}:{1}'.format(host_intermediates_path, DOCKER_INTERMEDIATES_DIR))
+
+            command = self.get_command()
+            self.log.info('Running command %s', command)
             self.container = self.cli.create_container(
-                command=self.get_command(),
+                command=command,
                 environment=self.environment,
                 host_config=self.cli.create_host_config(
                     auto_remove=self.auto_remove,
@@ -289,9 +295,14 @@ class DagsterOperator(ModifiedDockerOperator):
 
         # Tell dagster and docker where to store intermediates on the file system to share
         # intermediates between step executions
+        print('*' * 140)
+        print(self.config)
+        print('*' * 140)
         config_dict = yaml.load(self.config)
-        config_dict.update({'storage': {'filesystem': {'base_dir': DOCKER_TEMPDIR}}})
-        self.config = yaml.dump(config_dict)
+        config_dict.update({'storage': {'filesystem': {'base_dir': DOCKER_INTERMEDIATES_DIR}}})
+        print(yaml.dump(config_dict))
+        print('*' * 140)
+        # self.config = yaml.dump(config_dict)
 
         if self.step_keys is None:
             self.step_keys = []
@@ -389,9 +400,6 @@ class DagsterOperator(ModifiedDockerOperator):
             self._run_id = context['dag_run'].run_id
 
         try:
-            # Tell Docker to mount our intermediates storage directory
-            self.volumes.append('{0}:{0}'.format(DOCKER_TEMPDIR))
-
             self.log.debug('Executing with query: {query}'.format(query=self.query))
 
             raw_res = super(DagsterOperator, self).execute(context)

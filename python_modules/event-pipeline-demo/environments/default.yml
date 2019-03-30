@@ -2,24 +2,18 @@ context:
   default:
     config:
       log_level: DEBUG
-         
+expectations:
+  evaluate: false
 solids:
   event_ingest:
     inputs:
-      spark_inputs: ["/path/to/inputs"]
+      spark_inputs: ["foo"]
     config:
-      spark_outputs: ["/path/to/outputs"]
-      application_jar: "events-assembly-0.1.0-SNAPSHOT.jar"
-      deploy_mode: "client"
+      spark_outputs: ["bar"]
+      application_arguments: "--local-path /data/ --date 2019-01-01"
+      application_jar: "./events-assembly-0.1.0-SNAPSHOT.jar"
       main_class: "io.dagster.events.EventPipeline"
-      application_arguments: "--local-path /path/to/inputs --date 2019-01-01"            
-      master_url: "local[*]"
-      spark_conf:
-        spark:
-          app:
-            name: "test_app"
-          executor:
-            cores: 1
+      master_url: "local[4]"
 
 
 # TODO: set up tests on remote cluster

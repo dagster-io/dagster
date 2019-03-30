@@ -30,7 +30,7 @@ DEFAULT_ARGS = {
     'retry_delay': timedelta(0, 300),
 }
 
-DOCKER_TEMPDIR = '/tmp/dagster/unusual-prefix'
+DOCKER_TEMPDIR = '/tmp/results'
 
 
 def _normalize_key(key):
