@@ -2875,7 +2875,8 @@ E   AttributeError: module 'dagster.core.types' has no attribute 'ConfigDictiona
 ```
 
 First, we can discouraging the use of the `types` namespace. Instead just `from dagster import Dict` (or whatever class directly).
-Second, `ConfigDictionary` is now just `Dict`.
+Second, `ConfigDictionary` is now just `NamedDict`. If the name of the type wasn't particularily relevant
+you can also eliminate that and just use `Dict`.
 Third, you do not have to name it. The net result is much nicer:
 
 Before:
@@ -21653,7 +21654,8 @@ snapshots['test_build_all_docs 57'] = '''
 </pre></div>
 </div>
 <p>First, we can discouraging the use of the <code class="docutils literal notranslate"><span class="pre">types</span></code> namespace. Instead just <code class="docutils literal notranslate"><span class="pre">from</span> <span class="pre">dagster</span> <span class="pre">import</span> <span class="pre">Dict</span></code> (or whatever class directly).
-Second, <code class="docutils literal notranslate"><span class="pre">ConfigDictionary</span></code> is now just <code class="docutils literal notranslate"><span class="pre">Dict</span></code>.
+Second, <code class="docutils literal notranslate"><span class="pre">ConfigDictionary</span></code> is now just <code class="docutils literal notranslate"><span class="pre">NamedDict</span></code>. If the name of the type wasn’t particularily relevant
+you can also eliminate that and just use <code class="docutils literal notranslate"><span class="pre">Dict</span></code>.
 Third, you do not have to name it. The net result is much nicer:</p>
 <p>Before:</p>
 <div class="highlight-py notranslate"><div class="highlight"><pre><span></span><span class="n">types</span><span class="o">.</span><span class="n">ConfigDictionary</span><span class="p">(</span>
