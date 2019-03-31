@@ -42,8 +42,8 @@ def check_using_facing_field_param(obj, param_name, error_context_str):
             raise DagsterInvalidDefinitionError(
                 (
                     'You have passed a config type "{printed_type}" in the parameter '
-                    '"{param_name}" {error_context_str} that expects a '
-                    'Field. You have likely forgot to wrap this type in a Field.'
+                    '"{param_name}" {error_context_str}. '
+                    'You have likely forgot to wrap this type in a Field.'
                 ).format(
                     printed_type=print_config_type_to_string(config_type, with_lines=False),
                     error_context_str=error_context_str,
@@ -210,6 +210,8 @@ class DictCounter:
 
 
 def NamedDict(name, fields, description=None, type_attributes=DEFAULT_TYPE_ATTRIBUTES):
+    check_user_facing_fields_dict(fields, 'NamedDict named "{}"'.format(name))
+
     class _NamedDict(_ConfigComposite):
         def __init__(self):
             super(_NamedDict, self).__init__(
@@ -224,17 +226,7 @@ def NamedDict(name, fields, description=None, type_attributes=DEFAULT_TYPE_ATTRI
 
 
 def Dict(fields):
-    type_name = 'Dict'
-    check.dict_param(fields, 'fields', key_type=str)
-    for field_name, potential_field in fields.items():
-        check_using_facing_field_param(
-            potential_field,
-            'fields',
-            (
-                'It is in the "{field_name}" entry of the field dict of a {type_name} '
-                'with field names {field_names}'
-            ).format(type_name=type_name, field_name=field_name, field_names=list(fields.keys())),
-        )
+    check_user_facing_fields_dict(fields, 'Dict')
 
     class _Dict(_ConfigComposite):
         def __init__(self):
@@ -248,6 +240,25 @@ def Dict(fields):
             )
 
     return _Dict
+
+
+def check_user_facing_fields_dict(fields, type_name_msg):
+    check.dict_param(fields, 'fields', key_type=str)
+    check.str_param(type_name_msg, 'type_name_msg')
+
+    for field_name, potential_field in fields.items():
+        check_using_facing_field_param(
+            potential_field,
+            'fields',
+            (
+                'and it is in the "{field_name}" entry of that dict. It is from '
+                'a {type_name_msg} with fields {field_names}'
+            ).format(
+                type_name_msg=type_name_msg,
+                field_name=field_name,
+                field_names=sorted(list(fields.keys())),
+            ),
+        )
 
 
 def PermissiveDict(fields=None):
