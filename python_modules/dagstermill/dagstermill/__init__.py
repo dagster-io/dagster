@@ -35,11 +35,8 @@ from dagster.core.errors import DagsterSubprocessExecutionError
 from dagster.core.events import construct_json_event_logger, EventRecord, EventType
 from dagster.core.execution import (
     yield_pipeline_execution_context,
-    yield_pipeline_execution_context_no_resources,
-    yield_blank_pipeline_execution_context,
     _create_resource_gens,
     _get_resources_type,
-    _yield_pipeline_context_gen,
 )
 from dagster.core.execution_context import (
     DagsterLog,
@@ -200,16 +197,20 @@ class Manager:
         # do not include event_callback in ExecutionMetadata,
         # since that'll be taken care of by side-channel established by event_logger
         run_config = RunConfig(run_id, loggers=loggers)
-        with yield_pipeline_execution_context_no_resources(
+        with yield_pipeline_execution_context(
             self.pipeline_def, environment_dict, run_config
         ) as pipeline_context:
             self.context = DagstermillInNotebookExecutionContext(pipeline_context)
 
         # Below is all for resources in notebook to work
-        with _yield_pipeline_context_gen(
+        with _get_resource_creation_info(
             self.pipeline_def, environment_dict, run_config
         ) as resource_creation_info:
-            resource_gens = _create_resource_gens(resource_creation_info)
+            resource_gens = _create_resource_gens(
+                self.pipeline_def, 
+                resource_creation_info.context_def, 
+                resource_creation_info.environment_config, 
+                resource_creation_info.run_id)
             self.context.resource_gens = resource_gens
 
         self.context.resources_type = _get_resources_type(
@@ -217,6 +218,11 @@ class Manager:
         )
 
         return self.context
+
+def yield_blank_pipeline_execution_context(environment_dict={}):
+    pipeline_def = PipelineDefinition([], name='Blank Pipeline Def')
+    run_config = RunConfig(run_id='')
+    yield yield_pipeline_execution_context(pipeline_def, environment_dict, run_config)
 
 
 def dagstermill_lifecycle_begin(resource_gens, resources_type):
