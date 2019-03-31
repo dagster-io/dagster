@@ -198,18 +198,18 @@ def test_pass_config_type_to_field_error_solid_definition():
 
 def test_pass_unrelated_type_to_field_error_solid_definition():
 
-    # with pytest.raises(DagsterInvalidDefinitionError) as exc_info:
+    with pytest.raises(DagsterInvalidDefinitionError) as exc_info:
 
-    @solid(config_field='nope')
-    def a_solid(_context):
-        pass
+        @solid(config_field='nope')
+        def a_solid(_context):
+            pass
 
-    assert a_solid  # fool lint
+        assert a_solid  # fool lint
 
     assert str(exc_info.value) == (
-        'You have passed a config type "{ val: Int }" as parameter "config_field" '
-        'of a solid definition named "a_solid" that expects a Field. You have '
-        'likely forgot to wrap this type in a Field.'
+        'You have passed an object \'nope\' of incorrect type "str" as parameter '
+        '"config_field" of a solid definition named "a_solid" where a Field '
+        'was expected.'
     )
 
 
