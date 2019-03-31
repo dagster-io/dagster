@@ -29,9 +29,9 @@ FIELD_NO_DEFAULT_PROVIDED = __FieldValueSentinel
 INFER_OPTIONAL_COMPOSITE_FIELD = __InferOptionalCompositeFieldSentinel
 
 
-def check_using_facing_field_param(obj, param_name, error_context_str=None):
+def check_using_facing_field_param(obj, param_name, error_context_str):
     check.str_param(param_name, 'param_name')
-    check.opt_str_param(error_context_str, 'error_context_str')
+    check.str_param(error_context_str, 'error_context_str')
 
     if not isinstance(obj, FieldImpl):
         from dagster.core.types.field import resolve_to_config_type
@@ -67,9 +67,9 @@ def check_using_facing_field_param(obj, param_name, error_context_str=None):
     return check.inst_param(obj, param_name, FieldImpl)
 
 
-def check_user_facing_opt_field_param(obj, param_name, error_context_str=None):
+def check_user_facing_opt_field_param(obj, param_name, error_context_str):
     check.str_param(param_name, 'param_name')
-    check.opt_str_param(error_context_str, 'error_context_str')
+    check.str_param(error_context_str, 'error_context_str')
     if obj is None:
         return None
     return check_using_facing_field_param(obj, param_name, error_context_str)
