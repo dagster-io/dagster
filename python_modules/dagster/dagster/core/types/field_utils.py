@@ -209,6 +209,25 @@ class DictCounter:
         return DictCounter._count
 
 
+def check_user_facing_fields_dict(fields, type_name_msg):
+    check.dict_param(fields, 'fields', key_type=str)
+    check.str_param(type_name_msg, 'type_name_msg')
+
+    for field_name, potential_field in fields.items():
+        check_using_facing_field_param(
+            potential_field,
+            'fields',
+            (
+                'and it is in the "{field_name}" entry of that dict. It is from '
+                'a {type_name_msg} with fields {field_names}'
+            ).format(
+                type_name_msg=type_name_msg,
+                field_name=field_name,
+                field_names=sorted(list(fields.keys())),
+            ),
+        )
+
+
 def NamedDict(name, fields, description=None, type_attributes=DEFAULT_TYPE_ATTRIBUTES):
     check_user_facing_fields_dict(fields, 'NamedDict named "{}"'.format(name))
 
@@ -240,25 +259,6 @@ def Dict(fields):
             )
 
     return _Dict
-
-
-def check_user_facing_fields_dict(fields, type_name_msg):
-    check.dict_param(fields, 'fields', key_type=str)
-    check.str_param(type_name_msg, 'type_name_msg')
-
-    for field_name, potential_field in fields.items():
-        check_using_facing_field_param(
-            potential_field,
-            'fields',
-            (
-                'and it is in the "{field_name}" entry of that dict. It is from '
-                'a {type_name_msg} with fields {field_names}'
-            ).format(
-                type_name_msg=type_name_msg,
-                field_name=field_name,
-                field_names=sorted(list(fields.keys())),
-            ),
-        )
 
 
 def PermissiveDict(fields=None):
