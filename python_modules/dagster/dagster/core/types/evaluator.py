@@ -148,11 +148,8 @@ def friendly_string_for_error(error):
             field_name=error.error_data.field_name, path_msg=path_msg, type_msg=type_msg
         )
     elif error.reason == DagsterEvaluationErrorReason.RUNTIME_TYPE_MISMATCH:
-        return 'Type failure at path "{path}"{type_msg}. Got "{value_rep}". {message}.'.format(
-            path=path,
-            type_msg=type_msg,
-            value_rep=error.error_data.value_rep,
-            message=error.message,
+        return 'Type failure at path "{path}"{type_msg}. {message}.'.format(
+            path=path, type_msg=type_msg, message=error.message
         )
     elif error.reason == DagsterEvaluationErrorReason.SELECTOR_FIELD_ERROR:
         if error.error_data.incoming_fields:
@@ -280,10 +277,8 @@ def _validate_config(config_type, config_value, stack):
             yield EvaluationError(
                 stack=stack,
                 reason=DagsterEvaluationErrorReason.RUNTIME_TYPE_MISMATCH,
-                message='Value "{value}" {path_msg} is not valid. Expected "{type_name}"'.format(
-                    path_msg=_get_friendly_path_msg(stack),
-                    value=config_value,
-                    type_name=config_type.name,
+                message='Value {path_msg} is not valid. Expected "{type_name}"'.format(
+                    path_msg=_get_friendly_path_msg(stack), type_name=config_type.name
                 ),
                 error_data=RuntimeMismatchErrorData(
                     config_type=config_type, value_rep=repr(config_value)
@@ -325,8 +320,8 @@ def validate_enum_value(enum_type, config_value, stack):
         yield EvaluationError(
             stack=stack,
             reason=DagsterEvaluationErrorReason.RUNTIME_TYPE_MISMATCH,
-            message='Value for enum type {type_name} must be a string got {value}'.format(
-                type_name=enum_type.name, value=config_value
+            message='Value for enum type {type_name} must be a string'.format(
+                type_name=enum_type.name
             ),
             error_data=RuntimeMismatchErrorData(
                 config_type=enum_type, value_rep=repr(config_value)
@@ -338,14 +333,7 @@ def validate_enum_value(enum_type, config_value, stack):
         yield EvaluationError(
             stack=stack,
             reason=DagsterEvaluationErrorReason.RUNTIME_TYPE_MISMATCH,
-            message=(
-                'Value not in enum type {type_name}. Got: {value}. '
-                'Possible values: {possible_values}.'
-            ).format(
-                type_name=enum_type.name,
-                value=repr(config_value),
-                possible_values=enum_type.config_values,
-            ),
+            message='Value not in enum type {type_name}'.format(type_name=enum_type.name),
             error_data=RuntimeMismatchErrorData(
                 config_type=enum_type, value_rep=repr(config_value)
             ),
@@ -364,8 +352,8 @@ def validate_selector_config_value(selector_type, config_value, stack):
         yield EvaluationError(
             stack=stack,
             reason=DagsterEvaluationErrorReason.RUNTIME_TYPE_MISMATCH,
-            message='Value for selector type {type_name} must be a dict got {value}'.format(
-                type_name=selector_type.name, value=config_value
+            message='Value for selector type {type_name} must be a dict'.format(
+                type_name=selector_type.name
             ),
             error_data=RuntimeMismatchErrorData(
                 config_type=selector_type, value_rep=repr(config_value)
@@ -396,7 +384,7 @@ def validate_selector_config_value(selector_type, config_value, stack):
                 stack=stack,
                 reason=DagsterEvaluationErrorReason.SELECTOR_FIELD_ERROR,
                 message=(
-                    'Must specify a field if more one defined. Defined fields: ' '{defined_fields}'
+                    'Must specify a field if more one defined. Defined fields: {defined_fields}'
                 ).format(defined_fields=defined_fields),
                 error_data=SelectorTypeErrorData(dagster_type=selector_type, incoming_fields=[]),
             )
@@ -409,7 +397,7 @@ def validate_selector_config_value(selector_type, config_value, stack):
                 stack=stack,
                 reason=DagsterEvaluationErrorReason.SELECTOR_FIELD_ERROR,
                 message=(
-                    'Must specify the required field. Defined fields: ' '{defined_fields}'
+                    'Must specify the required field. Defined fields: {defined_fields}'
                 ).format(defined_fields=defined_fields),
                 error_data=SelectorTypeErrorData(dagster_type=selector_type, incoming_fields=[]),
             )
@@ -448,10 +436,9 @@ def validate_composite_config_value(composite_type, config_value, stack):
         yield EvaluationError(
             stack=stack,
             reason=DagsterEvaluationErrorReason.RUNTIME_TYPE_MISMATCH,
-            message='Value {value} {path_msg} must be dict. Expected: "{type_name}".'.format(
+            message='Value {path_msg} must be dict. Expected: "{type_name}".'.format(
                 path_msg=path_msg,
                 type_name=print_config_type_to_string(composite_type, with_lines=False),
-                value=config_value,
             ),
             error_data=RuntimeMismatchErrorData(
                 config_type=composite_type, value_rep=repr(config_value)
@@ -467,10 +454,16 @@ def validate_composite_config_value(composite_type, config_value, stack):
     defined_fields = set(fields.keys())
     incoming_fields = set(config_value.keys())
 
-    for received_field in incoming_fields:
-        if received_field not in defined_fields:
-            yield create_field_not_defined_error(composite_type, stack, received_field)
+    # Here, we support permissive composites. In cases where we know the set of permissible keys a
+    # priori, we validate against the config. For permissive composites, we give the user an escape
+    # hatch where they can specify arbitrary fields...
+    if not composite_type.is_permissive_composite:
+        for received_field in incoming_fields:
+            if received_field not in defined_fields:
+                yield create_field_not_defined_error(composite_type, stack, received_field)
 
+    # ...However, for any fields the user *has* told us about, we validate against their config
+    # specification.
     for expected_field, field_def in fields.items():
         if expected_field in incoming_fields:
             for error in _validate_config(
@@ -499,9 +492,8 @@ def validate_list_value(list_type, config_value, stack):
         yield EvaluationError(
             stack=stack,
             reason=DagsterEvaluationErrorReason.RUNTIME_TYPE_MISMATCH,
-            message='Value {value} {path_msg} must be list. Expected: {type_name}'.format(
+            message='{path_msg} must be list. Expected: {type_name}'.format(
                 path_msg=_get_friendly_path_msg(stack),
-                value=config_value,
                 type_name=print_config_type_to_string(list_type, with_lines=False),
             ),
             error_data=RuntimeMismatchErrorData(

@@ -1,21 +1,17 @@
 from collections import namedtuple
 from enum import Enum
 
-import six
-
 
 from dagster import check
 from dagster.core.definitions import Solid, PipelineDefinition
-from dagster.core.errors import DagsterError
 from dagster.core.execution_context import (
     SystemPipelineExecutionContext,
     SystemStepExecutionContext,
 )
+from dagster.core.intermediates_manager import StepOutputHandle
 from dagster.core.types.runtime import RuntimeType
 from dagster.core.utils import toposort
 from dagster.utils import merge_dicts
-
-from .intermediates_manager import StepOutputHandle
 
 
 class StepOutputValue(namedtuple('_StepOutputValue', 'output_name value')):
@@ -38,10 +34,9 @@ class SingleOutputStepCreationData(namedtuple('SingleOutputStepCreationData', 's
 
 
 class StepOutputData:
-    def __init__(self, step_output_handle, value_repr, intermediates_manager):
-        self._value_repr = value_repr
-        self._intermediates_manager = intermediates_manager
+    def __init__(self, step_output_handle, value_repr):
         self.step_output_handle = step_output_handle
+        self._value_repr = value_repr
 
     @property
     def output_name(self):
@@ -51,14 +46,14 @@ class StepOutputData:
     def value_repr(self):
         return self._value_repr
 
-    def get_value(self):
-        return self._intermediates_manager.get_value(self.step_output_handle)
 
-
-class StepFailureData(namedtuple('_StepFailureData', 'dagster_error')):
-    def __new__(cls, dagster_error):
+class StepFailureData(namedtuple('_StepFailureData', 'error_message error_cls_name stack')):
+    def __new__(cls, error_message, error_cls_name, stack):
         return super(StepFailureData, cls).__new__(
-            cls, dagster_error=check.inst_param(dagster_error, 'dagster_error', DagsterError)
+            cls,
+            error_cls_name=check.str_param(error_cls_name, 'error_cls_name'),
+            error_message=check.str_param(error_message, 'error_message'),
+            stack=check.list_param(stack, 'stack', of_type=str),
         )
 
 
@@ -67,14 +62,48 @@ class ExecutionStepEventType(Enum):
     STEP_FAILURE = 'STEP_FAILURE'
 
 
+def get_step_output_event(events, step_key, output_name='result'):
+    check.list_param(events, 'events', of_type=ExecutionStepEvent)
+    check.str_param(step_key, 'step_key')
+    check.str_param(output_name, 'output_name')
+
+    for event in events:
+        if (
+            event.event_type == ExecutionStepEventType.STEP_OUTPUT
+            and event.step_key == step_key
+            and event.step_output_data.output_name == output_name
+        ):
+            return event
+    return None
+
+
 class ExecutionStepEvent(
-    namedtuple('_ExecutionStepEvent', 'event_type step step_output_data step_failure_data tags')
+    namedtuple(
+        '_ExecutionStepEvent',
+        'event_type step_key solid_name step_kind step_output_data step_failure_data tags',
+    )
 ):
-    def __new__(cls, event_type, step, step_output_data, step_failure_data, tags):
+    @staticmethod
+    def from_step(event_type, step, step_output_data, step_failure_data, tags):
+        return ExecutionStepEvent(
+            event_type,
+            step.key,
+            step.solid.name,
+            step.kind,
+            step_output_data,
+            step_failure_data,
+            tags,
+        )
+
+    def __new__(
+        cls, event_type, step_key, solid_name, step_kind, step_output_data, step_failure_data, tags
+    ):
         return super(ExecutionStepEvent, cls).__new__(
             cls,
             check.inst_param(event_type, 'event_type', ExecutionStepEventType),
-            check.inst_param(step, 'step', ExecutionStep),
+            check.str_param(step_key, 'step_key'),
+            check.str_param(solid_name, 'solid_name'),
+            check.inst_param(step_kind, 'step_kind', StepKind),
             check.opt_inst_param(step_output_data, 'step_output_data', StepOutputData),
             check.opt_inst_param(step_failure_data, 'step_failure_data', StepFailureData),
             check.dict_param(tags, 'tags'),
@@ -96,7 +125,7 @@ class ExecutionStepEvent(
     def step_output_event(step_context, step_output_data):
         check.inst_param(step_context, 'step_context', SystemStepExecutionContext)
 
-        return ExecutionStepEvent(
+        return ExecutionStepEvent.from_step(
             event_type=ExecutionStepEventType.STEP_OUTPUT,
             step=step_context.step,
             step_output_data=check.inst_param(step_output_data, 'step_output_data', StepOutputData),
@@ -108,7 +137,7 @@ class ExecutionStepEvent(
     def step_failure_event(step_context, step_failure_data):
         check.inst_param(step_context, 'step_context', SystemStepExecutionContext)
 
-        return ExecutionStepEvent(
+        return ExecutionStepEvent.from_step(
             event_type=ExecutionStepEventType.STEP_FAILURE,
             step=step_context.step,
             step_output_data=None,
@@ -117,17 +146,6 @@ class ExecutionStepEvent(
             ),
             tags=step_context.tags,
         )
-
-    def reraise_user_error(self):
-        check.invariant(self.event_type == ExecutionStepEventType.STEP_FAILURE)
-        if self.step_failure_data.dagster_error.is_user_code_error:
-            six.reraise(*self.step_failure_data.dagster_error.original_exc_info)
-        else:
-            raise self.step_failure_data.dagster_error
-
-    @property
-    def kind(self):
-        return self.step.kind
 
 
 class StepKind(Enum):
@@ -155,12 +173,13 @@ class StepInput(namedtuple('_StepInput', 'name runtime_type prev_output_handle')
         )
 
 
-class StepOutput(namedtuple('_StepOutput', 'name runtime_type')):
-    def __new__(cls, name, runtime_type):
+class StepOutput(namedtuple('_StepOutput', 'name runtime_type optional')):
+    def __new__(cls, name, runtime_type, optional):
         return super(StepOutput, cls).__new__(
             cls,
             name=check.str_param(name, 'name'),
             runtime_type=check.inst_param(runtime_type, 'runtime_type', RuntimeType),
+            optional=check.bool_param(optional, 'optional'),
         )
 
 

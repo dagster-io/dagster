@@ -88,12 +88,12 @@ def test_module_example():
     try:
         os.chdir(script_relative_path('.'))
         execute_dagstermill_cli(
-            module_name="module_name",
+            module_name="dagster",
             fn_name="function_name",
             notebook_name="notebooks/CLI_test_module",
         )
         EXPECTED_OUTPUT = EXPECTED_OUTPUT_SHELL.format(
-            import_statement="from module_name import function_name",
+            import_statement="from dagster import function_name",
             declaration_statement="dm.register_repository(function_name())",
         )
         check_notebook_expected_output(

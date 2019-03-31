@@ -44,7 +44,7 @@ def _do_setup(name='dagster-ge'):
         packages=find_packages(exclude=['dagster_ge_tests']),
         install_requires=[
             # standard python 2/3 compatability things
-            'enum34>=1.1.6',
+            'enum-compat==0.0.2',
             'future>=0.16.0',
             'dagster>=0.2.0',
             'great-expectations>=0.4.2',

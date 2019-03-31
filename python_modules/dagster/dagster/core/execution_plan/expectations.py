@@ -116,7 +116,10 @@ def create_expectation_step(
                 prev_output_handle=prev_step_output_handle,
             )
         ],
-        step_outputs=[StepOutput(name=EXPECTATION_VALUE_OUTPUT, runtime_type=value_type)],
+        step_outputs=[
+            # Expectation value output is optional since we omit if the expectation fails
+            StepOutput(name=EXPECTATION_VALUE_OUTPUT, runtime_type=value_type, optional=True)
+        ],
         compute_fn=_create_expectation_lambda(
             solid, inout_def, expectation_def, EXPECTATION_VALUE_OUTPUT
         ),

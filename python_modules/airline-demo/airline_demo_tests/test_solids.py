@@ -22,7 +22,12 @@ from dagster import (
 )
 
 from airline_demo.solids import sql_solid, download_from_s3, ingest_csv_to_spark, unzip_file
-from airline_demo.resources import spark_session_local, tempfile_resource, unsigned_s3_session
+from airline_demo.resources import (
+    spark_session_local,
+    tempfile_resource,
+    unsigned_s3_session,
+    s3_download_manager,
+)
 
 from .marks import nettest, postgres, redshift, skip, spark
 
@@ -40,7 +45,11 @@ def _s3_context():
     return {
         'test': PipelineContextDefinition(
             context_fn=lambda info: ExecutionContext.console_logging(log_level=logging.DEBUG),
-            resources={'s3': unsigned_s3_session, 'tempfile': tempfile_resource},
+            resources={
+                's3': unsigned_s3_session,
+                'tempfile': tempfile_resource,
+                'download_manager': s3_download_manager,
+            },
         )
     }
 
@@ -80,42 +89,28 @@ def test_download_from_s3():
         PipelineDefinition([download_from_s3], context_definitions=_s3_context()),
         'download_from_s3',
         environment_dict={
-            'context': {'test': {}},
-            'solids': {
-                'download_from_s3': {
-                    'config': [
-                        {'bucket': 'dagster-airline-demo-source-data', 'key': 'test/test_file'}
-                    ]
+            'context': {
+                'test': {
+                    'resources': {
+                        'download_manager': {
+                            'config': {
+                                'skip_if_present': False,
+                                'bucket': 'dagster-airline-demo-source-data',
+                                'key': 'test',
+                                'target_folder': 'test',
+                            }
+                        }
+                    }
                 }
             },
+            'solids': {'download_from_s3': {'config': {'target_file': 'test_file'}}},
         },
     )
     assert result.success
-    assert result.transformed_value() == ['test/test_file']
-    assert os.path.isfile(result.transformed_value()[0])
-    with open(result.transformed_value()[0], 'r') as fd:
+    assert result.transformed_value() == 'test/test_file'
+    assert os.path.isfile(result.transformed_value())
+    with open(result.transformed_value(), 'r') as fd:
         assert fd.read() == 'test\n'
-
-
-@nettest
-def test_download_from_s3_tempfile():
-    result = execute_solid(
-        PipelineDefinition([download_from_s3], context_definitions=_s3_context()),
-        'download_from_s3',
-        environment_dict={
-            'context': {'test': {}},
-            'solids': {
-                'download_from_s3': {
-                    'config': [
-                        {'bucket': 'dagster-airline-demo-source-data', 'key': 'test/test_file'}
-                    ]
-                }
-            },
-        },
-    )
-    assert result.success
-    assert result.transformed_value()
-    assert [not os.path.isfile(v) for v in result.transformed_value()]
 
 
 def test_unzip_file_tempfile():
@@ -128,16 +123,16 @@ def test_unzip_file_tempfile():
             solids=[nonce, unzip_file],
             dependencies={
                 'unzip_file': {
-                    'archive_paths': DependencyDefinition('nonce'),
-                    'archive_members': DependencyDefinition('nonce'),
+                    'archive_path': DependencyDefinition('nonce'),
+                    'archive_member': DependencyDefinition('nonce'),
                 }
             },
             context_definitions=_tempfile_context(),
         ),
         'unzip_file',
         inputs={
-            'archive_paths': [os.path.join(os.path.dirname(__file__), 'data/test.zip')],
-            'archive_members': ['test/test_file'],
+            'archive_path': os.path.join(os.path.dirname(__file__), 'data/test.zip'),
+            'archive_member': 'test/test_file',
         },
         environment_dict={'solids': {'unzip_file': {'config': {'skip_if_present': False}}}},
     )

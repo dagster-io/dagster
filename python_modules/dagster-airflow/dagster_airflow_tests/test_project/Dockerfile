@@ -4,20 +4,17 @@ RUN mkdir -p /tmp/results
 
 WORKDIR /tmp/
 
-# In a typical production deploy, use the following pattern.
-
-# ADD requirements.txt .
-
-# RUN pip install -r requirements.txt
-
 ADD dagster dagster
 ADD dagit dagit
 
 RUN pip install dagster/
 RUN pip install dagit/
 
+ADD requirements.txt .
+RUN pip install -r requirements.txt
+
 ADD . .
 
-ENTRYPOINT [ "dagit", "--no-watch" ]
+ENTRYPOINT [ "dagit-cli" ]
 
 EXPOSE 3000

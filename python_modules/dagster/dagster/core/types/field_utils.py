@@ -131,6 +131,10 @@ class _ConfigComposite(_ConfigHasFields):
     def is_composite(self):
         return True
 
+    @property
+    def is_permissive_composite(self):
+        return False
+
 
 class _ConfigSelector(_ConfigHasFields):
     @property
@@ -187,7 +191,38 @@ def Dict(fields):
     return _Dict
 
 
+def PermissiveDict(fields=None):
+    '''A permissive dict will permit the user to partially specify the permitted fields. Any fields
+    that are specified and passed in will be type checked. Other fields will be allowed, but
+    will be ignored by the type checker.
+    '''
+
+    class _PermissiveDict(_ConfigComposite):
+        def __init__(self):
+            key = 'PermissiveDict.' + str(DictCounter.get_next_count())
+            super(_PermissiveDict, self).__init__(
+                name=None,
+                key=key,
+                fields=fields or dict(),
+                description='A configuration dictionary with typed fields',
+                type_attributes=ConfigTypeAttributes(is_builtin=True),
+            )
+
+        @property
+        def is_permissive_composite(self):
+            return True
+
+    return _PermissiveDict
+
+
 def Selector(fields):
+    '''Selectors are used when you want to be able present several different options to the user but
+    force them to select one. For example, it would not make much sense to allow them
+    to say that a single input should be sourced from a csv and a parquet file: They must choose.
+
+    Note that in other type systems this might be called an "input union."
+    '''
+
     class _Selector(_ConfigSelector):
         def __init__(self):
             key = 'Selector.' + str(DictCounter.get_next_count())

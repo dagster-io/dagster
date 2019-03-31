@@ -54,13 +54,14 @@ def _do_setup(name='dagit'):
         include_package_data=True,
         install_requires=[
             # standard python 2/3 compatability things
-            'enum34>=1.1.6',
+            'enum-compat==0.0.2',
             'future>=0.16.0, <0.17.0a0',
             # cli
             # 'click>=6.7',
             # 'coloredlogs>=10.0',
             # 'graphviz>=0.8.3',
-            'pyyaml>=3.12',
+            # pyyaml pinned for compatibility with docker-compose
+            'pyyaml==4.2b1',
             # core (not explicitly expressed atm)
             'six>=1.11.0',
             # cli
@@ -87,7 +88,7 @@ def _do_setup(name='dagit'):
             # notebooks support
             'nbconvert>=5.4.0',
             # dev/test - Installed via dev-requirements.txt
-            # 'pylint>=1.8.4',
+            # 'pylint>=2.3.0',
             # 'pytest>=3.5.1',
             # 'recommonmark>=0.4.0',
             # 'rope>=0.10.7',
@@ -97,7 +98,8 @@ def _do_setup(name='dagit'):
             # 'twine>=1.11.0',
             # 'pre-commit'>=1.10.1',
         ],
-        entry_points={"console_scripts": ['dagit = dagit.cli:main']},
+        scripts=["bin/dagit"],
+        entry_points={"console_scripts": ['dagit-cli = dagit.cli:main']},
     )
 
 

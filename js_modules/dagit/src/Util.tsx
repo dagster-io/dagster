@@ -40,3 +40,28 @@ export function debounce<T extends (...args: any[]) => any>(
 
   return (debounced as any) as T;
 }
+
+function twoDigit(v: number) {
+  return `${v < 10 ? "0" : ""}${v}`;
+}
+
+export function formatElapsedTime(elapsed: number) {
+  let text = "";
+
+  if (elapsed < 1000) {
+    // < 1 second, show "X msec"
+    text = `${Math.ceil(elapsed)} msec`;
+  } else {
+    // < 1 hour, show "42:12"
+    const sec = Math.floor(elapsed / 1000) % 60;
+    const min = Math.floor(elapsed / 1000 / 60) % 60;
+    const hours = Math.floor(elapsed / 1000 / 60 / 60);
+
+    if (hours > 0) {
+      text = `${hours}:${twoDigit(min)}:${twoDigit(sec)}`;
+    } else {
+      text = `${min}:${twoDigit(sec)}`;
+    }
+  }
+  return text;
+}

@@ -1,6 +1,6 @@
 click>=6.7
 dagster
-enum34>=1.1.6
+enum-compat==0.0.2
 flask-cors>=3.0.6
 Flask-GraphQL>=2.0.0
 Flask-Sockets>=0.2.1
@@ -15,6 +15,7 @@ graphql-core>=2.1
 graphql-ws>=0.3.0
 nbconvert>=5.4.0
 pyrsistent>=0.14.8
-pyyaml>=3.12
+# pyyaml pinned for compatibility with docker-compose
+pyyaml==4.2b1
 six>=1.11.0
 watchdog>=0.8.3

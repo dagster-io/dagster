@@ -68,7 +68,7 @@ def test_typed_demo_configuration_schema_type_mismatch_error():
         PipelineConfigEvaluationError,
         match=(
             'Type failure at path "root:solids:typed_multiply_the_word:config:factor" on type '
-            '"Int". Got "\'not_a_number\'"'
+            '"Int"'
         ),
     ):
         execute_pipeline(

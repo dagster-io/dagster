@@ -1,0 +1,658 @@
+type CompositeConfigType implements ConfigType {
+  key: String!
+  name: String
+  description: String
+  innerTypes: [ConfigType!]!
+  isNullable: Boolean!
+  isList: Boolean!
+  isSelector: Boolean!
+  isBuiltin: Boolean!
+  isSystemGenerated: Boolean!
+  fields: [ConfigTypeField!]!
+}
+
+interface ConfigType {
+  key: String!
+  name: String
+  description: String
+  innerTypes: [ConfigType!]!
+  isNullable: Boolean!
+  isList: Boolean!
+  isSelector: Boolean!
+  isBuiltin: Boolean!
+  isSystemGenerated: Boolean!
+}
+
+type ConfigTypeField {
+  name: String!
+  description: String
+  configType: ConfigType!
+  defaultValue: String
+  isOptional: Boolean!
+}
+
+type ConfigTypeNotFoundError implements Error {
+  message: String!
+  stack: [String!]!
+  pipeline: Pipeline!
+  configTypeName: String!
+}
+
+union ConfigTypeOrError = EnumConfigType | CompositeConfigType | RegularConfigType | PipelineNotFoundError | ConfigTypeNotFoundError
+
+scalar Cursor
+
+type EnumConfigType implements ConfigType {
+  key: String!
+  name: String
+  description: String
+  innerTypes: [ConfigType!]!
+  isNullable: Boolean!
+  isList: Boolean!
+  isSelector: Boolean!
+  isBuiltin: Boolean!
+  isSystemGenerated: Boolean!
+  values: [EnumConfigValue!]!
+}
+
+type EnumConfigValue {
+  value: String!
+  description: String
+}
+
+interface Error {
+  message: String!
+  stack: [String!]!
+}
+
+enum EvaluationErrorReason {
+  RUNTIME_TYPE_MISMATCH
+  MISSING_REQUIRED_FIELD
+  FIELD_NOT_DEFINED
+  SELECTOR_FIELD_ERROR
+}
+
+type EvaluationStack {
+  entries: [EvaluationStackEntry!]!
+}
+
+union EvaluationStackEntry = EvaluationStackListItemEntry | EvaluationStackPathEntry
+
+type EvaluationStackListItemEntry {
+  listIndex: Int!
+}
+
+type EvaluationStackPathEntry {
+  field: ConfigTypeField!
+}
+
+union ExecutePlanResult = ExecutePlanSuccess | PipelineConfigValidationInvalid | PipelineNotFoundError | InvalidStepError
+
+type ExecutePlanSuccess {
+  pipeline: Pipeline!
+  hasFailures: Boolean!
+  stepEvents: [StepEvent!]!
+}
+
+input ExecutionMetadata {
+  runId: String
+  tags: [ExecutionTag!]
+}
+
+type ExecutionPlan {
+  steps: [ExecutionStep!]!
+  pipeline: Pipeline!
+}
+
+union ExecutionPlanResult = ExecutionPlan | PipelineConfigValidationInvalid | PipelineNotFoundError
+
+input ExecutionSelector {
+  name: String!
+  solidSubset: [String!]
+}
+
+type ExecutionStep {
+  name: String! @deprecated(reason: "Use key")
+  key: String!
+  inputs: [ExecutionStepInput!]!
+  outputs: [ExecutionStepOutput!]!
+  solid: Solid!
+  kind: StepKind!
+}
+
+type ExecutionStepFailureEvent implements MessageEvent {
+  run: PipelineRun!
+  message: String!
+  timestamp: String!
+  level: LogLevel!
+  step: ExecutionStep
+  error: PythonError!
+}
+
+type ExecutionStepInput {
+  name: String!
+  type: RuntimeType!
+  dependsOn: ExecutionStep!
+}
+
+type ExecutionStepOutput {
+  name: String!
+  type: RuntimeType!
+}
+
+type ExecutionStepOutputEvent implements MessageEvent {
+  run: PipelineRun!
+  message: String!
+  timestamp: String!
+  level: LogLevel!
+  step: ExecutionStep
+  outputName: String!
+  storageMode: String!
+  storageObjectId: String!
+}
+
+type ExecutionStepStartEvent implements MessageEvent {
+  run: PipelineRun!
+  message: String!
+  timestamp: String!
+  level: LogLevel!
+  step: ExecutionStep
+}
+
+type ExecutionStepSuccessEvent implements MessageEvent {
+  run: PipelineRun!
+  message: String!
+  timestamp: String!
+  level: LogLevel!
+  step: ExecutionStep
+}
+
+input ExecutionTag {
+  key: String!
+  value: String!
+}
+
+type Expectation {
+  name: String!
+  description: String
+}
+
+type FieldNotDefinedConfigError implements PipelineConfigValidationError {
+  message: String!
+  path: [String!]!
+  stack: EvaluationStack!
+  reason: EvaluationErrorReason!
+  fieldName: String!
+}
+
+type Input {
+  solid: Solid!
+  definition: InputDefinition!
+  dependsOn: Output
+}
+
+type InputDefinition {
+  solidDefinition: SolidDefinition!
+  name: String!
+  description: String
+  type: RuntimeType!
+  expectations: [Expectation!]!
+}
+
+type InvalidDefinitionError implements Error {
+  message: String!
+  stack: [String!]!
+}
+
+type InvalidOutputError {
+  stepKey: String!
+  invalidOutputName: String!
+}
+
+type InvalidStepError {
+  invalidStepKey: String!
+}
+
+type ListConfigType implements ConfigType & WrappingConfigType {
+  key: String!
+  name: String
+  description: String
+  innerTypes: [ConfigType!]!
+  isNullable: Boolean!
+  isList: Boolean!
+  isSelector: Boolean!
+  isBuiltin: Boolean!
+  isSystemGenerated: Boolean!
+  ofType: ConfigType!
+}
+
+type ListRuntimeType implements RuntimeType & WrappingRuntimeType {
+  key: String!
+  name: String
+  displayName: String!
+  description: String
+  isNullable: Boolean!
+  isList: Boolean!
+  isBuiltin: Boolean!
+  inputSchemaType: ConfigType
+  outputSchemaType: ConfigType
+  innerTypes: [RuntimeType!]!
+  ofType: RuntimeType!
+}
+
+enum LogLevel {
+  CRITICAL
+  ERROR
+  INFO
+  WARNING
+  DEBUG
+}
+
+type LogMessageConnection {
+  nodes: [PipelineRunEvent!]!
+  pageInfo: PageInfo!
+}
+
+type LogMessageEvent implements MessageEvent {
+  run: PipelineRun!
+  message: String!
+  timestamp: String!
+  level: LogLevel!
+  step: ExecutionStep
+}
+
+interface MessageEvent {
+  run: PipelineRun!
+  message: String!
+  timestamp: String!
+  level: LogLevel!
+  step: ExecutionStep
+}
+
+type MissingFieldConfigError implements PipelineConfigValidationError {
+  message: String!
+  path: [String!]!
+  stack: EvaluationStack!
+  reason: EvaluationErrorReason!
+  field: ConfigTypeField!
+}
+
+type MissingRunIdErrorEvent {
+  invalidRunId: String!
+}
+
+type Mutation {
+  startPipelineExecution(config: PipelineConfig, executionMetadata: ExecutionMetadata, pipeline: ExecutionSelector!, reexecutionConfig: ReexecutionConfig, stepKeys: [String!]): StartPipelineExecutionResult!
+  executePlan(config: PipelineConfig, executionMetadata: ExecutionMetadata!, pipelineName: String!, stepKeys: [String!]): ExecutePlanResult!
+}
+
+type NullableConfigType implements ConfigType & WrappingConfigType {
+  key: String!
+  name: String
+  description: String
+  innerTypes: [ConfigType!]!
+  isNullable: Boolean!
+  isList: Boolean!
+  isSelector: Boolean!
+  isBuiltin: Boolean!
+  isSystemGenerated: Boolean!
+  ofType: ConfigType!
+}
+
+type NullableRuntimeType implements RuntimeType & WrappingRuntimeType {
+  key: String!
+  name: String
+  displayName: String!
+  description: String
+  isNullable: Boolean!
+  isList: Boolean!
+  isBuiltin: Boolean!
+  inputSchemaType: ConfigType
+  outputSchemaType: ConfigType
+  innerTypes: [RuntimeType!]!
+  ofType: RuntimeType!
+}
+
+type Output {
+  solid: Solid!
+  definition: OutputDefinition!
+  dependedBy: [Input!]!
+}
+
+type OutputDefinition {
+  solidDefinition: SolidDefinition!
+  name: String!
+  description: String
+  type: RuntimeType!
+  expectations: [Expectation!]!
+}
+
+type PageInfo {
+  lastCursor: Cursor
+  hasNextPage: Boolean
+  hasPreviousPage: Boolean
+  count: Int!
+  totalCount: Int!
+}
+
+type Pipeline {
+  name: String!
+  description: String
+  solids: [Solid!]!
+  contexts: [PipelineContext!]!
+  environmentType: ConfigType!
+  configTypes: [ConfigType!]!
+  runtimeTypes: [RuntimeType!]!
+  runs: [PipelineRun!]!
+}
+
+scalar PipelineConfig
+
+interface PipelineConfigValidationError {
+  message: String!
+  path: [String!]!
+  stack: EvaluationStack!
+  reason: EvaluationErrorReason!
+}
+
+type PipelineConfigValidationInvalid {
+  pipeline: Pipeline!
+  errors: [PipelineConfigValidationError!]!
+}
+
+union PipelineConfigValidationResult = PipelineConfigValidationValid | PipelineConfigValidationInvalid | PipelineNotFoundError
+
+type PipelineConfigValidationValid {
+  pipeline: Pipeline!
+}
+
+type PipelineConnection {
+  nodes: [Pipeline!]!
+}
+
+type PipelineContext {
+  name: String!
+  description: String
+  config: ConfigTypeField
+  resources: [Resource!]!
+}
+
+interface PipelineEvent {
+  pipeline: Pipeline!
+}
+
+type PipelineFailureEvent implements MessageEvent & PipelineEvent {
+  run: PipelineRun!
+  message: String!
+  timestamp: String!
+  level: LogLevel!
+  step: ExecutionStep
+  pipeline: Pipeline!
+}
+
+type PipelineNotFoundError implements Error {
+  message: String!
+  stack: [String!]!
+  pipelineName: String!
+}
+
+union PipelineOrError = Pipeline | PythonError | PipelineNotFoundError | SolidNotFoundError
+
+type PipelineProcessStartedEvent implements MessageEvent & PipelineEvent {
+  run: PipelineRun!
+  message: String!
+  timestamp: String!
+  level: LogLevel!
+  step: ExecutionStep
+  pipeline: Pipeline!
+  processId: Int!
+}
+
+type PipelineProcessStartEvent implements MessageEvent & PipelineEvent {
+  run: PipelineRun!
+  message: String!
+  timestamp: String!
+  level: LogLevel!
+  step: ExecutionStep
+  pipeline: Pipeline!
+}
+
+type PipelineRun {
+  runId: String!
+  status: PipelineRunStatus!
+  pipeline: Pipeline!
+  logs: LogMessageConnection!
+  executionPlan: ExecutionPlan!
+  config: String!
+}
+
+union PipelineRunEvent = LogMessageEvent | PipelineStartEvent | PipelineSuccessEvent | PipelineFailureEvent | ExecutionStepStartEvent | ExecutionStepSuccessEvent | ExecutionStepOutputEvent | ExecutionStepFailureEvent | PipelineProcessStartEvent | PipelineProcessStartedEvent | StepMaterializationEvent
+
+type PipelineRunLogsSubscriptionMissingRunIdFailure {
+  missingRunId: String!
+}
+
+union PipelineRunLogsSubscriptionPayload = PipelineRunLogsSubscriptionSuccess | PipelineRunLogsSubscriptionMissingRunIdFailure
+
+type PipelineRunLogsSubscriptionSuccess {
+  messages: [PipelineRunEvent!]!
+}
+
+type PipelineRunNotFoundError implements Error {
+  message: String!
+  stack: [String!]!
+  runId: String!
+}
+
+union PipelineRunOrError = PipelineRun | PipelineRunNotFoundError
+
+enum PipelineRunStatus {
+  NOT_STARTED
+  STARTED
+  SUCCESS
+  FAILURE
+}
+
+union PipelinesOrError = PipelineConnection | PythonError | InvalidDefinitionError
+
+type PipelineStartEvent implements MessageEvent & PipelineEvent {
+  run: PipelineRun!
+  message: String!
+  timestamp: String!
+  level: LogLevel!
+  step: ExecutionStep
+  pipeline: Pipeline!
+}
+
+type PipelineSuccessEvent implements MessageEvent & PipelineEvent {
+  run: PipelineRun!
+  message: String!
+  timestamp: String!
+  level: LogLevel!
+  step: ExecutionStep
+  pipeline: Pipeline!
+}
+
+type PythonError implements Error {
+  message: String!
+  stack: [String!]!
+}
+
+type Query {
+  version: String!
+  pipelineOrError(params: ExecutionSelector!): PipelineOrError!
+  pipeline(params: ExecutionSelector!): Pipeline!
+  pipelinesOrError: PipelinesOrError!
+  pipelines: PipelineConnection!
+  configTypeOrError(pipelineName: String!, configTypeName: String!): ConfigTypeOrError!
+  runtimeTypeOrError(pipelineName: String!, runtimeTypeName: String!): RuntimeTypeOrError!
+  pipelineRuns: [PipelineRun!]!
+  pipelineRunOrError(runId: ID!): PipelineRunOrError!
+  isPipelineConfigValid(pipeline: ExecutionSelector!, config: PipelineConfig): PipelineConfigValidationResult!
+  executionPlan(pipeline: ExecutionSelector!, config: PipelineConfig): ExecutionPlanResult!
+}
+
+input ReexecutionConfig {
+  previousRunId: String!
+  stepOutputHandles: [StepOutputHandle!]!
+}
+
+type RegularConfigType implements ConfigType {
+  key: String!
+  name: String
+  description: String
+  innerTypes: [ConfigType!]!
+  isNullable: Boolean!
+  isList: Boolean!
+  isSelector: Boolean!
+  isBuiltin: Boolean!
+  isSystemGenerated: Boolean!
+}
+
+type RegularRuntimeType implements RuntimeType {
+  key: String!
+  name: String
+  displayName: String!
+  description: String
+  isNullable: Boolean!
+  isList: Boolean!
+  isBuiltin: Boolean!
+  inputSchemaType: ConfigType
+  outputSchemaType: ConfigType
+  innerTypes: [RuntimeType!]!
+}
+
+type Resource {
+  name: String!
+  description: String
+  config: ConfigTypeField
+}
+
+type RuntimeMismatchConfigError implements PipelineConfigValidationError {
+  message: String!
+  path: [String!]!
+  stack: EvaluationStack!
+  reason: EvaluationErrorReason!
+  type: ConfigType!
+  valueRep: String
+}
+
+interface RuntimeType {
+  key: String!
+  name: String
+  displayName: String!
+  description: String
+  isNullable: Boolean!
+  isList: Boolean!
+  isBuiltin: Boolean!
+  inputSchemaType: ConfigType
+  outputSchemaType: ConfigType
+  innerTypes: [RuntimeType!]!
+}
+
+type RuntimeTypeNotFoundError implements Error {
+  message: String!
+  stack: [String!]!
+  pipeline: Pipeline!
+  runtimeTypeName: String!
+}
+
+union RuntimeTypeOrError = RegularRuntimeType | PipelineNotFoundError | RuntimeTypeNotFoundError
+
+type SelectorTypeConfigError implements PipelineConfigValidationError {
+  message: String!
+  path: [String!]!
+  stack: EvaluationStack!
+  reason: EvaluationErrorReason!
+  incomingFields: [String!]!
+}
+
+type Solid {
+  name: String!
+  definition: SolidDefinition!
+  inputs: [Input!]!
+  outputs: [Output!]!
+}
+
+type SolidDefinition {
+  name: String!
+  description: String
+  metadata: [SolidMetadataItemDefinition!]!
+  inputDefinitions: [InputDefinition!]!
+  outputDefinitions: [OutputDefinition!]!
+  configDefinition: ConfigTypeField
+}
+
+type SolidMetadataItemDefinition {
+  key: String!
+  value: String!
+}
+
+type SolidNotFoundError implements Error {
+  message: String!
+  stack: [String!]!
+  solidName: String!
+}
+
+union StartPipelineExecutionResult = InvalidStepError | InvalidOutputError | PipelineConfigValidationInvalid | PipelineNotFoundError | StartPipelineExecutionSuccess
+
+type StartPipelineExecutionSuccess {
+  run: PipelineRun!
+}
+
+interface StepEvent {
+  step: ExecutionStep!
+  success: Boolean!
+}
+
+type StepFailureEvent implements StepEvent {
+  step: ExecutionStep!
+  success: Boolean!
+  errorMessage: String!
+}
+
+enum StepKind {
+  TRANSFORM
+  INPUT_EXPECTATION
+  OUTPUT_EXPECTATION
+  JOIN
+  SERIALIZE
+  INPUT_THUNK
+  MATERIALIZATION_THUNK
+  UNMARSHAL_INPUT
+  MARSHAL_OUTPUT
+}
+
+type StepMaterializationEvent implements MessageEvent {
+  run: PipelineRun!
+  message: String!
+  timestamp: String!
+  level: LogLevel!
+  step: ExecutionStep
+  fileName: String!
+  fileLocation: String!
+}
+
+input StepOutputHandle {
+  stepKey: String!
+  outputName: String!
+}
+
+type Subscription {
+  pipelineRunLogs(runId: ID!, after: Cursor): PipelineRunLogsSubscriptionPayload!
+}
+
+type SuccessfulStepOutputEvent implements StepEvent {
+  step: ExecutionStep!
+  success: Boolean!
+  outputName: String!
+  valueRepr: String!
+}
+
+interface WrappingConfigType {
+  ofType: ConfigType!
+}
+
+interface WrappingRuntimeType {
+  ofType: RuntimeType!
+}

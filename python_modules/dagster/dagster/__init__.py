@@ -14,6 +14,8 @@ from dagster.core.execution_context import (
     RunConfig,
 )
 
+from dagster.core.runs import RunStorageMode
+
 from dagster.core.user_context import ExecutionContext
 
 from dagster.core.definitions import (
@@ -35,12 +37,14 @@ from dagster.core.definitions.decorators import MultipleResults, lambda_solid, s
 
 from dagster.core.errors import (
     DagsterExecutionStepExecutionError,
+    DagsterExecutionStepNotFoundError,
     DagsterExpectationFailedError,
     DagsterInvalidDefinitionError,
     DagsterInvariantViolationError,
     DagsterRuntimeCoercionError,
     DagsterTypeError,
     DagsterUserCodeExecutionError,
+    DagsterStepOutputNotFoundError,
 )
 
 
@@ -60,12 +64,14 @@ from dagster.core.types import (
     output_schema,
     output_selector_schema,
     Path,
+    PermissiveDict,
     PythonObjectType,
     Selector,
     String,
 )
 
 from dagster.core.types.decorator import dagster_type, as_dagster_type
+from dagster.core.types.marshal import SerializationStrategy
 from dagster.core.types.config import ConfigType, Enum, EnumValue
 from dagster.core.types.evaluator import DagsterEvaluateConfigValueError
 from dagster.core.types.runtime import RuntimeType
@@ -109,6 +115,7 @@ __all__ = [
     'DagsterRuntimeCoercionError',
     'DagsterTypeError',
     'DagsterUserCodeExecutionError',
+    'DagsterStepOutputNotFoundError',
     # Utilities
     'execute_solid',
     'execute_solids',
@@ -127,9 +134,11 @@ __all__ = [
     'output_schema',
     'output_selector_schema',
     'Path',
+    'PermissiveDict',
     'PythonObjectType',
     'Selector',
     'String',
+    'SerializationStrategy',
     # type creation
     'as_dagster_type',
     'dagster_type',

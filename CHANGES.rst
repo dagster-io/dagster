@@ -1,7 +1,29 @@
+0.3.6
+   - Dagit's Execute tab now opens runs in separate browser tabs and a new Runs tab allows you to browse
+     and view historical runs.
+   - There is now a new configuration section "storage" which can configure whether or not the execution
+     should use the filesystem to store intermediate values or just store those values in memory.
+   - Similarily, there is a new configuration for RunConfig that where the user can specify
+     intermediate value storage via an API.
+   - API Additions and Changes
+      - ``OutputDefinition`` now contains an explicit ``is_optional`` parameter and defaults to being not optional.
+
+0.3.5
+   - Dagit now defaults to --watch; run dagit --no-watch to disable (process-based) autoreloading.
+
 0.3.4
 
   - API Additions and Changes:
       - ExecutionMetadata has been renamed to RunConfig
+      - throw_on_user_error no longer top level argument to execute_pipeline. Part of InProcessExecutorConfig
+      - We no longer include values of configs in config parsing error exception to prevent
+        accidental logging of sensitive information that might be in config files.
+  - Dagit improvements
+      - Show total execution time at the bottom of the execution pane
+      - Remove extra scrollbars in Windows and Mac with external mouse
+      - New dynamics for multiple runs in dagit; run history; better tabbing behavior.
+  - Dagstermill improvements
+      - Repo registration is now optional; "Hello, World" examples are now boilerplate free.
 
 0.3.3
 

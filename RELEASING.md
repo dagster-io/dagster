@@ -19,6 +19,13 @@ Our release automation tools are contained in `bin/publish.py`. These tools are 
 guard against some kinds of mistakes, but could and should be smarter. Generally speaking, it's
 preferable to invest in these tools rather than to complicate the release process.
 
+It's good practice to run the release process for a pre-release version before releasing a new
+version, i.e., first for version 0.3.0.pre0, and then for version 0.3.0 only when you know that
+the process is going to succeed without issues. This ensures a clean release history.
+
+You should also run releases from a clean clone of the repository. This is to guard against any
+issues that might be introduced by local build artifacts.
+
 1. Check that you are on `master`, that there are no local changes or changes on the remote, and
    that you are at the root of the repository.
 
@@ -43,8 +50,10 @@ preferable to invest in these tools rather than to complicate the release proces
 
     python bin/publish.py publish
 
-7. Manually switch the default ReadTheDocs version to the newly built docs.
+7. Manually switch the default ReadTheDocs version to the newly built docs:
+   [https://readthedocs.org/dashboard/dagster/versions/](https://readthedocs.org/dashboard/dagster/versions/)
 
+8. Check that the ReadTheDocs and PyPI versions are as you expect.
 
 ### PyPI credentials
 

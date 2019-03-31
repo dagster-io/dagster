@@ -7,7 +7,6 @@ from dagster.utils import script_relative_path
 from dagster_airflow.scaffold import (
     _bad_import,
     _format_config,
-    _key_for_marshalled_result,
     _is_py,
     _normalize_key,
     _split_lines,
@@ -30,17 +29,6 @@ def test_bad_import():
 
 def test_split_lines():
     assert _split_lines('foo\nbar\n') == ['foo', 'bar,']
-
-
-def test_key_for_marshalled_result():
-    assert (
-        _key_for_marshalled_result('foo.bar_baz', 'zip_zowie.quux', prepend_run_id=False)
-        == '/tmp/results/foo_bar__baz___zip__zowie_quux.pickle'
-    )
-    assert (
-        _key_for_marshalled_result('foo.bar_baz', 'zip_zowie.quux')
-        == '/tmp/results/{run_id_prefix}foo_bar__baz___zip__zowie_quux.pickle'
-    )
 
 
 def test_format_config():

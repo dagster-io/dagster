@@ -9,15 +9,15 @@ import uuid
 
 from dagster import check
 from dagster.utils import merge_dicts
+from dagster.core.errors import DagsterInvariantViolationError
 
 from .definitions.expectation import ExpectationDefinition
 from .definitions.input import InputDefinition
 from .definitions.output import OutputDefinition
 from .events import ExecutionEvents
-from .files import FileStore
 from .log import DagsterLog
+from .runs import RunStorageMode, RunStorage
 from .system_config.objects import EnvironmentConfig
-from .types.marshal import PersistenceStrategy
 
 
 class ExecutorConfig:
@@ -39,39 +39,75 @@ def make_new_run_id():
     return str(uuid.uuid4())
 
 
-class RunConfig(namedtuple('_RunConfig', 'run_id tags event_callback loggers executor_config')):
+class ReexecutionConfig:
+    def __init__(self, previous_run_id, step_output_handles):
+        self.previous_run_id = previous_run_id
+        self.step_output_handles = step_output_handles
+
+
+class RunConfig(
+    namedtuple(
+        '_RunConfig',
+        (
+            'run_id tags event_callback loggers executor_config storage_mode reexecution_config '
+            'step_keys_to_execute'
+        ),
+    )
+):
     def __new__(
-        cls, run_id=None, tags=None, event_callback=None, loggers=None, executor_config=None
+        cls,
+        run_id=None,
+        tags=None,
+        event_callback=None,
+        loggers=None,
+        executor_config=None,
+        storage_mode=None,
+        reexecution_config=None,
+        step_keys_to_execute=None,
     ):
+        if (
+            isinstance(executor_config, MultiprocessExecutorConfig)
+            and storage_mode is RunStorageMode.IN_MEMORY
+        ):
+            raise DagsterInvariantViolationError(
+                'Can not create a RunConfig with executor_config MultiProcessExecutorConfig and '
+                'storage_mode RunStorageMode.IN_MEMORY'
+            )
+
+        check.opt_list_param(step_keys_to_execute, 'step_keys_to_execute', of_type=str)
+
         return super(RunConfig, cls).__new__(
             cls,
             run_id=check.str_param(run_id, 'run_id') if run_id else make_new_run_id(),
             tags=check.opt_dict_param(tags, 'tags', key_type=str, value_type=str),
             event_callback=check.opt_callable_param(event_callback, 'event_callback'),
             loggers=check.opt_list_param(loggers, 'loggers'),
-            executor_config=check.opt_inst_param(
-                executor_config, 'executor_config', ExecutorConfig, InProcessExecutorConfig()
+            executor_config=check.inst_param(executor_config, 'executor_config', ExecutorConfig)
+            if executor_config
+            else InProcessExecutorConfig(),
+            storage_mode=check.opt_inst_param(storage_mode, 'storage_mode', RunStorageMode),
+            reexecution_config=check.opt_inst_param(
+                reexecution_config, 'reexecution_config', ReexecutionConfig
             ),
+            step_keys_to_execute=step_keys_to_execute,
         )
 
     @staticmethod
     def nonthrowing_in_process():
         return RunConfig(executor_config=InProcessExecutorConfig(throw_on_user_error=False))
 
-    def with_tags(self, **tags):
-        return RunConfig(
-            run_id=self.run_id,
-            event_callback=self.event_callback,
-            loggers=self.loggers,
-            tags=merge_dicts(self.tags, tags),
-            executor_config=self.executor_config,
-        )
+    def with_tags(self, **new_tags):
+        new_tags = merge_dicts(self.tags, new_tags)
+        return RunConfig(**merge_dicts(self._asdict(), {'tags': new_tags}))
 
 
 class SystemPipelineExecutionContextData(
     namedtuple(
         '_SystemPipelineExecutionContextData',
-        'run_config resources environment_config persistence_strategy pipeline_def files',
+        (
+            'run_config resources environment_config pipeline_def '
+            'run_storage intermediates_manager'
+        ),
     )
 ):
     '''
@@ -80,9 +116,16 @@ class SystemPipelineExecutionContextData(
     '''
 
     def __new__(
-        cls, run_config, resources, environment_config, persistence_strategy, pipeline_def, files
+        cls,
+        run_config,
+        resources,
+        environment_config,
+        pipeline_def,
+        run_storage,
+        intermediates_manager,
     ):
-        from .definitions.pipeline import PipelineDefinition
+        from .definitions import PipelineDefinition
+        from .intermediates_manager import IntermediatesManager
 
         return super(SystemPipelineExecutionContextData, cls).__new__(
             cls,
@@ -91,11 +134,11 @@ class SystemPipelineExecutionContextData(
             environment_config=check.inst_param(
                 environment_config, 'environment_config', EnvironmentConfig
             ),
-            persistence_strategy=check.inst_param(
-                persistence_strategy, 'persistence_strategy', PersistenceStrategy
-            ),
             pipeline_def=check.inst_param(pipeline_def, 'pipeline_def', PipelineDefinition),
-            files=check.inst_param(files, 'files', FileStore),
+            run_storage=check.inst_param(run_storage, 'run_storage', RunStorage),
+            intermediates_manager=check.inst_param(
+                intermediates_manager, 'intermediates_manager', IntermediatesManager
+            ),
         )
 
     @property
@@ -168,10 +211,6 @@ class SystemPipelineExecutionContext(object):
         return self._tags[key]
 
     @property
-    def persistence_strategy(self):
-        return self._pipeline_context_data.persistence_strategy
-
-    @property
     def pipeline_def(self):
         return self._pipeline_context_data.pipeline_def
 
@@ -191,8 +230,12 @@ class SystemPipelineExecutionContext(object):
         return self._log
 
     @property
-    def files(self):
-        return self._pipeline_context_data.files
+    def run_storage(self):
+        return self._pipeline_context_data.run_storage
+
+    @property
+    def intermediates_manager(self):
+        return self._pipeline_context_data.intermediates_manager
 
 
 class SystemStepExecutionContext(SystemPipelineExecutionContext):

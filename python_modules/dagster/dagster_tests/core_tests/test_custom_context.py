@@ -217,7 +217,7 @@ def test_invalid_context():
         PipelineConfigEvaluationError,
         match=(
             'Error 1: Type failure at path "root:context:default:config:string_field" '
-            'on type "String". Got "1". Value "1" at path '
+            'on type "String". Value at path '
             'root:context:default:config:string_field is not valid. Expected "String".'
         ),
     ):

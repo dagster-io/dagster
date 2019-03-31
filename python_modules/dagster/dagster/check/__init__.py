@@ -54,7 +54,7 @@ def _param_subclass_mismatch_exception(obj, superclass, param_name):
     )
 
 
-def _type_mismatch_error(obj, ttype, desc):
+def _type_mismatch_error(obj, ttype, desc=None):
     if desc:
         return CheckError(
             'Object {obj} is not a {type}. Got {obj} with type {obj_type}. Desc: {desc}'.format(
@@ -238,6 +238,16 @@ def opt_bool_param(obj, param_name, default=None):
     return default if obj is None else obj
 
 
+def is_list(obj_list, of_type=None, desc=None):
+    if not isinstance(obj_list, list):
+        raise_with_traceback(_type_mismatch_error(obj_list, list, desc))
+
+    if not of_type:
+        return obj_list
+
+    return _check_list_items(obj_list, of_type)
+
+
 def list_param(obj_list, param_name, of_type=None):
     if not isinstance(obj_list, list):
         raise_with_traceback(_param_type_mismatch_exception(obj_list, list, param_name))
@@ -277,6 +287,12 @@ def _check_list_items(obj_list, of_type):
 
 
 def opt_list_param(obj_list, param_name, of_type=None):
+    '''Ensures argument obj_list is a list or None; in the latter case, instantiates an empty list
+    and returns it.
+
+    If the of_type argument is provided, also ensures that list items conform to the type specified
+    by of_type.
+    '''
     if obj_list is not None and not isinstance(obj_list, list):
         raise_with_traceback(_param_type_mismatch_exception(obj_list, list, param_name))
     if not obj_list:
@@ -287,7 +303,13 @@ def opt_list_param(obj_list, param_name, of_type=None):
     return _check_list_items(obj_list, of_type)
 
 
-def _check_key_value_types(obj, key_type, value_type):
+def _check_key_value_types(obj, key_type, value_type, key_check=isinstance, value_check=isinstance):
+    '''Ensures argument obj is a dictionary, and enforces that the keys/values conform to the types
+    specified by key_type, value_type.
+    '''
+    if not isinstance(obj, dict):
+        raise_with_traceback(_type_mismatch_error(obj, dict))
+
     if key_type is str:
         key_type = string_types
 
@@ -295,7 +317,7 @@ def _check_key_value_types(obj, key_type, value_type):
         value_type = string_types
 
     for key, value in obj.items():
-        if key_type and not isinstance(key, key_type):
+        if key_type and not key_check(key, key_type):
             raise_with_traceback(
                 CheckError(
                     'Key in dictionary mismatches type. Expected {key_type}. Got {obj_repr}'.format(
@@ -303,7 +325,7 @@ def _check_key_value_types(obj, key_type, value_type):
                     )
                 )
             )
-        if value_type and not isinstance(value, value_type):
+        if value_type and not value_check(value, value_type):
             raise_with_traceback(
                 CheckError(
                     'Value in dictionary mismatches expected type for key {key}. Expected value '
@@ -316,6 +338,9 @@ def _check_key_value_types(obj, key_type, value_type):
 
 
 def dict_param(obj, param_name, key_type=None, value_type=None):
+    '''Ensures argument obj is a native Python dictionary, raises an exception if not, and otherwise
+    returns obj.
+    '''
     if not isinstance(obj, dict):
         raise_with_traceback(_param_type_mismatch_exception(obj, dict, param_name))
 
@@ -325,13 +350,18 @@ def dict_param(obj, param_name, key_type=None, value_type=None):
     return _check_key_value_types(obj, key_type, value_type)
 
 
-def opt_dict_param(obj, param_name, key_type=None, value_type=None):
+def opt_dict_param(obj, param_name, key_type=None, value_type=None, value_class=None):
+    '''Ensures argument obj is either a dictionary or None; if the latter, instantiates an empty
+    dictionary.
+    '''
     if obj is not None and not isinstance(obj, dict):
         raise_with_traceback(_param_type_mismatch_exception(obj, dict, param_name))
 
     if not obj:
         return {}
 
+    if value_class:
+        return _check_key_value_types(obj, key_type, value_type=value_class, value_check=issubclass)
     return _check_key_value_types(obj, key_type, value_type)
 
 

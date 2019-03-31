@@ -17,7 +17,7 @@ import airflow.plugins_manager
 import docker
 import pytest
 
-from dagster import check
+from dagster import check, seven
 from dagster.core.execution import create_execution_plan
 from dagster.utils import load_yaml_from_path, mkdir_p, script_relative_path
 
@@ -31,12 +31,6 @@ from .test_project.dagster_airflow_demo import (
 from .utils import reload_module
 
 IMAGE = 'dagster-airflow-demo'
-
-# py2 compat
-try:
-    FileNotFoundError
-except NameError:
-    FileNotFoundError = IOError
 
 
 @pytest.fixture(scope='module')
@@ -182,15 +176,30 @@ def airflow_test(docker_image, dags_path, plugins_path, host_tmp_dir):
 
 
 @pytest.fixture(scope='module')
-def scaffold_dag(airflow_test):
+def pipeline():
+    yield define_demo_execution_pipeline()
+
+
+@pytest.fixture(scope='module')
+def env_config(s3_bucket):
+    config = load_yaml_from_path(script_relative_path('test_project/env.yml'))
+    config['storage'] = {'s3': {'s3_bucket': s3_bucket}}
+    yield config
+
+
+@pytest.fixture(scope='session')
+def s3_bucket():
+    yield 'dagster-airflow-scratch'
+
+
+@pytest.fixture(scope='module')
+def scaffold_dag(airflow_test, pipeline, env_config):
     '''Scaffolds an Airflow dag and installs it.
 
     We should probably use test classes for these tests and set attributes like pipeline/env_config
     on the classes to make this more reusable.
     '''
     docker_image, dags_path, _ = airflow_test
-    pipeline = define_demo_execution_pipeline()
-    env_config = load_yaml_from_path(script_relative_path('test_project/env.yml'))
 
     tempdir = tempfile.gettempdir()
 
@@ -238,14 +247,14 @@ def scaffold_dag(airflow_test):
         os.remove(
             os.path.abspath(os.path.join(dags_path, os.path.basename(static_path)[:-3] + '.pyc'))
         )
-    except (FileNotFoundError, OSError):
+    except (seven.FileNotFoundError, OSError):
         pass
 
     try:
         os.remove(
             os.path.abspath(os.path.join(dags_path, os.path.basename(editable_path)[:-3] + '.pyc'))
         )
-    except (FileNotFoundError, OSError):
+    except (seven.FileNotFoundError, OSError):
         pass
 
 
@@ -304,5 +313,5 @@ def scaffold_error_dag(airflow_test):
             os.path.abspath(os.path.join(dags_path, os.path.basename(editable_path)[:-3] + '.pyc'))
         )
 
-    except (FileNotFoundError, OSError):
+    except (seven.FileNotFoundError, OSError):
         pass

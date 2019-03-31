@@ -31,6 +31,7 @@ def create_join_step(pipeline_context, solid, step_key, prev_steps, prev_output_
 
     step_inputs = []
     seen_runtime_type = None
+    seen_optionality = None
     for prev_step in prev_steps:
         prev_step_output = prev_step.step_output_named(prev_output_name)
 
@@ -38,6 +39,11 @@ def create_join_step(pipeline_context, solid, step_key, prev_steps, prev_output_
             seen_runtime_type = prev_step_output.runtime_type
         else:
             check.invariant(seen_runtime_type == prev_step_output.runtime_type)
+
+        if seen_optionality is None:
+            seen_optionality = prev_step_output.optional
+        else:
+            check.invariant(seen_optionality == prev_step_output.optional)
 
         output_handle = StepOutputHandle.from_step(prev_step, prev_output_name)
 
@@ -47,7 +53,7 @@ def create_join_step(pipeline_context, solid, step_key, prev_steps, prev_output_
         pipeline_context=pipeline_context,
         key=step_key,
         step_inputs=step_inputs,
-        step_outputs=[StepOutput(JOIN_OUTPUT, seen_runtime_type)],
+        step_outputs=[StepOutput(JOIN_OUTPUT, seen_runtime_type, optional=seen_optionality)],
         compute_fn=__join_lambda,
         kind=StepKind.JOIN,
         solid=solid,
@@ -107,7 +113,7 @@ def create_value_thunk_step(pipeline_context, solid, runtime_type, step_key, val
             pipeline_context=pipeline_context,
             key=step_key,
             step_inputs=[],
-            step_outputs=[StepOutput(VALUE_OUTPUT, runtime_type)],
+            step_outputs=[StepOutput(VALUE_OUTPUT, runtime_type, optional=False)],
             compute_fn=_fn,
             kind=StepKind.VALUE_THUNK,
             solid=solid,

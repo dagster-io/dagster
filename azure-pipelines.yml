@@ -1,44 +1,35 @@
-# Placeholder until we reenable the config below!
-pool:
-  vmImage: 'Ubuntu 16.04'
-
-steps:
-- task: UsePythonVersion@0
-  inputs:
-    versionSpec: 3.5
-
-# jobs:
-#   - job: 'dagster'
-#     pool:
-#       vmImage: 'vs2017-win2016'
-#     strategy:
-#       matrix:
-#         py27:
-#           TOXENV: 'py27'
-#           python.version: '2.7'
-#         py35:
-#           TOXENV: 'py35'
-#           python.version: '3.5'
-#         py36:
-#           TOXENV: 'py36'
-#           python.version: '3.6'
-#         py37:
-#           TOXENV: 'py37'
-#           python.version: '3.7'
-#     steps:
-#     - task: UsePythonVersion@0
-#       inputs:
-#         versionSpec: '$(python.version)'
-#         architecture: 'x64'
-#     - script: pip install tox
-#       displayName: 'Install tox'
-#     - script: cd python_modules\dagster && tox -e %TOXENV% && cd ..\.. 
-#       displayName: 'Run tests'
-#     - task: PublishTestResults@2
-#       inputs:
-#         testResultsFiles: '**/test_results.xml'
-#         testRunTitle: 'dagster $(TOXENV)'
-#       condition: succeededOrFailed()
+jobs:
+  - job: 'dagster'
+    pool:
+      vmImage: 'vs2017-win2016'
+    strategy:
+      matrix:
+        py27:
+          TOXENV: 'py27'
+          python.version: '2.7'
+        py35:
+          TOXENV: 'py35'
+          python.version: '3.5'
+        py36:
+          TOXENV: 'py36'
+          python.version: '3.6'
+        py37:
+          TOXENV: 'py37'
+          python.version: '3.7'
+    steps:
+    - task: UsePythonVersion@0
+      inputs:
+        versionSpec: '$(python.version)'
+        architecture: 'x64'
+    - script: pip install tox
+      displayName: 'Install tox'
+    - script: cd python_modules\dagster && tox -e %TOXENV% && cd ..\.. 
+      displayName: 'Run tests'
+    - task: PublishTestResults@2
+      inputs:
+        testResultsFiles: '**/test_results.xml'
+        testRunTitle: 'dagster $(TOXENV)'
+      condition: succeededOrFailed()
 #   - job: 'dagit'
 #     pool:
 #       vmImage: 'vs2017-win2016'

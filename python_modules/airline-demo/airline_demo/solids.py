@@ -1,6 +1,7 @@
 '''A fully fleshed out demo dagster repository with many configurable options.'''
 
 import os
+import re
 import zipfile
 
 from sqlalchemy import text
@@ -26,6 +27,9 @@ from dagstermill import define_dagstermill_solid
 
 from .types import FileExistsAtPath, SparkDataFrameType, SqlAlchemyEngineType, SqlTableName
 from .utils import mkdir_p, S3Logger
+
+
+PARQUET_SPECIAL_CHARACTERS = r'[ ,;{}()\n\t=]'
 
 
 def _notebook_path(name):
@@ -131,39 +135,16 @@ def sql_solid(name, select_statement, materialization_strategy, table_name=None,
 @solid(
     name='download_from_s3',
     config_field=Field(
-        List(
-            Dict(
-                fields={
-                    # Probably want to make the region configuable too
-                    'bucket': Field(
-                        String, description='The S3 bucket in which to look for the key.'
-                    ),
-                    'key': Field(String, description='The key to download.'),
-                    'skip_if_present': Field(
-                        Bool,
-                        description=(
-                            'If True, and a file already exists at the path described by the '
-                            'target_path config value, if present, or the key, then the solid '
-                            'will no-op.'
-                        ),
-                        default_value=False,
-                        is_optional=True,
-                    ),
-                    'target_path': Field(
-                        Path,
-                        description=(
-                            'If present, specifies the path at which to download the object.'
-                        ),
-                        is_optional=True,
-                    ),
-                }
-            )
+        Dict(
+            fields={
+                'target_file': Field(
+                    Path, description=('Specifies the path at which to download the object.')
+                )
+            }
         )
     ),
     description='Downloads an object from S3.',
-    outputs=[
-        OutputDefinition(List(FileExistsAtPath), description='The path to the downloaded object.')
-    ],
+    outputs=[OutputDefinition(FileExistsAtPath, description='The path to the downloaded object.')],
 )
 def download_from_s3(context):
     '''Download an object from s3.
@@ -175,40 +156,9 @@ def download_from_s3(context):
         str:
             The path to the downloaded object.
     '''
-    results = []
-    for file_ in context.solid_config:
-        bucket = file_['bucket']
-        key = file_['key']
-        target_path = file_.get('target_path') or key
-
-        if target_path is None:
-            target_path = context.resources.tempfile.tempfile().name
-
-        if file_['skip_if_present'] and safe_isfile(target_path):
-            context.log.info(
-                'Skipping download, file already present at {target_path}'.format(
-                    target_path=target_path
-                )
-            )
-        else:
-            if os.path.dirname(target_path):
-                mkdir_p(os.path.dirname(target_path))
-
-            context.log.info(
-                'Starting download of {bucket}/{key} to {target_path}'.format(
-                    bucket=bucket, key=key, target_path=target_path
-                )
-            )
-
-            headers = context.resources.s3.head_object(Bucket=bucket, Key=key)
-            logger = S3Logger(
-                context.log.debug, bucket, key, target_path, int(headers['ContentLength'])
-            )
-            context.resources.s3.download_file(
-                Bucket=bucket, Key=key, Filename=target_path, Callback=logger
-            )
-        results.append(target_path)
-    return results
+    target_file = context.solid_config['target_file']
+    # TODO: error here caused terrible, terrible error message
+    return context.resources.download_manager.download_file(context, target_file)
 
 
 @solid(
@@ -259,23 +209,9 @@ def upload_to_s3(context, file_path):
 
 @solid(
     name='unzip_file',
-    # config_field=Field(
-    #     ConfigDictionary(name='UnzipFileConfigType', fields={
-    #         'archive_path': Field(String, description=''),
-    #         'archive_member': Field(String, description=''),
-    #         'destination_dir': Field(String, description=''),
-    #     })
-    # ),
     inputs=[
-        InputDefinition('archive_paths', List(Path), description='The path to the archive.'),
-        InputDefinition(
-            'archive_members', List(String), description='The archive member to extract.'
-        ),
-        # InputDefinition(
-        #     'destination_dir',
-        #     String,
-        #     description='',
-        # ),
+        InputDefinition('archive_path', Path, description='The path to the archive.'),
+        InputDefinition('archive_member', String, description='The archive member to extract.'),
     ],
     config_field=Field(
         Dict(
@@ -298,69 +234,47 @@ def upload_to_s3(context, file_path):
     ),
     description='Extracts an archive member from a zip archive.',
     outputs=[
-        OutputDefinition(
-            List(FileExistsAtPath), description='The path to the unzipped archive member.'
-        )
+        OutputDefinition(FileExistsAtPath, description='The path to the unzipped archive member.')
     ],
 )
-def unzip_file(
-    context,
-    archive_paths,
-    archive_members,
-    # destination_dir=None
-):
-    # FIXME
-    # archive_path = info.config['archive_path']
-    # archive_member = info.config['archive_member']
-    results = []
-    for (i, archive_path) in enumerate(archive_paths):
-        destination_dir = (
-            # info.config['destination_dir'] or
-            os.path.dirname(archive_path)
-        )
-        if archive_members:
-            archive_member = archive_members[i]
-        else:
-            archive_member = None
+def unzip_file(context, archive_path, archive_member):
+    destination_dir = os.path.dirname(archive_path)
 
-        with zipfile.ZipFile(archive_path, 'r') as zip_ref:
-            if archive_member is not None:
-                target_path = os.path.join(destination_dir, archive_member)
-                is_file = safe_isfile(target_path)
-                is_dir = os.path.isdir(target_path)
-                if not (context.solid_config['skip_if_present'] and (is_file or is_dir)):
-                    zip_ref.extract(archive_member, destination_dir)
-                else:
-                    if is_file:
-                        context.log.info(
-                            'Skipping unarchive of {archive_member} from {archive_path}, '
-                            'file already present at {target_path}'.format(
-                                archive_member=archive_member,
-                                archive_path=archive_path,
-                                target_path=target_path,
-                            )
-                        )
-                    if is_dir:
-                        context.log.info(
-                            'Skipping unarchive of {archive_member} from {archive_path}, '
-                            'directory already present at {target_path}'.format(
-                                archive_member=archive_member,
-                                archive_path=archive_path,
-                                target_path=target_path,
-                            )
-                        )
+    with zipfile.ZipFile(archive_path, 'r') as zip_ref:
+        if archive_member is not None:
+            target_path = os.path.join(destination_dir, archive_member)
+            is_file = safe_isfile(target_path)
+            is_dir = os.path.isdir(target_path)
+            if not (context.solid_config['skip_if_present'] and (is_file or is_dir)):
+                zip_ref.extract(archive_member, destination_dir)
             else:
-                if not (context.solid_config['skip_if_present'] and is_dir):
-                    zip_ref.extractall(destination_dir)
-                else:
+                if is_file:
                     context.log.info(
-                        'Skipping unarchive of {archive_path}, directory already present '
-                        'at {target_path}'.format(
-                            archive_path=archive_path, target_path=target_path
+                        'Skipping unarchive of {archive_member} from {archive_path}, '
+                        'file already present at {target_path}'.format(
+                            archive_member=archive_member,
+                            archive_path=archive_path,
+                            target_path=target_path,
                         )
                     )
-        results.append(target_path)
-    return results
+                if is_dir:
+                    context.log.info(
+                        'Skipping unarchive of {archive_member} from {archive_path}, '
+                        'directory already present at {target_path}'.format(
+                            archive_member=archive_member,
+                            archive_path=archive_path,
+                            target_path=target_path,
+                        )
+                    )
+        else:
+            if not (context.solid_config['skip_if_present'] and is_dir):
+                zip_ref.extractall(destination_dir)
+            else:
+                context.log.info(
+                    'Skipping unarchive of {archive_path}, directory already present '
+                    'at {target_path}'.format(archive_path=archive_path, target_path=target_path)
+                )
+    return target_path
 
 
 @solid(
@@ -377,7 +291,12 @@ def ingest_csv_to_spark(context, input_csv):
         )
         .load(input_csv)
     )
-    return data_frame
+
+    # parquet compat
+    renamed_columns = [
+        re.sub(PARQUET_SPECIAL_CHARACTERS, '', column_name) for column_name in data_frame.columns
+    ]
+    return data_frame.toDF(*renamed_columns)
 
 
 def rename_spark_dataframe_columns(data_frame, fn):

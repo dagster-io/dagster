@@ -1,4 +1,5 @@
 /* tslint:disable */
+/* eslint-disable */
 // This file was automatically generated and should not be edited.
 
 // ====================================================
@@ -7,6 +8,12 @@
 
 export interface PipelinePageFragment_PythonError {
   __typename: "PythonError";
+  message: string;
+  stack: string[];
+}
+
+export interface PipelinePageFragment_InvalidDefinitionError {
+  __typename: "InvalidDefinitionError";
   message: string;
   stack: string[];
 }
@@ -563,4 +570,4 @@ export interface PipelinePageFragment_PipelineConnection {
   nodes: PipelinePageFragment_PipelineConnection_nodes[];
 }
 
-export type PipelinePageFragment = PipelinePageFragment_PythonError | PipelinePageFragment_PipelineConnection;
+export type PipelinePageFragment = PipelinePageFragment_PythonError | PipelinePageFragment_InvalidDefinitionError | PipelinePageFragment_PipelineConnection;

@@ -307,50 +307,68 @@ snapshots['test_build_all_docs 3'] = '''
 development environment.</p>
 <div class="section" id="local-development-setup">
 <h2>Local development setup<a class="headerlink" href="#local-development-setup" title="Permalink to this headline">¶</a></h2>
-<ol class="arabic simple">
-<li>Install Python 3.6.</li>
-</ol>
+<ol class="arabic">
+<li><p class="first">Install Python. Python 3.6 or above recommended.</p>
 <blockquote>
-<div><ul class="simple">
-<li>You can’t use Python 3.7+ yet because of <a class="reference external" href="https://github.com/apache/arrow/issues/1125">https://github.com/apache/arrow/issues/1125</a></li>
-</ul>
+<div><p>Note: If you use Python 3.7 dagster-airflow will not install and run properly
+as airflow is not Python 3.7 compatible. Until [AIRFLOW-2876](<a class="reference external" href="https://github.com/apache/airflow/pull/3723">https://github.com/apache/airflow/pull/3723</a>)
+is resolved (expected in 1.10.3), Airflow (and, as a consequence, dagster-airflow)
+is incompatible with Python 3.7.</p>
+<p>The rest of the modules will work properly so you can ignore this error and develop the rest
+of the modules.</p>
 </div></blockquote>
-<ol class="arabic simple" start="2">
-<li>Create and activate a virtualenv</li>
+</li>
+<li><p class="first">Create and activate a virtualenv.</p>
+</li>
 </ol>
 <div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$</span> python3 -m venv dagsterenv
 <span class="gp">$</span> <span class="nb">source</span> dagsterenv/bin/activate
 </pre></div>
 </div>
 <ol class="arabic simple" start="3">
-<li>Install dagster locally and install dev tools</li>
+<li>Install yarn. If you are on macOS, this should be:</li>
 </ol>
-<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$</span> git clone git@github.com:dagster-io/dagster.git
-<span class="gp">$</span> <span class="nb">cd</span> dagster/python_modules
-<span class="gp">$</span> pip install -e ./dagit
-<span class="gp">$</span> pip install -e ./dagster
-<span class="gp">$</span> pip install -r ./dagster/dev-requirements.txt
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$</span> brew install yarn
 </pre></div>
 </div>
-<ol class="arabic simple" start="4">
-<li>Install dagit webapp dependencies</li>
+<p>4. Run the script dev_env_setup.sh at repo root. This sets up a full
+dagster developer environment with all modules and runs tests that
+do not require heavy external dependencies such as docker. This will
+take a few minutes.</p>
+<blockquote>
+<div>$ ./dev_env_setup.sh</div></blockquote>
+<ol class="arabic" start="5">
+<li><p class="first">Run some tests manually to make sure things are working.</p>
+<blockquote>
+<div><p>$ pytest python_modules/dagster/dagster_tests</p>
+</div></blockquote>
+</li>
 </ol>
-<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$</span> <span class="nb">cd</span> dagster/python_modules/dagit/dagit/webapp
-<span class="gp">$</span> yarn install
+<p>Have fun coding!</p>
+<ol class="arabic simple" start="6">
+<li>Set up pre-commit hooks</li>
+</ol>
+<p>We use black to enforce a consistent code style. To set up a pre-commit hook, just run:</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$</span> pre-commit install
 </pre></div>
 </div>
-<ol class="arabic simple" start="5">
-<li>Run tests</li>
-</ol>
-<p>We use tox to manage test environments for python.</p>
-<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$</span> <span class="nb">cd</span> dagster/python_modules/dagster
-<span class="gp">$</span> tox
-<span class="gp">$</span> <span class="nb">cd</span> dagster/python_modules/dagit
-<span class="gp">$</span> tox
+<p>(The <cite>pre-commit</cite> package is installed in dagster’s dev-requirements.)</p>
+<div class="section" id="running-dagit-webapp-in-development">
+<h3>Running dagit webapp in development<a class="headerlink" href="#running-dagit-webapp-in-development" title="Permalink to this headline">¶</a></h3>
+<p>For development, run the dagit GraphQL server on a different port than the
+webapp, from any directory that contains a repository.yml file. For example:</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$</span> <span class="nb">cd</span> dagster/python_modules/dagster/dagster/tutorials/intro_tutorial
+<span class="gp">$</span> dagit -p <span class="m">3333</span>
+</pre></div>
+</div>
+<p>Keep this running. Then, in another terminal, run the local development
+(autoreloading, etc.) version of the webapp:</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$</span> <span class="nb">cd</span> dagster/js_modules/dagit
+<span class="gp">$</span> make dev_webapp
 </pre></div>
 </div>
 <p>To run JavaScript tests for the dagit frontend, you can run:</p>
-<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$</span> <span class="nb">cd</span> dagster/python_modules/dagit/dagit/webapp
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$</span> <span class="nb">cd</span> dagster/js_modules/dagit
 <span class="gp">$</span> yarn <span class="nb">test</span>
 </pre></div>
 </div>
@@ -362,19 +380,6 @@ something.</p>
 <p>Check that the change is sensible and run <code class="docutils literal notranslate"><span class="pre">yarn</span> <span class="pre">run</span> <span class="pre">jest</span> <span class="pre">-u</span></code> to update the
 snapshot to the new result. You can also update snapshots interactively
 when you are in <code class="docutils literal notranslate"><span class="pre">--watch</span></code> mode.</p>
-<div class="section" id="running-dagit-webapp-in-development">
-<h3>Running dagit webapp in development<a class="headerlink" href="#running-dagit-webapp-in-development" title="Permalink to this headline">¶</a></h3>
-<p>For development, run the dagit GraphQL server on a different port than the
-webapp, from any directory that contains a repository.yml file. For example:</p>
-<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$</span> <span class="nb">cd</span> dagster/python_modules/dagster/dagster/dagster_examples
-<span class="gp">$</span> dagit -p <span class="m">3333</span>
-</pre></div>
-</div>
-<p>Run the local development (autoreloading, etc.) version of the webapp.</p>
-<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$</span> <span class="nb">cd</span> dagster/python_modules/dagit/dagit/webapp
-<span class="gp">$</span> <span class="nv">REACT_APP_GRAPHQL_URI</span><span class="o">=</span><span class="s2">&quot;http://localhost:3333/graphql&quot;</span> yarn start
-</pre></div>
-</div>
 </div>
 <div class="section" id="releasing">
 <h3>Releasing<a class="headerlink" href="#releasing" title="Permalink to this headline">¶</a></h3>
@@ -576,12 +581,8 @@ snapshots['test_build_all_docs 4'] = '''
 </li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="apidocs/execution.html#dagster.PipelineExecutionResult.context">context (dagster.PipelineExecutionResult attribute)</a>
-
-      <ul>
-        <li><a href="apidocs/execution.html#dagster.SolidExecutionResult.context">(dagster.SolidExecutionResult attribute)</a>
+      <li><a href="apidocs/execution.html#dagster.SolidExecutionResult.context">context (dagster.SolidExecutionResult attribute)</a>
 </li>
-      </ul></li>
       <li><a href="apidocs/definitions.html#dagster.PipelineDefinition.context_definitions">context_definitions (dagster.PipelineDefinition attribute)</a>
 </li>
       <li><a href="apidocs/definitions.html#dagster.PipelineContextDefinition.context_fn">context_fn (dagster.PipelineContextDefinition attribute)</a>
@@ -593,8 +594,6 @@ snapshots['test_build_all_docs 4'] = '''
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="apidocs/types.html#module-dagster">dagster (module)</a>
-</li>
-      <li><a href="apidocs/execution.html#dagster.SolidExecutionResult.dagster_error">dagster_error (dagster.SolidExecutionResult attribute)</a>
 </li>
       <li><a href="apidocs/types.html#dagster.dagster_type">dagster_type() (in module dagster)</a>
 </li>
@@ -612,10 +611,10 @@ snapshots['test_build_all_docs 4'] = '''
 </li>
       <li><a href="apidocs/definitions.html#dagster.PipelineDefinition.dependencies">dependencies (dagster.PipelineDefinition attribute)</a>
 </li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="apidocs/definitions.html#dagster.PipelineDefinition.dependency_structure">dependency_structure (dagster.PipelineDefinition attribute)</a>
 </li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="apidocs/definitions.html#dagster.DependencyDefinition">DependencyDefinition (class in dagster)</a>
 </li>
       <li><a href="apidocs/definitions.html#dagster.DependencyDefinition.description">description (dagster.DependencyDefinition attribute)</a>
@@ -670,10 +669,12 @@ snapshots['test_build_all_docs 4'] = '''
 <h2 id="F">F</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="apidocs/definitions.html#dagster.Field">Field() (in module dagster)</a>
+      <li><a href="apidocs/execution.html#dagster.SolidExecutionResult.failure_data">failure_data (dagster.SolidExecutionResult attribute)</a>
 </li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="apidocs/definitions.html#dagster.Field">Field() (in module dagster)</a>
+</li>
       <li><a href="apidocs/decorators.html#dagster.MultipleResults.from_dict">from_dict() (dagster.MultipleResults static method)</a>
 </li>
   </ul></td>
@@ -713,6 +714,8 @@ snapshots['test_build_all_docs 4'] = '''
       <li><a href="apidocs/definitions.html#dagster.InputDefinition">InputDefinition (class in dagster)</a>
 </li>
       <li><a href="apidocs/types.html#dagster.Int">Int (in module dagster)</a>
+</li>
+      <li><a href="apidocs/definitions.html#dagster.OutputDefinition.is_optional">is_optional (dagster.OutputDefinition attribute)</a>
 </li>
       <li><a href="apidocs/definitions.html#dagster.RepositoryDefinition.iterate_over_pipelines">iterate_over_pipelines() (dagster.RepositoryDefinition method)</a>
 </li>
@@ -798,14 +801,12 @@ snapshots['test_build_all_docs 4'] = '''
 </li>
       <li><a href="apidocs/types.html#dagster.Path">Path (in module dagster)</a>
 </li>
-      <li><a href="apidocs/execution.html#dagster.PipelineExecutionResult.pipeline">pipeline (dagster.PipelineExecutionResult attribute)</a>
-</li>
       <li><a href="apidocs/definitions.html#dagster.RepositoryDefinition.pipeline_dict">pipeline_dict (dagster.RepositoryDefinition attribute)</a>
+</li>
+      <li><a href="apidocs/errors.html#dagster.PipelineConfigEvaluationError">PipelineConfigEvaluationError</a>
 </li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="apidocs/errors.html#dagster.PipelineConfigEvaluationError">PipelineConfigEvaluationError</a>
-</li>
       <li><a href="apidocs/definitions.html#dagster.PipelineContextDefinition">PipelineContextDefinition (class in dagster)</a>
 </li>
       <li><a href="apidocs/definitions.html#dagster.PipelineDefinition">PipelineDefinition (class in dagster)</a>
@@ -832,8 +833,6 @@ snapshots['test_build_all_docs 4'] = '''
 </li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="apidocs/execution.html#dagster.PipelineExecutionResult.result_list">result_list (dagster.PipelineExecutionResult attribute)</a>
-</li>
       <li><a href="apidocs/decorators.html#dagster.MultipleResults.results">results (dagster.MultipleResults attribute)</a>
 </li>
       <li><a href="apidocs/execution.html#dagster.RunConfig">RunConfig (class in dagster)</a>
@@ -1911,49 +1910,75 @@ development environment.
 Local development setup
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-1. Install Python 3.6.
-  * You can't use Python 3.7+ yet because of https://github.com/apache/arrow/issues/1125
+1. Install Python. Python 3.6 or above recommended.
 
-2. Create and activate a virtualenv
+    Note: If you use Python 3.7 dagster-airflow will not install and run properly
+    as airflow is not Python 3.7 compatible. Until [AIRFLOW-2876](https://github.com/apache/airflow/pull/3723)
+    is resolved (expected in 1.10.3), Airflow (and, as a consequence, dagster-airflow)
+    is incompatible with Python 3.7.
+
+    The rest of the modules will work properly so you can ignore this error and develop the rest
+    of the modules.
+
+2. Create and activate a virtualenv.
 
 .. code-block:: console
 
     $ python3 -m venv dagsterenv
     $ source dagsterenv/bin/activate
 
-3. Install dagster locally and install dev tools
+3. Install yarn. If you are on macOS, this should be:
 
 .. code-block:: console
 
-    $ git clone git@github.com:dagster-io/dagster.git
-    $ cd dagster/python_modules
-    $ pip install -e ./dagit
-    $ pip install -e ./dagster
-    $ pip install -r ./dagster/dev-requirements.txt
+    $ brew install yarn
 
-4. Install dagit webapp dependencies
+4. Run the script dev_env_setup.sh at repo root. This sets up a full
+dagster developer environment with all modules and runs tests that
+do not require heavy external dependencies such as docker. This will
+take a few minutes.
+
+    $ ./dev_env_setup.sh
+
+5. Run some tests manually to make sure things are working.
+
+    $ pytest python_modules/dagster/dagster_tests
+
+Have fun coding!
+
+6. Set up pre-commit hooks
+
+We use black to enforce a consistent code style. To set up a pre-commit hook, just run:
 
 .. code-block:: console
 
-    $ cd dagster/python_modules/dagit/dagit/webapp
-    $ yarn install
+    $ pre-commit install
 
-5. Run tests
+(The `pre-commit` package is installed in dagster's dev-requirements.)
 
-We use tox to manage test environments for python.
+Running dagit webapp in development
+-------------------------------------
+For development, run the dagit GraphQL server on a different port than the
+webapp, from any directory that contains a repository.yml file. For example:
 
 .. code-block:: console
 
-    $ cd dagster/python_modules/dagster
-    $ tox
-    $ cd dagster/python_modules/dagit
-    $ tox
+    $ cd dagster/python_modules/dagster/dagster/tutorials/intro_tutorial
+    $ dagit -p 3333
+
+Keep this running. Then, in another terminal, run the local development 
+(autoreloading, etc.) version of the webapp:
+
+.. code-block:: console
+
+    $ cd dagster/js_modules/dagit
+    $ make dev_webapp
 
 To run JavaScript tests for the dagit frontend, you can run:
 
 .. code-block:: console
 
-    $ cd dagster/python_modules/dagit/dagit/webapp
+    $ cd dagster/js_modules/dagit
     $ yarn test
 
 In webapp development it's handy to run ``yarn run jest --watch`` to have an
@@ -1967,23 +1992,6 @@ Check that the change is sensible and run ``yarn run jest -u`` to update the
 snapshot to the new result. You can also update snapshots interactively
 when you are in ``--watch`` mode.
 
-Running dagit webapp in development
--------------------------------------
-For development, run the dagit GraphQL server on a different port than the
-webapp, from any directory that contains a repository.yml file. For example:
-
-.. code-block:: console
-
-    $ cd dagster/python_modules/dagster/dagster/dagster_examples
-    $ dagit -p 3333
-
-Run the local development (autoreloading, etc.) version of the webapp.
-
-.. code-block:: console
-
-    $ cd dagster/python_modules/dagit/dagit/webapp
-    $ REACT_APP_GRAPHQL_URI="http://localhost:3333/graphql" yarn start
-
 Releasing
 -----------
 Projects are released using the Python script at ``dagster/bin/publish.py``.
@@ -1996,6 +2004,8 @@ Running a live html version of the docs can expedite documentation development.
 
     $ cd python_modules/dagster/docs
     $ make livehtml
+
+
 '''
 
 snapshots['test_build_all_docs 11'] = '''.. image:: https://user-images.githubusercontent.com/28738937/44878798-b6e17e00-ac5c-11e8-8d25-2e47e5a53418.png
@@ -2865,7 +2875,8 @@ E   AttributeError: module 'dagster.core.types' has no attribute 'ConfigDictiona
 ```
 
 First, we can discouraging the use of the `types` namespace. Instead just `from dagster import Dict` (or whatever class directly).
-Second, `ConfigDictionary` is now just `Dict`.
+Second, `ConfigDictionary` is now just `NamedDict`. If the name of the type wasn't particularily relevant
+you can also eliminate that and just use `Dict`.
 Third, you do not have to name it. The net result is much nicer:
 
 Before:
@@ -19786,7 +19797,7 @@ Inputs are values within the dagster type system that are created from previous 
 
 <dl class="class">
 <dt id="dagster.OutputDefinition">
-<em class="property">class </em><code class="descclassname">dagster.</code><code class="descname">OutputDefinition</code><span class="sig-paren">(</span><em>dagster_type=None</em>, <em>name=None</em>, <em>expectations=None</em>, <em>description=None</em><span class="sig-paren">)</span><a class="headerlink" href="#dagster.OutputDefinition" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">dagster.</code><code class="descname">OutputDefinition</code><span class="sig-paren">(</span><em>dagster_type=None</em>, <em>name=None</em>, <em>expectations=None</em>, <em>description=None</em>, <em>is_optional=False</em><span class="sig-paren">)</span><a class="headerlink" href="#dagster.OutputDefinition" title="Permalink to this definition">¶</a></dt>
 <dd><p>An OutputDefinition represents an output from a solid. Solids can have multiple
 outputs. In those cases the outputs must be named. Frequently solids have only one
 output, and so the user can construct a single OutputDefinition that will have
@@ -19813,6 +19824,12 @@ the default name of “result”.</p>
 <dt id="dagster.OutputDefinition.description">
 <code class="descname">description</code><a class="headerlink" href="#dagster.OutputDefinition.description" title="Permalink to this definition">¶</a></dt>
 <dd><p><em>str</em> – Description of the output. Optional.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="dagster.OutputDefinition.is_optional">
+<code class="descname">is_optional</code><a class="headerlink" href="#dagster.OutputDefinition.is_optional" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>bool</em> – If this output is optional. Optional, defaults to false.</p>
 </dd></dl>
 
 </dd></dl>
@@ -20121,7 +20138,7 @@ data assets.</p>
 <p>Solids should be implemented as idempotent, parameterizable, non-destructive functions.
 Data computations with these properties are much easier to test, reason about, and operate.</p>
 <p>The inputs and outputs are gradually, optionally typed by the dagster type system. Types
-can be user-defined and can represent entites as varied as scalars, dataframe, database
+can be user-defined and can represent entities as varied as scalars, dataframe, database
 tables, and so forth. They can represent pure in-memory objects, or handles to assets
 on disk or in external resources.</p>
 <p>A solid is a generalized abstraction that could take many forms.</p>
@@ -20377,26 +20394,6 @@ at runtime.</p>
 <dd><p>This is base class for any exception that is meant to wrap an Exception
 thrown by user code. It wraps that existing user code. The original_exc_info
 argument to the ctor is meant to be a sys.exc_info at the site of constructor.</p>
-<p>Example:</p>
-<p>output_type = step.step_output_dict[output_name].runtime_type
-try:</p>
-<blockquote>
-<div><dl class="docutils">
-<dt>context.persistence_strategy.write_value(</dt>
-<dd>output_type.serialization_strategy, output[‘path’], result.step_output_data.value</dd>
-</dl>
-<p>)</p>
-</div></blockquote>
-<dl class="docutils">
-<dt>except Exception as e:  # pylint: disable=broad-except</dt>
-<dd><dl class="first docutils">
-<dt>raise_from(</dt>
-<dd>DagsterExecutionStepExecutionError(…)
-e,</dd>
-</dl>
-<p class="last">)</p>
-</dd>
-</dl>
 </dd></dl>
 
 <dl class="exception">
@@ -20592,26 +20589,8 @@ SystemPipelineExecutionContextCreationData although that seemed excessively verb
 
 <dl class="class">
 <dt id="dagster.PipelineExecutionResult">
-<em class="property">class </em><code class="descclassname">dagster.</code><code class="descname">PipelineExecutionResult</code><span class="sig-paren">(</span><em>pipeline</em>, <em>run_id</em>, <em>step_event_list</em><span class="sig-paren">)</span><a class="headerlink" href="#dagster.PipelineExecutionResult" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">dagster.</code><code class="descname">PipelineExecutionResult</code><span class="sig-paren">(</span><em>pipeline</em>, <em>run_id</em>, <em>step_event_list</em>, <em>reconstruct_context</em><span class="sig-paren">)</span><a class="headerlink" href="#dagster.PipelineExecutionResult" title="Permalink to this definition">¶</a></dt>
 <dd><p>Result of execution of the whole pipeline. Returned eg by <a class="reference internal" href="#dagster.execute_pipeline" title="dagster.execute_pipeline"><code class="xref py py-func docutils literal notranslate"><span class="pre">execute_pipeline()</span></code></a>.</p>
-<dl class="attribute">
-<dt id="dagster.PipelineExecutionResult.pipeline">
-<code class="descname">pipeline</code><a class="headerlink" href="#dagster.PipelineExecutionResult.pipeline" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>PipelineDefinition</em> – Pipeline that was executed</p>
-</dd></dl>
-
-<dl class="attribute">
-<dt id="dagster.PipelineExecutionResult.context">
-<code class="descname">context</code><a class="headerlink" href="#dagster.PipelineExecutionResult.context" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>ExecutionContext</em> – ExecutionContext of that particular Pipeline run.</p>
-</dd></dl>
-
-<dl class="attribute">
-<dt id="dagster.PipelineExecutionResult.result_list">
-<code class="descname">result_list</code><a class="headerlink" href="#dagster.PipelineExecutionResult.result_list" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>list[SolidExecutionResult]</em> – List of results for each pipeline solid.</p>
-</dd></dl>
-
 <dl class="method">
 <dt id="dagster.PipelineExecutionResult.result_for_solid">
 <code class="descname">result_for_solid</code><span class="sig-paren">(</span><em>name</em><span class="sig-paren">)</span><a class="headerlink" href="#dagster.PipelineExecutionResult.result_for_solid" title="Permalink to this definition">¶</a></dt>
@@ -20641,7 +20620,7 @@ SystemPipelineExecutionContextCreationData although that seemed excessively verb
 
 <dl class="class">
 <dt id="dagster.SolidExecutionResult">
-<em class="property">class </em><code class="descclassname">dagster.</code><code class="descname">SolidExecutionResult</code><span class="sig-paren">(</span><em>solid</em>, <em>step_events_by_kind</em><span class="sig-paren">)</span><a class="headerlink" href="#dagster.SolidExecutionResult" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">dagster.</code><code class="descname">SolidExecutionResult</code><span class="sig-paren">(</span><em>solid</em>, <em>step_events_by_kind</em>, <em>reconstruct_context</em><span class="sig-paren">)</span><a class="headerlink" href="#dagster.SolidExecutionResult" title="Permalink to this definition">¶</a></dt>
 <dd><p>Execution result for one solid of the pipeline.</p>
 <dl class="attribute">
 <dt id="dagster.SolidExecutionResult.context">
@@ -20656,9 +20635,9 @@ SystemPipelineExecutionContextCreationData although that seemed excessively verb
 </dd></dl>
 
 <dl class="attribute">
-<dt id="dagster.SolidExecutionResult.dagster_error">
-<code class="descname">dagster_error</code><a class="headerlink" href="#dagster.SolidExecutionResult.dagster_error" title="Permalink to this definition">¶</a></dt>
-<dd><p>Returns exception that happened during this solid’s execution, if any</p>
+<dt id="dagster.SolidExecutionResult.failure_data">
+<code class="descname">failure_data</code><a class="headerlink" href="#dagster.SolidExecutionResult.failure_data" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the failing step’s data that happened during this solid’s execution, if any</p>
 </dd></dl>
 
 <dl class="attribute">
@@ -20671,7 +20650,8 @@ SystemPipelineExecutionContextCreationData although that seemed excessively verb
 <dt id="dagster.SolidExecutionResult.transformed_value">
 <code class="descname">transformed_value</code><span class="sig-paren">(</span><em>output_name=\'result\'</em><span class="sig-paren">)</span><a class="headerlink" href="#dagster.SolidExecutionResult.transformed_value" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns transformed value either for DEFAULT_OUTPUT or for the output
-given as output_name. Returns None if execution result isn’t a success</p>
+given as output_name. Returns None if execution result isn’t a success.</p>
+<p>Reconstructs the pipeline context to materialize value.</p>
 </dd></dl>
 
 <dl class="attribute">
@@ -20679,6 +20659,7 @@ given as output_name. Returns None if execution result isn’t a success</p>
 <code class="descname">transformed_values</code><a class="headerlink" href="#dagster.SolidExecutionResult.transformed_values" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return dictionary of transformed results, with keys being output names.
 Returns None if execution result isn’t a success.</p>
+<p>Reconstructs the pipeline context to materialize values.</p>
 </dd></dl>
 
 </dd></dl>
@@ -20826,7 +20807,7 @@ snapshots['test_build_all_docs 54'] = '''
 
 <dl class="function">
 <dt id="dagster.as_dagster_type">
-<code class="descclassname">dagster.</code><code class="descname">as_dagster_type</code><span class="sig-paren">(</span><em>existing_type</em>, <em>name=None</em>, <em>description=None</em>, <em>input_schema=None</em>, <em>output_schema=None</em>, <em>serialization_strategy=None</em><span class="sig-paren">)</span><a class="headerlink" href="#dagster.as_dagster_type" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">dagster.</code><code class="descname">as_dagster_type</code><span class="sig-paren">(</span><em>existing_type</em>, <em>name=None</em>, <em>description=None</em>, <em>input_schema=None</em>, <em>output_schema=None</em>, <em>serialization_strategy=None</em>, <em>storage_plugins=None</em><span class="sig-paren">)</span><a class="headerlink" href="#dagster.as_dagster_type" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="attribute">
@@ -20901,7 +20882,7 @@ snapshots['test_build_all_docs 54'] = '''
 
 <dl class="class">
 <dt id="dagster.RuntimeType">
-<em class="property">class </em><code class="descclassname">dagster.</code><code class="descname">RuntimeType</code><span class="sig-paren">(</span><em>key</em>, <em>name</em>, <em>is_builtin=False</em>, <em>description=None</em>, <em>input_schema=None</em>, <em>output_schema=None</em>, <em>serialization_strategy=None</em><span class="sig-paren">)</span><a class="headerlink" href="#dagster.RuntimeType" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">dagster.</code><code class="descname">RuntimeType</code><span class="sig-paren">(</span><em>key</em>, <em>name</em>, <em>is_builtin=False</em>, <em>description=None</em>, <em>input_schema=None</em>, <em>output_schema=None</em>, <em>serialization_strategy=None</em>, <em>storage_plugins=None</em><span class="sig-paren">)</span><a class="headerlink" href="#dagster.RuntimeType" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="attribute">
@@ -21673,7 +21654,8 @@ snapshots['test_build_all_docs 57'] = '''
 </pre></div>
 </div>
 <p>First, we can discouraging the use of the <code class="docutils literal notranslate"><span class="pre">types</span></code> namespace. Instead just <code class="docutils literal notranslate"><span class="pre">from</span> <span class="pre">dagster</span> <span class="pre">import</span> <span class="pre">Dict</span></code> (or whatever class directly).
-Second, <code class="docutils literal notranslate"><span class="pre">ConfigDictionary</span></code> is now just <code class="docutils literal notranslate"><span class="pre">Dict</span></code>.
+Second, <code class="docutils literal notranslate"><span class="pre">ConfigDictionary</span></code> is now just <code class="docutils literal notranslate"><span class="pre">NamedDict</span></code>. If the name of the type wasn’t particularily relevant
+you can also eliminate that and just use <code class="docutils literal notranslate"><span class="pre">Dict</span></code>.
 Third, you do not have to name it. The net result is much nicer:</p>
 <p>Before:</p>
 <div class="highlight-py notranslate"><div class="highlight"><pre><span></span><span class="n">types</span><span class="o">.</span><span class="n">ConfigDictionary</span><span class="p">(</span>
@@ -24913,8 +24895,8 @@ and then execute that pipeline.</p>
         <span class="n">String</span><span class="p">,</span> <span class="n">description</span><span class="o">=</span><span class="s1">&#39;Should be either out_one or out_two&#39;</span>
     <span class="p">),</span>
     <span class="n">outputs</span><span class="o">=</span><span class="p">[</span>
-        <span class="n">OutputDefinition</span><span class="p">(</span><span class="n">dagster_type</span><span class="o">=</span><span class="n">Int</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;out_one&#39;</span><span class="p">),</span>
-        <span class="n">OutputDefinition</span><span class="p">(</span><span class="n">dagster_type</span><span class="o">=</span><span class="n">Int</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;out_two&#39;</span><span class="p">),</span>
+        <span class="n">OutputDefinition</span><span class="p">(</span><span class="n">dagster_type</span><span class="o">=</span><span class="n">Int</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;out_one&#39;</span><span class="p">,</span> <span class="n">is_optional</span><span class="o">=</span><span class="kc">True</span><span class="p">),</span>
+        <span class="n">OutputDefinition</span><span class="p">(</span><span class="n">dagster_type</span><span class="o">=</span><span class="n">Int</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;out_two&#39;</span><span class="p">,</span> <span class="n">is_optional</span><span class="o">=</span><span class="kc">True</span><span class="p">),</span>
     <span class="p">],</span>
 <span class="p">)</span>
 <span class="k">def</span> <span class="nf">conditional</span><span class="p">(</span><span class="n">context</span><span class="p">):</span>

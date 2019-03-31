@@ -1,6 +1,6 @@
 from dagit.schema import dauphin
 from dagit.schema import model
-from dagster.core.execution import ExecutionSelector, RunConfig
+from dagster.core.execution import ExecutionSelector
 from ..version import __version__
 
 
@@ -30,7 +30,10 @@ class DauphinQuery(dauphin.ObjectType):
         runtimeTypeName=dauphin.Argument(dauphin.NonNull(dauphin.String)),
     )
     pipelineRuns = dauphin.non_null_list('PipelineRun')
-    pipelineRun = dauphin.Field('PipelineRun', runId=dauphin.NonNull(dauphin.ID))
+
+    pipelineRunOrError = dauphin.Field(
+        dauphin.NonNull('PipelineRunOrError'), runId=dauphin.NonNull(dauphin.ID)
+    )
 
     isPipelineConfigValid = dauphin.Field(
         dauphin.NonNull('PipelineConfigValidationResult'),
@@ -79,7 +82,7 @@ class DauphinQuery(dauphin.ObjectType):
     def resolve_pipelineRuns(self, graphene_info):
         return model.get_runs(graphene_info)
 
-    def resolve_pipelineRun(self, graphene_info, runId):
+    def resolve_pipelineRunOrError(self, graphene_info, runId):
         return model.get_run(graphene_info, runId)
 
     def resolve_isPipelineConfigValid(self, graphene_info, pipeline, config):
@@ -89,6 +92,31 @@ class DauphinQuery(dauphin.ObjectType):
         return model.get_execution_plan(graphene_info, pipeline.to_selector(), config)
 
 
+class DauphinStepOutputHandle(dauphin.InputObjectType):
+    class Meta:
+        name = 'StepOutputHandle'
+
+    stepKey = dauphin.NonNull(dauphin.String)
+    outputName = dauphin.NonNull(dauphin.String)
+
+
+class DauphinReexecutionConfig(dauphin.InputObjectType):
+    class Meta:
+        name = 'ReexecutionConfig'
+
+    previousRunId = dauphin.NonNull(dauphin.String)
+    stepOutputHandles = dauphin.non_null_list(DauphinStepOutputHandle)
+
+    def to_reexecution_config(self):
+        from dagster.core.execution_context import ReexecutionConfig
+        from dagster.core.intermediates_manager import StepOutputHandle
+
+        return ReexecutionConfig(
+            self.previousRunId,
+            list(map(lambda g: StepOutputHandle(g.stepKey, g.outputName), self.stepOutputHandles)),
+        )
+
+
 class DauphinStartPipelineExecutionMutation(dauphin.Mutation):
     class Meta:
         name = 'StartPipelineExecutionMutation'
@@ -96,12 +124,25 @@ class DauphinStartPipelineExecutionMutation(dauphin.Mutation):
     class Arguments:
         pipeline = dauphin.NonNull('ExecutionSelector')
         config = dauphin.Argument('PipelineConfig')
+        stepKeys = dauphin.List(dauphin.NonNull(dauphin.String))
+        executionMetadata = dauphin.Argument('ExecutionMetadata')
+        reexecutionConfig = dauphin.Argument('ReexecutionConfig')
 
     Output = dauphin.NonNull('StartPipelineExecutionResult')
 
     def mutate(self, graphene_info, **kwargs):
+        reexecution_config = (
+            kwargs['reexecutionConfig'].to_reexecution_config()
+            if 'reexecutionConfig' in kwargs
+            else None
+        )
         return model.start_pipeline_execution(
-            graphene_info, kwargs['pipeline'].to_selector(), kwargs.get('config')
+            graphene_info,
+            kwargs['pipeline'].to_selector(),
+            kwargs.get('config'),
+            kwargs.get('stepKeys'),
+            reexecution_config,
+            kwargs.get('executionMetadata'),
         )
 
 
@@ -145,45 +186,26 @@ class DauphinExecutionMetadata(dauphin.InputObjectType):
     runId = dauphin.String()
     tags = dauphin.List(dauphin.NonNull(DauphinExecutionTag))
 
-    def to_metadata(self):
-        tags = {}
-        if tags:
-            for tag in self.tags:  # pylint: disable=E1133
-                tags[tag['key']] = tag['value']
 
-        return RunConfig(run_id=self.runId, tags=tags)
-
-
-class DauphinStartSubplanExecution(dauphin.Mutation):
+class DauphinExecutePlan(dauphin.Mutation):
     class Meta:
-        name = 'StartSubplanExecution'
+        name = 'ExecutePlan'
 
     class Arguments:
         pipelineName = dauphin.NonNull(dauphin.String)
         config = dauphin.Argument('PipelineConfig')
-        stepExecutions = dauphin.non_null_list(DauphinStepExecution)
+        stepKeys = dauphin.List(dauphin.NonNull(dauphin.String))
         executionMetadata = dauphin.Argument(dauphin.NonNull(DauphinExecutionMetadata))
 
-    Output = dauphin.NonNull('StartSubplanExecutionResult')
+    Output = dauphin.NonNull('ExecutePlanResult')
 
     def mutate(self, graphene_info, **kwargs):
-        return model.start_subplan_execution(
-            model.SubplanExecutionArgs(
-                graphene_info,
-                kwargs['pipelineName'],
-                kwargs.get('config'),
-                list(
-                    map(
-                        lambda data: model.step_executions_from_graphql_inputs(
-                            data['stepKey'],
-                            data.get('marshalledInputs', []),
-                            data.get('marshalledOutputs', []),
-                        ),
-                        kwargs['stepExecutions'],
-                    )
-                ),
-                kwargs['executionMetadata'].to_metadata(),
-            )
+        return model.do_execute_plan(
+            graphene_info,
+            kwargs['pipelineName'],
+            kwargs.get('config'),
+            kwargs['executionMetadata'],
+            kwargs.get('stepKeys'),
         )
 
 
@@ -192,9 +214,7 @@ class DauphinMutation(dauphin.ObjectType):
         name = 'Mutation'
 
     start_pipeline_execution = DauphinStartPipelineExecutionMutation.Field()
-    # TODO this name should indicate that this is synchronous
-    # https://github.com/dagster-io/dagster/issues/810
-    start_subplan_execution = DauphinStartSubplanExecution.Field()
+    execute_plan = DauphinExecutePlan.Field()
 
 
 class DauphinSubscription(dauphin.ObjectType):

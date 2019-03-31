@@ -28,14 +28,18 @@ setup(
     ],
     packages=find_packages(exclude=['test']),
     install_requires=[
-        'boto3',
+        'boto3==1.9.*',
         'dagster',
         'dagstermill',
-        'descartes',
-        'geopandas',
-        'matplotlib',
-        'pyspark',
-        'sqlalchemy-redshift',
-        'SQLAlchemy-Utils',
+        'descartes==1.1.0',
+        'geopandas==0.4.0',
+        'matplotlib==3.0.2; python_version >= "3.5"',
+        'matplotlib==2.2.4; python_version < "3.5"',
+        # pyproj is required by geopandas, but something is wrong with the
+        # wheel for 2.0.2
+        'pyproj==2.0.1',
+        'pyspark==2.4.0',
+        'sqlalchemy-redshift==0.7.1',
+        'SQLAlchemy-Utils==0.33.8',
     ],
 )

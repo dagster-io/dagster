@@ -16,17 +16,21 @@ import "codemirror/addon/dialog/dialog";
 import "./codemirror-yaml/lint"; // Patch lint
 import "codemirror/addon/lint/lint.css";
 import "codemirror/keymap/sublime";
-import { Controlled as CodeMirrorReact } from "react-codemirror2";
+import {
+  Controlled as CodeMirrorReact,
+  IInstance as Editor
+} from "react-codemirror2";
 import { ConfigEditorPipelineFragment } from "./types/ConfigEditorPipelineFragment";
 import "./codemirror-yaml/mode";
 import { LintJson as YamlModeLintJson } from "./codemirror-yaml/mode";
 import { debounce } from "../Util";
 
 interface IConfigEditorProps {
-  pipeline: ConfigEditorPipelineFragment;
+  pipeline?: ConfigEditorPipelineFragment;
   checkConfig: YamlModeLintJson;
   configCode: string;
   onConfigChange: (newValue: string) => void;
+  readOnly: boolean;
 }
 
 const AUTO_COMPLETE_AFTER_KEY = /^[a-zA-Z0-9_@(]$/;
@@ -35,6 +39,15 @@ const performLint = debounce((editor: any) => {
 }, 1000);
 
 export default class ConfigEditor extends React.Component<IConfigEditorProps> {
+  _editor?: Editor;
+
+  componentDidUpdate(prevProps: IConfigEditorProps) {
+    if (!this._editor) return;
+    if (prevProps.pipeline === this.props.pipeline) return;
+    console.log("performLint pipeline assigned");
+    performLint(this._editor);
+  }
+
   render() {
     return (
       <CodeMirrorReact
@@ -44,6 +57,7 @@ export default class ConfigEditor extends React.Component<IConfigEditorProps> {
             mode: "yaml",
             theme: "material",
             lineNumbers: true,
+            readOnly: this.props.readOnly,
             indentUnit: 2,
             smartIndent: true,
             showCursorWhenSelecting: true,
@@ -91,6 +105,7 @@ export default class ConfigEditor extends React.Component<IConfigEditorProps> {
           } as any
         }
         editorDidMount={editor => {
+          this._editor = editor;
           performLint(editor);
         }}
         onBeforeChange={(editor, data, value) => {
@@ -114,17 +129,17 @@ export default class ConfigEditor extends React.Component<IConfigEditorProps> {
 
 injectGlobal`
   .react-codemirror2 {
-    overflow-y: scroll;
-    && {
-      width: 100%;
-      flex: 1;
-    }
+    height: 100%;
+    flex: 1;
+    position: relative;
   }
-  .CodeMirror {
-    && {
-      height: 100%;
-      width: 100%;
-    }
+  .react-codemirror2 .CodeMirror {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: initial;
   }
   .cm-whitespace {
     /*

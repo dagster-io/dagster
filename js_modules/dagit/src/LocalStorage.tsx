@@ -17,27 +17,18 @@ export interface IExecutionSessionPlan {
   }>;
 }
 
-export interface IExecutionSessionRun {
-  executionParams: {
-    pipelineName: string;
-    config: object;
-  };
-  executionPlan: IExecutionSessionPlan;
-  runId: string;
-}
-
 export interface IExecutionSession {
   key: string;
   name: string;
   config: string;
   solidSubset: string[] | null;
+
+  // this is set when you execute the session and freeze it
+  runId?: string;
+  configChangedSinceRun: boolean;
 }
 
-export interface IExecutionSessionChanges {
-  name?: string;
-  config?: string;
-  solidSubset?: string[] | null;
-}
+export type IExecutionSessionChanges = Partial<IExecutionSession>;
 
 // When we create a new session, we insert a placeholder config that is swapped
 // with a scaffold when the pipeline with the desired solidSubset has loaded
@@ -46,24 +37,26 @@ export const SESSION_CONFIG_PLACEHOLDER = "SCAFFOLD-PLACEHOLDER";
 
 const DEFAULT_SESSION: IExecutionSession = {
   key: "default",
-  name: "Untitled",
+  name: "Workspace",
   config: SESSION_CONFIG_PLACEHOLDER,
-  solidSubset: null
+  solidSubset: null,
+  runId: undefined,
+  configChangedSinceRun: false
 };
 
 export function applySelectSession(data: IStorageData, key: string) {
-  data.current = key;
-  return data;
+  return { ...data, current: key };
 }
 
 export function applyRemoveSession(data: IStorageData, key: string) {
-  const idx = Object.keys(data.sessions).indexOf(key);
-  delete data.sessions[key];
-  if (data.current === key) {
-    const remainingKeys = Object.keys(data.sessions);
-    data.current = remainingKeys[idx] || remainingKeys[0];
+  const next = { current: data.current, sessions: { ...data.sessions } };
+  const idx = Object.keys(next.sessions).indexOf(key);
+  delete next.sessions[key];
+  if (next.current === key) {
+    const remainingKeys = Object.keys(next.sessions);
+    next.current = remainingKeys[idx] || remainingKeys[0];
   }
-  return data;
+  return next;
 }
 
 export function applyChangesToSession(
@@ -71,15 +64,33 @@ export function applyChangesToSession(
   key: string,
   changes: IExecutionSessionChanges
 ) {
-  Object.assign(data.sessions[key], changes);
-  return data;
+  const saved = data.sessions[key];
+  if (changes.config && changes.config !== saved.config && saved.runId) {
+    changes.configChangedSinceRun = true;
+  }
+
+  return {
+    current: data.current,
+    sessions: { ...data.sessions, [key]: { ...saved, ...changes } }
+  };
 }
 
-export function applyCreateSession(data: IStorageData) {
+export function applyCreateSession(
+  data: IStorageData,
+  initial: IExecutionSessionChanges = {}
+) {
   const key = `s${Date.now()}`;
-  data.sessions[key] = Object.assign({}, DEFAULT_SESSION, { key });
-  data.current = key;
-  return data;
+
+  return {
+    current: key,
+    sessions: {
+      ...data.sessions,
+      [key]: Object.assign({}, DEFAULT_SESSION, initial, {
+        configChangedSinceRun: false,
+        key
+      })
+    }
+  };
 }
 
 // StorageProvider component that vends `IStorageData` via a render prop

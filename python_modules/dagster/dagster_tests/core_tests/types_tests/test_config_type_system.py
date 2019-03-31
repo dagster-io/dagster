@@ -9,6 +9,7 @@ from dagster import (
     Int,
     List,
     Nullable,
+    PermissiveDict,
     PipelineConfigEvaluationError,
     PipelineContextDefinition,
     PipelineDefinition,
@@ -88,6 +89,10 @@ def _mixed_required_optional_string_config_dict_with_default():
     )
 
 
+def _multiple_required_fields_config_permissive_dict():
+    return Field(PermissiveDict({'field_one': Field(String), 'field_two': Field(String)}))
+
+
 def _validate(config_field, value):
     return throwing_evaluate_config_value(config_field.config_type, value)
 
@@ -148,6 +153,12 @@ def test_multiple_required_fields_failing():
 
     with pytest.raises(DagsterEvaluateConfigValueError):
         _validate(
+            _multiple_required_fields_config_dict(),
+            {'field_one': 'yup', 'field_two': 'yup', 'extra': 'should_not_exist'},
+        )
+
+    with pytest.raises(DagsterEvaluateConfigValueError):
+        _validate(
             _multiple_required_fields_config_dict(), {'field_one': 'value_one', 'field_two': 2}
         )
 
@@ -181,6 +192,50 @@ def test_single_optional_field_passing_with_default():
     assert _validate(
         _single_optional_string_field_config_dict_with_default(), {'optional_field': 'override'}
     ) == {'optional_field': 'override'}
+
+
+def test_permissive_multiple_required_fields_passing():
+    assert _validate(
+        _multiple_required_fields_config_permissive_dict(),
+        {
+            'field_one': 'value_one',
+            'field_two': 'value_two',
+            'previously_unspecified': 'should_exist',
+        },
+    ) == {
+        'field_one': 'value_one',
+        'field_two': 'value_two',
+        'previously_unspecified': 'should_exist',
+    }
+
+
+def test_permissive_multiple_required_fields_nested_passing():
+    assert _validate(
+        _multiple_required_fields_config_permissive_dict(),
+        {
+            'field_one': 'value_one',
+            'field_two': 'value_two',
+            'previously_unspecified': {'nested': 'value', 'with_int': 2},
+        },
+    ) == {
+        'field_one': 'value_one',
+        'field_two': 'value_two',
+        'previously_unspecified': {'nested': 'value', 'with_int': 2},
+    }
+
+
+def test_permissive_multiple_required_fields_failing():
+    with pytest.raises(DagsterEvaluateConfigValueError):
+        _validate(_multiple_required_fields_config_permissive_dict(), {})
+
+    with pytest.raises(DagsterEvaluateConfigValueError):
+        _validate(_multiple_required_fields_config_permissive_dict(), {'field_one': 'yup'})
+
+    with pytest.raises(DagsterEvaluateConfigValueError):
+        _validate(
+            _multiple_required_fields_config_permissive_dict(),
+            {'field_one': 'value_one', 'field_two': 2},
+        )
 
 
 def test_mixed_args_passing():
@@ -227,13 +282,13 @@ def test_single_nested_config():
 def test_single_nested_config_undefined_errors():
     with pytest.raises(
         DagsterEvaluateConfigValueError,
-        match='Value dkjfdk at path root:nested must be dict. Expected: "{ int_field: Int }".',
+        match='Value at path root:nested must be dict. Expected: "{ int_field: Int }".',
     ):
         _validate(_single_nested_config(), {'nested': 'dkjfdk'})
 
     with pytest.raises(
         DagsterEvaluateConfigValueError,
-        match='Value "dkjfdk" at path root:nested:int_field is not valid. Expected "Int"',
+        match='Value at path root:nested:int_field is not valid. Expected "Int"',
     ):
         _validate(_single_nested_config(), {'nested': {'int_field': 'dkjfdk'}})
 
@@ -248,10 +303,7 @@ def test_single_nested_config_undefined_errors():
 
     with pytest.raises(
         DagsterEvaluateConfigValueError,
-        match=(
-            'Value "{\'too_nested\': \'dkjfdk\'}" at path root:nested:int_field is not valid. '
-            'Expected "Int"'
-        ),
+        match='Value at path root:nested:int_field is not valid. Expected "Int"',
     ):
         _validate(_single_nested_config(), {'nested': {'int_field': {'too_nested': 'dkjfdk'}}})
 
@@ -446,8 +498,9 @@ def test_no_env_missing_required_error_handling():
         'Missing required field  "solids" at document config root. Expected: "{ context?: '
         'NoEnvMissingRequiredError.ContextConfig execution?: '
         'NoEnvMissingRequiredError.ExecutionConfig expectations?: '
-        'NoEnvMissingRequiredError.ExpectationsConfig solids: '
-        'NoEnvMissingRequiredError.SolidsConfigDictionary }"'
+        'NoEnvMissingRequiredError.ExpectationsConfig '
+        'solids: NoEnvMissingRequiredError.SolidsConfigDictionary '
+        'storage?: NoEnvMissingRequiredError.StorageConfig }"'
     ) in pe.message
 
 

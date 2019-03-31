@@ -1,4 +1,5 @@
 /* tslint:disable */
+/* eslint-disable */
 // This file was automatically generated and should not be edited.
 
 // ====================================================
@@ -7,6 +8,12 @@
 
 export interface AppQuery_pipelinesOrError_PythonError {
   __typename: "PythonError";
+  message: string;
+  stack: string[];
+}
+
+export interface AppQuery_pipelinesOrError_InvalidDefinitionError {
+  __typename: "InvalidDefinitionError";
   message: string;
   stack: string[];
 }
@@ -563,7 +570,7 @@ export interface AppQuery_pipelinesOrError_PipelineConnection {
   nodes: AppQuery_pipelinesOrError_PipelineConnection_nodes[];
 }
 
-export type AppQuery_pipelinesOrError = AppQuery_pipelinesOrError_PythonError | AppQuery_pipelinesOrError_PipelineConnection;
+export type AppQuery_pipelinesOrError = AppQuery_pipelinesOrError_PythonError | AppQuery_pipelinesOrError_InvalidDefinitionError | AppQuery_pipelinesOrError_PipelineConnection;
 
 export interface AppQuery {
   pipelinesOrError: AppQuery_pipelinesOrError;

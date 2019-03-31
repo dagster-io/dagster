@@ -38,8 +38,8 @@ def return_dict_results(_context):
         String, description='Should be either out_one or out_two'
     ),
     outputs=[
-        OutputDefinition(dagster_type=Int, name='out_one'),
-        OutputDefinition(dagster_type=Int, name='out_two'),
+        OutputDefinition(dagster_type=Int, name='out_one', is_optional=True),
+        OutputDefinition(dagster_type=Int, name='out_two', is_optional=True),
     ],
 )
 def conditional(context):

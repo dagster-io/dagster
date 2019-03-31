@@ -64,11 +64,16 @@ def test_basic_solids_config():
 
     assert scaffold_pipeline_config(pipeline_def, skip_optional=False) == {
         'context': {
-            'default': {'config': {'log_level': ''}, 'persistence': {'file': {}}, 'resources': {}}
+            'default': {
+                'config': {'log_level': 'DEBUG|INFO|WARNING|ERROR|CRITICAL'},
+                'persistence': {'file': {}},
+                'resources': {},
+            }
         },
         'solids': {'required_field_solid': {'config': {'required_int': 0}}},
         'expectations': {'evaluate': True},
         'execution': {},
+        'storage': {'filesystem': {}, 'in_memory': {}, 's3': {'s3_bucket': ''}},
     }
 
 
@@ -106,4 +111,5 @@ def test_two_contexts():
         'solids': {},
         'expectations': {'evaluate': True},
         'execution': {},
+        'storage': {'filesystem': {}, 'in_memory': {}, 's3': {'s3_bucket': ''}},
     }

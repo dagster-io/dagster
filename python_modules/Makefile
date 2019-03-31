@@ -14,8 +14,8 @@ watch:
 	--drop dagster/dagster dagster/dagster_tests/ dagster-ge/dagster_ge dagster-ge/dagster_ge_tests dagit/dagit dagit/dagit_tests
 
 black:
-	black . --line-length 100 -S --fast --exclude "build/|buck-out/|dist/|_build/|\.eggs/|\.git/|\.hg/|\.mypy_cache/|\.nox/|\.tox/|\.venv/|python_modules/dagster/dagster/tutorials/|snapshots/|__scaffold\.py"
-	black ./dagster/dagster/tutorials --line-length 79 -S --fast
+	black . --line-length 100 -S --fast --exclude "build/|buck-out/|dist/|_build/|\.eggs/|\.git/|\.hg/|\.mypy_cache/|\.nox/|\.tox/|\.venv/|python_modules/dagster/dagster/tutorials/|snapshots/|__scaffold\.py" -N
+	black ./dagster/dagster/tutorials --line-length 79 -S --fast -N
 
 
 pylint:
@@ -38,6 +38,12 @@ dagster_yapf:
 
 test_airline:
 	cd airline-demo; pytest -vv -s -W ignore:::psycopg2 -m "not slow and not py3"
+
+intro_tutorial:
+	cd dagster/dagster/tutorials/intro_tutorial; dagit -p 3333
+
+docs:
+	pytest --snapshot-update dagster
 
 clean:
 	find . -name \*.pyc -delete

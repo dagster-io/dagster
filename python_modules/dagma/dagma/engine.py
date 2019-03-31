@@ -2,7 +2,6 @@
 
 import base64
 import io
-import json
 import os
 import pickle
 import shutil
@@ -15,7 +14,7 @@ from collections import namedtuple
 
 import cloudpickle as pickle
 
-from dagster import check
+from dagster import check, seven
 from dagster.core.execution_context import SystemPipelineExecutionContext
 from dagster.core.execution_plan.objects import ExecutionPlan
 from dagster.utils.zip import zip_folder
@@ -132,7 +131,7 @@ def _execute_step_async(lambda_client, lambda_step, context, payload):
 def _execute_step_sync(lambda_client, lambda_step, context, payload):
     res = lambda_client.invoke(
         FunctionName=lambda_step['FunctionArn'],
-        Payload=json.dumps({'config': list(payload)}, sort_keys=True),
+        Payload=seven.json.dumps({'config': list(payload)}),
         InvocationType='RequestResponse',
         LogType='Tail',
     )

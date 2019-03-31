@@ -112,7 +112,8 @@ E   AttributeError: module 'dagster.core.types' has no attribute 'ConfigDictiona
 ```
 
 First, we can discouraging the use of the `types` namespace. Instead just `from dagster import Dict` (or whatever class directly).
-Second, `ConfigDictionary` is now just `Dict`.
+Second, `ConfigDictionary` is now just `NamedDict`. If the name of the type wasn't particularily relevant
+you can also eliminate that and just use `Dict`.
 Third, you do not have to name it. The net result is much nicer:
 
 Before:

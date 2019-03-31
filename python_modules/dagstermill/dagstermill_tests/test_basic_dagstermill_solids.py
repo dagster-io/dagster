@@ -1,10 +1,9 @@
-import sys
-
 import pytest
 
 from dagster import execute_pipeline, RunConfig
 
 from dagstermill import DagstermillError
+from dagstermill.test_utils import notebook_test
 from dagstermill.examples.repository import (
     define_add_pipeline,
     define_error_pipeline,
@@ -13,19 +12,8 @@ from dagstermill.examples.repository import (
     define_test_notebook_dag_pipeline,
     define_tutorial_pipeline,
     define_resource_pipeline,
+    define_no_repo_registration_error_pipeline,
 )
-
-
-# Notebooks encode what version of python (e.g. their kernel)
-# they run on, so we can't run notebooks in python2 atm
-def notebook_test(f):
-    return pytest.mark.skipif(
-        sys.version_info < (3, 5),
-        reason='''Notebooks execute in their own process and hardcode what "kernel" they use.
-        All of the development notebooks currently use the python3 "kernel" so they will
-        not be executable in a container that only have python2.7 (e.g. in CircleCI)
-        ''',
-    )(f)
 
 
 @notebook_test
@@ -85,3 +73,15 @@ def test_tutorial_pipeline():
 def test_resources_notebook():
     result = execute_pipeline(define_resource_pipeline())
     assert result.success
+
+@notebook_test
+def test_no_repo_registration_error():
+    with pytest.raises(
+        DagstermillError,
+        match='If Dagstermill solids have outputs that require serialization strategies',
+    ):
+        execute_pipeline(define_no_repo_registration_error_pipeline())
+    res = execute_pipeline(
+        define_no_repo_registration_error_pipeline(), run_config=RunConfig.nonthrowing_in_process()
+    )
+    assert not res.success

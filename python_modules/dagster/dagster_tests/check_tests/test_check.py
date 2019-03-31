@@ -73,6 +73,16 @@ def test_list_param():
         check.list_param('3u4', 'list_param')
 
 
+def test_is_list():
+    assert check.is_list([]) == []
+
+    with pytest.raises(CheckError):
+        check.is_list(None)
+
+    with pytest.raises(CheckError):
+        check.is_list('3u4')
+
+
 def test_typed_list_param():
     class Foo(object):
         pass
@@ -89,6 +99,24 @@ def test_typed_list_param():
 
     with pytest.raises(CheckError):
         check.list_param([None], 'list_param', Foo)
+
+
+def test_typed_is_list():
+    class Foo(object):
+        pass
+
+    class Bar(object):
+        pass
+
+    assert check.is_list([], Foo) == []
+    foo_list = [Foo()]
+    assert check.is_list(foo_list, Foo) == foo_list
+
+    with pytest.raises(CheckError):
+        check.is_list([Bar()], Foo)
+
+    with pytest.raises(CheckError):
+        check.is_list([None], Foo)
 
 
 def test_opt_list_param():
@@ -438,6 +466,9 @@ def test_inst_param():
         check.inst_param(None, 'obj', Bar)
 
     with pytest.raises(ParameterCheckError, match='not a Bar'):
+        check.inst_param(Bar, 'obj', Bar)
+
+    with pytest.raises(ParameterCheckError, match='not a Bar'):
         check.inst_param(Foo(), 'obj', Bar)
 
     with pytest.raises(ParameterCheckError, match=r"not one of \['Bar', 'Foo'\]"):
@@ -462,6 +493,9 @@ def test_opt_inst_param():
     assert check.opt_inst_param(obj, 'obj', Foo) == obj
     assert check.opt_inst_param(None, 'obj', Foo) is None
     assert check.opt_inst_param(None, 'obj', Bar) is None
+
+    with pytest.raises(ParameterCheckError, match='not a Bar'):
+        check.opt_inst_param(Bar, 'obj', Bar)
 
     with pytest.raises(ParameterCheckError, match='not a Bar'):
         check.opt_inst_param(Foo(), 'obj', Bar)

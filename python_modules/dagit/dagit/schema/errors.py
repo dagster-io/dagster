@@ -52,6 +52,19 @@ class DauphinPipelineNotFoundError(dauphin.ObjectType):
         self.message = 'Pipeline {pipeline_name} does not exist'.format(pipeline_name=pipeline_name)
 
 
+class DauphinPipelineRunNotFoundError(dauphin.ObjectType):
+    class Meta:
+        name = 'PipelineRunNotFoundError'
+        interfaces = (DauphinError,)
+
+    run_id = dauphin.NonNull(dauphin.String)
+
+    def __init__(self, run_id):
+        super(DauphinPipelineRunNotFoundError, self).__init__()
+        self.run_id = check.str_param(run_id, 'run_id')
+        self.message = 'Pipeline run {run_id} does not exist'.format(run_id=run_id)
+
+
 class DauphinSolidNotFoundError(dauphin.ObjectType):
     class Meta:
         name = 'SolidNotFoundError'
@@ -296,13 +309,30 @@ class DauphinStartPipelineExecutionSuccess(dauphin.ObjectType):
     run = dauphin.Field(dauphin.NonNull('PipelineRun'))
 
 
+class DauphinInvalidStepError(dauphin.ObjectType):
+    class Meta:
+        name = 'InvalidStepError'
+
+    invalid_step_key = dauphin.NonNull(dauphin.String)
+
+
+class DauphinInvalidOutputError(dauphin.ObjectType):
+    class Meta:
+        name = 'InvalidOutputError'
+
+    step_key = dauphin.NonNull(dauphin.String)
+    invalid_output_name = dauphin.NonNull(dauphin.String)
+
+
 class DauphinStartPipelineExecutionResult(dauphin.Union):
     class Meta:
         name = 'StartPipelineExecutionResult'
         types = (
-            DauphinStartPipelineExecutionSuccess,
+            DauphinInvalidStepError,
+            DauphinInvalidOutputError,
             DauphinPipelineConfigValidationInvalid,
             DauphinPipelineNotFoundError,
+            DauphinStartPipelineExecutionSuccess,
         )
 
 
@@ -331,58 +361,23 @@ class DauphinStepFailureEvent(dauphin.ObjectType):
     error_message = dauphin.Field(dauphin.NonNull(dauphin.String))
 
 
-class DauphinStartSubplanExecutionSuccess(dauphin.ObjectType):
+class DauphinExecutePlanSuccess(dauphin.ObjectType):
     class Meta:
-        name = 'StartSubplanExecutionSuccess'
+        name = 'ExecutePlanSuccess'
 
     pipeline = dauphin.Field(dauphin.NonNull('Pipeline'))
     has_failures = dauphin.Field(dauphin.NonNull(dauphin.Boolean))
     step_events = dauphin.non_null_list(DauphinStepEvent)
 
 
-class DauphinStartSubplanExecutionInvalidStepError(dauphin.ObjectType):
+class DauphinExecutePlanResult(dauphin.Union):
     class Meta:
-        name = 'StartSubplanExecutionInvalidStepError'
-
-    invalid_step_key = dauphin.NonNull(dauphin.String)
-
-
-class DauphinStartSubplanExecutionInvalidInputError(dauphin.ObjectType):
-    class Meta:
-        name = 'StartSubplanExecutionInvalidInputError'
-
-    step_key = dauphin.NonNull(dauphin.String)
-    invalid_input_name = dauphin.NonNull(dauphin.String)
-
-
-class DauphinStartSubplanExecutionInvalidOutputError(dauphin.ObjectType):
-    class Meta:
-        name = 'StartSubplanExecutionInvalidOutputError'
-
-    step_key = dauphin.NonNull(dauphin.String)
-    invalid_output_name = dauphin.NonNull(dauphin.String)
-
-
-class DauphinInvalidSubplanMissingInputError(dauphin.ObjectType):
-    class Meta:
-        name = 'InvalidSubplanMissingInputError'
-
-    step_key = dauphin.NonNull(dauphin.String)
-    missing_input_name = dauphin.NonNull(dauphin.String)
-
-
-class DauphinStartSubplanExecutionResult(dauphin.Union):
-    class Meta:
-        name = 'StartSubplanExecutionResult'
+        name = 'ExecutePlanResult'
         types = (
-            DauphinInvalidSubplanMissingInputError,
+            DauphinExecutePlanSuccess,
             DauphinPipelineConfigValidationInvalid,
             DauphinPipelineNotFoundError,
-            DauphinPythonError,
-            DauphinStartSubplanExecutionInvalidInputError,
-            DauphinStartSubplanExecutionInvalidOutputError,
-            DauphinStartSubplanExecutionInvalidStepError,
-            DauphinStartSubplanExecutionSuccess,
+            DauphinInvalidStepError,
         )
 
 
@@ -424,3 +419,9 @@ class DauphinRuntimeTypeOrError(dauphin.Union):
             DauphinPipelineNotFoundError,
             DauphinRuntimeTypeNotFoundError,
         )
+
+
+class DauphinPipelineRunOrError(dauphin.Union):
+    class Meta:
+        name = 'PipelineRunOrError'
+        types = ('PipelineRun', DauphinPipelineRunNotFoundError)

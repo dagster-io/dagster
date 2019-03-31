@@ -21,6 +21,9 @@ from dagster.core.execution import (
     create_environment_config,
 )
 
+from dagster.core.intermediates_manager import InMemoryIntermediatesManager
+from dagster.core.runs import InMemoryRunStorage
+
 from dagster.core.utility_solids import define_stub_solid
 
 
@@ -33,6 +36,8 @@ def create_test_pipeline_execution_context(loggers=None, resources=None, tags=No
         execution_context=ExecutionContext(),
         resources=resources,
         environment_config=create_environment_config(pipeline_def),
+        run_storage=InMemoryRunStorage(),
+        intermediates_manager=InMemoryIntermediatesManager(),
     )
 
 
@@ -121,11 +126,6 @@ def execute_solids(pipeline_def, solid_names, inputs=None, environment_dict=None
     sub_pipeline = pipeline_def.build_sub_pipeline(solid_names)
     stubbed_pipeline = build_pipeline_with_input_stubs(sub_pipeline, inputs)
     result = execute_pipeline(stubbed_pipeline, environment_dict)
-
-    if not result.success:
-        for solid_result in result.solid_result_list:
-            if not solid_result.success:
-                solid_result.reraise_user_error()
 
     return {sr.solid.name: sr for sr in result.solid_result_list}
 
