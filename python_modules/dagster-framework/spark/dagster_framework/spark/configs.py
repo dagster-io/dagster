@@ -14,6 +14,12 @@ from .configs_spark import spark_config
 
 
 def define_spark_config():
+    '''Spark configuration.
+
+    See the Spark documentation for reference:
+        https://spark.apache.org/docs/latest/submitting-applications.html
+    '''
+
     main_class = Field(
         String,
         description='The entry point for your application (e.g. org.apache.spark.examples.SparkPi)',
@@ -65,8 +71,6 @@ def define_spark_config():
 
     return Field(
         Dict(
-            # See the Spark documentation for reference:
-            # https://spark.apache.org/docs/latest/submitting-applications.html
             fields={
                 'main_class': main_class,
                 'master_url': master_url,

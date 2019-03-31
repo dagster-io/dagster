@@ -9,16 +9,16 @@ else:
     import builtins
 
 version = {}
-with open("dagster_solids/version.py") as fp:
+with open("dagster_framework/spark/version.py") as fp:
     exec(fp.read(), version)  # pylint: disable=W0122
 
 setup(
-    name='dagster_solids',
+    name='dagster_framework_spark',
     version=version['__version__'],
     author='Elementl',
     license='Apache-2.0',
     description='A complete demo exercising the functionality of Dagster.',
-    url='https://github.com/dagster-io/dagster/tree/master/python_modules/dagster-solids',
+    url='https://github.com/dagster-io/dagster/tree/master/python_modules/dagster-framework/spark',
     classifiers=[
         'Programming Language :: Python :: 2.7',
         'Programming Language :: Python :: 3.5',
@@ -27,6 +27,6 @@ setup(
         'Operating System :: OS Independent',
     ],
     packages=find_packages(exclude=['test']),
-    install_requires=[],
-    extras_require={'snowflake': ["snowflake-connector-python==1.7.*"]},
+    install_requires=['dagster'],
+    zip_safe=False,
 )

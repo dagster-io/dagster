@@ -1,11 +1,12 @@
-from dagster import Bool, Dict, Field, Int, PermissiveDict, String
+from dagster import Bool, Dict, Field, Int, String
 
 
 def define_snowflake_config():
-    sql = Field(String, description='The SQL query to run', is_optional=False)
+    '''Snowflake configuration.
 
-    # TODO: make this a permissive dict
-    parameters = Field(String, description='parameters to bind in the SQL query', is_optional=True)
+    See the Snowflake documentation for reference:
+        https://docs.snowflake.net/manuals/user-guide/python-connector-api.html
+    '''
 
     account = Field(
         String,
@@ -108,11 +109,7 @@ def define_snowflake_config():
 
     return Field(
         Dict(
-            # See the Spark documentation for reference:
-            # https://spark.apache.org/docs/latest/submitting-applications.html
             fields={
-                'sql': sql,
-                'parameters': parameters,
                 'account': account,
                 'user': user,
                 'password': password,
