@@ -20,15 +20,14 @@ def resolve_to_config_type(dagster_type):
         return Any.inst()
     if isinstance(dagster_type, BuiltinEnum):
         return ConfigType.from_builtin_enum(dagster_type)
-    ## TODO need to check for runtime type. e.g. List(DataFrame)
     if isinstance(dagster_type, WrappingListType):
         return resolve_to_config_list(dagster_type).inst()
     if isinstance(dagster_type, WrappingNullableType):
         return resolve_to_config_nullable(dagster_type).inst()
-    if issubclass(dagster_type, ConfigType):
+    if isinstance(dagster_type, type) and issubclass(dagster_type, ConfigType):
         return dagster_type.inst()
 
-    check.failed('should not reach')
+    return None
 
 
 def Field(

@@ -1,4 +1,5 @@
 from dagster import check
+from dagster.core.errors import DagsterInvalidDefinitionError
 from .config import ConfigType, ConfigTypeAttributes, DEFAULT_TYPE_ATTRIBUTES
 from .default_applier import apply_default_values
 
@@ -26,6 +27,52 @@ class __InferOptionalCompositeFieldSentinel:
 FIELD_NO_DEFAULT_PROVIDED = __FieldValueSentinel
 
 INFER_OPTIONAL_COMPOSITE_FIELD = __InferOptionalCompositeFieldSentinel
+
+
+def check_using_facing_field_param(obj, param_name, error_context_str=None):
+    check.str_param(param_name, 'param_name')
+    check.opt_str_param(error_context_str, 'error_context_str')
+
+    if not isinstance(obj, FieldImpl):
+        from dagster.core.types.field import resolve_to_config_type
+        from .type_printer import print_config_type_to_string
+
+        config_type = resolve_to_config_type(obj)
+        if config_type:
+            raise DagsterInvalidDefinitionError(
+                (
+                    'You have passed a config type {printed_type} as parameter {param_name} of a '
+                    '{error_context_str} that expects a Field. You have likely forgot '
+                    'to wrap this type in a Field.'
+                ).format(
+                    printed_type=print_config_type_to_string(config_type, with_lines=False),
+                    error_context_str=error_context_str,
+                    param_name=param_name,
+                )
+            )
+        else:
+            raise DagsterInvalidDefinitionError(
+                (
+                    'You have passed an object {value_repr} of incorrect type "{type_name}" as '
+                    'parameter {param_name} of a {error_context_str} where a '
+                    'Field was expected.'
+                ).format(
+                    error_context_str=error_context_str,
+                    param_name=param_name,
+                    value_repr=repr(obj),
+                    type_name=type(obj).__name__,
+                )
+            )
+
+    return check.inst_param(obj, param_name, FieldImpl)
+
+
+def check_user_facing_opt_field_param(obj, param_name, error_context_str=None):
+    check.str_param(param_name, 'param_name')
+    check.opt_str_param(error_context_str, 'error_context_str')
+    if obj is None:
+        return None
+    return check_using_facing_field_param(obj, param_name, error_context_str)
 
 
 def check_field_param(obj, param_name):

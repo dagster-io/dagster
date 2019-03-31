@@ -3,7 +3,7 @@ from collections import namedtuple
 from dagster import check
 
 from dagster.core.types import Field, Dict
-from dagster.core.types.field_utils import check_opt_field_param
+from dagster.core.types.field_utils import check_user_facing_opt_field_param
 from dagster.core.user_context import ExecutionContext
 from dagster.core.system_config.objects import DEFAULT_CONTEXT_NAME
 
@@ -82,7 +82,9 @@ class PipelineContextDefinition(object):
             config_field = _default_config_field()
             context_fn = _default_context_fn
 
-        self.config_field = check_opt_field_param(config_field, 'config_field')
+        self.config_field = check_user_facing_opt_field_param(
+            config_field, 'config_field', 'PipelineContextDefinition'
+        )
         self.context_fn = check.opt_callable_param(
             context_fn, 'context_fn', lambda *args, **kwargs: ExecutionContext()
         )

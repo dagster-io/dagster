@@ -3,17 +3,20 @@ import pytest
 import dagster.check as check
 
 from dagster import (
+    ConfigType,
     DagsterInvalidDefinitionError,
     DependencyDefinition,
+    Dict,
+    Field,
+    InputDefinition,
+    Int,
+    NamedDict,
+    OutputDefinition,
+    PipelineContextDefinition,
     PipelineDefinition,
     SolidDefinition,
-    OutputDefinition,
-    InputDefinition,
-    solid,
-    Field,
     String,
-    NamedDict,
-    ConfigType,
+    solid,
 )
 
 from dagster.core.utility_solids import define_stub_solid
@@ -142,4 +145,35 @@ def test_double_type_key():
     assert str(exc_info.value) == (
         'Type keys must be unique. You have constructed two different instances of types '
         'with the same key "KeyOne".'
+    )
+
+
+def test_pass_config_type_to_field_error_context_definition():
+    with pytest.raises(DagsterInvalidDefinitionError) as exc_info:
+        PipelineDefinition(
+            name='pass_config_type_to_context_def_config_field_error_pipeline',
+            solids=[],
+            context_definitions={
+                'some_context': PipelineContextDefinition(config_field=Dict({'val': Field(Int)}))
+            },
+        )
+
+    assert str(exc_info.value) == (
+        'You have passed a config type { val: Int } as parameter config_field of a '
+        'PipelineContextDefinition that expects a Field. You have likely forgot to '
+        'wrap this type in a Field.'
+    )
+
+
+def test_pass_unrelated_type_to_field_error_context_definition():
+    with pytest.raises(DagsterInvalidDefinitionError) as exc_info:
+        PipelineDefinition(
+            name='pass_unrelated_type_to_context_def_config_field_error_pipeline',
+            solids=[],
+            context_definitions={'some_context': PipelineContextDefinition(config_field='wut')},
+        )
+
+    assert str(exc_info.value) == (
+        'You have passed an object \'wut\' of incorrect type "str" as parameter '
+        'config_field of a PipelineContextDefinition where a Field was expected.'
     )
