@@ -213,6 +213,7 @@ def check_user_facing_fields_dict(fields, type_name_msg):
     check.dict_param(fields, 'fields', key_type=str)
     check.str_param(type_name_msg, 'type_name_msg')
 
+    sorted_field_names = sorted(list(fields.keys()))
     for field_name, potential_field in fields.items():
         check_using_facing_field_param(
             potential_field,
@@ -221,9 +222,7 @@ def check_user_facing_fields_dict(fields, type_name_msg):
                 'and it is in the "{field_name}" entry of that dict. It is from '
                 'a {type_name_msg} with fields {field_names}'
             ).format(
-                type_name_msg=type_name_msg,
-                field_name=field_name,
-                field_names=sorted(list(fields.keys())),
+                type_name_msg=type_name_msg, field_name=field_name, field_names=sorted_field_names
             ),
         )
 
@@ -267,6 +266,9 @@ def PermissiveDict(fields=None):
     will be ignored by the type checker.
     '''
 
+    if fields:
+        check_user_facing_fields_dict(fields, 'PermissiveDict')
+
     class _PermissiveDict(_ConfigComposite):
         def __init__(self):
             key = 'PermissiveDict.' + str(DictCounter.get_next_count())
@@ -293,6 +295,8 @@ def Selector(fields):
     Note that in other type systems this might be called an "input union."
     '''
 
+    check_user_facing_fields_dict(fields, 'Selector')
+
     class _Selector(_ConfigSelector):
         def __init__(self):
             key = 'Selector.' + str(DictCounter.get_next_count())
@@ -309,6 +313,7 @@ def Selector(fields):
 
 def NamedSelector(name, fields, description=None, type_attributes=DEFAULT_TYPE_ATTRIBUTES):
     check.str_param(name, 'name')
+    check_user_facing_fields_dict(fields, 'NamedSelector named "{}"'.format(name))
 
     class _NamedSelector(_ConfigSelector):
         def __init__(self):

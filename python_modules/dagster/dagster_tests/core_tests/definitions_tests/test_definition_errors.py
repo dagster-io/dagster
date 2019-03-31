@@ -11,13 +11,13 @@ from dagster import (
     InputDefinition,
     Int,
     NamedDict,
-    # NamedSelector,
+    NamedSelector,
     OutputDefinition,
-    # PermissiveDict,
+    PermissiveDict,
     PipelineContextDefinition,
     PipelineDefinition,
     ResourceDefinition,
-    # Selector,
+    Selector,
     SolidDefinition,
     String,
     solid,
@@ -272,11 +272,38 @@ def test_invalid_named_dict_field():
     )
 
 
-# def test_invalid_permissive_dict_field():
-#     NamedDict('some_dict', {'val': Int})
+def test_invalid_permissive_dict_field():
 
-# def test_invalid_selector_field():
-#     NamedDict('some_dict', {'val': Int})
+    with pytest.raises(DagsterInvalidDefinitionError) as exc_info:
+        PermissiveDict({'val': Int, 'another_val': Field(Int)})
 
-# def test_invalid_named_selector_field():
-#     NamedDict('some_dict', {'val': Int})
+    assert str(exc_info.value) == (
+        'You have passed a config type "Int" in the parameter "fields" and it is '
+        'in the "val" entry of that dict. It is from a PermissiveDict with fields '
+        '[\'another_val\', \'val\']. You have likely '
+        'forgot to wrap this type in a Field.'
+    )
+
+
+def test_invalid_selector_field():
+    with pytest.raises(DagsterInvalidDefinitionError) as exc_info:
+        Selector({'val': Int})
+
+    assert str(exc_info.value) == (
+        'You have passed a config type "Int" in the parameter "fields" and it is '
+        'in the "val" entry of that dict. It is from a Selector with fields '
+        '[\'val\']. You have likely forgot to wrap this type in a Field.'
+    )
+
+
+def test_invalid_named_selector_field():
+    with pytest.raises(DagsterInvalidDefinitionError) as exc_info:
+        NamedSelector('some_selector', {'val': Int})
+
+    assert str(exc_info.value) == (
+        'You have passed a config type "Int" in the parameter "fields" and it is '
+        'in the "val" entry of that dict. It is from a NamedSelector named '
+        '"some_selector" with fields [\'val\']. You '
+        'have likely forgot to wrap this type in a Field.'
+    )
+
