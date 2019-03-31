@@ -306,4 +306,3 @@ def test_invalid_named_selector_field():
         '"some_selector" with fields [\'val\']. You '
         'have likely forgot to wrap this type in a Field.'
     )
-
