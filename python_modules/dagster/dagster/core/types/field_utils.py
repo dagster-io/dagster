@@ -41,9 +41,9 @@ def check_using_facing_field_param(obj, param_name, error_context_str):
         if config_type:
             raise DagsterInvalidDefinitionError(
                 (
-                    'You have passed a config type {printed_type} as parameter {param_name} of a '
-                    '{error_context_str} that expects a Field. You have likely forgot '
-                    'to wrap this type in a Field.'
+                    'You have passed a config type "{printed_type}" as parameter '
+                    '"{param_name}" of a {error_context_str} that expects a '
+                    'Field. You have likely forgot to wrap this type in a Field.'
                 ).format(
                     printed_type=print_config_type_to_string(config_type, with_lines=False),
                     error_context_str=error_context_str,
@@ -54,7 +54,7 @@ def check_using_facing_field_param(obj, param_name, error_context_str):
             raise DagsterInvalidDefinitionError(
                 (
                     'You have passed an object {value_repr} of incorrect type "{type_name}" as '
-                    'parameter {param_name} of a {error_context_str} where a '
+                    'parameter "{param_name}" of a {error_context_str} where a '
                     'Field was expected.'
                 ).format(
                     error_context_str=error_context_str,

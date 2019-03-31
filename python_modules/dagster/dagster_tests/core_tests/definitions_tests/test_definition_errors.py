@@ -159,7 +159,7 @@ def test_pass_config_type_to_field_error_context_definition():
         )
 
     assert str(exc_info.value) == (
-        'You have passed a config type { val: Int } as parameter config_field of a '
+        'You have passed a config type "{ val: Int }" as parameter "config_field" of a '
         'PipelineContextDefinition that expects a Field. You have likely forgot to '
         'wrap this type in a Field.'
     )
@@ -175,7 +175,41 @@ def test_pass_unrelated_type_to_field_error_context_definition():
 
     assert str(exc_info.value) == (
         'You have passed an object \'wut\' of incorrect type "str" as parameter '
-        'config_field of a PipelineContextDefinition where a Field was expected.'
+        '"config_field" of a PipelineContextDefinition where a Field was expected.'
+    )
+
+
+def test_pass_config_type_to_field_error_solid_definition():
+
+    with pytest.raises(DagsterInvalidDefinitionError) as exc_info:
+
+        @solid(config_field=Dict({'val': Field(Int)}))
+        def a_solid(_context):
+            pass
+
+        assert a_solid  # fool lint
+
+    assert str(exc_info.value) == (
+        'You have passed a config type "{ val: Int }" as parameter "config_field" '
+        'of a solid definition named "a_solid" that expects a Field. You have '
+        'likely forgot to wrap this type in a Field.'
+    )
+
+
+def test_pass_unrelated_type_to_field_error_solid_definition():
+
+    # with pytest.raises(DagsterInvalidDefinitionError) as exc_info:
+
+    @solid(config_field='nope')
+    def a_solid(_context):
+        pass
+
+    assert a_solid  # fool lint
+
+    assert str(exc_info.value) == (
+        'You have passed a config type "{ val: Int }" as parameter "config_field" '
+        'of a solid definition named "a_solid" that expects a Field. You have '
+        'likely forgot to wrap this type in a Field.'
     )
 
 
