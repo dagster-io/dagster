@@ -1,9 +1,15 @@
-from dagster import check, InputDefinition, OutputDefinition, Result, SolidDefinition
-from dagster import DagsterUserCodeExecutionError
+from dagster import (
+    check,
+    DagsterUserCodeExecutionError,
+    InputDefinition,
+    OutputDefinition,
+    Result,
+    SolidDefinition,
+)
 
 
-from .configs import define_spark_config, parse_spark_config
-from .utils import run_spark_subprocess
+from .configs import define_spark_config
+from .utils import run_spark_subprocess, parse_spark_config
 
 
 class SparkSolidError(DagsterUserCodeExecutionError):
@@ -11,10 +17,11 @@ class SparkSolidError(DagsterUserCodeExecutionError):
 
 
 def define_spark_transform_fn(context, inputs):
-    '''Define local Spark execution.
+    '''Define Spark execution.
 
-    This function defines how we'll execute the Spark job in the local deployment configuration.
+    This function defines how we'll execute the Spark job and invokes spark-submit.
     '''
+
     # Extract parameters from config
     (
         main_class,
@@ -65,20 +72,21 @@ def define_spark_transform_fn(context, inputs):
         yield Result(spark_outputs, output_def.name)
 
 
-def define_spark_solid(name, inputs, outputs, description=None):
-    check.str_param(name, 'name')
-    inputs = check.opt_list_param(inputs, 'input_defs', of_type=InputDefinition)
-    outputs = check.opt_list_param(outputs, 'output_defs', of_type=OutputDefinition)
-
-    description = (
-        description or 'This solid is a generic representation of a parameterized Spark job.'
-    )
-
-    return SolidDefinition(
-        name=name,
-        description=description,
-        transform_fn=define_spark_transform_fn,
-        inputs=inputs,
-        outputs=outputs,
-        config_field=define_spark_config(),
-    )
+class SparkSolidDefinition(SolidDefinition):
+    def __init__(self, name, inputs, outputs, description=None):
+        name = check.str_param(name, 'name')
+        description = check.opt_str_param(
+            description,
+            'description',
+            'This solid is a generic representation of a parameterized Spark job.',
+        )
+        inputs = check.opt_list_param(inputs, 'input_defs', of_type=InputDefinition)
+        outputs = check.opt_list_param(outputs, 'output_defs', of_type=OutputDefinition)
+        super(SparkSolidDefinition, self).__init__(
+            name=name,
+            description=description,
+            inputs=inputs,
+            outputs=outputs,
+            transform_fn=define_spark_transform_fn,
+            config_field=define_spark_config(),
+        )

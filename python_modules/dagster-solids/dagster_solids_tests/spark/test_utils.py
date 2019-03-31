@@ -1,4 +1,4 @@
-from event_pipeline_demo.configs import parse_spark_config
+from dagster_solids.spark.utils import parse_spark_config
 
 
 def test_parse_spark_config():

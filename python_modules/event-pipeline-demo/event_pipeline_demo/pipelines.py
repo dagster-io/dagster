@@ -1,13 +1,13 @@
 """Pipeline definitions for the airline_demo."""
 
 from dagster import InputDefinition, OutputDefinition, List, Path, PipelineDefinition
-
-from .solids import define_spark_solid
+from dagster_solids.spark import SparkSolidDefinition
+from dagster_solids.snowflake import SnowflakeSolidDefinition
 
 
 def define_event_ingest_pipeline():
 
-    event_ingest = define_spark_solid(
+    event_ingest = SparkSolidDefinition(
         'event_ingest',
         [
             InputDefinition(
@@ -26,4 +26,8 @@ def define_event_ingest_pipeline():
         'Ingest events from JSON to Parquet',
     )
 
-    return PipelineDefinition(name='event_ingest_pipeline', solids=[event_ingest], dependencies={})
+    snowflake_query = SnowflakeSolidDefinition('hello_world_snowflake')
+
+    return PipelineDefinition(
+        name='event_ingest_pipeline', solids=[snowflake_query], dependencies={}
+    )
