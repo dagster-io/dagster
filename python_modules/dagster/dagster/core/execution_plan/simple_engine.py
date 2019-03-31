@@ -162,6 +162,7 @@ def execute_step_in_memory(step_context, inputs, intermediates_manager):
 
         error_info = serializable_error_info_from_exc_info(user_facing_exc_info)
 
+        # This logs at ERROR level
         step_context.events.execution_plan_step_failure(step_context.step.key, user_facing_exc_info)
 
         yield ExecutionStepEvent.step_failure_event(
