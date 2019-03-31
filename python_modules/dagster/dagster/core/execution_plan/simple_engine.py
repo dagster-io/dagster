@@ -6,8 +6,6 @@ import six
 
 from dagster import check
 
-from dagster.utils.logging import get_formatted_stack_trace
-
 from dagster.utils.timing import time_execution_scope
 
 from dagster.core.errors import (
@@ -148,7 +146,6 @@ def execute_step_in_memory(step_context, inputs, intermediates_manager):
             )
             yield step_event
     except DagsterError as dagster_error:
-        step_context.log.error(str(dagster_error))
 
         user_facing_exc_info = (
             # pylint does not know original_exc_info exists is is_user_code_error is true
@@ -162,6 +159,9 @@ def execute_step_in_memory(step_context, inputs, intermediates_manager):
             six.reraise(*user_facing_exc_info)
 
         error_info = serializable_error_info_from_exc_info(user_facing_exc_info)
+
+        # This logs at ERROR level
+        step_context.events.execution_plan_step_failure(step_context.step.key, user_facing_exc_info)
 
         yield ExecutionStepEvent.step_failure_event(
             step_context=step_context,
@@ -228,11 +228,10 @@ def _execute_steps_core_loop(step_context, inputs, intermediates_manager):
     step = step_context.step
     step_context.events.execution_plan_step_start(step.key)
 
-    try:
-        with time_execution_scope() as timer_result:
-            step_output_value_iterator = check.generator(
-                _iterate_step_output_values_within_boundary(step_context, evaluated_inputs)
-            )
+    with time_execution_scope() as timer_result:
+        step_output_value_iterator = check.generator(
+            _iterate_step_output_values_within_boundary(step_context, evaluated_inputs)
+        )
 
         for step_output_value in check.generator(
             _error_check_step_output_values(step_context.step, step_output_value_iterator)
@@ -240,23 +239,7 @@ def _execute_steps_core_loop(step_context, inputs, intermediates_manager):
 
             yield _create_step_event(step_context, step_output_value, intermediates_manager)
 
-        step_context.events.execution_plan_step_success(step.key, timer_result.millis)
-
-    except DagsterError as dagster_error:
-        # The step compute_fn and output error checking both raise exceptions. Catch
-        # and re-throw these to ensure that the step is always marked as failed.
-
-        user_facing_exc_info = (
-            # pylint does not know original_exc_info exists is is_user_code_error is true
-            # pylint: disable=no-member
-            dagster_error.original_exc_info
-            if dagster_error.is_user_code_error
-            else sys.exc_info()
-        )
-        step_context.events.execution_plan_step_failure(step.key, user_facing_exc_info)
-        stack_trace = get_formatted_stack_trace(dagster_error)
-        step_context.log.error(str(dagster_error), stack_trace=stack_trace)
-        six.reraise(*sys.exc_info())
+    step_context.events.execution_plan_step_success(step.key, timer_result.millis)
 
 
 def _create_step_event(step_context, step_output_value, intermediates_manager):

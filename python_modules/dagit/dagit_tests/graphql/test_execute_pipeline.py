@@ -111,6 +111,10 @@ def test_basic_start_pipeline_execution_and_subscribe():
     for message in subscribe_result.data['pipelineRunLogs']['messages']:
         if message['__typename'] == 'LogMessageEvent':
             log_messages.append(message)
+        else:
+            # all the rest of the events are non-error system-level events
+            # and should be at INFO level
+            assert message['level'] == 'INFO'
 
     # skip the first one was we know it is not associatied with a step
     for log_message in log_messages[1:]:
@@ -163,6 +167,7 @@ def test_subscription_query_error():
 
     assert step_run_log_entry['message'] == 'Execution of throw_a_thing.transform failed'
     assert step_run_log_entry['error']
+    assert step_run_log_entry['level'] == 'ERROR'
     assert isinstance(step_run_log_entry['error']['stack'], list)
 
     assert 'bad programmer' in step_run_log_entry['error']['stack'][-1]
@@ -205,12 +210,14 @@ subscription subscribeTest($runId: ID!) {
                 ... on MessageEvent {
                     message
                     step {key }
+                    level
                 }
                 ... on ExecutionStepFailureEvent {
                     error {
                         message
                         stack
                     }
+                    level
                 }
             }
         }

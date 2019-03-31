@@ -113,7 +113,7 @@ class ExecutionEvents(namedtuple('_ExecutionEvents', 'pipeline_name log')):
 
     def execution_plan_step_failure(self, step_key, exc_info):
         check.str_param(step_key, 'step_key')
-        self.log.info(
+        self.log.error(
             'Execution of {step_key} failed'.format(step_key=step_key),
             event_type=EventType.EXECUTION_PLAN_STEP_FAILURE.value,
             step_key=step_key,
