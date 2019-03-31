@@ -41,8 +41,8 @@ def check_using_facing_field_param(obj, param_name, error_context_str):
         if config_type:
             raise DagsterInvalidDefinitionError(
                 (
-                    'You have passed a config type "{printed_type}" as parameter '
-                    '"{param_name}" of a {error_context_str} that expects a '
+                    'You have passed a config type "{printed_type}" in the parameter '
+                    '"{param_name}" {error_context_str} that expects a '
                     'Field. You have likely forgot to wrap this type in a Field.'
                 ).format(
                     printed_type=print_config_type_to_string(config_type, with_lines=False),
@@ -53,9 +53,9 @@ def check_using_facing_field_param(obj, param_name, error_context_str):
         else:
             raise DagsterInvalidDefinitionError(
                 (
-                    'You have passed an object {value_repr} of incorrect type "{type_name}" as '
-                    'parameter "{param_name}" of a {error_context_str} where a '
-                    'Field was expected.'
+                    'You have passed an object {value_repr} of incorrect type '
+                    '"{type_name}" in the parameter "{param_name}" '
+                    '{error_context_str} where a Field was expected.'
                 ).format(
                     error_context_str=error_context_str,
                     param_name=param_name,
@@ -224,6 +224,18 @@ def NamedDict(name, fields, description=None, type_attributes=DEFAULT_TYPE_ATTRI
 
 
 def Dict(fields):
+    type_name = 'Dict'
+    check.dict_param(fields, 'fields', key_type=str)
+    for field_name, potential_field in fields.items():
+        check_using_facing_field_param(
+            potential_field,
+            'fields',
+            (
+                'It is in the "{field_name}" entry of the field dict of a {type_name} '
+                'with field names {field_names}'
+            ).format(type_name=type_name, field_name=field_name, field_names=list(fields.keys())),
+        )
+
     class _Dict(_ConfigComposite):
         def __init__(self):
             key = 'Dict.' + str(DictCounter.get_next_count())

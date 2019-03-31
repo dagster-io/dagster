@@ -11,10 +11,13 @@ from dagster import (
     InputDefinition,
     Int,
     NamedDict,
+    # NamedSelector,
     OutputDefinition,
+    # PermissiveDict,
     PipelineContextDefinition,
     PipelineDefinition,
     ResourceDefinition,
+    # Selector,
     SolidDefinition,
     String,
     solid,
@@ -160,7 +163,7 @@ def test_pass_config_type_to_field_error_context_definition():
         )
 
     assert str(exc_info.value) == (
-        'You have passed a config type "{ val: Int }" as parameter "config_field" of a '
+        'You have passed a config type "{ val: Int }" in the parameter "config_field" of a '
         'PipelineContextDefinition that expects a Field. You have likely forgot to '
         'wrap this type in a Field.'
     )
@@ -175,7 +178,7 @@ def test_pass_unrelated_type_to_field_error_context_definition():
         )
 
     assert str(exc_info.value) == (
-        'You have passed an object \'wut\' of incorrect type "str" as parameter '
+        'You have passed an object \'wut\' of incorrect type "str" in the parameter '
         '"config_field" of a PipelineContextDefinition where a Field was expected.'
     )
 
@@ -191,7 +194,7 @@ def test_pass_config_type_to_field_error_solid_definition():
         assert a_solid  # fool lint
 
     assert str(exc_info.value) == (
-        'You have passed a config type "{ val: Int }" as parameter "config_field" '
+        'You have passed a config type "{ val: Int }" in the parameter "config_field" '
         'of a SolidDefinition or @solid named "a_solid" that expects a Field. You have '
         'likely forgot to wrap this type in a Field.'
     )
@@ -208,7 +211,7 @@ def test_pass_unrelated_type_to_field_error_solid_definition():
         assert a_solid  # fool lint
 
     assert str(exc_info.value) == (
-        'You have passed an object \'nope\' of incorrect type "str" as parameter '
+        'You have passed an object \'nope\' of incorrect type "str" in the parameter '
         '"config_field" of a SolidDefinition or @solid named "a_solid" where a Field '
         'was expected.'
     )
@@ -219,7 +222,7 @@ def test_pass_config_type_to_field_error_resource_definition():
         ResourceDefinition(resource_fn=lambda: None, config_field=Dict({'val': Field(Int)}))
 
     assert str(exc_info.value) == (
-        'You have passed a config type "{ val: Int }" as parameter "config_field" of a '
+        'You have passed a config type "{ val: Int }" in the parameter "config_field" of a '
         'ResourceDefinition or @resource that expects a Field. You have likely forgot to '
         'wrap this type in a Field.'
     )
@@ -230,7 +233,7 @@ def test_pass_unrelated_type_to_field_error_resource_definition():
         ResourceDefinition(resource_fn=lambda: None, config_field='wut')
 
     assert str(exc_info.value) == (
-        'You have passed an object \'wut\' of incorrect type "str" as parameter '
+        'You have passed an object \'wut\' of incorrect type "str" in the parameter '
         '"config_field" of a ResourceDefinition or @resource where a Field was expected.'
     )
 
@@ -245,11 +248,26 @@ def test_pass_incorrect_thing_to_field():
     )
 
 
-# TODO
-# def test_invalid_dict_field():
-#     Dict({'val': Int})
+def test_invalid_dict_field():
+    with pytest.raises(DagsterInvalidDefinitionError) as exc_info:
+        Dict({'val': Int, 'another_val': Field(Int)})
+
+    assert str(exc_info.value) == (
+        'You have passed a config type "Int" in the parameter "fields" It is '
+        'in the "val" entry of the field dict of a Dict with field names '
+        '[\'val\', \'another_val\'] that expects a Field. You have likely '
+        'forgot to wrap this type in a Field.'
+    )
 
 
-# TODO
 # def test_invalid_named_dict_field():
+#     NamedDict('some_dict', {'val': Int})
+
+# def test_invalid_permissive_dict_field():
+#     NamedDict('some_dict', {'val': Int})
+
+# def test_invalid_selector_field():
+#     NamedDict('some_dict', {'val': Int})
+
+# def test_invalid_named_selector_field():
 #     NamedDict('some_dict', {'val': Int})

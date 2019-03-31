@@ -76,7 +76,7 @@ class SolidDefinition(object):
         self.config_field = check_user_facing_opt_field_param(
             config_field,
             'config_field',
-            'SolidDefinition or @solid named "{name}"'.format(name=name),
+            'of a SolidDefinition or @solid named "{name}"'.format(name=name),
         )
         self.metadata = check.opt_dict_param(metadata, 'metadata', key_type=str)
         self._input_dict = {inp.name: inp for inp in inputs}

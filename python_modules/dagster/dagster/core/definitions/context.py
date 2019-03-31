@@ -83,7 +83,7 @@ class PipelineContextDefinition(object):
             context_fn = _default_context_fn
 
         self.config_field = check_user_facing_opt_field_param(
-            config_field, 'config_field', 'PipelineContextDefinition'
+            config_field, 'config_field', 'of a PipelineContextDefinition'
         )
         self.context_fn = check.opt_callable_param(
             context_fn, 'context_fn', lambda *args, **kwargs: ExecutionContext()
