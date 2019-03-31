@@ -6,8 +6,6 @@ import six
 
 from dagster import check
 
-from dagster.utils.logging import get_formatted_stack_trace
-
 from dagster.utils.timing import time_execution_scope
 
 from dagster.core.errors import (
