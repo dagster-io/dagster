@@ -1,13 +1,15 @@
 from dagster import check
 
 from dagster.core.types import Field, String
-from dagster.core.types.field_utils import check_opt_field_param
+from dagster.core.types.field_utils import check_user_facing_opt_field_param
 
 
 class ResourceDefinition(object):
     def __init__(self, resource_fn, config_field=None, description=None):
         self.resource_fn = check.callable_param(resource_fn, 'resource_fn')
-        self.config_field = check_opt_field_param(config_field, 'config_field')
+        self.config_field = check_user_facing_opt_field_param(
+            config_field, 'config_field', 'ResourceDefinition or @resource'
+        )
         self.description = check.opt_str_param(description, 'description')
 
     @staticmethod

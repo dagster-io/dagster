@@ -14,6 +14,7 @@ from dagster import (
     OutputDefinition,
     PipelineContextDefinition,
     PipelineDefinition,
+    ResourceDefinition,
     SolidDefinition,
     String,
     solid,
@@ -191,7 +192,7 @@ def test_pass_config_type_to_field_error_solid_definition():
 
     assert str(exc_info.value) == (
         'You have passed a config type "{ val: Int }" as parameter "config_field" '
-        'of a solid definition named "a_solid" that expects a Field. You have '
+        'of a SolidDefinition or @solid named "a_solid" that expects a Field. You have '
         'likely forgot to wrap this type in a Field.'
     )
 
@@ -208,8 +209,29 @@ def test_pass_unrelated_type_to_field_error_solid_definition():
 
     assert str(exc_info.value) == (
         'You have passed an object \'nope\' of incorrect type "str" as parameter '
-        '"config_field" of a solid definition named "a_solid" where a Field '
+        '"config_field" of a SolidDefinition or @solid named "a_solid" where a Field '
         'was expected.'
+    )
+
+
+def test_pass_config_type_to_field_error_resource_definition():
+    with pytest.raises(DagsterInvalidDefinitionError) as exc_info:
+        ResourceDefinition(resource_fn=lambda: None, config_field=Dict({'val': Field(Int)}))
+
+    assert str(exc_info.value) == (
+        'You have passed a config type "{ val: Int }" as parameter "config_field" of a '
+        'ResourceDefinition or @resource that expects a Field. You have likely forgot to '
+        'wrap this type in a Field.'
+    )
+
+
+def test_pass_unrelated_type_to_field_error_resource_definition():
+    with pytest.raises(DagsterInvalidDefinitionError) as exc_info:
+        ResourceDefinition(resource_fn=lambda: None, config_field='wut')
+
+    assert str(exc_info.value) == (
+        'You have passed an object \'wut\' of incorrect type "str" as parameter '
+        '"config_field" of a ResourceDefinition or @resource where a Field was expected.'
     )
 
 
@@ -221,3 +243,13 @@ def test_pass_incorrect_thing_to_field():
         'Attempted to pass \'nope\' to a Field that expects a valid dagster type '
         'usable in config (e.g. Dict, NamedDict, Int, String et al).'
     )
+
+
+# TODO
+# def test_invalid_dict_field():
+#     Dict({'val': Int})
+
+
+# TODO
+# def test_invalid_named_dict_field():
+#     NamedDict('some_dict', {'val': Int})

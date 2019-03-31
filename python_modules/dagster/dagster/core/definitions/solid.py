@@ -74,7 +74,9 @@ class SolidDefinition(object):
         self.output_defs = check.list_param(outputs, 'outputs', OutputDefinition)
         self.description = check.opt_str_param(description, 'description')
         self.config_field = check_user_facing_opt_field_param(
-            config_field, 'config_field', 'solid definition named "{name}"'.format(name=name)
+            config_field,
+            'config_field',
+            'SolidDefinition or @solid named "{name}"'.format(name=name),
         )
         self.metadata = check.opt_dict_param(metadata, 'metadata', key_type=str)
         self._input_dict = {inp.name: inp for inp in inputs}
