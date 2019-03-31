@@ -12,7 +12,7 @@ from dagster import (
 
 from dagster.core.events import construct_event_logger, EventRecord, EventType
 
-from dagster.utils.logging import define_colored_console_logger
+from dagster.utils.logging import define_colored_console_logger, ERROR, INFO
 
 
 def single_event(events, event_type):
@@ -120,8 +120,10 @@ def test_single_solid_pipeline_failure():
     assert start_event.pipeline_name == 'single_solid_pipeline'
     assert start_event.solid_name == 'solid_one'
     assert start_event.solid_definition_name == 'solid_one'
+    assert start_event.level == INFO
 
     failure_event = single_event(events, EventType.EXECUTION_PLAN_STEP_FAILURE)
     assert failure_event.pipeline_name == 'single_solid_pipeline'
     assert failure_event.solid_name == 'solid_one'
     assert failure_event.solid_definition_name == 'solid_one'
+    assert failure_event.level == ERROR
