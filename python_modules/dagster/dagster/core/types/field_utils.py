@@ -33,38 +33,38 @@ def check_using_facing_field_param(obj, param_name, error_context_str):
     check.str_param(param_name, 'param_name')
     check.str_param(error_context_str, 'error_context_str')
 
-    if not isinstance(obj, FieldImpl):
-        from dagster.core.types.field import resolve_to_config_type
-        from .type_printer import print_config_type_to_string
+    if isinstance(obj, FieldImpl):
+        return obj
 
-        config_type = resolve_to_config_type(obj)
-        if config_type:
-            raise DagsterInvalidDefinitionError(
-                (
-                    'You have passed a config type "{printed_type}" in the parameter '
-                    '"{param_name}" {error_context_str}. '
-                    'You have likely forgot to wrap this type in a Field.'
-                ).format(
-                    printed_type=print_config_type_to_string(config_type, with_lines=False),
-                    error_context_str=error_context_str,
-                    param_name=param_name,
-                )
-            )
-        else:
-            raise DagsterInvalidDefinitionError(
-                (
-                    'You have passed an object {value_repr} of incorrect type '
-                    '"{type_name}" in the parameter "{param_name}" '
-                    '{error_context_str} where a Field was expected.'
-                ).format(
-                    error_context_str=error_context_str,
-                    param_name=param_name,
-                    value_repr=repr(obj),
-                    type_name=type(obj).__name__,
-                )
-            )
+    from dagster.core.types.field import resolve_to_config_type
+    from .type_printer import print_config_type_to_string
 
-    return check.inst_param(obj, param_name, FieldImpl)
+    config_type = resolve_to_config_type(obj)
+    if config_type:
+        raise DagsterInvalidDefinitionError(
+            (
+                'You have passed a config type "{printed_type}" in the parameter '
+                '"{param_name}" {error_context_str}. '
+                'You have likely forgot to wrap this type in a Field.'
+            ).format(
+                printed_type=print_config_type_to_string(config_type, with_lines=False),
+                error_context_str=error_context_str,
+                param_name=param_name,
+            )
+        )
+    else:
+        raise DagsterInvalidDefinitionError(
+            (
+                'You have passed an object {value_repr} of incorrect type '
+                '"{type_name}" in the parameter "{param_name}" '
+                '{error_context_str} where a Field was expected.'
+            ).format(
+                error_context_str=error_context_str,
+                param_name=param_name,
+                value_repr=repr(obj),
+                type_name=type(obj).__name__,
+            )
+        )
 
 
 def check_user_facing_opt_field_param(obj, param_name, error_context_str):
