@@ -237,6 +237,7 @@ class S3ObjectStore(ObjectStore):
 
         key = self.key_for_paths(paths)
 
+        # FIXME we need better error handling for object store
         return runtime_type.serialization_strategy.deserialize_value(
             context, BytesIO(self.s3.get_object(Bucket=self.bucket, Key=key)['Body'].read())
         )
