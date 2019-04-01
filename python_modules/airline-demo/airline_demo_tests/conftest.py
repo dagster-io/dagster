@@ -6,6 +6,9 @@ import shutil
 import subprocess
 import sys
 import tempfile
+import uuid
+
+from collections import namedtuple
 
 try:
     import airflow.plugins_manager
@@ -277,6 +280,8 @@ def in_memory_airflow_run(scaffold_dag, docker_compose_db):
 
     execution_date = datetime.datetime.utcnow()
 
+    run_id = str(uuid.uuid4())
+
     import_module_from_path(
         '{pipeline_name}_static__scaffold'.format(pipeline_name=pipeline_name), static_path
     )
@@ -297,6 +302,7 @@ def in_memory_airflow_run(scaffold_dag, docker_compose_db):
     for task in tasks:
         ti = TaskInstance(task=task, execution_date=execution_date)
         context = ti.get_template_context()
+        context['dag_run'] = namedtuple('_', 'run_id')(run_id=run_id)
         task._log = logging  # pylint: disable=protected-access
         results.append(task.execute(context))
 
