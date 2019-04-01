@@ -13,6 +13,29 @@ from .configs import define_snowflake_config
 
 class SnowflakeSolidDefinition(SolidDefinition):
     '''SnowflakeSolidDefinition wraps execution of a list of Snowflake SQL queries.
+
+    Per the Snowflake docs, xecuting multiple SQL statements separated by a semicolon in a single
+    execute call is not supported, and so here we iterate over a list of SQL queries and call
+    connector.execute() on each.
+
+    Attributes:
+
+        name (str): Name of the solid.
+        sql_queries (List[str]): A list of SQL queries to execute together. If auto-commit is
+            enabled, will commit after each query, otherwise will only commit after the last query
+            is completed.
+        parameters (Dict[str, str]): Query parameters to bind to the parameterized query (expects
+            query to be parameterized). See the Snowflake docs at https://bit.ly/2JZBr6C for how to
+            format these parameters.
+        description (str): Description of the solid.
+
+    Examples:
+        .. code-block:: python
+
+            s = SnowflakeSolidDefinition(
+                name="select_1",
+                sql_queries=['select 1;']
+            )
     '''
 
     def __init__(self, name, sql_queries, parameters=None, description=None):
@@ -134,4 +157,21 @@ class SnowflakeSolidDefinition(SolidDefinition):
             outputs=[OutputDefinition(List(dagster_pd.DataFrame))],
             transform_fn=_define_snowflake_transform_fn,
             config_field=define_snowflake_config(),
+        )
+
+
+class SnowflakeLoadSolidDefinition(SnowflakeSolidDefinition):
+    def __init__(self, name, src, table, description=None):
+
+        sql_queries = [
+            'CREATE OR REPLACE TABLE {table} ( data VARIANT DEFAULT NULL);'.format(table=table),
+            'CREATE OR REPLACE FILE FORMAT parquet_format TYPE = \'parquet\';',
+            'PUT {src} @%{table};'.format(src=src, table=table),
+            'COPY INTO {table} FROM @%{table} FILE_FORMAT = (FORMAT_NAME = \'parquet_format\');'.format(
+                table=table
+            ),
+        ]
+
+        super(SnowflakeLoadSolidDefinition, self).__init__(
+            name=name, sql_queries=sql_queries, description=description
         )

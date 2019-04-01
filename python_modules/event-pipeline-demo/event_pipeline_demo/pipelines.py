@@ -17,7 +17,7 @@ from dagster import (
 from dagster.utils import safe_isfile, mkdir_p
 
 from dagster_framework.spark import SparkSolidDefinition
-from dagster_framework.snowflake import SnowflakeSolidDefinition
+from dagster_framework.snowflake import SnowflakeLoadSolidDefinition
 from dagster_framework.aws import download_from_s3
 
 
@@ -44,19 +44,13 @@ def define_event_ingest_pipeline():
     event_ingest = SparkSolidDefinition('event_ingest', 'Ingest events from JSON to Parquet')
 
     # TODO: express dependency of this solid on event_ingest
-    snowflake_sql_queries = [
-        'CREATE OR REPLACE TABLE events ( data VARIANT DEFAULT NULL);',
-        'CREATE OR REPLACE FILE FORMAT parquet_format TYPE = \'parquet\';',
-        #
-        # TODO: parameterize load location
-        'PUT file:///tmp/output/local/output/2019/01/01/*.parquet @%events;',
-        'COPY INTO events FROM @%events FILE_FORMAT = (FORMAT_NAME = \'parquet_format\');',
-    ]
-    snowflake_query = SnowflakeSolidDefinition('snowflake_query', snowflake_sql_queries)
+    snowflake_load = SnowflakeLoadSolidDefinition(
+        'snowflake_load', src='file:///tmp/output/local/output/2019/01/01/*.parquet', table='events'
+    )
 
     return PipelineDefinition(
         name='event_ingest_pipeline',
-        solids=[download_from_s3, gunzipper, event_ingest, snowflake_query],
+        solids=[download_from_s3, gunzipper, event_ingest, snowflake_load],
         dependencies={
             SolidInstance('gunzipper'): {'gzip_file': DependencyDefinition('download_from_s3')},
             SolidInstance('event_ingest'): {'spark_inputs': DependencyDefinition('gunzipper')},
