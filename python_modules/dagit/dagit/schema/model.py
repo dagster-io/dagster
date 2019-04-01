@@ -470,6 +470,7 @@ def _create_dauphin_step_event(execution_plan, step_event):
         DauphinExecutionStepSuccessEvent,
         DauphinExecutionStepFailureEvent,
         DauphinExecutionStepStartEvent,
+        DauphinStepMaterializationEvent,
     )
 
     check.inst_param(step_event, 'step_event', DagsterEvent)
@@ -493,6 +494,12 @@ def _create_dauphin_step_event(execution_plan, step_event):
         )
     elif step_event.event_type == DagsterEventType.STEP_SUCCESS:
         return DauphinExecutionStepSuccessEvent(step=DauphinExecutionStep(execution_plan, step))
+    elif step_event.event_type == DagsterEventType.STEP_MATERIALIZATION:
+        return DauphinStepMaterializationEvent(
+            file_name=step_event.step_materialization_data.name,
+            file_location=step_event.step_materialization_data.path,
+            step=DauphinExecutionStep(execution_plan, step),
+        )
 
     else:
         check.failed('Unsupported step event: {step_event}'.format(step_event=step_event))

@@ -16,8 +16,8 @@ from dagster import (
     check,
     execute_pipeline,
 )
-from dagster.core.events.logging import EventType, DagsterEventRecord, PipelineEventRecord
-from dagster.core.events import DagsterEvent, DagsterEventType
+from dagster.core.events.logging import DagsterEventRecord
+from dagster.core.events import DagsterEvent, DagsterEventType, PipelineProcessStartedData
 from dagster.utils.error import serializable_error_info_from_exc_info, SerializableErrorInfo
 from dagster.utils.logging import level_from_string
 from dagster.utils import get_multiprocessing_context
@@ -51,7 +51,6 @@ def build_synthetic_pipeline_error_record(run_id, error_info, pipeline_name):
         + '\nStack Trace:\n'
         + '\n'.join(error_info.stack),
         level=level_from_string('ERROR'),
-        event_type=EventType.DAGSTER_EVENT,
         run_id=run_id,
         timestamp=time.time(),
         error_info=error_info,
@@ -65,15 +64,15 @@ def build_process_start_event(run_id, pipeline_name):
         pipeline_name=pipeline_name, run_id=run_id
     )
 
-    return PipelineEventRecord(
+    return DagsterEventRecord(
         message=message,
         user_message=message,
         level=level_from_string('INFO'),
-        event_type=EventType.PIPELINE_PROCESS_START,
         run_id=run_id,
         timestamp=time.time(),
         error_info=None,
         pipeline_name=pipeline_name,
+        dagster_event=DagsterEvent(DagsterEventType.PIPELINE_PROCESS_START.value, pipeline_name),
     )
 
 
@@ -82,27 +81,25 @@ def build_process_started_event(run_id, pipeline_name, process_id):
         pipeline_name=pipeline_name, run_id=run_id, process_id=process_id
     )
 
-    return PipelineProcessStartedEvent(
+    return DagsterEventRecord(
         message=message,
         user_message=message,
         level=level_from_string('INFO'),
-        event_type=EventType.PIPELINE_PROCESS_STARTED,
         run_id=run_id,
         timestamp=time.time(),
         error_info=None,
         pipeline_name=pipeline_name,
-        process_id=process_id,
+        dagster_event=DagsterEvent(
+            event_type_value=DagsterEventType.PIPELINE_PROCESS_STARTED.value,
+            pipeline_name=pipeline_name,
+            step_key=None,
+            solid_name=None,
+            solid_definition_name=None,
+            step_kind_value=None,
+            tags=None,
+            event_specific_data=PipelineProcessStartedData(process_id),
+        ),
     )
-
-
-class PipelineProcessStartedEvent(PipelineEventRecord):
-    def __init__(self, process_id, **kwargs):
-        super(PipelineProcessStartedEvent, self).__init__(**kwargs)
-        self._process_id = check.int_param(process_id, 'process_id')
-
-    @property
-    def process_id(self):
-        return self._process_id
 
 
 DAGIT_DEFAULT_STORAGE_MODE = RunStorageMode.FILESYSTEM

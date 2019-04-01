@@ -3,8 +3,6 @@ from enum import Enum
 
 from dagster import check
 
-from .logging import EventType
-
 
 class DagsterEventType(Enum):
     STEP_OUTPUT = 'STEP_OUTPUT'
@@ -16,6 +14,9 @@ class DagsterEventType(Enum):
     PIPELINE_START = 'PIPELINE_START'
     PIPELINE_SUCCESS = 'PIPELINE_SUCCESS'
     PIPELINE_FAILURE = 'PIPELINE_FAILURE'
+
+    PIPELINE_PROCESS_START = 'PIPELINE_PROCESS_START'
+    PIPELINE_PROCESS_STARTED = 'PIPELINE_PROCESS_STARTED'
 
 
 STEP_EVENTS = {
@@ -77,7 +78,6 @@ class DagsterEvent(
             ('{event_type} for step {step_key}').format(
                 event_type=event_type, step_key=step_context.step.key
             ),
-            event_type=EventType.DAGSTER_EVENT.value,
             dagster_event=event,
             pipeline_name=step_context.pipeline_def.name,
         )
@@ -100,7 +100,6 @@ class DagsterEvent(
             ),
             dagster_event=event,
             pipeline_name=pipeline_name,
-            event_type=EventType.DAGSTER_EVENT.value,
         )
         return event
 
@@ -262,4 +261,8 @@ def get_step_output_event(events, step_key, output_name='result'):
 
 
 class StepMaterializationData(namedtuple('_StepMaterializationData', 'name path')):
+    pass
+
+
+class PipelineProcessStartedData(namedtuple('_PipelineProcessStartedData', 'process_id')):
     pass

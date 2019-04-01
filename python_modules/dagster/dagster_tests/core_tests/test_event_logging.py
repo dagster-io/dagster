@@ -10,25 +10,15 @@ from dagster import (
     lambda_solid,
 )
 
-from dagster.core.events.logging import construct_event_logger, EventRecord, EventType
+from dagster.core.events.logging import construct_event_logger, EventRecord
 from dagster.core.events import DagsterEventType
 
 from dagster.utils.logging import define_colored_console_logger, ERROR, INFO
 
 
-def single_event(events, event_type):
-    assert event_type in events
-    assert len(events[event_type]) == 1
-    return events[event_type][0]
-
-
 def single_dagster_event(events, event_type):
-    assert EventType.DAGSTER_EVENT in events
-    dagster_events = {
-        event.dagster_event.event_type: event for event in events[EventType.DAGSTER_EVENT]
-    }
-    assert event_type in dagster_events
-    return dagster_events[event_type]
+    assert event_type in events
+    return events[event_type][0]
 
 
 def define_event_logging_pipeline(name, solids, event_callback, deps=None):
@@ -54,7 +44,8 @@ def test_empty_pipeline():
 
     def _event_callback(record):
         assert isinstance(record, EventRecord)
-        events[record.event_type].append(record)
+        if record.is_dagster_event:
+            events[record.dagster_event.event_type].append(record)
 
     pipeline_def = define_event_logging_pipeline(
         name='empty_pipeline', solids=[], event_callback=_event_callback
@@ -82,7 +73,8 @@ def test_single_solid_pipeline_success():
         return 1
 
     def _event_callback(record):
-        events[record.event_type].append(record)
+        if record.is_dagster_event:
+            events[record.dagster_event.event_type].append(record)
 
     pipeline_def = define_event_logging_pipeline(
         name='single_solid_pipeline', solids=[solid_one], event_callback=_event_callback
@@ -120,7 +112,8 @@ def test_single_solid_pipeline_failure():
         raise Exception('nope')
 
     def _event_callback(record):
-        events[record.event_type].append(record)
+        if record.is_dagster_event:
+            events[record.dagster_event.event_type].append(record)
 
     pipeline_def = define_event_logging_pipeline(
         name='single_solid_pipeline', solids=[solid_one], event_callback=_event_callback

@@ -635,7 +635,7 @@ enum StepKind {
   MARSHAL_OUTPUT
 }
 
-type StepMaterializationEvent implements MessageEvent {
+type StepMaterializationEvent implements MessageEvent & StepEvent {
   run: PipelineRun!
   message: String!
   timestamp: String!
