@@ -6,7 +6,7 @@ import pandas as pd
 import snowflake.connector
 
 import dagster_pandas as dagster_pd
-from dagster import check, List, OutputDefinition, Result, SolidDefinition
+from dagster import check, Bool, InputDefinition, List, OutputDefinition, Result, SolidDefinition
 
 from .configs import define_snowflake_config
 
@@ -37,6 +37,8 @@ class SnowflakeSolidDefinition(SolidDefinition):
                 sql_queries=['select 1;']
             )
     '''
+
+    INPUT_READY = 'input_ready_sentinel'
 
     def __init__(self, name, sql_queries, parameters=None, description=None):
         name = check.str_param(name, 'name')
@@ -117,8 +119,8 @@ class SnowflakeSolidDefinition(SolidDefinition):
                 'timezone': timezone,
             }
 
-            # We can't pass None values to snowflake.connector.connect() because they will override the
-            # default values set within the connector; remove them from the conn_args dict
+            # We can't pass None values to snowflake.connector.connect() because they will override
+            # the default values set within the connector; remove them from the conn_args dict
             conn_args = {k: v for k, v in conn_args.items() if v}
 
             def _filter_password(conn_args):
@@ -155,8 +157,7 @@ class SnowflakeSolidDefinition(SolidDefinition):
         super(SnowflakeSolidDefinition, self).__init__(
             name=name,
             description=description,
-            # TODO: clean this up
-            inputs=[],
+            inputs=[InputDefinition(SnowflakeSolidDefinition.INPUT_READY, Bool)],
             outputs=[OutputDefinition(List(dagster_pd.DataFrame))],
             transform_fn=_define_snowflake_transform_fn,
             config_field=define_snowflake_config(),

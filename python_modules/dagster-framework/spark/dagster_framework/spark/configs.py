@@ -9,7 +9,7 @@ import os
 
 from dagster import Dict, Field, List, Path, String
 
-from .types import SparkDeployMode
+from .types import SparkDeployMode, SparkSolidOutputMode, SparkSolidOutputModeSuccess
 from .configs_spark import spark_config
 
 
@@ -69,6 +69,14 @@ def define_spark_config():
 
     spark_outputs = Field(List(String), description='The outputs that this Spark job will produce')
 
+    solid_output_mode = Field(
+        SparkSolidOutputMode,
+        description='''Which output type to use for this Spark solid. Defaults to a success boolean
+        sentinel.''',
+        is_optional=True,
+        default_value=SparkSolidOutputModeSuccess.python_value,
+    )
+
     return Field(
         Dict(
             fields={
@@ -80,6 +88,7 @@ def define_spark_config():
                 'spark_home': spark_home,
                 'application_arguments': application_arguments,
                 'spark_outputs': spark_outputs,
+                'solid_output_mode': solid_output_mode,
             }
         )
     )

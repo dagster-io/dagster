@@ -1,8 +1,17 @@
-from dagster import check, InputDefinition, List, OutputDefinition, Path, Result, SolidDefinition
+from dagster import (
+    check,
+    Bool,
+    InputDefinition,
+    List,
+    OutputDefinition,
+    Path,
+    Result,
+    SolidDefinition,
+)
 
 
 from .configs import define_spark_config
-from .types import SparkSolidError
+from .types import SparkSolidError, SparkSolidOutputModeSuccess, SparkSolidOutputModePaths
 from .utils import run_spark_subprocess, parse_spark_config
 
 
@@ -34,6 +43,7 @@ class SparkSolidDefinition(SolidDefinition):
                 application_arguments,
                 spark_home,
                 spark_outputs,
+                solid_output_mode,
             ) = [
                 context.solid_config.get(k)
                 for k in (
@@ -45,6 +55,7 @@ class SparkSolidDefinition(SolidDefinition):
                     'application_arguments',
                     'spark_home',
                     'spark_outputs',
+                    'solid_output_mode',
                 )
             ]
 
@@ -76,14 +87,29 @@ class SparkSolidDefinition(SolidDefinition):
             if retcode != 0:
                 raise SparkSolidError('Spark job failed')
 
-            for output_def in system_context.solid_def.output_defs:
-                yield Result(spark_outputs, output_def.name)
+            if solid_output_mode == SparkSolidOutputModeSuccess.python_value:
+                yield Result(True, SparkSolidOutputModeSuccess.python_value)
+            elif solid_output_mode == SparkSolidOutputModePaths.python_value:
+                yield Result(spark_outputs, SparkSolidOutputModePaths.python_value)
+            else:
+                raise SparkSolidError('should not reach')
 
         super(SparkSolidDefinition, self).__init__(
             name=name,
             description=description,
             inputs=[InputDefinition('spark_inputs', List(Path))],
-            outputs=[OutputDefinition(List(Path), 'spark_outputs')],
+            outputs=[
+                OutputDefinition(
+                    dagster_type=Bool,
+                    name=SparkSolidOutputModeSuccess.python_value,
+                    is_optional=True,
+                ),
+                OutputDefinition(
+                    dagster_type=List(Path),
+                    name=SparkSolidOutputModePaths.python_value,
+                    is_optional=True,
+                ),
+            ],
             transform_fn=_define_spark_transform_fn,
             config_field=define_spark_config(),
         )

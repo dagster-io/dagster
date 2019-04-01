@@ -12,3 +12,10 @@ SparkDeployMode = Enum(
 
 class SparkSolidError(DagsterUserCodeExecutionError):
     pass
+
+
+SparkSolidOutputModeSuccess = EnumValue('output_success')
+SparkSolidOutputModePaths = EnumValue('paths')
+SparkSolidOutputMode = Enum(
+    name='SparkOutputMode', enum_values=[SparkSolidOutputModeSuccess, SparkSolidOutputModePaths]
+)

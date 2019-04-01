@@ -17,7 +17,7 @@ from dagster import (
 from dagster.utils import safe_isfile, mkdir_p
 
 from dagster_framework.spark import SparkSolidDefinition
-from dagster_framework.snowflake import SnowflakeLoadSolidDefinition
+from dagster_framework.snowflake import SnowflakeSolidDefinition, SnowflakeLoadSolidDefinition
 from dagster_framework.aws import download_from_s3
 
 
@@ -54,5 +54,10 @@ def define_event_ingest_pipeline():
         dependencies={
             SolidInstance('gunzipper'): {'gzip_file': DependencyDefinition('download_from_s3')},
             SolidInstance('event_ingest'): {'spark_inputs': DependencyDefinition('gunzipper')},
+            SolidInstance('snowflake_load'): {
+                SnowflakeSolidDefinition.INPUT_READY: DependencyDefinition(
+                    'event_ingest', 'output_success'
+                )
+            },
         },
     )
