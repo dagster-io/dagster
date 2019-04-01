@@ -1,4 +1,4 @@
-from dagster import Bool, Dict, Field, Int, String
+from dagster import Bool, Dict, Field, Int, Path, String
 
 
 def define_snowflake_config():
@@ -82,8 +82,12 @@ def define_snowflake_config():
         is_optional=True,
     )
 
-    # ocsp_response_cache_filename
-    # TODO: add support for this parameter
+    ocsp_response_cache_filename = Field(
+        Path,
+        description='''URI for the OCSP response cache file.
+         By default, the OCSP response cache file is created in the cache directory.''',
+        is_optional=True,
+    )
 
     validate_default_parameters = Field(
         Bool,
@@ -122,6 +126,7 @@ def define_snowflake_config():
                 'client_session_keep_alive': client_session_keep_alive,
                 'login_timeout': login_timeout,
                 'network_timeout': network_timeout,
+                'ocsp_response_cache_filename': ocsp_response_cache_filename,
                 'validate_default_parameters': validate_default_parameters,
                 'paramstyle': paramstyle,
                 'timezone': timezone,

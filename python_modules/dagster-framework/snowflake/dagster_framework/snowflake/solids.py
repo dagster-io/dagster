@@ -53,7 +53,7 @@ class SnowflakeSolidDefinition(SolidDefinition):
             or 'This solid is a generic representation of a parameterized Snowflake query job.'
         )
 
-        def _define_snowflake_transform_fn(context, _):
+        def _define_snowflake_transform_fn(context, _):  # pylint: disable=too-many-locals
             '''Define Snowflake execution.
 
             This function defines how we'll execute the Snowflake SQL query.
@@ -72,6 +72,7 @@ class SnowflakeSolidDefinition(SolidDefinition):
                 client_session_keep_alive,
                 login_timeout,
                 network_timeout,
+                ocsp_response_cache_filename,
                 validate_default_parameters,
                 paramstyle,
                 timezone,
@@ -90,6 +91,7 @@ class SnowflakeSolidDefinition(SolidDefinition):
                     'client_session_keep_alive',
                     'login_timeout',
                     'network_timeout',
+                    'ocsp_response_cache_filename',
                     'validate_default_parameters',
                     'paramstyle',
                     'timezone',
@@ -109,6 +111,7 @@ class SnowflakeSolidDefinition(SolidDefinition):
                 'client_session_keep_alive': client_session_keep_alive,
                 'login_timeout': login_timeout,
                 'network_timeout': network_timeout,
+                'ocsp_response_cache_filename': ocsp_response_cache_filename,
                 'validate_default_parameters': validate_default_parameters,
                 'paramstyle': paramstyle,
                 'timezone': timezone,
