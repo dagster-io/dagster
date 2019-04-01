@@ -180,7 +180,6 @@ class StepExecutionContext(object):
     def context(self):
         _warn_about_context_property()
         return self._legacy_context
-        # return self._system_step_execution_context.context
 
     @property
     def solid_def(self):
