@@ -156,15 +156,13 @@ def test_nested_error_two_fields_not_defined():
     result = eval_config_value_from_dagster_type(DoubleLevelDict, value)
 
     assert not result.success
-    assert len(result.errors) == 2
+    assert len(result.errors) == 1
 
-    field_one_error = get_field_name_error(result, 'no_field_one')
-    field_two_error = get_field_name_error(result, 'no_field_two')
+    fields_error = result.errors[0]
 
-    assert field_one_error.reason == DagsterEvaluationErrorReason.FIELD_NOT_DEFINED
-    assert field_one_error.error_data.field_name == 'no_field_one'
-    assert field_two_error.reason == DagsterEvaluationErrorReason.FIELD_NOT_DEFINED
-    assert field_two_error.error_data.field_name == 'no_field_two'
+    assert fields_error.reason == DagsterEvaluationErrorReason.FIELDS_NOT_DEFINED
+
+    assert fields_error.error_data.field_names == ['no_field_one', 'no_field_two']
 
 
 def test_nested_error_missing_fields():
