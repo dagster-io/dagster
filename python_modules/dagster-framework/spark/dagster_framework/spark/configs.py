@@ -5,47 +5,21 @@ in a variety of deployment contexts. See the Spark documentation at
 https://spark.apache.org/docs/latest/submitting-applications.html for a more in-depth summary of
 Spark deployment contexts and configuration.
 '''
-import itertools
 import os
 
 from dagster import Dict, Field, List, Path, String
 
-from .types import SparkDeployMode
+from .types import SparkDeployMode, SparkSolidOutputMode, SparkSolidOutputModeSuccess
 from .configs_spark import spark_config
 
 
-def parse_spark_config(spark_conf):
-    '''For each key-value pair in spark conf, we need to pass to CLI in format:
+def define_spark_config():
+    '''Spark configuration.
 
-        --conf "key=value"
+    See the Spark documentation for reference:
+        https://spark.apache.org/docs/latest/submitting-applications.html
     '''
 
-    def flatten_dict(d):
-        def _flatten_dict(d, result, key_path=None):
-            '''Iterates an arbitrarily nested dictionary and yield dot-notation key:value tuples.
-
-            {'foo': {'bar': 3, 'baz': 1}, {'other': {'key': 1}} =>
-                [('foo.bar', 3), ('foo.baz', 1), ('other.key', 1)]
-
-            '''
-            for k, v in d.items():
-                new_key_path = (key_path or []) + [k]
-                if isinstance(v, dict):
-                    _flatten_dict(v, result, new_key_path)
-                else:
-                    result.append(('.'.join(new_key_path), v))
-
-        result = []
-        _flatten_dict(d, result)
-        return result
-
-    spark_conf_list = flatten_dict(spark_conf)
-    return list(
-        itertools.chain.from_iterable([('--conf', '{}={}'.format(*c)) for c in spark_conf_list])
-    )
-
-
-def define_spark_config():
     main_class = Field(
         String,
         description='The entry point for your application (e.g. org.apache.spark.examples.SparkPi)',
@@ -95,10 +69,16 @@ def define_spark_config():
 
     spark_outputs = Field(List(String), description='The outputs that this Spark job will produce')
 
+    solid_output_mode = Field(
+        SparkSolidOutputMode,
+        description='''Which output type to use for this Spark solid. Defaults to a success boolean
+        sentinel.''',
+        is_optional=True,
+        default_value=SparkSolidOutputModeSuccess.python_value,
+    )
+
     return Field(
         Dict(
-            # See the Spark documentation for reference:
-            # https://spark.apache.org/docs/latest/submitting-applications.html
             fields={
                 'main_class': main_class,
                 'master_url': master_url,
@@ -108,6 +88,7 @@ def define_spark_config():
                 'spark_home': spark_home,
                 'application_arguments': application_arguments,
                 'spark_outputs': spark_outputs,
+                'solid_output_mode': solid_output_mode,
             }
         )
     )

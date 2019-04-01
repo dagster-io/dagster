@@ -4,33 +4,29 @@ context:
       log_level: DEBUG
          
 solids:
-  event_ingest:
-    inputs:
-      spark_inputs: ["/path/to/inputs"]
+  download_from_s3:
     config:
-      spark_outputs: ["/path/to/outputs"]
+      bucket: "elementl-public"
+      key: "example-json.gz"
+      skip_if_present: true
+      target_folder: "/tmp/dagster/events"
+  snowflake_load:
+    config:
+      account: "<< SET ME >>"
+      user: "<< SET ME >>"
+      password: "<< SET ME >>"
+      warehouse: "TINY_WAREHOUSE"
+      database: "TESTDB"
+      schema: "TESTSCHEMA"
+  event_ingest:
+    config:
+      spark_outputs: ["/tmp/dagster/events"]
       application_jar: "events-assembly-0.1.0-SNAPSHOT.jar"
       deploy_mode: "client"
       main_class: "io.dagster.events.EventPipeline"
-      application_arguments: "--local-path /path/to/inputs --date 2019-01-01"            
+      application_arguments: "--local-path /tmp/dagster/events --date 2019-01-01"
       master_url: "local[*]"
       spark_conf:
         spark:
           app:
             name: "test_app"
-          executor:
-            cores: 1
-
-
-# TODO: set up tests on remote cluster
-#   application_jar: "events-assembly-0.1.0-SNAPSHOT.jar"
-#   deploy_mode: "client"
-#   main_class: "io.dagster.events.EventPipeline"
-#   application_arguments: "--s3-bucket elementl-data --s3-prefix events --date 2019-01-01"            
-#   master_url: "spark://127.0.0.1:7077"
-#   spark_conf:
-#     spark:
-#       app:
-#         name: "test_app"
-#       executor:
-#         cores: 1

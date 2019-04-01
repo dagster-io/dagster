@@ -1,10 +1,10 @@
 import pytest
 
-from dagster import execute_pipeline
+# from dagster import execute_pipeline
 
-from dagster.utils import load_yaml_from_globs, script_relative_path
+# from dagster.utils import load_yaml_from_globs, script_relative_path
 
-from event_pipeline_demo.pipelines import define_event_ingest_pipeline
+# from event_pipeline_demo.pipelines import define_event_ingest_pipeline
 
 spark = pytest.mark.spark
 '''Tests that require Spark.'''
