@@ -181,16 +181,11 @@ def test_nested_error_multiple_missing_fields():
 
     result = eval_config_value_from_dagster_type(DoubleLevelDict, value)
     assert not result.success
-    assert len(result.errors) == 2
+    assert len(result.errors) == 1
 
-    assert (
-        get_field_name_error(result, 'bool_field').reason
-        == DagsterEvaluationErrorReason.MISSING_REQUIRED_FIELD
-    )
-    assert (
-        get_field_name_error(result, 'string_field').reason
-        == DagsterEvaluationErrorReason.MISSING_REQUIRED_FIELD
-    )
+    fields_error = result.errors[0]
+    assert fields_error.reason == DagsterEvaluationErrorReason.MISSING_REQUIRED_FIELDS
+    assert fields_error.error_data.field_names == ['bool_field', 'string_field']
 
 
 def test_nested_missing_and_not_defined():
@@ -198,17 +193,16 @@ def test_nested_missing_and_not_defined():
 
     result = eval_config_value_from_dagster_type(DoubleLevelDict, value)
     assert not result.success
-    assert len(result.errors) == 3
+    assert len(result.errors) == 2
 
-    assert (
-        get_field_name_error(result, 'bool_field').reason
-        == DagsterEvaluationErrorReason.MISSING_REQUIRED_FIELD
-    )
+    fields_error = [
+        error
+        for error in result.errors
+        if error.reason == DagsterEvaluationErrorReason.MISSING_REQUIRED_FIELDS
+    ][0]
 
-    assert (
-        get_field_name_error(result, 'string_field').reason
-        == DagsterEvaluationErrorReason.MISSING_REQUIRED_FIELD
-    )
+    assert fields_error.reason == DagsterEvaluationErrorReason.MISSING_REQUIRED_FIELDS
+    assert fields_error.error_data.field_names == ['bool_field', 'string_field']
 
     assert (
         get_field_name_error(result, 'not_defined').reason

@@ -17,6 +17,7 @@ from .type_printer import print_config_type_to_string
 class DagsterEvaluationErrorReason(Enum):
     RUNTIME_TYPE_MISMATCH = 'RUNTIME_TYPE_MISMATCH'
     MISSING_REQUIRED_FIELD = 'MISSING_REQUIRED_FIELD'
+    MISSING_REQUIRED_FIELDS = 'MISSING_REQUIRED_FIELDS'
     FIELD_NOT_DEFINED = 'FIELD_NOT_DEFINED'
     FIELDS_NOT_DEFINED = 'FIELDS_NOT_DEFINED'
     SELECTOR_FIELD_ERROR = 'SELECTOR_FIELD_ERROR'
@@ -45,6 +46,15 @@ class MissingFieldErrorData(namedtuple('_MissingFieldErrorData', 'field_name fie
         )
 
 
+class MissingFieldsErrorData(namedtuple('_MissingFieldErrorData', 'field_names field_defs')):
+    def __new__(cls, field_names, field_defs):
+        return super(MissingFieldsErrorData, cls).__new__(
+            cls,
+            check.list_param(field_names, 'field_names', of_type=str),
+            [check_field_param(field_def, 'field_defs') for field_def in field_defs],
+        )
+
+
 class RuntimeMismatchErrorData(namedtuple('_RuntimeMismatchErrorData', 'config_type value_rep')):
     def __new__(cls, config_type, value_rep):
         return super(RuntimeMismatchErrorData, cls).__new__(
@@ -66,6 +76,7 @@ ERROR_DATA_TYPES = (
     FieldNotDefinedErrorData,
     FieldsNotDefinedErrorData,
     MissingFieldErrorData,
+    MissingFieldsErrorData,
     RuntimeMismatchErrorData,
     SelectorTypeErrorData,
 )
@@ -482,7 +493,8 @@ def validate_composite_config_value(composite_type, config_value, stack):
                 yield create_fields_not_defined_error(composite_type, stack, undefined_fields)
 
     # ...However, for any fields the user *has* told us about, we validate against their config
-    # specification.
+    # specifications
+    missing_fields = []
     for expected_field, field_def in fields.items():
         if expected_field in incoming_fields:
             for error in _validate_config(
@@ -497,7 +509,13 @@ def validate_composite_config_value(composite_type, config_value, stack):
 
         else:
             check.invariant(not field_def.default_provided)
-            yield create_missing_required_field_error(composite_type, stack, expected_field)
+            missing_fields.append(expected_field)
+
+    if missing_fields:
+        if len(missing_fields) == 1:
+            yield create_missing_required_field_error(composite_type, stack, missing_fields[0])
+        else:
+            yield create_missing_required_fields_error(composite_type, stack, missing_fields)
 
 
 ## Lists
@@ -529,8 +547,8 @@ def validate_list_value(list_type, config_value, stack):
 
 
 def create_fields_not_defined_error(composite_type, stack, undefined_fields):
-    check.inst_param(composite_type, 'config_type', ConfigType)
-    check.param_invariant(composite_type.has_fields, 'config_type')
+    check.inst_param(composite_type, 'composite_type', ConfigType)
+    check.param_invariant(composite_type.has_fields, 'composite_type')
     check.inst_param(stack, 'stack', EvaluationStack)
     check.list_param(undefined_fields, 'undefined_fields', of_type=str)
 
@@ -540,7 +558,10 @@ def create_fields_not_defined_error(composite_type, stack, undefined_fields):
     return EvaluationError(
         stack=stack,
         reason=DagsterEvaluationErrorReason.FIELDS_NOT_DEFINED,
-        message='Fields "{undefined_fields}" are not defined {path_msg} Available fields: "{available_fields}"'.format(
+        message=(
+            'Fields "{undefined_fields}" are not defined {path_msg} Available '
+            'fields: "{available_fields}"'
+        ).format(
             undefined_fields=undefined_fields,
             path_msg=_get_friendly_path_msg(stack),
             available_fields=available_fields,
@@ -551,6 +572,7 @@ def create_fields_not_defined_error(composite_type, stack, undefined_fields):
 
 def create_field_not_defined_error(config_type, stack, received_field):
     check.param_invariant(config_type.has_fields, 'config_type')
+    check.inst_param(stack, 'stack', EvaluationStack)
     return EvaluationError(
         stack=stack,
         reason=DagsterEvaluationErrorReason.FIELD_NOT_DEFINED,
@@ -565,6 +587,7 @@ def create_field_not_defined_error(config_type, stack, received_field):
 
 def create_missing_required_field_error(config_type, stack, expected_field):
     check.param_invariant(config_type.has_fields, 'config_type')
+    check.inst_param(stack, 'stack', EvaluationStack)
     return EvaluationError(
         stack=stack,
         reason=DagsterEvaluationErrorReason.MISSING_REQUIRED_FIELD,
@@ -575,5 +598,25 @@ def create_missing_required_field_error(config_type, stack, expected_field):
         ),
         error_data=MissingFieldErrorData(
             field_name=expected_field, field_def=config_type.fields[expected_field]
+        ),
+    )
+
+
+def create_missing_required_fields_error(composite_type, stack, missing_fields):
+    check.inst_param(composite_type, 'composite_type', ConfigType)
+    check.param_invariant(composite_type.has_fields, 'compositve_type')
+    check.inst_param(stack, 'stack', EvaluationStack)
+
+    missing_fields = sorted(missing_fields)
+    missing_field_defs = list(map(lambda mf: composite_type.fields[mf], missing_fields))
+
+    return EvaluationError(
+        stack=stack,
+        reason=DagsterEvaluationErrorReason.MISSING_REQUIRED_FIELDS,
+        message='Missing required fields "{missing_fields}" {path_msg}".'.format(
+            missing_fields=missing_fields, path_msg=_get_friendly_path_msg(stack)
+        ),
+        error_data=MissingFieldsErrorData(
+            field_names=missing_fields, field_defs=missing_field_defs
         ),
     )

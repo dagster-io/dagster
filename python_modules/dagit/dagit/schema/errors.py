@@ -8,6 +8,7 @@ from dagster.core.types.evaluator import (
     EvaluationStackListItemEntry,
     RuntimeMismatchErrorData,
     MissingFieldErrorData,
+    MissingFieldsErrorData,
     FieldNotDefinedErrorData,
     FieldsNotDefinedErrorData,
     SelectorTypeErrorData,
@@ -148,6 +149,28 @@ class DauphinPipelineConfigValidationError(dauphin.Interface):
                     name=error.error_data.field_name, field=error.error_data.field_def
                 ),
             )
+        elif isinstance(error.error_data, MissingFieldsErrorData):
+            graphene_fields = []
+            for field_name, field_def in zip(
+                error.error_data.field_names, error.error_data.field_defs
+            ):
+                graphene_fields.append(
+                    graphene_info.schema.type_named('ConfigTypeField')(
+                        name=field_name, field=field_def
+                    )
+                )
+
+            return graphene_info.schema.type_named('MissingFieldsConfigError')(
+                message=error.message,
+                path=[],  # TODO: remove
+                stack=error.stack,
+                reason=error.reason,
+                fields=graphene_fields,
+                # field=graphene_info.schema.type_named('ConfigTypeField')(
+                #     name=error.error_data.field_name, field=error.error_data.field_def
+                # ),
+            )
+
         elif isinstance(error.error_data, FieldNotDefinedErrorData):
             return graphene_info.schema.type_named('FieldNotDefinedConfigError')(
                 message=error.message,
@@ -198,6 +221,14 @@ class DauphinMissingFieldConfigError(dauphin.ObjectType):
     field = dauphin.NonNull('ConfigTypeField')
 
 
+class DauphinMissingFieldsConfigError(dauphin.ObjectType):
+    class Meta:
+        name = 'MissingFieldsConfigError'
+        interfaces = (DauphinPipelineConfigValidationError,)
+
+    fields = dauphin.non_null_list('ConfigTypeField')
+
+
 class DauphinFieldNotDefinedConfigError(dauphin.ObjectType):
     class Meta:
         name = 'FieldNotDefinedConfigError'
@@ -228,6 +259,7 @@ class DauphinEvaluationErrorReason(dauphin.Enum):
 
     RUNTIME_TYPE_MISMATCH = 'RUNTIME_TYPE_MISMATCH'
     MISSING_REQUIRED_FIELD = 'MISSING_REQUIRED_FIELD'
+    MISSING_REQUIRED_FIELDS = 'MISSING_REQUIRED_FIELDS'
     FIELD_NOT_DEFINED = 'FIELD_NOT_DEFINED'
     FIELDS_NOT_DEFINED = 'FIELDS_NOT_DEFINED'
     SELECTOR_FIELD_ERROR = 'SELECTOR_FIELD_ERROR'

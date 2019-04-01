@@ -20,6 +20,9 @@ query PipelineQuery($config: PipelineConfig, $pipeline: ExecutionSelector!)
                 ... on MissingFieldConfigError {
                     field { name }
                 }
+                ... on MissingFieldsConfigError {
+                    fields { name }
+                }
                 ... on FieldNotDefinedConfigError {
                     fieldName
                 }
@@ -321,6 +324,22 @@ def test_more_complicated_works():
     valid_data = result.data['isPipelineConfigValid']
     assert valid_data['__typename'] == 'PipelineConfigValidationValid'
     assert valid_data['pipeline']['name'] == 'more_complicated_nested_config'
+
+
+def test_multiple_missing_fields():
+
+    result = execute_config_graphql(
+        pipeline_name='more_complicated_nested_config',
+        env_config={'solids': {'a_solid_with_multilayered_config': {'config': {}}}},
+    )
+
+    assert not result.errors
+    assert result.data
+    valid_data = result.data['isPipelineConfigValid']
+
+    assert valid_data['__typename'] == 'PipelineConfigValidationInvalid'
+    assert valid_data['pipeline']['name'] == 'more_complicated_nested_config'
+    assert len(valid_data['errors']) == 1
 
 
 def test_more_complicated_multiple_errors():

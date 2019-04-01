@@ -35,7 +35,7 @@ export interface ConfigEditorValidationFragment_PipelineConfigValidationInvalid_
 }
 
 export interface ConfigEditorValidationFragment_PipelineConfigValidationInvalid_errors {
-  __typename: "FieldNotDefinedConfigError" | "FieldsNotDefinedConfigError" | "MissingFieldConfigError" | "RuntimeMismatchConfigError" | "SelectorTypeConfigError";
+  __typename: "FieldNotDefinedConfigError" | "FieldsNotDefinedConfigError" | "MissingFieldConfigError" | "MissingFieldsConfigError" | "RuntimeMismatchConfigError" | "SelectorTypeConfigError";
   reason: EvaluationErrorReason;
   message: string;
   stack: ConfigEditorValidationFragment_PipelineConfigValidationInvalid_errors_stack;
