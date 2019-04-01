@@ -150,25 +150,19 @@ class DauphinPipelineConfigValidationError(dauphin.Interface):
                 ),
             )
         elif isinstance(error.error_data, MissingFieldsErrorData):
-            graphene_fields = []
-            for field_name, field_def in zip(
-                error.error_data.field_names, error.error_data.field_defs
-            ):
-                graphene_fields.append(
-                    graphene_info.schema.type_named('ConfigTypeField')(
-                        name=field_name, field=field_def
-                    )
-                )
-
             return graphene_info.schema.type_named('MissingFieldsConfigError')(
                 message=error.message,
                 path=[],  # TODO: remove
                 stack=error.stack,
                 reason=error.reason,
-                fields=graphene_fields,
-                # field=graphene_info.schema.type_named('ConfigTypeField')(
-                #     name=error.error_data.field_name, field=error.error_data.field_def
-                # ),
+                fields=[
+                    graphene_info.schema.type_named('ConfigTypeField')(
+                        name=field_name, field=field_def
+                    )
+                    for field_name, field_def in zip(
+                        error.error_data.field_names, error.error_data.field_defs
+                    )
+                ],
             )
 
         elif isinstance(error.error_data, FieldNotDefinedErrorData):

@@ -340,6 +340,11 @@ def test_multiple_missing_fields():
     assert valid_data['__typename'] == 'PipelineConfigValidationInvalid'
     assert valid_data['pipeline']['name'] == 'more_complicated_nested_config'
     assert len(valid_data['errors']) == 1
+    error_data = valid_data['errors'][0]
+    missing_names = {field_data['name'] for field_data in error_data['fields']}
+    assert missing_names == {'nested_field', 'field_one'}
+    print(field_stack(error_data))
+    assert field_stack(error_data) == ['solids', 'a_solid_with_multilayered_config', 'config']
 
 
 def test_more_complicated_multiple_errors():
