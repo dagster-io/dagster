@@ -16,6 +16,8 @@ else:
     from StringIO import StringIO  # pylint:disable=import-error
 
 
+# TODO implement a generic import by name -- see https://stackoverflow.com/questions/301134/how-to-import-a-module-given-its-name
+
 # https://stackoverflow.com/a/67692/324449
 def import_module_from_path(module_name, path_to_file):
     version = sys.version_info
