@@ -7,6 +7,9 @@ from .utils import run_spark_subprocess, parse_spark_config
 
 
 class SparkSolidDefinition(SolidDefinition):
+    '''This solid is a generic representation of a parameterized Spark job.
+    '''
+
     def __init__(self, name, description=None):
         name = check.str_param(name, 'name')
         description = check.opt_str_param(
@@ -67,8 +70,8 @@ class SparkSolidDefinition(SolidDefinition):
                 + ([application_arguments] if application_arguments else [])
             )
             system_context = context.get_system_context()
-            system_context.log.info("Running spark-submit: " + ' '.join(spark_shell_cmd))
-            retcode = run_spark_subprocess(spark_shell_cmd, system_context.log)
+            context.log.info("Running spark-submit: " + ' '.join(spark_shell_cmd))
+            retcode = run_spark_subprocess(spark_shell_cmd, context.log)
 
             if retcode != 0:
                 raise SparkSolidError('Spark job failed')
@@ -80,7 +83,7 @@ class SparkSolidDefinition(SolidDefinition):
             name=name,
             description=description,
             inputs=[InputDefinition('spark_inputs', List(Path))],
-            outputs=[OutputDefinition('spark_outputs', List(Path))],
+            outputs=[OutputDefinition(List(Path), 'spark_outputs')],
             transform_fn=_define_spark_transform_fn,
             config_field=define_spark_config(),
         )

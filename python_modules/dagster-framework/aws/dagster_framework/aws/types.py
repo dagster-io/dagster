@@ -1,4 +1,4 @@
-from dagster import Stringish
+from dagster.core.types.runtime import Stringish
 from dagster.utils import safe_isfile
 
 

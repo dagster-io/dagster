@@ -17,7 +17,7 @@ setup(
     version=version['__version__'],
     author='Elementl',
     license='Apache-2.0',
-    description='A complete demo exercising the functionality of Dagster.',
+    description='Package for Snowflake Dagster framework components.',
     url='https://github.com/dagster-io/dagster/tree/master/python_modules/dagster-framework/snowflake',
     classifiers=[
         'Programming Language :: Python :: 2.7',

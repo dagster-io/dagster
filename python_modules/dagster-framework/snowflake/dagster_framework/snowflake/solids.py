@@ -6,7 +6,7 @@ import pandas as pd
 import snowflake.connector
 
 import dagster_pandas as dagster_pd
-from dagster import check, OutputDefinition, List, Result, SolidDefinition
+from dagster import check, InputDefinition, List, OutputDefinition, Result, SolidDefinition, String
 
 from .configs import define_snowflake_config
 
@@ -35,8 +35,6 @@ class SnowflakeSolidDefinition(SolidDefinition):
 
             This function defines how we'll execute the Snowflake SQL query.
             '''
-            system_context = context.get_system_context()
-
             # Extract parameters from config
             (
                 account,
@@ -101,7 +99,7 @@ class SnowflakeSolidDefinition(SolidDefinition):
                 '''Remove password from connection args for logging'''
                 return {k: v for k, v in conn_args.items() if k != 'password'}
 
-            system_context.log.info(
+            context.log.info(
                 '''Connecting to Snowflake with conn_args %s and
                     [warehouse %s database %s schema %s role %s]'''
                 % (str(_filter_password(conn_args)), warehouse, database, schema, role)
@@ -115,7 +113,7 @@ class SnowflakeSolidDefinition(SolidDefinition):
                     if sys.version_info[0] < 3:
                         query = query.encode('utf-8')
 
-                    system_context.log.info(
+                    context.log.info(
                         'Executing SQL query %s %s'
                         % (query, 'with parameters ' + str(parameters) if parameters else '')
                     )
@@ -125,12 +123,13 @@ class SnowflakeSolidDefinition(SolidDefinition):
                 if not autocommit:
                     conn.commit()
 
-                system_context.log.info(str(results))
+                context.log.info(str(results))
                 yield Result(results)
 
         super(SnowflakeSolidDefinition, self).__init__(
             name=name,
             description=description,
+            # TODO: clean this up
             inputs=[],
             outputs=[OutputDefinition(List(dagster_pd.DataFrame))],
             transform_fn=_define_snowflake_transform_fn,

@@ -1,26 +1,64 @@
 """Pipeline definitions for the airline_demo."""
 
-import logging
+import gzip
+import os
+import shutil
 
-from dagster import ExecutionContext, PipelineContextDefinition, List, Path, PipelineDefinition
+from dagster import (
+    lambda_solid,
+    DependencyDefinition,
+    InputDefinition,
+    OutputDefinition,
+    List,
+    PipelineDefinition,
+    SolidInstance,
+    String,
+)
+from dagster.utils import safe_isfile, mkdir_p
+
 from dagster_framework.spark import SparkSolidDefinition
 from dagster_framework.snowflake import SnowflakeSolidDefinition
+from dagster_framework.aws import download_from_s3
 
-from .resources import s3_download_manager
+
+@lambda_solid(inputs=[InputDefinition('gzip_file', String)], output=OutputDefinition(List(String)))
+def gunzipper(gzip_file):
+    '''gunzips /path/to/foo.gz to /path/to/raw/2019/01/01/data.json
+    '''
+    # TODO: take date as an input
+
+    path_prefix = os.path.dirname(gzip_file)
+    output_folder = os.path.join(path_prefix, 'raw/2019/01/01')
+    outfile = os.path.join(output_folder, 'data.json')
+
+    if not safe_isfile(outfile):
+        mkdir_p(output_folder)
+
+        with gzip.open(gzip_file, 'rb') as f_in, open(outfile, 'wb') as f_out:
+            shutil.copyfileobj(f_in, f_out)
+
+    return [path_prefix]
 
 
 def define_event_ingest_pipeline():
-    local_context = PipelineContextDefinition(
-        context_fn=lambda _: ExecutionContext.console_logging(log_level=logging.DEBUG),
-        resources={'download_manager': s3_download_manager},
-    )
-
-    # download_from_s3 = download_from_s3()
-
     event_ingest = SparkSolidDefinition('event_ingest', 'Ingest events from JSON to Parquet')
 
-    snowflake_query = SnowflakeSolidDefinition('hello_world_snowflake', ['select 1;', 'select 2;'])
+    # TODO: express dependency of this solid on event_ingest
+    snowflake_sql_queries = [
+        'CREATE OR REPLACE TABLE events ( data VARIANT DEFAULT NULL);',
+        'CREATE OR REPLACE FILE FORMAT parquet_format TYPE = \'parquet\';',
+        #
+        # TODO: parameterize load location
+        'PUT file:///tmp/output/local/output/2019/01/01/*.parquet @%events;',
+        'COPY INTO events FROM @%events FILE_FORMAT = (FORMAT_NAME = \'parquet_format\');',
+    ]
+    snowflake_query = SnowflakeSolidDefinition('snowflake_query', snowflake_sql_queries)
 
     return PipelineDefinition(
-        name='event_ingest_pipeline', solids=[snowflake_query], dependencies={}
+        name='event_ingest_pipeline',
+        solids=[download_from_s3, gunzipper, event_ingest, snowflake_query],
+        dependencies={
+            SolidInstance('gunzipper'): {'gzip_file': DependencyDefinition('download_from_s3')},
+            SolidInstance('event_ingest'): {'spark_inputs': DependencyDefinition('gunzipper')},
+        },
     )
