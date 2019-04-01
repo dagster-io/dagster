@@ -68,6 +68,7 @@ interface Error {
 enum EvaluationErrorReason {
   RUNTIME_TYPE_MISMATCH
   MISSING_REQUIRED_FIELD
+  MISSING_REQUIRED_FIELDS
   FIELD_NOT_DEFINED
   FIELDS_NOT_DEFINED
   SELECTOR_FIELD_ERROR
@@ -284,6 +285,14 @@ type MissingFieldConfigError implements PipelineConfigValidationError {
   stack: EvaluationStack!
   reason: EvaluationErrorReason!
   field: ConfigTypeField!
+}
+
+type MissingFieldsConfigError implements PipelineConfigValidationError {
+  message: String!
+  path: [String!]!
+  stack: EvaluationStack!
+  reason: EvaluationErrorReason!
+  fields: [ConfigTypeField!]!
 }
 
 type MissingRunIdErrorEvent {
