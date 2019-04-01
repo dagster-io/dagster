@@ -80,7 +80,6 @@ class SparkSolidDefinition(SolidDefinition):
                 + [application_jar]
                 + ([application_arguments] if application_arguments else [])
             )
-            system_context = context.get_system_context()
             context.log.info("Running spark-submit: " + ' '.join(spark_shell_cmd))
             retcode = run_spark_subprocess(spark_shell_cmd, context.log)
 
