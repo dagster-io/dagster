@@ -14,7 +14,7 @@ from .configs import define_snowflake_config
 class SnowflakeSolidDefinition(SolidDefinition):
     '''SnowflakeSolidDefinition wraps execution of a list of Snowflake SQL queries.
 
-    Per the Snowflake docs, xecuting multiple SQL statements separated by a semicolon in a single
+    Per the Snowflake docs, executing multiple SQL statements separated by a semicolon in a single
     execute call is not supported, and so here we iterate over a list of SQL queries and call
     connector.execute() on each.
 
@@ -25,8 +25,9 @@ class SnowflakeSolidDefinition(SolidDefinition):
             enabled, will commit after each query, otherwise will only commit after the last query
             is completed.
         parameters (Dict[str, str]): Query parameters to bind to the parameterized query (expects
-            query to be parameterized). See the Snowflake docs at https://bit.ly/2JZBr6C for how to
-            format these parameters.
+            query to be parameterized). Note that the parameters will be shared across all of the
+            queries provided in the sql_queries argument. See the Snowflake docs at
+            https://bit.ly/2JZBr6C for how to format these parameters. 
         description (str): Description of the solid.
 
     Examples:
@@ -55,7 +56,7 @@ class SnowflakeSolidDefinition(SolidDefinition):
             or 'This solid is a generic representation of a parameterized Snowflake query job.'
         )
 
-        def _define_snowflake_transform_fn(context, _):  # pylint: disable=too-many-locals
+        def _snowflake_transform_fn(context, _):  # pylint: disable=too-many-locals
             '''Define Snowflake execution.
 
             This function defines how we'll execute the Snowflake SQL query.
@@ -121,7 +122,7 @@ class SnowflakeSolidDefinition(SolidDefinition):
 
             # We can't pass None values to snowflake.connector.connect() because they will override
             # the default values set within the connector; remove them from the conn_args dict
-            conn_args = {k: v for k, v in conn_args.items() if v}
+            conn_args = {k: v for k, v in conn_args.items() if v is not None}
 
             def _filter_password(conn_args):
                 '''Remove password from connection args for logging'''
@@ -159,7 +160,7 @@ class SnowflakeSolidDefinition(SolidDefinition):
             description=description,
             inputs=[InputDefinition(SnowflakeSolidDefinition.INPUT_READY, Bool)],
             outputs=[OutputDefinition(List(dagster_pd.DataFrame))],
-            transform_fn=_define_snowflake_transform_fn,
+            transform_fn=_snowflake_transform_fn,
             config_field=define_snowflake_config(),
         )
 

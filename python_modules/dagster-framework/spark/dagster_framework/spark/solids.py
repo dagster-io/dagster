@@ -27,7 +27,7 @@ class SparkSolidDefinition(SolidDefinition):
             'This solid is a generic representation of a parameterized Spark job.',
         )
 
-        def _define_spark_transform_fn(context, _):
+        def _spark_transform_fn(context, _):
             '''Define Spark execution.
 
             This function defines how we'll execute the Spark job and invokes spark-submit.
@@ -109,6 +109,6 @@ class SparkSolidDefinition(SolidDefinition):
                     is_optional=True,
                 ),
             ],
-            transform_fn=_define_spark_transform_fn,
+            transform_fn=_spark_transform_fn,
             config_field=define_spark_config(),
         )
