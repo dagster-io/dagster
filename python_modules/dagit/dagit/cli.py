@@ -52,7 +52,9 @@ def execute_query_from_cli(repository_container, query, variables):
         executor=Executor(),
     )
 
-    print(seven.json.dumps(result.to_dict()))
+    str_res = seven.json.dumps(result.to_dict())
+    print(str_res)
+    return str_res
 
 
 @click.command(

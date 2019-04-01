@@ -17,6 +17,7 @@ from yaml import dump
 from dagster import check, PipelineDefinition
 from dagster.core.execution import create_execution_plan
 
+from .compile import coalesce_execution_steps
 from .utils import IndentingBlockPrinter
 
 
@@ -57,7 +58,7 @@ def _steps_for_key(solid_name):
     return 'STEPS_FOR_' + solid_name.upper()
 
 
-def _format_config(config):
+def format_config_for_graphql(config):
     '''This recursive descent thing formats a config dict for GraphQL.'''
 
     def _format_config_subdict(config, current_indent=0):
@@ -124,31 +125,6 @@ def _format_config(config):
         check.failed('Expected a dict to format as config, got: {item}'.format(item=repr(config)))
 
     return _format_config_subdict(config)
-
-
-def _coalesce_solid_order(execution_plan):
-    solid_order = [s.tags['solid'] for s in execution_plan.topological_steps()]
-    reversed_coalesced_solid_order = []
-    for solid in reversed(solid_order):
-        if solid in reversed_coalesced_solid_order:
-            continue
-        reversed_coalesced_solid_order.append(solid)
-    return [x for x in reversed(reversed_coalesced_solid_order)]
-
-
-def coalesce_execution_steps(execution_plan):
-    '''Groups execution steps by solid, in topological order of the solids.'''
-
-    solid_order = _coalesce_solid_order(execution_plan)
-
-    steps = defaultdict(list)
-
-    for solid_name, solid_steps in itertools.groupby(
-        execution_plan.topological_steps(), lambda x: x.tags['solid']
-    ):
-        steps[solid_name] += list(solid_steps)
-
-    return [(solid_name, steps[solid_name]) for solid_name in solid_order]
 
 
 def _make_editable_scaffold(
@@ -315,7 +291,7 @@ def _make_static_scaffold(pipeline_name, env_config, execution_plan, image, edit
 
         printer.line('CONFIG = \'\'\'')
         with printer.with_indent():
-            for line in _format_config(env_config).strip('\n').split('\n'):
+            for line in format_config_for_graphql(env_config).strip('\n').split('\n'):
                 printer.line(line)
         printer.line('\'\'\'.strip(\'\\n\').strip(\' \')')
         printer.blank_line()
