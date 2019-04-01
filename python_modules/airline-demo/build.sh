@@ -19,8 +19,8 @@ rm -rf dagstermill/dist && \
 rm -rf .tox dist && \
 \
 docker build -t airline-demo-airflow . && \
-docker tag airline-demo-airflow dagster/airline-demo-airflow && \
-\
+docker tag airline-demo-airflow dagster/airline-demo-airflow
+
 # pip uninstall -y dagster-airflow && \
 # pip install -e ../dagster-airflow && \
 # \
