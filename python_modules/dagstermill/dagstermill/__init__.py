@@ -265,9 +265,10 @@ class Manager:
         )
         resource_gens = _create_resource_gens(
             self.pipeline_def,
-            resource_creation_info.context_def, 
-            resource_creation_info.environment_config, 
-            resource_creation_info.run_id)
+            resource_creation_info.context_def,
+            resource_creation_info.environment_config,
+            resource_creation_info.run_id,
+        )
         self.context.resource_gens = resource_gens
 
         self.context.resources_type = _get_resources_type(
@@ -276,7 +277,8 @@ class Manager:
 
         return self.context
 
-def yield_blank_pipeline_execution_context(environment_dict={}):
+
+def yield_blank_pipeline_execution_context(environment_dict):
     pipeline_def = PipelineDefinition([], name='Blank Pipeline Def')
     run_config = RunConfig(run_id='')
     yield yield_pipeline_execution_context(pipeline_def, environment_dict, run_config)

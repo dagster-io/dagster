@@ -74,6 +74,7 @@ def test_resources_notebook():
     result = execute_pipeline(define_resource_pipeline())
     assert result.success
 
+
 @notebook_test
 def test_no_repo_registration_error():
     with pytest.raises(

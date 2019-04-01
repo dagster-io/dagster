@@ -9,17 +9,18 @@ from dagster import (
     Int,
     OutputDefinition,
     PipelineDefinition,
+    PipelineContextDefinition,
     RepositoryDefinition,
     SolidDefinition,
     SolidInstance,
     check,
     lambda_solid,
     solid,
+    resource,
     as_dagster_type,
     SerializationStrategy,
 )
 
-from dagster import RepositoryDefinition, PipelineContextDefinition, resource
 from dagster_pandas import DataFrame
 
 
@@ -211,6 +212,8 @@ def define_resource_pipeline():
             'local': PipelineContextDefinition(resources={'file_manager': trivial_resource})
         },
     )
+
+
 class ComplexSerializationStrategy(SerializationStrategy):  # pylint: disable=no-init
     def serialize_value(self, context, value, write_file_obj):
         pass

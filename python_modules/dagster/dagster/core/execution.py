@@ -411,55 +411,6 @@ def construct_intermediates_manager(run_config, environment_config, pipeline_def
                 )
             )
         else:
-            check.failed('U nexpected enum {}'.format(run_config.storage_mode))
-    elif environment_config.storage.storage_mode == 'filesystem':
-        return ObjectStoreIntermediatesManager(
-            FileSystemObjectStore(
-                run_config.run_id, construct_type_registry(pipeline_def, RunStorageMode.FILESYSTEM)
-            )
-        )
-    elif environment_config.storage.storage_mode == 'in_memory':
-        return InMemoryIntermediatesManager()
-    elif environment_config.storage.storage_mode == 's3':
-        return ObjectStoreIntermediatesManager(
-            S3ObjectStore(
-                environment_config.storage.storage_config['s3_bucket'],
-                run_config.run_id,
-                construct_type_registry(pipeline_def, RunStorageMode.S3),
-            )
-        )
-    elif environment_config.storage.storage_mode is None:
-        return InMemoryIntermediatesManager()
-    else:
-        raise DagsterInvariantViolationError(
-            'Invalid storage specified {}'.format(environment_config.storage.storage_mode)
-        )
-
-
-def construct_intermediates_manager(run_config, environment_config, pipeline_def):
-    check.inst_param(run_config, 'run_config', RunConfig)
-    check.inst_param(environment_config, 'environment_config', EnvironmentConfig)
-    check.inst_param(pipeline_def, 'pipeline_def', PipelineDefinition)
-
-    if run_config.storage_mode:
-        if run_config.storage_mode == RunStorageMode.FILESYSTEM:
-            return ObjectStoreIntermediatesManager(
-                FileSystemObjectStore(
-                    run_config.run_id,
-                    construct_type_registry(pipeline_def, RunStorageMode.FILESYSTEM),
-                )
-            )
-        elif run_config.storage_mode == RunStorageMode.IN_MEMORY:
-            return InMemoryIntermediatesManager()
-        elif run_config.storage_mode == RunStorageMode.S3:
-            return ObjectStoreIntermediatesManager(
-                S3ObjectStore(
-                    environment_config.storage.storage_config['s3_bucket'],
-                    run_config.run_id,
-                    construct_type_registry(pipeline_def, RunStorageMode.S3),
-                )
-            )
-        else:
             check.failed('Unexpected enum {}'.format(run_config.storage_mode))
     elif environment_config.storage.storage_mode == 'filesystem':
         return ObjectStoreIntermediatesManager(
@@ -484,6 +435,7 @@ def construct_intermediates_manager(run_config, environment_config, pipeline_def
             'Invalid storage specified {}'.format(environment_config.storage.storage_mode)
         )
 
+
 @contextmanager
 def yield_pipeline_execution_context(pipeline_def, environment_dict, run_config):
     check.inst_param(pipeline_def, 'pipeline_def', PipelineDefinition)
@@ -498,6 +450,7 @@ def yield_pipeline_execution_context(pipeline_def, environment_dict, run_config)
         pipeline_def, environment_config, run_config, intermediates_manager
     ) as context:
         yield context
+
 
 @contextmanager
 def _pipeline_execution_context_manager(
@@ -593,34 +546,42 @@ def _create_loggers(run_config, execution_context):
     else:
         return execution_context.loggers
 
-ResourceCreationInfo = namedtuple('ResourceCreationInfo', 'pipeline_def context_def environment_config ec_gen run_id')
+
+ResourceCreationInfo = namedtuple(
+    'ResourceCreationInfo', 'pipeline_def context_def environment_config ec_gen run_id'
+)
+
 
 def _get_resource_creation_info(pipeline_def, environment_dict, run_id):
     environment_config = create_environment_config(pipeline_def, environment_dict)
     context_definition = pipeline_def.context_definitions[environment_config.context.name]
     init_context = InitContext(
-        context_config=environment_config.context.config,
-        pipeline_def=pipeline_def,
-        run_id=run_id,
+        context_config=environment_config.context.config, pipeline_def=pipeline_def, run_id=run_id
     )
 
     ec_or_gen = context_definition.context_fn(init_context)
     ec_gen = as_ensured_single_gen(ec_or_gen)
-    return ResourceCreationInfo(pipeline_def, context_definition, environment_config, ec_gen, run_id)
+    return ResourceCreationInfo(
+        pipeline_def, context_definition, environment_config, ec_gen, run_id
+    )
+
 
 def _create_resource_gens(pipeline_def, context_def, environment, run_id):
     resource_gens = {}
 
     for resource_name in context_def.resources.keys():
-        resource_obj_or_gen = get_resource_or_gen(pipeline_def, context_def, resource_name, environment, run_id)
+        resource_obj_or_gen = get_resource_or_gen(
+            pipeline_def, context_def, resource_name, environment, run_id
+        )
         resource_gens[resource_name] = as_ensured_single_gen(resource_obj_or_gen)
-    
+
     return resource_gens
 
 
 def _get_resources_type(pipeline_def, environment_config):
     context_name = environment_config.context.name
     return pipeline_def.context_definitions[context_name].resources_type
+
 
 @contextmanager
 def _yield_resources(pipeline_def, context_def, environment, execution_context, run_id):
