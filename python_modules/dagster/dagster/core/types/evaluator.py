@@ -573,6 +573,8 @@ def create_fields_not_defined_error(composite_type, stack, undefined_fields):
 def create_field_not_defined_error(config_type, stack, received_field):
     check.param_invariant(config_type.has_fields, 'config_type')
     check.inst_param(stack, 'stack', EvaluationStack)
+    check.str_param(received_field, 'received_field')
+
     return EvaluationError(
         stack=stack,
         reason=DagsterEvaluationErrorReason.FIELD_NOT_DEFINED,
@@ -588,6 +590,8 @@ def create_field_not_defined_error(config_type, stack, received_field):
 def create_missing_required_field_error(config_type, stack, expected_field):
     check.param_invariant(config_type.has_fields, 'config_type')
     check.inst_param(stack, 'stack', EvaluationStack)
+    check.str_param(expected_field, 'expected_field')
+
     return EvaluationError(
         stack=stack,
         reason=DagsterEvaluationErrorReason.MISSING_REQUIRED_FIELD,
@@ -606,6 +610,7 @@ def create_missing_required_fields_error(composite_type, stack, missing_fields):
     check.inst_param(composite_type, 'composite_type', ConfigType)
     check.param_invariant(composite_type.has_fields, 'compositve_type')
     check.inst_param(stack, 'stack', EvaluationStack)
+    check.list_param(missing_fields, 'missing_fields', of_type=str)
 
     missing_fields = sorted(missing_fields)
     missing_field_defs = list(map(lambda mf: composite_type.fields[mf], missing_fields))
