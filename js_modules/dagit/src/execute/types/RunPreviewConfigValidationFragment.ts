@@ -13,7 +13,7 @@ export interface RunPreviewConfigValidationFragment_PipelineConfigValidationVali
 }
 
 export interface RunPreviewConfigValidationFragment_PipelineConfigValidationInvalid_errors {
-  __typename: "FieldNotDefinedConfigError" | "MissingFieldConfigError" | "RuntimeMismatchConfigError" | "SelectorTypeConfigError";
+  __typename: "FieldNotDefinedConfigError" | "FieldsNotDefinedConfigError" | "MissingFieldConfigError" | "RuntimeMismatchConfigError" | "SelectorTypeConfigError";
   reason: EvaluationErrorReason;
   message: string;
 }

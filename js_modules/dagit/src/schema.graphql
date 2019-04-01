@@ -185,6 +185,14 @@ type FieldNotDefinedConfigError implements PipelineConfigValidationError {
   fieldName: String!
 }
 
+type FieldsNotDefinedConfigError implements PipelineConfigValidationError {
+  message: String!
+  path: [String!]!
+  stack: EvaluationStack!
+  reason: EvaluationErrorReason!
+  fieldNames: [String!]!
+}
+
 type Input {
   solid: Solid!
   definition: InputDefinition!

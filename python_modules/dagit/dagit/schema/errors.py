@@ -9,6 +9,7 @@ from dagster.core.types.evaluator import (
     RuntimeMismatchErrorData,
     MissingFieldErrorData,
     FieldNotDefinedErrorData,
+    FieldsNotDefinedErrorData,
     SelectorTypeErrorData,
 )
 
@@ -155,6 +156,14 @@ class DauphinPipelineConfigValidationError(dauphin.Interface):
                 reason=error.reason,
                 field_name=error.error_data.field_name,
             )
+        elif isinstance(error.error_data, FieldsNotDefinedErrorData):
+            return graphene_info.schema.type_named('FieldsNotDefinedConfigError')(
+                message=error.message,
+                path=[],  # TODO: remove
+                stack=error.stack,
+                reason=error.reason,
+                field_names=error.error_data.field_names,
+            )
         elif isinstance(error.error_data, SelectorTypeErrorData):
             return graphene_info.schema.type_named('SelectorTypeConfigError')(
                 message=error.message,
@@ -197,6 +206,14 @@ class DauphinFieldNotDefinedConfigError(dauphin.ObjectType):
     field_name = dauphin.NonNull(dauphin.String)
 
 
+class DauphinFieldsNotDefinedConfigError(dauphin.ObjectType):
+    class Meta:
+        name = 'FieldsNotDefinedConfigError'
+        interfaces = (DauphinPipelineConfigValidationError,)
+
+    field_names = dauphin.non_null_list(dauphin.String)
+
+
 class DauphinSelectorTypeConfigError(dauphin.ObjectType):
     class Meta:
         name = 'SelectorTypeConfigError'
@@ -212,6 +229,7 @@ class DauphinEvaluationErrorReason(dauphin.Enum):
     RUNTIME_TYPE_MISMATCH = 'RUNTIME_TYPE_MISMATCH'
     MISSING_REQUIRED_FIELD = 'MISSING_REQUIRED_FIELD'
     FIELD_NOT_DEFINED = 'FIELD_NOT_DEFINED'
+    FIELDS_NOT_DEFINED = 'FIELDS_NOT_DEFINED'
     SELECTOR_FIELD_ERROR = 'SELECTOR_FIELD_ERROR'
 
 

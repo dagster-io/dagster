@@ -28,7 +28,7 @@ export interface StartPipelineExecution_startPipelineExecution_PipelineNotFoundE
 }
 
 export interface StartPipelineExecution_startPipelineExecution_PipelineConfigValidationInvalid_errors {
-  __typename: "FieldNotDefinedConfigError" | "MissingFieldConfigError" | "RuntimeMismatchConfigError" | "SelectorTypeConfigError";
+  __typename: "FieldNotDefinedConfigError" | "FieldsNotDefinedConfigError" | "MissingFieldConfigError" | "RuntimeMismatchConfigError" | "SelectorTypeConfigError";
   message: string;
 }
 

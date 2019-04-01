@@ -18,7 +18,15 @@ class DagsterEvaluationErrorReason(Enum):
     RUNTIME_TYPE_MISMATCH = 'RUNTIME_TYPE_MISMATCH'
     MISSING_REQUIRED_FIELD = 'MISSING_REQUIRED_FIELD'
     FIELD_NOT_DEFINED = 'FIELD_NOT_DEFINED'
+    FIELDS_NOT_DEFINED = 'FIELDS_NOT_DEFINED'
     SELECTOR_FIELD_ERROR = 'SELECTOR_FIELD_ERROR'
+
+
+class FieldsNotDefinedErrorData(namedtuple('_FieldsNotDefinedErrorData', 'field_names')):
+    def __new__(cls, field_names):
+        return super(FieldsNotDefinedErrorData, cls).__new__(
+            cls, check.list_param(field_names, 'field_names', of_type=str)
+        )
 
 
 class FieldNotDefinedErrorData(namedtuple('_FieldNotDefinedErrorData', 'field_name')):
@@ -56,6 +64,7 @@ class SelectorTypeErrorData(namedtuple('_SelectorTypeErrorData', 'dagster_type i
 
 ERROR_DATA_TYPES = (
     FieldNotDefinedErrorData,
+    FieldsNotDefinedErrorData,
     MissingFieldErrorData,
     RuntimeMismatchErrorData,
     SelectorTypeErrorData,
@@ -147,6 +156,8 @@ def friendly_string_for_error(error):
         return 'Undefined field "{field_name}"{type_msg} {path_msg}'.format(
             field_name=error.error_data.field_name, path_msg=path_msg, type_msg=type_msg
         )
+    elif error.reason == DagsterEvaluationErrorReason.FIELDS_NOT_DEFINED:
+        return error.message
     elif error.reason == DagsterEvaluationErrorReason.RUNTIME_TYPE_MISMATCH:
         return 'Type failure at path "{path}"{type_msg}. {message}.'.format(
             path=path, type_msg=type_msg, message=error.message
@@ -458,9 +469,16 @@ def validate_composite_config_value(composite_type, config_value, stack):
     # priori, we validate against the config. For permissive composites, we give the user an escape
     # hatch where they can specify arbitrary fields...
     if not composite_type.is_permissive_composite:
+        undefined_fields = []
         for received_field in incoming_fields:
             if received_field not in defined_fields:
-                yield create_field_not_defined_error(composite_type, stack, received_field)
+                undefined_fields.append(received_field)
+
+        if undefined_fields:
+            if len(undefined_fields) == 1:
+                yield create_field_not_defined_error(composite_type, stack, undefined_fields[0])
+            else:
+                yield create_fields_not_defined_error(composite_type, stack, undefined_fields)
 
     # ...However, for any fields the user *has* told us about, we validate against their config
     # specification.
@@ -507,6 +525,27 @@ def validate_list_value(list_type, config_value, stack):
             list_type.inner_type, item, stack_with_list_index(stack, index)
         ):
             yield error
+
+
+def create_fields_not_defined_error(composite_type, stack, undefined_fields):
+    check.inst_param(composite_type, 'config_type', ConfigType)
+    check.param_invariant(composite_type.has_fields, 'config_type')
+    check.inst_param(stack, 'stack', EvaluationStack)
+    check.list_param(undefined_fields, 'undefined_fields', of_type=str)
+
+    available_fields = sorted(list(composite_type.fields.keys()))
+    undefined_fields = sorted(undefined_fields)
+
+    return EvaluationError(
+        stack=stack,
+        reason=DagsterEvaluationErrorReason.FIELDS_NOT_DEFINED,
+        message='Fields "{undefined_fields}" are not defined {path_msg} Available fields: "{available_fields}"'.format(
+            undefined_fields=undefined_fields,
+            path_msg=_get_friendly_path_msg(stack),
+            available_fields=available_fields,
+        ),
+        error_data=FieldsNotDefinedErrorData(field_names=undefined_fields),
+    )
 
 
 def create_field_not_defined_error(config_type, stack, received_field):
