@@ -2,7 +2,7 @@ import os
 
 import boto3
 
-from dagster import check, resource, solid, Bool, Dict, Field, OutputDefinition, Path, String
+from dagster import solid, Bool, Dict, Field, OutputDefinition, Path, String
 from dagster.utils import safe_isfile, mkdir_p
 
 from .types import FileExistsAtPath
@@ -79,4 +79,3 @@ def download_from_s3(context):
         s3.download_file(Bucket=bucket, Key=key, Filename=target_file, Callback=logger)
 
     return target_file
-

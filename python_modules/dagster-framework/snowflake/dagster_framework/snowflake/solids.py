@@ -6,7 +6,7 @@ import pandas as pd
 import snowflake.connector
 
 import dagster_pandas as dagster_pd
-from dagster import check, InputDefinition, List, OutputDefinition, Result, SolidDefinition, String
+from dagster import check, List, OutputDefinition, Result, SolidDefinition
 
 from .configs import define_snowflake_config
 
@@ -117,8 +117,8 @@ class SnowflakeSolidDefinition(SolidDefinition):
                         'Executing SQL query %s %s'
                         % (query, 'with parameters ' + str(parameters) if parameters else '')
                     )
-                    cursor.execute(query, parameters)
-                    results.append(pd.DataFrame(cursor.fetchall()))
+                    cursor.execute(query, parameters)  # pylint: disable=E1101
+                    results.append(pd.DataFrame(cursor.fetchall()))  # pylint: disable=E1101
 
                 if not autocommit:
                     conn.commit()
