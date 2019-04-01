@@ -384,8 +384,9 @@ def validate_selector_config_value(selector_type, config_value, stack):
                 stack=stack,
                 reason=DagsterEvaluationErrorReason.SELECTOR_FIELD_ERROR,
                 message=(
-                    'Must specify a field if more one defined. Defined fields: {defined_fields}'
-                ).format(defined_fields=defined_fields),
+                    'Must specify a field {path_msg} if more than one field is defined. '
+                    'Defined fields: {defined_fields}'
+                ).format(defined_fields=defined_fields, path_msg=_get_friendly_path_msg(stack)),
                 error_data=SelectorTypeErrorData(dagster_type=selector_type, incoming_fields=[]),
             )
             return

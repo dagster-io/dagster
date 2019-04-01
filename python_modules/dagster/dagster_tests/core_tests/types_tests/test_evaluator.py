@@ -356,6 +356,18 @@ def test_example_selector_multiple_fields():
     assert result.errors[0].reason == DagsterEvaluationErrorReason.SELECTOR_FIELD_ERROR
 
 
+def test_selector_within_dict_no_subfields():
+    result = eval_config_value_from_dagster_type(
+        Dict({'selector': Field(ExampleSelector)}), {'selector': {}}
+    )
+    assert not result.success
+    assert len(result.errors) == 1
+    assert result.errors[0].message == (
+        "Must specify a field at path root:selector if more than one field "
+        "is defined. Defined fields: ['option_one', 'option_two']"
+    )
+
+
 SelectorWithDefaults = Selector({'default': Field(String, is_optional=True, default_value='foo')})
 
 
