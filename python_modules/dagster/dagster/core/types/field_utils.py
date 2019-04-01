@@ -1,4 +1,5 @@
 from dagster import check
+from dagster.core.errors import DagsterInvalidDefinitionError
 from .config import ConfigType, ConfigTypeAttributes, DEFAULT_TYPE_ATTRIBUTES
 from .default_applier import apply_default_values
 
@@ -26,6 +27,52 @@ class __InferOptionalCompositeFieldSentinel:
 FIELD_NO_DEFAULT_PROVIDED = __FieldValueSentinel
 
 INFER_OPTIONAL_COMPOSITE_FIELD = __InferOptionalCompositeFieldSentinel
+
+
+def check_using_facing_field_param(obj, param_name, error_context_str):
+    check.str_param(param_name, 'param_name')
+    check.str_param(error_context_str, 'error_context_str')
+
+    if isinstance(obj, FieldImpl):
+        return obj
+
+    from dagster.core.types.field import resolve_to_config_type
+    from .type_printer import print_config_type_to_string
+
+    config_type = resolve_to_config_type(obj)
+    if config_type:
+        raise DagsterInvalidDefinitionError(
+            (
+                'You have passed a config type "{printed_type}" in the parameter '
+                '"{param_name}" {error_context_str}. '
+                'You have likely forgot to wrap this type in a Field.'
+            ).format(
+                printed_type=print_config_type_to_string(config_type, with_lines=False),
+                error_context_str=error_context_str,
+                param_name=param_name,
+            )
+        )
+    else:
+        raise DagsterInvalidDefinitionError(
+            (
+                'You have passed an object {value_repr} of incorrect type '
+                '"{type_name}" in the parameter "{param_name}" '
+                '{error_context_str} where a Field was expected.'
+            ).format(
+                error_context_str=error_context_str,
+                param_name=param_name,
+                value_repr=repr(obj),
+                type_name=type(obj).__name__,
+            )
+        )
+
+
+def check_user_facing_opt_field_param(obj, param_name, error_context_str):
+    check.str_param(param_name, 'param_name')
+    check.str_param(error_context_str, 'error_context_str')
+    if obj is None:
+        return None
+    return check_using_facing_field_param(obj, param_name, error_context_str)
 
 
 def check_field_param(obj, param_name):
@@ -162,7 +209,27 @@ class DictCounter:
         return DictCounter._count
 
 
+def check_user_facing_fields_dict(fields, type_name_msg):
+    check.dict_param(fields, 'fields', key_type=str)
+    check.str_param(type_name_msg, 'type_name_msg')
+
+    sorted_field_names = sorted(list(fields.keys()))
+    for field_name, potential_field in fields.items():
+        check_using_facing_field_param(
+            potential_field,
+            'fields',
+            (
+                'and it is in the "{field_name}" entry of that dict. It is from '
+                'a {type_name_msg} with fields {field_names}'
+            ).format(
+                type_name_msg=type_name_msg, field_name=field_name, field_names=sorted_field_names
+            ),
+        )
+
+
 def NamedDict(name, fields, description=None, type_attributes=DEFAULT_TYPE_ATTRIBUTES):
+    check_user_facing_fields_dict(fields, 'NamedDict named "{}"'.format(name))
+
     class _NamedDict(_ConfigComposite):
         def __init__(self):
             super(_NamedDict, self).__init__(
@@ -177,6 +244,8 @@ def NamedDict(name, fields, description=None, type_attributes=DEFAULT_TYPE_ATTRI
 
 
 def Dict(fields):
+    check_user_facing_fields_dict(fields, 'Dict')
+
     class _Dict(_ConfigComposite):
         def __init__(self):
             key = 'Dict.' + str(DictCounter.get_next_count())
@@ -196,6 +265,9 @@ def PermissiveDict(fields=None):
     that are specified and passed in will be type checked. Other fields will be allowed, but
     will be ignored by the type checker.
     '''
+
+    if fields:
+        check_user_facing_fields_dict(fields, 'PermissiveDict')
 
     class _PermissiveDict(_ConfigComposite):
         def __init__(self):
@@ -223,6 +295,8 @@ def Selector(fields):
     Note that in other type systems this might be called an "input union."
     '''
 
+    check_user_facing_fields_dict(fields, 'Selector')
+
     class _Selector(_ConfigSelector):
         def __init__(self):
             key = 'Selector.' + str(DictCounter.get_next_count())
@@ -239,6 +313,7 @@ def Selector(fields):
 
 def NamedSelector(name, fields, description=None, type_attributes=DEFAULT_TYPE_ATTRIBUTES):
     check.str_param(name, 'name')
+    check_user_facing_fields_dict(fields, 'NamedSelector named "{}"'.format(name))
 
     class _NamedSelector(_ConfigSelector):
         def __init__(self):
