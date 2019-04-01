@@ -20121,14 +20121,14 @@ name of the pipeline are the same.</p>
 <dl class="method">
 <dt id="dagster.RepositoryDefinition.iterate_over_pipelines">
 <code class="descname">iterate_over_pipelines</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#dagster.RepositoryDefinition.iterate_over_pipelines" title="Permalink to this definition">¶</a></dt>
-<dd><p>Yield all pipelines one at a time</p>
+<dd><p>Returns list of pipelines. Exists for backwards compat. The name lies.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"></td>
 </tr>
-<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">Iterable[<a class="reference internal" href="#dagster.PipelineDefinition" title="dagster.PipelineDefinition">PipelineDefinition</a>]</td>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">List[<a class="reference internal" href="#dagster.PipelineDefinition" title="dagster.PipelineDefinition">PipelineDefinition</a>]</td>
 </tr>
 </tbody>
 </table>
