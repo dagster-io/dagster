@@ -7,6 +7,7 @@
 //==============================================================
 
 export enum EvaluationErrorReason {
+  FIELDS_NOT_DEFINED = "FIELDS_NOT_DEFINED",
   FIELD_NOT_DEFINED = "FIELD_NOT_DEFINED",
   MISSING_REQUIRED_FIELD = "MISSING_REQUIRED_FIELD",
   RUNTIME_TYPE_MISMATCH = "RUNTIME_TYPE_MISMATCH",
