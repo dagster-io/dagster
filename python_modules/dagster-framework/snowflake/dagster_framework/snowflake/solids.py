@@ -161,6 +161,12 @@ class SnowflakeSolidDefinition(SolidDefinition):
 
 
 class SnowflakeLoadSolidDefinition(SnowflakeSolidDefinition):
+    '''Snowflake Load.
+
+    This solid encapsulates loading data into Snowflake. Right now it only supports Parquet-based
+    loads, but over time we will add support for the remaining Snowflake load formats.
+    '''
+
     def __init__(self, name, src, table, description=None):
 
         sql_queries = [
