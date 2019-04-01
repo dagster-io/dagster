@@ -415,3 +415,36 @@ The preferred option is to make solid names unique. Prefixing solids in
 offending pipelines with the pipeline name would be a straightforward approach
 to solve this quickly. This would also guarantee that a later change would not
 trigger this error again.
+
+12. **Context is now a top-level argument to solids**
+
+This is not a breaking change, but it will improve developer ergonomics
+and is relatively straightforward to do.
+
+Before:
+
+```py
+    @solid
+    def a_solid(info):
+        info.context.info('something')
+        info.context.resources.a_resource.do_something()
+```
+
+After:
+
+```py
+    @solid
+    def a_solid(context):
+        context.log.info('something') # log in the name is more clear
+        context.resources.a_resource.do_something() # resources available top-level
+        context.run_id # run_id available as top level property
+        # no longer info.context.config as it was confusing
+        # when switching between resources, contexts, and solids
+        context.solid_config
+```
+
+The ability to refer to `info.context` will go away fairly
+(there is a legacy adapter class to enable backwards compatability
+and we do not want it to be immortal). We also want to enforce
+that the name of the first variable is context. We are only
+allowing info temporarily.
