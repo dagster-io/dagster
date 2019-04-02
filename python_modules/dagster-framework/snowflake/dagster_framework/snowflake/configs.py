@@ -92,7 +92,7 @@ def define_snowflake_config():
     validate_default_parameters = Field(
         Bool,
         description='''False by default. Raise an exception if either one of specified database,
-         schema or warehouse doesn’t exists if True.''',
+         schema or warehouse doesn't exists if True.''',
         is_optional=True,
     )
 
