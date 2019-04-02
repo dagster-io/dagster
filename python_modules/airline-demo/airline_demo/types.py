@@ -96,7 +96,7 @@ class Bytes(RuntimeType, BytesIO):
     def __init__(self):
         self.storage_plugins = {RunStorageMode.S3: BytesIOS3StoragePlugin}
         super(Bytes, self).__init__(
-            'Bytes', 'Bytes', description='Bytes representing the contents of a file'
+            'Bytes', 'Bytes', description='Bytes representing the contents of a file.'
         )
 
     def coerce_runtime_value(self, value):
@@ -112,7 +112,7 @@ class FileFromPath(RuntimeType):
         super(FileFromPath, self).__init__(
             'FileFromPath',
             'FileFromPath',
-            description='Bytes representing the contents of a file at a specific path',
+            description='Bytes representing the contents of a file at a specific path.',
         )
 
     def coerce_runtime_value(self, value):

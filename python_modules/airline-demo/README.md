@@ -136,7 +136,8 @@ order to understand what values are required, or what they do -- enabling more c
 <!-- FIXME -->
 <!-- ![Download pipeline config docs](img/download_pipeline_config_docs.png) -->
 
-### Custom types
+<!-- FIXME -->
+<!-- ### Custom types
 
 Note that the output of this solid is also a List -- in this case, a `List(FileExistsAtPath)`. We've
 defined a custom output type to illustrate the richness of the Dagster type system:
@@ -153,7 +154,7 @@ defined a custom output type to illustrate the richness of the Dagster type syst
             return self.throw_if_false(safe_isfile, value)
 
 By overriding `coerce_runtime_value` to check if a file actually exists at the specified path, we
-can lever the type system to make runtime guarantees about the integrity of our pipeline.
+can lever the type system to make runtime guarantees about the integrity of our pipeline. -->
 
 ### Robust solids for development workflows
 
