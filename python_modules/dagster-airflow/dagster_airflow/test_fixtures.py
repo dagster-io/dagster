@@ -17,9 +17,12 @@ from .factory import make_airflow_dag
 
 @pytest.fixture(scope='class')
 def dagster_airflow_python_operator_pipeline(request):
-    '''This is a test helper for running Dagster pipelines as Airflow DAGs.
+    '''This is a test fixture for running Dagster pipelines as Airflow DAGs.
 
     Usage:
+        # alternatively, import this fixture into your conftest.py
+        from dagster_airflow.test_fixtures import dagster_airflow_python_operator_pipeline
+
         class TestMyPipeline(object):
             pipeline = define_my_pipeline()
             config = {'solids': {'my_solid': 'foo'}}

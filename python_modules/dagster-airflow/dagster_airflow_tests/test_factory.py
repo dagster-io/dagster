@@ -7,7 +7,7 @@ import uuid
 
 from dagster.utils import script_relative_path
 
-from dagster_airflow.test_helpers import dagster_airflow_python_operator_pipeline
+from dagster_airflow.test_fixtures import dagster_airflow_python_operator_pipeline
 
 from .test_project.dagster_airflow_demo import define_demo_execution_pipeline
 
