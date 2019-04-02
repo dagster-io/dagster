@@ -105,8 +105,10 @@ export class PipelineJumpBar extends React.Component<IPipelineJumpBarProps> {
     if (event.key === "p") {
       activateSelect(this.select.current);
     }
-    if (event.key === "Escape" && this.props.selectedPipeline) {
-      this.props.onItemSelect(this.props.selectedPipeline);
+    if (this.select.current && this.select.current.state.isOpen) {
+      if (event.key === "Escape" && this.props.selectedPipeline) {
+        this.props.onItemSelect(this.props.selectedPipeline);
+      }
     }
   };
 

@@ -313,8 +313,10 @@ CodeMirror.registerHelper(
   "yaml",
   (
     editor: any,
-    options: { pipeline: ConfigEditorPipelineFragment }
+    options: { pipeline?: ConfigEditorPipelineFragment }
   ): { list: Array<CodemirrorHint> } => {
+    if (!options.pipeline) return { list: [] };
+
     const cur = editor.getCursor();
     const token: CodemirrorToken = editor.getTokenAt(cur);
 
@@ -472,7 +474,7 @@ export type ValidationResult =
       errors: Array<ValidationError>;
     };
 
-export type LintJson = (json: any) => Promise<ValidationResult>;
+export type LintJson = (json: object) => Promise<ValidationResult>;
 
 type ValidationError = {
   message: string;
@@ -541,7 +543,7 @@ CodeMirror.registerHelper(
     });
 
     if (doc.errors.length === 0) {
-      const json = doc.toJSON();
+      const json = doc.toJSON() || {};
       const validationResult = await checkConfig(json);
       if (!validationResult.isValid) {
         validationResult.errors.forEach(error => {

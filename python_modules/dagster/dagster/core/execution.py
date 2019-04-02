@@ -70,7 +70,7 @@ from .intermediates_manager import (
 
 from .log import DagsterLog
 
-from .object_store import FileSystemObjectStore, S3ObjectStore
+from .object_store import FileSystemObjectStore, S3ObjectStore, construct_type_registry
 
 from .runs import (
     DagsterRunMeta,
@@ -91,12 +91,13 @@ class PipelineExecutionResult(object):
     '''Result of execution of the whole pipeline. Returned eg by :py:func:`execute_pipeline`.
     '''
 
-    def __init__(self, pipeline, run_id, step_event_list):
+    def __init__(self, pipeline, run_id, step_event_list, reconstruct_context):
         self.pipeline = check.inst_param(pipeline, 'pipeline', PipelineDefinition)
         self.run_id = check.str_param(run_id, 'run_id')
         self.step_event_list = check.list_param(
             step_event_list, 'step_event_list', of_type=ExecutionStepEvent
         )
+        self.reconstruct_context = check.callable_param(reconstruct_context, 'reconstruct_context')
 
         solid_result_dict = self._context_solid_result_dict(step_event_list)
 
@@ -122,6 +123,7 @@ class PipelineExecutionResult(object):
             solid_result_dict[solid_name] = SolidExecutionResult(
                 self.pipeline.solid_named(solid_name),
                 dict(step_events_by_solid_by_kind[solid_name]),
+                self.reconstruct_context,
             )
         return solid_result_dict
 
@@ -163,11 +165,12 @@ class SolidExecutionResult(object):
       solid (SolidDefinition): Solid for which this result is
     '''
 
-    def __init__(self, solid, step_events_by_kind):
+    def __init__(self, solid, step_events_by_kind, reconstruct_context):
         self.solid = check.inst_param(solid, 'solid', Solid)
         self.step_events_by_kind = check.dict_param(
             step_events_by_kind, 'step_events_by_kind', key_type=StepKind, value_type=list
         )
+        self.reconstruct_context = check.callable_param(reconstruct_context, 'reconstruct_context')
 
     @property
     def transform(self):
@@ -186,28 +189,6 @@ class SolidExecutionResult(object):
     def output_expectations(self):
         return self.step_events_by_kind.get(StepKind.OUTPUT_EXPECTATION, [])
 
-    @staticmethod
-    def from_step_events(pipeline_context, step_events):
-        check.inst_param(pipeline_context, 'pipeline_context', SystemPipelineExecutionContext)
-        step_events = check.list_param(step_events, 'step_events', ExecutionStepEvent)
-        if step_events:
-            step_events_by_kind = defaultdict(list)
-
-            solid = None
-            for result in step_events:
-                if solid is None:
-                    solid = result.step.solid
-                check.invariant(result.step.solid is solid, 'Must all be from same solid')
-
-            for result in step_events:
-                step_events_by_kind[result.kind].append(result)
-
-            return SolidExecutionResult(
-                solid=step_events[0].step.solid, step_events_by_kind=dict(step_events_by_kind)
-            )
-        else:
-            check.failed("Cannot create SolidExecutionResult from empty list")
-
     @property
     def success(self):
         '''Whether the solid execution was successful'''
@@ -223,18 +204,28 @@ class SolidExecutionResult(object):
     @property
     def transformed_values(self):
         '''Return dictionary of transformed results, with keys being output names.
-        Returns None if execution result isn't a success.'''
+        Returns None if execution result isn't a success.
+
+        Reconstructs the pipeline context to materialize values.
+        '''
         if self.success and self.transforms:
-            return {
-                result.step_output_data.output_name: result.step_output_data.get_value()
-                for result in self.transforms
-            }
+            with self.reconstruct_context() as context:
+                values = {
+                    result.step_output_data.output_name: self._get_value(
+                        context, result.step_output_data
+                    )
+                    for result in self.transforms
+                }
+            return values
         else:
             return None
 
     def transformed_value(self, output_name=DEFAULT_OUTPUT):
         '''Returns transformed value either for DEFAULT_OUTPUT or for the output
-        given as output_name. Returns None if execution result isn't a success'''
+        given as output_name. Returns None if execution result isn't a success.
+
+        Reconstructs the pipeline context to materialize value.
+        '''
         check.str_param(output_name, 'output_name')
 
         if not self.solid.definition.has_output(output_name):
@@ -247,7 +238,10 @@ class SolidExecutionResult(object):
         if self.success:
             for result in self.transforms:
                 if result.step_output_data.output_name == output_name:
-                    return result.step_output_data.get_value()
+                    with self.reconstruct_context() as context:
+                        value = self._get_value(context, result.step_output_data)
+                    return value
+
             raise DagsterInvariantViolationError(
                 (
                     'Did not find result {output_name} in solid {self.solid.name} '
@@ -256,6 +250,13 @@ class SolidExecutionResult(object):
             )
         else:
             return None
+
+    def _get_value(self, context, step_output_data):
+        return context.intermediates_manager.get_intermediate(
+            context=context,
+            runtime_type=self.solid.output_def_named(step_output_data.output_name).runtime_type,
+            step_output_handle=step_output_data.step_output_handle,
+        )
 
     @property
     def failure_data(self):
@@ -366,6 +367,9 @@ def construct_run_storage(run_config, environment_config):
             return FileSystemRunStorage()
         elif run_config.storage_mode == RunStorageMode.IN_MEMORY:
             return InMemoryRunStorage()
+        elif run_config.storage_mode == RunStorageMode.S3:
+            # TODO: Revisit whether we want to use S3 run storage
+            return InMemoryRunStorage()
         else:
             check.failed('Unexpected enum {}'.format(run_config.storage_mode))
     elif environment_config.storage.storage_mode == 'filesystem':
@@ -383,32 +387,45 @@ def construct_run_storage(run_config, environment_config):
         )
 
 
-def construct_intermediates_manager(run_config, init_context, environment_config):
+def construct_intermediates_manager(run_config, environment_config, pipeline_def):
     check.inst_param(run_config, 'run_config', RunConfig)
-    check.inst_param(init_context, 'init_context', InitContext)
     check.inst_param(environment_config, 'environment_config', EnvironmentConfig)
+    check.inst_param(pipeline_def, 'pipeline_def', PipelineDefinition)
 
     if run_config.storage_mode:
         if run_config.storage_mode == RunStorageMode.FILESYSTEM:
-            return ObjectStoreIntermediatesManager(FileSystemObjectStore(init_context.run_id))
+            return ObjectStoreIntermediatesManager(
+                FileSystemObjectStore(
+                    run_config.run_id,
+                    construct_type_registry(pipeline_def, RunStorageMode.FILESYSTEM),
+                )
+            )
         elif run_config.storage_mode == RunStorageMode.IN_MEMORY:
             return InMemoryIntermediatesManager()
         elif run_config.storage_mode == RunStorageMode.S3:
             return ObjectStoreIntermediatesManager(
                 S3ObjectStore(
-                    environment_config.storage.storage_config['s3_bucket'], init_context.run_id
+                    environment_config.storage.storage_config['s3_bucket'],
+                    run_config.run_id,
+                    construct_type_registry(pipeline_def, RunStorageMode.S3),
                 )
             )
         else:
             check.failed('Unexpected enum {}'.format(run_config.storage_mode))
     elif environment_config.storage.storage_mode == 'filesystem':
-        return ObjectStoreIntermediatesManager(FileSystemObjectStore(init_context.run_id))
+        return ObjectStoreIntermediatesManager(
+            FileSystemObjectStore(
+                run_config.run_id, construct_type_registry(pipeline_def, RunStorageMode.FILESYSTEM)
+            )
+        )
     elif environment_config.storage.storage_mode == 'in_memory':
         return InMemoryIntermediatesManager()
     elif environment_config.storage.storage_mode == 's3':
         return ObjectStoreIntermediatesManager(
             S3ObjectStore(
-                environment_config.storage.storage_config['s3_bucket'], init_context.run_id
+                environment_config.storage.storage_config['s3_bucket'],
+                run_config.run_id,
+                construct_type_registry(pipeline_def, RunStorageMode.S3),
             )
         )
     elif environment_config.storage.storage_mode is None:
@@ -426,6 +443,23 @@ def yield_pipeline_execution_context(pipeline_def, environment_dict, run_config)
     check.inst_param(run_config, 'run_config', RunConfig)
 
     environment_config = create_environment_config(pipeline_def, environment_dict)
+    intermediates_manager = construct_intermediates_manager(
+        run_config, environment_config, pipeline_def
+    )
+    with _pipeline_execution_context_manager(
+        pipeline_def, environment_config, run_config, intermediates_manager
+    ) as context:
+        yield context
+
+
+@contextmanager
+def _pipeline_execution_context_manager(
+    pipeline_def, environment_config, run_config, intermediates_manager
+):
+    check.inst_param(pipeline_def, 'pipeline_def', PipelineDefinition)
+    check.inst_param(environment_config, 'environment_config', EnvironmentConfig)
+    check.inst_param(run_config, 'run_config', RunConfig)
+    check.inst_param(intermediates_manager, 'intermediates_manager', IntermediatesManager)
 
     context_definition = pipeline_def.context_definitions[environment_config.context.name]
 
@@ -463,7 +497,7 @@ def yield_pipeline_execution_context(pipeline_def, environment_dict, run_config)
                 resources,
                 environment_config,
                 run_storage,
-                construct_intermediates_manager(run_config, init_context, environment_config),
+                intermediates_manager,
             )
 
 
@@ -564,6 +598,48 @@ def get_resource_or_gen(pipeline_def, context_definition, resource_name, environ
     )
 
 
+def _execute_pipeline_iterator(pipeline_context):
+    check.inst_param(pipeline_context, 'pipeline_context', SystemPipelineExecutionContext)
+    pipeline_context.events.pipeline_start()
+
+    execution_plan = create_execution_plan_core(pipeline_context)
+
+    steps = execution_plan.topological_steps()
+
+    if not steps:
+        pipeline_context.log.debug(
+            'Pipeline {pipeline} has no nodes and no execution will happen'.format(
+                pipeline=pipeline_context.pipeline_def.display_name
+            )
+        )
+        pipeline_context.events.pipeline_success()
+        return
+
+    _setup_reexecution(pipeline_context.run_config, pipeline_context, execution_plan)
+
+    pipeline_context.log.debug(
+        'About to execute the compute node graph in the following order {order}'.format(
+            order=[step.key for step in steps]
+        )
+    )
+
+    check.invariant(len(steps[0].step_inputs) == 0)
+
+    pipeline_success = True
+
+    for step_event in invoke_executor_on_plan(
+        pipeline_context, execution_plan, pipeline_context.run_config.step_keys_to_execute
+    ):
+        if step_event.is_step_failure:
+            pipeline_success = False
+        yield step_event
+
+    if pipeline_success:
+        pipeline_context.events.pipeline_success()
+    else:
+        pipeline_context.events.pipeline_failure()
+
+
 def execute_pipeline_iterator(pipeline, environment_dict=None, run_config=None):
     '''Returns iterator that yields :py:class:`SolidExecutionResult` for each
     solid executed in the pipeline.
@@ -578,49 +654,15 @@ def execute_pipeline_iterator(pipeline, environment_dict=None, run_config=None):
     check.inst_param(pipeline, 'pipeline', PipelineDefinition)
     environment_dict = check.opt_dict_param(environment_dict, 'environment_dict')
     run_config = check_run_config_param(run_config)
+    environment_config = create_environment_config(pipeline, environment_dict)
+    intermediates_manager = construct_intermediates_manager(
+        run_config, environment_config, pipeline
+    )
 
-    with yield_pipeline_execution_context(
-        pipeline, environment_dict, run_config
+    with _pipeline_execution_context_manager(
+        pipeline, environment_config, run_config, intermediates_manager
     ) as pipeline_context:
-
-        pipeline_context.events.pipeline_start()
-
-        execution_plan = create_execution_plan_core(pipeline_context)
-
-        steps = execution_plan.topological_steps()
-
-        if not steps:
-            pipeline_context.log.debug(
-                'Pipeline {pipeline} has no nodes and no execution will happen'.format(
-                    pipeline=pipeline.display_name
-                )
-            )
-            pipeline_context.events.pipeline_success()
-            return
-
-        _setup_reexecution(run_config, pipeline_context, execution_plan)
-
-        pipeline_context.log.debug(
-            'About to execute the compute node graph in the following order {order}'.format(
-                order=[step.key for step in steps]
-            )
-        )
-
-        check.invariant(len(steps[0].step_inputs) == 0)
-
-        pipeline_success = True
-
-        for step_event in invoke_executor_on_plan(
-            pipeline_context, execution_plan, run_config.step_keys_to_execute
-        ):
-            if step_event.is_step_failure:
-                pipeline_success = False
-            yield step_event
-
-        if pipeline_success:
-            pipeline_context.events.pipeline_success()
-        else:
-            pipeline_context.events.pipeline_failure()
+        return _execute_pipeline_iterator(pipeline_context)
 
 
 def execute_pipeline(pipeline, environment_dict=None, run_config=None):
@@ -641,14 +683,22 @@ def execute_pipeline(pipeline, environment_dict=None, run_config=None):
     check.inst_param(pipeline, 'pipeline', PipelineDefinition)
     environment_dict = check.opt_dict_param(environment_dict, 'environment_dict')
     run_config = check_run_config_param(run_config)
+    environment_config = create_environment_config(pipeline, environment_dict)
+    intermediates_manager = construct_intermediates_manager(
+        run_config, environment_config, pipeline
+    )
+
+    with _pipeline_execution_context_manager(
+        pipeline, environment_config, run_config, intermediates_manager
+    ) as pipeline_context:
+        step_event_list = list(_execute_pipeline_iterator(pipeline_context))
 
     return PipelineExecutionResult(
         pipeline,
         run_config.run_id,
-        list(
-            execute_pipeline_iterator(
-                pipeline=pipeline, environment_dict=environment_dict, run_config=run_config
-            )
+        step_event_list,
+        lambda: _pipeline_execution_context_manager(
+            pipeline, environment_config, run_config, intermediates_manager
         ),
     )
 

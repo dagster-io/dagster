@@ -156,15 +156,13 @@ def test_nested_error_two_fields_not_defined():
     result = eval_config_value_from_dagster_type(DoubleLevelDict, value)
 
     assert not result.success
-    assert len(result.errors) == 2
+    assert len(result.errors) == 1
 
-    field_one_error = get_field_name_error(result, 'no_field_one')
-    field_two_error = get_field_name_error(result, 'no_field_two')
+    fields_error = result.errors[0]
 
-    assert field_one_error.reason == DagsterEvaluationErrorReason.FIELD_NOT_DEFINED
-    assert field_one_error.error_data.field_name == 'no_field_one'
-    assert field_two_error.reason == DagsterEvaluationErrorReason.FIELD_NOT_DEFINED
-    assert field_two_error.error_data.field_name == 'no_field_two'
+    assert fields_error.reason == DagsterEvaluationErrorReason.FIELDS_NOT_DEFINED
+
+    assert fields_error.error_data.field_names == ['no_field_one', 'no_field_two']
 
 
 def test_nested_error_missing_fields():
@@ -183,16 +181,11 @@ def test_nested_error_multiple_missing_fields():
 
     result = eval_config_value_from_dagster_type(DoubleLevelDict, value)
     assert not result.success
-    assert len(result.errors) == 2
+    assert len(result.errors) == 1
 
-    assert (
-        get_field_name_error(result, 'bool_field').reason
-        == DagsterEvaluationErrorReason.MISSING_REQUIRED_FIELD
-    )
-    assert (
-        get_field_name_error(result, 'string_field').reason
-        == DagsterEvaluationErrorReason.MISSING_REQUIRED_FIELD
-    )
+    fields_error = result.errors[0]
+    assert fields_error.reason == DagsterEvaluationErrorReason.MISSING_REQUIRED_FIELDS
+    assert fields_error.error_data.field_names == ['bool_field', 'string_field']
 
 
 def test_nested_missing_and_not_defined():
@@ -200,17 +193,16 @@ def test_nested_missing_and_not_defined():
 
     result = eval_config_value_from_dagster_type(DoubleLevelDict, value)
     assert not result.success
-    assert len(result.errors) == 3
+    assert len(result.errors) == 2
 
-    assert (
-        get_field_name_error(result, 'bool_field').reason
-        == DagsterEvaluationErrorReason.MISSING_REQUIRED_FIELD
-    )
+    fields_error = [
+        error
+        for error in result.errors
+        if error.reason == DagsterEvaluationErrorReason.MISSING_REQUIRED_FIELDS
+    ][0]
 
-    assert (
-        get_field_name_error(result, 'string_field').reason
-        == DagsterEvaluationErrorReason.MISSING_REQUIRED_FIELD
-    )
+    assert fields_error.reason == DagsterEvaluationErrorReason.MISSING_REQUIRED_FIELDS
+    assert fields_error.error_data.field_names == ['bool_field', 'string_field']
 
     assert (
         get_field_name_error(result, 'not_defined').reason
@@ -354,6 +346,18 @@ def test_example_selector_multiple_fields():
     assert not result.success
     assert len(result.errors) == 1
     assert result.errors[0].reason == DagsterEvaluationErrorReason.SELECTOR_FIELD_ERROR
+
+
+def test_selector_within_dict_no_subfields():
+    result = eval_config_value_from_dagster_type(
+        Dict({'selector': Field(ExampleSelector)}), {'selector': {}}
+    )
+    assert not result.success
+    assert len(result.errors) == 1
+    assert result.errors[0].message == (
+        "Must specify a field at path root:selector if more than one field "
+        "is defined. Defined fields: ['option_one', 'option_two']"
+    )
 
 
 SelectorWithDefaults = Selector({'default': Field(String, is_optional=True, default_value='foo')})

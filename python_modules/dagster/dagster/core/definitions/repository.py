@@ -81,21 +81,21 @@ class RepositoryDefinition(object):
         self._pipeline_cache[name] = check.inst(
             pipeline,
             PipelineDefinition,
-            'Function passed into pipeline_dict with key {key} must return a PipelineDefinition'.format(
-                key=name
-            ),
+            (
+                'Function passed into pipeline_dict with key {key} must return a '
+                'PipelineDefinition'
+            ).format(key=name),
         )
 
         return pipeline
 
     def iterate_over_pipelines(self):
-        '''Yield all pipelines one at a time
+        '''Returns list of pipelines. Exists for backwards compat. The name lies.
 
         Returns:
-            Iterable[PipelineDefinition]:
+            List[PipelineDefinition]:
         '''
-        for name in self.pipeline_dict.keys():
-            yield self.get_pipeline(name)
+        return self.get_all_pipelines()
 
     def get_all_pipelines(self):
         '''Return all pipelines as a list
@@ -104,10 +104,9 @@ class RepositoryDefinition(object):
             List[PipelineDefinition]:
 
         '''
-        pipelines = list(self.iterate_over_pipelines())
-
+        pipelines = list(map(self.get_pipeline, self.pipeline_dict.keys()))
+        # This does uniqueness check
         self._construct_solid_defs(pipelines)
-
         return pipelines
 
     def _construct_solid_defs(self, pipelines):

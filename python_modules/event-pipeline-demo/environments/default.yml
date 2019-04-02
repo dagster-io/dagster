@@ -1,0 +1,32 @@
+context:
+  default:
+    config:
+      log_level: DEBUG
+         
+solids:
+  download_from_s3:
+    config:
+      bucket: "elementl-public"
+      key: "example-json.gz"
+      skip_if_present: true
+      target_folder: "/tmp/dagster/events"
+  snowflake_load:
+    config:
+      account: "<< SET ME >>"
+      user: "<< SET ME >>"
+      password: "<< SET ME >>"
+      warehouse: "TINY_WAREHOUSE"
+      database: "TESTDB"
+      schema: "TESTSCHEMA"
+  event_ingest:
+    config:
+      spark_outputs: ["/tmp/dagster/events"]
+      application_jar: "events-assembly-0.1.0-SNAPSHOT.jar"
+      deploy_mode: "client"
+      main_class: "io.dagster.events.EventPipeline"
+      application_arguments: "--local-path /tmp/dagster/events --date 2019-01-01"
+      master_url: "local[*]"
+      spark_conf:
+        spark:
+          app:
+            name: "test_app"

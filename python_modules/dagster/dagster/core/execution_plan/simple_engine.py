@@ -6,8 +6,6 @@ import six
 
 from dagster import check
 
-from dagster.utils.logging import get_formatted_stack_trace
-
 from dagster.utils.timing import time_execution_scope
 
 from dagster.core.errors import (
@@ -16,6 +14,7 @@ from dagster.core.errors import (
     DagsterRuntimeCoercionError,
     DagsterExecutionStepExecutionError,
     DagsterTypeError,
+    DagsterStepOutputNotFoundError,
 )
 
 from dagster.core.execution_context import (
@@ -70,14 +69,17 @@ def start_inprocess_executor(
 
             step_context = pipeline_context.for_step(step)
 
-            if not intermediates_manager.all_inputs_covered(step_context, step):
-                expected_outputs = [ni.prev_output_handle for ni in step.step_inputs]
+            uncovered_inputs = intermediates_manager.uncovered_inputs(step_context, step)
+            if uncovered_inputs:
+                # In partial pipeline execution, we may end up here without having validated the
+                # missing dependent outputs were optional
+                _assert_missing_inputs_optional(uncovered_inputs, execution_plan, step.key)
 
                 step_context.log.info(
                     (
-                        'Not all inputs covered for {step}. Not executing. Output need for '
-                        'inputs {expected_outputs}'
-                    ).format(expected_outputs=expected_outputs, step=step.key)
+                        'Not all inputs covered for {step}. Not executing. Output missing for '
+                        'inputs: {uncovered_inputs}'
+                    ).format(uncovered_inputs=uncovered_inputs, step=step.key)
                 )
                 continue
 
@@ -94,6 +96,21 @@ def start_inprocess_executor(
                     step_event.reraise_user_error()
 
                 yield step_event
+
+
+def _assert_missing_inputs_optional(uncovered_inputs, execution_plan, step_key):
+    nonoptionals = [
+        handle for handle in uncovered_inputs if not execution_plan.get_step_output(handle).optional
+    ]
+    if nonoptionals:
+        raise DagsterStepOutputNotFoundError(
+            (
+                'When executing {step} discovered required outputs missing '
+                'from previous step: {nonoptionals}'
+            ).format(nonoptionals=nonoptionals, step=step_key),
+            step_key=nonoptionals[0].step_key,
+            output_name=nonoptionals[0].output_name,
+        )
 
 
 def _create_input_values(step_context, intermediates_manager):
@@ -129,9 +146,8 @@ def execute_step_in_memory(step_context, inputs, intermediates_manager):
             )
             yield step_event
     except DagsterError as dagster_error:
-        step_context.log.error(str(dagster_error))
 
-        exc_info = (
+        user_facing_exc_info = (
             # pylint does not know original_exc_info exists is is_user_code_error is true
             # pylint: disable=no-member
             dagster_error.original_exc_info
@@ -140,15 +156,18 @@ def execute_step_in_memory(step_context, inputs, intermediates_manager):
         )
 
         if step_context.executor_config.throw_on_user_error:
-            six.reraise(*exc_info)
+            six.reraise(*user_facing_exc_info)
 
-        error_info = serializable_error_info_from_exc_info(exc_info)
+        error_info = serializable_error_info_from_exc_info(user_facing_exc_info)
+
+        # This logs at ERROR level
+        step_context.events.execution_plan_step_failure(step_context.step.key, user_facing_exc_info)
 
         yield ExecutionStepEvent.step_failure_event(
             step_context=step_context,
             step_failure_data=StepFailureData(
                 error_message=error_info.message,
-                error_cls_name=exc_info[0].__name__,  # 0 is the exception type
+                error_cls_name=user_facing_exc_info[0].__name__,  # 0 is the exception type
                 stack=error_info.stack,
             ),
         )
@@ -184,11 +203,13 @@ def _error_check_step_output_values(step, step_output_values):
 
     for step_output_def in step.step_outputs:
         if not step_output_def.name in seen_outputs and not step_output_def.optional:
-            raise DagsterInvariantViolationError(
+            raise DagsterStepOutputNotFoundError(
                 'Core transform for solid "{step.solid.name}" did not return an output '
                 'for non-optional output "{step_output_def.name}"'.format(
                     step=step, step_output_def=step_output_def
-                )
+                ),
+                step_key=step.key,
+                output_name=step_output_def.name,
             )
 
 
@@ -207,11 +228,10 @@ def _execute_steps_core_loop(step_context, inputs, intermediates_manager):
     step = step_context.step
     step_context.events.execution_plan_step_start(step.key)
 
-    try:
-        with time_execution_scope() as timer_result:
-            step_output_value_iterator = check.generator(
-                _iterate_step_output_values_within_boundary(step_context, evaluated_inputs)
-            )
+    with time_execution_scope() as timer_result:
+        step_output_value_iterator = check.generator(
+            _iterate_step_output_values_within_boundary(step_context, evaluated_inputs)
+        )
 
         for step_output_value in check.generator(
             _error_check_step_output_values(step_context.step, step_output_value_iterator)
@@ -219,15 +239,7 @@ def _execute_steps_core_loop(step_context, inputs, intermediates_manager):
 
             yield _create_step_event(step_context, step_output_value, intermediates_manager)
 
-        step_context.events.execution_plan_step_success(step.key, timer_result.millis)
-
-    except DagsterError as e:
-        # The step compute_fn and output error checking both raise exceptions. Catch
-        # and re-throw these to ensure that the step is always marked as failed.
-        step_context.events.execution_plan_step_failure(step.key, sys.exc_info())
-        stack_trace = get_formatted_stack_trace(e)
-        step_context.log.error(str(e), stack_trace=stack_trace)
-        six.reraise(*sys.exc_info())
+    step_context.events.execution_plan_step_success(step.key, timer_result.millis)
 
 
 def _create_step_event(step_context, step_output_value, intermediates_manager):
@@ -261,9 +273,7 @@ def _create_step_event(step_context, step_output_value, intermediates_manager):
         return ExecutionStepEvent.step_output_event(
             step_context=step_context,
             step_output_data=StepOutputData(
-                step_output_handle=step_output_handle,
-                value_repr=repr(value),
-                intermediates_manager=intermediates_manager,
+                step_output_handle=step_output_handle, value_repr=repr(value)
             ),
         )
     except DagsterRuntimeCoercionError as e:

@@ -68,7 +68,9 @@ interface Error {
 enum EvaluationErrorReason {
   RUNTIME_TYPE_MISMATCH
   MISSING_REQUIRED_FIELD
+  MISSING_REQUIRED_FIELDS
   FIELD_NOT_DEFINED
+  FIELDS_NOT_DEFINED
   SELECTOR_FIELD_ERROR
 }
 
@@ -185,6 +187,14 @@ type FieldNotDefinedConfigError implements PipelineConfigValidationError {
   fieldName: String!
 }
 
+type FieldsNotDefinedConfigError implements PipelineConfigValidationError {
+  message: String!
+  path: [String!]!
+  stack: EvaluationStack!
+  reason: EvaluationErrorReason!
+  fieldNames: [String!]!
+}
+
 type Input {
   solid: Solid!
   definition: InputDefinition!
@@ -275,6 +285,18 @@ type MissingFieldConfigError implements PipelineConfigValidationError {
   stack: EvaluationStack!
   reason: EvaluationErrorReason!
   field: ConfigTypeField!
+}
+
+type MissingFieldsConfigError implements PipelineConfigValidationError {
+  message: String!
+  path: [String!]!
+  stack: EvaluationStack!
+  reason: EvaluationErrorReason!
+  fields: [ConfigTypeField!]!
+}
+
+type MissingRunIdErrorEvent {
+  invalidRunId: String!
 }
 
 type Mutation {
@@ -424,9 +446,23 @@ type PipelineRun {
 
 union PipelineRunEvent = LogMessageEvent | PipelineStartEvent | PipelineSuccessEvent | PipelineFailureEvent | ExecutionStepStartEvent | ExecutionStepSuccessEvent | ExecutionStepOutputEvent | ExecutionStepFailureEvent | PipelineProcessStartEvent | PipelineProcessStartedEvent | StepMaterializationEvent
 
-type PipelineRunLogsSubscriptionPayload {
+type PipelineRunLogsSubscriptionMissingRunIdFailure {
+  missingRunId: String!
+}
+
+union PipelineRunLogsSubscriptionPayload = PipelineRunLogsSubscriptionSuccess | PipelineRunLogsSubscriptionMissingRunIdFailure
+
+type PipelineRunLogsSubscriptionSuccess {
   messages: [PipelineRunEvent!]!
 }
+
+type PipelineRunNotFoundError implements Error {
+  message: String!
+  stack: [String!]!
+  runId: String!
+}
+
+union PipelineRunOrError = PipelineRun | PipelineRunNotFoundError
 
 enum PipelineRunStatus {
   NOT_STARTED
@@ -469,7 +505,7 @@ type Query {
   configTypeOrError(pipelineName: String!, configTypeName: String!): ConfigTypeOrError!
   runtimeTypeOrError(pipelineName: String!, runtimeTypeName: String!): RuntimeTypeOrError!
   pipelineRuns: [PipelineRun!]!
-  pipelineRun(runId: ID!): PipelineRun
+  pipelineRunOrError(runId: ID!): PipelineRunOrError!
   isPipelineConfigValid(pipeline: ExecutionSelector!, config: PipelineConfig): PipelineConfigValidationResult!
   executionPlan(pipeline: ExecutionSelector!, config: PipelineConfig): ExecutionPlanResult!
 }

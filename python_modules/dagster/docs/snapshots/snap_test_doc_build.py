@@ -345,6 +345,14 @@ take a few minutes.</p>
 </li>
 </ol>
 <p>Have fun coding!</p>
+<ol class="arabic simple" start="6">
+<li>Set up pre-commit hooks</li>
+</ol>
+<p>We use black to enforce a consistent code style. To set up a pre-commit hook, just run:</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$</span> pre-commit install
+</pre></div>
+</div>
+<p>(The <cite>pre-commit</cite> package is installed in dagster’s dev-requirements.)</p>
 <div class="section" id="running-dagit-webapp-in-development">
 <h3>Running dagit webapp in development<a class="headerlink" href="#running-dagit-webapp-in-development" title="Permalink to this headline">¶</a></h3>
 <p>For development, run the dagit GraphQL server on a different port than the
@@ -1938,6 +1946,16 @@ take a few minutes.
 
 Have fun coding!
 
+6. Set up pre-commit hooks
+
+We use black to enforce a consistent code style. To set up a pre-commit hook, just run:
+
+.. code-block:: console
+
+    $ pre-commit install
+
+(The `pre-commit` package is installed in dagster's dev-requirements.)
+
 Running dagit webapp in development
 -------------------------------------
 For development, run the dagit GraphQL server on a different port than the
@@ -2846,7 +2864,7 @@ Properties:
 
 Note you can use S3FileHandle and PathToFile as if they were just "normal types" as well.
 
-5. **ConfigDictionary --> Dict**
+5. **ConfigDictionary --> NamedDict or Dict**
 
 We have a much less verbose API for building configuration schema:
 
@@ -2857,7 +2875,8 @@ E   AttributeError: module 'dagster.core.types' has no attribute 'ConfigDictiona
 ```
 
 First, we can discouraging the use of the `types` namespace. Instead just `from dagster import Dict` (or whatever class directly).
-Second, `ConfigDictionary` is now just `Dict`.
+Second, `ConfigDictionary` is now just `NamedDict`. If the name of the type wasn't particularily relevant
+you can also eliminate that and just use `Dict`.
 Third, you do not have to name it. The net result is much nicer:
 
 Before:
@@ -3086,7 +3105,9 @@ Before:
 After:
 
 ```py
-    yield ExecutionContext(
+    # because you no longer need the with clause here you can just return
+    # the ExecutionContext object directly
+    return ExecutionContext(
         loggers=[define_colored_console_logger('dagster', log_level)],
         resources=resources,
         tags={
@@ -3124,6 +3145,72 @@ After
 def return_none(context):
     return None # Because of Nullable wrapper, this is ok
 ```
+
+11. **Solid name uniqueness per-repository enforce by default**
+
+Error:
+
+```
+ dagster.core.errors.DagsterInvalidDefinitionError: Trying to add duplicate solid def solid_one in pipeline_two, Already saw in pipeline_one.
+```
+
+We enforce that solid names are unique per-repository by default. This is to setup
+a future where you can look up a solid by name in a repository and view that as an
+independent entity, among other things. An example of a feature this enables is the
+ability to index back into all the places where that solid is used.
+
+As a temporary measure, we have added an `enforce_uniqueness` boolean flag to
+RepositoryDefinition construction. However, this will not be supported forever as
+we will be building features that rely on that property.
+
+Fix is:
+
+```py
+
+    return RepositoryDefinition(
+        name='repo_name',
+        enforce_uniqueness=True, # add this flag
+        pipeline_dict={...}
+    )
+```
+
+The preferred option is to make solid names unique. Prefixing solids in
+offending pipelines with the pipeline name would be a straightforward approach
+to solve this quickly. This would also guarantee that a later change would not
+trigger this error again.
+
+12. **Context is now a top-level argument to solids**
+
+This is not a breaking change, but it will improve developer ergonomics
+and is relatively straightforward to do.
+
+Before:
+
+```py
+    @solid
+    def a_solid(info):
+        info.context.info('something')
+        info.context.resources.a_resource.do_something()
+```
+
+After:
+
+```py
+    @solid
+    def a_solid(context):
+        context.log.info('something') # log in the name is more clear
+        context.resources.a_resource.do_something() # resources available top-level
+        context.run_id # run_id available as top level property
+        # no longer info.context.config as it was confusing
+        # when switching between resources, contexts, and solids
+        context.solid_config
+```
+
+The ability to refer to `info.context` will go away fairly
+(there is a legacy adapter class to enable backwards compatability
+and we do not want it to be immortal). We also want to enforce
+that the name of the first variable is context. We are only
+allowing info temporarily.
 """
 
 snapshots['test_build_all_docs 22'] = '''An actual DAG
@@ -20067,14 +20154,14 @@ name of the pipeline are the same.</p>
 <dl class="method">
 <dt id="dagster.RepositoryDefinition.iterate_over_pipelines">
 <code class="descname">iterate_over_pipelines</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#dagster.RepositoryDefinition.iterate_over_pipelines" title="Permalink to this definition">¶</a></dt>
-<dd><p>Yield all pipelines one at a time</p>
+<dd><p>Returns list of pipelines. Exists for backwards compat. The name lies.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"></td>
 </tr>
-<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">Iterable[<a class="reference internal" href="#dagster.PipelineDefinition" title="dagster.PipelineDefinition">PipelineDefinition</a>]</td>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">List[<a class="reference internal" href="#dagster.PipelineDefinition" title="dagster.PipelineDefinition">PipelineDefinition</a>]</td>
 </tr>
 </tbody>
 </table>
@@ -20570,7 +20657,7 @@ SystemPipelineExecutionContextCreationData although that seemed excessively verb
 
 <dl class="class">
 <dt id="dagster.PipelineExecutionResult">
-<em class="property">class </em><code class="descclassname">dagster.</code><code class="descname">PipelineExecutionResult</code><span class="sig-paren">(</span><em>pipeline</em>, <em>run_id</em>, <em>step_event_list</em><span class="sig-paren">)</span><a class="headerlink" href="#dagster.PipelineExecutionResult" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">dagster.</code><code class="descname">PipelineExecutionResult</code><span class="sig-paren">(</span><em>pipeline</em>, <em>run_id</em>, <em>step_event_list</em>, <em>reconstruct_context</em><span class="sig-paren">)</span><a class="headerlink" href="#dagster.PipelineExecutionResult" title="Permalink to this definition">¶</a></dt>
 <dd><p>Result of execution of the whole pipeline. Returned eg by <a class="reference internal" href="#dagster.execute_pipeline" title="dagster.execute_pipeline"><code class="xref py py-func docutils literal notranslate"><span class="pre">execute_pipeline()</span></code></a>.</p>
 <dl class="method">
 <dt id="dagster.PipelineExecutionResult.result_for_solid">
@@ -20601,7 +20688,7 @@ SystemPipelineExecutionContextCreationData although that seemed excessively verb
 
 <dl class="class">
 <dt id="dagster.SolidExecutionResult">
-<em class="property">class </em><code class="descclassname">dagster.</code><code class="descname">SolidExecutionResult</code><span class="sig-paren">(</span><em>solid</em>, <em>step_events_by_kind</em><span class="sig-paren">)</span><a class="headerlink" href="#dagster.SolidExecutionResult" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">dagster.</code><code class="descname">SolidExecutionResult</code><span class="sig-paren">(</span><em>solid</em>, <em>step_events_by_kind</em>, <em>reconstruct_context</em><span class="sig-paren">)</span><a class="headerlink" href="#dagster.SolidExecutionResult" title="Permalink to this definition">¶</a></dt>
 <dd><p>Execution result for one solid of the pipeline.</p>
 <dl class="attribute">
 <dt id="dagster.SolidExecutionResult.context">
@@ -20631,7 +20718,8 @@ SystemPipelineExecutionContextCreationData although that seemed excessively verb
 <dt id="dagster.SolidExecutionResult.transformed_value">
 <code class="descname">transformed_value</code><span class="sig-paren">(</span><em>output_name=\'result\'</em><span class="sig-paren">)</span><a class="headerlink" href="#dagster.SolidExecutionResult.transformed_value" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns transformed value either for DEFAULT_OUTPUT or for the output
-given as output_name. Returns None if execution result isn’t a success</p>
+given as output_name. Returns None if execution result isn’t a success.</p>
+<p>Reconstructs the pipeline context to materialize value.</p>
 </dd></dl>
 
 <dl class="attribute">
@@ -20639,6 +20727,7 @@ given as output_name. Returns None if execution result isn’t a success</p>
 <code class="descname">transformed_values</code><a class="headerlink" href="#dagster.SolidExecutionResult.transformed_values" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return dictionary of transformed results, with keys being output names.
 Returns None if execution result isn’t a success.</p>
+<p>Reconstructs the pipeline context to materialize values.</p>
 </dd></dl>
 
 </dd></dl>
@@ -20786,7 +20875,7 @@ snapshots['test_build_all_docs 54'] = '''
 
 <dl class="function">
 <dt id="dagster.as_dagster_type">
-<code class="descclassname">dagster.</code><code class="descname">as_dagster_type</code><span class="sig-paren">(</span><em>existing_type</em>, <em>name=None</em>, <em>description=None</em>, <em>input_schema=None</em>, <em>output_schema=None</em>, <em>serialization_strategy=None</em><span class="sig-paren">)</span><a class="headerlink" href="#dagster.as_dagster_type" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">dagster.</code><code class="descname">as_dagster_type</code><span class="sig-paren">(</span><em>existing_type</em>, <em>name=None</em>, <em>description=None</em>, <em>input_schema=None</em>, <em>output_schema=None</em>, <em>serialization_strategy=None</em>, <em>storage_plugins=None</em><span class="sig-paren">)</span><a class="headerlink" href="#dagster.as_dagster_type" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="attribute">
@@ -20861,7 +20950,7 @@ snapshots['test_build_all_docs 54'] = '''
 
 <dl class="class">
 <dt id="dagster.RuntimeType">
-<em class="property">class </em><code class="descclassname">dagster.</code><code class="descname">RuntimeType</code><span class="sig-paren">(</span><em>key</em>, <em>name</em>, <em>is_builtin=False</em>, <em>description=None</em>, <em>input_schema=None</em>, <em>output_schema=None</em>, <em>serialization_strategy=None</em><span class="sig-paren">)</span><a class="headerlink" href="#dagster.RuntimeType" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">dagster.</code><code class="descname">RuntimeType</code><span class="sig-paren">(</span><em>key</em>, <em>name</em>, <em>is_builtin=False</em>, <em>description=None</em>, <em>input_schema=None</em>, <em>output_schema=None</em>, <em>serialization_strategy=None</em>, <em>storage_plugins=None</em><span class="sig-paren">)</span><a class="headerlink" href="#dagster.RuntimeType" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="attribute">
@@ -21625,7 +21714,7 @@ snapshots['test_build_all_docs 57'] = '''
 </div>
 <p>Note you can use S3FileHandle and PathToFile as if they were just “normal types” as well.</p>
 <ol class="simple">
-<li><strong>ConfigDictionary –&gt; Dict</strong></li>
+<li><strong>ConfigDictionary –&gt; NamedDict or Dict</strong></li>
 </ol>
 <p>We have a much less verbose API for building configuration schema:</p>
 <p>Error:</p>
@@ -21633,7 +21722,8 @@ snapshots['test_build_all_docs 57'] = '''
 </pre></div>
 </div>
 <p>First, we can discouraging the use of the <code class="docutils literal notranslate"><span class="pre">types</span></code> namespace. Instead just <code class="docutils literal notranslate"><span class="pre">from</span> <span class="pre">dagster</span> <span class="pre">import</span> <span class="pre">Dict</span></code> (or whatever class directly).
-Second, <code class="docutils literal notranslate"><span class="pre">ConfigDictionary</span></code> is now just <code class="docutils literal notranslate"><span class="pre">Dict</span></code>.
+Second, <code class="docutils literal notranslate"><span class="pre">ConfigDictionary</span></code> is now just <code class="docutils literal notranslate"><span class="pre">NamedDict</span></code>. If the name of the type wasn’t particularily relevant
+you can also eliminate that and just use <code class="docutils literal notranslate"><span class="pre">Dict</span></code>.
 Third, you do not have to name it. The net result is much nicer:</p>
 <p>Before:</p>
 <div class="highlight-py notranslate"><div class="highlight"><pre><span></span><span class="n">types</span><span class="o">.</span><span class="n">ConfigDictionary</span><span class="p">(</span>
@@ -21828,7 +21918,9 @@ Third, you do not have to name it. The net result is much nicer:</p>
 </pre></div>
 </div>
 <p>After:</p>
-<div class="highlight-py notranslate"><div class="highlight"><pre><span></span>    <span class="k">yield</span> <span class="n">ExecutionContext</span><span class="p">(</span>
+<div class="highlight-py notranslate"><div class="highlight"><pre><span></span>    <span class="c1"># because you no longer need the with clause here you can just return</span>
+    <span class="c1"># the ExecutionContext object directly</span>
+    <span class="k">return</span> <span class="n">ExecutionContext</span><span class="p">(</span>
         <span class="n">loggers</span><span class="o">=</span><span class="p">[</span><span class="n">define_colored_console_logger</span><span class="p">(</span><span class="s1">&#39;dagster&#39;</span><span class="p">,</span> <span class="n">log_level</span><span class="p">)],</span>
         <span class="n">resources</span><span class="o">=</span><span class="n">resources</span><span class="p">,</span>
         <span class="n">tags</span><span class="o">=</span><span class="p">{</span>
@@ -21861,6 +21953,61 @@ accept None by default, and this is no longer true in 0.3.0. You have to opt int
     <span class="k">return</span> <span class="bp">None</span> <span class="c1"># Because of Nullable wrapper, this is ok</span>
 </pre></div>
 </div>
+<ol class="simple">
+<li><strong>Solid name uniqueness per-repository enforce by default</strong></li>
+</ol>
+<p>Error:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span> <span class="n">dagster</span><span class="o">.</span><span class="n">core</span><span class="o">.</span><span class="n">errors</span><span class="o">.</span><span class="n">DagsterInvalidDefinitionError</span><span class="p">:</span> <span class="n">Trying</span> <span class="n">to</span> <span class="n">add</span> <span class="n">duplicate</span> <span class="n">solid</span> <span class="k">def</span> <span class="nf">solid_one</span> <span class="ow">in</span> <span class="n">pipeline_two</span><span class="p">,</span> <span class="n">Already</span> <span class="n">saw</span> <span class="ow">in</span> <span class="n">pipeline_one</span><span class="o">.</span>
+</pre></div>
+</div>
+<p>We enforce that solid names are unique per-repository by default. This is to setup
+a future where you can look up a solid by name in a repository and view that as an
+independent entity, among other things. An example of a feature this enables is the
+ability to index back into all the places where that solid is used.</p>
+<p>As a temporary measure, we have added an <code class="docutils literal notranslate"><span class="pre">enforce_uniqueness</span></code> boolean flag to
+RepositoryDefinition construction. However, this will not be supported forever as
+we will be building features that rely on that property.</p>
+<p>Fix is:</p>
+<div class="highlight-py notranslate"><div class="highlight"><pre><span></span>
+    <span class="k">return</span> <span class="n">RepositoryDefinition</span><span class="p">(</span>
+        <span class="n">name</span><span class="o">=</span><span class="s1">&#39;repo_name&#39;</span><span class="p">,</span>
+        <span class="n">enforce_uniqueness</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="c1"># add this flag</span>
+        <span class="n">pipeline_dict</span><span class="o">=</span><span class="p">{</span><span class="o">...</span><span class="p">}</span>
+    <span class="p">)</span>
+</pre></div>
+</div>
+<p>The preferred option is to make solid names unique. Prefixing solids in
+offending pipelines with the pipeline name would be a straightforward approach
+to solve this quickly. This would also guarantee that a later change would not
+trigger this error again.</p>
+<ol class="simple">
+<li><strong>Context is now a top-level argument to solids</strong></li>
+</ol>
+<p>This is not a breaking change, but it will improve developer ergonomics
+and is relatively straightforward to do.</p>
+<p>Before:</p>
+<div class="highlight-py notranslate"><div class="highlight"><pre><span></span>    <span class="nd">@solid</span>
+    <span class="k">def</span> <span class="nf">a_solid</span><span class="p">(</span><span class="n">info</span><span class="p">):</span>
+        <span class="n">info</span><span class="o">.</span><span class="n">context</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;something&#39;</span><span class="p">)</span>
+        <span class="n">info</span><span class="o">.</span><span class="n">context</span><span class="o">.</span><span class="n">resources</span><span class="o">.</span><span class="n">a_resource</span><span class="o">.</span><span class="n">do_something</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>After:</p>
+<div class="highlight-py notranslate"><div class="highlight"><pre><span></span>    <span class="nd">@solid</span>
+    <span class="k">def</span> <span class="nf">a_solid</span><span class="p">(</span><span class="n">context</span><span class="p">):</span>
+        <span class="n">context</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;something&#39;</span><span class="p">)</span> <span class="c1"># log in the name is more clear</span>
+        <span class="n">context</span><span class="o">.</span><span class="n">resources</span><span class="o">.</span><span class="n">a_resource</span><span class="o">.</span><span class="n">do_something</span><span class="p">()</span> <span class="c1"># resources available top-level</span>
+        <span class="n">context</span><span class="o">.</span><span class="n">run_id</span> <span class="c1"># run_id available as top level property</span>
+        <span class="c1"># no longer info.context.config as it was confusing</span>
+        <span class="c1"># when switching between resources, contexts, and solids</span>
+        <span class="n">context</span><span class="o">.</span><span class="n">solid_config</span>
+</pre></div>
+</div>
+<p>The ability to refer to <code class="docutils literal notranslate"><span class="pre">info.context</span></code> will go away fairly
+(there is a legacy adapter class to enable backwards compatability
+and we do not want it to be immortal). We also want to enforce
+that the name of the first variable is context. We are only
+allowing info temporarily.</p>
 </div>
 </div>
 

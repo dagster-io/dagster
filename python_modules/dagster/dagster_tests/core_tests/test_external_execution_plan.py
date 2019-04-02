@@ -4,6 +4,7 @@ import pytest
 
 from dagster import (
     DagsterExecutionStepNotFoundError,
+    DagsterStepOutputNotFoundError,
     DependencyDefinition,
     InputDefinition,
     Int,
@@ -215,9 +216,6 @@ def test_execute_step_wrong_step_key():
     assert str(exc_info.value) == 'Execution plan does not contain step "nope"'
 
 
-# We can improve error handling here when
-# https://github.com/dagster-io/dagster/issues/932
-# is done
 def test_using_file_system_for_subplan_missing_input():
     pipeline = define_inty_pipeline()
 
@@ -227,15 +225,13 @@ def test_using_file_system_for_subplan_missing_input():
 
     run_id = str(uuid.uuid4())
 
-    step_events = execute_plan(
-        execution_plan,
-        environment_dict=environment_dict,
-        run_config=RunConfig(run_id=run_id),
-        step_keys_to_execute=['add_one.transform'],
-    )
-
-    assert not step_events
-    assert not has_filesystem_intermediate(run_id, 'add_one.transform')
+    with pytest.raises(DagsterStepOutputNotFoundError):
+        execute_plan(
+            execution_plan,
+            environment_dict=environment_dict,
+            run_config=RunConfig(run_id=run_id),
+            step_keys_to_execute=['add_one.transform'],
+        )
 
 
 def test_using_file_system_for_subplan_invalid_step():

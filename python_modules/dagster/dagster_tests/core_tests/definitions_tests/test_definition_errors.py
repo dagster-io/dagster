@@ -3,17 +3,24 @@ import pytest
 import dagster.check as check
 
 from dagster import (
+    ConfigType,
     DagsterInvalidDefinitionError,
     DependencyDefinition,
-    PipelineDefinition,
-    SolidDefinition,
-    OutputDefinition,
-    InputDefinition,
-    solid,
+    Dict,
     Field,
-    String,
+    InputDefinition,
+    Int,
     NamedDict,
-    ConfigType,
+    NamedSelector,
+    OutputDefinition,
+    PermissiveDict,
+    PipelineContextDefinition,
+    PipelineDefinition,
+    ResourceDefinition,
+    Selector,
+    SolidDefinition,
+    String,
+    solid,
 )
 
 from dagster.core.utility_solids import define_stub_solid
@@ -142,4 +149,160 @@ def test_double_type_key():
     assert str(exc_info.value) == (
         'Type keys must be unique. You have constructed two different instances of types '
         'with the same key "KeyOne".'
+    )
+
+
+def test_pass_config_type_to_field_error_context_definition():
+    with pytest.raises(DagsterInvalidDefinitionError) as exc_info:
+        PipelineDefinition(
+            name='pass_config_type_to_context_def_config_field_error_pipeline',
+            solids=[],
+            context_definitions={
+                'some_context': PipelineContextDefinition(config_field=Dict({'val': Field(Int)}))
+            },
+        )
+
+    assert str(exc_info.value) == (
+        'You have passed a config type "{ val: Int }" in the parameter "config_field" of a '
+        'PipelineContextDefinition. You have likely forgot to '
+        'wrap this type in a Field.'
+    )
+
+
+def test_pass_unrelated_type_to_field_error_context_definition():
+    with pytest.raises(DagsterInvalidDefinitionError) as exc_info:
+        PipelineDefinition(
+            name='pass_unrelated_type_to_context_def_config_field_error_pipeline',
+            solids=[],
+            context_definitions={'some_context': PipelineContextDefinition(config_field='wut')},
+        )
+
+    assert str(exc_info.value) == (
+        'You have passed an object \'wut\' of incorrect type "str" in the parameter '
+        '"config_field" of a PipelineContextDefinition where a Field was expected.'
+    )
+
+
+def test_pass_config_type_to_field_error_solid_definition():
+
+    with pytest.raises(DagsterInvalidDefinitionError) as exc_info:
+
+        @solid(config_field=Dict({'val': Field(Int)}))
+        def a_solid(_context):
+            pass
+
+        assert a_solid  # fool lint
+
+    assert str(exc_info.value) == (
+        'You have passed a config type "{ val: Int }" in the parameter "config_field" '
+        'of a SolidDefinition or @solid named "a_solid". You have '
+        'likely forgot to wrap this type in a Field.'
+    )
+
+
+def test_pass_unrelated_type_to_field_error_solid_definition():
+
+    with pytest.raises(DagsterInvalidDefinitionError) as exc_info:
+
+        @solid(config_field='nope')
+        def a_solid(_context):
+            pass
+
+        assert a_solid  # fool lint
+
+    assert str(exc_info.value) == (
+        'You have passed an object \'nope\' of incorrect type "str" in the parameter '
+        '"config_field" of a SolidDefinition or @solid named "a_solid" where a Field '
+        'was expected.'
+    )
+
+
+def test_pass_config_type_to_field_error_resource_definition():
+    with pytest.raises(DagsterInvalidDefinitionError) as exc_info:
+        ResourceDefinition(resource_fn=lambda: None, config_field=Dict({'val': Field(Int)}))
+
+    assert str(exc_info.value) == (
+        'You have passed a config type "{ val: Int }" in the parameter "config_field" of a '
+        'ResourceDefinition or @resource. You have likely forgot to '
+        'wrap this type in a Field.'
+    )
+
+
+def test_pass_unrelated_type_to_field_error_resource_definition():
+    with pytest.raises(DagsterInvalidDefinitionError) as exc_info:
+        ResourceDefinition(resource_fn=lambda: None, config_field='wut')
+
+    assert str(exc_info.value) == (
+        'You have passed an object \'wut\' of incorrect type "str" in the parameter '
+        '"config_field" of a ResourceDefinition or @resource where a Field was expected.'
+    )
+
+
+def test_pass_incorrect_thing_to_field():
+    with pytest.raises(DagsterInvalidDefinitionError) as exc_info:
+        Field('nope')
+
+    assert str(exc_info.value) == (
+        'Attempted to pass \'nope\' to a Field that expects a valid dagster type '
+        'usable in config (e.g. Dict, NamedDict, Int, String et al).'
+    )
+
+
+def test_invalid_dict_field():
+    with pytest.raises(DagsterInvalidDefinitionError) as exc_info:
+        Dict({'val': Int, 'another_val': Field(Int)})
+
+    assert str(exc_info.value) == (
+        'You have passed a config type "Int" in the parameter "fields" and it is '
+        'in the "val" entry of that dict. It is from a Dict with fields '
+        '[\'another_val\', \'val\']. You have likely '
+        'forgot to wrap this type in a Field.'
+    )
+
+
+def test_invalid_named_dict_field():
+    with pytest.raises(DagsterInvalidDefinitionError) as exc_info:
+        NamedDict('some_named_dict', {'val': Int, 'another_val': Field(Int)})
+
+    assert str(exc_info.value) == (
+        'You have passed a config type "Int" in the parameter "fields" and it is '
+        'in the "val" entry of that dict. It is from a NamedDict named '
+        '"some_named_dict" with fields [\'another_val\', \'val\']. You '
+        'have likely forgot to wrap this type in a Field.'
+    )
+
+
+def test_invalid_permissive_dict_field():
+
+    with pytest.raises(DagsterInvalidDefinitionError) as exc_info:
+        PermissiveDict({'val': Int, 'another_val': Field(Int)})
+
+    assert str(exc_info.value) == (
+        'You have passed a config type "Int" in the parameter "fields" and it is '
+        'in the "val" entry of that dict. It is from a PermissiveDict with fields '
+        '[\'another_val\', \'val\']. You have likely '
+        'forgot to wrap this type in a Field.'
+    )
+
+
+def test_invalid_selector_field():
+    with pytest.raises(DagsterInvalidDefinitionError) as exc_info:
+        Selector({'val': Int})
+
+    assert str(exc_info.value) == (
+        'You have passed a config type "Int" in the parameter "fields" and it is '
+        'in the "val" entry of that dict. It is from a Selector with fields '
+        '[\'val\']. You have likely forgot to wrap this type in a Field.'
+    )
+
+
+def test_invalid_named_selector_field():
+    with pytest.raises(DagsterInvalidDefinitionError) as exc_info:
+        NamedSelector('some_selector', {'val': Int})
+
+    assert str(exc_info.value) == (
+        'You have passed a config type "Int" in the parameter "fields" and it is '
+        'in the "val" entry of that dict. It is from a NamedSelector named '
+        '"some_selector" with fields [\'val\']. You '
+        'have likely forgot to wrap this type in a Field.'
     )

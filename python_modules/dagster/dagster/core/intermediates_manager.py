@@ -5,7 +5,6 @@ import six
 
 from dagster import check
 
-
 from .execution_context import SystemPipelineExecutionContext
 from .object_store import ObjectStore
 from .runs import RunStorageMode
@@ -47,13 +46,17 @@ class IntermediatesManager(six.with_metaclass(ABCMeta)):  # pylint: disable=no-i
         pass
 
     def all_inputs_covered(self, context, step):
+        return len(self.uncovered_inputs(context, step)) == 0
+
+    def uncovered_inputs(self, context, step):
         from .execution_plan.objects import ExecutionStep
 
         check.inst_param(step, 'step', ExecutionStep)
+        uncovered_inputs = []
         for step_input in step.step_inputs:
             if not self.has_intermediate(context, step_input.prev_output_handle):
-                return False
-        return True
+                uncovered_inputs.append(step_input.prev_output_handle)
+        return uncovered_inputs
 
 
 class InMemoryIntermediatesManager(IntermediatesManager):
@@ -106,7 +109,7 @@ class ObjectStoreIntermediatesManager(IntermediatesManager):
         check.inst_param(step_output_handle, 'step_output_handle', StepOutputHandle)
         check.invariant(self.has_intermediate(context, step_output_handle))
 
-        return self._object_store.get_object(
+        return self._object_store.get_value(
             context=context, runtime_type=runtime_type, paths=self._get_paths(step_output_handle)
         )
 
@@ -116,7 +119,7 @@ class ObjectStoreIntermediatesManager(IntermediatesManager):
         check.inst_param(step_output_handle, 'step_output_handle', StepOutputHandle)
         check.invariant(not self.has_intermediate(context, step_output_handle))
 
-        return self._object_store.set_object(
+        return self._object_store.set_value(
             obj=value,
             context=context,
             runtime_type=runtime_type,

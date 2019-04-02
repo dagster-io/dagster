@@ -1,4 +1,5 @@
 from dagster import check
+from dagster.core.errors import DagsterInvalidDefinitionError
 from .builtin_enum import BuiltinEnum
 from .config import Any, ConfigType, List, Nullable
 from .field_utils import FieldImpl, FIELD_NO_DEFAULT_PROVIDED, INFER_OPTIONAL_COMPOSITE_FIELD
@@ -20,15 +21,14 @@ def resolve_to_config_type(dagster_type):
         return Any.inst()
     if isinstance(dagster_type, BuiltinEnum):
         return ConfigType.from_builtin_enum(dagster_type)
-    ## TODO need to check for runtime type. e.g. List(DataFrame)
     if isinstance(dagster_type, WrappingListType):
         return resolve_to_config_list(dagster_type).inst()
     if isinstance(dagster_type, WrappingNullableType):
         return resolve_to_config_nullable(dagster_type).inst()
-    if issubclass(dagster_type, ConfigType):
+    if isinstance(dagster_type, type) and issubclass(dagster_type, ConfigType):
         return dagster_type.inst()
 
-    check.failed('should not reach')
+    return None
 
 
 def Field(
@@ -37,4 +37,12 @@ def Field(
     is_optional=INFER_OPTIONAL_COMPOSITE_FIELD,
     description=None,
 ):
+    config_type = resolve_to_config_type(dagster_type)
+    if not config_type:
+        raise DagsterInvalidDefinitionError(
+            (
+                'Attempted to pass {value_repr} to a Field that expects a valid '
+                'dagster type usable in config (e.g. Dict, NamedDict, Int, String et al).'
+            ).format(value_repr=repr(dagster_type))
+        )
     return FieldImpl(resolve_to_config_type(dagster_type), default_value, is_optional, description)

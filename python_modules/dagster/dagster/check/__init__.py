@@ -303,7 +303,7 @@ def opt_list_param(obj_list, param_name, of_type=None):
     return _check_list_items(obj_list, of_type)
 
 
-def _check_key_value_types(obj, key_type, value_type):
+def _check_key_value_types(obj, key_type, value_type, key_check=isinstance, value_check=isinstance):
     '''Ensures argument obj is a dictionary, and enforces that the keys/values conform to the types
     specified by key_type, value_type.
     '''
@@ -317,7 +317,7 @@ def _check_key_value_types(obj, key_type, value_type):
         value_type = string_types
 
     for key, value in obj.items():
-        if key_type and not isinstance(key, key_type):
+        if key_type and not key_check(key, key_type):
             raise_with_traceback(
                 CheckError(
                     'Key in dictionary mismatches type. Expected {key_type}. Got {obj_repr}'.format(
@@ -325,7 +325,7 @@ def _check_key_value_types(obj, key_type, value_type):
                     )
                 )
             )
-        if value_type and not isinstance(value, value_type):
+        if value_type and not value_check(value, value_type):
             raise_with_traceback(
                 CheckError(
                     'Value in dictionary mismatches expected type for key {key}. Expected value '
@@ -350,7 +350,7 @@ def dict_param(obj, param_name, key_type=None, value_type=None):
     return _check_key_value_types(obj, key_type, value_type)
 
 
-def opt_dict_param(obj, param_name, key_type=None, value_type=None):
+def opt_dict_param(obj, param_name, key_type=None, value_type=None, value_class=None):
     '''Ensures argument obj is either a dictionary or None; if the latter, instantiates an empty
     dictionary.
     '''
@@ -360,6 +360,8 @@ def opt_dict_param(obj, param_name, key_type=None, value_type=None):
     if not obj:
         return {}
 
+    if value_class:
+        return _check_key_value_types(obj, key_type, value_type=value_class, value_check=issubclass)
     return _check_key_value_types(obj, key_type, value_type)
 
 

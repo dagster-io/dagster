@@ -101,7 +101,7 @@ Properties:
 
 Note you can use S3FileHandle and PathToFile as if they were just "normal types" as well.
 
-5. **ConfigDictionary --> Dict**
+5. **ConfigDictionary --> NamedDict or Dict**
 
 We have a much less verbose API for building configuration schema:
 
@@ -112,7 +112,8 @@ E   AttributeError: module 'dagster.core.types' has no attribute 'ConfigDictiona
 ```
 
 First, we can discouraging the use of the `types` namespace. Instead just `from dagster import Dict` (or whatever class directly).
-Second, `ConfigDictionary` is now just `Dict`.
+Second, `ConfigDictionary` is now just `NamedDict`. If the name of the type wasn't particularily relevant
+you can also eliminate that and just use `Dict`.
 Third, you do not have to name it. The net result is much nicer:
 
 Before:
@@ -341,7 +342,9 @@ Before:
 After:
 
 ```py
-    yield ExecutionContext(
+    # because you no longer need the with clause here you can just return
+    # the ExecutionContext object directly
+    return ExecutionContext(
         loggers=[define_colored_console_logger('dagster', log_level)],
         resources=resources,
         tags={
@@ -379,3 +382,69 @@ After
 def return_none(context):
     return None # Because of Nullable wrapper, this is ok
 ```
+
+11. **Solid name uniqueness per-repository enforce by default**
+
+Error:
+
+```
+ dagster.core.errors.DagsterInvalidDefinitionError: Trying to add duplicate solid def solid_one in pipeline_two, Already saw in pipeline_one.
+```
+
+We enforce that solid names are unique per-repository by default. This is to setup
+a future where you can look up a solid by name in a repository and view that as an
+independent entity, among other things. An example of a feature this enables is the
+ability to index back into all the places where that solid is used.
+
+As a temporary measure, we have added an `enforce_uniqueness` boolean flag to
+RepositoryDefinition construction. However, this will not be supported forever as
+we will be building features that rely on that property.
+
+Fix is:
+
+```py
+
+    return RepositoryDefinition(
+        name='repo_name',
+        enforce_uniqueness=True, # add this flag
+        pipeline_dict={...}
+    )
+```
+
+The preferred option is to make solid names unique. Prefixing solids in
+offending pipelines with the pipeline name would be a straightforward approach
+to solve this quickly. This would also guarantee that a later change would not
+trigger this error again.
+
+12. **Context is now a top-level argument to solids**
+
+This is not a breaking change, but it will improve developer ergonomics
+and is relatively straightforward to do.
+
+Before:
+
+```py
+    @solid
+    def a_solid(info):
+        info.context.info('something')
+        info.context.resources.a_resource.do_something()
+```
+
+After:
+
+```py
+    @solid
+    def a_solid(context):
+        context.log.info('something') # log in the name is more clear
+        context.resources.a_resource.do_something() # resources available top-level
+        context.run_id # run_id available as top level property
+        # no longer info.context.config as it was confusing
+        # when switching between resources, contexts, and solids
+        context.solid_config
+```
+
+The ability to refer to `info.context` will go away fairly
+(there is a legacy adapter class to enable backwards compatability
+and we do not want it to be immortal). We also want to enforce
+that the name of the first variable is context. We are only
+allowing info temporarily.

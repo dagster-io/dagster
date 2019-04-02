@@ -8,7 +8,9 @@ from dagster.core.types.evaluator import (
     EvaluationStackListItemEntry,
     RuntimeMismatchErrorData,
     MissingFieldErrorData,
+    MissingFieldsErrorData,
     FieldNotDefinedErrorData,
+    FieldsNotDefinedErrorData,
     SelectorTypeErrorData,
 )
 
@@ -50,6 +52,19 @@ class DauphinPipelineNotFoundError(dauphin.ObjectType):
         super(DauphinPipelineNotFoundError, self).__init__()
         self.pipeline_name = check.str_param(pipeline_name, 'pipeline_name')
         self.message = 'Pipeline {pipeline_name} does not exist'.format(pipeline_name=pipeline_name)
+
+
+class DauphinPipelineRunNotFoundError(dauphin.ObjectType):
+    class Meta:
+        name = 'PipelineRunNotFoundError'
+        interfaces = (DauphinError,)
+
+    run_id = dauphin.NonNull(dauphin.String)
+
+    def __init__(self, run_id):
+        super(DauphinPipelineRunNotFoundError, self).__init__()
+        self.run_id = check.str_param(run_id, 'run_id')
+        self.message = 'Pipeline run {run_id} does not exist'.format(run_id=run_id)
 
 
 class DauphinSolidNotFoundError(dauphin.ObjectType):
@@ -134,6 +149,22 @@ class DauphinPipelineConfigValidationError(dauphin.Interface):
                     name=error.error_data.field_name, field=error.error_data.field_def
                 ),
             )
+        elif isinstance(error.error_data, MissingFieldsErrorData):
+            return graphene_info.schema.type_named('MissingFieldsConfigError')(
+                message=error.message,
+                path=[],  # TODO: remove
+                stack=error.stack,
+                reason=error.reason,
+                fields=[
+                    graphene_info.schema.type_named('ConfigTypeField')(
+                        name=field_name, field=field_def
+                    )
+                    for field_name, field_def in zip(
+                        error.error_data.field_names, error.error_data.field_defs
+                    )
+                ],
+            )
+
         elif isinstance(error.error_data, FieldNotDefinedErrorData):
             return graphene_info.schema.type_named('FieldNotDefinedConfigError')(
                 message=error.message,
@@ -141,6 +172,14 @@ class DauphinPipelineConfigValidationError(dauphin.Interface):
                 stack=error.stack,
                 reason=error.reason,
                 field_name=error.error_data.field_name,
+            )
+        elif isinstance(error.error_data, FieldsNotDefinedErrorData):
+            return graphene_info.schema.type_named('FieldsNotDefinedConfigError')(
+                message=error.message,
+                path=[],  # TODO: remove
+                stack=error.stack,
+                reason=error.reason,
+                field_names=error.error_data.field_names,
             )
         elif isinstance(error.error_data, SelectorTypeErrorData):
             return graphene_info.schema.type_named('SelectorTypeConfigError')(
@@ -176,12 +215,28 @@ class DauphinMissingFieldConfigError(dauphin.ObjectType):
     field = dauphin.NonNull('ConfigTypeField')
 
 
+class DauphinMissingFieldsConfigError(dauphin.ObjectType):
+    class Meta:
+        name = 'MissingFieldsConfigError'
+        interfaces = (DauphinPipelineConfigValidationError,)
+
+    fields = dauphin.non_null_list('ConfigTypeField')
+
+
 class DauphinFieldNotDefinedConfigError(dauphin.ObjectType):
     class Meta:
         name = 'FieldNotDefinedConfigError'
         interfaces = (DauphinPipelineConfigValidationError,)
 
     field_name = dauphin.NonNull(dauphin.String)
+
+
+class DauphinFieldsNotDefinedConfigError(dauphin.ObjectType):
+    class Meta:
+        name = 'FieldsNotDefinedConfigError'
+        interfaces = (DauphinPipelineConfigValidationError,)
+
+    field_names = dauphin.non_null_list(dauphin.String)
 
 
 class DauphinSelectorTypeConfigError(dauphin.ObjectType):
@@ -198,7 +253,9 @@ class DauphinEvaluationErrorReason(dauphin.Enum):
 
     RUNTIME_TYPE_MISMATCH = 'RUNTIME_TYPE_MISMATCH'
     MISSING_REQUIRED_FIELD = 'MISSING_REQUIRED_FIELD'
+    MISSING_REQUIRED_FIELDS = 'MISSING_REQUIRED_FIELDS'
     FIELD_NOT_DEFINED = 'FIELD_NOT_DEFINED'
+    FIELDS_NOT_DEFINED = 'FIELDS_NOT_DEFINED'
     SELECTOR_FIELD_ERROR = 'SELECTOR_FIELD_ERROR'
 
 
@@ -406,3 +463,9 @@ class DauphinRuntimeTypeOrError(dauphin.Union):
             DauphinPipelineNotFoundError,
             DauphinRuntimeTypeNotFoundError,
         )
+
+
+class DauphinPipelineRunOrError(dauphin.Union):
+    class Meta:
+        name = 'PipelineRunOrError'
+        types = ('PipelineRun', DauphinPipelineRunNotFoundError)

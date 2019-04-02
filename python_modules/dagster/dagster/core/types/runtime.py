@@ -36,6 +36,7 @@ class RuntimeType(object):
         input_schema=None,
         output_schema=None,
         serialization_strategy=None,
+        storage_plugins=None,
     ):
 
         type_obj = type(self)
@@ -58,6 +59,7 @@ class RuntimeType(object):
             SerializationStrategy,
             PickleSerializationStrategy(),
         )
+        self.storage_plugins = check.opt_dict_param(storage_plugins, 'storage_plugins')
 
         self.is_builtin = check.bool_param(is_builtin, 'is_builtin')
 
