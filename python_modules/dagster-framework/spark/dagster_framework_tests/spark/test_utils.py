@@ -65,9 +65,9 @@ def test_parse_spark_config():
             'deploy': {'zookeeper': {}},
         }
     }
-    assert parse_spark_config(test) == [
-        '--conf',
-        'spark.app.name=foo',
-        '--conf',
-        'spark.cores.max=3',
-    ]
+    parsed_config = parse_spark_config(test)
+
+    # Iteration order isn't preserved across python versions
+    assert set([('--conf', 'spark.app.name=foo'), ('--conf', 'spark.cores.max=3')]) == set(
+        [(parsed_config[i], parsed_config[i + 1]) for i in range(0, len(parsed_config), 2)]
+    )
