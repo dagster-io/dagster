@@ -4,7 +4,7 @@ import sys
 from future.utils import raise_from
 import six
 
-from dagster import check
+from dagster import check, seven
 
 from dagster.utils.timing import time_execution_scope
 
@@ -277,11 +277,19 @@ def _create_step_output_event(step_context, step_output_value, intermediates_man
             value=value,
         )
 
+        # This is a stopgap to facilitate writing tests against the value_repr exposed in the
+        # GraphQL interface
+        if isinstance(value, six.string_types):
+            value_repr = repr(str(value))
+        elif isinstance(value, dict):
+            value_repr = seven.json.dumps(value).replace('"', '\'')
+        else:
+            value_repr = repr(value)
         return DagsterEvent.step_output_event(
             step_context=step_context,
             step_output_data=StepOutputData(
                 step_output_handle=step_output_handle,
-                value_repr=repr(value),
+                value_repr=value_repr,
                 storage_object_id=object_key,
                 storage_mode_value=intermediates_manager.storage_mode.value,
             ),
