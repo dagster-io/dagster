@@ -36,7 +36,7 @@ from dagster import (
 from dagster.core.definitions.dependency import Solid
 from dagster.core.definitions.environment_configs import construct_environment_config
 from dagster.core.errors import DagsterSubprocessExecutionError
-from dagster.core.events.logging import construct_json_event_logger, EventRecord, EventType
+from dagster.core.events.logging import construct_json_event_logger, EventRecord
 from dagster.core.events import DagsterEvent
 from dagster.core.execution import yield_pipeline_execution_context
 from dagster.core.execution_context import (
@@ -591,9 +591,6 @@ def _dm_solid_transform(name, notebook_path):
                                     break
                                 event_record_dict = json.loads(line)
 
-                                event_record_dict['event_type'] = EventType(
-                                    event_record_dict['event_type']
-                                )
                                 system_transform_context.event_callback(
                                     EventRecord(**event_record_dict)
                                 )

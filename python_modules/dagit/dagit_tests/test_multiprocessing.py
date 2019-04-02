@@ -7,7 +7,7 @@ from dagster import (
     lambda_solid,
 )
 from dagster.cli.dynamic_loader import RepositoryTargetInfo
-from dagster.core.events.logging import EventType
+from dagster.core.events import DagsterEventType
 from dagster.core.execution import create_execution_plan, ExecutionSelector
 from dagster.core.execution_context import make_new_run_id
 from dagster.utils import script_relative_path
@@ -19,7 +19,11 @@ from dagit.pipeline_run_storage import InMemoryPipelineRun, PipelineRunStatus
 
 
 def get_events_of_type(events, event_type):
-    return [event for event in events if event.event_type == event_type]
+    return [
+        event
+        for event in events
+        if event.is_dagster_event and event.dagster_event.event_type == event_type
+    ]
 
 
 def test_running():
@@ -56,10 +60,10 @@ def test_running():
     events = pipeline_run.all_logs()
     assert events
 
-    process_start_events = get_events_of_type(events, EventType.PIPELINE_PROCESS_START)
+    process_start_events = get_events_of_type(events, DagsterEventType.PIPELINE_PROCESS_START)
     assert len(process_start_events) == 1
 
-    process_started_events = get_events_of_type(events, EventType.PIPELINE_PROCESS_STARTED)
+    process_started_events = get_events_of_type(events, DagsterEventType.PIPELINE_PROCESS_STARTED)
     assert len(process_started_events) == 1
 
 

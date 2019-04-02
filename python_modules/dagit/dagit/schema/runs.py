@@ -1,7 +1,7 @@
 from __future__ import absolute_import
 
 from dagster import check
-from dagster.core.events.logging import EventRecord, EventType
+from dagster.core.events.logging import EventRecord
 from dagster.core.events import DagsterEventType
 
 from dagster.utils.logging import CRITICAL, DEBUG, ERROR, INFO, WARNING, check_valid_level_param
@@ -237,7 +237,7 @@ class DauphinExecutionStepFailureEvent(dauphin.ObjectType):
 class DauphinStepMaterializationEvent(dauphin.ObjectType):
     class Meta:
         name = 'StepMaterializationEvent'
-        interfaces = (DauphinMessageEvent,)
+        interfaces = (DauphinMessageEvent, DauphinStepEvent)
 
     file_name = dauphin.NonNull(dauphin.String)
     file_location = dauphin.NonNull(dauphin.String)
@@ -289,16 +289,7 @@ class DauphinPipelineRunEvent(dauphin.Union):
             'step': dauphin_step,
         }
 
-        if event.event_type == EventType.PIPELINE_PROCESS_START:
-            return graphene_info.schema.type_named('PipelineProcessStartEvent')(
-                pipeline=dauphin_pipeline, **basic_params
-            )
-        elif event.event_type == EventType.PIPELINE_PROCESS_STARTED:
-            return graphene_info.schema.type_named('PipelineProcessStartedEvent')(
-                pipeline=dauphin_pipeline, process_id=event.process_id, **basic_params
-            )
-
-        elif event.event_type == EventType.DAGSTER_EVENT:
+        if event.is_dagster_event:
             dagster_event = event.dagster_event
             if dagster_event.event_type == DagsterEventType.STEP_START:
                 return graphene_info.schema.type_named('ExecutionStepStartEvent')(**basic_params)
@@ -340,6 +331,16 @@ class DauphinPipelineRunEvent(dauphin.Union):
                 return graphene_info.schema.type_named('PipelineFailureEvent')(
                     pipeline=dauphin_pipeline, **basic_params
                 )
+            if dagster_event.event_type == DagsterEventType.PIPELINE_PROCESS_START:
+                return graphene_info.schema.type_named('PipelineProcessStartEvent')(
+                    pipeline=dauphin_pipeline, **basic_params
+                )
+            elif dagster_event.event_type == DagsterEventType.PIPELINE_PROCESS_STARTED:
+                process_data = dagster_event.pipeline_process_started_data
+                return graphene_info.schema.type_named('PipelineProcessStartedEvent')(
+                    pipeline=dauphin_pipeline, process_id=process_data.process_id, **basic_params
+                )
+
             else:
                 raise Exception(
                     ('Unknown DAGSTER_EVENT type {inner_type} found in logs').format(
