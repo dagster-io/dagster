@@ -903,16 +903,26 @@ jobs:
     docker:
       - image: circleci/python:3.6.6
     environment:
-      TOXENV: py36
+      - TOXENV: py36
+      - SBT_VERSION: 1.0.4
+
     working_directory: ~/repo
 
     steps:
+      - run:
+          name: Get sbt binary
+          command: |
+            sudo apt update && sudo apt install -y curl
+            curl -L -o sbt-$SBT_VERSION.deb https://dl.bintray.com/sbt/debian/sbt-$SBT_VERSION.deb
+            sudo dpkg -i sbt-$SBT_VERSION.deb
+            rm sbt-$SBT_VERSION.deb
+            sudo apt-get update && sudo apt-get install -y sbt
+            sudo apt-get clean && sudo apt-get autoclean
+
       - checkout
 
-      - run:
-          name: Install Dependencies
-          command: |
-            sudo pip install tox
+      - restore_cache:
+          key: sbt-cache
 
       - run:
           name: Build Scala jar
@@ -921,6 +931,18 @@ jobs:
               sbt events/assembly
               cp ./events/target/scala-2.11/events-assembly-0.1.0-SNAPSHOT.jar /tmp/dagster/events/
               popd
+
+      - save_cache:
+          key: sbt-cache
+          paths:
+            - "~/.ivy2/cache"
+            - "~/.sbt"
+            - "~/.m2"
+
+      - run:
+          name: Install Dependencies
+          command: |
+            sudo pip install tox
 
       - run:
           name: Run Dagster Tests
