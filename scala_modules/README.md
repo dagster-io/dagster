@@ -4,7 +4,7 @@ This project is our collection of Scala modules.
 ## Requirements
 * IntelliJ IDEA
 * IntelliJ Scalafmt Plugin 
-* Scala
+* Scala 2.11
 * Spark 2.4.0+
 
 Spark is expected to be a provided dependency, so you should have a working Spark install somewhere, and `$SPARK_HOME` should be set in your environment.
@@ -20,5 +20,5 @@ Saving this here for future reference: [Spark + S3](https://medium.com/@subhojit
 ### Installing scala and sbt on Mac OS X
 Use homebrew:
 
-    brew install scala
+    brew install scala@2.11
     brew install sbt
