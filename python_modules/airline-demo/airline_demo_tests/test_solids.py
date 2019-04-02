@@ -58,7 +58,7 @@ def _spark_context():
     return {
         'test': PipelineContextDefinition(
             context_fn=lambda info: ExecutionContext.console_logging(log_level=logging.DEBUG),
-            resources={'spark': spark_session_local},
+            resources={'spark': spark_session_local, 'tempfile': tempfile_resource},
         )
     }
 
@@ -107,10 +107,7 @@ def test_download_from_s3():
         },
     )
     assert result.success
-    assert result.transformed_value() == 'test/test_file'
-    assert os.path.isfile(result.transformed_value())
-    with open(result.transformed_value(), 'r') as fd:
-        assert fd.read() == 'test\n'
+    assert result.transformed_value().read() == b'test\n'
 
 
 def test_unzip_file_tempfile():
@@ -118,28 +115,26 @@ def test_unzip_file_tempfile():
     def nonce():
         return None
 
+    with open(os.path.join(os.path.dirname(__file__), 'data/test.zip'), 'rb') as fd:
+        archive_file = fd.read()
+
     result = execute_solid(
         PipelineDefinition(
             solids=[nonce, unzip_file],
             dependencies={
                 'unzip_file': {
-                    'archive_path': DependencyDefinition('nonce'),
+                    'archive_file': DependencyDefinition('nonce'),
                     'archive_member': DependencyDefinition('nonce'),
                 }
             },
             context_definitions=_tempfile_context(),
         ),
         'unzip_file',
-        inputs={
-            'archive_path': os.path.join(os.path.dirname(__file__), 'data/test.zip'),
-            'archive_member': 'test/test_file',
-        },
-        environment_dict={'solids': {'unzip_file': {'config': {'skip_if_present': False}}}},
+        inputs={'archive_file': archive_file, 'archive_member': 'test/test_file'},
+        environment_dict={},
     )
     assert result.success
-    assert result.transformed_value()
-    assert all([v for v in result.transformed_value()])
-    assert [not os.path.isfile(v) for v in result.transformed_value()]
+    assert result.transformed_value().read() == b'test\n'
 
 
 @spark
@@ -148,19 +143,23 @@ def test_ingest_csv_to_spark():
     def nonce():
         return None
 
+    with open(os.path.join(os.path.dirname(__file__), 'data/test.csv'), 'rb') as fd:
+        input_csv_file = fd.read()
     result = execute_solid(
         PipelineDefinition(
             [nonce, ingest_csv_to_spark],
-            dependencies={'ingest_csv_to_spark': {'input_csv': DependencyDefinition('nonce')}},
+            dependencies={'ingest_csv_to_spark': {'input_csv_file': DependencyDefinition('nonce')}},
             context_definitions=_spark_context(),
         ),
         'ingest_csv_to_spark',
-        inputs={'input_csv': os.path.join(os.path.dirname(__file__), 'data/test.csv')},
+        inputs={'input_csv_file': input_csv_file},
         environment_dict={'context': {'test': {}}},
     )
     assert result.success
     assert isinstance(result.transformed_value(), pyspark.sql.dataframe.DataFrame)
-    assert result.transformed_value().head()[0] == '1'
+    # We can't make this assertion because the tempfile is cleaned up after the solid executes --
+    # a fuller test would have another solid make this assertion
+    # assert result.transformed_value().head()[0] == '1'
 
 
 @postgres

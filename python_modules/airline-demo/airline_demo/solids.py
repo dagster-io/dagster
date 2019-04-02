@@ -2,18 +2,19 @@
 
 import os
 import re
+import tempfile
 import zipfile
+
+from io import BytesIO
 
 from sqlalchemy import text
 
 from dagster import (
     Any,
-    Bool,
     Dict,
     Field,
     InputDefinition,
     Int,
-    List,
     OutputDefinition,
     Path,
     Result,
@@ -22,11 +23,9 @@ from dagster import (
     check,
     solid,
 )
-from dagster.utils import safe_isfile
 from dagstermill import define_dagstermill_solid
 
-from .types import FileExistsAtPath, SparkDataFrameType, SqlAlchemyEngineType, SqlTableName
-from .utils import mkdir_p, S3Logger
+from .types import Bytes, FileFromPath, SparkDataFrameType, SqlTableName
 
 
 PARQUET_SPECIAL_CHARACTERS = r'[ ,;{}()\n\t=]'
@@ -135,16 +134,10 @@ def sql_solid(name, select_statement, materialization_strategy, table_name=None,
 @solid(
     name='download_from_s3',
     config_field=Field(
-        Dict(
-            fields={
-                'target_file': Field(
-                    Path, description=('Specifies the path at which to download the object.')
-                )
-            }
-        )
+        Dict(fields={'target_file': Field(Path, description=('Specifies the object to download.'))})
     ),
     description='Downloads an object from S3.',
-    outputs=[OutputDefinition(FileExistsAtPath, description='The path to the downloaded object.')],
+    outputs=[OutputDefinition(Bytes, description='The contents of the downloaded object.')],
 )
 def download_from_s3(context):
     '''Download an object from s3.
@@ -157,8 +150,7 @@ def download_from_s3(context):
             The path to the downloaded object.
     '''
     target_file = context.solid_config['target_file']
-    # TODO: error here caused terrible, terrible error message
-    return context.resources.download_manager.download_file(context, target_file)
+    return context.resources.download_manager.download_file_contents(context, target_file)
 
 
 @solid(
@@ -177,7 +169,7 @@ def download_from_s3(context):
             }
         )
     ),
-    inputs=[InputDefinition('file_path', Path, description='The path of the file to upload.')],
+    inputs=[InputDefinition('file_obj', Bytes, description='The file to upload.')],
     description='Uploads a file to S3.',
     outputs=[
         OutputDefinition(
@@ -186,7 +178,7 @@ def download_from_s3(context):
         OutputDefinition(String, description='The key to which the file was uploaded.', name='key'),
     ],
 )
-def upload_to_s3(context, file_path):
+def upload_to_s3(context, file_obj):
     '''Upload a file to s3.
 
     Args:
@@ -199,10 +191,9 @@ def upload_to_s3(context, file_path):
     bucket = context.solid_config['bucket']
     key = context.solid_config['key']
 
-    with open(file_path, 'rb') as fd:
-        context.resources.s3.put_object(
-            Bucket=bucket, Body=fd, Key=key, **(context.solid_config.get('kwargs') or {})
-        )
+    context.resources.s3.put_object(
+        Bucket=bucket, Body=file_obj.read(), Key=key, **(context.solid_config.get('kwargs') or {})
+    )
     yield Result(bucket, 'bucket')
     yield Result(key, 'key')
 
@@ -210,97 +201,44 @@ def upload_to_s3(context, file_path):
 @solid(
     name='unzip_file',
     inputs=[
-        InputDefinition('archive_path', Path, description='The path to the archive.'),
+        InputDefinition('archive_file', Bytes, description='The archive to unzip'),
         InputDefinition('archive_member', String, description='The archive member to extract.'),
     ],
-    config_field=Field(
-        Dict(
-            fields={
-                'skip_if_present': Field(
-                    Bool,
-                    description='If True, and a file already exists at the path to which the '
-                    'archive member would be unzipped, then the solid will no-op',
-                    default_value=False,
-                    is_optional=True,
-                ),
-                'destination_dir': Field(
-                    String,
-                    description='If no destination_dir is specified, the archive will be unzipped '
-                    'to a temporary directory.',
-                    is_optional=True,
-                ),
-            }
-        )
-    ),
     description='Extracts an archive member from a zip archive.',
-    outputs=[
-        OutputDefinition(FileExistsAtPath, description='The path to the unzipped archive member.')
-    ],
+    outputs=[OutputDefinition(Bytes, description='The unzipped archive member.')],
 )
-def unzip_file(context, archive_path, archive_member):
-    destination_dir = os.path.dirname(archive_path)
+def unzip_file(_context, archive_file, archive_member):
 
-    with zipfile.ZipFile(archive_path, 'r') as zip_ref:
-        if archive_member is not None:
-            target_path = os.path.join(destination_dir, archive_member)
-            is_file = safe_isfile(target_path)
-            is_dir = os.path.isdir(target_path)
-            if not (context.solid_config['skip_if_present'] and (is_file or is_dir)):
-                zip_ref.extract(archive_member, destination_dir)
-            else:
-                if is_file:
-                    context.log.info(
-                        'Skipping unarchive of {archive_member} from {archive_path}, '
-                        'file already present at {target_path}'.format(
-                            archive_member=archive_member,
-                            archive_path=archive_path,
-                            target_path=target_path,
-                        )
-                    )
-                if is_dir:
-                    context.log.info(
-                        'Skipping unarchive of {archive_member} from {archive_path}, '
-                        'directory already present at {target_path}'.format(
-                            archive_member=archive_member,
-                            archive_path=archive_path,
-                            target_path=target_path,
-                        )
-                    )
-        else:
-            if not (context.solid_config['skip_if_present'] and is_dir):
-                zip_ref.extractall(destination_dir)
-            else:
-                context.log.info(
-                    'Skipping unarchive of {archive_path}, directory already present '
-                    'at {target_path}'.format(archive_path=archive_path, target_path=target_path)
-                )
-    return target_path
+    with zipfile.ZipFile(archive_file) as zip_ref:
+        return BytesIO(zip_ref.open(archive_member).read())
+
+
+def rename_spark_dataframe_columns(data_frame, fn):
+    return data_frame.toDF(*[fn(c) for c in data_frame.columns])
 
 
 @solid(
     name='ingest_csv_to_spark',
-    inputs=[InputDefinition('input_csv', Path)],
+    inputs=[InputDefinition('input_csv_file', Bytes)],
     outputs=[OutputDefinition(SparkDataFrameType)],
 )
-def ingest_csv_to_spark(context, input_csv):
+def ingest_csv_to_spark(context, input_csv_file):
+    tf = context.resources.tempfile.tempfile()
+    with open(tf.name, 'wb') as fd:
+        fd.write(input_csv_file.read())
     data_frame = (
         context.resources.spark.read.format('csv')
         .options(
             header='true',
             # inferSchema='true',
         )
-        .load(input_csv)
+        .load(tf.name)
     )
 
     # parquet compat
-    renamed_columns = [
-        re.sub(PARQUET_SPECIAL_CHARACTERS, '', column_name) for column_name in data_frame.columns
-    ]
-    return data_frame.toDF(*renamed_columns)
-
-
-def rename_spark_dataframe_columns(data_frame, fn):
-    return data_frame.toDF(*[fn(c) for c in data_frame.columns])
+    return rename_spark_dataframe_columns(
+        data_frame, lambda x: re.sub(PARQUET_SPECIAL_CHARACTERS, '', x)
+    )
 
 
 @solid(
@@ -353,6 +291,7 @@ def replace_values_spark(data_frame, old, new):
             description='The pyspark DataFrame containing NA values to normalize.',
         )
     ],
+    outputs=[OutputDefinition(SparkDataFrameType)],
 )
 def normalize_weather_na_values(_context, data_frame):
     return replace_values_spark(data_frame, 'M', None)
@@ -640,9 +579,9 @@ delays_by_geography = notebook_solid(
     ],
     outputs=[
         OutputDefinition(
-            dagster_type=Path,
+            dagster_type=FileFromPath,
             # name='plots_pdf_path',
-            description='The path to the saved PDF plots.',
+            description='The saved PDF plots.',
         )
     ],
 )
@@ -657,7 +596,7 @@ delays_vs_fares_nb = notebook_solid(
     ],
     outputs=[
         OutputDefinition(
-            dagster_type=Path,
+            dagster_type=FileFromPath,
             # name='plots_pdf_path',
             description='The path to the saved PDF plots.',
         )
@@ -674,7 +613,7 @@ sfo_delays_by_destination = notebook_solid(
     ],
     outputs=[
         OutputDefinition(
-            dagster_type=Path,
+            dagster_type=FileFromPath,
             # name='plots_pdf_path',
             description='The path to the saved PDF plots.',
         )

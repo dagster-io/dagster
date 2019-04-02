@@ -2,16 +2,16 @@
 
 
 from collections import namedtuple
+from io import BytesIO
 
 import sqlalchemy
 
 from pyspark.sql import DataFrame
 
-from dagster import as_dagster_type, Dict, Field, String
+from dagster import as_dagster_type, check, Dict, Field, String
 from dagster.core.object_store import get_valid_target_path, TypeStoragePlugin
 from dagster.core.runs import RunStorageMode
-from dagster.core.types.runtime import Stringish
-from dagster.utils import safe_isfile
+from dagster.core.types.runtime import Stringish, RuntimeType
 
 
 AirlineDemoResources = namedtuple(
@@ -69,13 +69,55 @@ class SqlTableName(Stringish):
         super(SqlTableName, self).__init__(description='The name of a database table')
 
 
-class FileExistsAtPath(Stringish):
+class BytesIOS3StoragePlugin(TypeStoragePlugin):  # pylint: disable=no-init
+    @classmethod
+    def set_object(cls, object_store, obj, context, runtime_type, paths):
+        if isinstance(obj, bytes):
+            return super(BytesIOS3StoragePlugin, cls).set_object(
+                object_store, obj, context, runtime_type, paths
+            )
+        elif isinstance(obj, BytesIO):
+            return super(BytesIOS3StoragePlugin, cls).set_object(
+                object_store, obj.read(), context, runtime_type, paths
+            )
+        else:
+            check.invariant('Shouldn\'t be here')
+
+    @classmethod
+    def get_object(cls, object_store, context, runtime_type, paths):
+        return BytesIO(
+            super(BytesIOS3StoragePlugin, cls).get_object(
+                object_store, context, runtime_type, paths
+            )
+        )
+
+
+class Bytes(RuntimeType, BytesIO):
     def __init__(self):
-        super(FileExistsAtPath, self).__init__(description='A path at which a file actually exists')
+        self.storage_plugins = {RunStorageMode.S3: BytesIOS3StoragePlugin}
+        super(Bytes, self).__init__(
+            'Bytes', 'Bytes', description='Bytes representing the contents of a file.'
+        )
 
     def coerce_runtime_value(self, value):
-        value = super(FileExistsAtPath, self).coerce_runtime_value(value)
-        return self.throw_if_false(safe_isfile, value)
+        if isinstance(value, BytesIO):
+            return value
+        if isinstance(value, bytes):
+            return BytesIO(value)
+
+
+class FileFromPath(RuntimeType):
+    def __init__(self):
+        self.storage_plugins = {RunStorageMode.S3: BytesIOS3StoragePlugin}
+        super(FileFromPath, self).__init__(
+            'FileFromPath',
+            'FileFromPath',
+            description='Bytes representing the contents of a file at a specific path.',
+        )
+
+    def coerce_runtime_value(self, value):
+        with open(value, 'rb') as fd:
+            return BytesIO(fd.read())
 
 
 RedshiftConfigData = Dict(

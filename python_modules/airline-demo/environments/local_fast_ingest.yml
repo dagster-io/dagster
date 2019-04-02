@@ -24,51 +24,30 @@ solids:
     config:
       target_file: sfo_q2_weather.txt
   unzip_april_on_time_data:
-    config:
-      destination_dir: source_data
-      skip_if_present: true
     inputs:
       archive_member:
         value: On_Time_Reporting_Carrier_On_Time_Performance_(1987_present)_2018_4.csv
   unzip_may_on_time_data:
-    config:
-      destination_dir: source_data
-      skip_if_present: true
     inputs:
       archive_member:
         value: On_Time_Reporting_Carrier_On_Time_Performance_(1987_present)_2018_5.csv
   unzip_june_on_time_data:
-    config:
-      destination_dir: source_data
-      skip_if_present: true
     inputs:
       archive_member:
         value: On_Time_Reporting_Carrier_On_Time_Performance_(1987_present)_2018_6.csv
   unzip_master_cord_data:
-    config:
-      destination_dir: source_data
-      skip_if_present: true
     inputs:
       archive_member:
         value: 954834304_T_MASTER_CORD.csv
   unzip_q2_coupon_data:
-    config:
-      destination_dir: source_data
-      skip_if_present: true
     inputs:
       archive_member:
         value: Origin_and_Destination_Survey_DB1BCoupon_2018_2.csv
   unzip_q2_market_data:
-    config:
-      destination_dir: source_data
-      skip_if_present: true
     inputs:
       archive_member:
         value: Origin_and_Destination_Survey_DB1BMarket_2018_2.csv
   unzip_q2_ticket_data:
-    config:
-      destination_dir: source_data
-      skip_if_present: true
     inputs:
       archive_member:
         value: Origin_and_Destination_Survey_DB1BTicket_2018_2.csv

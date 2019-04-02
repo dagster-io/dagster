@@ -49,7 +49,7 @@ QUERY_TEMPLATE = '''
 mutation(
   $config: PipelineConfig = {config},
   $pipelineName: String = "{pipeline_name}",
-  $runId: String = "{run_id}"
+  $runId: String = "{run_id}",
   $stepKeys: [String!] = {step_keys}
 ) {{
   executePlan(

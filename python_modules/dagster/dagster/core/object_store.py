@@ -16,16 +16,15 @@ from .types.runtime import RuntimeType, resolve_to_runtime_type
 
 def ensure_boto_requirements():
     '''Check that boto3 and botocore are importable -- required for S3ObjectStore.'''
+    # TODO this could be factored to check.import
     try:
         import boto3
-        import botocore  # pylint: disable=unused-import
     except ImportError:
         raise check.CheckError(
-            'boto3 and botocore must both be available for import in order to make use of '
-            'an S3ObjectStore'
+            'boto3 must be available for import in order to make use of an S3ObjectStore'
         )
 
-    return (boto3, botocore)
+    return boto3
 
 
 class TypeStoragePlugin(six.with_metaclass(ABCMeta)):  # pylint: disable=no-init
@@ -157,7 +156,7 @@ class FileSystemObjectStore(ObjectStore):
 
     def has_object(self, context, paths):  # pylint: disable=unused-argument
         target_path = os.path.join(self.root, *paths)
-        return os.path.isfile(target_path)
+        return os.path.exists(target_path)
 
     def rm_object(self, context, paths):  # pylint: disable=unused-argument
         target_path = os.path.join(self.root, *paths)
@@ -189,7 +188,7 @@ class FileSystemObjectStore(ObjectStore):
 
 class S3ObjectStore(ObjectStore):
     def __init__(self, s3_bucket, run_id, types_to_register=None):
-        boto3, _ = ensure_boto_requirements()
+        boto3 = ensure_boto_requirements()
         check.str_param(run_id, 'run_id')
 
         self.s3 = boto3.client('s3')
@@ -238,29 +237,44 @@ class S3ObjectStore(ObjectStore):
 
         key = self.key_for_paths(paths)
 
+        # FIXME we need better error handling for object store
         return runtime_type.serialization_strategy.deserialize_value(
             context, BytesIO(self.s3.get_object(Bucket=self.bucket, Key=key)['Body'].read())
         )
 
     def has_object(self, context, paths):  # pylint: disable=unused-argument
-        _, botocore = ensure_boto_requirements()
-        key = self.key_for_paths(paths)
+        ensure_boto_requirements()
+        prefix = self.key_for_paths(paths)
 
-        try:
-            self.s3.head_object(Bucket=self.bucket, Key=key)
+        key_count = self.s3.list_objects_v2(Bucket=self.bucket, Prefix=prefix)['KeyCount']
+        if key_count > 0:
             return True
-        except botocore.exceptions.ClientError as exc:  # pylint: disable=undefined-variable
-            if exc.response.get('Error', {}).get('Code') == '404':
-                return False
-            raise
+        return False
 
     def rm_object(self, context, paths):
+        def delete_for_results(object_store, results):
+            object_store.s3.delete_objects(
+                Bucket=self.bucket,
+                Delete={'Objects': [{'Key': result['Key']} for result in results['Contents']]},
+            )
+
         ensure_boto_requirements()
         if not self.has_object(context, paths):
             return
 
-        key = self.key_for_paths(paths)
-        self.s3.delete_object(Bucket=self.bucket, Key=key)
+        prefix = self.key_for_paths(paths)
+        results = self.s3.list_objects_v2(Bucket=self.bucket, Prefix=prefix)
+        delete_for_results(self, results)
+
+        continuation = results['IsTruncated']
+        while continuation:
+            continuation_token = results['NextContinuationToken']
+            results = self.s3.list_objects_v2(
+                Bucket=self.bucket, Prefix=prefix, ContinuationToken=continuation_token
+            )
+            delete_for_results(self, results)
+            continuation = results['IsTruncated']
+
         return
 
     def copy_object_from_prev_run(

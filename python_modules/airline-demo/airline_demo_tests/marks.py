@@ -23,3 +23,6 @@ slow = pytest.mark.slow
 
 spark = pytest.mark.spark
 '''Tests that require Spark.'''
+
+airflow = pytest.mark.airflow
+'''Tests that require Airflow.'''

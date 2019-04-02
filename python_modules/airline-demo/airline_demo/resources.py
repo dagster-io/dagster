@@ -58,6 +58,11 @@ class S3DownloadManager:
 
         return target_path
 
+    def download_file_contents(self, context, target_file):
+        check.str_param(target_file, 'target_file')
+        full_key = self.key + '/' + target_file
+        return context.resources.s3.get_object(Bucket=self.bucket, Key=full_key)['Body'].read()
+
 
 @resource(
     config_field=Field(

@@ -729,6 +729,10 @@ jobs:
             . build.sh
             popd
       - run:
+          name: Setup AIRFLOW_HOME
+          command: |
+            mkdir -p /home/circleci/airflow
+      - run:
           name: Install Dependencies
           command: |
             sudo pip install -U 'pip<19.0' # see: https://github.com/pypa/pip/issues/6163
@@ -809,6 +813,10 @@ jobs:
             . build.sh
             popd
       - run:
+          name: Setup AIRFLOW_HOME
+          command: |
+            mkdir -p /home/circleci/airflow
+      - run:
           name: Install Dependencies
           command: |
             sudo pip install -U 'pip<19.0' # see: https://github.com/pypa/pip/issues/6163
@@ -859,6 +867,10 @@ jobs:
             pushd python_modules/airline-demo/
             . build.sh
             popd
+      - run:
+          name: Setup AIRFLOW_HOME
+          command: |
+            mkdir -p /home/circleci/airflow
       - run:
           name: Install Dependencies
           command: |
