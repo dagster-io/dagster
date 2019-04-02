@@ -168,6 +168,13 @@ class DagsterEvent(
         return self.event_specific_data
 
     @property
+    def pipeline_process_started_data(self):
+        _assert_type(
+            'pipeline_process_started', DagsterEventType.PIPELINE_PROCESS_STARTED, self.event_type
+        )
+        return self.event_specific_data
+
+    @property
     def step_materialization_data(self):
         _assert_type(
             'step_materialization_data', DagsterEventType.STEP_MATERIALIZATION, self.event_type
