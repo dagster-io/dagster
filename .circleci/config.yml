@@ -917,7 +917,7 @@ jobs:
       - run:
           name: Build Scala jar
           command: |
-              pushd ../../scala_modules
+              pushd scala_modules
               sbt events/assembly
               cp ./events/target/scala-2.11/events-assembly-0.1.0-SNAPSHOT.jar /tmp/dagster/events/
               popd
