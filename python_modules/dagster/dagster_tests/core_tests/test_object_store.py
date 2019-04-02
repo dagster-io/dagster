@@ -273,10 +273,7 @@ def test_s3_object_store_composite_types_with_custom_serializer_for_inner_type()
             ) == ['foo', 'bar']
 
         finally:
-            try:
-                shutil.rmtree(object_store.root)
-            except seven.FileNotFoundError:
-                pass
+            object_store.rm_object(context, ['foo'])
 
 
 def test_file_system_object_store_with_type_storage_plugin():
