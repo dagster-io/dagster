@@ -20,8 +20,8 @@ class TestExecuteDag(object):
 
     def test_execute_dag(self, dagster_airflow_python_operator_pipeline):
         expected_results = {
-            'multiply_the_word': '\'barbar\'',
-            'count_letters': '{\'b\': 2, \'a\': 2, \'r\': 2}',
+            'multiply_the_word': '"barbar"',
+            'count_letters': '{"b": 2, "a": 2, "r": 2}',
         }
         for result in dagster_airflow_python_operator_pipeline:
             assert 'data' in result
@@ -35,5 +35,7 @@ class TestExecuteDag(object):
                 )
             )[0]
             assert json.loads(
-                re.sub('^u\'', '\'', result['valueRepr']).replace('\'', '"')
+                re.sub(
+                    '\{u\'', '{\'', re.sub(' u\'', ' \'', re.sub('^u\'', '\'', result['valueRepr']))
+                ).replace('\'', '"')
             ) == json.loads(expected_results[result['step']['solid']['name']].replace('\'', '"'))

@@ -54,7 +54,7 @@ def test_modified_docker_operator_bad_command():
         config='',
         pipeline_name='',
     )
-    with pytest.raises(AirflowException, match='\'StatusCode\': 2}'):
+    with pytest.raises(AirflowException, match='\'StatusCode\': 2'):
         operator.execute({})
 
 
