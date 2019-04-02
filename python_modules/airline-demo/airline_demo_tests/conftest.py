@@ -28,8 +28,6 @@ try:
 except ImportError:
     pass
 
-from .utils import import_module_from_path
-
 
 IMAGE = 'airline-demo-airflow'
 
@@ -282,10 +280,10 @@ def in_memory_airflow_run(scaffold_dag, docker_compose_db):
 
     run_id = str(uuid.uuid4())
 
-    import_module_from_path(
+    seven.import_module_from_path(
         '{pipeline_name}_static__scaffold'.format(pipeline_name=pipeline_name), static_path
     )
-    demo_pipeline = import_module_from_path('demo_pipeline', editable_path)
+    demo_pipeline = seven.import_module_from_path('demo_pipeline', editable_path)
 
     _dag, tasks = demo_pipeline.make_dag(
         dag_id=demo_pipeline.DAG_ID,

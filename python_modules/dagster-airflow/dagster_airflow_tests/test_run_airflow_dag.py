@@ -11,14 +11,13 @@ import pytest
 from airflow.exceptions import AirflowException
 from airflow.models import TaskInstance
 
-from dagster import RunConfig
+from dagster import RunConfig, seven
 from dagster.core.execution import yield_pipeline_execution_context
 from dagster.core.object_store import has_s3_intermediate
 
 from dagster_airflow.scaffold import coalesce_execution_steps
 
 from .marks import aws, nettest
-from .utils import import_module_from_path
 
 if sys.platform == 'darwin':
     TEMP_DIR = '/tmp'
@@ -105,8 +104,8 @@ def test_run_airflow_dag(scaffold_dag):
 
     execution_date = datetime.datetime.utcnow()
 
-    import_module_from_path('demo_pipeline_static__scaffold', static_path)
-    demo_pipeline = import_module_from_path('demo_pipeline', editable_path)
+    seven.import_module_from_path('demo_pipeline_static__scaffold', static_path)
+    demo_pipeline = seven.import_module_from_path('demo_pipeline', editable_path)
 
     _dag, tasks = demo_pipeline.make_dag(
         dag_id=demo_pipeline.DAG_ID,
@@ -130,8 +129,8 @@ def test_run_airflow_error_dag(scaffold_error_dag):
 
     execution_date = datetime.datetime.utcnow()
 
-    import_module_from_path('demo_error_pipeline_static__scaffold', static_path)
-    demo_pipeline = import_module_from_path('demo_error_pipeline', editable_path)
+    seven.import_module_from_path('demo_error_pipeline_static__scaffold', static_path)
+    demo_pipeline = seven.import_module_from_path('demo_error_pipeline', editable_path)
 
     _dag, tasks = demo_pipeline.make_dag(
         dag_id=demo_pipeline.DAG_ID,
