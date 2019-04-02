@@ -910,12 +910,16 @@ jobs:
       - restore_cache:
           key: sbt-cache
       - run:
+          name: Create working directory for build
+          command: |
+            mkdir -p /tmp/dagster/events/
+      - run:
           name: Build Scala jar
           command: |
-              pushd scala_modules
-              /opt/sbt/bin/sbt events/assembly
-              cp ./events/target/scala-2.11/events-assembly-0.1.0-SNAPSHOT.jar /tmp/dagster/events/
-              popd
+            pushd scala_modules
+            /opt/sbt/bin/sbt events/assembly
+            cp ./events/target/scala-2.11/events-assembly-0.1.0-SNAPSHOT.jar /tmp/dagster/events/
+            popd
       - save_cache:
           key: sbt-cache
           paths:
