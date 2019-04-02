@@ -289,7 +289,7 @@ type CodemirrorLocation = {
 };
 
 type CodemirrorHint = {
-  displayText: string;
+  render: (el: Element, self: any, data: any) => void;
   text: string;
   from: CodemirrorLocation;
   to: CodemirrorLocation;
@@ -341,9 +341,30 @@ CodeMirror.registerHelper(
       type.__typename === "ListConfigType" ||
       type.__typename == "CompositeConfigType";
 
-    const buildSuggestion = (display: string, replacement: string) => ({
+    const buildSuggestion = (
+      display: string,
+      replacement: string,
+      description: string | null
+    ): CodemirrorHint => ({
       text: replacement,
-      displayText: display,
+      render: (el, self, data) => {
+        const div = document.createElement("div");
+        div.textContent = display;
+        if (description) {
+          const docs = document.createElement("div");
+          docs.innerText =
+            description.length < 90
+              ? description
+              : description.substr(0, 87) + "...";
+          docs.style.opacity = "0.5";
+          docs.style.overflow = "hidden";
+          docs.style.maxHeight = "33px";
+          docs.style.maxWidth = "360px";
+          docs.style.whiteSpace = "normal";
+          div.appendChild(docs);
+        }
+        el.appendChild(div);
+      },
       from: { line: cur.line, ch: start },
       to: { line: cur.line, ch: token.end }
     });
@@ -358,7 +379,8 @@ CodeMirror.registerHelper(
               field.name,
               shouldAddTrailingNewline(field.configType)
                 ? `${field.name}:\n${" ".repeat(start + 2)}`
-                : `${field.name}: `
+                : `${field.name}: `,
+              field.description
             )
           )
       };
@@ -372,7 +394,7 @@ CodeMirror.registerHelper(
       return {
         list: context.type.values
           .filter(val => val.value.startsWith(searchString))
-          .map(val => buildSuggestion(val.value, `"${val.value}"`))
+          .map(val => buildSuggestion(val.value, `"${val.value}"`, null))
       };
     }
 
@@ -458,6 +480,36 @@ type ValidationError = {
   reason: string;
 };
 
+CodeMirror.registerHelper("dagster-docs", "yaml", (editor: any, pos: any) => {
+  const pipeline = editor.options.hintOptions
+    .pipeline as ConfigEditorPipelineFragment;
+  const token: CodemirrorToken = editor.getTokenAt(pos);
+
+  if (token.type !== "atom") {
+    return null;
+  }
+
+  // Takes the pipeline and the YAML tokenizer state and returns the
+  // pipeline type in scope and available (yet-to-be-used) fields
+  // if it is a composite type.
+  const context = findAutocompletionContext(
+    pipeline,
+    token.state.parents,
+    token.start
+  );
+
+  const match =
+    context &&
+    context.type.__typename == "CompositeConfigType" &&
+    context.type.fields.find(f => f.name === token.string);
+
+  if (match && match.description) {
+    return match.description;
+  }
+
+  return null;
+});
+
 CodeMirror.registerHelper(
   "lint",
   "yaml",
@@ -519,8 +571,16 @@ function findRangeInDocumentFromPath(
   pathPart: "key" | "value"
 ): { start: number; end: number } | null {
   let node: any = nodeAtPath(doc, path);
-  if (node && node.type && node.type === "PAIR") {
-    node = node[pathPart];
+  if (
+    node &&
+    node.type &&
+    node.type === "PAIR" &&
+    pathPart === "value" &&
+    node.value
+  ) {
+    node = node.value;
+  } else {
+    node = node.key;
   }
   if (node && node.range) {
     return {
