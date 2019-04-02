@@ -6,10 +6,10 @@ from dagster.core.execution_context import (
     MultiprocessExecutorConfig,
     SystemPipelineExecutionContext,
 )
-
+from dagster.core.events import DagsterEvent
 
 from .create import create_execution_plan_core
-from .objects import ExecutionPlan, ExecutionStepEvent
+from .objects import ExecutionPlan
 from .simple_engine import start_inprocess_executor
 
 from .child_process_executor import ChildProcessCommand, execute_child_process_command
@@ -94,5 +94,5 @@ def multiprocess_execute_plan(pipeline_context, execution_plan, step_keys_to_exe
                 continue
 
             for step_event in check.generator(execute_step_out_of_process(step_context, step)):
-                check.inst(step_event, ExecutionStepEvent)
+                check.inst(step_event, DagsterEvent)
                 yield step_event

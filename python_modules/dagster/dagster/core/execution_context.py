@@ -14,7 +14,7 @@ from dagster.core.errors import DagsterInvariantViolationError
 from .definitions.expectation import ExpectationDefinition
 from .definitions.input import InputDefinition
 from .definitions.output import OutputDefinition
-from .events import ExecutionEvents
+from .events.logging import ExecutionEvents
 from .log import DagsterLog
 from .runs import RunStorageMode, RunStorage
 from .system_config.objects import EnvironmentConfig

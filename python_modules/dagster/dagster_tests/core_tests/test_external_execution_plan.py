@@ -17,7 +17,7 @@ from dagster import (
 from dagster.core.execution import (
     MultiprocessExecutorConfig,
     yield_pipeline_execution_context,
-    ExecutionStepEventType,
+    DagsterEventType,
     create_execution_plan,
     execute_plan,
 )
@@ -56,7 +56,7 @@ def define_inty_pipeline():
 def get_step_output(step_events, step_key, output_name='result'):
     for step_event in step_events:
         if (
-            step_event.event_type == ExecutionStepEventType.STEP_OUTPUT
+            step_event.event_type == DagsterEventType.STEP_OUTPUT
             and step_event.step_key == step_key
             and step_event.step_output_data.output_name == output_name
         ):

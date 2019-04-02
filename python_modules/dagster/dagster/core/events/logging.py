@@ -3,9 +3,8 @@ import json
 from collections import namedtuple
 from enum import Enum
 
-from dagster import check, seven
-from dagster.utils import merge_dicts
-from dagster.utils.error import serializable_error_info_from_exc_info, SerializableErrorInfo
+from dagster import check
+from dagster.utils.error import SerializableErrorInfo
 
 from dagster.utils.logging import (
     DEBUG,
@@ -16,21 +15,18 @@ from dagster.utils.logging import (
     construct_single_handler_logger,
 )
 
-from .log import DagsterLog
+from dagster.core.log import DagsterLog
 
 
 class EventType(Enum):
+    DAGSTER_EVENT = 'DAGSTER_EVENT'
+
     PIPELINE_START = 'PIPELINE_START'
     PIPELINE_SUCCESS = 'PIPELINE_SUCCESS'
     PIPELINE_FAILURE = 'PIPELINE_FAILURE'
 
     PIPELINE_PROCESS_START = 'PIPELINE_PROCESS_START'
     PIPELINE_PROCESS_STARTED = 'PIPELINE_PROCESS_STARTED'
-
-    EXECUTION_PLAN_STEP_SUCCESS = 'EXECUTION_PLAN_STEP_SUCCESS'
-    EXECUTION_PLAN_STEP_START = 'EXECUTION_PLAN_STEP_START'
-    EXECUTION_PLAN_STEP_OUTPUT = 'EXECUTION_PLAN_STEP_OUTPUT'
-    EXECUTION_PLAN_STEP_FAILURE = 'EXECUTION_PLAN_STEP_FAILURE'
 
     STEP_MATERIALIZATION = 'STEP_MATERIALIZATION'
 
@@ -65,60 +61,6 @@ class ExecutionEvents(namedtuple('_ExecutionEvents', 'pipeline_name log')):
                 pipeline=self.pipeline_name
             ),
             event_type=EventType.PIPELINE_FAILURE.value,
-        )
-
-    def execution_plan_step_start(self, step_key):
-        check.str_param(step_key, 'step_key')
-        self.log.info(
-            'Beginning execution of {step_key}'.format(step_key=step_key),
-            event_type=EventType.EXECUTION_PLAN_STEP_START.value,
-            step_key=step_key,
-        )
-
-    def execution_plan_step_output(self, step_key, output_name, storage_mode, storage_object_id):
-        check.str_param(step_key, 'step_key')
-        check.str_param(output_name, 'output_name')
-        check.str_param(storage_mode, 'storage_mode')
-        check.str_param(storage_object_id, 'storage_object_id')
-
-        self.log.info(
-            (
-                'Execution step {step_key} emitted output {output_name}. Storage mode: '
-                '{storage_mode} at storage_object_id {storage_object_id}'
-            ).format(
-                step_key=step_key,
-                output_name=output_name,
-                storage_mode=storage_mode,
-                storage_object_id=storage_object_id,
-            ),
-            event_type=EventType.EXECUTION_PLAN_STEP_OUTPUT.value,
-            step_key=step_key,
-            output_name=output_name,
-            storage_mode=storage_mode,
-            storage_object_id=storage_object_id,
-        )
-
-    def execution_plan_step_success(self, step_key, millis):
-        check.str_param(step_key, 'step_key')
-        check.float_param(millis, 'millis')
-
-        self.log.info(
-            'Execution of {step_key} succeeded in {millis}'.format(
-                step_key=step_key, millis=millis
-            ),
-            event_type=EventType.EXECUTION_PLAN_STEP_SUCCESS.value,
-            millis=millis,
-            step_key=step_key,
-        )
-
-    def execution_plan_step_failure(self, step_key, exc_info):
-        check.str_param(step_key, 'step_key')
-        self.log.error(
-            'Execution of {step_key} failed'.format(step_key=step_key),
-            event_type=EventType.EXECUTION_PLAN_STEP_FAILURE.value,
-            step_key=step_key,
-            # We really need a better serialization story here
-            error_info=seven.json.dumps(serializable_error_info_from_exc_info(exc_info)),
         )
 
     def step_materialization(self, step_key, file_name, file_location):
@@ -220,80 +162,31 @@ class PipelineEventRecord(EventRecord):
         return orig
 
 
-class ExecutionStepEventRecord(EventRecord):
-    def __init__(self, pipeline_name, solid_name, solid_definition_name, **kwargs):
-        super(ExecutionStepEventRecord, self).__init__(**kwargs)
-        self._pipeline_name = check.str_param(pipeline_name, 'pipeline_name')
-        self._solid_name = check.str_param(solid_name, 'solid_name')
-        self._solid_definition_name = check.str_param(
-            solid_definition_name, 'solid_definition_name'
-        )
+class DagsterEventRecord(EventRecord):
+    def __init__(self, dagster_event, pipeline_name, **kwargs):
+        super(DagsterEventRecord, self).__init__(**kwargs)
+        self._dagster_event = dagster_event
+        self._pipeline_name = pipeline_name
+
+    @property
+    def dagster_event(self):
+        return self._dagster_event
 
     @property
     def pipeline_name(self):
         return self._pipeline_name
 
-    @property
-    def solid_name(self):
-        return self._solid_name
-
-    @property
-    def solid_definition_name(self):
-        return self._solid_definition_name
-
     def to_dict(self):
-        orig = super(ExecutionStepEventRecord, self).to_dict()
-        orig.update(
-            {
-                'pipeline_name': self.pipeline_name,
-                'step_key': self.step_key,
-                'solid_name': self.solid_name,
-                'solid_definition_name': self.solid_definition_name,
-            }
-        )
+        orig = super(DagsterEventRecord, self).to_dict()
+        orig.update({'dagster_event': self.dagster_event, 'pipeline_name': self.pipeline_name})
         return orig
-
-
-class ExecutionStepSuccessRecord(ExecutionStepEventRecord):
-    def __init__(self, millis, **kwargs):
-        super(ExecutionStepSuccessRecord, self).__init__(**kwargs)
-        self._millis = check.float_param(millis, 'millis')
-
-    @property
-    def millis(self):
-        return self._millis
-
-    def to_dict(self):
-        orig = super(ExecutionStepSuccessRecord, self).to_dict()
-        orig['millis'] = self.millis
-        return orig
-
-
-class ExecutionStepOutputRecord(ExecutionStepEventRecord):
-    def __init__(self, output_name, storage_mode, storage_object_id, **kwargs):
-        super(ExecutionStepOutputRecord, self).__init__(**kwargs)
-        self._output_name = check.str_param(output_name, 'output_name')
-        self._storage_mode = check.str_param(storage_mode, 'storage_mode')
-        self._storage_object_id = check.str_param(storage_object_id, 'storage_object_id')
-
-    @property
-    def output_name(self):
-        return self._output_name
-
-    @property
-    def storage_mode(self):
-        return self._storage_mode
-
-    @property
-    def storage_object_id(self):
-        return self._storage_object_id
 
 
 class LogMessageRecord(EventRecord):
     pass
 
 
-class StepMaterializationRecord(ExecutionStepEventRecord):
+class StepMaterializationRecord(EventRecord):
     def __init__(self, file_name, file_location, **kwargs):
         super(StepMaterializationRecord, self).__init__(**kwargs)
         self._name = check.str_param(file_name, 'file_name')
@@ -315,14 +208,11 @@ class StepMaterializationRecord(ExecutionStepEventRecord):
 
 
 EVENT_CLS_LOOKUP = {
-    EventType.EXECUTION_PLAN_STEP_FAILURE: ExecutionStepEventRecord,
-    EventType.EXECUTION_PLAN_STEP_OUTPUT: ExecutionStepOutputRecord,
-    EventType.EXECUTION_PLAN_STEP_START: ExecutionStepEventRecord,
-    EventType.EXECUTION_PLAN_STEP_SUCCESS: ExecutionStepSuccessRecord,
     EventType.PIPELINE_FAILURE: PipelineEventRecord,
     EventType.PIPELINE_START: PipelineEventRecord,
     EventType.PIPELINE_SUCCESS: PipelineEventRecord,
     EventType.STEP_MATERIALIZATION: StepMaterializationRecord,
+    EventType.DAGSTER_EVENT: DagsterEventRecord,
     EventType.UNCATEGORIZED: LogMessageRecord,
 }
 
@@ -361,23 +251,18 @@ def logger_to_kwargs(logger_message):
     event_cls = EVENT_CLS_LOOKUP[event_type]
     if issubclass(event_cls, PipelineEventRecord):
         return dict(base_args, pipeline_name=logger_message.meta['pipeline'])
-    elif issubclass(event_cls, ExecutionStepEventRecord):
-        step_args = {
-            'pipeline_name': logger_message.meta['pipeline'],
-            'solid_name': logger_message.meta['solid'],
-            'solid_definition_name': logger_message.meta['solid_definition'],
-        }
-        if event_cls == ExecutionStepSuccessRecord:
-            step_args['millis'] = logger_message.meta['millis']
-        if event_cls == StepMaterializationRecord:
-            step_args['file_name'] = logger_message.meta['file_name']
-            step_args['file_location'] = logger_message.meta['file_location']
-        if event_cls == ExecutionStepOutputRecord:
-            step_args['output_name'] = logger_message.meta['output_name']
-            step_args['storage_mode'] = logger_message.meta['storage_mode']
-            step_args['storage_object_id'] = logger_message.meta['storage_object_id']
-
-        return merge_dicts(base_args, step_args)
+    elif issubclass(event_cls, DagsterEventRecord):
+        return dict(
+            base_args,
+            dagster_event=logger_message.meta['dagster_event'],
+            pipeline_name=logger_message.meta['pipeline_name'],
+        )
+    elif issubclass(event_cls, StepMaterializationRecord):
+        return dict(
+            base_args,
+            file_name=logger_message.meta['file_name'],
+            file_location=logger_message.meta['file_location'],
+        )
     else:
         return base_args
 

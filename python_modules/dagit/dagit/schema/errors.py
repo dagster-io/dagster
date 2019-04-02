@@ -18,6 +18,7 @@ from dagster.utils.error import SerializableErrorInfo
 
 from dagit.schema import dauphin
 
+from .runs import DauphinStepEvent
 from .config_types import to_dauphin_config_type
 
 
@@ -378,31 +379,6 @@ class DauphinStartPipelineExecutionResult(dauphin.Union):
             DauphinPipelineNotFoundError,
             DauphinStartPipelineExecutionSuccess,
         )
-
-
-class DauphinStepEvent(dauphin.Interface):
-    class Meta:
-        name = 'StepEvent'
-
-    step = dauphin.Field(dauphin.NonNull('ExecutionStep'))
-    success = dauphin.Field(dauphin.NonNull(dauphin.Boolean))
-
-
-class DauphinSuccessfulStepOutputEvent(dauphin.ObjectType):
-    class Meta:
-        name = 'SuccessfulStepOutputEvent'
-        interfaces = (DauphinStepEvent,)
-
-    output_name = dauphin.Field(dauphin.NonNull(dauphin.String))
-    value_repr = dauphin.Field(dauphin.NonNull(dauphin.String))
-
-
-class DauphinStepFailureEvent(dauphin.ObjectType):
-    class Meta:
-        name = 'StepFailureEvent'
-        interfaces = (DauphinStepEvent,)
-
-    error_message = dauphin.Field(dauphin.NonNull(dauphin.String))
 
 
 class DauphinExecutePlanSuccess(dauphin.ObjectType):

@@ -4,14 +4,12 @@ from enum import Enum
 
 from dagster import check
 from dagster.core.definitions import Solid, PipelineDefinition
-from dagster.core.execution_context import (
-    SystemPipelineExecutionContext,
-    SystemStepExecutionContext,
-)
-from dagster.core.intermediates_manager import StepOutputHandle
+from dagster.core.execution_context import SystemPipelineExecutionContext
+from dagster.core.intermediates_manager import StepOutputHandle, RunStorageMode
 from dagster.core.types.runtime import RuntimeType
 from dagster.core.utils import toposort
 from dagster.utils import merge_dicts
+from dagster.utils.error import SerializableErrorInfo
 
 
 class StepOutputValue(namedtuple('_StepOutputValue', 'output_name value')):
@@ -33,118 +31,43 @@ class SingleOutputStepCreationData(namedtuple('SingleOutputStepCreationData', 's
         return StepOutputHandle.from_step(self.step, self.output_name)
 
 
-class StepOutputData:
-    def __init__(self, step_output_handle, value_repr):
-        self.step_output_handle = step_output_handle
-        self._value_repr = value_repr
+class StepOutputData(
+    namedtuple(
+        '_StepOutputData', 'step_output_handle value_repr storage_object_id storage_mode_value'
+    )
+):
+    def __new__(cls, step_output_handle, value_repr, storage_object_id, storage_mode_value):
+        check.inst_param(RunStorageMode(storage_mode_value), 'storage_mode', RunStorageMode)
+        return super(StepOutputData, cls).__new__(
+            cls,
+            step_output_handle=check.inst_param(
+                step_output_handle, 'step_output_handle', StepOutputHandle
+            ),
+            value_repr=check.str_param(value_repr, 'value_repr'),
+            storage_object_id=check.str_param(storage_object_id, 'storage_object_id'),
+            storage_mode_value=check.str_param(storage_mode_value, 'storage_mode_value'),
+        )
 
     @property
     def output_name(self):
         return self.step_output_handle.output_name
 
     @property
-    def value_repr(self):
-        return self._value_repr
+    def storage_mode(self):
+        return RunStorageMode(self.storage_mode_value)
 
 
-class StepFailureData(namedtuple('_StepFailureData', 'error_message error_cls_name stack')):
-    def __new__(cls, error_message, error_cls_name, stack):
+class StepFailureData(namedtuple('_StepFailureData', 'error')):
+    def __new__(cls, error):
         return super(StepFailureData, cls).__new__(
-            cls,
-            error_cls_name=check.str_param(error_cls_name, 'error_cls_name'),
-            error_message=check.str_param(error_message, 'error_message'),
-            stack=check.list_param(stack, 'stack', of_type=str),
+            cls, error=check.inst_param(error, 'error', SerializableErrorInfo)
         )
 
 
-class ExecutionStepEventType(Enum):
-    STEP_OUTPUT = 'STEP_OUTPUT'
-    STEP_FAILURE = 'STEP_FAILURE'
-
-
-def get_step_output_event(events, step_key, output_name='result'):
-    check.list_param(events, 'events', of_type=ExecutionStepEvent)
-    check.str_param(step_key, 'step_key')
-    check.str_param(output_name, 'output_name')
-
-    for event in events:
-        if (
-            event.event_type == ExecutionStepEventType.STEP_OUTPUT
-            and event.step_key == step_key
-            and event.step_output_data.output_name == output_name
-        ):
-            return event
-    return None
-
-
-class ExecutionStepEvent(
-    namedtuple(
-        '_ExecutionStepEvent',
-        'event_type step_key solid_name step_kind step_output_data step_failure_data tags',
-    )
-):
-    @staticmethod
-    def from_step(event_type, step, step_output_data, step_failure_data, tags):
-        return ExecutionStepEvent(
-            event_type,
-            step.key,
-            step.solid.name,
-            step.kind,
-            step_output_data,
-            step_failure_data,
-            tags,
-        )
-
-    def __new__(
-        cls, event_type, step_key, solid_name, step_kind, step_output_data, step_failure_data, tags
-    ):
-        return super(ExecutionStepEvent, cls).__new__(
-            cls,
-            check.inst_param(event_type, 'event_type', ExecutionStepEventType),
-            check.str_param(step_key, 'step_key'),
-            check.str_param(solid_name, 'solid_name'),
-            check.inst_param(step_kind, 'step_kind', StepKind),
-            check.opt_inst_param(step_output_data, 'step_output_data', StepOutputData),
-            check.opt_inst_param(step_failure_data, 'step_failure_data', StepFailureData),
-            check.dict_param(tags, 'tags'),
-        )
-
-    @property
-    def is_step_success(self):
-        return not self.is_step_failure
-
-    @property
-    def is_successful_output(self):
-        return self.event_type == ExecutionStepEventType.STEP_OUTPUT
-
-    @property
-    def is_step_failure(self):
-        return self.event_type == ExecutionStepEventType.STEP_FAILURE
-
-    @staticmethod
-    def step_output_event(step_context, step_output_data):
-        check.inst_param(step_context, 'step_context', SystemStepExecutionContext)
-
-        return ExecutionStepEvent.from_step(
-            event_type=ExecutionStepEventType.STEP_OUTPUT,
-            step=step_context.step,
-            step_output_data=check.inst_param(step_output_data, 'step_output_data', StepOutputData),
-            step_failure_data=None,
-            tags=step_context.tags,
-        )
-
-    @staticmethod
-    def step_failure_event(step_context, step_failure_data):
-        check.inst_param(step_context, 'step_context', SystemStepExecutionContext)
-
-        return ExecutionStepEvent.from_step(
-            event_type=ExecutionStepEventType.STEP_FAILURE,
-            step=step_context.step,
-            step_output_data=None,
-            step_failure_data=check.inst_param(
-                step_failure_data, 'step_failure_data', StepFailureData
-            ),
-            tags=step_context.tags,
+class StepSuccessData(namedtuple('_StepSuccessData', 'duration_ms')):
+    def __new__(cls, duration_ms):
+        return super(StepSuccessData, cls).__new__(
+            cls, duration_ms=check.float_param(duration_ms, 'duration_ms')
         )
 
 

@@ -56,7 +56,7 @@ def test_error_notebook():
         execute_pipeline(define_error_pipeline())
     res = execute_pipeline(define_error_pipeline(), run_config=RunConfig.nonthrowing_in_process())
     assert not res.success
-    assert res.step_event_list[0].event_type.value == 'STEP_FAILURE'
+    assert res.step_event_list[1].event_type.value == 'STEP_FAILURE'
 
 
 @notebook_test
