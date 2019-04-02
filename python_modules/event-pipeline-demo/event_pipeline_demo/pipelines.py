@@ -45,7 +45,10 @@ def define_event_ingest_pipeline():
 
     # TODO: express dependency of this solid on event_ingest
     snowflake_load = SnowflakeLoadSolidDefinition(
-        'snowflake_load', src='file:///tmp/output/local/output/2019/01/01/*.parquet', table='events'
+        'snowflake_load',
+        # TODO: need to pull this out to config
+        src='file:///tmp/dagster/events/data/output/2019/01/01/*.parquet',
+        table='events',
     )
 
     return PipelineDefinition(
