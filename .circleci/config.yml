@@ -901,22 +901,11 @@ jobs:
 
   event-pipeline-demo-py36: &event-pipeline-demo-template
     docker:
-      - image: circleci/python:3.6.6
+      - image: dagster/cci-test:3.6
     environment:
       TOXENV: py36
     working_directory: ~/repo
     steps:
-      - run:
-          environment:
-            SBT_VERSION: 1.2.8
-          name: Get sbt binary
-          command: |
-            sudo apt update && sudo apt install -y curl
-            curl -L -o sbt-$SBT_VERSION.deb https://dl.bintray.com/sbt/debian/sbt-$SBT_VERSION.deb
-            sudo dpkg -i sbt-$SBT_VERSION.deb
-            rm sbt-$SBT_VERSION.deb
-            sudo apt-get update && sudo apt-get install -y sbt
-            sudo apt-get clean && sudo apt-get autoclean
       - checkout
       - restore_cache:
           key: sbt-cache
@@ -924,7 +913,7 @@ jobs:
           name: Build Scala jar
           command: |
               pushd scala_modules
-              sbt events/assembly
+              /opt/sbt/bin/sbt events/assembly
               cp ./events/target/scala-2.11/events-assembly-0.1.0-SNAPSHOT.jar /tmp/dagster/events/
               popd
       - save_cache:
@@ -954,21 +943,21 @@ jobs:
   event-pipeline-demo-py37:
     <<: *event-pipeline-demo-template
     docker:
-      - image: circleci/python:3.7.2
+      - image: dagster/cci-test:3.7.2
     environment:
       TOXENV: py37
 
   event-pipeline-demo-py35:
     <<: *event-pipeline-demo-template
     docker:
-      - image: circleci/python:3.5.6
+      - image: dagster/cci-test:3.5
     environment:
       TOXENV: py35
 
   event-pipeline-demo-py27:
     <<: *event-pipeline-demo-template
     docker:
-      - image: circleci/python:2.7.15
+      - image: dagster/cci-test:2.7
     environment:
       TOXENV: py27
 
