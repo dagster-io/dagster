@@ -913,13 +913,13 @@ jobs:
       - run:
           name: Run Dagster Tests
           command: |
-            pushd python_modules/event-pipeline-demp
+            pushd python_modules/event-pipeline-demo
             tox -e $TOXENV
             popd
 
       - run:
           command: |
-            mv python_modules/event-pipeline-demp/.coverage python_modules/.coverage.event-pipeline-demp.${CIRCLE_BUILD_NUM}
+            mv python_modules/event-pipeline-demo/.coverage python_modules/.coverage.event-pipeline-demo.${CIRCLE_BUILD_NUM}
 
       - persist_to_workspace:
           root: python_modules/
