@@ -2,6 +2,7 @@ from __future__ import unicode_literals
 
 import datetime
 import json
+import re
 import uuid
 
 from collections import namedtuple
@@ -54,6 +55,6 @@ def test_execute_dag():
                 lambda x: x['outputName'] == 'result', json_res['data']['executePlan']['stepEvents']
             )
         )[0]
-        assert json.loads(result['valueRepr'].replace('\'', '"')) == json.loads(
-            expected_results[task.task_id].replace('\'', '"')
-        )
+        assert json.loads(
+            re.sub('^u\'', '\'', result['valueRepr']).replace('\'', '"')
+        ) == json.loads(expected_results[task.task_id].replace('\'', '"'))
