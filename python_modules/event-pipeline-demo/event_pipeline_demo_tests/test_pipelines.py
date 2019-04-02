@@ -33,9 +33,12 @@ def test_event_pipeline():
             except subprocess.CalledProcessError:
                 pass
             else:
-                os.environ['SPARK_HOME'] = list(
-                    filter(lambda x: 'Location' in x, pyspark_show.decode('utf-8').split('\n'))
-                )[0].split(' ')[1]
+                os.environ['SPARK_HOME'] = os.path.join(
+                    list(
+                        filter(lambda x: 'Location' in x, pyspark_show.decode('utf-8').split('\n'))
+                    )[0].split(' ')[1],
+                    'pyspark',
+                )
 
         config = load_yaml_from_globs(script_relative_path('../environments/default.yml'))
         result_pipeline = execute_pipeline(define_event_ingest_pipeline(), config)
