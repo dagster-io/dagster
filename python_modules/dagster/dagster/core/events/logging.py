@@ -24,8 +24,6 @@ class EventType(Enum):
     PIPELINE_PROCESS_START = 'PIPELINE_PROCESS_START'
     PIPELINE_PROCESS_STARTED = 'PIPELINE_PROCESS_STARTED'
 
-    STEP_MATERIALIZATION = 'STEP_MATERIALIZATION'
-
     UNCATEGORIZED = 'UNCATEGORIZED'
 
 
@@ -35,18 +33,6 @@ class ExecutionEvents(namedtuple('_ExecutionEvents', 'pipeline_name log')):
             cls,
             check.str_param(pipeline_name, 'pipeline_name'),
             check.inst_param(log, 'log', DagsterLog),
-        )
-
-    def step_materialization(self, step_key, file_name, file_location):
-        check.str_param(step_key, 'step_key')
-        self.log.info(
-            'Step {step_key} produced materialization of {name} at {loc}'.format(
-                step_key=step_key, name=file_name, loc=file_location
-            ),
-            event_type=EventType.STEP_MATERIALIZATION.value,
-            step_key=step_key,
-            file_name=file_name,
-            file_location=file_location,
         )
 
 
@@ -160,29 +146,7 @@ class LogMessageRecord(EventRecord):
     pass
 
 
-class StepMaterializationRecord(EventRecord):
-    def __init__(self, file_name, file_location, **kwargs):
-        super(StepMaterializationRecord, self).__init__(**kwargs)
-        self._name = check.str_param(file_name, 'file_name')
-        self._loc = check.str_param(file_location, 'file_location')
-
-    @property
-    def file_name(self):
-        return self._name
-
-    @property
-    def file_location(self):
-        return self._loc
-
-    def to_dict(self):
-        orig = super(StepMaterializationRecord, self).to_dict()
-        orig['name'] = self.file_name
-        orig['loc'] = self.file_location
-        return orig
-
-
 EVENT_CLS_LOOKUP = {
-    EventType.STEP_MATERIALIZATION: StepMaterializationRecord,
     EventType.DAGSTER_EVENT: DagsterEventRecord,
     EventType.UNCATEGORIZED: LogMessageRecord,
 }
@@ -223,12 +187,6 @@ def logger_to_kwargs(logger_message):
             base_args,
             dagster_event=logger_message.meta['dagster_event'],
             pipeline_name=logger_message.meta['pipeline_name'],
-        )
-    elif issubclass(event_cls, StepMaterializationRecord):
-        return dict(
-            base_args,
-            file_name=logger_message.meta['file_name'],
-            file_location=logger_message.meta['file_location'],
         )
     else:
         return base_args

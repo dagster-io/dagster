@@ -313,6 +313,13 @@ class DauphinPipelineRunEvent(dauphin.Union):
                     storage_object_id=output_data.storage_object_id,
                     **basic_params
                 )
+            elif dagster_event.event_type == DagsterEventType.STEP_MATERIALIZATION:
+                materialization_data = dagster_event.step_materialization_data
+                return graphene_info.schema.type_named('StepMaterializationEvent')(
+                    file_name=materialization_data.name,
+                    file_location=materialization_data.path,
+                    **basic_params
+                )
             elif dagster_event.event_type == DagsterEventType.STEP_FAILURE:
                 check.inst(dagster_event.step_failure_data, StepFailureData)
                 return graphene_info.schema.type_named('ExecutionStepFailureEvent')(
@@ -340,9 +347,5 @@ class DauphinPipelineRunEvent(dauphin.Union):
                     )
                 )
 
-        elif event.event_type == EventType.STEP_MATERIALIZATION:
-            return graphene_info.schema.type_named('StepMaterializationEvent')(
-                file_name=event.file_name, file_location=event.file_location, **basic_params
-            )
         else:
             return graphene_info.schema.type_named('LogMessageEvent')(**basic_params)

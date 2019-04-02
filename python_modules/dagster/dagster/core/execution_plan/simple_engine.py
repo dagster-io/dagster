@@ -23,6 +23,8 @@ from dagster.core.execution_context import (
     SystemStepExecutionContext,
 )
 
+from dagster.core.definitions import Materialization
+
 from dagster.core.events import DagsterEvent, DagsterEventType
 
 from dagster.core.intermediates_manager import IntermediatesManager
@@ -169,13 +171,20 @@ def execute_step_in_memory(step_context, inputs, intermediates_manager):
         return
 
 
-def _error_check_step_output_values(step, step_output_values):
+def _error_check_step_outputs(step, step_output_iter):
     check.inst_param(step, 'step', ExecutionStep)
-    check.generator_param(step_output_values, 'step_output_values')
+    check.generator_param(step_output_iter, 'step_output_iter')
 
     output_names = list([output_def.name for output_def in step.step_outputs])
     seen_outputs = set()
-    for step_output_value in step_output_values:
+
+    for step_output in step_output_iter:
+        if not isinstance(step_output, StepOutputValue):
+            yield step_output
+            continue
+
+        # do additional processing on StepOutputValues
+        step_output_value = step_output
         if not step.has_step_output(step_output_value.output_name):
             raise DagsterInvariantViolationError(
                 'Core transform for solid "{step.solid.name}" returned an output '
@@ -223,20 +232,31 @@ def _execute_steps_core_loop(step_context, inputs, intermediates_manager):
     yield DagsterEvent.step_start_event(step_context)
 
     with time_execution_scope() as timer_result:
-        step_output_value_iterator = check.generator(
-            _iterate_step_output_values_within_boundary(step_context, evaluated_inputs)
+        step_output_iterator = check.generator(
+            _iterate_step_outputs_within_boundary(step_context, evaluated_inputs)
         )
-    for step_output_value in check.generator(
-        _error_check_step_output_values(step_context.step, step_output_value_iterator)
+    for step_output in check.generator(
+        _error_check_step_outputs(step_context.step, step_output_iterator)
     ):
-        yield _create_step_event(step_context, step_output_value, intermediates_manager)
+        if isinstance(step_output, StepOutputValue):
+            yield _create_step_output_event(step_context, step_output, intermediates_manager)
+        elif isinstance(step_output, Materialization):
+            yield DagsterEvent.step_materialization(
+                step_context, step_output.name, step_output.path
+            )
+        else:
+            check.invariant(
+                'Unexpected step_output {step_output}, should have been caught earlier'.format(
+                    step_output=step_output
+                )
+            )
 
     yield DagsterEvent.step_success_event(
         step_context, StepSuccessData(duration_ms=timer_result.millis)
     )
 
 
-def _create_step_event(step_context, step_output_value, intermediates_manager):
+def _create_step_output_event(step_context, step_output_value, intermediates_manager):
     check.inst_param(step_context, 'step_context', SystemStepExecutionContext)
     check.inst_param(step_output_value, 'step_output_value', StepOutputValue)
     check.inst_param(intermediates_manager, 'intermediates_manager', IntermediatesManager)
@@ -302,7 +322,7 @@ def _get_evaluated_input(step, input_name, input_value):
         )
 
 
-def _iterate_step_output_values_within_boundary(step_context, evaluated_inputs):
+def _iterate_step_outputs_within_boundary(step_context, evaluated_inputs):
     check.inst_param(step_context, 'step_context', SystemStepExecutionContext)
     check.dict_param(evaluated_inputs, 'evaluated_inputs', key_type=str)
 
@@ -311,8 +331,8 @@ def _iterate_step_output_values_within_boundary(step_context, evaluated_inputs):
         gen = check.opt_generator(step_context.step.compute_fn(step_context, evaluated_inputs))
 
         if gen is not None:
-            for step_output_value in gen:
-                yield step_output_value
+            for step_output in gen:
+                yield step_output
 
 
 @contextmanager

@@ -28,6 +28,7 @@ from dagster.core.definitions import (
     PipelineDefinition,
     RepositoryDefinition,
     Result,
+    Materialization,
     SolidDefinition,
     SolidInstance,
 )
@@ -96,6 +97,7 @@ __all__ = [
     'Result',
     'SolidDefinition',
     'SolidInstance',
+    'Materialization',
     # Decorators
     'lambda_solid',
     'solid',

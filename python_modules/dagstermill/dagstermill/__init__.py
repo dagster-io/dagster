@@ -26,6 +26,7 @@ from dagster import (
     OutputDefinition,
     RepositoryDefinition,
     Result,
+    Materialization,
     PipelineDefinition,
     SolidDefinition,
     check,
@@ -36,6 +37,7 @@ from dagster.core.definitions.dependency import Solid
 from dagster.core.definitions.environment_configs import construct_environment_config
 from dagster.core.errors import DagsterSubprocessExecutionError
 from dagster.core.events.logging import construct_json_event_logger, EventRecord, EventType
+from dagster.core.events import DagsterEvent
 from dagster.core.execution import yield_pipeline_execution_context
 from dagster.core.execution_context import (
     DagsterLog,
@@ -611,10 +613,8 @@ def _dm_solid_transform(name, notebook_path):
                 )
             )
 
-            system_transform_context.events.step_materialization(
-                system_transform_context.step.key,
-                '{name} output notebook'.format(name=transform_context.solid.name),
-                temp_path,
+            yield Materialization(
+                '{name} output notebook'.format(name=transform_context.solid.name), temp_path
             )
 
             for output_def in system_transform_context.solid_def.output_defs:

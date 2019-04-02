@@ -11,6 +11,7 @@ class DagsterEventType(Enum):
     STEP_FAILURE = 'STEP_FAILURE'
     STEP_START = 'STEP_START'
     STEP_SUCCESS = 'STEP_SUCCESS'
+    STEP_MATERIALIZATION = 'STEP_MATERIALIZATION'
 
     PIPELINE_START = 'PIPELINE_START'
     PIPELINE_SUCCESS = 'PIPELINE_SUCCESS'
@@ -22,7 +23,17 @@ STEP_EVENTS = {
     DagsterEventType.STEP_OUTPUT,
     DagsterEventType.STEP_FAILURE,
     DagsterEventType.STEP_SUCCESS,
+    DagsterEventType.STEP_MATERIALIZATION,
 }
+
+
+def _assert_type(method, expected_type, actual_type):
+    check.invariant(
+        expected_type == actual_type,
+        (
+            '{method} only callable when event_type is {expected_type}, called on {actual_type}'
+        ).format(method=method, expected_type=expected_type, actual_type=actual_type),
+    )
 
 
 def _validate_event_specific_data(event_type, event_specific_data):
@@ -144,23 +155,24 @@ class DagsterEvent(
 
     @property
     def step_output_data(self):
-        assert (
-            self.event_type == DagsterEventType.STEP_OUTPUT
-        ), 'step_output_data only available on STEP_OUTPUT'
+        _assert_type('step_output_data', DagsterEventType.STEP_OUTPUT, self.event_type)
         return self.event_specific_data
 
     @property
     def step_success_data(self):
-        assert (
-            self.event_type == DagsterEventType.STEP_SUCCESS
-        ), 'step_success_data only available on STEP_SUCCESS'
+        _assert_type('step_success_data', DagsterEventType.STEP_SUCCESS, self.event_type)
         return self.event_specific_data
 
     @property
     def step_failure_data(self):
-        assert (
-            self.event_type == DagsterEventType.STEP_FAILURE
-        ), 'step_failure_data only available on STEP_FAILURE'
+        _assert_type('step_failure_data', DagsterEventType.STEP_FAILURE, self.event_type)
+        return self.event_specific_data
+
+    @property
+    def step_materialization_data(self):
+        _assert_type(
+            'step_materialization_data', DagsterEventType.STEP_MATERIALIZATION, self.event_type
+        )
         return self.event_specific_data
 
     @staticmethod
@@ -210,6 +222,19 @@ class DagsterEvent(
         )
 
     @staticmethod
+    def step_materialization(step_context, name, path):
+        from dagster.core.execution_context import SystemStepExecutionContext
+
+        check.inst_param(step_context, 'step_context', SystemStepExecutionContext)
+        check.str_param(name, 'name')
+        check.str_param(path, 'path')
+        return DagsterEvent.from_step(
+            event_type=DagsterEventType.STEP_MATERIALIZATION,
+            step_context=step_context,
+            event_specific_data=StepMaterializationData(name, path),
+        )
+
+    @staticmethod
     def pipeline_start(pipeline_context):
         return DagsterEvent.from_pipeline(DagsterEventType.PIPELINE_START, pipeline_context)
 
@@ -234,3 +259,7 @@ def get_step_output_event(events, step_key, output_name='result'):
         ):
             return event
     return None
+
+
+class StepMaterializationData(namedtuple('_StepMaterializationData', 'name path')):
+    pass
