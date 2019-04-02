@@ -89,6 +89,19 @@ class ObjectStore(six.with_metaclass(ABCMeta)):
             return self.TYPE_REGISTRY[runtime_type.name].set_object(
                 self, obj, context, runtime_type, paths
             )
+        elif runtime_type.name is None:
+            composite_overrides = {
+                t.name in self.TYPE_REGISTRY
+                for t in runtime_type.inner_types
+                if t.name in self.TYPE_REGISTRY
+            }
+            if composite_overrides:
+                check.not_implemented(
+                    'Don\'t know how to store a composite object with inner type storage '
+                    'overrides. Found inner types with overrides: {composite_overrides}.'.format(
+                        composite_overrides=', '.join([str(x) for x in composite_overrides])
+                    )
+                )
         return self.set_object(obj, context, runtime_type, paths)
 
     def get_value(self, context, runtime_type, paths):
@@ -96,6 +109,19 @@ class ObjectStore(six.with_metaclass(ABCMeta)):
             return self.TYPE_REGISTRY[runtime_type.name].get_object(
                 self, context, runtime_type, paths
             )
+        elif runtime_type.name is None:
+            composite_overrides = {
+                t.name in self.TYPE_REGISTRY
+                for t in runtime_type.inner_types
+                if t.name in self.TYPE_REGISTRY
+            }
+            if composite_overrides:
+                check.not_implemented(
+                    'Don\'t know how to store a composite object with inner type storage '
+                    'overrides. Found inner types with overrides: {composite_overrides}.'.format(
+                        composite_overrides=', '.join([str(x) for x in composite_overrides])
+                    )
+                )
         return self.get_object(context, runtime_type, paths)
 
 
@@ -178,7 +204,7 @@ class FileSystemObjectStore(ObjectStore):
         target_path = os.path.join(self.root, *paths)
         if not self.has_object(context, paths):
             return
-        os.unlink(target_path)
+        shutil.rmtree(target_path)
         return
 
     def copy_object_from_prev_run(
