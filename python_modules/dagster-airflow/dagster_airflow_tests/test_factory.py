@@ -54,4 +54,6 @@ def test_execute_dag():
                 lambda x: x['outputName'] == 'result', json_res['data']['executePlan']['stepEvents']
             )
         )[0]
-        assert result['valueRepr'] == expected_results[task.task_id]
+        assert json.loads(result['valueRepr'].replace('\'', '"')) == json.loads(
+            expected_results[task.task_id].replace('\'', '"')
+        )
