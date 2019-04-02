@@ -59,10 +59,10 @@ class SparkSolidDefinition(SolidDefinition):
                 )
             ]
 
-            check.not_none_param(
-                spark_home,
-                'No spark home set. You must either provide spark_home or set $SPARK_HOME in your '
-                'environment',
+            check.invariant(
+                spark_home is not None,
+                'No spark home set. You must either pass spark_home in config or set $SPARK_HOME '
+                'in your environment (got None).',
             )
 
             deploy_mode = ['--deploy-mode', '{}'.format(deploy_mode)] if deploy_mode else []

@@ -86,6 +86,15 @@ workflows:
           context: coveralls
       - airline-demo-py27:
           context: coveralls
+      - event-pipeline-demo-py37:
+          context: coveralls
+      - event-pipeline-demo-py36:
+          context: coveralls
+      - event-pipeline-demo-py35:
+          context: coveralls
+      - event-pipeline-demo-py27:
+          context: coveralls
+
       - coverage:
           requires:
             - dagster-py37
@@ -885,6 +894,58 @@ jobs:
           root: python_modules/airline-demo/
           paths:
             - .coverage*
+
+  event-pipeline-demo-py36: &event-pipeline-demo-template
+    docker:
+      - image: circleci/python:3.6.6
+    environment:
+      TOXENV: py36
+    working_directory: ~/repo
+
+    steps:
+      - checkout
+
+      - run:
+          name: Install Dependencies
+          command: |
+            sudo pip install tox
+
+      - run:
+          name: Run Dagster Tests
+          command: |
+            pushd python_modules/event-pipeline-demp
+            tox -e $TOXENV
+            popd
+
+      - run:
+          command: |
+            mv python_modules/event-pipeline-demp/.coverage python_modules/.coverage.event-pipeline-demp.${CIRCLE_BUILD_NUM}
+
+      - persist_to_workspace:
+          root: python_modules/
+          paths:
+            - .coverage*
+
+  event-pipeline-demo-py37:
+    <<: *event-pipeline-demo-template
+    docker:
+      - image: circleci/python:3.7.2
+    environment:
+      TOXENV: py37
+
+  event-pipeline-demo-py35:
+    <<: *event-pipeline-demo-template
+    docker:
+      - image: circleci/python:3.5.6
+    environment:
+      TOXENV: py35
+
+  event-pipeline-demo-py27:
+    <<: *event-pipeline-demo-template
+    docker:
+      - image: circleci/python:2.7.15
+    environment:
+      TOXENV: py27
 
   coverage:
     docker:
