@@ -1,6 +1,12 @@
 import os
 import subprocess
 
+# another py2/3 difference
+try:
+    import unittest.mock as mock
+except ImportError:
+    import mock
+
 import pytest
 
 from dagster import execute_pipeline
@@ -20,14 +26,15 @@ skip = pytest.mark.skip
 # 2. Ensure we have Spark available to CircleCI
 # 3. Include example / test data in this repository
 @spark
-def test_event_pipeline():
-    spark_home_not_set = False
+@mock.patch('snowflake.connector.connect')
+def test_event_pipeline(snowflake_connect):
+    spark_home_set = True
 
     if os.getenv('SPARK_HOME') is None:
-        spark_home_not_set = True
+        spark_home_set = False
 
     try:
-        if spark_home_not_set:
+        if not spark_home_set:
             try:
                 pyspark_show = subprocess.check_output(['pip', 'show', 'pyspark'])
             except subprocess.CalledProcessError:
@@ -44,8 +51,19 @@ def test_event_pipeline():
         result_pipeline = execute_pipeline(define_event_ingest_pipeline(), config)
         assert result_pipeline.success
 
+        # We're not testing Snowflake loads here, so at least test that we called the connect
+        # appropriately
+        snowflake_connect.assert_called_once_with(
+            user='<< SET ME >>',
+            password='<< SET ME >>',
+            account='<< SET ME >>',
+            database='TESTDB',
+            schema='TESTSCHEMA',
+            warehouse='TINY_WAREHOUSE',
+        )
+
     finally:
-        if spark_home_not_set:
+        if not spark_home_set:
             try:
                 del os.environ['SPARK_HOME']
             except KeyError:
