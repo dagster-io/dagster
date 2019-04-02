@@ -64,8 +64,14 @@ def test_empty_pipeline():
     assert result.success
     assert events
 
-    assert single_event(events, EventType.PIPELINE_START).pipeline_name == 'empty_pipeline'
-    assert single_event(events, EventType.PIPELINE_SUCCESS).pipeline_name == 'empty_pipeline'
+    assert (
+        single_dagster_event(events, DagsterEventType.PIPELINE_START).pipeline_name
+        == 'empty_pipeline'
+    )
+    assert (
+        single_dagster_event(events, DagsterEventType.PIPELINE_SUCCESS).pipeline_name
+        == 'empty_pipeline'
+    )
 
 
 def test_single_solid_pipeline_success():

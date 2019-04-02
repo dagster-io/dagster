@@ -21,7 +21,7 @@ from dagster.core.definitions import Solid, solids_in_topological_order
 from dagster.core.definitions.dependency import DependencyStructure
 from dagster.core.definitions.pipeline import _create_adjacency_lists
 
-from dagster.core.execution import SolidExecutionResult
+from dagster.core.execution import SolidExecutionResult, step_output_event_filter
 
 from dagster.core.utility_solids import define_stub_solid
 
@@ -330,8 +330,10 @@ def test_pipeline_name_threaded_through_context():
 
     assert result.success
 
-    for step_event in execute_pipeline_iterator(
-        PipelineDefinition(name="foobar", solids=[assert_name_transform]), {}
+    for step_event in step_output_event_filter(
+        execute_pipeline_iterator(
+            PipelineDefinition(name="foobar", solids=[assert_name_transform]), {}
+        )
     ):
         assert step_event.is_step_success
 
@@ -364,11 +366,11 @@ def test_pipeline_subset():
     assert len(subset_result.solid_result_list) == 1
     assert subset_result.result_for_solid('add_one').transformed_value() == 4
 
-    step_events = execute_pipeline_iterator(
+    events = execute_pipeline_iterator(
         pipeline_def.build_sub_pipeline(['add_one']), environment_dict=env_config
     )
 
-    for step_event in step_events:
+    for step_event in step_output_event_filter(events):
         assert step_event.is_step_success
 
 
@@ -480,16 +482,13 @@ def test_pipeline_streaming_iterator():
         dependencies={'add_one': {'num': DependencyDefinition('push_one')}},
     )
 
-    step_event_iterator = execute_pipeline_iterator(pipeline_def)
-    next(step_event_iterator)  # start step
+    step_event_iterator = step_output_event_filter(execute_pipeline_iterator(pipeline_def))
 
     push_one_step_event = next(step_event_iterator)
     assert push_one_step_event.is_successful_output
     assert push_one_step_event.step_output_data.value_repr == '1'
     assert events == [1]
-    next(step_event_iterator)  # success
 
-    next(step_event_iterator)  # start step
     add_one_step_event = next(step_event_iterator)
     assert add_one_step_event.is_successful_output
     assert add_one_step_event.step_output_data.value_repr == '2'
@@ -510,8 +509,8 @@ def test_pipeline_streaming_multiple_outputs():
         name='test_streaming_iterator_multiple_outputs', solids=[push_one_two]
     )
 
-    step_event_iterator = execute_pipeline_iterator(pipeline_def)
-    next(step_event_iterator)  # start
+    step_event_iterator = step_output_event_filter(execute_pipeline_iterator(pipeline_def))
+
     one_output_step_event = next(step_event_iterator)
     assert one_output_step_event.is_successful_output
     assert one_output_step_event.step_output_data.value_repr == '1'

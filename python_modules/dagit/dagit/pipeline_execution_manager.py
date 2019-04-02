@@ -16,7 +16,8 @@ from dagster import (
     check,
     execute_pipeline,
 )
-from dagster.core.events.logging import PipelineEventRecord, EventType
+from dagster.core.events.logging import EventType, DagsterEventRecord, PipelineEventRecord
+from dagster.core.events import DagsterEvent, DagsterEventType
 from dagster.utils.error import serializable_error_info_from_exc_info, SerializableErrorInfo
 from dagster.utils.logging import level_from_string
 from dagster.utils import get_multiprocessing_context
@@ -34,7 +35,7 @@ def build_synthetic_pipeline_error_record(run_id, error_info, pipeline_name):
     check.str_param(pipeline_name, 'pipeline_name')
     check.inst_param(error_info, 'error_info', SerializableErrorInfo)
 
-    return PipelineEventRecord(
+    return DagsterEventRecord(
         message=error_info.message + '\nStack Trace:\n' + '\n'.join(error_info.stack),
         # Currently it is the user_message that is displayed to the user client side
         # in dagit even though that was not the original intent. The original
@@ -50,11 +51,12 @@ def build_synthetic_pipeline_error_record(run_id, error_info, pipeline_name):
         + '\nStack Trace:\n'
         + '\n'.join(error_info.stack),
         level=level_from_string('ERROR'),
-        event_type=EventType.PIPELINE_FAILURE,
+        event_type=EventType.DAGSTER_EVENT,
         run_id=run_id,
         timestamp=time.time(),
         error_info=error_info,
         pipeline_name=pipeline_name,
+        dagster_event=DagsterEvent(DagsterEventType.PIPELINE_FAILURE.value, pipeline_name),
     )
 
 

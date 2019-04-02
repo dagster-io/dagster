@@ -1,11 +1,6 @@
 from dagster.utils.logging import define_structured_logger, DEBUG
 
-from dagster.core.events.logging import (
-    EventType,
-    construct_event_record,
-    LogMessageRecord,
-    PipelineEventRecord,
-)
+from dagster.core.events.logging import construct_event_record, LogMessageRecord
 
 from dagster.utils.test import create_test_pipeline_execution_context
 
@@ -42,10 +37,3 @@ def test_construct_event_record():
     assert len(messages) == 1
     message = messages[0]
     assert isinstance(message, LogMessageRecord)
-
-    context.events.pipeline_start()
-
-    assert len(messages) == 2
-    pipeline_start = messages[1]
-    assert isinstance(pipeline_start, PipelineEventRecord)
-    assert pipeline_start.event_type == EventType.PIPELINE_START

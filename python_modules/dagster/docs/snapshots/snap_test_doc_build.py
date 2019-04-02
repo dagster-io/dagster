@@ -20657,7 +20657,7 @@ SystemPipelineExecutionContextCreationData although that seemed excessively verb
 
 <dl class="class">
 <dt id="dagster.PipelineExecutionResult">
-<em class="property">class </em><code class="descclassname">dagster.</code><code class="descname">PipelineExecutionResult</code><span class="sig-paren">(</span><em>pipeline</em>, <em>run_id</em>, <em>step_event_list</em>, <em>reconstruct_context</em><span class="sig-paren">)</span><a class="headerlink" href="#dagster.PipelineExecutionResult" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">dagster.</code><code class="descname">PipelineExecutionResult</code><span class="sig-paren">(</span><em>pipeline</em>, <em>run_id</em>, <em>event_list</em>, <em>reconstruct_context</em><span class="sig-paren">)</span><a class="headerlink" href="#dagster.PipelineExecutionResult" title="Permalink to this definition">¶</a></dt>
 <dd><p>Result of execution of the whole pipeline. Returned eg by <a class="reference internal" href="#dagster.execute_pipeline" title="dagster.execute_pipeline"><code class="xref py py-func docutils literal notranslate"><span class="pre">execute_pipeline()</span></code></a>.</p>
 <dl class="method">
 <dt id="dagster.PipelineExecutionResult.result_for_solid">
