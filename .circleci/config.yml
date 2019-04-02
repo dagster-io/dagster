@@ -133,6 +133,10 @@ workflows:
             - airline-demo-py36
             - airline-demo-py35
             - airline-demo-py27
+            - event-pipeline-demo-py37
+            - event-pipeline-demo-py36
+            - event-pipeline-demo-py35
+            - event-pipeline-demo-py27
           context: coveralls
   nightly:
     triggers:
