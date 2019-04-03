@@ -19,7 +19,7 @@ lazy val awsVersion = "1.11.525"
 lazy val events = project
   .settings(
     name := "events",
-    assemblyMergeStrategy in assembly := {
+    assembly / assemblyMergeStrategy := {
       case x if x.endsWith("io.netty.versions.properties") => MergeStrategy.first
       case x =>
         val oldStrategy = (assemblyMergeStrategy in assembly).value
@@ -33,9 +33,14 @@ lazy val events = project
     // version needed by Spark.
     //
     // These rules apply at jar assembly time, so code can still import com.amazonaws... as before.
-    assemblyShadeRules in assembly := Seq(
+    assembly / assemblyShadeRules := Seq(
       ShadeRule.rename("com.amazonaws.**" -> "shaded.@0").inAll
     ),
+    // See: https://github.com/milessabin/shapeless/wiki/Shapeless-with-SBT-Assembly-inside-Docker
+    assembly / assemblyExcludedJars := {
+      val cp = (assembly / fullClasspath).value
+      cp filter {_.data.getName == "shapeless_2.11-2.3.3.jar"}
+    },
     resolvers += Resolver.sonatypeRepo("releases"),
     libraryDependencies ++= Seq(
       scalaTest          % Test,
@@ -46,5 +51,7 @@ lazy val events = project
       "io.circe"         %% "circe-parser" % "0.11.1",
       "io.circe"         %% "circe-generic" % "0.11.1",
       "io.circe"         %% "circe-generic-extras" % "0.11.1"
-    )
+    ),
+    scalacOptions ++= Seq("-Xmax-classfile-name", "240"),
+    Compile / scalacOptions ++= Seq("-Xmax-classfile-name", "240")
   )

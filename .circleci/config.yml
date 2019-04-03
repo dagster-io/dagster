@@ -86,6 +86,15 @@ workflows:
           context: coveralls
       - airline-demo-py27:
           context: coveralls
+      - event-pipeline-demo-py37:
+          context: coveralls
+      - event-pipeline-demo-py36:
+          context: coveralls
+      - event-pipeline-demo-py35:
+          context: coveralls
+      - event-pipeline-demo-py27:
+          context: coveralls
+
       - coverage:
           requires:
             - dagster-py37
@@ -124,6 +133,10 @@ workflows:
             - airline-demo-py36
             - airline-demo-py35
             - airline-demo-py27
+            - event-pipeline-demo-py37
+            - event-pipeline-demo-py36
+            - event-pipeline-demo-py35
+            - event-pipeline-demo-py27
           context: coveralls
   nightly:
     triggers:
@@ -897,6 +910,72 @@ jobs:
           root: python_modules/airline-demo/
           paths:
             - .coverage*
+
+  event-pipeline-demo-py36: &event-pipeline-demo-template
+    docker:
+      - image: dagster/cci-test:3.6
+    environment:
+      TOXENV: py36
+    working_directory: ~/repo
+    steps:
+      - checkout
+      - restore_cache:
+          key: sbt-cache
+      - run:
+          name: Create working directory for build
+          command: |
+            mkdir -p /tmp/dagster/events/
+      - run:
+          name: Build Scala jar
+          command: |
+            pushd scala_modules
+            /opt/sbt/bin/sbt events/assembly
+            cp ./events/target/scala-2.11/events-assembly-0.1.0-SNAPSHOT.jar /tmp/dagster/events/
+            popd
+      - save_cache:
+          key: sbt-cache
+          paths:
+            - "~/.ivy2/cache"
+            - "~/.sbt"
+            - "~/.m2"
+      - run:
+          name: Install Dependencies
+          command: |
+            sudo pip install tox
+      - run:
+          name: Run Dagster Tests
+          command: |
+            pushd python_modules/event-pipeline-demo
+            tox -e $TOXENV
+            popd
+      - run:
+          command: |
+            mv python_modules/event-pipeline-demo/.coverage python_modules/.coverage.event-pipeline-demo.${CIRCLE_BUILD_NUM}
+      - persist_to_workspace:
+          root: python_modules/
+          paths:
+            - .coverage*
+
+  event-pipeline-demo-py37:
+    <<: *event-pipeline-demo-template
+    docker:
+      - image: dagster/cci-test:3.7.2
+    environment:
+      TOXENV: py37
+
+  event-pipeline-demo-py35:
+    <<: *event-pipeline-demo-template
+    docker:
+      - image: dagster/cci-test:3.5
+    environment:
+      TOXENV: py35
+
+  event-pipeline-demo-py27:
+    <<: *event-pipeline-demo-template
+    docker:
+      - image: dagster/cci-test:2.7
+    environment:
+      TOXENV: py27
 
   coverage:
     docker:
