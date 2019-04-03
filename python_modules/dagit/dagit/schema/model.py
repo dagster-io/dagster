@@ -430,11 +430,9 @@ def _execute_plan_chain_actual_execute_or_error(
         None if 'storage' in execute_plan_args.environment_dict else RunStorageMode.FILESYSTEM
     )
 
-    run_config = RunConfig(run_id=run_id, tags=tags, storage_mode=run_storage_mode)
     execution_plan = create_execution_plan(
         pipeline=dauphin_pipeline.get_dagster_pipeline(),
         environment_dict=execute_plan_args.environment_dict,
-        run_config=run_config,
     )
 
     if execute_plan_args.step_keys:
@@ -443,6 +441,8 @@ def _execute_plan_chain_actual_execute_or_error(
                 return execute_plan_args.graphene_info.schema.type_named('InvalidStepError')(
                     invalid_step_key=step_key
                 )
+
+    run_config = RunConfig(run_id=run_id, tags=tags, storage_mode=run_storage_mode)
 
     step_events = list(
         execute_plan(
