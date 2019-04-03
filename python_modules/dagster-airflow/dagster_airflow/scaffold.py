@@ -282,10 +282,10 @@ def _make_static_scaffold(pipeline_name, env_config, execution_plan, image, edit
         printer.line('from airflow import DAG')
         printer.line('try:')
         with printer.with_indent():
-            printer.line('from airflow.operators.dagster_plugin import DagsterOperator')
+            printer.line('from airflow.operators.dagster_plugin import DagsterDockerOperator')
         printer.line('except (ModuleNotFoundError, ImportError):')
         with printer.with_indent():
-            printer.line('from dagster_airflow import DagsterOperator')
+            printer.line('from dagster_airflow import DagsterDockerOperator')
         printer.blank_line()
         printer.blank_line()
 
@@ -331,7 +331,9 @@ def _make_static_scaffold(pipeline_name, env_config, execution_plan, image, edit
                 steps_for_key = _steps_for_key(solid_name)
 
                 printer.line(
-                    '{airflow_step_key}_task = DagsterOperator('.format(airflow_step_key=solid_name)
+                    '{airflow_step_key}_task = DagsterDockerOperator('.format(
+                        airflow_step_key=solid_name
+                    )
                 )
                 with printer.with_indent():
                     printer.line('step=\'{step_key}\','.format(step_key=solid_name))
@@ -478,7 +480,7 @@ def scaffold_airflow_dag(
             constructor. If `dag_kwargs.default_args` is set, values set there will smash the
             values in ``dagster_airflow.scaffold.DEFAULT_ARGS``. Default: None.
         operator_kwargs (dict, optional): Any additional keyword arguments to pass to the
-            ``DagsterOperator`` constructor. These will be passed through to the underlying
+            ``DagsterDockerOperator`` constructor. These will be passed through to the underlying
             ``ModifiedDockerOperator``. Default: None
         regenerate (bool): If true, write only the static scaffold. Default: False.
 

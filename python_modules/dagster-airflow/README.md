@@ -116,11 +116,11 @@ required to access the S3 bucket for dagster-airflow.
 
 ## Installing the dagster-airflow plugin
 
-If you prefer not to use Airflow plugins, you can skip this step and  import the `DagsterOperator`
+If you prefer not to use Airflow plugins, you can skip this step and  import the `DagsterDockerOperator`
 directly. Be sure that the dagster-airflow package is installed in the Python environment in which
 you run Airflow:
 
-    from dagster_airflow import DagsterOperator
+    from dagster_airflow import DagsterDockerOperator
 
 Alternatively, we can use Airflow's [plugin machinery](https://airflow.apache.org/plugins.html).
 Airflow looks for plugins in a magic directory, `$AIRFLOW_HOME/plugins/`. The dagster plugin is
@@ -136,7 +136,7 @@ dagster-airflow install
 Airflow DAGs are declaratively defined in Python files that live in another magic directory,
 `$AIRFLOW_HOME/dags/`. Code in these files doesn't do any actual processing -- it's just a way of
 telling Airflow about the structure of your pipelines. The pipeline steps themselves are fully
-containerized, and the `DagsterOperator` manages their execution.
+containerized, and the `DagsterDockerOperator` manages their execution.
 
 You don't need to construct any Airflow DAG files yourself in order to run Dagster pipelines in
 Airflow -- we've provided facilities to scaffold them for you. This CLI utility takes the ordinary
@@ -252,7 +252,7 @@ Scaffolding this will produce the following representation of the pipeline as an
 import datetime
 
 from airflow import DAG
-from airflow.operators.dagster_plugin import DagsterOperator
+from airflow.operators.dagster_plugin import DagsterDockerOperator
 
 # Set your S3 connection id here, if you do not want to use the default `aws_default` connection
 S3_CONN_ID = "aws_default"
@@ -272,21 +272,21 @@ dag = DAG(
     },
 )
 
-multiply__the__word_word_input__thunk_task = DagsterOperator(
+multiply__the__word_word_input__thunk_task = DagsterDockerOperator(
     step="multiply__the__word_word_input__thunk",
     dag=dag,
     image="dagster-airflow-demo",
     task_id="multiply__the__word_word_input__thunk",
     s3_conn_id=S3_CONN_ID,
 )
-multiply__the__word_transform_task = DagsterOperator(
+multiply__the__word_transform_task = DagsterDockerOperator(
     step="multiply__the__word_transform",
     dag=dag,
     image="dagster-airflow-demo",
     task_id="multiply__the__word_transform",
     s3_conn_id=S3_CONN_ID,
 )
-count__letters_transform_task = DagsterOperator(
+count__letters_transform_task = DagsterDockerOperator(
     step="count__letters_transform",
     dag=dag,
     image="dagster-airflow-demo",
@@ -304,7 +304,7 @@ Now you can visualize and schedule this DAG in Airflow:
 
 Note that there is one Airflow task corresponding to each execution step in the pipeline, not to
 each solid. This means that
-Note that we use a single operator, the DagsterOperator, for every execution step
+Note that we use a single operator, the DagsterDockerOperator, for every execution step
 
 # Testing
 

@@ -1,7 +1,7 @@
 '''The dagster-airflow Airflow plugin.
 
 Place this file in your Airflow plugins directory (``$AIRFLOW_HOME/plugins``) to make
-airflow.operators.dagster_plugin.DagsterOperator available.
+airflow.operators.dagster_plugin.DagsterDockerOperator available.
 '''
 from __future__ import print_function
 
@@ -238,7 +238,7 @@ class ModifiedDockerOperator(DockerOperator):
         return super(ModifiedDockerOperator, self)._DockerOperator__get_tls_config()
 
 
-class DagsterOperator(ModifiedDockerOperator):
+class DagsterDockerOperator(ModifiedDockerOperator):
     '''Dagster operator for Apache Airflow.
 
     Wraps a modified DockerOperator incorporating https://github.com/apache/airflow/pull/4315.
@@ -272,7 +272,7 @@ class DagsterOperator(ModifiedDockerOperator):
         # We don't use dagster.check here to avoid taking the dependency.
         for attr_ in ['config', 'pipeline_name']:
             assert isinstance(getattr(self, attr_), STRING_TYPES), (
-                'Bad value for DagsterOperator {attr_}: expected a string and got {value} of '
+                'Bad value for DagsterDockerOperator {attr_}: expected a string and got {value} of '
                 'type {type_}'.format(
                     attr_=attr_, value=getattr(self, attr_), type_=type(getattr(self, attr_))
                 )
@@ -282,7 +282,7 @@ class DagsterOperator(ModifiedDockerOperator):
             self.step_keys = []
 
         assert isinstance(self.step_keys, list), (
-            'Bad value for DagsterOperator step_keys: expected a list and got {value} of '
+            'Bad value for DagsterDockerOperator step_keys: expected a list and got {value} of '
             'type {type_}'.format(value=self.step_keys, type_=type(self.step_keys))
         )
 
@@ -292,7 +292,7 @@ class DagsterOperator(ModifiedDockerOperator):
                 bad_keys.append((ix, step_key))
         assert (
             not bad_keys
-        ), 'Bad values for DagsterOperator step_keys (expected only strings): {bad_values}'.format(
+        ), 'Bad values for DagsterDockerOperator step_keys (expected only strings): {bad_values}'.format(
             bad_values=', '.join(
                 [
                     '{value} of type {type_} at index {idx}'.format(
@@ -325,7 +325,7 @@ class DagsterOperator(ModifiedDockerOperator):
         if 'environment' not in kwargs:
             kwargs['environment'] = DEFAULT_ENVIRONMENT
 
-        super(DagsterOperator, self).__init__(*args, **kwargs)
+        super(DagsterDockerOperator, self).__init__(*args, **kwargs)
 
     @property
     def run_id(self):
@@ -359,7 +359,7 @@ class DagsterOperator(ModifiedDockerOperator):
 
     def get_hook(self):
         if self.docker_conn_id_set:
-            return super(DagsterOperator, self).get_hook()
+            return super(DagsterDockerOperator, self).get_hook()
 
         class _DummyHook(object):
             def get_conn(self):
@@ -376,7 +376,7 @@ class DagsterOperator(ModifiedDockerOperator):
         try:
             self.log.debug('Executing with query: {query}'.format(query=self.query))
 
-            raw_res = super(DagsterOperator, self).execute(context)
+            raw_res = super(DagsterDockerOperator, self).execute(context)
             self.log.info('Finished executing container.')
             (res, last_line) = parse_raw_res(raw_res)
 
@@ -423,15 +423,15 @@ class DagsterOperator(ModifiedDockerOperator):
     # See https://issues.apache.org/jira/browse/AIRFLOW-3880
     def __get_tls_config(self):
         # pylint:disable=no-member
-        return super(DagsterOperator, self)._ModifiedDockerOperator__get_tls_config()
+        return super(DagsterDockerOperator, self)._ModifiedDockerOperator__get_tls_config()
 
 
 class DagsterPlugin(AirflowPlugin):
     '''Dagster plugin for Apache Airflow.
 
-    This plugin's only member is the DagsterOperator, which is intended to be used in
+    This plugin's only member is the DagsterDockerOperator, which is intended to be used in
     autoscaffolded code created by dagster_airflow.scaffold_airflow_dag.
     '''
 
     name = 'dagster_plugin'
-    operators = [DagsterOperator]
+    operators = [DagsterDockerOperator]

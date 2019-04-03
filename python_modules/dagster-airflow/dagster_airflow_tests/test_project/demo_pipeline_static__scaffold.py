@@ -18,9 +18,9 @@ changes to the static file.
 
 from airflow import DAG
 try:
-    from airflow.operators.dagster_plugin import DagsterOperator
+    from airflow.operators.dagster_plugin import DagsterDockerOperator
 except (ModuleNotFoundError, ImportError):
-    from dagster_airflow import DagsterOperator
+    from dagster_airflow import DagsterDockerOperator
 
 
 CONFIG = '''
@@ -71,7 +71,7 @@ def make_dag(
 
     tasks = []
 
-    multiply_the_word_task = DagsterOperator(
+    multiply_the_word_task = DagsterDockerOperator(
         step='multiply_the_word',
         config=CONFIG,
         dag=dag,
@@ -84,7 +84,7 @@ def make_dag(
     )
     tasks.append(multiply_the_word_task)
 
-    count_letters_task = DagsterOperator(
+    count_letters_task = DagsterDockerOperator(
         step='count_letters',
         config=CONFIG,
         dag=dag,

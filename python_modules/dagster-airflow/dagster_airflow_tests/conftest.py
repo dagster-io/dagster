@@ -151,11 +151,12 @@ def airflow_test(docker_image, dags_path, plugins_path, host_tmp_dir):
             sys.modules[operators_module.__name__] = operators_module
             globals()[operators_module._name] = operators_module  # pylint:disable=protected-access
 
-        # Test that we can now actually import the DagsterOperator
-        from airflow.operators.dagster_plugin import DagsterOperator
+        # Test that we can now actually import the DagsterDockerOperator
+        # pylint: disable=import-error
+        from airflow.operators.dagster_plugin import DagsterDockerOperator
 
         # Clean up
-        del DagsterOperator
+        del DagsterDockerOperator
 
         yield (docker_image, dags_path, host_tmp_dir)
 
