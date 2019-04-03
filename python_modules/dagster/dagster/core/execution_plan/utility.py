@@ -50,7 +50,7 @@ def create_join_step(pipeline_context, solid, step_key, prev_steps, prev_output_
         step_inputs.append(StepInput(prev_step.key, prev_step_output.runtime_type, output_handle))
 
     return ExecutionStep(
-        pipeline_context=pipeline_context,
+        pipeline_name=pipeline_context.pipeline_def.name,
         key=step_key,
         step_inputs=step_inputs,
         step_outputs=[StepOutput(JOIN_OUTPUT, seen_runtime_type, optional=seen_optionality)],
@@ -110,7 +110,7 @@ def create_value_thunk_step(pipeline_context, solid, runtime_type, step_key, val
 
     return SingleOutputStepCreationData(
         ExecutionStep(
-            pipeline_context=pipeline_context,
+            pipeline_name=pipeline_context.pipeline_def.name,
             key=step_key,
             step_inputs=[],
             step_outputs=[StepOutput(VALUE_OUTPUT, runtime_type, optional=False)],

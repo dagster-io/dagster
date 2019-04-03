@@ -28,7 +28,7 @@ def _create_input_thunk_execution_step(pipeline_context, solid, input_def, input
         yield StepOutputValue(output_name=INPUT_THUNK_OUTPUT, value=value)
 
     return ExecutionStep(
-        pipeline_context=pipeline_context,
+        pipeline_name=pipeline_context.pipeline_def.name,
         key=solid.name + '.' + input_def.name + '.input_thunk',
         step_inputs=[],
         step_outputs=[

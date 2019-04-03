@@ -110,19 +110,17 @@ class ExecutionStep(
     namedtuple(
         '_ExecutionStep',
         (
-            'pipeline_context key step_inputs step_input_dict step_outputs step_output_dict '
+            'pipeline_name key step_inputs step_input_dict step_outputs step_output_dict '
             'compute_fn kind solid tags'
         ),
     )
 ):
     def __new__(
-        cls, pipeline_context, key, step_inputs, step_outputs, compute_fn, kind, solid, tags=None
+        cls, pipeline_name, key, step_inputs, step_outputs, compute_fn, kind, solid, tags=None
     ):
         return super(ExecutionStep, cls).__new__(
             cls,
-            pipeline_context=check.inst_param(
-                pipeline_context, 'pipeline_context', SystemPipelineExecutionContext
-            ),
+            pipeline_name=check.str_param(pipeline_name, 'pipeline_name'),
             key=check.str_param(key, 'key'),
             step_inputs=check.list_param(step_inputs, 'step_inputs', of_type=StepInput),
             step_input_dict={si.name: si for si in step_inputs},
@@ -132,22 +130,15 @@ class ExecutionStep(
             kind=check.inst_param(kind, 'kind', StepKind),
             solid=check.inst_param(solid, 'solid', Solid),
             tags=merge_dicts(
-                merge_dicts(
-                    {
-                        'step_key': key,
-                        'pipeline': pipeline_context.pipeline_def.name,
-                        'solid': solid.name,
-                        'solid_definition': solid.definition.name,
-                    },
-                    check.opt_dict_param(tags, 'tags'),
-                ),
-                pipeline_context.tags,
+                {
+                    'step_key': key,
+                    'pipeline': pipeline_name,
+                    'solid': solid.name,
+                    'solid_definition': solid.definition.name,
+                },
+                check.opt_dict_param(tags, 'tags'),
             ),
         )
-
-    @property
-    def pipeline_name(self):
-        return self.pipeline_context.pipeline_def.name
 
     @property
     def solid_name(self):
@@ -157,6 +148,7 @@ class ExecutionStep(
     def solid_definition_name(self):
         return self.solid.definition.name
 
+    # TODO I believe we can remove this
     def __getnewargs__(self):
         return (
             self.key,
@@ -165,18 +157,6 @@ class ExecutionStep(
             self.compute_fn,
             self.kind,
             self.solid,
-        )
-
-    def with_new_inputs(self, step_inputs):
-        return ExecutionStep(
-            pipeline_context=self.pipeline_context,
-            key=self.key,
-            step_inputs=step_inputs,
-            step_outputs=self.step_outputs,
-            compute_fn=self.compute_fn,
-            kind=self.kind,
-            solid=self.solid,
-            tags=self.tags,
         )
 
     def has_step_output(self, name):

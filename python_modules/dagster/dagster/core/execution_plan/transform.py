@@ -16,7 +16,7 @@ def create_transform_step(pipeline_context, solid, step_inputs):
     check.list_param(step_inputs, 'step_inputs', of_type=StepInput)
 
     return ExecutionStep(
-        pipeline_context=pipeline_context,
+        pipeline_name=pipeline_context.pipeline_def.name,
         key='{solid.name}.transform'.format(solid=solid),
         step_inputs=step_inputs,
         step_outputs=[

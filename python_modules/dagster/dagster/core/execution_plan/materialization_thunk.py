@@ -57,7 +57,7 @@ def decorate_with_output_materializations(pipeline_context, solid, output_def, s
     for mat_count, output_spec in enumerate(configs_for_output(solid, solid_config, output_def)):
         new_steps.append(
             ExecutionStep(
-                pipeline_context=pipeline_context,
+                pipeline_name=pipeline_context.pipeline_def.name,
                 key='{solid}.materialization.output.{output}.{mat_count}'.format(
                     solid=solid.name, output=output_def.name, mat_count=mat_count
                 ),
