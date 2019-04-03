@@ -4,7 +4,7 @@ These make very heavy use of fixture dependency and scope. If you're unfamiliar 
 fixtures, read: https://docs.pytest.org/en/latest/fixture.html.
 '''
 # pylint doesn't understand the way that pytest constructs fixture dependnecies
-# pylint: disable=redefined-outer-name
+# pylint: disable=redefined-outer-name, unused-argument
 import datetime
 import os
 import shutil
@@ -19,7 +19,7 @@ import pytest
 
 from dagster import check, seven
 from dagster.core.execution import create_execution_plan
-from dagster.utils import load_yaml_from_path, mkdir_p, script_relative_path
+from dagster.utils import load_yaml_from_path, mkdir_p, pushd, script_relative_path
 
 from dagster_airflow import scaffold_airflow_dag
 
@@ -53,35 +53,40 @@ def temp_dir():
     shutil.rmtree(dir_path)
 
 
-@pytest.fixture(scope='module')
+@pytest.fixture(scope='session')
 def docker_client():
     '''Instantiate a Docker Python client.'''
     try:
         client = docker.from_env()
         client.info()
     except docker.errors.APIError:
+        # pylint: disable=protected-access
         check.failed('Couldn\'t find docker at {url} -- is it running?'.format(url=client._url('')))
     return client
 
 
-@pytest.fixture(scope='module')
-def docker_image(docker_client):
-    '''Check that the airflow image exists.
-    
-    This image is created by dagster_airflow_tests/test_project/build.sh -- we might want to move
-    image build into a test fixture of its own.
-    '''
+@pytest.fixture(scope='session')
+def build_docker_image(docker_client):
+    with pushd(script_relative_path('test_project')):
+        subprocess.check_output(['./build.sh'], shell=True)
+
+    return IMAGE
+
+
+@pytest.fixture(scope='session')
+def docker_image(docker_client, build_docker_image):
+    '''Check that the airflow image exists.'''
     try:
-        docker_client.images.get(IMAGE)
+        docker_client.images.get(build_docker_image)
     except docker.errors.ImageNotFound:
         check.failed(
             'Couldn\'t find docker image {image} required for test: please run the script at '
             '{script_path}'.format(
-                image=IMAGE, script_path=script_relative_path('test_project/build.sh')
+                image=build_docker_image, script_path=script_relative_path('test_project/build.sh')
             )
         )
 
-    return IMAGE
+    return build_docker_image
 
 
 @pytest.fixture(scope='module')
