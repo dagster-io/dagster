@@ -1035,6 +1035,8 @@ jobs:
     <<: *event-pipeline-demo-template
     docker:
       - image: dagster/cci-test:2.7
+    environment:
+      TOXENV: py27
 
   dagster-framework-aws-py36: &dagster-framework-aws-template
     docker:
