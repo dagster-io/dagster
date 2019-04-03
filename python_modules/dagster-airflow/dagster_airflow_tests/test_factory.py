@@ -34,6 +34,8 @@ class TestExecuteDag(object):
                     result['data']['executePlan']['stepEvents'],
                 )
             )[0]
+            # This ugly beast is to deal with cross-python-version differences in `valueRepr` --
+            # in py2 we'll get 'u"barbar"', in py3 we'll get '"barbar"', etc.
             assert json.loads(
                 re.sub(
                     '\{u\'', '{\'', re.sub(' u\'', ' \'', re.sub('^u\'', '\'', result['valueRepr']))
