@@ -12,7 +12,7 @@ from dagster.core.execution import create_execution_plan
 from dagit.app import RepositoryContainer
 from dagit.cli import execute_query_from_cli
 
-from .dagster_plugin import QUERY_TEMPLATE
+from .dagster_plugin import DagsterDockerOperator, DOCKER_TEMPDIR, QUERY_TEMPLATE
 from .compile import coalesce_execution_steps
 from .scaffold import format_config_for_graphql
 from .utils import IndentingBlockPrinter
@@ -60,12 +60,46 @@ def _make_python_callable(dag_id, pipeline, env_config, step_keys):
             step_keys=json.dumps(step_keys),
             pipeline_name=pipeline.name,
         )
-        return execute_query_from_cli(repository_container, query, variables=None)
+        return json.loads(execute_query_from_cli(repository_container, query, variables=None))
 
     return python_callable
 
 
-def make_airflow_dag(pipeline, env_config=None, dag_id=None, dag_description=None, dag_kwargs=None):
+def _make_python_operator(pipeline, env_config, solid_name, step_keys, dag, dag_id, op_kwargs):
+    return PythonOperator(
+        task_id=solid_name,
+        provide_context=True,
+        python_callable=_make_python_callable(dag_id, pipeline, env_config, step_keys),
+        dag=dag,
+        **op_kwargs,
+    )
+
+
+def _make_dagster_docker_operator(
+    pipeline, env_config, solid_name, step_keys, dag, dag_id, op_kwargs
+):
+    return DagsterDockerOperator(
+        step=solid_name,
+        config=format_config_for_graphql(env_config),
+        dag=dag,
+        tmp_dir=DOCKER_TEMPDIR,
+        pipeline_name=pipeline.name,
+        step_keys=step_keys,
+        task_id=solid_name,
+        **op_kwargs,
+    )
+
+
+def _make_airflow_dag(
+    pipeline,
+    env_config=None,
+    dag_id=None,
+    dag_description=None,
+    dag_kwargs=None,
+    op_kwargs=None,
+    operator_factory=_make_python_operator,
+):
+
     check.inst_param(pipeline, 'pipeline', PipelineDefinition)
     env_config = check.opt_dict_param(env_config, 'env_config', key_type=str)
     pipeline_name = pipeline.name
@@ -75,8 +109,9 @@ def make_airflow_dag(pipeline, env_config=None, dag_id=None, dag_description=Non
     )
     dag_kwargs = dict(
         {'default_args': DEFAULT_ARGS},
-        **check.opt_dict_param(dag_kwargs, 'dag_kwargs', key_type=str)
+        **check.opt_dict_param(dag_kwargs, 'dag_kwargs', key_type=str),
     )
+    op_kwargs = check.opt_dict_param(op_kwargs, 'op_kwargs', key_type=str)
 
     dag = DAG(dag_id=dag_id, description=dag_description, **dag_kwargs)
 
@@ -90,11 +125,14 @@ def make_airflow_dag(pipeline, env_config=None, dag_id=None, dag_description=Non
 
         step_keys = [step.key for step in solid_steps]
 
-        task = PythonOperator(
-            task_id=solid_name,
-            provide_context=True,
-            python_callable=_make_python_callable(dag_id, pipeline, env_config, step_keys),
+        task = operator_factory(
+            pipeline=pipeline,
+            env_config=env_config,
+            solid_name=solid_name,
+            step_keys=step_keys,
             dag=dag,
+            dag_id=dag_id,
+            op_kwargs=op_kwargs,
         )
 
         tasks[solid_name] = task
@@ -108,3 +146,38 @@ def make_airflow_dag(pipeline, env_config=None, dag_id=None, dag_description=Non
                     tasks[prev_solid_name].set_downstream(task)
 
     return (dag, [tasks[solid_name] for solid_name in coalesced_plan.keys()])
+
+
+def make_airflow_dag(
+    pipeline, env_config=None, dag_id=None, dag_description=None, dag_kwargs=None, op_kwargs=None
+):
+    return _make_airflow_dag(
+        pipeline=pipeline,
+        env_config=env_config,
+        dag_id=dag_id,
+        dag_description=dag_description,
+        dag_kwargs=dag_kwargs,
+        op_kwargs=op_kwargs,
+    )
+
+
+def make_airflow_dag_containerized(
+    pipeline,
+    image,
+    env_config=None,
+    dag_id=None,
+    dag_description=None,
+    dag_kwargs=None,
+    op_kwargs=None,
+):
+    op_kwargs = check.opt_dict_param(op_kwargs, 'op_kwargs', key_type=str)
+    op_kwargs['image'] = image
+    return _make_airflow_dag(
+        pipeline=pipeline,
+        env_config=env_config,
+        dag_id=dag_id,
+        dag_description=dag_description,
+        dag_kwargs=dag_kwargs,
+        op_kwargs=op_kwargs,
+        operator_factory=_make_dagster_docker_operator,
+    )
