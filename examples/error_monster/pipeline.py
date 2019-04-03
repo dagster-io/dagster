@@ -78,4 +78,3 @@ if __name__ == '__main__':
         RunConfig.nonthrowing_in_process(),
     )
     print('Pipeline Success: ', result.success)
-

@@ -71,7 +71,6 @@ def test_failure_midstream():
         return [inputs['A'], inputs['B'], {'C': 'transform_called'}]
 
     def success_fn(_context, inputs):
-        check.failed('user error')
         return [inputs['C'], {'D': 'transform_called'}]
 
     solid_c = single_output_transform(
