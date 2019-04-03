@@ -119,10 +119,17 @@ def _make_airflow_dag(
     dag_description = check.opt_str_param(
         dag_description, 'dag_description', _make_dag_description(pipeline_name, env_config)
     )
+    # black 18.9b0 doesn't support py27-compatible formatting of the below invocation (omitting
+    # the trailing comma after **check.opt_dict_param...) -- black 19.3b0 supports multiple python
+    # versions, but currently doesn't know what to do with from __future__ import print_function --
+    # see https://github.com/ambv/black/issues/768
+    # fmt: off
     dag_kwargs = dict(
         {'default_args': DEFAULT_ARGS},
-        **check.opt_dict_param(dag_kwargs, 'dag_kwargs', key_type=str),
+        **check.opt_dict_param(dag_kwargs, 'dag_kwargs', key_type=str)
     )
+    # fmt: on
+
     op_kwargs = check.opt_dict_param(op_kwargs, 'op_kwargs', key_type=str)
 
     dag = DAG(dag_id=dag_id, description=dag_description, **dag_kwargs)
