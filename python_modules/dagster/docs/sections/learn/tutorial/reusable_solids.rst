@@ -13,7 +13,7 @@ if one included two copies of the solid.
 Instead we introduce a new class ``SolidInstance`` that allows the user to create multiple, named instances
 of a single solid:
 
-.. literalinclude:: ../../dagster/tutorials/intro_tutorial/reusable_solids.py
+.. literalinclude:: ../../../../dagster/tutorials/intro_tutorial/reusable_solids.py
    :linenos:
    :caption: reusable_solids.py
 
@@ -31,7 +31,7 @@ If you inspect this in dagit, you'll see those two instances:
 You also use the aliases in the environment config. In order to execute this pipeline, use
 the following config file:
 
-.. literalinclude:: ../../dagster/tutorials/intro_tutorial/reusable_solids.yml
+.. literalinclude:: ../../../../dagster/tutorials/intro_tutorial/reusable_solids.yml
    :linenos:
    :caption: reusable_solids.yml
 

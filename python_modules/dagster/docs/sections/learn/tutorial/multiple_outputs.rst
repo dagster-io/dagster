@@ -13,7 +13,7 @@ happened during the computation.
 
 Here we present an example of a solid that has multiple outputs within a pipeline:
 
-.. literalinclude:: ../../dagster/tutorials/intro_tutorial/multiple_outputs.py
+.. literalinclude:: ../../../../dagster/tutorials/intro_tutorial/multiple_outputs.py
    :linenos:
    :caption: multiple_outputs.py
    :lines: 53-67, 26-34, 67-84
@@ -59,7 +59,7 @@ multiple instances of the ``Result`` object. (Note: this is actually the core
 specification of the transform function: all other forms are implemented in terms of
 the iterator form.)
 
-.. literalinclude:: ../../dagster/tutorials/intro_tutorial/multiple_outputs.py
+.. literalinclude:: ../../../../dagster/tutorials/intro_tutorial/multiple_outputs.py
    :linenos:
    :caption: multiple_outputs.py
    :lines: 15-24
@@ -82,14 +82,14 @@ Multiple outputs are the mechanism by which we implement branching or conditiona
 Let's modify the first solid above to conditionally emit one output or the other based on config
 and then execute that pipeline.
 
-.. literalinclude:: ../../dagster/tutorials/intro_tutorial/multiple_outputs.py
+.. literalinclude:: ../../../../dagster/tutorials/intro_tutorial/multiple_outputs.py
     :linenos:
     :caption: multiple_outputs.py
     :lines: 36-52,86-99
 
 You must create a config file
 
-.. literalinclude:: ../../dagster/tutorials/intro_tutorial/conditional_outputs.yml
+.. literalinclude:: ../../../../dagster/tutorials/intro_tutorial/conditional_outputs.yml
     :linenos:
     :caption: conditional_outputs.yml
 

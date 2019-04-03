@@ -7,7 +7,7 @@ environment.
 Let's return to our hello world example. But this time, we'll make the string
 the solid returns be parameterized based on inputs.
 
-.. literalinclude:: ../../dagster/tutorials/intro_tutorial/inputs.py
+.. literalinclude:: ../../../../dagster/tutorials/intro_tutorial/inputs.py
    :lines: 1-17
    :linenos:
    :caption: inputs.py
@@ -27,7 +27,7 @@ In the Python API, pipeline configuration is specified in the second argument to
 *all* of the configuration to execute an entire pipeline. It may have many sections, but we'll only
 use one of them here: per-solid configuration specified under the key ``solids``:
 
-.. literalinclude:: ../../dagster/tutorials/intro_tutorial/inputs.py
+.. literalinclude:: ../../../../dagster/tutorials/intro_tutorial/inputs.py
     :linenos:
     :lines: 25,27,29-31
     :dedent: 8 
@@ -39,7 +39,7 @@ that we can specify that value of the input ``word``.
 The function ``execute_with_another_world`` demonstrates how one would invoke this pipeline
 using the python API:
 
-.. literalinclude:: ../../dagster/tutorials/intro_tutorial/inputs.py
+.. literalinclude:: ../../../../dagster/tutorials/intro_tutorial/inputs.py
     :linenos:
     :lines: 20-22,25,27,29-32
 
@@ -50,7 +50,7 @@ Next let's use the CLI. In order to do that we'll need to provide the environmen
 information via a config file. We'll use the same values as before, but in the form
 of YAML rather than python dictionaries:
 
-.. literalinclude:: ../../dagster/tutorials/intro_tutorial/inputs_env.yml
+.. literalinclude:: ../../../../dagster/tutorials/intro_tutorial/inputs_env.yml
    :language: YAML
    :linenos:
    :caption: inputs_env.yml
@@ -89,7 +89,7 @@ are often not surfaced until the pipeline is executed.
 
 For example, imagine if our environment for our pipeline was:
 
-.. literalinclude:: ../../dagster/tutorials/intro_tutorial/inputs_env_bad.yml
+.. literalinclude:: ../../../../dagster/tutorials/intro_tutorial/inputs_env_bad.yml
    :language: YAML
    :linenos:
    :caption: inputs_env_bad.yml
@@ -110,7 +110,7 @@ make the inputs typed.
 A user can apply types to inputs and outputs. In this case we just want to type them as the
 built-in ``String``.
 
-.. literalinclude:: ../../dagster/tutorials/intro_tutorial/inputs.py
+.. literalinclude:: ../../../../dagster/tutorials/intro_tutorial/inputs.py
    :lines: 35-40
    :emphasize-lines: 2-3
    :caption: inputs.py

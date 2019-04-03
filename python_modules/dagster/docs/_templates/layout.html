@@ -1,0 +1,171 @@
+{%- extends "basic/layout.html" %}
+
+{%- block extrahead %}
+{{ super() }}
+<link rel="stylesheet" href="{{ pathto('_static/custom.css', 1) }}" type="text/css" />
+{% if theme_touch_icon %}
+<link rel="apple-touch-icon" href="{{ pathto('_static/' ~ theme_touch_icon, 1) }}" />
+{% endif %}
+{% if theme_canonical_url %}
+<link rel="canonical" href="{{ theme_canonical_url }}{{ pagename }}.html" />
+{% endif %}
+<meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+{% endblock %}
+
+{# top+bottom related navs; we also have our own in sidebar #}
+{%- macro rellink_markup() %}
+<nav id="rellinks">
+    <ul>
+        {%- if prev and not "no title" in prev.title %}
+        <li>
+            &larr;
+            <a href="{{ prev.link|e }}" title="Previous document">{{ prev.title }}</a>
+        </li>
+        {%- endif %}
+        <li>
+            <a href="/" title="Home">Home</a>
+        </li>
+        {%- if next %}
+        <li>
+            <a href="{{ next.link|e }}" title="Next document">{{ next.title }}</a>
+            &rarr;
+        </li>
+        {%- endif %}
+    </ul>
+</nav>
+{%- endmacro %}
+
+{%- set theme_show_relbar_top = theme_show_relbar_top or theme_show_relbars %}
+{%- set theme_show_relbar_bottom = theme_show_relbar_bottom or theme_show_relbars %}
+
+{# removed existing top+bottom related nav, and embed in main content #}
+{%- block relbar1 %}{% endblock %}
+{%- block relbar2 %}{% endblock %}
+
+{# Nav should appear before content, not after #}
+{%- block content %}
+{%- if theme_fixed_sidebar|lower == 'true' %}
+<div class="document">
+    {{ sidebar() }}
+    {%- block document %}
+    <div class="documentwrapper">
+        {%- if render_sidebar %}
+        <div class="bodywrapper">
+            {%- endif %}
+
+            {%- block relbar_top %}
+            {%- if theme_show_relbar_top|tobool and pagename != 'index' %}
+            <div class="related top">
+                &nbsp;
+                {{- rellink_markup () }}
+            </div>
+            {%- endif %}
+            {% endblock %}
+
+            <div class="body" role="main">
+                {% block body %} {% endblock %}
+            </div>
+
+            {% if pagename == 'index' %}
+            <div class="logo_img">
+                <img
+                    src="https://user-images.githubusercontent.com/28738937/44878798-b6e17e00-ac5c-11e8-8d25-2e47e5a53418.png" />
+            </div>
+            <div class="dagster">
+                <div class="why_dagster">
+                    <h1>Why Dagster?</h1>
+                    Dagster is an opinionated system and programming model that makes building data applications easy.
+                    Design your workflows with local development, testability, a type system—and deploy to your existing
+                    systems.
+                </div>
+
+                <a href="sections/install/install.html" class="get_started">&#128736;&nbsp;&nbsp;Get Started »</a>
+
+                <div class="value_prop_blocks">
+                    <div class="value_prop_block">
+                        <h1>Unified Workflow</h1>
+                        <div class="value_prop_detail">Dagster takes a holistic view of your data pipelines,
+                            across Spark/Scala, SQL, notebooks and DAGs, integrating your data workflows end-to-end so
+                            you can catch issues before you go to production.
+                        </div>
+                    </div>
+
+                    <div class="value_prop_block">
+                        <h1>Testability</h1>
+                        <div class="value_prop_detail">Testing data pipelines has never been easy. Dagster provides rich
+                            type systems for both configuration and data, and helps you write tests that span your
+                            orchestration and jobs.
+                        </div>
+                    </div>
+
+                    <div class="value_prop_block">
+                        <h1>Runs on Your Infrastructure</h1>
+                        <div class="value_prop_detail">Dagster compiles into Airflow DAGs, so you can drop it into your
+                            existing infrastructure on standalone systems or AWS and start using it today.
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {%- endif %}
+
+            {%- block relbar_bottom %}
+            {%- if theme_show_relbar_bottom|tobool and pagename != 'index'%}
+            <div class="related bottom">
+                &nbsp;
+                {{- rellink_markup () }}
+            </div>
+            {%- endif %}
+            {% endblock %}
+
+            {%- if render_sidebar %}
+        </div>
+        {%- endif %}
+    </div>
+    {%- endblock %}
+    <div class="clearer"></div>
+</div>
+{%- else %}
+{{ super() }}
+{%- endif %}
+{%- endblock %}
+
+{%- block footer %}
+<div class="footer">
+    {% if show_copyright %}&copy;{{ copyright }}.{% endif %}
+    {% if theme_show_powered_by|lower == 'true' %}
+    {% if show_copyright %}|{% endif %}
+    Powered by <a href="http://sphinx-doc.org/">Sphinx {{ sphinx_version }}</a>
+    &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster {{ alabaster_version }}</a>
+    {% endif %}
+    {%- if show_source and has_source and sourcename %}
+    {% if show_copyright or theme_show_powered_by %}|{% endif %}
+    <a href="{{ pathto('_sources/' + sourcename, true)|e }}" rel="nofollow">{{ _('Page source') }}</a>
+    {%- endif %}
+</div>
+
+{% if theme_github_banner|lower != 'false' %}
+<a href="https://github.com/{{ theme_github_user }}/{{ theme_github_repo }}" class="github">
+    <img style="position: absolute; top: 0; right: 0; border: 0;"
+        src="{{ pathto('_static/' ~ theme_github_banner, 1) if theme_github_banner|lower != 'true' else 'https://s3.amazonaws.com/github/ribbons/forkme_right_darkblue_121621.png' }}"
+        alt="Fork me on GitHub" class="github" />
+</a>
+{% endif %}
+
+{% if theme_analytics_id %}
+<script type="text/javascript">
+
+    var _gaq = _gaq || [];
+    _gaq.push(['_setAccount', '{{ theme_analytics_id }}']);
+    _gaq.push(['_setDomainName', 'none']);
+    _gaq.push(['_setAllowLinker', true]);
+    _gaq.push(['_trackPageview']);
+
+    (function () {
+        var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+        ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+        var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+    })();
+
+</script>
+{% endif %}
+{%- endblock %}

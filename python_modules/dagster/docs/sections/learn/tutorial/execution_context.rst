@@ -20,7 +20,7 @@ Logging
 
 One of the most basic pipeline-level facilities is logging.
 
-.. literalinclude:: ../../dagster/tutorials/intro_tutorial/execution_context.py
+.. literalinclude:: ../../../../dagster/tutorials/intro_tutorial/execution_context.py
    :lines: 1-16
    :caption: execution_context.py
 
@@ -49,7 +49,7 @@ is because the default log level is ``INFO``, so debug-level messages will not a
 
 Let's change that by specifying some config.
 
-.. literalinclude:: ../../dagster/tutorials/intro_tutorial/execution_context.yml
+.. literalinclude:: ../../../../dagster/tutorials/intro_tutorial/execution_context.yml
    :language: YAML
    :linenos:
    :caption: execution_context.yml

@@ -21,7 +21,7 @@
 from recommonmark.parser import CommonMarkParser
 
 project = 'Dagster'
-copyright = '2018, Elementl, Inc'  # pylint: disable=W0622
+copyright = ' 2019, Elementl, Inc'  # pylint: disable=W0622
 author = 'The Dagster Team'
 
 # The short X.Y version
@@ -75,12 +75,18 @@ pygments_style = 'sphinx'
 # a list of builtin themes.
 #
 html_theme = 'alabaster'
+html_title = 'Dagster'
+
+
+def setup(app):
+    app.add_stylesheet("css/custom.css")
+
 
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the
 # documentation.
 #
-# html_theme_options = {}
+html_theme_options = {'font_family': 'Roboto'}
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
@@ -95,7 +101,7 @@ html_static_path = ['_static']
 # default: ``['localtoc.html', 'relations.html', 'sourcelink.html',
 # 'searchbox.html']``.
 #
-# html_sidebars = {}
+html_sidebars = {}
 
 # -- Options for HTMLHelp output ---------------------------------------------
 
@@ -123,7 +129,7 @@ latex_elements = {
 # (source start file, target name, title,
 #  author, documentclass [howto, manual, or own class]).
 latex_documents = [
-    (master_doc, 'Dagster.tex', 'Dagster Documentation', 'Nickholas Schrock', 'manual')
+    (master_doc, 'Dagster.tex', 'Dagster Documentation', 'Nicholas Schrock', 'manual')
 ]
 
 # -- Options for manual page output ------------------------------------------
@@ -153,12 +159,14 @@ texinfo_documents = [
 
 extensions = ['sphinx.ext.napoleon']
 
-html_sidebars = {'**': ['globaltoc.html', 'relations.html', 'sourcelink.html', 'searchbox.html']}
+html_sidebars = {'**': ['globaltoc.html', 'searchbox.html']}
 
 html_context = {
     "display_github": True,  # Integrate GitHub
     "github_user": "dagster-io",  # Username
     "github_repo": "dagster",  # Repo name
     "github_version": "master",  # Version
-    "conf_py_path": "/python_modules/dagster/docs/",  # Path in the checkout to the docs root
+    "conf_py_path": "/python_modules/dagster/docs/",  # Path in the checkout to the docs root,
+    'theme_show_relbar_top': True,
+    'theme_show_relbar_bottom': True,
 }

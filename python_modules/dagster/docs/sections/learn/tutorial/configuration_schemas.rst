@@ -8,19 +8,19 @@ editing experience possible, and help to catch configuration errors before pipel
 Let's see how the configuration schema can prevent errors and improve pipeline documentation.
 We'll replace the config field in our solid definition with a structured, strongly typed schema.
 
-.. literalinclude:: ../../dagster/tutorials/intro_tutorial/configuration_schemas.py
+.. literalinclude:: ../../../../dagster/tutorials/intro_tutorial/configuration_schemas.py
    :linenos:
    :caption: configuration_schemas.py
 
 The previous env.yml file works as before:
 
-.. literalinclude:: ../../dagster/tutorials/intro_tutorial/configuration_schemas.yml
+.. literalinclude:: ../../../../dagster/tutorials/intro_tutorial/configuration_schemas.yml
    :linenos:
    :caption: configuration_schemas.yml
 
 Now let's imagine we made a mistake and passed a ``string`` in our configuration:
 
-.. literalinclude:: ../../dagster/tutorials/intro_tutorial/configuration_schemas_runtime_error.yml
+.. literalinclude:: ../../../../dagster/tutorials/intro_tutorial/configuration_schemas_runtime_error.yml
    :linenos:
    :emphasize-lines: 12
    :caption: configuration_schemas_runtime_error.yml
@@ -43,7 +43,7 @@ to catch this before execution.
 
 In order to do that, let us use the typed config solid.
 
-.. literalinclude:: ../../dagster/tutorials/intro_tutorial/configuration_schemas_type_mismatch_error.yml
+.. literalinclude:: ../../../../dagster/tutorials/intro_tutorial/configuration_schemas_type_mismatch_error.yml
    :linenos:
    :emphasize-lines: 12
    :caption: configuration_schemas_runtime_error.yml
@@ -75,7 +75,7 @@ actionable error message before the pipeline is ever executed.
 
 Let's see what happens if we pass config with the wrong structure:
 
-.. literalinclude:: ../../dagster/tutorials/intro_tutorial/configuration_schemas_wrong_field.yml
+.. literalinclude:: ../../../../dagster/tutorials/intro_tutorial/configuration_schemas_wrong_field.yml
    :linenos:
    :emphasize-lines: 9 
    :caption: configuration_schemas_wrong_field.yml

@@ -1,5 +1,5 @@
 Principles
------------
+-------------------------
 Dagster is opinionated about how data pipelines should be built and structured. What do we think
 is important?
 
