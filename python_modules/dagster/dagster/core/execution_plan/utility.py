@@ -1,7 +1,5 @@
 from dagster import check
-from dagster.core.execution import SystemPipelineExecutionContext
-from dagster.core.definitions import Solid
-from dagster.core.types.runtime import RuntimeType
+from dagster.core.definitions import Solid, PipelineDefinition
 
 from .objects import (
     ExecutionValueSubplan,
@@ -11,7 +9,6 @@ from .objects import (
     StepOutputHandle,
     StepOutputValue,
     StepKind,
-    SingleOutputStepCreationData,
 )
 
 JOIN_OUTPUT = 'join_output'
@@ -22,7 +19,7 @@ def __join_lambda(_context, inputs):
 
 
 def create_join_step(pipeline_def, solid, step_key, prev_steps, prev_output_name):
-    # check.inst_param(pipeline_def, 'pipeline_context', SystemPipelineExecutionContext)
+    check.inst_param(pipeline_def, 'pipeline_def', PipelineDefinition)
     check.inst_param(solid, 'solid', Solid)
     check.str_param(step_key, 'step_key')
     check.list_param(prev_steps, 'prev_steps', of_type=ExecutionStep)
@@ -58,7 +55,6 @@ def create_join_step(pipeline_def, solid, step_key, prev_steps, prev_output_name
         kind=StepKind.JOIN,
         solid=solid,
         tags={},
-        # tags=pipeline_context.get_tags(),
     )
 
 
@@ -77,7 +73,7 @@ def create_joining_subplan(
     to be seen if there should be any work or verification done in this step, especially
     in multi-process environments that require persistence between steps.
     '''
-    # check.inst_param(pipeline_def, 'pipeline_context', SystemPipelineExecutionContext)
+    check.inst_param(pipeline_def, 'pipeline_def', PipelineDefinition)
     check.inst_param(solid, 'solid', Solid)
     check.str_param(join_step_key, 'join_step_key')
     check.list_param(parallel_steps, 'parallel_steps', of_type=ExecutionStep)
@@ -93,31 +89,4 @@ def create_joining_subplan(
     output_name = join_step.step_outputs[0].name
     return ExecutionValueSubplan(
         parallel_steps + [join_step], StepOutputHandle.from_step(join_step, output_name)
-    )
-
-
-VALUE_OUTPUT = 'value_output'
-
-
-def create_value_thunk_step(pipeline_context, solid, runtime_type, step_key, value):
-    check.inst_param(pipeline_context, 'pipeline_context', SystemPipelineExecutionContext)
-    check.inst_param(solid, 'solid', Solid)
-    check.inst_param(runtime_type, 'runtime_type', RuntimeType)
-    check.str_param(step_key, 'step_key')
-
-    def _fn(_context, _inputs):
-        yield StepOutputValue(output_name=VALUE_OUTPUT, value=value)
-
-    return SingleOutputStepCreationData(
-        ExecutionStep(
-            pipeline_name=pipeline_context.pipeline_def.name,
-            key=step_key,
-            step_inputs=[],
-            step_outputs=[StepOutput(VALUE_OUTPUT, runtime_type, optional=False)],
-            compute_fn=_fn,
-            kind=StepKind.VALUE_THUNK,
-            solid=solid,
-            tags={},
-        ),
-        VALUE_OUTPUT,
     )

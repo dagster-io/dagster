@@ -12,6 +12,8 @@ from dagster.core.execution_context import SystemStepExecutionContext
 
 from dagster.core.errors import DagsterExpectationFailedError
 
+from dagster.core.system_config.objects import EnvironmentConfig
+
 from dagster.core.user_context import ExpectationExecutionContext
 
 from .objects import (
@@ -133,6 +135,7 @@ def create_expectation_step(
 
 def decorate_with_expectations(pipeline_def, environment_config, solid, transform_step, output_def):
     check.inst_param(pipeline_def, 'pipeline_def', PipelineDefinition)
+    check.inst_param(environment_config, 'environment_config', EnvironmentConfig)
     check.inst_param(solid, 'solid', Solid)
     check.inst_param(transform_step, 'transform_step', ExecutionStep)
     check.inst_param(output_def, 'output_def', OutputDefinition)

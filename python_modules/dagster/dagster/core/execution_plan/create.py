@@ -106,6 +106,8 @@ def create_execution_plan_from_steps(pipeline_def, steps):
 def create_subplan_for_input(
     pipeline_def, environment_config, solid, prev_step_output_handle, input_def
 ):
+    check.inst_param(pipeline_def, 'pipeline_def', PipelineDefinition)
+    check.inst_param(environment_config, 'environment_config', EnvironmentConfig)
     check.inst_param(solid, 'solid', Solid)
     check.inst_param(prev_step_output_handle, 'prev_step_output_handle', StepOutputHandle)
     check.inst_param(input_def, 'input_def', InputDefinition)
@@ -137,6 +139,7 @@ def create_subplan_for_output(
 
 def get_input_source_step_handle(pipeline_def, environment_config, plan_builder, solid, input_def):
     check.inst_param(pipeline_def, 'pipeline_def', PipelineDefinition)
+    check.inst_param(environment_config, 'environment_config', EnvironmentConfig)
     check.inst_param(plan_builder, 'plan_builder', PlanBuilder)
     check.inst_param(solid, 'solid', Solid)
     check.inst_param(input_def, 'input_def', InputDefinition)
@@ -167,6 +170,7 @@ def get_input_source_step_handle(pipeline_def, environment_config, plan_builder,
 
 def create_step_inputs(pipeline_def, environment_config, plan_builder, solid):
     check.inst_param(pipeline_def, 'pipeline_def', PipelineDefinition)
+    check.inst_param(environment_config, 'environment_config', EnvironmentConfig)
     check.inst_param(plan_builder, 'plan_builder', PlanBuilder)
     check.inst_param(solid, 'solid', Solid)
 
