@@ -6,7 +6,7 @@ from dagster.utils import script_relative_path
 
 from dagster_airflow.scaffold import (
     _bad_import,
-    _format_config,
+    format_config_for_graphql,
     _is_py,
     _normalize_key,
     _split_lines,
@@ -33,32 +33,35 @@ def test_split_lines():
 
 def test_format_config():
     with pytest.raises(check.CheckError):
-        _format_config('')
+        format_config_for_graphql('')
 
     with pytest.raises(check.CheckError):
-        _format_config(None)
+        format_config_for_graphql(None)
 
     with pytest.raises(check.CheckError):
-        _format_config([])
+        format_config_for_graphql([])
 
     with pytest.raises(check.CheckError):
-        _format_config(3)
+        format_config_for_graphql(3)
 
-    assert _format_config({}) == '{\n}\n'
+    assert format_config_for_graphql({}) == '{\n}\n'
 
-    assert _format_config({'foo': 'bar'}) == '{\n  foo: "bar"\n}\n'
+    assert format_config_for_graphql({'foo': 'bar'}) == '{\n  foo: "bar"\n}\n'
 
-    assert _format_config({'foo': 'bar', 'baz': 'quux'}) == '{\n  baz: "quux",\n  foo: "bar"\n}\n'
+    assert (
+        format_config_for_graphql({'foo': 'bar', 'baz': 'quux'})
+        == '{\n  baz: "quux",\n  foo: "bar"\n}\n'
+    )
 
-    assert _format_config({'foo': {'bar': 'baz', 'quux': 'bip'}}) == (
+    assert format_config_for_graphql({'foo': {'bar': 'baz', 'quux': 'bip'}}) == (
         '{\n' '  foo: {\n' '    bar: "baz",\n' '    quux: "bip"\n' '  }\n' '}\n'
     )
 
-    assert _format_config({'foo': {'bar': 3, 'quux': 'bip'}}) == (
+    assert format_config_for_graphql({'foo': {'bar': 3, 'quux': 'bip'}}) == (
         '{\n' '  foo: {\n' '    bar: 3,\n' '    quux: "bip"\n' '  }\n' '}\n'
     )
 
-    assert _format_config({'foo': {'bar': {'baz': {'quux': 'bip', 'bop': 'boop'}}}}) == (
+    assert format_config_for_graphql({'foo': {'bar': {'baz': {'quux': 'bip', 'bop': 'boop'}}}}) == (
         '{\n'
         '  foo: {\n'
         '    bar: {\n'
@@ -71,11 +74,11 @@ def test_format_config():
         '}\n'
     )
 
-    assert _format_config({'foo': {'bar': ['baz', 'quux']}}) == (
+    assert format_config_for_graphql({'foo': {'bar': ['baz', 'quux']}}) == (
         '{\n' '  foo: {\n' '    bar: [\n' '      "baz",\n' '      "quux"\n' '    ]\n' '  }\n' '}\n'
     )
 
-    assert _format_config({'foo': {'bar': ['baz', {'quux': 'ruux'}]}}) == (
+    assert format_config_for_graphql({'foo': {'bar': ['baz', {'quux': 'ruux'}]}}) == (
         '{\n'
         '  foo: {\n'
         '    bar: [\n'

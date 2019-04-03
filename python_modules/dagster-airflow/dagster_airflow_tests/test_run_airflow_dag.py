@@ -15,7 +15,7 @@ from dagster import RunConfig, seven
 from dagster.core.execution import yield_pipeline_execution_context
 from dagster.core.object_store import has_s3_intermediate
 
-from dagster_airflow.scaffold import coalesce_execution_steps
+from dagster_airflow.compile import coalesce_execution_steps
 
 from .marks import aws, nettest
 
@@ -37,7 +37,7 @@ def test_unit_run_airflow_dag_steps(scaffold_dag, pipeline, env_config, s3_bucke
 
     run_id = str(uuid.uuid4())
 
-    for (solid_name, solid_steps) in coalesce_execution_steps(execution_plan):
+    for (solid_name, solid_steps) in coalesce_execution_steps(execution_plan).items():
         task_id = solid_name
 
         step_output_keys = set([])
