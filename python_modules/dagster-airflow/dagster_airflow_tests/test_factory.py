@@ -34,10 +34,12 @@ class TestExecuteDag(object):
             assert result['data']['executePlan']['__typename'] == 'ExecutePlanSuccess'
             result = list(
                 filter(
-                    lambda x: x['outputName'] == 'result',
+                    lambda x: x['__typename'] == 'ExecutionStepOutputEvent',
                     result['data']['executePlan']['stepEvents'],
                 )
             )[0]
+            if result['step']['kind'] == 'INPUT_THUNK':
+                continue
             # This ugly beast is to deal with cross-python-version differences in `valueRepr` --
             # in py2 we'll get 'u"barbar"', in py3 we'll get '"barbar"', etc.
             assert json.loads(
@@ -69,10 +71,12 @@ class TestExecuteDagContainerized(object):
             assert result['data']['executePlan']['__typename'] == 'ExecutePlanSuccess'
             result = list(
                 filter(
-                    lambda x: x['outputName'] == 'result',
+                    lambda x: x['__typename'] == 'ExecutionStepOutputEvent',
                     result['data']['executePlan']['stepEvents'],
                 )
             )[0]
+            if result['step']['kind'] == 'INPUT_THUNK':
+                continue
             assert json.loads(
                 re.sub(
                     '\{u\'', '{\'', re.sub(' u\'', ' \'', re.sub('^u\'', '\'', result['valueRepr']))
