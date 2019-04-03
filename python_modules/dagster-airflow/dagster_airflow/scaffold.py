@@ -298,7 +298,7 @@ def _make_static_scaffold(pipeline_name, env_config, execution_plan, image, edit
         printer.line('PIPELINE_NAME = \'{pipeline_name}\''.format(pipeline_name=pipeline_name))
         printer.blank_line()
 
-        for (solid_name, solid_steps) in coalesce_execution_steps(execution_plan):
+        for (solid_name, solid_steps) in coalesce_execution_steps(execution_plan).items():
             steps_for_key = _steps_for_key(solid_name)
 
             printer.line('{steps_for_key} = ['.format(steps_for_key=steps_for_key))
@@ -327,7 +327,7 @@ def _make_static_scaffold(pipeline_name, env_config, execution_plan, image, edit
             printer.line('tasks = []')
             printer.blank_line()
 
-            for (solid_name, solid_steps) in coalesce_execution_steps(execution_plan):
+            for (solid_name, solid_steps) in coalesce_execution_steps(execution_plan).items():
                 steps_for_key = _steps_for_key(solid_name)
 
                 printer.line(
@@ -351,7 +351,7 @@ def _make_static_scaffold(pipeline_name, env_config, execution_plan, image, edit
                 )
                 printer.blank_line()
 
-            for (solid_name, solid_steps) in coalesce_execution_steps(execution_plan):
+            for (solid_name, solid_steps) in coalesce_execution_steps(execution_plan).items():
                 for solid_step in solid_steps:
                     for step_input in solid_step.step_inputs:
                         prev_airflow_step_key = execution_plan.get_step_by_key(

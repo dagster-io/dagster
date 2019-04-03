@@ -86,7 +86,7 @@ def make_airflow_dag(pipeline, env_config=None, dag_id=None, dag_description=Non
 
     coalesced_plan = coalesce_execution_steps(execution_plan)
 
-    for solid_name, solid_steps in coalesced_plan:
+    for solid_name, solid_steps in coalesced_plan.items():
 
         step_keys = [step.key for step in solid_steps]
 
@@ -107,4 +107,4 @@ def make_airflow_dag(pipeline, env_config=None, dag_id=None, dag_description=Non
                 if solid_name != prev_solid_name:
                     tasks[prev_solid_name].set_downstream(task)
 
-    return (dag, [tasks[solid_name] for solid_name, _ in coalesced_plan])
+    return (dag, [tasks[solid_name] for solid_name in coalesced_plan.keys()])
