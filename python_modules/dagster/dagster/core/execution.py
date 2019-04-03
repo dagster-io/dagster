@@ -278,7 +278,6 @@ def create_execution_plan(pipeline, environment_dict=None, run_config=None):
     check.inst_param(pipeline, 'pipeline', PipelineDefinition)
     environment_dict = check.opt_dict_param(environment_dict, 'environment_dict', key_type=str)
     run_config = check_run_config_param(run_config)
-    check.inst_param(run_config, 'run_config', RunConfig)
 
     with yield_pipeline_execution_context(
         pipeline, environment_dict, run_config

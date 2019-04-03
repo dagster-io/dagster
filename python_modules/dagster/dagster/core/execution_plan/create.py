@@ -59,7 +59,9 @@ def create_execution_plan_core(pipeline_context):
 
     for solid in solids_in_topological_order(pipeline_context.pipeline_def):
 
-        step_inputs = create_step_inputs(pipeline_context, plan_builder, solid)
+        step_inputs = create_step_inputs(
+            pipeline_context.pipeline_def, pipeline_context.environment_config, plan_builder, solid
+        )
 
         solid_transform_step = create_transform_step(pipeline_context, solid, step_inputs)
 
@@ -101,19 +103,16 @@ def create_execution_plan_from_steps(pipeline_context, steps):
     return ExecutionPlan(pipeline_context.pipeline_def, step_dict, deps)
 
 
-def create_subplan_for_input(pipeline_context, solid, prev_step_output_handle, input_def):
-    check.inst_param(pipeline_context, 'pipeline_context', SystemPipelineExecutionContext)
+def create_subplan_for_input(
+    pipeline_def, environment_config, solid, prev_step_output_handle, input_def
+):
     check.inst_param(solid, 'solid', Solid)
     check.inst_param(prev_step_output_handle, 'prev_step_output_handle', StepOutputHandle)
     check.inst_param(input_def, 'input_def', InputDefinition)
 
-    if pipeline_context.environment_config.expectations.evaluate and input_def.expectations:
+    if environment_config.expectations.evaluate and input_def.expectations:
         return create_expectations_subplan(
-            pipeline_context,
-            solid,
-            input_def,
-            prev_step_output_handle,
-            kind=StepKind.INPUT_EXPECTATION,
+            pipeline_def, solid, input_def, prev_step_output_handle, kind=StepKind.INPUT_EXPECTATION
         )
     else:
         return ExecutionValueSubplan.empty(prev_step_output_handle)
@@ -130,18 +129,18 @@ def create_subplan_for_output(pipeline_context, solid, solid_transform_step, out
     return decorate_with_output_materializations(pipeline_context, solid, output_def, subplan)
 
 
-def get_input_source_step_handle(pipeline_context, plan_builder, solid, input_def):
-    check.inst_param(pipeline_context, 'pipeline_context', SystemPipelineExecutionContext)
+def get_input_source_step_handle(pipeline_def, environment_config, plan_builder, solid, input_def):
+    # check.inst_param(pipeline_context, 'pipeline_context', SystemPipelineExecutionContext)
     check.inst_param(plan_builder, 'plan_builder', PlanBuilder)
     check.inst_param(solid, 'solid', Solid)
     check.inst_param(input_def, 'input_def', InputDefinition)
 
     input_handle = solid.input_handle(input_def.name)
-    solid_config = pipeline_context.environment_config.solids.get(solid.name)
-    dependency_structure = pipeline_context.pipeline_def.dependency_structure
+    solid_config = environment_config.solids.get(solid.name)
+    dependency_structure = pipeline_def.dependency_structure
     if solid_config and input_def.name in solid_config.inputs:
         step_creation_data = create_input_thunk_execution_step(
-            pipeline_context, solid, input_def, solid_config.inputs[input_def.name]
+            pipeline_def, solid, input_def, solid_config.inputs[input_def.name]
         )
         plan_builder.steps.append(step_creation_data.step)
         return step_creation_data.step_output_handle
@@ -155,15 +154,13 @@ def get_input_source_step_handle(pipeline_context, plan_builder, solid, input_de
                 'must get a value either (a) from a dependency or (b) from the '
                 'inputs section of its configuration.'
             ).format(
-                pipeline_name=pipeline_context.pipeline.name,
-                solid_name=solid.name,
-                input_name=input_def.name,
+                pipeline_name=pipeline_def.name, solid_name=solid.name, input_name=input_def.name
             )
         )
 
 
-def create_step_inputs(pipeline_context, plan_builder, solid):
-    check.inst_param(pipeline_context, 'pipeline_context', SystemPipelineExecutionContext)
+def create_step_inputs(pipeline_def, environment_config, plan_builder, solid):
+    # check.inst_param(pipeline_context, 'pipeline_context', SystemPipelineExecutionContext)
     check.inst_param(plan_builder, 'plan_builder', PlanBuilder)
     check.inst_param(solid, 'solid', Solid)
 
@@ -171,11 +168,11 @@ def create_step_inputs(pipeline_context, plan_builder, solid):
 
     for input_def in solid.definition.input_defs:
         prev_step_output_handle = get_input_source_step_handle(
-            pipeline_context, plan_builder, solid, input_def
+            pipeline_def, environment_config, plan_builder, solid, input_def
         )
 
         subplan = create_subplan_for_input(
-            pipeline_context, solid, prev_step_output_handle, input_def
+            pipeline_def, environment_config, solid, prev_step_output_handle, input_def
         )
 
         plan_builder.steps.extend(subplan.steps)
