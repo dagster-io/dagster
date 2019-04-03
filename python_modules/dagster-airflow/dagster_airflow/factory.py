@@ -4,15 +4,11 @@ import json
 from yaml import dump
 
 from airflow import DAG
-from airflow.operators.python_operator import PythonOperator
 
-from dagster import check, PipelineDefinition, RepositoryDefinition
+from dagster import check, PipelineDefinition
 from dagster.core.execution import create_execution_plan
 
-from dagit.app import RepositoryContainer
-from dagit.cli import execute_query_from_cli
-
-from .dagster_plugin import DagsterDockerOperator, DOCKER_TEMPDIR, QUERY_TEMPLATE
+from .dagster_plugin import DagsterDockerOperator, DagsterOperator, DagsterPythonOperator
 from .compile import coalesce_execution_steps
 from .scaffold import format_config_for_graphql
 from .utils import IndentingBlockPrinter
@@ -46,62 +42,6 @@ def _make_dag_description(pipeline_name, env_config):
         return printer.read()
 
 
-def _make_python_callable(dag_id, pipeline, env_config, step_keys):
-    repository = RepositoryDefinition('<<ephemeral repository>>', {dag_id: lambda: pipeline})
-    repository_container = RepositoryContainer(repository=repository)
-
-    config = format_config_for_graphql(env_config)
-
-    def python_callable(**kwargs):
-        run_id = kwargs.get('dag_run').run_id
-        query = QUERY_TEMPLATE.format(
-            config=config,
-            run_id=run_id,
-            step_keys=json.dumps(step_keys),
-            pipeline_name=pipeline.name,
-        )
-        return json.loads(execute_query_from_cli(repository_container, query, variables=None))
-
-    return python_callable
-
-
-def _make_python_operator(pipeline, env_config, solid_name, step_keys, dag, dag_id, op_kwargs):
-    # black 18.9b0 doesn't support py27-compatible formatting of the below invocation (omitting
-    # the trailing comma after **op_kwargs) -- black 19.3b0 supports multiple python versions, but
-    # currently doesn't know what to do with from __future__ import print_function -- see
-    # https://github.com/ambv/black/issues/768
-    # fmt: off
-    return PythonOperator(
-        task_id=solid_name,
-        provide_context=True,
-        python_callable=_make_python_callable(dag_id, pipeline, env_config, step_keys),
-        dag=dag,
-        **op_kwargs
-    )
-    # fmt: on
-
-
-def _make_dagster_docker_operator(
-    pipeline, env_config, solid_name, step_keys, dag, dag_id, op_kwargs
-):
-    # black 18.9b0 doesn't support py27-compatible formatting of the below invocation (omitting
-    # the trailing comma after **op_kwargs) -- black 19.3b0 supports multiple python versions, but
-    # currently doesn't know what to do with from __future__ import print_function -- see
-    # https://github.com/ambv/black/issues/768
-    # fmt: off
-    return DagsterDockerOperator(
-        step=solid_name,
-        config=format_config_for_graphql(env_config),
-        dag=dag,
-        tmp_dir=DOCKER_TEMPDIR,
-        pipeline_name=pipeline.name,
-        step_keys=step_keys,
-        task_id=solid_name,
-        **op_kwargs
-    )
-    # fmt: on
-
-
 def _make_airflow_dag(
     pipeline,
     env_config=None,
@@ -109,7 +49,7 @@ def _make_airflow_dag(
     dag_description=None,
     dag_kwargs=None,
     op_kwargs=None,
-    operator_factory=_make_python_operator,
+    operator=DagsterPythonOperator,
 ):
 
     check.inst_param(pipeline, 'pipeline', PipelineDefinition)
@@ -119,6 +59,7 @@ def _make_airflow_dag(
     dag_description = check.opt_str_param(
         dag_description, 'dag_description', _make_dag_description(pipeline_name, env_config)
     )
+    check.subclass_param(operator, 'operator', DagsterOperator)
     # black 18.9b0 doesn't support py27-compatible formatting of the below invocation (omitting
     # the trailing comma after **check.opt_dict_param...) -- black 19.3b0 supports multiple python
     # versions, but currently doesn't know what to do with from __future__ import print_function --
@@ -144,9 +85,9 @@ def _make_airflow_dag(
 
         step_keys = [step.key for step in solid_steps]
 
-        task = operator_factory(
+        task = operator.operator_for_solid(
             pipeline=pipeline,
-            env_config=env_config,
+            env_config=format_config_for_graphql(env_config),
             solid_name=solid_name,
             step_keys=step_keys,
             dag=dag,
@@ -198,5 +139,5 @@ def make_airflow_dag_containerized(
         dag_description=dag_description,
         dag_kwargs=dag_kwargs,
         op_kwargs=op_kwargs,
-        operator_factory=_make_dagster_docker_operator,
+        operator=DagsterDockerOperator,
     )
