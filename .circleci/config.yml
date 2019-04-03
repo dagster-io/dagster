@@ -977,6 +977,7 @@ jobs:
       - image: dagster/cci-test:3.6
     environment:
       TOXENV: py36
+      SLUGIFY_USES_TEXT_UNIDECODE: "yes"
     working_directory: ~/repo
     steps:
       - checkout
@@ -1023,6 +1024,7 @@ jobs:
       - image: dagster/cci-test:3.7.2
     environment:
       TOXENV: py37
+      SLUGIFY_USES_TEXT_UNIDECODE: "yes"
 
   event-pipeline-demo-py35:
     <<: *event-pipeline-demo-template
@@ -1030,6 +1032,7 @@ jobs:
       - image: dagster/cci-test:3.5
     environment:
       TOXENV: py35
+      SLUGIFY_USES_TEXT_UNIDECODE: "yes"
 
   event-pipeline-demo-py27:
     <<: *event-pipeline-demo-template
@@ -1037,6 +1040,7 @@ jobs:
       - image: dagster/cci-test:2.7
     environment:
       TOXENV: py27
+      SLUGIFY_USES_TEXT_UNIDECODE: "yes"
 
   dagster-framework-aws-py36: &dagster-framework-aws-template
     docker:
