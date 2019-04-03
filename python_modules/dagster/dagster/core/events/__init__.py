@@ -9,6 +9,7 @@ class DagsterEventType(Enum):
     STEP_FAILURE = 'STEP_FAILURE'
     STEP_START = 'STEP_START'
     STEP_SUCCESS = 'STEP_SUCCESS'
+    STEP_SKIPPED = 'STEP_SKIPPED'
     STEP_MATERIALIZATION = 'STEP_MATERIALIZATION'
 
     PIPELINE_START = 'PIPELINE_START'
@@ -24,6 +25,7 @@ STEP_EVENTS = {
     DagsterEventType.STEP_OUTPUT,
     DagsterEventType.STEP_FAILURE,
     DagsterEventType.STEP_SUCCESS,
+    DagsterEventType.STEP_SKIPPED,
     DagsterEventType.STEP_MATERIALIZATION,
 }
 
@@ -46,6 +48,10 @@ def _validate_event_specific_data(event_type, event_specific_data):
         check.inst_param(event_specific_data, 'event_specific_data', StepFailureData)
     elif event_type == DagsterEventType.STEP_SUCCESS:
         check.inst_param(event_specific_data, 'event_specific_data', StepSuccessData)
+    elif event_type == DagsterEventType.STEP_MATERIALIZATION:
+        check.inst_param(event_specific_data, 'event_specific_data', StepMaterializationData)
+    elif event_type == DagsterEventType.PIPELINE_PROCESS_STARTED:
+        check.inst_param(event_specific_data, 'event_specific_data', PipelineProcessStartedData)
 
     return event_specific_data
 
@@ -59,6 +65,10 @@ class DagsterEvent(
 ):
     @staticmethod
     def from_step(event_type, step_context, event_specific_data=None):
+        from dagster.core.execution_context import SystemStepExecutionContext
+
+        check.inst_param(step_context, 'step_context', SystemStepExecutionContext)
+
         event = DagsterEvent(
             check.inst_param(event_type, 'event_type', DagsterEventType).value,
             step_context.pipeline_def.name,
@@ -67,7 +77,7 @@ class DagsterEvent(
             step_context.step.solid.definition.name,
             step_context.step.kind.value,
             step_context.tags,
-            event_specific_data,
+            _validate_event_specific_data(event_type, event_specific_data),
         )
 
         log_fn = step_context.log.info
@@ -183,10 +193,6 @@ class DagsterEvent(
 
     @staticmethod
     def step_output_event(step_context, step_output_data):
-        from dagster.core.execution_context import SystemStepExecutionContext
-
-        check.inst_param(step_context, 'step_context', SystemStepExecutionContext)
-
         return DagsterEvent.from_step(
             event_type=DagsterEventType.STEP_OUTPUT,
             step_context=step_context,
@@ -195,10 +201,6 @@ class DagsterEvent(
 
     @staticmethod
     def step_failure_event(step_context, step_failure_data):
-        from dagster.core.execution_context import SystemStepExecutionContext
-
-        check.inst_param(step_context, 'step_context', SystemStepExecutionContext)
-
         return DagsterEvent.from_step(
             event_type=DagsterEventType.STEP_FAILURE,
             step_context=step_context,
@@ -207,20 +209,12 @@ class DagsterEvent(
 
     @staticmethod
     def step_start_event(step_context):
-        from dagster.core.execution_context import SystemStepExecutionContext
-
-        check.inst_param(step_context, 'step_context', SystemStepExecutionContext)
-
         return DagsterEvent.from_step(
             event_type=DagsterEventType.STEP_START, step_context=step_context
         )
 
     @staticmethod
     def step_success_event(step_context, success):
-        from dagster.core.execution_context import SystemStepExecutionContext
-
-        check.inst_param(step_context, 'step_context', SystemStepExecutionContext)
-
         return DagsterEvent.from_step(
             event_type=DagsterEventType.STEP_SUCCESS,
             step_context=step_context,
@@ -228,10 +222,13 @@ class DagsterEvent(
         )
 
     @staticmethod
-    def step_materialization(step_context, name, path):
-        from dagster.core.execution_context import SystemStepExecutionContext
+    def step_skipped_event(step_context):
+        return DagsterEvent.from_step(
+            event_type=DagsterEventType.STEP_SKIPPED, step_context=step_context
+        )
 
-        check.inst_param(step_context, 'step_context', SystemStepExecutionContext)
+    @staticmethod
+    def step_materialization(step_context, name, path):
         check.str_param(name, 'name')
         check.str_param(path, 'path')
         return DagsterEvent.from_step(

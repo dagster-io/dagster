@@ -209,6 +209,12 @@ class DauphinExecutionStepStartEvent(dauphin.ObjectType):
         interfaces = (DauphinMessageEvent, DauphinStepEvent)
 
 
+class DauphinExecutionStepSkippedEvent(dauphin.ObjectType):
+    class Meta:
+        name = 'ExecutionStepSkippedEvent'
+        interfaces = (DauphinMessageEvent, DauphinStepEvent)
+
+
 class DauphinExecutionStepOutputEvent(dauphin.ObjectType):
     class Meta:
         name = 'ExecutionStepOutputEvent'
@@ -256,6 +262,7 @@ class DauphinPipelineRunEvent(dauphin.Union):
             DauphinExecutionStepSuccessEvent,
             DauphinExecutionStepOutputEvent,
             DauphinExecutionStepFailureEvent,
+            DauphinExecutionStepSkippedEvent,
             DauphinPipelineProcessStartEvent,
             DauphinPipelineProcessStartedEvent,
             DauphinStepMaterializationEvent,
@@ -293,7 +300,8 @@ class DauphinPipelineRunEvent(dauphin.Union):
             dagster_event = event.dagster_event
             if dagster_event.event_type == DagsterEventType.STEP_START:
                 return graphene_info.schema.type_named('ExecutionStepStartEvent')(**basic_params)
-
+            elif dagster_event.event_type == DagsterEventType.STEP_SKIPPED:
+                return graphene_info.schema.type_named('ExecutionStepSkippedEvent')(**basic_params)
             elif dagster_event.event_type == DagsterEventType.STEP_SUCCESS:
                 return graphene_info.schema.type_named('ExecutionStepSuccessEvent')(**basic_params)
             elif dagster_event.event_type == DagsterEventType.STEP_OUTPUT:

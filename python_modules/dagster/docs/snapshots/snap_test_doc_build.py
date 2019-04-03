@@ -851,6 +851,8 @@ snapshots['test_build_all_docs 4'] = '''
 <h2 id="S">S</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="apidocs/execution.html#dagster.SolidExecutionResult.skipped">skipped (dagster.SolidExecutionResult attribute)</a>
+</li>
       <li><a href="apidocs/definitions.html#dagster.DependencyDefinition.solid">solid (dagster.DependencyDefinition attribute)</a>
 
       <ul>
@@ -863,10 +865,10 @@ snapshots['test_build_all_docs 4'] = '''
 </li>
       <li><a href="apidocs/definitions.html#dagster.SolidDefinition">SolidDefinition (class in dagster)</a>
 </li>
-      <li><a href="apidocs/execution.html#dagster.SolidExecutionResult">SolidExecutionResult (class in dagster)</a>
-</li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="apidocs/execution.html#dagster.SolidExecutionResult">SolidExecutionResult (class in dagster)</a>
+</li>
       <li><a href="apidocs/definitions.html#dagster.SolidInstance">SolidInstance (class in dagster)</a>
 </li>
       <li><a href="apidocs/definitions.html#dagster.PipelineDefinition.solids">solids (dagster.PipelineDefinition attribute)</a>, <a href="apidocs/definitions.html#dagster.PipelineDefinition.solids">[1]</a>
@@ -20706,6 +20708,12 @@ SystemPipelineExecutionContextCreationData although that seemed excessively verb
 <dt id="dagster.SolidExecutionResult.failure_data">
 <code class="descname">failure_data</code><a class="headerlink" href="#dagster.SolidExecutionResult.failure_data" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns the failing step’s data that happened during this solid’s execution, if any</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="dagster.SolidExecutionResult.skipped">
+<code class="descname">skipped</code><a class="headerlink" href="#dagster.SolidExecutionResult.skipped" title="Permalink to this definition">¶</a></dt>
+<dd><p>Whether the solid execution was skipped</p>
 </dd></dl>
 
 <dl class="attribute">

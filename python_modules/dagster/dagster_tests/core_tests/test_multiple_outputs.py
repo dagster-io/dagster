@@ -190,11 +190,7 @@ def test_multiple_outputs_only_emit_one():
     ):
         result.result_for_solid('not_present')
 
-    with pytest.raises(
-        DagsterInvariantViolationError,
-        match='Did not find result for solid downstream_two in pipeline execution result',
-    ):
-        result.result_for_solid('downstream_two')
+    assert result.result_for_solid('downstream_two').skipped
 
 
 def test_missing_non_optional_output_fails():

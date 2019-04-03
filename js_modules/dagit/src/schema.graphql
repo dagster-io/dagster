@@ -154,6 +154,14 @@ type ExecutionStepOutputEvent implements MessageEvent & StepEvent {
   valueRepr: String!
 }
 
+type ExecutionStepSkippedEvent implements MessageEvent & StepEvent {
+  run: PipelineRun!
+  message: String!
+  timestamp: String!
+  level: LogLevel!
+  step: ExecutionStep
+}
+
 type ExecutionStepStartEvent implements MessageEvent & StepEvent {
   run: PipelineRun!
   message: String!
@@ -445,7 +453,7 @@ type PipelineRun {
   config: String!
 }
 
-union PipelineRunEvent = LogMessageEvent | PipelineStartEvent | PipelineSuccessEvent | PipelineFailureEvent | ExecutionStepStartEvent | ExecutionStepSuccessEvent | ExecutionStepOutputEvent | ExecutionStepFailureEvent | PipelineProcessStartEvent | PipelineProcessStartedEvent | StepMaterializationEvent
+union PipelineRunEvent = LogMessageEvent | PipelineStartEvent | PipelineSuccessEvent | PipelineFailureEvent | ExecutionStepStartEvent | ExecutionStepSuccessEvent | ExecutionStepOutputEvent | ExecutionStepFailureEvent | ExecutionStepSkippedEvent | PipelineProcessStartEvent | PipelineProcessStartedEvent | StepMaterializationEvent
 
 type PipelineRunLogsSubscriptionMissingRunIdFailure {
   missingRunId: String!

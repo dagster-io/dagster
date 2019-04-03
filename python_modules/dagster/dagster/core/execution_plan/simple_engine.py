@@ -60,6 +60,8 @@ def start_inprocess_executor(
         ),
     )
 
+    failed_or_skipped_steps = set()
+
     step_levels = execution_plan.topological_step_levels()
 
     # It would be good to implement a reference tracking algorithm here so we could
@@ -73,6 +75,21 @@ def start_inprocess_executor(
 
             step_context = pipeline_context.for_step(step)
 
+            failed_inputs = [
+                step_input.prev_output_handle.step_key
+                for step_input in step.step_inputs
+                if step_input.prev_output_handle.step_key in failed_or_skipped_steps
+            ]
+            if failed_inputs:
+                step_context.log.info(
+                    'Dependencies for step {step} failed: {failed_inputs}. Not executing.'.format(
+                        step=step.key, failed_inputs=failed_inputs
+                    )
+                )
+                failed_or_skipped_steps.add(step.key)
+                yield DagsterEvent.step_skipped_event(step_context)
+                continue
+
             uncovered_inputs = intermediates_manager.uncovered_inputs(step_context, step)
             if uncovered_inputs:
                 # In partial pipeline execution, we may end up here without having validated the
@@ -85,6 +102,8 @@ def start_inprocess_executor(
                         'inputs: {uncovered_inputs}'
                     ).format(uncovered_inputs=uncovered_inputs, step=step.key)
                 )
+                failed_or_skipped_steps.add(step.key)
+                yield DagsterEvent.step_skipped_event(step_context)
                 continue
 
             input_values = _create_input_values(step_context, intermediates_manager)
@@ -93,11 +112,10 @@ def start_inprocess_executor(
                 execute_step_in_memory(step_context, input_values, intermediates_manager)
             ):
                 check.inst(step_event, DagsterEvent)
-                if (
-                    pipeline_context.executor_config.throw_on_user_error
-                    and step_event.is_step_failure
-                ):
-                    step_event.reraise_user_error()
+                if step_event.is_step_failure:
+                    failed_or_skipped_steps.add(step.key)
+                    if pipeline_context.executor_config.throw_on_user_error:
+                        step_event.reraise_user_error()
 
                 yield step_event
 
