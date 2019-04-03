@@ -329,3 +329,4 @@ def execute_pipeline_through_queue(
     finally:
         message_queue.put(MultiprocessingDone())
         message_queue.close()
+

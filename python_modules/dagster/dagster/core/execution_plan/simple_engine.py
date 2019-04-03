@@ -60,6 +60,8 @@ def start_inprocess_executor(
         ),
     )
 
+    propogated_step_failures = set()
+
     step_levels = execution_plan.topological_step_levels()
 
     # It would be good to implement a reference tracking algorithm here so we could
@@ -72,6 +74,20 @@ def start_inprocess_executor(
                 continue
 
             step_context = pipeline_context.for_step(step)
+
+            failed_inputs = [
+                step_input.prev_output_handle.step_key
+                for step_input in step.step_inputs
+                if step_input.prev_output_handle.step_key in propogated_step_failures
+            ]
+            if failed_inputs:
+                step_context.log.info(
+                    ('Dependencies for step {step} failed: {failed_inputs}. Not executing.').format(
+                        step=step.key, failed_inputs=failed_inputs
+                    )
+                )
+                propogated_step_failures.add(step.key)
+                continue
 
             uncovered_inputs = intermediates_manager.uncovered_inputs(step_context, step)
             if uncovered_inputs:
@@ -93,11 +109,10 @@ def start_inprocess_executor(
                 execute_step_in_memory(step_context, input_values, intermediates_manager)
             ):
                 check.inst(step_event, DagsterEvent)
-                if (
-                    pipeline_context.executor_config.throw_on_user_error
-                    and step_event.is_step_failure
-                ):
-                    step_event.reraise_user_error()
+                if step_event.is_step_failure:
+                    propogated_step_failures.add(step.key)
+                    if pipeline_context.executor_config.throw_on_user_error:
+                        step_event.reraise_user_error()
 
                 yield step_event
 

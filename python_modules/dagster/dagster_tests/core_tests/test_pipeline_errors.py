@@ -66,21 +66,33 @@ def test_failure_midstream():
     solid_a = create_root_success_solid('A')
     solid_b = create_root_success_solid('B')
 
-    def transform_fn(_context, inputs):
+    def fail_fn(_context, inputs):
         check.failed('user error')
         return [inputs['A'], inputs['B'], {'C': 'transform_called'}]
+
+    def success_fn(_context, inputs):
+        check.failed('user error')
+        return [inputs['C'], {'D': 'transform_called'}]
 
     solid_c = single_output_transform(
         name='C',
         inputs=[InputDefinition(name='A'), InputDefinition(name='B')],
-        transform_fn=transform_fn,
+        transform_fn=fail_fn,
+        output=OutputDefinition(),
+    )
+
+    solid_d = single_output_transform(
+        name='D',
+        inputs=[InputDefinition(name='C')],
+        transform_fn=success_fn,
         output=OutputDefinition(),
     )
 
     pipeline = silencing_pipeline(
-        solids=[solid_a, solid_b, solid_c],
+        solids=[solid_a, solid_b, solid_c, solid_d],
         dependencies={
-            'C': {'A': DependencyDefinition(solid_a.name), 'B': DependencyDefinition(solid_b.name)}
+            'C': {'A': DependencyDefinition(solid_a.name), 'B': DependencyDefinition(solid_b.name)},
+            'D': {'C': DependencyDefinition(solid_c.name)},
         },
     )
     pipeline_result = execute_pipeline(pipeline, run_config=RunConfig.nonthrowing_in_process())
@@ -88,7 +100,6 @@ def test_failure_midstream():
     assert pipeline_result.result_for_solid('A').success
     assert pipeline_result.result_for_solid('B').success
     assert not pipeline_result.result_for_solid('C').success
-    print(pipeline_result.result_for_solid('C').failure_data.error)
     assert pipeline_result.result_for_solid('C').failure_data.error.cls_name == 'CheckError'
 
 
