@@ -147,21 +147,6 @@ class ExecutionStep(
     def solid_definition_name(self):
         return self.solid.definition.name
 
-    # TODO I believe we can remove this. This was only here
-    # so that we could pickle this stuff in the currently unused
-    # and untested dagma project. This object is not really reliably
-    # pickleable anyways since it contains references to solid definitions
-    # and lambdas: https://github.com/dagster-io/dagster/issues/1111
-    def __getnewargs__(self):
-        return (
-            self.key,
-            self.step_inputs,
-            self.step_outputs,
-            self.compute_fn,
-            self.kind,
-            self.solid,
-        )
-
     def has_step_output(self, name):
         check.str_param(name, 'name')
         return name in self.step_output_dict
