@@ -19,16 +19,7 @@ def test_import_module_from_path():
     assert foo_module.FOO == 7
 
 
-def test_reload_module():
-    foo_module = seven.import_module_from_path('foo_module', script_relative_path('foo_module.py'))
-    assert foo_module.FOO == 7
-    with open(script_relative_path('foo_module.py'), 'w') as fd:
-        fd.write('FOO = 6\n')
-    seven.reload_module(foo_module)
-    assert foo_module.FOO == 6
-
-
-def test_json_dewode_error():
+def test_json_decode_error():
     try:
         json.loads(',dsfjd')
     except seven.json.JSONDecodeError:
