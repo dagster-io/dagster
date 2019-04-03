@@ -4,7 +4,6 @@ from enum import Enum
 
 from dagster import check
 from dagster.core.definitions import Solid, PipelineDefinition
-from dagster.core.execution_context import SystemPipelineExecutionContext
 from dagster.core.intermediates_manager import StepOutputHandle, RunStorageMode
 from dagster.core.types.runtime import RuntimeType
 from dagster.core.utils import toposort

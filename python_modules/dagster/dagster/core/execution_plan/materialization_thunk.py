@@ -1,7 +1,6 @@
 from dagster import check
 
 from dagster.core.definitions import Solid, OutputDefinition, PipelineDefinition
-from dagster.core.execution_context import SystemPipelineExecutionContext
 
 from dagster.core.types.runtime import RuntimeType
 
