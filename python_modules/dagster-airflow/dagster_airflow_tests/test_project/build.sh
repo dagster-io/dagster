@@ -10,6 +10,6 @@ cp -R ../../../dagit . && \
 rm -rf dagster/.tox dagit/.tox dagster/dist dagit/dist dagster/*.egg-info \
     dagit/*.egg-info dagster/build dagit/build && \
 \
-docker build -t dagster-airflow-demo .
-
+docker build -t dagster-airflow-demo . && \
+\
 rm -rf dagster dagit
