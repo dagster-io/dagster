@@ -470,6 +470,7 @@ def _create_dauphin_step_event(execution_plan, step_event):
         DauphinExecutionStepSuccessEvent,
         DauphinExecutionStepFailureEvent,
         DauphinExecutionStepStartEvent,
+        DauphinExecutionStepSkippedEvent,
         DauphinStepMaterializationEvent,
     )
 
@@ -479,6 +480,8 @@ def _create_dauphin_step_event(execution_plan, step_event):
 
     if step_event.event_type == DagsterEventType.STEP_START:
         return DauphinExecutionStepStartEvent(step=DauphinExecutionStep(execution_plan, step))
+    if step_event.event_type == DagsterEventType.STEP_SKIPPED:
+        return DauphinExecutionStepSkippedEvent(step=DauphinExecutionStep(execution_plan, step))
     elif step_event.event_type == DagsterEventType.STEP_OUTPUT:
         return DauphinExecutionStepOutputEvent(
             step=DauphinExecutionStep(execution_plan, step),

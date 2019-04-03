@@ -186,9 +186,23 @@ class SolidExecutionResult(object):
     @property
     def success(self):
         '''Whether the solid execution was successful'''
+        any_success = False
+        for step_event in itertools.chain(
+            self.input_expectations, self.output_expectations, self.transforms
+        ):
+            if step_event.event_type == DagsterEventType.STEP_FAILURE:
+                return False
+            if step_event.event_type == DagsterEventType.STEP_SUCCESS:
+                any_success = True
+
+        return any_success
+
+    @property
+    def skipped(self):
+        '''Whether the solid execution was skipped'''
         return all(
             [
-                not step_event.is_step_failure
+                step_event.event_type == DagsterEventType.STEP_SKIPPED
                 for step_event in itertools.chain(
                     self.input_expectations, self.output_expectations, self.transforms
                 )

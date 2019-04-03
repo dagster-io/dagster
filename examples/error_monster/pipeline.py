@@ -24,7 +24,7 @@ def emit_num(context):
     if context.solid_config['throw_in_solid']:
         raise Exception('throwing from in the solid')
 
-    return 69
+    return 13
 
 
 @solid(

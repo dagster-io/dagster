@@ -63,6 +63,14 @@ def test_transform_failure_pipeline():
 
 
 def test_failure_midstream():
+    '''
+    A
+     \\
+       C (fails) = D (skipped)
+     //
+    B
+    '''
+
     solid_a = create_root_success_solid('A')
     solid_b = create_root_success_solid('B')
 
@@ -100,6 +108,85 @@ def test_failure_midstream():
     assert pipeline_result.result_for_solid('B').success
     assert not pipeline_result.result_for_solid('C').success
     assert pipeline_result.result_for_solid('C').failure_data.error.cls_name == 'CheckError'
+    assert not pipeline_result.result_for_solid('D').success
+    assert pipeline_result.result_for_solid('D').skipped
+
+
+def test_failure_propagation():
+    '''
+      B =========== C
+     //             \\
+    A                F (skipped)
+     \\             //
+      D (fails) == E (skipped)
+    '''
+
+    solid_a = create_root_success_solid('A')
+
+    def fail_fn(_context, inputs):
+        check.failed('user error')
+        return inputs
+
+    def success_fn(_context, inputs):
+        return inputs
+
+    solid_b = single_output_transform(
+        name='B',
+        inputs=[InputDefinition(name='A')],
+        transform_fn=success_fn,
+        output=OutputDefinition(),
+    )
+
+    solid_c = single_output_transform(
+        name='C',
+        inputs=[InputDefinition(name='B')],
+        transform_fn=success_fn,
+        output=OutputDefinition(),
+    )
+
+    solid_d = single_output_transform(
+        name='D',
+        inputs=[InputDefinition(name='A')],
+        transform_fn=fail_fn,
+        output=OutputDefinition(),
+    )
+
+    solid_e = single_output_transform(
+        name='E',
+        inputs=[InputDefinition(name='D')],
+        transform_fn=success_fn,
+        output=OutputDefinition(),
+    )
+
+    solid_f = single_output_transform(
+        name='F',
+        inputs=[InputDefinition(name='C'), InputDefinition(name='E')],
+        transform_fn=success_fn,
+        output=OutputDefinition(),
+    )
+
+    pipeline = silencing_pipeline(
+        solids=[solid_a, solid_b, solid_c, solid_d, solid_e, solid_f],
+        dependencies={
+            'B': {'A': DependencyDefinition(solid_a.name)},
+            'D': {'A': DependencyDefinition(solid_a.name)},
+            'C': {'B': DependencyDefinition(solid_b.name)},
+            'E': {'D': DependencyDefinition(solid_d.name)},
+            'F': {'C': DependencyDefinition(solid_c.name), 'E': DependencyDefinition(solid_e.name)},
+        },
+    )
+
+    pipeline_result = execute_pipeline(pipeline, run_config=RunConfig.nonthrowing_in_process())
+
+    assert pipeline_result.result_for_solid('A').success
+    assert pipeline_result.result_for_solid('B').success
+    assert pipeline_result.result_for_solid('C').success
+    assert not pipeline_result.result_for_solid('D').success
+    assert pipeline_result.result_for_solid('D').failure_data.error.cls_name == 'CheckError'
+    assert not pipeline_result.result_for_solid('E').success
+    assert pipeline_result.result_for_solid('E').skipped
+    assert not pipeline_result.result_for_solid('F').success
+    assert pipeline_result.result_for_solid('F').skipped
 
 
 def test_do_not_yield_result():

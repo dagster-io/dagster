@@ -60,7 +60,7 @@ def start_inprocess_executor(
         ),
     )
 
-    propogated_step_failures = set()
+    failed_or_skipped_steps = set()
 
     step_levels = execution_plan.topological_step_levels()
 
@@ -78,15 +78,16 @@ def start_inprocess_executor(
             failed_inputs = [
                 step_input.prev_output_handle.step_key
                 for step_input in step.step_inputs
-                if step_input.prev_output_handle.step_key in propogated_step_failures
+                if step_input.prev_output_handle.step_key in failed_or_skipped_steps
             ]
             if failed_inputs:
                 step_context.log.info(
-                    ('Dependencies for step {step} failed: {failed_inputs}. Not executing.').format(
+                    'Dependencies for step {step} failed: {failed_inputs}. Not executing.'.format(
                         step=step.key, failed_inputs=failed_inputs
                     )
                 )
-                propogated_step_failures.add(step.key)
+                failed_or_skipped_steps.add(step.key)
+                yield DagsterEvent.step_skipped_event(step_context)
                 continue
 
             uncovered_inputs = intermediates_manager.uncovered_inputs(step_context, step)
@@ -101,6 +102,8 @@ def start_inprocess_executor(
                         'inputs: {uncovered_inputs}'
                     ).format(uncovered_inputs=uncovered_inputs, step=step.key)
                 )
+                failed_or_skipped_steps.add(step.key)
+                yield DagsterEvent.step_skipped_event(step_context)
                 continue
 
             input_values = _create_input_values(step_context, intermediates_manager)
@@ -110,7 +113,7 @@ def start_inprocess_executor(
             ):
                 check.inst(step_event, DagsterEvent)
                 if step_event.is_step_failure:
-                    propogated_step_failures.add(step.key)
+                    failed_or_skipped_steps.add(step.key)
                     if pipeline_context.executor_config.throw_on_user_error:
                         step_event.reraise_user_error()
 
