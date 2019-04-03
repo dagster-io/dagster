@@ -1,6 +1,6 @@
 from dagster import check
 
-from dagster.core.definitions import Solid, OutputDefinition
+from dagster.core.definitions import Solid, OutputDefinition, PipelineDefinition
 from dagster.core.execution_context import SystemPipelineExecutionContext
 
 from dagster.core.types.runtime import RuntimeType
@@ -41,13 +41,15 @@ def configs_for_output(solid, solid_config, output_def):
             yield output_spec
 
 
-def decorate_with_output_materializations(pipeline_context, solid, output_def, subplan):
-    check.inst_param(pipeline_context, 'pipeline_context', SystemPipelineExecutionContext)
+def decorate_with_output_materializations(
+    pipeline_def, environment_config, solid, output_def, subplan
+):
+    check.inst_param(pipeline_def, 'pipeline_def', PipelineDefinition)
     check.inst_param(solid, 'solid', Solid)
     check.inst_param(output_def, 'output_def', OutputDefinition)
     check.inst_param(subplan, 'subplan', ExecutionValueSubplan)
 
-    solid_config = pipeline_context.environment_config.solids.get(solid.name)
+    solid_config = environment_config.solids.get(solid.name)
 
     if not (solid_config and solid_config.outputs):
         return subplan
@@ -57,7 +59,7 @@ def decorate_with_output_materializations(pipeline_context, solid, output_def, s
     for mat_count, output_spec in enumerate(configs_for_output(solid, solid_config, output_def)):
         new_steps.append(
             ExecutionStep(
-                pipeline_name=pipeline_context.pipeline_def.name,
+                pipeline_name=pipeline_def.name,
                 key='{solid}.materialization.output.{output}.{mat_count}'.format(
                     solid=solid.name, output=output_def.name, mat_count=mat_count
                 ),
@@ -83,7 +85,7 @@ def decorate_with_output_materializations(pipeline_context, solid, output_def, s
         )
 
     return create_joining_subplan(
-        pipeline_context,
+        pipeline_def,
         solid,
         '{solid}.materialization.output.{output}.join'.format(
             solid=solid.name, output=output_def.name

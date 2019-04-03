@@ -21,8 +21,8 @@ def __join_lambda(_context, inputs):
     yield StepOutputValue(output_name=JOIN_OUTPUT, value=list(inputs.values())[0])
 
 
-def create_join_step(pipeline_context, solid, step_key, prev_steps, prev_output_name):
-    check.inst_param(pipeline_context, 'pipeline_context', SystemPipelineExecutionContext)
+def create_join_step(pipeline_def, solid, step_key, prev_steps, prev_output_name):
+    # check.inst_param(pipeline_def, 'pipeline_context', SystemPipelineExecutionContext)
     check.inst_param(solid, 'solid', Solid)
     check.str_param(step_key, 'step_key')
     check.list_param(prev_steps, 'prev_steps', of_type=ExecutionStep)
@@ -50,7 +50,7 @@ def create_join_step(pipeline_context, solid, step_key, prev_steps, prev_output_
         step_inputs.append(StepInput(prev_step.key, prev_step_output.runtime_type, output_handle))
 
     return ExecutionStep(
-        pipeline_name=pipeline_context.pipeline_def.name,
+        pipeline_name=pipeline_def.name,
         key=step_key,
         step_inputs=step_inputs,
         step_outputs=[StepOutput(JOIN_OUTPUT, seen_runtime_type, optional=seen_optionality)],
@@ -63,7 +63,7 @@ def create_join_step(pipeline_context, solid, step_key, prev_steps, prev_output_
 
 
 def create_joining_subplan(
-    pipeline_context, solid, join_step_key, parallel_steps, parallel_step_output
+    pipeline_def, solid, join_step_key, parallel_steps, parallel_step_output
 ):
     '''
     This captures a common pattern of fanning out a single value to N steps,
@@ -77,7 +77,7 @@ def create_joining_subplan(
     to be seen if there should be any work or verification done in this step, especially
     in multi-process environments that require persistence between steps.
     '''
-    check.inst_param(pipeline_context, 'pipeline_context', SystemPipelineExecutionContext)
+    # check.inst_param(pipeline_def, 'pipeline_context', SystemPipelineExecutionContext)
     check.inst_param(solid, 'solid', Solid)
     check.str_param(join_step_key, 'join_step_key')
     check.list_param(parallel_steps, 'parallel_steps', of_type=ExecutionStep)
@@ -87,7 +87,7 @@ def create_joining_subplan(
         check.invariant(parallel_step.has_step_output(parallel_step_output))
 
     join_step = create_join_step(
-        pipeline_context, solid, join_step_key, parallel_steps, parallel_step_output
+        pipeline_def, solid, join_step_key, parallel_steps, parallel_step_output
     )
 
     output_name = join_step.step_outputs[0].name
