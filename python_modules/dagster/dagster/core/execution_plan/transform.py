@@ -1,22 +1,19 @@
 from dagster import check
-from dagster.core.definitions import Result, Solid, Materialization
+from dagster.core.definitions import Result, Solid, Materialization, PipelineDefinition
 from dagster.core.errors import DagsterInvariantViolationError
 from dagster.core.user_context import TransformExecutionContext
-from dagster.core.execution_context import (
-    SystemTransformExecutionContext,
-    SystemPipelineExecutionContext,
-)
+from dagster.core.execution_context import SystemTransformExecutionContext
 
 from .objects import ExecutionStep, StepInput, StepKind, StepOutput, StepOutputValue
 
 
-def create_transform_step(pipeline_context, solid, step_inputs):
-    check.inst_param(pipeline_context, 'pipeline_context', SystemPipelineExecutionContext)
+def create_transform_step(pipeline_def, solid, step_inputs):
+    check.inst_param(pipeline_def, 'pipeline_def', PipelineDefinition)
     check.inst_param(solid, 'solid', Solid)
     check.list_param(step_inputs, 'step_inputs', of_type=StepInput)
 
     return ExecutionStep(
-        pipeline_name=pipeline_context.pipeline_def.name,
+        pipeline_name=pipeline_def.name,
         key='{solid.name}.transform'.format(solid=solid),
         step_inputs=step_inputs,
         step_outputs=[

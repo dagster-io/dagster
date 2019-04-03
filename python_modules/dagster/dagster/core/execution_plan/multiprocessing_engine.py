@@ -31,7 +31,9 @@ class InProcessExecutorChildProcessCommand(ChildProcessCommand):
             pipeline, self.environment_dict, self.run_config.with_tags(pid=str(os.getpid()))
         ) as pipeline_context:
 
-            execution_plan = create_execution_plan_core(pipeline_context)
+            execution_plan = create_execution_plan_core(
+                pipeline_context.pipeline_def, pipeline_context.environment_config
+            )
 
             for step_event in start_inprocess_executor(
                 pipeline_context,

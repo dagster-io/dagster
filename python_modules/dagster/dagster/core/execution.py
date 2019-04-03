@@ -278,11 +278,14 @@ def create_execution_plan(pipeline, environment_dict=None, run_config=None):
     check.inst_param(pipeline, 'pipeline', PipelineDefinition)
     environment_dict = check.opt_dict_param(environment_dict, 'environment_dict', key_type=str)
     run_config = check_run_config_param(run_config)
-
-    with yield_pipeline_execution_context(
-        pipeline, environment_dict, run_config
-    ) as pipeline_context:
-        return create_execution_plan_core(pipeline_context)
+    environment_config = create_environment_config(pipeline, environment_dict)
+    return create_execution_plan_core(pipeline, environment_config)
+    # with yield_pipeline_execution_context(
+    #     pipeline, environment_dict, run_config
+    # ) as pipeline_context:
+    #     return create_execution_plan_core(
+    #         pipeline_context.pipeline_def, pipeline_context.environment_config
+    #     )
 
 
 def get_tags(user_context_params, run_config, pipeline):
@@ -599,7 +602,9 @@ def _execute_pipeline_iterator(pipeline_context):
     check.inst_param(pipeline_context, 'pipeline_context', SystemPipelineExecutionContext)
     yield DagsterEvent.pipeline_start(pipeline_context)
 
-    execution_plan = create_execution_plan_core(pipeline_context)
+    execution_plan = create_execution_plan_core(
+        pipeline_context.pipeline_def, pipeline_context.environment_config
+    )
 
     steps = execution_plan.topological_steps()
 

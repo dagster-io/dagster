@@ -11,7 +11,7 @@ from dagster.core.definitions import (
 
 from dagster.core.errors import DagsterInvariantViolationError
 
-from dagster.core.execution_context import SystemPipelineExecutionContext
+from dagster.core.system_config.objects import EnvironmentConfig
 
 from .expectations import create_expectations_subplan, decorate_with_expectations
 
@@ -53,35 +53,30 @@ class PlanBuilder:
         self.step_output_map = StepOutputMap()
 
 
-def create_execution_plan_core(pipeline_context):
-    check.inst_param(pipeline_context, 'pipeline_context', SystemPipelineExecutionContext)
+def create_execution_plan_core(pipeline_def, environment_config):
+    check.inst_param(pipeline_def, 'pipeline_def', PipelineDefinition)
+    check.inst_param(environment_config, 'environment_config', EnvironmentConfig)
 
     plan_builder = PlanBuilder()
 
-    for solid in solids_in_topological_order(pipeline_context.pipeline_def):
+    for solid in solids_in_topological_order(pipeline_def):
 
-        step_inputs = create_step_inputs(
-            pipeline_context.pipeline_def, pipeline_context.environment_config, plan_builder, solid
-        )
+        step_inputs = create_step_inputs(pipeline_def, environment_config, plan_builder, solid)
 
-        solid_transform_step = create_transform_step(pipeline_context, solid, step_inputs)
+        solid_transform_step = create_transform_step(pipeline_def, solid, step_inputs)
 
         plan_builder.steps.append(solid_transform_step)
 
         for output_def in solid.definition.output_defs:
             subplan = create_subplan_for_output(
-                pipeline_context.pipeline_def,
-                pipeline_context.environment_config,
-                solid,
-                solid_transform_step,
-                output_def,
+                pipeline_def, environment_config, solid, solid_transform_step, output_def
             )
             plan_builder.steps.extend(subplan.steps)
 
             output_handle = solid.output_handle(output_def.name)
             plan_builder.step_output_map[output_handle] = subplan.terminal_step_output_handle
 
-    return create_execution_plan_from_steps(pipeline_context.pipeline_def, plan_builder.steps)
+    return create_execution_plan_from_steps(pipeline_def, plan_builder.steps)
 
 
 def create_execution_plan_from_steps(pipeline_def, steps):
