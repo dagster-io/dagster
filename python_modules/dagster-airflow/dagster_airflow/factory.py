@@ -66,6 +66,11 @@ def _make_python_callable(dag_id, pipeline, env_config, step_keys):
 
 
 def _make_python_operator(pipeline, env_config, solid_name, step_keys, dag, dag_id, op_kwargs):
+    # black 18.9b0 doesn't support py27-compatible formatting of the below invocation (omitting
+    # the trailing comma after **op_kwargs) -- black 19.3b0 supports multiple python versions, but
+    # currently doesn't know what to do with from __future__ import print_function -- see
+    # https://github.com/ambv/black/issues/768
+    # fmt: off
     return PythonOperator(
         task_id=solid_name,
         provide_context=True,
@@ -73,11 +78,17 @@ def _make_python_operator(pipeline, env_config, solid_name, step_keys, dag, dag_
         dag=dag,
         **op_kwargs
     )
+    # fmt: on
 
 
 def _make_dagster_docker_operator(
     pipeline, env_config, solid_name, step_keys, dag, dag_id, op_kwargs
 ):
+    # black 18.9b0 doesn't support py27-compatible formatting of the below invocation (omitting
+    # the trailing comma after **op_kwargs) -- black 19.3b0 supports multiple python versions, but
+    # currently doesn't know what to do with from __future__ import print_function -- see
+    # https://github.com/ambv/black/issues/768
+    # fmt: off
     return DagsterDockerOperator(
         step=solid_name,
         config=format_config_for_graphql(env_config),
@@ -88,6 +99,7 @@ def _make_dagster_docker_operator(
         task_id=solid_name,
         **op_kwargs
     )
+    # fmt: on
 
 
 def _make_airflow_dag(
