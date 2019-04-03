@@ -71,7 +71,7 @@ def _make_python_operator(pipeline, env_config, solid_name, step_keys, dag, dag_
         provide_context=True,
         python_callable=_make_python_callable(dag_id, pipeline, env_config, step_keys),
         dag=dag,
-        **op_kwargs,
+        **op_kwargs
     )
 
 
@@ -86,7 +86,7 @@ def _make_dagster_docker_operator(
         pipeline_name=pipeline.name,
         step_keys=step_keys,
         task_id=solid_name,
-        **op_kwargs,
+        **op_kwargs
     )
 
 
