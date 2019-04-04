@@ -28,6 +28,7 @@ DEFAULT_ENVIRONMENT = {
 
 LINE_LENGTH = 100
 
+
 def parse_raw_res(raw_res):
     res = None
     # FIXME
@@ -211,9 +212,7 @@ class DagsterDockerOperator(ModifiedDockerOperator, DagsterOperator):
         for ix, step_key in enumerate(self.step_keys):
             if not isinstance(step, string_types):
                 bad_keys.append((ix, step_key))
-        assert (
-            not bad_keys
-        ), (
+        assert not bad_keys, (
             'Bad values for DagsterDockerOperator step_keys (expected only strings): '
             '{bad_values}'
         ).format(

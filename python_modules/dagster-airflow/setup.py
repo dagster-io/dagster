@@ -49,7 +49,7 @@ def _do_setup(name='dagster-airflow'):
             'docker==3.7.0',
             # aws
             'boto3==1.9.*',
-        ]
+        ],
     )
 
 
