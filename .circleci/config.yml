@@ -87,14 +87,14 @@ workflows:
       - dagma-py27:
           context: coveralls
 
-      - airline-demo-py37:
-          context: coveralls
-      - airline-demo-py36:
-          context: coveralls
-      - airline-demo-py35:
-          context: coveralls
-      - airline-demo-py27:
-          context: coveralls
+      # - airline-demo-py37:
+      #     context: coveralls
+      # - airline-demo-py36:
+      #     context: coveralls
+      # - airline-demo-py35:
+      #     context: coveralls
+      # - airline-demo-py27:
+      #     context: coveralls
 
       - event-pipeline-demo-py37:
           context: coveralls
@@ -174,10 +174,10 @@ workflows:
             - dagma-py36
             - dagma-py35
 
-            - airline-demo-py37
-            - airline-demo-py36
-            - airline-demo-py35
-            - airline-demo-py27
+            # - airline-demo-py37
+            # - airline-demo-py36
+            # - airline-demo-py35
+            # - airline-demo-py27
 
             - event-pipeline-demo-py37
             - event-pipeline-demo-py36
