@@ -216,6 +216,9 @@ RUN apt-get install apt-transport-https
 RUN apt-get update
 RUN apt-get install yarn
 
+RUN sudo pip install -U 'pip<19.0'
+RUN sudo pip install tox
+
 # END IMAGE CUSTOMIZATIONS
 
 USER circleci
