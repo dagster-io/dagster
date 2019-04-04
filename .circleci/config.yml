@@ -781,6 +781,8 @@ jobs:
           name: Install Dependencies
           command: |
             pyenv local 3.6.3
+            sudo apt-get update
+            sudo apt-get install libpq-dev
       - run:
           name: Setup AIRFLOW_HOME
           command: |
@@ -870,6 +872,8 @@ jobs:
             pyenv global 3.5.2
             sudo pip install -U 'pip<19.0' # see: https://github.com/pypa/pip/issues/6163
             sudo pip install tox
+            sudo apt-get update
+            sudo apt-get install libpq-dev
       - run:
           name: Run airline-demo Tests
           command: |
@@ -896,7 +900,9 @@ jobs:
       - run:
           name: Install py27-dev
           command: |
+            sudo apt-get update
             sudo apt-get install python2.7-dev
+            sudo apt-get install libpq-dev
       - run:
           name: Build Dockerfile
           command: |
