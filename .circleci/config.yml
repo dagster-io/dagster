@@ -917,6 +917,8 @@ jobs:
             pyenv local 2.7.14  # avoiding an annoying circle-specific upgrade step
             sudo pip install -U 'pip<19.0' # see: https://github.com/pypa/pip/issues/6163
             sudo pip install tox tox-pyenv
+            sudo apt-get update
+            sudo apt-get install libpq-dev
       - run:
           name: Setup AIRFLOW_HOME
           command: |
