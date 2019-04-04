@@ -792,7 +792,7 @@ jobs:
   airline-demo-py37:
     docker:
       # FIXME: https://github.com/dagster-io/dagster/issues/521
-      - image: schrockn/cci-test:3.7.3
+      - image: dagster/cci-test:3.7.3
         auth:
           username: $DOCKERHUB_USERNAME
           password: $DOCKERHUB_PASSWORD
