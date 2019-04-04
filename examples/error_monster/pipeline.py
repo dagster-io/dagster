@@ -41,7 +41,7 @@ def define_errorable_resource():
 solid_throw_config = Field(Dict(fields={'throw_in_solid': Field(Bool)}))
 
 
-@solid(name='start', outputs=[OutputDefinition(Int)], config_field=solid_throw_config)
+@solid(name='emit_num', outputs=[OutputDefinition(Int)], config_field=solid_throw_config)
 def emit_num(context):
     if context.solid_config['throw_in_solid']:
         raise Exception('throwing from in the solid')
@@ -50,7 +50,7 @@ def emit_num(context):
 
 
 @solid(
-    name='middle',
+    name='num_to_str',
     inputs=[InputDefinition('num', Int)],
     outputs=[OutputDefinition(String)],
     config_field=solid_throw_config,
@@ -63,7 +63,7 @@ def num_to_str(context, num):
 
 
 @solid(
-    name='end',
+    name='str_to_num',
     inputs=[InputDefinition('string', String)],
     outputs=[OutputDefinition(Int)],
     config_field=solid_throw_config,
@@ -86,9 +86,9 @@ def define_pipeline():
         name="error_monster",
         solids=[emit_num, num_to_str, str_to_num],
         dependencies={
-            SolidInstance('start'): {},
-            SolidInstance('middle'): {'num': DependencyDefinition('start')},
-            SolidInstance('end'): {'string': DependencyDefinition('middle')},
+            SolidInstance('emit_num', 'start'): {},
+            SolidInstance('num_to_str', 'middle'): {'num': DependencyDefinition('start')},
+            SolidInstance('str_to_num', 'end'): {'string': DependencyDefinition('middle')},
         },
         context_definitions={
             'errorable_context': PipelineContextDefinition(
@@ -118,6 +118,6 @@ if __name__ == '__main__':
                 'end': {'config': {'throw_in_solid': False}},
             },
         },
-        RunConfig.nonthrowing_in_process(),
+        # RunConfig.nonthrowing_in_process(),
     )
     print('Pipeline Success: ', result.success)

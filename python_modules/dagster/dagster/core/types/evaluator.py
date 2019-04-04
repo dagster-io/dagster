@@ -163,6 +163,8 @@ def friendly_string_for_error(error):
             path_msg=path_msg,
             type_msg=print_config_type_to_string(type_in_context, with_lines=False),
         )
+    elif error.reason == DagsterEvaluationErrorReason.MISSING_REQUIRED_FIELDS:
+        return error.message
     elif error.reason == DagsterEvaluationErrorReason.FIELD_NOT_DEFINED:
         return 'Undefined field "{field_name}"{type_msg} {path_msg}'.format(
             field_name=error.error_data.field_name, path_msg=path_msg, type_msg=type_msg
@@ -184,8 +186,9 @@ def friendly_string_for_error(error):
                 'You specified no fields at path "{path}". '
                 'You must specify one and only one field at this level.'
             ).format(path=path)
+
     else:
-        check.failed('not supported')
+        check.failed('{} (friendly message for this type not yet provided)'.format(error.reason))
 
 
 def _get_type_msg(error, type_in_context):
