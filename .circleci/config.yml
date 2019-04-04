@@ -690,7 +690,7 @@ jobs:
 
   dagit-webapp:
     docker:
-      - image: dagster/cci-test:3.7.3-node
+      - image: circleci/python:3.7.2-node
     working_directory: ~/repo
     steps:
       - checkout
