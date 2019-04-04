@@ -14,7 +14,7 @@ RUN apt-get update; \
 											 libpq-dev
 
 # -----------------------------------------------------------------------------------------------
-# https://raw.githubusercontent.com/docker-library/python/39c500cc8aefcb67a76d518d789441ef85fc771f/2.7/jessie/Dockerfile
+# https://github.com/docker-library/python/blob/f991b3773d8f50486cfdd06a6f5c208ce38e1ed3/3.5/stretch/Dockerfile
 
 # ensure local python is preferred over distribution python
 ENV PATH /usr/local/bin:$PATH
@@ -22,16 +22,14 @@ ENV PATH /usr/local/bin:$PATH
 # http://bugs.python.org/issue19846
 # > At the moment, setting "LANG=C" on a Linux system *fundamentally breaks Python 3*, and that's not OK.
 ENV LANG C.UTF-8
-# https://github.com/docker-library/python/issues/147
-ENV PYTHONIOENCODING UTF-8
 
 # extra dependencies (over what buildpack-deps already includes)
 RUN apt-get update && apt-get install -y --no-install-recommends \
 		tk-dev \
 	&& rm -rf /var/lib/apt/lists/*
 
-ENV GPG_KEY C01E1CAD5EA2C4F0B8E3571504C367C218ADD4FF
-ENV PYTHON_VERSION 2.7.15
+ENV GPG_KEY 97FC712E4C024BBEA48A61ED3A5CA953F73C700D
+ENV PYTHON_VERSION 3.5.7
 
 RUN set -ex \
 	\
@@ -50,8 +48,11 @@ RUN set -ex \
 	&& gnuArch="$(dpkg-architecture --query DEB_BUILD_GNU_TYPE)" \
 	&& ./configure \
 		--build="$gnuArch" \
+		--enable-loadable-sqlite-extensions \
 		--enable-shared \
-		--enable-unicode=ucs4 \
+		--with-system-expat \
+		--with-system-ffi \
+		--without-ensurepip \
 	&& make -j "$(nproc)" \
 	&& make install \
 	&& ldconfig \
@@ -64,10 +65,17 @@ RUN set -ex \
 		\) -exec rm -rf '{}' + \
 	&& rm -rf /usr/src/python \
 	\
-	&& python2 --version
+	&& python3 --version
 
-# # if this is called "PIP_VERSION", pip explodes with "ValueError: invalid truth value '<VERSION>'"
-ENV PYTHON_PIP_VERSION 18.1
+# make some useful symlinks that are expected to exist
+RUN cd /usr/local/bin \
+	&& ln -s idle3 idle \
+	&& ln -s pydoc3 pydoc \
+	&& ln -s python3 python \
+	&& ln -s python3-config python-config
+
+# if this is called "PIP_VERSION", pip explodes with "ValueError: invalid truth value '<VERSION>'"
+ENV PYTHON_PIP_VERSION 19.0.3
 
 RUN set -ex; \
 	\
@@ -86,10 +94,7 @@ RUN set -ex; \
 			-o \
 			\( -type f -a \( -name '*.pyc' -o -name '*.pyo' \) \) \
 		\) -exec rm -rf '{}' +; \
-	rm -f get-pip.py
-
-# install "virtualenv", since the vast majority of users of this image will want it
-RUN pip install --no-cache-dir virtualenv
+rm -f get-pip.py
 
 # ------------------------------------------------------------------------------------------------
 # https://raw.githubusercontent.com/CircleCI-Public/circleci-dockerfiles/master/openjdk/images/8u151-jdk/Dockerfile
@@ -212,7 +217,7 @@ RUN apt-get install apt-transport-https
 RUN apt-get update
 RUN apt-get install yarn
 
-RUN sudo pip install -U 'pip<19.0'
+RUN sudo pip install -U 'pip<19.0' # see: https://github.com/pypa/pip/issues/6163
 RUN sudo pip install tox
 
 # END IMAGE CUSTOMIZATIONS

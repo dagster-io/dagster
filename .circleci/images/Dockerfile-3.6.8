@@ -1,8 +1,6 @@
 FROM openjdk:8u212-jdk
 
 RUN apt-get update; \
-    apt-get upgrade; \
-    apt-get dist-upgrade; \
     apt-get install -y build-essential \
                        checkinstall \
                        libreadline-gplv2-dev \
@@ -15,16 +13,8 @@ RUN apt-get update; \
                        libbz2-dev \
 											 libpq-dev
 
-# Magical incanations required per:
-# https://stackoverflow.com/questions/27022373/python3-importerror-no-module-named-ctypes-when-using-value-from-module-mul
-RUN apt-get install -y build-essential python-dev python-setuptools python-pip python-smbus
-RUN apt-get install -y libncursesw5-dev libgdbm-dev libc6-dev
-RUN apt-get install -y zlib1g-dev libsqlite3-dev tk-dev
-RUN apt-get install -y libssl-dev openssl
-RUN apt-get install -y libffi-dev
-
 # -----------------------------------------------------------------------------------------------
-# https://raw.githubusercontent.com/docker-library/python/39c500cc8aefcb67a76d518d789441ef85fc771f/2.7/jessie/Dockerfile
+# https://github.com/docker-library/python/blob/b9cb77020447a1ac30f5f1e17f31e534826db7bb/3.6/stretch/Dockerfile
 
 # ensure local python is preferred over distribution python
 ENV PATH /usr/local/bin:$PATH
@@ -39,7 +29,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 	&& rm -rf /var/lib/apt/lists/*
 
 ENV GPG_KEY 0D96DF4D4110E5C43FBFB17F2D347EA6AA65421D
-ENV PYTHON_VERSION 3.7.2
+ENV PYTHON_VERSION 3.6.8
 
 RUN set -ex \
 	\
@@ -77,7 +67,6 @@ RUN set -ex \
 	\
 	&& python3 --version
 
-
 # make some useful symlinks that are expected to exist
 RUN cd /usr/local/bin \
 	&& ln -s idle3 idle \
@@ -86,7 +75,7 @@ RUN cd /usr/local/bin \
 	&& ln -s python3-config python-config
 
 # if this is called "PIP_VERSION", pip explodes with "ValueError: invalid truth value '<VERSION>'"
-ENV PYTHON_PIP_VERSION 18.1
+ENV PYTHON_PIP_VERSION 19.0.3
 
 RUN set -ex; \
 	\
@@ -106,7 +95,6 @@ RUN set -ex; \
 			\( -type f -a \( -name '*.pyc' -o -name '*.pyo' \) \) \
 		\) -exec rm -rf '{}' +; \
 	rm -f get-pip.py
-
 
 # ------------------------------------------------------------------------------------------------
 # https://raw.githubusercontent.com/CircleCI-Public/circleci-dockerfiles/master/openjdk/images/8u151-jdk/Dockerfile
@@ -229,7 +217,7 @@ RUN apt-get install apt-transport-https
 RUN apt-get update
 RUN apt-get install yarn
 
-RUN sudo pip install -U 'pip<19.0'
+RUN sudo pip install -U 'pip<19.0' # see: https://github.com/pypa/pip/issues/6163
 RUN sudo pip install tox
 
 # END IMAGE CUSTOMIZATIONS
