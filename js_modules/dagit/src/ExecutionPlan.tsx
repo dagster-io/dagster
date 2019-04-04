@@ -87,6 +87,15 @@ export default class ExecutionPlan extends React.PureComponent<
             {`Process (PID ${runMetadata.processId}) began pipeline execution`}
           </span>
         );
+      } else if (runMetadata.initFailed) {
+        startDone = true;
+        startText = (
+          <span>
+            {`Process (PID ${
+              runMetadata.processId
+            }) pipeline initialization failed!`}
+          </span>
+        );
       }
     }
     return (

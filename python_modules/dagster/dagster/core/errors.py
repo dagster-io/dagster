@@ -1,7 +1,8 @@
 from contextlib import contextmanager
 from enum import Enum
-
+import sys
 import six
+from future.utils import raise_from
 
 from dagster import check
 
@@ -82,6 +83,14 @@ class DagsterExecutionStepExecutionError(DagsterUserCodeExecutionError):
     '''Indicates an error occured during the body of execution step execution'''
 
 
+class DagsterContextFunctionError(DagsterUserCodeExecutionError):
+    '''Indicates an error occured during the body of context_fn in a PipelineContextDefinition'''
+
+
+class DagsterResourceFunctionError(DagsterUserCodeExecutionError):
+    '''Indicates an error occured during the body of resource_fn in a ResourceDefinition'''
+
+
 class DagsterExpectationFailedError(DagsterError):
     '''Thrown with pipeline configured to throw on expectation failure'''
 
@@ -136,6 +145,35 @@ class DagsterPY4JTribalKnowledgeException(Exception):
     under which py4j exceptions are raised. This is just a place to encode
     insitutional knowledge.
     '''
+
+
+@contextmanager
+def user_code_error_boundary(error_cls, msg, **kwargs):
+    '''
+    Wraps the execution of user-space code in an error boundary. This places a uniform
+    policy around an user code invoked by the framework. This ensures that all user
+    errors are wrapped in the DagsterUserCodeExecutionError, and that the original stack
+    trace of the user error is preserved, so that it can be reported without confusing
+    framework code in the stack trace, if a tool author wishes to do so. This has
+    been especially help in a notebooking context.
+    '''
+    check.str_param(msg, 'msg')
+    check.subclass_param(error_cls, 'error_cls', DagsterUserCodeExecutionError)
+
+    try:
+        yield
+    except Exception as e:  # pylint: disable=W0703
+
+        if isinstance(e, DagsterError):
+            # The system has thrown an error that is part of the user-framework contract
+            raise e
+        else:
+            # An exception has been thrown by user code and computation should cease
+            # with the error reported further up the stack
+            raise_from(
+                error_cls(msg.format(**kwargs), user_exception=e, original_exc_info=sys.exc_info()),
+                e,
+            )
 
 
 HAS_P4J = True

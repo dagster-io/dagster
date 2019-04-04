@@ -88,7 +88,10 @@ export default class RunSubscriptionProvider extends React.Component<
             draftData.status = PipelineRunStatus.STARTED;
           } else if (message.__typename === "PipelineSuccessEvent") {
             draftData.status = PipelineRunStatus.SUCCESS;
-          } else if (message.__typename === "PipelineFailureEvent") {
+          } else if (
+            message.__typename === "PipelineFailureEvent" ||
+            message.__typename === "PipelineInitFailureEvent"
+          ) {
             draftData.status = PipelineRunStatus.FAILURE;
           }
         });

@@ -21,6 +21,26 @@ export interface PipelineRunPipelineRunEventFragment_LogMessageEvent {
   step: PipelineRunPipelineRunEventFragment_LogMessageEvent_step | null;
 }
 
+export interface PipelineRunPipelineRunEventFragment_PipelineInitFailureEvent_error {
+  __typename: "PythonError";
+  stack: string[];
+  message: string;
+}
+
+export interface PipelineRunPipelineRunEventFragment_PipelineInitFailureEvent_step {
+  __typename: "ExecutionStep";
+  name: string;
+}
+
+export interface PipelineRunPipelineRunEventFragment_PipelineInitFailureEvent {
+  __typename: "PipelineInitFailureEvent";
+  message: string;
+  timestamp: string;
+  level: LogLevel;
+  error: PipelineRunPipelineRunEventFragment_PipelineInitFailureEvent_error;
+  step: PipelineRunPipelineRunEventFragment_PipelineInitFailureEvent_step | null;
+}
+
 export interface PipelineRunPipelineRunEventFragment_ExecutionStepFailureEvent_step {
   __typename: "ExecutionStep";
   name: string;
@@ -70,4 +90,4 @@ export interface PipelineRunPipelineRunEventFragment_StepMaterializationEvent {
   fileName: string;
 }
 
-export type PipelineRunPipelineRunEventFragment = PipelineRunPipelineRunEventFragment_LogMessageEvent | PipelineRunPipelineRunEventFragment_ExecutionStepFailureEvent | PipelineRunPipelineRunEventFragment_PipelineProcessStartedEvent | PipelineRunPipelineRunEventFragment_StepMaterializationEvent;
+export type PipelineRunPipelineRunEventFragment = PipelineRunPipelineRunEventFragment_LogMessageEvent | PipelineRunPipelineRunEventFragment_PipelineInitFailureEvent | PipelineRunPipelineRunEventFragment_ExecutionStepFailureEvent | PipelineRunPipelineRunEventFragment_PipelineProcessStartedEvent | PipelineRunPipelineRunEventFragment_StepMaterializationEvent;

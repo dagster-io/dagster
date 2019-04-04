@@ -15,6 +15,20 @@ export interface LogsScrollingTableMessageFragment_LogMessageEvent {
   level: LogLevel;
 }
 
+export interface LogsScrollingTableMessageFragment_PipelineInitFailureEvent_error {
+  __typename: "PythonError";
+  stack: string[];
+  message: string;
+}
+
+export interface LogsScrollingTableMessageFragment_PipelineInitFailureEvent {
+  __typename: "PipelineInitFailureEvent";
+  message: string;
+  timestamp: string;
+  level: LogLevel;
+  error: LogsScrollingTableMessageFragment_PipelineInitFailureEvent_error;
+}
+
 export interface LogsScrollingTableMessageFragment_ExecutionStepFailureEvent_step {
   __typename: "ExecutionStep";
   name: string;
@@ -35,4 +49,4 @@ export interface LogsScrollingTableMessageFragment_ExecutionStepFailureEvent {
   error: LogsScrollingTableMessageFragment_ExecutionStepFailureEvent_error;
 }
 
-export type LogsScrollingTableMessageFragment = LogsScrollingTableMessageFragment_LogMessageEvent | LogsScrollingTableMessageFragment_ExecutionStepFailureEvent;
+export type LogsScrollingTableMessageFragment = LogsScrollingTableMessageFragment_LogMessageEvent | LogsScrollingTableMessageFragment_PipelineInitFailureEvent | LogsScrollingTableMessageFragment_ExecutionStepFailureEvent;
