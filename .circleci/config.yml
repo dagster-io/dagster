@@ -87,15 +87,14 @@ workflows:
       - dagma-py27:
           context: coveralls
 
-      # https://github.com/dagster-io/dagster/issues/1124
-      # - airline-demo-py37:
-      #     context: coveralls
-      # - airline-demo-py36:
-      #     context: coveralls
-      # - airline-demo-py35:
-      #     context: coveralls
-      # - airline-demo-py27:
-      #     context: coveralls
+      - airline-demo-py37:
+          context: coveralls
+      - airline-demo-py36:
+          context: coveralls
+      - airline-demo-py35:
+          context: coveralls
+      - airline-demo-py27:
+          context: coveralls
 
       - event-pipeline-demo-py37:
           context: coveralls
