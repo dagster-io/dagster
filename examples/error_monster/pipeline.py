@@ -19,6 +19,8 @@ from dagster import (
     ExecutionContext,
 )
 
+from dagster.core.errors import DagsterUserError
+
 
 class ErrorableResource:
     pass
@@ -106,13 +108,13 @@ if __name__ == '__main__':
                 'errorable_context': {
                     'config': {'throw_on_context_init': False},
                     'resources': {
-                        'errorable_resource': {'config': {'throw_on_resource_init': True}}
+                        'errorable_resource': {'config': {'throw_on_resource_init': False}}
                     },
                 }
             },
             'solids': {
                 'start': {'config': {'throw_in_solid': False}},
-                'middle': {'config': {'throw_in_solid': False}},
+                'middle': {'config': {'throw_in_solid': True}},
                 'end': {'config': {'throw_in_solid': False}},
             },
         },

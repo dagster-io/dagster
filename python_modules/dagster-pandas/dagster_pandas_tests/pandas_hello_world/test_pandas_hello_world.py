@@ -5,6 +5,7 @@ import pytest
 from dagster.core.execution import execute_pipeline
 from dagster.utils import script_relative_path
 from dagster.cli.pipeline import do_execute_command, print_pipeline
+from dagster.core.errors import DagsterExecutionStepExecutionError
 
 from dagster_pandas.examples.pandas_hello_world.pipeline import (
     define_success_pipeline,
@@ -65,7 +66,7 @@ def test_cli_execute_failure():
 
     # currently paths in env files have to be relative to where the
     # script has launched so we have to simulate that
-    with pytest.raises(Exception, match='I am a programmer and I make error'):
+    with pytest.raises(DagsterExecutionStepExecutionError) as e_info:
         cwd = os.getcwd()
         try:
 
@@ -79,6 +80,7 @@ def test_cli_execute_failure():
         finally:
             # restore cwd
             os.chdir(cwd)
+    assert 'I am a programmer and I make error' in str(e_info.value.__cause__)
 
 
 def test_cli_print():

@@ -1,4 +1,5 @@
 import pytest
+import sys
 
 from dagster import (
     DagsterInvariantViolationError,
@@ -17,6 +18,7 @@ from dagster import (
 )
 
 from dagster.core.test_utils import execute_single_solid_in_isolation, single_output_transform
+from dagster.core.errors import DagsterExecutionStepExecutionError
 
 
 def silencing_default_context():
@@ -231,12 +233,14 @@ def test_single_transform_returning_result():
 
 
 def test_user_error_propogation():
+    err_msg = 'the user has errored'
+
     class UserError(Exception):
         pass
 
     @lambda_solid
     def throws_user_error():
-        raise UserError()
+        raise UserError(err_msg)
 
     @lambda_solid
     def return_one():
@@ -252,5 +256,11 @@ def test_user_error_propogation():
         dependencies={'add_one': {'num': DependencyDefinition('return_one')}},
     )
 
-    with pytest.raises(UserError):
+    with pytest.raises(DagsterExecutionStepExecutionError) as e_info:
         execute_pipeline(pipeline_def)
+
+    assert isinstance(e_info.value.__cause__, UserError)
+
+    # ensure that the inner exception shows up in the error message on python 2
+    if sys.version_info[0] == 2:
+        assert err_msg in str(e_info.value)

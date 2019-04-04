@@ -21,7 +21,6 @@ import inspect
 import itertools
 import time
 import sys
-import six
 
 from contextlib2 import ExitStack
 from dagster import check
@@ -539,7 +538,7 @@ def _pipeline_execution_context_manager(
         )
 
         if run_config.executor_config.throw_on_user_error:
-            six.reraise(*user_facing_exc_info)
+            raise dagster_error
 
         error_info = serializable_error_info_from_exc_info(user_facing_exc_info)
         yield DagsterEvent.pipeline_init_failure(

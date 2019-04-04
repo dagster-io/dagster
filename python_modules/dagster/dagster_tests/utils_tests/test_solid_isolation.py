@@ -16,6 +16,7 @@ from dagster import (
 )
 
 from dagster.utils.test import execute_solid
+from dagster.core.errors import DagsterExecutionStepExecutionError
 
 
 def test_single_solid_in_isolation():
@@ -143,8 +144,10 @@ def test_single_solid_error():
 
     pipeline_def = PipelineDefinition(solids=[throw_error])
 
-    with pytest.raises(SomeError):
+    with pytest.raises(DagsterExecutionStepExecutionError) as e_info:
         execute_solid(pipeline_def, 'throw_error')
+
+    assert isinstance(e_info.value.__cause__, SomeError)
 
 
 def test_single_solid_type_checking_output_error():
@@ -168,5 +171,7 @@ def test_failing_solid_execute_solid():
 
     pipeline_def = PipelineDefinition(solids=[throw_an_error])
 
-    with pytest.raises(ThisException):
+    with pytest.raises(DagsterExecutionStepExecutionError) as e_info:
         execute_solid(pipeline_def, 'throw_an_error')
+
+    assert isinstance(e_info.value.__cause__, ThisException)
