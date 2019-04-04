@@ -19,7 +19,7 @@ languages.
 This time, we'll use a more fully-featured API to define our solid -- 
 :py:func:`@solid <dagster.solid>` instead of :py:func:`@lambda_solid <dagster.lambda_solid>`.
 
-.. literalinclude:: ../../dagster/tutorials/intro_tutorial/config.py
+.. literalinclude:: ../../../../dagster/tutorials/intro_tutorial/config.py
    :linenos:
    :caption: config.py
 
@@ -39,7 +39,7 @@ Configuration values are passed in a dict as the second argument to
 configuration to execute an entire pipeline. It may have many sections, but we're only
 using one of them here: per-solid configuration specified under the key ``solids``.
 
-.. literalinclude:: ../../dagster/tutorials/intro_tutorial/config.py
+.. literalinclude:: ../../../../dagster/tutorials/intro_tutorial/config.py
    :lines: 28
    :dedent: 8
 
@@ -53,7 +53,7 @@ In this case, we've defined a single scalar string value as config.
 Let's see how to run this pipeline, with config, from the command line. In order to do this you 
 must provide config in the form of a yaml file:
 
-.. literalinclude:: ../../dagster/tutorials/intro_tutorial/config_env.yml
+.. literalinclude:: ../../../../dagster/tutorials/intro_tutorial/config_env.yml
    :linenos:
    :caption: config_env.yml
 

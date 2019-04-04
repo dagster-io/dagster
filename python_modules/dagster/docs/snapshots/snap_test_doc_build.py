@@ -25,9 +25,7 @@ snapshots['test_build_all_docs 1'] = [
             'doctrees'
         ],
         [
-            'apidocs',
-            'guides',
-            'intro_tutorial'
+            'sections'
         ],
         [
         ]
@@ -36,6 +34,36 @@ snapshots['test_build_all_docs 1'] = [
         [
             '.',
             'doctrees',
+            'sections'
+        ],
+        [
+            'api',
+            'community',
+            'install',
+            'learn'
+        ],
+        [
+        ]
+    ),
+    (
+        [
+            '.',
+            'doctrees',
+            'sections',
+            'api'
+        ],
+        [
+            'apidocs'
+        ],
+        [
+        ]
+    ),
+    (
+        [
+            '.',
+            'doctrees',
+            'sections',
+            'api',
             'apidocs'
         ],
         [
@@ -47,6 +75,46 @@ snapshots['test_build_all_docs 1'] = [
         [
             '.',
             'doctrees',
+            'sections',
+            'community'
+        ],
+        [
+        ],
+        [
+        ]
+    ),
+    (
+        [
+            '.',
+            'doctrees',
+            'sections',
+            'install'
+        ],
+        [
+        ],
+        [
+        ]
+    ),
+    (
+        [
+            '.',
+            'doctrees',
+            'sections',
+            'learn'
+        ],
+        [
+            'guides',
+            'tutorial'
+        ],
+        [
+        ]
+    ),
+    (
+        [
+            '.',
+            'doctrees',
+            'sections',
+            'learn',
             'guides'
         ],
         [
@@ -58,7 +126,9 @@ snapshots['test_build_all_docs 1'] = [
         [
             '.',
             'doctrees',
-            'intro_tutorial'
+            'sections',
+            'learn',
+            'tutorial'
         ],
         [
         ],
@@ -74,17 +144,12 @@ snapshots['test_build_all_docs 1'] = [
             '_images',
             '_sources',
             '_static',
-            'apidocs',
-            'guides',
-            'intro_tutorial'
+            'sections'
         ],
         [
             '.buildinfo',
-            'contributing.html',
             'genindex.html',
             'index.html',
-            'installation.html',
-            'principles.html',
             'py-modindex.html',
             'search.html'
         ]
@@ -107,15 +172,10 @@ snapshots['test_build_all_docs 1'] = [
             '_sources'
         ],
         [
-            'apidocs',
-            'guides',
-            'intro_tutorial'
+            'sections'
         ],
         [
-            'contributing.rst.txt',
-            'index.rst.txt',
-            'installation.rst.txt',
-            'principles.rst.txt'
+            'index.rst.txt'
         ]
     ),
     (
@@ -123,6 +183,39 @@ snapshots['test_build_all_docs 1'] = [
             '.',
             'html',
             '_sources',
+            'sections'
+        ],
+        [
+            'api',
+            'community',
+            'install',
+            'learn'
+        ],
+        [
+        ]
+    ),
+    (
+        [
+            '.',
+            'html',
+            '_sources',
+            'sections',
+            'api'
+        ],
+        [
+            'apidocs'
+        ],
+        [
+            'api.rst.txt'
+        ]
+    ),
+    (
+        [
+            '.',
+            'html',
+            '_sources',
+            'sections',
+            'api',
             'apidocs'
         ],
         [
@@ -141,6 +234,55 @@ snapshots['test_build_all_docs 1'] = [
             '.',
             'html',
             '_sources',
+            'sections',
+            'community'
+        ],
+        [
+        ],
+        [
+            'community.rst.txt',
+            'contributing.rst.txt',
+            'release_notes.rst.txt'
+        ]
+    ),
+    (
+        [
+            '.',
+            'html',
+            '_sources',
+            'sections',
+            'install'
+        ],
+        [
+        ],
+        [
+            'install.rst.txt'
+        ]
+    ),
+    (
+        [
+            '.',
+            'html',
+            '_sources',
+            'sections',
+            'learn'
+        ],
+        [
+            'guides',
+            'tutorial'
+        ],
+        [
+            'learn.rst.txt',
+            'principles.rst.txt'
+        ]
+    ),
+    (
+        [
+            '.',
+            'html',
+            '_sources',
+            'sections',
+            'learn',
             'guides'
         ],
         [
@@ -155,7 +297,9 @@ snapshots['test_build_all_docs 1'] = [
             '.',
             'html',
             '_sources',
-            'intro_tutorial'
+            'sections',
+            'learn',
+            'tutorial'
         ],
         [
         ],
@@ -168,6 +312,7 @@ snapshots['test_build_all_docs 1'] = [
             'expectations.rst.txt',
             'hello_dag.rst.txt',
             'hello_world.rst.txt',
+            'index.rst.txt',
             'inputs.rst.txt',
             'multiple_outputs.rst.txt',
             'pipeline_cli_execution.rst.txt',
@@ -185,6 +330,7 @@ snapshots['test_build_all_docs 1'] = [
             '_static'
         ],
         [
+            'css'
         ],
         [
             'alabaster.css',
@@ -205,6 +351,50 @@ snapshots['test_build_all_docs 1'] = [
         [
             '.',
             'html',
+            '_static',
+            'css'
+        ],
+        [
+        ],
+        [
+            'custom.css'
+        ]
+    ),
+    (
+        [
+            '.',
+            'html',
+            'sections'
+        ],
+        [
+            'api',
+            'community',
+            'install',
+            'learn'
+        ],
+        [
+        ]
+    ),
+    (
+        [
+            '.',
+            'html',
+            'sections',
+            'api'
+        ],
+        [
+            'apidocs'
+        ],
+        [
+            'api.html'
+        ]
+    ),
+    (
+        [
+            '.',
+            'html',
+            'sections',
+            'api',
             'apidocs'
         ],
         [
@@ -222,6 +412,52 @@ snapshots['test_build_all_docs 1'] = [
         [
             '.',
             'html',
+            'sections',
+            'community'
+        ],
+        [
+        ],
+        [
+            'community.html',
+            'contributing.html',
+            'release_notes.html'
+        ]
+    ),
+    (
+        [
+            '.',
+            'html',
+            'sections',
+            'install'
+        ],
+        [
+        ],
+        [
+            'install.html'
+        ]
+    ),
+    (
+        [
+            '.',
+            'html',
+            'sections',
+            'learn'
+        ],
+        [
+            'guides',
+            'tutorial'
+        ],
+        [
+            'learn.html',
+            'principles.html'
+        ]
+    ),
+    (
+        [
+            '.',
+            'html',
+            'sections',
+            'learn',
             'guides'
         ],
         [
@@ -235,7 +471,9 @@ snapshots['test_build_all_docs 1'] = [
         [
             '.',
             'html',
-            'intro_tutorial'
+            'sections',
+            'learn',
+            'tutorial'
         ],
         [
         ],
@@ -248,6 +486,7 @@ snapshots['test_build_all_docs 1'] = [
             'expectations.html',
             'hello_dag.html',
             'hello_world.html',
+            'index.html',
             'inputs.html',
             'multiple_outputs.html',
             'pipeline_cli_execution.html',
@@ -262,235 +501,11 @@ snapshots['test_build_all_docs 1'] = [
 
 snapshots['test_build_all_docs 2'] = '''# Sphinx build info version 1
 # This file hashes the configuration used when building these files. When it is not found, a full rebuild will be done.
-config: 60669317f959338d907c02d78b4de87c
+config: 77bc4f3e47bd198f1d8cf723cf3212f8
 tags: 645f666f9bcd5a90fca523b33c5a78b7
 '''
 
 snapshots['test_build_all_docs 3'] = '''
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
-  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
-
-<html xmlns="http://www.w3.org/1999/xhtml">
-  <head>
-    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
-    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    <title>Contributing &#8212; Dagster  documentation</title>
-    <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
-    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
-    <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
-    <script type="text/javascript" src="_static/jquery.js"></script>
-    <script type="text/javascript" src="_static/underscore.js"></script>
-    <script type="text/javascript" src="_static/doctools.js"></script>
-    <link rel="index" title="Index" href="genindex.html" />
-    <link rel="search" title="Search" href="search.html" />
-    <link rel="next" title="Hello, World" href="intro_tutorial/hello_world.html" />
-    <link rel="prev" title="Installation" href="installation.html" />
-   
-  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
-  
-  
-  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
-
-  </head><body>
-  
-
-    <div class="document">
-      <div class="documentwrapper">
-        <div class="bodywrapper">
-          
-
-          <div class="body" role="main">
-            
-  <div class="section" id="contributing">
-<h1>Contributing<a class="headerlink" href="#contributing" title="Permalink to this headline">¶</a></h1>
-<p>If you are planning to contribute to dagster, you will need to set up a local
-development environment.</p>
-<div class="section" id="local-development-setup">
-<h2>Local development setup<a class="headerlink" href="#local-development-setup" title="Permalink to this headline">¶</a></h2>
-<ol class="arabic">
-<li><p class="first">Install Python. Python 3.6 or above recommended.</p>
-<blockquote>
-<div><p>Note: If you use Python 3.7 dagster-airflow will not install and run properly
-as airflow is not Python 3.7 compatible. Until [AIRFLOW-2876](<a class="reference external" href="https://github.com/apache/airflow/pull/3723">https://github.com/apache/airflow/pull/3723</a>)
-is resolved (expected in 1.10.3), Airflow (and, as a consequence, dagster-airflow)
-is incompatible with Python 3.7.</p>
-<p>The rest of the modules will work properly so you can ignore this error and develop the rest
-of the modules.</p>
-</div></blockquote>
-</li>
-<li><p class="first">Create and activate a virtualenv.</p>
-</li>
-</ol>
-<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$</span> python3 -m venv dagsterenv
-<span class="gp">$</span> <span class="nb">source</span> dagsterenv/bin/activate
-</pre></div>
-</div>
-<ol class="arabic simple" start="3">
-<li>Install yarn. If you are on macOS, this should be:</li>
-</ol>
-<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$</span> brew install yarn
-</pre></div>
-</div>
-<p>4. Run the script dev_env_setup.sh at repo root. This sets up a full
-dagster developer environment with all modules and runs tests that
-do not require heavy external dependencies such as docker. This will
-take a few minutes.</p>
-<blockquote>
-<div>$ ./dev_env_setup.sh</div></blockquote>
-<ol class="arabic" start="5">
-<li><p class="first">Run some tests manually to make sure things are working.</p>
-<blockquote>
-<div><p>$ pytest python_modules/dagster/dagster_tests</p>
-</div></blockquote>
-</li>
-</ol>
-<p>Have fun coding!</p>
-<ol class="arabic simple" start="6">
-<li>Set up pre-commit hooks</li>
-</ol>
-<p>We use black to enforce a consistent code style. To set up a pre-commit hook, just run:</p>
-<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$</span> pre-commit install
-</pre></div>
-</div>
-<p>(The <cite>pre-commit</cite> package is installed in dagster’s dev-requirements.)</p>
-<div class="section" id="running-dagit-webapp-in-development">
-<h3>Running dagit webapp in development<a class="headerlink" href="#running-dagit-webapp-in-development" title="Permalink to this headline">¶</a></h3>
-<p>For development, run the dagit GraphQL server on a different port than the
-webapp, from any directory that contains a repository.yml file. For example:</p>
-<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$</span> <span class="nb">cd</span> dagster/python_modules/dagster/dagster/tutorials/intro_tutorial
-<span class="gp">$</span> dagit -p <span class="m">3333</span>
-</pre></div>
-</div>
-<p>Keep this running. Then, in another terminal, run the local development
-(autoreloading, etc.) version of the webapp:</p>
-<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$</span> <span class="nb">cd</span> dagster/js_modules/dagit
-<span class="gp">$</span> make dev_webapp
-</pre></div>
-</div>
-<p>To run JavaScript tests for the dagit frontend, you can run:</p>
-<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$</span> <span class="nb">cd</span> dagster/js_modules/dagit
-<span class="gp">$</span> yarn <span class="nb">test</span>
-</pre></div>
-</div>
-<p>In webapp development it’s handy to run <code class="docutils literal notranslate"><span class="pre">yarn</span> <span class="pre">run</span> <span class="pre">jest</span> <span class="pre">--watch</span></code> to have an
-interactive test runner.</p>
-<p>Some webapp tests use snapshots–auto-generated results to which the test
-render tree is compared. Those tests are supposed to break when you change
-something.</p>
-<p>Check that the change is sensible and run <code class="docutils literal notranslate"><span class="pre">yarn</span> <span class="pre">run</span> <span class="pre">jest</span> <span class="pre">-u</span></code> to update the
-snapshot to the new result. You can also update snapshots interactively
-when you are in <code class="docutils literal notranslate"><span class="pre">--watch</span></code> mode.</p>
-</div>
-<div class="section" id="releasing">
-<h3>Releasing<a class="headerlink" href="#releasing" title="Permalink to this headline">¶</a></h3>
-<p>Projects are released using the Python script at <code class="docutils literal notranslate"><span class="pre">dagster/bin/publish.py</span></code>.</p>
-</div>
-<div class="section" id="developing-docs">
-<h3>Developing docs<a class="headerlink" href="#developing-docs" title="Permalink to this headline">¶</a></h3>
-<p>Running a live html version of the docs can expedite documentation development.</p>
-<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$</span> <span class="nb">cd</span> python_modules/dagster/docs
-<span class="gp">$</span> make livehtml
-</pre></div>
-</div>
-</div>
-</div>
-</div>
-
-
-          </div>
-          
-        </div>
-      </div>
-      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
-        <div class="sphinxsidebarwrapper">
-<h3><a href="index.html">Table Of Contents</a></h3>
-<ul class="current">
-<li class="toctree-l1"><a class="reference internal" href="principles.html">Principles</a></li>
-<li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a></li>
-<li class="toctree-l1 current"><a class="current reference internal" href="#">Contributing</a></li>
-</ul>
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="intro_tutorial/hello_world.html">Hello, World</a></li>
-<li class="toctree-l1"><a class="reference internal" href="intro_tutorial/hello_dag.html">Hello, DAG</a></li>
-<li class="toctree-l1"><a class="reference internal" href="intro_tutorial/actual_dag.html">An actual DAG</a></li>
-<li class="toctree-l1"><a class="reference internal" href="intro_tutorial/inputs.html">Inputs</a></li>
-<li class="toctree-l1"><a class="reference internal" href="intro_tutorial/config.html">Configuration</a></li>
-<li class="toctree-l1"><a class="reference internal" href="intro_tutorial/configuration_schemas.html">Configuration Schemas</a></li>
-<li class="toctree-l1"><a class="reference internal" href="intro_tutorial/execution_context.html">Execution Context</a></li>
-<li class="toctree-l1"><a class="reference internal" href="intro_tutorial/resources.html">Resources</a></li>
-<li class="toctree-l1"><a class="reference internal" href="intro_tutorial/repos.html">Repositories</a></li>
-<li class="toctree-l1"><a class="reference internal" href="intro_tutorial/pipeline_cli_execution.html">Pipeline CLI Execution</a></li>
-<li class="toctree-l1"><a class="reference internal" href="intro_tutorial/types.html">User-Defined Types</a></li>
-<li class="toctree-l1"><a class="reference internal" href="intro_tutorial/expectations.html">Expectations</a></li>
-<li class="toctree-l1"><a class="reference internal" href="intro_tutorial/multiple_outputs.html">Multiple Outputs</a></li>
-<li class="toctree-l1"><a class="reference internal" href="intro_tutorial/reusable_solids.html">Reusable Solids</a></li>
-<li class="toctree-l1"><a class="reference internal" href="intro_tutorial/unittesting.html">Unit-testing Pipelines</a></li>
-<li class="toctree-l1"><a class="reference internal" href="intro_tutorial/dagstermill.html">Dagstermill</a></li>
-<li class="toctree-l1"><a class="reference internal" href="intro_tutorial/dagstermill.html#dagstermill-cli">Dagstermill CLI</a></li>
-</ul>
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="apidocs/definitions.html">Definitions</a></li>
-<li class="toctree-l1"><a class="reference internal" href="apidocs/decorators.html">Decorators</a></li>
-<li class="toctree-l1"><a class="reference internal" href="apidocs/execution.html">Execution</a></li>
-<li class="toctree-l1"><a class="reference internal" href="apidocs/errors.html">Errors</a></li>
-<li class="toctree-l1"><a class="reference internal" href="apidocs/types.html">Types</a></li>
-<li class="toctree-l1"><a class="reference internal" href="apidocs/utilities.html">Utilities</a></li>
-</ul>
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="guides/028_to_030_new_concepts.html">New Concepts in 0.3.0</a></li>
-<li class="toctree-l1"><a class="reference internal" href="guides/028_to_030_upgrade_guide.html">Upgrading to 0.3.0</a></li>
-</ul>
-<div class="relations">
-<h3>Related Topics</h3>
-<ul>
-  <li><a href="index.html">Documentation overview</a><ul>
-      <li>Previous: <a href="installation.html" title="previous chapter">Installation</a></li>
-      <li>Next: <a href="intro_tutorial/hello_world.html" title="next chapter">Hello, World</a></li>
-  </ul></li>
-</ul>
-</div>
-  <div role="note" aria-label="source link">
-    <h3>This Page</h3>
-    <ul class="this-page-menu">
-      <li><a href="_sources/contributing.rst.txt"
-            rel="nofollow">Show Source</a></li>
-    </ul>
-   </div>
-<div id="searchbox" style="display: none" role="search">
-  <h3>Quick search</h3>
-    <div class="searchformwrapper">
-    <form class="search" action="search.html" method="get">
-      <input type="text" name="q" />
-      <input type="submit" value="Go" />
-      <input type="hidden" name="check_keywords" value="yes" />
-      <input type="hidden" name="area" value="default" />
-    </form>
-    </div>
-</div>
-<script type="text/javascript">$(\'#searchbox\').show(0);</script>
-        </div>
-      </div>
-      <div class="clearer"></div>
-    </div>
-    <div class="footer">
-      &copy;2018, Elementl, Inc.
-      
-      |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.7.5</a>
-      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
-      
-      |
-      <a href="_sources/contributing.rst.txt"
-          rel="nofollow">Page source</a>
-    </div>
-
-    
-
-    
-  </body>
-</html>'''
-
-snapshots['test_build_all_docs 4'] = '''
 
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
@@ -499,31 +514,42 @@ snapshots['test_build_all_docs 4'] = '''
   <head>
     <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    <title>Index &#8212; Dagster  documentation</title>
+    <title>Index &#8212; Dagster</title>
     <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="_static/css/custom.css" type="text/css" />
     <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
     <link rel="index" title="Index" href="#" />
     <link rel="search" title="Search" href="search.html" />
-   
-  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
-  
-  
-  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+ 
+<link rel="stylesheet" href="_static/custom.css" type="text/css" />
+
+
+<meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
 
   </head><body>
   
 
     <div class="document">
-      <div class="documentwrapper">
+    <div class="documentwrapper">
         <div class="bodywrapper">
-          
-
-          <div class="body" role="main">
+            <div class="related top">
+                &nbsp;
+<nav id="rellinks">
+    <ul>
+        <li>
+            <a href="/" title="Home">Home</a>
+        </li>
+    </ul>
+</nav>
+            </div>
             
+
+            <div class="body" role="main">
+                
 
 <h1 id="index">Index</h1>
 
@@ -551,11 +577,11 @@ snapshots['test_build_all_docs 4'] = '''
 <h2 id="A">A</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="apidocs/types.html#dagster.Any">Any (in module dagster)</a>
+      <li><a href="sections/api/apidocs/types.html#dagster.Any">Any (in module dagster)</a>
 </li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="apidocs/types.html#dagster.as_dagster_type">as_dagster_type() (in module dagster)</a>
+      <li><a href="sections/api/apidocs/types.html#dagster.as_dagster_type">as_dagster_type() (in module dagster)</a>
 </li>
   </ul></td>
 </tr></table>
@@ -563,7 +589,7 @@ snapshots['test_build_all_docs 4'] = '''
 <h2 id="B">B</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="apidocs/types.html#dagster.Bool">Bool (in module dagster)</a>
+      <li><a href="sections/api/apidocs/types.html#dagster.Bool">Bool (in module dagster)</a>
 </li>
   </ul></td>
 </tr></table>
@@ -571,21 +597,21 @@ snapshots['test_build_all_docs 4'] = '''
 <h2 id="C">C</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="apidocs/definitions.html#dagster.PipelineContextDefinition.config_field">config_field (dagster.PipelineContextDefinition attribute)</a>
+      <li><a href="sections/api/apidocs/definitions.html#dagster.PipelineContextDefinition.config_field">config_field (dagster.PipelineContextDefinition attribute)</a>
 
       <ul>
-        <li><a href="apidocs/definitions.html#dagster.SolidDefinition.config_field">(dagster.SolidDefinition attribute)</a>
+        <li><a href="sections/api/apidocs/definitions.html#dagster.SolidDefinition.config_field">(dagster.SolidDefinition attribute)</a>
 </li>
       </ul></li>
-      <li><a href="apidocs/types.html#dagster.ConfigType">ConfigType (class in dagster)</a>
+      <li><a href="sections/api/apidocs/types.html#dagster.ConfigType">ConfigType (class in dagster)</a>
 </li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="apidocs/execution.html#dagster.SolidExecutionResult.context">context (dagster.SolidExecutionResult attribute)</a>
+      <li><a href="sections/api/apidocs/execution.html#dagster.SolidExecutionResult.context">context (dagster.SolidExecutionResult attribute)</a>
 </li>
-      <li><a href="apidocs/definitions.html#dagster.PipelineDefinition.context_definitions">context_definitions (dagster.PipelineDefinition attribute)</a>
+      <li><a href="sections/api/apidocs/definitions.html#dagster.PipelineDefinition.context_definitions">context_definitions (dagster.PipelineDefinition attribute)</a>
 </li>
-      <li><a href="apidocs/definitions.html#dagster.PipelineContextDefinition.context_fn">context_fn (dagster.PipelineContextDefinition attribute)</a>
+      <li><a href="sections/api/apidocs/definitions.html#dagster.PipelineContextDefinition.context_fn">context_fn (dagster.PipelineContextDefinition attribute)</a>
 </li>
   </ul></td>
 </tr></table>
@@ -593,49 +619,49 @@ snapshots['test_build_all_docs 4'] = '''
 <h2 id="D">D</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="apidocs/types.html#module-dagster">dagster (module)</a>
+      <li><a href="sections/api/apidocs/types.html#module-dagster">dagster (module)</a>
 </li>
-      <li><a href="apidocs/types.html#dagster.dagster_type">dagster_type() (in module dagster)</a>
+      <li><a href="sections/api/apidocs/types.html#dagster.dagster_type">dagster_type() (in module dagster)</a>
 </li>
-      <li><a href="apidocs/errors.html#dagster.DagsterExpectationFailedError">DagsterExpectationFailedError</a>
+      <li><a href="sections/api/apidocs/errors.html#dagster.DagsterExpectationFailedError">DagsterExpectationFailedError</a>
 </li>
-      <li><a href="apidocs/errors.html#dagster.DagsterInvalidDefinitionError">DagsterInvalidDefinitionError</a>
+      <li><a href="sections/api/apidocs/errors.html#dagster.DagsterInvalidDefinitionError">DagsterInvalidDefinitionError</a>
 </li>
-      <li><a href="apidocs/errors.html#dagster.DagsterInvariantViolationError">DagsterInvariantViolationError</a>
+      <li><a href="sections/api/apidocs/errors.html#dagster.DagsterInvariantViolationError">DagsterInvariantViolationError</a>
 </li>
-      <li><a href="apidocs/errors.html#dagster.DagsterRuntimeCoercionError">DagsterRuntimeCoercionError</a>
+      <li><a href="sections/api/apidocs/errors.html#dagster.DagsterRuntimeCoercionError">DagsterRuntimeCoercionError</a>
 </li>
-      <li><a href="apidocs/errors.html#dagster.DagsterTypeError">DagsterTypeError</a>
+      <li><a href="sections/api/apidocs/errors.html#dagster.DagsterTypeError">DagsterTypeError</a>
 </li>
-      <li><a href="apidocs/errors.html#dagster.DagsterUserCodeExecutionError">DagsterUserCodeExecutionError</a>
+      <li><a href="sections/api/apidocs/errors.html#dagster.DagsterUserCodeExecutionError">DagsterUserCodeExecutionError</a>
 </li>
-      <li><a href="apidocs/definitions.html#dagster.PipelineDefinition.dependencies">dependencies (dagster.PipelineDefinition attribute)</a>
+      <li><a href="sections/api/apidocs/definitions.html#dagster.PipelineDefinition.dependencies">dependencies (dagster.PipelineDefinition attribute)</a>
 </li>
-      <li><a href="apidocs/definitions.html#dagster.PipelineDefinition.dependency_structure">dependency_structure (dagster.PipelineDefinition attribute)</a>
+      <li><a href="sections/api/apidocs/definitions.html#dagster.PipelineDefinition.dependency_structure">dependency_structure (dagster.PipelineDefinition attribute)</a>
 </li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="apidocs/definitions.html#dagster.DependencyDefinition">DependencyDefinition (class in dagster)</a>
+      <li><a href="sections/api/apidocs/definitions.html#dagster.DependencyDefinition">DependencyDefinition (class in dagster)</a>
 </li>
-      <li><a href="apidocs/definitions.html#dagster.DependencyDefinition.description">description (dagster.DependencyDefinition attribute)</a>
+      <li><a href="sections/api/apidocs/definitions.html#dagster.DependencyDefinition.description">description (dagster.DependencyDefinition attribute)</a>
 
       <ul>
-        <li><a href="apidocs/definitions.html#dagster.ExpectationDefinition.description">(dagster.ExpectationDefinition attribute)</a>
+        <li><a href="sections/api/apidocs/definitions.html#dagster.ExpectationDefinition.description">(dagster.ExpectationDefinition attribute)</a>
 </li>
-        <li><a href="apidocs/definitions.html#dagster.InputDefinition.description">(dagster.InputDefinition attribute)</a>
+        <li><a href="sections/api/apidocs/definitions.html#dagster.InputDefinition.description">(dagster.InputDefinition attribute)</a>
 </li>
-        <li><a href="apidocs/definitions.html#dagster.OutputDefinition.description">(dagster.OutputDefinition attribute)</a>
+        <li><a href="sections/api/apidocs/definitions.html#dagster.OutputDefinition.description">(dagster.OutputDefinition attribute)</a>
 </li>
-        <li><a href="apidocs/definitions.html#dagster.PipelineContextDefinition.description">(dagster.PipelineContextDefinition attribute)</a>
+        <li><a href="sections/api/apidocs/definitions.html#dagster.PipelineContextDefinition.description">(dagster.PipelineContextDefinition attribute)</a>
 </li>
-        <li><a href="apidocs/definitions.html#dagster.PipelineDefinition.description">(dagster.PipelineDefinition attribute)</a>
+        <li><a href="sections/api/apidocs/definitions.html#dagster.PipelineDefinition.description">(dagster.PipelineDefinition attribute)</a>
 </li>
-        <li><a href="apidocs/definitions.html#dagster.SolidDefinition.description">(dagster.SolidDefinition attribute)</a>
+        <li><a href="sections/api/apidocs/definitions.html#dagster.SolidDefinition.description">(dagster.SolidDefinition attribute)</a>
 </li>
       </ul></li>
-      <li><a href="apidocs/types.html#dagster.Dict">Dict() (in module dagster)</a>
+      <li><a href="sections/api/apidocs/types.html#dagster.Dict">Dict() (in module dagster)</a>
 </li>
-      <li><a href="apidocs/definitions.html#dagster.PipelineDefinition.display_name">display_name (dagster.PipelineDefinition attribute)</a>
+      <li><a href="sections/api/apidocs/definitions.html#dagster.PipelineDefinition.display_name">display_name (dagster.PipelineDefinition attribute)</a>
 </li>
   </ul></td>
 </tr></table>
@@ -643,25 +669,25 @@ snapshots['test_build_all_docs 4'] = '''
 <h2 id="E">E</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="apidocs/execution.html#dagster.execute_pipeline">execute_pipeline() (in module dagster)</a>
+      <li><a href="sections/api/apidocs/execution.html#dagster.execute_pipeline">execute_pipeline() (in module dagster)</a>
 </li>
-      <li><a href="apidocs/execution.html#dagster.execute_pipeline_iterator">execute_pipeline_iterator() (in module dagster)</a>
+      <li><a href="sections/api/apidocs/execution.html#dagster.execute_pipeline_iterator">execute_pipeline_iterator() (in module dagster)</a>
 </li>
-      <li><a href="apidocs/utilities.html#dagster.execute_solid">execute_solid() (in module dagster)</a>
+      <li><a href="sections/api/apidocs/utilities.html#dagster.execute_solid">execute_solid() (in module dagster)</a>
 </li>
-      <li><a href="apidocs/utilities.html#dagster.execute_solids">execute_solids() (in module dagster)</a>
+      <li><a href="sections/api/apidocs/utilities.html#dagster.execute_solids">execute_solids() (in module dagster)</a>
 </li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="apidocs/execution.html#dagster.ExecutionContext">ExecutionContext (class in dagster)</a>
+      <li><a href="sections/api/apidocs/execution.html#dagster.ExecutionContext">ExecutionContext (class in dagster)</a>
 </li>
-      <li><a href="apidocs/definitions.html#dagster.ExpectationDefinition.expectation_fn">expectation_fn (dagster.ExpectationDefinition attribute)</a>
+      <li><a href="sections/api/apidocs/definitions.html#dagster.ExpectationDefinition.expectation_fn">expectation_fn (dagster.ExpectationDefinition attribute)</a>
 </li>
-      <li><a href="apidocs/definitions.html#dagster.ExpectationDefinition">ExpectationDefinition (class in dagster)</a>
+      <li><a href="sections/api/apidocs/definitions.html#dagster.ExpectationDefinition">ExpectationDefinition (class in dagster)</a>
 </li>
-      <li><a href="apidocs/definitions.html#dagster.ExpectationResult">ExpectationResult (class in dagster)</a>
+      <li><a href="sections/api/apidocs/definitions.html#dagster.ExpectationResult">ExpectationResult (class in dagster)</a>
 </li>
-      <li><a href="apidocs/definitions.html#dagster.InputDefinition.expectations">expectations (dagster.InputDefinition attribute)</a>
+      <li><a href="sections/api/apidocs/definitions.html#dagster.InputDefinition.expectations">expectations (dagster.InputDefinition attribute)</a>
 </li>
   </ul></td>
 </tr></table>
@@ -669,13 +695,13 @@ snapshots['test_build_all_docs 4'] = '''
 <h2 id="F">F</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="apidocs/execution.html#dagster.SolidExecutionResult.failure_data">failure_data (dagster.SolidExecutionResult attribute)</a>
+      <li><a href="sections/api/apidocs/execution.html#dagster.SolidExecutionResult.failure_data">failure_data (dagster.SolidExecutionResult attribute)</a>
 </li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="apidocs/definitions.html#dagster.Field">Field() (in module dagster)</a>
+      <li><a href="sections/api/apidocs/definitions.html#dagster.Field">Field() (in module dagster)</a>
 </li>
-      <li><a href="apidocs/decorators.html#dagster.MultipleResults.from_dict">from_dict() (dagster.MultipleResults static method)</a>
+      <li><a href="sections/api/apidocs/decorators.html#dagster.MultipleResults.from_dict">from_dict() (dagster.MultipleResults static method)</a>
 </li>
   </ul></td>
 </tr></table>
@@ -683,11 +709,11 @@ snapshots['test_build_all_docs 4'] = '''
 <h2 id="G">G</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="apidocs/definitions.html#dagster.RepositoryDefinition.get_all_pipelines">get_all_pipelines() (dagster.RepositoryDefinition method)</a>
+      <li><a href="sections/api/apidocs/definitions.html#dagster.RepositoryDefinition.get_all_pipelines">get_all_pipelines() (dagster.RepositoryDefinition method)</a>
 </li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="apidocs/definitions.html#dagster.RepositoryDefinition.get_pipeline">get_pipeline() (dagster.RepositoryDefinition method)</a>
+      <li><a href="sections/api/apidocs/definitions.html#dagster.RepositoryDefinition.get_pipeline">get_pipeline() (dagster.RepositoryDefinition method)</a>
 </li>
   </ul></td>
 </tr></table>
@@ -695,7 +721,7 @@ snapshots['test_build_all_docs 4'] = '''
 <h2 id="H">H</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="apidocs/definitions.html#dagster.PipelineDefinition.has_solid">has_solid() (dagster.PipelineDefinition method)</a>
+      <li><a href="sections/api/apidocs/definitions.html#dagster.PipelineDefinition.has_solid">has_solid() (dagster.PipelineDefinition method)</a>
 </li>
   </ul></td>
 </tr></table>
@@ -703,21 +729,21 @@ snapshots['test_build_all_docs 4'] = '''
 <h2 id="I">I</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="apidocs/definitions.html#dagster.SolidDefinition.input_defs">input_defs (dagster.SolidDefinition attribute)</a>
+      <li><a href="sections/api/apidocs/definitions.html#dagster.SolidDefinition.input_defs">input_defs (dagster.SolidDefinition attribute)</a>
 </li>
-      <li><a href="apidocs/types.html#dagster.input_schema">input_schema() (in module dagster)</a>
+      <li><a href="sections/api/apidocs/types.html#dagster.input_schema">input_schema() (in module dagster)</a>
 </li>
-      <li><a href="apidocs/types.html#dagster.input_selector_schema">input_selector_schema() (in module dagster)</a>
+      <li><a href="sections/api/apidocs/types.html#dagster.input_selector_schema">input_selector_schema() (in module dagster)</a>
 </li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="apidocs/definitions.html#dagster.InputDefinition">InputDefinition (class in dagster)</a>
+      <li><a href="sections/api/apidocs/definitions.html#dagster.InputDefinition">InputDefinition (class in dagster)</a>
 </li>
-      <li><a href="apidocs/types.html#dagster.Int">Int (in module dagster)</a>
+      <li><a href="sections/api/apidocs/types.html#dagster.Int">Int (in module dagster)</a>
 </li>
-      <li><a href="apidocs/definitions.html#dagster.OutputDefinition.is_optional">is_optional (dagster.OutputDefinition attribute)</a>
+      <li><a href="sections/api/apidocs/definitions.html#dagster.OutputDefinition.is_optional">is_optional (dagster.OutputDefinition attribute)</a>
 </li>
-      <li><a href="apidocs/definitions.html#dagster.RepositoryDefinition.iterate_over_pipelines">iterate_over_pipelines() (dagster.RepositoryDefinition method)</a>
+      <li><a href="sections/api/apidocs/definitions.html#dagster.RepositoryDefinition.iterate_over_pipelines">iterate_over_pipelines() (dagster.RepositoryDefinition method)</a>
 </li>
   </ul></td>
 </tr></table>
@@ -725,11 +751,11 @@ snapshots['test_build_all_docs 4'] = '''
 <h2 id="L">L</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="apidocs/decorators.html#dagster.lambda_solid">lambda_solid() (in module dagster)</a>
+      <li><a href="sections/api/apidocs/decorators.html#dagster.lambda_solid">lambda_solid() (in module dagster)</a>
 </li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="apidocs/types.html#dagster.List">List() (in module dagster)</a>
+      <li><a href="sections/api/apidocs/types.html#dagster.List">List() (in module dagster)</a>
 </li>
   </ul></td>
 </tr></table>
@@ -737,13 +763,13 @@ snapshots['test_build_all_docs 4'] = '''
 <h2 id="M">M</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="apidocs/definitions.html#dagster.ExpectationResult.message">message (dagster.ExpectationResult attribute)</a>
+      <li><a href="sections/api/apidocs/definitions.html#dagster.ExpectationResult.message">message (dagster.ExpectationResult attribute)</a>
 </li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="apidocs/definitions.html#dagster.SolidDefinition.metadata">metadata (dagster.SolidDefinition attribute)</a>
+      <li><a href="sections/api/apidocs/definitions.html#dagster.SolidDefinition.metadata">metadata (dagster.SolidDefinition attribute)</a>
 </li>
-      <li><a href="apidocs/decorators.html#dagster.MultipleResults">MultipleResults (class in dagster)</a>
+      <li><a href="sections/api/apidocs/decorators.html#dagster.MultipleResults">MultipleResults (class in dagster)</a>
 </li>
   </ul></td>
 </tr></table>
@@ -751,25 +777,25 @@ snapshots['test_build_all_docs 4'] = '''
 <h2 id="N">N</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="apidocs/definitions.html#dagster.ExpectationDefinition.name">name (dagster.ExpectationDefinition attribute)</a>
+      <li><a href="sections/api/apidocs/definitions.html#dagster.ExpectationDefinition.name">name (dagster.ExpectationDefinition attribute)</a>
 
       <ul>
-        <li><a href="apidocs/definitions.html#dagster.InputDefinition.name">(dagster.InputDefinition attribute)</a>
+        <li><a href="sections/api/apidocs/definitions.html#dagster.InputDefinition.name">(dagster.InputDefinition attribute)</a>
 </li>
-        <li><a href="apidocs/definitions.html#dagster.OutputDefinition.name">(dagster.OutputDefinition attribute)</a>
+        <li><a href="sections/api/apidocs/definitions.html#dagster.OutputDefinition.name">(dagster.OutputDefinition attribute)</a>
 </li>
-        <li><a href="apidocs/definitions.html#dagster.PipelineDefinition.name">(dagster.PipelineDefinition attribute)</a>
+        <li><a href="sections/api/apidocs/definitions.html#dagster.PipelineDefinition.name">(dagster.PipelineDefinition attribute)</a>
 </li>
-        <li><a href="apidocs/definitions.html#dagster.RepositoryDefinition.name">(dagster.RepositoryDefinition attribute)</a>
+        <li><a href="sections/api/apidocs/definitions.html#dagster.RepositoryDefinition.name">(dagster.RepositoryDefinition attribute)</a>
 </li>
-        <li><a href="apidocs/definitions.html#dagster.SolidDefinition.name">(dagster.SolidDefinition attribute)</a>
+        <li><a href="sections/api/apidocs/definitions.html#dagster.SolidDefinition.name">(dagster.SolidDefinition attribute)</a>
 </li>
       </ul></li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="apidocs/types.html#dagster.NamedDict">NamedDict() (in module dagster)</a>
+      <li><a href="sections/api/apidocs/types.html#dagster.NamedDict">NamedDict() (in module dagster)</a>
 </li>
-      <li><a href="apidocs/types.html#dagster.Nullable">Nullable() (in module dagster)</a>
+      <li><a href="sections/api/apidocs/types.html#dagster.Nullable">Nullable() (in module dagster)</a>
 </li>
   </ul></td>
 </tr></table>
@@ -777,19 +803,19 @@ snapshots['test_build_all_docs 4'] = '''
 <h2 id="O">O</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="apidocs/definitions.html#dagster.DependencyDefinition.output">output (dagster.DependencyDefinition attribute)</a>
+      <li><a href="sections/api/apidocs/definitions.html#dagster.DependencyDefinition.output">output (dagster.DependencyDefinition attribute)</a>
 </li>
-      <li><a href="apidocs/definitions.html#dagster.Result.output_name">output_name (dagster.Result attribute)</a>
+      <li><a href="sections/api/apidocs/definitions.html#dagster.Result.output_name">output_name (dagster.Result attribute)</a>
 </li>
-      <li><a href="apidocs/types.html#dagster.output_schema">output_schema() (in module dagster)</a>
+      <li><a href="sections/api/apidocs/types.html#dagster.output_schema">output_schema() (in module dagster)</a>
 </li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="apidocs/types.html#dagster.output_selector_schema">output_selector_schema() (in module dagster)</a>
+      <li><a href="sections/api/apidocs/types.html#dagster.output_selector_schema">output_selector_schema() (in module dagster)</a>
 </li>
-      <li><a href="apidocs/definitions.html#dagster.OutputDefinition">OutputDefinition (class in dagster)</a>
+      <li><a href="sections/api/apidocs/definitions.html#dagster.OutputDefinition">OutputDefinition (class in dagster)</a>
 </li>
-      <li><a href="apidocs/definitions.html#dagster.SolidDefinition.outputs_defs">outputs_defs (dagster.SolidDefinition attribute)</a>
+      <li><a href="sections/api/apidocs/definitions.html#dagster.SolidDefinition.outputs_defs">outputs_defs (dagster.SolidDefinition attribute)</a>
 </li>
   </ul></td>
 </tr></table>
@@ -797,23 +823,23 @@ snapshots['test_build_all_docs 4'] = '''
 <h2 id="P">P</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="apidocs/definitions.html#dagster.PipelineContextDefinition.passthrough_context_definition">passthrough_context_definition() (dagster.PipelineContextDefinition static method)</a>
+      <li><a href="sections/api/apidocs/definitions.html#dagster.PipelineContextDefinition.passthrough_context_definition">passthrough_context_definition() (dagster.PipelineContextDefinition static method)</a>
 </li>
-      <li><a href="apidocs/types.html#dagster.Path">Path (in module dagster)</a>
+      <li><a href="sections/api/apidocs/types.html#dagster.Path">Path (in module dagster)</a>
 </li>
-      <li><a href="apidocs/definitions.html#dagster.RepositoryDefinition.pipeline_dict">pipeline_dict (dagster.RepositoryDefinition attribute)</a>
+      <li><a href="sections/api/apidocs/definitions.html#dagster.RepositoryDefinition.pipeline_dict">pipeline_dict (dagster.RepositoryDefinition attribute)</a>
 </li>
-      <li><a href="apidocs/errors.html#dagster.PipelineConfigEvaluationError">PipelineConfigEvaluationError</a>
+      <li><a href="sections/api/apidocs/errors.html#dagster.PipelineConfigEvaluationError">PipelineConfigEvaluationError</a>
 </li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="apidocs/definitions.html#dagster.PipelineContextDefinition">PipelineContextDefinition (class in dagster)</a>
+      <li><a href="sections/api/apidocs/definitions.html#dagster.PipelineContextDefinition">PipelineContextDefinition (class in dagster)</a>
 </li>
-      <li><a href="apidocs/definitions.html#dagster.PipelineDefinition">PipelineDefinition (class in dagster)</a>
+      <li><a href="sections/api/apidocs/definitions.html#dagster.PipelineDefinition">PipelineDefinition (class in dagster)</a>
 </li>
-      <li><a href="apidocs/execution.html#dagster.PipelineExecutionResult">PipelineExecutionResult (class in dagster)</a>
+      <li><a href="sections/api/apidocs/execution.html#dagster.PipelineExecutionResult">PipelineExecutionResult (class in dagster)</a>
 </li>
-      <li><a href="apidocs/types.html#dagster.PythonObjectType">PythonObjectType (class in dagster)</a>
+      <li><a href="sections/api/apidocs/types.html#dagster.PythonObjectType">PythonObjectType (class in dagster)</a>
 </li>
   </ul></td>
 </tr></table>
@@ -821,29 +847,29 @@ snapshots['test_build_all_docs 4'] = '''
 <h2 id="R">R</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="apidocs/definitions.html#dagster.RepositoryDefinition">RepositoryDefinition (class in dagster)</a>
+      <li><a href="sections/api/apidocs/definitions.html#dagster.RepositoryDefinition">RepositoryDefinition (class in dagster)</a>
 </li>
-      <li><a href="apidocs/definitions.html#dagster.ResourceDefinition">ResourceDefinition (class in dagster)</a>
+      <li><a href="sections/api/apidocs/definitions.html#dagster.ResourceDefinition">ResourceDefinition (class in dagster)</a>
 </li>
-      <li><a href="apidocs/definitions.html#dagster.Result">Result (class in dagster)</a>
+      <li><a href="sections/api/apidocs/definitions.html#dagster.Result">Result (class in dagster)</a>
 </li>
-      <li><a href="apidocs/definitions.html#dagster.ExpectationResult.result_context">result_context (dagster.ExpectationResult attribute)</a>
+      <li><a href="sections/api/apidocs/definitions.html#dagster.ExpectationResult.result_context">result_context (dagster.ExpectationResult attribute)</a>
 </li>
-      <li><a href="apidocs/execution.html#dagster.PipelineExecutionResult.result_for_solid">result_for_solid() (dagster.PipelineExecutionResult method)</a>
+      <li><a href="sections/api/apidocs/execution.html#dagster.PipelineExecutionResult.result_for_solid">result_for_solid() (dagster.PipelineExecutionResult method)</a>
 </li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="apidocs/decorators.html#dagster.MultipleResults.results">results (dagster.MultipleResults attribute)</a>
+      <li><a href="sections/api/apidocs/decorators.html#dagster.MultipleResults.results">results (dagster.MultipleResults attribute)</a>
 </li>
-      <li><a href="apidocs/execution.html#dagster.RunConfig">RunConfig (class in dagster)</a>
+      <li><a href="sections/api/apidocs/execution.html#dagster.RunConfig">RunConfig (class in dagster)</a>
 </li>
-      <li><a href="apidocs/definitions.html#dagster.InputDefinition.runtime_type">runtime_type (dagster.InputDefinition attribute)</a>
+      <li><a href="sections/api/apidocs/definitions.html#dagster.InputDefinition.runtime_type">runtime_type (dagster.InputDefinition attribute)</a>
 
       <ul>
-        <li><a href="apidocs/definitions.html#dagster.OutputDefinition.runtime_type">(dagster.OutputDefinition attribute)</a>
+        <li><a href="sections/api/apidocs/definitions.html#dagster.OutputDefinition.runtime_type">(dagster.OutputDefinition attribute)</a>
 </li>
       </ul></li>
-      <li><a href="apidocs/types.html#dagster.RuntimeType">RuntimeType (class in dagster)</a>
+      <li><a href="sections/api/apidocs/types.html#dagster.RuntimeType">RuntimeType (class in dagster)</a>
 </li>
   </ul></td>
 </tr></table>
@@ -851,36 +877,36 @@ snapshots['test_build_all_docs 4'] = '''
 <h2 id="S">S</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="apidocs/execution.html#dagster.SolidExecutionResult.skipped">skipped (dagster.SolidExecutionResult attribute)</a>
+      <li><a href="sections/api/apidocs/execution.html#dagster.SolidExecutionResult.skipped">skipped (dagster.SolidExecutionResult attribute)</a>
 </li>
-      <li><a href="apidocs/definitions.html#dagster.DependencyDefinition.solid">solid (dagster.DependencyDefinition attribute)</a>
+      <li><a href="sections/api/apidocs/definitions.html#dagster.DependencyDefinition.solid">solid (dagster.DependencyDefinition attribute)</a>
 
       <ul>
-        <li><a href="apidocs/execution.html#dagster.SolidExecutionResult.solid">(dagster.SolidExecutionResult attribute)</a>
+        <li><a href="sections/api/apidocs/execution.html#dagster.SolidExecutionResult.solid">(dagster.SolidExecutionResult attribute)</a>
 </li>
       </ul></li>
-      <li><a href="apidocs/decorators.html#dagster.solid">solid() (in module dagster)</a>
+      <li><a href="sections/api/apidocs/decorators.html#dagster.solid">solid() (in module dagster)</a>
 </li>
-      <li><a href="apidocs/definitions.html#dagster.PipelineDefinition.solid_named">solid_named() (dagster.PipelineDefinition method)</a>
+      <li><a href="sections/api/apidocs/definitions.html#dagster.PipelineDefinition.solid_named">solid_named() (dagster.PipelineDefinition method)</a>
 </li>
-      <li><a href="apidocs/definitions.html#dagster.SolidDefinition">SolidDefinition (class in dagster)</a>
+      <li><a href="sections/api/apidocs/definitions.html#dagster.SolidDefinition">SolidDefinition (class in dagster)</a>
 </li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="apidocs/execution.html#dagster.SolidExecutionResult">SolidExecutionResult (class in dagster)</a>
+      <li><a href="sections/api/apidocs/execution.html#dagster.SolidExecutionResult">SolidExecutionResult (class in dagster)</a>
 </li>
-      <li><a href="apidocs/definitions.html#dagster.SolidInstance">SolidInstance (class in dagster)</a>
+      <li><a href="sections/api/apidocs/definitions.html#dagster.SolidInstance">SolidInstance (class in dagster)</a>
 </li>
-      <li><a href="apidocs/definitions.html#dagster.PipelineDefinition.solids">solids (dagster.PipelineDefinition attribute)</a>, <a href="apidocs/definitions.html#dagster.PipelineDefinition.solids">[1]</a>
+      <li><a href="sections/api/apidocs/definitions.html#dagster.PipelineDefinition.solids">solids (dagster.PipelineDefinition attribute)</a>, <a href="sections/api/apidocs/definitions.html#dagster.PipelineDefinition.solids">[1]</a>
 </li>
-      <li><a href="apidocs/types.html#dagster.String">String (in module dagster)</a>
+      <li><a href="sections/api/apidocs/types.html#dagster.String">String (in module dagster)</a>
 </li>
-      <li><a href="apidocs/definitions.html#dagster.ExpectationResult.success">success (dagster.ExpectationResult attribute)</a>
+      <li><a href="sections/api/apidocs/definitions.html#dagster.ExpectationResult.success">success (dagster.ExpectationResult attribute)</a>
 
       <ul>
-        <li><a href="apidocs/execution.html#dagster.PipelineExecutionResult.success">(dagster.PipelineExecutionResult attribute)</a>
+        <li><a href="sections/api/apidocs/execution.html#dagster.PipelineExecutionResult.success">(dagster.PipelineExecutionResult attribute)</a>
 </li>
-        <li><a href="apidocs/execution.html#dagster.SolidExecutionResult.success">(dagster.SolidExecutionResult attribute)</a>
+        <li><a href="sections/api/apidocs/execution.html#dagster.SolidExecutionResult.success">(dagster.SolidExecutionResult attribute)</a>
 </li>
       </ul></li>
   </ul></td>
@@ -889,13 +915,13 @@ snapshots['test_build_all_docs 4'] = '''
 <h2 id="T">T</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="apidocs/definitions.html#dagster.SolidDefinition.transform_fn">transform_fn (dagster.SolidDefinition attribute)</a>
+      <li><a href="sections/api/apidocs/definitions.html#dagster.SolidDefinition.transform_fn">transform_fn (dagster.SolidDefinition attribute)</a>
 </li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="apidocs/execution.html#dagster.SolidExecutionResult.transformed_value">transformed_value() (dagster.SolidExecutionResult method)</a>
+      <li><a href="sections/api/apidocs/execution.html#dagster.SolidExecutionResult.transformed_value">transformed_value() (dagster.SolidExecutionResult method)</a>
 </li>
-      <li><a href="apidocs/execution.html#dagster.SolidExecutionResult.transformed_values">transformed_values (dagster.SolidExecutionResult attribute)</a>
+      <li><a href="sections/api/apidocs/execution.html#dagster.SolidExecutionResult.transformed_values">transformed_values (dagster.SolidExecutionResult attribute)</a>
 </li>
   </ul></td>
 </tr></table>
@@ -903,91 +929,197 @@ snapshots['test_build_all_docs 4'] = '''
 <h2 id="V">V</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="apidocs/definitions.html#dagster.Result.value">value (dagster.Result attribute)</a>
+      <li><a href="sections/api/apidocs/definitions.html#dagster.Result.value">value (dagster.Result attribute)</a>
 </li>
   </ul></td>
 </tr></table>
 
 
 
-          </div>
-          
+            </div>
+
+            
+            <div class="related bottom">
+                &nbsp;
+<nav id="rellinks">
+    <ul>
+        <li>
+            <a href="/" title="Home">Home</a>
+        </li>
+    </ul>
+</nav>
+            </div>
+            
         </div>
-      </div>
-      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
-        <div class="sphinxsidebarwrapper">
-<h3><a href="index.html">Table Of Contents</a></h3>
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="principles.html">Principles</a></li>
-<li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a></li>
-<li class="toctree-l1"><a class="reference internal" href="contributing.html">Contributing</a></li>
-</ul>
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="intro_tutorial/hello_world.html">Hello, World</a></li>
-<li class="toctree-l1"><a class="reference internal" href="intro_tutorial/hello_dag.html">Hello, DAG</a></li>
-<li class="toctree-l1"><a class="reference internal" href="intro_tutorial/actual_dag.html">An actual DAG</a></li>
-<li class="toctree-l1"><a class="reference internal" href="intro_tutorial/inputs.html">Inputs</a></li>
-<li class="toctree-l1"><a class="reference internal" href="intro_tutorial/config.html">Configuration</a></li>
-<li class="toctree-l1"><a class="reference internal" href="intro_tutorial/configuration_schemas.html">Configuration Schemas</a></li>
-<li class="toctree-l1"><a class="reference internal" href="intro_tutorial/execution_context.html">Execution Context</a></li>
-<li class="toctree-l1"><a class="reference internal" href="intro_tutorial/resources.html">Resources</a></li>
-<li class="toctree-l1"><a class="reference internal" href="intro_tutorial/repos.html">Repositories</a></li>
-<li class="toctree-l1"><a class="reference internal" href="intro_tutorial/pipeline_cli_execution.html">Pipeline CLI Execution</a></li>
-<li class="toctree-l1"><a class="reference internal" href="intro_tutorial/types.html">User-Defined Types</a></li>
-<li class="toctree-l1"><a class="reference internal" href="intro_tutorial/expectations.html">Expectations</a></li>
-<li class="toctree-l1"><a class="reference internal" href="intro_tutorial/multiple_outputs.html">Multiple Outputs</a></li>
-<li class="toctree-l1"><a class="reference internal" href="intro_tutorial/reusable_solids.html">Reusable Solids</a></li>
-<li class="toctree-l1"><a class="reference internal" href="intro_tutorial/unittesting.html">Unit-testing Pipelines</a></li>
-<li class="toctree-l1"><a class="reference internal" href="intro_tutorial/dagstermill.html">Dagstermill</a></li>
-<li class="toctree-l1"><a class="reference internal" href="intro_tutorial/dagstermill.html#dagstermill-cli">Dagstermill CLI</a></li>
-</ul>
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="apidocs/definitions.html">Definitions</a></li>
-<li class="toctree-l1"><a class="reference internal" href="apidocs/decorators.html">Decorators</a></li>
-<li class="toctree-l1"><a class="reference internal" href="apidocs/execution.html">Execution</a></li>
-<li class="toctree-l1"><a class="reference internal" href="apidocs/errors.html">Errors</a></li>
-<li class="toctree-l1"><a class="reference internal" href="apidocs/types.html">Types</a></li>
-<li class="toctree-l1"><a class="reference internal" href="apidocs/utilities.html">Utilities</a></li>
-</ul>
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="guides/028_to_030_new_concepts.html">New Concepts in 0.3.0</a></li>
-<li class="toctree-l1"><a class="reference internal" href="guides/028_to_030_upgrade_guide.html">Upgrading to 0.3.0</a></li>
-</ul>
-<div class="relations">
-<h3>Related Topics</h3>
-<ul>
-  <li><a href="index.html">Documentation overview</a><ul>
-  </ul></li>
-</ul>
-</div>
-<div id="searchbox" style="display: none" role="search">
-  <h3>Quick search</h3>
-    <div class="searchformwrapper">
-    <form class="search" action="search.html" method="get">
-      <input type="text" name="q" />
-      <input type="submit" value="Go" />
-      <input type="hidden" name="check_keywords" value="yes" />
-      <input type="hidden" name="area" value="default" />
-    </form>
     </div>
-</div>
-<script type="text/javascript">$(\'#searchbox\').show(0);</script>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><h3><a href="index.html">Dagster</a></h3>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="sections/install/install.html">Install</a></li>
+<li class="toctree-l1"><a class="reference internal" href="sections/learn/learn.html">Learn</a></li>
+<li class="toctree-l1"><a class="reference internal" href="sections/api/api.html">API Docs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="sections/community/community.html">Community</a></li>
+</ul>
+
         </div>
       </div>
       <div class="clearer"></div>
     </div>
-    <div class="footer">
-      &copy;2018, Elementl, Inc.
-      
-      |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.7.5</a>
-      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
-      
+<div class="footer">
+    &copy; 2019, Elementl, Inc.
+    
+    |
+    Powered by <a href="http://sphinx-doc.org/">Sphinx 1.7.5</a>
+    &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+    
+</div>
+
+
+
+
+  </body>
+</html>'''
+
+snapshots['test_build_all_docs 4'] = '''
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>Home &#8212; Dagster</title>
+    <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="_static/css/custom.css" type="text/css" />
+    <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Install" href="sections/install/install.html" />
+ 
+<link rel="stylesheet" href="_static/custom.css" type="text/css" />
+
+
+<meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+    <div class="documentwrapper">
+        <div class="bodywrapper">
+            
+
+            <div class="body" role="main">
+                
+  <div class="toctree-wrapper compound" id="documentation">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="sections/install/install.html">Install</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="sections/install/install.html#quick-start">Quick Start</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sections/install/install.html#detailed-installation-guide">Detailed Installation Guide</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="sections/learn/learn.html">Learn</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="sections/learn/tutorial/index.html">Tutorial</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sections/learn/principles.html">Principles</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sections/learn/learn.html#other-guides">Other Guides</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="sections/api/api.html">API Docs</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="sections/api/apidocs/definitions.html">Definitions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sections/api/apidocs/decorators.html">Decorators</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sections/api/apidocs/execution.html">Execution</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sections/api/apidocs/errors.html">Errors</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sections/api/apidocs/types.html">Types</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sections/api/apidocs/utilities.html">Utilities</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="sections/community/community.html">Community</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="sections/community/contributing.html">Contributing</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sections/community/release_notes.html">Release Notes</a></li>
+<li class="toctree-l2"><a class="reference external" href="https://www.github.com/dagster-io/dagster/">Github</a></li>
+<li class="toctree-l2"><a class="reference external" href="https://stackoverflow.com/questions/tagged/dagster">StackOverflow</a></li>
+</ul>
+</li>
+</ul>
+</div>
+
+
+            </div>
+
+            
+            <div class="logo_img">
+                <img
+                    src="https://user-images.githubusercontent.com/28738937/44878798-b6e17e00-ac5c-11e8-8d25-2e47e5a53418.png" />
+            </div>
+            <div class="dagster">
+                <div class="why_dagster">
+                    <h1>Why Dagster?</h1>
+                    Dagster is an opinionated system and programming model that makes building data applications easy.
+                    Design your workflows with local development, testability, a type system—and deploy to your existing
+                    systems.
+                </div>
+
+                <a href="sections/install/install.html" class="get_started">&#128736;&nbsp;&nbsp;Get Started »</a>
+
+                <div class="value_prop_blocks">
+                    <div class="value_prop_block">
+                        <h1>Unified Workflow</h1>
+                        <div class="value_prop_detail">Dagster takes a holistic view of your data pipelines,
+                            across Spark/Scala, SQL, notebooks and DAGs, integrating your data workflows end-to-end so
+                            you can catch issues before you go to production.
+                        </div>
+                    </div>
+
+                    <div class="value_prop_block">
+                        <h1>Testability</h1>
+                        <div class="value_prop_detail">Testing data pipelines has never been easy. Dagster provides rich
+                            type systems for both configuration and data, and helps you write tests that span your
+                            orchestration and jobs.
+                        </div>
+                    </div>
+
+                    <div class="value_prop_block">
+                        <h1>Runs on Your Infrastructure</h1>
+                        <div class="value_prop_detail">Dagster compiles into Airflow DAGs, so you can drop it into your
+                            existing infrastructure on standalone systems or AWS and start using it today.
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+        </div>
     </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><h3><a href="#">Dagster</a></h3>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="sections/install/install.html">Install</a></li>
+<li class="toctree-l1"><a class="reference internal" href="sections/learn/learn.html">Learn</a></li>
+<li class="toctree-l1"><a class="reference internal" href="sections/api/api.html">API Docs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="sections/community/community.html">Community</a></li>
+</ul>
 
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+<div class="footer">
+    &copy; 2019, Elementl, Inc.
     
+    |
+    Powered by <a href="http://sphinx-doc.org/">Sphinx 1.7.5</a>
+    &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+    
+    |
+    <a href="_sources/index.rst.txt" rel="nofollow">Page source</a>
+</div>
 
-    
+
+
+
   </body>
 </html>'''
 
@@ -999,647 +1131,10 @@ snapshots['test_build_all_docs 5'] = '''
   <head>
     <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    <title>Intro Tutorial &#8212; Dagster  documentation</title>
+    <title>Python Module Index &#8212; Dagster</title>
     <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
-    <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
-    <script type="text/javascript" src="_static/jquery.js"></script>
-    <script type="text/javascript" src="_static/underscore.js"></script>
-    <script type="text/javascript" src="_static/doctools.js"></script>
-    <link rel="index" title="Index" href="genindex.html" />
-    <link rel="search" title="Search" href="search.html" />
-    <link rel="next" title="Principles" href="principles.html" />
-   
-  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
-  
-  
-  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
-
-  </head><body>
-  
-
-    <div class="document">
-      <div class="documentwrapper">
-        <div class="bodywrapper">
-          
-
-          <div class="body" role="main">
-            
-  <img alt="https://user-images.githubusercontent.com/28738937/44878798-b6e17e00-ac5c-11e8-8d25-2e47e5a53418.png" class="align-center" src="https://user-images.githubusercontent.com/28738937/44878798-b6e17e00-ac5c-11e8-8d25-2e47e5a53418.png" />
-<p>Welcome to Dagster, an opinionated programming model for data pipelines.</p>
-<div class="toctree-wrapper compound" id="documentation">
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="principles.html">Principles</a></li>
-<li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a></li>
-<li class="toctree-l1"><a class="reference internal" href="contributing.html">Contributing</a></li>
-</ul>
-</div>
-<div class="section" id="intro-tutorial">
-<h1>Intro Tutorial<a class="headerlink" href="#intro-tutorial" title="Permalink to this headline">¶</a></h1>
-<div class="toctree-wrapper compound" id="id1">
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="intro_tutorial/hello_world.html">Hello, World</a></li>
-<li class="toctree-l1"><a class="reference internal" href="intro_tutorial/hello_dag.html">Hello, DAG</a></li>
-<li class="toctree-l1"><a class="reference internal" href="intro_tutorial/actual_dag.html">An actual DAG</a></li>
-<li class="toctree-l1"><a class="reference internal" href="intro_tutorial/inputs.html">Inputs</a></li>
-<li class="toctree-l1"><a class="reference internal" href="intro_tutorial/config.html">Configuration</a></li>
-<li class="toctree-l1"><a class="reference internal" href="intro_tutorial/configuration_schemas.html">Configuration Schemas</a></li>
-<li class="toctree-l1"><a class="reference internal" href="intro_tutorial/execution_context.html">Execution Context</a></li>
-<li class="toctree-l1"><a class="reference internal" href="intro_tutorial/resources.html">Resources</a></li>
-<li class="toctree-l1"><a class="reference internal" href="intro_tutorial/repos.html">Repositories</a></li>
-<li class="toctree-l1"><a class="reference internal" href="intro_tutorial/pipeline_cli_execution.html">Pipeline CLI Execution</a></li>
-<li class="toctree-l1"><a class="reference internal" href="intro_tutorial/types.html">User-Defined Types</a></li>
-<li class="toctree-l1"><a class="reference internal" href="intro_tutorial/expectations.html">Expectations</a></li>
-<li class="toctree-l1"><a class="reference internal" href="intro_tutorial/multiple_outputs.html">Multiple Outputs</a></li>
-<li class="toctree-l1"><a class="reference internal" href="intro_tutorial/reusable_solids.html">Reusable Solids</a></li>
-<li class="toctree-l1"><a class="reference internal" href="intro_tutorial/unittesting.html">Unit-testing Pipelines</a></li>
-<li class="toctree-l1"><a class="reference internal" href="intro_tutorial/dagstermill.html">Dagstermill</a></li>
-<li class="toctree-l1"><a class="reference internal" href="intro_tutorial/dagstermill.html#dagstermill-cli">Dagstermill CLI</a></li>
-</ul>
-</div>
-</div>
-<div class="section" id="api-reference">
-<h1>API Reference<a class="headerlink" href="#api-reference" title="Permalink to this headline">¶</a></h1>
-<div class="toctree-wrapper compound" id="id2">
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="apidocs/definitions.html">Definitions</a></li>
-<li class="toctree-l1"><a class="reference internal" href="apidocs/decorators.html">Decorators</a></li>
-<li class="toctree-l1"><a class="reference internal" href="apidocs/execution.html">Execution</a></li>
-<li class="toctree-l1"><a class="reference internal" href="apidocs/errors.html">Errors</a></li>
-<li class="toctree-l1"><a class="reference internal" href="apidocs/types.html">Types</a></li>
-<li class="toctree-l1"><a class="reference internal" href="apidocs/utilities.html">Utilities</a></li>
-</ul>
-</div>
-</div>
-<div class="section" id="guides">
-<h1>Guides<a class="headerlink" href="#guides" title="Permalink to this headline">¶</a></h1>
-<div class="toctree-wrapper compound" id="id3">
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="guides/028_to_030_new_concepts.html">New Concepts in 0.3.0</a></li>
-<li class="toctree-l1"><a class="reference internal" href="guides/028_to_030_upgrade_guide.html">Upgrading to 0.3.0</a></li>
-</ul>
-</div>
-</div>
-<div class="section" id="indices-and-tables">
-<h1>Indices and tables<a class="headerlink" href="#indices-and-tables" title="Permalink to this headline">¶</a></h1>
-<ul class="simple">
-<li><a class="reference internal" href="genindex.html"><span class="std std-ref">Index</span></a></li>
-<li><a class="reference internal" href="py-modindex.html"><span class="std std-ref">Module Index</span></a></li>
-<li><a class="reference internal" href="search.html"><span class="std std-ref">Search Page</span></a></li>
-</ul>
-</div>
-
-
-          </div>
-          
-        </div>
-      </div>
-      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
-        <div class="sphinxsidebarwrapper">
-<h3><a href="#">Table Of Contents</a></h3>
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="principles.html">Principles</a></li>
-<li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a></li>
-<li class="toctree-l1"><a class="reference internal" href="contributing.html">Contributing</a></li>
-</ul>
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="intro_tutorial/hello_world.html">Hello, World</a></li>
-<li class="toctree-l1"><a class="reference internal" href="intro_tutorial/hello_dag.html">Hello, DAG</a></li>
-<li class="toctree-l1"><a class="reference internal" href="intro_tutorial/actual_dag.html">An actual DAG</a></li>
-<li class="toctree-l1"><a class="reference internal" href="intro_tutorial/inputs.html">Inputs</a></li>
-<li class="toctree-l1"><a class="reference internal" href="intro_tutorial/config.html">Configuration</a></li>
-<li class="toctree-l1"><a class="reference internal" href="intro_tutorial/configuration_schemas.html">Configuration Schemas</a></li>
-<li class="toctree-l1"><a class="reference internal" href="intro_tutorial/execution_context.html">Execution Context</a></li>
-<li class="toctree-l1"><a class="reference internal" href="intro_tutorial/resources.html">Resources</a></li>
-<li class="toctree-l1"><a class="reference internal" href="intro_tutorial/repos.html">Repositories</a></li>
-<li class="toctree-l1"><a class="reference internal" href="intro_tutorial/pipeline_cli_execution.html">Pipeline CLI Execution</a></li>
-<li class="toctree-l1"><a class="reference internal" href="intro_tutorial/types.html">User-Defined Types</a></li>
-<li class="toctree-l1"><a class="reference internal" href="intro_tutorial/expectations.html">Expectations</a></li>
-<li class="toctree-l1"><a class="reference internal" href="intro_tutorial/multiple_outputs.html">Multiple Outputs</a></li>
-<li class="toctree-l1"><a class="reference internal" href="intro_tutorial/reusable_solids.html">Reusable Solids</a></li>
-<li class="toctree-l1"><a class="reference internal" href="intro_tutorial/unittesting.html">Unit-testing Pipelines</a></li>
-<li class="toctree-l1"><a class="reference internal" href="intro_tutorial/dagstermill.html">Dagstermill</a></li>
-<li class="toctree-l1"><a class="reference internal" href="intro_tutorial/dagstermill.html#dagstermill-cli">Dagstermill CLI</a></li>
-</ul>
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="apidocs/definitions.html">Definitions</a></li>
-<li class="toctree-l1"><a class="reference internal" href="apidocs/decorators.html">Decorators</a></li>
-<li class="toctree-l1"><a class="reference internal" href="apidocs/execution.html">Execution</a></li>
-<li class="toctree-l1"><a class="reference internal" href="apidocs/errors.html">Errors</a></li>
-<li class="toctree-l1"><a class="reference internal" href="apidocs/types.html">Types</a></li>
-<li class="toctree-l1"><a class="reference internal" href="apidocs/utilities.html">Utilities</a></li>
-</ul>
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="guides/028_to_030_new_concepts.html">New Concepts in 0.3.0</a></li>
-<li class="toctree-l1"><a class="reference internal" href="guides/028_to_030_upgrade_guide.html">Upgrading to 0.3.0</a></li>
-</ul>
-<div class="relations">
-<h3>Related Topics</h3>
-<ul>
-  <li><a href="#">Documentation overview</a><ul>
-      <li>Next: <a href="principles.html" title="next chapter">Principles</a></li>
-  </ul></li>
-</ul>
-</div>
-  <div role="note" aria-label="source link">
-    <h3>This Page</h3>
-    <ul class="this-page-menu">
-      <li><a href="_sources/index.rst.txt"
-            rel="nofollow">Show Source</a></li>
-    </ul>
-   </div>
-<div id="searchbox" style="display: none" role="search">
-  <h3>Quick search</h3>
-    <div class="searchformwrapper">
-    <form class="search" action="search.html" method="get">
-      <input type="text" name="q" />
-      <input type="submit" value="Go" />
-      <input type="hidden" name="check_keywords" value="yes" />
-      <input type="hidden" name="area" value="default" />
-    </form>
-    </div>
-</div>
-<script type="text/javascript">$(\'#searchbox\').show(0);</script>
-        </div>
-      </div>
-      <div class="clearer"></div>
-    </div>
-    <div class="footer">
-      &copy;2018, Elementl, Inc.
-      
-      |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.7.5</a>
-      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
-      
-      |
-      <a href="_sources/index.rst.txt"
-          rel="nofollow">Page source</a>
-    </div>
-
-    
-
-    
-  </body>
-</html>'''
-
-snapshots['test_build_all_docs 6'] = '''
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
-  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
-
-<html xmlns="http://www.w3.org/1999/xhtml">
-  <head>
-    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
-    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    <title>Installation &#8212; Dagster  documentation</title>
-    <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
-    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
-    <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
-    <script type="text/javascript" src="_static/jquery.js"></script>
-    <script type="text/javascript" src="_static/underscore.js"></script>
-    <script type="text/javascript" src="_static/doctools.js"></script>
-    <link rel="index" title="Index" href="genindex.html" />
-    <link rel="search" title="Search" href="search.html" />
-    <link rel="next" title="Contributing" href="contributing.html" />
-    <link rel="prev" title="Principles" href="principles.html" />
-   
-  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
-  
-  
-  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
-
-  </head><body>
-  
-
-    <div class="document">
-      <div class="documentwrapper">
-        <div class="bodywrapper">
-          
-
-          <div class="body" role="main">
-            
-  <div class="section" id="installation">
-<h1>Installation<a class="headerlink" href="#installation" title="Permalink to this headline">¶</a></h1>
-<p>Dagster is tested on Python 3.7.2, 3.6.6, 3.5.6, and 2.7.15. Python 3 is strongly
-encouraged – if you can, you won’t regret making the switch!</p>
-<div class="section" id="installing-python-pip-virtualenv-and-yarn">
-<h2>Installing Python, pip, virtualenv, and yarn<a class="headerlink" href="#installing-python-pip-virtualenv-and-yarn" title="Permalink to this headline">¶</a></h2>
-<p>To check that Python and the pip package manager are already installed, you can run:</p>
-<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$</span> python --version
-<span class="gp">$</span> pip --version
-</pre></div>
-</div>
-<p>If you’re running Python 3.3 or later, you already have the venv package for managing
-virtualenvs. On Python 2.7, you can check whether you have the virtualenv tool installed by
-running:</p>
-<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$</span> virtualenv --version
-</pre></div>
-</div>
-<p>If these tools aren’t present on your system, you can install them as follows:</p>
-<p>On Ubuntu:</p>
-<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$</span> sudo apt update
-<span class="gp">$</span> sudo apt install python3-dev python3-pip
-</pre></div>
-</div>
-<p>And on Python 2.7:</p>
-<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$</span> sudo pip install -U virtualenv  <span class="c1"># system-wide install</span>
-</pre></div>
-</div>
-<p>On OSX, using <a class="reference external" href="https://brew.sh/">Homebrew</a>:</p>
-<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$</span> brew update
-<span class="gp">$</span> brew install python  <span class="c1"># Python 3</span>
-</pre></div>
-</div>
-<p>And on Python 2.7:</p>
-<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$</span> sudo pip install -U virtualenv  <span class="c1"># system-wide install</span>
-</pre></div>
-</div>
-<p>On Windows (Python 3):
-- Install the <em>Microsoft Visual C++ 2015 Redistributable Update 3</em>. This comes with
-<em>Visual Studio 2015</em> but can be installed separately as follows:</p>
-<blockquote>
-<div><ol class="arabic simple">
-<li>Go to the Visual Studio downloads,</li>
-<li>Select <em>Redistributables and Build Tools</em>,</li>
-<li>Download and install the <em>Microsoft Visual C++ 2015 Redistributable Update 3</em>.</li>
-</ol>
-</div></blockquote>
-<ul class="simple">
-<li>Install the 64-bit Python 3 release for Windows (select <code class="docutils literal notranslate"><span class="pre">pip</span></code> as an optional feature).</li>
-</ul>
-<p>To use the dagit tool, you will also need to
-<a class="reference external" href="https://yarnpkg.com/lang/en/docs/install/">install yarn</a>.</p>
-</div>
-<div class="section" id="creating-a-virtual-environment">
-<h2>Creating a virtual environment<a class="headerlink" href="#creating-a-virtual-environment" title="Permalink to this headline">¶</a></h2>
-<p>We strongly recommend installing dagster inside a Python virtualenv. If you are
-running Anaconda, you should install dagster inside a Conda environment.</p>
-<p>To create a virtual environment on Python 3, you can just run:</p>
-<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$</span> python3 -m venv /path/to/new/virtual/environment
-</pre></div>
-</div>
-<p>This will create a new Python environment whose interpreter and libraries
-are isolated from those installed in other virtual environments, and
-(by default) any libraries installed in a “system” Python installed as part
-of your operating system.</p>
-<p>On Python 2, you can use a tool like
-<a class="reference external" href="https://virtualenvwrapper.readthedocs.io/en/latest/">virtualenvwrapper</a>
-to manage your virtual environments, or just run:</p>
-<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$</span> virtualenv /path/to/new/virtual/environment
-</pre></div>
-</div>
-<p>You’ll then need to ‘activate’ the virtualenvironment, in bash by
-running:</p>
-<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$</span> <span class="nb">source</span> /path/to/new/virtual/environment/bin/activate
-</pre></div>
-</div>
-<p>(For other shells, see the
-<a class="reference external" href="https://docs.python.org/3/library/venv.html#creating-virtual-environments">venv documentation</a>.)</p>
-<p>If you are using Anaconda, you can run:</p>
-<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$</span> conda create --name myenv
-</pre></div>
-</div>
-<p>And then, on OSX or Ubuntu:</p>
-<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$</span> <span class="nb">source</span> activate myenv
-</pre></div>
-</div>
-<p>Or, on Windows:</p>
-<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$</span> activate myenv
-</pre></div>
-</div>
-</div>
-<div class="section" id="installing-the-stable-version-from-pypi">
-<h2>Installing the stable version from PyPI<a class="headerlink" href="#installing-the-stable-version-from-pypi" title="Permalink to this headline">¶</a></h2>
-<p>To install dagster and dagit, run:</p>
-<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$</span> pip install dagster
-<span class="gp">$</span> pip install dagit
-</pre></div>
-</div>
-<p>This will install the latest stable version of both packages.</p>
-</div>
-<div class="section" id="installing-the-dev-version-from-source">
-<h2>Installing the dev version from source<a class="headerlink" href="#installing-the-dev-version-from-source" title="Permalink to this headline">¶</a></h2>
-<p>To install the development version of the software, first clone the project
-from Github:</p>
-<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$</span> git clone git@github.com:dagster-io/dagster.git
-</pre></div>
-</div>
-<p>From the root of the repository, you can then run:</p>
-<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$</span> pip install -e python_packages/dagster <span class="o">&amp;&amp;</span> <span class="se">\\</span>
-  <span class="nb">pushd</span> python_packages/dagit/webapp <span class="o">&amp;&amp;</span> <span class="se">\\</span>
-  yarn install <span class="o">&amp;&amp;</span> <span class="se">\\</span>
-  yarn build <span class="o">&amp;&amp;</span> <span class="se">\\</span>
-  <span class="nb">popd</span> <span class="o">&amp;&amp;</span> <span class="se">\\</span>
-  pip install -e python_packages/dagit
-</pre></div>
-</div>
-</div>
-</div>
-
-
-          </div>
-          
-        </div>
-      </div>
-      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
-        <div class="sphinxsidebarwrapper">
-<h3><a href="index.html">Table Of Contents</a></h3>
-<ul class="current">
-<li class="toctree-l1"><a class="reference internal" href="principles.html">Principles</a></li>
-<li class="toctree-l1 current"><a class="current reference internal" href="#">Installation</a></li>
-<li class="toctree-l1"><a class="reference internal" href="contributing.html">Contributing</a></li>
-</ul>
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="intro_tutorial/hello_world.html">Hello, World</a></li>
-<li class="toctree-l1"><a class="reference internal" href="intro_tutorial/hello_dag.html">Hello, DAG</a></li>
-<li class="toctree-l1"><a class="reference internal" href="intro_tutorial/actual_dag.html">An actual DAG</a></li>
-<li class="toctree-l1"><a class="reference internal" href="intro_tutorial/inputs.html">Inputs</a></li>
-<li class="toctree-l1"><a class="reference internal" href="intro_tutorial/config.html">Configuration</a></li>
-<li class="toctree-l1"><a class="reference internal" href="intro_tutorial/configuration_schemas.html">Configuration Schemas</a></li>
-<li class="toctree-l1"><a class="reference internal" href="intro_tutorial/execution_context.html">Execution Context</a></li>
-<li class="toctree-l1"><a class="reference internal" href="intro_tutorial/resources.html">Resources</a></li>
-<li class="toctree-l1"><a class="reference internal" href="intro_tutorial/repos.html">Repositories</a></li>
-<li class="toctree-l1"><a class="reference internal" href="intro_tutorial/pipeline_cli_execution.html">Pipeline CLI Execution</a></li>
-<li class="toctree-l1"><a class="reference internal" href="intro_tutorial/types.html">User-Defined Types</a></li>
-<li class="toctree-l1"><a class="reference internal" href="intro_tutorial/expectations.html">Expectations</a></li>
-<li class="toctree-l1"><a class="reference internal" href="intro_tutorial/multiple_outputs.html">Multiple Outputs</a></li>
-<li class="toctree-l1"><a class="reference internal" href="intro_tutorial/reusable_solids.html">Reusable Solids</a></li>
-<li class="toctree-l1"><a class="reference internal" href="intro_tutorial/unittesting.html">Unit-testing Pipelines</a></li>
-<li class="toctree-l1"><a class="reference internal" href="intro_tutorial/dagstermill.html">Dagstermill</a></li>
-<li class="toctree-l1"><a class="reference internal" href="intro_tutorial/dagstermill.html#dagstermill-cli">Dagstermill CLI</a></li>
-</ul>
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="apidocs/definitions.html">Definitions</a></li>
-<li class="toctree-l1"><a class="reference internal" href="apidocs/decorators.html">Decorators</a></li>
-<li class="toctree-l1"><a class="reference internal" href="apidocs/execution.html">Execution</a></li>
-<li class="toctree-l1"><a class="reference internal" href="apidocs/errors.html">Errors</a></li>
-<li class="toctree-l1"><a class="reference internal" href="apidocs/types.html">Types</a></li>
-<li class="toctree-l1"><a class="reference internal" href="apidocs/utilities.html">Utilities</a></li>
-</ul>
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="guides/028_to_030_new_concepts.html">New Concepts in 0.3.0</a></li>
-<li class="toctree-l1"><a class="reference internal" href="guides/028_to_030_upgrade_guide.html">Upgrading to 0.3.0</a></li>
-</ul>
-<div class="relations">
-<h3>Related Topics</h3>
-<ul>
-  <li><a href="index.html">Documentation overview</a><ul>
-      <li>Previous: <a href="principles.html" title="previous chapter">Principles</a></li>
-      <li>Next: <a href="contributing.html" title="next chapter">Contributing</a></li>
-  </ul></li>
-</ul>
-</div>
-  <div role="note" aria-label="source link">
-    <h3>This Page</h3>
-    <ul class="this-page-menu">
-      <li><a href="_sources/installation.rst.txt"
-            rel="nofollow">Show Source</a></li>
-    </ul>
-   </div>
-<div id="searchbox" style="display: none" role="search">
-  <h3>Quick search</h3>
-    <div class="searchformwrapper">
-    <form class="search" action="search.html" method="get">
-      <input type="text" name="q" />
-      <input type="submit" value="Go" />
-      <input type="hidden" name="check_keywords" value="yes" />
-      <input type="hidden" name="area" value="default" />
-    </form>
-    </div>
-</div>
-<script type="text/javascript">$(\'#searchbox\').show(0);</script>
-        </div>
-      </div>
-      <div class="clearer"></div>
-    </div>
-    <div class="footer">
-      &copy;2018, Elementl, Inc.
-      
-      |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.7.5</a>
-      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
-      
-      |
-      <a href="_sources/installation.rst.txt"
-          rel="nofollow">Page source</a>
-    </div>
-
-    
-
-    
-  </body>
-</html>'''
-
-snapshots['test_build_all_docs 7'] = '''
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
-  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
-
-<html xmlns="http://www.w3.org/1999/xhtml">
-  <head>
-    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
-    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    <title>Principles &#8212; Dagster  documentation</title>
-    <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
-    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
-    <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
-    <script type="text/javascript" src="_static/jquery.js"></script>
-    <script type="text/javascript" src="_static/underscore.js"></script>
-    <script type="text/javascript" src="_static/doctools.js"></script>
-    <link rel="index" title="Index" href="genindex.html" />
-    <link rel="search" title="Search" href="search.html" />
-    <link rel="next" title="Installation" href="installation.html" />
-    <link rel="prev" title="Intro Tutorial" href="index.html" />
-   
-  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
-  
-  
-  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
-
-  </head><body>
-  
-
-    <div class="document">
-      <div class="documentwrapper">
-        <div class="bodywrapper">
-          
-
-          <div class="body" role="main">
-            
-  <div class="section" id="principles">
-<h1>Principles<a class="headerlink" href="#principles" title="Permalink to this headline">¶</a></h1>
-<p>Dagster is opinionated about how data pipelines should be built and structured. What do we think
-is important?</p>
-<div class="section" id="functional">
-<h2>Functional<a class="headerlink" href="#functional" title="Permalink to this headline">¶</a></h2>
-<p>Data pipelines should be expressed as DAGs (directed acyclic graphs) of functional, idempotent
-computations. Individual nodes in the graph consume their inputs, perform some computation, and
-yield outputs, either with no side effects or with clearly advertised side effects. Given the
-same inputs and configuration, the computation should always produce the same output. If these
-computations have external dependencies, these should be parametrizable, so that the computations
-may execute in different environments.</p>
-<blockquote>
-<div><ul class="simple">
-<li>See Maxime Beauchemin’s Medium article on <a class="reference external" href="https://bit.ly/2LxDgnr">Functional Data Engineering</a>
-for an excellent overview of functional programing in batch computations.</li>
-</ul>
-</div></blockquote>
-</div>
-<div class="section" id="self-describing">
-<h2>Self-describing<a class="headerlink" href="#self-describing" title="Permalink to this headline">¶</a></h2>
-<p>Data pipelines should be self-describing, with rich metadata and types. Users should be able to
-approach an unfamiliar pipeline and use tooling to inspect it and discover its structure,
-capabilities, and requirements. Pipeline metadata should be co-located with the pipeline’s actual
-code: documentation and code should be delivered as a single artifact.</p>
-</div>
-<div class="section" id="compute-agnostic">
-<h2>Compute-agnostic<a class="headerlink" href="#compute-agnostic" title="Permalink to this headline">¶</a></h2>
-<p>Heterogeneity in data pipelines is the norm, rather than the exception. Data pipelines are written
-collaboratively by many people in different personas – data engineers, machine-learning engineers,
-data scientists, analysts and so on – who have different needs and tools, and are particular about
-those tools.</p>
-<p>Dagster has opinions about best practices for structuring data pipelines. It has no opinions
-about what libraries and engines should do actual compute. Dagster pipelines can be made up of
-any Python computations, whether they use Pandas, Spark, or call out to SQL or any other DSL or
-library deemed appropriate to the task.</p>
-</div>
-<div class="section" id="testable">
-<h2>Testable<a class="headerlink" href="#testable" title="Permalink to this headline">¶</a></h2>
-<p>Testing data pipelines is notoriously difficult. Because testing is so difficult, it is often never
-done, or done poorly. Dagster pipelines are designed to be tested. Dagster provides explicit support
-for pipeline authors to manage and maintain multiple execution environments – for example, unit
-testing, integration testing, and production environments. Dagster can also execute arbitrary
-subsets and nodes of pipelines, which is critical for testability (and useful in operational
-contexts as well).</p>
-</div>
-<div class="section" id="verifiable-data-quality">
-<h2>Verifiable data quality<a class="headerlink" href="#verifiable-data-quality" title="Permalink to this headline">¶</a></h2>
-<p>Testing code is important in data pipelines, but it is not sufficient. Data quality tests – run
-during every meaningful stage of computation in production – are critical to reduce the
-maintenance burden of data pipelines. Pipeline authors generally do not have control over their
-input data, and make many implicit assumptions about that data. Data formats can also change
-over time. In order to control this entropy, Dagster encourages users to computationally verify
-assumptions (known as expectations) about the data as part of the pipeline process. This way, when
-those assumptions break, the breakage can be reported quickly, easily, and with rich metadata
-and diagnostic information. These expectations can also serve as contracts between teams.</p>
-<blockquote>
-<div><ul class="simple">
-<li>See <a class="reference external" href="https://bit.ly/2mxDS1R">https://bit.ly/2mxDS1R</a> for a primer on pipeline tests for data quality.</li>
-</ul>
-</div></blockquote>
-</div>
-<div class="section" id="gradual-optional-typing">
-<h2>Gradual, optional typing<a class="headerlink" href="#gradual-optional-typing" title="Permalink to this headline">¶</a></h2>
-<p>Dagster contains a type system to describe the values flowing through the pipeline and the
-configuration of the pipeline. As pipelines mature, gradual typing lets nodes in a pipeline
-know if they are properly arranged and configured prior to execution, and provides rich
-documentation and runtime error checking.</p>
-</div>
-</div>
-
-
-          </div>
-          
-        </div>
-      </div>
-      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
-        <div class="sphinxsidebarwrapper">
-<h3><a href="index.html">Table Of Contents</a></h3>
-<ul class="current">
-<li class="toctree-l1 current"><a class="current reference internal" href="#">Principles</a></li>
-<li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a></li>
-<li class="toctree-l1"><a class="reference internal" href="contributing.html">Contributing</a></li>
-</ul>
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="intro_tutorial/hello_world.html">Hello, World</a></li>
-<li class="toctree-l1"><a class="reference internal" href="intro_tutorial/hello_dag.html">Hello, DAG</a></li>
-<li class="toctree-l1"><a class="reference internal" href="intro_tutorial/actual_dag.html">An actual DAG</a></li>
-<li class="toctree-l1"><a class="reference internal" href="intro_tutorial/inputs.html">Inputs</a></li>
-<li class="toctree-l1"><a class="reference internal" href="intro_tutorial/config.html">Configuration</a></li>
-<li class="toctree-l1"><a class="reference internal" href="intro_tutorial/configuration_schemas.html">Configuration Schemas</a></li>
-<li class="toctree-l1"><a class="reference internal" href="intro_tutorial/execution_context.html">Execution Context</a></li>
-<li class="toctree-l1"><a class="reference internal" href="intro_tutorial/resources.html">Resources</a></li>
-<li class="toctree-l1"><a class="reference internal" href="intro_tutorial/repos.html">Repositories</a></li>
-<li class="toctree-l1"><a class="reference internal" href="intro_tutorial/pipeline_cli_execution.html">Pipeline CLI Execution</a></li>
-<li class="toctree-l1"><a class="reference internal" href="intro_tutorial/types.html">User-Defined Types</a></li>
-<li class="toctree-l1"><a class="reference internal" href="intro_tutorial/expectations.html">Expectations</a></li>
-<li class="toctree-l1"><a class="reference internal" href="intro_tutorial/multiple_outputs.html">Multiple Outputs</a></li>
-<li class="toctree-l1"><a class="reference internal" href="intro_tutorial/reusable_solids.html">Reusable Solids</a></li>
-<li class="toctree-l1"><a class="reference internal" href="intro_tutorial/unittesting.html">Unit-testing Pipelines</a></li>
-<li class="toctree-l1"><a class="reference internal" href="intro_tutorial/dagstermill.html">Dagstermill</a></li>
-<li class="toctree-l1"><a class="reference internal" href="intro_tutorial/dagstermill.html#dagstermill-cli">Dagstermill CLI</a></li>
-</ul>
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="apidocs/definitions.html">Definitions</a></li>
-<li class="toctree-l1"><a class="reference internal" href="apidocs/decorators.html">Decorators</a></li>
-<li class="toctree-l1"><a class="reference internal" href="apidocs/execution.html">Execution</a></li>
-<li class="toctree-l1"><a class="reference internal" href="apidocs/errors.html">Errors</a></li>
-<li class="toctree-l1"><a class="reference internal" href="apidocs/types.html">Types</a></li>
-<li class="toctree-l1"><a class="reference internal" href="apidocs/utilities.html">Utilities</a></li>
-</ul>
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="guides/028_to_030_new_concepts.html">New Concepts in 0.3.0</a></li>
-<li class="toctree-l1"><a class="reference internal" href="guides/028_to_030_upgrade_guide.html">Upgrading to 0.3.0</a></li>
-</ul>
-<div class="relations">
-<h3>Related Topics</h3>
-<ul>
-  <li><a href="index.html">Documentation overview</a><ul>
-      <li>Previous: <a href="index.html" title="previous chapter">Intro Tutorial</a></li>
-      <li>Next: <a href="installation.html" title="next chapter">Installation</a></li>
-  </ul></li>
-</ul>
-</div>
-  <div role="note" aria-label="source link">
-    <h3>This Page</h3>
-    <ul class="this-page-menu">
-      <li><a href="_sources/principles.rst.txt"
-            rel="nofollow">Show Source</a></li>
-    </ul>
-   </div>
-<div id="searchbox" style="display: none" role="search">
-  <h3>Quick search</h3>
-    <div class="searchformwrapper">
-    <form class="search" action="search.html" method="get">
-      <input type="text" name="q" />
-      <input type="submit" value="Go" />
-      <input type="hidden" name="check_keywords" value="yes" />
-      <input type="hidden" name="area" value="default" />
-    </form>
-    </div>
-</div>
-<script type="text/javascript">$(\'#searchbox\').show(0);</script>
-        </div>
-      </div>
-      <div class="clearer"></div>
-    </div>
-    <div class="footer">
-      &copy;2018, Elementl, Inc.
-      
-      |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.7.5</a>
-      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
-      
-      |
-      <a href="_sources/principles.rst.txt"
-          rel="nofollow">Page source</a>
-    </div>
-
-    
-
-    
-  </body>
-</html>'''
-
-snapshots['test_build_all_docs 8'] = '''
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
-  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
-
-<html xmlns="http://www.w3.org/1999/xhtml">
-  <head>
-    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
-    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    <title>Python Module Index &#8212; Dagster  documentation</title>
-    <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
-    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="_static/css/custom.css" type="text/css" />
     <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
@@ -1647,11 +1142,11 @@ snapshots['test_build_all_docs 8'] = '''
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
 
-   
-  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
-  
-  
-  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+ 
+<link rel="stylesheet" href="_static/custom.css" type="text/css" />
+
+
+<meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
 
 
     <script type="text/javascript">
@@ -1663,12 +1158,22 @@ snapshots['test_build_all_docs 8'] = '''
   
 
     <div class="document">
-      <div class="documentwrapper">
+    <div class="documentwrapper">
         <div class="bodywrapper">
-          
-
-          <div class="body" role="main">
+            <div class="related top">
+                &nbsp;
+<nav id="rellinks">
+    <ul>
+        <li>
+            <a href="/" title="Home">Home</a>
+        </li>
+    </ul>
+</nav>
+            </div>
             
+
+            <div class="body" role="main">
+                
 
    <h1>Python Module Index</h1>
 
@@ -1683,93 +1188,56 @@ snapshots['test_build_all_docs 8'] = '''
      <tr>
        <td></td>
        <td>
-       <a href="apidocs/types.html#module-dagster"><code class="xref">dagster</code></a></td><td>
+       <a href="sections/api/apidocs/types.html#module-dagster"><code class="xref">dagster</code></a></td><td>
        <em></em></td></tr>
    </table>
 
 
-          </div>
-          
+            </div>
+
+            
+            <div class="related bottom">
+                &nbsp;
+<nav id="rellinks">
+    <ul>
+        <li>
+            <a href="/" title="Home">Home</a>
+        </li>
+    </ul>
+</nav>
+            </div>
+            
         </div>
-      </div>
-      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
-        <div class="sphinxsidebarwrapper">
-<h3><a href="index.html">Table Of Contents</a></h3>
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="principles.html">Principles</a></li>
-<li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a></li>
-<li class="toctree-l1"><a class="reference internal" href="contributing.html">Contributing</a></li>
-</ul>
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="intro_tutorial/hello_world.html">Hello, World</a></li>
-<li class="toctree-l1"><a class="reference internal" href="intro_tutorial/hello_dag.html">Hello, DAG</a></li>
-<li class="toctree-l1"><a class="reference internal" href="intro_tutorial/actual_dag.html">An actual DAG</a></li>
-<li class="toctree-l1"><a class="reference internal" href="intro_tutorial/inputs.html">Inputs</a></li>
-<li class="toctree-l1"><a class="reference internal" href="intro_tutorial/config.html">Configuration</a></li>
-<li class="toctree-l1"><a class="reference internal" href="intro_tutorial/configuration_schemas.html">Configuration Schemas</a></li>
-<li class="toctree-l1"><a class="reference internal" href="intro_tutorial/execution_context.html">Execution Context</a></li>
-<li class="toctree-l1"><a class="reference internal" href="intro_tutorial/resources.html">Resources</a></li>
-<li class="toctree-l1"><a class="reference internal" href="intro_tutorial/repos.html">Repositories</a></li>
-<li class="toctree-l1"><a class="reference internal" href="intro_tutorial/pipeline_cli_execution.html">Pipeline CLI Execution</a></li>
-<li class="toctree-l1"><a class="reference internal" href="intro_tutorial/types.html">User-Defined Types</a></li>
-<li class="toctree-l1"><a class="reference internal" href="intro_tutorial/expectations.html">Expectations</a></li>
-<li class="toctree-l1"><a class="reference internal" href="intro_tutorial/multiple_outputs.html">Multiple Outputs</a></li>
-<li class="toctree-l1"><a class="reference internal" href="intro_tutorial/reusable_solids.html">Reusable Solids</a></li>
-<li class="toctree-l1"><a class="reference internal" href="intro_tutorial/unittesting.html">Unit-testing Pipelines</a></li>
-<li class="toctree-l1"><a class="reference internal" href="intro_tutorial/dagstermill.html">Dagstermill</a></li>
-<li class="toctree-l1"><a class="reference internal" href="intro_tutorial/dagstermill.html#dagstermill-cli">Dagstermill CLI</a></li>
-</ul>
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="apidocs/definitions.html">Definitions</a></li>
-<li class="toctree-l1"><a class="reference internal" href="apidocs/decorators.html">Decorators</a></li>
-<li class="toctree-l1"><a class="reference internal" href="apidocs/execution.html">Execution</a></li>
-<li class="toctree-l1"><a class="reference internal" href="apidocs/errors.html">Errors</a></li>
-<li class="toctree-l1"><a class="reference internal" href="apidocs/types.html">Types</a></li>
-<li class="toctree-l1"><a class="reference internal" href="apidocs/utilities.html">Utilities</a></li>
-</ul>
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="guides/028_to_030_new_concepts.html">New Concepts in 0.3.0</a></li>
-<li class="toctree-l1"><a class="reference internal" href="guides/028_to_030_upgrade_guide.html">Upgrading to 0.3.0</a></li>
-</ul>
-<div class="relations">
-<h3>Related Topics</h3>
-<ul>
-  <li><a href="index.html">Documentation overview</a><ul>
-  </ul></li>
-</ul>
-</div>
-<div id="searchbox" style="display: none" role="search">
-  <h3>Quick search</h3>
-    <div class="searchformwrapper">
-    <form class="search" action="search.html" method="get">
-      <input type="text" name="q" />
-      <input type="submit" value="Go" />
-      <input type="hidden" name="check_keywords" value="yes" />
-      <input type="hidden" name="area" value="default" />
-    </form>
     </div>
-</div>
-<script type="text/javascript">$(\'#searchbox\').show(0);</script>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><h3><a href="index.html">Dagster</a></h3>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="sections/install/install.html">Install</a></li>
+<li class="toctree-l1"><a class="reference internal" href="sections/learn/learn.html">Learn</a></li>
+<li class="toctree-l1"><a class="reference internal" href="sections/api/api.html">API Docs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="sections/community/community.html">Community</a></li>
+</ul>
+
         </div>
       </div>
       <div class="clearer"></div>
     </div>
-    <div class="footer">
-      &copy;2018, Elementl, Inc.
-      
-      |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.7.5</a>
-      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
-      
-    </div>
-
+<div class="footer">
+    &copy; 2019, Elementl, Inc.
     
-
+    |
+    Powered by <a href="http://sphinx-doc.org/">Sphinx 1.7.5</a>
+    &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
     
+</div>
+
+
+
+
   </body>
 </html>'''
 
-snapshots['test_build_all_docs 9'] = '''
+snapshots['test_build_all_docs 6'] = '''
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
@@ -1777,9 +1245,10 @@ snapshots['test_build_all_docs 9'] = '''
   <head>
     <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    <title>Search &#8212; Dagster  documentation</title>
+    <title>Search &#8212; Dagster</title>
     <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="_static/css/custom.css" type="text/css" />
     <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
@@ -1793,23 +1262,33 @@ snapshots['test_build_all_docs 9'] = '''
   
   <script type="text/javascript" id="searchindexloader"></script>
   
-   
-  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
-  
-  
-  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+ 
+<link rel="stylesheet" href="_static/custom.css" type="text/css" />
+
+
+<meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
 
 
   </head><body>
   
 
     <div class="document">
-      <div class="documentwrapper">
+    <div class="documentwrapper">
         <div class="bodywrapper">
-          
-
-          <div class="body" role="main">
+            <div class="related top">
+                &nbsp;
+<nav id="rellinks">
+    <ul>
+        <li>
+            <a href="/" title="Home">Home</a>
+        </li>
+    </ul>
+</nav>
+            </div>
             
+
+            <div class="body" role="main">
+                
   <h1 id="search-documentation">Search</h1>
   <div id="fallback" class="admonition warning">
   <script type="text/javascript">$(\'#fallback\').hide();</script>
@@ -1834,76 +1313,260 @@ snapshots['test_build_all_docs 9'] = '''
   
   </div>
 
-          </div>
-          
+            </div>
+
+            
+            <div class="related bottom">
+                &nbsp;
+<nav id="rellinks">
+    <ul>
+        <li>
+            <a href="/" title="Home">Home</a>
+        </li>
+    </ul>
+</nav>
+            </div>
+            
         </div>
-      </div>
+    </div>
       <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
-        <div class="sphinxsidebarwrapper">
-<h3><a href="index.html">Table Of Contents</a></h3>
+        <div class="sphinxsidebarwrapper"><h3><a href="index.html">Dagster</a></h3>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="principles.html">Principles</a></li>
-<li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a></li>
-<li class="toctree-l1"><a class="reference internal" href="contributing.html">Contributing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="sections/install/install.html">Install</a></li>
+<li class="toctree-l1"><a class="reference internal" href="sections/learn/learn.html">Learn</a></li>
+<li class="toctree-l1"><a class="reference internal" href="sections/api/api.html">API Docs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="sections/community/community.html">Community</a></li>
 </ul>
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="intro_tutorial/hello_world.html">Hello, World</a></li>
-<li class="toctree-l1"><a class="reference internal" href="intro_tutorial/hello_dag.html">Hello, DAG</a></li>
-<li class="toctree-l1"><a class="reference internal" href="intro_tutorial/actual_dag.html">An actual DAG</a></li>
-<li class="toctree-l1"><a class="reference internal" href="intro_tutorial/inputs.html">Inputs</a></li>
-<li class="toctree-l1"><a class="reference internal" href="intro_tutorial/config.html">Configuration</a></li>
-<li class="toctree-l1"><a class="reference internal" href="intro_tutorial/configuration_schemas.html">Configuration Schemas</a></li>
-<li class="toctree-l1"><a class="reference internal" href="intro_tutorial/execution_context.html">Execution Context</a></li>
-<li class="toctree-l1"><a class="reference internal" href="intro_tutorial/resources.html">Resources</a></li>
-<li class="toctree-l1"><a class="reference internal" href="intro_tutorial/repos.html">Repositories</a></li>
-<li class="toctree-l1"><a class="reference internal" href="intro_tutorial/pipeline_cli_execution.html">Pipeline CLI Execution</a></li>
-<li class="toctree-l1"><a class="reference internal" href="intro_tutorial/types.html">User-Defined Types</a></li>
-<li class="toctree-l1"><a class="reference internal" href="intro_tutorial/expectations.html">Expectations</a></li>
-<li class="toctree-l1"><a class="reference internal" href="intro_tutorial/multiple_outputs.html">Multiple Outputs</a></li>
-<li class="toctree-l1"><a class="reference internal" href="intro_tutorial/reusable_solids.html">Reusable Solids</a></li>
-<li class="toctree-l1"><a class="reference internal" href="intro_tutorial/unittesting.html">Unit-testing Pipelines</a></li>
-<li class="toctree-l1"><a class="reference internal" href="intro_tutorial/dagstermill.html">Dagstermill</a></li>
-<li class="toctree-l1"><a class="reference internal" href="intro_tutorial/dagstermill.html#dagstermill-cli">Dagstermill CLI</a></li>
-</ul>
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="apidocs/definitions.html">Definitions</a></li>
-<li class="toctree-l1"><a class="reference internal" href="apidocs/decorators.html">Decorators</a></li>
-<li class="toctree-l1"><a class="reference internal" href="apidocs/execution.html">Execution</a></li>
-<li class="toctree-l1"><a class="reference internal" href="apidocs/errors.html">Errors</a></li>
-<li class="toctree-l1"><a class="reference internal" href="apidocs/types.html">Types</a></li>
-<li class="toctree-l1"><a class="reference internal" href="apidocs/utilities.html">Utilities</a></li>
-</ul>
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="guides/028_to_030_new_concepts.html">New Concepts in 0.3.0</a></li>
-<li class="toctree-l1"><a class="reference internal" href="guides/028_to_030_upgrade_guide.html">Upgrading to 0.3.0</a></li>
-</ul>
-<div class="relations">
-<h3>Related Topics</h3>
-<ul>
-  <li><a href="index.html">Documentation overview</a><ul>
-  </ul></li>
-</ul>
-</div>
+
         </div>
       </div>
       <div class="clearer"></div>
     </div>
-    <div class="footer">
-      &copy;2018, Elementl, Inc.
-      
-      |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.7.5</a>
-      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
-      
-    </div>
-
+<div class="footer">
+    &copy; 2019, Elementl, Inc.
     
-
+    |
+    Powered by <a href="http://sphinx-doc.org/">Sphinx 1.7.5</a>
+    &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
     
+</div>
+
+
+
+
   </body>
 </html>'''
 
-snapshots['test_build_all_docs 10'] = '''Contributing
+snapshots['test_build_all_docs 7'] = '''.. title:: Home
+
+.. toctree::
+  :maxdepth: 2
+  :name: Documentation
+
+  Install <sections/install/install>
+  Learn <sections/learn/learn>
+  API Docs <sections/api/api>
+
+  Community <sections/community/community>
+
+.. TODO: Write this section  Deploying <sections/deploying/deploying>
+'''
+
+snapshots['test_build_all_docs 8'] = '''API Docs
+=======================
+
+
+.. toctree::
+  :maxdepth: 1
+  :name: API Reference
+
+  apidocs/definitions
+  apidocs/decorators
+  apidocs/execution
+  apidocs/errors
+  apidocs/types
+  apidocs/utilities'''
+
+snapshots['test_build_all_docs 9'] = '''Decorators
+===========================
+
+.. currentmodule:: dagster
+
+A more concise way to define solids.
+
+.. autofunction:: lambda_solid
+
+.. autofunction:: solid
+
+.. autoclass:: MultipleResults
+    :members:
+'''
+
+snapshots['test_build_all_docs 10'] = '''Definitions
+===========================
+
+.. currentmodule:: dagster
+
+Core API for defining solids and pipelines.
+
+.. autoclass:: DependencyDefinition
+    :members:
+
+.. autoclass:: ExpectationDefinition
+    :members:
+
+.. autoclass:: ExpectationResult
+    :members:
+
+.. autofunction:: Field
+
+.. autoclass:: InputDefinition
+    :members:
+
+.. autoclass:: OutputDefinition
+    :members:
+
+.. autoclass:: PipelineContextDefinition
+    :members:
+
+.. autoclass:: PipelineDefinition
+    :members:
+
+.. autoclass:: RepositoryDefinition
+    :members:
+
+.. autoclass:: ResourceDefinition
+    :members:
+
+.. autoclass:: Result
+    :members:
+
+.. autoclass:: SolidDefinition
+    :members:
+
+.. autoclass:: SolidInstance
+    :members:
+'''
+
+snapshots['test_build_all_docs 11'] = '''Errors
+=========
+
+.. currentmodule:: dagster
+
+Core dagster error classes.
+
+.. autoexception:: DagsterExpectationFailedError
+
+.. autoexception:: DagsterInvalidDefinitionError
+
+.. autoexception:: DagsterInvariantViolationError
+
+.. autoexception:: DagsterRuntimeCoercionError
+
+.. autoexception:: DagsterTypeError
+
+.. autoexception:: DagsterUserCodeExecutionError
+
+.. autoexception:: PipelineConfigEvaluationError
+'''
+
+snapshots['test_build_all_docs 12'] = '''Execution
+=========
+
+.. currentmodule:: dagster
+
+Executing pipelines and solids.
+
+.. autofunction:: execute_pipeline
+
+.. autofunction:: execute_pipeline_iterator
+
+.. autoclass:: ExecutionContext
+   :members:
+
+.. autoclass:: PipelineExecutionResult
+   :members:
+
+.. autoclass:: RunConfig 
+   :members:
+
+.. autoclass:: SolidExecutionResult
+   :members:
+'''
+
+snapshots['test_build_all_docs 13'] = '''Types
+=========
+
+.. module:: dagster
+
+Dagster type system.
+
+Type definitions
+-----------------
+
+.. autoclass:: Any
+
+.. autofunction:: as_dagster_type
+
+.. autoclass:: Bool
+
+.. autofunction:: dagster_type
+
+.. autoclass:: ConfigType
+
+.. autofunction:: Dict
+
+.. autofunction:: input_schema
+
+.. autofunction:: input_selector_schema
+
+.. autoclass:: Int
+
+.. autofunction:: List
+
+.. autofunction:: NamedDict
+
+.. autofunction:: Nullable
+
+.. autofunction:: output_schema
+
+.. autofunction:: output_selector_schema
+
+.. autoclass:: Path
+
+.. autoclass:: PythonObjectType
+
+.. autoclass:: RuntimeType
+
+.. autoclass:: String
+'''
+
+snapshots['test_build_all_docs 14'] = '''Utilities
+=========
+
+.. currentmodule:: dagster
+
+.. autofunction:: execute_solid
+
+.. autofunction:: execute_solids
+'''
+
+snapshots['test_build_all_docs 15'] = '''Community
+=======================
+
+Here, we've including instructions for how to contribute to the Dagster project. We welcome both
+code contributions and issue reports.
+
+.. toctree::
+  :maxdepth: 1
+
+  contributing
+  release_notes
+  Github <https://www.github.com/dagster-io/dagster/>
+  StackOverflow <https://stackoverflow.com/questions/tagged/dagster>
+'''
+
+snapshots['test_build_all_docs 16'] = '''Contributing
 ============
 
 If you are planning to contribute to dagster, you will need to set up a local
@@ -2010,84 +1673,29 @@ Running a live html version of the docs can expedite documentation development.
 
 '''
 
-snapshots['test_build_all_docs 11'] = '''.. image:: https://user-images.githubusercontent.com/28738937/44878798-b6e17e00-ac5c-11e8-8d25-2e47e5a53418.png
-   :align: center
-
-
-Welcome to Dagster, an opinionated programming model for data pipelines.
-
-.. toctree::
-  :maxdepth: 1
-  :name: Documentation
-
-  principles
-  installation
-  contributing
-
-Intro Tutorial
-==============
-.. toctree::
-  :maxdepth: 1
-  :name: Intro Tutorial
-
-
-  intro_tutorial/hello_world
-  intro_tutorial/hello_dag
-  intro_tutorial/actual_dag
-  intro_tutorial/inputs
-  intro_tutorial/config
-  intro_tutorial/configuration_schemas
-  intro_tutorial/execution_context
-  intro_tutorial/resources
-  intro_tutorial/repos
-  intro_tutorial/pipeline_cli_execution
-  intro_tutorial/types
-  intro_tutorial/expectations
-  intro_tutorial/multiple_outputs
-  intro_tutorial/reusable_solids
-  intro_tutorial/unittesting
-  intro_tutorial/dagstermill
-
-API Reference
-================
-
-.. toctree::
-  :maxdepth: 1
-  :name: API Reference
-
-  apidocs/definitions
-  apidocs/decorators
-  apidocs/execution
-  apidocs/errors
-  apidocs/types
-  apidocs/utilities
-
-Guides
-================
-
-.. toctree::
-  :maxdepth: 1
-  :name: Guides
-
-  guides/028_to_030_new_concepts
-  guides/028_to_030_upgrade_guide
-
-Indices and tables
-==================
-
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`
+snapshots['test_build_all_docs 17'] = '''Release Notes
+=============
 '''
 
-snapshots['test_build_all_docs 12'] = '''Installation
+snapshots['test_build_all_docs 18'] = '''Install
 =======================
 
+Quick Start
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+To install dagster and dagit, run:
+
+.. code-block:: console
+
+    $ pip install dagster dagit
+
+This will install the latest stable version of dagster's packages in your current Python
+environment.
+
+
+Detailed Installation Guide
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Dagster is tested on Python 3.7.2, 3.6.6, 3.5.6, and 2.7.15. Python 3 is strongly
 encouraged -- if you can, you won't regret making the switch!
-
-Installing Python, pip, virtualenv, and yarn
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 To check that Python and the pip package manager are already installed, you can run:
 
@@ -2106,35 +1714,32 @@ running:
 
 If these tools aren't present on your system, you can install them as follows:
 
-On Ubuntu:
+Ubuntu
+***********
 
 .. code-block:: console
 
     $ sudo apt update
     $ sudo apt install python3-dev python3-pip
 
-And on Python 2.7:
-
-.. code-block:: console
-
-    $ sudo pip install -U virtualenv  # system-wide install
-
-On OSX, using `Homebrew <https://brew.sh/>`_:
+macOS
+***********
+Using `Homebrew <https://brew.sh/>`_:
 
 .. code-block:: console
 
     $ brew update
     $ brew install python  # Python 3
 
-And on Python 2.7:
+On Python 2.7, you can install virtualenv with:
 
 .. code-block:: console
 
     $ sudo pip install -U virtualenv  # system-wide install
 
-On Windows (Python 3):
-- Install the *Microsoft Visual C++ 2015 Redistributable Update 3*. This comes with 
-*Visual Studio 2015* but can be installed separately as follows:
+Windows (Python 3)
+******************
+- Install the *Microsoft Visual C++ 2015 Redistributable Update 3*. This comes with *Visual Studio 2015* but can be installed separately as follows:
 
   1. Go to the Visual Studio downloads,
   2. Select *Redistributables and Build Tools*,
@@ -2142,11 +1747,12 @@ On Windows (Python 3):
 
 - Install the 64-bit Python 3 release for Windows (select ``pip`` as an optional feature).
 
-To use the dagit tool, you will also need to
+To use the ``dagit`` tool, you will also need to
 `install yarn <https://yarnpkg.com/lang/en/docs/install/>`_.
 
-Creating a virtual environment
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Notes on Python virtualenvs
+***************************
 We strongly recommend installing dagster inside a Python virtualenv. If you are
 running Anaconda, you should install dagster inside a Conda environment.
 
@@ -2154,7 +1760,7 @@ To create a virtual environment on Python 3, you can just run:
 
 .. code-block:: console
 
-    $ python3 -m venv /path/to/new/virtual/environment
+    $ python3 -m venv ~/.venvs/dagster
 
 This will create a new Python environment whose interpreter and libraries
 are isolated from those installed in other virtual environments, and
@@ -2167,14 +1773,14 @@ to manage your virtual environments, or just run:
 
 .. code-block:: console
 
-    $ virtualenv /path/to/new/virtual/environment
+    $ virtualenv ~/.venvs/dagster
 
 You'll then need to 'activate' the virtualenvironment, in bash by
 running:
 
 .. code-block:: console
 
-    $ source /path/to/new/virtual/environment/bin/activate
+    $ source ~/.venvs/dagster/bin/activate
 
 (For other shells, see the
 `venv documentation <https://docs.python.org/3/library/venv.html#creating-virtual-environments>`_.)
@@ -2183,54 +1789,42 @@ If you are using Anaconda, you can run:
 
 .. code-block:: console
 
-    $ conda create --name myenv
+    $ conda create --name dagster
 
-And then, on OSX or Ubuntu:
+And then, on macOS or Ubuntu:
 
 .. code-block:: console
 
-    $ source activate myenv
+    $ source activate dagster
 
 Or, on Windows:
 
 .. code-block:: console
 
-    $ activate myenv
+    $ activate dagster
 
-Installing the stable version from PyPI
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-To install dagster and dagit, run:
-
-.. code-block:: console
-
-    $ pip install dagster
-    $ pip install dagit
-
-This will install the latest stable version of both packages.
-
-Installing the dev version from source
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-To install the development version of the software, first clone the project
-from Github:
-
-.. code-block:: console
-
-    $ git clone git@github.com:dagster-io/dagster.git
-
-From the root of the repository, you can then run:
-
-.. code-block:: console
-
-    $ pip install -e python_packages/dagster && \\
-      pushd python_packages/dagit/webapp && \\
-      yarn install && \\
-      yarn build && \\
-      popd && \\
-      pip install -e python_packages/dagit
 '''
 
-snapshots['test_build_all_docs 13'] = '''Principles
------------
+snapshots['test_build_all_docs 19'] = '''Learn
+=======================
+
+.. toctree::
+  :maxdepth: 1
+
+  tutorial/index
+  principles
+
+Other Guides
+*****************
+.. toctree::
+  :maxdepth: 1
+
+  guides/028_to_030_new_concepts
+  guides/028_to_030_upgrade_guide
+'''
+
+snapshots['test_build_all_docs 20'] = '''Principles
+-------------------------
 Dagster is opinionated about how data pipelines should be built and structured. What do we think
 is important?
 
@@ -2295,171 +1889,7 @@ know if they are properly arranged and configured prior to execution, and provid
 documentation and runtime error checking.
 '''
 
-snapshots['test_build_all_docs 14'] = '''Decorators
-===========================
-
-.. currentmodule:: dagster
-
-A more concise way to define solids.
-
-.. autofunction:: lambda_solid
-
-.. autofunction:: solid
-
-.. autoclass:: MultipleResults
-    :members:
-'''
-
-snapshots['test_build_all_docs 15'] = '''Definitions
-===========================
-
-.. currentmodule:: dagster
-
-Core API for defining solids and pipelines.
-
-.. autoclass:: DependencyDefinition
-    :members:
-
-.. autoclass:: ExpectationDefinition
-    :members:
-
-.. autoclass:: ExpectationResult
-    :members:
-
-.. autofunction:: Field
-
-.. autoclass:: InputDefinition
-    :members:
-
-.. autoclass:: OutputDefinition
-    :members:
-
-.. autoclass:: PipelineContextDefinition
-    :members:
-
-.. autoclass:: PipelineDefinition
-    :members:
-
-.. autoclass:: RepositoryDefinition
-    :members:
-
-.. autoclass:: ResourceDefinition
-    :members:
-
-.. autoclass:: Result
-    :members:
-
-.. autoclass:: SolidDefinition
-    :members:
-
-.. autoclass:: SolidInstance
-    :members:
-'''
-
-snapshots['test_build_all_docs 16'] = '''Errors
-=========
-
-.. currentmodule:: dagster
-
-Core dagster error classes.
-
-.. autoexception:: DagsterExpectationFailedError
-
-.. autoexception:: DagsterInvalidDefinitionError
-
-.. autoexception:: DagsterInvariantViolationError
-
-.. autoexception:: DagsterRuntimeCoercionError
-
-.. autoexception:: DagsterTypeError
-
-.. autoexception:: DagsterUserCodeExecutionError
-
-.. autoexception:: PipelineConfigEvaluationError
-'''
-
-snapshots['test_build_all_docs 17'] = '''Execution
-=========
-
-.. currentmodule:: dagster
-
-Executing pipelines and solids.
-
-.. autofunction:: execute_pipeline
-
-.. autofunction:: execute_pipeline_iterator
-
-.. autoclass:: ExecutionContext
-   :members:
-
-.. autoclass:: PipelineExecutionResult
-   :members:
-
-.. autoclass:: RunConfig 
-   :members:
-
-.. autoclass:: SolidExecutionResult
-   :members:
-'''
-
-snapshots['test_build_all_docs 18'] = '''Types
-=========
-
-.. module:: dagster
-
-Dagster type system.
-
-Type definitions
------------------
-
-.. autoclass:: Any
-
-.. autofunction:: as_dagster_type
-
-.. autoclass:: Bool
-
-.. autofunction:: dagster_type
-
-.. autoclass:: ConfigType
-
-.. autofunction:: Dict
-
-.. autofunction:: input_schema
-
-.. autofunction:: input_selector_schema
-
-.. autoclass:: Int
-
-.. autofunction:: List
-
-.. autofunction:: NamedDict
-
-.. autofunction:: Nullable
-
-.. autofunction:: output_schema
-
-.. autofunction:: output_selector_schema
-
-.. autoclass:: Path
-
-.. autoclass:: PythonObjectType
-
-.. autoclass:: RuntimeType
-
-.. autoclass:: String
-'''
-
-snapshots['test_build_all_docs 19'] = '''Utilities
-=========
-
-.. currentmodule:: dagster
-
-.. autofunction:: execute_solid
-
-.. autofunction:: execute_solids
-'''
-
-snapshots['test_build_all_docs 20'] = """# New Concepts in 0.3.0
+snapshots['test_build_all_docs 21'] = """# New Concepts in 0.3.0
 
 The upgrade guide describes the changes you are _require_ to make to install 0.3.0. This guide describes the changes you _should_ make in order to use the latest capabilities. The new concepts take some getting used to, but are quite powerful.
 
@@ -2763,7 +2193,7 @@ After:
 What's great about this new input structure is that now the unzip_file is more reusable as it could be reused in the middle of a pipeline with its input coming from a previous solid, or as a solid at the beginning of a pipeline.
 """
 
-snapshots['test_build_all_docs 21'] = """# Upgrading to 0.3.0
+snapshots['test_build_all_docs 22'] = """# Upgrading to 0.3.0
 
 This guide is a step-by-step guide for upgrading from dagster 0.2.x to 0.3.0. This represents a substantial upgrade in capabilities but also some breaking API changes. We'll detail them, provide context and reasoning, and instructions about how to upgrade.
 
@@ -3215,7 +2645,7 @@ that the name of the first variable is context. We are only
 allowing info temporarily.
 """
 
-snapshots['test_build_all_docs 22'] = '''An actual DAG
+snapshots['test_build_all_docs 23'] = '''An actual DAG
 -------------
 
 Next we will build a slightly more topologically complex DAG that demonstrates how dagster
@@ -3223,7 +2653,7 @@ determines the execution order of solids in a pipeline:
 
 .. image:: actual_dag_figure_one.png
 
-.. literalinclude:: ../../dagster/tutorials/intro_tutorial/actual_dag.py
+.. literalinclude:: ../../../../dagster/tutorials/intro_tutorial/actual_dag.py
    :linenos:
    :caption: actual_dag.py
 
@@ -3254,7 +2684,7 @@ We've seen how to wire solids together into DAGs. Now let's look more deeply at 
 environment.
 '''
 
-snapshots['test_build_all_docs 23'] = '''Configuration
+snapshots['test_build_all_docs 24'] = '''Configuration
 -------------
 For maximum flexibility, testability, and reusability, we want to avoid hardcoding solids'
 (or pipelines') dependencies on the external world.
@@ -3275,7 +2705,7 @@ languages.
 This time, we'll use a more fully-featured API to define our solid -- 
 :py:func:`@solid <dagster.solid>` instead of :py:func:`@lambda_solid <dagster.lambda_solid>`.
 
-.. literalinclude:: ../../dagster/tutorials/intro_tutorial/config.py
+.. literalinclude:: ../../../../dagster/tutorials/intro_tutorial/config.py
    :linenos:
    :caption: config.py
 
@@ -3295,7 +2725,7 @@ Configuration values are passed in a dict as the second argument to
 configuration to execute an entire pipeline. It may have many sections, but we're only
 using one of them here: per-solid configuration specified under the key ``solids``.
 
-.. literalinclude:: ../../dagster/tutorials/intro_tutorial/config.py
+.. literalinclude:: ../../../../dagster/tutorials/intro_tutorial/config.py
    :lines: 28
    :dedent: 8
 
@@ -3309,7 +2739,7 @@ In this case, we've defined a single scalar string value as config.
 Let's see how to run this pipeline, with config, from the command line. In order to do this you 
 must provide config in the form of a yaml file:
 
-.. literalinclude:: ../../dagster/tutorials/intro_tutorial/config_env.yml
+.. literalinclude:: ../../../../dagster/tutorials/intro_tutorial/config_env.yml
    :linenos:
    :caption: config_env.yml
 
@@ -3335,7 +2765,7 @@ Next, we'll learn about configuration schemas and how the type system can help w
 of config: :doc:`Configuration Schemas <configuration_schemas>`.
 '''
 
-snapshots['test_build_all_docs 24'] = '''Configuration Schemas
+snapshots['test_build_all_docs 25'] = '''Configuration Schemas
 ---------------------
 
 Dagster includes a system for strongly-typed, self-describing configurations schemas. These
@@ -3345,19 +2775,19 @@ editing experience possible, and help to catch configuration errors before pipel
 Let's see how the configuration schema can prevent errors and improve pipeline documentation.
 We'll replace the config field in our solid definition with a structured, strongly typed schema.
 
-.. literalinclude:: ../../dagster/tutorials/intro_tutorial/configuration_schemas.py
+.. literalinclude:: ../../../../dagster/tutorials/intro_tutorial/configuration_schemas.py
    :linenos:
    :caption: configuration_schemas.py
 
 The previous env.yml file works as before:
 
-.. literalinclude:: ../../dagster/tutorials/intro_tutorial/configuration_schemas.yml
+.. literalinclude:: ../../../../dagster/tutorials/intro_tutorial/configuration_schemas.yml
    :linenos:
    :caption: configuration_schemas.yml
 
 Now let's imagine we made a mistake and passed a ``string`` in our configuration:
 
-.. literalinclude:: ../../dagster/tutorials/intro_tutorial/configuration_schemas_runtime_error.yml
+.. literalinclude:: ../../../../dagster/tutorials/intro_tutorial/configuration_schemas_runtime_error.yml
    :linenos:
    :emphasize-lines: 12
    :caption: configuration_schemas_runtime_error.yml
@@ -3380,7 +2810,7 @@ to catch this before execution.
 
 In order to do that, let us use the typed config solid.
 
-.. literalinclude:: ../../dagster/tutorials/intro_tutorial/configuration_schemas_type_mismatch_error.yml
+.. literalinclude:: ../../../../dagster/tutorials/intro_tutorial/configuration_schemas_type_mismatch_error.yml
    :linenos:
    :emphasize-lines: 12
    :caption: configuration_schemas_runtime_error.yml
@@ -3412,7 +2842,7 @@ actionable error message before the pipeline is ever executed.
 
 Let's see what happens if we pass config with the wrong structure:
 
-.. literalinclude:: ../../dagster/tutorials/intro_tutorial/configuration_schemas_wrong_field.yml
+.. literalinclude:: ../../../../dagster/tutorials/intro_tutorial/configuration_schemas_wrong_field.yml
    :linenos:
    :emphasize-lines: 9 
    :caption: configuration_schemas_wrong_field.yml
@@ -3432,7 +2862,7 @@ Next, we'll see how to use the  :doc:`Execution Context <execution_context>` to 
 how pipeline execution interacts with its environment.
 '''
 
-snapshots['test_build_all_docs 25'] = '''============
+snapshots['test_build_all_docs 26'] = '''============
 Dagstermill 
 ============
 
@@ -3712,7 +3142,7 @@ After a while, say you finally have a repository file (``repository.yml``). Then
 
 '''
 
-snapshots['test_build_all_docs 26'] = '''Execution Context
+snapshots['test_build_all_docs 27'] = '''Execution Context
 =================
 
 One of the most important objects in the system is the execution context. The execution
@@ -3734,7 +3164,7 @@ Logging
 
 One of the most basic pipeline-level facilities is logging.
 
-.. literalinclude:: ../../dagster/tutorials/intro_tutorial/execution_context.py
+.. literalinclude:: ../../../../dagster/tutorials/intro_tutorial/execution_context.py
    :lines: 1-16
    :caption: execution_context.py
 
@@ -3763,7 +3193,7 @@ is because the default log level is ``INFO``, so debug-level messages will not a
 
 Let's change that by specifying some config.
 
-.. literalinclude:: ../../dagster/tutorials/intro_tutorial/execution_context.yml
+.. literalinclude:: ../../../../dagster/tutorials/intro_tutorial/execution_context.yml
    :language: YAML
    :linenos:
    :caption: execution_context.yml
@@ -3788,7 +3218,7 @@ We'll see how to use some of these other capabilities in the next section:
 :doc:`Resources <resources>`.
 '''
 
-snapshots['test_build_all_docs 27'] = '''Expectations
+snapshots['test_build_all_docs 28'] = '''Expectations
 ============
 
 Dagster has a first-class concept to capture data quality tests. We call these
@@ -3808,7 +3238,7 @@ inspected, and configured to run in different ways.
 
 You'll note the new concept of expecatations.
 
-.. literalinclude:: ../../dagster/tutorials/intro_tutorial/expectations.py
+.. literalinclude:: ../../../../dagster/tutorials/intro_tutorial/expectations.py
    :linenos:
    :caption: expectations.py
    :emphasize-lines: 17-24
@@ -3824,7 +3254,7 @@ was processed
 
 We'll use this config file.
 
-.. literalinclude:: ../../dagster/tutorials/intro_tutorial/expectations_pass.yml
+.. literalinclude:: ../../../../dagster/tutorials/intro_tutorial/expectations_pass.yml
    :linenos:
    :caption: expectations_pass.yml
 
@@ -3845,7 +3275,7 @@ In that execution you'll notice a passing expectation:
 Now let's make this fail. Currently the default behavior is to throw an error and halt execution
 when an expectation fails. So:
 
-.. literalinclude:: ../../dagster/tutorials/intro_tutorial/expectations_fail.yml
+.. literalinclude:: ../../../../dagster/tutorials/intro_tutorial/expectations_fail.yml
    :linenos:
    :caption: expectations_fail.yml
 
@@ -3870,7 +3300,7 @@ feature right now is the ability to skip expectations entirely. This is useful i
 expectations are expensive and you have a time-critical job you must. In that case you can
 configure the pipeline to skip expectations entirely.
 
-.. literalinclude:: ../../dagster/tutorials/intro_tutorial/expectations_skip_failed.yml
+.. literalinclude:: ../../../../dagster/tutorials/intro_tutorial/expectations_skip_failed.yml
    :linenos:
    :caption: expectations_skip_fail.yml
 
@@ -3882,7 +3312,7 @@ configure the pipeline to skip expectations entirely.
 
 '''
 
-snapshots['test_build_all_docs 28'] = '''Hello, DAG
+snapshots['test_build_all_docs 29'] = '''Hello, DAG
 ----------
 One of the core capabitilies of dagster is the ability to express data pipelines as arbitrary
 directed acyclic graphs (DAGs) of solids.
@@ -3891,7 +3321,7 @@ We'll define a very simple two-solid pipeline whose first solid returns a hardco
 and whose second solid concatenates two copies of its input. The output of the pipeline should be
 two concatenated copies of the hardcoded string.
 
-.. literalinclude:: ../../dagster/tutorials/intro_tutorial/hello_dag.py
+.. literalinclude:: ../../../../dagster/tutorials/intro_tutorial/hello_dag.py
    :linenos:
    :caption: hello_dag.py
 
@@ -3908,7 +3338,7 @@ This pipeline introduces a few new concepts.
     called ``dependencies``, which is a dict that defines the connections between solids in a
     pipeline's DAG.
 
-    .. literalinclude::  ../../dagster/tutorials/intro_tutorial/hello_dag.py
+    .. literalinclude::  ../../../../dagster/tutorials/intro_tutorial/hello_dag.py
        :lines: 23-25
        :dedent: 8
 
@@ -3947,14 +3377,14 @@ In the next section, :doc:`An actual DAG <actual_dag>`, we'll build our first DA
 topology and see how dagster determines the execution order of a pipeline.
 '''
 
-snapshots['test_build_all_docs 29'] = '''Hello, World
+snapshots['test_build_all_docs 30'] = '''Hello, World
 ------------
-See :doc:`../installation` for instructions installing dagster (the core library) and dagit (the
+See :doc:`../../install/install` for instructions installing dagster (the core library) and dagit (the
 web UI tool used to visualize your data pipelines) on your platform of choice.
 
 Let's write our first pipeline and save it as ``hello_world.py``.
 
-.. literalinclude:: ../../dagster/tutorials/intro_tutorial/hello_world.py
+.. literalinclude:: ../../../../dagster/tutorials/intro_tutorial/hello_world.py
    :linenos:
    :lines: 1-12
    :caption: hello_world.py
@@ -4029,7 +3459,7 @@ Library
 If you'd rather execute your pipelines as a script, you can do that without using the dagster CLI
 at all. Just add a few lines to `hello_world.py` (highlighted in yellow):
 
-.. literalinclude:: ../../dagster/tutorials/intro_tutorial/hello_world.py
+.. literalinclude:: ../../../../dagster/tutorials/intro_tutorial/hello_world.py
    :linenos:
    :caption: hello_world.py
    :emphasize-lines: 15-17
@@ -4043,7 +3473,31 @@ Then you can just run:
 Next, let's build our first multi-solid DAG in :doc:`Hello, DAG <hello_dag>`!
 '''
 
-snapshots['test_build_all_docs 30'] = '''Inputs
+snapshots['test_build_all_docs 31'] = '''Tutorial
+=======================
+
+.. toctree::
+  :maxdepth: 1
+
+  hello_world
+  hello_dag
+  actual_dag
+  inputs
+  config
+  configuration_schemas
+  execution_context
+  resources
+  repos
+  pipeline_cli_execution
+  types
+  expectations
+  multiple_outputs
+  reusable_solids
+  unittesting
+  dagstermill
+'''
+
+snapshots['test_build_all_docs 32'] = '''Inputs
 ------
 So far we have only demonstrated pipelines whose solids yield hardcoded values and then flow them
 through the pipeline. In order to be useful a pipeline must also interact with its external
@@ -4052,7 +3506,7 @@ environment.
 Let's return to our hello world example. But this time, we'll make the string
 the solid returns be parameterized based on inputs.
 
-.. literalinclude:: ../../dagster/tutorials/intro_tutorial/inputs.py
+.. literalinclude:: ../../../../dagster/tutorials/intro_tutorial/inputs.py
    :lines: 1-17
    :linenos:
    :caption: inputs.py
@@ -4072,7 +3526,7 @@ In the Python API, pipeline configuration is specified in the second argument to
 *all* of the configuration to execute an entire pipeline. It may have many sections, but we'll only
 use one of them here: per-solid configuration specified under the key ``solids``:
 
-.. literalinclude:: ../../dagster/tutorials/intro_tutorial/inputs.py
+.. literalinclude:: ../../../../dagster/tutorials/intro_tutorial/inputs.py
     :linenos:
     :lines: 25,27,29-31
     :dedent: 8 
@@ -4084,7 +3538,7 @@ that we can specify that value of the input ``word``.
 The function ``execute_with_another_world`` demonstrates how one would invoke this pipeline
 using the python API:
 
-.. literalinclude:: ../../dagster/tutorials/intro_tutorial/inputs.py
+.. literalinclude:: ../../../../dagster/tutorials/intro_tutorial/inputs.py
     :linenos:
     :lines: 20-22,25,27,29-32
 
@@ -4095,7 +3549,7 @@ Next let's use the CLI. In order to do that we'll need to provide the environmen
 information via a config file. We'll use the same values as before, but in the form
 of YAML rather than python dictionaries:
 
-.. literalinclude:: ../../dagster/tutorials/intro_tutorial/inputs_env.yml
+.. literalinclude:: ../../../../dagster/tutorials/intro_tutorial/inputs_env.yml
    :language: YAML
    :linenos:
    :caption: inputs_env.yml
@@ -4134,7 +3588,7 @@ are often not surfaced until the pipeline is executed.
 
 For example, imagine if our environment for our pipeline was:
 
-.. literalinclude:: ../../dagster/tutorials/intro_tutorial/inputs_env_bad.yml
+.. literalinclude:: ../../../../dagster/tutorials/intro_tutorial/inputs_env_bad.yml
    :language: YAML
    :linenos:
    :caption: inputs_env_bad.yml
@@ -4155,7 +3609,7 @@ make the inputs typed.
 A user can apply types to inputs and outputs. In this case we just want to type them as the
 built-in ``String``.
 
-.. literalinclude:: ../../dagster/tutorials/intro_tutorial/inputs.py
+.. literalinclude:: ../../../../dagster/tutorials/intro_tutorial/inputs.py
    :lines: 35-40
    :emphasize-lines: 2-3
    :caption: inputs.py
@@ -4167,7 +3621,7 @@ By using typed input instead we can catch this error prior to execution.
 Next, we'll look at a closely allied concept -- :doc:`Configuration <config>` values.
 '''
 
-snapshots['test_build_all_docs 31'] = '''Multiple Outputs
+snapshots['test_build_all_docs 33'] = '''Multiple Outputs
 ----------------
 
 So far all of our examples have been solids that have a single output. But
@@ -4182,7 +3636,7 @@ happened during the computation.
 
 Here we present an example of a solid that has multiple outputs within a pipeline:
 
-.. literalinclude:: ../../dagster/tutorials/intro_tutorial/multiple_outputs.py
+.. literalinclude:: ../../../../dagster/tutorials/intro_tutorial/multiple_outputs.py
    :linenos:
    :caption: multiple_outputs.py
    :lines: 53-67, 26-34, 67-84
@@ -4228,7 +3682,7 @@ multiple instances of the ``Result`` object. (Note: this is actually the core
 specification of the transform function: all other forms are implemented in terms of
 the iterator form.)
 
-.. literalinclude:: ../../dagster/tutorials/intro_tutorial/multiple_outputs.py
+.. literalinclude:: ../../../../dagster/tutorials/intro_tutorial/multiple_outputs.py
    :linenos:
    :caption: multiple_outputs.py
    :lines: 15-24
@@ -4251,14 +3705,14 @@ Multiple outputs are the mechanism by which we implement branching or conditiona
 Let's modify the first solid above to conditionally emit one output or the other based on config
 and then execute that pipeline.
 
-.. literalinclude:: ../../dagster/tutorials/intro_tutorial/multiple_outputs.py
+.. literalinclude:: ../../../../dagster/tutorials/intro_tutorial/multiple_outputs.py
     :linenos:
     :caption: multiple_outputs.py
     :lines: 36-52,86-99
 
 You must create a config file
 
-.. literalinclude:: ../../dagster/tutorials/intro_tutorial/conditional_outputs.yml
+.. literalinclude:: ../../../../dagster/tutorials/intro_tutorial/conditional_outputs.yml
     :linenos:
     :caption: conditional_outputs.yml
 
@@ -4281,7 +3735,7 @@ Next, let's look at writing :doc:`Reusable Solids <reusable_solids>` so we can a
 common data pipeline work.
 '''
 
-snapshots['test_build_all_docs 32'] = '''Pipeline CLI Execution
+snapshots['test_build_all_docs 34'] = '''Pipeline CLI Execution
 ----------------------
 
 Up until now we've been focusing on using the dagit tool for executing pipelines. However, we
@@ -4291,13 +3745,13 @@ a production context.
 Just as in the last part of the tutorial, we'll define a pipeline and a repository, and create
 a yaml file to tell the CLI tool about the repository.
 
-.. literalinclude:: ../../dagster/tutorials/intro_tutorial/pipeline_cli_execution.py
+.. literalinclude:: ../../../../dagster/tutorials/intro_tutorial/pipeline_cli_execution.py
    :linenos:
    :caption: pipeline_cli_execution.py
 
 And now the repository file:
 
-.. literalinclude:: ../../dagster/tutorials/intro_tutorial/pipeline_execution_repository.yml
+.. literalinclude:: ../../../../dagster/tutorials/intro_tutorial/pipeline_execution_repository.yml
    :linenos:
    :language: YAML
    :caption: repository.yml
@@ -4305,7 +3759,7 @@ And now the repository file:
 Finally, we'll need to define the pipeline config in a yaml file in order to
 execute our pipeline from the command line.
 
-.. literalinclude:: ../../dagster/tutorials/intro_tutorial/pipeline_execution_env.yml
+.. literalinclude:: ../../../../dagster/tutorials/intro_tutorial/pipeline_execution_env.yml
    :linenos:
    :language: YAML
    :caption: env.yml
@@ -4329,12 +3783,12 @@ for config.
 
 Let's split up our env.yml into two parts:
 
-.. literalinclude:: ../../dagster/tutorials/intro_tutorial/pipeline_execution_env.yml
+.. literalinclude:: ../../../../dagster/tutorials/intro_tutorial/pipeline_execution_env.yml
    :lines: 1-4
    :language: YAML
    :caption: constant_env.yml
 
-.. literalinclude:: ../../dagster/tutorials/intro_tutorial/pipeline_execution_env.yml
+.. literalinclude:: ../../../../dagster/tutorials/intro_tutorial/pipeline_execution_env.yml
    :lines: 6-12
    :language: YAML
    :caption: specific_env.yml
@@ -4353,7 +3807,7 @@ Next, we'll look at how :doc:`User-Defined Types <types>` can enrich documentati
 in pipelines.
 '''
 
-snapshots['test_build_all_docs 33'] = '''Repositories
+snapshots['test_build_all_docs 35'] = '''Repositories
 ------------
 Dagster is a not just a programming model for pipelines, it is also a platform for
 tool-building. You've already met the dagster and dagit CLI tools, which let you programmatically
@@ -4376,7 +3830,7 @@ A **repository** is a collection of pipelines at which dagster tools may be poin
 Repostories are declared using a new API,
 :py:func:`RepositoryDefinition <dagster.RepositoryDefinition>`:
 
-.. literalinclude:: ../../dagster/tutorials/intro_tutorial/repos.py
+.. literalinclude:: ../../../../dagster/tutorials/intro_tutorial/repos.py
    :linenos:
    :caption: repos.py
 
@@ -4399,7 +3853,7 @@ let's create a declarative config file with this information to make using the c
 easier. Save this file as ``repository.yml``. This is the default name for a repository config file,
 although you can tell the CLI tools to use any file you like.
 
-.. literalinclude:: ../../dagster/tutorials/intro_tutorial/repos_1.yml
+.. literalinclude:: ../../../../dagster/tutorials/intro_tutorial/repos_1.yml
    :linenos:
    :language: YAML
    :caption: repository.yml
@@ -4412,7 +3866,7 @@ Now you should be able to list the pipelines in this repo without all the typing
 
 You can also specify a module instead of a file in the repository.yml file.
 
-.. literalinclude:: ../../dagster/tutorials/intro_tutorial/repos_2.yml
+.. literalinclude:: ../../../../dagster/tutorials/intro_tutorial/repos_2.yml
    :linenos:
    :language: YAML
    :caption: repository.yml
@@ -4422,7 +3876,7 @@ a little better, and learn how to execute pipelines in a repository from the com
 with swappable config.
 '''
 
-snapshots['test_build_all_docs 34'] = '''Resources
+snapshots['test_build_all_docs 36'] = '''Resources
 =========
 
 We've already learned about logging through the info object. We can also use the info object
@@ -4435,10 +3889,10 @@ We are going to record the results of computations in that key value store.
 
 We are going to model this key value store as a resource.
 
-.. literalinclude:: ../../dagster/tutorials/intro_tutorial/resources.py
+.. literalinclude:: ../../../../dagster/tutorials/intro_tutorial/resources.py
    :lines: 1
 
-.. literalinclude:: ../../dagster/tutorials/intro_tutorial/resources.py
+.. literalinclude:: ../../../../dagster/tutorials/intro_tutorial/resources.py
    :lines: 28-41, 64-76
 
 The core of a resource are the definition of its configuration (the ``config_field``)
@@ -4448,7 +3902,7 @@ key of the ``info`` parameter.
 
 Let's now attach this resource to a pipeline and use it in a solid.
 
-.. literalinclude:: ../../dagster/tutorials/intro_tutorial/resources.py
+.. literalinclude:: ../../../../dagster/tutorials/intro_tutorial/resources.py
    :lines: 79-93, 97-101
 
 Resources are attached to pipeline context definitions. A pipeline context
@@ -4463,7 +3917,7 @@ resource.
 
 In order to invoke this pipeline, we pass it the following configuration:
 
-.. literalinclude:: ../../dagster/tutorials/intro_tutorial/resources.py
+.. literalinclude:: ../../../../dagster/tutorials/intro_tutorial/resources.py
    :lines: 105-129
    :dedent: 4
 
@@ -4479,24 +3933,24 @@ public cloud version.
 First we need a version of the store that implements the same interface that can be used
 in testing contexts but does not touch the public cloud:
 
-.. literalinclude:: ../../dagster/tutorials/intro_tutorial/resources.py
+.. literalinclude:: ../../../../dagster/tutorials/intro_tutorial/resources.py
    :lines: 43-53
 
 Next we package this up as a resource.
 
-.. literalinclude:: ../../dagster/tutorials/intro_tutorial/resources.py
+.. literalinclude:: ../../../../dagster/tutorials/intro_tutorial/resources.py
    :lines: 56-62
 
 And lastly add a new context definition to represent this new operating "mode":
 
-.. literalinclude:: ../../dagster/tutorials/intro_tutorial/resources.py
+.. literalinclude:: ../../../../dagster/tutorials/intro_tutorial/resources.py
    :lines: 89-101
    :emphasize-lines: 6-8
 
 Now we can simply change configuration and the "in-memory" version of the
 resource will be used instead of the cloud version:
 
-.. literalinclude:: ../../dagster/tutorials/intro_tutorial/resources.py
+.. literalinclude:: ../../../../dagster/tutorials/intro_tutorial/resources.py
    :lines: 131-144
    :emphasize-lines: 4
    :dedent: 4
@@ -4505,7 +3959,7 @@ In the next section, we'll see how to declaratively specify :doc:`Repositories <
 manage collections of multiple dagster pipelines.
 '''
 
-snapshots['test_build_all_docs 35'] = '''Reusable Solids
+snapshots['test_build_all_docs 37'] = '''Reusable Solids
 ---------------
 
 So far we have been using solids tailor-made for each pipeline they were resident in, and have
@@ -4520,7 +3974,7 @@ if one included two copies of the solid.
 Instead we introduce a new class ``SolidInstance`` that allows the user to create multiple, named instances
 of a single solid:
 
-.. literalinclude:: ../../dagster/tutorials/intro_tutorial/reusable_solids.py
+.. literalinclude:: ../../../../dagster/tutorials/intro_tutorial/reusable_solids.py
    :linenos:
    :caption: reusable_solids.py
 
@@ -4538,7 +3992,7 @@ If you inspect this in dagit, you'll see those two instances:
 You also use the aliases in the environment config. In order to execute this pipeline, use
 the following config file:
 
-.. literalinclude:: ../../dagster/tutorials/intro_tutorial/reusable_solids.yml
+.. literalinclude:: ../../../../dagster/tutorials/intro_tutorial/reusable_solids.yml
    :linenos:
    :caption: reusable_solids.yml
 
@@ -4555,7 +4009,7 @@ can imagine reusable solids doing more useful things like uploading files
 to cloud storage, unzipping files, etc.
 '''
 
-snapshots['test_build_all_docs 36'] = '''User-Defined Types
+snapshots['test_build_all_docs 38'] = '''User-Defined Types
 ------------------
 
 Throughout the tutorial you have seen the use of builtins such as :py:class:`Int <dagster.Int>`
@@ -4568,7 +4022,7 @@ in the dagster-pandas library, building it step by step along the way.
 Basic Typing
 ^^^^^^^^^^^^
 
-.. literalinclude:: ../../../dagster-pandas/dagster_pandas/data_frame.py
+.. literalinclude:: ../../../../../dagster-pandas/dagster_pandas/data_frame.py
    :lines: 1, 79-85, 88
 
 What this code doing is annotating/registering an existing type as a dagster type. Now one can
@@ -4655,7 +4109,7 @@ API that removes some boilerplate around manipulating the config_value dictionar
 user-provided function takes the unpacked key and value of config_value directly, since in the
 case of a selector, the config_value dictionary has only 1 (key, value) pair.
 
-.. literalinclude:: ../../../dagster-pandas/dagster_pandas/data_frame.py
+.. literalinclude:: ../../../../../dagster-pandas/dagster_pandas/data_frame.py
    :lines: 53-77
 
 You'll note that we no longer need to manipulate the ``config_value`` dictionary. It grabs
@@ -4663,7 +4117,7 @@ that key and value for you and calls the provided function.
 
 Finally insert this into the original declaration:
 
-.. literalinclude:: ../../../dagster-pandas/dagster_pandas/data_frame.py
+.. literalinclude:: ../../../../../dagster-pandas/dagster_pandas/data_frame.py
    :lines: 80-86,88 
    :emphasize-lines: 7
 
@@ -4681,7 +4135,7 @@ persistent store. Outputs are purely *optional* for any computation, whereas inp
 for a computation to proceed. You will likely want outputs as for a pipeline to be useful it
 should produce some materialization that outlives the computation.
 
-.. literalinclude:: ../../../dagster-pandas/dagster_pandas/data_frame.py
+.. literalinclude:: ../../../../../dagster-pandas/dagster_pandas/data_frame.py
    :lines: 27-50
    :emphasize-lines: 1
 
@@ -4692,7 +4146,7 @@ how to materialize the value.
 
 One connects the output schema to the type as follows:
 
-.. literalinclude:: ../../../dagster-pandas/dagster_pandas/data_frame.py
+.. literalinclude:: ../../../../../dagster-pandas/dagster_pandas/data_frame.py
    :lines: 80-88
    :emphasize-lines: 8
  
@@ -4706,7 +4160,7 @@ given output any number of times in any number of formats.
 .. image:: types_figure_three.png
 '''
 
-snapshots['test_build_all_docs 37'] = '''Unit-testing Pipelines
+snapshots['test_build_all_docs 39'] = '''Unit-testing Pipelines
 ----------------------
 
 Unit testing data pipelines is, broadly speaking, quite difficult. As a result, it is typically
@@ -4723,7 +4177,7 @@ Let's start where we left off.
 
 We have the following pipeline:
 
-.. literalinclude:: ../../dagster/tutorials/intro_tutorial/unittesting.py
+.. literalinclude:: ../../../../dagster/tutorials/intro_tutorial/unittesting.py
     :linenos:
     :caption: unittesting.py
     :lines: 1-45
@@ -4735,7 +4189,7 @@ provide, instead of from solids upstream in the dependency graph.
 
 So let's do that. Follow along in the comments:
 
-.. literalinclude:: ../../dagster/tutorials/intro_tutorial/unittesting.py
+.. literalinclude:: ../../../../dagster/tutorials/intro_tutorial/unittesting.py
     :linenos:
     :caption: unittesting.py
     :lines: 47-53
@@ -4744,18 +4198,18 @@ We can also execute entire arbitrary subdags rather than a single solid using
 the ``execute_solids`` function
 
 
-.. literalinclude:: ../../dagster/tutorials/intro_tutorial/unittesting.py
+.. literalinclude:: ../../../../dagster/tutorials/intro_tutorial/unittesting.py
     :linenos:
     :caption: unittesting.py
     :lines: 55-63
 '''
 
-snapshots['test_build_all_docs 38'] = '''@import url("basic.css");
+snapshots['test_build_all_docs 40'] = '''@import url("basic.css");
 
 /* -- page layout ----------------------------------------------------------- */
 
 body {
-    font-family: Georgia, serif;
+    font-family: Roboto;
     font-size: 17px;
     background-color: #fff;
     color: #000;
@@ -4859,7 +4313,7 @@ div.sphinxsidebarwrapper p.blurb {
 
 div.sphinxsidebar h3,
 div.sphinxsidebar h4 {
-    font-family: Georgia, serif;
+    font-family: Roboto;
     color: #444;
     font-size: 24px;
     font-weight: normal;
@@ -4903,7 +4357,7 @@ div.sphinxsidebar ul li.toctree-l2 > a {
 
 div.sphinxsidebar input {
     border: 1px solid #CCC;
-    font-family: Georgia, serif;
+    font-family: Roboto;
     font-size: 1em;
 }
 
@@ -4949,7 +4403,7 @@ div.body h3,
 div.body h4,
 div.body h5,
 div.body h6 {
-    font-family: Georgia, serif;
+    font-family: Roboto;
     font-weight: normal;
     margin: 30px 0px 10px 0px;
     padding: 0;
@@ -4990,7 +4444,7 @@ div.admonition tt.xref, div.admonition code.xref, div.admonition a tt {
 }
 
 div.admonition p.admonition-title {
-    font-family: Georgia, serif;
+    font-family: Roboto;
     font-weight: normal;
     font-size: 24px;
     margin: 0 0 10px 0;
@@ -5452,7 +4906,7 @@ nav#breadcrumbs li+li:before {
     }
 }'''
 
-snapshots['test_build_all_docs 39'] = '''/*
+snapshots['test_build_all_docs 41'] = '''/*
  * basic.css
  * ~~~~~~~~~
  *
@@ -6118,10 +5572,10 @@ div.math:hover a.headerlink {
     }
 }'''
 
-snapshots['test_build_all_docs 40'] = '''/* This file intentionally left blank. */
+snapshots['test_build_all_docs 42'] = '''/* This file intentionally left blank. */
 '''
 
-snapshots['test_build_all_docs 41'] = '''/*
+snapshots['test_build_all_docs 43'] = '''/*
  * doctools.js
  * ~~~~~~~~~~~
  *
@@ -6435,7 +5889,7 @@ $(document).ready(function() {
   Documentation.init();
 });'''
 
-snapshots['test_build_all_docs 42'] = '''var DOCUMENTATION_OPTIONS = {
+snapshots['test_build_all_docs 44'] = '''var DOCUMENTATION_OPTIONS = {
     URL_ROOT: document.getElementById("documentation_options").getAttribute(\'data-url_root\'),
     VERSION: '',
     LANGUAGE: 'None',
@@ -6445,7 +5899,7 @@ snapshots['test_build_all_docs 42'] = '''var DOCUMENTATION_OPTIONS = {
     SOURCELINK_SUFFIX: '.txt'
 };'''
 
-snapshots['test_build_all_docs 43'] = '''/*!
+snapshots['test_build_all_docs 45'] = '''/*!
  * jQuery JavaScript Library v3.2.1
  * https://jquery.com/
  *
@@ -16700,13 +16154,13 @@ return jQuery;
 } );
 '''
 
-snapshots['test_build_all_docs 44'] = '''/*! jQuery v3.2.1 | (c) JS Foundation and other contributors | jquery.org/license */
+snapshots['test_build_all_docs 46'] = '''/*! jQuery v3.2.1 | (c) JS Foundation and other contributors | jquery.org/license */
 !function(a,b){"use strict";"object"==typeof module&&"object"==typeof module.exports?module.exports=a.document?b(a,!0):function(a){if(!a.document)throw new Error("jQuery requires a window with a document");return b(a)}:b(a)}("undefined"!=typeof window?window:this,function(a,b){"use strict";var c=[],d=a.document,e=Object.getPrototypeOf,f=c.slice,g=c.concat,h=c.push,i=c.indexOf,j={},k=j.toString,l=j.hasOwnProperty,m=l.toString,n=m.call(Object),o={};function p(a,b){b=b||d;var c=b.createElement("script");c.text=a,b.head.appendChild(c).parentNode.removeChild(c)}var q="3.2.1",r=function(a,b){return new r.fn.init(a,b)},s=/^[\\s\\uFEFF\\xA0]+|[\\s\\uFEFF\\xA0]+$/g,t=/^-ms-/,u=/-([a-z])/g,v=function(a,b){return b.toUpperCase()};r.fn=r.prototype={jquery:q,constructor:r,length:0,toArray:function(){return f.call(this)},get:function(a){return null==a?f.call(this):a<0?this[a+this.length]:this[a]},pushStack:function(a){var b=r.merge(this.constructor(),a);return b.prevObject=this,b},each:function(a){return r.each(this,a)},map:function(a){return this.pushStack(r.map(this,function(b,c){return a.call(b,c,b)}))},slice:function(){return this.pushStack(f.apply(this,arguments))},first:function(){return this.eq(0)},last:function(){return this.eq(-1)},eq:function(a){var b=this.length,c=+a+(a<0?b:0);return this.pushStack(c>=0&&c<b?[this[c]]:[])},end:function(){return this.prevObject||this.constructor()},push:h,sort:c.sort,splice:c.splice},r.extend=r.fn.extend=function(){var a,b,c,d,e,f,g=arguments[0]||{},h=1,i=arguments.length,j=!1;for("boolean"==typeof g&&(j=g,g=arguments[h]||{},h++),"object"==typeof g||r.isFunction(g)||(g={}),h===i&&(g=this,h--);h<i;h++)if(null!=(a=arguments[h]))for(b in a)c=g[b],d=a[b],g!==d&&(j&&d&&(r.isPlainObject(d)||(e=Array.isArray(d)))?(e?(e=!1,f=c&&Array.isArray(c)?c:[]):f=c&&r.isPlainObject(c)?c:{},g[b]=r.extend(j,f,d)):void 0!==d&&(g[b]=d));return g},r.extend({expando:"jQuery"+(q+Math.random()).replace(/\\D/g,""),isReady:!0,error:function(a){throw new Error(a)},noop:function(){},isFunction:function(a){return"function"===r.type(a)},isWindow:function(a){return null!=a&&a===a.window},isNumeric:function(a){var b=r.type(a);return("number"===b||"string"===b)&&!isNaN(a-parseFloat(a))},isPlainObject:function(a){var b,c;return!(!a||"[object Object]"!==k.call(a))&&(!(b=e(a))||(c=l.call(b,"constructor")&&b.constructor,"function"==typeof c&&m.call(c)===n))},isEmptyObject:function(a){var b;for(b in a)return!1;return!0},type:function(a){return null==a?a+"":"object"==typeof a||"function"==typeof a?j[k.call(a)]||"object":typeof a},globalEval:function(a){p(a)},camelCase:function(a){return a.replace(t,"ms-").replace(u,v)},each:function(a,b){var c,d=0;if(w(a)){for(c=a.length;d<c;d++)if(b.call(a[d],d,a[d])===!1)break}else for(d in a)if(b.call(a[d],d,a[d])===!1)break;return a},trim:function(a){return null==a?"":(a+"").replace(s,"")},makeArray:function(a,b){var c=b||[];return null!=a&&(w(Object(a))?r.merge(c,"string"==typeof a?[a]:a):h.call(c,a)),c},inArray:function(a,b,c){return null==b?-1:i.call(b,a,c)},merge:function(a,b){for(var c=+b.length,d=0,e=a.length;d<c;d++)a[e++]=b[d];return a.length=e,a},grep:function(a,b,c){for(var d,e=[],f=0,g=a.length,h=!c;f<g;f++)d=!b(a[f],f),d!==h&&e.push(a[f]);return e},map:function(a,b,c){var d,e,f=0,h=[];if(w(a))for(d=a.length;f<d;f++)e=b(a[f],f,c),null!=e&&h.push(e);else for(f in a)e=b(a[f],f,c),null!=e&&h.push(e);return g.apply([],h)},guid:1,proxy:function(a,b){var c,d,e;if("string"==typeof b&&(c=a[b],b=a,a=c),r.isFunction(a))return d=f.call(arguments,2),e=function(){return a.apply(b||this,d.concat(f.call(arguments)))},e.guid=a.guid=a.guid||r.guid++,e},now:Date.now,support:o}),"function"==typeof Symbol&&(r.fn[Symbol.iterator]=c[Symbol.iterator]),r.each("Boolean Number String Function Array Date RegExp Object Error Symbol".split(" "),function(a,b){j["[object "+b+"]"]=b.toLowerCase()});function w(a){var b=!!a&&"length"in a&&a.length,c=r.type(a);return"function"!==c&&!r.isWindow(a)&&("array"===c||0===b||"number"==typeof b&&b>0&&b-1 in a)}var x=function(a){var b,c,d,e,f,g,h,i,j,k,l,m,n,o,p,q,r,s,t,u="sizzle"+1*new Date,v=a.document,w=0,x=0,y=ha(),z=ha(),A=ha(),B=function(a,b){return a===b&&(l=!0),0},C={}.hasOwnProperty,D=[],E=D.pop,F=D.push,G=D.push,H=D.slice,I=function(a,b){for(var c=0,d=a.length;c<d;c++)if(a[c]===b)return c;return-1},J="checked|selected|async|autofocus|autoplay|controls|defer|disabled|hidden|ismap|loop|multiple|open|readonly|required|scoped",K="[\\\\x20\\\\t\\\\r\\\\n\\\\f]",L="(?:\\\\\\\\.|[\\\\w-]|[^\\0-\\\\xa0])+",M="\\\\["+K+"*("+L+")(?:"+K+"*([*^$|!~]?=)"+K+"*(?:\'((?:\\\\\\\\.|[^\\\\\\\\\'])*)\'|\\"((?:\\\\\\\\.|[^\\\\\\\\\\"])*)\\"|("+L+"))|)"+K+"*\\\\]",N=":("+L+")(?:\\\\(((\'((?:\\\\\\\\.|[^\\\\\\\\\'])*)\'|\\"((?:\\\\\\\\.|[^\\\\\\\\\\"])*)\\")|((?:\\\\\\\\.|[^\\\\\\\\()[\\\\]]|"+M+")*)|.*)\\\\)|)",O=new RegExp(K+"+","g"),P=new RegExp("^"+K+"+|((?:^|[^\\\\\\\\])(?:\\\\\\\\.)*)"+K+"+$","g"),Q=new RegExp("^"+K+"*,"+K+"*"),R=new RegExp("^"+K+"*([>+~]|"+K+")"+K+"*"),S=new RegExp("="+K+"*([^\\\\]\'\\"]*?)"+K+"*\\\\]","g"),T=new RegExp(N),U=new RegExp("^"+L+"$"),V={ID:new RegExp("^#("+L+")"),CLASS:new RegExp("^\\\\.("+L+")"),TAG:new RegExp("^("+L+"|[*])"),ATTR:new RegExp("^"+M),PSEUDO:new RegExp("^"+N),CHILD:new RegExp("^:(only|first|last|nth|nth-last)-(child|of-type)(?:\\\\("+K+"*(even|odd|(([+-]|)(\\\\d*)n|)"+K+"*(?:([+-]|)"+K+"*(\\\\d+)|))"+K+"*\\\\)|)","i"),bool:new RegExp("^(?:"+J+")$","i"),needsContext:new RegExp("^"+K+"*[>+~]|:(even|odd|eq|gt|lt|nth|first|last)(?:\\\\("+K+"*((?:-\\\\d)?\\\\d*)"+K+"*\\\\)|)(?=[^-]|$)","i")},W=/^(?:input|select|textarea|button)$/i,X=/^h\\d$/i,Y=/^[^{]+\\{\\s*\\[native \\w/,Z=/^(?:#([\\w-]+)|(\\w+)|\\.([\\w-]+))$/,$=/[+~]/,_=new RegExp("\\\\\\\\([\\\\da-f]{1,6}"+K+"?|("+K+")|.)","ig"),aa=function(a,b,c){var d="0x"+b-65536;return d!==d||c?b:d<0?String.fromCharCode(d+65536):String.fromCharCode(d>>10|55296,1023&d|56320)},ba=/([\\0-\\x1f\\x7f]|^-?\\d)|^-$|[^\\0-\\x1f\\x7f-\\uFFFF\\w-]/g,ca=function(a,b){return b?"\\0"===a?"\\ufffd":a.slice(0,-1)+"\\\\"+a.charCodeAt(a.length-1).toString(16)+" ":"\\\\"+a},da=function(){m()},ea=ta(function(a){return a.disabled===!0&&("form"in a||"label"in a)},{dir:"parentNode",next:"legend"});try{G.apply(D=H.call(v.childNodes),v.childNodes),D[v.childNodes.length].nodeType}catch(fa){G={apply:D.length?function(a,b){F.apply(a,H.call(b))}:function(a,b){var c=a.length,d=0;while(a[c++]=b[d++]);a.length=c-1}}}function ga(a,b,d,e){var f,h,j,k,l,o,r,s=b&&b.ownerDocument,w=b?b.nodeType:9;if(d=d||[],"string"!=typeof a||!a||1!==w&&9!==w&&11!==w)return d;if(!e&&((b?b.ownerDocument||b:v)!==n&&m(b),b=b||n,p)){if(11!==w&&(l=Z.exec(a)))if(f=l[1]){if(9===w){if(!(j=b.getElementById(f)))return d;if(j.id===f)return d.push(j),d}else if(s&&(j=s.getElementById(f))&&t(b,j)&&j.id===f)return d.push(j),d}else{if(l[2])return G.apply(d,b.getElementsByTagName(a)),d;if((f=l[3])&&c.getElementsByClassName&&b.getElementsByClassName)return G.apply(d,b.getElementsByClassName(f)),d}if(c.qsa&&!A[a+" "]&&(!q||!q.test(a))){if(1!==w)s=b,r=a;else if("object"!==b.nodeName.toLowerCase()){(k=b.getAttribute("id"))?k=k.replace(ba,ca):b.setAttribute("id",k=u),o=g(a),h=o.length;while(h--)o[h]="#"+k+" "+sa(o[h]);r=o.join(","),s=$.test(a)&&qa(b.parentNode)||b}if(r)try{return G.apply(d,s.querySelectorAll(r)),d}catch(x){}finally{k===u&&b.removeAttribute("id")}}}return i(a.replace(P,"$1"),b,d,e)}function ha(){var a=[];function b(c,e){return a.push(c+" ")>d.cacheLength&&delete b[a.shift()],b[c+" "]=e}return b}function ia(a){return a[u]=!0,a}function ja(a){var b=n.createElement("fieldset");try{return!!a(b)}catch(c){return!1}finally{b.parentNode&&b.parentNode.removeChild(b),b=null}}function ka(a,b){var c=a.split("|"),e=c.length;while(e--)d.attrHandle[c[e]]=b}function la(a,b){var c=b&&a,d=c&&1===a.nodeType&&1===b.nodeType&&a.sourceIndex-b.sourceIndex;if(d)return d;if(c)while(c=c.nextSibling)if(c===b)return-1;return a?1:-1}function ma(a){return function(b){var c=b.nodeName.toLowerCase();return"input"===c&&b.type===a}}function na(a){return function(b){var c=b.nodeName.toLowerCase();return("input"===c||"button"===c)&&b.type===a}}function oa(a){return function(b){return"form"in b?b.parentNode&&b.disabled===!1?"label"in b?"label"in b.parentNode?b.parentNode.disabled===a:b.disabled===a:b.isDisabled===a||b.isDisabled!==!a&&ea(b)===a:b.disabled===a:"label"in b&&b.disabled===a}}function pa(a){return ia(function(b){return b=+b,ia(function(c,d){var e,f=a([],c.length,b),g=f.length;while(g--)c[e=f[g]]&&(c[e]=!(d[e]=c[e]))})})}function qa(a){return a&&"undefined"!=typeof a.getElementsByTagName&&a}c=ga.support={},f=ga.isXML=function(a){var b=a&&(a.ownerDocument||a).documentElement;return!!b&&"HTML"!==b.nodeName},m=ga.setDocument=function(a){var b,e,g=a?a.ownerDocument||a:v;return g!==n&&9===g.nodeType&&g.documentElement?(n=g,o=n.documentElement,p=!f(n),v!==n&&(e=n.defaultView)&&e.top!==e&&(e.addEventListener?e.addEventListener("unload",da,!1):e.attachEvent&&e.attachEvent("onunload",da)),c.attributes=ja(function(a){return a.className="i",!a.getAttribute("className")}),c.getElementsByTagName=ja(function(a){return a.appendChild(n.createComment("")),!a.getElementsByTagName("*").length}),c.getElementsByClassName=Y.test(n.getElementsByClassName),c.getById=ja(function(a){return o.appendChild(a).id=u,!n.getElementsByName||!n.getElementsByName(u).length}),c.getById?(d.filter.ID=function(a){var b=a.replace(_,aa);return function(a){return a.getAttribute("id")===b}},d.find.ID=function(a,b){if("undefined"!=typeof b.getElementById&&p){var c=b.getElementById(a);return c?[c]:[]}}):(d.filter.ID=function(a){var b=a.replace(_,aa);return function(a){var c="undefined"!=typeof a.getAttributeNode&&a.getAttributeNode("id");return c&&c.value===b}},d.find.ID=function(a,b){if("undefined"!=typeof b.getElementById&&p){var c,d,e,f=b.getElementById(a);if(f){if(c=f.getAttributeNode("id"),c&&c.value===a)return[f];e=b.getElementsByName(a),d=0;while(f=e[d++])if(c=f.getAttributeNode("id"),c&&c.value===a)return[f]}return[]}}),d.find.TAG=c.getElementsByTagName?function(a,b){return"undefined"!=typeof b.getElementsByTagName?b.getElementsByTagName(a):c.qsa?b.querySelectorAll(a):void 0}:function(a,b){var c,d=[],e=0,f=b.getElementsByTagName(a);if("*"===a){while(c=f[e++])1===c.nodeType&&d.push(c);return d}return f},d.find.CLASS=c.getElementsByClassName&&function(a,b){if("undefined"!=typeof b.getElementsByClassName&&p)return b.getElementsByClassName(a)},r=[],q=[],(c.qsa=Y.test(n.querySelectorAll))&&(ja(function(a){o.appendChild(a).innerHTML="<a id=\'"+u+"\'></a><select id=\'"+u+"-\\r\\\\\' msallowcapture=\'\'><option selected=\'\'></option></select>",a.querySelectorAll("[msallowcapture^=\'\']").length&&q.push("[*^$]="+K+"*(?:\'\'|\\"\\")"),a.querySelectorAll("[selected]").length||q.push("\\\\["+K+"*(?:value|"+J+")"),a.querySelectorAll("[id~="+u+"-]").length||q.push("~="),a.querySelectorAll(":checked").length||q.push(":checked"),a.querySelectorAll("a#"+u+"+*").length||q.push(".#.+[+~]")}),ja(function(a){a.innerHTML="<a href=\'\' disabled=\'disabled\'></a><select disabled=\'disabled\'><option/></select>";var b=n.createElement("input");b.setAttribute("type","hidden"),a.appendChild(b).setAttribute("name","D"),a.querySelectorAll("[name=d]").length&&q.push("name"+K+"*[*^$|!~]?="),2!==a.querySelectorAll(":enabled").length&&q.push(":enabled",":disabled"),o.appendChild(a).disabled=!0,2!==a.querySelectorAll(":disabled").length&&q.push(":enabled",":disabled"),a.querySelectorAll("*,:x"),q.push(",.*:")})),(c.matchesSelector=Y.test(s=o.matches||o.webkitMatchesSelector||o.mozMatchesSelector||o.oMatchesSelector||o.msMatchesSelector))&&ja(function(a){c.disconnectedMatch=s.call(a,"*"),s.call(a,"[s!=\'\']:x"),r.push("!=",N)}),q=q.length&&new RegExp(q.join("|")),r=r.length&&new RegExp(r.join("|")),b=Y.test(o.compareDocumentPosition),t=b||Y.test(o.contains)?function(a,b){var c=9===a.nodeType?a.documentElement:a,d=b&&b.parentNode;return a===d||!(!d||1!==d.nodeType||!(c.contains?c.contains(d):a.compareDocumentPosition&&16&a.compareDocumentPosition(d)))}:function(a,b){if(b)while(b=b.parentNode)if(b===a)return!0;return!1},B=b?function(a,b){if(a===b)return l=!0,0;var d=!a.compareDocumentPosition-!b.compareDocumentPosition;return d?d:(d=(a.ownerDocument||a)===(b.ownerDocument||b)?a.compareDocumentPosition(b):1,1&d||!c.sortDetached&&b.compareDocumentPosition(a)===d?a===n||a.ownerDocument===v&&t(v,a)?-1:b===n||b.ownerDocument===v&&t(v,b)?1:k?I(k,a)-I(k,b):0:4&d?-1:1)}:function(a,b){if(a===b)return l=!0,0;var c,d=0,e=a.parentNode,f=b.parentNode,g=[a],h=[b];if(!e||!f)return a===n?-1:b===n?1:e?-1:f?1:k?I(k,a)-I(k,b):0;if(e===f)return la(a,b);c=a;while(c=c.parentNode)g.unshift(c);c=b;while(c=c.parentNode)h.unshift(c);while(g[d]===h[d])d++;return d?la(g[d],h[d]):g[d]===v?-1:h[d]===v?1:0},n):n},ga.matches=function(a,b){return ga(a,null,null,b)},ga.matchesSelector=function(a,b){if((a.ownerDocument||a)!==n&&m(a),b=b.replace(S,"=\'$1\']"),c.matchesSelector&&p&&!A[b+" "]&&(!r||!r.test(b))&&(!q||!q.test(b)))try{var d=s.call(a,b);if(d||c.disconnectedMatch||a.document&&11!==a.document.nodeType)return d}catch(e){}return ga(b,n,null,[a]).length>0},ga.contains=function(a,b){return(a.ownerDocument||a)!==n&&m(a),t(a,b)},ga.attr=function(a,b){(a.ownerDocument||a)!==n&&m(a);var e=d.attrHandle[b.toLowerCase()],f=e&&C.call(d.attrHandle,b.toLowerCase())?e(a,b,!p):void 0;return void 0!==f?f:c.attributes||!p?a.getAttribute(b):(f=a.getAttributeNode(b))&&f.specified?f.value:null},ga.escape=function(a){return(a+"").replace(ba,ca)},ga.error=function(a){throw new Error("Syntax error, unrecognized expression: "+a)},ga.uniqueSort=function(a){var b,d=[],e=0,f=0;if(l=!c.detectDuplicates,k=!c.sortStable&&a.slice(0),a.sort(B),l){while(b=a[f++])b===a[f]&&(e=d.push(f));while(e--)a.splice(d[e],1)}return k=null,a},e=ga.getText=function(a){var b,c="",d=0,f=a.nodeType;if(f){if(1===f||9===f||11===f){if("string"==typeof a.textContent)return a.textContent;for(a=a.firstChild;a;a=a.nextSibling)c+=e(a)}else if(3===f||4===f)return a.nodeValue}else while(b=a[d++])c+=e(b);return c},d=ga.selectors={cacheLength:50,createPseudo:ia,match:V,attrHandle:{},find:{},relative:{">":{dir:"parentNode",first:!0}," ":{dir:"parentNode"},"+":{dir:"previousSibling",first:!0},"~":{dir:"previousSibling"}},preFilter:{ATTR:function(a){return a[1]=a[1].replace(_,aa),a[3]=(a[3]||a[4]||a[5]||"").replace(_,aa),"~="===a[2]&&(a[3]=" "+a[3]+" "),a.slice(0,4)},CHILD:function(a){return a[1]=a[1].toLowerCase(),"nth"===a[1].slice(0,3)?(a[3]||ga.error(a[0]),a[4]=+(a[4]?a[5]+(a[6]||1):2*("even"===a[3]||"odd"===a[3])),a[5]=+(a[7]+a[8]||"odd"===a[3])):a[3]&&ga.error(a[0]),a},PSEUDO:function(a){var b,c=!a[6]&&a[2];return V.CHILD.test(a[0])?null:(a[3]?a[2]=a[4]||a[5]||"":c&&T.test(c)&&(b=g(c,!0))&&(b=c.indexOf(")",c.length-b)-c.length)&&(a[0]=a[0].slice(0,b),a[2]=c.slice(0,b)),a.slice(0,3))}},filter:{TAG:function(a){var b=a.replace(_,aa).toLowerCase();return"*"===a?function(){return!0}:function(a){return a.nodeName&&a.nodeName.toLowerCase()===b}},CLASS:function(a){var b=y[a+" "];return b||(b=new RegExp("(^|"+K+")"+a+"("+K+"|$)"))&&y(a,function(a){return b.test("string"==typeof a.className&&a.className||"undefined"!=typeof a.getAttribute&&a.getAttribute("class")||"")})},ATTR:function(a,b,c){return function(d){var e=ga.attr(d,a);return null==e?"!="===b:!b||(e+="","="===b?e===c:"!="===b?e!==c:"^="===b?c&&0===e.indexOf(c):"*="===b?c&&e.indexOf(c)>-1:"$="===b?c&&e.slice(-c.length)===c:"~="===b?(" "+e.replace(O," ")+" ").indexOf(c)>-1:"|="===b&&(e===c||e.slice(0,c.length+1)===c+"-"))}},CHILD:function(a,b,c,d,e){var f="nth"!==a.slice(0,3),g="last"!==a.slice(-4),h="of-type"===b;return 1===d&&0===e?function(a){return!!a.parentNode}:function(b,c,i){var j,k,l,m,n,o,p=f!==g?"nextSibling":"previousSibling",q=b.parentNode,r=h&&b.nodeName.toLowerCase(),s=!i&&!h,t=!1;if(q){if(f){while(p){m=b;while(m=m[p])if(h?m.nodeName.toLowerCase()===r:1===m.nodeType)return!1;o=p="only"===a&&!o&&"nextSibling"}return!0}if(o=[g?q.firstChild:q.lastChild],g&&s){m=q,l=m[u]||(m[u]={}),k=l[m.uniqueID]||(l[m.uniqueID]={}),j=k[a]||[],n=j[0]===w&&j[1],t=n&&j[2],m=n&&q.childNodes[n];while(m=++n&&m&&m[p]||(t=n=0)||o.pop())if(1===m.nodeType&&++t&&m===b){k[a]=[w,n,t];break}}else if(s&&(m=b,l=m[u]||(m[u]={}),k=l[m.uniqueID]||(l[m.uniqueID]={}),j=k[a]||[],n=j[0]===w&&j[1],t=n),t===!1)while(m=++n&&m&&m[p]||(t=n=0)||o.pop())if((h?m.nodeName.toLowerCase()===r:1===m.nodeType)&&++t&&(s&&(l=m[u]||(m[u]={}),k=l[m.uniqueID]||(l[m.uniqueID]={}),k[a]=[w,t]),m===b))break;return t-=e,t===d||t%d===0&&t/d>=0}}},PSEUDO:function(a,b){var c,e=d.pseudos[a]||d.setFilters[a.toLowerCase()]||ga.error("unsupported pseudo: "+a);return e[u]?e(b):e.length>1?(c=[a,a,"",b],d.setFilters.hasOwnProperty(a.toLowerCase())?ia(function(a,c){var d,f=e(a,b),g=f.length;while(g--)d=I(a,f[g]),a[d]=!(c[d]=f[g])}):function(a){return e(a,0,c)}):e}},pseudos:{not:ia(function(a){var b=[],c=[],d=h(a.replace(P,"$1"));return d[u]?ia(function(a,b,c,e){var f,g=d(a,null,e,[]),h=a.length;while(h--)(f=g[h])&&(a[h]=!(b[h]=f))}):function(a,e,f){return b[0]=a,d(b,null,f,c),b[0]=null,!c.pop()}}),has:ia(function(a){return function(b){return ga(a,b).length>0}}),contains:ia(function(a){return a=a.replace(_,aa),function(b){return(b.textContent||b.innerText||e(b)).indexOf(a)>-1}}),lang:ia(function(a){return U.test(a||"")||ga.error("unsupported lang: "+a),a=a.replace(_,aa).toLowerCase(),function(b){var c;do if(c=p?b.lang:b.getAttribute("xml:lang")||b.getAttribute("lang"))return c=c.toLowerCase(),c===a||0===c.indexOf(a+"-");while((b=b.parentNode)&&1===b.nodeType);return!1}}),target:function(b){var c=a.location&&a.location.hash;return c&&c.slice(1)===b.id},root:function(a){return a===o},focus:function(a){return a===n.activeElement&&(!n.hasFocus||n.hasFocus())&&!!(a.type||a.href||~a.tabIndex)},enabled:oa(!1),disabled:oa(!0),checked:function(a){var b=a.nodeName.toLowerCase();return"input"===b&&!!a.checked||"option"===b&&!!a.selected},selected:function(a){return a.parentNode&&a.parentNode.selectedIndex,a.selected===!0},empty:function(a){for(a=a.firstChild;a;a=a.nextSibling)if(a.nodeType<6)return!1;return!0},parent:function(a){return!d.pseudos.empty(a)},header:function(a){return X.test(a.nodeName)},input:function(a){return W.test(a.nodeName)},button:function(a){var b=a.nodeName.toLowerCase();return"input"===b&&"button"===a.type||"button"===b},text:function(a){var b;return"input"===a.nodeName.toLowerCase()&&"text"===a.type&&(null==(b=a.getAttribute("type"))||"text"===b.toLowerCase())},first:pa(function(){return[0]}),last:pa(function(a,b){return[b-1]}),eq:pa(function(a,b,c){return[c<0?c+b:c]}),even:pa(function(a,b){for(var c=0;c<b;c+=2)a.push(c);return a}),odd:pa(function(a,b){for(var c=1;c<b;c+=2)a.push(c);return a}),lt:pa(function(a,b,c){for(var d=c<0?c+b:c;--d>=0;)a.push(d);return a}),gt:pa(function(a,b,c){for(var d=c<0?c+b:c;++d<b;)a.push(d);return a})}},d.pseudos.nth=d.pseudos.eq;for(b in{radio:!0,checkbox:!0,file:!0,password:!0,image:!0})d.pseudos[b]=ma(b);for(b in{submit:!0,reset:!0})d.pseudos[b]=na(b);function ra(){}ra.prototype=d.filters=d.pseudos,d.setFilters=new ra,g=ga.tokenize=function(a,b){var c,e,f,g,h,i,j,k=z[a+" "];if(k)return b?0:k.slice(0);h=a,i=[],j=d.preFilter;while(h){c&&!(e=Q.exec(h))||(e&&(h=h.slice(e[0].length)||h),i.push(f=[])),c=!1,(e=R.exec(h))&&(c=e.shift(),f.push({value:c,type:e[0].replace(P," ")}),h=h.slice(c.length));for(g in d.filter)!(e=V[g].exec(h))||j[g]&&!(e=j[g](e))||(c=e.shift(),f.push({value:c,type:g,matches:e}),h=h.slice(c.length));if(!c)break}return b?h.length:h?ga.error(a):z(a,i).slice(0)};function sa(a){for(var b=0,c=a.length,d="";b<c;b++)d+=a[b].value;return d}function ta(a,b,c){var d=b.dir,e=b.next,f=e||d,g=c&&"parentNode"===f,h=x++;return b.first?function(b,c,e){while(b=b[d])if(1===b.nodeType||g)return a(b,c,e);return!1}:function(b,c,i){var j,k,l,m=[w,h];if(i){while(b=b[d])if((1===b.nodeType||g)&&a(b,c,i))return!0}else while(b=b[d])if(1===b.nodeType||g)if(l=b[u]||(b[u]={}),k=l[b.uniqueID]||(l[b.uniqueID]={}),e&&e===b.nodeName.toLowerCase())b=b[d]||b;else{if((j=k[f])&&j[0]===w&&j[1]===h)return m[2]=j[2];if(k[f]=m,m[2]=a(b,c,i))return!0}return!1}}function ua(a){return a.length>1?function(b,c,d){var e=a.length;while(e--)if(!a[e](b,c,d))return!1;return!0}:a[0]}function va(a,b,c){for(var d=0,e=b.length;d<e;d++)ga(a,b[d],c);return c}function wa(a,b,c,d,e){for(var f,g=[],h=0,i=a.length,j=null!=b;h<i;h++)(f=a[h])&&(c&&!c(f,d,e)||(g.push(f),j&&b.push(h)));return g}function xa(a,b,c,d,e,f){return d&&!d[u]&&(d=xa(d)),e&&!e[u]&&(e=xa(e,f)),ia(function(f,g,h,i){var j,k,l,m=[],n=[],o=g.length,p=f||va(b||"*",h.nodeType?[h]:h,[]),q=!a||!f&&b?p:wa(p,m,a,h,i),r=c?e||(f?a:o||d)?[]:g:q;if(c&&c(q,r,h,i),d){j=wa(r,n),d(j,[],h,i),k=j.length;while(k--)(l=j[k])&&(r[n[k]]=!(q[n[k]]=l))}if(f){if(e||a){if(e){j=[],k=r.length;while(k--)(l=r[k])&&j.push(q[k]=l);e(null,r=[],j,i)}k=r.length;while(k--)(l=r[k])&&(j=e?I(f,l):m[k])>-1&&(f[j]=!(g[j]=l))}}else r=wa(r===g?r.splice(o,r.length):r),e?e(null,g,r,i):G.apply(g,r)})}function ya(a){for(var b,c,e,f=a.length,g=d.relative[a[0].type],h=g||d.relative[" "],i=g?1:0,k=ta(function(a){return a===b},h,!0),l=ta(function(a){return I(b,a)>-1},h,!0),m=[function(a,c,d){var e=!g&&(d||c!==j)||((b=c).nodeType?k(a,c,d):l(a,c,d));return b=null,e}];i<f;i++)if(c=d.relative[a[i].type])m=[ta(ua(m),c)];else{if(c=d.filter[a[i].type].apply(null,a[i].matches),c[u]){for(e=++i;e<f;e++)if(d.relative[a[e].type])break;return xa(i>1&&ua(m),i>1&&sa(a.slice(0,i-1).concat({value:" "===a[i-2].type?"*":""})).replace(P,"$1"),c,i<e&&ya(a.slice(i,e)),e<f&&ya(a=a.slice(e)),e<f&&sa(a))}m.push(c)}return ua(m)}function za(a,b){var c=b.length>0,e=a.length>0,f=function(f,g,h,i,k){var l,o,q,r=0,s="0",t=f&&[],u=[],v=j,x=f||e&&d.find.TAG("*",k),y=w+=null==v?1:Math.random()||.1,z=x.length;for(k&&(j=g===n||g||k);s!==z&&null!=(l=x[s]);s++){if(e&&l){o=0,g||l.ownerDocument===n||(m(l),h=!p);while(q=a[o++])if(q(l,g||n,h)){i.push(l);break}k&&(w=y)}c&&((l=!q&&l)&&r--,f&&t.push(l))}if(r+=s,c&&s!==r){o=0;while(q=b[o++])q(t,u,g,h);if(f){if(r>0)while(s--)t[s]||u[s]||(u[s]=E.call(i));u=wa(u)}G.apply(i,u),k&&!f&&u.length>0&&r+b.length>1&&ga.uniqueSort(i)}return k&&(w=y,j=v),t};return c?ia(f):f}return h=ga.compile=function(a,b){var c,d=[],e=[],f=A[a+" "];if(!f){b||(b=g(a)),c=b.length;while(c--)f=ya(b[c]),f[u]?d.push(f):e.push(f);f=A(a,za(e,d)),f.selector=a}return f},i=ga.select=function(a,b,c,e){var f,i,j,k,l,m="function"==typeof a&&a,n=!e&&g(a=m.selector||a);if(c=c||[],1===n.length){if(i=n[0]=n[0].slice(0),i.length>2&&"ID"===(j=i[0]).type&&9===b.nodeType&&p&&d.relative[i[1].type]){if(b=(d.find.ID(j.matches[0].replace(_,aa),b)||[])[0],!b)return c;m&&(b=b.parentNode),a=a.slice(i.shift().value.length)}f=V.needsContext.test(a)?0:i.length;while(f--){if(j=i[f],d.relative[k=j.type])break;if((l=d.find[k])&&(e=l(j.matches[0].replace(_,aa),$.test(i[0].type)&&qa(b.parentNode)||b))){if(i.splice(f,1),a=e.length&&sa(i),!a)return G.apply(c,e),c;break}}}return(m||h(a,n))(e,b,!p,c,!b||$.test(a)&&qa(b.parentNode)||b),c},c.sortStable=u.split("").sort(B).join("")===u,c.detectDuplicates=!!l,m(),c.sortDetached=ja(function(a){return 1&a.compareDocumentPosition(n.createElement("fieldset"))}),ja(function(a){return a.innerHTML="<a href=\'#\'></a>","#"===a.firstChild.getAttribute("href")})||ka("type|href|height|width",function(a,b,c){if(!c)return a.getAttribute(b,"type"===b.toLowerCase()?1:2)}),c.attributes&&ja(function(a){return a.innerHTML="<input/>",a.firstChild.setAttribute("value",""),""===a.firstChild.getAttribute("value")})||ka("value",function(a,b,c){if(!c&&"input"===a.nodeName.toLowerCase())return a.defaultValue}),ja(function(a){return null==a.getAttribute("disabled")})||ka(J,function(a,b,c){var d;if(!c)return a[b]===!0?b.toLowerCase():(d=a.getAttributeNode(b))&&d.specified?d.value:null}),ga}(a);r.find=x,r.expr=x.selectors,r.expr[":"]=r.expr.pseudos,r.uniqueSort=r.unique=x.uniqueSort,r.text=x.getText,r.isXMLDoc=x.isXML,r.contains=x.contains,r.escapeSelector=x.escape;var y=function(a,b,c){var d=[],e=void 0!==c;while((a=a[b])&&9!==a.nodeType)if(1===a.nodeType){if(e&&r(a).is(c))break;d.push(a)}return d},z=function(a,b){for(var c=[];a;a=a.nextSibling)1===a.nodeType&&a!==b&&c.push(a);return c},A=r.expr.match.needsContext;function B(a,b){return a.nodeName&&a.nodeName.toLowerCase()===b.toLowerCase()}var C=/^<([a-z][^\\/\\0>:\\x20\\t\\r\\n\\f]*)[\\x20\\t\\r\\n\\f]*\\/?>(?:<\\/\\1>|)$/i,D=/^.[^:#\\[\\.,]*$/;function E(a,b,c){return r.isFunction(b)?r.grep(a,function(a,d){return!!b.call(a,d,a)!==c}):b.nodeType?r.grep(a,function(a){return a===b!==c}):"string"!=typeof b?r.grep(a,function(a){return i.call(b,a)>-1!==c}):D.test(b)?r.filter(b,a,c):(b=r.filter(b,a),r.grep(a,function(a){return i.call(b,a)>-1!==c&&1===a.nodeType}))}r.filter=function(a,b,c){var d=b[0];return c&&(a=":not("+a+")"),1===b.length&&1===d.nodeType?r.find.matchesSelector(d,a)?[d]:[]:r.find.matches(a,r.grep(b,function(a){return 1===a.nodeType}))},r.fn.extend({find:function(a){var b,c,d=this.length,e=this;if("string"!=typeof a)return this.pushStack(r(a).filter(function(){for(b=0;b<d;b++)if(r.contains(e[b],this))return!0}));for(c=this.pushStack([]),b=0;b<d;b++)r.find(a,e[b],c);return d>1?r.uniqueSort(c):c},filter:function(a){return this.pushStack(E(this,a||[],!1))},not:function(a){return this.pushStack(E(this,a||[],!0))},is:function(a){return!!E(this,"string"==typeof a&&A.test(a)?r(a):a||[],!1).length}});var F,G=/^(?:\\s*(<[\\w\\W]+>)[^>]*|#([\\w-]+))$/,H=r.fn.init=function(a,b,c){var e,f;if(!a)return this;if(c=c||F,"string"==typeof a){if(e="<"===a[0]&&">"===a[a.length-1]&&a.length>=3?[null,a,null]:G.exec(a),!e||!e[1]&&b)return!b||b.jquery?(b||c).find(a):this.constructor(b).find(a);if(e[1]){if(b=b instanceof r?b[0]:b,r.merge(this,r.parseHTML(e[1],b&&b.nodeType?b.ownerDocument||b:d,!0)),C.test(e[1])&&r.isPlainObject(b))for(e in b)r.isFunction(this[e])?this[e](b[e]):this.attr(e,b[e]);return this}return f=d.getElementById(e[2]),f&&(this[0]=f,this.length=1),this}return a.nodeType?(this[0]=a,this.length=1,this):r.isFunction(a)?void 0!==c.ready?c.ready(a):a(r):r.makeArray(a,this)};H.prototype=r.fn,F=r(d);var I=/^(?:parents|prev(?:Until|All))/,J={children:!0,contents:!0,next:!0,prev:!0};r.fn.extend({has:function(a){var b=r(a,this),c=b.length;return this.filter(function(){for(var a=0;a<c;a++)if(r.contains(this,b[a]))return!0})},closest:function(a,b){var c,d=0,e=this.length,f=[],g="string"!=typeof a&&r(a);if(!A.test(a))for(;d<e;d++)for(c=this[d];c&&c!==b;c=c.parentNode)if(c.nodeType<11&&(g?g.index(c)>-1:1===c.nodeType&&r.find.matchesSelector(c,a))){f.push(c);break}return this.pushStack(f.length>1?r.uniqueSort(f):f)},index:function(a){return a?"string"==typeof a?i.call(r(a),this[0]):i.call(this,a.jquery?a[0]:a):this[0]&&this[0].parentNode?this.first().prevAll().length:-1},add:function(a,b){return this.pushStack(r.uniqueSort(r.merge(this.get(),r(a,b))))},addBack:function(a){return this.add(null==a?this.prevObject:this.prevObject.filter(a))}});function K(a,b){while((a=a[b])&&1!==a.nodeType);return a}r.each({parent:function(a){var b=a.parentNode;return b&&11!==b.nodeType?b:null},parents:function(a){return y(a,"parentNode")},parentsUntil:function(a,b,c){return y(a,"parentNode",c)},next:function(a){return K(a,"nextSibling")},prev:function(a){return K(a,"previousSibling")},nextAll:function(a){return y(a,"nextSibling")},prevAll:function(a){return y(a,"previousSibling")},nextUntil:function(a,b,c){return y(a,"nextSibling",c)},prevUntil:function(a,b,c){return y(a,"previousSibling",c)},siblings:function(a){return z((a.parentNode||{}).firstChild,a)},children:function(a){return z(a.firstChild)},contents:function(a){return B(a,"iframe")?a.contentDocument:(B(a,"template")&&(a=a.content||a),r.merge([],a.childNodes))}},function(a,b){r.fn[a]=function(c,d){var e=r.map(this,b,c);return"Until"!==a.slice(-5)&&(d=c),d&&"string"==typeof d&&(e=r.filter(d,e)),this.length>1&&(J[a]||r.uniqueSort(e),I.test(a)&&e.reverse()),this.pushStack(e)}});var L=/[^\\x20\\t\\r\\n\\f]+/g;function M(a){var b={};return r.each(a.match(L)||[],function(a,c){b[c]=!0}),b}r.Callbacks=function(a){a="string"==typeof a?M(a):r.extend({},a);var b,c,d,e,f=[],g=[],h=-1,i=function(){for(e=e||a.once,d=b=!0;g.length;h=-1){c=g.shift();while(++h<f.length)f[h].apply(c[0],c[1])===!1&&a.stopOnFalse&&(h=f.length,c=!1)}a.memory||(c=!1),b=!1,e&&(f=c?[]:"")},j={add:function(){return f&&(c&&!b&&(h=f.length-1,g.push(c)),function d(b){r.each(b,function(b,c){r.isFunction(c)?a.unique&&j.has(c)||f.push(c):c&&c.length&&"string"!==r.type(c)&&d(c)})}(arguments),c&&!b&&i()),this},remove:function(){return r.each(arguments,function(a,b){var c;while((c=r.inArray(b,f,c))>-1)f.splice(c,1),c<=h&&h--}),this},has:function(a){return a?r.inArray(a,f)>-1:f.length>0},empty:function(){return f&&(f=[]),this},disable:function(){return e=g=[],f=c="",this},disabled:function(){return!f},lock:function(){return e=g=[],c||b||(f=c=""),this},locked:function(){return!!e},fireWith:function(a,c){return e||(c=c||[],c=[a,c.slice?c.slice():c],g.push(c),b||i()),this},fire:function(){return j.fireWith(this,arguments),this},fired:function(){return!!d}};return j};function N(a){return a}function O(a){throw a}function P(a,b,c,d){var e;try{a&&r.isFunction(e=a.promise)?e.call(a).done(b).fail(c):a&&r.isFunction(e=a.then)?e.call(a,b,c):b.apply(void 0,[a].slice(d))}catch(a){c.apply(void 0,[a])}}r.extend({Deferred:function(b){var c=[["notify","progress",r.Callbacks("memory"),r.Callbacks("memory"),2],["resolve","done",r.Callbacks("once memory"),r.Callbacks("once memory"),0,"resolved"],["reject","fail",r.Callbacks("once memory"),r.Callbacks("once memory"),1,"rejected"]],d="pending",e={state:function(){return d},always:function(){return f.done(arguments).fail(arguments),this},"catch":function(a){return e.then(null,a)},pipe:function(){var a=arguments;return r.Deferred(function(b){r.each(c,function(c,d){var e=r.isFunction(a[d[4]])&&a[d[4]];f[d[1]](function(){var a=e&&e.apply(this,arguments);a&&r.isFunction(a.promise)?a.promise().progress(b.notify).done(b.resolve).fail(b.reject):b[d[0]+"With"](this,e?[a]:arguments)})}),a=null}).promise()},then:function(b,d,e){var f=0;function g(b,c,d,e){return function(){var h=this,i=arguments,j=function(){var a,j;if(!(b<f)){if(a=d.apply(h,i),a===c.promise())throw new TypeError("Thenable self-resolution");j=a&&("object"==typeof a||"function"==typeof a)&&a.then,r.isFunction(j)?e?j.call(a,g(f,c,N,e),g(f,c,O,e)):(f++,j.call(a,g(f,c,N,e),g(f,c,O,e),g(f,c,N,c.notifyWith))):(d!==N&&(h=void 0,i=[a]),(e||c.resolveWith)(h,i))}},k=e?j:function(){try{j()}catch(a){r.Deferred.exceptionHook&&r.Deferred.exceptionHook(a,k.stackTrace),b+1>=f&&(d!==O&&(h=void 0,i=[a]),c.rejectWith(h,i))}};b?k():(r.Deferred.getStackHook&&(k.stackTrace=r.Deferred.getStackHook()),a.setTimeout(k))}}return r.Deferred(function(a){c[0][3].add(g(0,a,r.isFunction(e)?e:N,a.notifyWith)),c[1][3].add(g(0,a,r.isFunction(b)?b:N)),c[2][3].add(g(0,a,r.isFunction(d)?d:O))}).promise()},promise:function(a){return null!=a?r.extend(a,e):e}},f={};return r.each(c,function(a,b){var g=b[2],h=b[5];e[b[1]]=g.add,h&&g.add(function(){d=h},c[3-a][2].disable,c[0][2].lock),g.add(b[3].fire),f[b[0]]=function(){return f[b[0]+"With"](this===f?void 0:this,arguments),this},f[b[0]+"With"]=g.fireWith}),e.promise(f),b&&b.call(f,f),f},when:function(a){var b=arguments.length,c=b,d=Array(c),e=f.call(arguments),g=r.Deferred(),h=function(a){return function(c){d[a]=this,e[a]=arguments.length>1?f.call(arguments):c,--b||g.resolveWith(d,e)}};if(b<=1&&(P(a,g.done(h(c)).resolve,g.reject,!b),"pending"===g.state()||r.isFunction(e[c]&&e[c].then)))return g.then();while(c--)P(e[c],h(c),g.reject);return g.promise()}});var Q=/^(Eval|Internal|Range|Reference|Syntax|Type|URI)Error$/;r.Deferred.exceptionHook=function(b,c){a.console&&a.console.warn&&b&&Q.test(b.name)&&a.console.warn("jQuery.Deferred exception: "+b.message,b.stack,c)},r.readyException=function(b){a.setTimeout(function(){throw b})};var R=r.Deferred();r.fn.ready=function(a){return R.then(a)["catch"](function(a){r.readyException(a)}),this},r.extend({isReady:!1,readyWait:1,ready:function(a){(a===!0?--r.readyWait:r.isReady)||(r.isReady=!0,a!==!0&&--r.readyWait>0||R.resolveWith(d,[r]))}}),r.ready.then=R.then;function S(){d.removeEventListener("DOMContentLoaded",S),
 a.removeEventListener("load",S),r.ready()}"complete"===d.readyState||"loading"!==d.readyState&&!d.documentElement.doScroll?a.setTimeout(r.ready):(d.addEventListener("DOMContentLoaded",S),a.addEventListener("load",S));var T=function(a,b,c,d,e,f,g){var h=0,i=a.length,j=null==c;if("object"===r.type(c)){e=!0;for(h in c)T(a,b,h,c[h],!0,f,g)}else if(void 0!==d&&(e=!0,r.isFunction(d)||(g=!0),j&&(g?(b.call(a,d),b=null):(j=b,b=function(a,b,c){return j.call(r(a),c)})),b))for(;h<i;h++)b(a[h],c,g?d:d.call(a[h],h,b(a[h],c)));return e?a:j?b.call(a):i?b(a[0],c):f},U=function(a){return 1===a.nodeType||9===a.nodeType||!+a.nodeType};function V(){this.expando=r.expando+V.uid++}V.uid=1,V.prototype={cache:function(a){var b=a[this.expando];return b||(b={},U(a)&&(a.nodeType?a[this.expando]=b:Object.defineProperty(a,this.expando,{value:b,configurable:!0}))),b},set:function(a,b,c){var d,e=this.cache(a);if("string"==typeof b)e[r.camelCase(b)]=c;else for(d in b)e[r.camelCase(d)]=b[d];return e},get:function(a,b){return void 0===b?this.cache(a):a[this.expando]&&a[this.expando][r.camelCase(b)]},access:function(a,b,c){return void 0===b||b&&"string"==typeof b&&void 0===c?this.get(a,b):(this.set(a,b,c),void 0!==c?c:b)},remove:function(a,b){var c,d=a[this.expando];if(void 0!==d){if(void 0!==b){Array.isArray(b)?b=b.map(r.camelCase):(b=r.camelCase(b),b=b in d?[b]:b.match(L)||[]),c=b.length;while(c--)delete d[b[c]]}(void 0===b||r.isEmptyObject(d))&&(a.nodeType?a[this.expando]=void 0:delete a[this.expando])}},hasData:function(a){var b=a[this.expando];return void 0!==b&&!r.isEmptyObject(b)}};var W=new V,X=new V,Y=/^(?:\\{[\\w\\W]*\\}|\\[[\\w\\W]*\\])$/,Z=/[A-Z]/g;function $(a){return"true"===a||"false"!==a&&("null"===a?null:a===+a+""?+a:Y.test(a)?JSON.parse(a):a)}function _(a,b,c){var d;if(void 0===c&&1===a.nodeType)if(d="data-"+b.replace(Z,"-$&").toLowerCase(),c=a.getAttribute(d),"string"==typeof c){try{c=$(c)}catch(e){}X.set(a,b,c)}else c=void 0;return c}r.extend({hasData:function(a){return X.hasData(a)||W.hasData(a)},data:function(a,b,c){return X.access(a,b,c)},removeData:function(a,b){X.remove(a,b)},_data:function(a,b,c){return W.access(a,b,c)},_removeData:function(a,b){W.remove(a,b)}}),r.fn.extend({data:function(a,b){var c,d,e,f=this[0],g=f&&f.attributes;if(void 0===a){if(this.length&&(e=X.get(f),1===f.nodeType&&!W.get(f,"hasDataAttrs"))){c=g.length;while(c--)g[c]&&(d=g[c].name,0===d.indexOf("data-")&&(d=r.camelCase(d.slice(5)),_(f,d,e[d])));W.set(f,"hasDataAttrs",!0)}return e}return"object"==typeof a?this.each(function(){X.set(this,a)}):T(this,function(b){var c;if(f&&void 0===b){if(c=X.get(f,a),void 0!==c)return c;if(c=_(f,a),void 0!==c)return c}else this.each(function(){X.set(this,a,b)})},null,b,arguments.length>1,null,!0)},removeData:function(a){return this.each(function(){X.remove(this,a)})}}),r.extend({queue:function(a,b,c){var d;if(a)return b=(b||"fx")+"queue",d=W.get(a,b),c&&(!d||Array.isArray(c)?d=W.access(a,b,r.makeArray(c)):d.push(c)),d||[]},dequeue:function(a,b){b=b||"fx";var c=r.queue(a,b),d=c.length,e=c.shift(),f=r._queueHooks(a,b),g=function(){r.dequeue(a,b)};"inprogress"===e&&(e=c.shift(),d--),e&&("fx"===b&&c.unshift("inprogress"),delete f.stop,e.call(a,g,f)),!d&&f&&f.empty.fire()},_queueHooks:function(a,b){var c=b+"queueHooks";return W.get(a,c)||W.access(a,c,{empty:r.Callbacks("once memory").add(function(){W.remove(a,[b+"queue",c])})})}}),r.fn.extend({queue:function(a,b){var c=2;return"string"!=typeof a&&(b=a,a="fx",c--),arguments.length<c?r.queue(this[0],a):void 0===b?this:this.each(function(){var c=r.queue(this,a,b);r._queueHooks(this,a),"fx"===a&&"inprogress"!==c[0]&&r.dequeue(this,a)})},dequeue:function(a){return this.each(function(){r.dequeue(this,a)})},clearQueue:function(a){return this.queue(a||"fx",[])},promise:function(a,b){var c,d=1,e=r.Deferred(),f=this,g=this.length,h=function(){--d||e.resolveWith(f,[f])};"string"!=typeof a&&(b=a,a=void 0),a=a||"fx";while(g--)c=W.get(f[g],a+"queueHooks"),c&&c.empty&&(d++,c.empty.add(h));return h(),e.promise(b)}});var aa=/[+-]?(?:\\d*\\.|)\\d+(?:[eE][+-]?\\d+|)/.source,ba=new RegExp("^(?:([+-])=|)("+aa+")([a-z%]*)$","i"),ca=["Top","Right","Bottom","Left"],da=function(a,b){return a=b||a,"none"===a.style.display||""===a.style.display&&r.contains(a.ownerDocument,a)&&"none"===r.css(a,"display")},ea=function(a,b,c,d){var e,f,g={};for(f in b)g[f]=a.style[f],a.style[f]=b[f];e=c.apply(a,d||[]);for(f in b)a.style[f]=g[f];return e};function fa(a,b,c,d){var e,f=1,g=20,h=d?function(){return d.cur()}:function(){return r.css(a,b,"")},i=h(),j=c&&c[3]||(r.cssNumber[b]?"":"px"),k=(r.cssNumber[b]||"px"!==j&&+i)&&ba.exec(r.css(a,b));if(k&&k[3]!==j){j=j||k[3],c=c||[],k=+i||1;do f=f||".5",k/=f,r.style(a,b,k+j);while(f!==(f=h()/i)&&1!==f&&--g)}return c&&(k=+k||+i||0,e=c[1]?k+(c[1]+1)*c[2]:+c[2],d&&(d.unit=j,d.start=k,d.end=e)),e}var ga={};function ha(a){var b,c=a.ownerDocument,d=a.nodeName,e=ga[d];return e?e:(b=c.body.appendChild(c.createElement(d)),e=r.css(b,"display"),b.parentNode.removeChild(b),"none"===e&&(e="block"),ga[d]=e,e)}function ia(a,b){for(var c,d,e=[],f=0,g=a.length;f<g;f++)d=a[f],d.style&&(c=d.style.display,b?("none"===c&&(e[f]=W.get(d,"display")||null,e[f]||(d.style.display="")),""===d.style.display&&da(d)&&(e[f]=ha(d))):"none"!==c&&(e[f]="none",W.set(d,"display",c)));for(f=0;f<g;f++)null!=e[f]&&(a[f].style.display=e[f]);return a}r.fn.extend({show:function(){return ia(this,!0)},hide:function(){return ia(this)},toggle:function(a){return"boolean"==typeof a?a?this.show():this.hide():this.each(function(){da(this)?r(this).show():r(this).hide()})}});var ja=/^(?:checkbox|radio)$/i,ka=/<([a-z][^\\/\\0>\\x20\\t\\r\\n\\f]+)/i,la=/^$|\\/(?:java|ecma)script/i,ma={option:[1,"<select multiple=\'multiple\'>","</select>"],thead:[1,"<table>","</table>"],col:[2,"<table><colgroup>","</colgroup></table>"],tr:[2,"<table><tbody>","</tbody></table>"],td:[3,"<table><tbody><tr>","</tr></tbody></table>"],_default:[0,"",""]};ma.optgroup=ma.option,ma.tbody=ma.tfoot=ma.colgroup=ma.caption=ma.thead,ma.th=ma.td;function na(a,b){var c;return c="undefined"!=typeof a.getElementsByTagName?a.getElementsByTagName(b||"*"):"undefined"!=typeof a.querySelectorAll?a.querySelectorAll(b||"*"):[],void 0===b||b&&B(a,b)?r.merge([a],c):c}function oa(a,b){for(var c=0,d=a.length;c<d;c++)W.set(a[c],"globalEval",!b||W.get(b[c],"globalEval"))}var pa=/<|&#?\\w+;/;function qa(a,b,c,d,e){for(var f,g,h,i,j,k,l=b.createDocumentFragment(),m=[],n=0,o=a.length;n<o;n++)if(f=a[n],f||0===f)if("object"===r.type(f))r.merge(m,f.nodeType?[f]:f);else if(pa.test(f)){g=g||l.appendChild(b.createElement("div")),h=(ka.exec(f)||["",""])[1].toLowerCase(),i=ma[h]||ma._default,g.innerHTML=i[1]+r.htmlPrefilter(f)+i[2],k=i[0];while(k--)g=g.lastChild;r.merge(m,g.childNodes),g=l.firstChild,g.textContent=""}else m.push(b.createTextNode(f));l.textContent="",n=0;while(f=m[n++])if(d&&r.inArray(f,d)>-1)e&&e.push(f);else if(j=r.contains(f.ownerDocument,f),g=na(l.appendChild(f),"script"),j&&oa(g),c){k=0;while(f=g[k++])la.test(f.type||"")&&c.push(f)}return l}!function(){var a=d.createDocumentFragment(),b=a.appendChild(d.createElement("div")),c=d.createElement("input");c.setAttribute("type","radio"),c.setAttribute("checked","checked"),c.setAttribute("name","t"),b.appendChild(c),o.checkClone=b.cloneNode(!0).cloneNode(!0).lastChild.checked,b.innerHTML="<textarea>x</textarea>",o.noCloneChecked=!!b.cloneNode(!0).lastChild.defaultValue}();var ra=d.documentElement,sa=/^key/,ta=/^(?:mouse|pointer|contextmenu|drag|drop)|click/,ua=/^([^.]*)(?:\\.(.+)|)/;function va(){return!0}function wa(){return!1}function xa(){try{return d.activeElement}catch(a){}}function ya(a,b,c,d,e,f){var g,h;if("object"==typeof b){"string"!=typeof c&&(d=d||c,c=void 0);for(h in b)ya(a,h,c,d,b[h],f);return a}if(null==d&&null==e?(e=c,d=c=void 0):null==e&&("string"==typeof c?(e=d,d=void 0):(e=d,d=c,c=void 0)),e===!1)e=wa;else if(!e)return a;return 1===f&&(g=e,e=function(a){return r().off(a),g.apply(this,arguments)},e.guid=g.guid||(g.guid=r.guid++)),a.each(function(){r.event.add(this,b,e,d,c)})}r.event={global:{},add:function(a,b,c,d,e){var f,g,h,i,j,k,l,m,n,o,p,q=W.get(a);if(q){c.handler&&(f=c,c=f.handler,e=f.selector),e&&r.find.matchesSelector(ra,e),c.guid||(c.guid=r.guid++),(i=q.events)||(i=q.events={}),(g=q.handle)||(g=q.handle=function(b){return"undefined"!=typeof r&&r.event.triggered!==b.type?r.event.dispatch.apply(a,arguments):void 0}),b=(b||"").match(L)||[""],j=b.length;while(j--)h=ua.exec(b[j])||[],n=p=h[1],o=(h[2]||"").split(".").sort(),n&&(l=r.event.special[n]||{},n=(e?l.delegateType:l.bindType)||n,l=r.event.special[n]||{},k=r.extend({type:n,origType:p,data:d,handler:c,guid:c.guid,selector:e,needsContext:e&&r.expr.match.needsContext.test(e),namespace:o.join(".")},f),(m=i[n])||(m=i[n]=[],m.delegateCount=0,l.setup&&l.setup.call(a,d,o,g)!==!1||a.addEventListener&&a.addEventListener(n,g)),l.add&&(l.add.call(a,k),k.handler.guid||(k.handler.guid=c.guid)),e?m.splice(m.delegateCount++,0,k):m.push(k),r.event.global[n]=!0)}},remove:function(a,b,c,d,e){var f,g,h,i,j,k,l,m,n,o,p,q=W.hasData(a)&&W.get(a);if(q&&(i=q.events)){b=(b||"").match(L)||[""],j=b.length;while(j--)if(h=ua.exec(b[j])||[],n=p=h[1],o=(h[2]||"").split(".").sort(),n){l=r.event.special[n]||{},n=(d?l.delegateType:l.bindType)||n,m=i[n]||[],h=h[2]&&new RegExp("(^|\\\\.)"+o.join("\\\\.(?:.*\\\\.|)")+"(\\\\.|$)"),g=f=m.length;while(f--)k=m[f],!e&&p!==k.origType||c&&c.guid!==k.guid||h&&!h.test(k.namespace)||d&&d!==k.selector&&("**"!==d||!k.selector)||(m.splice(f,1),k.selector&&m.delegateCount--,l.remove&&l.remove.call(a,k));g&&!m.length&&(l.teardown&&l.teardown.call(a,o,q.handle)!==!1||r.removeEvent(a,n,q.handle),delete i[n])}else for(n in i)r.event.remove(a,n+b[j],c,d,!0);r.isEmptyObject(i)&&W.remove(a,"handle events")}},dispatch:function(a){var b=r.event.fix(a),c,d,e,f,g,h,i=new Array(arguments.length),j=(W.get(this,"events")||{})[b.type]||[],k=r.event.special[b.type]||{};for(i[0]=b,c=1;c<arguments.length;c++)i[c]=arguments[c];if(b.delegateTarget=this,!k.preDispatch||k.preDispatch.call(this,b)!==!1){h=r.event.handlers.call(this,b,j),c=0;while((f=h[c++])&&!b.isPropagationStopped()){b.currentTarget=f.elem,d=0;while((g=f.handlers[d++])&&!b.isImmediatePropagationStopped())b.rnamespace&&!b.rnamespace.test(g.namespace)||(b.handleObj=g,b.data=g.data,e=((r.event.special[g.origType]||{}).handle||g.handler).apply(f.elem,i),void 0!==e&&(b.result=e)===!1&&(b.preventDefault(),b.stopPropagation()))}return k.postDispatch&&k.postDispatch.call(this,b),b.result}},handlers:function(a,b){var c,d,e,f,g,h=[],i=b.delegateCount,j=a.target;if(i&&j.nodeType&&!("click"===a.type&&a.button>=1))for(;j!==this;j=j.parentNode||this)if(1===j.nodeType&&("click"!==a.type||j.disabled!==!0)){for(f=[],g={},c=0;c<i;c++)d=b[c],e=d.selector+" ",void 0===g[e]&&(g[e]=d.needsContext?r(e,this).index(j)>-1:r.find(e,this,null,[j]).length),g[e]&&f.push(d);f.length&&h.push({elem:j,handlers:f})}return j=this,i<b.length&&h.push({elem:j,handlers:b.slice(i)}),h},addProp:function(a,b){Object.defineProperty(r.Event.prototype,a,{enumerable:!0,configurable:!0,get:r.isFunction(b)?function(){if(this.originalEvent)return b(this.originalEvent)}:function(){if(this.originalEvent)return this.originalEvent[a]},set:function(b){Object.defineProperty(this,a,{enumerable:!0,configurable:!0,writable:!0,value:b})}})},fix:function(a){return a[r.expando]?a:new r.Event(a)},special:{load:{noBubble:!0},focus:{trigger:function(){if(this!==xa()&&this.focus)return this.focus(),!1},delegateType:"focusin"},blur:{trigger:function(){if(this===xa()&&this.blur)return this.blur(),!1},delegateType:"focusout"},click:{trigger:function(){if("checkbox"===this.type&&this.click&&B(this,"input"))return this.click(),!1},_default:function(a){return B(a.target,"a")}},beforeunload:{postDispatch:function(a){void 0!==a.result&&a.originalEvent&&(a.originalEvent.returnValue=a.result)}}}},r.removeEvent=function(a,b,c){a.removeEventListener&&a.removeEventListener(b,c)},r.Event=function(a,b){return this instanceof r.Event?(a&&a.type?(this.originalEvent=a,this.type=a.type,this.isDefaultPrevented=a.defaultPrevented||void 0===a.defaultPrevented&&a.returnValue===!1?va:wa,this.target=a.target&&3===a.target.nodeType?a.target.parentNode:a.target,this.currentTarget=a.currentTarget,this.relatedTarget=a.relatedTarget):this.type=a,b&&r.extend(this,b),this.timeStamp=a&&a.timeStamp||r.now(),void(this[r.expando]=!0)):new r.Event(a,b)},r.Event.prototype={constructor:r.Event,isDefaultPrevented:wa,isPropagationStopped:wa,isImmediatePropagationStopped:wa,isSimulated:!1,preventDefault:function(){var a=this.originalEvent;this.isDefaultPrevented=va,a&&!this.isSimulated&&a.preventDefault()},stopPropagation:function(){var a=this.originalEvent;this.isPropagationStopped=va,a&&!this.isSimulated&&a.stopPropagation()},stopImmediatePropagation:function(){var a=this.originalEvent;this.isImmediatePropagationStopped=va,a&&!this.isSimulated&&a.stopImmediatePropagation(),this.stopPropagation()}},r.each({altKey:!0,bubbles:!0,cancelable:!0,changedTouches:!0,ctrlKey:!0,detail:!0,eventPhase:!0,metaKey:!0,pageX:!0,pageY:!0,shiftKey:!0,view:!0,"char":!0,charCode:!0,key:!0,keyCode:!0,button:!0,buttons:!0,clientX:!0,clientY:!0,offsetX:!0,offsetY:!0,pointerId:!0,pointerType:!0,screenX:!0,screenY:!0,targetTouches:!0,toElement:!0,touches:!0,which:function(a){var b=a.button;return null==a.which&&sa.test(a.type)?null!=a.charCode?a.charCode:a.keyCode:!a.which&&void 0!==b&&ta.test(a.type)?1&b?1:2&b?3:4&b?2:0:a.which}},r.event.addProp),r.each({mouseenter:"mouseover",mouseleave:"mouseout",pointerenter:"pointerover",pointerleave:"pointerout"},function(a,b){r.event.special[a]={delegateType:b,bindType:b,handle:function(a){var c,d=this,e=a.relatedTarget,f=a.handleObj;return e&&(e===d||r.contains(d,e))||(a.type=f.origType,c=f.handler.apply(this,arguments),a.type=b),c}}}),r.fn.extend({on:function(a,b,c,d){return ya(this,a,b,c,d)},one:function(a,b,c,d){return ya(this,a,b,c,d,1)},off:function(a,b,c){var d,e;if(a&&a.preventDefault&&a.handleObj)return d=a.handleObj,r(a.delegateTarget).off(d.namespace?d.origType+"."+d.namespace:d.origType,d.selector,d.handler),this;if("object"==typeof a){for(e in a)this.off(e,b,a[e]);return this}return b!==!1&&"function"!=typeof b||(c=b,b=void 0),c===!1&&(c=wa),this.each(function(){r.event.remove(this,a,c,b)})}});var za=/<(?!area|br|col|embed|hr|img|input|link|meta|param)(([a-z][^\\/\\0>\\x20\\t\\r\\n\\f]*)[^>]*)\\/>/gi,Aa=/<script|<style|<link/i,Ba=/checked\\s*(?:[^=]|=\\s*.checked.)/i,Ca=/^true\\/(.*)/,Da=/^\\s*<!(?:\\[CDATA\\[|--)|(?:\\]\\]|--)>\\s*$/g;function Ea(a,b){return B(a,"table")&&B(11!==b.nodeType?b:b.firstChild,"tr")?r(">tbody",a)[0]||a:a}function Fa(a){return a.type=(null!==a.getAttribute("type"))+"/"+a.type,a}function Ga(a){var b=Ca.exec(a.type);return b?a.type=b[1]:a.removeAttribute("type"),a}function Ha(a,b){var c,d,e,f,g,h,i,j;if(1===b.nodeType){if(W.hasData(a)&&(f=W.access(a),g=W.set(b,f),j=f.events)){delete g.handle,g.events={};for(e in j)for(c=0,d=j[e].length;c<d;c++)r.event.add(b,e,j[e][c])}X.hasData(a)&&(h=X.access(a),i=r.extend({},h),X.set(b,i))}}function Ia(a,b){var c=b.nodeName.toLowerCase();"input"===c&&ja.test(a.type)?b.checked=a.checked:"input"!==c&&"textarea"!==c||(b.defaultValue=a.defaultValue)}function Ja(a,b,c,d){b=g.apply([],b);var e,f,h,i,j,k,l=0,m=a.length,n=m-1,q=b[0],s=r.isFunction(q);if(s||m>1&&"string"==typeof q&&!o.checkClone&&Ba.test(q))return a.each(function(e){var f=a.eq(e);s&&(b[0]=q.call(this,e,f.html())),Ja(f,b,c,d)});if(m&&(e=qa(b,a[0].ownerDocument,!1,a,d),f=e.firstChild,1===e.childNodes.length&&(e=f),f||d)){for(h=r.map(na(e,"script"),Fa),i=h.length;l<m;l++)j=e,l!==n&&(j=r.clone(j,!0,!0),i&&r.merge(h,na(j,"script"))),c.call(a[l],j,l);if(i)for(k=h[h.length-1].ownerDocument,r.map(h,Ga),l=0;l<i;l++)j=h[l],la.test(j.type||"")&&!W.access(j,"globalEval")&&r.contains(k,j)&&(j.src?r._evalUrl&&r._evalUrl(j.src):p(j.textContent.replace(Da,""),k))}return a}function Ka(a,b,c){for(var d,e=b?r.filter(b,a):a,f=0;null!=(d=e[f]);f++)c||1!==d.nodeType||r.cleanData(na(d)),d.parentNode&&(c&&r.contains(d.ownerDocument,d)&&oa(na(d,"script")),d.parentNode.removeChild(d));return a}r.extend({htmlPrefilter:function(a){return a.replace(za,"<$1></$2>")},clone:function(a,b,c){var d,e,f,g,h=a.cloneNode(!0),i=r.contains(a.ownerDocument,a);if(!(o.noCloneChecked||1!==a.nodeType&&11!==a.nodeType||r.isXMLDoc(a)))for(g=na(h),f=na(a),d=0,e=f.length;d<e;d++)Ia(f[d],g[d]);if(b)if(c)for(f=f||na(a),g=g||na(h),d=0,e=f.length;d<e;d++)Ha(f[d],g[d]);else Ha(a,h);return g=na(h,"script"),g.length>0&&oa(g,!i&&na(a,"script")),h},cleanData:function(a){for(var b,c,d,e=r.event.special,f=0;void 0!==(c=a[f]);f++)if(U(c)){if(b=c[W.expando]){if(b.events)for(d in b.events)e[d]?r.event.remove(c,d):r.removeEvent(c,d,b.handle);c[W.expando]=void 0}c[X.expando]&&(c[X.expando]=void 0)}}}),r.fn.extend({detach:function(a){return Ka(this,a,!0)},remove:function(a){return Ka(this,a)},text:function(a){return T(this,function(a){return void 0===a?r.text(this):this.empty().each(function(){1!==this.nodeType&&11!==this.nodeType&&9!==this.nodeType||(this.textContent=a)})},null,a,arguments.length)},append:function(){return Ja(this,arguments,function(a){if(1===this.nodeType||11===this.nodeType||9===this.nodeType){var b=Ea(this,a);b.appendChild(a)}})},prepend:function(){return Ja(this,arguments,function(a){if(1===this.nodeType||11===this.nodeType||9===this.nodeType){var b=Ea(this,a);b.insertBefore(a,b.firstChild)}})},before:function(){return Ja(this,arguments,function(a){this.parentNode&&this.parentNode.insertBefore(a,this)})},after:function(){return Ja(this,arguments,function(a){this.parentNode&&this.parentNode.insertBefore(a,this.nextSibling)})},empty:function(){for(var a,b=0;null!=(a=this[b]);b++)1===a.nodeType&&(r.cleanData(na(a,!1)),a.textContent="");return this},clone:function(a,b){return a=null!=a&&a,b=null==b?a:b,this.map(function(){return r.clone(this,a,b)})},html:function(a){return T(this,function(a){var b=this[0]||{},c=0,d=this.length;if(void 0===a&&1===b.nodeType)return b.innerHTML;if("string"==typeof a&&!Aa.test(a)&&!ma[(ka.exec(a)||["",""])[1].toLowerCase()]){a=r.htmlPrefilter(a);try{for(;c<d;c++)b=this[c]||{},1===b.nodeType&&(r.cleanData(na(b,!1)),b.innerHTML=a);b=0}catch(e){}}b&&this.empty().append(a)},null,a,arguments.length)},replaceWith:function(){var a=[];return Ja(this,arguments,function(b){var c=this.parentNode;r.inArray(this,a)<0&&(r.cleanData(na(this)),c&&c.replaceChild(b,this))},a)}}),r.each({appendTo:"append",prependTo:"prepend",insertBefore:"before",insertAfter:"after",replaceAll:"replaceWith"},function(a,b){r.fn[a]=function(a){for(var c,d=[],e=r(a),f=e.length-1,g=0;g<=f;g++)c=g===f?this:this.clone(!0),r(e[g])[b](c),h.apply(d,c.get());return this.pushStack(d)}});var La=/^margin/,Ma=new RegExp("^("+aa+")(?!px)[a-z%]+$","i"),Na=function(b){var c=b.ownerDocument.defaultView;return c&&c.opener||(c=a),c.getComputedStyle(b)};!function(){function b(){if(i){i.style.cssText="box-sizing:border-box;position:relative;display:block;margin:auto;border:1px;padding:1px;top:1%;width:50%",i.innerHTML="",ra.appendChild(h);var b=a.getComputedStyle(i);c="1%"!==b.top,g="2px"===b.marginLeft,e="4px"===b.width,i.style.marginRight="50%",f="4px"===b.marginRight,ra.removeChild(h),i=null}}var c,e,f,g,h=d.createElement("div"),i=d.createElement("div");i.style&&(i.style.backgroundClip="content-box",i.cloneNode(!0).style.backgroundClip="",o.clearCloneStyle="content-box"===i.style.backgroundClip,h.style.cssText="border:0;width:8px;height:0;top:0;left:-9999px;padding:0;margin-top:1px;position:absolute",h.appendChild(i),r.extend(o,{pixelPosition:function(){return b(),c},boxSizingReliable:function(){return b(),e},pixelMarginRight:function(){return b(),f},reliableMarginLeft:function(){return b(),g}}))}();function Oa(a,b,c){var d,e,f,g,h=a.style;return c=c||Na(a),c&&(g=c.getPropertyValue(b)||c[b],""!==g||r.contains(a.ownerDocument,a)||(g=r.style(a,b)),!o.pixelMarginRight()&&Ma.test(g)&&La.test(b)&&(d=h.width,e=h.minWidth,f=h.maxWidth,h.minWidth=h.maxWidth=h.width=g,g=c.width,h.width=d,h.minWidth=e,h.maxWidth=f)),void 0!==g?g+"":g}function Pa(a,b){return{get:function(){return a()?void delete this.get:(this.get=b).apply(this,arguments)}}}var Qa=/^(none|table(?!-c[ea]).+)/,Ra=/^--/,Sa={position:"absolute",visibility:"hidden",display:"block"},Ta={letterSpacing:"0",fontWeight:"400"},Ua=["Webkit","Moz","ms"],Va=d.createElement("div").style;function Wa(a){if(a in Va)return a;var b=a[0].toUpperCase()+a.slice(1),c=Ua.length;while(c--)if(a=Ua[c]+b,a in Va)return a}function Xa(a){var b=r.cssProps[a];return b||(b=r.cssProps[a]=Wa(a)||a),b}function Ya(a,b,c){var d=ba.exec(b);return d?Math.max(0,d[2]-(c||0))+(d[3]||"px"):b}function Za(a,b,c,d,e){var f,g=0;for(f=c===(d?"border":"content")?4:"width"===b?1:0;f<4;f+=2)"margin"===c&&(g+=r.css(a,c+ca[f],!0,e)),d?("content"===c&&(g-=r.css(a,"padding"+ca[f],!0,e)),"margin"!==c&&(g-=r.css(a,"border"+ca[f]+"Width",!0,e))):(g+=r.css(a,"padding"+ca[f],!0,e),"padding"!==c&&(g+=r.css(a,"border"+ca[f]+"Width",!0,e)));return g}function $a(a,b,c){var d,e=Na(a),f=Oa(a,b,e),g="border-box"===r.css(a,"boxSizing",!1,e);return Ma.test(f)?f:(d=g&&(o.boxSizingReliable()||f===a.style[b]),"auto"===f&&(f=a["offset"+b[0].toUpperCase()+b.slice(1)]),f=parseFloat(f)||0,f+Za(a,b,c||(g?"border":"content"),d,e)+"px")}r.extend({cssHooks:{opacity:{get:function(a,b){if(b){var c=Oa(a,"opacity");return""===c?"1":c}}}},cssNumber:{animationIterationCount:!0,columnCount:!0,fillOpacity:!0,flexGrow:!0,flexShrink:!0,fontWeight:!0,lineHeight:!0,opacity:!0,order:!0,orphans:!0,widows:!0,zIndex:!0,zoom:!0},cssProps:{"float":"cssFloat"},style:function(a,b,c,d){if(a&&3!==a.nodeType&&8!==a.nodeType&&a.style){var e,f,g,h=r.camelCase(b),i=Ra.test(b),j=a.style;return i||(b=Xa(h)),g=r.cssHooks[b]||r.cssHooks[h],void 0===c?g&&"get"in g&&void 0!==(e=g.get(a,!1,d))?e:j[b]:(f=typeof c,"string"===f&&(e=ba.exec(c))&&e[1]&&(c=fa(a,b,e),f="number"),null!=c&&c===c&&("number"===f&&(c+=e&&e[3]||(r.cssNumber[h]?"":"px")),o.clearCloneStyle||""!==c||0!==b.indexOf("background")||(j[b]="inherit"),g&&"set"in g&&void 0===(c=g.set(a,c,d))||(i?j.setProperty(b,c):j[b]=c)),void 0)}},css:function(a,b,c,d){var e,f,g,h=r.camelCase(b),i=Ra.test(b);return i||(b=Xa(h)),g=r.cssHooks[b]||r.cssHooks[h],g&&"get"in g&&(e=g.get(a,!0,c)),void 0===e&&(e=Oa(a,b,d)),"normal"===e&&b in Ta&&(e=Ta[b]),""===c||c?(f=parseFloat(e),c===!0||isFinite(f)?f||0:e):e}}),r.each(["height","width"],function(a,b){r.cssHooks[b]={get:function(a,c,d){if(c)return!Qa.test(r.css(a,"display"))||a.getClientRects().length&&a.getBoundingClientRect().width?$a(a,b,d):ea(a,Sa,function(){return $a(a,b,d)})},set:function(a,c,d){var e,f=d&&Na(a),g=d&&Za(a,b,d,"border-box"===r.css(a,"boxSizing",!1,f),f);return g&&(e=ba.exec(c))&&"px"!==(e[3]||"px")&&(a.style[b]=c,c=r.css(a,b)),Ya(a,c,g)}}}),r.cssHooks.marginLeft=Pa(o.reliableMarginLeft,function(a,b){if(b)return(parseFloat(Oa(a,"marginLeft"))||a.getBoundingClientRect().left-ea(a,{marginLeft:0},function(){return a.getBoundingClientRect().left}))+"px"}),r.each({margin:"",padding:"",border:"Width"},function(a,b){r.cssHooks[a+b]={expand:function(c){for(var d=0,e={},f="string"==typeof c?c.split(" "):[c];d<4;d++)e[a+ca[d]+b]=f[d]||f[d-2]||f[0];return e}},La.test(a)||(r.cssHooks[a+b].set=Ya)}),r.fn.extend({css:function(a,b){return T(this,function(a,b,c){var d,e,f={},g=0;if(Array.isArray(b)){for(d=Na(a),e=b.length;g<e;g++)f[b[g]]=r.css(a,b[g],!1,d);return f}return void 0!==c?r.style(a,b,c):r.css(a,b)},a,b,arguments.length>1)}});function _a(a,b,c,d,e){return new _a.prototype.init(a,b,c,d,e)}r.Tween=_a,_a.prototype={constructor:_a,init:function(a,b,c,d,e,f){this.elem=a,this.prop=c,this.easing=e||r.easing._default,this.options=b,this.start=this.now=this.cur(),this.end=d,this.unit=f||(r.cssNumber[c]?"":"px")},cur:function(){var a=_a.propHooks[this.prop];return a&&a.get?a.get(this):_a.propHooks._default.get(this)},run:function(a){var b,c=_a.propHooks[this.prop];return this.options.duration?this.pos=b=r.easing[this.easing](a,this.options.duration*a,0,1,this.options.duration):this.pos=b=a,this.now=(this.end-this.start)*b+this.start,this.options.step&&this.options.step.call(this.elem,this.now,this),c&&c.set?c.set(this):_a.propHooks._default.set(this),this}},_a.prototype.init.prototype=_a.prototype,_a.propHooks={_default:{get:function(a){var b;return 1!==a.elem.nodeType||null!=a.elem[a.prop]&&null==a.elem.style[a.prop]?a.elem[a.prop]:(b=r.css(a.elem,a.prop,""),b&&"auto"!==b?b:0)},set:function(a){r.fx.step[a.prop]?r.fx.step[a.prop](a):1!==a.elem.nodeType||null==a.elem.style[r.cssProps[a.prop]]&&!r.cssHooks[a.prop]?a.elem[a.prop]=a.now:r.style(a.elem,a.prop,a.now+a.unit)}}},_a.propHooks.scrollTop=_a.propHooks.scrollLeft={set:function(a){a.elem.nodeType&&a.elem.parentNode&&(a.elem[a.prop]=a.now)}},r.easing={linear:function(a){return a},swing:function(a){return.5-Math.cos(a*Math.PI)/2},_default:"swing"},r.fx=_a.prototype.init,r.fx.step={};var ab,bb,cb=/^(?:toggle|show|hide)$/,db=/queueHooks$/;function eb(){bb&&(d.hidden===!1&&a.requestAnimationFrame?a.requestAnimationFrame(eb):a.setTimeout(eb,r.fx.interval),r.fx.tick())}function fb(){return a.setTimeout(function(){ab=void 0}),ab=r.now()}function gb(a,b){var c,d=0,e={height:a};for(b=b?1:0;d<4;d+=2-b)c=ca[d],e["margin"+c]=e["padding"+c]=a;return b&&(e.opacity=e.width=a),e}function hb(a,b,c){for(var d,e=(kb.tweeners[b]||[]).concat(kb.tweeners["*"]),f=0,g=e.length;f<g;f++)if(d=e[f].call(c,b,a))return d}function ib(a,b,c){var d,e,f,g,h,i,j,k,l="width"in b||"height"in b,m=this,n={},o=a.style,p=a.nodeType&&da(a),q=W.get(a,"fxshow");c.queue||(g=r._queueHooks(a,"fx"),null==g.unqueued&&(g.unqueued=0,h=g.empty.fire,g.empty.fire=function(){g.unqueued||h()}),g.unqueued++,m.always(function(){m.always(function(){g.unqueued--,r.queue(a,"fx").length||g.empty.fire()})}));for(d in b)if(e=b[d],cb.test(e)){if(delete b[d],f=f||"toggle"===e,e===(p?"hide":"show")){if("show"!==e||!q||void 0===q[d])continue;p=!0}n[d]=q&&q[d]||r.style(a,d)}if(i=!r.isEmptyObject(b),i||!r.isEmptyObject(n)){l&&1===a.nodeType&&(c.overflow=[o.overflow,o.overflowX,o.overflowY],j=q&&q.display,null==j&&(j=W.get(a,"display")),k=r.css(a,"display"),"none"===k&&(j?k=j:(ia([a],!0),j=a.style.display||j,k=r.css(a,"display"),ia([a]))),("inline"===k||"inline-block"===k&&null!=j)&&"none"===r.css(a,"float")&&(i||(m.done(function(){o.display=j}),null==j&&(k=o.display,j="none"===k?"":k)),o.display="inline-block")),c.overflow&&(o.overflow="hidden",m.always(function(){o.overflow=c.overflow[0],o.overflowX=c.overflow[1],o.overflowY=c.overflow[2]})),i=!1;for(d in n)i||(q?"hidden"in q&&(p=q.hidden):q=W.access(a,"fxshow",{display:j}),f&&(q.hidden=!p),p&&ia([a],!0),m.done(function(){p||ia([a]),W.remove(a,"fxshow");for(d in n)r.style(a,d,n[d])})),i=hb(p?q[d]:0,d,m),d in q||(q[d]=i.start,p&&(i.end=i.start,i.start=0))}}function jb(a,b){var c,d,e,f,g;for(c in a)if(d=r.camelCase(c),e=b[d],f=a[c],Array.isArray(f)&&(e=f[1],f=a[c]=f[0]),c!==d&&(a[d]=f,delete a[c]),g=r.cssHooks[d],g&&"expand"in g){f=g.expand(f),delete a[d];for(c in f)c in a||(a[c]=f[c],b[c]=e)}else b[d]=e}function kb(a,b,c){var d,e,f=0,g=kb.prefilters.length,h=r.Deferred().always(function(){delete i.elem}),i=function(){if(e)return!1;for(var b=ab||fb(),c=Math.max(0,j.startTime+j.duration-b),d=c/j.duration||0,f=1-d,g=0,i=j.tweens.length;g<i;g++)j.tweens[g].run(f);return h.notifyWith(a,[j,f,c]),f<1&&i?c:(i||h.notifyWith(a,[j,1,0]),h.resolveWith(a,[j]),!1)},j=h.promise({elem:a,props:r.extend({},b),opts:r.extend(!0,{specialEasing:{},easing:r.easing._default},c),originalProperties:b,originalOptions:c,startTime:ab||fb(),duration:c.duration,tweens:[],createTween:function(b,c){var d=r.Tween(a,j.opts,b,c,j.opts.specialEasing[b]||j.opts.easing);return j.tweens.push(d),d},stop:function(b){var c=0,d=b?j.tweens.length:0;if(e)return this;for(e=!0;c<d;c++)j.tweens[c].run(1);return b?(h.notifyWith(a,[j,1,0]),h.resolveWith(a,[j,b])):h.rejectWith(a,[j,b]),this}}),k=j.props;for(jb(k,j.opts.specialEasing);f<g;f++)if(d=kb.prefilters[f].call(j,a,k,j.opts))return r.isFunction(d.stop)&&(r._queueHooks(j.elem,j.opts.queue).stop=r.proxy(d.stop,d)),d;return r.map(k,hb,j),r.isFunction(j.opts.start)&&j.opts.start.call(a,j),j.progress(j.opts.progress).done(j.opts.done,j.opts.complete).fail(j.opts.fail).always(j.opts.always),r.fx.timer(r.extend(i,{elem:a,anim:j,queue:j.opts.queue})),j}r.Animation=r.extend(kb,{tweeners:{"*":[function(a,b){var c=this.createTween(a,b);return fa(c.elem,a,ba.exec(b),c),c}]},tweener:function(a,b){r.isFunction(a)?(b=a,a=["*"]):a=a.match(L);for(var c,d=0,e=a.length;d<e;d++)c=a[d],kb.tweeners[c]=kb.tweeners[c]||[],kb.tweeners[c].unshift(b)},prefilters:[ib],prefilter:function(a,b){b?kb.prefilters.unshift(a):kb.prefilters.push(a)}}),r.speed=function(a,b,c){var d=a&&"object"==typeof a?r.extend({},a):{complete:c||!c&&b||r.isFunction(a)&&a,duration:a,easing:c&&b||b&&!r.isFunction(b)&&b};return r.fx.off?d.duration=0:"number"!=typeof d.duration&&(d.duration in r.fx.speeds?d.duration=r.fx.speeds[d.duration]:d.duration=r.fx.speeds._default),null!=d.queue&&d.queue!==!0||(d.queue="fx"),d.old=d.complete,d.complete=function(){r.isFunction(d.old)&&d.old.call(this),d.queue&&r.dequeue(this,d.queue)},d},r.fn.extend({fadeTo:function(a,b,c,d){return this.filter(da).css("opacity",0).show().end().animate({opacity:b},a,c,d)},animate:function(a,b,c,d){var e=r.isEmptyObject(a),f=r.speed(b,c,d),g=function(){var b=kb(this,r.extend({},a),f);(e||W.get(this,"finish"))&&b.stop(!0)};return g.finish=g,e||f.queue===!1?this.each(g):this.queue(f.queue,g)},stop:function(a,b,c){var d=function(a){var b=a.stop;delete a.stop,b(c)};return"string"!=typeof a&&(c=b,b=a,a=void 0),b&&a!==!1&&this.queue(a||"fx",[]),this.each(function(){var b=!0,e=null!=a&&a+"queueHooks",f=r.timers,g=W.get(this);if(e)g[e]&&g[e].stop&&d(g[e]);else for(e in g)g[e]&&g[e].stop&&db.test(e)&&d(g[e]);for(e=f.length;e--;)f[e].elem!==this||null!=a&&f[e].queue!==a||(f[e].anim.stop(c),b=!1,f.splice(e,1));!b&&c||r.dequeue(this,a)})},finish:function(a){return a!==!1&&(a=a||"fx"),this.each(function(){var b,c=W.get(this),d=c[a+"queue"],e=c[a+"queueHooks"],f=r.timers,g=d?d.length:0;for(c.finish=!0,r.queue(this,a,[]),e&&e.stop&&e.stop.call(this,!0),b=f.length;b--;)f[b].elem===this&&f[b].queue===a&&(f[b].anim.stop(!0),f.splice(b,1));for(b=0;b<g;b++)d[b]&&d[b].finish&&d[b].finish.call(this);delete c.finish})}}),r.each(["toggle","show","hide"],function(a,b){var c=r.fn[b];r.fn[b]=function(a,d,e){return null==a||"boolean"==typeof a?c.apply(this,arguments):this.animate(gb(b,!0),a,d,e)}}),r.each({slideDown:gb("show"),slideUp:gb("hide"),slideToggle:gb("toggle"),fadeIn:{opacity:"show"},fadeOut:{opacity:"hide"},fadeToggle:{opacity:"toggle"}},function(a,b){r.fn[a]=function(a,c,d){return this.animate(b,a,c,d)}}),r.timers=[],r.fx.tick=function(){var a,b=0,c=r.timers;for(ab=r.now();b<c.length;b++)a=c[b],a()||c[b]!==a||c.splice(b--,1);c.length||r.fx.stop(),ab=void 0},r.fx.timer=function(a){r.timers.push(a),r.fx.start()},r.fx.interval=13,r.fx.start=function(){bb||(bb=!0,eb())},r.fx.stop=function(){bb=null},r.fx.speeds={slow:600,fast:200,_default:400},r.fn.delay=function(b,c){return b=r.fx?r.fx.speeds[b]||b:b,c=c||"fx",this.queue(c,function(c,d){var e=a.setTimeout(c,b);d.stop=function(){a.clearTimeout(e)}})},function(){var a=d.createElement("input"),b=d.createElement("select"),c=b.appendChild(d.createElement("option"));a.type="checkbox",o.checkOn=""!==a.value,o.optSelected=c.selected,a=d.createElement("input"),a.value="t",a.type="radio",o.radioValue="t"===a.value}();var lb,mb=r.expr.attrHandle;r.fn.extend({attr:function(a,b){return T(this,r.attr,a,b,arguments.length>1)},removeAttr:function(a){return this.each(function(){r.removeAttr(this,a)})}}),r.extend({attr:function(a,b,c){var d,e,f=a.nodeType;if(3!==f&&8!==f&&2!==f)return"undefined"==typeof a.getAttribute?r.prop(a,b,c):(1===f&&r.isXMLDoc(a)||(e=r.attrHooks[b.toLowerCase()]||(r.expr.match.bool.test(b)?lb:void 0)),void 0!==c?null===c?void r.removeAttr(a,b):e&&"set"in e&&void 0!==(d=e.set(a,c,b))?d:(a.setAttribute(b,c+""),c):e&&"get"in e&&null!==(d=e.get(a,b))?d:(d=r.find.attr(a,b),
 null==d?void 0:d))},attrHooks:{type:{set:function(a,b){if(!o.radioValue&&"radio"===b&&B(a,"input")){var c=a.value;return a.setAttribute("type",b),c&&(a.value=c),b}}}},removeAttr:function(a,b){var c,d=0,e=b&&b.match(L);if(e&&1===a.nodeType)while(c=e[d++])a.removeAttribute(c)}}),lb={set:function(a,b,c){return b===!1?r.removeAttr(a,c):a.setAttribute(c,c),c}},r.each(r.expr.match.bool.source.match(/\\w+/g),function(a,b){var c=mb[b]||r.find.attr;mb[b]=function(a,b,d){var e,f,g=b.toLowerCase();return d||(f=mb[g],mb[g]=e,e=null!=c(a,b,d)?g:null,mb[g]=f),e}});var nb=/^(?:input|select|textarea|button)$/i,ob=/^(?:a|area)$/i;r.fn.extend({prop:function(a,b){return T(this,r.prop,a,b,arguments.length>1)},removeProp:function(a){return this.each(function(){delete this[r.propFix[a]||a]})}}),r.extend({prop:function(a,b,c){var d,e,f=a.nodeType;if(3!==f&&8!==f&&2!==f)return 1===f&&r.isXMLDoc(a)||(b=r.propFix[b]||b,e=r.propHooks[b]),void 0!==c?e&&"set"in e&&void 0!==(d=e.set(a,c,b))?d:a[b]=c:e&&"get"in e&&null!==(d=e.get(a,b))?d:a[b]},propHooks:{tabIndex:{get:function(a){var b=r.find.attr(a,"tabindex");return b?parseInt(b,10):nb.test(a.nodeName)||ob.test(a.nodeName)&&a.href?0:-1}}},propFix:{"for":"htmlFor","class":"className"}}),o.optSelected||(r.propHooks.selected={get:function(a){var b=a.parentNode;return b&&b.parentNode&&b.parentNode.selectedIndex,null},set:function(a){var b=a.parentNode;b&&(b.selectedIndex,b.parentNode&&b.parentNode.selectedIndex)}}),r.each(["tabIndex","readOnly","maxLength","cellSpacing","cellPadding","rowSpan","colSpan","useMap","frameBorder","contentEditable"],function(){r.propFix[this.toLowerCase()]=this});function pb(a){var b=a.match(L)||[];return b.join(" ")}function qb(a){return a.getAttribute&&a.getAttribute("class")||""}r.fn.extend({addClass:function(a){var b,c,d,e,f,g,h,i=0;if(r.isFunction(a))return this.each(function(b){r(this).addClass(a.call(this,b,qb(this)))});if("string"==typeof a&&a){b=a.match(L)||[];while(c=this[i++])if(e=qb(c),d=1===c.nodeType&&" "+pb(e)+" "){g=0;while(f=b[g++])d.indexOf(" "+f+" ")<0&&(d+=f+" ");h=pb(d),e!==h&&c.setAttribute("class",h)}}return this},removeClass:function(a){var b,c,d,e,f,g,h,i=0;if(r.isFunction(a))return this.each(function(b){r(this).removeClass(a.call(this,b,qb(this)))});if(!arguments.length)return this.attr("class","");if("string"==typeof a&&a){b=a.match(L)||[];while(c=this[i++])if(e=qb(c),d=1===c.nodeType&&" "+pb(e)+" "){g=0;while(f=b[g++])while(d.indexOf(" "+f+" ")>-1)d=d.replace(" "+f+" "," ");h=pb(d),e!==h&&c.setAttribute("class",h)}}return this},toggleClass:function(a,b){var c=typeof a;return"boolean"==typeof b&&"string"===c?b?this.addClass(a):this.removeClass(a):r.isFunction(a)?this.each(function(c){r(this).toggleClass(a.call(this,c,qb(this),b),b)}):this.each(function(){var b,d,e,f;if("string"===c){d=0,e=r(this),f=a.match(L)||[];while(b=f[d++])e.hasClass(b)?e.removeClass(b):e.addClass(b)}else void 0!==a&&"boolean"!==c||(b=qb(this),b&&W.set(this,"__className__",b),this.setAttribute&&this.setAttribute("class",b||a===!1?"":W.get(this,"__className__")||""))})},hasClass:function(a){var b,c,d=0;b=" "+a+" ";while(c=this[d++])if(1===c.nodeType&&(" "+pb(qb(c))+" ").indexOf(b)>-1)return!0;return!1}});var rb=/\\r/g;r.fn.extend({val:function(a){var b,c,d,e=this[0];{if(arguments.length)return d=r.isFunction(a),this.each(function(c){var e;1===this.nodeType&&(e=d?a.call(this,c,r(this).val()):a,null==e?e="":"number"==typeof e?e+="":Array.isArray(e)&&(e=r.map(e,function(a){return null==a?"":a+""})),b=r.valHooks[this.type]||r.valHooks[this.nodeName.toLowerCase()],b&&"set"in b&&void 0!==b.set(this,e,"value")||(this.value=e))});if(e)return b=r.valHooks[e.type]||r.valHooks[e.nodeName.toLowerCase()],b&&"get"in b&&void 0!==(c=b.get(e,"value"))?c:(c=e.value,"string"==typeof c?c.replace(rb,""):null==c?"":c)}}}),r.extend({valHooks:{option:{get:function(a){var b=r.find.attr(a,"value");return null!=b?b:pb(r.text(a))}},select:{get:function(a){var b,c,d,e=a.options,f=a.selectedIndex,g="select-one"===a.type,h=g?null:[],i=g?f+1:e.length;for(d=f<0?i:g?f:0;d<i;d++)if(c=e[d],(c.selected||d===f)&&!c.disabled&&(!c.parentNode.disabled||!B(c.parentNode,"optgroup"))){if(b=r(c).val(),g)return b;h.push(b)}return h},set:function(a,b){var c,d,e=a.options,f=r.makeArray(b),g=e.length;while(g--)d=e[g],(d.selected=r.inArray(r.valHooks.option.get(d),f)>-1)&&(c=!0);return c||(a.selectedIndex=-1),f}}}}),r.each(["radio","checkbox"],function(){r.valHooks[this]={set:function(a,b){if(Array.isArray(b))return a.checked=r.inArray(r(a).val(),b)>-1}},o.checkOn||(r.valHooks[this].get=function(a){return null===a.getAttribute("value")?"on":a.value})});var sb=/^(?:focusinfocus|focusoutblur)$/;r.extend(r.event,{trigger:function(b,c,e,f){var g,h,i,j,k,m,n,o=[e||d],p=l.call(b,"type")?b.type:b,q=l.call(b,"namespace")?b.namespace.split("."):[];if(h=i=e=e||d,3!==e.nodeType&&8!==e.nodeType&&!sb.test(p+r.event.triggered)&&(p.indexOf(".")>-1&&(q=p.split("."),p=q.shift(),q.sort()),k=p.indexOf(":")<0&&"on"+p,b=b[r.expando]?b:new r.Event(p,"object"==typeof b&&b),b.isTrigger=f?2:3,b.namespace=q.join("."),b.rnamespace=b.namespace?new RegExp("(^|\\\\.)"+q.join("\\\\.(?:.*\\\\.|)")+"(\\\\.|$)"):null,b.result=void 0,b.target||(b.target=e),c=null==c?[b]:r.makeArray(c,[b]),n=r.event.special[p]||{},f||!n.trigger||n.trigger.apply(e,c)!==!1)){if(!f&&!n.noBubble&&!r.isWindow(e)){for(j=n.delegateType||p,sb.test(j+p)||(h=h.parentNode);h;h=h.parentNode)o.push(h),i=h;i===(e.ownerDocument||d)&&o.push(i.defaultView||i.parentWindow||a)}g=0;while((h=o[g++])&&!b.isPropagationStopped())b.type=g>1?j:n.bindType||p,m=(W.get(h,"events")||{})[b.type]&&W.get(h,"handle"),m&&m.apply(h,c),m=k&&h[k],m&&m.apply&&U(h)&&(b.result=m.apply(h,c),b.result===!1&&b.preventDefault());return b.type=p,f||b.isDefaultPrevented()||n._default&&n._default.apply(o.pop(),c)!==!1||!U(e)||k&&r.isFunction(e[p])&&!r.isWindow(e)&&(i=e[k],i&&(e[k]=null),r.event.triggered=p,e[p](),r.event.triggered=void 0,i&&(e[k]=i)),b.result}},simulate:function(a,b,c){var d=r.extend(new r.Event,c,{type:a,isSimulated:!0});r.event.trigger(d,null,b)}}),r.fn.extend({trigger:function(a,b){return this.each(function(){r.event.trigger(a,b,this)})},triggerHandler:function(a,b){var c=this[0];if(c)return r.event.trigger(a,b,c,!0)}}),r.each("blur focus focusin focusout resize scroll click dblclick mousedown mouseup mousemove mouseover mouseout mouseenter mouseleave change select submit keydown keypress keyup contextmenu".split(" "),function(a,b){r.fn[b]=function(a,c){return arguments.length>0?this.on(b,null,a,c):this.trigger(b)}}),r.fn.extend({hover:function(a,b){return this.mouseenter(a).mouseleave(b||a)}}),o.focusin="onfocusin"in a,o.focusin||r.each({focus:"focusin",blur:"focusout"},function(a,b){var c=function(a){r.event.simulate(b,a.target,r.event.fix(a))};r.event.special[b]={setup:function(){var d=this.ownerDocument||this,e=W.access(d,b);e||d.addEventListener(a,c,!0),W.access(d,b,(e||0)+1)},teardown:function(){var d=this.ownerDocument||this,e=W.access(d,b)-1;e?W.access(d,b,e):(d.removeEventListener(a,c,!0),W.remove(d,b))}}});var tb=a.location,ub=r.now(),vb=/\\?/;r.parseXML=function(b){var c;if(!b||"string"!=typeof b)return null;try{c=(new a.DOMParser).parseFromString(b,"text/xml")}catch(d){c=void 0}return c&&!c.getElementsByTagName("parsererror").length||r.error("Invalid XML: "+b),c};var wb=/\\[\\]$/,xb=/\\r?\\n/g,yb=/^(?:submit|button|image|reset|file)$/i,zb=/^(?:input|select|textarea|keygen)/i;function Ab(a,b,c,d){var e;if(Array.isArray(b))r.each(b,function(b,e){c||wb.test(a)?d(a,e):Ab(a+"["+("object"==typeof e&&null!=e?b:"")+"]",e,c,d)});else if(c||"object"!==r.type(b))d(a,b);else for(e in b)Ab(a+"["+e+"]",b[e],c,d)}r.param=function(a,b){var c,d=[],e=function(a,b){var c=r.isFunction(b)?b():b;d[d.length]=encodeURIComponent(a)+"="+encodeURIComponent(null==c?"":c)};if(Array.isArray(a)||a.jquery&&!r.isPlainObject(a))r.each(a,function(){e(this.name,this.value)});else for(c in a)Ab(c,a[c],b,e);return d.join("&")},r.fn.extend({serialize:function(){return r.param(this.serializeArray())},serializeArray:function(){return this.map(function(){var a=r.prop(this,"elements");return a?r.makeArray(a):this}).filter(function(){var a=this.type;return this.name&&!r(this).is(":disabled")&&zb.test(this.nodeName)&&!yb.test(a)&&(this.checked||!ja.test(a))}).map(function(a,b){var c=r(this).val();return null==c?null:Array.isArray(c)?r.map(c,function(a){return{name:b.name,value:a.replace(xb,"\\r\\n")}}):{name:b.name,value:c.replace(xb,"\\r\\n")}}).get()}});var Bb=/%20/g,Cb=/#.*$/,Db=/([?&])_=[^&]*/,Eb=/^(.*?):[ \\t]*([^\\r\\n]*)$/gm,Fb=/^(?:about|app|app-storage|.+-extension|file|res|widget):$/,Gb=/^(?:GET|HEAD)$/,Hb=/^\\/\\//,Ib={},Jb={},Kb="*/".concat("*"),Lb=d.createElement("a");Lb.href=tb.href;function Mb(a){return function(b,c){"string"!=typeof b&&(c=b,b="*");var d,e=0,f=b.toLowerCase().match(L)||[];if(r.isFunction(c))while(d=f[e++])"+"===d[0]?(d=d.slice(1)||"*",(a[d]=a[d]||[]).unshift(c)):(a[d]=a[d]||[]).push(c)}}function Nb(a,b,c,d){var e={},f=a===Jb;function g(h){var i;return e[h]=!0,r.each(a[h]||[],function(a,h){var j=h(b,c,d);return"string"!=typeof j||f||e[j]?f?!(i=j):void 0:(b.dataTypes.unshift(j),g(j),!1)}),i}return g(b.dataTypes[0])||!e["*"]&&g("*")}function Ob(a,b){var c,d,e=r.ajaxSettings.flatOptions||{};for(c in b)void 0!==b[c]&&((e[c]?a:d||(d={}))[c]=b[c]);return d&&r.extend(!0,a,d),a}function Pb(a,b,c){var d,e,f,g,h=a.contents,i=a.dataTypes;while("*"===i[0])i.shift(),void 0===d&&(d=a.mimeType||b.getResponseHeader("Content-Type"));if(d)for(e in h)if(h[e]&&h[e].test(d)){i.unshift(e);break}if(i[0]in c)f=i[0];else{for(e in c){if(!i[0]||a.converters[e+" "+i[0]]){f=e;break}g||(g=e)}f=f||g}if(f)return f!==i[0]&&i.unshift(f),c[f]}function Qb(a,b,c,d){var e,f,g,h,i,j={},k=a.dataTypes.slice();if(k[1])for(g in a.converters)j[g.toLowerCase()]=a.converters[g];f=k.shift();while(f)if(a.responseFields[f]&&(c[a.responseFields[f]]=b),!i&&d&&a.dataFilter&&(b=a.dataFilter(b,a.dataType)),i=f,f=k.shift())if("*"===f)f=i;else if("*"!==i&&i!==f){if(g=j[i+" "+f]||j["* "+f],!g)for(e in j)if(h=e.split(" "),h[1]===f&&(g=j[i+" "+h[0]]||j["* "+h[0]])){g===!0?g=j[e]:j[e]!==!0&&(f=h[0],k.unshift(h[1]));break}if(g!==!0)if(g&&a["throws"])b=g(b);else try{b=g(b)}catch(l){return{state:"parsererror",error:g?l:"No conversion from "+i+" to "+f}}}return{state:"success",data:b}}r.extend({active:0,lastModified:{},etag:{},ajaxSettings:{url:tb.href,type:"GET",isLocal:Fb.test(tb.protocol),global:!0,processData:!0,async:!0,contentType:"application/x-www-form-urlencoded; charset=UTF-8",accepts:{"*":Kb,text:"text/plain",html:"text/html",xml:"application/xml, text/xml",json:"application/json, text/javascript"},contents:{xml:/\\bxml\\b/,html:/\\bhtml/,json:/\\bjson\\b/},responseFields:{xml:"responseXML",text:"responseText",json:"responseJSON"},converters:{"* text":String,"text html":!0,"text json":JSON.parse,"text xml":r.parseXML},flatOptions:{url:!0,context:!0}},ajaxSetup:function(a,b){return b?Ob(Ob(a,r.ajaxSettings),b):Ob(r.ajaxSettings,a)},ajaxPrefilter:Mb(Ib),ajaxTransport:Mb(Jb),ajax:function(b,c){"object"==typeof b&&(c=b,b=void 0),c=c||{};var e,f,g,h,i,j,k,l,m,n,o=r.ajaxSetup({},c),p=o.context||o,q=o.context&&(p.nodeType||p.jquery)?r(p):r.event,s=r.Deferred(),t=r.Callbacks("once memory"),u=o.statusCode||{},v={},w={},x="canceled",y={readyState:0,getResponseHeader:function(a){var b;if(k){if(!h){h={};while(b=Eb.exec(g))h[b[1].toLowerCase()]=b[2]}b=h[a.toLowerCase()]}return null==b?null:b},getAllResponseHeaders:function(){return k?g:null},setRequestHeader:function(a,b){return null==k&&(a=w[a.toLowerCase()]=w[a.toLowerCase()]||a,v[a]=b),this},overrideMimeType:function(a){return null==k&&(o.mimeType=a),this},statusCode:function(a){var b;if(a)if(k)y.always(a[y.status]);else for(b in a)u[b]=[u[b],a[b]];return this},abort:function(a){var b=a||x;return e&&e.abort(b),A(0,b),this}};if(s.promise(y),o.url=((b||o.url||tb.href)+"").replace(Hb,tb.protocol+"//"),o.type=c.method||c.type||o.method||o.type,o.dataTypes=(o.dataType||"*").toLowerCase().match(L)||[""],null==o.crossDomain){j=d.createElement("a");try{j.href=o.url,j.href=j.href,o.crossDomain=Lb.protocol+"//"+Lb.host!=j.protocol+"//"+j.host}catch(z){o.crossDomain=!0}}if(o.data&&o.processData&&"string"!=typeof o.data&&(o.data=r.param(o.data,o.traditional)),Nb(Ib,o,c,y),k)return y;l=r.event&&o.global,l&&0===r.active++&&r.event.trigger("ajaxStart"),o.type=o.type.toUpperCase(),o.hasContent=!Gb.test(o.type),f=o.url.replace(Cb,""),o.hasContent?o.data&&o.processData&&0===(o.contentType||"").indexOf("application/x-www-form-urlencoded")&&(o.data=o.data.replace(Bb,"+")):(n=o.url.slice(f.length),o.data&&(f+=(vb.test(f)?"&":"?")+o.data,delete o.data),o.cache===!1&&(f=f.replace(Db,"$1"),n=(vb.test(f)?"&":"?")+"_="+ub++ +n),o.url=f+n),o.ifModified&&(r.lastModified[f]&&y.setRequestHeader("If-Modified-Since",r.lastModified[f]),r.etag[f]&&y.setRequestHeader("If-None-Match",r.etag[f])),(o.data&&o.hasContent&&o.contentType!==!1||c.contentType)&&y.setRequestHeader("Content-Type",o.contentType),y.setRequestHeader("Accept",o.dataTypes[0]&&o.accepts[o.dataTypes[0]]?o.accepts[o.dataTypes[0]]+("*"!==o.dataTypes[0]?", "+Kb+"; q=0.01":""):o.accepts["*"]);for(m in o.headers)y.setRequestHeader(m,o.headers[m]);if(o.beforeSend&&(o.beforeSend.call(p,y,o)===!1||k))return y.abort();if(x="abort",t.add(o.complete),y.done(o.success),y.fail(o.error),e=Nb(Jb,o,c,y)){if(y.readyState=1,l&&q.trigger("ajaxSend",[y,o]),k)return y;o.async&&o.timeout>0&&(i=a.setTimeout(function(){y.abort("timeout")},o.timeout));try{k=!1,e.send(v,A)}catch(z){if(k)throw z;A(-1,z)}}else A(-1,"No Transport");function A(b,c,d,h){var j,m,n,v,w,x=c;k||(k=!0,i&&a.clearTimeout(i),e=void 0,g=h||"",y.readyState=b>0?4:0,j=b>=200&&b<300||304===b,d&&(v=Pb(o,y,d)),v=Qb(o,v,y,j),j?(o.ifModified&&(w=y.getResponseHeader("Last-Modified"),w&&(r.lastModified[f]=w),w=y.getResponseHeader("etag"),w&&(r.etag[f]=w)),204===b||"HEAD"===o.type?x="nocontent":304===b?x="notmodified":(x=v.state,m=v.data,n=v.error,j=!n)):(n=x,!b&&x||(x="error",b<0&&(b=0))),y.status=b,y.statusText=(c||x)+"",j?s.resolveWith(p,[m,x,y]):s.rejectWith(p,[y,x,n]),y.statusCode(u),u=void 0,l&&q.trigger(j?"ajaxSuccess":"ajaxError",[y,o,j?m:n]),t.fireWith(p,[y,x]),l&&(q.trigger("ajaxComplete",[y,o]),--r.active||r.event.trigger("ajaxStop")))}return y},getJSON:function(a,b,c){return r.get(a,b,c,"json")},getScript:function(a,b){return r.get(a,void 0,b,"script")}}),r.each(["get","post"],function(a,b){r[b]=function(a,c,d,e){return r.isFunction(c)&&(e=e||d,d=c,c=void 0),r.ajax(r.extend({url:a,type:b,dataType:e,data:c,success:d},r.isPlainObject(a)&&a))}}),r._evalUrl=function(a){return r.ajax({url:a,type:"GET",dataType:"script",cache:!0,async:!1,global:!1,"throws":!0})},r.fn.extend({wrapAll:function(a){var b;return this[0]&&(r.isFunction(a)&&(a=a.call(this[0])),b=r(a,this[0].ownerDocument).eq(0).clone(!0),this[0].parentNode&&b.insertBefore(this[0]),b.map(function(){var a=this;while(a.firstElementChild)a=a.firstElementChild;return a}).append(this)),this},wrapInner:function(a){return r.isFunction(a)?this.each(function(b){r(this).wrapInner(a.call(this,b))}):this.each(function(){var b=r(this),c=b.contents();c.length?c.wrapAll(a):b.append(a)})},wrap:function(a){var b=r.isFunction(a);return this.each(function(c){r(this).wrapAll(b?a.call(this,c):a)})},unwrap:function(a){return this.parent(a).not("body").each(function(){r(this).replaceWith(this.childNodes)}),this}}),r.expr.pseudos.hidden=function(a){return!r.expr.pseudos.visible(a)},r.expr.pseudos.visible=function(a){return!!(a.offsetWidth||a.offsetHeight||a.getClientRects().length)},r.ajaxSettings.xhr=function(){try{return new a.XMLHttpRequest}catch(b){}};var Rb={0:200,1223:204},Sb=r.ajaxSettings.xhr();o.cors=!!Sb&&"withCredentials"in Sb,o.ajax=Sb=!!Sb,r.ajaxTransport(function(b){var c,d;if(o.cors||Sb&&!b.crossDomain)return{send:function(e,f){var g,h=b.xhr();if(h.open(b.type,b.url,b.async,b.username,b.password),b.xhrFields)for(g in b.xhrFields)h[g]=b.xhrFields[g];b.mimeType&&h.overrideMimeType&&h.overrideMimeType(b.mimeType),b.crossDomain||e["X-Requested-With"]||(e["X-Requested-With"]="XMLHttpRequest");for(g in e)h.setRequestHeader(g,e[g]);c=function(a){return function(){c&&(c=d=h.onload=h.onerror=h.onabort=h.onreadystatechange=null,"abort"===a?h.abort():"error"===a?"number"!=typeof h.status?f(0,"error"):f(h.status,h.statusText):f(Rb[h.status]||h.status,h.statusText,"text"!==(h.responseType||"text")||"string"!=typeof h.responseText?{binary:h.response}:{text:h.responseText},h.getAllResponseHeaders()))}},h.onload=c(),d=h.onerror=c("error"),void 0!==h.onabort?h.onabort=d:h.onreadystatechange=function(){4===h.readyState&&a.setTimeout(function(){c&&d()})},c=c("abort");try{h.send(b.hasContent&&b.data||null)}catch(i){if(c)throw i}},abort:function(){c&&c()}}}),r.ajaxPrefilter(function(a){a.crossDomain&&(a.contents.script=!1)}),r.ajaxSetup({accepts:{script:"text/javascript, application/javascript, application/ecmascript, application/x-ecmascript"},contents:{script:/\\b(?:java|ecma)script\\b/},converters:{"text script":function(a){return r.globalEval(a),a}}}),r.ajaxPrefilter("script",function(a){void 0===a.cache&&(a.cache=!1),a.crossDomain&&(a.type="GET")}),r.ajaxTransport("script",function(a){if(a.crossDomain){var b,c;return{send:function(e,f){b=r("<script>").prop({charset:a.scriptCharset,src:a.url}).on("load error",c=function(a){b.remove(),c=null,a&&f("error"===a.type?404:200,a.type)}),d.head.appendChild(b[0])},abort:function(){c&&c()}}}});var Tb=[],Ub=/(=)\\?(?=&|$)|\\?\\?/;r.ajaxSetup({jsonp:"callback",jsonpCallback:function(){var a=Tb.pop()||r.expando+"_"+ub++;return this[a]=!0,a}}),r.ajaxPrefilter("json jsonp",function(b,c,d){var e,f,g,h=b.jsonp!==!1&&(Ub.test(b.url)?"url":"string"==typeof b.data&&0===(b.contentType||"").indexOf("application/x-www-form-urlencoded")&&Ub.test(b.data)&&"data");if(h||"jsonp"===b.dataTypes[0])return e=b.jsonpCallback=r.isFunction(b.jsonpCallback)?b.jsonpCallback():b.jsonpCallback,h?b[h]=b[h].replace(Ub,"$1"+e):b.jsonp!==!1&&(b.url+=(vb.test(b.url)?"&":"?")+b.jsonp+"="+e),b.converters["script json"]=function(){return g||r.error(e+" was not called"),g[0]},b.dataTypes[0]="json",f=a[e],a[e]=function(){g=arguments},d.always(function(){void 0===f?r(a).removeProp(e):a[e]=f,b[e]&&(b.jsonpCallback=c.jsonpCallback,Tb.push(e)),g&&r.isFunction(f)&&f(g[0]),g=f=void 0}),"script"}),o.createHTMLDocument=function(){var a=d.implementation.createHTMLDocument("").body;return a.innerHTML="<form></form><form></form>",2===a.childNodes.length}(),r.parseHTML=function(a,b,c){if("string"!=typeof a)return[];"boolean"==typeof b&&(c=b,b=!1);var e,f,g;return b||(o.createHTMLDocument?(b=d.implementation.createHTMLDocument(""),e=b.createElement("base"),e.href=d.location.href,b.head.appendChild(e)):b=d),f=C.exec(a),g=!c&&[],f?[b.createElement(f[1])]:(f=qa([a],b,g),g&&g.length&&r(g).remove(),r.merge([],f.childNodes))},r.fn.load=function(a,b,c){var d,e,f,g=this,h=a.indexOf(" ");return h>-1&&(d=pb(a.slice(h)),a=a.slice(0,h)),r.isFunction(b)?(c=b,b=void 0):b&&"object"==typeof b&&(e="POST"),g.length>0&&r.ajax({url:a,type:e||"GET",dataType:"html",data:b}).done(function(a){f=arguments,g.html(d?r("<div>").append(r.parseHTML(a)).find(d):a)}).always(c&&function(a,b){g.each(function(){c.apply(this,f||[a.responseText,b,a])})}),this},r.each(["ajaxStart","ajaxStop","ajaxComplete","ajaxError","ajaxSuccess","ajaxSend"],function(a,b){r.fn[b]=function(a){return this.on(b,a)}}),r.expr.pseudos.animated=function(a){return r.grep(r.timers,function(b){return a===b.elem}).length},r.offset={setOffset:function(a,b,c){var d,e,f,g,h,i,j,k=r.css(a,"position"),l=r(a),m={};"static"===k&&(a.style.position="relative"),h=l.offset(),f=r.css(a,"top"),i=r.css(a,"left"),j=("absolute"===k||"fixed"===k)&&(f+i).indexOf("auto")>-1,j?(d=l.position(),g=d.top,e=d.left):(g=parseFloat(f)||0,e=parseFloat(i)||0),r.isFunction(b)&&(b=b.call(a,c,r.extend({},h))),null!=b.top&&(m.top=b.top-h.top+g),null!=b.left&&(m.left=b.left-h.left+e),"using"in b?b.using.call(a,m):l.css(m)}},r.fn.extend({offset:function(a){if(arguments.length)return void 0===a?this:this.each(function(b){r.offset.setOffset(this,a,b)});var b,c,d,e,f=this[0];if(f)return f.getClientRects().length?(d=f.getBoundingClientRect(),b=f.ownerDocument,c=b.documentElement,e=b.defaultView,{top:d.top+e.pageYOffset-c.clientTop,left:d.left+e.pageXOffset-c.clientLeft}):{top:0,left:0}},position:function(){if(this[0]){var a,b,c=this[0],d={top:0,left:0};return"fixed"===r.css(c,"position")?b=c.getBoundingClientRect():(a=this.offsetParent(),b=this.offset(),B(a[0],"html")||(d=a.offset()),d={top:d.top+r.css(a[0],"borderTopWidth",!0),left:d.left+r.css(a[0],"borderLeftWidth",!0)}),{top:b.top-d.top-r.css(c,"marginTop",!0),left:b.left-d.left-r.css(c,"marginLeft",!0)}}},offsetParent:function(){return this.map(function(){var a=this.offsetParent;while(a&&"static"===r.css(a,"position"))a=a.offsetParent;return a||ra})}}),r.each({scrollLeft:"pageXOffset",scrollTop:"pageYOffset"},function(a,b){var c="pageYOffset"===b;r.fn[a]=function(d){return T(this,function(a,d,e){var f;return r.isWindow(a)?f=a:9===a.nodeType&&(f=a.defaultView),void 0===e?f?f[b]:a[d]:void(f?f.scrollTo(c?f.pageXOffset:e,c?e:f.pageYOffset):a[d]=e)},a,d,arguments.length)}}),r.each(["top","left"],function(a,b){r.cssHooks[b]=Pa(o.pixelPosition,function(a,c){if(c)return c=Oa(a,b),Ma.test(c)?r(a).position()[b]+"px":c})}),r.each({Height:"height",Width:"width"},function(a,b){r.each({padding:"inner"+a,content:b,"":"outer"+a},function(c,d){r.fn[d]=function(e,f){var g=arguments.length&&(c||"boolean"!=typeof e),h=c||(e===!0||f===!0?"margin":"border");return T(this,function(b,c,e){var f;return r.isWindow(b)?0===d.indexOf("outer")?b["inner"+a]:b.document.documentElement["client"+a]:9===b.nodeType?(f=b.documentElement,Math.max(b.body["scroll"+a],f["scroll"+a],b.body["offset"+a],f["offset"+a],f["client"+a])):void 0===e?r.css(b,c,h):r.style(b,c,e,h)},b,g?e:void 0,g)}})}),r.fn.extend({bind:function(a,b,c){return this.on(a,null,b,c)},unbind:function(a,b){return this.off(a,null,b)},delegate:function(a,b,c,d){return this.on(b,a,c,d)},undelegate:function(a,b,c){return 1===arguments.length?this.off(a,"**"):this.off(b,a||"**",c)}}),r.holdReady=function(a){a?r.readyWait++:r.ready(!0)},r.isArray=Array.isArray,r.parseJSON=JSON.parse,r.nodeName=B,"function"==typeof define&&define.amd&&define("jquery",[],function(){return r});var Vb=a.jQuery,Wb=a.$;return r.noConflict=function(b){return a.$===r&&(a.$=Wb),b&&a.jQuery===r&&(a.jQuery=Vb),r},b||(a.jQuery=a.$=r),r});
 '''
 
-snapshots['test_build_all_docs 45'] = '''.highlight .hll { background-color: #ffffcc }
+snapshots['test_build_all_docs 47'] = '''.highlight .hll { background-color: #ffffcc }
 .highlight  { background: #eeffcc; }
 .highlight .c { color: #408090; font-style: italic } /* Comment */
 .highlight .err { border: 1px solid #FF0000 } /* Error */
@@ -16776,7 +16230,7 @@ snapshots['test_build_all_docs 45'] = '''.highlight .hll { background-color: #ff
 .highlight .vm { color: #bb60d5 } /* Name.Variable.Magic */
 .highlight .il { color: #208050 } /* Literal.Number.Integer.Long */'''
 
-snapshots['test_build_all_docs 46'] = '''/*
+snapshots['test_build_all_docs 48'] = '''/*
  * searchtools.js_t
  * ~~~~~~~~~~~~~~~~
  *
@@ -17538,7 +16992,7 @@ $(document).ready(function() {
   Search.init();
 });'''
 
-snapshots['test_build_all_docs 47'] = '''//     Underscore.js 1.3.1
+snapshots['test_build_all_docs 49'] = '''//     Underscore.js 1.3.1
 //     (c) 2009-2012 Jeremy Ashkenas, DocumentCloud Inc.
 //     Underscore is freely distributable under the MIT license.
 //     Portions of Underscore are inspired or borrowed from Prototype,
@@ -18539,7 +17993,7 @@ snapshots['test_build_all_docs 47'] = '''//     Underscore.js 1.3.1
 }).call(this);
 '''
 
-snapshots['test_build_all_docs 48'] = '''// Underscore.js 1.3.1
+snapshots['test_build_all_docs 50'] = '''// Underscore.js 1.3.1
 // (c) 2009-2012 Jeremy Ashkenas, DocumentCloud Inc.
 // Underscore is freely distributable under the MIT license.
 // Portions of Underscore are inspired or borrowed from Prototype,
@@ -18572,7 +18026,7 @@ function(){var a=i.call(arguments);H.call(a,this._wrapped);return v(c.apply(b,a)
 true;return this};m.prototype.value=function(){return this._wrapped}}).call(this);
 '''
 
-snapshots['test_build_all_docs 49'] = '''/*
+snapshots['test_build_all_docs 51'] = '''/*
  * websupport.js
  * ~~~~~~~~~~~~~
  *
@@ -19382,7 +18836,232 @@ $(document).ready(function() {
 });
 '''
 
-snapshots['test_build_all_docs 50'] = '''
+snapshots['test_build_all_docs 52'] = '''
+/* 
+ *
+ *  First, theme overrides
+ *   
+ */
+
+
+@import url('https://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,600');
+
+
+body {
+    font-family: 'Source Sans Pro', sans-serif;
+    font-weight: 300;
+    color: #1C2844;
+    font-size: 17px;
+    line-height: 25px;
+}
+
+
+div.body h1,
+div.body h2,
+div.body h3,
+div.body h4,
+div.body h5,
+div.body h6,
+div.sphinxsidebar h3,
+div.sphinxsidebar h4 {
+    font-family: 'Source Sans Pro', sans-serif;
+    font-weight: 600;
+    color: #1C2844;
+}
+
+div.body h1 { margin-top: 0; padding-top: 0; font-size: 140%; }
+div.body h2 { font-size: 110%; }
+div.body h3 { font-size: 100%; }
+div.body h4 { font-size: 100%; }
+div.body h5 { font-size: 100%; }
+div.body h6 { font-size: 100%; }
+
+div.sphinxsidebar a {
+    border-bottom: none;
+}
+
+a.reference {
+    border-bottom: none;
+}
+
+.bodywrapper { padding-top: 21px; }
+
+#documentation {
+    display: none;
+}
+
+.sphinxsidebar h3 > a {
+    -webkit-transition: color 0.3s ease-in-out;
+    -moz-transition: color 0.3s ease-in-out;
+    -o-transition: color 0.3s ease-in-out;
+    transition: color 0.3s ease-in-out;
+    padding-left: 6px; 
+}
+
+.sphinxsidebar h3 > a:hover {
+    color: #2391EB;   
+}
+
+.sphinxsidebar li.toctree-l1 > a {
+    font-family: 'Source Sans Pro', sans-serif;
+    font-weight: 400;
+    margin: 0 8px;
+    -webkit-transition: color 0.2s ease-in-out;
+    -moz-transition: color 0.2s ease-in-out;
+    -o-transition: color 0.2s ease-in-out;
+    transition: color 0.2s ease-in-out;
+}
+
+.sphinxsidebar li.toctree-l1 > a:hover {
+    color: #2391EB;
+    border-bottom: 1px solid #2391EB;
+}
+
+.sphinxsidebar li.toctree-l1 > a.current {
+    color: #2391EB;
+}
+
+.sphinxsidebar li.toctree-l1 > ul {
+    list-style: none;
+  }
+  
+.sphinxsidebar li.toctree-l1 > ul li::before {
+    content: "\\2022";
+    color: #1C2844;
+    display: inline-block;
+    width: 10px;
+    margin-left: -7px;
+}
+
+
+@media screen and (max-width: 875px) {
+    .sphinxsidebar li.toctree-l1 > ul li::before {
+        content: "\\2022";
+        color: rgb(170, 170, 170);
+        display: inline-block;
+        width: 10px;
+        margin-left: -7px;
+    }
+
+    div.sphinxsidebar {
+        display: block;
+        float: none;
+        width: 110%;
+        margin: 50px -30px -10px -30px;
+        background: #333;
+    }
+}
+
+
+#rellinks {
+    color: #1C2844;
+}
+
+#rellinks a {
+    color: #2391EB;
+    text-decoration: none;
+}
+
+#rellinks a:hover {
+    text-decoration: underline;
+    text-decoration-color: #2391EB;
+}
+
+.body a.reference {
+    color: #2391EB;
+    text-decoration: none;
+}
+
+.body a.reference:hover {
+    text-decoration: underline;
+    text-decoration-color: #2391EB;
+    border-bottom: none;
+}
+
+/* 
+ *
+ *  Now for dagster-specific stuff 
+ *   
+ */
+
+ .logo_img {
+    height: 42%;
+    width: 42%;
+    padding-bottom: 30px;
+    display: block;
+    margin: 0 auto;
+}
+
+.dagster {
+    text-align: center;
+}
+
+.why_dagster {
+    width: 50%;
+    margin: 0 auto;
+    padding-bottom: 33px;
+}
+
+.why_dagster h1 {
+    font-size: 29px;
+    line-height: 44px;
+    margin: 0;
+    padding: 0;
+}
+
+.get_started {
+\tbackground-color:#299cee;
+\t-moz-border-radius:30px;
+\t-webkit-border-radius:30px;
+\tborder-radius:30px;
+\tborder:1px solid #2f82bd;
+\tdisplay:inline-block;
+\tcursor:pointer;
+\tcolor:#ffffff;
+\tfont-size:17px;
+\tpadding:10px 28px;
+\ttext-decoration:none;
+    text-shadow:0px 1px 1px #2f6627;
+}
+.get_started:hover {
+\tbackground-color:#248AD4;
+    color:#ffffff;
+    border: 1px solid rgb(39, 58, 104);
+    text-decoration: none;    
+}
+.get_started:active {
+\tposition:relative;
+    top:1px;
+    text-decoration: none;
+}
+
+
+.value_prop_blocks {
+    display: flex;
+    flex-wrap: wrap;
+    padding-top: 20px;
+    justify-content: center;
+}
+
+
+.value_prop_block {
+    width: calc(33.3333% + -30px);
+    margin: 15px;
+    padding: 0px;
+    flex: 0 0 210px;
+    text-align: left;
+}
+
+.value_prop_block h1 {
+    font-family: 'Source Sans Pro', sans-serif;
+    font-weight: 600;
+    font-size: 100%;
+    text-align: center;
+}
+
+'''
+
+snapshots['test_build_all_docs 53'] = '''
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
@@ -19390,33 +19069,183 @@ snapshots['test_build_all_docs 50'] = '''
   <head>
     <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    <title>Decorators &#8212; Dagster  documentation</title>
-    <link rel="stylesheet" href="../_static/alabaster.css" type="text/css" />
-    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
-    <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
-    <script type="text/javascript" src="../_static/jquery.js"></script>
-    <script type="text/javascript" src="../_static/underscore.js"></script>
-    <script type="text/javascript" src="../_static/doctools.js"></script>
-    <link rel="index" title="Index" href="../genindex.html" />
-    <link rel="search" title="Search" href="../search.html" />
-    <link rel="next" title="Execution" href="execution.html" />
-    <link rel="prev" title="Definitions" href="definitions.html" />
-   
-  <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
-  
-  
-  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+    <title>API Docs &#8212; Dagster</title>
+    <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/css/custom.css" type="text/css" />
+    <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="Definitions" href="apidocs/definitions.html" />
+    <link rel="prev" title="Upgrading to 0.3.0" href="../learn/guides/028_to_030_upgrade_guide.html" />
+ 
+<link rel="stylesheet" href="../../_static/custom.css" type="text/css" />
+
+
+<meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
 
   </head><body>
   
 
     <div class="document">
-      <div class="documentwrapper">
+    <div class="documentwrapper">
         <div class="bodywrapper">
-          
-
-          <div class="body" role="main">
+            <div class="related top">
+                &nbsp;
+<nav id="rellinks">
+    <ul>
+        <li>
+            &larr;
+            <a href="../learn/guides/028_to_030_upgrade_guide.html" title="Previous document">Upgrading to 0.3.0</a>
+        </li>
+        <li>
+            <a href="/" title="Home">Home</a>
+        </li>
+        <li>
+            <a href="apidocs/definitions.html" title="Next document">Definitions</a>
+            &rarr;
+        </li>
+    </ul>
+</nav>
+            </div>
             
+
+            <div class="body" role="main">
+                
+  <div class="section" id="api-docs">
+<h1>API Docs<a class="headerlink" href="#api-docs" title="Permalink to this headline">¶</a></h1>
+<div class="toctree-wrapper compound" id="api-reference">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="apidocs/definitions.html">Definitions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="apidocs/decorators.html">Decorators</a></li>
+<li class="toctree-l1"><a class="reference internal" href="apidocs/execution.html">Execution</a></li>
+<li class="toctree-l1"><a class="reference internal" href="apidocs/errors.html">Errors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="apidocs/types.html">Types</a></li>
+<li class="toctree-l1"><a class="reference internal" href="apidocs/utilities.html">Utilities</a></li>
+</ul>
+</div>
+</div>
+
+
+            </div>
+
+            
+            <div class="related bottom">
+                &nbsp;
+<nav id="rellinks">
+    <ul>
+        <li>
+            &larr;
+            <a href="../learn/guides/028_to_030_upgrade_guide.html" title="Previous document">Upgrading to 0.3.0</a>
+        </li>
+        <li>
+            <a href="/" title="Home">Home</a>
+        </li>
+        <li>
+            <a href="apidocs/definitions.html" title="Next document">Definitions</a>
+            &rarr;
+        </li>
+    </ul>
+</nav>
+            </div>
+            
+        </div>
+    </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><h3><a href="../../index.html">Dagster</a></h3>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../install/install.html">Install</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../learn/learn.html">Learn</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">API Docs</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="apidocs/definitions.html">Definitions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="apidocs/decorators.html">Decorators</a></li>
+<li class="toctree-l2"><a class="reference internal" href="apidocs/execution.html">Execution</a></li>
+<li class="toctree-l2"><a class="reference internal" href="apidocs/errors.html">Errors</a></li>
+<li class="toctree-l2"><a class="reference internal" href="apidocs/types.html">Types</a></li>
+<li class="toctree-l2"><a class="reference internal" href="apidocs/utilities.html">Utilities</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../community/community.html">Community</a></li>
+</ul>
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+<div class="footer">
+    &copy; 2019, Elementl, Inc.
+    
+    |
+    Powered by <a href="http://sphinx-doc.org/">Sphinx 1.7.5</a>
+    &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+    
+    |
+    <a href="../../_sources/sections/api/api.rst.txt" rel="nofollow">Page source</a>
+</div>
+
+
+
+
+  </body>
+</html>'''
+
+snapshots['test_build_all_docs 54'] = '''
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>Decorators &#8212; Dagster</title>
+    <link rel="stylesheet" href="../../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/css/custom.css" type="text/css" />
+    <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+    <link rel="next" title="Execution" href="execution.html" />
+    <link rel="prev" title="Definitions" href="definitions.html" />
+ 
+<link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
+
+
+<meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+    <div class="documentwrapper">
+        <div class="bodywrapper">
+            <div class="related top">
+                &nbsp;
+<nav id="rellinks">
+    <ul>
+        <li>
+            &larr;
+            <a href="definitions.html" title="Previous document">Definitions</a>
+        </li>
+        <li>
+            <a href="/" title="Home">Home</a>
+        </li>
+        <li>
+            <a href="execution.html" title="Next document">Execution</a>
+            &rarr;
+        </li>
+    </ul>
+</nav>
+            </div>
+            
+
+            <div class="body" role="main">
+                
   <div class="section" id="decorators">
 <h1>Decorators<a class="headerlink" href="#decorators" title="Permalink to this headline">¶</a></h1>
 <p>A more concise way to define solids.</p>
@@ -19601,100 +19430,69 @@ multiple outputs. Useful for solids that have multiple outputs.</li>
 </div>
 
 
-          </div>
-          
-        </div>
-      </div>
-      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
-        <div class="sphinxsidebarwrapper">
-<h3><a href="../index.html">Table Of Contents</a></h3>
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="../principles.html">Principles</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../installation.html">Installation</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../contributing.html">Contributing</a></li>
-</ul>
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/hello_world.html">Hello, World</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/hello_dag.html">Hello, DAG</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/actual_dag.html">An actual DAG</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/inputs.html">Inputs</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/config.html">Configuration</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/configuration_schemas.html">Configuration Schemas</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/execution_context.html">Execution Context</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/resources.html">Resources</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/repos.html">Repositories</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/pipeline_cli_execution.html">Pipeline CLI Execution</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/types.html">User-Defined Types</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/expectations.html">Expectations</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/multiple_outputs.html">Multiple Outputs</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/reusable_solids.html">Reusable Solids</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/unittesting.html">Unit-testing Pipelines</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/dagstermill.html">Dagstermill</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/dagstermill.html#dagstermill-cli">Dagstermill CLI</a></li>
-</ul>
-<ul class="current">
-<li class="toctree-l1"><a class="reference internal" href="definitions.html">Definitions</a></li>
-<li class="toctree-l1 current"><a class="current reference internal" href="#">Decorators</a></li>
-<li class="toctree-l1"><a class="reference internal" href="execution.html">Execution</a></li>
-<li class="toctree-l1"><a class="reference internal" href="errors.html">Errors</a></li>
-<li class="toctree-l1"><a class="reference internal" href="types.html">Types</a></li>
-<li class="toctree-l1"><a class="reference internal" href="utilities.html">Utilities</a></li>
-</ul>
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="../guides/028_to_030_new_concepts.html">New Concepts in 0.3.0</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../guides/028_to_030_upgrade_guide.html">Upgrading to 0.3.0</a></li>
-</ul>
-<div class="relations">
-<h3>Related Topics</h3>
-<ul>
-  <li><a href="../index.html">Documentation overview</a><ul>
-      <li>Previous: <a href="definitions.html" title="previous chapter">Definitions</a></li>
-      <li>Next: <a href="execution.html" title="next chapter">Execution</a></li>
-  </ul></li>
-</ul>
-</div>
-  <div role="note" aria-label="source link">
-    <h3>This Page</h3>
-    <ul class="this-page-menu">
-      <li><a href="../_sources/apidocs/decorators.rst.txt"
-            rel="nofollow">Show Source</a></li>
+            </div>
+
+            
+            <div class="related bottom">
+                &nbsp;
+<nav id="rellinks">
+    <ul>
+        <li>
+            &larr;
+            <a href="definitions.html" title="Previous document">Definitions</a>
+        </li>
+        <li>
+            <a href="/" title="Home">Home</a>
+        </li>
+        <li>
+            <a href="execution.html" title="Next document">Execution</a>
+            &rarr;
+        </li>
     </ul>
-   </div>
-<div id="searchbox" style="display: none" role="search">
-  <h3>Quick search</h3>
-    <div class="searchformwrapper">
-    <form class="search" action="../search.html" method="get">
-      <input type="text" name="q" />
-      <input type="submit" value="Go" />
-      <input type="hidden" name="check_keywords" value="yes" />
-      <input type="hidden" name="area" value="default" />
-    </form>
+</nav>
+            </div>
+            
+        </div>
     </div>
-</div>
-<script type="text/javascript">$(\'#searchbox\').show(0);</script>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><h3><a href="../../../index.html">Dagster</a></h3>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../install/install.html">Install</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../learn/learn.html">Learn</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../api.html">API Docs</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="definitions.html">Definitions</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Decorators</a></li>
+<li class="toctree-l2"><a class="reference internal" href="execution.html">Execution</a></li>
+<li class="toctree-l2"><a class="reference internal" href="errors.html">Errors</a></li>
+<li class="toctree-l2"><a class="reference internal" href="types.html">Types</a></li>
+<li class="toctree-l2"><a class="reference internal" href="utilities.html">Utilities</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../community/community.html">Community</a></li>
+</ul>
+
         </div>
       </div>
       <div class="clearer"></div>
     </div>
-    <div class="footer">
-      &copy;2018, Elementl, Inc.
-      
-      |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.7.5</a>
-      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
-      
-      |
-      <a href="../_sources/apidocs/decorators.rst.txt"
-          rel="nofollow">Page source</a>
-    </div>
-
+<div class="footer">
+    &copy; 2019, Elementl, Inc.
     
-
+    |
+    Powered by <a href="http://sphinx-doc.org/">Sphinx 1.7.5</a>
+    &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
     
+    |
+    <a href="../../../_sources/sections/api/apidocs/decorators.rst.txt" rel="nofollow">Page source</a>
+</div>
+
+
+
+
   </body>
 </html>'''
 
-snapshots['test_build_all_docs 51'] = '''
+snapshots['test_build_all_docs 55'] = '''
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
@@ -19702,33 +19500,52 @@ snapshots['test_build_all_docs 51'] = '''
   <head>
     <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    <title>Definitions &#8212; Dagster  documentation</title>
-    <link rel="stylesheet" href="../_static/alabaster.css" type="text/css" />
-    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
-    <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
-    <script type="text/javascript" src="../_static/jquery.js"></script>
-    <script type="text/javascript" src="../_static/underscore.js"></script>
-    <script type="text/javascript" src="../_static/doctools.js"></script>
-    <link rel="index" title="Index" href="../genindex.html" />
-    <link rel="search" title="Search" href="../search.html" />
+    <title>Definitions &#8212; Dagster</title>
+    <link rel="stylesheet" href="../../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/css/custom.css" type="text/css" />
+    <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
     <link rel="next" title="Decorators" href="decorators.html" />
-    <link rel="prev" title="Dagstermill" href="../intro_tutorial/dagstermill.html" />
-   
-  <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
-  
-  
-  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+    <link rel="prev" title="API Docs" href="../api.html" />
+ 
+<link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
+
+
+<meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
 
   </head><body>
   
 
     <div class="document">
-      <div class="documentwrapper">
+    <div class="documentwrapper">
         <div class="bodywrapper">
-          
-
-          <div class="body" role="main">
+            <div class="related top">
+                &nbsp;
+<nav id="rellinks">
+    <ul>
+        <li>
+            &larr;
+            <a href="../api.html" title="Previous document">API Docs</a>
+        </li>
+        <li>
+            <a href="/" title="Home">Home</a>
+        </li>
+        <li>
+            <a href="decorators.html" title="Next document">Decorators</a>
+            &rarr;
+        </li>
+    </ul>
+</nav>
+            </div>
             
+
+            <div class="body" role="main">
+                
   <div class="section" id="definitions">
 <h1>Definitions<a class="headerlink" href="#definitions" title="Permalink to this headline">¶</a></h1>
 <p>Core API for defining solids and pipelines.</p>
@@ -20296,100 +20113,69 @@ like the alias.</p>
 </div>
 
 
-          </div>
-          
-        </div>
-      </div>
-      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
-        <div class="sphinxsidebarwrapper">
-<h3><a href="../index.html">Table Of Contents</a></h3>
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="../principles.html">Principles</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../installation.html">Installation</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../contributing.html">Contributing</a></li>
-</ul>
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/hello_world.html">Hello, World</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/hello_dag.html">Hello, DAG</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/actual_dag.html">An actual DAG</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/inputs.html">Inputs</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/config.html">Configuration</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/configuration_schemas.html">Configuration Schemas</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/execution_context.html">Execution Context</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/resources.html">Resources</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/repos.html">Repositories</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/pipeline_cli_execution.html">Pipeline CLI Execution</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/types.html">User-Defined Types</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/expectations.html">Expectations</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/multiple_outputs.html">Multiple Outputs</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/reusable_solids.html">Reusable Solids</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/unittesting.html">Unit-testing Pipelines</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/dagstermill.html">Dagstermill</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/dagstermill.html#dagstermill-cli">Dagstermill CLI</a></li>
-</ul>
-<ul class="current">
-<li class="toctree-l1 current"><a class="current reference internal" href="#">Definitions</a></li>
-<li class="toctree-l1"><a class="reference internal" href="decorators.html">Decorators</a></li>
-<li class="toctree-l1"><a class="reference internal" href="execution.html">Execution</a></li>
-<li class="toctree-l1"><a class="reference internal" href="errors.html">Errors</a></li>
-<li class="toctree-l1"><a class="reference internal" href="types.html">Types</a></li>
-<li class="toctree-l1"><a class="reference internal" href="utilities.html">Utilities</a></li>
-</ul>
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="../guides/028_to_030_new_concepts.html">New Concepts in 0.3.0</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../guides/028_to_030_upgrade_guide.html">Upgrading to 0.3.0</a></li>
-</ul>
-<div class="relations">
-<h3>Related Topics</h3>
-<ul>
-  <li><a href="../index.html">Documentation overview</a><ul>
-      <li>Previous: <a href="../intro_tutorial/dagstermill.html" title="previous chapter">Dagstermill</a></li>
-      <li>Next: <a href="decorators.html" title="next chapter">Decorators</a></li>
-  </ul></li>
-</ul>
-</div>
-  <div role="note" aria-label="source link">
-    <h3>This Page</h3>
-    <ul class="this-page-menu">
-      <li><a href="../_sources/apidocs/definitions.rst.txt"
-            rel="nofollow">Show Source</a></li>
+            </div>
+
+            
+            <div class="related bottom">
+                &nbsp;
+<nav id="rellinks">
+    <ul>
+        <li>
+            &larr;
+            <a href="../api.html" title="Previous document">API Docs</a>
+        </li>
+        <li>
+            <a href="/" title="Home">Home</a>
+        </li>
+        <li>
+            <a href="decorators.html" title="Next document">Decorators</a>
+            &rarr;
+        </li>
     </ul>
-   </div>
-<div id="searchbox" style="display: none" role="search">
-  <h3>Quick search</h3>
-    <div class="searchformwrapper">
-    <form class="search" action="../search.html" method="get">
-      <input type="text" name="q" />
-      <input type="submit" value="Go" />
-      <input type="hidden" name="check_keywords" value="yes" />
-      <input type="hidden" name="area" value="default" />
-    </form>
+</nav>
+            </div>
+            
+        </div>
     </div>
-</div>
-<script type="text/javascript">$(\'#searchbox\').show(0);</script>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><h3><a href="../../../index.html">Dagster</a></h3>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../install/install.html">Install</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../learn/learn.html">Learn</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../api.html">API Docs</a><ul class="current">
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Definitions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="decorators.html">Decorators</a></li>
+<li class="toctree-l2"><a class="reference internal" href="execution.html">Execution</a></li>
+<li class="toctree-l2"><a class="reference internal" href="errors.html">Errors</a></li>
+<li class="toctree-l2"><a class="reference internal" href="types.html">Types</a></li>
+<li class="toctree-l2"><a class="reference internal" href="utilities.html">Utilities</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../community/community.html">Community</a></li>
+</ul>
+
         </div>
       </div>
       <div class="clearer"></div>
     </div>
-    <div class="footer">
-      &copy;2018, Elementl, Inc.
-      
-      |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.7.5</a>
-      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
-      
-      |
-      <a href="../_sources/apidocs/definitions.rst.txt"
-          rel="nofollow">Page source</a>
-    </div>
-
+<div class="footer">
+    &copy; 2019, Elementl, Inc.
     
-
+    |
+    Powered by <a href="http://sphinx-doc.org/">Sphinx 1.7.5</a>
+    &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
     
+    |
+    <a href="../../../_sources/sections/api/apidocs/definitions.rst.txt" rel="nofollow">Page source</a>
+</div>
+
+
+
+
   </body>
 </html>'''
 
-snapshots['test_build_all_docs 52'] = '''
+snapshots['test_build_all_docs 56'] = '''
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
@@ -20397,33 +20183,52 @@ snapshots['test_build_all_docs 52'] = '''
   <head>
     <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    <title>Errors &#8212; Dagster  documentation</title>
-    <link rel="stylesheet" href="../_static/alabaster.css" type="text/css" />
-    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
-    <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
-    <script type="text/javascript" src="../_static/jquery.js"></script>
-    <script type="text/javascript" src="../_static/underscore.js"></script>
-    <script type="text/javascript" src="../_static/doctools.js"></script>
-    <link rel="index" title="Index" href="../genindex.html" />
-    <link rel="search" title="Search" href="../search.html" />
+    <title>Errors &#8212; Dagster</title>
+    <link rel="stylesheet" href="../../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/css/custom.css" type="text/css" />
+    <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
     <link rel="next" title="Types" href="types.html" />
     <link rel="prev" title="Execution" href="execution.html" />
-   
-  <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
-  
-  
-  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+ 
+<link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
+
+
+<meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
 
   </head><body>
   
 
     <div class="document">
-      <div class="documentwrapper">
+    <div class="documentwrapper">
         <div class="bodywrapper">
-          
-
-          <div class="body" role="main">
+            <div class="related top">
+                &nbsp;
+<nav id="rellinks">
+    <ul>
+        <li>
+            &larr;
+            <a href="execution.html" title="Previous document">Execution</a>
+        </li>
+        <li>
+            <a href="/" title="Home">Home</a>
+        </li>
+        <li>
+            <a href="types.html" title="Next document">Types</a>
+            &rarr;
+        </li>
+    </ul>
+</nav>
+            </div>
             
+
+            <div class="body" role="main">
+                
   <div class="section" id="errors">
 <h1>Errors<a class="headerlink" href="#errors" title="Permalink to this headline">¶</a></h1>
 <p>Core dagster error classes.</p>
@@ -20474,100 +20279,69 @@ argument to the ctor is meant to be a sys.exc_info at the site of constructor.</
 </div>
 
 
-          </div>
-          
-        </div>
-      </div>
-      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
-        <div class="sphinxsidebarwrapper">
-<h3><a href="../index.html">Table Of Contents</a></h3>
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="../principles.html">Principles</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../installation.html">Installation</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../contributing.html">Contributing</a></li>
-</ul>
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/hello_world.html">Hello, World</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/hello_dag.html">Hello, DAG</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/actual_dag.html">An actual DAG</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/inputs.html">Inputs</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/config.html">Configuration</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/configuration_schemas.html">Configuration Schemas</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/execution_context.html">Execution Context</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/resources.html">Resources</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/repos.html">Repositories</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/pipeline_cli_execution.html">Pipeline CLI Execution</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/types.html">User-Defined Types</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/expectations.html">Expectations</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/multiple_outputs.html">Multiple Outputs</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/reusable_solids.html">Reusable Solids</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/unittesting.html">Unit-testing Pipelines</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/dagstermill.html">Dagstermill</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/dagstermill.html#dagstermill-cli">Dagstermill CLI</a></li>
-</ul>
-<ul class="current">
-<li class="toctree-l1"><a class="reference internal" href="definitions.html">Definitions</a></li>
-<li class="toctree-l1"><a class="reference internal" href="decorators.html">Decorators</a></li>
-<li class="toctree-l1"><a class="reference internal" href="execution.html">Execution</a></li>
-<li class="toctree-l1 current"><a class="current reference internal" href="#">Errors</a></li>
-<li class="toctree-l1"><a class="reference internal" href="types.html">Types</a></li>
-<li class="toctree-l1"><a class="reference internal" href="utilities.html">Utilities</a></li>
-</ul>
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="../guides/028_to_030_new_concepts.html">New Concepts in 0.3.0</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../guides/028_to_030_upgrade_guide.html">Upgrading to 0.3.0</a></li>
-</ul>
-<div class="relations">
-<h3>Related Topics</h3>
-<ul>
-  <li><a href="../index.html">Documentation overview</a><ul>
-      <li>Previous: <a href="execution.html" title="previous chapter">Execution</a></li>
-      <li>Next: <a href="types.html" title="next chapter">Types</a></li>
-  </ul></li>
-</ul>
-</div>
-  <div role="note" aria-label="source link">
-    <h3>This Page</h3>
-    <ul class="this-page-menu">
-      <li><a href="../_sources/apidocs/errors.rst.txt"
-            rel="nofollow">Show Source</a></li>
+            </div>
+
+            
+            <div class="related bottom">
+                &nbsp;
+<nav id="rellinks">
+    <ul>
+        <li>
+            &larr;
+            <a href="execution.html" title="Previous document">Execution</a>
+        </li>
+        <li>
+            <a href="/" title="Home">Home</a>
+        </li>
+        <li>
+            <a href="types.html" title="Next document">Types</a>
+            &rarr;
+        </li>
     </ul>
-   </div>
-<div id="searchbox" style="display: none" role="search">
-  <h3>Quick search</h3>
-    <div class="searchformwrapper">
-    <form class="search" action="../search.html" method="get">
-      <input type="text" name="q" />
-      <input type="submit" value="Go" />
-      <input type="hidden" name="check_keywords" value="yes" />
-      <input type="hidden" name="area" value="default" />
-    </form>
+</nav>
+            </div>
+            
+        </div>
     </div>
-</div>
-<script type="text/javascript">$(\'#searchbox\').show(0);</script>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><h3><a href="../../../index.html">Dagster</a></h3>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../install/install.html">Install</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../learn/learn.html">Learn</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../api.html">API Docs</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="definitions.html">Definitions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="decorators.html">Decorators</a></li>
+<li class="toctree-l2"><a class="reference internal" href="execution.html">Execution</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Errors</a></li>
+<li class="toctree-l2"><a class="reference internal" href="types.html">Types</a></li>
+<li class="toctree-l2"><a class="reference internal" href="utilities.html">Utilities</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../community/community.html">Community</a></li>
+</ul>
+
         </div>
       </div>
       <div class="clearer"></div>
     </div>
-    <div class="footer">
-      &copy;2018, Elementl, Inc.
-      
-      |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.7.5</a>
-      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
-      
-      |
-      <a href="../_sources/apidocs/errors.rst.txt"
-          rel="nofollow">Page source</a>
-    </div>
-
+<div class="footer">
+    &copy; 2019, Elementl, Inc.
     
-
+    |
+    Powered by <a href="http://sphinx-doc.org/">Sphinx 1.7.5</a>
+    &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
     
+    |
+    <a href="../../../_sources/sections/api/apidocs/errors.rst.txt" rel="nofollow">Page source</a>
+</div>
+
+
+
+
   </body>
 </html>'''
 
-snapshots['test_build_all_docs 53'] = '''
+snapshots['test_build_all_docs 57'] = '''
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
@@ -20575,33 +20349,52 @@ snapshots['test_build_all_docs 53'] = '''
   <head>
     <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    <title>Execution &#8212; Dagster  documentation</title>
-    <link rel="stylesheet" href="../_static/alabaster.css" type="text/css" />
-    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
-    <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
-    <script type="text/javascript" src="../_static/jquery.js"></script>
-    <script type="text/javascript" src="../_static/underscore.js"></script>
-    <script type="text/javascript" src="../_static/doctools.js"></script>
-    <link rel="index" title="Index" href="../genindex.html" />
-    <link rel="search" title="Search" href="../search.html" />
+    <title>Execution &#8212; Dagster</title>
+    <link rel="stylesheet" href="../../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/css/custom.css" type="text/css" />
+    <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
     <link rel="next" title="Errors" href="errors.html" />
     <link rel="prev" title="Decorators" href="decorators.html" />
-   
-  <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
-  
-  
-  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+ 
+<link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
+
+
+<meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
 
   </head><body>
   
 
     <div class="document">
-      <div class="documentwrapper">
+    <div class="documentwrapper">
         <div class="bodywrapper">
-          
-
-          <div class="body" role="main">
+            <div class="related top">
+                &nbsp;
+<nav id="rellinks">
+    <ul>
+        <li>
+            &larr;
+            <a href="decorators.html" title="Previous document">Decorators</a>
+        </li>
+        <li>
+            <a href="/" title="Home">Home</a>
+        </li>
+        <li>
+            <a href="errors.html" title="Next document">Errors</a>
+            &rarr;
+        </li>
+    </ul>
+</nav>
+            </div>
             
+
+            <div class="body" role="main">
+                
   <div class="section" id="execution">
 <h1>Execution<a class="headerlink" href="#execution" title="Permalink to this headline">¶</a></h1>
 <p>Executing pipelines and solids.</p>
@@ -20743,100 +20536,69 @@ Returns None if execution result isn’t a success.</p>
 </div>
 
 
-          </div>
-          
-        </div>
-      </div>
-      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
-        <div class="sphinxsidebarwrapper">
-<h3><a href="../index.html">Table Of Contents</a></h3>
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="../principles.html">Principles</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../installation.html">Installation</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../contributing.html">Contributing</a></li>
-</ul>
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/hello_world.html">Hello, World</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/hello_dag.html">Hello, DAG</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/actual_dag.html">An actual DAG</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/inputs.html">Inputs</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/config.html">Configuration</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/configuration_schemas.html">Configuration Schemas</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/execution_context.html">Execution Context</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/resources.html">Resources</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/repos.html">Repositories</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/pipeline_cli_execution.html">Pipeline CLI Execution</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/types.html">User-Defined Types</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/expectations.html">Expectations</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/multiple_outputs.html">Multiple Outputs</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/reusable_solids.html">Reusable Solids</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/unittesting.html">Unit-testing Pipelines</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/dagstermill.html">Dagstermill</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/dagstermill.html#dagstermill-cli">Dagstermill CLI</a></li>
-</ul>
-<ul class="current">
-<li class="toctree-l1"><a class="reference internal" href="definitions.html">Definitions</a></li>
-<li class="toctree-l1"><a class="reference internal" href="decorators.html">Decorators</a></li>
-<li class="toctree-l1 current"><a class="current reference internal" href="#">Execution</a></li>
-<li class="toctree-l1"><a class="reference internal" href="errors.html">Errors</a></li>
-<li class="toctree-l1"><a class="reference internal" href="types.html">Types</a></li>
-<li class="toctree-l1"><a class="reference internal" href="utilities.html">Utilities</a></li>
-</ul>
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="../guides/028_to_030_new_concepts.html">New Concepts in 0.3.0</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../guides/028_to_030_upgrade_guide.html">Upgrading to 0.3.0</a></li>
-</ul>
-<div class="relations">
-<h3>Related Topics</h3>
-<ul>
-  <li><a href="../index.html">Documentation overview</a><ul>
-      <li>Previous: <a href="decorators.html" title="previous chapter">Decorators</a></li>
-      <li>Next: <a href="errors.html" title="next chapter">Errors</a></li>
-  </ul></li>
-</ul>
-</div>
-  <div role="note" aria-label="source link">
-    <h3>This Page</h3>
-    <ul class="this-page-menu">
-      <li><a href="../_sources/apidocs/execution.rst.txt"
-            rel="nofollow">Show Source</a></li>
+            </div>
+
+            
+            <div class="related bottom">
+                &nbsp;
+<nav id="rellinks">
+    <ul>
+        <li>
+            &larr;
+            <a href="decorators.html" title="Previous document">Decorators</a>
+        </li>
+        <li>
+            <a href="/" title="Home">Home</a>
+        </li>
+        <li>
+            <a href="errors.html" title="Next document">Errors</a>
+            &rarr;
+        </li>
     </ul>
-   </div>
-<div id="searchbox" style="display: none" role="search">
-  <h3>Quick search</h3>
-    <div class="searchformwrapper">
-    <form class="search" action="../search.html" method="get">
-      <input type="text" name="q" />
-      <input type="submit" value="Go" />
-      <input type="hidden" name="check_keywords" value="yes" />
-      <input type="hidden" name="area" value="default" />
-    </form>
+</nav>
+            </div>
+            
+        </div>
     </div>
-</div>
-<script type="text/javascript">$(\'#searchbox\').show(0);</script>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><h3><a href="../../../index.html">Dagster</a></h3>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../install/install.html">Install</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../learn/learn.html">Learn</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../api.html">API Docs</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="definitions.html">Definitions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="decorators.html">Decorators</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Execution</a></li>
+<li class="toctree-l2"><a class="reference internal" href="errors.html">Errors</a></li>
+<li class="toctree-l2"><a class="reference internal" href="types.html">Types</a></li>
+<li class="toctree-l2"><a class="reference internal" href="utilities.html">Utilities</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../community/community.html">Community</a></li>
+</ul>
+
         </div>
       </div>
       <div class="clearer"></div>
     </div>
-    <div class="footer">
-      &copy;2018, Elementl, Inc.
-      
-      |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.7.5</a>
-      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
-      
-      |
-      <a href="../_sources/apidocs/execution.rst.txt"
-          rel="nofollow">Page source</a>
-    </div>
-
+<div class="footer">
+    &copy; 2019, Elementl, Inc.
     
-
+    |
+    Powered by <a href="http://sphinx-doc.org/">Sphinx 1.7.5</a>
+    &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
     
+    |
+    <a href="../../../_sources/sections/api/apidocs/execution.rst.txt" rel="nofollow">Page source</a>
+</div>
+
+
+
+
   </body>
 </html>'''
 
-snapshots['test_build_all_docs 54'] = '''
+snapshots['test_build_all_docs 58'] = '''
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
@@ -20844,33 +20606,52 @@ snapshots['test_build_all_docs 54'] = '''
   <head>
     <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    <title>Types &#8212; Dagster  documentation</title>
-    <link rel="stylesheet" href="../_static/alabaster.css" type="text/css" />
-    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
-    <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
-    <script type="text/javascript" src="../_static/jquery.js"></script>
-    <script type="text/javascript" src="../_static/underscore.js"></script>
-    <script type="text/javascript" src="../_static/doctools.js"></script>
-    <link rel="index" title="Index" href="../genindex.html" />
-    <link rel="search" title="Search" href="../search.html" />
+    <title>Types &#8212; Dagster</title>
+    <link rel="stylesheet" href="../../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/css/custom.css" type="text/css" />
+    <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
     <link rel="next" title="Utilities" href="utilities.html" />
     <link rel="prev" title="Errors" href="errors.html" />
-   
-  <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
-  
-  
-  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+ 
+<link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
+
+
+<meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
 
   </head><body>
   
 
     <div class="document">
-      <div class="documentwrapper">
+    <div class="documentwrapper">
         <div class="bodywrapper">
-          
-
-          <div class="body" role="main">
+            <div class="related top">
+                &nbsp;
+<nav id="rellinks">
+    <ul>
+        <li>
+            &larr;
+            <a href="errors.html" title="Previous document">Errors</a>
+        </li>
+        <li>
+            <a href="/" title="Home">Home</a>
+        </li>
+        <li>
+            <a href="utilities.html" title="Next document">Utilities</a>
+            &rarr;
+        </li>
+    </ul>
+</nav>
+            </div>
             
+
+            <div class="body" role="main">
+                
   <div class="section" id="module-dagster">
 <span id="types"></span><h1>Types<a class="headerlink" href="#module-dagster" title="Permalink to this headline">¶</a></h1>
 <p>Dagster type system.</p>
@@ -20970,100 +20751,69 @@ snapshots['test_build_all_docs 54'] = '''
 </div>
 
 
-          </div>
-          
-        </div>
-      </div>
-      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
-        <div class="sphinxsidebarwrapper">
-<h3><a href="../index.html">Table Of Contents</a></h3>
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="../principles.html">Principles</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../installation.html">Installation</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../contributing.html">Contributing</a></li>
-</ul>
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/hello_world.html">Hello, World</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/hello_dag.html">Hello, DAG</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/actual_dag.html">An actual DAG</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/inputs.html">Inputs</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/config.html">Configuration</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/configuration_schemas.html">Configuration Schemas</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/execution_context.html">Execution Context</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/resources.html">Resources</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/repos.html">Repositories</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/pipeline_cli_execution.html">Pipeline CLI Execution</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/types.html">User-Defined Types</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/expectations.html">Expectations</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/multiple_outputs.html">Multiple Outputs</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/reusable_solids.html">Reusable Solids</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/unittesting.html">Unit-testing Pipelines</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/dagstermill.html">Dagstermill</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/dagstermill.html#dagstermill-cli">Dagstermill CLI</a></li>
-</ul>
-<ul class="current">
-<li class="toctree-l1"><a class="reference internal" href="definitions.html">Definitions</a></li>
-<li class="toctree-l1"><a class="reference internal" href="decorators.html">Decorators</a></li>
-<li class="toctree-l1"><a class="reference internal" href="execution.html">Execution</a></li>
-<li class="toctree-l1"><a class="reference internal" href="errors.html">Errors</a></li>
-<li class="toctree-l1 current"><a class="current reference internal" href="#">Types</a></li>
-<li class="toctree-l1"><a class="reference internal" href="utilities.html">Utilities</a></li>
-</ul>
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="../guides/028_to_030_new_concepts.html">New Concepts in 0.3.0</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../guides/028_to_030_upgrade_guide.html">Upgrading to 0.3.0</a></li>
-</ul>
-<div class="relations">
-<h3>Related Topics</h3>
-<ul>
-  <li><a href="../index.html">Documentation overview</a><ul>
-      <li>Previous: <a href="errors.html" title="previous chapter">Errors</a></li>
-      <li>Next: <a href="utilities.html" title="next chapter">Utilities</a></li>
-  </ul></li>
-</ul>
-</div>
-  <div role="note" aria-label="source link">
-    <h3>This Page</h3>
-    <ul class="this-page-menu">
-      <li><a href="../_sources/apidocs/types.rst.txt"
-            rel="nofollow">Show Source</a></li>
+            </div>
+
+            
+            <div class="related bottom">
+                &nbsp;
+<nav id="rellinks">
+    <ul>
+        <li>
+            &larr;
+            <a href="errors.html" title="Previous document">Errors</a>
+        </li>
+        <li>
+            <a href="/" title="Home">Home</a>
+        </li>
+        <li>
+            <a href="utilities.html" title="Next document">Utilities</a>
+            &rarr;
+        </li>
     </ul>
-   </div>
-<div id="searchbox" style="display: none" role="search">
-  <h3>Quick search</h3>
-    <div class="searchformwrapper">
-    <form class="search" action="../search.html" method="get">
-      <input type="text" name="q" />
-      <input type="submit" value="Go" />
-      <input type="hidden" name="check_keywords" value="yes" />
-      <input type="hidden" name="area" value="default" />
-    </form>
+</nav>
+            </div>
+            
+        </div>
     </div>
-</div>
-<script type="text/javascript">$(\'#searchbox\').show(0);</script>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><h3><a href="../../../index.html">Dagster</a></h3>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../install/install.html">Install</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../learn/learn.html">Learn</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../api.html">API Docs</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="definitions.html">Definitions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="decorators.html">Decorators</a></li>
+<li class="toctree-l2"><a class="reference internal" href="execution.html">Execution</a></li>
+<li class="toctree-l2"><a class="reference internal" href="errors.html">Errors</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Types</a></li>
+<li class="toctree-l2"><a class="reference internal" href="utilities.html">Utilities</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../community/community.html">Community</a></li>
+</ul>
+
         </div>
       </div>
       <div class="clearer"></div>
     </div>
-    <div class="footer">
-      &copy;2018, Elementl, Inc.
-      
-      |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.7.5</a>
-      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
-      
-      |
-      <a href="../_sources/apidocs/types.rst.txt"
-          rel="nofollow">Page source</a>
-    </div>
-
+<div class="footer">
+    &copy; 2019, Elementl, Inc.
     
-
+    |
+    Powered by <a href="http://sphinx-doc.org/">Sphinx 1.7.5</a>
+    &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
     
+    |
+    <a href="../../../_sources/sections/api/apidocs/types.rst.txt" rel="nofollow">Page source</a>
+</div>
+
+
+
+
   </body>
 </html>'''
 
-snapshots['test_build_all_docs 55'] = '''
+snapshots['test_build_all_docs 59'] = '''
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
@@ -21071,33 +20821,52 @@ snapshots['test_build_all_docs 55'] = '''
   <head>
     <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    <title>Utilities &#8212; Dagster  documentation</title>
-    <link rel="stylesheet" href="../_static/alabaster.css" type="text/css" />
-    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
-    <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
-    <script type="text/javascript" src="../_static/jquery.js"></script>
-    <script type="text/javascript" src="../_static/underscore.js"></script>
-    <script type="text/javascript" src="../_static/doctools.js"></script>
-    <link rel="index" title="Index" href="../genindex.html" />
-    <link rel="search" title="Search" href="../search.html" />
-    <link rel="next" title="New Concepts in 0.3.0" href="../guides/028_to_030_new_concepts.html" />
+    <title>Utilities &#8212; Dagster</title>
+    <link rel="stylesheet" href="../../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/css/custom.css" type="text/css" />
+    <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+    <link rel="next" title="Community" href="../../community/community.html" />
     <link rel="prev" title="Types" href="types.html" />
-   
-  <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
-  
-  
-  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+ 
+<link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
+
+
+<meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
 
   </head><body>
   
 
     <div class="document">
-      <div class="documentwrapper">
+    <div class="documentwrapper">
         <div class="bodywrapper">
-          
-
-          <div class="body" role="main">
+            <div class="related top">
+                &nbsp;
+<nav id="rellinks">
+    <ul>
+        <li>
+            &larr;
+            <a href="types.html" title="Previous document">Types</a>
+        </li>
+        <li>
+            <a href="/" title="Home">Home</a>
+        </li>
+        <li>
+            <a href="../../community/community.html" title="Next document">Community</a>
+            &rarr;
+        </li>
+    </ul>
+</nav>
+            </div>
             
+
+            <div class="body" role="main">
+                
   <div class="section" id="utilities">
 <h1>Utilities<a class="headerlink" href="#utilities" title="Permalink to this headline">¶</a></h1>
 <dl class="function">
@@ -21113,100 +20882,69 @@ snapshots['test_build_all_docs 55'] = '''
 </div>
 
 
-          </div>
-          
-        </div>
-      </div>
-      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
-        <div class="sphinxsidebarwrapper">
-<h3><a href="../index.html">Table Of Contents</a></h3>
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="../principles.html">Principles</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../installation.html">Installation</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../contributing.html">Contributing</a></li>
-</ul>
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/hello_world.html">Hello, World</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/hello_dag.html">Hello, DAG</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/actual_dag.html">An actual DAG</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/inputs.html">Inputs</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/config.html">Configuration</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/configuration_schemas.html">Configuration Schemas</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/execution_context.html">Execution Context</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/resources.html">Resources</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/repos.html">Repositories</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/pipeline_cli_execution.html">Pipeline CLI Execution</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/types.html">User-Defined Types</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/expectations.html">Expectations</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/multiple_outputs.html">Multiple Outputs</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/reusable_solids.html">Reusable Solids</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/unittesting.html">Unit-testing Pipelines</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/dagstermill.html">Dagstermill</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/dagstermill.html#dagstermill-cli">Dagstermill CLI</a></li>
-</ul>
-<ul class="current">
-<li class="toctree-l1"><a class="reference internal" href="definitions.html">Definitions</a></li>
-<li class="toctree-l1"><a class="reference internal" href="decorators.html">Decorators</a></li>
-<li class="toctree-l1"><a class="reference internal" href="execution.html">Execution</a></li>
-<li class="toctree-l1"><a class="reference internal" href="errors.html">Errors</a></li>
-<li class="toctree-l1"><a class="reference internal" href="types.html">Types</a></li>
-<li class="toctree-l1 current"><a class="current reference internal" href="#">Utilities</a></li>
-</ul>
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="../guides/028_to_030_new_concepts.html">New Concepts in 0.3.0</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../guides/028_to_030_upgrade_guide.html">Upgrading to 0.3.0</a></li>
-</ul>
-<div class="relations">
-<h3>Related Topics</h3>
-<ul>
-  <li><a href="../index.html">Documentation overview</a><ul>
-      <li>Previous: <a href="types.html" title="previous chapter">Types</a></li>
-      <li>Next: <a href="../guides/028_to_030_new_concepts.html" title="next chapter">New Concepts in 0.3.0</a></li>
-  </ul></li>
-</ul>
-</div>
-  <div role="note" aria-label="source link">
-    <h3>This Page</h3>
-    <ul class="this-page-menu">
-      <li><a href="../_sources/apidocs/utilities.rst.txt"
-            rel="nofollow">Show Source</a></li>
+            </div>
+
+            
+            <div class="related bottom">
+                &nbsp;
+<nav id="rellinks">
+    <ul>
+        <li>
+            &larr;
+            <a href="types.html" title="Previous document">Types</a>
+        </li>
+        <li>
+            <a href="/" title="Home">Home</a>
+        </li>
+        <li>
+            <a href="../../community/community.html" title="Next document">Community</a>
+            &rarr;
+        </li>
     </ul>
-   </div>
-<div id="searchbox" style="display: none" role="search">
-  <h3>Quick search</h3>
-    <div class="searchformwrapper">
-    <form class="search" action="../search.html" method="get">
-      <input type="text" name="q" />
-      <input type="submit" value="Go" />
-      <input type="hidden" name="check_keywords" value="yes" />
-      <input type="hidden" name="area" value="default" />
-    </form>
+</nav>
+            </div>
+            
+        </div>
     </div>
-</div>
-<script type="text/javascript">$(\'#searchbox\').show(0);</script>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><h3><a href="../../../index.html">Dagster</a></h3>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../install/install.html">Install</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../learn/learn.html">Learn</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../api.html">API Docs</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="definitions.html">Definitions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="decorators.html">Decorators</a></li>
+<li class="toctree-l2"><a class="reference internal" href="execution.html">Execution</a></li>
+<li class="toctree-l2"><a class="reference internal" href="errors.html">Errors</a></li>
+<li class="toctree-l2"><a class="reference internal" href="types.html">Types</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Utilities</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../community/community.html">Community</a></li>
+</ul>
+
         </div>
       </div>
       <div class="clearer"></div>
     </div>
-    <div class="footer">
-      &copy;2018, Elementl, Inc.
-      
-      |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.7.5</a>
-      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
-      
-      |
-      <a href="../_sources/apidocs/utilities.rst.txt"
-          rel="nofollow">Page source</a>
-    </div>
-
+<div class="footer">
+    &copy; 2019, Elementl, Inc.
     
-
+    |
+    Powered by <a href="http://sphinx-doc.org/">Sphinx 1.7.5</a>
+    &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
     
+    |
+    <a href="../../../_sources/sections/api/apidocs/utilities.rst.txt" rel="nofollow">Page source</a>
+</div>
+
+
+
+
   </body>
 </html>'''
 
-snapshots['test_build_all_docs 56'] = '''
+snapshots['test_build_all_docs 60'] = '''
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
@@ -21214,33 +20952,1025 @@ snapshots['test_build_all_docs 56'] = '''
   <head>
     <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    <title>New Concepts in 0.3.0 &#8212; Dagster  documentation</title>
-    <link rel="stylesheet" href="../_static/alabaster.css" type="text/css" />
-    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
-    <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
-    <script type="text/javascript" src="../_static/jquery.js"></script>
-    <script type="text/javascript" src="../_static/underscore.js"></script>
-    <script type="text/javascript" src="../_static/doctools.js"></script>
-    <link rel="index" title="Index" href="../genindex.html" />
-    <link rel="search" title="Search" href="../search.html" />
-    <link rel="next" title="Upgrading to 0.3.0" href="028_to_030_upgrade_guide.html" />
-    <link rel="prev" title="Utilities" href="../apidocs/utilities.html" />
-   
-  <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
-  
-  
-  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+    <title>Community &#8212; Dagster</title>
+    <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/css/custom.css" type="text/css" />
+    <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="Contributing" href="contributing.html" />
+    <link rel="prev" title="Utilities" href="../api/apidocs/utilities.html" />
+ 
+<link rel="stylesheet" href="../../_static/custom.css" type="text/css" />
+
+
+<meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
 
   </head><body>
   
 
     <div class="document">
-      <div class="documentwrapper">
+    <div class="documentwrapper">
         <div class="bodywrapper">
-          
-
-          <div class="body" role="main">
+            <div class="related top">
+                &nbsp;
+<nav id="rellinks">
+    <ul>
+        <li>
+            &larr;
+            <a href="../api/apidocs/utilities.html" title="Previous document">Utilities</a>
+        </li>
+        <li>
+            <a href="/" title="Home">Home</a>
+        </li>
+        <li>
+            <a href="contributing.html" title="Next document">Contributing</a>
+            &rarr;
+        </li>
+    </ul>
+</nav>
+            </div>
             
+
+            <div class="body" role="main">
+                
+  <div class="section" id="community">
+<h1>Community<a class="headerlink" href="#community" title="Permalink to this headline">¶</a></h1>
+<p>Here, we’ve including instructions for how to contribute to the Dagster project. We welcome both
+code contributions and issue reports.</p>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="contributing.html">Contributing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="release_notes.html">Release Notes</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://www.github.com/dagster-io/dagster/">Github</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://stackoverflow.com/questions/tagged/dagster">StackOverflow</a></li>
+</ul>
+</div>
+</div>
+
+
+            </div>
+
+            
+            <div class="related bottom">
+                &nbsp;
+<nav id="rellinks">
+    <ul>
+        <li>
+            &larr;
+            <a href="../api/apidocs/utilities.html" title="Previous document">Utilities</a>
+        </li>
+        <li>
+            <a href="/" title="Home">Home</a>
+        </li>
+        <li>
+            <a href="contributing.html" title="Next document">Contributing</a>
+            &rarr;
+        </li>
+    </ul>
+</nav>
+            </div>
+            
+        </div>
+    </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><h3><a href="../../index.html">Dagster</a></h3>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../install/install.html">Install</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../learn/learn.html">Learn</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../api/api.html">API Docs</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Community</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="contributing.html">Contributing</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release_notes.html">Release Notes</a></li>
+<li class="toctree-l2"><a class="reference external" href="https://www.github.com/dagster-io/dagster/">Github</a></li>
+<li class="toctree-l2"><a class="reference external" href="https://stackoverflow.com/questions/tagged/dagster">StackOverflow</a></li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+<div class="footer">
+    &copy; 2019, Elementl, Inc.
+    
+    |
+    Powered by <a href="http://sphinx-doc.org/">Sphinx 1.7.5</a>
+    &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+    
+    |
+    <a href="../../_sources/sections/community/community.rst.txt" rel="nofollow">Page source</a>
+</div>
+
+
+
+
+  </body>
+</html>'''
+
+snapshots['test_build_all_docs 61'] = '''
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>Contributing &#8212; Dagster</title>
+    <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/css/custom.css" type="text/css" />
+    <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="Release Notes" href="release_notes.html" />
+    <link rel="prev" title="Community" href="community.html" />
+ 
+<link rel="stylesheet" href="../../_static/custom.css" type="text/css" />
+
+
+<meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+    <div class="documentwrapper">
+        <div class="bodywrapper">
+            <div class="related top">
+                &nbsp;
+<nav id="rellinks">
+    <ul>
+        <li>
+            &larr;
+            <a href="community.html" title="Previous document">Community</a>
+        </li>
+        <li>
+            <a href="/" title="Home">Home</a>
+        </li>
+        <li>
+            <a href="release_notes.html" title="Next document">Release Notes</a>
+            &rarr;
+        </li>
+    </ul>
+</nav>
+            </div>
+            
+
+            <div class="body" role="main">
+                
+  <div class="section" id="contributing">
+<h1>Contributing<a class="headerlink" href="#contributing" title="Permalink to this headline">¶</a></h1>
+<p>If you are planning to contribute to dagster, you will need to set up a local
+development environment.</p>
+<div class="section" id="local-development-setup">
+<h2>Local development setup<a class="headerlink" href="#local-development-setup" title="Permalink to this headline">¶</a></h2>
+<ol class="arabic">
+<li><p class="first">Install Python. Python 3.6 or above recommended.</p>
+<blockquote>
+<div><p>Note: If you use Python 3.7 dagster-airflow will not install and run properly
+as airflow is not Python 3.7 compatible. Until [AIRFLOW-2876](<a class="reference external" href="https://github.com/apache/airflow/pull/3723">https://github.com/apache/airflow/pull/3723</a>)
+is resolved (expected in 1.10.3), Airflow (and, as a consequence, dagster-airflow)
+is incompatible with Python 3.7.</p>
+<p>The rest of the modules will work properly so you can ignore this error and develop the rest
+of the modules.</p>
+</div></blockquote>
+</li>
+<li><p class="first">Create and activate a virtualenv.</p>
+</li>
+</ol>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$</span> python3 -m venv dagsterenv
+<span class="gp">$</span> <span class="nb">source</span> dagsterenv/bin/activate
+</pre></div>
+</div>
+<ol class="arabic simple" start="3">
+<li>Install yarn. If you are on macOS, this should be:</li>
+</ol>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$</span> brew install yarn
+</pre></div>
+</div>
+<p>4. Run the script dev_env_setup.sh at repo root. This sets up a full
+dagster developer environment with all modules and runs tests that
+do not require heavy external dependencies such as docker. This will
+take a few minutes.</p>
+<blockquote>
+<div>$ ./dev_env_setup.sh</div></blockquote>
+<ol class="arabic" start="5">
+<li><p class="first">Run some tests manually to make sure things are working.</p>
+<blockquote>
+<div><p>$ pytest python_modules/dagster/dagster_tests</p>
+</div></blockquote>
+</li>
+</ol>
+<p>Have fun coding!</p>
+<ol class="arabic simple" start="6">
+<li>Set up pre-commit hooks</li>
+</ol>
+<p>We use black to enforce a consistent code style. To set up a pre-commit hook, just run:</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$</span> pre-commit install
+</pre></div>
+</div>
+<p>(The <cite>pre-commit</cite> package is installed in dagster’s dev-requirements.)</p>
+<div class="section" id="running-dagit-webapp-in-development">
+<h3>Running dagit webapp in development<a class="headerlink" href="#running-dagit-webapp-in-development" title="Permalink to this headline">¶</a></h3>
+<p>For development, run the dagit GraphQL server on a different port than the
+webapp, from any directory that contains a repository.yml file. For example:</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$</span> <span class="nb">cd</span> dagster/python_modules/dagster/dagster/tutorials/intro_tutorial
+<span class="gp">$</span> dagit -p <span class="m">3333</span>
+</pre></div>
+</div>
+<p>Keep this running. Then, in another terminal, run the local development
+(autoreloading, etc.) version of the webapp:</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$</span> <span class="nb">cd</span> dagster/js_modules/dagit
+<span class="gp">$</span> make dev_webapp
+</pre></div>
+</div>
+<p>To run JavaScript tests for the dagit frontend, you can run:</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$</span> <span class="nb">cd</span> dagster/js_modules/dagit
+<span class="gp">$</span> yarn <span class="nb">test</span>
+</pre></div>
+</div>
+<p>In webapp development it’s handy to run <code class="docutils literal notranslate"><span class="pre">yarn</span> <span class="pre">run</span> <span class="pre">jest</span> <span class="pre">--watch</span></code> to have an
+interactive test runner.</p>
+<p>Some webapp tests use snapshots–auto-generated results to which the test
+render tree is compared. Those tests are supposed to break when you change
+something.</p>
+<p>Check that the change is sensible and run <code class="docutils literal notranslate"><span class="pre">yarn</span> <span class="pre">run</span> <span class="pre">jest</span> <span class="pre">-u</span></code> to update the
+snapshot to the new result. You can also update snapshots interactively
+when you are in <code class="docutils literal notranslate"><span class="pre">--watch</span></code> mode.</p>
+</div>
+<div class="section" id="releasing">
+<h3>Releasing<a class="headerlink" href="#releasing" title="Permalink to this headline">¶</a></h3>
+<p>Projects are released using the Python script at <code class="docutils literal notranslate"><span class="pre">dagster/bin/publish.py</span></code>.</p>
+</div>
+<div class="section" id="developing-docs">
+<h3>Developing docs<a class="headerlink" href="#developing-docs" title="Permalink to this headline">¶</a></h3>
+<p>Running a live html version of the docs can expedite documentation development.</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$</span> <span class="nb">cd</span> python_modules/dagster/docs
+<span class="gp">$</span> make livehtml
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+
+
+            </div>
+
+            
+            <div class="related bottom">
+                &nbsp;
+<nav id="rellinks">
+    <ul>
+        <li>
+            &larr;
+            <a href="community.html" title="Previous document">Community</a>
+        </li>
+        <li>
+            <a href="/" title="Home">Home</a>
+        </li>
+        <li>
+            <a href="release_notes.html" title="Next document">Release Notes</a>
+            &rarr;
+        </li>
+    </ul>
+</nav>
+            </div>
+            
+        </div>
+    </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><h3><a href="../../index.html">Dagster</a></h3>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../install/install.html">Install</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../learn/learn.html">Learn</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../api/api.html">API Docs</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="community.html">Community</a><ul class="current">
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Contributing</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release_notes.html">Release Notes</a></li>
+<li class="toctree-l2"><a class="reference external" href="https://www.github.com/dagster-io/dagster/">Github</a></li>
+<li class="toctree-l2"><a class="reference external" href="https://stackoverflow.com/questions/tagged/dagster">StackOverflow</a></li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+<div class="footer">
+    &copy; 2019, Elementl, Inc.
+    
+    |
+    Powered by <a href="http://sphinx-doc.org/">Sphinx 1.7.5</a>
+    &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+    
+    |
+    <a href="../../_sources/sections/community/contributing.rst.txt" rel="nofollow">Page source</a>
+</div>
+
+
+
+
+  </body>
+</html>'''
+
+snapshots['test_build_all_docs 62'] = '''
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>Release Notes &#8212; Dagster</title>
+    <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/css/custom.css" type="text/css" />
+    <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="prev" title="Contributing" href="contributing.html" />
+ 
+<link rel="stylesheet" href="../../_static/custom.css" type="text/css" />
+
+
+<meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+    <div class="documentwrapper">
+        <div class="bodywrapper">
+            <div class="related top">
+                &nbsp;
+<nav id="rellinks">
+    <ul>
+        <li>
+            &larr;
+            <a href="contributing.html" title="Previous document">Contributing</a>
+        </li>
+        <li>
+            <a href="/" title="Home">Home</a>
+        </li>
+    </ul>
+</nav>
+            </div>
+            
+
+            <div class="body" role="main">
+                
+  <div class="section" id="release-notes">
+<h1>Release Notes<a class="headerlink" href="#release-notes" title="Permalink to this headline">¶</a></h1>
+</div>
+
+
+            </div>
+
+            
+            <div class="related bottom">
+                &nbsp;
+<nav id="rellinks">
+    <ul>
+        <li>
+            &larr;
+            <a href="contributing.html" title="Previous document">Contributing</a>
+        </li>
+        <li>
+            <a href="/" title="Home">Home</a>
+        </li>
+    </ul>
+</nav>
+            </div>
+            
+        </div>
+    </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><h3><a href="../../index.html">Dagster</a></h3>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../install/install.html">Install</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../learn/learn.html">Learn</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../api/api.html">API Docs</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="community.html">Community</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="contributing.html">Contributing</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Release Notes</a></li>
+<li class="toctree-l2"><a class="reference external" href="https://www.github.com/dagster-io/dagster/">Github</a></li>
+<li class="toctree-l2"><a class="reference external" href="https://stackoverflow.com/questions/tagged/dagster">StackOverflow</a></li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+<div class="footer">
+    &copy; 2019, Elementl, Inc.
+    
+    |
+    Powered by <a href="http://sphinx-doc.org/">Sphinx 1.7.5</a>
+    &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+    
+    |
+    <a href="../../_sources/sections/community/release_notes.rst.txt" rel="nofollow">Page source</a>
+</div>
+
+
+
+
+  </body>
+</html>'''
+
+snapshots['test_build_all_docs 63'] = '''
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>Install &#8212; Dagster</title>
+    <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/css/custom.css" type="text/css" />
+    <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="Learn" href="../learn/learn.html" />
+    <link rel="prev" title="&lt;no title&gt;" href="../../index.html" />
+ 
+<link rel="stylesheet" href="../../_static/custom.css" type="text/css" />
+
+
+<meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+    <div class="documentwrapper">
+        <div class="bodywrapper">
+            <div class="related top">
+                &nbsp;
+<nav id="rellinks">
+    <ul>
+        <li>
+            <a href="/" title="Home">Home</a>
+        </li>
+        <li>
+            <a href="../learn/learn.html" title="Next document">Learn</a>
+            &rarr;
+        </li>
+    </ul>
+</nav>
+            </div>
+            
+
+            <div class="body" role="main">
+                
+  <div class="section" id="install">
+<h1>Install<a class="headerlink" href="#install" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="quick-start">
+<h2>Quick Start<a class="headerlink" href="#quick-start" title="Permalink to this headline">¶</a></h2>
+<p>To install dagster and dagit, run:</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$</span> pip install dagster dagit
+</pre></div>
+</div>
+<p>This will install the latest stable version of dagster’s packages in your current Python
+environment.</p>
+</div>
+<div class="section" id="detailed-installation-guide">
+<h2>Detailed Installation Guide<a class="headerlink" href="#detailed-installation-guide" title="Permalink to this headline">¶</a></h2>
+<p>Dagster is tested on Python 3.7.2, 3.6.6, 3.5.6, and 2.7.15. Python 3 is strongly
+encouraged – if you can, you won’t regret making the switch!</p>
+<p>To check that Python and the pip package manager are already installed, you can run:</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$</span> python --version
+<span class="gp">$</span> pip --version
+</pre></div>
+</div>
+<p>If you’re running Python 3.3 or later, you already have the venv package for managing
+virtualenvs. On Python 2.7, you can check whether you have the virtualenv tool installed by
+running:</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$</span> virtualenv --version
+</pre></div>
+</div>
+<p>If these tools aren’t present on your system, you can install them as follows:</p>
+<div class="section" id="ubuntu">
+<h3>Ubuntu<a class="headerlink" href="#ubuntu" title="Permalink to this headline">¶</a></h3>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$</span> sudo apt update
+<span class="gp">$</span> sudo apt install python3-dev python3-pip
+</pre></div>
+</div>
+</div>
+<div class="section" id="macos">
+<h3>macOS<a class="headerlink" href="#macos" title="Permalink to this headline">¶</a></h3>
+<p>Using <a class="reference external" href="https://brew.sh/">Homebrew</a>:</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$</span> brew update
+<span class="gp">$</span> brew install python  <span class="c1"># Python 3</span>
+</pre></div>
+</div>
+<p>On Python 2.7, you can install virtualenv with:</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$</span> sudo pip install -U virtualenv  <span class="c1"># system-wide install</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="windows-python-3">
+<h3>Windows (Python 3)<a class="headerlink" href="#windows-python-3" title="Permalink to this headline">¶</a></h3>
+<ul class="simple">
+<li>Install the <em>Microsoft Visual C++ 2015 Redistributable Update 3</em>. This comes with <em>Visual Studio 2015</em> but can be installed separately as follows:<ol class="arabic">
+<li>Go to the Visual Studio downloads,</li>
+<li>Select <em>Redistributables and Build Tools</em>,</li>
+<li>Download and install the <em>Microsoft Visual C++ 2015 Redistributable Update 3</em>.</li>
+</ol>
+</li>
+<li>Install the 64-bit Python 3 release for Windows (select <code class="docutils literal notranslate"><span class="pre">pip</span></code> as an optional feature).</li>
+</ul>
+<p>To use the <code class="docutils literal notranslate"><span class="pre">dagit</span></code> tool, you will also need to
+<a class="reference external" href="https://yarnpkg.com/lang/en/docs/install/">install yarn</a>.</p>
+</div>
+<div class="section" id="notes-on-python-virtualenvs">
+<h3>Notes on Python virtualenvs<a class="headerlink" href="#notes-on-python-virtualenvs" title="Permalink to this headline">¶</a></h3>
+<p>We strongly recommend installing dagster inside a Python virtualenv. If you are
+running Anaconda, you should install dagster inside a Conda environment.</p>
+<p>To create a virtual environment on Python 3, you can just run:</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$</span> python3 -m venv ~/.venvs/dagster
+</pre></div>
+</div>
+<p>This will create a new Python environment whose interpreter and libraries
+are isolated from those installed in other virtual environments, and
+(by default) any libraries installed in a “system” Python installed as part
+of your operating system.</p>
+<p>On Python 2, you can use a tool like
+<a class="reference external" href="https://virtualenvwrapper.readthedocs.io/en/latest/">virtualenvwrapper</a>
+to manage your virtual environments, or just run:</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$</span> virtualenv ~/.venvs/dagster
+</pre></div>
+</div>
+<p>You’ll then need to ‘activate’ the virtualenvironment, in bash by
+running:</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$</span> <span class="nb">source</span> ~/.venvs/dagster/bin/activate
+</pre></div>
+</div>
+<p>(For other shells, see the
+<a class="reference external" href="https://docs.python.org/3/library/venv.html#creating-virtual-environments">venv documentation</a>.)</p>
+<p>If you are using Anaconda, you can run:</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$</span> conda create --name dagster
+</pre></div>
+</div>
+<p>And then, on macOS or Ubuntu:</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$</span> <span class="nb">source</span> activate dagster
+</pre></div>
+</div>
+<p>Or, on Windows:</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$</span> activate dagster
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+
+
+            </div>
+
+            
+            <div class="related bottom">
+                &nbsp;
+<nav id="rellinks">
+    <ul>
+        <li>
+            <a href="/" title="Home">Home</a>
+        </li>
+        <li>
+            <a href="../learn/learn.html" title="Next document">Learn</a>
+            &rarr;
+        </li>
+    </ul>
+</nav>
+            </div>
+            
+        </div>
+    </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><h3><a href="../../index.html">Dagster</a></h3>
+<ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Install</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#quick-start">Quick Start</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#detailed-installation-guide">Detailed Installation Guide</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../learn/learn.html">Learn</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../api/api.html">API Docs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../community/community.html">Community</a></li>
+</ul>
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+<div class="footer">
+    &copy; 2019, Elementl, Inc.
+    
+    |
+    Powered by <a href="http://sphinx-doc.org/">Sphinx 1.7.5</a>
+    &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+    
+    |
+    <a href="../../_sources/sections/install/install.rst.txt" rel="nofollow">Page source</a>
+</div>
+
+
+
+
+  </body>
+</html>'''
+
+snapshots['test_build_all_docs 64'] = '''
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>Learn &#8212; Dagster</title>
+    <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/css/custom.css" type="text/css" />
+    <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="Tutorial" href="tutorial/index.html" />
+    <link rel="prev" title="Install" href="../install/install.html" />
+ 
+<link rel="stylesheet" href="../../_static/custom.css" type="text/css" />
+
+
+<meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+    <div class="documentwrapper">
+        <div class="bodywrapper">
+            <div class="related top">
+                &nbsp;
+<nav id="rellinks">
+    <ul>
+        <li>
+            &larr;
+            <a href="../install/install.html" title="Previous document">Install</a>
+        </li>
+        <li>
+            <a href="/" title="Home">Home</a>
+        </li>
+        <li>
+            <a href="tutorial/index.html" title="Next document">Tutorial</a>
+            &rarr;
+        </li>
+    </ul>
+</nav>
+            </div>
+            
+
+            <div class="body" role="main">
+                
+  <div class="section" id="learn">
+<h1>Learn<a class="headerlink" href="#learn" title="Permalink to this headline">¶</a></h1>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="tutorial/index.html">Tutorial</a></li>
+<li class="toctree-l1"><a class="reference internal" href="principles.html">Principles</a></li>
+</ul>
+</div>
+<div class="section" id="other-guides">
+<h2>Other Guides<a class="headerlink" href="#other-guides" title="Permalink to this headline">¶</a></h2>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="guides/028_to_030_new_concepts.html">New Concepts in 0.3.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="guides/028_to_030_upgrade_guide.html">Upgrading to 0.3.0</a></li>
+</ul>
+</div>
+</div>
+</div>
+
+
+            </div>
+
+            
+            <div class="related bottom">
+                &nbsp;
+<nav id="rellinks">
+    <ul>
+        <li>
+            &larr;
+            <a href="../install/install.html" title="Previous document">Install</a>
+        </li>
+        <li>
+            <a href="/" title="Home">Home</a>
+        </li>
+        <li>
+            <a href="tutorial/index.html" title="Next document">Tutorial</a>
+            &rarr;
+        </li>
+    </ul>
+</nav>
+            </div>
+            
+        </div>
+    </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><h3><a href="../../index.html">Dagster</a></h3>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../install/install.html">Install</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Learn</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="tutorial/index.html">Tutorial</a></li>
+<li class="toctree-l2"><a class="reference internal" href="principles.html">Principles</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#other-guides">Other Guides</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../api/api.html">API Docs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../community/community.html">Community</a></li>
+</ul>
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+<div class="footer">
+    &copy; 2019, Elementl, Inc.
+    
+    |
+    Powered by <a href="http://sphinx-doc.org/">Sphinx 1.7.5</a>
+    &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+    
+    |
+    <a href="../../_sources/sections/learn/learn.rst.txt" rel="nofollow">Page source</a>
+</div>
+
+
+
+
+  </body>
+</html>'''
+
+snapshots['test_build_all_docs 65'] = '''
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>Principles &#8212; Dagster</title>
+    <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/css/custom.css" type="text/css" />
+    <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="New Concepts in 0.3.0" href="guides/028_to_030_new_concepts.html" />
+    <link rel="prev" title="Dagstermill" href="tutorial/dagstermill.html" />
+ 
+<link rel="stylesheet" href="../../_static/custom.css" type="text/css" />
+
+
+<meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+    <div class="documentwrapper">
+        <div class="bodywrapper">
+            <div class="related top">
+                &nbsp;
+<nav id="rellinks">
+    <ul>
+        <li>
+            &larr;
+            <a href="tutorial/dagstermill.html" title="Previous document">Dagstermill</a>
+        </li>
+        <li>
+            <a href="/" title="Home">Home</a>
+        </li>
+        <li>
+            <a href="guides/028_to_030_new_concepts.html" title="Next document">New Concepts in 0.3.0</a>
+            &rarr;
+        </li>
+    </ul>
+</nav>
+            </div>
+            
+
+            <div class="body" role="main">
+                
+  <div class="section" id="principles">
+<h1>Principles<a class="headerlink" href="#principles" title="Permalink to this headline">¶</a></h1>
+<p>Dagster is opinionated about how data pipelines should be built and structured. What do we think
+is important?</p>
+<div class="section" id="functional">
+<h2>Functional<a class="headerlink" href="#functional" title="Permalink to this headline">¶</a></h2>
+<p>Data pipelines should be expressed as DAGs (directed acyclic graphs) of functional, idempotent
+computations. Individual nodes in the graph consume their inputs, perform some computation, and
+yield outputs, either with no side effects or with clearly advertised side effects. Given the
+same inputs and configuration, the computation should always produce the same output. If these
+computations have external dependencies, these should be parametrizable, so that the computations
+may execute in different environments.</p>
+<blockquote>
+<div><ul class="simple">
+<li>See Maxime Beauchemin’s Medium article on <a class="reference external" href="https://bit.ly/2LxDgnr">Functional Data Engineering</a>
+for an excellent overview of functional programing in batch computations.</li>
+</ul>
+</div></blockquote>
+</div>
+<div class="section" id="self-describing">
+<h2>Self-describing<a class="headerlink" href="#self-describing" title="Permalink to this headline">¶</a></h2>
+<p>Data pipelines should be self-describing, with rich metadata and types. Users should be able to
+approach an unfamiliar pipeline and use tooling to inspect it and discover its structure,
+capabilities, and requirements. Pipeline metadata should be co-located with the pipeline’s actual
+code: documentation and code should be delivered as a single artifact.</p>
+</div>
+<div class="section" id="compute-agnostic">
+<h2>Compute-agnostic<a class="headerlink" href="#compute-agnostic" title="Permalink to this headline">¶</a></h2>
+<p>Heterogeneity in data pipelines is the norm, rather than the exception. Data pipelines are written
+collaboratively by many people in different personas – data engineers, machine-learning engineers,
+data scientists, analysts and so on – who have different needs and tools, and are particular about
+those tools.</p>
+<p>Dagster has opinions about best practices for structuring data pipelines. It has no opinions
+about what libraries and engines should do actual compute. Dagster pipelines can be made up of
+any Python computations, whether they use Pandas, Spark, or call out to SQL or any other DSL or
+library deemed appropriate to the task.</p>
+</div>
+<div class="section" id="testable">
+<h2>Testable<a class="headerlink" href="#testable" title="Permalink to this headline">¶</a></h2>
+<p>Testing data pipelines is notoriously difficult. Because testing is so difficult, it is often never
+done, or done poorly. Dagster pipelines are designed to be tested. Dagster provides explicit support
+for pipeline authors to manage and maintain multiple execution environments – for example, unit
+testing, integration testing, and production environments. Dagster can also execute arbitrary
+subsets and nodes of pipelines, which is critical for testability (and useful in operational
+contexts as well).</p>
+</div>
+<div class="section" id="verifiable-data-quality">
+<h2>Verifiable data quality<a class="headerlink" href="#verifiable-data-quality" title="Permalink to this headline">¶</a></h2>
+<p>Testing code is important in data pipelines, but it is not sufficient. Data quality tests – run
+during every meaningful stage of computation in production – are critical to reduce the
+maintenance burden of data pipelines. Pipeline authors generally do not have control over their
+input data, and make many implicit assumptions about that data. Data formats can also change
+over time. In order to control this entropy, Dagster encourages users to computationally verify
+assumptions (known as expectations) about the data as part of the pipeline process. This way, when
+those assumptions break, the breakage can be reported quickly, easily, and with rich metadata
+and diagnostic information. These expectations can also serve as contracts between teams.</p>
+<blockquote>
+<div><ul class="simple">
+<li>See <a class="reference external" href="https://bit.ly/2mxDS1R">https://bit.ly/2mxDS1R</a> for a primer on pipeline tests for data quality.</li>
+</ul>
+</div></blockquote>
+</div>
+<div class="section" id="gradual-optional-typing">
+<h2>Gradual, optional typing<a class="headerlink" href="#gradual-optional-typing" title="Permalink to this headline">¶</a></h2>
+<p>Dagster contains a type system to describe the values flowing through the pipeline and the
+configuration of the pipeline. As pipelines mature, gradual typing lets nodes in a pipeline
+know if they are properly arranged and configured prior to execution, and provides rich
+documentation and runtime error checking.</p>
+</div>
+</div>
+
+
+            </div>
+
+            
+            <div class="related bottom">
+                &nbsp;
+<nav id="rellinks">
+    <ul>
+        <li>
+            &larr;
+            <a href="tutorial/dagstermill.html" title="Previous document">Dagstermill</a>
+        </li>
+        <li>
+            <a href="/" title="Home">Home</a>
+        </li>
+        <li>
+            <a href="guides/028_to_030_new_concepts.html" title="Next document">New Concepts in 0.3.0</a>
+            &rarr;
+        </li>
+    </ul>
+</nav>
+            </div>
+            
+        </div>
+    </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><h3><a href="../../index.html">Dagster</a></h3>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../install/install.html">Install</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="learn.html">Learn</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="tutorial/index.html">Tutorial</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Principles</a></li>
+<li class="toctree-l2"><a class="reference internal" href="learn.html#other-guides">Other Guides</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../api/api.html">API Docs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../community/community.html">Community</a></li>
+</ul>
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+<div class="footer">
+    &copy; 2019, Elementl, Inc.
+    
+    |
+    Powered by <a href="http://sphinx-doc.org/">Sphinx 1.7.5</a>
+    &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+    
+    |
+    <a href="../../_sources/sections/learn/principles.rst.txt" rel="nofollow">Page source</a>
+</div>
+
+
+
+
+  </body>
+</html>'''
+
+snapshots['test_build_all_docs 66'] = '''
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>New Concepts in 0.3.0 &#8212; Dagster</title>
+    <link rel="stylesheet" href="../../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/css/custom.css" type="text/css" />
+    <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+    <link rel="next" title="Upgrading to 0.3.0" href="028_to_030_upgrade_guide.html" />
+    <link rel="prev" title="Principles" href="../principles.html" />
+ 
+<link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
+
+
+<meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+    <div class="documentwrapper">
+        <div class="bodywrapper">
+            <div class="related top">
+                &nbsp;
+<nav id="rellinks">
+    <ul>
+        <li>
+            &larr;
+            <a href="../principles.html" title="Previous document">Principles</a>
+        </li>
+        <li>
+            <a href="/" title="Home">Home</a>
+        </li>
+        <li>
+            <a href="028_to_030_upgrade_guide.html" title="Next document">Upgrading to 0.3.0</a>
+            &rarr;
+        </li>
+    </ul>
+</nav>
+            </div>
+            
+
+            <div class="body" role="main">
+                
   <div class="section" id="new-concepts-in-0-3-0">
 <span id="new-concepts-in-0-3-0"></span><h1>New Concepts in 0.3.0<a class="headerlink" href="#new-concepts-in-0-3-0" title="Permalink to this headline">¶</a></h1>
 <p>The upgrade guide describes the changes you are <em>require</em> to make to install 0.3.0. This guide describes the changes you <em>should</em> make in order to use the latest capabilities. The new concepts take some getting used to, but are quite powerful.</p>
@@ -21511,100 +22241,66 @@ be modeling such things as inputs.</p>
 </div>
 
 
-          </div>
-          
-        </div>
-      </div>
-      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
-        <div class="sphinxsidebarwrapper">
-<h3><a href="../index.html">Table Of Contents</a></h3>
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="../principles.html">Principles</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../installation.html">Installation</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../contributing.html">Contributing</a></li>
-</ul>
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/hello_world.html">Hello, World</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/hello_dag.html">Hello, DAG</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/actual_dag.html">An actual DAG</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/inputs.html">Inputs</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/config.html">Configuration</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/configuration_schemas.html">Configuration Schemas</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/execution_context.html">Execution Context</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/resources.html">Resources</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/repos.html">Repositories</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/pipeline_cli_execution.html">Pipeline CLI Execution</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/types.html">User-Defined Types</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/expectations.html">Expectations</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/multiple_outputs.html">Multiple Outputs</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/reusable_solids.html">Reusable Solids</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/unittesting.html">Unit-testing Pipelines</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/dagstermill.html">Dagstermill</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/dagstermill.html#dagstermill-cli">Dagstermill CLI</a></li>
-</ul>
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="../apidocs/definitions.html">Definitions</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../apidocs/decorators.html">Decorators</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../apidocs/execution.html">Execution</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../apidocs/errors.html">Errors</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../apidocs/types.html">Types</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../apidocs/utilities.html">Utilities</a></li>
-</ul>
-<ul class="current">
-<li class="toctree-l1 current"><a class="current reference internal" href="#">New Concepts in 0.3.0</a></li>
-<li class="toctree-l1"><a class="reference internal" href="028_to_030_upgrade_guide.html">Upgrading to 0.3.0</a></li>
-</ul>
-<div class="relations">
-<h3>Related Topics</h3>
-<ul>
-  <li><a href="../index.html">Documentation overview</a><ul>
-      <li>Previous: <a href="../apidocs/utilities.html" title="previous chapter">Utilities</a></li>
-      <li>Next: <a href="028_to_030_upgrade_guide.html" title="next chapter">Upgrading to 0.3.0</a></li>
-  </ul></li>
-</ul>
-</div>
-  <div role="note" aria-label="source link">
-    <h3>This Page</h3>
-    <ul class="this-page-menu">
-      <li><a href="../_sources/guides/028_to_030_new_concepts.md.txt"
-            rel="nofollow">Show Source</a></li>
+            </div>
+
+            
+            <div class="related bottom">
+                &nbsp;
+<nav id="rellinks">
+    <ul>
+        <li>
+            &larr;
+            <a href="../principles.html" title="Previous document">Principles</a>
+        </li>
+        <li>
+            <a href="/" title="Home">Home</a>
+        </li>
+        <li>
+            <a href="028_to_030_upgrade_guide.html" title="Next document">Upgrading to 0.3.0</a>
+            &rarr;
+        </li>
     </ul>
-   </div>
-<div id="searchbox" style="display: none" role="search">
-  <h3>Quick search</h3>
-    <div class="searchformwrapper">
-    <form class="search" action="../search.html" method="get">
-      <input type="text" name="q" />
-      <input type="submit" value="Go" />
-      <input type="hidden" name="check_keywords" value="yes" />
-      <input type="hidden" name="area" value="default" />
-    </form>
+</nav>
+            </div>
+            
+        </div>
     </div>
-</div>
-<script type="text/javascript">$(\'#searchbox\').show(0);</script>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><h3><a href="../../../index.html">Dagster</a></h3>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../install/install.html">Install</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../learn.html">Learn</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../tutorial/index.html">Tutorial</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../principles.html">Principles</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="../learn.html#other-guides">Other Guides</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../api/api.html">API Docs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../community/community.html">Community</a></li>
+</ul>
+
         </div>
       </div>
       <div class="clearer"></div>
     </div>
-    <div class="footer">
-      &copy;2018, Elementl, Inc.
-      
-      |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.7.5</a>
-      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
-      
-      |
-      <a href="../_sources/guides/028_to_030_new_concepts.md.txt"
-          rel="nofollow">Page source</a>
-    </div>
-
+<div class="footer">
+    &copy; 2019, Elementl, Inc.
     
-
+    |
+    Powered by <a href="http://sphinx-doc.org/">Sphinx 1.7.5</a>
+    &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
     
+    |
+    <a href="../../../_sources/sections/learn/guides/028_to_030_new_concepts.md.txt" rel="nofollow">Page source</a>
+</div>
+
+
+
+
   </body>
 </html>'''
 
-snapshots['test_build_all_docs 57'] = '''
+snapshots['test_build_all_docs 67'] = '''
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
@@ -21612,32 +22308,52 @@ snapshots['test_build_all_docs 57'] = '''
   <head>
     <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    <title>Upgrading to 0.3.0 &#8212; Dagster  documentation</title>
-    <link rel="stylesheet" href="../_static/alabaster.css" type="text/css" />
-    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
-    <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
-    <script type="text/javascript" src="../_static/jquery.js"></script>
-    <script type="text/javascript" src="../_static/underscore.js"></script>
-    <script type="text/javascript" src="../_static/doctools.js"></script>
-    <link rel="index" title="Index" href="../genindex.html" />
-    <link rel="search" title="Search" href="../search.html" />
+    <title>Upgrading to 0.3.0 &#8212; Dagster</title>
+    <link rel="stylesheet" href="../../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/css/custom.css" type="text/css" />
+    <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+    <link rel="next" title="API Docs" href="../../api/api.html" />
     <link rel="prev" title="New Concepts in 0.3.0" href="028_to_030_new_concepts.html" />
-   
-  <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
-  
-  
-  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+ 
+<link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
+
+
+<meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
 
   </head><body>
   
 
     <div class="document">
-      <div class="documentwrapper">
+    <div class="documentwrapper">
         <div class="bodywrapper">
-          
-
-          <div class="body" role="main">
+            <div class="related top">
+                &nbsp;
+<nav id="rellinks">
+    <ul>
+        <li>
+            &larr;
+            <a href="028_to_030_new_concepts.html" title="Previous document">New Concepts in 0.3.0</a>
+        </li>
+        <li>
+            <a href="/" title="Home">Home</a>
+        </li>
+        <li>
+            <a href="../../api/api.html" title="Next document">API Docs</a>
+            &rarr;
+        </li>
+    </ul>
+</nav>
+            </div>
             
+
+            <div class="body" role="main">
+                
   <div class="section" id="upgrading-to-0-3-0">
 <span id="upgrading-to-0-3-0"></span><h1>Upgrading to 0.3.0<a class="headerlink" href="#upgrading-to-0-3-0" title="Permalink to this headline">¶</a></h1>
 <p>This guide is a step-by-step guide for upgrading from dagster 0.2.x to 0.3.0. This represents a substantial upgrade in capabilities but also some breaking API changes. We’ll detail them, provide context and reasoning, and instructions about how to upgrade.</p>
@@ -22020,99 +22736,66 @@ allowing info temporarily.</p>
 </div>
 
 
-          </div>
-          
-        </div>
-      </div>
-      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
-        <div class="sphinxsidebarwrapper">
-<h3><a href="../index.html">Table Of Contents</a></h3>
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="../principles.html">Principles</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../installation.html">Installation</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../contributing.html">Contributing</a></li>
-</ul>
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/hello_world.html">Hello, World</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/hello_dag.html">Hello, DAG</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/actual_dag.html">An actual DAG</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/inputs.html">Inputs</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/config.html">Configuration</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/configuration_schemas.html">Configuration Schemas</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/execution_context.html">Execution Context</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/resources.html">Resources</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/repos.html">Repositories</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/pipeline_cli_execution.html">Pipeline CLI Execution</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/types.html">User-Defined Types</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/expectations.html">Expectations</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/multiple_outputs.html">Multiple Outputs</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/reusable_solids.html">Reusable Solids</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/unittesting.html">Unit-testing Pipelines</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/dagstermill.html">Dagstermill</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/dagstermill.html#dagstermill-cli">Dagstermill CLI</a></li>
-</ul>
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="../apidocs/definitions.html">Definitions</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../apidocs/decorators.html">Decorators</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../apidocs/execution.html">Execution</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../apidocs/errors.html">Errors</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../apidocs/types.html">Types</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../apidocs/utilities.html">Utilities</a></li>
-</ul>
-<ul class="current">
-<li class="toctree-l1"><a class="reference internal" href="028_to_030_new_concepts.html">New Concepts in 0.3.0</a></li>
-<li class="toctree-l1 current"><a class="current reference internal" href="#">Upgrading to 0.3.0</a></li>
-</ul>
-<div class="relations">
-<h3>Related Topics</h3>
-<ul>
-  <li><a href="../index.html">Documentation overview</a><ul>
-      <li>Previous: <a href="028_to_030_new_concepts.html" title="previous chapter">New Concepts in 0.3.0</a></li>
-  </ul></li>
-</ul>
-</div>
-  <div role="note" aria-label="source link">
-    <h3>This Page</h3>
-    <ul class="this-page-menu">
-      <li><a href="../_sources/guides/028_to_030_upgrade_guide.md.txt"
-            rel="nofollow">Show Source</a></li>
+            </div>
+
+            
+            <div class="related bottom">
+                &nbsp;
+<nav id="rellinks">
+    <ul>
+        <li>
+            &larr;
+            <a href="028_to_030_new_concepts.html" title="Previous document">New Concepts in 0.3.0</a>
+        </li>
+        <li>
+            <a href="/" title="Home">Home</a>
+        </li>
+        <li>
+            <a href="../../api/api.html" title="Next document">API Docs</a>
+            &rarr;
+        </li>
     </ul>
-   </div>
-<div id="searchbox" style="display: none" role="search">
-  <h3>Quick search</h3>
-    <div class="searchformwrapper">
-    <form class="search" action="../search.html" method="get">
-      <input type="text" name="q" />
-      <input type="submit" value="Go" />
-      <input type="hidden" name="check_keywords" value="yes" />
-      <input type="hidden" name="area" value="default" />
-    </form>
+</nav>
+            </div>
+            
+        </div>
     </div>
-</div>
-<script type="text/javascript">$(\'#searchbox\').show(0);</script>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><h3><a href="../../../index.html">Dagster</a></h3>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../install/install.html">Install</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../learn.html">Learn</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../tutorial/index.html">Tutorial</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../principles.html">Principles</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="../learn.html#other-guides">Other Guides</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../api/api.html">API Docs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../community/community.html">Community</a></li>
+</ul>
+
         </div>
       </div>
       <div class="clearer"></div>
     </div>
-    <div class="footer">
-      &copy;2018, Elementl, Inc.
-      
-      |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.7.5</a>
-      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
-      
-      |
-      <a href="../_sources/guides/028_to_030_upgrade_guide.md.txt"
-          rel="nofollow">Page source</a>
-    </div>
-
+<div class="footer">
+    &copy; 2019, Elementl, Inc.
     
-
+    |
+    Powered by <a href="http://sphinx-doc.org/">Sphinx 1.7.5</a>
+    &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
     
+    |
+    <a href="../../../_sources/sections/learn/guides/028_to_030_upgrade_guide.md.txt" rel="nofollow">Page source</a>
+</div>
+
+
+
+
   </body>
 </html>'''
 
-snapshots['test_build_all_docs 58'] = '''
+snapshots['test_build_all_docs 68'] = '''
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
@@ -22120,38 +22803,57 @@ snapshots['test_build_all_docs 58'] = '''
   <head>
     <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    <title>An actual DAG &#8212; Dagster  documentation</title>
-    <link rel="stylesheet" href="../_static/alabaster.css" type="text/css" />
-    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
-    <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
-    <script type="text/javascript" src="../_static/jquery.js"></script>
-    <script type="text/javascript" src="../_static/underscore.js"></script>
-    <script type="text/javascript" src="../_static/doctools.js"></script>
-    <link rel="index" title="Index" href="../genindex.html" />
-    <link rel="search" title="Search" href="../search.html" />
+    <title>An actual DAG &#8212; Dagster</title>
+    <link rel="stylesheet" href="../../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/css/custom.css" type="text/css" />
+    <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
     <link rel="next" title="Inputs" href="inputs.html" />
     <link rel="prev" title="Hello, DAG" href="hello_dag.html" />
-   
-  <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
-  
-  
-  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+ 
+<link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
+
+
+<meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
 
   </head><body>
   
 
     <div class="document">
-      <div class="documentwrapper">
+    <div class="documentwrapper">
         <div class="bodywrapper">
-          
-
-          <div class="body" role="main">
+            <div class="related top">
+                &nbsp;
+<nav id="rellinks">
+    <ul>
+        <li>
+            &larr;
+            <a href="hello_dag.html" title="Previous document">Hello, DAG</a>
+        </li>
+        <li>
+            <a href="/" title="Home">Home</a>
+        </li>
+        <li>
+            <a href="inputs.html" title="Next document">Inputs</a>
+            &rarr;
+        </li>
+    </ul>
+</nav>
+            </div>
             
+
+            <div class="body" role="main">
+                
   <div class="section" id="an-actual-dag">
 <h1>An actual DAG<a class="headerlink" href="#an-actual-dag" title="Permalink to this headline">¶</a></h1>
 <p>Next we will build a slightly more topologically complex DAG that demonstrates how dagster
 determines the execution order of solids in a pipeline:</p>
-<img alt="../_images/actual_dag_figure_one.png" src="../_images/actual_dag_figure_one.png" />
+<img alt="../../../_images/actual_dag_figure_one.png" src="../../../_images/actual_dag_figure_one.png" />
 <div class="literal-block-wrapper docutils container" id="id1">
 <div class="code-block-caption"><span class="caption-text">actual_dag.py</span><a class="headerlink" href="#id1" title="Permalink to this code">¶</a></div>
 <div class="highlight-default notranslate"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre> 1
@@ -22264,100 +22966,66 @@ environment.</p>
 </div>
 
 
-          </div>
-          
-        </div>
-      </div>
-      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
-        <div class="sphinxsidebarwrapper">
-<h3><a href="../index.html">Table Of Contents</a></h3>
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="../principles.html">Principles</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../installation.html">Installation</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../contributing.html">Contributing</a></li>
-</ul>
-<ul class="current">
-<li class="toctree-l1"><a class="reference internal" href="hello_world.html">Hello, World</a></li>
-<li class="toctree-l1"><a class="reference internal" href="hello_dag.html">Hello, DAG</a></li>
-<li class="toctree-l1 current"><a class="current reference internal" href="#">An actual DAG</a></li>
-<li class="toctree-l1"><a class="reference internal" href="inputs.html">Inputs</a></li>
-<li class="toctree-l1"><a class="reference internal" href="config.html">Configuration</a></li>
-<li class="toctree-l1"><a class="reference internal" href="configuration_schemas.html">Configuration Schemas</a></li>
-<li class="toctree-l1"><a class="reference internal" href="execution_context.html">Execution Context</a></li>
-<li class="toctree-l1"><a class="reference internal" href="resources.html">Resources</a></li>
-<li class="toctree-l1"><a class="reference internal" href="repos.html">Repositories</a></li>
-<li class="toctree-l1"><a class="reference internal" href="pipeline_cli_execution.html">Pipeline CLI Execution</a></li>
-<li class="toctree-l1"><a class="reference internal" href="types.html">User-Defined Types</a></li>
-<li class="toctree-l1"><a class="reference internal" href="expectations.html">Expectations</a></li>
-<li class="toctree-l1"><a class="reference internal" href="multiple_outputs.html">Multiple Outputs</a></li>
-<li class="toctree-l1"><a class="reference internal" href="reusable_solids.html">Reusable Solids</a></li>
-<li class="toctree-l1"><a class="reference internal" href="unittesting.html">Unit-testing Pipelines</a></li>
-<li class="toctree-l1"><a class="reference internal" href="dagstermill.html">Dagstermill</a></li>
-<li class="toctree-l1"><a class="reference internal" href="dagstermill.html#dagstermill-cli">Dagstermill CLI</a></li>
-</ul>
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="../apidocs/definitions.html">Definitions</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../apidocs/decorators.html">Decorators</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../apidocs/execution.html">Execution</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../apidocs/errors.html">Errors</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../apidocs/types.html">Types</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../apidocs/utilities.html">Utilities</a></li>
-</ul>
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="../guides/028_to_030_new_concepts.html">New Concepts in 0.3.0</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../guides/028_to_030_upgrade_guide.html">Upgrading to 0.3.0</a></li>
-</ul>
-<div class="relations">
-<h3>Related Topics</h3>
-<ul>
-  <li><a href="../index.html">Documentation overview</a><ul>
-      <li>Previous: <a href="hello_dag.html" title="previous chapter">Hello, DAG</a></li>
-      <li>Next: <a href="inputs.html" title="next chapter">Inputs</a></li>
-  </ul></li>
-</ul>
-</div>
-  <div role="note" aria-label="source link">
-    <h3>This Page</h3>
-    <ul class="this-page-menu">
-      <li><a href="../_sources/intro_tutorial/actual_dag.rst.txt"
-            rel="nofollow">Show Source</a></li>
+            </div>
+
+            
+            <div class="related bottom">
+                &nbsp;
+<nav id="rellinks">
+    <ul>
+        <li>
+            &larr;
+            <a href="hello_dag.html" title="Previous document">Hello, DAG</a>
+        </li>
+        <li>
+            <a href="/" title="Home">Home</a>
+        </li>
+        <li>
+            <a href="inputs.html" title="Next document">Inputs</a>
+            &rarr;
+        </li>
     </ul>
-   </div>
-<div id="searchbox" style="display: none" role="search">
-  <h3>Quick search</h3>
-    <div class="searchformwrapper">
-    <form class="search" action="../search.html" method="get">
-      <input type="text" name="q" />
-      <input type="submit" value="Go" />
-      <input type="hidden" name="check_keywords" value="yes" />
-      <input type="hidden" name="area" value="default" />
-    </form>
+</nav>
+            </div>
+            
+        </div>
     </div>
-</div>
-<script type="text/javascript">$(\'#searchbox\').show(0);</script>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><h3><a href="../../../index.html">Dagster</a></h3>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../install/install.html">Install</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../learn.html">Learn</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="index.html">Tutorial</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../principles.html">Principles</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../learn.html#other-guides">Other Guides</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../api/api.html">API Docs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../community/community.html">Community</a></li>
+</ul>
+
         </div>
       </div>
       <div class="clearer"></div>
     </div>
-    <div class="footer">
-      &copy;2018, Elementl, Inc.
-      
-      |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.7.5</a>
-      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
-      
-      |
-      <a href="../_sources/intro_tutorial/actual_dag.rst.txt"
-          rel="nofollow">Page source</a>
-    </div>
-
+<div class="footer">
+    &copy; 2019, Elementl, Inc.
     
-
+    |
+    Powered by <a href="http://sphinx-doc.org/">Sphinx 1.7.5</a>
+    &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
     
+    |
+    <a href="../../../_sources/sections/learn/tutorial/actual_dag.rst.txt" rel="nofollow">Page source</a>
+</div>
+
+
+
+
   </body>
 </html>'''
 
-snapshots['test_build_all_docs 59'] = '''
+snapshots['test_build_all_docs 69'] = '''
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
@@ -22365,33 +23033,52 @@ snapshots['test_build_all_docs 59'] = '''
   <head>
     <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    <title>Configuration &#8212; Dagster  documentation</title>
-    <link rel="stylesheet" href="../_static/alabaster.css" type="text/css" />
-    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
-    <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
-    <script type="text/javascript" src="../_static/jquery.js"></script>
-    <script type="text/javascript" src="../_static/underscore.js"></script>
-    <script type="text/javascript" src="../_static/doctools.js"></script>
-    <link rel="index" title="Index" href="../genindex.html" />
-    <link rel="search" title="Search" href="../search.html" />
+    <title>Configuration &#8212; Dagster</title>
+    <link rel="stylesheet" href="../../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/css/custom.css" type="text/css" />
+    <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
     <link rel="next" title="Configuration Schemas" href="configuration_schemas.html" />
     <link rel="prev" title="Inputs" href="inputs.html" />
-   
-  <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
-  
-  
-  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+ 
+<link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
+
+
+<meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
 
   </head><body>
   
 
     <div class="document">
-      <div class="documentwrapper">
+    <div class="documentwrapper">
         <div class="bodywrapper">
-          
-
-          <div class="body" role="main">
+            <div class="related top">
+                &nbsp;
+<nav id="rellinks">
+    <ul>
+        <li>
+            &larr;
+            <a href="inputs.html" title="Previous document">Inputs</a>
+        </li>
+        <li>
+            <a href="/" title="Home">Home</a>
+        </li>
+        <li>
+            <a href="configuration_schemas.html" title="Next document">Configuration Schemas</a>
+            &rarr;
+        </li>
+    </ul>
+</nav>
+            </div>
             
+
+            <div class="body" role="main">
+                
   <div class="section" id="configuration">
 <h1>Configuration<a class="headerlink" href="#configuration" title="Permalink to this headline">¶</a></h1>
 <p>For maximum flexibility, testability, and reusability, we want to avoid hardcoding solids’
@@ -22406,7 +23093,7 @@ linked by a dependency definition to <strong>outputs</strong> of a previous comp
 <p>We’ll illustrate this by configuring our hello world example to speak a couple of different
 languages.</p>
 <p>This time, we’ll use a more fully-featured API to define our solid –
-<a class="reference internal" href="../apidocs/decorators.html#dagster.solid" title="dagster.solid"><code class="xref py py-func docutils literal notranslate"><span class="pre">&#64;solid</span></code></a> instead of <a class="reference internal" href="../apidocs/decorators.html#dagster.lambda_solid" title="dagster.lambda_solid"><code class="xref py py-func docutils literal notranslate"><span class="pre">&#64;lambda_solid</span></code></a>.</p>
+<a class="reference internal" href="../../api/apidocs/decorators.html#dagster.solid" title="dagster.solid"><code class="xref py py-func docutils literal notranslate"><span class="pre">&#64;solid</span></code></a> instead of <a class="reference internal" href="../../api/apidocs/decorators.html#dagster.lambda_solid" title="dagster.lambda_solid"><code class="xref py py-func docutils literal notranslate"><span class="pre">&#64;lambda_solid</span></code></a>.</p>
 <div class="literal-block-wrapper docutils container" id="id1">
 <div class="code-block-caption"><span class="caption-text">config.py</span><a class="headerlink" href="#id1" title="Permalink to this code">¶</a></div>
 <div class="highlight-default notranslate"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre> 1
@@ -22469,19 +23156,19 @@ languages.</p>
 </pre></div>
 </td></tr></table></div>
 </div>
-<p>We will be exploring the <a class="reference internal" href="../apidocs/decorators.html#dagster.solid" title="dagster.solid"><code class="xref py py-func docutils literal notranslate"><span class="pre">&#64;solid</span></code></a> API in much more detail as this tutorial
+<p>We will be exploring the <a class="reference internal" href="../../api/apidocs/decorators.html#dagster.solid" title="dagster.solid"><code class="xref py py-func docutils literal notranslate"><span class="pre">&#64;solid</span></code></a> API in much more detail as this tutorial
 proceeds. For now, the salient differences are:</p>
 <ol class="arabic simple">
-<li>The <a class="reference internal" href="../apidocs/decorators.html#dagster.solid" title="dagster.solid"><code class="xref py py-func docutils literal notranslate"><span class="pre">&#64;solid</span></code></a> API takes an additional parameter, <cite>config_field</cite>, which
+<li>The <a class="reference internal" href="../../api/apidocs/decorators.html#dagster.solid" title="dagster.solid"><code class="xref py py-func docutils literal notranslate"><span class="pre">&#64;solid</span></code></a> API takes an additional parameter, <cite>config_field</cite>, which
 defines the structure and type of configuration values that can be set on each execution of the
-solid. This parameter should be a <a class="reference internal" href="../apidocs/definitions.html#dagster.Field" title="dagster.Field"><code class="xref py py-func docutils literal notranslate"><span class="pre">Field</span></code></a>, which tells the dagster
+solid. This parameter should be a <a class="reference internal" href="../../api/apidocs/definitions.html#dagster.Field" title="dagster.Field"><code class="xref py py-func docutils literal notranslate"><span class="pre">Field</span></code></a>, which tells the dagster
 machinery how to translate config values into runtime values available to the solid.</li>
-<li>The function annotated by the <a class="reference internal" href="../apidocs/decorators.html#dagster.solid" title="dagster.solid"><code class="xref py py-func docutils literal notranslate"><span class="pre">&#64;solid</span></code></a> API receives an additional first
+<li>The function annotated by the <a class="reference internal" href="../../api/apidocs/decorators.html#dagster.solid" title="dagster.solid"><code class="xref py py-func docutils literal notranslate"><span class="pre">&#64;solid</span></code></a> API receives an additional first
 parameter, <code class="docutils literal notranslate"><span class="pre">context</span></code>, of type <code class="xref py py-class docutils literal notranslate"><span class="pre">TransformExecutionContext</span></code>.
 The configuration passed into each solid is available to the annotated function as <code class="docutils literal notranslate"><span class="pre">context.solid_config</span></code>.</li>
 </ol>
 <p>Configuration values are passed in a dict as the second argument to
-<a class="reference internal" href="../apidocs/execution.html#dagster.execute_pipeline" title="dagster.execute_pipeline"><code class="xref py py-func docutils literal notranslate"><span class="pre">execute_pipeline</span></code></a>. This dict specifies <em>all</em> of the
+<a class="reference internal" href="../../api/apidocs/execution.html#dagster.execute_pipeline" title="dagster.execute_pipeline"><code class="xref py py-func docutils literal notranslate"><span class="pre">execute_pipeline</span></code></a>. This dict specifies <em>all</em> of the
 configuration to execute an entire pipeline. It may have many sections, but we’re only
 using one of them here: per-solid configuration specified under the key <code class="docutils literal notranslate"><span class="pre">solids</span></code>.</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">{</span><span class="s1">&#39;solids&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;configurable_hello&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;config&#39;</span><span class="p">:</span> <span class="s1">&#39;cn&#39;</span><span class="p">}}},</span>
@@ -22515,106 +23202,72 @@ must provide config in the form of a yaml file:</p>
 </div>
 <p>Just as with configurable inputs, you can edit the configuration on the fly in dagit’s built-in
 config editor. Try switching languages and rerunning the pipeline!</p>
-<img alt="../_images/config_figure_one.png" src="../_images/config_figure_one.png" />
+<img alt="../../../_images/config_figure_one.png" src="../../../_images/config_figure_one.png" />
 <p>Next, we’ll learn about configuration schemas and how the type system can help with the management
 of config: <a class="reference internal" href="configuration_schemas.html"><span class="doc">Configuration Schemas</span></a>.</p>
 </div>
 
 
-          </div>
-          
-        </div>
-      </div>
-      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
-        <div class="sphinxsidebarwrapper">
-<h3><a href="../index.html">Table Of Contents</a></h3>
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="../principles.html">Principles</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../installation.html">Installation</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../contributing.html">Contributing</a></li>
-</ul>
-<ul class="current">
-<li class="toctree-l1"><a class="reference internal" href="hello_world.html">Hello, World</a></li>
-<li class="toctree-l1"><a class="reference internal" href="hello_dag.html">Hello, DAG</a></li>
-<li class="toctree-l1"><a class="reference internal" href="actual_dag.html">An actual DAG</a></li>
-<li class="toctree-l1"><a class="reference internal" href="inputs.html">Inputs</a></li>
-<li class="toctree-l1 current"><a class="current reference internal" href="#">Configuration</a></li>
-<li class="toctree-l1"><a class="reference internal" href="configuration_schemas.html">Configuration Schemas</a></li>
-<li class="toctree-l1"><a class="reference internal" href="execution_context.html">Execution Context</a></li>
-<li class="toctree-l1"><a class="reference internal" href="resources.html">Resources</a></li>
-<li class="toctree-l1"><a class="reference internal" href="repos.html">Repositories</a></li>
-<li class="toctree-l1"><a class="reference internal" href="pipeline_cli_execution.html">Pipeline CLI Execution</a></li>
-<li class="toctree-l1"><a class="reference internal" href="types.html">User-Defined Types</a></li>
-<li class="toctree-l1"><a class="reference internal" href="expectations.html">Expectations</a></li>
-<li class="toctree-l1"><a class="reference internal" href="multiple_outputs.html">Multiple Outputs</a></li>
-<li class="toctree-l1"><a class="reference internal" href="reusable_solids.html">Reusable Solids</a></li>
-<li class="toctree-l1"><a class="reference internal" href="unittesting.html">Unit-testing Pipelines</a></li>
-<li class="toctree-l1"><a class="reference internal" href="dagstermill.html">Dagstermill</a></li>
-<li class="toctree-l1"><a class="reference internal" href="dagstermill.html#dagstermill-cli">Dagstermill CLI</a></li>
-</ul>
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="../apidocs/definitions.html">Definitions</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../apidocs/decorators.html">Decorators</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../apidocs/execution.html">Execution</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../apidocs/errors.html">Errors</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../apidocs/types.html">Types</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../apidocs/utilities.html">Utilities</a></li>
-</ul>
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="../guides/028_to_030_new_concepts.html">New Concepts in 0.3.0</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../guides/028_to_030_upgrade_guide.html">Upgrading to 0.3.0</a></li>
-</ul>
-<div class="relations">
-<h3>Related Topics</h3>
-<ul>
-  <li><a href="../index.html">Documentation overview</a><ul>
-      <li>Previous: <a href="inputs.html" title="previous chapter">Inputs</a></li>
-      <li>Next: <a href="configuration_schemas.html" title="next chapter">Configuration Schemas</a></li>
-  </ul></li>
-</ul>
-</div>
-  <div role="note" aria-label="source link">
-    <h3>This Page</h3>
-    <ul class="this-page-menu">
-      <li><a href="../_sources/intro_tutorial/config.rst.txt"
-            rel="nofollow">Show Source</a></li>
+            </div>
+
+            
+            <div class="related bottom">
+                &nbsp;
+<nav id="rellinks">
+    <ul>
+        <li>
+            &larr;
+            <a href="inputs.html" title="Previous document">Inputs</a>
+        </li>
+        <li>
+            <a href="/" title="Home">Home</a>
+        </li>
+        <li>
+            <a href="configuration_schemas.html" title="Next document">Configuration Schemas</a>
+            &rarr;
+        </li>
     </ul>
-   </div>
-<div id="searchbox" style="display: none" role="search">
-  <h3>Quick search</h3>
-    <div class="searchformwrapper">
-    <form class="search" action="../search.html" method="get">
-      <input type="text" name="q" />
-      <input type="submit" value="Go" />
-      <input type="hidden" name="check_keywords" value="yes" />
-      <input type="hidden" name="area" value="default" />
-    </form>
+</nav>
+            </div>
+            
+        </div>
     </div>
-</div>
-<script type="text/javascript">$(\'#searchbox\').show(0);</script>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><h3><a href="../../../index.html">Dagster</a></h3>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../install/install.html">Install</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../learn.html">Learn</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="index.html">Tutorial</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../principles.html">Principles</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../learn.html#other-guides">Other Guides</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../api/api.html">API Docs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../community/community.html">Community</a></li>
+</ul>
+
         </div>
       </div>
       <div class="clearer"></div>
     </div>
-    <div class="footer">
-      &copy;2018, Elementl, Inc.
-      
-      |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.7.5</a>
-      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
-      
-      |
-      <a href="../_sources/intro_tutorial/config.rst.txt"
-          rel="nofollow">Page source</a>
-    </div>
-
+<div class="footer">
+    &copy; 2019, Elementl, Inc.
     
-
+    |
+    Powered by <a href="http://sphinx-doc.org/">Sphinx 1.7.5</a>
+    &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
     
+    |
+    <a href="../../../_sources/sections/learn/tutorial/config.rst.txt" rel="nofollow">Page source</a>
+</div>
+
+
+
+
   </body>
 </html>'''
 
-snapshots['test_build_all_docs 60'] = '''
+snapshots['test_build_all_docs 70'] = '''
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
@@ -22622,33 +23275,52 @@ snapshots['test_build_all_docs 60'] = '''
   <head>
     <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    <title>Configuration Schemas &#8212; Dagster  documentation</title>
-    <link rel="stylesheet" href="../_static/alabaster.css" type="text/css" />
-    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
-    <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
-    <script type="text/javascript" src="../_static/jquery.js"></script>
-    <script type="text/javascript" src="../_static/underscore.js"></script>
-    <script type="text/javascript" src="../_static/doctools.js"></script>
-    <link rel="index" title="Index" href="../genindex.html" />
-    <link rel="search" title="Search" href="../search.html" />
+    <title>Configuration Schemas &#8212; Dagster</title>
+    <link rel="stylesheet" href="../../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/css/custom.css" type="text/css" />
+    <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
     <link rel="next" title="Execution Context" href="execution_context.html" />
     <link rel="prev" title="Configuration" href="config.html" />
-   
-  <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
-  
-  
-  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+ 
+<link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
+
+
+<meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
 
   </head><body>
   
 
     <div class="document">
-      <div class="documentwrapper">
+    <div class="documentwrapper">
         <div class="bodywrapper">
-          
-
-          <div class="body" role="main">
+            <div class="related top">
+                &nbsp;
+<nav id="rellinks">
+    <ul>
+        <li>
+            &larr;
+            <a href="config.html" title="Previous document">Configuration</a>
+        </li>
+        <li>
+            <a href="/" title="Home">Home</a>
+        </li>
+        <li>
+            <a href="execution_context.html" title="Next document">Execution Context</a>
+            &rarr;
+        </li>
+    </ul>
+</nav>
+            </div>
             
+
+            <div class="body" role="main">
+                
   <div class="section" id="configuration-schemas">
 <h1>Configuration Schemas<a class="headerlink" href="#configuration-schemas" title="Permalink to this headline">¶</a></h1>
 <p>Dagster includes a system for strongly-typed, self-describing configurations schemas. These
@@ -23004,100 +23676,66 @@ how pipeline execution interacts with its environment.</p>
 </div>
 
 
-          </div>
-          
-        </div>
-      </div>
-      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
-        <div class="sphinxsidebarwrapper">
-<h3><a href="../index.html">Table Of Contents</a></h3>
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="../principles.html">Principles</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../installation.html">Installation</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../contributing.html">Contributing</a></li>
-</ul>
-<ul class="current">
-<li class="toctree-l1"><a class="reference internal" href="hello_world.html">Hello, World</a></li>
-<li class="toctree-l1"><a class="reference internal" href="hello_dag.html">Hello, DAG</a></li>
-<li class="toctree-l1"><a class="reference internal" href="actual_dag.html">An actual DAG</a></li>
-<li class="toctree-l1"><a class="reference internal" href="inputs.html">Inputs</a></li>
-<li class="toctree-l1"><a class="reference internal" href="config.html">Configuration</a></li>
-<li class="toctree-l1 current"><a class="current reference internal" href="#">Configuration Schemas</a></li>
-<li class="toctree-l1"><a class="reference internal" href="execution_context.html">Execution Context</a></li>
-<li class="toctree-l1"><a class="reference internal" href="resources.html">Resources</a></li>
-<li class="toctree-l1"><a class="reference internal" href="repos.html">Repositories</a></li>
-<li class="toctree-l1"><a class="reference internal" href="pipeline_cli_execution.html">Pipeline CLI Execution</a></li>
-<li class="toctree-l1"><a class="reference internal" href="types.html">User-Defined Types</a></li>
-<li class="toctree-l1"><a class="reference internal" href="expectations.html">Expectations</a></li>
-<li class="toctree-l1"><a class="reference internal" href="multiple_outputs.html">Multiple Outputs</a></li>
-<li class="toctree-l1"><a class="reference internal" href="reusable_solids.html">Reusable Solids</a></li>
-<li class="toctree-l1"><a class="reference internal" href="unittesting.html">Unit-testing Pipelines</a></li>
-<li class="toctree-l1"><a class="reference internal" href="dagstermill.html">Dagstermill</a></li>
-<li class="toctree-l1"><a class="reference internal" href="dagstermill.html#dagstermill-cli">Dagstermill CLI</a></li>
-</ul>
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="../apidocs/definitions.html">Definitions</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../apidocs/decorators.html">Decorators</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../apidocs/execution.html">Execution</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../apidocs/errors.html">Errors</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../apidocs/types.html">Types</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../apidocs/utilities.html">Utilities</a></li>
-</ul>
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="../guides/028_to_030_new_concepts.html">New Concepts in 0.3.0</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../guides/028_to_030_upgrade_guide.html">Upgrading to 0.3.0</a></li>
-</ul>
-<div class="relations">
-<h3>Related Topics</h3>
-<ul>
-  <li><a href="../index.html">Documentation overview</a><ul>
-      <li>Previous: <a href="config.html" title="previous chapter">Configuration</a></li>
-      <li>Next: <a href="execution_context.html" title="next chapter">Execution Context</a></li>
-  </ul></li>
-</ul>
-</div>
-  <div role="note" aria-label="source link">
-    <h3>This Page</h3>
-    <ul class="this-page-menu">
-      <li><a href="../_sources/intro_tutorial/configuration_schemas.rst.txt"
-            rel="nofollow">Show Source</a></li>
+            </div>
+
+            
+            <div class="related bottom">
+                &nbsp;
+<nav id="rellinks">
+    <ul>
+        <li>
+            &larr;
+            <a href="config.html" title="Previous document">Configuration</a>
+        </li>
+        <li>
+            <a href="/" title="Home">Home</a>
+        </li>
+        <li>
+            <a href="execution_context.html" title="Next document">Execution Context</a>
+            &rarr;
+        </li>
     </ul>
-   </div>
-<div id="searchbox" style="display: none" role="search">
-  <h3>Quick search</h3>
-    <div class="searchformwrapper">
-    <form class="search" action="../search.html" method="get">
-      <input type="text" name="q" />
-      <input type="submit" value="Go" />
-      <input type="hidden" name="check_keywords" value="yes" />
-      <input type="hidden" name="area" value="default" />
-    </form>
+</nav>
+            </div>
+            
+        </div>
     </div>
-</div>
-<script type="text/javascript">$(\'#searchbox\').show(0);</script>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><h3><a href="../../../index.html">Dagster</a></h3>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../install/install.html">Install</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../learn.html">Learn</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="index.html">Tutorial</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../principles.html">Principles</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../learn.html#other-guides">Other Guides</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../api/api.html">API Docs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../community/community.html">Community</a></li>
+</ul>
+
         </div>
       </div>
       <div class="clearer"></div>
     </div>
-    <div class="footer">
-      &copy;2018, Elementl, Inc.
-      
-      |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.7.5</a>
-      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
-      
-      |
-      <a href="../_sources/intro_tutorial/configuration_schemas.rst.txt"
-          rel="nofollow">Page source</a>
-    </div>
-
+<div class="footer">
+    &copy; 2019, Elementl, Inc.
     
-
+    |
+    Powered by <a href="http://sphinx-doc.org/">Sphinx 1.7.5</a>
+    &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
     
+    |
+    <a href="../../../_sources/sections/learn/tutorial/configuration_schemas.rst.txt" rel="nofollow">Page source</a>
+</div>
+
+
+
+
   </body>
 </html>'''
 
-snapshots['test_build_all_docs 61'] = '''
+snapshots['test_build_all_docs 71'] = '''
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
@@ -23105,33 +23743,52 @@ snapshots['test_build_all_docs 61'] = '''
   <head>
     <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    <title>Dagstermill &#8212; Dagster  documentation</title>
-    <link rel="stylesheet" href="../_static/alabaster.css" type="text/css" />
-    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
-    <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
-    <script type="text/javascript" src="../_static/jquery.js"></script>
-    <script type="text/javascript" src="../_static/underscore.js"></script>
-    <script type="text/javascript" src="../_static/doctools.js"></script>
-    <link rel="index" title="Index" href="../genindex.html" />
-    <link rel="search" title="Search" href="../search.html" />
-    <link rel="next" title="Definitions" href="../apidocs/definitions.html" />
+    <title>Dagstermill &#8212; Dagster</title>
+    <link rel="stylesheet" href="../../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/css/custom.css" type="text/css" />
+    <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+    <link rel="next" title="Principles" href="../principles.html" />
     <link rel="prev" title="Unit-testing Pipelines" href="unittesting.html" />
-   
-  <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
-  
-  
-  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+ 
+<link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
+
+
+<meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
 
   </head><body>
   
 
     <div class="document">
-      <div class="documentwrapper">
+    <div class="documentwrapper">
         <div class="bodywrapper">
-          
-
-          <div class="body" role="main">
+            <div class="related top">
+                &nbsp;
+<nav id="rellinks">
+    <ul>
+        <li>
+            &larr;
+            <a href="unittesting.html" title="Previous document">Unit-testing Pipelines</a>
+        </li>
+        <li>
+            <a href="/" title="Home">Home</a>
+        </li>
+        <li>
+            <a href="../principles.html" title="Next document">Principles</a>
+            &rarr;
+        </li>
+    </ul>
+</nav>
+            </div>
             
+
+            <div class="body" role="main">
+                
   <div class="section" id="dagstermill">
 <h1>Dagstermill<a class="headerlink" href="#dagstermill" title="Permalink to this headline">¶</a></h1>
 <p>A wonderful feature of using Dagster is that you can productionize Jupyter notebooks and involve them in a (production) pipeline as units of computation.</p>
@@ -23145,7 +23802,7 @@ snapshots['test_build_all_docs 61'] = '''
 <div class="section" id="a-very-simple-pipeline-with-a-notebook">
 <h2>A (Very Simple) Pipeline with a Notebook<a class="headerlink" href="#a-very-simple-pipeline-with-a-notebook" title="Permalink to this headline">¶</a></h2>
 <p>Say you have a pipeline as shown below:</p>
-<img alt="../_images/test_add_pipeline.png" src="../_images/test_add_pipeline.png" />
+<img alt="../../../_images/test_add_pipeline.png" src="../../../_images/test_add_pipeline.png" />
 <p>This is a very simple pipeline, where the solid <code class="docutils literal notranslate"><span class="pre">return_one</span></code> returns 1 and <code class="docutils literal notranslate"><span class="pre">return_two</span></code> returns 2. The notebook driven solid <code class="docutils literal notranslate"><span class="pre">add_two_numbers</span></code> simply adds two numbers and returns the result, as the name suggests.</p>
 <p>The notebook might have a cell that looks like the following:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">a</span> <span class="o">=</span> <span class="mi">3</span>
@@ -23176,7 +23833,7 @@ snapshots['test_build_all_docs 61'] = '''
 <li><code class="docutils literal notranslate"><span class="pre">inputs</span></code>, <code class="docutils literal notranslate"><span class="pre">outputs</span></code>: the named and typed inputs and outputs of the notebook as a solid</li>
 </ul>
 <p>However, we also have to add some boilerplate to the notebook itself to make sure it plays nice with the dagstermill framework. The final notebook with the boilerplate looks as follows.</p>
-<img alt="../_images/add_two_numbers.png" src="../_images/add_two_numbers.png" />
+<img alt="../../../_images/add_two_numbers.png" src="../../../_images/add_two_numbers.png" />
 <ol class="arabic simple">
 <li><code class="docutils literal notranslate"><span class="pre">import</span> <span class="pre">dagstermill</span> <span class="pre">as</span> <span class="pre">dm</span></code> imports the dagstermill library, which is necesary for the rest of the boilerplate</li>
 <li><code class="docutils literal notranslate"><span class="pre">dm.register_repository()</span></code> takes a repository definition (<code class="docutils literal notranslate"><span class="pre">define_example_repository()</span></code> in this case) and lets the notebook know how to find the repository that contains the corresponding notebook-driven solid.</li>
@@ -23192,7 +23849,7 @@ runtime values of the inputs and then running the notebook using the <a class="r
 A nice side effect of using the papermill library to run the notebook is that the output is contained in an “output notebook”,
 and the source notebook remains unchanged. Since the output notebook is itself a valid Jupyter notebook, debugging can be done within the notebook environment!</p>
 <p>The execution log contains the path to the output notebook so that you can access it after execution to examine and potentially debug the output. Within dagit we also provide a link to the output notebook, as shown below.</p>
-<img alt="../_images/output_notebook.png" src="../_images/output_notebook.png" />
+<img alt="../../../_images/output_notebook.png" src="../../../_images/output_notebook.png" />
 </div>
 <div class="section" id="summary-of-using-dagstermill">
 <h2>Summary of Using Dagstermill<a class="headerlink" href="#summary-of-using-dagstermill" title="Permalink to this headline">¶</a></h2>
@@ -23211,7 +23868,7 @@ and the source notebook remains unchanged. Since the output notebook is itself a
 Below we provide a more complicated example of a pipeline involving notebooks with outputs that are fed in as inputs into further steps in the pipeline.
 This is a particular compelling use-case of incorporating notebook-driven solids into a pipeline, as the user no longer has to manually marshall the inputs and outputs of notebooks manually.
 Instead, the dagster execution engine takes care of this for us! Let us look at the following machine-learning inspired pipeline.</p>
-<img alt="../_images/ML_pipeline.png" src="../_images/ML_pipeline.png" />
+<img alt="../../../_images/ML_pipeline.png" src="../../../_images/ML_pipeline.png" />
 <p>The corresponding dagster code for defining the pipeline is as follows:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">define_tutorial_pipeline</span><span class="p">():</span>
     <span class="k">return</span> <span class="n">PipelineDefinition</span><span class="p">(</span>
@@ -23226,17 +23883,17 @@ Instead, the dagster execution engine takes care of this for us! Let us look at 
 </pre></div>
 </div>
 <p>The <code class="docutils literal notranslate"><span class="pre">clean_data_solid</span></code> solid is driven by the following notebook:</p>
-<img alt="../_images/clean_data_ipynb.png" src="../_images/clean_data_ipynb.png" />
+<img alt="../../../_images/clean_data_ipynb.png" src="../../../_images/clean_data_ipynb.png" />
 <p>We see that this notebook loads some data, filters it and yields it as a dataframe.
 Then, this dataframe is consumed by the solids <code class="docutils literal notranslate"><span class="pre">linear_regression</span></code> and <code class="docutils literal notranslate"><span class="pre">random_forest_regression</span></code>, which both consume inputs <code class="docutils literal notranslate"><span class="pre">df</span></code> that is flowed from the output of <code class="docutils literal notranslate"><span class="pre">clean_data_solid</span></code>.</p>
 <p>The <code class="docutils literal notranslate"><span class="pre">random_forest_regression</span></code> solid is driven by the following notebook:</p>
-<img alt="../_images/RF_ipynb.png" src="../_images/RF_ipynb.png" />
+<img alt="../../../_images/RF_ipynb.png" src="../../../_images/RF_ipynb.png" />
 <p>Without the dagstermill abstraction, we’d have to manually save the output of the <code class="docutils literal notranslate"><span class="pre">clean_data</span></code> notebook to a location and make sure to load the same location in the 2 other notebooks.
 However, the dagster execution engine takes care of this marshalling for us,
 so notice that the <code class="docutils literal notranslate"><span class="pre">random_forest_regression</span></code> notebook is simply using <code class="docutils literal notranslate"><span class="pre">df</span></code> as a parameter
 that will be over-written with its correct runtime value from the result of <code class="docutils literal notranslate"><span class="pre">clean_data</span></code>.</p>
 <p>After running the pipeline, we can examine the <code class="docutils literal notranslate"><span class="pre">random_forest_regression</span></code> output notebook, which looks as follows:</p>
-<img alt="../_images/RF_output_notebook.png" src="../_images/RF_output_notebook.png" />
+<img alt="../../../_images/RF_output_notebook.png" src="../../../_images/RF_output_notebook.png" />
 <p>The output notebook is quite convenient, because we can debug within the notebook environment as well as view plots and other output within the notebook context.
 We can also look at the input that was flowed into the notebook (i.e. the filtered output of <code class="docutils literal notranslate"><span class="pre">clean_data</span></code>).</p>
 </div>
@@ -23332,111 +23989,77 @@ We can also look at the input that was flowed into the notebook (i.e. the filter
 </pre></div>
 </div>
 <p>Gives the following notebook–notice how there is no call to <code class="docutils literal notranslate"><span class="pre">register_repository</span></code> within the notebook.</p>
-<img alt="../_images/pre_boilerplate_notebook.png" src="../_images/pre_boilerplate_notebook.png" />
+<img alt="../../../_images/pre_boilerplate_notebook.png" src="../../../_images/pre_boilerplate_notebook.png" />
 <p>After a while, say you finally have a repository file (<code class="docutils literal notranslate"><span class="pre">repository.yml</span></code>). Then you register the notebook, giving the following:</p>
 <div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$</span> ls
 <span class="go">test_notebook.ipynb repository.yml</span>
 <span class="gp">$</span> dagstermill register-notebook --notebook test_notebook.ipynb -y repository.yml
 </pre></div>
 </div>
-<img alt="../_images/post_boilerplate_notebook.png" src="../_images/post_boilerplate_notebook.png" />
+<img alt="../../../_images/post_boilerplate_notebook.png" src="../../../_images/post_boilerplate_notebook.png" />
 </div>
 
 
-          </div>
-          
-        </div>
-      </div>
-      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
-        <div class="sphinxsidebarwrapper">
-<h3><a href="../index.html">Table Of Contents</a></h3>
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="../principles.html">Principles</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../installation.html">Installation</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../contributing.html">Contributing</a></li>
-</ul>
-<ul class="current">
-<li class="toctree-l1"><a class="reference internal" href="hello_world.html">Hello, World</a></li>
-<li class="toctree-l1"><a class="reference internal" href="hello_dag.html">Hello, DAG</a></li>
-<li class="toctree-l1"><a class="reference internal" href="actual_dag.html">An actual DAG</a></li>
-<li class="toctree-l1"><a class="reference internal" href="inputs.html">Inputs</a></li>
-<li class="toctree-l1"><a class="reference internal" href="config.html">Configuration</a></li>
-<li class="toctree-l1"><a class="reference internal" href="configuration_schemas.html">Configuration Schemas</a></li>
-<li class="toctree-l1"><a class="reference internal" href="execution_context.html">Execution Context</a></li>
-<li class="toctree-l1"><a class="reference internal" href="resources.html">Resources</a></li>
-<li class="toctree-l1"><a class="reference internal" href="repos.html">Repositories</a></li>
-<li class="toctree-l1"><a class="reference internal" href="pipeline_cli_execution.html">Pipeline CLI Execution</a></li>
-<li class="toctree-l1"><a class="reference internal" href="types.html">User-Defined Types</a></li>
-<li class="toctree-l1"><a class="reference internal" href="expectations.html">Expectations</a></li>
-<li class="toctree-l1"><a class="reference internal" href="multiple_outputs.html">Multiple Outputs</a></li>
-<li class="toctree-l1"><a class="reference internal" href="reusable_solids.html">Reusable Solids</a></li>
-<li class="toctree-l1"><a class="reference internal" href="unittesting.html">Unit-testing Pipelines</a></li>
-<li class="toctree-l1 current"><a class="current reference internal" href="#">Dagstermill</a></li>
-<li class="toctree-l1"><a class="reference internal" href="#dagstermill-cli">Dagstermill CLI</a></li>
-</ul>
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="../apidocs/definitions.html">Definitions</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../apidocs/decorators.html">Decorators</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../apidocs/execution.html">Execution</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../apidocs/errors.html">Errors</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../apidocs/types.html">Types</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../apidocs/utilities.html">Utilities</a></li>
-</ul>
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="../guides/028_to_030_new_concepts.html">New Concepts in 0.3.0</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../guides/028_to_030_upgrade_guide.html">Upgrading to 0.3.0</a></li>
-</ul>
-<div class="relations">
-<h3>Related Topics</h3>
-<ul>
-  <li><a href="../index.html">Documentation overview</a><ul>
-      <li>Previous: <a href="unittesting.html" title="previous chapter">Unit-testing Pipelines</a></li>
-      <li>Next: <a href="../apidocs/definitions.html" title="next chapter">Definitions</a></li>
-  </ul></li>
-</ul>
-</div>
-  <div role="note" aria-label="source link">
-    <h3>This Page</h3>
-    <ul class="this-page-menu">
-      <li><a href="../_sources/intro_tutorial/dagstermill.rst.txt"
-            rel="nofollow">Show Source</a></li>
+            </div>
+
+            
+            <div class="related bottom">
+                &nbsp;
+<nav id="rellinks">
+    <ul>
+        <li>
+            &larr;
+            <a href="unittesting.html" title="Previous document">Unit-testing Pipelines</a>
+        </li>
+        <li>
+            <a href="/" title="Home">Home</a>
+        </li>
+        <li>
+            <a href="../principles.html" title="Next document">Principles</a>
+            &rarr;
+        </li>
     </ul>
-   </div>
-<div id="searchbox" style="display: none" role="search">
-  <h3>Quick search</h3>
-    <div class="searchformwrapper">
-    <form class="search" action="../search.html" method="get">
-      <input type="text" name="q" />
-      <input type="submit" value="Go" />
-      <input type="hidden" name="check_keywords" value="yes" />
-      <input type="hidden" name="area" value="default" />
-    </form>
+</nav>
+            </div>
+            
+        </div>
     </div>
-</div>
-<script type="text/javascript">$(\'#searchbox\').show(0);</script>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><h3><a href="../../../index.html">Dagster</a></h3>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../install/install.html">Install</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../learn.html">Learn</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="index.html">Tutorial</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../principles.html">Principles</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../learn.html#other-guides">Other Guides</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../api/api.html">API Docs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../community/community.html">Community</a></li>
+</ul>
+
         </div>
       </div>
       <div class="clearer"></div>
     </div>
-    <div class="footer">
-      &copy;2018, Elementl, Inc.
-      
-      |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.7.5</a>
-      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
-      
-      |
-      <a href="../_sources/intro_tutorial/dagstermill.rst.txt"
-          rel="nofollow">Page source</a>
-    </div>
-
+<div class="footer">
+    &copy; 2019, Elementl, Inc.
     
-
+    |
+    Powered by <a href="http://sphinx-doc.org/">Sphinx 1.7.5</a>
+    &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
     
+    |
+    <a href="../../../_sources/sections/learn/tutorial/dagstermill.rst.txt" rel="nofollow">Page source</a>
+</div>
+
+
+
+
   </body>
 </html>'''
 
-snapshots['test_build_all_docs 62'] = '''
+snapshots['test_build_all_docs 72'] = '''
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
@@ -23444,33 +24067,52 @@ snapshots['test_build_all_docs 62'] = '''
   <head>
     <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    <title>Execution Context &#8212; Dagster  documentation</title>
-    <link rel="stylesheet" href="../_static/alabaster.css" type="text/css" />
-    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
-    <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
-    <script type="text/javascript" src="../_static/jquery.js"></script>
-    <script type="text/javascript" src="../_static/underscore.js"></script>
-    <script type="text/javascript" src="../_static/doctools.js"></script>
-    <link rel="index" title="Index" href="../genindex.html" />
-    <link rel="search" title="Search" href="../search.html" />
+    <title>Execution Context &#8212; Dagster</title>
+    <link rel="stylesheet" href="../../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/css/custom.css" type="text/css" />
+    <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
     <link rel="next" title="Resources" href="resources.html" />
     <link rel="prev" title="Configuration Schemas" href="configuration_schemas.html" />
-   
-  <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
-  
-  
-  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+ 
+<link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
+
+
+<meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
 
   </head><body>
   
 
     <div class="document">
-      <div class="documentwrapper">
+    <div class="documentwrapper">
         <div class="bodywrapper">
-          
-
-          <div class="body" role="main">
+            <div class="related top">
+                &nbsp;
+<nav id="rellinks">
+    <ul>
+        <li>
+            &larr;
+            <a href="configuration_schemas.html" title="Previous document">Configuration Schemas</a>
+        </li>
+        <li>
+            <a href="/" title="Home">Home</a>
+        </li>
+        <li>
+            <a href="resources.html" title="Next document">Resources</a>
+            &rarr;
+        </li>
+    </ul>
+</nav>
+            </div>
             
+
+            <div class="body" role="main">
+                
   <div class="section" id="execution-context">
 <h1>Execution Context<a class="headerlink" href="#execution-context" title="Permalink to this headline">¶</a></h1>
 <p>One of the most important objects in the system is the execution context. The execution
@@ -23556,100 +24198,66 @@ or compute substrates – can be configured using the context.</p>
 </div>
 
 
-          </div>
-          
-        </div>
-      </div>
-      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
-        <div class="sphinxsidebarwrapper">
-<h3><a href="../index.html">Table Of Contents</a></h3>
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="../principles.html">Principles</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../installation.html">Installation</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../contributing.html">Contributing</a></li>
-</ul>
-<ul class="current">
-<li class="toctree-l1"><a class="reference internal" href="hello_world.html">Hello, World</a></li>
-<li class="toctree-l1"><a class="reference internal" href="hello_dag.html">Hello, DAG</a></li>
-<li class="toctree-l1"><a class="reference internal" href="actual_dag.html">An actual DAG</a></li>
-<li class="toctree-l1"><a class="reference internal" href="inputs.html">Inputs</a></li>
-<li class="toctree-l1"><a class="reference internal" href="config.html">Configuration</a></li>
-<li class="toctree-l1"><a class="reference internal" href="configuration_schemas.html">Configuration Schemas</a></li>
-<li class="toctree-l1 current"><a class="current reference internal" href="#">Execution Context</a></li>
-<li class="toctree-l1"><a class="reference internal" href="resources.html">Resources</a></li>
-<li class="toctree-l1"><a class="reference internal" href="repos.html">Repositories</a></li>
-<li class="toctree-l1"><a class="reference internal" href="pipeline_cli_execution.html">Pipeline CLI Execution</a></li>
-<li class="toctree-l1"><a class="reference internal" href="types.html">User-Defined Types</a></li>
-<li class="toctree-l1"><a class="reference internal" href="expectations.html">Expectations</a></li>
-<li class="toctree-l1"><a class="reference internal" href="multiple_outputs.html">Multiple Outputs</a></li>
-<li class="toctree-l1"><a class="reference internal" href="reusable_solids.html">Reusable Solids</a></li>
-<li class="toctree-l1"><a class="reference internal" href="unittesting.html">Unit-testing Pipelines</a></li>
-<li class="toctree-l1"><a class="reference internal" href="dagstermill.html">Dagstermill</a></li>
-<li class="toctree-l1"><a class="reference internal" href="dagstermill.html#dagstermill-cli">Dagstermill CLI</a></li>
-</ul>
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="../apidocs/definitions.html">Definitions</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../apidocs/decorators.html">Decorators</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../apidocs/execution.html">Execution</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../apidocs/errors.html">Errors</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../apidocs/types.html">Types</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../apidocs/utilities.html">Utilities</a></li>
-</ul>
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="../guides/028_to_030_new_concepts.html">New Concepts in 0.3.0</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../guides/028_to_030_upgrade_guide.html">Upgrading to 0.3.0</a></li>
-</ul>
-<div class="relations">
-<h3>Related Topics</h3>
-<ul>
-  <li><a href="../index.html">Documentation overview</a><ul>
-      <li>Previous: <a href="configuration_schemas.html" title="previous chapter">Configuration Schemas</a></li>
-      <li>Next: <a href="resources.html" title="next chapter">Resources</a></li>
-  </ul></li>
-</ul>
-</div>
-  <div role="note" aria-label="source link">
-    <h3>This Page</h3>
-    <ul class="this-page-menu">
-      <li><a href="../_sources/intro_tutorial/execution_context.rst.txt"
-            rel="nofollow">Show Source</a></li>
+            </div>
+
+            
+            <div class="related bottom">
+                &nbsp;
+<nav id="rellinks">
+    <ul>
+        <li>
+            &larr;
+            <a href="configuration_schemas.html" title="Previous document">Configuration Schemas</a>
+        </li>
+        <li>
+            <a href="/" title="Home">Home</a>
+        </li>
+        <li>
+            <a href="resources.html" title="Next document">Resources</a>
+            &rarr;
+        </li>
     </ul>
-   </div>
-<div id="searchbox" style="display: none" role="search">
-  <h3>Quick search</h3>
-    <div class="searchformwrapper">
-    <form class="search" action="../search.html" method="get">
-      <input type="text" name="q" />
-      <input type="submit" value="Go" />
-      <input type="hidden" name="check_keywords" value="yes" />
-      <input type="hidden" name="area" value="default" />
-    </form>
+</nav>
+            </div>
+            
+        </div>
     </div>
-</div>
-<script type="text/javascript">$(\'#searchbox\').show(0);</script>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><h3><a href="../../../index.html">Dagster</a></h3>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../install/install.html">Install</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../learn.html">Learn</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="index.html">Tutorial</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../principles.html">Principles</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../learn.html#other-guides">Other Guides</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../api/api.html">API Docs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../community/community.html">Community</a></li>
+</ul>
+
         </div>
       </div>
       <div class="clearer"></div>
     </div>
-    <div class="footer">
-      &copy;2018, Elementl, Inc.
-      
-      |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.7.5</a>
-      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
-      
-      |
-      <a href="../_sources/intro_tutorial/execution_context.rst.txt"
-          rel="nofollow">Page source</a>
-    </div>
-
+<div class="footer">
+    &copy; 2019, Elementl, Inc.
     
-
+    |
+    Powered by <a href="http://sphinx-doc.org/">Sphinx 1.7.5</a>
+    &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
     
+    |
+    <a href="../../../_sources/sections/learn/tutorial/execution_context.rst.txt" rel="nofollow">Page source</a>
+</div>
+
+
+
+
   </body>
 </html>'''
 
-snapshots['test_build_all_docs 63'] = '''
+snapshots['test_build_all_docs 73'] = '''
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
@@ -23657,33 +24265,52 @@ snapshots['test_build_all_docs 63'] = '''
   <head>
     <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    <title>Expectations &#8212; Dagster  documentation</title>
-    <link rel="stylesheet" href="../_static/alabaster.css" type="text/css" />
-    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
-    <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
-    <script type="text/javascript" src="../_static/jquery.js"></script>
-    <script type="text/javascript" src="../_static/underscore.js"></script>
-    <script type="text/javascript" src="../_static/doctools.js"></script>
-    <link rel="index" title="Index" href="../genindex.html" />
-    <link rel="search" title="Search" href="../search.html" />
+    <title>Expectations &#8212; Dagster</title>
+    <link rel="stylesheet" href="../../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/css/custom.css" type="text/css" />
+    <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
     <link rel="next" title="Multiple Outputs" href="multiple_outputs.html" />
     <link rel="prev" title="User-Defined Types" href="types.html" />
-   
-  <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
-  
-  
-  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+ 
+<link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
+
+
+<meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
 
   </head><body>
   
 
     <div class="document">
-      <div class="documentwrapper">
+    <div class="documentwrapper">
         <div class="bodywrapper">
-          
-
-          <div class="body" role="main">
+            <div class="related top">
+                &nbsp;
+<nav id="rellinks">
+    <ul>
+        <li>
+            &larr;
+            <a href="types.html" title="Previous document">User-Defined Types</a>
+        </li>
+        <li>
+            <a href="/" title="Home">Home</a>
+        </li>
+        <li>
+            <a href="multiple_outputs.html" title="Next document">Multiple Outputs</a>
+            &rarr;
+        </li>
+    </ul>
+</nav>
+            </div>
             
+
+            <div class="body" role="main">
+                
   <div class="section" id="expectations">
 <h1>Expectations<a class="headerlink" href="#expectations" title="Permalink to this headline">¶</a></h1>
 <p>Dagster has a first-class concept to capture data quality tests. We call these
@@ -23885,100 +24512,66 @@ configure the pipeline to skip expectations entirely.</p>
 </div>
 
 
-          </div>
-          
-        </div>
-      </div>
-      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
-        <div class="sphinxsidebarwrapper">
-<h3><a href="../index.html">Table Of Contents</a></h3>
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="../principles.html">Principles</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../installation.html">Installation</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../contributing.html">Contributing</a></li>
-</ul>
-<ul class="current">
-<li class="toctree-l1"><a class="reference internal" href="hello_world.html">Hello, World</a></li>
-<li class="toctree-l1"><a class="reference internal" href="hello_dag.html">Hello, DAG</a></li>
-<li class="toctree-l1"><a class="reference internal" href="actual_dag.html">An actual DAG</a></li>
-<li class="toctree-l1"><a class="reference internal" href="inputs.html">Inputs</a></li>
-<li class="toctree-l1"><a class="reference internal" href="config.html">Configuration</a></li>
-<li class="toctree-l1"><a class="reference internal" href="configuration_schemas.html">Configuration Schemas</a></li>
-<li class="toctree-l1"><a class="reference internal" href="execution_context.html">Execution Context</a></li>
-<li class="toctree-l1"><a class="reference internal" href="resources.html">Resources</a></li>
-<li class="toctree-l1"><a class="reference internal" href="repos.html">Repositories</a></li>
-<li class="toctree-l1"><a class="reference internal" href="pipeline_cli_execution.html">Pipeline CLI Execution</a></li>
-<li class="toctree-l1"><a class="reference internal" href="types.html">User-Defined Types</a></li>
-<li class="toctree-l1 current"><a class="current reference internal" href="#">Expectations</a></li>
-<li class="toctree-l1"><a class="reference internal" href="multiple_outputs.html">Multiple Outputs</a></li>
-<li class="toctree-l1"><a class="reference internal" href="reusable_solids.html">Reusable Solids</a></li>
-<li class="toctree-l1"><a class="reference internal" href="unittesting.html">Unit-testing Pipelines</a></li>
-<li class="toctree-l1"><a class="reference internal" href="dagstermill.html">Dagstermill</a></li>
-<li class="toctree-l1"><a class="reference internal" href="dagstermill.html#dagstermill-cli">Dagstermill CLI</a></li>
-</ul>
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="../apidocs/definitions.html">Definitions</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../apidocs/decorators.html">Decorators</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../apidocs/execution.html">Execution</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../apidocs/errors.html">Errors</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../apidocs/types.html">Types</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../apidocs/utilities.html">Utilities</a></li>
-</ul>
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="../guides/028_to_030_new_concepts.html">New Concepts in 0.3.0</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../guides/028_to_030_upgrade_guide.html">Upgrading to 0.3.0</a></li>
-</ul>
-<div class="relations">
-<h3>Related Topics</h3>
-<ul>
-  <li><a href="../index.html">Documentation overview</a><ul>
-      <li>Previous: <a href="types.html" title="previous chapter">User-Defined Types</a></li>
-      <li>Next: <a href="multiple_outputs.html" title="next chapter">Multiple Outputs</a></li>
-  </ul></li>
-</ul>
-</div>
-  <div role="note" aria-label="source link">
-    <h3>This Page</h3>
-    <ul class="this-page-menu">
-      <li><a href="../_sources/intro_tutorial/expectations.rst.txt"
-            rel="nofollow">Show Source</a></li>
+            </div>
+
+            
+            <div class="related bottom">
+                &nbsp;
+<nav id="rellinks">
+    <ul>
+        <li>
+            &larr;
+            <a href="types.html" title="Previous document">User-Defined Types</a>
+        </li>
+        <li>
+            <a href="/" title="Home">Home</a>
+        </li>
+        <li>
+            <a href="multiple_outputs.html" title="Next document">Multiple Outputs</a>
+            &rarr;
+        </li>
     </ul>
-   </div>
-<div id="searchbox" style="display: none" role="search">
-  <h3>Quick search</h3>
-    <div class="searchformwrapper">
-    <form class="search" action="../search.html" method="get">
-      <input type="text" name="q" />
-      <input type="submit" value="Go" />
-      <input type="hidden" name="check_keywords" value="yes" />
-      <input type="hidden" name="area" value="default" />
-    </form>
+</nav>
+            </div>
+            
+        </div>
     </div>
-</div>
-<script type="text/javascript">$(\'#searchbox\').show(0);</script>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><h3><a href="../../../index.html">Dagster</a></h3>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../install/install.html">Install</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../learn.html">Learn</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="index.html">Tutorial</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../principles.html">Principles</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../learn.html#other-guides">Other Guides</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../api/api.html">API Docs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../community/community.html">Community</a></li>
+</ul>
+
         </div>
       </div>
       <div class="clearer"></div>
     </div>
-    <div class="footer">
-      &copy;2018, Elementl, Inc.
-      
-      |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.7.5</a>
-      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
-      
-      |
-      <a href="../_sources/intro_tutorial/expectations.rst.txt"
-          rel="nofollow">Page source</a>
-    </div>
-
+<div class="footer">
+    &copy; 2019, Elementl, Inc.
     
-
+    |
+    Powered by <a href="http://sphinx-doc.org/">Sphinx 1.7.5</a>
+    &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
     
+    |
+    <a href="../../../_sources/sections/learn/tutorial/expectations.rst.txt" rel="nofollow">Page source</a>
+</div>
+
+
+
+
   </body>
 </html>'''
 
-snapshots['test_build_all_docs 64'] = '''
+snapshots['test_build_all_docs 74'] = '''
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
@@ -23986,33 +24579,52 @@ snapshots['test_build_all_docs 64'] = '''
   <head>
     <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    <title>Hello, DAG &#8212; Dagster  documentation</title>
-    <link rel="stylesheet" href="../_static/alabaster.css" type="text/css" />
-    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
-    <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
-    <script type="text/javascript" src="../_static/jquery.js"></script>
-    <script type="text/javascript" src="../_static/underscore.js"></script>
-    <script type="text/javascript" src="../_static/doctools.js"></script>
-    <link rel="index" title="Index" href="../genindex.html" />
-    <link rel="search" title="Search" href="../search.html" />
+    <title>Hello, DAG &#8212; Dagster</title>
+    <link rel="stylesheet" href="../../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/css/custom.css" type="text/css" />
+    <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
     <link rel="next" title="An actual DAG" href="actual_dag.html" />
     <link rel="prev" title="Hello, World" href="hello_world.html" />
-   
-  <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
-  
-  
-  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+ 
+<link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
+
+
+<meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
 
   </head><body>
   
 
     <div class="document">
-      <div class="documentwrapper">
+    <div class="documentwrapper">
         <div class="bodywrapper">
-          
-
-          <div class="body" role="main">
+            <div class="related top">
+                &nbsp;
+<nav id="rellinks">
+    <ul>
+        <li>
+            &larr;
+            <a href="hello_world.html" title="Previous document">Hello, World</a>
+        </li>
+        <li>
+            <a href="/" title="Home">Home</a>
+        </li>
+        <li>
+            <a href="actual_dag.html" title="Next document">An actual DAG</a>
+            &rarr;
+        </li>
+    </ul>
+</nav>
+            </div>
             
+
+            <div class="body" role="main">
+                
   <div class="section" id="hello-dag">
 <h1>Hello, DAG<a class="headerlink" href="#hello-dag" title="Permalink to this headline">¶</a></h1>
 <p>One of the core capabitilies of dagster is the ability to express data pipelines as arbitrary
@@ -24079,13 +24691,13 @@ two concatenated copies of the hardcoded string.</p>
 <p>This pipeline introduces a few new concepts.</p>
 <ol class="arabic">
 <li><p class="first">Solids can have <strong>inputs</strong> defined by instances of
-<a class="reference internal" href="../apidocs/definitions.html#dagster.InputDefinition" title="dagster.InputDefinition"><code class="xref py py-class docutils literal notranslate"><span class="pre">InputDefinition</span></code></a>. Inputs allow us to connect solids to
+<a class="reference internal" href="../../api/apidocs/definitions.html#dagster.InputDefinition" title="dagster.InputDefinition"><code class="xref py py-class docutils literal notranslate"><span class="pre">InputDefinition</span></code></a>. Inputs allow us to connect solids to
 each other, and give dagster information about solids’ dependencies on each other (and, as
 we’ll see later, optionally let dagster check the types of the inputs at runtime).</p>
 </li>
 <li><p class="first">Solids’ <strong>dependencies</strong> on each other are expressed by instances of
-<a class="reference internal" href="../apidocs/definitions.html#dagster.DependencyDefinition" title="dagster.DependencyDefinition"><code class="xref py py-class docutils literal notranslate"><span class="pre">DependencyDefinition</span></code></a>.
-You’ll notice the new argument to <a class="reference internal" href="../apidocs/definitions.html#dagster.PipelineDefinition" title="dagster.PipelineDefinition"><code class="xref py py-class docutils literal notranslate"><span class="pre">PipelineDefinition</span></code></a>
+<a class="reference internal" href="../../api/apidocs/definitions.html#dagster.DependencyDefinition" title="dagster.DependencyDefinition"><code class="xref py py-class docutils literal notranslate"><span class="pre">DependencyDefinition</span></code></a>.
+You’ll notice the new argument to <a class="reference internal" href="../../api/apidocs/definitions.html#dagster.PipelineDefinition" title="dagster.PipelineDefinition"><code class="xref py py-class docutils literal notranslate"><span class="pre">PipelineDefinition</span></code></a>
 called <code class="docutils literal notranslate"><span class="pre">dependencies</span></code>, which is a dict that defines the connections between solids in a
 pipeline’s DAG.</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">dependencies</span><span class="o">=</span><span class="p">{</span>
@@ -24095,7 +24707,7 @@ pipeline’s DAG.</p>
 </div>
 <p>The first layer of keys in this dict are the <em>names</em> of solids in the pipeline. The second layer
 of keys are the <em>names</em> of the inputs to each solid. Each input in the DAG must be provided a
-<a class="reference internal" href="../apidocs/definitions.html#dagster.DependencyDefinition" title="dagster.DependencyDefinition"><code class="xref py py-class docutils literal notranslate"><span class="pre">DependencyDefinition</span></code></a>. (Don’t worry – if you forget
+<a class="reference internal" href="../../api/apidocs/definitions.html#dagster.DependencyDefinition" title="dagster.DependencyDefinition"><code class="xref py py-class docutils literal notranslate"><span class="pre">DependencyDefinition</span></code></a>. (Don’t worry – if you forget
 to specify an input, a helpful error message will tell you what you missed.)</p>
 <p>In this case the dictionary encodes the fact that the input <code class="docutils literal notranslate"><span class="pre">arg_one</span></code> of solid <code class="docutils literal notranslate"><span class="pre">solid_two</span></code>
 should flow from the output of <code class="docutils literal notranslate"><span class="pre">solid_one</span></code>.</p>
@@ -24107,7 +24719,7 @@ should flow from the output of <code class="docutils literal notranslate"><span 
 </div>
 <p>Navigate to <a class="reference external" href="http://127.0.0.1:3000/hello_dag_pipeline/explore">http://127.0.0.1:3000/hello_dag_pipeline/explore</a> or choose the hello_dag_pipeline
 from the dropdown:</p>
-<img alt="../_images/hello_dag_figure_one.png" src="../_images/hello_dag_figure_one.png" />
+<img alt="../../../_images/hello_dag_figure_one.png" src="../../../_images/hello_dag_figure_one.png" />
 <p>One of the distinguishing features of dagster that separates it from many workflow engines is that
 dependencies connect <em>inputs</em> and <em>outputs</em> rather than just <em>tasks</em>. An author of a dagster
 pipeline defines the flow of execution by defining the flow of <em>data</em> within that
@@ -24122,100 +24734,66 @@ topology and see how dagster determines the execution order of a pipeline.</p>
 </div>
 
 
-          </div>
-          
-        </div>
-      </div>
-      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
-        <div class="sphinxsidebarwrapper">
-<h3><a href="../index.html">Table Of Contents</a></h3>
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="../principles.html">Principles</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../installation.html">Installation</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../contributing.html">Contributing</a></li>
-</ul>
-<ul class="current">
-<li class="toctree-l1"><a class="reference internal" href="hello_world.html">Hello, World</a></li>
-<li class="toctree-l1 current"><a class="current reference internal" href="#">Hello, DAG</a></li>
-<li class="toctree-l1"><a class="reference internal" href="actual_dag.html">An actual DAG</a></li>
-<li class="toctree-l1"><a class="reference internal" href="inputs.html">Inputs</a></li>
-<li class="toctree-l1"><a class="reference internal" href="config.html">Configuration</a></li>
-<li class="toctree-l1"><a class="reference internal" href="configuration_schemas.html">Configuration Schemas</a></li>
-<li class="toctree-l1"><a class="reference internal" href="execution_context.html">Execution Context</a></li>
-<li class="toctree-l1"><a class="reference internal" href="resources.html">Resources</a></li>
-<li class="toctree-l1"><a class="reference internal" href="repos.html">Repositories</a></li>
-<li class="toctree-l1"><a class="reference internal" href="pipeline_cli_execution.html">Pipeline CLI Execution</a></li>
-<li class="toctree-l1"><a class="reference internal" href="types.html">User-Defined Types</a></li>
-<li class="toctree-l1"><a class="reference internal" href="expectations.html">Expectations</a></li>
-<li class="toctree-l1"><a class="reference internal" href="multiple_outputs.html">Multiple Outputs</a></li>
-<li class="toctree-l1"><a class="reference internal" href="reusable_solids.html">Reusable Solids</a></li>
-<li class="toctree-l1"><a class="reference internal" href="unittesting.html">Unit-testing Pipelines</a></li>
-<li class="toctree-l1"><a class="reference internal" href="dagstermill.html">Dagstermill</a></li>
-<li class="toctree-l1"><a class="reference internal" href="dagstermill.html#dagstermill-cli">Dagstermill CLI</a></li>
-</ul>
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="../apidocs/definitions.html">Definitions</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../apidocs/decorators.html">Decorators</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../apidocs/execution.html">Execution</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../apidocs/errors.html">Errors</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../apidocs/types.html">Types</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../apidocs/utilities.html">Utilities</a></li>
-</ul>
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="../guides/028_to_030_new_concepts.html">New Concepts in 0.3.0</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../guides/028_to_030_upgrade_guide.html">Upgrading to 0.3.0</a></li>
-</ul>
-<div class="relations">
-<h3>Related Topics</h3>
-<ul>
-  <li><a href="../index.html">Documentation overview</a><ul>
-      <li>Previous: <a href="hello_world.html" title="previous chapter">Hello, World</a></li>
-      <li>Next: <a href="actual_dag.html" title="next chapter">An actual DAG</a></li>
-  </ul></li>
-</ul>
-</div>
-  <div role="note" aria-label="source link">
-    <h3>This Page</h3>
-    <ul class="this-page-menu">
-      <li><a href="../_sources/intro_tutorial/hello_dag.rst.txt"
-            rel="nofollow">Show Source</a></li>
+            </div>
+
+            
+            <div class="related bottom">
+                &nbsp;
+<nav id="rellinks">
+    <ul>
+        <li>
+            &larr;
+            <a href="hello_world.html" title="Previous document">Hello, World</a>
+        </li>
+        <li>
+            <a href="/" title="Home">Home</a>
+        </li>
+        <li>
+            <a href="actual_dag.html" title="Next document">An actual DAG</a>
+            &rarr;
+        </li>
     </ul>
-   </div>
-<div id="searchbox" style="display: none" role="search">
-  <h3>Quick search</h3>
-    <div class="searchformwrapper">
-    <form class="search" action="../search.html" method="get">
-      <input type="text" name="q" />
-      <input type="submit" value="Go" />
-      <input type="hidden" name="check_keywords" value="yes" />
-      <input type="hidden" name="area" value="default" />
-    </form>
+</nav>
+            </div>
+            
+        </div>
     </div>
-</div>
-<script type="text/javascript">$(\'#searchbox\').show(0);</script>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><h3><a href="../../../index.html">Dagster</a></h3>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../install/install.html">Install</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../learn.html">Learn</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="index.html">Tutorial</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../principles.html">Principles</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../learn.html#other-guides">Other Guides</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../api/api.html">API Docs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../community/community.html">Community</a></li>
+</ul>
+
         </div>
       </div>
       <div class="clearer"></div>
     </div>
-    <div class="footer">
-      &copy;2018, Elementl, Inc.
-      
-      |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.7.5</a>
-      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
-      
-      |
-      <a href="../_sources/intro_tutorial/hello_dag.rst.txt"
-          rel="nofollow">Page source</a>
-    </div>
-
+<div class="footer">
+    &copy; 2019, Elementl, Inc.
     
-
+    |
+    Powered by <a href="http://sphinx-doc.org/">Sphinx 1.7.5</a>
+    &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
     
+    |
+    <a href="../../../_sources/sections/learn/tutorial/hello_dag.rst.txt" rel="nofollow">Page source</a>
+</div>
+
+
+
+
   </body>
 </html>'''
 
-snapshots['test_build_all_docs 65'] = '''
+snapshots['test_build_all_docs 75'] = '''
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
@@ -24223,36 +24801,55 @@ snapshots['test_build_all_docs 65'] = '''
   <head>
     <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    <title>Hello, World &#8212; Dagster  documentation</title>
-    <link rel="stylesheet" href="../_static/alabaster.css" type="text/css" />
-    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
-    <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
-    <script type="text/javascript" src="../_static/jquery.js"></script>
-    <script type="text/javascript" src="../_static/underscore.js"></script>
-    <script type="text/javascript" src="../_static/doctools.js"></script>
-    <link rel="index" title="Index" href="../genindex.html" />
-    <link rel="search" title="Search" href="../search.html" />
+    <title>Hello, World &#8212; Dagster</title>
+    <link rel="stylesheet" href="../../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/css/custom.css" type="text/css" />
+    <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
     <link rel="next" title="Hello, DAG" href="hello_dag.html" />
-    <link rel="prev" title="Contributing" href="../contributing.html" />
-   
-  <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
-  
-  
-  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+    <link rel="prev" title="Tutorial" href="index.html" />
+ 
+<link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
+
+
+<meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
 
   </head><body>
   
 
     <div class="document">
-      <div class="documentwrapper">
+    <div class="documentwrapper">
         <div class="bodywrapper">
-          
-
-          <div class="body" role="main">
+            <div class="related top">
+                &nbsp;
+<nav id="rellinks">
+    <ul>
+        <li>
+            &larr;
+            <a href="index.html" title="Previous document">Tutorial</a>
+        </li>
+        <li>
+            <a href="/" title="Home">Home</a>
+        </li>
+        <li>
+            <a href="hello_dag.html" title="Next document">Hello, DAG</a>
+            &rarr;
+        </li>
+    </ul>
+</nav>
+            </div>
             
+
+            <div class="body" role="main">
+                
   <div class="section" id="hello-world">
 <h1>Hello, World<a class="headerlink" href="#hello-world" title="Permalink to this headline">¶</a></h1>
-<p>See <a class="reference internal" href="../installation.html"><span class="doc">Installation</span></a> for instructions installing dagster (the core library) and dagit (the
+<p>See <a class="reference internal" href="../../install/install.html"><span class="doc">Install</span></a> for instructions installing dagster (the core library) and dagit (the
 web UI tool used to visualize your data pipelines) on your platform of choice.</p>
 <p>Let’s write our first pipeline and save it as <code class="docutils literal notranslate"><span class="pre">hello_world.py</span></code>.</p>
 <div class="literal-block-wrapper docutils container" id="id1">
@@ -24286,13 +24883,13 @@ web UI tool used to visualize your data pipelines) on your platform of choice.</
 <p>This example introduces three concepts:</p>
 <ol class="arabic simple">
 <li>A <strong>solid</strong> is a functional unit of computation in a data pipeline. In this example, we use the
-decorator <a class="reference internal" href="../apidocs/decorators.html#dagster.lambda_solid" title="dagster.lambda_solid"><code class="xref py py-func docutils literal notranslate"><span class="pre">&#64;lambda_solid</span></code></a> to mark the function <code class="docutils literal notranslate"><span class="pre">hello_world</span></code>
+decorator <a class="reference internal" href="../../api/apidocs/decorators.html#dagster.lambda_solid" title="dagster.lambda_solid"><code class="xref py py-func docutils literal notranslate"><span class="pre">&#64;lambda_solid</span></code></a> to mark the function <code class="docutils literal notranslate"><span class="pre">hello_world</span></code>
 as a solid: a functional unit which takes no inputs and returns the output <code class="docutils literal notranslate"><span class="pre">\'hello\'</span></code> every
 time it’s run.</li>
 <li>A <strong>pipeline</strong> is a set of solids arranged into a DAG of computation that produces data assets.
-In this example, the call to <a class="reference internal" href="../apidocs/definitions.html#dagster.PipelineDefinition" title="dagster.PipelineDefinition"><code class="xref py py-class docutils literal notranslate"><span class="pre">PipelineDefinition</span></code></a> defines
+In this example, the call to <a class="reference internal" href="../../api/apidocs/definitions.html#dagster.PipelineDefinition" title="dagster.PipelineDefinition"><code class="xref py py-class docutils literal notranslate"><span class="pre">PipelineDefinition</span></code></a> defines
 a pipeline with a single solid.</li>
-<li>We <strong>execute</strong> the pipeline by running <a class="reference internal" href="../apidocs/execution.html#dagster.execute_pipeline" title="dagster.execute_pipeline"><code class="xref py py-func docutils literal notranslate"><span class="pre">execute_pipeline</span></code></a>.
+<li>We <strong>execute</strong> the pipeline by running <a class="reference internal" href="../../api/apidocs/execution.html#dagster.execute_pipeline" title="dagster.execute_pipeline"><code class="xref py py-func docutils literal notranslate"><span class="pre">execute_pipeline</span></code></a>.
 Dagster will call into each solid in the pipeline, functionally transforming its inputs, if any,
 and threading its outputs to solids further on in the DAG.</li>
 </ol>
@@ -24329,12 +24926,12 @@ them later), but you can see that the third message is:
 </div>
 <p>You should be able to navigate to <a class="reference external" href="http://127.0.0.1:3000/hello_world_pipeline/explore">http://127.0.0.1:3000/hello_world_pipeline/explore</a> in your web
 browser and view your pipeline.</p>
-<img alt="../_images/hello_world_figure_one.png" src="../_images/hello_world_figure_one.png" />
+<img alt="../../../_images/hello_world_figure_one.png" src="../../../_images/hello_world_figure_one.png" />
 <p>There are lots of ways to execute dagster pipelines. If you navigate to the “Execute”
 tab (<a class="reference external" href="http://127.0.0.1:3000/hello_world_pipeline/execute">http://127.0.0.1:3000/hello_world_pipeline/execute</a>), you can execute your pipeline directly
 from dagit. Logs will stream into the bottom right pane of the interface, where you can filter them
 by log level.</p>
-<img alt="../_images/hello_world_figure_two.png" src="../_images/hello_world_figure_two.png" />
+<img alt="../../../_images/hello_world_figure_two.png" src="../../../_images/hello_world_figure_two.png" />
 </div>
 <div class="section" id="library">
 <h3>Library<a class="headerlink" href="#library" title="Permalink to this headline">¶</a></h3>
@@ -24388,20 +24985,124 @@ at all. Just add a few lines to <cite>hello_world.py</cite> (highlighted in yell
 </div>
 
 
-          </div>
-          
+            </div>
+
+            
+            <div class="related bottom">
+                &nbsp;
+<nav id="rellinks">
+    <ul>
+        <li>
+            &larr;
+            <a href="index.html" title="Previous document">Tutorial</a>
+        </li>
+        <li>
+            <a href="/" title="Home">Home</a>
+        </li>
+        <li>
+            <a href="hello_dag.html" title="Next document">Hello, DAG</a>
+            &rarr;
+        </li>
+    </ul>
+</nav>
+            </div>
+            
+        </div>
+    </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><h3><a href="../../../index.html">Dagster</a></h3>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../install/install.html">Install</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../learn.html">Learn</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="index.html">Tutorial</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../principles.html">Principles</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../learn.html#other-guides">Other Guides</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../api/api.html">API Docs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../community/community.html">Community</a></li>
+</ul>
+
         </div>
       </div>
-      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
-        <div class="sphinxsidebarwrapper">
-<h3><a href="../index.html">Table Of Contents</a></h3>
+      <div class="clearer"></div>
+    </div>
+<div class="footer">
+    &copy; 2019, Elementl, Inc.
+    
+    |
+    Powered by <a href="http://sphinx-doc.org/">Sphinx 1.7.5</a>
+    &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+    
+    |
+    <a href="../../../_sources/sections/learn/tutorial/hello_world.rst.txt" rel="nofollow">Page source</a>
+</div>
+
+
+
+
+  </body>
+</html>'''
+
+snapshots['test_build_all_docs 76'] = '''
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>Tutorial &#8212; Dagster</title>
+    <link rel="stylesheet" href="../../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/css/custom.css" type="text/css" />
+    <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+    <link rel="next" title="Hello, World" href="hello_world.html" />
+    <link rel="prev" title="Learn" href="../learn.html" />
+ 
+<link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
+
+
+<meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+    <div class="documentwrapper">
+        <div class="bodywrapper">
+            <div class="related top">
+                &nbsp;
+<nav id="rellinks">
+    <ul>
+        <li>
+            &larr;
+            <a href="../learn.html" title="Previous document">Learn</a>
+        </li>
+        <li>
+            <a href="/" title="Home">Home</a>
+        </li>
+        <li>
+            <a href="hello_world.html" title="Next document">Hello, World</a>
+            &rarr;
+        </li>
+    </ul>
+</nav>
+            </div>
+            
+
+            <div class="body" role="main">
+                
+  <div class="section" id="tutorial">
+<h1>Tutorial<a class="headerlink" href="#tutorial" title="Permalink to this headline">¶</a></h1>
+<div class="toctree-wrapper compound">
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="../principles.html">Principles</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../installation.html">Installation</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../contributing.html">Contributing</a></li>
-</ul>
-<ul class="current">
-<li class="toctree-l1 current"><a class="current reference internal" href="#">Hello, World</a></li>
+<li class="toctree-l1"><a class="reference internal" href="hello_world.html">Hello, World</a></li>
 <li class="toctree-l1"><a class="reference internal" href="hello_dag.html">Hello, DAG</a></li>
 <li class="toctree-l1"><a class="reference internal" href="actual_dag.html">An actual DAG</a></li>
 <li class="toctree-l1"><a class="reference internal" href="inputs.html">Inputs</a></li>
@@ -24419,69 +25120,70 @@ at all. Just add a few lines to <cite>hello_world.py</cite> (highlighted in yell
 <li class="toctree-l1"><a class="reference internal" href="dagstermill.html">Dagstermill</a></li>
 <li class="toctree-l1"><a class="reference internal" href="dagstermill.html#dagstermill-cli">Dagstermill CLI</a></li>
 </ul>
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="../apidocs/definitions.html">Definitions</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../apidocs/decorators.html">Decorators</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../apidocs/execution.html">Execution</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../apidocs/errors.html">Errors</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../apidocs/types.html">Types</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../apidocs/utilities.html">Utilities</a></li>
-</ul>
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="../guides/028_to_030_new_concepts.html">New Concepts in 0.3.0</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../guides/028_to_030_upgrade_guide.html">Upgrading to 0.3.0</a></li>
-</ul>
-<div class="relations">
-<h3>Related Topics</h3>
-<ul>
-  <li><a href="../index.html">Documentation overview</a><ul>
-      <li>Previous: <a href="../contributing.html" title="previous chapter">Contributing</a></li>
-      <li>Next: <a href="hello_dag.html" title="next chapter">Hello, DAG</a></li>
-  </ul></li>
-</ul>
 </div>
-  <div role="note" aria-label="source link">
-    <h3>This Page</h3>
-    <ul class="this-page-menu">
-      <li><a href="../_sources/intro_tutorial/hello_world.rst.txt"
-            rel="nofollow">Show Source</a></li>
+</div>
+
+
+            </div>
+
+            
+            <div class="related bottom">
+                &nbsp;
+<nav id="rellinks">
+    <ul>
+        <li>
+            &larr;
+            <a href="../learn.html" title="Previous document">Learn</a>
+        </li>
+        <li>
+            <a href="/" title="Home">Home</a>
+        </li>
+        <li>
+            <a href="hello_world.html" title="Next document">Hello, World</a>
+            &rarr;
+        </li>
     </ul>
-   </div>
-<div id="searchbox" style="display: none" role="search">
-  <h3>Quick search</h3>
-    <div class="searchformwrapper">
-    <form class="search" action="../search.html" method="get">
-      <input type="text" name="q" />
-      <input type="submit" value="Go" />
-      <input type="hidden" name="check_keywords" value="yes" />
-      <input type="hidden" name="area" value="default" />
-    </form>
+</nav>
+            </div>
+            
+        </div>
     </div>
-</div>
-<script type="text/javascript">$(\'#searchbox\').show(0);</script>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><h3><a href="../../../index.html">Dagster</a></h3>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../install/install.html">Install</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../learn.html">Learn</a><ul class="current">
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Tutorial</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../principles.html">Principles</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../learn.html#other-guides">Other Guides</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../api/api.html">API Docs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../community/community.html">Community</a></li>
+</ul>
+
         </div>
       </div>
       <div class="clearer"></div>
     </div>
-    <div class="footer">
-      &copy;2018, Elementl, Inc.
-      
-      |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.7.5</a>
-      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
-      
-      |
-      <a href="../_sources/intro_tutorial/hello_world.rst.txt"
-          rel="nofollow">Page source</a>
-    </div>
-
+<div class="footer">
+    &copy; 2019, Elementl, Inc.
     
-
+    |
+    Powered by <a href="http://sphinx-doc.org/">Sphinx 1.7.5</a>
+    &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
     
+    |
+    <a href="../../../_sources/sections/learn/tutorial/index.rst.txt" rel="nofollow">Page source</a>
+</div>
+
+
+
+
   </body>
 </html>'''
 
-snapshots['test_build_all_docs 66'] = '''
+snapshots['test_build_all_docs 77'] = '''
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
@@ -24489,33 +25191,52 @@ snapshots['test_build_all_docs 66'] = '''
   <head>
     <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    <title>Inputs &#8212; Dagster  documentation</title>
-    <link rel="stylesheet" href="../_static/alabaster.css" type="text/css" />
-    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
-    <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
-    <script type="text/javascript" src="../_static/jquery.js"></script>
-    <script type="text/javascript" src="../_static/underscore.js"></script>
-    <script type="text/javascript" src="../_static/doctools.js"></script>
-    <link rel="index" title="Index" href="../genindex.html" />
-    <link rel="search" title="Search" href="../search.html" />
+    <title>Inputs &#8212; Dagster</title>
+    <link rel="stylesheet" href="../../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/css/custom.css" type="text/css" />
+    <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
     <link rel="next" title="Configuration" href="config.html" />
     <link rel="prev" title="An actual DAG" href="actual_dag.html" />
-   
-  <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
-  
-  
-  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+ 
+<link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
+
+
+<meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
 
   </head><body>
   
 
     <div class="document">
-      <div class="documentwrapper">
+    <div class="documentwrapper">
         <div class="bodywrapper">
-          
-
-          <div class="body" role="main">
+            <div class="related top">
+                &nbsp;
+<nav id="rellinks">
+    <ul>
+        <li>
+            &larr;
+            <a href="actual_dag.html" title="Previous document">An actual DAG</a>
+        </li>
+        <li>
+            <a href="/" title="Home">Home</a>
+        </li>
+        <li>
+            <a href="config.html" title="Next document">Configuration</a>
+            &rarr;
+        </li>
+    </ul>
+</nav>
+            </div>
             
+
+            <div class="body" role="main">
+                
   <div class="section" id="inputs">
 <h1>Inputs<a class="headerlink" href="#inputs" title="Permalink to this headline">¶</a></h1>
 <p>So far we have only demonstrated pipelines whose solids yield hardcoded values and then flow them
@@ -24570,7 +25291,7 @@ in each case.</p>
 <div class="section" id="python-api">
 <h2>Python API<a class="headerlink" href="#python-api" title="Permalink to this headline">¶</a></h2>
 <p>In the Python API, pipeline configuration is specified in the second argument to
-<a class="reference internal" href="../apidocs/execution.html#dagster.execute_pipeline" title="dagster.execute_pipeline"><code class="xref py py-func docutils literal notranslate"><span class="pre">execute_pipeline</span></code></a>, which must be a dict. This dict contains
+<a class="reference internal" href="../../api/apidocs/execution.html#dagster.execute_pipeline" title="dagster.execute_pipeline"><code class="xref py py-func docutils literal notranslate"><span class="pre">execute_pipeline</span></code></a>, which must be a dict. This dict contains
 <em>all</em> of the configuration to execute an entire pipeline. It may have many sections, but we’ll only
 use one of them here: per-solid configuration specified under the key <code class="docutils literal notranslate"><span class="pre">solids</span></code>:</p>
 <div class="highlight-default notranslate"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre>1
@@ -24642,7 +25363,7 @@ of YAML rather than python dictionaries:</p>
 </pre></div>
 </div>
 <p>From the execute console, you can enter your config directly like so:</p>
-<img alt="../_images/inputs_figure_one.png" src="../_images/inputs_figure_one.png" />
+<img alt="../../../_images/inputs_figure_one.png" src="../../../_images/inputs_figure_one.png" />
 <p>You’ll notice that the config editor is auto-completing. Because it knows the structure
 of the config, the editor can provide rich error information. We can improve the experience of
 using the editor by appropriately typing the inputs, making everything less error-prone.</p>
@@ -24668,9 +25389,9 @@ are often not surfaced until the pipeline is executed.</p>
 </div>
 <p>If we execute this pipeline with this config, it’ll fail at runtime.</p>
 <p>Enter this config in dagit and execute and you’ll see the transform fail:</p>
-<img alt="../_images/inputs_figure_two_untyped_execution.png" src="../_images/inputs_figure_two_untyped_execution.png" />
+<img alt="../../../_images/inputs_figure_two_untyped_execution.png" src="../../../_images/inputs_figure_two_untyped_execution.png" />
 <p>Click on the red dot on the execution step that failed and a detailed stacktrace will pop up.</p>
-<img alt="../_images/inputs_figure_three_error_modal.png" src="../_images/inputs_figure_three_error_modal.png" />
+<img alt="../../../_images/inputs_figure_three_error_modal.png" src="../../../_images/inputs_figure_three_error_modal.png" />
 <p>It would be better if we could catch this error earlier, when we specify the config. So let’s
 make the inputs typed.</p>
 <p>A user can apply types to inputs and outputs. In this case we just want to type them as the
@@ -24687,107 +25408,73 @@ built-in <code class="docutils literal notranslate"><span class="pre">String</sp
 </div>
 </div>
 <p>By using typed input instead we can catch this error prior to execution.</p>
-<img alt="../_images/inputs_figure_four_error_prechecked.png" src="../_images/inputs_figure_four_error_prechecked.png" />
+<img alt="../../../_images/inputs_figure_four_error_prechecked.png" src="../../../_images/inputs_figure_four_error_prechecked.png" />
 <p>Next, we’ll look at a closely allied concept – <a class="reference internal" href="config.html"><span class="doc">Configuration</span></a> values.</p>
 </div>
 </div>
 </div>
 
 
-          </div>
-          
-        </div>
-      </div>
-      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
-        <div class="sphinxsidebarwrapper">
-<h3><a href="../index.html">Table Of Contents</a></h3>
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="../principles.html">Principles</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../installation.html">Installation</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../contributing.html">Contributing</a></li>
-</ul>
-<ul class="current">
-<li class="toctree-l1"><a class="reference internal" href="hello_world.html">Hello, World</a></li>
-<li class="toctree-l1"><a class="reference internal" href="hello_dag.html">Hello, DAG</a></li>
-<li class="toctree-l1"><a class="reference internal" href="actual_dag.html">An actual DAG</a></li>
-<li class="toctree-l1 current"><a class="current reference internal" href="#">Inputs</a></li>
-<li class="toctree-l1"><a class="reference internal" href="config.html">Configuration</a></li>
-<li class="toctree-l1"><a class="reference internal" href="configuration_schemas.html">Configuration Schemas</a></li>
-<li class="toctree-l1"><a class="reference internal" href="execution_context.html">Execution Context</a></li>
-<li class="toctree-l1"><a class="reference internal" href="resources.html">Resources</a></li>
-<li class="toctree-l1"><a class="reference internal" href="repos.html">Repositories</a></li>
-<li class="toctree-l1"><a class="reference internal" href="pipeline_cli_execution.html">Pipeline CLI Execution</a></li>
-<li class="toctree-l1"><a class="reference internal" href="types.html">User-Defined Types</a></li>
-<li class="toctree-l1"><a class="reference internal" href="expectations.html">Expectations</a></li>
-<li class="toctree-l1"><a class="reference internal" href="multiple_outputs.html">Multiple Outputs</a></li>
-<li class="toctree-l1"><a class="reference internal" href="reusable_solids.html">Reusable Solids</a></li>
-<li class="toctree-l1"><a class="reference internal" href="unittesting.html">Unit-testing Pipelines</a></li>
-<li class="toctree-l1"><a class="reference internal" href="dagstermill.html">Dagstermill</a></li>
-<li class="toctree-l1"><a class="reference internal" href="dagstermill.html#dagstermill-cli">Dagstermill CLI</a></li>
-</ul>
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="../apidocs/definitions.html">Definitions</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../apidocs/decorators.html">Decorators</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../apidocs/execution.html">Execution</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../apidocs/errors.html">Errors</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../apidocs/types.html">Types</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../apidocs/utilities.html">Utilities</a></li>
-</ul>
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="../guides/028_to_030_new_concepts.html">New Concepts in 0.3.0</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../guides/028_to_030_upgrade_guide.html">Upgrading to 0.3.0</a></li>
-</ul>
-<div class="relations">
-<h3>Related Topics</h3>
-<ul>
-  <li><a href="../index.html">Documentation overview</a><ul>
-      <li>Previous: <a href="actual_dag.html" title="previous chapter">An actual DAG</a></li>
-      <li>Next: <a href="config.html" title="next chapter">Configuration</a></li>
-  </ul></li>
-</ul>
-</div>
-  <div role="note" aria-label="source link">
-    <h3>This Page</h3>
-    <ul class="this-page-menu">
-      <li><a href="../_sources/intro_tutorial/inputs.rst.txt"
-            rel="nofollow">Show Source</a></li>
+            </div>
+
+            
+            <div class="related bottom">
+                &nbsp;
+<nav id="rellinks">
+    <ul>
+        <li>
+            &larr;
+            <a href="actual_dag.html" title="Previous document">An actual DAG</a>
+        </li>
+        <li>
+            <a href="/" title="Home">Home</a>
+        </li>
+        <li>
+            <a href="config.html" title="Next document">Configuration</a>
+            &rarr;
+        </li>
     </ul>
-   </div>
-<div id="searchbox" style="display: none" role="search">
-  <h3>Quick search</h3>
-    <div class="searchformwrapper">
-    <form class="search" action="../search.html" method="get">
-      <input type="text" name="q" />
-      <input type="submit" value="Go" />
-      <input type="hidden" name="check_keywords" value="yes" />
-      <input type="hidden" name="area" value="default" />
-    </form>
+</nav>
+            </div>
+            
+        </div>
     </div>
-</div>
-<script type="text/javascript">$(\'#searchbox\').show(0);</script>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><h3><a href="../../../index.html">Dagster</a></h3>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../install/install.html">Install</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../learn.html">Learn</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="index.html">Tutorial</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../principles.html">Principles</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../learn.html#other-guides">Other Guides</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../api/api.html">API Docs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../community/community.html">Community</a></li>
+</ul>
+
         </div>
       </div>
       <div class="clearer"></div>
     </div>
-    <div class="footer">
-      &copy;2018, Elementl, Inc.
-      
-      |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.7.5</a>
-      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
-      
-      |
-      <a href="../_sources/intro_tutorial/inputs.rst.txt"
-          rel="nofollow">Page source</a>
-    </div>
-
+<div class="footer">
+    &copy; 2019, Elementl, Inc.
     
-
+    |
+    Powered by <a href="http://sphinx-doc.org/">Sphinx 1.7.5</a>
+    &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
     
+    |
+    <a href="../../../_sources/sections/learn/tutorial/inputs.rst.txt" rel="nofollow">Page source</a>
+</div>
+
+
+
+
   </body>
 </html>'''
 
-snapshots['test_build_all_docs 67'] = '''
+snapshots['test_build_all_docs 78'] = '''
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
@@ -24795,33 +25482,52 @@ snapshots['test_build_all_docs 67'] = '''
   <head>
     <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    <title>Multiple Outputs &#8212; Dagster  documentation</title>
-    <link rel="stylesheet" href="../_static/alabaster.css" type="text/css" />
-    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
-    <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
-    <script type="text/javascript" src="../_static/jquery.js"></script>
-    <script type="text/javascript" src="../_static/underscore.js"></script>
-    <script type="text/javascript" src="../_static/doctools.js"></script>
-    <link rel="index" title="Index" href="../genindex.html" />
-    <link rel="search" title="Search" href="../search.html" />
+    <title>Multiple Outputs &#8212; Dagster</title>
+    <link rel="stylesheet" href="../../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/css/custom.css" type="text/css" />
+    <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
     <link rel="next" title="Reusable Solids" href="reusable_solids.html" />
     <link rel="prev" title="Expectations" href="expectations.html" />
-   
-  <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
-  
-  
-  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+ 
+<link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
+
+
+<meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
 
   </head><body>
   
 
     <div class="document">
-      <div class="documentwrapper">
+    <div class="documentwrapper">
         <div class="bodywrapper">
-          
-
-          <div class="body" role="main">
+            <div class="related top">
+                &nbsp;
+<nav id="rellinks">
+    <ul>
+        <li>
+            &larr;
+            <a href="expectations.html" title="Previous document">Expectations</a>
+        </li>
+        <li>
+            <a href="/" title="Home">Home</a>
+        </li>
+        <li>
+            <a href="reusable_solids.html" title="Next document">Reusable Solids</a>
+            &rarr;
+        </li>
+    </ul>
+</nav>
+            </div>
             
+
+            <div class="body" role="main">
+                
   <div class="section" id="multiple-outputs">
 <h1>Multiple Outputs<a class="headerlink" href="#multiple-outputs" title="Permalink to this headline">¶</a></h1>
 <p>So far all of our examples have been solids that have a single output. But
@@ -24922,18 +25628,18 @@ happened during the computation.</p>
 </td></tr></table></div>
 </div>
 <p>This can be visualized in dagit:</p>
-<img alt="../_images/multiple_results_figure_one.png" src="../_images/multiple_results_figure_one.png" />
+<img alt="../../../_images/multiple_results_figure_one.png" src="../../../_images/multiple_results_figure_one.png" />
 <p>Notice how <code class="docutils literal notranslate"><span class="pre">return_dict_results</span></code> has two outputs. For the first time
-we have provided the name argument to an <a class="reference internal" href="../apidocs/definitions.html#dagster.OutputDefinition" title="dagster.OutputDefinition"><code class="xref py py-class docutils literal notranslate"><span class="pre">OutputDefinition</span></code></a>.
+we have provided the name argument to an <a class="reference internal" href="../../api/apidocs/definitions.html#dagster.OutputDefinition" title="dagster.OutputDefinition"><code class="xref py py-class docutils literal notranslate"><span class="pre">OutputDefinition</span></code></a>.
 (The name of an output defaults to <code class="docutils literal notranslate"><span class="pre">\'result\'</span></code>, as it does for a
-<a class="reference internal" href="../apidocs/definitions.html#dagster.DependencyDefinition" title="dagster.DependencyDefinition"><code class="xref py py-class docutils literal notranslate"><span class="pre">DependencyDefinition</span></code></a>) Output names must be unique
+<a class="reference internal" href="../../api/apidocs/definitions.html#dagster.DependencyDefinition" title="dagster.DependencyDefinition"><code class="xref py py-class docutils literal notranslate"><span class="pre">DependencyDefinition</span></code></a>) Output names must be unique
 and each result returned by a solid’s transform function must have a name that corresponds to
 one of these outputs.</p>
-<p>So from <code class="docutils literal notranslate"><span class="pre">return_dict_results</span></code> we used <a class="reference internal" href="../apidocs/decorators.html#dagster.MultipleResults" title="dagster.MultipleResults"><code class="xref py py-class docutils literal notranslate"><span class="pre">MultipleResults</span></code></a>
+<p>So from <code class="docutils literal notranslate"><span class="pre">return_dict_results</span></code> we used <a class="reference internal" href="../../api/apidocs/decorators.html#dagster.MultipleResults" title="dagster.MultipleResults"><code class="xref py py-class docutils literal notranslate"><span class="pre">MultipleResults</span></code></a>
 to return all outputs from this transform.</p>
 <p>Just as this tutorial gives us the first example of a named
-<a class="reference internal" href="../apidocs/definitions.html#dagster.OutputDefinition" title="dagster.OutputDefinition"><code class="xref py py-class docutils literal notranslate"><span class="pre">OutputDefinition</span></code></a>, this is also the first time that we’ve
-seen a named <a class="reference internal" href="../apidocs/definitions.html#dagster.DependencyDefinition" title="dagster.DependencyDefinition"><code class="xref py py-class docutils literal notranslate"><span class="pre">DependencyDefinition</span></code></a>. Recall that dependencies
+<a class="reference internal" href="../../api/apidocs/definitions.html#dagster.OutputDefinition" title="dagster.OutputDefinition"><code class="xref py py-class docutils literal notranslate"><span class="pre">OutputDefinition</span></code></a>, this is also the first time that we’ve
+seen a named <a class="reference internal" href="../../api/apidocs/definitions.html#dagster.DependencyDefinition" title="dagster.DependencyDefinition"><code class="xref py py-class docutils literal notranslate"><span class="pre">DependencyDefinition</span></code></a>. Recall that dependencies
 point to a particular <strong>output</strong> of a solid, rather than to the solid itself.</p>
 <p>With this we can run the pipeline:</p>
 <div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$</span> dagster pipeline execute -f multiple_outputs.py <span class="se">\\</span>
@@ -24948,7 +25654,7 @@ point to a particular <strong>output</strong> of a solid, rather than to the sol
 </div>
 <div class="section" id="iterator-of-result">
 <h2>Iterator of <code class="docutils literal notranslate"><span class="pre">Result</span></code><a class="headerlink" href="#iterator-of-result" title="Permalink to this headline">¶</a></h2>
-<p>The <a class="reference internal" href="../apidocs/decorators.html#dagster.MultipleResults" title="dagster.MultipleResults"><code class="xref py py-class docutils literal notranslate"><span class="pre">MultipleResults</span></code></a> class is not the only way
+<p>The <a class="reference internal" href="../../api/apidocs/decorators.html#dagster.MultipleResults" title="dagster.MultipleResults"><code class="xref py py-class docutils literal notranslate"><span class="pre">MultipleResults</span></code></a> class is not the only way
 to return multiple results from a solid transform function. You can also yield
 multiple instances of the <code class="docutils literal notranslate"><span class="pre">Result</span></code> object. (Note: this is actually the core
 specification of the transform function: all other forms are implemented in terms of
@@ -25086,100 +25792,66 @@ common data pipeline work.</p>
 </div>
 
 
-          </div>
-          
-        </div>
-      </div>
-      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
-        <div class="sphinxsidebarwrapper">
-<h3><a href="../index.html">Table Of Contents</a></h3>
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="../principles.html">Principles</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../installation.html">Installation</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../contributing.html">Contributing</a></li>
-</ul>
-<ul class="current">
-<li class="toctree-l1"><a class="reference internal" href="hello_world.html">Hello, World</a></li>
-<li class="toctree-l1"><a class="reference internal" href="hello_dag.html">Hello, DAG</a></li>
-<li class="toctree-l1"><a class="reference internal" href="actual_dag.html">An actual DAG</a></li>
-<li class="toctree-l1"><a class="reference internal" href="inputs.html">Inputs</a></li>
-<li class="toctree-l1"><a class="reference internal" href="config.html">Configuration</a></li>
-<li class="toctree-l1"><a class="reference internal" href="configuration_schemas.html">Configuration Schemas</a></li>
-<li class="toctree-l1"><a class="reference internal" href="execution_context.html">Execution Context</a></li>
-<li class="toctree-l1"><a class="reference internal" href="resources.html">Resources</a></li>
-<li class="toctree-l1"><a class="reference internal" href="repos.html">Repositories</a></li>
-<li class="toctree-l1"><a class="reference internal" href="pipeline_cli_execution.html">Pipeline CLI Execution</a></li>
-<li class="toctree-l1"><a class="reference internal" href="types.html">User-Defined Types</a></li>
-<li class="toctree-l1"><a class="reference internal" href="expectations.html">Expectations</a></li>
-<li class="toctree-l1 current"><a class="current reference internal" href="#">Multiple Outputs</a></li>
-<li class="toctree-l1"><a class="reference internal" href="reusable_solids.html">Reusable Solids</a></li>
-<li class="toctree-l1"><a class="reference internal" href="unittesting.html">Unit-testing Pipelines</a></li>
-<li class="toctree-l1"><a class="reference internal" href="dagstermill.html">Dagstermill</a></li>
-<li class="toctree-l1"><a class="reference internal" href="dagstermill.html#dagstermill-cli">Dagstermill CLI</a></li>
-</ul>
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="../apidocs/definitions.html">Definitions</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../apidocs/decorators.html">Decorators</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../apidocs/execution.html">Execution</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../apidocs/errors.html">Errors</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../apidocs/types.html">Types</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../apidocs/utilities.html">Utilities</a></li>
-</ul>
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="../guides/028_to_030_new_concepts.html">New Concepts in 0.3.0</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../guides/028_to_030_upgrade_guide.html">Upgrading to 0.3.0</a></li>
-</ul>
-<div class="relations">
-<h3>Related Topics</h3>
-<ul>
-  <li><a href="../index.html">Documentation overview</a><ul>
-      <li>Previous: <a href="expectations.html" title="previous chapter">Expectations</a></li>
-      <li>Next: <a href="reusable_solids.html" title="next chapter">Reusable Solids</a></li>
-  </ul></li>
-</ul>
-</div>
-  <div role="note" aria-label="source link">
-    <h3>This Page</h3>
-    <ul class="this-page-menu">
-      <li><a href="../_sources/intro_tutorial/multiple_outputs.rst.txt"
-            rel="nofollow">Show Source</a></li>
+            </div>
+
+            
+            <div class="related bottom">
+                &nbsp;
+<nav id="rellinks">
+    <ul>
+        <li>
+            &larr;
+            <a href="expectations.html" title="Previous document">Expectations</a>
+        </li>
+        <li>
+            <a href="/" title="Home">Home</a>
+        </li>
+        <li>
+            <a href="reusable_solids.html" title="Next document">Reusable Solids</a>
+            &rarr;
+        </li>
     </ul>
-   </div>
-<div id="searchbox" style="display: none" role="search">
-  <h3>Quick search</h3>
-    <div class="searchformwrapper">
-    <form class="search" action="../search.html" method="get">
-      <input type="text" name="q" />
-      <input type="submit" value="Go" />
-      <input type="hidden" name="check_keywords" value="yes" />
-      <input type="hidden" name="area" value="default" />
-    </form>
+</nav>
+            </div>
+            
+        </div>
     </div>
-</div>
-<script type="text/javascript">$(\'#searchbox\').show(0);</script>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><h3><a href="../../../index.html">Dagster</a></h3>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../install/install.html">Install</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../learn.html">Learn</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="index.html">Tutorial</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../principles.html">Principles</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../learn.html#other-guides">Other Guides</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../api/api.html">API Docs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../community/community.html">Community</a></li>
+</ul>
+
         </div>
       </div>
       <div class="clearer"></div>
     </div>
-    <div class="footer">
-      &copy;2018, Elementl, Inc.
-      
-      |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.7.5</a>
-      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
-      
-      |
-      <a href="../_sources/intro_tutorial/multiple_outputs.rst.txt"
-          rel="nofollow">Page source</a>
-    </div>
-
+<div class="footer">
+    &copy; 2019, Elementl, Inc.
     
-
+    |
+    Powered by <a href="http://sphinx-doc.org/">Sphinx 1.7.5</a>
+    &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
     
+    |
+    <a href="../../../_sources/sections/learn/tutorial/multiple_outputs.rst.txt" rel="nofollow">Page source</a>
+</div>
+
+
+
+
   </body>
 </html>'''
 
-snapshots['test_build_all_docs 68'] = '''
+snapshots['test_build_all_docs 79'] = '''
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
@@ -25187,33 +25859,52 @@ snapshots['test_build_all_docs 68'] = '''
   <head>
     <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    <title>Pipeline CLI Execution &#8212; Dagster  documentation</title>
-    <link rel="stylesheet" href="../_static/alabaster.css" type="text/css" />
-    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
-    <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
-    <script type="text/javascript" src="../_static/jquery.js"></script>
-    <script type="text/javascript" src="../_static/underscore.js"></script>
-    <script type="text/javascript" src="../_static/doctools.js"></script>
-    <link rel="index" title="Index" href="../genindex.html" />
-    <link rel="search" title="Search" href="../search.html" />
+    <title>Pipeline CLI Execution &#8212; Dagster</title>
+    <link rel="stylesheet" href="../../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/css/custom.css" type="text/css" />
+    <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
     <link rel="next" title="User-Defined Types" href="types.html" />
     <link rel="prev" title="Repositories" href="repos.html" />
-   
-  <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
-  
-  
-  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+ 
+<link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
+
+
+<meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
 
   </head><body>
   
 
     <div class="document">
-      <div class="documentwrapper">
+    <div class="documentwrapper">
         <div class="bodywrapper">
-          
-
-          <div class="body" role="main">
+            <div class="related top">
+                &nbsp;
+<nav id="rellinks">
+    <ul>
+        <li>
+            &larr;
+            <a href="repos.html" title="Previous document">Repositories</a>
+        </li>
+        <li>
+            <a href="/" title="Home">Home</a>
+        </li>
+        <li>
+            <a href="types.html" title="Next document">User-Defined Types</a>
+            &rarr;
+        </li>
+    </ul>
+</nav>
+            </div>
             
+
+            <div class="body" role="main">
+                
   <div class="section" id="pipeline-cli-execution">
 <h1>Pipeline CLI Execution<a class="headerlink" href="#pipeline-cli-execution" title="Permalink to this headline">¶</a></h1>
 <p>Up until now we’ve been focusing on using the dagit tool for executing pipelines. However, we
@@ -25412,100 +26103,66 @@ in pipelines.</p>
 </div>
 
 
-          </div>
-          
-        </div>
-      </div>
-      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
-        <div class="sphinxsidebarwrapper">
-<h3><a href="../index.html">Table Of Contents</a></h3>
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="../principles.html">Principles</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../installation.html">Installation</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../contributing.html">Contributing</a></li>
-</ul>
-<ul class="current">
-<li class="toctree-l1"><a class="reference internal" href="hello_world.html">Hello, World</a></li>
-<li class="toctree-l1"><a class="reference internal" href="hello_dag.html">Hello, DAG</a></li>
-<li class="toctree-l1"><a class="reference internal" href="actual_dag.html">An actual DAG</a></li>
-<li class="toctree-l1"><a class="reference internal" href="inputs.html">Inputs</a></li>
-<li class="toctree-l1"><a class="reference internal" href="config.html">Configuration</a></li>
-<li class="toctree-l1"><a class="reference internal" href="configuration_schemas.html">Configuration Schemas</a></li>
-<li class="toctree-l1"><a class="reference internal" href="execution_context.html">Execution Context</a></li>
-<li class="toctree-l1"><a class="reference internal" href="resources.html">Resources</a></li>
-<li class="toctree-l1"><a class="reference internal" href="repos.html">Repositories</a></li>
-<li class="toctree-l1 current"><a class="current reference internal" href="#">Pipeline CLI Execution</a></li>
-<li class="toctree-l1"><a class="reference internal" href="types.html">User-Defined Types</a></li>
-<li class="toctree-l1"><a class="reference internal" href="expectations.html">Expectations</a></li>
-<li class="toctree-l1"><a class="reference internal" href="multiple_outputs.html">Multiple Outputs</a></li>
-<li class="toctree-l1"><a class="reference internal" href="reusable_solids.html">Reusable Solids</a></li>
-<li class="toctree-l1"><a class="reference internal" href="unittesting.html">Unit-testing Pipelines</a></li>
-<li class="toctree-l1"><a class="reference internal" href="dagstermill.html">Dagstermill</a></li>
-<li class="toctree-l1"><a class="reference internal" href="dagstermill.html#dagstermill-cli">Dagstermill CLI</a></li>
-</ul>
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="../apidocs/definitions.html">Definitions</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../apidocs/decorators.html">Decorators</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../apidocs/execution.html">Execution</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../apidocs/errors.html">Errors</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../apidocs/types.html">Types</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../apidocs/utilities.html">Utilities</a></li>
-</ul>
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="../guides/028_to_030_new_concepts.html">New Concepts in 0.3.0</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../guides/028_to_030_upgrade_guide.html">Upgrading to 0.3.0</a></li>
-</ul>
-<div class="relations">
-<h3>Related Topics</h3>
-<ul>
-  <li><a href="../index.html">Documentation overview</a><ul>
-      <li>Previous: <a href="repos.html" title="previous chapter">Repositories</a></li>
-      <li>Next: <a href="types.html" title="next chapter">User-Defined Types</a></li>
-  </ul></li>
-</ul>
-</div>
-  <div role="note" aria-label="source link">
-    <h3>This Page</h3>
-    <ul class="this-page-menu">
-      <li><a href="../_sources/intro_tutorial/pipeline_cli_execution.rst.txt"
-            rel="nofollow">Show Source</a></li>
+            </div>
+
+            
+            <div class="related bottom">
+                &nbsp;
+<nav id="rellinks">
+    <ul>
+        <li>
+            &larr;
+            <a href="repos.html" title="Previous document">Repositories</a>
+        </li>
+        <li>
+            <a href="/" title="Home">Home</a>
+        </li>
+        <li>
+            <a href="types.html" title="Next document">User-Defined Types</a>
+            &rarr;
+        </li>
     </ul>
-   </div>
-<div id="searchbox" style="display: none" role="search">
-  <h3>Quick search</h3>
-    <div class="searchformwrapper">
-    <form class="search" action="../search.html" method="get">
-      <input type="text" name="q" />
-      <input type="submit" value="Go" />
-      <input type="hidden" name="check_keywords" value="yes" />
-      <input type="hidden" name="area" value="default" />
-    </form>
+</nav>
+            </div>
+            
+        </div>
     </div>
-</div>
-<script type="text/javascript">$(\'#searchbox\').show(0);</script>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><h3><a href="../../../index.html">Dagster</a></h3>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../install/install.html">Install</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../learn.html">Learn</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="index.html">Tutorial</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../principles.html">Principles</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../learn.html#other-guides">Other Guides</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../api/api.html">API Docs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../community/community.html">Community</a></li>
+</ul>
+
         </div>
       </div>
       <div class="clearer"></div>
     </div>
-    <div class="footer">
-      &copy;2018, Elementl, Inc.
-      
-      |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.7.5</a>
-      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
-      
-      |
-      <a href="../_sources/intro_tutorial/pipeline_cli_execution.rst.txt"
-          rel="nofollow">Page source</a>
-    </div>
-
+<div class="footer">
+    &copy; 2019, Elementl, Inc.
     
-
+    |
+    Powered by <a href="http://sphinx-doc.org/">Sphinx 1.7.5</a>
+    &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
     
+    |
+    <a href="../../../_sources/sections/learn/tutorial/pipeline_cli_execution.rst.txt" rel="nofollow">Page source</a>
+</div>
+
+
+
+
   </body>
 </html>'''
 
-snapshots['test_build_all_docs 69'] = '''
+snapshots['test_build_all_docs 80'] = '''
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
@@ -25513,33 +26170,52 @@ snapshots['test_build_all_docs 69'] = '''
   <head>
     <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    <title>Repositories &#8212; Dagster  documentation</title>
-    <link rel="stylesheet" href="../_static/alabaster.css" type="text/css" />
-    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
-    <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
-    <script type="text/javascript" src="../_static/jquery.js"></script>
-    <script type="text/javascript" src="../_static/underscore.js"></script>
-    <script type="text/javascript" src="../_static/doctools.js"></script>
-    <link rel="index" title="Index" href="../genindex.html" />
-    <link rel="search" title="Search" href="../search.html" />
+    <title>Repositories &#8212; Dagster</title>
+    <link rel="stylesheet" href="../../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/css/custom.css" type="text/css" />
+    <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
     <link rel="next" title="Pipeline CLI Execution" href="pipeline_cli_execution.html" />
     <link rel="prev" title="Resources" href="resources.html" />
-   
-  <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
-  
-  
-  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+ 
+<link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
+
+
+<meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
 
   </head><body>
   
 
     <div class="document">
-      <div class="documentwrapper">
+    <div class="documentwrapper">
         <div class="bodywrapper">
-          
-
-          <div class="body" role="main">
+            <div class="related top">
+                &nbsp;
+<nav id="rellinks">
+    <ul>
+        <li>
+            &larr;
+            <a href="resources.html" title="Previous document">Resources</a>
+        </li>
+        <li>
+            <a href="/" title="Home">Home</a>
+        </li>
+        <li>
+            <a href="pipeline_cli_execution.html" title="Next document">Pipeline CLI Execution</a>
+            &rarr;
+        </li>
+    </ul>
+</nav>
+            </div>
             
+
+            <div class="body" role="main">
+                
   <div class="section" id="repositories">
 <h1>Repositories<a class="headerlink" href="#repositories" title="Permalink to this headline">¶</a></h1>
 <p>Dagster is a not just a programming model for pipelines, it is also a platform for
@@ -25556,7 +26232,7 @@ run and visualize pipelines.</p>
 want to be able to target many pipelines at once with our tools.</p>
 <p>A <strong>repository</strong> is a collection of pipelines at which dagster tools may be pointed.</p>
 <p>Repostories are declared using a new API,
-<a class="reference internal" href="../apidocs/definitions.html#dagster.RepositoryDefinition" title="dagster.RepositoryDefinition"><code class="xref py py-func docutils literal notranslate"><span class="pre">RepositoryDefinition</span></code></a>:</p>
+<a class="reference internal" href="../../api/apidocs/definitions.html#dagster.RepositoryDefinition" title="dagster.RepositoryDefinition"><code class="xref py py-func docutils literal notranslate"><span class="pre">RepositoryDefinition</span></code></a>:</p>
 <div class="literal-block-wrapper docutils container" id="id1">
 <div class="code-block-caption"><span class="caption-text">repos.py</span><a class="headerlink" href="#id1" title="Permalink to this code">¶</a></div>
 <div class="highlight-default notranslate"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre> 1
@@ -25607,7 +26283,7 @@ error message.</p>
 </pre></div>
 </div>
 <p>Now you can see the list of all pipelines in the repo via the dropdown at the top.</p>
-<img alt="../_images/repos_figure_one.png" src="../_images/repos_figure_one.png" />
+<img alt="../../../_images/repos_figure_one.png" src="../../../_images/repos_figure_one.png" />
 <p>Typing the name of the file and function defining the repository gets tiresome and repetitive, so
 let’s create a declarative config file with this information to make using the command line tools
 easier. Save this file as <code class="docutils literal notranslate"><span class="pre">repository.yml</span></code>. This is the default name for a repository config file,
@@ -25643,100 +26319,66 @@ with swappable config.</p>
 </div>
 
 
-          </div>
-          
-        </div>
-      </div>
-      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
-        <div class="sphinxsidebarwrapper">
-<h3><a href="../index.html">Table Of Contents</a></h3>
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="../principles.html">Principles</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../installation.html">Installation</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../contributing.html">Contributing</a></li>
-</ul>
-<ul class="current">
-<li class="toctree-l1"><a class="reference internal" href="hello_world.html">Hello, World</a></li>
-<li class="toctree-l1"><a class="reference internal" href="hello_dag.html">Hello, DAG</a></li>
-<li class="toctree-l1"><a class="reference internal" href="actual_dag.html">An actual DAG</a></li>
-<li class="toctree-l1"><a class="reference internal" href="inputs.html">Inputs</a></li>
-<li class="toctree-l1"><a class="reference internal" href="config.html">Configuration</a></li>
-<li class="toctree-l1"><a class="reference internal" href="configuration_schemas.html">Configuration Schemas</a></li>
-<li class="toctree-l1"><a class="reference internal" href="execution_context.html">Execution Context</a></li>
-<li class="toctree-l1"><a class="reference internal" href="resources.html">Resources</a></li>
-<li class="toctree-l1 current"><a class="current reference internal" href="#">Repositories</a></li>
-<li class="toctree-l1"><a class="reference internal" href="pipeline_cli_execution.html">Pipeline CLI Execution</a></li>
-<li class="toctree-l1"><a class="reference internal" href="types.html">User-Defined Types</a></li>
-<li class="toctree-l1"><a class="reference internal" href="expectations.html">Expectations</a></li>
-<li class="toctree-l1"><a class="reference internal" href="multiple_outputs.html">Multiple Outputs</a></li>
-<li class="toctree-l1"><a class="reference internal" href="reusable_solids.html">Reusable Solids</a></li>
-<li class="toctree-l1"><a class="reference internal" href="unittesting.html">Unit-testing Pipelines</a></li>
-<li class="toctree-l1"><a class="reference internal" href="dagstermill.html">Dagstermill</a></li>
-<li class="toctree-l1"><a class="reference internal" href="dagstermill.html#dagstermill-cli">Dagstermill CLI</a></li>
-</ul>
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="../apidocs/definitions.html">Definitions</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../apidocs/decorators.html">Decorators</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../apidocs/execution.html">Execution</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../apidocs/errors.html">Errors</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../apidocs/types.html">Types</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../apidocs/utilities.html">Utilities</a></li>
-</ul>
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="../guides/028_to_030_new_concepts.html">New Concepts in 0.3.0</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../guides/028_to_030_upgrade_guide.html">Upgrading to 0.3.0</a></li>
-</ul>
-<div class="relations">
-<h3>Related Topics</h3>
-<ul>
-  <li><a href="../index.html">Documentation overview</a><ul>
-      <li>Previous: <a href="resources.html" title="previous chapter">Resources</a></li>
-      <li>Next: <a href="pipeline_cli_execution.html" title="next chapter">Pipeline CLI Execution</a></li>
-  </ul></li>
-</ul>
-</div>
-  <div role="note" aria-label="source link">
-    <h3>This Page</h3>
-    <ul class="this-page-menu">
-      <li><a href="../_sources/intro_tutorial/repos.rst.txt"
-            rel="nofollow">Show Source</a></li>
+            </div>
+
+            
+            <div class="related bottom">
+                &nbsp;
+<nav id="rellinks">
+    <ul>
+        <li>
+            &larr;
+            <a href="resources.html" title="Previous document">Resources</a>
+        </li>
+        <li>
+            <a href="/" title="Home">Home</a>
+        </li>
+        <li>
+            <a href="pipeline_cli_execution.html" title="Next document">Pipeline CLI Execution</a>
+            &rarr;
+        </li>
     </ul>
-   </div>
-<div id="searchbox" style="display: none" role="search">
-  <h3>Quick search</h3>
-    <div class="searchformwrapper">
-    <form class="search" action="../search.html" method="get">
-      <input type="text" name="q" />
-      <input type="submit" value="Go" />
-      <input type="hidden" name="check_keywords" value="yes" />
-      <input type="hidden" name="area" value="default" />
-    </form>
+</nav>
+            </div>
+            
+        </div>
     </div>
-</div>
-<script type="text/javascript">$(\'#searchbox\').show(0);</script>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><h3><a href="../../../index.html">Dagster</a></h3>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../install/install.html">Install</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../learn.html">Learn</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="index.html">Tutorial</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../principles.html">Principles</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../learn.html#other-guides">Other Guides</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../api/api.html">API Docs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../community/community.html">Community</a></li>
+</ul>
+
         </div>
       </div>
       <div class="clearer"></div>
     </div>
-    <div class="footer">
-      &copy;2018, Elementl, Inc.
-      
-      |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.7.5</a>
-      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
-      
-      |
-      <a href="../_sources/intro_tutorial/repos.rst.txt"
-          rel="nofollow">Page source</a>
-    </div>
-
+<div class="footer">
+    &copy; 2019, Elementl, Inc.
     
-
+    |
+    Powered by <a href="http://sphinx-doc.org/">Sphinx 1.7.5</a>
+    &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
     
+    |
+    <a href="../../../_sources/sections/learn/tutorial/repos.rst.txt" rel="nofollow">Page source</a>
+</div>
+
+
+
+
   </body>
 </html>'''
 
-snapshots['test_build_all_docs 70'] = '''
+snapshots['test_build_all_docs 81'] = '''
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
@@ -25744,33 +26386,52 @@ snapshots['test_build_all_docs 70'] = '''
   <head>
     <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    <title>Resources &#8212; Dagster  documentation</title>
-    <link rel="stylesheet" href="../_static/alabaster.css" type="text/css" />
-    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
-    <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
-    <script type="text/javascript" src="../_static/jquery.js"></script>
-    <script type="text/javascript" src="../_static/underscore.js"></script>
-    <script type="text/javascript" src="../_static/doctools.js"></script>
-    <link rel="index" title="Index" href="../genindex.html" />
-    <link rel="search" title="Search" href="../search.html" />
+    <title>Resources &#8212; Dagster</title>
+    <link rel="stylesheet" href="../../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/css/custom.css" type="text/css" />
+    <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
     <link rel="next" title="Repositories" href="repos.html" />
     <link rel="prev" title="Execution Context" href="execution_context.html" />
-   
-  <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
-  
-  
-  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+ 
+<link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
+
+
+<meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
 
   </head><body>
   
 
     <div class="document">
-      <div class="documentwrapper">
+    <div class="documentwrapper">
         <div class="bodywrapper">
-          
-
-          <div class="body" role="main">
+            <div class="related top">
+                &nbsp;
+<nav id="rellinks">
+    <ul>
+        <li>
+            &larr;
+            <a href="execution_context.html" title="Previous document">Execution Context</a>
+        </li>
+        <li>
+            <a href="/" title="Home">Home</a>
+        </li>
+        <li>
+            <a href="repos.html" title="Next document">Repositories</a>
+            &rarr;
+        </li>
+    </ul>
+</nav>
+            </div>
             
+
+            <div class="body" role="main">
+                
   <div class="section" id="resources">
 <h1>Resources<a class="headerlink" href="#resources" title="Permalink to this headline">¶</a></h1>
 <p>We’ve already learned about logging through the info object. We can also use the info object
@@ -25946,100 +26607,66 @@ manage collections of multiple dagster pipelines.</p>
 </div>
 
 
-          </div>
-          
-        </div>
-      </div>
-      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
-        <div class="sphinxsidebarwrapper">
-<h3><a href="../index.html">Table Of Contents</a></h3>
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="../principles.html">Principles</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../installation.html">Installation</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../contributing.html">Contributing</a></li>
-</ul>
-<ul class="current">
-<li class="toctree-l1"><a class="reference internal" href="hello_world.html">Hello, World</a></li>
-<li class="toctree-l1"><a class="reference internal" href="hello_dag.html">Hello, DAG</a></li>
-<li class="toctree-l1"><a class="reference internal" href="actual_dag.html">An actual DAG</a></li>
-<li class="toctree-l1"><a class="reference internal" href="inputs.html">Inputs</a></li>
-<li class="toctree-l1"><a class="reference internal" href="config.html">Configuration</a></li>
-<li class="toctree-l1"><a class="reference internal" href="configuration_schemas.html">Configuration Schemas</a></li>
-<li class="toctree-l1"><a class="reference internal" href="execution_context.html">Execution Context</a></li>
-<li class="toctree-l1 current"><a class="current reference internal" href="#">Resources</a></li>
-<li class="toctree-l1"><a class="reference internal" href="repos.html">Repositories</a></li>
-<li class="toctree-l1"><a class="reference internal" href="pipeline_cli_execution.html">Pipeline CLI Execution</a></li>
-<li class="toctree-l1"><a class="reference internal" href="types.html">User-Defined Types</a></li>
-<li class="toctree-l1"><a class="reference internal" href="expectations.html">Expectations</a></li>
-<li class="toctree-l1"><a class="reference internal" href="multiple_outputs.html">Multiple Outputs</a></li>
-<li class="toctree-l1"><a class="reference internal" href="reusable_solids.html">Reusable Solids</a></li>
-<li class="toctree-l1"><a class="reference internal" href="unittesting.html">Unit-testing Pipelines</a></li>
-<li class="toctree-l1"><a class="reference internal" href="dagstermill.html">Dagstermill</a></li>
-<li class="toctree-l1"><a class="reference internal" href="dagstermill.html#dagstermill-cli">Dagstermill CLI</a></li>
-</ul>
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="../apidocs/definitions.html">Definitions</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../apidocs/decorators.html">Decorators</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../apidocs/execution.html">Execution</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../apidocs/errors.html">Errors</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../apidocs/types.html">Types</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../apidocs/utilities.html">Utilities</a></li>
-</ul>
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="../guides/028_to_030_new_concepts.html">New Concepts in 0.3.0</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../guides/028_to_030_upgrade_guide.html">Upgrading to 0.3.0</a></li>
-</ul>
-<div class="relations">
-<h3>Related Topics</h3>
-<ul>
-  <li><a href="../index.html">Documentation overview</a><ul>
-      <li>Previous: <a href="execution_context.html" title="previous chapter">Execution Context</a></li>
-      <li>Next: <a href="repos.html" title="next chapter">Repositories</a></li>
-  </ul></li>
-</ul>
-</div>
-  <div role="note" aria-label="source link">
-    <h3>This Page</h3>
-    <ul class="this-page-menu">
-      <li><a href="../_sources/intro_tutorial/resources.rst.txt"
-            rel="nofollow">Show Source</a></li>
+            </div>
+
+            
+            <div class="related bottom">
+                &nbsp;
+<nav id="rellinks">
+    <ul>
+        <li>
+            &larr;
+            <a href="execution_context.html" title="Previous document">Execution Context</a>
+        </li>
+        <li>
+            <a href="/" title="Home">Home</a>
+        </li>
+        <li>
+            <a href="repos.html" title="Next document">Repositories</a>
+            &rarr;
+        </li>
     </ul>
-   </div>
-<div id="searchbox" style="display: none" role="search">
-  <h3>Quick search</h3>
-    <div class="searchformwrapper">
-    <form class="search" action="../search.html" method="get">
-      <input type="text" name="q" />
-      <input type="submit" value="Go" />
-      <input type="hidden" name="check_keywords" value="yes" />
-      <input type="hidden" name="area" value="default" />
-    </form>
+</nav>
+            </div>
+            
+        </div>
     </div>
-</div>
-<script type="text/javascript">$(\'#searchbox\').show(0);</script>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><h3><a href="../../../index.html">Dagster</a></h3>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../install/install.html">Install</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../learn.html">Learn</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="index.html">Tutorial</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../principles.html">Principles</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../learn.html#other-guides">Other Guides</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../api/api.html">API Docs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../community/community.html">Community</a></li>
+</ul>
+
         </div>
       </div>
       <div class="clearer"></div>
     </div>
-    <div class="footer">
-      &copy;2018, Elementl, Inc.
-      
-      |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.7.5</a>
-      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
-      
-      |
-      <a href="../_sources/intro_tutorial/resources.rst.txt"
-          rel="nofollow">Page source</a>
-    </div>
-
+<div class="footer">
+    &copy; 2019, Elementl, Inc.
     
-
+    |
+    Powered by <a href="http://sphinx-doc.org/">Sphinx 1.7.5</a>
+    &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
     
+    |
+    <a href="../../../_sources/sections/learn/tutorial/resources.rst.txt" rel="nofollow">Page source</a>
+</div>
+
+
+
+
   </body>
 </html>'''
 
-snapshots['test_build_all_docs 71'] = '''
+snapshots['test_build_all_docs 82'] = '''
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
@@ -26047,33 +26674,52 @@ snapshots['test_build_all_docs 71'] = '''
   <head>
     <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    <title>Reusable Solids &#8212; Dagster  documentation</title>
-    <link rel="stylesheet" href="../_static/alabaster.css" type="text/css" />
-    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
-    <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
-    <script type="text/javascript" src="../_static/jquery.js"></script>
-    <script type="text/javascript" src="../_static/underscore.js"></script>
-    <script type="text/javascript" src="../_static/doctools.js"></script>
-    <link rel="index" title="Index" href="../genindex.html" />
-    <link rel="search" title="Search" href="../search.html" />
+    <title>Reusable Solids &#8212; Dagster</title>
+    <link rel="stylesheet" href="../../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/css/custom.css" type="text/css" />
+    <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
     <link rel="next" title="Unit-testing Pipelines" href="unittesting.html" />
     <link rel="prev" title="Multiple Outputs" href="multiple_outputs.html" />
-   
-  <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
-  
-  
-  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+ 
+<link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
+
+
+<meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
 
   </head><body>
   
 
     <div class="document">
-      <div class="documentwrapper">
+    <div class="documentwrapper">
         <div class="bodywrapper">
-          
-
-          <div class="body" role="main">
+            <div class="related top">
+                &nbsp;
+<nav id="rellinks">
+    <ul>
+        <li>
+            &larr;
+            <a href="multiple_outputs.html" title="Previous document">Multiple Outputs</a>
+        </li>
+        <li>
+            <a href="/" title="Home">Home</a>
+        </li>
+        <li>
+            <a href="unittesting.html" title="Next document">Unit-testing Pipelines</a>
+            &rarr;
+        </li>
+    </ul>
+</nav>
+            </div>
             
+
+            <div class="body" role="main">
+                
   <div class="section" id="reusable-solids">
 <h1>Reusable Solids<a class="headerlink" href="#reusable-solids" title="Permalink to this headline">¶</a></h1>
 <p>So far we have been using solids tailor-made for each pipeline they were resident in, and have
@@ -26179,7 +26825,7 @@ purposes of this pipeline, and the dependencies parameter is how they instantiat
 and connected together. Within the dependency graph and in config, the alias of the
 particular instance is used, rather than the name of the definition.</p>
 <p>If you inspect this in dagit, you’ll see those two instances:</p>
-<img alt="../_images/reusable_solids_figure_one.png" src="../_images/reusable_solids_figure_one.png" />
+<img alt="../../../_images/reusable_solids_figure_one.png" src="../../../_images/reusable_solids_figure_one.png" />
 <p>You also use the aliases in the environment config. In order to execute this pipeline, use
 the following config file:</p>
 <div class="literal-block-wrapper docutils container" id="id2">
@@ -26223,100 +26869,66 @@ to cloud storage, unzipping files, etc.</p>
 </div>
 
 
-          </div>
-          
-        </div>
-      </div>
-      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
-        <div class="sphinxsidebarwrapper">
-<h3><a href="../index.html">Table Of Contents</a></h3>
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="../principles.html">Principles</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../installation.html">Installation</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../contributing.html">Contributing</a></li>
-</ul>
-<ul class="current">
-<li class="toctree-l1"><a class="reference internal" href="hello_world.html">Hello, World</a></li>
-<li class="toctree-l1"><a class="reference internal" href="hello_dag.html">Hello, DAG</a></li>
-<li class="toctree-l1"><a class="reference internal" href="actual_dag.html">An actual DAG</a></li>
-<li class="toctree-l1"><a class="reference internal" href="inputs.html">Inputs</a></li>
-<li class="toctree-l1"><a class="reference internal" href="config.html">Configuration</a></li>
-<li class="toctree-l1"><a class="reference internal" href="configuration_schemas.html">Configuration Schemas</a></li>
-<li class="toctree-l1"><a class="reference internal" href="execution_context.html">Execution Context</a></li>
-<li class="toctree-l1"><a class="reference internal" href="resources.html">Resources</a></li>
-<li class="toctree-l1"><a class="reference internal" href="repos.html">Repositories</a></li>
-<li class="toctree-l1"><a class="reference internal" href="pipeline_cli_execution.html">Pipeline CLI Execution</a></li>
-<li class="toctree-l1"><a class="reference internal" href="types.html">User-Defined Types</a></li>
-<li class="toctree-l1"><a class="reference internal" href="expectations.html">Expectations</a></li>
-<li class="toctree-l1"><a class="reference internal" href="multiple_outputs.html">Multiple Outputs</a></li>
-<li class="toctree-l1 current"><a class="current reference internal" href="#">Reusable Solids</a></li>
-<li class="toctree-l1"><a class="reference internal" href="unittesting.html">Unit-testing Pipelines</a></li>
-<li class="toctree-l1"><a class="reference internal" href="dagstermill.html">Dagstermill</a></li>
-<li class="toctree-l1"><a class="reference internal" href="dagstermill.html#dagstermill-cli">Dagstermill CLI</a></li>
-</ul>
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="../apidocs/definitions.html">Definitions</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../apidocs/decorators.html">Decorators</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../apidocs/execution.html">Execution</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../apidocs/errors.html">Errors</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../apidocs/types.html">Types</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../apidocs/utilities.html">Utilities</a></li>
-</ul>
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="../guides/028_to_030_new_concepts.html">New Concepts in 0.3.0</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../guides/028_to_030_upgrade_guide.html">Upgrading to 0.3.0</a></li>
-</ul>
-<div class="relations">
-<h3>Related Topics</h3>
-<ul>
-  <li><a href="../index.html">Documentation overview</a><ul>
-      <li>Previous: <a href="multiple_outputs.html" title="previous chapter">Multiple Outputs</a></li>
-      <li>Next: <a href="unittesting.html" title="next chapter">Unit-testing Pipelines</a></li>
-  </ul></li>
-</ul>
-</div>
-  <div role="note" aria-label="source link">
-    <h3>This Page</h3>
-    <ul class="this-page-menu">
-      <li><a href="../_sources/intro_tutorial/reusable_solids.rst.txt"
-            rel="nofollow">Show Source</a></li>
+            </div>
+
+            
+            <div class="related bottom">
+                &nbsp;
+<nav id="rellinks">
+    <ul>
+        <li>
+            &larr;
+            <a href="multiple_outputs.html" title="Previous document">Multiple Outputs</a>
+        </li>
+        <li>
+            <a href="/" title="Home">Home</a>
+        </li>
+        <li>
+            <a href="unittesting.html" title="Next document">Unit-testing Pipelines</a>
+            &rarr;
+        </li>
     </ul>
-   </div>
-<div id="searchbox" style="display: none" role="search">
-  <h3>Quick search</h3>
-    <div class="searchformwrapper">
-    <form class="search" action="../search.html" method="get">
-      <input type="text" name="q" />
-      <input type="submit" value="Go" />
-      <input type="hidden" name="check_keywords" value="yes" />
-      <input type="hidden" name="area" value="default" />
-    </form>
+</nav>
+            </div>
+            
+        </div>
     </div>
-</div>
-<script type="text/javascript">$(\'#searchbox\').show(0);</script>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><h3><a href="../../../index.html">Dagster</a></h3>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../install/install.html">Install</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../learn.html">Learn</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="index.html">Tutorial</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../principles.html">Principles</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../learn.html#other-guides">Other Guides</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../api/api.html">API Docs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../community/community.html">Community</a></li>
+</ul>
+
         </div>
       </div>
       <div class="clearer"></div>
     </div>
-    <div class="footer">
-      &copy;2018, Elementl, Inc.
-      
-      |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.7.5</a>
-      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
-      
-      |
-      <a href="../_sources/intro_tutorial/reusable_solids.rst.txt"
-          rel="nofollow">Page source</a>
-    </div>
-
+<div class="footer">
+    &copy; 2019, Elementl, Inc.
     
-
+    |
+    Powered by <a href="http://sphinx-doc.org/">Sphinx 1.7.5</a>
+    &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
     
+    |
+    <a href="../../../_sources/sections/learn/tutorial/reusable_solids.rst.txt" rel="nofollow">Page source</a>
+</div>
+
+
+
+
   </body>
 </html>'''
 
-snapshots['test_build_all_docs 72'] = '''
+snapshots['test_build_all_docs 83'] = '''
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
@@ -26324,37 +26936,56 @@ snapshots['test_build_all_docs 72'] = '''
   <head>
     <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    <title>User-Defined Types &#8212; Dagster  documentation</title>
-    <link rel="stylesheet" href="../_static/alabaster.css" type="text/css" />
-    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
-    <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
-    <script type="text/javascript" src="../_static/jquery.js"></script>
-    <script type="text/javascript" src="../_static/underscore.js"></script>
-    <script type="text/javascript" src="../_static/doctools.js"></script>
-    <link rel="index" title="Index" href="../genindex.html" />
-    <link rel="search" title="Search" href="../search.html" />
+    <title>User-Defined Types &#8212; Dagster</title>
+    <link rel="stylesheet" href="../../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/css/custom.css" type="text/css" />
+    <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
     <link rel="next" title="Expectations" href="expectations.html" />
     <link rel="prev" title="Pipeline CLI Execution" href="pipeline_cli_execution.html" />
-   
-  <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
-  
-  
-  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+ 
+<link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
+
+
+<meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
 
   </head><body>
   
 
     <div class="document">
-      <div class="documentwrapper">
+    <div class="documentwrapper">
         <div class="bodywrapper">
-          
-
-          <div class="body" role="main">
+            <div class="related top">
+                &nbsp;
+<nav id="rellinks">
+    <ul>
+        <li>
+            &larr;
+            <a href="pipeline_cli_execution.html" title="Previous document">Pipeline CLI Execution</a>
+        </li>
+        <li>
+            <a href="/" title="Home">Home</a>
+        </li>
+        <li>
+            <a href="expectations.html" title="Next document">Expectations</a>
+            &rarr;
+        </li>
+    </ul>
+</nav>
+            </div>
             
+
+            <div class="body" role="main">
+                
   <div class="section" id="user-defined-types">
 <h1>User-Defined Types<a class="headerlink" href="#user-defined-types" title="Permalink to this headline">¶</a></h1>
-<p>Throughout the tutorial you have seen the use of builtins such as <a class="reference internal" href="../apidocs/types.html#dagster.Int" title="dagster.Int"><code class="xref py py-class docutils literal notranslate"><span class="pre">Int</span></code></a>
-and <a class="reference internal" href="../apidocs/types.html#dagster.String" title="dagster.String"><code class="xref py py-class docutils literal notranslate"><span class="pre">String</span></code></a> for types. However you will want to be able to define your
+<p>Throughout the tutorial you have seen the use of builtins such as <a class="reference internal" href="../../api/apidocs/types.html#dagster.Int" title="dagster.Int"><code class="xref py py-class docutils literal notranslate"><span class="pre">Int</span></code></a>
+and <a class="reference internal" href="../../api/apidocs/types.html#dagster.String" title="dagster.String"><code class="xref py py-class docutils literal notranslate"><span class="pre">String</span></code></a> for types. However you will want to be able to define your
 own dagster types to fully utilize the system. We’ll go over that here.</p>
 <p>As a pedogogical example, we will go over the code used to the define the <code class="docutils literal notranslate"><span class="pre">PandasDataFrame</span></code> type
 in the dagster-pandas library, building it step by step along the way.</p>
@@ -26484,7 +27115,7 @@ that key and value for you and calls the provided function.</p>
 </div>
 <p>Now if you run a pipeline with this solid from dagit you will be able to provide sources for
 these inputs via config:</p>
-<img alt="../_images/types_figure_one.png" src="../_images/types_figure_one.png" />
+<img alt="../../../_images/types_figure_one.png" src="../../../_images/types_figure_one.png" />
 </div>
 <div class="section" id="output-schema">
 <h2>Output Schema<a class="headerlink" href="#output-schema" title="Permalink to this headline">¶</a></h2>
@@ -26536,108 +27167,74 @@ how to materialize the value.</p>
 </pre></div>
 </div>
 <p>Now we can provide a list of materializations to a given execution.</p>
-<img alt="../_images/types_figure_two.png" src="../_images/types_figure_two.png" />
+<img alt="../../../_images/types_figure_two.png" src="../../../_images/types_figure_two.png" />
 <p>You’ll note you can provide an arbitrary number of materializations. You can materialize any
 given output any number of times in any number of formats.</p>
-<img alt="../_images/types_figure_three.png" src="../_images/types_figure_three.png" />
+<img alt="../../../_images/types_figure_three.png" src="../../../_images/types_figure_three.png" />
 </div>
 </div>
 
 
-          </div>
-          
-        </div>
-      </div>
-      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
-        <div class="sphinxsidebarwrapper">
-<h3><a href="../index.html">Table Of Contents</a></h3>
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="../principles.html">Principles</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../installation.html">Installation</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../contributing.html">Contributing</a></li>
-</ul>
-<ul class="current">
-<li class="toctree-l1"><a class="reference internal" href="hello_world.html">Hello, World</a></li>
-<li class="toctree-l1"><a class="reference internal" href="hello_dag.html">Hello, DAG</a></li>
-<li class="toctree-l1"><a class="reference internal" href="actual_dag.html">An actual DAG</a></li>
-<li class="toctree-l1"><a class="reference internal" href="inputs.html">Inputs</a></li>
-<li class="toctree-l1"><a class="reference internal" href="config.html">Configuration</a></li>
-<li class="toctree-l1"><a class="reference internal" href="configuration_schemas.html">Configuration Schemas</a></li>
-<li class="toctree-l1"><a class="reference internal" href="execution_context.html">Execution Context</a></li>
-<li class="toctree-l1"><a class="reference internal" href="resources.html">Resources</a></li>
-<li class="toctree-l1"><a class="reference internal" href="repos.html">Repositories</a></li>
-<li class="toctree-l1"><a class="reference internal" href="pipeline_cli_execution.html">Pipeline CLI Execution</a></li>
-<li class="toctree-l1 current"><a class="current reference internal" href="#">User-Defined Types</a></li>
-<li class="toctree-l1"><a class="reference internal" href="expectations.html">Expectations</a></li>
-<li class="toctree-l1"><a class="reference internal" href="multiple_outputs.html">Multiple Outputs</a></li>
-<li class="toctree-l1"><a class="reference internal" href="reusable_solids.html">Reusable Solids</a></li>
-<li class="toctree-l1"><a class="reference internal" href="unittesting.html">Unit-testing Pipelines</a></li>
-<li class="toctree-l1"><a class="reference internal" href="dagstermill.html">Dagstermill</a></li>
-<li class="toctree-l1"><a class="reference internal" href="dagstermill.html#dagstermill-cli">Dagstermill CLI</a></li>
-</ul>
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="../apidocs/definitions.html">Definitions</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../apidocs/decorators.html">Decorators</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../apidocs/execution.html">Execution</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../apidocs/errors.html">Errors</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../apidocs/types.html">Types</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../apidocs/utilities.html">Utilities</a></li>
-</ul>
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="../guides/028_to_030_new_concepts.html">New Concepts in 0.3.0</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../guides/028_to_030_upgrade_guide.html">Upgrading to 0.3.0</a></li>
-</ul>
-<div class="relations">
-<h3>Related Topics</h3>
-<ul>
-  <li><a href="../index.html">Documentation overview</a><ul>
-      <li>Previous: <a href="pipeline_cli_execution.html" title="previous chapter">Pipeline CLI Execution</a></li>
-      <li>Next: <a href="expectations.html" title="next chapter">Expectations</a></li>
-  </ul></li>
-</ul>
-</div>
-  <div role="note" aria-label="source link">
-    <h3>This Page</h3>
-    <ul class="this-page-menu">
-      <li><a href="../_sources/intro_tutorial/types.rst.txt"
-            rel="nofollow">Show Source</a></li>
+            </div>
+
+            
+            <div class="related bottom">
+                &nbsp;
+<nav id="rellinks">
+    <ul>
+        <li>
+            &larr;
+            <a href="pipeline_cli_execution.html" title="Previous document">Pipeline CLI Execution</a>
+        </li>
+        <li>
+            <a href="/" title="Home">Home</a>
+        </li>
+        <li>
+            <a href="expectations.html" title="Next document">Expectations</a>
+            &rarr;
+        </li>
     </ul>
-   </div>
-<div id="searchbox" style="display: none" role="search">
-  <h3>Quick search</h3>
-    <div class="searchformwrapper">
-    <form class="search" action="../search.html" method="get">
-      <input type="text" name="q" />
-      <input type="submit" value="Go" />
-      <input type="hidden" name="check_keywords" value="yes" />
-      <input type="hidden" name="area" value="default" />
-    </form>
+</nav>
+            </div>
+            
+        </div>
     </div>
-</div>
-<script type="text/javascript">$(\'#searchbox\').show(0);</script>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><h3><a href="../../../index.html">Dagster</a></h3>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../install/install.html">Install</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../learn.html">Learn</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="index.html">Tutorial</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../principles.html">Principles</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../learn.html#other-guides">Other Guides</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../api/api.html">API Docs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../community/community.html">Community</a></li>
+</ul>
+
         </div>
       </div>
       <div class="clearer"></div>
     </div>
-    <div class="footer">
-      &copy;2018, Elementl, Inc.
-      
-      |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.7.5</a>
-      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
-      
-      |
-      <a href="../_sources/intro_tutorial/types.rst.txt"
-          rel="nofollow">Page source</a>
-    </div>
-
+<div class="footer">
+    &copy; 2019, Elementl, Inc.
     
-
+    |
+    Powered by <a href="http://sphinx-doc.org/">Sphinx 1.7.5</a>
+    &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
     
+    |
+    <a href="../../../_sources/sections/learn/tutorial/types.rst.txt" rel="nofollow">Page source</a>
+</div>
+
+
+
+
   </body>
 </html>'''
 
-snapshots['test_build_all_docs 73'] = '''
+snapshots['test_build_all_docs 84'] = '''
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
@@ -26645,33 +27242,52 @@ snapshots['test_build_all_docs 73'] = '''
   <head>
     <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    <title>Unit-testing Pipelines &#8212; Dagster  documentation</title>
-    <link rel="stylesheet" href="../_static/alabaster.css" type="text/css" />
-    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
-    <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
-    <script type="text/javascript" src="../_static/jquery.js"></script>
-    <script type="text/javascript" src="../_static/underscore.js"></script>
-    <script type="text/javascript" src="../_static/doctools.js"></script>
-    <link rel="index" title="Index" href="../genindex.html" />
-    <link rel="search" title="Search" href="../search.html" />
+    <title>Unit-testing Pipelines &#8212; Dagster</title>
+    <link rel="stylesheet" href="../../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/css/custom.css" type="text/css" />
+    <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
     <link rel="next" title="Dagstermill" href="dagstermill.html" />
     <link rel="prev" title="Reusable Solids" href="reusable_solids.html" />
-   
-  <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
-  
-  
-  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+ 
+<link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
+
+
+<meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
 
   </head><body>
   
 
     <div class="document">
-      <div class="documentwrapper">
+    <div class="documentwrapper">
         <div class="bodywrapper">
-          
-
-          <div class="body" role="main">
+            <div class="related top">
+                &nbsp;
+<nav id="rellinks">
+    <ul>
+        <li>
+            &larr;
+            <a href="reusable_solids.html" title="Previous document">Reusable Solids</a>
+        </li>
+        <li>
+            <a href="/" title="Home">Home</a>
+        </li>
+        <li>
+            <a href="dagstermill.html" title="Next document">Dagstermill</a>
+            &rarr;
+        </li>
+    </ul>
+</nav>
+            </div>
             
+
+            <div class="body" role="main">
+                
   <div class="section" id="unit-testing-pipelines">
 <h1>Unit-testing Pipelines<a class="headerlink" href="#unit-testing-pipelines" title="Permalink to this headline">¶</a></h1>
 <p>Unit testing data pipelines is, broadly speaking, quite difficult. As a result, it is typically
@@ -26826,95 +27442,61 @@ the <code class="docutils literal notranslate"><span class="pre">execute_solids<
 </div>
 
 
-          </div>
-          
-        </div>
-      </div>
-      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
-        <div class="sphinxsidebarwrapper">
-<h3><a href="../index.html">Table Of Contents</a></h3>
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="../principles.html">Principles</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../installation.html">Installation</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../contributing.html">Contributing</a></li>
-</ul>
-<ul class="current">
-<li class="toctree-l1"><a class="reference internal" href="hello_world.html">Hello, World</a></li>
-<li class="toctree-l1"><a class="reference internal" href="hello_dag.html">Hello, DAG</a></li>
-<li class="toctree-l1"><a class="reference internal" href="actual_dag.html">An actual DAG</a></li>
-<li class="toctree-l1"><a class="reference internal" href="inputs.html">Inputs</a></li>
-<li class="toctree-l1"><a class="reference internal" href="config.html">Configuration</a></li>
-<li class="toctree-l1"><a class="reference internal" href="configuration_schemas.html">Configuration Schemas</a></li>
-<li class="toctree-l1"><a class="reference internal" href="execution_context.html">Execution Context</a></li>
-<li class="toctree-l1"><a class="reference internal" href="resources.html">Resources</a></li>
-<li class="toctree-l1"><a class="reference internal" href="repos.html">Repositories</a></li>
-<li class="toctree-l1"><a class="reference internal" href="pipeline_cli_execution.html">Pipeline CLI Execution</a></li>
-<li class="toctree-l1"><a class="reference internal" href="types.html">User-Defined Types</a></li>
-<li class="toctree-l1"><a class="reference internal" href="expectations.html">Expectations</a></li>
-<li class="toctree-l1"><a class="reference internal" href="multiple_outputs.html">Multiple Outputs</a></li>
-<li class="toctree-l1"><a class="reference internal" href="reusable_solids.html">Reusable Solids</a></li>
-<li class="toctree-l1 current"><a class="current reference internal" href="#">Unit-testing Pipelines</a></li>
-<li class="toctree-l1"><a class="reference internal" href="dagstermill.html">Dagstermill</a></li>
-<li class="toctree-l1"><a class="reference internal" href="dagstermill.html#dagstermill-cli">Dagstermill CLI</a></li>
-</ul>
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="../apidocs/definitions.html">Definitions</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../apidocs/decorators.html">Decorators</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../apidocs/execution.html">Execution</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../apidocs/errors.html">Errors</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../apidocs/types.html">Types</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../apidocs/utilities.html">Utilities</a></li>
-</ul>
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="../guides/028_to_030_new_concepts.html">New Concepts in 0.3.0</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../guides/028_to_030_upgrade_guide.html">Upgrading to 0.3.0</a></li>
-</ul>
-<div class="relations">
-<h3>Related Topics</h3>
-<ul>
-  <li><a href="../index.html">Documentation overview</a><ul>
-      <li>Previous: <a href="reusable_solids.html" title="previous chapter">Reusable Solids</a></li>
-      <li>Next: <a href="dagstermill.html" title="next chapter">Dagstermill</a></li>
-  </ul></li>
-</ul>
-</div>
-  <div role="note" aria-label="source link">
-    <h3>This Page</h3>
-    <ul class="this-page-menu">
-      <li><a href="../_sources/intro_tutorial/unittesting.rst.txt"
-            rel="nofollow">Show Source</a></li>
+            </div>
+
+            
+            <div class="related bottom">
+                &nbsp;
+<nav id="rellinks">
+    <ul>
+        <li>
+            &larr;
+            <a href="reusable_solids.html" title="Previous document">Reusable Solids</a>
+        </li>
+        <li>
+            <a href="/" title="Home">Home</a>
+        </li>
+        <li>
+            <a href="dagstermill.html" title="Next document">Dagstermill</a>
+            &rarr;
+        </li>
     </ul>
-   </div>
-<div id="searchbox" style="display: none" role="search">
-  <h3>Quick search</h3>
-    <div class="searchformwrapper">
-    <form class="search" action="../search.html" method="get">
-      <input type="text" name="q" />
-      <input type="submit" value="Go" />
-      <input type="hidden" name="check_keywords" value="yes" />
-      <input type="hidden" name="area" value="default" />
-    </form>
+</nav>
+            </div>
+            
+        </div>
     </div>
-</div>
-<script type="text/javascript">$(\'#searchbox\').show(0);</script>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><h3><a href="../../../index.html">Dagster</a></h3>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../install/install.html">Install</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../learn.html">Learn</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="index.html">Tutorial</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../principles.html">Principles</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../learn.html#other-guides">Other Guides</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../api/api.html">API Docs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../community/community.html">Community</a></li>
+</ul>
+
         </div>
       </div>
       <div class="clearer"></div>
     </div>
-    <div class="footer">
-      &copy;2018, Elementl, Inc.
-      
-      |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.7.5</a>
-      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
-      
-      |
-      <a href="../_sources/intro_tutorial/unittesting.rst.txt"
-          rel="nofollow">Page source</a>
-    </div>
-
+<div class="footer">
+    &copy; 2019, Elementl, Inc.
     
-
+    |
+    Powered by <a href="http://sphinx-doc.org/">Sphinx 1.7.5</a>
+    &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
     
+    |
+    <a href="../../../_sources/sections/learn/tutorial/unittesting.rst.txt" rel="nofollow">Page source</a>
+</div>
+
+
+
+
   </body>
 </html>'''

@@ -18,7 +18,7 @@ inspected, and configured to run in different ways.
 
 You'll note the new concept of expecatations.
 
-.. literalinclude:: ../../dagster/tutorials/intro_tutorial/expectations.py
+.. literalinclude:: ../../../../dagster/tutorials/intro_tutorial/expectations.py
    :linenos:
    :caption: expectations.py
    :emphasize-lines: 17-24
@@ -34,7 +34,7 @@ was processed
 
 We'll use this config file.
 
-.. literalinclude:: ../../dagster/tutorials/intro_tutorial/expectations_pass.yml
+.. literalinclude:: ../../../../dagster/tutorials/intro_tutorial/expectations_pass.yml
    :linenos:
    :caption: expectations_pass.yml
 
@@ -55,7 +55,7 @@ In that execution you'll notice a passing expectation:
 Now let's make this fail. Currently the default behavior is to throw an error and halt execution
 when an expectation fails. So:
 
-.. literalinclude:: ../../dagster/tutorials/intro_tutorial/expectations_fail.yml
+.. literalinclude:: ../../../../dagster/tutorials/intro_tutorial/expectations_fail.yml
    :linenos:
    :caption: expectations_fail.yml
 
@@ -80,7 +80,7 @@ feature right now is the ability to skip expectations entirely. This is useful i
 expectations are expensive and you have a time-critical job you must. In that case you can
 configure the pipeline to skip expectations entirely.
 
-.. literalinclude:: ../../dagster/tutorials/intro_tutorial/expectations_skip_failed.yml
+.. literalinclude:: ../../../../dagster/tutorials/intro_tutorial/expectations_skip_failed.yml
    :linenos:
    :caption: expectations_skip_fail.yml
 

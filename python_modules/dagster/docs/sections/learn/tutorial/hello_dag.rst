@@ -7,7 +7,7 @@ We'll define a very simple two-solid pipeline whose first solid returns a hardco
 and whose second solid concatenates two copies of its input. The output of the pipeline should be
 two concatenated copies of the hardcoded string.
 
-.. literalinclude:: ../../dagster/tutorials/intro_tutorial/hello_dag.py
+.. literalinclude:: ../../../../dagster/tutorials/intro_tutorial/hello_dag.py
    :linenos:
    :caption: hello_dag.py
 
@@ -24,7 +24,7 @@ This pipeline introduces a few new concepts.
     called ``dependencies``, which is a dict that defines the connections between solids in a
     pipeline's DAG.
 
-    .. literalinclude::  ../../dagster/tutorials/intro_tutorial/hello_dag.py
+    .. literalinclude::  ../../../../dagster/tutorials/intro_tutorial/hello_dag.py
        :lines: 23-25
        :dedent: 8
 

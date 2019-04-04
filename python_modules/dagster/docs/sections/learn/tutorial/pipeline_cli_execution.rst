@@ -8,13 +8,13 @@ a production context.
 Just as in the last part of the tutorial, we'll define a pipeline and a repository, and create
 a yaml file to tell the CLI tool about the repository.
 
-.. literalinclude:: ../../dagster/tutorials/intro_tutorial/pipeline_cli_execution.py
+.. literalinclude:: ../../../../dagster/tutorials/intro_tutorial/pipeline_cli_execution.py
    :linenos:
    :caption: pipeline_cli_execution.py
 
 And now the repository file:
 
-.. literalinclude:: ../../dagster/tutorials/intro_tutorial/pipeline_execution_repository.yml
+.. literalinclude:: ../../../../dagster/tutorials/intro_tutorial/pipeline_execution_repository.yml
    :linenos:
    :language: YAML
    :caption: repository.yml
@@ -22,7 +22,7 @@ And now the repository file:
 Finally, we'll need to define the pipeline config in a yaml file in order to
 execute our pipeline from the command line.
 
-.. literalinclude:: ../../dagster/tutorials/intro_tutorial/pipeline_execution_env.yml
+.. literalinclude:: ../../../../dagster/tutorials/intro_tutorial/pipeline_execution_env.yml
    :linenos:
    :language: YAML
    :caption: env.yml
@@ -46,12 +46,12 @@ for config.
 
 Let's split up our env.yml into two parts:
 
-.. literalinclude:: ../../dagster/tutorials/intro_tutorial/pipeline_execution_env.yml
+.. literalinclude:: ../../../../dagster/tutorials/intro_tutorial/pipeline_execution_env.yml
    :lines: 1-4
    :language: YAML
    :caption: constant_env.yml
 
-.. literalinclude:: ../../dagster/tutorials/intro_tutorial/pipeline_execution_env.yml
+.. literalinclude:: ../../../../dagster/tutorials/intro_tutorial/pipeline_execution_env.yml
    :lines: 6-12
    :language: YAML
    :caption: specific_env.yml

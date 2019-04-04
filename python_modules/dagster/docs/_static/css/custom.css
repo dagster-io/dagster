@@ -1,0 +1,223 @@
+
+/* 
+ *
+ *  First, theme overrides
+ *   
+ */
+
+
+@import url('https://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,600');
+
+
+body {
+    font-family: 'Source Sans Pro', sans-serif;
+    font-weight: 300;
+    color: #1C2844;
+    font-size: 17px;
+    line-height: 25px;
+}
+
+
+div.body h1,
+div.body h2,
+div.body h3,
+div.body h4,
+div.body h5,
+div.body h6,
+div.sphinxsidebar h3,
+div.sphinxsidebar h4 {
+    font-family: 'Source Sans Pro', sans-serif;
+    font-weight: 600;
+    color: #1C2844;
+}
+
+div.body h1 { margin-top: 0; padding-top: 0; font-size: 140%; }
+div.body h2 { font-size: 110%; }
+div.body h3 { font-size: 100%; }
+div.body h4 { font-size: 100%; }
+div.body h5 { font-size: 100%; }
+div.body h6 { font-size: 100%; }
+
+div.sphinxsidebar a {
+    border-bottom: none;
+}
+
+a.reference {
+    border-bottom: none;
+}
+
+.bodywrapper { padding-top: 21px; }
+
+#documentation {
+    display: none;
+}
+
+.sphinxsidebar h3 > a {
+    -webkit-transition: color 0.3s ease-in-out;
+    -moz-transition: color 0.3s ease-in-out;
+    -o-transition: color 0.3s ease-in-out;
+    transition: color 0.3s ease-in-out;
+    padding-left: 6px; 
+}
+
+.sphinxsidebar h3 > a:hover {
+    color: #2391EB;   
+}
+
+.sphinxsidebar li.toctree-l1 > a {
+    font-family: 'Source Sans Pro', sans-serif;
+    font-weight: 400;
+    margin: 0 8px;
+    -webkit-transition: color 0.2s ease-in-out;
+    -moz-transition: color 0.2s ease-in-out;
+    -o-transition: color 0.2s ease-in-out;
+    transition: color 0.2s ease-in-out;
+}
+
+.sphinxsidebar li.toctree-l1 > a:hover {
+    color: #2391EB;
+    border-bottom: 1px solid #2391EB;
+}
+
+.sphinxsidebar li.toctree-l1 > a.current {
+    color: #2391EB;
+}
+
+.sphinxsidebar li.toctree-l1 > ul {
+    list-style: none;
+  }
+  
+.sphinxsidebar li.toctree-l1 > ul li::before {
+    content: "\2022";
+    color: #1C2844;
+    display: inline-block;
+    width: 10px;
+    margin-left: -7px;
+}
+
+
+@media screen and (max-width: 875px) {
+    .sphinxsidebar li.toctree-l1 > ul li::before {
+        content: "\2022";
+        color: rgb(170, 170, 170);
+        display: inline-block;
+        width: 10px;
+        margin-left: -7px;
+    }
+
+    div.sphinxsidebar {
+        display: block;
+        float: none;
+        width: 110%;
+        margin: 50px -30px -10px -30px;
+        background: #333;
+    }
+}
+
+
+#rellinks {
+    color: #1C2844;
+}
+
+#rellinks a {
+    color: #2391EB;
+    text-decoration: none;
+}
+
+#rellinks a:hover {
+    text-decoration: underline;
+    text-decoration-color: #2391EB;
+}
+
+.body a.reference {
+    color: #2391EB;
+    text-decoration: none;
+}
+
+.body a.reference:hover {
+    text-decoration: underline;
+    text-decoration-color: #2391EB;
+    border-bottom: none;
+}
+
+/* 
+ *
+ *  Now for dagster-specific stuff 
+ *   
+ */
+
+ .logo_img {
+    height: 42%;
+    width: 42%;
+    padding-bottom: 30px;
+    display: block;
+    margin: 0 auto;
+}
+
+.dagster {
+    text-align: center;
+}
+
+.why_dagster {
+    width: 50%;
+    margin: 0 auto;
+    padding-bottom: 33px;
+}
+
+.why_dagster h1 {
+    font-size: 29px;
+    line-height: 44px;
+    margin: 0;
+    padding: 0;
+}
+
+.get_started {
+	background-color:#299cee;
+	-moz-border-radius:30px;
+	-webkit-border-radius:30px;
+	border-radius:30px;
+	border:1px solid #2f82bd;
+	display:inline-block;
+	cursor:pointer;
+	color:#ffffff;
+	font-size:17px;
+	padding:10px 28px;
+	text-decoration:none;
+    text-shadow:0px 1px 1px #2f6627;
+}
+.get_started:hover {
+	background-color:#248AD4;
+    color:#ffffff;
+    border: 1px solid rgb(39, 58, 104);
+    text-decoration: none;    
+}
+.get_started:active {
+	position:relative;
+    top:1px;
+    text-decoration: none;
+}
+
+
+.value_prop_blocks {
+    display: flex;
+    flex-wrap: wrap;
+    padding-top: 20px;
+    justify-content: center;
+}
+
+
+.value_prop_block {
+    width: calc(33.3333% + -30px);
+    margin: 15px;
+    padding: 0px;
+    flex: 0 0 210px;
+    text-align: left;
+}
+
+.value_prop_block h1 {
+    font-family: 'Source Sans Pro', sans-serif;
+    font-weight: 600;
+    font-size: 100%;
+    text-align: center;
+}
+

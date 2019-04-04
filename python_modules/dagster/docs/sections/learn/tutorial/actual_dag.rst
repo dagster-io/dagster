@@ -6,7 +6,7 @@ determines the execution order of solids in a pipeline:
 
 .. image:: actual_dag_figure_one.png
 
-.. literalinclude:: ../../dagster/tutorials/intro_tutorial/actual_dag.py
+.. literalinclude:: ../../../../dagster/tutorials/intro_tutorial/actual_dag.py
    :linenos:
    :caption: actual_dag.py
 

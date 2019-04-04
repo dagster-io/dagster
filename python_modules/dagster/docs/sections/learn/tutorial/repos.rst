@@ -21,7 +21,7 @@ A **repository** is a collection of pipelines at which dagster tools may be poin
 Repostories are declared using a new API,
 :py:func:`RepositoryDefinition <dagster.RepositoryDefinition>`:
 
-.. literalinclude:: ../../dagster/tutorials/intro_tutorial/repos.py
+.. literalinclude:: ../../../../dagster/tutorials/intro_tutorial/repos.py
    :linenos:
    :caption: repos.py
 
@@ -44,7 +44,7 @@ let's create a declarative config file with this information to make using the c
 easier. Save this file as ``repository.yml``. This is the default name for a repository config file,
 although you can tell the CLI tools to use any file you like.
 
-.. literalinclude:: ../../dagster/tutorials/intro_tutorial/repos_1.yml
+.. literalinclude:: ../../../../dagster/tutorials/intro_tutorial/repos_1.yml
    :linenos:
    :language: YAML
    :caption: repository.yml
@@ -57,7 +57,7 @@ Now you should be able to list the pipelines in this repo without all the typing
 
 You can also specify a module instead of a file in the repository.yml file.
 
-.. literalinclude:: ../../dagster/tutorials/intro_tutorial/repos_2.yml
+.. literalinclude:: ../../../../dagster/tutorials/intro_tutorial/repos_2.yml
    :linenos:
    :language: YAML
    :caption: repository.yml
