@@ -210,6 +210,13 @@ class DagsterEvent(
         )
         return self.event_specific_data
 
+    @property
+    def pipeline_init_failure_data(self):
+        _assert_type(
+            'pipeline_init_failure_data', DagsterEventType.PIPELINE_INIT_FAILURE, self.event_type
+        )
+        return self.event_specific_data
+
     @staticmethod
     def step_output_event(step_context, step_output_data):
         return DagsterEvent.from_step(

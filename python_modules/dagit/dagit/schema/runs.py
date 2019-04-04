@@ -196,6 +196,14 @@ class DauphinPipelineProcessStartedEvent(dauphin.ObjectType):
     process_id = dauphin.NonNull(dauphin.Int)
 
 
+class DauphinPipelineInitFailureEvent(dauphin.ObjectType):
+    class Meta:
+        name = 'PipelineInitFailureEvent'
+        interfaces = (DauphinMessageEvent, DauphinPipelineEvent)
+
+    error = dauphin.NonNull('PythonError')
+
+
 class DauphinStepEvent(dauphin.Interface):
     class Meta:
         name = 'StepEvent'
@@ -258,6 +266,7 @@ class DauphinPipelineRunEvent(dauphin.Union):
             DauphinPipelineStartEvent,
             DauphinPipelineSuccessEvent,
             DauphinPipelineFailureEvent,
+            DauphinPipelineInitFailureEvent,
             DauphinExecutionStepStartEvent,
             DauphinExecutionStepSuccessEvent,
             DauphinExecutionStepOutputEvent,
@@ -339,7 +348,7 @@ class DauphinPipelineRunEvent(dauphin.Union):
                 return graphene_info.schema.type_named('PipelineFailureEvent')(
                     pipeline=dauphin_pipeline, **basic_params
                 )
-            if dagster_event.event_type == DagsterEventType.PIPELINE_PROCESS_START:
+            elif dagster_event.event_type == DagsterEventType.PIPELINE_PROCESS_START:
                 return graphene_info.schema.type_named('PipelineProcessStartEvent')(
                     pipeline=dauphin_pipeline, **basic_params
                 )
@@ -347,6 +356,14 @@ class DauphinPipelineRunEvent(dauphin.Union):
                 process_data = dagster_event.pipeline_process_started_data
                 return graphene_info.schema.type_named('PipelineProcessStartedEvent')(
                     pipeline=dauphin_pipeline, process_id=process_data.process_id, **basic_params
+                )
+            elif dagster_event.event_type == DagsterEventType.PIPELINE_INIT_FAILURE:
+                return graphene_info.schema.type_named('PipelineInitFailureEvent')(
+                    pipeline=dauphin_pipeline,
+                    error=graphene_info.schema.type_named('PythonError')(
+                        dagster_event.pipeline_init_failure_data.error
+                    ),
+                    **basic_params
                 )
 
             else:

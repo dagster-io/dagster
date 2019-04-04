@@ -417,6 +417,16 @@ type PipelineFailureEvent implements MessageEvent & PipelineEvent {
   pipeline: Pipeline!
 }
 
+type PipelineInitFailureEvent implements MessageEvent & PipelineEvent {
+  run: PipelineRun!
+  message: String!
+  timestamp: String!
+  level: LogLevel!
+  step: ExecutionStep
+  pipeline: Pipeline!
+  error: PythonError!
+}
+
 type PipelineNotFoundError implements Error {
   message: String!
   stack: [String!]!
@@ -453,7 +463,7 @@ type PipelineRun {
   config: String!
 }
 
-union PipelineRunEvent = LogMessageEvent | PipelineStartEvent | PipelineSuccessEvent | PipelineFailureEvent | ExecutionStepStartEvent | ExecutionStepSuccessEvent | ExecutionStepOutputEvent | ExecutionStepFailureEvent | ExecutionStepSkippedEvent | PipelineProcessStartEvent | PipelineProcessStartedEvent | StepMaterializationEvent
+union PipelineRunEvent = LogMessageEvent | PipelineStartEvent | PipelineSuccessEvent | PipelineFailureEvent | PipelineInitFailureEvent | ExecutionStepStartEvent | ExecutionStepSuccessEvent | ExecutionStepOutputEvent | ExecutionStepFailureEvent | ExecutionStepSkippedEvent | PipelineProcessStartEvent | PipelineProcessStartedEvent | StepMaterializationEvent
 
 type PipelineRunLogsSubscriptionMissingRunIdFailure {
   missingRunId: String!
