@@ -8,6 +8,7 @@ from dagster.tutorials.intro_tutorial.configuration_schemas import (
 )
 from dagster.utils import script_relative_path
 from dagster.utils.yaml_utils import load_yaml_from_path
+from dagster.core.errors import DagsterExecutionStepExecutionError
 
 
 def intro_tutorial_path(path):
@@ -30,11 +31,13 @@ def test_demo_configuration_schema_pipeline_correct_yaml():
 
 
 def test_demo_configuration_schema_pipeline_runtime_error():
-    with pytest.raises(TypeError):
+    with pytest.raises(DagsterExecutionStepExecutionError) as e_info:
         execute_pipeline(
             define_demo_configuration_schema_pipeline(),
             load_yaml_from_path(intro_tutorial_path('configuration_schemas_runtime_error.yml')),
         )
+
+    assert isinstance(e_info.value.__cause__, TypeError)
 
 
 def test_demo_configuration_schema_pipeline_wrong_field():

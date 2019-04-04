@@ -1,8 +1,10 @@
 from contextlib import contextmanager
 from enum import Enum
 import sys
+import traceback
 import six
 from future.utils import raise_from
+
 
 from dagster import check
 
@@ -57,7 +59,10 @@ class DagsterUserCodeExecutionError(DagsterUserError):
         original_exc_info = check.opt_tuple_param(
             kwargs.pop('original_exc_info', None), 'original_exc_info'
         )
-        super(DagsterUserCodeExecutionError, self).__init__(*args, **kwargs)
+
+        msg = _add_inner_exception_for_py2(args[0], original_exc_info)
+
+        super(DagsterUserCodeExecutionError, self).__init__(msg, *args[1:], **kwargs)
 
         self.user_exception = check.opt_inst_param(user_exception, 'user_exception', Exception)
         self.original_exc_info = original_exc_info
@@ -126,13 +131,13 @@ class DagsterSubprocessExecutionError(DagsterError):
     '''
 
 
-class DagsterRunNotFoundError(Exception):
+class DagsterRunNotFoundError(DagsterError):
     def __init__(self, *args, **kwargs):
         self.invalid_run_id = check.str_param(kwargs.pop('invalid_run_id'), 'invalid_run_id')
         super(DagsterRunNotFoundError, self).__init__(*args, **kwargs)
 
 
-class DagsterStepOutputNotFoundError(Exception):
+class DagsterStepOutputNotFoundError(DagsterError):
     def __init__(self, *args, **kwargs):
         self.step_key = check.str_param(kwargs.pop('step_key'), 'step_key')
         self.output_name = check.str_param(kwargs.pop('output_name'), 'output_name')
@@ -145,6 +150,17 @@ class DagsterPY4JTribalKnowledgeException(Exception):
     under which py4j exceptions are raised. This is just a place to encode
     insitutional knowledge.
     '''
+
+
+def _add_inner_exception_for_py2(msg, exc_info):
+    if sys.version_info[0] == 2:
+        return (
+            msg
+            + '\n\nThe above exception was the direct cause of the following exception:\n\n'
+            + ''.join(traceback.format_exception(*exc_info))
+        )
+
+    return msg
 
 
 @contextmanager
@@ -163,7 +179,6 @@ def user_code_error_boundary(error_cls, msg, **kwargs):
     try:
         yield
     except Exception as e:  # pylint: disable=W0703
-
         if isinstance(e, DagsterError):
             # The system has thrown an error that is part of the user-framework contract
             raise e

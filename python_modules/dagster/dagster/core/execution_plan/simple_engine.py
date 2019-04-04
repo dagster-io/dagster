@@ -1,7 +1,6 @@
 import sys
 
 from future.utils import raise_from
-import six
 
 from dagster import check
 
@@ -169,6 +168,8 @@ def execute_step_in_memory(step_context, inputs, intermediates_manager):
                 )
             yield step_event
     except DagsterError as dagster_error:
+        if step_context.executor_config.throw_on_user_error:
+            raise dagster_error
 
         user_facing_exc_info = (
             # pylint does not know original_exc_info exists is is_user_code_error is true
@@ -177,9 +178,6 @@ def execute_step_in_memory(step_context, inputs, intermediates_manager):
             if dagster_error.is_user_code_error
             else sys.exc_info()
         )
-
-        if step_context.executor_config.throw_on_user_error:
-            six.reraise(*user_facing_exc_info)
 
         error_info = serializable_error_info_from_exc_info(user_facing_exc_info)
 
