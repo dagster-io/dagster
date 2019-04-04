@@ -1,4 +1,3 @@
-from contextlib import contextmanager
 import sys
 
 from future.utils import raise_from
@@ -15,6 +14,7 @@ from dagster.core.errors import (
     DagsterExecutionStepExecutionError,
     DagsterTypeError,
     DagsterStepOutputNotFoundError,
+    user_code_error_boundary,
 )
 
 from dagster.core.execution_context import (
@@ -345,36 +345,10 @@ def _iterate_step_outputs_within_boundary(step_context, evaluated_inputs):
     check.dict_param(evaluated_inputs, 'evaluated_inputs', key_type=str)
 
     error_str = 'Error occured during step {key}'.format(key=step_context.step.key)
-    with _execution_step_error_boundary(step_context, error_str):
+    with user_code_error_boundary(DagsterExecutionStepExecutionError, error_str):
         gen = check.opt_generator(step_context.step.compute_fn(step_context, evaluated_inputs))
 
         if gen is not None:
             for step_output in gen:
                 yield step_output
 
-
-@contextmanager
-def _execution_step_error_boundary(step_context, msg, **kwargs):
-    '''
-    Wraps the execution of user-space code in an error boundary. This places a uniform
-    policy around an user code invoked by the framework. This ensures that all user
-    errors are wrapped in the SolidUserCodeExecutionError, and that the original stack
-    trace of the user error is preserved, so that it can be reported without confusing
-    framework code in the stack trace, if a tool author wishes to do so. This has
-    been especially help in a notebooking context.
-    '''
-    check.inst_param(step_context, 'step_context', SystemStepExecutionContext)
-    check.str_param(msg, 'msg')
-
-    try:
-        yield
-    except Exception as e:  # pylint: disable=W0703
-        if isinstance(e, DagsterError):
-            raise e
-        else:
-            raise_from(
-                DagsterExecutionStepExecutionError(
-                    msg.format(**kwargs), user_exception=e, original_exc_info=sys.exc_info()
-                ),
-                e,
-            )

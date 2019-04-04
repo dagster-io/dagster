@@ -20,10 +20,14 @@ from contextlib import contextmanager
 import inspect
 import itertools
 import time
+import sys
+import six
 
 from contextlib2 import ExitStack
 from dagster import check
 from dagster.utils import merge_dicts
+from dagster.utils.error import serializable_error_info_from_exc_info
+from dagster.utils.logging import define_colored_console_logger
 
 from .definitions import PipelineDefinition, Solid
 from .definitions.utils import DEFAULT_OUTPUT
@@ -38,13 +42,18 @@ from .execution_context import (
 )
 
 from .errors import (
+    DagsterError,
     DagsterExecutionStepNotFoundError,
     DagsterInvariantViolationError,
     DagsterRunNotFoundError,
     DagsterStepOutputNotFoundError,
+    DagsterUserCodeExecutionError,
+    DagsterContextFunctionError,
+    DagsterResourceFunctionError,
+    user_code_error_boundary,
 )
 
-from .events import DagsterEvent, DagsterEventType
+from .events import DagsterEvent, DagsterEventType, PipelineInitFailureData
 from .events.logging import construct_event_logger
 
 from .execution_plan.create import create_execution_plan_core
@@ -120,7 +129,7 @@ class PipelineExecutionResult(object):
     @property
     def success(self):
         '''Whether the pipeline execution was successful at all steps'''
-        return all([not step_event.is_step_failure for step_event in self.event_list])
+        return all([not event.is_failure for event in self.event_list])
 
     @property
     def step_event_list(self):
@@ -296,15 +305,18 @@ def create_execution_plan(pipeline, environment_dict=None):
 
 
 def get_tags(user_context_params, run_config, pipeline):
-    check.inst_param(user_context_params, 'user_context_params', ExecutionContext)
+    check.opt_inst_param(user_context_params, 'user_context_params', ExecutionContext)
     check.opt_inst_param(run_config, 'run_config', RunConfig)
     check.inst_param(pipeline, 'pipeline', PipelineDefinition)
 
-    base_tags = merge_dicts({'pipeline': pipeline.name}, user_context_params.tags)
+    user_tags = user_context_params.tags if user_context_params else {}
+    run_tags = run_config.tags if run_config else {}
+
+    base_tags = merge_dicts({'pipeline': pipeline.name}, user_tags)
 
     if run_config and run_config.tags:
-        user_keys = set(user_context_params.tags.keys())
-        provided_keys = set(run_config.tags.keys())
+        user_keys = set(user_tags.keys())
+        provided_keys = set(run_tags.keys())
         if not user_keys.isdisjoint(provided_keys):
             raise DagsterInvariantViolationError(
                 (
@@ -314,7 +326,7 @@ def get_tags(user_context_params, run_config, pipeline):
                 ).format(user_keys=user_keys, provided_keys=provided_keys)
             )
 
-        return merge_dicts(base_tags, run_config.tags)
+        return merge_dicts(base_tags, run_tags)
     else:
         return base_tags
 
@@ -331,27 +343,32 @@ def _ensure_gen(thing_or_gen):
 
 
 @contextmanager
-def as_ensured_single_gen(thing_or_gen):
+def user_code_context_manager(user_fn, error_cls):
     '''Wraps the output of a user provided function that may yield or return a value and
     returns a generator that asserts it only yields a single value.
     '''
-    gen = _ensure_gen(thing_or_gen)
+    check.callable_param(user_fn, 'user_fn')
+    check.subclass_param(error_cls, 'error_cls', DagsterUserCodeExecutionError)
 
-    try:
-        thing = next(gen)
-    except StopIteration:
-        check.failed('Must yield one item. You did not yield anything.')
+    with user_code_error_boundary(error_cls, 'Exception in user provided code'):
+        thing_or_gen = user_fn()
+        gen = _ensure_gen(thing_or_gen)
 
-    yield thing
+        try:
+            thing = next(gen)
+        except StopIteration:
+            check.failed('Must yield one item. You did not yield anything.')
 
-    stopped = False
+        yield thing
 
-    try:
-        next(gen)
-    except StopIteration:
-        stopped = True
+        stopped = False
 
-    check.invariant(stopped, 'Must yield one item. Yielded more than one item')
+        try:
+            next(gen)
+        except StopIteration:
+            stopped = True
+
+        check.invariant(stopped, 'Must yield one item. Yielded more than one item')
 
 
 def construct_run_storage(run_config, environment_config):
@@ -484,28 +501,48 @@ def _pipeline_execution_context_manager(
         run_id=run_config.run_id,
     )
 
-    ec_or_gen = context_definition.context_fn(init_context)
+    try:
+        with user_code_context_manager(
+            lambda: context_definition.context_fn(init_context), DagsterContextFunctionError
+        ) as execution_context:
+            check.inst(execution_context, ExecutionContext)
 
-    with as_ensured_single_gen(ec_or_gen) as execution_context:
-        check.inst(execution_context, ExecutionContext)
-
-        with _create_resources(
-            pipeline_def,
-            context_definition,
-            environment_config,
-            execution_context,
-            run_config.run_id,
-        ) as resources:
-
-            yield construct_pipeline_execution_context(
-                run_config,
-                execution_context,
+            with _create_resources(
                 pipeline_def,
-                resources,
+                context_definition,
                 environment_config,
-                run_storage,
-                intermediates_manager,
-            )
+                execution_context,
+                run_config.run_id,
+            ) as resources:
+
+                yield construct_pipeline_execution_context(
+                    run_config,
+                    execution_context,
+                    pipeline_def,
+                    resources,
+                    environment_config,
+                    run_storage,
+                    intermediates_manager,
+                )
+
+    except DagsterError as dagster_error:
+        user_facing_exc_info = (
+            # pylint does not know original_exc_info exists is is_user_code_error is true
+            # pylint: disable=no-member
+            dagster_error.original_exc_info
+            if dagster_error.is_user_code_error
+            else sys.exc_info()
+        )
+
+        if run_config.executor_config.throw_on_user_error:
+            six.reraise(*user_facing_exc_info)
+
+        error_info = serializable_error_info_from_exc_info(user_facing_exc_info)
+        yield DagsterEvent.pipeline_init_failure(
+            pipeline_name=pipeline_def.name,
+            failure_data=PipelineInitFailureData(error=error_info),
+            log=_create_context_free_log(run_config, pipeline_def),
+        )
 
 
 def construct_pipeline_execution_context(
@@ -554,6 +591,23 @@ def _create_loggers(run_config, execution_context):
         return execution_context.loggers
 
 
+def _create_context_free_log(run_config, pipeline_def):
+    '''In the event of pipeline initialization failure, we want to be able to log the failure
+    without a dependency on the ExecutionContext to initialize DagsterLog
+    '''
+    check.inst_param(run_config, 'run_config', RunConfig)
+    check.inst_param(pipeline_def, 'pipeline_def', PipelineDefinition)
+
+    # Use the default logger
+    loggers = [define_colored_console_logger('dagster')]
+    if run_config.event_callback:
+        loggers += [construct_event_logger(run_config.event_callback)]
+    elif run_config.loggers:
+        loggers += run_config.loggers
+
+    return DagsterLog(run_config.run_id, get_tags(None, run_config, pipeline_def), loggers)
+
+
 @contextmanager
 def _create_resources(pipeline_def, context_def, environment, execution_context, run_id):
     if not context_def.resources:
@@ -576,11 +630,26 @@ def _create_resources(pipeline_def, context_def, environment, execution_context,
     # can potentially have many resources so we need to use this abstraction.
     with ExitStack() as stack:
         for resource_name in context_def.resources.keys():
-            resource_obj_or_gen = get_resource_or_gen(
-                pipeline_def, context_def, resource_name, environment, run_id
+
+            resource_def = context_def.resources[resource_name]
+            # Need to do default values
+            resource_config = environment.context.resources.get(resource_name, {}).get('config')
+            init_context = InitResourceContext(
+                pipeline_def=pipeline_def,
+                resource_def=resource_def,
+                context_config=environment.context.config,
+                resource_config=resource_config,
+                run_id=run_id,
             )
 
-            resource_obj = stack.enter_context(as_ensured_single_gen(resource_obj_or_gen))
+            # capture loop vars as default params to lambda
+            user_fn = lambda resource_def=resource_def, init_context=init_context: resource_def.resource_fn(
+                init_context
+            )
+
+            resource_obj = stack.enter_context(
+                user_code_context_manager(user_fn, DagsterResourceFunctionError)
+            )
 
             resources[resource_name] = resource_obj
 
@@ -590,22 +659,17 @@ def _create_resources(pipeline_def, context_def, environment, execution_context,
         yield resources_type(**resources)
 
 
-def get_resource_or_gen(pipeline_def, context_definition, resource_name, environment, run_id):
-    resource_def = context_definition.resources[resource_name]
-    # Need to do default values
-    resource_config = environment.context.resources.get(resource_name, {}).get('config')
-    return resource_def.resource_fn(
-        InitResourceContext(
-            pipeline_def=pipeline_def,
-            resource_def=resource_def,
-            context_config=environment.context.config,
-            resource_config=resource_config,
-            run_id=run_id,
-        )
-    )
+def _execute_pipeline_iterator(context_or_failure_event):
+    # Due to use of context managers, if the user land code in context or resource init fails
+    # we can get either a pipeline_context or the failure event here.
+    if (
+        isinstance(context_or_failure_event, DagsterEvent)
+        and context_or_failure_event.event_type == DagsterEventType.PIPELINE_INIT_FAILURE
+    ):
+        yield context_or_failure_event
+        return
 
-
-def _execute_pipeline_iterator(pipeline_context):
+    pipeline_context = context_or_failure_event
     check.inst_param(pipeline_context, 'pipeline_context', SystemPipelineExecutionContext)
     yield DagsterEvent.pipeline_start(pipeline_context)
 

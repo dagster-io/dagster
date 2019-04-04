@@ -2,6 +2,8 @@ from collections import namedtuple
 from enum import Enum
 
 from dagster import check
+from dagster.utils.error import SerializableErrorInfo
+from dagster.core.log import DagsterLog
 
 
 class DagsterEventType(Enum):
@@ -11,6 +13,8 @@ class DagsterEventType(Enum):
     STEP_SUCCESS = 'STEP_SUCCESS'
     STEP_SKIPPED = 'STEP_SKIPPED'
     STEP_MATERIALIZATION = 'STEP_MATERIALIZATION'
+
+    PIPELINE_INIT_FAILURE = 'PIPELINE_INIT_FAILURE'
 
     PIPELINE_START = 'PIPELINE_START'
     PIPELINE_SUCCESS = 'PIPELINE_SUCCESS'
@@ -27,6 +31,12 @@ STEP_EVENTS = {
     DagsterEventType.STEP_SUCCESS,
     DagsterEventType.STEP_SKIPPED,
     DagsterEventType.STEP_MATERIALIZATION,
+}
+
+FAILURE_EVENTS = {
+    DagsterEventType.PIPELINE_INIT_FAILURE,
+    DagsterEventType.PIPELINE_FAILURE,
+    DagsterEventType.STEP_FAILURE,
 }
 
 
@@ -80,9 +90,7 @@ class DagsterEvent(
             _validate_event_specific_data(event_type, event_specific_data),
         )
 
-        log_fn = step_context.log.info
-        if event_type == DagsterEventType.STEP_FAILURE:
-            log_fn = step_context.log.error
+        log_fn = step_context.log.error if event_type in FAILURE_EVENTS else step_context.log.info
 
         log_fn(
             ('{event_type} for step {step_key}').format(
@@ -104,7 +112,14 @@ class DagsterEvent(
             check.inst_param(event_type, 'event_type', DagsterEventType).value,
             check.str_param(pipeline_name, 'pipeline_name'),
         )
-        pipeline_context.log.info(
+
+        log_fn = (
+            pipeline_context.log.error
+            if event_type in FAILURE_EVENTS
+            else pipeline_context.log.info
+        )
+
+        log_fn(
             ('{event_type} for pipeline {pipeline_name}').format(
                 event_type=event_type, pipeline_name=pipeline_name
             ),
@@ -161,6 +176,10 @@ class DagsterEvent(
     @property
     def is_step_failure(self):
         return self.event_type == DagsterEventType.STEP_FAILURE
+
+    @property
+    def is_failure(self):
+        return self.event_type in FAILURE_EVENTS
 
     @property
     def step_output_data(self):
@@ -249,6 +268,26 @@ class DagsterEvent(
     def pipeline_failure(pipeline_context):
         return DagsterEvent.from_pipeline(DagsterEventType.PIPELINE_FAILURE, pipeline_context)
 
+    @staticmethod
+    def pipeline_init_failure(pipeline_name, failure_data, log):
+        check.inst_param(failure_data, 'failure_data', PipelineInitFailureData)
+        check.inst_param(log, 'log', DagsterLog)
+        # this failure happens trying to bring up context so cant use from_pipeline
+
+        event = DagsterEvent(
+            event_type_value=DagsterEventType.PIPELINE_INIT_FAILURE.value,
+            pipeline_name=pipeline_name,
+            event_specific_data=failure_data,
+        )
+        log.error(
+            '{event_type} for pipeline {pipeline_name}'.format(
+                event_type=DagsterEventType.PIPELINE_INIT_FAILURE, pipeline_name=pipeline_name
+            ),
+            dagster_event=event,
+            pipeline_name=pipeline_name,
+        )
+        return event
+
 
 def get_step_output_event(events, step_key, output_name='result'):
     check.list_param(events, 'events', of_type=DagsterEvent)
@@ -270,3 +309,10 @@ class StepMaterializationData(namedtuple('_StepMaterializationData', 'name path'
 
 class PipelineProcessStartedData(namedtuple('_PipelineProcessStartedData', 'process_id')):
     pass
+
+
+class PipelineInitFailureData(namedtuple('_PipelineInitFailureData', 'error')):
+    def __new__(cls, error):
+        return super(PipelineInitFailureData, cls).__new__(
+            cls, error=check.inst_param(error, 'error', SerializableErrorInfo)
+        )
