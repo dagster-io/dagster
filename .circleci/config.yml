@@ -413,6 +413,8 @@ jobs:
           name: Install py36
           command: |
             pyenv install 3.6.3
+            sudo pip install -U 'pip<19.0' # see: https://github.com/pypa/pip/issues/6163
+            sudo pip install tox
       - run:
           name: Build Dockerfile
           command: |
@@ -604,6 +606,11 @@ jobs:
     steps:
       - checkout
       - run:
+          name: Install Dependencies
+          command: |
+            sudo pip install -U 'pip<19.0' # see: https://github.com/pypa/pip/issues/6163
+            sudo pip install tox
+      - run:
           name: Build Dockerfile
           command: |
             pushd python_modules/dagster-airflow/dagster_airflow_tests/test_project
@@ -642,6 +649,12 @@ jobs:
           name: Install py27-dev
           command: |
             sudo apt-get install python2.7-dev
+      - run:
+          name: Install dependencies
+          command: |
+            sudo pip install -U 'pip<19.0' # see: https://github.com/pypa/pip/issues/6163
+            sudo pip install tox
+
       - run:
           name: Build Dockerfile
           command: |
@@ -752,6 +765,8 @@ jobs:
           name: Install py36
           command: |
             pyenv install 3.6.3
+            sudo pip install -U 'pip<19.0' # see: https://github.com/pypa/pip/issues/6163
+            sudo pip install tox
       - run:
           name: Build Dockerfile
           command: |
@@ -853,6 +868,8 @@ jobs:
           name: Set up py35 (!?)
           command: |
             pyenv global 3.5.2
+            sudo pip install -U 'pip<19.0' # see: https://github.com/pypa/pip/issues/6163
+            sudo pip install tox
       - run:
           name: Run airline-demo Tests
           command: |
@@ -894,6 +911,8 @@ jobs:
           name: Install Dependencies
           command: |
             pyenv local 2.7.12
+            sudo pip install -U 'pip<19.0' # see: https://github.com/pypa/pip/issues/6163
+            sudo pip install tox
       - run:
           name: Setup AIRFLOW_HOME
           command: |
