@@ -145,5 +145,7 @@ def test_run_airflow_error_dag(scaffold_error_dag):
         ti = TaskInstance(task=task, execution_date=execution_date)
         context = ti.get_template_context()
         context['dag_run'] = namedtuple('_', 'run_id')(run_id=run_id)
-        with pytest.raises(AirflowException, match='Unusual error'):
+        with pytest.raises(
+            AirflowException, match='Error occured during step error_solid.transform'
+        ):
             task.execute(context)
