@@ -342,8 +342,23 @@ def _iterate_step_outputs_within_boundary(step_context, evaluated_inputs):
     check.inst_param(step_context, 'step_context', SystemStepExecutionContext)
     check.dict_param(evaluated_inputs, 'evaluated_inputs', key_type=str)
 
-    error_str = 'Error occured during step {key}'.format(key=step_context.step.key)
-    with user_code_error_boundary(DagsterExecutionStepExecutionError, error_str):
+    error_str = '''Error occured during the execution of step:
+    step key: "{key}"
+    solid instance: "{solid}"
+    solid definition: "{solid_def}"
+    '''.format(
+        key=step_context.step.key,
+        solid_def=step_context.solid_def.name,
+        solid=step_context.solid.name,
+    )
+
+    with user_code_error_boundary(
+        DagsterExecutionStepExecutionError,
+        error_str,
+        step_key=step_context.step.key,
+        solid_def_name=step_context.solid_def.name,
+        solid_name=step_context.solid.name,
+    ):
         gen = check.opt_generator(step_context.step.compute_fn(step_context, evaluated_inputs))
 
         if gen is not None:

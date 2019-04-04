@@ -87,6 +87,12 @@ class DagsterExecutionStepNotFoundError(DagsterUserError):
 class DagsterExecutionStepExecutionError(DagsterUserCodeExecutionError):
     '''Indicates an error occured during the body of execution step execution'''
 
+    def __init__(self, *args, **kwargs):
+        self.step_key = check.str_param(kwargs.pop('step_key'), 'step_key')
+        self.solid_name = check.str_param(kwargs.pop('solid_name'), 'solid_name')
+        self.solid_def_name = check.str_param(kwargs.pop('solid_def_name'), 'solid_def_name')
+        super(DagsterExecutionStepExecutionError, self).__init__(*args, **kwargs)
+
 
 class DagsterContextFunctionError(DagsterUserCodeExecutionError):
     '''Indicates an error occured during the body of context_fn in a PipelineContextDefinition'''
@@ -186,8 +192,7 @@ def user_code_error_boundary(error_cls, msg, **kwargs):
             # An exception has been thrown by user code and computation should cease
             # with the error reported further up the stack
             raise_from(
-                error_cls(msg.format(**kwargs), user_exception=e, original_exc_info=sys.exc_info()),
-                e,
+                error_cls(msg, user_exception=e, original_exc_info=sys.exc_info(), **kwargs), e
             )
 
 

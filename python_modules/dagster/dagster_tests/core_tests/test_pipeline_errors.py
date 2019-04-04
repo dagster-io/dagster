@@ -260,6 +260,15 @@ def test_user_error_propogation():
         execute_pipeline(pipeline_def)
 
     assert isinstance(e_info.value.__cause__, UserError)
+    # meta data on the exception
+    assert e_info.value.step_key == 'throws_user_error.transform'
+    assert e_info.value.solid_name == 'throws_user_error'
+    assert e_info.value.solid_def_name == 'throws_user_error'
+
+    # and in the message
+    assert 'step key: "throws_user_error.transform"' in str(e_info.value)
+    assert 'solid instance: "throws_user_error"' in str(e_info.value)
+    assert 'solid definition: "throws_user_error"' in str(e_info.value)
 
     # ensure that the inner exception shows up in the error message on python 2
     if sys.version_info[0] == 2:
