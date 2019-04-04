@@ -1,3 +1,4 @@
+# pylint: disable=redefined-outer-name
 import os
 
 from dagster.utils import script_relative_path
