@@ -87,15 +87,14 @@ workflows:
       - dagma-py27:
           context: coveralls
 
-      # https://github.com/dagster-io/dagster/issues/1124
-      # - airline-demo-py37:
-      #     context: coveralls
-      # - airline-demo-py36:
-      #     context: coveralls
-      # - airline-demo-py35:
-      #     context: coveralls
-      # - airline-demo-py27:
-      #     context: coveralls
+      - airline-demo-py37:
+          context: coveralls
+      - airline-demo-py36:
+          context: coveralls
+      - airline-demo-py35:
+          context: coveralls
+      - airline-demo-py27:
+          context: coveralls
 
       - event-pipeline-demo-py37:
           context: coveralls
@@ -215,7 +214,7 @@ workflows:
 jobs:
   format:
     docker:
-      - image: circleci/python:3.7.2
+      - image: dagster/cci-test:3.7.3
 
     working_directory: ~/repo
 
@@ -236,7 +235,7 @@ jobs:
 
   lint:
     docker:
-      - image: circleci/python:3.7.2
+      - image: dagster/cci-test:3.7.3
 
     working_directory: ~/repo
 
@@ -262,18 +261,13 @@ jobs:
 
   dagit-py36: &dagit-template
     docker:
-      - image: circleci/python:3.6.6
+      - image: dagster/cci-test:3.6.8
     environment:
       TOXENV: py36
     working_directory: ~/repo
 
     steps:
       - checkout
-
-      - run:
-          name: Install Dependencies
-          command: |
-            sudo pip install tox
 
       - run:
           name: Run Dagster Tests
@@ -293,18 +287,13 @@ jobs:
 
   dagster-py36: &dagster-template
     docker:
-      - image: circleci/python:3.6.6
+      - image: dagster/cci-test:3.6.8
     environment:
       TOXENV: py36
     working_directory: ~/repo
 
     steps:
       - checkout
-
-      - run:
-          name: Install Dependencies
-          command: |
-            sudo pip install tox
 
       - run:
           name: Run Dagster Tests
@@ -324,16 +313,12 @@ jobs:
 
   dagstermill-py36: &dagstermill-template
     docker:
-      - image: circleci/python:3.6.6
+      - image: dagster/cci-test:3.6.8
     environment:
       TOXENV: py36
     working_directory: ~/repo
     steps:
       - checkout
-      - run:
-          name: Install Dependencies
-          command: |
-            sudo pip install tox
       - run:
           name: Run Dagster Tests
           command: |
@@ -350,16 +335,12 @@ jobs:
 
   dagster-pandas-py36: &dagster-pandas-template
     docker:
-      - image: circleci/python:3.6.6
+      - image: dagster/cci-test:3.6.8
     environment:
       TOXENV: py36
     working_directory: ~/repo
     steps:
       - checkout
-      - run:
-          name: Install Dependencies
-          command: |
-            sudo pip install tox
       - run:
           name: Run Dagster Tests
           command: |
@@ -376,16 +357,12 @@ jobs:
 
   dagster-sqlalchemy-py36: &dagster-sqlalchemy-template
     docker:
-      - image: circleci/python:3.6.6
+      - image: dagster/cci-test:3.6.8
     environment:
       TOXENV: py36
     working_directory: ~/repo
     steps:
       - checkout
-      - run:
-          name: Install Dependencies
-          command: |
-            sudo pip install tox
       - run:
           name: Run Dagster Tests
           command: |
@@ -402,16 +379,12 @@ jobs:
 
   dagster-ge-py36: &dagster-ge-template
     docker:
-      - image: circleci/python:3.6.6
+      - image: dagster/cci-test:3.6.8
     environment:
       TOXENV: py36
     working_directory: ~/repo
     steps:
       - checkout
-      - run:
-          name: Install Dependencies
-          command: |
-            sudo pip install tox
       - run:
           name: Run Dagster Tests
           command: |
@@ -440,17 +413,14 @@ jobs:
           name: Install py36
           command: |
             pyenv install 3.6.3
+            sudo pip install -U 'pip<19.0' # see: https://github.com/pypa/pip/issues/6163
+            sudo pip install tox
       - run:
           name: Build Dockerfile
           command: |
             pushd python_modules/dagster-airflow/dagster_airflow_tests/test_project
             . build.sh
             popd
-      - run:
-          name: Install Dependencies
-          command: |
-            sudo pip install -U 'pip<19.0' # see: https://github.com/pypa/pip/issues/6163
-            sudo pip install tox
       - run:
           name: Setup AIRFLOW_HOME
           command: |
@@ -472,16 +442,12 @@ jobs:
 
   dagma-py36: &dagma-template
     docker:
-      - image: circleci/python:3.6.6
+      - image: dagster/cci-test:3.6.8
     environment:
       TOXENV: py36
     working_directory: ~/repo
     steps:
       - checkout
-      - run:
-          name: Install Dependencies
-          command: |
-            sudo pip install tox
       - run:
           name: Run Dagster Tests
           command: |
@@ -499,126 +465,126 @@ jobs:
   dagit-py37:
     <<: *dagit-template
     docker:
-      - image: circleci/python:3.7.2
+      - image: dagster/cci-test:3.7.3
     environment:
       TOXENV: py37
 
   dagit-py35:
     <<: *dagit-template
     docker:
-      - image: circleci/python:3.5.6
+      - image: dagster/cci-test:3.5.7
     environment:
       TOXENV: py35
 
   dagit-py27:
     <<: *dagit-template
     docker:
-      - image: circleci/python:2.7.15
+      - image: dagster/cci-test:2.7.16
     environment:
       TOXENV: py27
 
   dagster-py37:
     <<: *dagster-template
     docker:
-      - image: circleci/python:3.7.2
+      - image: dagster/cci-test:3.7.3
     environment:
       TOXENV: py37
 
   dagster-py35:
     <<: *dagster-template
     docker:
-      - image: circleci/python:3.5.6
+      - image: dagster/cci-test:3.5.7
     environment:
       TOXENV: py35
 
   dagster-py27:
     <<: *dagster-template
     docker:
-      - image: circleci/python:2.7.15
+      - image: dagster/cci-test:2.7.16
     environment:
       TOXENV: py27
 
   dagstermill-py37:
     <<: *dagstermill-template
     docker:
-      - image: circleci/python:3.7.2
+      - image: dagster/cci-test:3.7.3
     environment:
       TOXENV: py37
 
   dagstermill-py35:
     <<: *dagstermill-template
     docker:
-      - image: circleci/python:3.5.6
+      - image: dagster/cci-test:3.5.7
     environment:
       TOXENV: py35
 
   dagstermill-py27:
     <<: *dagstermill-template
     docker:
-      - image: circleci/python:2.7.15
+      - image: dagster/cci-test:2.7.16
     environment:
       TOXENV: py27
 
   dagster-pandas-py37:
     <<: *dagster-pandas-template
     docker:
-      - image: circleci/python:3.7.2
+      - image: dagster/cci-test:3.7.3
     environment:
       TOXENV: py37
 
   dagster-pandas-py35:
     <<: *dagster-pandas-template
     docker:
-      - image: circleci/python:3.5.6
+      - image: dagster/cci-test:3.5.7
     environment:
       TOXENV: py35
 
   dagster-pandas-py27:
     <<: *dagster-pandas-template
     docker:
-      - image: circleci/python:2.7.15
+      - image: dagster/cci-test:2.7.16
     environment:
       TOXENV: py27
 
   dagster-sqlalchemy-py37:
     <<: *dagster-sqlalchemy-template
     docker:
-      - image: circleci/python:3.7.2
+      - image: dagster/cci-test:3.7.3
     environment:
       TOXENV: py37
 
   dagster-sqlalchemy-py35:
     <<: *dagster-sqlalchemy-template
     docker:
-      - image: circleci/python:3.5.6
+      - image: dagster/cci-test:3.5.7
     environment:
       TOXENV: py35
 
   dagster-sqlalchemy-py27:
     <<: *dagster-sqlalchemy-template
     docker:
-      - image: circleci/python:2.7.15
+      - image: dagster/cci-test:2.7.16
     environment:
       TOXENV: py27
 
   dagster-ge-py37:
     <<: *dagster-ge-template
     docker:
-      - image: circleci/python:3.7.2
+      - image: dagster/cci-test:3.7.3
     environment:
       TOXENV: py37
 
   dagster-ge-py35:
     <<: *dagster-ge-template
     docker:
-      - image: circleci/python:3.5.6
+      - image: dagster/cci-test:3.5.7
     environment:
       TOXENV: py35
 
   dagster-ge-py27:
     <<: *dagster-ge-template
     docker:
-      - image: circleci/python:2.7.15
+      - image: dagster/cci-test:2.7.16
     environment:
       TOXENV: py27
 
@@ -640,16 +606,16 @@ jobs:
     steps:
       - checkout
       - run:
+          name: Install Dependencies
+          command: |
+            sudo pip install -U 'pip<19.0' # see: https://github.com/pypa/pip/issues/6163
+            sudo pip install tox
+      - run:
           name: Build Dockerfile
           command: |
             pushd python_modules/dagster-airflow/dagster_airflow_tests/test_project
             . build.sh
             popd
-      - run:
-          name: Install Dependencies
-          command: |
-            sudo pip install -U 'pip<19.0' # see: https://github.com/pypa/pip/issues/6163
-            sudo pip install tox
       - run:
           name: Setup AIRFLOW_HOME
           command: |
@@ -684,16 +650,17 @@ jobs:
           command: |
             sudo apt-get install python2.7-dev
       - run:
+          name: Install dependencies
+          command: |
+            sudo pip install -U 'pip<19.0' # see: https://github.com/pypa/pip/issues/6163
+            sudo pip install tox
+
+      - run:
           name: Build Dockerfile
           command: |
             pushd python_modules/dagster-airflow/dagster_airflow_tests/test_project
             . build.sh
             popd
-      - run:
-          name: Install Dependencies
-          command: |
-            sudo pip install -U 'pip<19.0' # see: https://github.com/pypa/pip/issues/6163
-            sudo pip install tox
       - run:
           name: Setup AIRFLOW_HOME
           command: |
@@ -716,21 +683,21 @@ jobs:
   dagma-py37:
     <<: *dagma-template
     docker:
-      - image: circleci/python:3.7.2
+      - image: dagster/cci-test:3.7.3
     environment:
       TOXENV: py37
 
   dagma-py35:
     <<: *dagma-template
     docker:
-      - image: circleci/python:3.5.6
+      - image: dagster/cci-test:3.5.7
     environment:
       TOXENV: py35
 
   dagma-py27:
     <<: *dagma-template
     docker:
-      - image: circleci/python:2.7.15
+      - image: dagster/cci-test:2.7.16
     environment:
       TOXENV: py27
 
@@ -798,6 +765,8 @@ jobs:
           name: Install py36
           command: |
             pyenv install 3.6.3
+            sudo pip install -U 'pip<19.0' # see: https://github.com/pypa/pip/issues/6163
+            sudo pip install tox
       - run:
           name: Build Dockerfile
           command: |
@@ -811,9 +780,9 @@ jobs:
       - run:
           name: Install Dependencies
           command: |
-            sudo pip install -U 'pip<19.0' # see: https://github.com/pypa/pip/issues/6163
-            sudo pip install tox tox-pyenv
             pyenv local 3.6.3
+            sudo apt-get update
+            sudo apt-get install libpq-dev
       - run:
           name: Setup AIRFLOW_HOME
           command: |
@@ -840,7 +809,7 @@ jobs:
   airline-demo-py37:
     docker:
       # FIXME: https://github.com/dagster-io/dagster/issues/521
-      - image: schrockn/cci-test:3.7.2
+      - image: dagster/cci-test:3.7.3
         auth:
           username: $DOCKERHUB_USERNAME
           password: $DOCKERHUB_PASSWORD
@@ -855,10 +824,6 @@ jobs:
       TOXENV: py37
     steps:
       - checkout
-      - run:
-          name: Install Dependencies
-          command: |
-            sudo pip install tox
       - run:
           name: Run airline-demo Tests
           command: |
@@ -893,11 +858,6 @@ jobs:
           command: |
             mkdir -p /home/circleci/airflow
       - run:
-          name: Install Dependencies
-          command: |
-            sudo pip install -U 'pip<19.0' # see: https://github.com/pypa/pip/issues/6163
-            sudo pip install tox
-      - run:
           name: Setup AIRFLOW_HOME
           command: |
             mkdir -p /home/circleci/airflow
@@ -910,6 +870,10 @@ jobs:
           name: Set up py35 (!?)
           command: |
             pyenv global 3.5.2
+            sudo pip install -U 'pip<19.0' # see: https://github.com/pypa/pip/issues/6163
+            sudo pip install tox
+            sudo apt-get update
+            sudo apt-get install libpq-dev
       - run:
           name: Run airline-demo Tests
           command: |
@@ -936,7 +900,7 @@ jobs:
       - run:
           name: Install py27-dev
           command: |
-            sudo apt-get install python2.7-dev
+            pyenv install 2.7.14
       - run:
           name: Build Dockerfile
           command: |
@@ -950,9 +914,11 @@ jobs:
       - run:
           name: Install Dependencies
           command: |
+            pyenv local 2.7.14  # avoiding an annoying circle-specific upgrade step
             sudo pip install -U 'pip<19.0' # see: https://github.com/pypa/pip/issues/6163
             sudo pip install tox tox-pyenv
-            pyenv local 2.7.12
+            sudo apt-get update
+            sudo apt-get install libpq-dev
       - run:
           name: Setup AIRFLOW_HOME
           command: |
@@ -976,7 +942,7 @@ jobs:
 
   event-pipeline-demo-py36: &event-pipeline-demo-template
     docker:
-      - image: dagster/cci-test:3.6
+      - image: dagster/cci-test:3.6.8
     environment:
       TOXENV: py36
       SLUGIFY_USES_TEXT_UNIDECODE: "yes"
@@ -1003,10 +969,6 @@ jobs:
             - "~/.sbt"
             - "~/.m2"
       - run:
-          name: Install Dependencies
-          command: |
-            sudo pip install tox
-      - run:
           name: Run Dagster Tests
           command: |
             pushd python_modules/event-pipeline-demo
@@ -1023,7 +985,7 @@ jobs:
   event-pipeline-demo-py37:
     <<: *event-pipeline-demo-template
     docker:
-      - image: dagster/cci-test:3.7.2
+      - image: dagster/cci-test:3.7.3
     environment:
       TOXENV: py37
       SLUGIFY_USES_TEXT_UNIDECODE: "yes"
@@ -1031,7 +993,7 @@ jobs:
   event-pipeline-demo-py35:
     <<: *event-pipeline-demo-template
     docker:
-      - image: dagster/cci-test:3.5
+      - image: dagster/cci-test:3.5.7
     environment:
       TOXENV: py35
       SLUGIFY_USES_TEXT_UNIDECODE: "yes"
@@ -1039,25 +1001,20 @@ jobs:
   event-pipeline-demo-py27:
     <<: *event-pipeline-demo-template
     docker:
-      - image: dagster/cci-test:2.7
+      - image: dagster/cci-test:2.7.16
     environment:
       TOXENV: py27
       SLUGIFY_USES_TEXT_UNIDECODE: "yes"
 
   dagster-framework-aws-py36: &dagster-framework-aws-template
     docker:
-      - image: circleci/python:3.6.6
+      - image: dagster/cci-test:3.6.8
     environment:
       TOXENV: py36
     working_directory: ~/repo
 
     steps:
       - checkout
-
-      - run:
-          name: Install Dependencies
-          command: |
-            sudo pip install tox
 
       - run:
           name: Run Dagster Tests
@@ -1078,38 +1035,33 @@ jobs:
   dagster-framework-aws-py37:
     <<: *dagster-framework-aws-template
     docker:
-      - image: circleci/python:3.7.2
+      - image: dagster/cci-test:3.7.3
     environment:
       TOXENV: py37
 
   dagster-framework-aws-py35:
     <<: *dagster-framework-aws-template
     docker:
-      - image: circleci/python:3.5.6
+      - image: dagster/cci-test:3.5.7
     environment:
       TOXENV: py35
 
   dagster-framework-aws-py27:
     <<: *dagster-framework-aws-template
     docker:
-      - image: circleci/python:2.7.15
+      - image: dagster/cci-test:2.7.16
     environment:
       TOXENV: py27
 
   dagster-framework-snowflake-py36: &dagster-framework-snowflake-template
     docker:
-      - image: circleci/python:3.6.6
+      - image: dagster/cci-test:3.6.8
     environment:
       TOXENV: py36
     working_directory: ~/repo
 
     steps:
       - checkout
-
-      - run:
-          name: Install Dependencies
-          command: |
-            sudo pip install tox
 
       - run:
           name: Run Dagster Tests
@@ -1130,39 +1082,33 @@ jobs:
   dagster-framework-snowflake-py37:
     <<: *dagster-framework-snowflake-template
     docker:
-      - image: circleci/python:3.7.2
+      - image: dagster/cci-test:3.7.3
     environment:
       TOXENV: py37
 
   dagster-framework-snowflake-py35:
     <<: *dagster-framework-snowflake-template
     docker:
-      - image: circleci/python:3.5.6
+      - image: dagster/cci-test:3.5.7
     environment:
       TOXENV: py35
 
   dagster-framework-snowflake-py27:
     <<: *dagster-framework-snowflake-template
     docker:
-      - image: circleci/python:2.7.15
+      - image: dagster/cci-test:2.7.16
     environment:
       TOXENV: py27
 
   dagster-framework-spark-py36: &dagster-framework-spark-template
     docker:
-      - image: circleci/python:3.6.6
+      - image: dagster/cci-test:3.6.8
     environment:
       TOXENV: py36
     working_directory: ~/repo
 
     steps:
       - checkout
-
-      - run:
-          name: Install Dependencies
-          command: |
-            sudo pip install tox
-
       - run:
           name: Run Dagster Tests
           command: |
@@ -1182,27 +1128,27 @@ jobs:
   dagster-framework-spark-py37:
     <<: *dagster-framework-spark-template
     docker:
-      - image: circleci/python:3.7.2
+      - image: dagster/cci-test:3.7.3
     environment:
       TOXENV: py37
 
   dagster-framework-spark-py35:
     <<: *dagster-framework-spark-template
     docker:
-      - image: circleci/python:3.5.6
+      - image: dagster/cci-test:3.5.7
     environment:
       TOXENV: py35
 
   dagster-framework-spark-py27:
     <<: *dagster-framework-spark-template
     docker:
-      - image: circleci/python:2.7.15
+      - image: dagster/cci-test:2.7.16
     environment:
       TOXENV: py27
 
   coverage:
     docker:
-      - image: circleci/python:3.6.6
+      - image: dagster/cci-test:3.6.8
     working_directory: ~/repo
     steps:
       - checkout
@@ -1222,7 +1168,7 @@ jobs:
 
   nightly:
     docker:
-      - image: dagster/cci-test:3.6.6
+      - image: dagster/cci-test:3.6.8
 
     working_directory: ~/repo
 
