@@ -104,9 +104,9 @@ if __name__ == '__main__':
         {
             'context': {
                 'errorable_context': {
-                    'config': {'throw_on_context_init': True},
+                    'config': {'throw_on_context_init': False},
                     'resources': {
-                        'errorable_resource': {'config': {'throw_on_resource_init': False}}
+                        'errorable_resource': {'config': {'throw_on_resource_init': True}}
                     },
                 }
             },
@@ -116,6 +116,6 @@ if __name__ == '__main__':
                 'end': {'config': {'throw_in_solid': False}},
             },
         },
-        # RunConfig.nonthrowing_in_process(),
+        RunConfig.nonthrowing_in_process(),
     )
     print('Pipeline Success: ', result.success)

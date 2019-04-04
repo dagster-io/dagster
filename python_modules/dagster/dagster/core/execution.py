@@ -634,21 +634,8 @@ def _create_resources(pipeline_def, context_def, environment, execution_context,
     # can potentially have many resources so we need to use this abstraction.
     with ExitStack() as stack:
         for resource_name in context_def.resources.keys():
-
-            resource_def = context_def.resources[resource_name]
-            # Need to do default values - issue #1120
-            resource_config = environment.context.resources.get(resource_name, {}).get('config')
-            init_context = InitResourceContext(
-                pipeline_def=pipeline_def,
-                resource_def=resource_def,
-                context_config=environment.context.config,
-                resource_config=resource_config,
-                run_id=run_id,
-            )
-
-            # capture loop vars as default params to lambda
-            user_fn = lambda resource_def=resource_def, init_context=init_context: resource_def.resource_fn(
-                init_context
+            user_fn = _create_resource_fn_lambda(
+                pipeline_def, context_def, resource_name, environment, run_id
             )
 
             resource_obj = stack.enter_context(
@@ -667,6 +654,23 @@ def _create_resources(pipeline_def, context_def, environment, execution_context,
 
         resources_type = pipeline_def.context_definitions[context_name].resources_type
         yield resources_type(**resources)
+
+
+def _create_resource_fn_lambda(
+    pipeline_def, context_definition, resource_name, environment, run_id
+):
+    resource_def = context_definition.resources[resource_name]
+    # Need to do default values
+    resource_config = environment.context.resources.get(resource_name, {}).get('config')
+    return lambda: resource_def.resource_fn(
+        InitResourceContext(
+            pipeline_def=pipeline_def,
+            resource_def=resource_def,
+            context_config=environment.context.config,
+            resource_config=resource_config,
+            run_id=run_id,
+        )
+    )
 
 
 def _execute_pipeline_iterator(context_or_failure_event):
