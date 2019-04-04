@@ -27,6 +27,7 @@ class TestInMemoryAirflow_0IngestExecution:
     def test_airflow_run_ingest_pipeline(self, in_memory_airflow_run, clean_results_dir):
         pass
 
+
 @slow
 @airflow
 class TestInMemoryAirflow_1WarehouseExecution:
