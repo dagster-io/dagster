@@ -29,7 +29,10 @@ interface ILogsScrollingTableSizedState {
 }
 
 function textForLog(log: LogsScrollingTableMessageFragment) {
-  if (log.__typename === "ExecutionStepFailureEvent") {
+  if (
+    log.__typename === "ExecutionStepFailureEvent" ||
+    log.__typename === "PipelineInitFailureEvent"
+  ) {
     return `${log.message}\n${log.error.message}\n${log.error.stack}`;
   }
   return log.message;
@@ -46,6 +49,12 @@ export default class LogsScrollingTable extends React.Component<
           message
           timestamp
           level
+        }
+        ... on PipelineInitFailureEvent {
+          error {
+            stack
+            message
+          }
         }
         ... on ExecutionStepFailureEvent {
           message
