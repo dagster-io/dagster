@@ -29,9 +29,9 @@ necessary to make changes to the static file.
 
 from airflow import DAG
 try:
-    from airflow.operators.dagster_plugin import DagsterOperator
+    from airflow.operators.dagster_plugin import DagsterDockerOperator
 except (ModuleNotFoundError, ImportError):
-    from dagster_airflow import DagsterOperator
+    from dagster_airflow import DagsterDockerOperator
 
 
 CONFIG = '''
@@ -139,7 +139,7 @@ def make_dag(
 
     tasks = []
 
-    eastbound_delays_task = DagsterOperator(
+    eastbound_delays_task = DagsterDockerOperator(
         step='eastbound_delays',
         config=CONFIG,
         dag=dag,
@@ -152,7 +152,7 @@ def make_dag(
     )
     tasks.append(eastbound_delays_task)
 
-    q2_sfo_outbound_flights_task = DagsterOperator(
+    q2_sfo_outbound_flights_task = DagsterDockerOperator(
         step='q2_sfo_outbound_flights',
         config=CONFIG,
         dag=dag,
@@ -165,7 +165,7 @@ def make_dag(
     )
     tasks.append(q2_sfo_outbound_flights_task)
 
-    tickets_with_destination_task = DagsterOperator(
+    tickets_with_destination_task = DagsterDockerOperator(
         step='tickets_with_destination',
         config=CONFIG,
         dag=dag,
@@ -178,7 +178,7 @@ def make_dag(
     )
     tasks.append(tickets_with_destination_task)
 
-    westbound_delays_task = DagsterOperator(
+    westbound_delays_task = DagsterDockerOperator(
         step='westbound_delays',
         config=CONFIG,
         dag=dag,
@@ -191,7 +191,7 @@ def make_dag(
     )
     tasks.append(westbound_delays_task)
 
-    average_sfo_outbound_avg_delays_by_destination_task = DagsterOperator(
+    average_sfo_outbound_avg_delays_by_destination_task = DagsterDockerOperator(
         step='average_sfo_outbound_avg_delays_by_destination',
         config=CONFIG,
         dag=dag,
@@ -204,7 +204,7 @@ def make_dag(
     )
     tasks.append(average_sfo_outbound_avg_delays_by_destination_task)
 
-    delays_by_geography_task = DagsterOperator(
+    delays_by_geography_task = DagsterDockerOperator(
         step='delays_by_geography',
         config=CONFIG,
         dag=dag,
@@ -217,7 +217,7 @@ def make_dag(
     )
     tasks.append(delays_by_geography_task)
 
-    delays_vs_fares_task = DagsterOperator(
+    delays_vs_fares_task = DagsterDockerOperator(
         step='delays_vs_fares',
         config=CONFIG,
         dag=dag,
@@ -230,7 +230,7 @@ def make_dag(
     )
     tasks.append(delays_vs_fares_task)
 
-    sfo_delays_by_destination_task = DagsterOperator(
+    sfo_delays_by_destination_task = DagsterDockerOperator(
         step='sfo_delays_by_destination',
         config=CONFIG,
         dag=dag,
@@ -243,7 +243,7 @@ def make_dag(
     )
     tasks.append(sfo_delays_by_destination_task)
 
-    upload_delays_by_geography_pdf_plots_task = DagsterOperator(
+    upload_delays_by_geography_pdf_plots_task = DagsterDockerOperator(
         step='upload_delays_by_geography_pdf_plots',
         config=CONFIG,
         dag=dag,
@@ -256,7 +256,7 @@ def make_dag(
     )
     tasks.append(upload_delays_by_geography_pdf_plots_task)
 
-    fares_vs_delays_task = DagsterOperator(
+    fares_vs_delays_task = DagsterDockerOperator(
         step='fares_vs_delays',
         config=CONFIG,
         dag=dag,
@@ -269,7 +269,7 @@ def make_dag(
     )
     tasks.append(fares_vs_delays_task)
 
-    upload_outbound_avg_delay_pdf_plots_task = DagsterOperator(
+    upload_outbound_avg_delay_pdf_plots_task = DagsterDockerOperator(
         step='upload_outbound_avg_delay_pdf_plots',
         config=CONFIG,
         dag=dag,
@@ -282,7 +282,7 @@ def make_dag(
     )
     tasks.append(upload_outbound_avg_delay_pdf_plots_task)
 
-    upload_delays_vs_fares_pdf_plots_task = DagsterOperator(
+    upload_delays_vs_fares_pdf_plots_task = DagsterDockerOperator(
         step='upload_delays_vs_fares_pdf_plots',
         config=CONFIG,
         dag=dag,

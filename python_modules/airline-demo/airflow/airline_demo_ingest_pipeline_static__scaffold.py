@@ -84,9 +84,9 @@ necessary to make changes to the static file.
 
 from airflow import DAG
 try:
-    from airflow.operators.dagster_plugin import DagsterOperator
+    from airflow.operators.dagster_plugin import DagsterDockerOperator
 except (ModuleNotFoundError, ImportError):
-    from dagster_airflow import DagsterOperator
+    from dagster_airflow import DagsterDockerOperator
 
 
 CONFIG = '''
@@ -433,7 +433,7 @@ def make_dag(
 
     tasks = []
 
-    download_april_on_time_data_task = DagsterOperator(
+    download_april_on_time_data_task = DagsterDockerOperator(
         step='download_april_on_time_data',
         config=CONFIG,
         dag=dag,
@@ -446,7 +446,7 @@ def make_dag(
     )
     tasks.append(download_april_on_time_data_task)
 
-    download_june_on_time_data_task = DagsterOperator(
+    download_june_on_time_data_task = DagsterDockerOperator(
         step='download_june_on_time_data',
         config=CONFIG,
         dag=dag,
@@ -459,7 +459,7 @@ def make_dag(
     )
     tasks.append(download_june_on_time_data_task)
 
-    download_master_cord_data_task = DagsterOperator(
+    download_master_cord_data_task = DagsterDockerOperator(
         step='download_master_cord_data',
         config=CONFIG,
         dag=dag,
@@ -472,7 +472,7 @@ def make_dag(
     )
     tasks.append(download_master_cord_data_task)
 
-    download_may_on_time_data_task = DagsterOperator(
+    download_may_on_time_data_task = DagsterDockerOperator(
         step='download_may_on_time_data',
         config=CONFIG,
         dag=dag,
@@ -485,7 +485,7 @@ def make_dag(
     )
     tasks.append(download_may_on_time_data_task)
 
-    download_q2_coupon_data_task = DagsterOperator(
+    download_q2_coupon_data_task = DagsterDockerOperator(
         step='download_q2_coupon_data',
         config=CONFIG,
         dag=dag,
@@ -498,7 +498,7 @@ def make_dag(
     )
     tasks.append(download_q2_coupon_data_task)
 
-    download_q2_market_data_task = DagsterOperator(
+    download_q2_market_data_task = DagsterDockerOperator(
         step='download_q2_market_data',
         config=CONFIG,
         dag=dag,
@@ -511,7 +511,7 @@ def make_dag(
     )
     tasks.append(download_q2_market_data_task)
 
-    download_q2_sfo_weather_task = DagsterOperator(
+    download_q2_sfo_weather_task = DagsterDockerOperator(
         step='download_q2_sfo_weather',
         config=CONFIG,
         dag=dag,
@@ -524,7 +524,7 @@ def make_dag(
     )
     tasks.append(download_q2_sfo_weather_task)
 
-    download_q2_ticket_data_task = DagsterOperator(
+    download_q2_ticket_data_task = DagsterDockerOperator(
         step='download_q2_ticket_data',
         config=CONFIG,
         dag=dag,
@@ -537,7 +537,7 @@ def make_dag(
     )
     tasks.append(download_q2_ticket_data_task)
 
-    ingest_q2_sfo_weather_task = DagsterOperator(
+    ingest_q2_sfo_weather_task = DagsterDockerOperator(
         step='ingest_q2_sfo_weather',
         config=CONFIG,
         dag=dag,
@@ -550,7 +550,7 @@ def make_dag(
     )
     tasks.append(ingest_q2_sfo_weather_task)
 
-    unzip_april_on_time_data_task = DagsterOperator(
+    unzip_april_on_time_data_task = DagsterDockerOperator(
         step='unzip_april_on_time_data',
         config=CONFIG,
         dag=dag,
@@ -563,7 +563,7 @@ def make_dag(
     )
     tasks.append(unzip_april_on_time_data_task)
 
-    unzip_june_on_time_data_task = DagsterOperator(
+    unzip_june_on_time_data_task = DagsterDockerOperator(
         step='unzip_june_on_time_data',
         config=CONFIG,
         dag=dag,
@@ -576,7 +576,7 @@ def make_dag(
     )
     tasks.append(unzip_june_on_time_data_task)
 
-    unzip_master_cord_data_task = DagsterOperator(
+    unzip_master_cord_data_task = DagsterDockerOperator(
         step='unzip_master_cord_data',
         config=CONFIG,
         dag=dag,
@@ -589,7 +589,7 @@ def make_dag(
     )
     tasks.append(unzip_master_cord_data_task)
 
-    unzip_may_on_time_data_task = DagsterOperator(
+    unzip_may_on_time_data_task = DagsterDockerOperator(
         step='unzip_may_on_time_data',
         config=CONFIG,
         dag=dag,
@@ -602,7 +602,7 @@ def make_dag(
     )
     tasks.append(unzip_may_on_time_data_task)
 
-    unzip_q2_coupon_data_task = DagsterOperator(
+    unzip_q2_coupon_data_task = DagsterDockerOperator(
         step='unzip_q2_coupon_data',
         config=CONFIG,
         dag=dag,
@@ -615,7 +615,7 @@ def make_dag(
     )
     tasks.append(unzip_q2_coupon_data_task)
 
-    unzip_q2_market_data_task = DagsterOperator(
+    unzip_q2_market_data_task = DagsterDockerOperator(
         step='unzip_q2_market_data',
         config=CONFIG,
         dag=dag,
@@ -628,7 +628,7 @@ def make_dag(
     )
     tasks.append(unzip_q2_market_data_task)
 
-    unzip_q2_ticket_data_task = DagsterOperator(
+    unzip_q2_ticket_data_task = DagsterDockerOperator(
         step='unzip_q2_ticket_data',
         config=CONFIG,
         dag=dag,
@@ -641,7 +641,7 @@ def make_dag(
     )
     tasks.append(unzip_q2_ticket_data_task)
 
-    ingest_april_on_time_data_task = DagsterOperator(
+    ingest_april_on_time_data_task = DagsterDockerOperator(
         step='ingest_april_on_time_data',
         config=CONFIG,
         dag=dag,
@@ -654,7 +654,7 @@ def make_dag(
     )
     tasks.append(ingest_april_on_time_data_task)
 
-    ingest_june_on_time_data_task = DagsterOperator(
+    ingest_june_on_time_data_task = DagsterDockerOperator(
         step='ingest_june_on_time_data',
         config=CONFIG,
         dag=dag,
@@ -667,7 +667,7 @@ def make_dag(
     )
     tasks.append(ingest_june_on_time_data_task)
 
-    ingest_master_cord_data_task = DagsterOperator(
+    ingest_master_cord_data_task = DagsterDockerOperator(
         step='ingest_master_cord_data',
         config=CONFIG,
         dag=dag,
@@ -680,7 +680,7 @@ def make_dag(
     )
     tasks.append(ingest_master_cord_data_task)
 
-    ingest_may_on_time_data_task = DagsterOperator(
+    ingest_may_on_time_data_task = DagsterDockerOperator(
         step='ingest_may_on_time_data',
         config=CONFIG,
         dag=dag,
@@ -693,7 +693,7 @@ def make_dag(
     )
     tasks.append(ingest_may_on_time_data_task)
 
-    ingest_q2_coupon_data_task = DagsterOperator(
+    ingest_q2_coupon_data_task = DagsterDockerOperator(
         step='ingest_q2_coupon_data',
         config=CONFIG,
         dag=dag,
@@ -706,7 +706,7 @@ def make_dag(
     )
     tasks.append(ingest_q2_coupon_data_task)
 
-    ingest_q2_market_data_task = DagsterOperator(
+    ingest_q2_market_data_task = DagsterDockerOperator(
         step='ingest_q2_market_data',
         config=CONFIG,
         dag=dag,
@@ -719,7 +719,7 @@ def make_dag(
     )
     tasks.append(ingest_q2_market_data_task)
 
-    ingest_q2_ticket_data_task = DagsterOperator(
+    ingest_q2_ticket_data_task = DagsterDockerOperator(
         step='ingest_q2_ticket_data',
         config=CONFIG,
         dag=dag,
@@ -732,7 +732,7 @@ def make_dag(
     )
     tasks.append(ingest_q2_ticket_data_task)
 
-    normalize_q2_weather_na_values_task = DagsterOperator(
+    normalize_q2_weather_na_values_task = DagsterDockerOperator(
         step='normalize_q2_weather_na_values',
         config=CONFIG,
         dag=dag,
@@ -745,7 +745,7 @@ def make_dag(
     )
     tasks.append(normalize_q2_weather_na_values_task)
 
-    canonicalize_q2_sfo_weather_task = DagsterOperator(
+    canonicalize_q2_sfo_weather_task = DagsterDockerOperator(
         step='canonicalize_q2_sfo_weather',
         config=CONFIG,
         dag=dag,
@@ -758,7 +758,7 @@ def make_dag(
     )
     tasks.append(canonicalize_q2_sfo_weather_task)
 
-    combine_april_may_on_time_data_task = DagsterOperator(
+    combine_april_may_on_time_data_task = DagsterDockerOperator(
         step='combine_april_may_on_time_data',
         config=CONFIG,
         dag=dag,
@@ -771,7 +771,7 @@ def make_dag(
     )
     tasks.append(combine_april_may_on_time_data_task)
 
-    prefix_dest_cord_data_task = DagsterOperator(
+    prefix_dest_cord_data_task = DagsterDockerOperator(
         step='prefix_dest_cord_data',
         config=CONFIG,
         dag=dag,
@@ -784,7 +784,7 @@ def make_dag(
     )
     tasks.append(prefix_dest_cord_data_task)
 
-    prefix_origin_cord_data_task = DagsterOperator(
+    prefix_origin_cord_data_task = DagsterDockerOperator(
         step='prefix_origin_cord_data',
         config=CONFIG,
         dag=dag,
@@ -797,7 +797,7 @@ def make_dag(
     )
     tasks.append(prefix_origin_cord_data_task)
 
-    subsample_q2_coupon_data_task = DagsterOperator(
+    subsample_q2_coupon_data_task = DagsterDockerOperator(
         step='subsample_q2_coupon_data',
         config=CONFIG,
         dag=dag,
@@ -810,7 +810,7 @@ def make_dag(
     )
     tasks.append(subsample_q2_coupon_data_task)
 
-    subsample_q2_market_data_task = DagsterOperator(
+    subsample_q2_market_data_task = DagsterDockerOperator(
         step='subsample_q2_market_data',
         config=CONFIG,
         dag=dag,
@@ -823,7 +823,7 @@ def make_dag(
     )
     tasks.append(subsample_q2_market_data_task)
 
-    subsample_q2_ticket_data_task = DagsterOperator(
+    subsample_q2_ticket_data_task = DagsterDockerOperator(
         step='subsample_q2_ticket_data',
         config=CONFIG,
         dag=dag,
@@ -836,7 +836,7 @@ def make_dag(
     )
     tasks.append(subsample_q2_ticket_data_task)
 
-    canonicalize_q2_coupon_data_task = DagsterOperator(
+    canonicalize_q2_coupon_data_task = DagsterDockerOperator(
         step='canonicalize_q2_coupon_data',
         config=CONFIG,
         dag=dag,
@@ -849,7 +849,7 @@ def make_dag(
     )
     tasks.append(canonicalize_q2_coupon_data_task)
 
-    canonicalize_q2_market_data_task = DagsterOperator(
+    canonicalize_q2_market_data_task = DagsterDockerOperator(
         step='canonicalize_q2_market_data',
         config=CONFIG,
         dag=dag,
@@ -862,7 +862,7 @@ def make_dag(
     )
     tasks.append(canonicalize_q2_market_data_task)
 
-    canonicalize_q2_ticket_data_task = DagsterOperator(
+    canonicalize_q2_ticket_data_task = DagsterDockerOperator(
         step='canonicalize_q2_ticket_data',
         config=CONFIG,
         dag=dag,
@@ -875,7 +875,7 @@ def make_dag(
     )
     tasks.append(canonicalize_q2_ticket_data_task)
 
-    combine_q2_on_time_data_task = DagsterOperator(
+    combine_q2_on_time_data_task = DagsterDockerOperator(
         step='combine_q2_on_time_data',
         config=CONFIG,
         dag=dag,
@@ -888,7 +888,7 @@ def make_dag(
     )
     tasks.append(combine_q2_on_time_data_task)
 
-    load_q2_sfo_weather_task = DagsterOperator(
+    load_q2_sfo_weather_task = DagsterDockerOperator(
         step='load_q2_sfo_weather',
         config=CONFIG,
         dag=dag,
@@ -901,7 +901,7 @@ def make_dag(
     )
     tasks.append(load_q2_sfo_weather_task)
 
-    load_q2_coupon_data_task = DagsterOperator(
+    load_q2_coupon_data_task = DagsterDockerOperator(
         step='load_q2_coupon_data',
         config=CONFIG,
         dag=dag,
@@ -914,7 +914,7 @@ def make_dag(
     )
     tasks.append(load_q2_coupon_data_task)
 
-    load_q2_market_data_task = DagsterOperator(
+    load_q2_market_data_task = DagsterDockerOperator(
         step='load_q2_market_data',
         config=CONFIG,
         dag=dag,
@@ -927,7 +927,7 @@ def make_dag(
     )
     tasks.append(load_q2_market_data_task)
 
-    load_q2_ticket_data_task = DagsterOperator(
+    load_q2_ticket_data_task = DagsterDockerOperator(
         step='load_q2_ticket_data',
         config=CONFIG,
         dag=dag,
@@ -940,7 +940,7 @@ def make_dag(
     )
     tasks.append(load_q2_ticket_data_task)
 
-    subsample_q2_on_time_data_task = DagsterOperator(
+    subsample_q2_on_time_data_task = DagsterDockerOperator(
         step='subsample_q2_on_time_data',
         config=CONFIG,
         dag=dag,
@@ -953,7 +953,7 @@ def make_dag(
     )
     tasks.append(subsample_q2_on_time_data_task)
 
-    join_q2_on_time_data_to_dest_cord_data_task = DagsterOperator(
+    join_q2_on_time_data_to_dest_cord_data_task = DagsterDockerOperator(
         step='join_q2_on_time_data_to_dest_cord_data',
         config=CONFIG,
         dag=dag,
@@ -966,7 +966,7 @@ def make_dag(
     )
     tasks.append(join_q2_on_time_data_to_dest_cord_data_task)
 
-    join_q2_on_time_data_to_origin_cord_data_task = DagsterOperator(
+    join_q2_on_time_data_to_origin_cord_data_task = DagsterDockerOperator(
         step='join_q2_on_time_data_to_origin_cord_data',
         config=CONFIG,
         dag=dag,
@@ -979,7 +979,7 @@ def make_dag(
     )
     tasks.append(join_q2_on_time_data_to_origin_cord_data_task)
 
-    canonicalize_q2_on_time_data_task = DagsterOperator(
+    canonicalize_q2_on_time_data_task = DagsterDockerOperator(
         step='canonicalize_q2_on_time_data',
         config=CONFIG,
         dag=dag,
@@ -992,7 +992,7 @@ def make_dag(
     )
     tasks.append(canonicalize_q2_on_time_data_task)
 
-    load_q2_on_time_data_task = DagsterOperator(
+    load_q2_on_time_data_task = DagsterDockerOperator(
         step='load_q2_on_time_data',
         config=CONFIG,
         dag=dag,

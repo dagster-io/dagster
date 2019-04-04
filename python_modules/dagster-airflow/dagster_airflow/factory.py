@@ -4,15 +4,11 @@ import json
 from yaml import dump
 
 from airflow import DAG
-from airflow.operators.python_operator import PythonOperator
 
-from dagster import check, PipelineDefinition, RepositoryDefinition
+from dagster import check, PipelineDefinition
 from dagster.core.execution import create_execution_plan
 
-from dagit.app import RepositoryContainer
-from dagit.cli import execute_query_from_cli
-
-from .dagster_plugin import QUERY_TEMPLATE
+from .dagster_plugin import DagsterDockerOperator, DagsterOperator, DagsterPythonOperator
 from .compile import coalesce_execution_steps
 from .scaffold import format_config_for_graphql
 from .utils import IndentingBlockPrinter
@@ -46,26 +42,16 @@ def _make_dag_description(pipeline_name, env_config):
         return printer.read()
 
 
-def _make_python_callable(dag_id, pipeline, env_config, step_keys):
-    repository = RepositoryDefinition('<<ephemeral repository>>', {dag_id: lambda: pipeline})
-    repository_container = RepositoryContainer(repository=repository)
+def _make_airflow_dag(
+    pipeline,
+    env_config=None,
+    dag_id=None,
+    dag_description=None,
+    dag_kwargs=None,
+    op_kwargs=None,
+    operator=DagsterPythonOperator,
+):
 
-    config = format_config_for_graphql(env_config)
-
-    def python_callable(**kwargs):
-        run_id = kwargs.get('dag_run').run_id
-        query = QUERY_TEMPLATE.format(
-            config=config,
-            run_id=run_id,
-            step_keys=json.dumps(step_keys),
-            pipeline_name=pipeline.name,
-        )
-        return execute_query_from_cli(repository_container, query, variables=None)
-
-    return python_callable
-
-
-def make_airflow_dag(pipeline, env_config=None, dag_id=None, dag_description=None, dag_kwargs=None):
     check.inst_param(pipeline, 'pipeline', PipelineDefinition)
     env_config = check.opt_dict_param(env_config, 'env_config', key_type=str)
     pipeline_name = pipeline.name
@@ -73,10 +59,19 @@ def make_airflow_dag(pipeline, env_config=None, dag_id=None, dag_description=Non
     dag_description = check.opt_str_param(
         dag_description, 'dag_description', _make_dag_description(pipeline_name, env_config)
     )
+    check.subclass_param(operator, 'operator', DagsterOperator)
+    # black 18.9b0 doesn't support py27-compatible formatting of the below invocation (omitting
+    # the trailing comma after **check.opt_dict_param...) -- black 19.3b0 supports multiple python
+    # versions, but currently doesn't know what to do with from __future__ import print_function --
+    # see https://github.com/ambv/black/issues/768
+    # fmt: off
     dag_kwargs = dict(
         {'default_args': DEFAULT_ARGS},
         **check.opt_dict_param(dag_kwargs, 'dag_kwargs', key_type=str)
     )
+    # fmt: on
+
+    op_kwargs = check.opt_dict_param(op_kwargs, 'op_kwargs', key_type=str)
 
     dag = DAG(dag_id=dag_id, description=dag_description, **dag_kwargs)
 
@@ -90,11 +85,14 @@ def make_airflow_dag(pipeline, env_config=None, dag_id=None, dag_description=Non
 
         step_keys = [step.key for step in solid_steps]
 
-        task = PythonOperator(
-            task_id=solid_name,
-            provide_context=True,
-            python_callable=_make_python_callable(dag_id, pipeline, env_config, step_keys),
+        task = operator.operator_for_solid(
+            pipeline=pipeline,
+            env_config=format_config_for_graphql(env_config),
+            solid_name=solid_name,
+            step_keys=step_keys,
             dag=dag,
+            dag_id=dag_id,
+            op_kwargs=op_kwargs,
         )
 
         tasks[solid_name] = task
@@ -108,3 +106,38 @@ def make_airflow_dag(pipeline, env_config=None, dag_id=None, dag_description=Non
                     tasks[prev_solid_name].set_downstream(task)
 
     return (dag, [tasks[solid_name] for solid_name in coalesced_plan.keys()])
+
+
+def make_airflow_dag(
+    pipeline, env_config=None, dag_id=None, dag_description=None, dag_kwargs=None, op_kwargs=None
+):
+    return _make_airflow_dag(
+        pipeline=pipeline,
+        env_config=env_config,
+        dag_id=dag_id,
+        dag_description=dag_description,
+        dag_kwargs=dag_kwargs,
+        op_kwargs=op_kwargs,
+    )
+
+
+def make_airflow_dag_containerized(
+    pipeline,
+    image,
+    env_config=None,
+    dag_id=None,
+    dag_description=None,
+    dag_kwargs=None,
+    op_kwargs=None,
+):
+    op_kwargs = check.opt_dict_param(op_kwargs, 'op_kwargs', key_type=str)
+    op_kwargs['image'] = image
+    return _make_airflow_dag(
+        pipeline=pipeline,
+        env_config=env_config,
+        dag_id=dag_id,
+        dag_description=dag_description,
+        dag_kwargs=dag_kwargs,
+        op_kwargs=op_kwargs,
+        operator=DagsterDockerOperator,
+    )
