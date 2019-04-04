@@ -343,14 +343,14 @@ def _ensure_gen(thing_or_gen):
 
 
 @contextmanager
-def user_code_context_manager(user_fn, error_cls):
+def user_code_context_manager(user_fn, error_cls, msg):
     '''Wraps the output of a user provided function that may yield or return a value and
     returns a generator that asserts it only yields a single value.
     '''
     check.callable_param(user_fn, 'user_fn')
     check.subclass_param(error_cls, 'error_cls', DagsterUserCodeExecutionError)
 
-    with user_code_error_boundary(error_cls, 'Exception in user provided code'):
+    with user_code_error_boundary(error_cls, msg):
         thing_or_gen = user_fn()
         gen = _ensure_gen(thing_or_gen)
 
@@ -503,7 +503,11 @@ def _pipeline_execution_context_manager(
 
     try:
         with user_code_context_manager(
-            lambda: context_definition.context_fn(init_context), DagsterContextFunctionError
+            lambda: context_definition.context_fn(init_context),
+            DagsterContextFunctionError,
+            'Error executing context_fn on ContextDefinition {name}'.format(
+                name=environment_config.context.name
+            ),
         ) as execution_context:
             check.inst(execution_context, ExecutionContext)
 
@@ -632,7 +636,7 @@ def _create_resources(pipeline_def, context_def, environment, execution_context,
         for resource_name in context_def.resources.keys():
 
             resource_def = context_def.resources[resource_name]
-            # Need to do default values
+            # Need to do default values - issue #1120
             resource_config = environment.context.resources.get(resource_name, {}).get('config')
             init_context = InitResourceContext(
                 pipeline_def=pipeline_def,
@@ -648,7 +652,13 @@ def _create_resources(pipeline_def, context_def, environment, execution_context,
             )
 
             resource_obj = stack.enter_context(
-                user_code_context_manager(user_fn, DagsterResourceFunctionError)
+                user_code_context_manager(
+                    user_fn,
+                    DagsterResourceFunctionError,
+                    'Error executing resource_fn on ResourceDefinition {name}'.format(
+                        name=resource_name
+                    ),
+                )
             )
 
             resources[resource_name] = resource_obj

@@ -163,9 +163,13 @@ def user_code_error_boundary(error_cls, msg, **kwargs):
     try:
         yield
     except Exception as e:  # pylint: disable=W0703
+
         if isinstance(e, DagsterError):
+            # The system has thrown an error that is part of the user-framework contract
             raise e
         else:
+            # An exception has been thrown by user code and computation should cease
+            # with the error reported further up the stack
             raise_from(
                 error_cls(msg.format(**kwargs), user_exception=e, original_exc_info=sys.exc_info()),
                 e,

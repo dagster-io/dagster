@@ -104,9 +104,9 @@ if __name__ == '__main__':
         {
             'context': {
                 'errorable_context': {
-                    'config': {'throw_on_context_init': False},
+                    'config': {'throw_on_context_init': True},
                     'resources': {
-                        'errorable_resource': {'config': {'throw_on_resource_init': True}}
+                        'errorable_resource': {'config': {'throw_on_resource_init': False}}
                     },
                 }
             },

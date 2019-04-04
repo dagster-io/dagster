@@ -279,7 +279,7 @@ class DagsterEvent(
     def pipeline_init_failure(pipeline_name, failure_data, log):
         check.inst_param(failure_data, 'failure_data', PipelineInitFailureData)
         check.inst_param(log, 'log', DagsterLog)
-        # this failure happens trying to bring up context so cant use from_pipeline
+        # this failure happens trying to bring up context so can't use from_pipeline
 
         event = DagsterEvent(
             event_type_value=DagsterEventType.PIPELINE_INIT_FAILURE.value,
