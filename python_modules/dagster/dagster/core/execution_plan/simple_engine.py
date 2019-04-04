@@ -351,4 +351,3 @@ def _iterate_step_outputs_within_boundary(step_context, evaluated_inputs):
         if gen is not None:
             for step_output in gen:
                 yield step_output
-
