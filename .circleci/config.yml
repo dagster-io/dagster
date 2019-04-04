@@ -916,7 +916,7 @@ jobs:
           command: |
             pyenv local 2.7.14  # avoiding an annoying circle-specific upgrade step
             sudo pip install -U 'pip<19.0' # see: https://github.com/pypa/pip/issues/6163
-            sudo pip install tox
+            sudo pip install tox tox-pyenv
       - run:
           name: Setup AIRFLOW_HOME
           command: |
