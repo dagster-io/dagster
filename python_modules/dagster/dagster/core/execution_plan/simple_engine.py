@@ -305,13 +305,10 @@ def _create_step_output_event(step_context, step_output_value, intermediates_man
     except DagsterRuntimeCoercionError as e:
         raise DagsterInvariantViolationError(
             (
-                'Solid {step.solid.name} output name {output_name} output '
-                '{step_output_value.value} type failure: {error_msg}.'
+                'In solid "{step.solid.name}" the output "{output_name}" returned '
+                'an invalid type: {error_msg}.'
             ).format(
-                step=step,
-                step_output_value=step_output_value,
-                error_msg=','.join(e.args),
-                output_name=step_output_value.output_name,
+                step=step, error_msg=','.join(e.args), output_name=step_output_value.output_name
             )
         )
 
@@ -327,11 +324,15 @@ def _get_evaluated_input(step, input_name, input_value):
         raise_from(
             DagsterTypeError(
                 (
-                    'Solid {step.solid.name} input {input_name} received value {input_value} '
-                    'which does not pass the typecheck for Dagster type '
-                    '{step_input.runtime_type.name}. Step {step.key}'
+                    'In solid "{step.solid.name}" the input "{input_name}" received value {input_value} '
+                    'of Python type {input_type} which does not pass the typecheck for '
+                    'Dagster type {step_input.runtime_type.name}. Step {step.key}.'
                 ).format(
-                    step=step, input_name=input_name, input_value=input_value, step_input=step_input
+                    step=step,
+                    input_name=input_name,
+                    input_value=input_value,
+                    input_type=type(input_value),
+                    step_input=step_input,
                 )
             ),
             evaluate_error,
