@@ -12,7 +12,7 @@ from airflow.operators.python_operator import PythonOperator
 
 from dagster.utils import load_yaml_from_glob_list
 
-from .dagster_plugin import DagsterDockerOperator
+from .operators import DagsterDockerOperator
 from .factory import make_airflow_dag, make_airflow_dag_containerized
 
 
