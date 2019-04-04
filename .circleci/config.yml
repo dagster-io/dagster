@@ -900,7 +900,7 @@ jobs:
       - run:
           name: Install py27-dev
           command: |
-            pyenv install 2.7.15
+            pyenv install 2.7.14
       - run:
           name: Build Dockerfile
           command: |
