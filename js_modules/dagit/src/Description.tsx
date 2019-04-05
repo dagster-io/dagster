@@ -68,14 +68,23 @@ export default class Description extends React.Component<
     const { expanded, hasMore } = this.state;
     return (
       <Container
+        onDoubleClick={e => {
+          const sel = document.getSelection();
+          if (!sel || !this._container.current) return;
+          const range = document.createRange();
+          range.selectNodeContents(this._container.current);
+          sel.removeAllRanges();
+          sel.addRange(range);
+        }}
         style={{
           maxHeight: expanded ? undefined : MaxHeight
         }}
-        onClick={() => this.setState({ expanded: !expanded })}
       >
         {!expanded && hasMore && <Mask />}
         {hasMore && (
-          <ShowMoreHandle>
+          <ShowMoreHandle
+            onClick={() => this.setState({ expanded: !expanded })}
+          >
             {expanded ? "Show Less" : "Show More"}
           </ShowMoreHandle>
         )}
