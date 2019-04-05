@@ -484,9 +484,15 @@ export interface PipelinePageFragment_PipelineConnection_nodes_solids_inputs_def
   expectations: PipelinePageFragment_PipelineConnection_nodes_solids_inputs_definition_expectations[];
 }
 
+export interface PipelinePageFragment_PipelineConnection_nodes_solids_inputs_dependsOn_definition_type {
+  __typename: "RegularRuntimeType" | "ListRuntimeType" | "NullableRuntimeType";
+  name: string | null;
+}
+
 export interface PipelinePageFragment_PipelineConnection_nodes_solids_inputs_dependsOn_definition {
   __typename: "OutputDefinition";
   name: string;
+  type: PipelinePageFragment_PipelineConnection_nodes_solids_inputs_dependsOn_definition_type;
 }
 
 export interface PipelinePageFragment_PipelineConnection_nodes_solids_inputs_dependsOn_solid {
@@ -532,9 +538,21 @@ export interface PipelinePageFragment_PipelineConnection_nodes_solids_outputs_de
   name: string;
 }
 
+export interface PipelinePageFragment_PipelineConnection_nodes_solids_outputs_dependedBy_definition_type {
+  __typename: "RegularRuntimeType" | "ListRuntimeType" | "NullableRuntimeType";
+  name: string | null;
+}
+
+export interface PipelinePageFragment_PipelineConnection_nodes_solids_outputs_dependedBy_definition {
+  __typename: "InputDefinition";
+  name: string;
+  type: PipelinePageFragment_PipelineConnection_nodes_solids_outputs_dependedBy_definition_type;
+}
+
 export interface PipelinePageFragment_PipelineConnection_nodes_solids_outputs_dependedBy {
   __typename: "Input";
   solid: PipelinePageFragment_PipelineConnection_nodes_solids_outputs_dependedBy_solid;
+  definition: PipelinePageFragment_PipelineConnection_nodes_solids_outputs_dependedBy_definition;
 }
 
 export interface PipelinePageFragment_PipelineConnection_nodes_solids_outputs {
