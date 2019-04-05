@@ -9,11 +9,19 @@ DAGSTER_META_KEY = 'dagster_meta'
 DAGSTER_DEFAULT_LOGGER = 'dagster'
 
 
+def _dump_value(value):
+    # dump namedtuples as objects instead of arrays
+    if isinstance(value, tuple) and hasattr(value, '_asdict'):
+        return seven.json.dumps(value._asdict())
+
+    return seven.json.dumps(value)
+
+
 def _kv_message(all_items, multiline=False):
     sep = '\n' if multiline else ' '
     format_str = '{key:>20} = {value}' if multiline else '{key}={value}'
     return sep + sep.join(
-        [format_str.format(key=key, value=seven.json.dumps(value)) for key, value in all_items]
+        [format_str.format(key=key, value=_dump_value(value)) for key, value in all_items]
     )
 
 
