@@ -65,3 +65,17 @@ export function formatElapsedTime(elapsed: number) {
   }
   return text;
 }
+
+export function weakmapMemoize<T extends object, R>(
+  fn: (arg: T) => R
+): (arg: T) => R {
+  let cache = new WeakMap();
+  return (arg: T) => {
+    if (cache.has(arg)) {
+      return cache.get(arg);
+    }
+    const r = fn(arg);
+    cache.set(arg, r);
+    return r;
+  };
+}

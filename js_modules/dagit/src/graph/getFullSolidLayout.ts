@@ -1,4 +1,5 @@
 import * as dagre from "dagre";
+import { weakmapMemoize } from "../Util";
 
 export type ILayoutConnectionMember = {
   point: IPoint;
@@ -84,7 +85,7 @@ const IO_THRESHOLD_FOR_MINI = 4;
 const PORT_INSET_X = 15;
 const PORT_INSET_Y = IO_HEIGHT / 2;
 
-export function getDagrePipelineLayout(
+function getDagrePipelineLayoutHeavy(
   pipeline: ILayoutPipeline
 ): IFullPipelineLayout {
   const g = new dagre.graphlib.Graph();
@@ -267,6 +268,10 @@ function layoutSolid(solid: ILayoutSolid, root: IPoint): IFullSolidLayout {
   };
 }
 
+export const getDagrePipelineLayout = weakmapMemoize(
+  getDagrePipelineLayoutHeavy
+);
+
 export function pointsToBox(a: IPoint, b: IPoint): ILayout {
   return {
     x: Math.min(a.x, b.x),
@@ -275,6 +280,7 @@ export function pointsToBox(a: IPoint, b: IPoint): ILayout {
     height: Math.abs(a.y - b.y)
   };
 }
+
 export function layoutsIntersect(a: ILayout, b: ILayout) {
   return (
     a.x + a.width >= b.x &&
