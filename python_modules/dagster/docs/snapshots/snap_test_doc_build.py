@@ -548,6 +548,8 @@ snapshots['test_build_all_docs 3'] = '''
             </div>
             
 
+            
+
             <div class="body" role="main">
                 
 
@@ -935,8 +937,6 @@ snapshots['test_build_all_docs 3'] = '''
 
 
             </div>
-
-            
             <div class="related bottom">
                 &nbsp;
 <nav id="rellinks">
@@ -1011,43 +1011,6 @@ snapshots['test_build_all_docs 4'] = '''
         <div class="bodywrapper">
             
 
-            <div class="body" role="main">
-                
-  <div class="toctree-wrapper compound" id="documentation">
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="sections/install/install.html">Install</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="sections/install/install.html#quick-start">Quick Start</a></li>
-<li class="toctree-l2"><a class="reference internal" href="sections/install/install.html#detailed-installation-guide">Detailed Installation Guide</a></li>
-</ul>
-</li>
-<li class="toctree-l1"><a class="reference internal" href="sections/learn/learn.html">Learn</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="sections/learn/tutorial/index.html">Tutorial</a></li>
-<li class="toctree-l2"><a class="reference internal" href="sections/learn/principles.html">Principles</a></li>
-<li class="toctree-l2"><a class="reference internal" href="sections/learn/learn.html#other-guides">Other Guides</a></li>
-</ul>
-</li>
-<li class="toctree-l1"><a class="reference internal" href="sections/api/api.html">API Docs</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="sections/api/apidocs/definitions.html">Definitions</a></li>
-<li class="toctree-l2"><a class="reference internal" href="sections/api/apidocs/decorators.html">Decorators</a></li>
-<li class="toctree-l2"><a class="reference internal" href="sections/api/apidocs/execution.html">Execution</a></li>
-<li class="toctree-l2"><a class="reference internal" href="sections/api/apidocs/errors.html">Errors</a></li>
-<li class="toctree-l2"><a class="reference internal" href="sections/api/apidocs/types.html">Types</a></li>
-<li class="toctree-l2"><a class="reference internal" href="sections/api/apidocs/utilities.html">Utilities</a></li>
-</ul>
-</li>
-<li class="toctree-l1"><a class="reference internal" href="sections/community/community.html">Community</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="sections/community/contributing.html">Contributing</a></li>
-<li class="toctree-l2"><a class="reference internal" href="sections/community/release_notes.html">Release Notes</a></li>
-<li class="toctree-l2"><a class="reference external" href="https://www.github.com/dagster-io/dagster/">Github</a></li>
-<li class="toctree-l2"><a class="reference external" href="https://stackoverflow.com/questions/tagged/dagster">StackOverflow</a></li>
-</ul>
-</li>
-</ul>
-</div>
-
-
-            </div>
-
             
             <div class="logo_img">
                 <img
@@ -1087,6 +1050,43 @@ snapshots['test_build_all_docs 4'] = '''
                         </div>
                     </div>
                 </div>
+            </div>
+
+            <div class="body" role="main">
+                
+  <div class="toctree-wrapper compound" id="documentation">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="sections/install/install.html">Install</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="sections/install/install.html#quick-start">Quick Start</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sections/install/install.html#detailed-installation-guide">Detailed Installation Guide</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="sections/learn/learn.html">Learn</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="sections/learn/tutorial/index.html">Tutorial</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sections/learn/principles.html">Principles</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sections/learn/learn.html#other-guides">Other Guides</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="sections/api/api.html">API Docs</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="sections/api/apidocs/definitions.html">Definitions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sections/api/apidocs/decorators.html">Decorators</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sections/api/apidocs/execution.html">Execution</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sections/api/apidocs/errors.html">Errors</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sections/api/apidocs/types.html">Types</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sections/api/apidocs/utilities.html">Utilities</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="sections/community/community.html">Community</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="sections/community/contributing.html">Contributing</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sections/community/release_notes.html">Release Notes</a></li>
+<li class="toctree-l2"><a class="reference external" href="https://www.github.com/dagster-io/dagster/">Github</a></li>
+<li class="toctree-l2"><a class="reference external" href="https://stackoverflow.com/questions/tagged/dagster">StackOverflow</a></li>
+</ul>
+</li>
+</ul>
+</div>
+
+
             </div>
             
         </div>
@@ -1170,6 +1170,8 @@ snapshots['test_build_all_docs 5'] = '''
             </div>
             
 
+            
+
             <div class="body" role="main">
                 
 
@@ -1192,8 +1194,6 @@ snapshots['test_build_all_docs 5'] = '''
 
 
             </div>
-
-            
             <div class="related bottom">
                 &nbsp;
 <nav id="rellinks">
@@ -1285,6 +1285,8 @@ snapshots['test_build_all_docs 6'] = '''
             </div>
             
 
+            
+
             <div class="body" role="main">
                 
   <h1 id="search-documentation">Search</h1>
@@ -1312,8 +1314,6 @@ snapshots['test_build_all_docs 6'] = '''
   </div>
 
             </div>
-
-            
             <div class="related bottom">
                 &nbsp;
 <nav id="rellinks">
@@ -19123,6 +19123,8 @@ snapshots['test_build_all_docs 53'] = '''
             </div>
             
 
+            
+
             <div class="body" role="main">
                 
   <div class="section" id="api-docs">
@@ -19141,8 +19143,6 @@ snapshots['test_build_all_docs 53'] = '''
 
 
             </div>
-
-            
             <div class="related bottom">
                 &nbsp;
 <nav id="rellinks">
@@ -19252,6 +19252,8 @@ snapshots['test_build_all_docs 54'] = '''
     </ul>
 </nav>
             </div>
+            
+
             
 
             <div class="body" role="main">
@@ -19441,8 +19443,6 @@ multiple outputs. Useful for solids that have multiple outputs.</li>
 
 
             </div>
-
-            
             <div class="related bottom">
                 &nbsp;
 <nav id="rellinks">
@@ -19552,6 +19552,8 @@ snapshots['test_build_all_docs 55'] = '''
     </ul>
 </nav>
             </div>
+            
+
             
 
             <div class="body" role="main">
@@ -20108,8 +20110,6 @@ like the alias.</p>
 
 
             </div>
-
-            
             <div class="related bottom">
                 &nbsp;
 <nav id="rellinks">
@@ -20221,6 +20221,8 @@ snapshots['test_build_all_docs 56'] = '''
             </div>
             
 
+            
+
             <div class="body" role="main">
                 
   <div class="section" id="errors">
@@ -20274,8 +20276,6 @@ argument to the ctor is meant to be a sys.exc_info at the site of constructor.</
 
 
             </div>
-
-            
             <div class="related bottom">
                 &nbsp;
 <nav id="rellinks">
@@ -20385,6 +20385,8 @@ snapshots['test_build_all_docs 57'] = '''
     </ul>
 </nav>
             </div>
+            
+
             
 
             <div class="body" role="main">
@@ -20531,8 +20533,6 @@ Returns None if execution result isn’t a success.</p>
 
 
             </div>
-
-            
             <div class="related bottom">
                 &nbsp;
 <nav id="rellinks">
@@ -20644,6 +20644,8 @@ snapshots['test_build_all_docs 58'] = '''
             </div>
             
 
+            
+
             <div class="body" role="main">
                 
   <div class="section" id="module-dagster">
@@ -20746,8 +20748,6 @@ snapshots['test_build_all_docs 58'] = '''
 
 
             </div>
-
-            
             <div class="related bottom">
                 &nbsp;
 <nav id="rellinks">
@@ -20859,6 +20859,8 @@ snapshots['test_build_all_docs 59'] = '''
             </div>
             
 
+            
+
             <div class="body" role="main">
                 
   <div class="section" id="utilities">
@@ -20877,8 +20879,6 @@ snapshots['test_build_all_docs 59'] = '''
 
 
             </div>
-
-            
             <div class="related bottom">
                 &nbsp;
 <nav id="rellinks">
@@ -20990,6 +20990,8 @@ snapshots['test_build_all_docs 60'] = '''
             </div>
             
 
+            
+
             <div class="body" role="main">
                 
   <div class="section" id="community">
@@ -21008,8 +21010,6 @@ code contributions and issue reports.</p>
 
 
             </div>
-
-            
             <div class="related bottom">
                 &nbsp;
 <nav id="rellinks">
@@ -21119,6 +21119,8 @@ snapshots['test_build_all_docs 61'] = '''
             </div>
             
 
+            
+
             <div class="body" role="main">
                 
   <div class="section" id="contributing">
@@ -21218,8 +21220,6 @@ when you are in <code class="docutils literal notranslate"><span class="pre">--w
 
 
             </div>
-
-            
             <div class="related bottom">
                 &nbsp;
 <nav id="rellinks">
@@ -21324,6 +21324,8 @@ snapshots['test_build_all_docs 62'] = '''
             </div>
             
 
+            
+
             <div class="body" role="main">
                 
   <div class="section" id="release-notes">
@@ -21332,8 +21334,6 @@ snapshots['test_build_all_docs 62'] = '''
 
 
             </div>
-
-            
             <div class="related bottom">
                 &nbsp;
 <nav id="rellinks">
@@ -21433,6 +21433,8 @@ snapshots['test_build_all_docs 63'] = '''
     </ul>
 </nav>
             </div>
+            
+
             
 
             <div class="body" role="main">
@@ -21540,8 +21542,6 @@ running:</p>
 
 
             </div>
-
-            
             <div class="related bottom">
                 &nbsp;
 <nav id="rellinks">
@@ -21645,6 +21645,8 @@ snapshots['test_build_all_docs 64'] = '''
             </div>
             
 
+            
+
             <div class="body" role="main">
                 
   <div class="section" id="learn">
@@ -21668,8 +21670,6 @@ snapshots['test_build_all_docs 64'] = '''
 
 
             </div>
-
-            
             <div class="related bottom">
                 &nbsp;
 <nav id="rellinks">
@@ -21778,6 +21778,8 @@ snapshots['test_build_all_docs 65'] = '''
             </div>
             
 
+            
+
             <div class="body" role="main">
                 
   <div class="section" id="principles">
@@ -21853,8 +21855,6 @@ documentation and runtime error checking.</p>
 
 
             </div>
-
-            
             <div class="related bottom">
                 &nbsp;
 <nav id="rellinks">
@@ -21961,6 +21961,8 @@ snapshots['test_build_all_docs 66'] = '''
     </ul>
 </nav>
             </div>
+            
+
             
 
             <div class="body" role="main">
@@ -22236,8 +22238,6 @@ be modeling such things as inputs.</p>
 
 
             </div>
-
-            
             <div class="related bottom">
                 &nbsp;
 <nav id="rellinks">
@@ -22344,6 +22344,8 @@ snapshots['test_build_all_docs 67'] = '''
     </ul>
 </nav>
             </div>
+            
+
             
 
             <div class="body" role="main">
@@ -22731,8 +22733,6 @@ allowing info temporarily.</p>
 
 
             </div>
-
-            
             <div class="related bottom">
                 &nbsp;
 <nav id="rellinks">
@@ -22839,6 +22839,8 @@ snapshots['test_build_all_docs 68'] = '''
     </ul>
 </nav>
             </div>
+            
+
             
 
             <div class="body" role="main">
@@ -22961,8 +22963,6 @@ environment.</p>
 
 
             </div>
-
-            
             <div class="related bottom">
                 &nbsp;
 <nav id="rellinks">
@@ -23069,6 +23069,8 @@ snapshots['test_build_all_docs 69'] = '''
     </ul>
 </nav>
             </div>
+            
+
             
 
             <div class="body" role="main">
@@ -23203,8 +23205,6 @@ of config: <a class="reference internal" href="configuration_schemas.html"><span
 
 
             </div>
-
-            
             <div class="related bottom">
                 &nbsp;
 <nav id="rellinks">
@@ -23311,6 +23311,8 @@ snapshots['test_build_all_docs 70'] = '''
     </ul>
 </nav>
             </div>
+            
+
             
 
             <div class="body" role="main">
@@ -23671,8 +23673,6 @@ how pipeline execution interacts with its environment.</p>
 
 
             </div>
-
-            
             <div class="related bottom">
                 &nbsp;
 <nav id="rellinks">
@@ -23779,6 +23779,8 @@ snapshots['test_build_all_docs 71'] = '''
     </ul>
 </nav>
             </div>
+            
+
             
 
             <div class="body" role="main">
@@ -23995,8 +23997,6 @@ We can also look at the input that was flowed into the notebook (i.e. the filter
 
 
             </div>
-
-            
             <div class="related bottom">
                 &nbsp;
 <nav id="rellinks">
@@ -24105,6 +24105,8 @@ snapshots['test_build_all_docs 72'] = '''
             </div>
             
 
+            
+
             <div class="body" role="main">
                 
   <div class="section" id="execution-context">
@@ -24193,8 +24195,6 @@ or compute substrates – can be configured using the context.</p>
 
 
             </div>
-
-            
             <div class="related bottom">
                 &nbsp;
 <nav id="rellinks">
@@ -24301,6 +24301,8 @@ snapshots['test_build_all_docs 73'] = '''
     </ul>
 </nav>
             </div>
+            
+
             
 
             <div class="body" role="main">
@@ -24507,8 +24509,6 @@ configure the pipeline to skip expectations entirely.</p>
 
 
             </div>
-
-            
             <div class="related bottom">
                 &nbsp;
 <nav id="rellinks">
@@ -24615,6 +24615,8 @@ snapshots['test_build_all_docs 74'] = '''
     </ul>
 </nav>
             </div>
+            
+
             
 
             <div class="body" role="main">
@@ -24729,8 +24731,6 @@ topology and see how dagster determines the execution order of a pipeline.</p>
 
 
             </div>
-
-            
             <div class="related bottom">
                 &nbsp;
 <nav id="rellinks">
@@ -24837,6 +24837,8 @@ snapshots['test_build_all_docs 75'] = '''
     </ul>
 </nav>
             </div>
+            
+
             
 
             <div class="body" role="main">
@@ -24980,8 +24982,6 @@ at all. Just add a few lines to <cite>hello_world.py</cite> (highlighted in yell
 
 
             </div>
-
-            
             <div class="related bottom">
                 &nbsp;
 <nav id="rellinks">
@@ -25090,6 +25090,8 @@ snapshots['test_build_all_docs 76'] = '''
             </div>
             
 
+            
+
             <div class="body" role="main">
                 
   <div class="section" id="tutorial">
@@ -25119,8 +25121,6 @@ snapshots['test_build_all_docs 76'] = '''
 
 
             </div>
-
-            
             <div class="related bottom">
                 &nbsp;
 <nav id="rellinks">
@@ -25227,6 +25227,8 @@ snapshots['test_build_all_docs 77'] = '''
     </ul>
 </nav>
             </div>
+            
+
             
 
             <div class="body" role="main">
@@ -25410,8 +25412,6 @@ built-in <code class="docutils literal notranslate"><span class="pre">String</sp
 
 
             </div>
-
-            
             <div class="related bottom">
                 &nbsp;
 <nav id="rellinks">
@@ -25518,6 +25518,8 @@ snapshots['test_build_all_docs 78'] = '''
     </ul>
 </nav>
             </div>
+            
+
             
 
             <div class="body" role="main">
@@ -25787,8 +25789,6 @@ common data pipeline work.</p>
 
 
             </div>
-
-            
             <div class="related bottom">
                 &nbsp;
 <nav id="rellinks">
@@ -25895,6 +25895,8 @@ snapshots['test_build_all_docs 79'] = '''
     </ul>
 </nav>
             </div>
+            
+
             
 
             <div class="body" role="main">
@@ -26098,8 +26100,6 @@ in pipelines.</p>
 
 
             </div>
-
-            
             <div class="related bottom">
                 &nbsp;
 <nav id="rellinks">
@@ -26208,6 +26208,8 @@ snapshots['test_build_all_docs 80'] = '''
             </div>
             
 
+            
+
             <div class="body" role="main">
                 
   <div class="section" id="repositories">
@@ -26314,8 +26316,6 @@ with swappable config.</p>
 
 
             </div>
-
-            
             <div class="related bottom">
                 &nbsp;
 <nav id="rellinks">
@@ -26422,6 +26422,8 @@ snapshots['test_build_all_docs 81'] = '''
     </ul>
 </nav>
             </div>
+            
+
             
 
             <div class="body" role="main">
@@ -26602,8 +26604,6 @@ manage collections of multiple dagster pipelines.</p>
 
 
             </div>
-
-            
             <div class="related bottom">
                 &nbsp;
 <nav id="rellinks">
@@ -26710,6 +26710,8 @@ snapshots['test_build_all_docs 82'] = '''
     </ul>
 </nav>
             </div>
+            
+
             
 
             <div class="body" role="main">
@@ -26864,8 +26866,6 @@ to cloud storage, unzipping files, etc.</p>
 
 
             </div>
-
-            
             <div class="related bottom">
                 &nbsp;
 <nav id="rellinks">
@@ -26972,6 +26972,8 @@ snapshots['test_build_all_docs 83'] = '''
     </ul>
 </nav>
             </div>
+            
+
             
 
             <div class="body" role="main">
@@ -27170,8 +27172,6 @@ given output any number of times in any number of formats.</p>
 
 
             </div>
-
-            
             <div class="related bottom">
                 &nbsp;
 <nav id="rellinks">
@@ -27278,6 +27278,8 @@ snapshots['test_build_all_docs 84'] = '''
     </ul>
 </nav>
             </div>
+            
+
             
 
             <div class="body" role="main">
@@ -27437,8 +27439,6 @@ the <code class="docutils literal notranslate"><span class="pre">execute_solids<
 
 
             </div>
-
-            
             <div class="related bottom">
                 &nbsp;
 <nav id="rellinks">

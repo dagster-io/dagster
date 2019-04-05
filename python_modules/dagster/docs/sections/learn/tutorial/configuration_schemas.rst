@@ -12,7 +12,7 @@ We'll replace the config field in our solid definition with a structured, strong
    :linenos:
    :caption: configuration_schemas.py
 
-The previous env.yml file works as before:
+The configuration YAML file works as before:
 
 .. literalinclude:: ../../../../dagster/tutorials/intro_tutorial/configuration_schemas.yml
    :linenos:
@@ -34,9 +34,21 @@ And then ran it:
     demo_configuration_schema \
     -e configuration_schemas_runtime_error.yml
     ...
-    File "configuration_schemas.py", line 21, in multiply_the_word
-        return word * info.config['factor']
+    Traceback (most recent call last):
+    ...
+    File "configuration_schemas.py", line 20, in multiply_the_word
+        return word * context.solid_config['factor']
     TypeError: can't multiply sequence by non-int of type 'str'
+
+    The above exception was the direct cause of the following exception:
+
+    Traceback (most recent call last):
+    ...
+    dagster.core.errors.DagsterExecutionStepExecutionError: Error occured during the execution of step:
+        step key: "multiply_the_word.transform"
+        solid instance: "multiply_the_word"
+        solid definition: "multiply_the_word"
+
 
 This pipeline is not typechecked and therefore error is caught at runtime. It would be preferable
 to catch this before execution.

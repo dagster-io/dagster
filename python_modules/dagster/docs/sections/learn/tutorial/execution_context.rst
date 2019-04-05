@@ -5,8 +5,8 @@ One of the most important objects in the system is the execution context. The ex
 context, the logger, and the resources are threaded throughout the entire computation (
 via the ``context`` object passed to user code) and contains handles to logging facilities
 and external resources. Interactions with logging systems, databases, and external
-clusters (e.g. a Spark cluster) should be managed through these properties of the 
-info object.
+clusters (e.g. a Spark cluster) should be managed through these properties of the execution 
+context.
 
 This provides a powerful layer of indirection that allows a solid to abstract
 away its surrounding environment. Using an execution context allows the system and
@@ -18,7 +18,7 @@ your production cluster environment.
 Logging
 ~~~~~~~
 
-One of the most basic pipeline-level facilities is logging.
+One of the most basic pipeline-level facilities is logging:
 
 .. literalinclude:: ../../../../dagster/tutorials/intro_tutorial/execution_context.py
    :lines: 1-16
@@ -34,7 +34,15 @@ And you'll notice log messages like this:
 
 .. code-block:: console
 
-    2019-01-15 04:59:37 - dagster - ERROR - orig_message="An error occurred." log_message_id="b0cbb1be-e476-4a4e-aaac-a29ddb15309a" run_id="d8f41da0-3825-4ac0-b8e0-4f38ba45b8e0" pipeline="execution_context_pipeline" solid="error_message" solid_definition="error_message"
+    2019-04-05 16:54:31 - dagster - ERROR -
+            orig_message = "An error occurred."
+          log_message_id = "d567e965-31a1-4b99-8b6c-f2f7cfccfcca"
+           log_timestamp = "2019-04-05T23:54:31.678344"
+                  run_id = "28188449-51bc-4c75-8b70-38cccb8e82e7"
+                pipeline = "execution_context_pipeline"
+                step_key = "error_message.transform"
+                   solid = "error_message"
+        solid_definition = "error_message"
 
 These log messages are annonated with a bunch of key value pairs that indicate where in the
 computation each log message was emitted. This happened because we logged through the execution

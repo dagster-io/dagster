@@ -69,10 +69,14 @@ browser and view your pipeline.
 
 There are lots of ways to execute dagster pipelines. If you navigate to the "Execute"
 tab (http://127.0.0.1:3000/hello_world_pipeline/execute), you can execute your pipeline directly
-from dagit. Logs will stream into the bottom right pane of the interface, where you can filter them
-by log level.
+from dagit by clicking the "Start Execution" button.
 
 .. image:: hello_world_figure_two.png
+
+A new window will open, and you'll see the pipeline execution commence with logs; here, you can 
+filter logs by level and search over the results
+
+.. image:: hello_world_figure_three.png
 
 Library
 ~~~~~~~
