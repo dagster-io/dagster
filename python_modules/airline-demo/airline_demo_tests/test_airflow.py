@@ -2,7 +2,10 @@
 import os
 
 from dagster.utils import script_relative_path
-from dagster_airflow.test_fixtures import dagster_airflow_python_operator_pipeline
+try:
+    from dagster_airflow.test_fixtures import dagster_airflow_python_operator_pipeline
+except ImportError:
+    pass
 
 from airline_demo.pipelines import (
     define_airline_demo_ingest_pipeline,
