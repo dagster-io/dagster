@@ -31,7 +31,7 @@ def format_config_for_graphql(config):
     def _format_config_subdict(config, current_indent=0):
         check.dict_param(config, 'config', key_type=str)
 
-        printer = IndentingBlockPrinter(indent_level=2, current_indent=current_indent)
+        printer = IndentingStringIoPrinter(indent_level=2, current_indent=current_indent)
         printer.line('{')
 
         n_elements = len(config)
@@ -55,7 +55,7 @@ def format_config_for_graphql(config):
         return printer.read()
 
     def _format_config_sublist(config, current_indent=0):
-        printer = IndentingBlockPrinter(indent_level=2, current_indent=current_indent)
+        printer = IndentingStringIoPrinter(indent_level=2, current_indent=current_indent)
         printer.line('[')
 
         n_elements = len(config)
@@ -76,7 +76,7 @@ def format_config_for_graphql(config):
         return printer.read()
 
     def _format_config_item(config, current_indent=0):
-        printer = IndentingBlockPrinter(indent_level=2, current_indent=current_indent)
+        printer = IndentingStringIoPrinter(indent_level=2, current_indent=current_indent)
 
         if isinstance(config, dict):
             return _format_config_subdict(config, printer.current_indent)

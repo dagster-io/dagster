@@ -13,6 +13,7 @@ from dagster_airflow.test_fixtures import (
 )
 
 from .conftest import IMAGE
+from .marks import nettest
 from .test_project.dagster_airflow_demo import define_demo_execution_pipeline
 
 
@@ -48,7 +49,7 @@ class TestExecuteDag(object):
                 ).replace('\'', '"')
             ) == json.loads(expected_results[result['step']['solid']['name']].replace('\'', '"'))
 
-
+@nettest
 class TestExecuteDagContainerized(object):
     pipeline = define_demo_execution_pipeline()
     config_yaml = [
