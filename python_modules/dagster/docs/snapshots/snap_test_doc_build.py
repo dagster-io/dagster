@@ -18935,6 +18935,10 @@ a.reference {
 
 
 @media screen and (max-width: 875px) {
+    body {
+        padding-right: 30px;
+    }
+
     .sphinxsidebar li.toctree-l1 > ul li::before {
         content: "\\2022";
         color: rgb(170, 170, 170);
@@ -18949,6 +18953,14 @@ a.reference {
         width: 110%;
         margin: 50px -30px -10px -30px;
         background: #333;
+    }
+
+    body .why_dagster {
+        width: 90%;
+    }
+
+    body .value_prop_block {
+        flex: 0 0 90%;
     }
 }
 
@@ -18987,7 +18999,7 @@ a.reference {
  .logo_img {
     height: 42%;
     width: 42%;
-    padding-bottom: 30px;
+    padding: 30px 0 30px 0;
     display: block;
     margin: 0 auto;
 }
