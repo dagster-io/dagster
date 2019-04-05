@@ -5,6 +5,7 @@ import { Button } from "@blueprintjs/core";
 interface IPythonErrorInfoProps {
   showReload?: boolean;
   centered?: boolean;
+  contextMsg?: string;
   error: {
     message: string;
     stack?: string[];
@@ -17,9 +18,13 @@ export default class PythonErrorInfo extends React.Component<
   render() {
     const { message, stack } = this.props.error;
     const Wrapper = this.props.centered ? ErrorWrapperCentered : ErrorWrapper;
+    const context = this.props.contextMsg ? (
+      <ErrorHeader>{this.props.contextMsg}</ErrorHeader>
+    ) : null;
 
     return (
       <Wrapper>
+        {context}
         <ErrorHeader>{message}</ErrorHeader>
         <Trace>{stack ? stack.join("") : "No Stack Provided."}</Trace>
         {this.props.showReload && (
