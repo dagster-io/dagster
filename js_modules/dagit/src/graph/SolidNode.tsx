@@ -120,13 +120,18 @@ export default class SolidNode extends React.Component<ISolidNodeProps> {
 
       const connections: Array<{ a: string; b: string }> = [];
 
+      let title = `${name}: ${type.name}`;
+
       if ("dependsOn" in item && item.dependsOn) {
+        title += `\n\nFrom:\n${item.dependsOn.solid.name}`;
         connections.push({
           a: item.dependsOn.solid.name,
           b: this.props.solid.name
         });
       }
       if ("dependedBy" in item) {
+        title +=
+          "\n\nUsed By:\n" + item.dependedBy.map(o => o.solid.name).join("\n");
         connections.push(
           ...item.dependedBy.map(o => ({
             a: o.solid.name,
@@ -148,7 +153,7 @@ export default class SolidNode extends React.Component<ISolidNodeProps> {
           onMouseEnter={() => this.props.onHighlightConnections(connections)}
           onMouseLeave={() => this.props.onHighlightConnections([])}
         >
-          <title>{`${name}: ${type.name}`}</title>
+          <title>{title}</title>
           <SVGFlowLayoutRect
             x={x}
             y={y}
