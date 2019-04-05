@@ -65,15 +65,16 @@ const PanAndZoomInteractor: SVGViewportInteractor = {
   },
 
   onWheel(viewport: SVGViewport, event: React.WheelEvent<HTMLDivElement>) {
-    event.preventDefault();
-    event.stopPropagation();
-
     // Because of inertial scrolling on macOS, we receive wheel events for ~1000ms
     // after we trigger the zoom and this can cause a second zoom.
     const wheelWasIdle = Date.now() - viewport._lastWheelTime > 2000;
     const wheelChangedDir = viewport._lastWheelDir !== Math.sign(event.deltaY);
+
+    // Ignore very gentle wheel interaction, could be accidental
+    if (Math.abs(event.deltaY) <= 2) return;
+
     if (wheelWasIdle || wheelChangedDir) {
-      if (event.deltaY > 0) {
+      if (event.deltaY < 0) {
         viewport.onZoomAndCenter(event);
       } else {
         viewport.autocenter(true);
