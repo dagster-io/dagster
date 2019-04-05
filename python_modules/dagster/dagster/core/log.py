@@ -8,9 +8,17 @@ from dagster import check, seven
 DAGSTER_META_KEY = 'dagster_meta'
 
 
+def _dump_value(value):
+    # dump namedtuples as objects instead of arrays
+    if isinstance(value, tuple) and hasattr(value, '_asdict'):
+        return seven.json.dumps(value._asdict())
+
+    return seven.json.dumps(value)
+
+
 def _kv_message(all_items):
     return ' '.join(
-        ['{key}={value}'.format(key=key, value=seven.json.dumps(value)) for key, value in all_items]
+        ['{key}={value}'.format(key=key, value=_dump_value(value)) for key, value in all_items]
     )
 
 
