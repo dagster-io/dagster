@@ -66,6 +66,13 @@ export function formatElapsedTime(elapsed: number) {
   return text;
 }
 
+// Simple memoization function for methods that take a single object argument.
+// Returns a memoized copy of the provided function which retrieves the result
+// from a cache after the first invocation with a given object.
+//
+// Uses WeakMap to tie the lifecycle of the cache to the lifecycle of the
+// object argument.
+//
 export function weakmapMemoize<T extends object, R>(
   fn: (arg: T) => R
 ): (arg: T) => R {
