@@ -214,3 +214,10 @@ def postgres_db_info_resource(init_context):
         dialect='postgres',
         load_table=_do_load,
     )
+
+
+if __name__ == '__main__':
+    # This is a brutal hack. When the SparkSession is created for the first time there is a lengthy
+    # download process from Maven. This allows us to run python -m airline_demo.resources in the
+    # Dockerfile and avoid a long runtime delay before each containerized solid executes.
+    spark_session_local.resource_fn(None)

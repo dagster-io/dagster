@@ -89,6 +89,10 @@ RUN pip install -e dagstermill/
 
 ADD . .
 
+RUN pip install -e .
+
+RUN python -m airline_demo.resources
+
 ENTRYPOINT [ "dagit", "--no-watch" ]
 
 EXPOSE 3000
