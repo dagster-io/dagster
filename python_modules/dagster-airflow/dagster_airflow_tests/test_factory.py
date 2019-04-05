@@ -49,6 +49,7 @@ class TestExecuteDag(object):
                 ).replace('\'', '"')
             ) == json.loads(expected_results[result['step']['solid']['name']].replace('\'', '"'))
 
+
 @nettest
 class TestExecuteDagContainerized(object):
     pipeline = define_demo_execution_pipeline()
