@@ -5,6 +5,8 @@ from __future__ import unicode_literals
 import json
 import tempfile
 
+import pytest
+
 from dagster import seven
 from dagster.utils import script_relative_path
 
@@ -20,10 +22,8 @@ def test_import_module_from_path():
 
 
 def test_json_decode_error():
-    try:
+    with pytest.raises(seven.json.JSONDecodeError):
         json.loads(',dsfjd')
-    except seven.json.JSONDecodeError:
-        pass
 
 
 def test_json_dump():
