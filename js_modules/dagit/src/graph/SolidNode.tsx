@@ -209,9 +209,9 @@ export default class SolidNode extends React.Component<ISolidNodeProps> {
         y={y - 10}
         width={width + 20}
         height={height + 20}
-        stroke={Colors.GRAY3}
-        fill="transparent"
-        strokeWidth={this.props.minified ? 3 : 1}
+        stroke="rgba(255, 69, 0, 1)"
+        fill="rgba(255, 69, 0, 0.2)"
+        strokeWidth={this.props.minified ? 8 : 3}
         strokeDasharray={this.props.minified ? 12 : 4}
       />
     );
