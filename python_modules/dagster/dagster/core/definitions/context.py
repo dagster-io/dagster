@@ -7,7 +7,7 @@ from dagster.core.types.field_utils import check_user_facing_opt_field_param
 from dagster.core.user_context import ExecutionContext
 from dagster.core.system_config.objects import DEFAULT_CONTEXT_NAME
 
-from dagster.utils.logging import LogLevelEnum, level_from_string, define_colored_console_logger
+from dagster.utils.logging import LogLevelEnum, level_from_string
 
 from .resource import ResourceDefinition
 
@@ -97,8 +97,7 @@ class PipelineContextDefinition(object):
 
 def _default_context_fn(init_context):
     log_level = level_from_string(init_context.context_config['log_level'])
-    context = ExecutionContext(loggers=[define_colored_console_logger('dagster', level=log_level)])
-    return context
+    return ExecutionContext.console_logging(log_level)
 
 
 def _default_config_field():
