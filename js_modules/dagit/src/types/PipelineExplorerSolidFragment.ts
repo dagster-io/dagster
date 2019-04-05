@@ -179,9 +179,15 @@ export interface PipelineExplorerSolidFragment_inputs_definition {
   expectations: PipelineExplorerSolidFragment_inputs_definition_expectations[];
 }
 
+export interface PipelineExplorerSolidFragment_inputs_dependsOn_definition_type {
+  __typename: "RegularRuntimeType" | "ListRuntimeType" | "NullableRuntimeType";
+  name: string | null;
+}
+
 export interface PipelineExplorerSolidFragment_inputs_dependsOn_definition {
   __typename: "OutputDefinition";
   name: string;
+  type: PipelineExplorerSolidFragment_inputs_dependsOn_definition_type;
 }
 
 export interface PipelineExplorerSolidFragment_inputs_dependsOn_solid {
@@ -227,9 +233,21 @@ export interface PipelineExplorerSolidFragment_outputs_dependedBy_solid {
   name: string;
 }
 
+export interface PipelineExplorerSolidFragment_outputs_dependedBy_definition_type {
+  __typename: "RegularRuntimeType" | "ListRuntimeType" | "NullableRuntimeType";
+  name: string | null;
+}
+
+export interface PipelineExplorerSolidFragment_outputs_dependedBy_definition {
+  __typename: "InputDefinition";
+  name: string;
+  type: PipelineExplorerSolidFragment_outputs_dependedBy_definition_type;
+}
+
 export interface PipelineExplorerSolidFragment_outputs_dependedBy {
   __typename: "Input";
   solid: PipelineExplorerSolidFragment_outputs_dependedBy_solid;
+  definition: PipelineExplorerSolidFragment_outputs_dependedBy_definition;
 }
 
 export interface PipelineExplorerSolidFragment_outputs {

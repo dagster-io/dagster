@@ -58,6 +58,9 @@ export default class SolidNode extends React.Component<ISolidNodeProps> {
           dependsOn {
             definition {
               name
+              type {
+                name
+              }
             }
             solid {
               name
@@ -78,6 +81,12 @@ export default class SolidNode extends React.Component<ISolidNodeProps> {
           dependedBy {
             solid {
               name
+            }
+            definition {
+              name
+              type {
+                name
+              }
             }
           }
         }
@@ -126,14 +135,28 @@ export default class SolidNode extends React.Component<ISolidNodeProps> {
       const { name, type } = item.definition;
 
       const connections: Array<{ a: string; b: string }> = [];
+      let title = `${item.definition.name}: ${item.definition.type.name}`;
+      let clickTarget: string | null = null;
 
       if ("dependsOn" in item && item.dependsOn) {
+        title += `\n\nFrom:\n${item.dependsOn.solid.name}: ${
+          item.dependsOn.definition.name
+        }`;
+        clickTarget = item.dependsOn.solid.name;
         connections.push({
           a: item.dependsOn.solid.name,
           b: this.props.solid.name
         });
       }
       if ("dependedBy" in item) {
+        title +=
+          "\n\nUsed By:\n" +
+          item.dependedBy
+            .map(o => `${o.solid.name} ${o.definition.name}`)
+            .join("\n");
+        clickTarget =
+          item.dependedBy.length === 1 ? item.dependedBy[0].solid.name : null;
+
         connections.push(
           ...item.dependedBy.map(o => ({
             a: o.solid.name,
@@ -154,8 +177,9 @@ export default class SolidNode extends React.Component<ISolidNodeProps> {
           key={i}
           onMouseEnter={() => this.props.onHighlightConnections(connections)}
           onMouseLeave={() => this.props.onHighlightConnections([])}
+          onClick={() => clickTarget && this.props.onDoubleClick(clickTarget)}
         >
-          <title>{`${name}: ${type.name}`}</title>
+          <title>{title}</title>
           <SVGFlowLayoutRect
             x={x}
             y={y}

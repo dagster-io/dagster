@@ -484,9 +484,15 @@ export interface AppQuery_pipelinesOrError_PipelineConnection_nodes_solids_input
   expectations: AppQuery_pipelinesOrError_PipelineConnection_nodes_solids_inputs_definition_expectations[];
 }
 
+export interface AppQuery_pipelinesOrError_PipelineConnection_nodes_solids_inputs_dependsOn_definition_type {
+  __typename: "RegularRuntimeType" | "ListRuntimeType" | "NullableRuntimeType";
+  name: string | null;
+}
+
 export interface AppQuery_pipelinesOrError_PipelineConnection_nodes_solids_inputs_dependsOn_definition {
   __typename: "OutputDefinition";
   name: string;
+  type: AppQuery_pipelinesOrError_PipelineConnection_nodes_solids_inputs_dependsOn_definition_type;
 }
 
 export interface AppQuery_pipelinesOrError_PipelineConnection_nodes_solids_inputs_dependsOn_solid {
@@ -532,9 +538,21 @@ export interface AppQuery_pipelinesOrError_PipelineConnection_nodes_solids_outpu
   name: string;
 }
 
+export interface AppQuery_pipelinesOrError_PipelineConnection_nodes_solids_outputs_dependedBy_definition_type {
+  __typename: "RegularRuntimeType" | "ListRuntimeType" | "NullableRuntimeType";
+  name: string | null;
+}
+
+export interface AppQuery_pipelinesOrError_PipelineConnection_nodes_solids_outputs_dependedBy_definition {
+  __typename: "InputDefinition";
+  name: string;
+  type: AppQuery_pipelinesOrError_PipelineConnection_nodes_solids_outputs_dependedBy_definition_type;
+}
+
 export interface AppQuery_pipelinesOrError_PipelineConnection_nodes_solids_outputs_dependedBy {
   __typename: "Input";
   solid: AppQuery_pipelinesOrError_PipelineConnection_nodes_solids_outputs_dependedBy_solid;
+  definition: AppQuery_pipelinesOrError_PipelineConnection_nodes_solids_outputs_dependedBy_definition;
 }
 
 export interface AppQuery_pipelinesOrError_PipelineConnection_nodes_solids_outputs {

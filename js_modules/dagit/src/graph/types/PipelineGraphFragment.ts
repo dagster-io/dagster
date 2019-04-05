@@ -40,9 +40,15 @@ export interface PipelineGraphFragment_solids_inputs_definition {
   type: PipelineGraphFragment_solids_inputs_definition_type;
 }
 
+export interface PipelineGraphFragment_solids_inputs_dependsOn_definition_type {
+  __typename: "RegularRuntimeType" | "ListRuntimeType" | "NullableRuntimeType";
+  name: string | null;
+}
+
 export interface PipelineGraphFragment_solids_inputs_dependsOn_definition {
   __typename: "OutputDefinition";
   name: string;
+  type: PipelineGraphFragment_solids_inputs_dependsOn_definition_type;
 }
 
 export interface PipelineGraphFragment_solids_inputs_dependsOn_solid {
@@ -85,9 +91,21 @@ export interface PipelineGraphFragment_solids_outputs_dependedBy_solid {
   name: string;
 }
 
+export interface PipelineGraphFragment_solids_outputs_dependedBy_definition_type {
+  __typename: "RegularRuntimeType" | "ListRuntimeType" | "NullableRuntimeType";
+  name: string | null;
+}
+
+export interface PipelineGraphFragment_solids_outputs_dependedBy_definition {
+  __typename: "InputDefinition";
+  name: string;
+  type: PipelineGraphFragment_solids_outputs_dependedBy_definition_type;
+}
+
 export interface PipelineGraphFragment_solids_outputs_dependedBy {
   __typename: "Input";
   solid: PipelineGraphFragment_solids_outputs_dependedBy_solid;
+  definition: PipelineGraphFragment_solids_outputs_dependedBy_definition;
 }
 
 export interface PipelineGraphFragment_solids_outputs {

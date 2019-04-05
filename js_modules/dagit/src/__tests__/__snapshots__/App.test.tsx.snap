@@ -481,6 +481,96 @@ Array [
                   strokeWidth={1}
                   width={350}
                   x={100}
+                  y={312}
+                />
+                <text
+                  dominantBaseline="hanging"
+                  fill="#222"
+                  style={
+                    Object {
+                      "font": "30px \\"Source Code Pro\\", monospace",
+                      "pointerEvents": "none",
+                    }
+                  }
+                  width={223.2}
+                  x={112}
+                  y={333}
+                >
+                  sum_sq_solid
+                </text>
+                <g
+                  onClick={[Function]}
+                  onMouseEnter={[Function]}
+                  onMouseLeave={[Function]}
+                >
+                  <title>
+                    sum_df: PandasDataFrame
+
+From:
+sum_solid: result
+                  </title>
+                  <rect
+                    fill="#00B3A4"
+                    height={36}
+                    stroke="#979797"
+                    strokeWidth={1}
+                    width={30}
+                    x={100}
+                    y={282}
+                  />
+                  <ellipse
+                    cx={115}
+                    cy={300}
+                    fill="rgba(0, 0, 0, 0.3)"
+                    rx={7}
+                    ry={7}
+                    stroke="white"
+                    strokeWidth={1.5}
+                  />
+                </g>
+                <g
+                  onClick={[Function]}
+                  onMouseEnter={[Function]}
+                  onMouseLeave={[Function]}
+                >
+                  <title>
+                    result: PandasDataFrame
+
+Used By:
+
+                  </title>
+                  <rect
+                    fill="#137CBD"
+                    height={36}
+                    stroke="#979797"
+                    strokeWidth={1}
+                    width={30}
+                    x={100}
+                    y={378}
+                  />
+                  <ellipse
+                    cx={115}
+                    cy={396}
+                    fill="rgba(0, 0, 0, 0.3)"
+                    rx={7}
+                    ry={7}
+                    stroke="white"
+                    strokeWidth={1.5}
+                  />
+                </g>
+              </g>
+              <g
+                onClick={[Function]}
+                onDoubleClick={[Function]}
+                opacity={1}
+              >
+                <rect
+                  fill="#DBE6EE"
+                  height={72}
+                  stroke="#979797"
+                  strokeWidth={1}
+                  width={350}
+                  x={100}
                   y={130}
                 />
                 <text
@@ -499,6 +589,7 @@ Array [
                   sum_solid
                 </text>
                 <g
+                  onClick={[Function]}
                   onMouseEnter={[Function]}
                   onMouseLeave={[Function]}
                 >
@@ -525,11 +616,15 @@ Array [
                   />
                 </g>
                 <g
+                  onClick={[Function]}
                   onMouseEnter={[Function]}
                   onMouseLeave={[Function]}
                 >
                   <title>
                     result: PandasDataFrame
+
+Used By:
+sum_sq_solid sum_df
                   </title>
                   <rect
                     fill="#137CBD"
@@ -543,88 +638,6 @@ Array [
                   <ellipse
                     cx={115}
                     cy={214}
-                    fill="rgba(0, 0, 0, 0.3)"
-                    rx={7}
-                    ry={7}
-                    stroke="white"
-                    strokeWidth={1.5}
-                  />
-                </g>
-              </g>
-              <g
-                onClick={[Function]}
-                onDoubleClick={[Function]}
-                opacity={1}
-              >
-                <rect
-                  fill="#DBE6EE"
-                  height={72}
-                  stroke="#979797"
-                  strokeWidth={1}
-                  width={350}
-                  x={100}
-                  y={312}
-                />
-                <text
-                  dominantBaseline="hanging"
-                  fill="#222"
-                  style={
-                    Object {
-                      "font": "30px \\"Source Code Pro\\", monospace",
-                      "pointerEvents": "none",
-                    }
-                  }
-                  width={223.2}
-                  x={112}
-                  y={333}
-                >
-                  sum_sq_solid
-                </text>
-                <g
-                  onMouseEnter={[Function]}
-                  onMouseLeave={[Function]}
-                >
-                  <title>
-                    sum_df: PandasDataFrame
-                  </title>
-                  <rect
-                    fill="#00B3A4"
-                    height={36}
-                    stroke="#979797"
-                    strokeWidth={1}
-                    width={30}
-                    x={100}
-                    y={282}
-                  />
-                  <ellipse
-                    cx={115}
-                    cy={300}
-                    fill="rgba(0, 0, 0, 0.3)"
-                    rx={7}
-                    ry={7}
-                    stroke="white"
-                    strokeWidth={1.5}
-                  />
-                </g>
-                <g
-                  onMouseEnter={[Function]}
-                  onMouseLeave={[Function]}
-                >
-                  <title>
-                    result: PandasDataFrame
-                  </title>
-                  <rect
-                    fill="#137CBD"
-                    height={36}
-                    stroke="#979797"
-                    strokeWidth={1}
-                    width={30}
-                    x={100}
-                    y={378}
-                  />
-                  <ellipse
-                    cx={115}
-                    cy={396}
                     fill="rgba(0, 0, 0, 0.3)"
                     rx={7}
                     ry={7}
@@ -876,7 +889,7 @@ Array [
                       </span>
                       : 
                       <span>
-                        String
+                        log_level
                       </span>
                     </div>
                     }
