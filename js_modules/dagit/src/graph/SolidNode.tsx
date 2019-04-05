@@ -1,13 +1,13 @@
 import * as React from "react";
 import gql from "graphql-tag";
+import { isEqual, omitBy } from "lodash";
 import { Colors } from "@blueprintjs/core";
 import PipelineColorScale from "./PipelineColorScale";
 import { IFullSolidLayout, ILayout } from "./getFullSolidLayout";
 import {
   SolidNodeFragment,
   SolidNodeFragment_inputs,
-  SolidNodeFragment_outputs,
-  SolidNodeFragment_inputs_dependsOn
+  SolidNodeFragment_outputs
 } from "./types/SolidNodeFragment";
 import {
   SVGEllipseInRect,
@@ -84,6 +84,13 @@ export default class SolidNode extends React.Component<ISolidNodeProps> {
       }
     `
   };
+
+  shouldComponentUpdate(prevProps: ISolidNodeProps) {
+    return !isEqual(
+      omitBy(prevProps, v => typeof v === "function"),
+      omitBy(this.props, v => typeof v === "function")
+    );
+  }
 
   handleClick = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -202,9 +209,9 @@ export default class SolidNode extends React.Component<ISolidNodeProps> {
         y={y - 10}
         width={width + 20}
         height={height + 20}
-        stroke={Colors.GRAY3}
-        fill="transparent"
-        strokeWidth={this.props.minified ? 3 : 1}
+        stroke="rgba(255, 69, 0, 1)"
+        fill="rgba(255, 69, 0, 0.2)"
+        strokeWidth={this.props.minified ? 8 : 3}
         strokeDasharray={this.props.minified ? 12 : 4}
       />
     );

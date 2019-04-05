@@ -6,13 +6,14 @@ import { LinkVertical as Link } from "@vx/shape";
 import SVGViewport, { SVGViewportInteractor } from "./SVGViewport";
 import SolidNode from "./SolidNode";
 import {
-  IPoint,
   ILayoutConnection,
   IFullPipelineLayout,
   IFullSolidLayout
 } from "./getFullSolidLayout";
 import { PipelineGraphFragment } from "./types/PipelineGraphFragment";
 import { PipelineGraphSolidFragment } from "./types/PipelineGraphSolidFragment";
+
+const NoOp = () => {};
 
 interface IPipelineGraphProps {
   pipeline: PipelineGraphFragment;
@@ -30,8 +31,9 @@ interface IPipelineContentsProps extends IPipelineGraphProps {
   layout: IFullPipelineLayout;
 }
 
+type IConnHighlight = { a: string; b: string };
 interface IPipelineContentsState {
-  highlightedConnections: { a: string; b: string }[];
+  highlightedConnections: IConnHighlight[];
 }
 
 class PipelineGraphContents extends React.PureComponent<
@@ -42,41 +44,17 @@ class PipelineGraphContents extends React.PureComponent<
     highlightedConnections: []
   };
 
-  renderConnections(connections: ILayoutConnection[]) {
-    const solids = this.props.layout.solids;
-
-    return connections.map(({ from, to }, i) => (
-      <g
-        key={i}
-        onMouseLeave={() => this.setState({ highlightedConnections: [] })}
-        onMouseEnter={() =>
-          this.setState({
-            highlightedConnections: [{ a: from.solidName, b: to.solidName }]
-          })
-        }
-      >
-        <StyledLink
-          x={(d: IPoint) => d.x}
-          y={(d: IPoint) => d.y}
-          data={{
-            // can also use from.point for the "Dagre" closest point on node
-            source: solids[from.solidName].outputs[from.edgeName].port,
-            target: solids[to.solidName].inputs[to.edgeName].port
-          }}
-        >
-          <title>{`${from.solidName} - ${to.solidName}`}</title>
-        </StyledLink>
-      </g>
-    ));
-  }
+  onHighlightConnections = (connections: IConnHighlight[]) => {
+    this.setState({ highlightedConnections: connections });
+  };
 
   render() {
     const {
       layout,
       minified,
       pipeline,
-      onClickSolid = () => {},
-      onDoubleClickSolid = () => {},
+      onClickSolid = NoOp,
+      onDoubleClickSolid = NoOp,
       highlightedSolids,
       selectedSolid
     } = this.props;
@@ -93,16 +71,18 @@ class PipelineGraphContents extends React.PureComponent<
 
     return (
       <g>
-        <g style={{ opacity: 0.2 }}>
-          {this.renderConnections(
-            layout.connections.filter(c => !isHighlighted(c))
-          )}
-        </g>
-        <g style={{ opacity: 0.75 }}>
-          {this.renderConnections(
-            layout.connections.filter(c => isHighlighted(c))
-          )}
-        </g>
+        <SolidLinks
+          layout={layout}
+          opacity={0.2}
+          connections={layout.connections}
+          onHighlight={this.onHighlightConnections}
+        />
+        <SolidLinks
+          layout={layout}
+          opacity={0.55}
+          connections={layout.connections.filter(c => isHighlighted(c))}
+          onHighlight={this.onHighlightConnections}
+        />
         {pipeline.solids.map(solid => (
           <SolidNode
             key={solid.name}
@@ -110,12 +90,16 @@ class PipelineGraphContents extends React.PureComponent<
             minified={minified}
             onClick={onClickSolid}
             onDoubleClick={onDoubleClickSolid}
-            onHighlightConnections={connections =>
-              this.setState({ highlightedConnections: connections })
-            }
+            onHighlightConnections={this.onHighlightConnections}
             layout={layout.solids[solid.name]}
             selected={selectedSolid === solid}
-            highlightedConnections={highlightedConnections}
+            highlightedConnections={
+              highlightedConnections.some(
+                c => c.a === solid.name || c.b === solid.name
+              )
+                ? highlightedConnections
+                : []
+            }
             dim={
               highlightedSolids.length > 0 &&
               highlightedSolids.indexOf(solid) == -1
@@ -258,6 +242,43 @@ export default class PipelineGraph extends React.Component<
     );
   }
 }
+
+const SolidLinks = React.memo(
+  (props: {
+    opacity: number;
+    layout: IFullPipelineLayout;
+    connections: ILayoutConnection[];
+    onHighlight: (arr: IConnHighlight[]) => void;
+  }) => {
+    const solids = props.layout.solids;
+
+    return (
+      <g style={{ opacity: props.opacity }}>
+        {props.connections.map(({ from, to }, i) => (
+          <g
+            key={i}
+            onMouseLeave={() => props.onHighlight([])}
+            onMouseEnter={() =>
+              props.onHighlight([{ a: from.solidName, b: to.solidName }])
+            }
+          >
+            <StyledLink
+              data={{
+                // can also use from.point for the "Dagre" closest point on node
+                source: solids[from.solidName].outputs[from.edgeName].port,
+                target: solids[to.solidName].inputs[to.edgeName].port
+              }}
+            >
+              <title>{`${from.solidName} - ${to.solidName}`}</title>
+            </StyledLink>
+          </g>
+        ))}
+      </g>
+    );
+  }
+);
+
+SolidLinks.displayName = "SolidLinks";
 
 const SVGContainer = styled.svg`
   border-radius: 0;
