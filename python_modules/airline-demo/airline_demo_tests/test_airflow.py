@@ -2,6 +2,7 @@
 import os
 
 from dagster.utils import script_relative_path
+
 try:
     from dagster_airflow.test_fixtures import dagster_airflow_python_operator_pipeline
 except ImportError:
