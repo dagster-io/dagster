@@ -90,27 +90,6 @@ def test_dupe_solid_repo_definition():
         repo.get_all_pipelines()
 
 
-def test_dupe_solid_repo_definition_iterate():
-    @lambda_solid(name='same')
-    def noop():
-        pass
-
-    @lambda_solid(name='same')
-    def noop2():
-        pass
-
-    repo = RepositoryDefinition(
-        'error_repo',
-        pipeline_dict={
-            'first': lambda: PipelineDefinition(name='first', solids=[noop]),
-            'second': lambda: PipelineDefinition(name='second', solids=[noop2]),
-        },
-    )
-
-    with pytest.raises(DagsterInvalidDefinitionError):
-        list(repo.iterate_over_pipelines())
-
-
 def test_dupe_solid_repo_definition_unforced():
     @lambda_solid(name='same')
     def noop():
