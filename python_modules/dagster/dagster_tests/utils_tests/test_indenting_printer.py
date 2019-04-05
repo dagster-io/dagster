@@ -157,7 +157,7 @@ def test_indenting_block_printer_context_management():
 
 
 def test_indenting_block_printer_block_printing():
-    with IndentingStringIoPrinter() as printer:
+    with IndentingStringIoPrinter(indent_level=4) as printer:
         printer.comment(LOREM_IPSUM)
         with printer.with_indent():
             printer.block(LOREM_IPSUM)
