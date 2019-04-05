@@ -24,7 +24,7 @@ function hueForTag(text = "") {
   );
 }
 
-const SolidTags: React.SFC<ISolidTagsProps> = ({
+const SolidTags: React.FunctionComponent<ISolidTagsProps> = ({
   tags,
   x,
   y,
@@ -74,4 +74,4 @@ const SolidTags: React.SFC<ISolidTagsProps> = ({
   );
 };
 
-export default SolidTags;
+export default React.memo(SolidTags);

@@ -256,7 +256,7 @@ export class SVGFlowLayoutRect extends React.Component<
   }
 }
 
-export class SVGFlowLayoutFiller extends React.Component {
+export class SVGFlowLayoutFiller extends React.PureComponent {
   static intrinsicSizeForProps(): ISize {
     return {
       compressionPriority: 2,
