@@ -89,14 +89,6 @@ class RepositoryDefinition(object):
 
         return pipeline
 
-    def iterate_over_pipelines(self):
-        '''Returns list of pipelines. Exists for backwards compat. The name lies.
-
-        Returns:
-            List[PipelineDefinition]:
-        '''
-        return self.get_all_pipelines()
-
     def get_all_pipelines(self):
         '''Return all pipelines as a list
 

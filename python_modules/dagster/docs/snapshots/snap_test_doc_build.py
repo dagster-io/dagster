@@ -743,8 +743,6 @@ snapshots['test_build_all_docs 3'] = '''
 </li>
       <li><a href="sections/api/apidocs/definitions.html#dagster.OutputDefinition.is_optional">is_optional (dagster.OutputDefinition attribute)</a>
 </li>
-      <li><a href="sections/api/apidocs/definitions.html#dagster.RepositoryDefinition.iterate_over_pipelines">iterate_over_pipelines() (dagster.RepositoryDefinition method)</a>
-</li>
   </ul></td>
 </tr></table>
 
@@ -19977,22 +19975,6 @@ name of the pipeline are the same.</p>
 <tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">Instance of PipelineDefinition with that name.</td>
 </tr>
 <tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><a class="reference internal" href="#dagster.PipelineDefinition" title="dagster.PipelineDefinition">PipelineDefinition</a></td>
-</tr>
-</tbody>
-</table>
-</dd></dl>
-
-<dl class="method">
-<dt id="dagster.RepositoryDefinition.iterate_over_pipelines">
-<code class="descname">iterate_over_pipelines</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#dagster.RepositoryDefinition.iterate_over_pipelines" title="Permalink to this definition">¶</a></dt>
-<dd><p>Returns list of pipelines. Exists for backwards compat. The name lies.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"></td>
-</tr>
-<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">List[<a class="reference internal" href="#dagster.PipelineDefinition" title="dagster.PipelineDefinition">PipelineDefinition</a>]</td>
 </tr>
 </tbody>
 </table>
