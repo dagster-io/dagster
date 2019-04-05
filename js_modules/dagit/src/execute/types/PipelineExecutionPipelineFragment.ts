@@ -1,5 +1,4 @@
 /* tslint:disable */
-/* eslint-disable */
 // This file was automatically generated and should not be edited.
 
 // ====================================================
@@ -78,6 +77,7 @@ export type PipelineExecutionPipelineFragment_configTypes_CompositeConfigType_fi
 export interface PipelineExecutionPipelineFragment_configTypes_CompositeConfigType_fields {
   __typename: "ConfigTypeField";
   name: string;
+  description: string | null;
   isOptional: boolean;
   configType: PipelineExecutionPipelineFragment_configTypes_CompositeConfigType_fields_configType;
 }

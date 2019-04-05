@@ -22,6 +22,7 @@ export const CONFIG_EDITOR_PIPELINE_FRAGMENT = gql`
       ... on CompositeConfigType {
         fields {
           name
+          description
           isOptional
           configType {
             __typename

@@ -78,6 +78,7 @@ export type PipelineExecutionRootQuery_pipeline_configTypes_CompositeConfigType_
 export interface PipelineExecutionRootQuery_pipeline_configTypes_CompositeConfigType_fields {
   __typename: "ConfigTypeField";
   name: string;
+  description: string | null;
   isOptional: boolean;
   configType: PipelineExecutionRootQuery_pipeline_configTypes_CompositeConfigType_fields_configType;
 }

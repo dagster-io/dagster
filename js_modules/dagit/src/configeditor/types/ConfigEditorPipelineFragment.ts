@@ -78,6 +78,7 @@ export type ConfigEditorPipelineFragment_configTypes_CompositeConfigType_fields_
 export interface ConfigEditorPipelineFragment_configTypes_CompositeConfigType_fields {
   __typename: "ConfigTypeField";
   name: string;
+  description: string | null;
   isOptional: boolean;
   configType: ConfigEditorPipelineFragment_configTypes_CompositeConfigType_fields_configType;
 }

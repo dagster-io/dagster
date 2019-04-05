@@ -3,19 +3,15 @@ var CodeMirror = require("codemirror");
 
 var GUTTER_ID = "CodeMirror-lint-markers";
 
-function showTooltip(e, content) {
+function showTooltip(e, content, node) {
   var tt = document.createElement("div");
+  var nodeRect = node.getBoundingClientRect();
+
   tt.className = "CodeMirror-lint-tooltip";
   tt.appendChild(content.cloneNode(true));
   document.body.appendChild(tt);
-
-  function position(e) {
-    if (!tt.parentNode) return CodeMirror.off(document, "mousemove", position);
-    tt.style.top = Math.max(0, e.clientY - tt.offsetHeight - 5) + "px";
-    tt.style.left = e.clientX + 5 + "px";
-  }
-  CodeMirror.on(document, "mousemove", position);
-  position(e);
+  tt.style.top = nodeRect.top - tt.clientHeight - 5 + "px";
+  tt.style.left = nodeRect.left + 5 + "px";
   if (tt.style.opacity != null) tt.style.opacity = 1;
   return tt;
 }
@@ -32,7 +28,7 @@ function hideTooltip(tt) {
 }
 
 function showTooltipFor(e, content, node) {
-  var tooltip = showTooltip(e, content);
+  var tooltip = showTooltip(e, content, node);
   function hide() {
     CodeMirror.off(node, "mouseout", hide);
     if (tooltip) {
@@ -88,11 +84,11 @@ function makeMarker(labels, severity, multiple, tooltips) {
     inner.className = "CodeMirror-lint-marker-multiple";
   }
 
-  if (tooltips != false)
+  if (tooltips != false) {
     CodeMirror.on(inner, "mouseover", function(e) {
       showTooltipFor(e, labels, inner);
     });
-
+  }
   return marker;
 }
 
@@ -233,9 +229,22 @@ function onChange(cm) {
   }, state.options.delay || 500);
 }
 
-function popupTooltips(annotations, e) {
+function popupTooltip(docs, annotations, e) {
   var target = e.target || e.srcElement;
+
   var tooltip = document.createDocumentFragment();
+
+  if (docs) {
+    var docsEl = document.createElement("div");
+    docsEl.textContent = docs;
+    tooltip.appendChild(docsEl);
+    if (annotations.length) {
+      docsEl.style.paddingBottom = "4px";
+      docsEl.style.marginBottom = "4px";
+      docsEl.style.borderBottom = "1px solid rgba(0,0,0,0.25)";
+    }
+  }
+
   for (var i = 0; i < annotations.length; i++) {
     var ann = annotations[i];
     tooltip.appendChild(annotationTooltip(ann));
@@ -245,18 +254,24 @@ function popupTooltips(annotations, e) {
 
 function onMouseOver(cm, e) {
   var target = e.target || e.srcElement;
-  if (!/\bCodeMirror-lint-mark-/.test(target.className)) return;
   var box = target.getBoundingClientRect(),
     x = (box.left + box.right) / 2,
     y = (box.top + box.bottom) / 2;
-  var spans = cm.findMarksAt(cm.coordsChar({ left: x, top: y }, "client"));
+  var pos = cm.coordsChar({ left: x, top: y }, "client");
+  var spans = cm.findMarksAt(pos);
+
+  var getDocs = cm.getHelper(CodeMirror.Pos(0, 0), "dagster-docs");
+  var docs = getDocs(cm, pos);
 
   var annotations = [];
   for (var i = 0; i < spans.length; ++i) {
     var ann = spans[i].__annotation;
     if (ann) annotations.push(ann);
   }
-  if (annotations.length) popupTooltips(annotations, e);
+
+  if (docs || annotations.length) {
+    popupTooltip(docs, annotations, e);
+  }
 }
 
 CodeMirror.defineOption("lint", false, function(cm, val, old) {

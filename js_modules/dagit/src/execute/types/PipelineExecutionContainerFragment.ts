@@ -78,6 +78,7 @@ export type PipelineExecutionContainerFragment_configTypes_CompositeConfigType_f
 export interface PipelineExecutionContainerFragment_configTypes_CompositeConfigType_fields {
   __typename: "ConfigTypeField";
   name: string;
+  description: string | null;
   isOptional: boolean;
   configType: PipelineExecutionContainerFragment_configTypes_CompositeConfigType_fields_configType;
 }
