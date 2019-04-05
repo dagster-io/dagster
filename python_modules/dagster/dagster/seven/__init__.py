@@ -54,3 +54,20 @@ def reload_module(module):
         return reload_(module)
 
     return reload(module)  # pylint: disable=undefined-variable
+
+
+def is_ascii(str_):
+    if sys.version_info.major < 3:
+        try:
+            str_.decode('ascii')
+            return True
+        except UnicodeEncodeError:
+            return False
+    elif sys.version_info.major == 3 and sys.version_info.minor < 7:
+        try:
+            str_.encode('ascii')
+            return True
+        except UnicodeEncodeError:
+            return False
+    else:
+        return str_.isascii()
