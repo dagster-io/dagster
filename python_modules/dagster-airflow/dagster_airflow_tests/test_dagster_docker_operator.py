@@ -4,7 +4,7 @@ import pytest
 
 from airflow.exceptions import AirflowException
 
-from dagster_airflow.dagster_plugin import DagsterDockerOperator
+from dagster_airflow.operators import DagsterDockerOperator
 
 
 def test_init_modified_docker_operator():

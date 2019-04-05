@@ -5,7 +5,6 @@ fixtures, read: https://docs.pytest.org/en/latest/fixture.html.
 '''
 # pylint doesn't understand the way that pytest constructs fixture dependnecies
 # pylint: disable=redefined-outer-name, unused-argument
-import datetime
 import os
 import shutil
 import subprocess
@@ -18,15 +17,7 @@ import docker
 import pytest
 
 from dagster import check, seven
-from dagster.core.execution import create_execution_plan
 from dagster.utils import load_yaml_from_path, mkdir_p, pushd, script_relative_path
-
-from dagster_airflow import scaffold_airflow_dag
-
-from .test_project.dagster_airflow_demo import (
-    define_demo_error_pipeline,
-    define_demo_execution_pipeline,
-)
 
 IMAGE = 'dagster-airflow-demo'
 
@@ -194,128 +185,3 @@ def env_config(s3_bucket):
 @pytest.fixture(scope='session')
 def s3_bucket():
     yield 'dagster-airflow-scratch'
-
-
-@pytest.fixture(scope='module')
-def scaffold_dag(airflow_test, pipeline, env_config):
-    '''Scaffolds an Airflow dag and installs it.
-
-    We should probably use test classes for these tests and set attributes like pipeline/env_config
-    on the classes to make this more reusable.
-    '''
-    docker_image, dags_path, _ = airflow_test
-
-    tempdir = tempfile.gettempdir()
-
-    static_path, editable_path = scaffold_airflow_dag(
-        pipeline=pipeline,
-        env_config=env_config,
-        image=docker_image,
-        output_path=tempdir,
-        dag_kwargs={'default_args': {'start_date': datetime.datetime(1900, 1, 1)}},
-    )
-
-    # Ensure that the scaffolded files parse correctly
-    subprocess.check_output(['python', editable_path])
-
-    shutil.copyfile(
-        static_path, os.path.abspath(os.path.join(dags_path, os.path.basename(static_path)))
-    )
-
-    shutil.copyfile(
-        editable_path, os.path.abspath(os.path.join(dags_path, os.path.basename(editable_path)))
-    )
-
-    os.remove(static_path)
-    os.remove(editable_path)
-
-    execution_date = datetime.datetime.utcnow().strftime('%Y-%m-%d')
-    pipeline_name = pipeline.name
-
-    execution_plan = create_execution_plan(pipeline, env_config)
-
-    yield (
-        pipeline_name,
-        execution_plan,
-        execution_date,
-        os.path.abspath(os.path.join(dags_path, os.path.basename(static_path))),
-        os.path.abspath(os.path.join(dags_path, os.path.basename(editable_path))),
-    )
-
-    # Clean up the installed DAGs
-    os.remove(os.path.abspath(os.path.join(dags_path, os.path.basename(static_path))))
-    os.remove(os.path.abspath(os.path.join(dags_path, os.path.basename(editable_path))))
-
-    # Including any bytecode cruft
-    try:
-        os.remove(
-            os.path.abspath(os.path.join(dags_path, os.path.basename(static_path)[:-3] + '.pyc'))
-        )
-    except (seven.FileNotFoundError, OSError):
-        pass
-
-    try:
-        os.remove(
-            os.path.abspath(os.path.join(dags_path, os.path.basename(editable_path)[:-3] + '.pyc'))
-        )
-    except (seven.FileNotFoundError, OSError):
-        pass
-
-
-@pytest.fixture(scope='module')
-def scaffold_error_dag(airflow_test):
-    '''See comment on scaffold_dag for a strategy to reduce repetition here.'''
-    docker_image, dags_path, _ = airflow_test
-    pipeline = define_demo_error_pipeline()
-    env_config = {}
-
-    tempdir = tempfile.gettempdir()
-
-    static_path, editable_path = scaffold_airflow_dag(
-        pipeline=pipeline,
-        env_config=env_config,
-        image=docker_image,
-        output_path=tempdir,
-        dag_kwargs={'default_args': {'start_date': datetime.datetime(1900, 1, 1)}},
-    )
-
-    # Ensure that the scaffolded files parse correctly
-    subprocess.check_output(['python', editable_path])
-
-    shutil.copyfile(
-        static_path, os.path.abspath(os.path.join(dags_path, os.path.basename(static_path)))
-    )
-
-    shutil.copyfile(
-        editable_path, os.path.abspath(os.path.join(dags_path, os.path.basename(editable_path)))
-    )
-
-    os.remove(static_path)
-    os.remove(editable_path)
-
-    execution_date = datetime.datetime.utcnow().strftime('%Y-%m-%d')
-    pipeline_name = pipeline.name
-
-    execution_plan = create_execution_plan(pipeline, env_config)
-
-    yield (
-        pipeline_name,
-        execution_plan,
-        execution_date,
-        os.path.abspath(os.path.join(dags_path, os.path.basename(static_path))),
-        os.path.abspath(os.path.join(dags_path, os.path.basename(editable_path))),
-    )
-
-    os.remove(os.path.abspath(os.path.join(dags_path, os.path.basename(static_path))))
-    os.remove(os.path.abspath(os.path.join(dags_path, os.path.basename(editable_path))))
-
-    try:
-        os.remove(
-            os.path.abspath(os.path.join(dags_path, os.path.basename(static_path)[:-3] + '.pyc'))
-        )
-        os.remove(
-            os.path.abspath(os.path.join(dags_path, os.path.basename(editable_path)[:-3] + '.pyc'))
-        )
-
-    except (seven.FileNotFoundError, OSError):
-        pass

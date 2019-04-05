@@ -1,12 +1,4 @@
-'''The dagster-airflow Airflow plugin.
-
-Place this file in your Airflow plugins directory (``$AIRFLOW_HOME/plugins``) to make
-airflow.operators.dagster_plugin.DagsterDockerOperator available.
-'''
-from __future__ import print_function
-
-import ast
-import errno
+'''The dagster-airflow operators.'''
 import json
 import os
 import sys
@@ -14,47 +6,18 @@ import sys
 from abc import ABCMeta, abstractmethod
 from contextlib import contextmanager
 
+from six import string_types, with_metaclass
+
 from airflow.exceptions import AirflowException
 from airflow.operators.docker_operator import DockerOperator
 from airflow.operators.python_operator import PythonOperator
-from airflow.plugins_manager import AirflowPlugin
 from airflow.utils.file import TemporaryDirectory
 from docker import APIClient, from_env
 
+from dagster.seven.json import JSONDecodeError
 
-if sys.version_info.major >= 3:
-    from json.decoder import JSONDecodeError  # pylint:disable=ungrouped-imports
-else:
-    JSONDecodeError = ValueError
+from .query import DAGSTER_OPERATOR_COMMAND_TEMPLATE, QUERY_TEMPLATE
 
-
-# We don't use six here to avoid taking the dependency
-STRING_TYPES = ("".__class__, u"".__class__)
-
-# Again, we don't use six
-def with_metaclass(meta, *bases):
-    """Create a base class with a metaclass."""
-    # This requires a bit of explanation: the basic idea is to make a dummy
-    # metaclass for one level of class instantiation that replaces itself with
-    # the actual metaclass.
-    class metaclass(type):
-        def __new__(cls, name, this_bases, d):
-            return meta(name, bases, d)
-
-        @classmethod
-        def __prepare__(cls, name, this_bases):
-            return meta.__prepare__(name, bases)
-
-    return type.__new__(metaclass, 'temporary_class', (), {})
-
-
-# FIXME need the types and separate variables
-DAGSTER_OPERATOR_COMMAND_TEMPLATE = '''-q '
-{query}
-'
-'''.strip(
-    '\n'
-)
 
 DOCKER_TEMPDIR = '/tmp/results'
 
@@ -63,82 +26,7 @@ DEFAULT_ENVIRONMENT = {
     'AWS_SECRET_ACCESS_KEY': os.getenv('AWS_SECRET_ACCESS_KEY'),
 }
 
-# TODO need to enrich error handling as we enrich the ultimate union type for executePlan
-QUERY_TEMPLATE = '''
-mutation(
-  $config: PipelineConfig = {config},
-  $pipelineName: String = "{pipeline_name}",
-  $runId: String = "{run_id}",
-  $stepKeys: [String!] = {step_keys}
-) {{
-  executePlan(
-    config: $config,
-    executionMetadata: {{
-      runId: $runId
-    }},
-    pipelineName: $pipelineName,
-    stepKeys: $stepKeys,
-  ) {{
-    __typename
-    ... on PipelineConfigValidationInvalid {{
-      pipeline {{
-        name
-      }}
-      errors {{
-        __typename
-        message
-        path
-        reason
-      }}
-    }}
-    ... on PipelineNotFoundError {{
-        message
-        stack
-        pipelineName
-    }}
-    ... on ExecutePlanSuccess {{
-      pipeline {{
-        name
-      }}
-      hasFailures
-      stepEvents {{
-        step {{
-          key
-          solid {{
-            name
-          }}
-          kind
-        }}
-        __typename
-        ... on ExecutionStepOutputEvent {{
-          outputName
-          valueRepr
-        }}
-        ... on ExecutionStepFailureEvent {{
-          error {{
-              message
-          }}
-        }}
-      }}
-    }}
-  }}
-}}
-'''.strip(
-    '\n'
-)
-
 LINE_LENGTH = 100
-
-
-# We include this directly to avoid taking the dependency on dagster
-def mkdir_p(path):
-    try:
-        os.makedirs(path)
-    except OSError as exc:  # Python >2.5
-        if exc.errno == errno.EEXIST and os.path.isdir(path):
-            pass
-        else:
-            raise
 
 
 def parse_raw_res(raw_res):
@@ -171,7 +59,7 @@ def handle_errors(res, last_line):
         raise AirflowException('Unexpected response type. Response: {}'.format(res))
 
 
-class DagsterOperator(with_metaclass(ABCMeta)):
+class DagsterOperator(with_metaclass(ABCMeta)):  # pylint:disable=no-init
     '''Abstract base class for Dagster operators.
 
     Implement operator_for_solid to support dynamic generation of Airflow operators corresponding to
@@ -305,7 +193,7 @@ class DagsterDockerOperator(ModifiedDockerOperator, DagsterOperator):
 
         # We don't use dagster.check here to avoid taking the dependency.
         for attr_ in ['config', 'pipeline_name']:
-            assert isinstance(getattr(self, attr_), STRING_TYPES), (
+            assert isinstance(getattr(self, attr_), string_types), (
                 'Bad value for DagsterDockerOperator {attr_}: expected a string and got {value} of '
                 'type {type_}'.format(
                     attr_=attr_, value=getattr(self, attr_), type_=type(getattr(self, attr_))
@@ -322,11 +210,12 @@ class DagsterDockerOperator(ModifiedDockerOperator, DagsterOperator):
 
         bad_keys = []
         for ix, step_key in enumerate(self.step_keys):
-            if not isinstance(step, STRING_TYPES):
+            if not isinstance(step, string_types):
                 bad_keys.append((ix, step_key))
-        assert (
-            not bad_keys
-        ), 'Bad values for DagsterDockerOperator step_keys (expected only strings): {bad_values}'.format(
+        assert not bad_keys, (
+            'Bad values for DagsterDockerOperator step_keys (expected only strings): '
+            '{bad_values}'
+        ).format(
             bad_values=', '.join(
                 [
                     '{value} of type {type_} at index {idx}'.format(
@@ -525,11 +414,3 @@ class DagsterPythonOperator(PythonOperator, DagsterOperator):
             **op_kwargs
         )
         # fmt: on
-
-
-class DagsterPlugin(AirflowPlugin):
-    '''Dagster plugin for Apache Airflow.
-    '''
-
-    name = 'dagster_plugin'
-    operators = [DagsterDockerOperator, DagsterPythonOperator]

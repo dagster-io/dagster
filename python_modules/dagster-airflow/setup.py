@@ -41,8 +41,6 @@ def _do_setup(name='dagster-airflow'):
             'enum-compat==0.0.2',
             'future>=0.16.0, <0.17.0a0',  # pin to range for Airflow compat
             'six>=1.11.0',
-            # cli
-            'click>=6.7',
             # airflow
             'apache-airflow==1.10.2',
             # dagster
@@ -52,7 +50,6 @@ def _do_setup(name='dagster-airflow'):
             # aws
             'boto3==1.9.*',
         ],
-        entry_points={"console_scripts": ['dagster-airflow = dagster_airflow.cli:main']},
     )
 
 

@@ -1,14 +1,22 @@
 from __future__ import print_function
+
 from contextlib import contextmanager
+from textwrap import TextWrapper
+
+from six import StringIO
 
 from dagster import check
 
 
+LINE_LENGTH = 100
+
+
 class IndentingPrinter(object):
-    def __init__(self, indent_level=2, printer=print, current_indent=0):
+    def __init__(self, indent_level=2, printer=print, current_indent=0, line_length=LINE_LENGTH):
         self.current_indent = current_indent
         self.indent_level = check.int_param(indent_level, 'indent_level')
         self.printer = check.callable_param(printer, 'printer')
+        self.line_length = line_length
 
         self._line_so_far = ''
 
@@ -20,6 +28,21 @@ class IndentingPrinter(object):
         check.str_param(text, 'text')
         self.printer(self.current_indent_str + self._line_so_far + text)
         self._line_so_far = ''
+
+    def block(self, text, prefix=''):
+        '''Automagically wrap a block of text.'''
+        wrapper = TextWrapper(
+            width=self.line_length - len(self.current_indent_str),
+            initial_indent=prefix,
+            subsequent_indent=prefix,
+            break_long_words=False,
+            break_on_hyphens=False,
+        )
+        for line in wrapper.wrap(text):
+            self.line(line)
+
+    def comment(self, text):
+        self.block(text, prefix='# ')
 
     @property
     def current_indent_str(self):
@@ -46,3 +69,22 @@ class IndentingPrinter(object):
         self.increase_indent()
         yield
         self.decrease_indent()
+
+
+class IndentingStringIoPrinter(IndentingPrinter):
+    '''Subclass of IndentingPrinter wrapping a StringIO.'''
+
+    def __init__(self, **kwargs):
+        self.buffer = StringIO()
+        self.printer = lambda x: self.buffer.write(x + '\n')
+        super(IndentingStringIoPrinter, self).__init__(printer=self.printer, **kwargs)
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, _exception_type, _exception_value, _traceback):
+        self.buffer.close()
+
+    def read(self):
+        '''Get the value of the backing StringIO.'''
+        return self.buffer.getvalue()

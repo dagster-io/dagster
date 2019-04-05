@@ -4,31 +4,7 @@ from dagster import check
 
 from dagster.utils import script_relative_path
 
-from dagster_airflow.scaffold import (
-    _bad_import,
-    format_config_for_graphql,
-    _is_py,
-    _normalize_key,
-    _split_lines,
-)
-
-
-def test_normalize_key():
-    assert _normalize_key('foo.bar_baz') == 'foo_bar__baz'
-
-
-def test_is_py():
-    assert _is_py(script_relative_path('test_scaffold_helpers.py'))
-    assert not _is_py(script_relative_path('test_scaffold_helpers'))
-
-
-def test_bad_import():
-    assert not _bad_import('foo_bar.py')
-    assert _bad_import('foo.bar.py')
-
-
-def test_split_lines():
-    assert _split_lines('foo\nbar\n') == ['foo', 'bar,']
+from dagster_airflow.factory import format_config_for_graphql
 
 
 def test_format_config():
