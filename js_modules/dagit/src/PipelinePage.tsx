@@ -106,7 +106,13 @@ export default class PipelinePage extends React.Component<IPipelinePageProps> {
     let body;
 
     if (error) {
-      body = <PythonErrorInfo error={error} centered={true} />;
+      body = (
+        <PythonErrorInfo
+          contextMsg={`${error.__typename} encountered when loading pipelines:`}
+          error={error}
+          centered={true}
+        />
+      );
     } else if (selectedPipeline && selectedTab) {
       body = (
         <Switch>
