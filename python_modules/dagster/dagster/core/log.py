@@ -11,8 +11,9 @@ DAGSTER_DEFAULT_LOGGER = 'dagster'
 
 def _kv_message(all_items, multiline=False):
     sep = '\n' if multiline else ' '
+    format_str = '{key:>20} = {value}' if multiline else '{key}={value}'
     return sep + sep.join(
-        ['{key}={value}'.format(key=key, value=seven.json.dumps(value)) for key, value in all_items]
+        [format_str.format(key=key, value=seven.json.dumps(value)) for key, value in all_items]
     )
 
 
