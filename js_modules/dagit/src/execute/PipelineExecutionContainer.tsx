@@ -19,13 +19,11 @@ import {
   applyCreateSession,
   IStorageData,
   IExecutionSession,
-  IExecutionSessionChanges,
-  SESSION_CONFIG_PLACEHOLDER
+  IExecutionSessionChanges
 } from "../LocalStorage";
 import {
   CONFIG_EDITOR_PIPELINE_FRAGMENT,
   CONFIG_EDITOR_VALIDATION_FRAGMENT,
-  scaffoldConfig,
   responseToValidationResult
 } from "../configeditor/ConfigEditorUtils";
 
@@ -40,7 +38,6 @@ import {
 } from "./types/StartPipelineExecution";
 
 const YAML_SYNTAX_INVALID = `The YAML you provided couldn't be parsed. Please fix the syntax errors and try again.`;
-const CONFIRM_RESET_TO_SCAFFOLD = `Would you like to reset your config to a scaffold based on this subset of the pipeline?`;
 
 interface IPipelineExecutionContainerProps {
   data: IStorageData;
@@ -94,15 +91,6 @@ export default class PipelineExecutionContainer extends React.Component<
   ensureSessionStateValid() {
     const { currentSession, pipeline } = this.props;
     if (!pipeline) return;
-
-    // We have to initialize the sessions in local storage here because the app
-    // needs to have the pieline (with the correct subset) in order to scaffold
-    // the config YAML. In the future this could go in some sort of HOC I suppose.
-    if (currentSession.config === SESSION_CONFIG_PLACEHOLDER) {
-      this.onSaveSession(currentSession.key, {
-        config: scaffoldConfig(pipeline)
-      });
-    }
   }
 
   onConfigChange = (config: any) => {
@@ -110,12 +98,7 @@ export default class PipelineExecutionContainer extends React.Component<
   };
 
   onSolidSubsetChange = (solidSubset: string[] | null) => {
-    const changes: IExecutionSessionChanges = { solidSubset };
-    if (confirm(CONFIRM_RESET_TO_SCAFFOLD)) {
-      changes.config = SESSION_CONFIG_PLACEHOLDER;
-    }
-
-    this.onSaveSession(this.props.currentSession.key, changes);
+    this.onSaveSession(this.props.currentSession.key, { solidSubset });
   };
 
   onSelectSession = (session: string) => {

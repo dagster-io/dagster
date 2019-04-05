@@ -30,15 +30,10 @@ export interface IExecutionSession {
 
 export type IExecutionSessionChanges = Partial<IExecutionSession>;
 
-// When we create a new session, we insert a placeholder config that is swapped
-// with a scaffold when the pipeline with the desired solidSubset has loaded
-// and we're able to assemble the YAML.
-export const SESSION_CONFIG_PLACEHOLDER = "SCAFFOLD-PLACEHOLDER";
-
 const DEFAULT_SESSION: IExecutionSession = {
   key: "default",
   name: "Workspace",
-  config: SESSION_CONFIG_PLACEHOLDER,
+  config: "",
   solidSubset: null,
   runId: undefined,
   configChangedSinceRun: false
