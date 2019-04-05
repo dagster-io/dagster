@@ -40,9 +40,15 @@ export interface SolidSelectorQuery_pipeline_solids_inputs_definition {
   type: SolidSelectorQuery_pipeline_solids_inputs_definition_type;
 }
 
+export interface SolidSelectorQuery_pipeline_solids_inputs_dependsOn_definition_type {
+  __typename: "RegularRuntimeType" | "ListRuntimeType" | "NullableRuntimeType";
+  name: string | null;
+}
+
 export interface SolidSelectorQuery_pipeline_solids_inputs_dependsOn_definition {
   __typename: "OutputDefinition";
   name: string;
+  type: SolidSelectorQuery_pipeline_solids_inputs_dependsOn_definition_type;
 }
 
 export interface SolidSelectorQuery_pipeline_solids_inputs_dependsOn_solid {
@@ -85,9 +91,21 @@ export interface SolidSelectorQuery_pipeline_solids_outputs_dependedBy_solid {
   name: string;
 }
 
+export interface SolidSelectorQuery_pipeline_solids_outputs_dependedBy_definition_type {
+  __typename: "RegularRuntimeType" | "ListRuntimeType" | "NullableRuntimeType";
+  name: string | null;
+}
+
+export interface SolidSelectorQuery_pipeline_solids_outputs_dependedBy_definition {
+  __typename: "InputDefinition";
+  name: string;
+  type: SolidSelectorQuery_pipeline_solids_outputs_dependedBy_definition_type;
+}
+
 export interface SolidSelectorQuery_pipeline_solids_outputs_dependedBy {
   __typename: "Input";
   solid: SolidSelectorQuery_pipeline_solids_outputs_dependedBy_solid;
+  definition: SolidSelectorQuery_pipeline_solids_outputs_dependedBy_definition;
 }
 
 export interface SolidSelectorQuery_pipeline_solids_outputs {
