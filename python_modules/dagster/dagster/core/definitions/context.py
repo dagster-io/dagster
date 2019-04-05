@@ -97,8 +97,7 @@ class PipelineContextDefinition(object):
 
 def _default_context_fn(init_context):
     log_level = level_from_string(init_context.context_config['log_level'])
-    context = ExecutionContext(loggers=[define_colored_console_logger('dagster', level=log_level)])
-    return context
+    return ExecutionContext.console_logging(log_level)
 
 
 def _default_config_field():

@@ -6,10 +6,12 @@ import uuid
 from dagster import check, seven
 
 DAGSTER_META_KEY = 'dagster_meta'
+DAGSTER_DEFAULT_LOGGER = 'dagster'
 
 
-def _kv_message(all_items):
-    return ' '.join(
+def _kv_message(all_items, multiline=False):
+    sep = '\n' if multiline else ' '
+    return sep + sep.join(
         ['{key}={value}'.format(key=key, value=seven.json.dumps(value)) for key, value in all_items]
     )
 
@@ -54,7 +56,8 @@ class DagsterLog:
             itertools.chain(synth_props.items(), self.tags.items(), message_props.items())
         )
 
-        message_with_structured_props = _kv_message(all_props.items())
+        msg_with_structured_props = _kv_message(all_props.items())
+        msg_with_multiline_structured_props = _kv_message(all_props.items(), multiline=True)
 
         # So here we use the arbitrary key DAGSTER_META_KEY to store a dictionary of
         # all the meta information that dagster injects into log message.
@@ -70,7 +73,12 @@ class DagsterLog:
 
         for logger in self.loggers:
             logger_method = check.is_callable(getattr(logger, method))
-            logger_method(message_with_structured_props, extra={DAGSTER_META_KEY: all_props})
+            if logger.name == DAGSTER_DEFAULT_LOGGER:
+                logger_method(
+                    msg_with_multiline_structured_props, extra={DAGSTER_META_KEY: all_props}
+                )
+            else:
+                logger_method(msg_with_structured_props, extra={DAGSTER_META_KEY: all_props})
 
     def debug(self, msg, **kwargs):
         '''
