@@ -94,7 +94,7 @@ class SparkSolidDefinition(SolidDefinition):
             retcode = run_spark_subprocess(spark_shell_cmd, context.log)
 
             if retcode != 0:
-                raise SparkSolidError('Spark job failed')
+                raise SparkSolidError('Spark job failed. Please consult your logs.')
 
             if solid_output_mode == SparkSolidOutputModeSuccess.python_value:
                 yield Result(True, SparkSolidOutputModeSuccess.python_value)
