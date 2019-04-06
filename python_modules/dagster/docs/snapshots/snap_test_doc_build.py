@@ -2777,7 +2777,7 @@ We'll replace the config field in our solid definition with a structured, strong
    :linenos:
    :caption: configuration_schemas.py
 
-The previous env.yml file works as before:
+The configuration YAML file works as before:
 
 .. literalinclude:: ../../../../dagster/tutorials/intro_tutorial/configuration_schemas.yml
    :linenos:
@@ -2799,9 +2799,21 @@ And then ran it:
     demo_configuration_schema \\
     -e configuration_schemas_runtime_error.yml
     ...
-    File "configuration_schemas.py", line 21, in multiply_the_word
-        return word * info.config['factor']
+    Traceback (most recent call last):
+    ...
+    File "configuration_schemas.py", line 20, in multiply_the_word
+        return word * context.solid_config['factor']
     TypeError: can't multiply sequence by non-int of type 'str'
+
+    The above exception was the direct cause of the following exception:
+
+    Traceback (most recent call last):
+    ...
+    dagster.core.errors.DagsterExecutionStepExecutionError: Error occured during the execution of step:
+        step key: "multiply_the_word.transform"
+        solid instance: "multiply_the_word"
+        solid definition: "multiply_the_word"
+
 
 This pipeline is not typechecked and therefore error is caught at runtime. It would be preferable
 to catch this before execution.
@@ -3147,8 +3159,8 @@ One of the most important objects in the system is the execution context. The ex
 context, the logger, and the resources are threaded throughout the entire computation (
 via the ``context`` object passed to user code) and contains handles to logging facilities
 and external resources. Interactions with logging systems, databases, and external
-clusters (e.g. a Spark cluster) should be managed through these properties of the 
-info object.
+clusters (e.g. a Spark cluster) should be managed through these properties of the execution 
+context.
 
 This provides a powerful layer of indirection that allows a solid to abstract
 away its surrounding environment. Using an execution context allows the system and
@@ -3160,7 +3172,7 @@ your production cluster environment.
 Logging
 ~~~~~~~
 
-One of the most basic pipeline-level facilities is logging.
+One of the most basic pipeline-level facilities is logging:
 
 .. literalinclude:: ../../../../dagster/tutorials/intro_tutorial/execution_context.py
    :lines: 1-16
@@ -3176,7 +3188,15 @@ And you'll notice log messages like this:
 
 .. code-block:: console
 
-    2019-01-15 04:59:37 - dagster - ERROR - orig_message="An error occurred." log_message_id="b0cbb1be-e476-4a4e-aaac-a29ddb15309a" run_id="d8f41da0-3825-4ac0-b8e0-4f38ba45b8e0" pipeline="execution_context_pipeline" solid="error_message" solid_definition="error_message"
+    2019-04-05 16:54:31 - dagster - ERROR -
+            orig_message = "An error occurred."
+          log_message_id = "d567e965-31a1-4b99-8b6c-f2f7cfccfcca"
+           log_timestamp = "2019-04-05T23:54:31.678344"
+                  run_id = "28188449-51bc-4c75-8b70-38cccb8e82e7"
+                pipeline = "execution_context_pipeline"
+                step_key = "error_message.transform"
+                   solid = "error_message"
+        solid_definition = "error_message"
 
 These log messages are annonated with a bunch of key value pairs that indicate where in the
 computation each log message was emitted. This happened because we logged through the execution
@@ -3446,10 +3466,14 @@ browser and view your pipeline.
 
 There are lots of ways to execute dagster pipelines. If you navigate to the "Execute"
 tab (http://127.0.0.1:3000/hello_world_pipeline/execute), you can execute your pipeline directly
-from dagit. Logs will stream into the bottom right pane of the interface, where you can filter them
-by log level.
+from dagit by clicking the "Start Execution" button.
 
 .. image:: hello_world_figure_two.png
+
+A new window will open, and you'll see the pipeline execution commence with logs; here, you can 
+filter logs by level and search over the results
+
+.. image:: hello_world_figure_three.png
 
 Library
 ~~~~~~~
@@ -3593,7 +3617,7 @@ For example, imagine if our environment for our pipeline was:
 
 If we execute this pipeline with this config, it'll fail at runtime.
 
-Enter this config in dagit and execute and you'll see the transform fail:
+Enter this config in dagit, hit execute, and you'll see the execution fail:
 
 .. image:: inputs_figure_two_untyped_execution.png
 
@@ -23510,7 +23534,7 @@ We’ll replace the config field in our solid definition with a structured, stro
 </pre></div>
 </td></tr></table></div>
 </div>
-<p>The previous env.yml file works as before:</p>
+<p>The configuration YAML file works as before:</p>
 <div class="literal-block-wrapper docutils container" id="id2">
 <div class="code-block-caption"><span class="caption-text">configuration_schemas.yml</span><a class="headerlink" href="#id2" title="Permalink to this code">¶</a></div>
 <div class="highlight-default notranslate"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre> 1
@@ -23574,9 +23598,20 @@ We’ll replace the config field in our solid definition with a structured, stro
 demo_configuration_schema <span class="se">\\</span>
 -e configuration_schemas_runtime_error.yml
 <span class="go">...</span>
-<span class="go">File &quot;configuration_schemas.py&quot;, line 21, in multiply_the_word</span>
-<span class="go">    return word * info.config[&#39;factor&#39;]</span>
+<span class="go">Traceback (most recent call last):</span>
+<span class="go">...</span>
+<span class="go">File &quot;configuration_schemas.py&quot;, line 20, in multiply_the_word</span>
+<span class="go">    return word * context.solid_config[&#39;factor&#39;]</span>
 <span class="go">TypeError: can&#39;t multiply sequence by non-int of type &#39;str&#39;</span>
+
+<span class="go">The above exception was the direct cause of the following exception:</span>
+
+<span class="go">Traceback (most recent call last):</span>
+<span class="go">...</span>
+<span class="go">dagster.core.errors.DagsterExecutionStepExecutionError: Error occured during the execution of step:</span>
+<span class="go">    step key: &quot;multiply_the_word.transform&quot;</span>
+<span class="go">    solid instance: &quot;multiply_the_word&quot;</span>
+<span class="go">    solid definition: &quot;multiply_the_word&quot;</span>
 </pre></div>
 </div>
 <p>This pipeline is not typechecked and therefore error is caught at runtime. It would be preferable
@@ -24115,8 +24150,8 @@ snapshots['test_build_all_docs 72'] = '''
 context, the logger, and the resources are threaded throughout the entire computation (
 via the <code class="docutils literal notranslate"><span class="pre">context</span></code> object passed to user code) and contains handles to logging facilities
 and external resources. Interactions with logging systems, databases, and external
-clusters (e.g. a Spark cluster) should be managed through these properties of the
-info object.</p>
+clusters (e.g. a Spark cluster) should be managed through these properties of the execution
+context.</p>
 <p>This provides a powerful layer of indirection that allows a solid to abstract
 away its surrounding environment. Using an execution context allows the system and
 pipeline infrastructure to provide different implementations for different
@@ -24125,7 +24160,7 @@ can be executed on your local machine or your CI/CD pipeline as readily as
 your production cluster environment.</p>
 <div class="section" id="logging">
 <h2>Logging<a class="headerlink" href="#logging" title="Permalink to this headline">¶</a></h2>
-<p>One of the most basic pipeline-level facilities is logging.</p>
+<p>One of the most basic pipeline-level facilities is logging:</p>
 <div class="literal-block-wrapper docutils container" id="id1">
 <div class="code-block-caption"><span class="caption-text">execution_context.py</span><a class="headerlink" href="#id1" title="Permalink to this code">¶</a></div>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">dagster</span> <span class="k">import</span> <span class="n">PipelineDefinition</span><span class="p">,</span> <span class="n">execute_pipeline</span><span class="p">,</span> <span class="n">solid</span>
@@ -24152,7 +24187,15 @@ your production cluster environment.</p>
 </pre></div>
 </div>
 <p>And you’ll notice log messages like this:</p>
-<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="go">2019-01-15 04:59:37 - dagster - ERROR - orig_message=&quot;An error occurred.&quot; log_message_id=&quot;b0cbb1be-e476-4a4e-aaac-a29ddb15309a&quot; run_id=&quot;d8f41da0-3825-4ac0-b8e0-4f38ba45b8e0&quot; pipeline=&quot;execution_context_pipeline&quot; solid=&quot;error_message&quot; solid_definition=&quot;error_message&quot;</span>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="go">2019-04-05 16:54:31 - dagster - ERROR -</span>
+<span class="go">        orig_message = &quot;An error occurred.&quot;</span>
+<span class="go">      log_message_id = &quot;d567e965-31a1-4b99-8b6c-f2f7cfccfcca&quot;</span>
+<span class="go">       log_timestamp = &quot;2019-04-05T23:54:31.678344&quot;</span>
+<span class="go">              run_id = &quot;28188449-51bc-4c75-8b70-38cccb8e82e7&quot;</span>
+<span class="go">            pipeline = &quot;execution_context_pipeline&quot;</span>
+<span class="go">            step_key = &quot;error_message.transform&quot;</span>
+<span class="go">               solid = &quot;error_message&quot;</span>
+<span class="go">    solid_definition = &quot;error_message&quot;</span>
 </pre></div>
 </div>
 <p>These log messages are annonated with a bunch of key value pairs that indicate where in the
@@ -24925,9 +24968,11 @@ browser and view your pipeline.</p>
 <img alt="../../../_images/hello_world_figure_one.png" src="../../../_images/hello_world_figure_one.png" />
 <p>There are lots of ways to execute dagster pipelines. If you navigate to the “Execute”
 tab (<a class="reference external" href="http://127.0.0.1:3000/hello_world_pipeline/execute">http://127.0.0.1:3000/hello_world_pipeline/execute</a>), you can execute your pipeline directly
-from dagit. Logs will stream into the bottom right pane of the interface, where you can filter them
-by log level.</p>
+from dagit by clicking the “Start Execution” button.</p>
 <img alt="../../../_images/hello_world_figure_two.png" src="../../../_images/hello_world_figure_two.png" />
+<p>A new window will open, and you’ll see the pipeline execution commence with logs; here, you can
+filter logs by level and search over the results</p>
+<img alt="../../../_images/hello_world_figure_three.png" src="../../../_images/hello_world_figure_three.png" />
 </div>
 <div class="section" id="library">
 <h3>Library<a class="headerlink" href="#library" title="Permalink to this headline">¶</a></h3>
@@ -25384,7 +25429,7 @@ are often not surfaced until the pipeline is executed.</p>
 </td></tr></table></div>
 </div>
 <p>If we execute this pipeline with this config, it’ll fail at runtime.</p>
-<p>Enter this config in dagit and execute and you’ll see the transform fail:</p>
+<p>Enter this config in dagit, hit execute, and you’ll see the execution fail:</p>
 <img alt="../../../_images/inputs_figure_two_untyped_execution.png" src="../../../_images/inputs_figure_two_untyped_execution.png" />
 <p>Click on the red dot on the execution step that failed and a detailed stacktrace will pop up.</p>
 <img alt="../../../_images/inputs_figure_three_error_modal.png" src="../../../_images/inputs_figure_three_error_modal.png" />
