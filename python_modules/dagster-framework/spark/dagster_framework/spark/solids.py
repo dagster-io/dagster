@@ -69,11 +69,13 @@ class SparkSolidDefinition(SolidDefinition):
                     )
                 )
 
-            check.invariant(
-                spark_home is not None,
-                'No spark home set. You must either pass spark_home in config or set $SPARK_HOME '
-                'in your environment (got None).',
-            )
+            if spark_home is None:
+                raise SparkSolidError(
+                    (
+                        'No spark home set. You must either pass spark_home in config or '
+                        'set $SPARK_HOME in your environment (got None).'
+                    )
+                )
 
             deploy_mode = ['--deploy-mode', '{}'.format(deploy_mode)] if deploy_mode else []
 
