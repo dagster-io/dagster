@@ -96,7 +96,7 @@ For example, imagine if our environment for our pipeline was:
 
 If we execute this pipeline with this config, it'll fail at runtime.
 
-Enter this config in dagit and execute and you'll see the transform fail:
+Enter this config in dagit, hit execute, and you'll see the execution fail:
 
 .. image:: inputs_figure_two_untyped_execution.png
 

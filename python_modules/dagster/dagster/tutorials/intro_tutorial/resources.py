@@ -56,9 +56,8 @@ class InMemoryStore:
 def define_in_memory_store_resource():
     return ResourceDefinition(
         resource_fn=lambda _: InMemoryStore(),
-        description='''
-    An in-memory key value store that requires no configuration. Useful for unittesting.
-    ''',
+        description='''An in-memory key value store that requires 
+        no configuration. Useful for unit testing.''',
     )
 
 

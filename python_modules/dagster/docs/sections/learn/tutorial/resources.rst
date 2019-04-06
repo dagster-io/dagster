@@ -19,8 +19,8 @@ We are going to model this key value store as a resource.
 
 The core of a resource are the definition of its configuration (the ``config_field``)
 and then the function that can actually construct the resource. Notice that all of the
-configuration specified for a given resource is passed to its constructor under the ``config``
-key of the ``info`` parameter.
+configuration specified for a given resource is passed to its constructor under the 
+``resource_config`` key of the ``init_context`` parameter.
 
 Let's now attach this resource to a pipeline and use it in a solid.
 
@@ -29,13 +29,12 @@ Let's now attach this resource to a pipeline and use it in a solid.
 
 Resources are attached to pipeline context definitions. A pipeline context
 definition is way that a pipeline can declare the different "modes" it can
-operate in. For example a common context definition would be "unittest"
-or "production". In a particular context definition you can provide a different
-set of resources. That means you can swap out implementations of these resources
+operate in. For example, a common context definition would be "unittest"
+or "production". So, you can swap out implementations of these resources
 by altering configuration, while not changing your code.
 
-In this case we have a single context definition "cloud" and that has a single
-resource.
+In this case we have a single context definition, ``cloud``, and that context definition has a 
+single resource, the cloud store resource.
 
 In order to invoke this pipeline, we pass it the following configuration:
 
@@ -48,12 +47,12 @@ using the ``cloud`` key under ``context`` and then parameterizing the store reso
 with the appropriate config. As a config, any user-provided configuration for
 an artifact (in this case the ``store`` resoource) is placed under the ``config`` key.
 
-So this works, but let us imagine we wanted to have a test mode where we interacted
+So this works, but imagine we wanted to have a test mode, where we interacted
 with an in memory version of that key value store and not develop against the live
 public cloud version.
 
-First we need a version of the store that implements the same interface that can be used
-in testing contexts but does not touch the public cloud:
+First, we need a version of the store that implements the same interface as the production key-value
+store; this version can be used in testing contexts without touching the public cloud:
 
 .. literalinclude:: ../../../../dagster/tutorials/intro_tutorial/resources.py
    :lines: 43-53

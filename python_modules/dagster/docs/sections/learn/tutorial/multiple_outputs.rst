@@ -16,7 +16,7 @@ Here we present an example of a solid that has multiple outputs within a pipelin
 .. literalinclude:: ../../../../dagster/tutorials/intro_tutorial/multiple_outputs.py
    :linenos:
    :caption: multiple_outputs.py
-   :lines: 53-67, 26-34, 67-84
+   :lines: 53-67, 26-34, 67-82
 
 This can be visualized in dagit:
 
@@ -38,7 +38,7 @@ Just as this tutorial gives us the first example of a named
 seen a named :py:class:`DependencyDefinition <dagster.DependencyDefinition>`. Recall that dependencies
 point to a particular **output** of a solid, rather than to the solid itself. 
 
-With this we can run the pipeline:
+With this we can run the pipeline (condensed here for brevity):
 
 .. code-block:: console
 
@@ -46,8 +46,15 @@ With this we can run the pipeline:
     -n define_multiple_outputs_step_one_pipeline
 
     ... log spew
-    2019-01-15 15:44:36 - dagster - INFO - orig_message="Solid return_dict_results emitted output \"out_one\" value 23" log_message_id="f7d90092-523e-41c3-ac43-f9124ea896ad" run_id="50733509-1dfb-4e1b-9f12-fc6be42f2376" pipeline="multiple_outputs_step_one_pipeline" solid="return_dict_results" solid_definition="return_dict_results"
-    2019-01-15 15:44:36 - dagster - INFO - orig_message="Solid return_dict_results emitted output \"out_two\" value 45" log_message_id="343ac9fb-4afd-4b96-85a6-0e15a1b22a6e" run_id="50733509-1dfb-4e1b-9f12-fc6be42f2376" pipeline="multiple_outputs_step_one_pipeline" solid="return_dict_results" solid_definition="return_dict_results"
+    2019-04-05 22:23:37 - dagster - INFO -
+            orig_message = "Solid return_dict_results emitted output \"out_one\" value 23"
+            ...
+        solid_definition = "return_dict_results"
+    ...
+    2019-04-05 22:23:37 - dagster - INFO -
+            orig_message = "Solid return_dict_results emitted output \"out_two\" value 45"
+            ...
+        solid_definition = "return_dict_results"
     ... more log spew
 
 Iterator of ``Result``
@@ -64,28 +71,17 @@ the iterator form.)
    :caption: multiple_outputs.py
    :lines: 15-24
 
-... and you'll see the same log spew around outputs in this version:
-
-.. code-block:: console
-
-    $ dagster pipeline execute -f multiple_outputs.py \
-    -n define_multiple_outputs_step_two_pipeline
-
-    2018-11-08 10:54:15 - dagster - INFO - orig_message="Solid yield_outputs emitted output \"out_one\" value 23" log_message_id="5e1cc181-b74d-47f8-8d32-bc262d555b73" run_id="4bee891c-e04f-4221-be77-17576abb9da2" pipeline="part_eleven_step_two" solid="yield_outputs" solid_definition="yield_outputs"
-    2018-11-08 10:54:15 - dagster - INFO - orig_message="Solid yield_outputs emitted output \"out_two\" value 45" log_message_id="8da32946-596d-4783-b7c5-4edbb3a1dbc2" run_id="4bee891c-e04f-4221-be77-17576abb9da2" pipeline="part_eleven_step_two" solid="yield_outputs" solid_definition="yield_outputs"
-
 Conditional Outputs
 ^^^^^^^^^^^^^^^^^^^
 
-Multiple outputs are the mechanism by which we implement branching or conditional execution.
-
-Let's modify the first solid above to conditionally emit one output or the other based on config
+Multiple outputs are the mechanism by which we implement branching or conditional execution. Let's
+modify the first solid above to conditionally emit one output or the other based on config
 and then execute that pipeline.
 
 .. literalinclude:: ../../../../dagster/tutorials/intro_tutorial/multiple_outputs.py
     :linenos:
     :caption: multiple_outputs.py
-    :lines: 36-52,86-99
+    :lines: 36-52,86-97
 
 You must create a config file
 
@@ -100,9 +96,15 @@ And then run it.
     $ dagster pipeline execute -f multiple_outputs.py \
     -n define_multiple_outputs_step_three_pipeline \
     -e conditional_outputs.yml
+
     ... log spew
-    2018-09-16 18:58:32 - dagster - INFO - orig_message="Solid conditional emitted output \"out_two\" value 45" log_message_id="f6fd78c5-c25e-40ea-95ef-6b80d12155de" pipeline="part_eleven_step_three" solid="conditional"
-    2018-09-16 18:58:32 - dagster - INFO - orig_message="Solid conditional did not fire outputs {'out_one'}" log_message_id="d548ea66-cb10-42b8-b150-aed8162cc25c" pipeline="part_eleven_step_three" solid="conditional"    
+    2019-04-05 22:29:31 - dagster - INFO -
+            orig_message = "Solid conditional emitted output \"out_two\" value 45"
+            ...
+
+    2019-04-05 22:29:31 - dagster - INFO -
+            orig_message = "Solid conditional did not fire outputs {'out_one'}"
+            ...
     ... log spew
 
 Note that we are configuring this solid to *only* emit ``out_two`` which will end up
