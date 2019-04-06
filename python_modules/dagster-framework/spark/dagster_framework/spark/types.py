@@ -1,6 +1,6 @@
 '''Type definitions for the event pipeline demo'''
 
-from dagster import DagsterUserCodeExecutionError, Enum, EnumValue
+from dagster import DagsterUserError, Enum, EnumValue
 
 
 SparkDeployModeCluster = EnumValue('cluster')
@@ -10,7 +10,7 @@ SparkDeployMode = Enum(
 )
 
 
-class SparkSolidError(DagsterUserCodeExecutionError):
+class SparkSolidError(DagsterUserError):
     pass
 
 

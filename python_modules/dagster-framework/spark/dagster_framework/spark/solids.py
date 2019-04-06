@@ -1,3 +1,5 @@
+import os
+
 from dagster import (
     check,
     Bool,
@@ -59,11 +61,21 @@ class SparkSolidDefinition(SolidDefinition):
                 )
             ]
 
-            check.invariant(
-                spark_home is not None,
-                'No spark home set. You must either pass spark_home in config or set $SPARK_HOME '
-                'in your environment (got None).',
-            )
+            if not os.path.exists(application_jar):
+                raise SparkSolidError(
+                    (
+                        'Application jar {} does not exist. A valid jar must be '
+                        'built before running this solid.'.format(application_jar)
+                    )
+                )
+
+            if spark_home is None:
+                raise SparkSolidError(
+                    (
+                        'No spark home set. You must either pass spark_home in config or '
+                        'set $SPARK_HOME in your environment (got None).'
+                    )
+                )
 
             deploy_mode = ['--deploy-mode', '{}'.format(deploy_mode)] if deploy_mode else []
 
@@ -84,7 +96,7 @@ class SparkSolidDefinition(SolidDefinition):
             retcode = run_spark_subprocess(spark_shell_cmd, context.log)
 
             if retcode != 0:
-                raise SparkSolidError('Spark job failed')
+                raise SparkSolidError('Spark job failed. Please consult your logs.')
 
             if solid_output_mode == SparkSolidOutputModeSuccess.python_value:
                 yield Result(True, SparkSolidOutputModeSuccess.python_value)

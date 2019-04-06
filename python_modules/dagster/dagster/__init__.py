@@ -45,6 +45,7 @@ from dagster.core.errors import (
     DagsterRuntimeCoercionError,
     DagsterTypeError,
     DagsterUserCodeExecutionError,
+    DagsterUserError,
     DagsterStepOutputNotFoundError,
 )
 
