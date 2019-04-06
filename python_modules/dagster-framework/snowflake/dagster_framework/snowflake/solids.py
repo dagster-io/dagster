@@ -147,7 +147,8 @@ class SnowflakeSolidDefinition(SolidDefinition):
                         % (query, 'with parameters ' + str(parameters) if parameters else '')
                     )
                     cursor.execute(query, parameters)  # pylint: disable=E1101
-                    results.append(pd.DataFrame(cursor.fetchall()))  # pylint: disable=E1101
+                    fetchall_results = cursor.fetchall()  # pylint: disable=E1101
+                    results.append(pd.DataFrame(fetchall_results))
 
                 if not autocommit:
                     conn.commit()

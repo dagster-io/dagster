@@ -1,3 +1,5 @@
+import os
+
 from dagster import (
     check,
     Bool,
@@ -58,6 +60,14 @@ class SparkSolidDefinition(SolidDefinition):
                     'solid_output_mode',
                 )
             ]
+
+            if not os.path.exists(application_jar):
+                raise SparkSolidError(
+                    (
+                        'Application jar {} does not exist. A valid jar must be '
+                        'built before running this solid.'.format(application_jar)
+                    )
+                )
 
             check.invariant(
                 spark_home is not None,

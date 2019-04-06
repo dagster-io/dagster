@@ -71,3 +71,10 @@ def is_ascii(str_):
             return False
     else:
         return str_.isascii()
+
+
+# another py2/3 difference
+try:
+    import unittest.mock as mock
+except ImportError:
+    import mock
