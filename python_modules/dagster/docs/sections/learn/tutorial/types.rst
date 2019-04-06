@@ -1,5 +1,5 @@
-User-Defined Types
-------------------
+User-Defined Types & Input/Output Schemas
+-----------------------------------------
 
 Throughout the tutorial you have seen the use of builtins such as :py:class:`Int <dagster.Int>`
 and :py:class:`String <dagster.String>` for types. However you will want to be able to define your
@@ -12,7 +12,7 @@ Basic Typing
 ^^^^^^^^^^^^
 
 .. literalinclude:: ../../../../../dagster-pandas/dagster_pandas/data_frame.py
-   :lines: 1, 79-85, 88
+   :lines: 1, 84-92, 95
 
 What this code doing is annotating/registering an existing type as a dagster type. Now one can
 include this type and use it as an input or output of a solid. The system will do a typecheck
@@ -99,7 +99,7 @@ user-provided function takes the unpacked key and value of config_value directly
 case of a selector, the config_value dictionary has only 1 (key, value) pair.
 
 .. literalinclude:: ../../../../../dagster-pandas/dagster_pandas/data_frame.py
-   :lines: 53-77
+   :lines: 57-81
 
 You'll note that we no longer need to manipulate the ``config_value`` dictionary. It grabs
 that key and value for you and calls the provided function.
@@ -107,7 +107,7 @@ that key and value for you and calls the provided function.
 Finally insert this into the original declaration:
 
 .. literalinclude:: ../../../../../dagster-pandas/dagster_pandas/data_frame.py
-   :lines: 80-86,88 
+   :lines: 84-92 
    :emphasize-lines: 7
 
 Now if you run a pipeline with this solid from dagit you will be able to provide sources for
@@ -125,18 +125,17 @@ for a computation to proceed. You will likely want outputs as for a pipeline to 
 should produce some materialization that outlives the computation.
 
 .. literalinclude:: ../../../../../dagster-pandas/dagster_pandas/data_frame.py
-   :lines: 27-50
-   :emphasize-lines: 1
+   :lines: 31-54
 
 This has a similar aesthetic to an input schema but performs a different function. Notice that
-it takes a third argument, `pandas_df` (it can be named anything), that is the value that was
+it takes a third argument, ``pandas_df`` (it can be named anything), that is the value that was
 outputted from the solid in question. It then takes the configuration data as "instructions" as to
 how to materialize the value.
 
 One connects the output schema to the type as follows:
 
 .. literalinclude:: ../../../../../dagster-pandas/dagster_pandas/data_frame.py
-   :lines: 80-88
+   :lines: 84-92
    :emphasize-lines: 8
  
 Now we can provide a list of materializations to a given execution.

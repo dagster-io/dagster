@@ -73,12 +73,12 @@ And then:
     value=-2)
 
 
-Because the system is explictly aware of these expectations they are viewable in tools like dagit.
-It can also configure the execution of these expectations. The capabilities of this aspect of the
+Because the system is explictly aware of these expectations they are viewable in dagit.
+It can also configure the execution of these expectations. The capabilities of this part of the
 system are currently quite immature, but we expect to develop these more in the future. The only
 feature right now is the ability to skip expectations entirely. This is useful in a case where
-expectations are expensive and you have a time-critical job you must. In that case you can
-configure the pipeline to skip expectations entirely.
+expectations are expensive and you have a time-critical job you must execute. In that case you can
+configure the pipeline to skip expectations entirely:
 
 .. literalinclude:: ../../../../dagster/tutorials/intro_tutorial/expectations_skip_failed.yml
    :linenos:

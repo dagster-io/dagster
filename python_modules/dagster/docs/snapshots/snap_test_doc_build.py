@@ -3311,12 +3311,12 @@ And then:
     value=-2)
 
 
-Because the system is explictly aware of these expectations they are viewable in tools like dagit.
-It can also configure the execution of these expectations. The capabilities of this aspect of the
+Because the system is explictly aware of these expectations they are viewable in dagit.
+It can also configure the execution of these expectations. The capabilities of this part of the
 system are currently quite immature, but we expect to develop these more in the future. The only
 feature right now is the ability to skip expectations entirely. This is useful in a case where
-expectations are expensive and you have a time-critical job you must. In that case you can
-configure the pipeline to skip expectations entirely.
+expectations are expensive and you have a time-critical job you must execute. In that case you can
+configure the pipeline to skip expectations entirely:
 
 .. literalinclude:: ../../../../dagster/tutorials/intro_tutorial/expectations_skip_failed.yml
    :linenos:
@@ -3661,7 +3661,7 @@ Here we present an example of a solid that has multiple outputs within a pipelin
 .. literalinclude:: ../../../../dagster/tutorials/intro_tutorial/multiple_outputs.py
    :linenos:
    :caption: multiple_outputs.py
-   :lines: 53-67, 26-34, 67-84
+   :lines: 53-67, 26-34, 67-82
 
 This can be visualized in dagit:
 
@@ -3683,7 +3683,7 @@ Just as this tutorial gives us the first example of a named
 seen a named :py:class:`DependencyDefinition <dagster.DependencyDefinition>`. Recall that dependencies
 point to a particular **output** of a solid, rather than to the solid itself. 
 
-With this we can run the pipeline:
+With this we can run the pipeline (condensed here for brevity):
 
 .. code-block:: console
 
@@ -3691,8 +3691,15 @@ With this we can run the pipeline:
     -n define_multiple_outputs_step_one_pipeline
 
     ... log spew
-    2019-01-15 15:44:36 - dagster - INFO - orig_message="Solid return_dict_results emitted output \\"out_one\\" value 23" log_message_id="f7d90092-523e-41c3-ac43-f9124ea896ad" run_id="50733509-1dfb-4e1b-9f12-fc6be42f2376" pipeline="multiple_outputs_step_one_pipeline" solid="return_dict_results" solid_definition="return_dict_results"
-    2019-01-15 15:44:36 - dagster - INFO - orig_message="Solid return_dict_results emitted output \\"out_two\\" value 45" log_message_id="343ac9fb-4afd-4b96-85a6-0e15a1b22a6e" run_id="50733509-1dfb-4e1b-9f12-fc6be42f2376" pipeline="multiple_outputs_step_one_pipeline" solid="return_dict_results" solid_definition="return_dict_results"
+    2019-04-05 22:23:37 - dagster - INFO -
+            orig_message = "Solid return_dict_results emitted output \\"out_one\\" value 23"
+            ...
+        solid_definition = "return_dict_results"
+    ...
+    2019-04-05 22:23:37 - dagster - INFO -
+            orig_message = "Solid return_dict_results emitted output \\"out_two\\" value 45"
+            ...
+        solid_definition = "return_dict_results"
     ... more log spew
 
 Iterator of ``Result``
@@ -3709,28 +3716,17 @@ the iterator form.)
    :caption: multiple_outputs.py
    :lines: 15-24
 
-... and you'll see the same log spew around outputs in this version:
-
-.. code-block:: console
-
-    $ dagster pipeline execute -f multiple_outputs.py \\
-    -n define_multiple_outputs_step_two_pipeline
-
-    2018-11-08 10:54:15 - dagster - INFO - orig_message="Solid yield_outputs emitted output \\"out_one\\" value 23" log_message_id="5e1cc181-b74d-47f8-8d32-bc262d555b73" run_id="4bee891c-e04f-4221-be77-17576abb9da2" pipeline="part_eleven_step_two" solid="yield_outputs" solid_definition="yield_outputs"
-    2018-11-08 10:54:15 - dagster - INFO - orig_message="Solid yield_outputs emitted output \\"out_two\\" value 45" log_message_id="8da32946-596d-4783-b7c5-4edbb3a1dbc2" run_id="4bee891c-e04f-4221-be77-17576abb9da2" pipeline="part_eleven_step_two" solid="yield_outputs" solid_definition="yield_outputs"
-
 Conditional Outputs
 ^^^^^^^^^^^^^^^^^^^
 
-Multiple outputs are the mechanism by which we implement branching or conditional execution.
-
-Let's modify the first solid above to conditionally emit one output or the other based on config
+Multiple outputs are the mechanism by which we implement branching or conditional execution. Let's
+modify the first solid above to conditionally emit one output or the other based on config
 and then execute that pipeline.
 
 .. literalinclude:: ../../../../dagster/tutorials/intro_tutorial/multiple_outputs.py
     :linenos:
     :caption: multiple_outputs.py
-    :lines: 36-52,86-99
+    :lines: 36-52,86-97
 
 You must create a config file
 
@@ -3745,9 +3741,15 @@ And then run it.
     $ dagster pipeline execute -f multiple_outputs.py \\
     -n define_multiple_outputs_step_three_pipeline \\
     -e conditional_outputs.yml
+
     ... log spew
-    2018-09-16 18:58:32 - dagster - INFO - orig_message="Solid conditional emitted output \\"out_two\\" value 45" log_message_id="f6fd78c5-c25e-40ea-95ef-6b80d12155de" pipeline="part_eleven_step_three" solid="conditional"
-    2018-09-16 18:58:32 - dagster - INFO - orig_message="Solid conditional did not fire outputs {\'out_one\'}" log_message_id="d548ea66-cb10-42b8-b150-aed8162cc25c" pipeline="part_eleven_step_three" solid="conditional"    
+    2019-04-05 22:29:31 - dagster - INFO -
+            orig_message = "Solid conditional emitted output \\"out_two\\" value 45"
+            ...
+
+    2019-04-05 22:29:31 - dagster - INFO -
+            orig_message = "Solid conditional did not fire outputs {\'out_one\'}"
+            ...
     ... log spew
 
 Note that we are configuring this solid to *only* emit ``out_two`` which will end up
@@ -3886,13 +3888,6 @@ Now you should be able to list the pipelines in this repo without all the typing
 
     $ dagit 
 
-You can also specify a module instead of a file in the repository.yml file.
-
-.. literalinclude:: ../../../../dagster/tutorials/intro_tutorial/repos_2.yml
-   :linenos:
-   :language: YAML
-   :caption: repository.yml
-
 In the next part of the tutorial, we'll get to know :doc:`Pipeline Execution <pipeline_cli_execution>`
 a little better, and learn how to execute pipelines in a repository from the command line by name,
 with swappable config.
@@ -3919,8 +3914,8 @@ We are going to model this key value store as a resource.
 
 The core of a resource are the definition of its configuration (the ``config_field``)
 and then the function that can actually construct the resource. Notice that all of the
-configuration specified for a given resource is passed to its constructor under the ``config``
-key of the ``info`` parameter.
+configuration specified for a given resource is passed to its constructor under the 
+``resource_config`` key of the ``init_context`` parameter.
 
 Let's now attach this resource to a pipeline and use it in a solid.
 
@@ -3929,13 +3924,12 @@ Let's now attach this resource to a pipeline and use it in a solid.
 
 Resources are attached to pipeline context definitions. A pipeline context
 definition is way that a pipeline can declare the different "modes" it can
-operate in. For example a common context definition would be "unittest"
-or "production". In a particular context definition you can provide a different
-set of resources. That means you can swap out implementations of these resources
+operate in. For example, a common context definition would be "unittest"
+or "production". So, you can swap out implementations of these resources
 by altering configuration, while not changing your code.
 
-In this case we have a single context definition "cloud" and that has a single
-resource.
+In this case we have a single context definition, ``cloud``, and that context definition has a 
+single resource, the cloud store resource.
 
 In order to invoke this pipeline, we pass it the following configuration:
 
@@ -3948,12 +3942,12 @@ using the ``cloud`` key under ``context`` and then parameterizing the store reso
 with the appropriate config. As a config, any user-provided configuration for
 an artifact (in this case the ``store`` resoource) is placed under the ``config`` key.
 
-So this works, but let us imagine we wanted to have a test mode where we interacted
+So this works, but imagine we wanted to have a test mode, where we interacted
 with an in memory version of that key value store and not develop against the live
 public cloud version.
 
-First we need a version of the store that implements the same interface that can be used
-in testing contexts but does not touch the public cloud:
+First, we need a version of the store that implements the same interface as the production key-value
+store; this version can be used in testing contexts without touching the public cloud:
 
 .. literalinclude:: ../../../../dagster/tutorials/intro_tutorial/resources.py
    :lines: 43-53
@@ -4031,8 +4025,8 @@ can imagine reusable solids doing more useful things like uploading files
 to cloud storage, unzipping files, etc.
 '''
 
-snapshots['test_build_all_docs 38'] = '''User-Defined Types
-------------------
+snapshots['test_build_all_docs 38'] = '''User-Defined Types & Input/Output Schemas
+-----------------------------------------
 
 Throughout the tutorial you have seen the use of builtins such as :py:class:`Int <dagster.Int>`
 and :py:class:`String <dagster.String>` for types. However you will want to be able to define your
@@ -4045,7 +4039,7 @@ Basic Typing
 ^^^^^^^^^^^^
 
 .. literalinclude:: ../../../../../dagster-pandas/dagster_pandas/data_frame.py
-   :lines: 1, 79-85, 88
+   :lines: 1, 84-92, 95
 
 What this code doing is annotating/registering an existing type as a dagster type. Now one can
 include this type and use it as an input or output of a solid. The system will do a typecheck
@@ -4132,7 +4126,7 @@ user-provided function takes the unpacked key and value of config_value directly
 case of a selector, the config_value dictionary has only 1 (key, value) pair.
 
 .. literalinclude:: ../../../../../dagster-pandas/dagster_pandas/data_frame.py
-   :lines: 53-77
+   :lines: 57-81
 
 You'll note that we no longer need to manipulate the ``config_value`` dictionary. It grabs
 that key and value for you and calls the provided function.
@@ -4140,7 +4134,7 @@ that key and value for you and calls the provided function.
 Finally insert this into the original declaration:
 
 .. literalinclude:: ../../../../../dagster-pandas/dagster_pandas/data_frame.py
-   :lines: 80-86,88 
+   :lines: 84-92 
    :emphasize-lines: 7
 
 Now if you run a pipeline with this solid from dagit you will be able to provide sources for
@@ -4158,18 +4152,17 @@ for a computation to proceed. You will likely want outputs as for a pipeline to 
 should produce some materialization that outlives the computation.
 
 .. literalinclude:: ../../../../../dagster-pandas/dagster_pandas/data_frame.py
-   :lines: 27-50
-   :emphasize-lines: 1
+   :lines: 31-54
 
 This has a similar aesthetic to an input schema but performs a different function. Notice that
-it takes a third argument, `pandas_df` (it can be named anything), that is the value that was
+it takes a third argument, ``pandas_df`` (it can be named anything), that is the value that was
 outputted from the solid in question. It then takes the configuration data as "instructions" as to
 how to materialize the value.
 
 One connects the output schema to the type as follows:
 
 .. literalinclude:: ../../../../../dagster-pandas/dagster_pandas/data_frame.py
-   :lines: 80-88
+   :lines: 84-92
    :emphasize-lines: 8
  
 Now we can provide a list of materializations to a given execution.
@@ -4185,8 +4178,9 @@ given output any number of times in any number of formats.
 snapshots['test_build_all_docs 39'] = '''Unit-testing Pipelines
 ----------------------
 
-Unit testing data pipelines is, broadly speaking, quite difficult. As a result, it is typically
-never done.
+Historically in production data engineering systems, unit testing data pipelines is quite difficult
+to implement. As a result, it is frequently omitted from data engineering workflows, and pipelines
+are instead tested end-to-end in a dev environment.
 
 One of the mechanisms included in dagster to enable testing has already been discussed: the
 :doc:`Execution Context <execution_context>`. Recall that the context allows us to configure the
@@ -24313,7 +24307,7 @@ snapshots['test_build_all_docs 73'] = '''
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" />
     <link rel="next" title="Multiple Outputs" href="multiple_outputs.html" />
-    <link rel="prev" title="User-Defined Types" href="types.html" />
+    <link rel="prev" title="User-Defined Types &amp; Input/Output Schemas" href="types.html" />
  
 <link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
 
@@ -24332,7 +24326,7 @@ snapshots['test_build_all_docs 73'] = '''
     <ul>
         <li>
             &larr;
-            <a href="types.html" title="Previous document">User-Defined Types</a>
+            <a href="types.html" title="Previous document">User-Defined Types &amp; Input/Output Schemas</a>
         </li>
         <li>
             <a href="/" title="Home">Home</a>
@@ -24513,12 +24507,12 @@ DagsterExpectationFailedError<span class="o">(</span><span class="nv">solid</spa
 <span class="nv">value</span><span class="o">=</span>-2<span class="o">)</span>
 </pre></div>
 </div>
-<p>Because the system is explictly aware of these expectations they are viewable in tools like dagit.
-It can also configure the execution of these expectations. The capabilities of this aspect of the
+<p>Because the system is explictly aware of these expectations they are viewable in dagit.
+It can also configure the execution of these expectations. The capabilities of this part of the
 system are currently quite immature, but we expect to develop these more in the future. The only
 feature right now is the ability to skip expectations entirely. This is useful in a case where
-expectations are expensive and you have a time-critical job you must. In that case you can
-configure the pipeline to skip expectations entirely.</p>
+expectations are expensive and you have a time-critical job you must execute. In that case you can
+configure the pipeline to skip expectations entirely:</p>
 <div class="literal-block-wrapper docutils container" id="id4">
 <div class="code-block-caption"><span class="caption-text">expectations_skip_fail.yml</span><a class="headerlink" href="#id4" title="Permalink to this code">¶</a></div>
 <div class="highlight-default notranslate"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre> 1
@@ -24558,7 +24552,7 @@ configure the pipeline to skip expectations entirely.</p>
     <ul>
         <li>
             &larr;
-            <a href="types.html" title="Previous document">User-Defined Types</a>
+            <a href="types.html" title="Previous document">User-Defined Types &amp; Input/Output Schemas</a>
         </li>
         <li>
             <a href="/" title="Home">Home</a>
@@ -25153,7 +25147,7 @@ snapshots['test_build_all_docs 76'] = '''
 <li class="toctree-l1"><a class="reference internal" href="resources.html">Resources</a></li>
 <li class="toctree-l1"><a class="reference internal" href="repos.html">Repositories</a></li>
 <li class="toctree-l1"><a class="reference internal" href="pipeline_cli_execution.html">Pipeline CLI Execution</a></li>
-<li class="toctree-l1"><a class="reference internal" href="types.html">User-Defined Types</a></li>
+<li class="toctree-l1"><a class="reference internal" href="types.html">User-Defined Types &amp; Input/Output Schemas</a></li>
 <li class="toctree-l1"><a class="reference internal" href="expectations.html">Expectations</a></li>
 <li class="toctree-l1"><a class="reference internal" href="multiple_outputs.html">Multiple Outputs</a></li>
 <li class="toctree-l1"><a class="reference internal" href="reusable_solids.html">Reusable Solids</a></li>
@@ -25621,9 +25615,7 @@ happened during the computation.</p>
 37
 38
 39
-40
-41
-42</pre></div></td><td class="code"><div class="highlight"><pre><span></span>
+40</pre></div></td><td class="code"><div class="highlight"><pre><span></span>
 <span class="nd">@solid</span><span class="p">(</span><span class="n">inputs</span><span class="o">=</span><span class="p">[</span><span class="n">InputDefinition</span><span class="p">(</span><span class="s1">&#39;num&#39;</span><span class="p">,</span> <span class="n">dagster_type</span><span class="o">=</span><span class="n">Int</span><span class="p">)])</span>
 <span class="k">def</span> <span class="nf">log_num</span><span class="p">(</span><span class="n">context</span><span class="p">,</span> <span class="n">num</span><span class="p">):</span>
     <span class="n">context</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;num </span><span class="si">{num}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">num</span><span class="o">=</span><span class="n">num</span><span class="p">))</span>
@@ -25663,8 +25655,6 @@ happened during the computation.</p>
             <span class="p">},</span>
         <span class="p">},</span>
     <span class="p">)</span>
-
-
 </pre></div>
 </td></tr></table></div>
 </div>
@@ -25682,13 +25672,20 @@ to return all outputs from this transform.</p>
 <a class="reference internal" href="../../api/apidocs/definitions.html#dagster.OutputDefinition" title="dagster.OutputDefinition"><code class="xref py py-class docutils literal notranslate"><span class="pre">OutputDefinition</span></code></a>, this is also the first time that we’ve
 seen a named <a class="reference internal" href="../../api/apidocs/definitions.html#dagster.DependencyDefinition" title="dagster.DependencyDefinition"><code class="xref py py-class docutils literal notranslate"><span class="pre">DependencyDefinition</span></code></a>. Recall that dependencies
 point to a particular <strong>output</strong> of a solid, rather than to the solid itself.</p>
-<p>With this we can run the pipeline:</p>
+<p>With this we can run the pipeline (condensed here for brevity):</p>
 <div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$</span> dagster pipeline execute -f multiple_outputs.py <span class="se">\\</span>
 -n define_multiple_outputs_step_one_pipeline
 
 <span class="go">... log spew</span>
-<span class="go">2019-01-15 15:44:36 - dagster - INFO - orig_message=&quot;Solid return_dict_results emitted output \\&quot;out_one\\&quot; value 23&quot; log_message_id=&quot;f7d90092-523e-41c3-ac43-f9124ea896ad&quot; run_id=&quot;50733509-1dfb-4e1b-9f12-fc6be42f2376&quot; pipeline=&quot;multiple_outputs_step_one_pipeline&quot; solid=&quot;return_dict_results&quot; solid_definition=&quot;return_dict_results&quot;</span>
-<span class="go">2019-01-15 15:44:36 - dagster - INFO - orig_message=&quot;Solid return_dict_results emitted output \\&quot;out_two\\&quot; value 45&quot; log_message_id=&quot;343ac9fb-4afd-4b96-85a6-0e15a1b22a6e&quot; run_id=&quot;50733509-1dfb-4e1b-9f12-fc6be42f2376&quot; pipeline=&quot;multiple_outputs_step_one_pipeline&quot; solid=&quot;return_dict_results&quot; solid_definition=&quot;return_dict_results&quot;</span>
+<span class="go">2019-04-05 22:23:37 - dagster - INFO -</span>
+<span class="go">        orig_message = &quot;Solid return_dict_results emitted output \\&quot;out_one\\&quot; value 23&quot;</span>
+<span class="go">        ...</span>
+<span class="go">    solid_definition = &quot;return_dict_results&quot;</span>
+<span class="go">...</span>
+<span class="go">2019-04-05 22:23:37 - dagster - INFO -</span>
+<span class="go">        orig_message = &quot;Solid return_dict_results emitted output \\&quot;out_two\\&quot; value 45&quot;</span>
+<span class="go">        ...</span>
+<span class="go">    solid_definition = &quot;return_dict_results&quot;</span>
 <span class="go">... more log spew</span>
 </pre></div>
 </div>
@@ -25724,19 +25721,11 @@ the iterator form.)</p>
 </pre></div>
 </td></tr></table></div>
 </div>
-<p>… and you’ll see the same log spew around outputs in this version:</p>
-<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$</span> dagster pipeline execute -f multiple_outputs.py <span class="se">\\</span>
--n define_multiple_outputs_step_two_pipeline
-
-<span class="go">2018-11-08 10:54:15 - dagster - INFO - orig_message=&quot;Solid yield_outputs emitted output \\&quot;out_one\\&quot; value 23&quot; log_message_id=&quot;5e1cc181-b74d-47f8-8d32-bc262d555b73&quot; run_id=&quot;4bee891c-e04f-4221-be77-17576abb9da2&quot; pipeline=&quot;part_eleven_step_two&quot; solid=&quot;yield_outputs&quot; solid_definition=&quot;yield_outputs&quot;</span>
-<span class="go">2018-11-08 10:54:15 - dagster - INFO - orig_message=&quot;Solid yield_outputs emitted output \\&quot;out_two\\&quot; value 45&quot; log_message_id=&quot;8da32946-596d-4783-b7c5-4edbb3a1dbc2&quot; run_id=&quot;4bee891c-e04f-4221-be77-17576abb9da2&quot; pipeline=&quot;part_eleven_step_two&quot; solid=&quot;yield_outputs&quot; solid_definition=&quot;yield_outputs&quot;</span>
-</pre></div>
-</div>
 </div>
 <div class="section" id="conditional-outputs">
 <h2>Conditional Outputs<a class="headerlink" href="#conditional-outputs" title="Permalink to this headline">¶</a></h2>
-<p>Multiple outputs are the mechanism by which we implement branching or conditional execution.</p>
-<p>Let’s modify the first solid above to conditionally emit one output or the other based on config
+<p>Multiple outputs are the mechanism by which we implement branching or conditional execution. Let’s
+modify the first solid above to conditionally emit one output or the other based on config
 and then execute that pipeline.</p>
 <div class="literal-block-wrapper docutils container" id="id3">
 <div class="code-block-caption"><span class="caption-text">multiple_outputs.py</span><a class="headerlink" href="#id3" title="Permalink to this code">¶</a></div>
@@ -25768,9 +25757,7 @@ and then execute that pipeline.</p>
 26
 27
 28
-29
-30
-31</pre></div></td><td class="code"><div class="highlight"><pre><span></span><span class="nd">@solid</span><span class="p">(</span>
+29</pre></div></td><td class="code"><div class="highlight"><pre><span></span><span class="nd">@solid</span><span class="p">(</span>
     <span class="n">config_field</span><span class="o">=</span><span class="n">Field</span><span class="p">(</span>
         <span class="n">String</span><span class="p">,</span> <span class="n">description</span><span class="o">=</span><span class="s1">&#39;Should be either out_one or out_two&#39;</span>
     <span class="p">),</span>
@@ -25799,8 +25786,6 @@ and then execute that pipeline.</p>
             <span class="p">},</span>
         <span class="p">},</span>
     <span class="p">)</span>
-
-
 </pre></div>
 </td></tr></table></div>
 </div>
@@ -25819,9 +25804,15 @@ and then execute that pipeline.</p>
 <div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$</span> dagster pipeline execute -f multiple_outputs.py <span class="se">\\</span>
 -n define_multiple_outputs_step_three_pipeline <span class="se">\\</span>
 -e conditional_outputs.yml
+
 <span class="go">... log spew</span>
-<span class="go">2018-09-16 18:58:32 - dagster - INFO - orig_message=&quot;Solid conditional emitted output \\&quot;out_two\\&quot; value 45&quot; log_message_id=&quot;f6fd78c5-c25e-40ea-95ef-6b80d12155de&quot; pipeline=&quot;part_eleven_step_three&quot; solid=&quot;conditional&quot;</span>
-<span class="go">2018-09-16 18:58:32 - dagster - INFO - orig_message=&quot;Solid conditional did not fire outputs {&#39;out_one&#39;}&quot; log_message_id=&quot;d548ea66-cb10-42b8-b150-aed8162cc25c&quot; pipeline=&quot;part_eleven_step_three&quot; solid=&quot;conditional&quot;</span>
+<span class="go">2019-04-05 22:29:31 - dagster - INFO -</span>
+<span class="go">        orig_message = &quot;Solid conditional emitted output \\&quot;out_two\\&quot; value 45&quot;</span>
+<span class="go">        ...</span>
+
+<span class="go">2019-04-05 22:29:31 - dagster - INFO -</span>
+<span class="go">        orig_message = &quot;Solid conditional did not fire outputs {&#39;out_one&#39;}&quot;</span>
+<span class="go">        ...</span>
 <span class="go">... log spew</span>
 </pre></div>
 </div>
@@ -25908,7 +25899,7 @@ snapshots['test_build_all_docs 79'] = '''
     <script type="text/javascript" src="../../../_static/doctools.js"></script>
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" />
-    <link rel="next" title="User-Defined Types" href="types.html" />
+    <link rel="next" title="User-Defined Types &amp; Input/Output Schemas" href="types.html" />
     <link rel="prev" title="Repositories" href="repos.html" />
  
 <link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
@@ -25934,7 +25925,7 @@ snapshots['test_build_all_docs 79'] = '''
             <a href="/" title="Home">Home</a>
         </li>
         <li>
-            <a href="types.html" title="Next document">User-Defined Types</a>
+            <a href="types.html" title="Next document">User-Defined Types &amp; Input/Output Schemas</a>
             &rarr;
         </li>
     </ul>
@@ -26157,7 +26148,7 @@ in pipelines.</p>
             <a href="/" title="Home">Home</a>
         </li>
         <li>
-            <a href="types.html" title="Next document">User-Defined Types</a>
+            <a href="types.html" title="Next document">User-Defined Types &amp; Input/Output Schemas</a>
             &rarr;
         </li>
     </ul>
@@ -26343,17 +26334,6 @@ although you can tell the CLI tools to use any file you like.</p>
 <div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$</span> dagit
 </pre></div>
 </div>
-<p>You can also specify a module instead of a file in the repository.yml file.</p>
-<div class="literal-block-wrapper docutils container" id="id3">
-<div class="code-block-caption"><span class="caption-text">repository.yml</span><a class="headerlink" href="#id3" title="Permalink to this code">¶</a></div>
-<div class="highlight-YAML notranslate"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre>1
-2
-3</pre></div></td><td class="code"><div class="highlight"><pre><span></span><span class="nt">repository</span><span class="p">:</span>
-    <span class="nt">module</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">dagster.tutorials.intro_tutorial.repos</span>
-    <span class="nt">fn</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">define_repo</span> 
-</pre></div>
-</td></tr></table></div>
-</div>
 <p>In the next part of the tutorial, we’ll get to know <a class="reference internal" href="pipeline_cli_execution.html"><span class="doc">Pipeline Execution</span></a>
 a little better, and learn how to execute pipelines in a repository from the command line by name,
 with swappable config.</p>
@@ -26499,7 +26479,6 @@ We are going to record the results of computations in that key value store.</p>
         <span class="p">)</span>
         <span class="n">set_value_in_cloud_store</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">conn</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
 
-
 <span class="k">def</span> <span class="nf">define_cloud_store_resource</span><span class="p">():</span>
     <span class="k">return</span> <span class="n">ResourceDefinition</span><span class="p">(</span>
         <span class="n">resource_fn</span><span class="o">=</span><span class="k">lambda</span> <span class="n">init_context</span><span class="p">:</span> <span class="n">PublicCloudStore</span><span class="p">(</span>
@@ -26512,15 +26491,15 @@ We are going to record the results of computations in that key value store.</p>
         <span class="n">description</span><span class="o">=</span><span class="s1">&#39;&#39;&#39;This represents some cloud-hosted key value store.</span>
 <span class="s1">        Username and password must be provided via configuration for this to</span>
 <span class="s1">        work&#39;&#39;&#39;</span><span class="p">,</span>
+    <span class="p">)</span>
 </pre></div>
 </div>
 <p>The core of a resource are the definition of its configuration (the <code class="docutils literal notranslate"><span class="pre">config_field</span></code>)
 and then the function that can actually construct the resource. Notice that all of the
-configuration specified for a given resource is passed to its constructor under the <code class="docutils literal notranslate"><span class="pre">config</span></code>
-key of the <code class="docutils literal notranslate"><span class="pre">info</span></code> parameter.</p>
+configuration specified for a given resource is passed to its constructor under the
+<code class="docutils literal notranslate"><span class="pre">resource_config</span></code> key of the <code class="docutils literal notranslate"><span class="pre">init_context</span></code> parameter.</p>
 <p>Let’s now attach this resource to a pipeline and use it in a solid.</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>
-<span class="nd">@solid</span><span class="p">(</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="nd">@solid</span><span class="p">(</span>
     <span class="n">inputs</span><span class="o">=</span><span class="p">[</span><span class="n">InputDefinition</span><span class="p">(</span><span class="s1">&#39;num_one&#39;</span><span class="p">,</span> <span class="n">Int</span><span class="p">),</span> <span class="n">InputDefinition</span><span class="p">(</span><span class="s1">&#39;num_two&#39;</span><span class="p">,</span> <span class="n">Int</span><span class="p">)],</span>
     <span class="n">outputs</span><span class="o">=</span><span class="p">[</span><span class="n">OutputDefinition</span><span class="p">(</span><span class="n">Int</span><span class="p">)],</span>
 <span class="p">)</span>
@@ -26534,24 +26513,23 @@ key of the <code class="docutils literal notranslate"><span class="pre">info</sp
     <span class="k">return</span> <span class="n">PipelineDefinition</span><span class="p">(</span>
         <span class="n">name</span><span class="o">=</span><span class="s1">&#39;resource_test_pipeline&#39;</span><span class="p">,</span>
         <span class="n">solids</span><span class="o">=</span><span class="p">[</span><span class="n">add_ints</span><span class="p">],</span>
-            <span class="p">),</span>
+        <span class="n">context_definitions</span><span class="o">=</span><span class="p">{</span>
             <span class="s1">&#39;cloud&#39;</span><span class="p">:</span> <span class="n">PipelineContextDefinition</span><span class="p">(</span>
                 <span class="n">resources</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;store&#39;</span><span class="p">:</span> <span class="n">define_cloud_store_resource</span><span class="p">()}</span>
             <span class="p">),</span>
         <span class="p">},</span>
+    <span class="p">)</span>
 </pre></div>
 </div>
 <p>Resources are attached to pipeline context definitions. A pipeline context
 definition is way that a pipeline can declare the different “modes” it can
-operate in. For example a common context definition would be “unittest”
-or “production”. In a particular context definition you can provide a different
-set of resources. That means you can swap out implementations of these resources
+operate in. For example, a common context definition would be “unittest”
+or “production”. So, you can swap out implementations of these resources
 by altering configuration, while not changing your code.</p>
-<p>In this case we have a single context definition “cloud” and that has a single
-resource.</p>
+<p>In this case we have a single context definition, <code class="docutils literal notranslate"><span class="pre">cloud</span></code>, and that context definition has a
+single resource, the cloud store resource.</p>
 <p>In order to invoke this pipeline, we pass it the following configuration:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">_name__</span> <span class="o">==</span> <span class="s1">&#39;__main__&#39;</span><span class="p">:</span>
-<span class="n">result</span> <span class="o">=</span> <span class="n">execute_pipeline</span><span class="p">(</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">result</span> <span class="o">=</span> <span class="n">execute_pipeline</span><span class="p">(</span>
     <span class="n">define_resource_test_pipeline</span><span class="p">(),</span>
     <span class="n">environment_dict</span><span class="o">=</span><span class="p">{</span>
         <span class="s1">&#39;context&#39;</span><span class="p">:</span> <span class="p">{</span>
@@ -26575,17 +26553,18 @@ resource.</p>
             <span class="p">}</span>
         <span class="p">},</span>
     <span class="p">},</span>
+<span class="p">)</span>
 </pre></div>
 </div>
 <p>Note how we are telling the configuration to create a cloud context by
 using the <code class="docutils literal notranslate"><span class="pre">cloud</span></code> key under <code class="docutils literal notranslate"><span class="pre">context</span></code> and then parameterizing the store resource
 with the appropriate config. As a config, any user-provided configuration for
 an artifact (in this case the <code class="docutils literal notranslate"><span class="pre">store</span></code> resoource) is placed under the <code class="docutils literal notranslate"><span class="pre">config</span></code> key.</p>
-<p>So this works, but let us imagine we wanted to have a test mode where we interacted
+<p>So this works, but imagine we wanted to have a test mode, where we interacted
 with an in memory version of that key value store and not develop against the live
 public cloud version.</p>
-<p>First we need a version of the store that implements the same interface that can be used
-in testing contexts but does not touch the public cloud:</p>
+<p>First, we need a version of the store that implements the same interface as the production key-value
+store; this version can be used in testing contexts without touching the public cloud:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">InMemoryStore</span><span class="p">:</span>
     <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">values</span> <span class="o">=</span> <span class="p">{}</span>
@@ -26603,36 +26582,35 @@ in testing contexts but does not touch the public cloud:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">define_in_memory_store_resource</span><span class="p">():</span>
     <span class="k">return</span> <span class="n">ResourceDefinition</span><span class="p">(</span>
         <span class="n">resource_fn</span><span class="o">=</span><span class="k">lambda</span> <span class="n">_</span><span class="p">:</span> <span class="n">InMemoryStore</span><span class="p">(),</span>
-        <span class="n">description</span><span class="o">=</span><span class="s1">&#39;&#39;&#39;</span>
-<span class="s1">    An in-memory key value store that requires no configuration. Useful for unittesting.</span>
-<span class="s1">    &#39;&#39;&#39;</span><span class="p">,</span>
+        <span class="n">description</span><span class="o">=</span><span class="s1">&#39;&#39;&#39;An in-memory key value store that requires </span>
+<span class="s1">        no configuration. Useful for unit testing.&#39;&#39;&#39;</span><span class="p">,</span>
     <span class="p">)</span>
+
 </pre></div>
 </div>
 <p>And lastly add a new context definition to represent this new operating “mode”:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>
-<span class="k">def</span> <span class="nf">define_resource_test_pipeline</span><span class="p">():</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">define_resource_test_pipeline</span><span class="p">():</span>
     <span class="k">return</span> <span class="n">PipelineDefinition</span><span class="p">(</span>
         <span class="n">name</span><span class="o">=</span><span class="s1">&#39;resource_test_pipeline&#39;</span><span class="p">,</span>
         <span class="n">solids</span><span class="o">=</span><span class="p">[</span><span class="n">add_ints</span><span class="p">],</span>
-<span class="hll">        <span class="n">context_definitions</span><span class="o">=</span><span class="p">{</span>
-</span><span class="hll">            <span class="s1">&#39;local&#39;</span><span class="p">:</span> <span class="n">PipelineContextDefinition</span><span class="p">(</span>
+        <span class="n">context_definitions</span><span class="o">=</span><span class="p">{</span>
+<span class="hll">            <span class="s1">&#39;local&#39;</span><span class="p">:</span> <span class="n">PipelineContextDefinition</span><span class="p">(</span>
 </span><span class="hll">                <span class="n">resources</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;store&#39;</span><span class="p">:</span> <span class="n">define_in_memory_store_resource</span><span class="p">()}</span>
-</span>            <span class="p">),</span>
-            <span class="s1">&#39;cloud&#39;</span><span class="p">:</span> <span class="n">PipelineContextDefinition</span><span class="p">(</span>
+</span><span class="hll">            <span class="p">),</span>
+</span>            <span class="s1">&#39;cloud&#39;</span><span class="p">:</span> <span class="n">PipelineContextDefinition</span><span class="p">(</span>
                 <span class="n">resources</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;store&#39;</span><span class="p">:</span> <span class="n">define_cloud_store_resource</span><span class="p">()}</span>
             <span class="p">),</span>
         <span class="p">},</span>
+    <span class="p">)</span>
 </pre></div>
 </div>
 <p>Now we can simply change configuration and the “in-memory” version of the
 resource will be used instead of the cloud version:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>
-<span class="n">result</span> <span class="o">=</span> <span class="n">execute_pipeline</span><span class="p">(</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">result</span> <span class="o">=</span> <span class="n">execute_pipeline</span><span class="p">(</span>
     <span class="n">define_resource_test_pipeline</span><span class="p">(),</span>
-<span class="hll">    <span class="n">environment_dict</span><span class="o">=</span><span class="p">{</span>
-</span>        <span class="s1">&#39;context&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;local&#39;</span><span class="p">:</span> <span class="p">{}},</span>
-        <span class="s1">&#39;solids&#39;</span><span class="p">:</span> <span class="p">{</span>
+    <span class="n">environment_dict</span><span class="o">=</span><span class="p">{</span>
+<span class="hll">        <span class="s1">&#39;context&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;local&#39;</span><span class="p">:</span> <span class="p">{}},</span>
+</span>        <span class="s1">&#39;solids&#39;</span><span class="p">:</span> <span class="p">{</span>
             <span class="s1">&#39;add_ints&#39;</span><span class="p">:</span> <span class="p">{</span>
                 <span class="s1">&#39;inputs&#39;</span><span class="p">:</span> <span class="p">{</span>
                     <span class="s1">&#39;num_one&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;value&#39;</span><span class="p">:</span> <span class="mi">2</span><span class="p">},</span>
@@ -26641,6 +26619,7 @@ resource will be used instead of the cloud version:</p>
             <span class="p">}</span>
         <span class="p">},</span>
     <span class="p">},</span>
+<span class="p">)</span>
 </pre></div>
 </div>
 <p>In the next section, we’ll see how to declaratively specify <a class="reference internal" href="repos.html"><span class="doc">Repositories</span></a> to
@@ -26975,7 +26954,7 @@ snapshots['test_build_all_docs 83'] = '''
   <head>
     <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    <title>User-Defined Types &#8212; Dagster</title>
+    <title>User-Defined Types &amp; Input/Output Schemas &#8212; Dagster</title>
     <link rel="stylesheet" href="../../../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
     <link rel="stylesheet" href="../../../_static/css/custom.css" type="text/css" />
@@ -27023,8 +27002,8 @@ snapshots['test_build_all_docs 83'] = '''
 
             <div class="body" role="main">
                 
-  <div class="section" id="user-defined-types">
-<h1>User-Defined Types<a class="headerlink" href="#user-defined-types" title="Permalink to this headline">¶</a></h1>
+  <div class="section" id="user-defined-types-input-output-schemas">
+<h1>User-Defined Types &amp; Input/Output Schemas<a class="headerlink" href="#user-defined-types-input-output-schemas" title="Permalink to this headline">¶</a></h1>
 <p>Throughout the tutorial you have seen the use of builtins such as <a class="reference internal" href="../../api/apidocs/types.html#dagster.Int" title="dagster.Int"><code class="xref py py-class docutils literal notranslate"><span class="pre">Int</span></code></a>
 and <a class="reference internal" href="../../api/apidocs/types.html#dagster.String" title="dagster.String"><code class="xref py py-class docutils literal notranslate"><span class="pre">String</span></code></a> for types. However you will want to be able to define your
 own dagster types to fully utilize the system. We’ll go over that here.</p>
@@ -27033,14 +27012,15 @@ in the dagster-pandas library, building it step by step along the way.</p>
 <div class="section" id="basic-typing">
 <h2>Basic Typing<a class="headerlink" href="#basic-typing" title="Permalink to this headline">¶</a></h2>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
-        <span class="k">raise</span> <span class="n">DagsterInvariantViolationError</span><span class="p">(</span>
-            <span class="s1">&#39;Unsupported file_type </span><span class="si">{file_type}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">file_type</span><span class="o">=</span><span class="n">file_type</span><span class="p">)</span>
-        <span class="p">)</span>
-
-
 <span class="n">DataFrame</span> <span class="o">=</span> <span class="n">as_dagster_type</span><span class="p">(</span>
     <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span>
-    <span class="n">tabular</span> <span class="n">data</span> <span class="n">structure</span> <span class="k">with</span> <span class="n">labeled</span> <span class="n">axes</span> <span class="p">(</span><span class="n">rows</span> <span class="ow">and</span> <span class="n">columns</span><span class="p">)</span><span class="o">.</span>
+    <span class="n">name</span><span class="o">=</span><span class="s1">&#39;PandasDataFrame&#39;</span><span class="p">,</span>
+    <span class="n">description</span><span class="o">=</span><span class="s1">&#39;&#39;&#39;Two-dimensional size-mutable, potentially heterogeneous</span>
+<span class="s1">    tabular data structure with labeled axes (rows and columns).</span>
+<span class="s1">    See http://pandas.pydata.org/&#39;&#39;&#39;</span><span class="p">,</span>
+    <span class="n">input_schema</span><span class="o">=</span><span class="n">dataframe_input_schema</span><span class="p">,</span>
+    <span class="n">output_schema</span><span class="o">=</span><span class="n">dataframe_output_schema</span><span class="p">,</span>
+<span class="p">)</span>
 </pre></div>
 </div>
 <p>What this code doing is annotating/registering an existing type as a dagster type. Now one can
@@ -27114,11 +27094,7 @@ values have been applied.</p>
 API that removes some boilerplate around manipulating the config_value dictionary. Instead, the
 user-provided function takes the unpacked key and value of config_value directly, since in the
 case of a selector, the config_value dictionary has only 1 (key, value) pair.</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>    <span class="k">else</span><span class="p">:</span>
-        <span class="n">check</span><span class="o">.</span><span class="n">failed</span><span class="p">(</span><span class="s1">&#39;Unsupported file_type </span><span class="si">{file_type}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">file_type</span><span class="o">=</span><span class="n">file_type</span><span class="p">))</span>
-
-
-<span class="nd">@input_selector_schema</span><span class="p">(</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="nd">@input_selector_schema</span><span class="p">(</span>
     <span class="n">NamedSelector</span><span class="p">(</span>
         <span class="s1">&#39;DataFrameInputSchema&#39;</span><span class="p">,</span>
         <span class="p">{</span>
@@ -27139,19 +27115,24 @@ case of a selector, the config_value dictionary has only 1 (key, value) pair.</p
         <span class="k">return</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_parquet</span><span class="p">(</span><span class="n">file_options</span><span class="p">[</span><span class="s1">&#39;path&#39;</span><span class="p">])</span>
     <span class="k">elif</span> <span class="n">file_type</span> <span class="o">==</span> <span class="s1">&#39;table&#39;</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_table</span><span class="p">(</span><span class="n">file_options</span><span class="p">[</span><span class="s1">&#39;path&#39;</span><span class="p">])</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="n">DagsterInvariantViolationError</span><span class="p">(</span>
+            <span class="s1">&#39;Unsupported file_type </span><span class="si">{file_type}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">file_type</span><span class="o">=</span><span class="n">file_type</span><span class="p">)</span>
+        <span class="p">)</span>
 </pre></div>
 </div>
 <p>You’ll note that we no longer need to manipulate the <code class="docutils literal notranslate"><span class="pre">config_value</span></code> dictionary. It grabs
 that key and value for you and calls the provided function.</p>
 <p>Finally insert this into the original declaration:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>            <span class="s1">&#39;Unsupported file_type </span><span class="si">{file_type}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">file_type</span><span class="o">=</span><span class="n">file_type</span><span class="p">)</span>
-        <span class="p">)</span>
-
-
-<span class="n">DataFrame</span> <span class="o">=</span> <span class="n">as_dagster_type</span><span class="p">(</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">DataFrame</span> <span class="o">=</span> <span class="n">as_dagster_type</span><span class="p">(</span>
     <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span>
-<span class="hll">    <span class="n">name</span><span class="o">=</span><span class="s1">&#39;PandasDataFrame&#39;</span><span class="p">,</span>
-</span>    <span class="n">tabular</span> <span class="n">data</span> <span class="n">structure</span> <span class="k">with</span> <span class="n">labeled</span> <span class="n">axes</span> <span class="p">(</span><span class="n">rows</span> <span class="ow">and</span> <span class="n">columns</span><span class="p">)</span><span class="o">.</span>
+    <span class="n">name</span><span class="o">=</span><span class="s1">&#39;PandasDataFrame&#39;</span><span class="p">,</span>
+    <span class="n">description</span><span class="o">=</span><span class="s1">&#39;&#39;&#39;Two-dimensional size-mutable, potentially heterogeneous</span>
+<span class="s1">    tabular data structure with labeled axes (rows and columns).</span>
+<span class="s1">    See http://pandas.pydata.org/&#39;&#39;&#39;</span><span class="p">,</span>
+<span class="hll">    <span class="n">input_schema</span><span class="o">=</span><span class="n">dataframe_input_schema</span><span class="p">,</span>
+</span>    <span class="n">output_schema</span><span class="o">=</span><span class="n">dataframe_output_schema</span><span class="p">,</span>
+<span class="p">)</span>
 </pre></div>
 </div>
 <p>Now if you run a pipeline with this solid from dagit you will be able to provide sources for
@@ -27165,11 +27146,7 @@ for taking the in-memory object flowed through your computation and materializin
 persistent store. Outputs are purely <em>optional</em> for any computation, whereas inputs <em>must</em> be provided
 for a computation to proceed. You will likely want outputs as for a pipeline to be useful it
 should produce some materialization that outlives the computation.</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="hll"><span class="k">def</span> <span class="nf">dict_without_keys</span><span class="p">(</span><span class="n">ddict</span><span class="p">,</span> <span class="o">*</span><span class="n">keys</span><span class="p">):</span>
-</span>    <span class="k">return</span> <span class="p">{</span><span class="n">key</span><span class="p">:</span> <span class="n">value</span> <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">ddict</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="n">key</span> <span class="ow">not</span> <span class="ow">in</span> <span class="nb">set</span><span class="p">(</span><span class="n">keys</span><span class="p">)}</span>
-
-
-<span class="nd">@output_selector_schema</span><span class="p">(</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="nd">@output_selector_schema</span><span class="p">(</span>
     <span class="n">NamedSelector</span><span class="p">(</span>
         <span class="s1">&#39;DataFrameOutputSchema&#39;</span><span class="p">,</span>
         <span class="p">{</span>
@@ -27189,22 +27166,26 @@ should produce some materialization that outlives the computation.</p>
         <span class="k">return</span> <span class="n">pandas_df</span><span class="o">.</span><span class="n">to_csv</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="o">**</span><span class="n">dict_without_keys</span><span class="p">(</span><span class="n">file_options</span><span class="p">,</span> <span class="s1">&#39;path&#39;</span><span class="p">))</span>
     <span class="k">elif</span> <span class="n">file_type</span> <span class="o">==</span> <span class="s1">&#39;parquet&#39;</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">pandas_df</span><span class="o">.</span><span class="n">to_parquet</span><span class="p">(</span><span class="n">file_options</span><span class="p">[</span><span class="s1">&#39;path&#39;</span><span class="p">])</span>
+    <span class="k">elif</span> <span class="n">file_type</span> <span class="o">==</span> <span class="s1">&#39;table&#39;</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">pandas_df</span><span class="o">.</span><span class="n">to_csv</span><span class="p">(</span><span class="n">file_options</span><span class="p">[</span><span class="s1">&#39;path&#39;</span><span class="p">],</span> <span class="n">sep</span><span class="o">=</span><span class="s1">&#39;</span><span class="se">\\t</span><span class="s1">&#39;</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">check</span><span class="o">.</span><span class="n">failed</span><span class="p">(</span><span class="s1">&#39;Unsupported file_type </span><span class="si">{file_type}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">file_type</span><span class="o">=</span><span class="n">file_type</span><span class="p">))</span>
 </pre></div>
 </div>
 <p>This has a similar aesthetic to an input schema but performs a different function. Notice that
-it takes a third argument, <cite>pandas_df</cite> (it can be named anything), that is the value that was
+it takes a third argument, <code class="docutils literal notranslate"><span class="pre">pandas_df</span></code> (it can be named anything), that is the value that was
 outputted from the solid in question. It then takes the configuration data as “instructions” as to
 how to materialize the value.</p>
 <p>One connects the output schema to the type as follows:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>            <span class="s1">&#39;Unsupported file_type </span><span class="si">{file_type}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">file_type</span><span class="o">=</span><span class="n">file_type</span><span class="p">)</span>
-        <span class="p">)</span>
-
-
-<span class="n">DataFrame</span> <span class="o">=</span> <span class="n">as_dagster_type</span><span class="p">(</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">DataFrame</span> <span class="o">=</span> <span class="n">as_dagster_type</span><span class="p">(</span>
     <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span>
     <span class="n">name</span><span class="o">=</span><span class="s1">&#39;PandasDataFrame&#39;</span><span class="p">,</span>
-<span class="hll">    <span class="n">description</span><span class="o">=</span><span class="s1">&#39;&#39;&#39;Two-dimensional size-mutable, potentially heterogeneous</span>
-</span><span class="s1">    tabular data structure with labeled axes (rows and columns).</span>
+    <span class="n">description</span><span class="o">=</span><span class="s1">&#39;&#39;&#39;Two-dimensional size-mutable, potentially heterogeneous</span>
+<span class="s1">    tabular data structure with labeled axes (rows and columns).</span>
+<span class="s1">    See http://pandas.pydata.org/&#39;&#39;&#39;</span><span class="p">,</span>
+    <span class="n">input_schema</span><span class="o">=</span><span class="n">dataframe_input_schema</span><span class="p">,</span>
+<span class="hll">    <span class="n">output_schema</span><span class="o">=</span><span class="n">dataframe_output_schema</span><span class="p">,</span>
+</span><span class="p">)</span>
 </pre></div>
 </div>
 <p>Now we can provide a list of materializations to a given execution.</p>
@@ -27331,8 +27312,9 @@ snapshots['test_build_all_docs 84'] = '''
                 
   <div class="section" id="unit-testing-pipelines">
 <h1>Unit-testing Pipelines<a class="headerlink" href="#unit-testing-pipelines" title="Permalink to this headline">¶</a></h1>
-<p>Unit testing data pipelines is, broadly speaking, quite difficult. As a result, it is typically
-never done.</p>
+<p>Historically in production data engineering systems, unit testing data pipelines is quite difficult
+to implement. As a result, it is frequently omitted from data engineering workflows, and pipelines
+are instead tested end-to-end in a dev environment.</p>
 <p>One of the mechanisms included in dagster to enable testing has already been discussed: the
 <a class="reference internal" href="execution_context.html"><span class="doc">Execution Context</span></a>. Recall that the context allows us to configure the
 pipeline-level execution environment while keeping all of the code in our pipelines unchanged.</p>

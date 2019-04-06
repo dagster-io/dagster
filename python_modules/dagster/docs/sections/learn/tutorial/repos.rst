@@ -55,13 +55,6 @@ Now you should be able to list the pipelines in this repo without all the typing
 
     $ dagit 
 
-You can also specify a module instead of a file in the repository.yml file.
-
-.. literalinclude:: ../../../../dagster/tutorials/intro_tutorial/repos_2.yml
-   :linenos:
-   :language: YAML
-   :caption: repository.yml
-
 In the next part of the tutorial, we'll get to know :doc:`Pipeline Execution <pipeline_cli_execution>`
 a little better, and learn how to execute pipelines in a repository from the command line by name,
 with swappable config.

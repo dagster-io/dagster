@@ -1,8 +1,9 @@
 Unit-testing Pipelines
 ----------------------
 
-Unit testing data pipelines is, broadly speaking, quite difficult. As a result, it is typically
-never done.
+Historically in production data engineering systems, unit testing data pipelines is quite difficult
+to implement. As a result, it is frequently omitted from data engineering workflows, and pipelines
+are instead tested end-to-end in a dev environment.
 
 One of the mechanisms included in dagster to enable testing has already been discussed: the
 :doc:`Execution Context <execution_context>`. Recall that the context allows us to configure the
