@@ -71,4 +71,3 @@ def is_ascii(str_):
             return False
     else:
         return str_.isascii()
-
