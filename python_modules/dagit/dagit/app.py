@@ -25,6 +25,7 @@ from .schema import create_schema
 from .schema.context import DagsterGraphQLContext
 from .subscription_server import DagsterSubscriptionServer
 from .templates.playground import TEMPLATE as PLAYGROUND_TEMPLATE
+from .version import __version__
 
 
 class RepositoryContainer(object):
@@ -153,6 +154,7 @@ def create_app(repository_container, pipeline_runs, use_synchronous_execution_ma
         repository_container=repository_container,
         pipeline_runs=pipeline_runs,
         execution_manager=execution_manager,
+        version=__version__,
     )
 
     app.add_url_rule(

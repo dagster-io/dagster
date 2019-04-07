@@ -5,7 +5,12 @@ from dagit.pipeline_execution_manager import PipelineExecutionManager
 
 class DagsterGraphQLContext(object):
     def __init__(
-        self, repository_container, pipeline_runs, execution_manager, throw_on_user_error=False
+        self,
+        repository_container,
+        pipeline_runs,
+        execution_manager,
+        throw_on_user_error=False,
+        version=None,
     ):
         from dagit.app import RepositoryContainer
 
@@ -17,3 +22,4 @@ class DagsterGraphQLContext(object):
             execution_manager, 'pipeline_execution_manager', PipelineExecutionManager
         )
         self.throw_on_user_error = check.bool_param(throw_on_user_error, 'throw_on_user_error')
+        self.version = version

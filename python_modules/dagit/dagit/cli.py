@@ -46,6 +46,7 @@ def execute_query_from_cli(repository_container, query, variables):
         repository_container=repository_container,
         pipeline_runs=pipeline_run_storage,
         execution_manager=execution_manager,
+        version=__version__,
     )
 
     result = graphql(

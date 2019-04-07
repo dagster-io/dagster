@@ -8,7 +8,6 @@ from dagster_graphql.implementation.fetch_pipelines import (
     get_pipelines,
     get_pipelines_or_raise,
 )
-from ..version import __version__
 
 
 class DauphinQuery(dauphin.ObjectType):
@@ -64,8 +63,8 @@ class DauphinQuery(dauphin.ObjectType):
     def resolve_runtimeTypeOrError(self, graphene_info, **kwargs):
         return get_runtime_type(graphene_info, kwargs['pipelineName'], kwargs['runtimeTypeName'])
 
-    def resolve_version(self, _graphene_info):
-        return __version__
+    def resolve_version(self, graphene_info):
+        return graphene_info.context.version
 
     def resolve_pipelineOrError(self, graphene_info, **kwargs):
         return get_pipeline(graphene_info, kwargs['params'].to_selector())
