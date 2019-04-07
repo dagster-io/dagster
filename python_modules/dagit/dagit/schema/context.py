@@ -1,5 +1,5 @@
 from dagster import check
-from dagit.pipeline_run_storage import PipelineRunStorage
+from dagster_graphql.implementation.pipeline_run_storage import PipelineRunStorage
 from dagit.pipeline_execution_manager import PipelineExecutionManager
 
 

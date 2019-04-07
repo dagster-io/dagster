@@ -4,7 +4,7 @@ import json
 from dagster.tutorials.intro_tutorial.repos import define_repo
 
 from dagit import app
-from dagit.pipeline_run_storage import PipelineRunStorage
+from dagster_graphql.implementation.pipeline_run_storage import PipelineRunStorage
 
 
 def test_smoke_app():

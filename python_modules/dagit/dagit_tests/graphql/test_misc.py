@@ -20,7 +20,7 @@ from dagster_pandas import DataFrame
 
 from dagit.app import RepositoryContainer
 from dagit.pipeline_execution_manager import SynchronousExecutionManager
-from dagit.pipeline_run_storage import PipelineRunStorage
+from dagster_graphql.implementation.pipeline_run_storage import PipelineRunStorage
 from dagit.schema.context import DagsterGraphQLContext
 
 from .setup import define_context, define_repository, execute_dagster_graphql

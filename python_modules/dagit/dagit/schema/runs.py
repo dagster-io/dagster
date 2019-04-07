@@ -6,9 +6,8 @@ from dagster.core.events import DagsterEventType
 
 from dagster.utils.logging import CRITICAL, DEBUG, ERROR, INFO, WARNING, check_valid_level_param
 from dagster.core.execution_plan.objects import ExecutionPlan, StepFailureData
+from dagster_graphql.implementation.pipeline_run_storage import PipelineRunStatus, PipelineRun
 
-from dagit import pipeline_run_storage
-from dagit.pipeline_run_storage import PipelineRunStatus, PipelineRun
 from dagit.schema import dauphin, model
 
 DauphinPipelineRunStatus = dauphin.Enum.from_enum(PipelineRunStatus)
@@ -93,9 +92,7 @@ class DauphinLogMessageConnection(dauphin.ObjectType):
     pageInfo = dauphin.NonNull('PageInfo')
 
     def __init__(self, pipeline_run):
-        self._pipeline_run = check.inst_param(
-            pipeline_run, 'pipeline_run', pipeline_run_storage.PipelineRun
-        )
+        self._pipeline_run = check.inst_param(pipeline_run, 'pipeline_run', PipelineRun)
         self._logs = self._pipeline_run.all_logs()
 
     def resolve_nodes(self, graphene_info):

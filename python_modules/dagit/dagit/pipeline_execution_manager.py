@@ -21,8 +21,7 @@ from dagster.core.events import DagsterEvent, DagsterEventType, PipelineProcessS
 from dagster.utils.error import serializable_error_info_from_exc_info, SerializableErrorInfo
 from dagster.utils.logging import level_from_string
 from dagster.utils import get_multiprocessing_context
-
-from .pipeline_run_storage import PipelineRun
+from dagster_graphql.implementation.pipeline_run_storage import PipelineRun
 
 
 class PipelineExecutionManager(object):
