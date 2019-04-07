@@ -21,7 +21,10 @@ from dagster import check, RepositoryDefinition, seven
 from dagster.cli.dynamic_loader import load_repository_from_target_info
 from dagster_graphql.schema import create_schema
 
-from .pipeline_execution_manager import MultiprocessingExecutionManager, SynchronousExecutionManager
+from dagster_graphql.implementation.pipeline_execution_manager import (
+    MultiprocessingExecutionManager,
+    SynchronousExecutionManager,
+)
 from .schema.context import DagsterGraphQLContext
 from .subscription_server import DagsterSubscriptionServer
 from .templates.playground import TEMPLATE as PLAYGROUND_TEMPLATE
