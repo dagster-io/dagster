@@ -12,8 +12,7 @@ from dagster import (
 )
 
 from dagster.core.definitions import Solid, SolidInputHandle, SolidOutputHandle
-
-from dagit.schema import dauphin
+from dagster_graphql import dauphin
 
 from .config_types import to_dauphin_config_type
 from .runtime_types import to_dauphin_runtime_type

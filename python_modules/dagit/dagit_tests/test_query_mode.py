@@ -41,7 +41,7 @@ def test_basic_pipelines():
 
 def test_basic_variables():
     query = 'query FooBar($pipelineName: String!){ pipeline(params:{name: $pipelineName}){ name} }'
-    variables = '{"pipelineName": "pandas_hello_world"}'
+    variables = '{"pipelineName": "math"}'
     repo_path = script_relative_path('./repository.yml')
 
     result = subprocess.check_output(['dagit-cli', '-q', query, '-v', variables, '-y', repo_path])
@@ -84,12 +84,10 @@ mutation ($pipeline: ExecutionSelector!, $config: PipelineConfig) {
 
 
 def test_start_execution():
-    path = script_relative_path('num.csv')
-
     variables = seven.json.dumps(
         {
-            "pipeline": {"name": "pandas_hello_world"},
-            "config": {"solids": {"sum_solid": {"inputs": {"num": {"csv": {"path": path}}}}}},
+            "pipeline": {"name": "math"},
+            "config": {"solids": {"add_one": {"inputs": {"num": {"value": 123}}}}},
         }
     )
 

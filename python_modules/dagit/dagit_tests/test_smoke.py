@@ -3,12 +3,14 @@ from __future__ import absolute_import, unicode_literals
 import json
 from dagster.tutorials.intro_tutorial.repos import define_repo
 
+from dagster.cli.dynamic_loader import RepositoryContainer
+
 from dagit import app
-from dagit.pipeline_run_storage import PipelineRunStorage
+from dagster_graphql.implementation.pipeline_run_storage import PipelineRunStorage
 
 
 def test_smoke_app():
-    repository_container = app.RepositoryContainer(repository=define_repo())
+    repository_container = RepositoryContainer(repository=define_repo())
     pipeline_run_storage = PipelineRunStorage()
     flask_app = app.create_app(repository_container, pipeline_run_storage)
     client = flask_app.test_client()

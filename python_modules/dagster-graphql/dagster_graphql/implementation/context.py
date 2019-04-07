@@ -1,13 +1,18 @@
 from dagster import check
-from dagit.pipeline_run_storage import PipelineRunStorage
-from dagit.pipeline_execution_manager import PipelineExecutionManager
+from dagster.cli.dynamic_loader import RepositoryContainer
+from .pipeline_run_storage import PipelineRunStorage
+from .pipeline_execution_manager import PipelineExecutionManager
 
 
 class DagsterGraphQLContext(object):
     def __init__(
-        self, repository_container, pipeline_runs, execution_manager, throw_on_user_error=False
+        self,
+        repository_container,
+        pipeline_runs,
+        execution_manager,
+        throw_on_user_error=False,
+        version=None,
     ):
-        from dagit.app import RepositoryContainer
 
         self.repository_container = check.inst_param(
             repository_container, 'repository_container', RepositoryContainer
@@ -17,3 +22,4 @@ class DagsterGraphQLContext(object):
             execution_manager, 'pipeline_execution_manager', PipelineExecutionManager
         )
         self.throw_on_user_error = check.bool_param(throw_on_user_error, 'throw_on_user_error')
+        self.version = version

@@ -16,13 +16,13 @@ from dagster import (
     check,
     execute_pipeline,
 )
+from dagster.cli.dynamic_loader import RepositoryContainer
 from dagster.core.events.logging import DagsterEventRecord
 from dagster.core.events import DagsterEvent, DagsterEventType, PipelineProcessStartedData
 from dagster.utils.error import serializable_error_info_from_exc_info, SerializableErrorInfo
 from dagster.utils.logging import level_from_string
 from dagster.utils import get_multiprocessing_context
-
-from .pipeline_run_storage import PipelineRun
+from dagster_graphql.implementation.pipeline_run_storage import PipelineRun
 
 
 class PipelineExecutionManager(object):
@@ -302,8 +302,6 @@ def execute_pipeline_through_queue(
         step_keys_to_execute=step_keys_to_execute,
         storage_mode=get_storage_mode(environment_dict),
     )
-
-    from .app import RepositoryContainer
 
     repository_container = RepositoryContainer(repository_info)
     if repository_container.repo_error:

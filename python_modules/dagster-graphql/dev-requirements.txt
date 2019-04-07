@@ -1,0 +1,11 @@
+pylint>=2.3.0; python_version >= '3.6'
+pre-commit==1.10.1
+pytest==4.0.2
+pytest-cov==2.6.0
+pytest-dependency==0.4.0
+pytest-runner==4.2
+recommonmark==0.4.0
+rope==0.11.0
+snapshottest==0.5.0
+twine==1.11.0
+

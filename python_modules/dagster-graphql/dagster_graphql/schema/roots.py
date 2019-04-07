@@ -1,7 +1,24 @@
-from dagit.schema import dauphin
-from dagit.schema import model
 from dagster.core.execution import ExecutionSelector
-from ..version import __version__
+
+from dagster_graphql import dauphin
+from dagster_graphql.implementation.execution import (
+    do_execute_plan,
+    get_pipeline_run_observable,
+    start_pipeline_execution,
+)
+from dagster_graphql.implementation.fetch_types import get_config_type, get_runtime_type
+from dagster_graphql.implementation.fetch_pipelines import (
+    get_pipeline,
+    get_pipeline_or_raise,
+    get_pipelines,
+    get_pipelines_or_raise,
+)
+from dagster_graphql.implementation.fetch_runs import (
+    get_execution_plan,
+    get_run,
+    get_runs,
+    validate_pipeline_config,
+)
 
 
 class DauphinQuery(dauphin.ObjectType):
@@ -52,44 +69,37 @@ class DauphinQuery(dauphin.ObjectType):
     )
 
     def resolve_configTypeOrError(self, graphene_info, **kwargs):
-        return model.get_config_type(
-            graphene_info, kwargs['pipelineName'], kwargs['configTypeName']
-        )
+        return get_config_type(graphene_info, kwargs['pipelineName'], kwargs['configTypeName'])
 
     def resolve_runtimeTypeOrError(self, graphene_info, **kwargs):
-        return model.get_runtime_type(
-            graphene_info, kwargs['pipelineName'], kwargs['runtimeTypeName']
-        )
+        return get_runtime_type(graphene_info, kwargs['pipelineName'], kwargs['runtimeTypeName'])
 
-    def resolve_version(self, _graphene_info):
-        return __version__
+    def resolve_version(self, graphene_info):
+        return graphene_info.context.version
 
     def resolve_pipelineOrError(self, graphene_info, **kwargs):
-        return model.get_pipeline(graphene_info, kwargs['params'].to_selector())
+        return get_pipeline(graphene_info, kwargs['params'].to_selector())
 
     def resolve_pipeline(self, graphene_info, **kwargs):
-        return model.get_pipeline_or_raise(graphene_info, kwargs['params'].to_selector())
+        return get_pipeline_or_raise(graphene_info, kwargs['params'].to_selector())
 
     def resolve_pipelinesOrError(self, graphene_info):
-        return model.get_pipelines(graphene_info)
+        return get_pipelines(graphene_info)
 
     def resolve_pipelines(self, graphene_info):
-        return model.get_pipelines_or_raise(graphene_info)
-
-    def resolve_type(self, graphene_info, pipelineName, typeName):
-        return model.get_pipeline_type(graphene_info, pipelineName, typeName)
+        return get_pipelines_or_raise(graphene_info)
 
     def resolve_pipelineRuns(self, graphene_info):
-        return model.get_runs(graphene_info)
+        return get_runs(graphene_info)
 
     def resolve_pipelineRunOrError(self, graphene_info, runId):
-        return model.get_run(graphene_info, runId)
+        return get_run(graphene_info, runId)
 
     def resolve_isPipelineConfigValid(self, graphene_info, pipeline, config):
-        return model.validate_pipeline_config(graphene_info, pipeline.to_selector(), config)
+        return validate_pipeline_config(graphene_info, pipeline.to_selector(), config)
 
     def resolve_executionPlan(self, graphene_info, pipeline, config):
-        return model.get_execution_plan(graphene_info, pipeline.to_selector(), config)
+        return get_execution_plan(graphene_info, pipeline.to_selector(), config)
 
 
 class DauphinStepOutputHandle(dauphin.InputObjectType):
@@ -136,7 +146,7 @@ class DauphinStartPipelineExecutionMutation(dauphin.Mutation):
             if 'reexecutionConfig' in kwargs
             else None
         )
-        return model.start_pipeline_execution(
+        return start_pipeline_execution(
             graphene_info,
             kwargs['pipeline'].to_selector(),
             kwargs.get('config'),
@@ -200,7 +210,7 @@ class DauphinExecutePlan(dauphin.Mutation):
     Output = dauphin.NonNull('ExecutePlanResult')
 
     def mutate(self, graphene_info, **kwargs):
-        return model.do_execute_plan(
+        return do_execute_plan(
             graphene_info,
             kwargs['pipelineName'],
             kwargs.get('config'),
@@ -228,7 +238,7 @@ class DauphinSubscription(dauphin.ObjectType):
     )
 
     def resolve_pipelineRunLogs(self, graphene_info, runId, after=None):
-        return model.get_pipeline_run_observable(graphene_info, runId, after)
+        return get_pipeline_run_observable(graphene_info, runId, after)
 
 
 class DauphinPipelineConfig(dauphin.GenericScalar, dauphin.Scalar):

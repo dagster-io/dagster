@@ -17,48 +17,17 @@ from flask_sockets import Sockets
 from graphql.execution.executors.gevent import GeventExecutor as Executor
 from nbconvert import HTMLExporter
 
-from dagster import check, RepositoryDefinition, seven
-from dagster.cli.dynamic_loader import load_repository_from_target_info
+from dagster import check, seven
+from dagster_graphql.schema import create_schema
 
-from .pipeline_execution_manager import MultiprocessingExecutionManager, SynchronousExecutionManager
-from .schema import create_schema
-from .schema.context import DagsterGraphQLContext
+from dagster_graphql.implementation.context import DagsterGraphQLContext
+from dagster_graphql.implementation.pipeline_execution_manager import (
+    MultiprocessingExecutionManager,
+    SynchronousExecutionManager,
+)
 from .subscription_server import DagsterSubscriptionServer
 from .templates.playground import TEMPLATE as PLAYGROUND_TEMPLATE
-
-
-class RepositoryContainer(object):
-    '''
-    This class solely exists to implement reloading semantics. We need to have a single object
-    that the graphql server has access that stays the same object between reload. This container
-    object allows the RepositoryInfo to be written in an immutable fashion.
-    '''
-
-    def __init__(self, repository_target_info=None, repository=None):
-        self.repo_error = None
-        if repository_target_info is not None:
-            self.repository_target_info = repository_target_info
-            try:
-                self.repo = check.inst(
-                    load_repository_from_target_info(repository_target_info), RepositoryDefinition
-                )
-            except:  # pylint: disable=W0702
-                self.repo_error = sys.exc_info()
-        elif repository is not None:
-            self.repository_target_info = None
-            self.repo = repository
-
-    @property
-    def repository(self):
-        return self.repo
-
-    @property
-    def error(self):
-        return self.repo_error
-
-    @property
-    def repository_info(self):
-        return self.repository_target_info
+from .version import __version__
 
 
 class DagsterGraphQLView(GraphQLView):
@@ -153,6 +122,7 @@ def create_app(repository_container, pipeline_runs, use_synchronous_execution_ma
         repository_container=repository_container,
         pipeline_runs=pipeline_runs,
         execution_manager=execution_manager,
+        version=__version__,
     )
 
     app.add_url_rule(

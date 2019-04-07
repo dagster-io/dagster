@@ -11,13 +11,21 @@ from graphql.execution.executors.gevent import GeventExecutor as Executor
 
 
 from dagster import check, seven
-from dagster.cli.dynamic_loader import repository_target_argument, load_target_info_from_cli_args
+from dagster.cli.dynamic_loader import (
+    RepositoryContainer,
+    load_target_info_from_cli_args,
+    repository_target_argument,
+)
+from dagster_graphql.implementation.context import DagsterGraphQLContext
+from dagster_graphql.implementation.pipeline_execution_manager import SynchronousExecutionManager
+from dagster_graphql.implementation.pipeline_run_storage import (
+    PipelineRunStorage,
+    LogFilePipelineRun,
+    InMemoryPipelineRun,
+)
 
-from .app import create_app, RepositoryContainer
-from .pipeline_execution_manager import SynchronousExecutionManager
-from .pipeline_run_storage import PipelineRunStorage, LogFilePipelineRun, InMemoryPipelineRun
+from .app import create_app
 from .schema import create_schema
-from .schema.context import DagsterGraphQLContext
 from .version import __version__
 
 
@@ -42,6 +50,7 @@ def execute_query_from_cli(repository_container, query, variables):
         repository_container=repository_container,
         pipeline_runs=pipeline_run_storage,
         execution_manager=execution_manager,
+        version=__version__,
     )
 
     result = graphql(

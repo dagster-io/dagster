@@ -1,4 +1,4 @@
-from dagit.schema import dauphin
+from dagster_graphql import dauphin
 
 
 class DauphinCursor(dauphin.ID, dauphin.Scalar):
