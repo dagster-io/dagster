@@ -11,7 +11,10 @@ from dagster.core.events import DagsterEventType
 from dagster.core.execution import create_execution_plan, ExecutionSelector
 from dagster.core.execution_context import make_new_run_id
 from dagster.utils import script_relative_path
-from dagster_graphql.implementation.pipeline_run_storage import PipelineRunStorage
+from dagster_graphql.implementation.pipeline_run_storage import (
+    PipelineRunStorage,
+    InMemoryPipelineRun,
+)
 import dagster_pandas as dagster_pd
 
 from dagit.app import RepositoryContainer
