@@ -1,19 +1,19 @@
 from __future__ import absolute_import
 from dagster_graphql import dauphin
+from dagster_graphql.schema import create_schema
 
+# def create_schema():
+#     # dauphin depends on import-based side effects
+#     # pylint: disable=W0611
+#     from dagster_graphql.schema import (
+#         config_types,
+#         errors,
+#         execution,
+#         paging,
+#         pipelines,
+#         roots,
+#         runs,
+#         runtime_types,
+#     )
 
-def create_schema():
-    # dauphin depends on import-based side effects
-    # pylint: disable=W0611
-    from dagster_graphql.schema import (
-        config_types,
-        errors,
-        execution,
-        paging,
-        pipelines,
-        roots,
-        runs,
-        runtime_types,
-    )
-
-    return dauphin.create_schema()
+#     return dauphin.create_schema()
