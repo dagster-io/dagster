@@ -12,10 +12,11 @@ from dagster.core.execution import ExecutionSelector, create_execution_plan, exe
 from dagster.core.execution_context import ReexecutionConfig, make_new_run_id
 from dagster.core.runs import RunStorageMode
 
-from dagster_graphql.implementation.fetch_pipelines import _pipeline_or_error_from_container
-from dagster_graphql.implementation.fetch_runs import _config_or_error_from_pipeline
 
 from dagster_graphql.schema.execution import DauphinExecutionStep
+
+from .fetch_pipelines import _pipeline_or_error_from_container
+from .fetch_runs import _config_or_error_from_pipeline
 
 
 def start_pipeline_execution(

@@ -1,6 +1,10 @@
 from dagit.schema import dauphin
-from dagit.schema import model
 from dagster.core.execution import ExecutionSelector
+from dagster_graphql.implementation.execution import (
+    do_execute_plan,
+    get_pipeline_run_observable,
+    start_pipeline_execution,
+)
 from dagster_graphql.implementation.fetch_types import get_config_type, get_runtime_type
 from dagster_graphql.implementation.fetch_pipelines import (
     get_pipeline,
@@ -141,7 +145,7 @@ class DauphinStartPipelineExecutionMutation(dauphin.Mutation):
             if 'reexecutionConfig' in kwargs
             else None
         )
-        return model.start_pipeline_execution(
+        return start_pipeline_execution(
             graphene_info,
             kwargs['pipeline'].to_selector(),
             kwargs.get('config'),
@@ -205,7 +209,7 @@ class DauphinExecutePlan(dauphin.Mutation):
     Output = dauphin.NonNull('ExecutePlanResult')
 
     def mutate(self, graphene_info, **kwargs):
-        return model.do_execute_plan(
+        return do_execute_plan(
             graphene_info,
             kwargs['pipelineName'],
             kwargs.get('config'),
@@ -233,7 +237,7 @@ class DauphinSubscription(dauphin.ObjectType):
     )
 
     def resolve_pipelineRunLogs(self, graphene_info, runId, after=None):
-        return model.get_pipeline_run_observable(graphene_info, runId, after)
+        return get_pipeline_run_observable(graphene_info, runId, after)
 
 
 class DauphinPipelineConfig(dauphin.GenericScalar, dauphin.Scalar):
