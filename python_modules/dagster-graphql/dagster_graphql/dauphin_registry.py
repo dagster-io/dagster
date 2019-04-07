@@ -19,7 +19,7 @@ e.g.
 
 dauphin.non_null_list(dauphin.String)
 
-as opposed to 
+as opposed to
 
 graphene.NonNull(graphene.List(graphene.NonNull(graphene.String)))
 
