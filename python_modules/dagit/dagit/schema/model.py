@@ -1,6 +1,5 @@
 from __future__ import absolute_import
 from collections import namedtuple
-import sys
 
 from rx import Observable
 
@@ -9,70 +8,18 @@ from graphql.execution.base import ResolveInfo
 from dagster import RunConfig, check
 
 from dagster.core.events import DagsterEventType, DagsterEvent
-from dagster.core.errors import DagsterInvalidDefinitionError
 from dagster.core.execution import ExecutionSelector, create_execution_plan, execute_plan
 from dagster.core.execution_context import ReexecutionConfig, make_new_run_id
 from dagster.core.runs import RunStorageMode
 from dagster.core.types.evaluator import evaluate_config_value
 
-from dagster.utils.error import serializable_error_info_from_exc_info
-
-from dagster_graphql.implementation.fetch import (
-    _pipeline_or_error_from_container,
-    _repository_or_error_from_container,
-)
+from dagster_graphql.implementation.fetch import _pipeline_or_error_from_container
 
 from dagster_graphql.schema.config_types import to_dauphin_config_type
 from dagster_graphql.schema.execution import DauphinExecutionStep
 from dagster_graphql.schema.runtime_types import to_dauphin_runtime_type
 
 from .utils import EitherValue, EitherError
-
-
-def get_pipelines(graphene_info):
-    check.inst_param(graphene_info, 'graphene_info', ResolveInfo)
-    return _get_pipelines(graphene_info).value()
-
-
-def get_pipelines_or_raise(graphene_info):
-    check.inst_param(graphene_info, 'graphene_info', ResolveInfo)
-    return _get_pipelines(graphene_info).value_or_raise()
-
-
-def _get_pipelines(graphene_info):
-    check.inst_param(graphene_info, 'graphene_info', ResolveInfo)
-
-    def process_pipelines(repository):
-        try:
-            pipeline_instances = []
-            for pipeline_def in repository.get_all_pipelines():
-                pipeline_instances.append(graphene_info.schema.type_named('Pipeline')(pipeline_def))
-            return graphene_info.schema.type_named('PipelineConnection')(
-                nodes=sorted(pipeline_instances, key=lambda pipeline: pipeline.name)
-            )
-        except DagsterInvalidDefinitionError:
-            return EitherError(
-                graphene_info.schema.type_named('InvalidDefinitionError')(
-                    serializable_error_info_from_exc_info(sys.exc_info())
-                )
-            )
-
-    repository_or_error = _repository_or_error_from_container(
-        graphene_info, graphene_info.context.repository_container
-    )
-    return repository_or_error.chain(process_pipelines)
-
-
-def get_pipeline_type(graphene_info, pipelineName, typeName):
-    check.inst_param(graphene_info, 'graphene_info', ResolveInfo)
-    check.str_param(pipelineName, 'pipelineName')
-    check.str_param(typeName, 'typeName')
-    pipeline_or_error = _pipeline_or_error_from_container(
-        graphene_info, graphene_info.context.repository_container, ExecutionSelector(pipelineName)
-    )
-    return pipeline_or_error.chain(
-        lambda pipeline: pipeline.get_type(graphene_info, typeName)
-    ).value_or_raise()
 
 
 def _config_type_or_error(graphene_info, dauphin_pipeline, config_type_name):

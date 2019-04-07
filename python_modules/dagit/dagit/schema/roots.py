@@ -1,7 +1,12 @@
 from dagit.schema import dauphin
 from dagit.schema import model
 from dagster.core.execution import ExecutionSelector
-from dagster_graphql.implementation.fetch import get_pipeline, get_pipeline_or_raise
+from dagster_graphql.implementation.fetch import (
+    get_pipeline,
+    get_pipeline_or_raise,
+    get_pipelines,
+    get_pipelines_or_raise,
+)
 from ..version import __version__
 
 
@@ -72,13 +77,10 @@ class DauphinQuery(dauphin.ObjectType):
         return get_pipeline_or_raise(graphene_info, kwargs['params'].to_selector())
 
     def resolve_pipelinesOrError(self, graphene_info):
-        return model.get_pipelines(graphene_info)
+        return get_pipelines(graphene_info)
 
     def resolve_pipelines(self, graphene_info):
-        return model.get_pipelines_or_raise(graphene_info)
-
-    def resolve_type(self, graphene_info, pipelineName, typeName):
-        return model.get_pipeline_type(graphene_info, pipelineName, typeName)
+        return get_pipelines_or_raise(graphene_info)
 
     def resolve_pipelineRuns(self, graphene_info):
         return model.get_runs(graphene_info)
