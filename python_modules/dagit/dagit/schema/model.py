@@ -23,9 +23,9 @@ from dagster_graphql.implementation.fetch import (
 )
 
 from dagster_graphql.schema.config_types import to_dauphin_config_type
+from dagster_graphql.schema.execution import DauphinExecutionStep
 from dagster_graphql.schema.runtime_types import to_dauphin_runtime_type
 
-from .execution import DauphinExecutionStep
 from .utils import EitherValue, EitherError
 
 
