@@ -32,6 +32,10 @@ workflows:
           context: coveralls
       - dagster-graphql-py36:
           context: coveralls
+      - dagster-graphql-py35:
+          context: coveralls
+      - dagster-graphql-py27:
+          context: coveralls
 
 
       - format
@@ -153,6 +157,8 @@ workflows:
 
             - dagster-graphql-py37
             - dagster-graphql-py36
+            - dagster-graphql-py35
+            - dagster-graphql-py27
 
             - dagstermill-py37
             - dagstermill-py36
@@ -565,6 +571,19 @@ jobs:
     environment:
       TOXENV: py37
 
+  dagster-graphql-py35:
+    <<: *dagster-graphql-template
+    docker:
+      - image: dagster/cci-test:3.5.7
+    environment:
+      TOXENV: py35
+
+  dagster-graphql-py27:
+    <<: *dagster-graphql-template
+    docker:
+      - image: dagster/cci-test:2.7.16
+    environment:
+      TOXENV: py27
 
   dagster-pandas-py37:
     <<: *dagster-pandas-template
