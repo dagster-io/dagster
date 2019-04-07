@@ -5,6 +5,7 @@ RUN mkdir -p /tmp/results
 WORKDIR /tmp/
 
 ADD dagster dagster
+ADD dagster-graphql dagster-graphql
 ADD dagit dagit
 
 RUN pip install dagster/
