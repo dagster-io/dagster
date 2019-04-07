@@ -32,6 +32,6 @@ setup(
         'gevent-websocket==0.10.1',
         'gevent==1.3.7',
         'pyrsistent>=0.14.8',
-        'rx=>1.6.1',
+        'rx>=1.6.1',
     ],
 )
