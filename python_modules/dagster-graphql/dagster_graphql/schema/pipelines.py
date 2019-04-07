@@ -12,11 +12,10 @@ from dagster import (
 )
 
 from dagster.core.definitions import Solid, SolidInputHandle, SolidOutputHandle
+from dagster_graphql import dauphin
 
-from dagster_graphql.schema.config_types import to_dauphin_config_type
-from dagster_graphql.schema.runtime_types import to_dauphin_runtime_type
-
-from dagit.schema import dauphin
+from .config_types import to_dauphin_config_type
+from .runtime_types import to_dauphin_runtime_type
 
 
 class DauphinPipeline(dauphin.ObjectType):
