@@ -1,6 +1,7 @@
 from dagster import check
 from dagster.utils.indenting_printer import IndentingStringIoPrinter
 
+
 def format_config_for_graphql(config):
     '''This recursive descent thing formats a config dict for GraphQL.'''
 

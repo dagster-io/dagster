@@ -259,9 +259,7 @@ class DagsterDockerOperator(ModifiedDockerOperator, DagsterOperator):
         tmp_dir = op_kwargs.pop('tmp_dir', DOCKER_TEMPDIR)
 
         if 'storage' not in env_config:
-            env_config['storage'] = {
-                'filesystem': {'base_dir': tmp_dir}
-            }
+            env_config['storage'] = {'filesystem': {'base_dir': tmp_dir}}
 
         # black 18.9b0 doesn't support py27-compatible formatting of the below invocation (omitting
         # the trailing comma after **op_kwargs) -- black 19.3b0 supports multiple python versions,

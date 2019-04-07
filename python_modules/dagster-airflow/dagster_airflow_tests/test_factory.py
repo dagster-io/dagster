@@ -96,9 +96,7 @@ class TestExecuteDagContainerized(object):
 
 class TestExecuteDagContainerizedFilesystemStorage(object):
     pipeline = define_demo_execution_pipeline()
-    config_yaml = [
-        script_relative_path('test_project/env.yml'),
-    ]
+    config_yaml = [script_relative_path('test_project/env.yml')]
     run_id = str(uuid.uuid4())
     execution_date = datetime.datetime.utcnow()
     image = IMAGE
