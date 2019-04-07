@@ -1,0 +1,1 @@
+<?xml version="1.0" encoding="utf-8"?><testsuite errors="0" failures="0" name="pytest" skips="0" tests="1" time="0.704"><testcase classname="dagster_graphql_tests.test_python_error" file="dagster_graphql_tests/test_python_error.py" line="6" name="test_python_error" time="0.0018277168273925781"></testcase></testsuite>
