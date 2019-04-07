@@ -6,8 +6,7 @@ workflows:
     jobs:
       # Required for merge
 
-      - dagit-webapp:
-          context: coveralls
+
       - dagster-py37:
           context: coveralls
       - dagster-py36:
@@ -16,21 +15,28 @@ workflows:
           context: coveralls
       - dagster-py27:
           context: coveralls
+
       - dagit-py37:
           context: coveralls
       - dagit-py36:
           context: coveralls
       - dagit-py35:
           context: coveralls
+      - dagit-py27:
+          context: coveralls
 
-      # Optional steps below
+      - dagit-webapp:
+          context: coveralls
+
+      - dagster-graphql-py37:
+          context: coveralls
+      - dagster-graphql-py36:
+          context: coveralls
+
 
       - format
 
       - lint
-
-      - dagit-py27:
-          context: coveralls
 
       - dagstermill-py37:
           context: coveralls
@@ -143,6 +149,10 @@ workflows:
             - dagit-py36
             - dagit-py35
             - dagit-py27
+
+
+            - dagster-graphql-py37
+            - dagster-graphql-py36
 
             - dagstermill-py37
             - dagstermill-py36
@@ -329,6 +339,28 @@ jobs:
       - run:
           command: |
             mv python_modules/dagstermill/.coverage python_modules/.coverage.dagstermill.${CIRCLE_BUILD_NUM}
+      - persist_to_workspace:
+          root: python_modules/
+          paths:
+            - .coverage*
+
+  dagster-graphql-py36: &dagster-graphql-template
+    docker:
+      - image: dagster/cci-test:3.6.8
+    environment:
+      TOXENV: py36
+    working_directory: ~/repo
+    steps:
+      - checkout
+      - run:
+          name: Run Dagster Tests
+          command: |
+            pushd python_modules/dagster-graphql
+            tox -e $TOXENV
+            popd
+      - run:
+          command: |
+            mv python_modules/dagster-graphql/.coverage python_modules/.coverage.dagster-graphql.${CIRCLE_BUILD_NUM}
       - persist_to_workspace:
           root: python_modules/
           paths:
@@ -525,6 +557,14 @@ jobs:
       - image: dagster/cci-test:2.7.16
     environment:
       TOXENV: py27
+
+  dagster-graphql-py37:
+    <<: *dagster-graphql-template
+    docker:
+      - image: dagster/cci-test:3.7.3
+    environment:
+      TOXENV: py37
+
 
   dagster-pandas-py37:
     <<: *dagster-pandas-template
