@@ -8,6 +8,7 @@ ADD dagster dagster
 ADD dagit dagit
 
 RUN pip install dagster/
+RUN pip install dagster-graphql/
 RUN pip install dagit/
 
 ADD requirements.txt .
