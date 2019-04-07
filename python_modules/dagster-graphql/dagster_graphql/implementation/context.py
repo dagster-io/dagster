@@ -1,6 +1,6 @@
 from dagster import check
-from dagster_graphql.implementation.pipeline_run_storage import PipelineRunStorage
-from dagster_graphql.implementation.pipeline_execution_manager import PipelineExecutionManager
+from .pipeline_run_storage import PipelineRunStorage
+from .pipeline_execution_manager import PipelineExecutionManager
 
 
 class DagsterGraphQLContext(object):

@@ -1,10 +1,10 @@
 from graphql import graphql
 
+from dagster_graphql.implementation.context import DagsterGraphQLContext
 from dagster_graphql.implementation.pipeline_run_storage import PipelineRunStorage
 from dagster_graphql.implementation.pipeline_execution_manager import SynchronousExecutionManager
 from dagster_graphql.schema import create_schema
 
-from dagit.schema.context import DagsterGraphQLContext
 from dagit.app import RepositoryContainer
 
 from dagster.utils import script_relative_path
