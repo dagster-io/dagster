@@ -247,12 +247,12 @@ jobs:
           command: |
             sudo pip install -r python_modules/dagster/dev-requirements.txt -qqq
             sudo pip install -e python_modules/dagster -qqq
+            sudo pip install -e python_modules/dagster-graphql -qqq
             sudo pip install -e python_modules/dagit -qqq
             sudo pip install -r python_modules/dagit/dev-requirements.txt -qqq
             sudo pip install -e python_modules/dagstermill -qqq
             sudo pip install -e python_modules/dagster-pandas -qqq
             sudo pip install -e python_modules/dagster-sqlalchemy -qqq
-            sudo pip install -e python_modules/dagster-graphql -qqq
 
       - attach_workspace:
           at: /tmp/workspace
