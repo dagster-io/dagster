@@ -2,6 +2,7 @@ from __future__ import unicode_literals
 
 import datetime
 import json
+import os
 import re
 import uuid
 
@@ -57,7 +58,7 @@ class TestExecuteDag(object):
 
 
 @nettest
-class TestExecuteDagContainerized(object):
+class TestExecuteDagContainerizedS3Storage(object):
     pipeline = define_demo_execution_pipeline()
     config_yaml = [
         script_relative_path('test_project/env.yml'),

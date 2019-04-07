@@ -41,13 +41,14 @@ def dagster_airflow_python_operator_pipeline(request):
     pipeline = getattr(request.cls, 'pipeline')
     config = getattr(request.cls, 'config', None)
     config_yaml = getattr(request.cls, 'config_yaml', None)
+    op_kwargs = getattr(request.cls, 'op_kwargs', {})
 
     if config is None and config_yaml is not None:
         config = load_yaml_from_glob_list(config_yaml)
     run_id = getattr(request.cls, 'run_id', str(uuid.uuid4()))
     execution_date = getattr(request.cls, 'execution_date', datetime.datetime.utcnow())
 
-    dag, tasks = make_airflow_dag(pipeline, config)
+    dag, tasks = make_airflow_dag(pipeline, config, op_kwargs=op_kwargs)
 
     assert isinstance(dag, DAG)
 
@@ -94,13 +95,14 @@ def dagster_airflow_docker_operator_pipeline(request):
     image = getattr(request.cls, 'image')
     config = getattr(request.cls, 'config', None)
     config_yaml = getattr(request.cls, 'config_yaml', [])
+    op_kwargs = getattr(request.cls, 'op_kwargs', {})
 
     if config is None and config_yaml is not None:
         config = load_yaml_from_glob_list(config_yaml)
     run_id = getattr(request.cls, 'run_id', str(uuid.uuid4()))
     execution_date = getattr(request.cls, 'execution_date', datetime.datetime.utcnow())
 
-    dag, tasks = make_airflow_dag_containerized(pipeline, image, config)
+    dag, tasks = make_airflow_dag_containerized(pipeline, image, config, op_kwargs=op_kwargs)
 
     assert isinstance(dag, DAG)
 
