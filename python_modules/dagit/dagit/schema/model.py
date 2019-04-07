@@ -15,9 +15,7 @@ from dagster.core.types.evaluator import evaluate_config_value
 
 from dagster_graphql.implementation.fetch_pipelines import _pipeline_or_error_from_container
 
-from dagster_graphql.schema.config_types import to_dauphin_config_type
 from dagster_graphql.schema.execution import DauphinExecutionStep
-from dagster_graphql.schema.runtime_types import to_dauphin_runtime_type
 
 from .utils import EitherValue, EitherError
 
