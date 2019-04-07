@@ -33,9 +33,7 @@ def get_pipelines_or_raise(graphene_info):
 def _get_pipeline(graphene_info, selector):
     check.inst_param(graphene_info, 'graphene_info', ResolveInfo)
     check.inst_param(selector, 'selector', ExecutionSelector)
-    return _pipeline_or_error_from_container(
-        graphene_info, graphene_info.context.repository_container, selector
-    )
+    return _pipeline_or_error_from_container(graphene_info, selector)
 
 
 def _get_pipelines(graphene_info):
@@ -56,19 +54,18 @@ def _get_pipelines(graphene_info):
                 )
             )
 
-    repository_or_error = _repository_or_error_from_container(
-        graphene_info, graphene_info.context.repository_container
-    )
+    repository_or_error = _repository_or_error_from_container(graphene_info)
     return repository_or_error.chain(process_pipelines)
 
 
-def _pipeline_or_error_from_container(graphene_info, container, selector):
-    return _repository_or_error_from_container(graphene_info, container).chain(
+def _pipeline_or_error_from_container(graphene_info, selector):
+    return _repository_or_error_from_container(graphene_info).chain(
         lambda repository: _pipeline_or_error_from_repository(graphene_info, repository, selector)
     )
 
 
-def _repository_or_error_from_container(graphene_info, container):
+def _repository_or_error_from_container(graphene_info):
+    container = graphene_info.context.repository_container
     error = container.error
     if error is not None:
         return EitherError(

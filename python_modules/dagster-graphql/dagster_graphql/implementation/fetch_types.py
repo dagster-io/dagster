@@ -21,7 +21,7 @@ def _config_type_or_error(graphene_info, dauphin_pipeline, config_type_name):
 
 def get_config_type(graphene_info, pipeline_name, type_name):
     pipeline_or_error = _pipeline_or_error_from_container(
-        graphene_info, graphene_info.context.repository_container, ExecutionSelector(pipeline_name)
+        graphene_info, ExecutionSelector(pipeline_name)
     )
 
     return pipeline_or_error.chain(
@@ -46,7 +46,7 @@ def _runtime_type_or_error(graphene_info, dauphin_pipeline, runtime_type_name):
 
 def get_runtime_type(graphene_info, pipeline_name, type_name):
     pipeline_or_error = _pipeline_or_error_from_container(
-        graphene_info, graphene_info.context.repository_container, ExecutionSelector(pipeline_name)
+        graphene_info, ExecutionSelector(pipeline_name)
     )
 
     return pipeline_or_error.chain(
