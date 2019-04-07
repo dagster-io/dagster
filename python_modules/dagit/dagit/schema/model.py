@@ -13,61 +13,13 @@ from dagster.core.execution_context import ReexecutionConfig, make_new_run_id
 from dagster.core.runs import RunStorageMode
 from dagster.core.types.evaluator import evaluate_config_value
 
-from dagster_graphql.implementation.fetch import _pipeline_or_error_from_container
+from dagster_graphql.implementation.fetch_pipelines import _pipeline_or_error_from_container
 
 from dagster_graphql.schema.config_types import to_dauphin_config_type
 from dagster_graphql.schema.execution import DauphinExecutionStep
 from dagster_graphql.schema.runtime_types import to_dauphin_runtime_type
 
 from .utils import EitherValue, EitherError
-
-
-def _config_type_or_error(graphene_info, dauphin_pipeline, config_type_name):
-    pipeline = dauphin_pipeline.get_dagster_pipeline()
-    if not pipeline.has_config_type(config_type_name):
-        return EitherError(
-            graphene_info.schema.type_named('ConfigTypeNotFoundError')(
-                pipeline=pipeline, config_type_name=config_type_name
-            )
-        )
-    else:
-        dauphin_config_type = to_dauphin_config_type(pipeline.config_type_named(config_type_name))
-        return EitherValue(dauphin_config_type)
-
-
-def get_config_type(graphene_info, pipeline_name, type_name):
-    pipeline_or_error = _pipeline_or_error_from_container(
-        graphene_info, graphene_info.context.repository_container, ExecutionSelector(pipeline_name)
-    )
-
-    return pipeline_or_error.chain(
-        lambda pipeline: _config_type_or_error(graphene_info, pipeline, type_name)
-    ).value()
-
-
-def _runtime_type_or_error(graphene_info, dauphin_pipeline, runtime_type_name):
-    pipeline = dauphin_pipeline.get_dagster_pipeline()
-    if not pipeline.has_runtime_type(runtime_type_name):
-        return EitherError(
-            graphene_info.schema.type_named('RuntimeTypeNotFoundError')(
-                pipeline=pipeline, runtime_type_name=runtime_type_name
-            )
-        )
-    else:
-        dauphin_runtime_type = to_dauphin_runtime_type(
-            pipeline.runtime_type_named(runtime_type_name)
-        )
-        return EitherValue(dauphin_runtime_type)
-
-
-def get_runtime_type(graphene_info, pipeline_name, type_name):
-    pipeline_or_error = _pipeline_or_error_from_container(
-        graphene_info, graphene_info.context.repository_container, ExecutionSelector(pipeline_name)
-    )
-
-    return pipeline_or_error.chain(
-        lambda pipeline: _runtime_type_or_error(graphene_info, pipeline, type_name)
-    ).value()
 
 
 def get_run(graphene_info, runId):

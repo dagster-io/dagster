@@ -8,7 +8,7 @@ from dagster.utils.logging import CRITICAL, DEBUG, ERROR, INFO, WARNING, check_v
 from dagster.core.execution_plan.objects import ExecutionPlan, StepFailureData
 
 from dagster_graphql import dauphin
-from dagster_graphql.implementation.fetch import get_pipeline_or_raise
+from dagster_graphql.implementation.fetch_pipelines import get_pipeline_or_raise
 from dagster_graphql.implementation.pipeline_run_storage import PipelineRunStatus, PipelineRun
 
 DauphinPipelineRunStatus = dauphin.Enum.from_enum(PipelineRunStatus)

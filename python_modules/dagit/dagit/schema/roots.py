@@ -1,7 +1,8 @@
 from dagit.schema import dauphin
 from dagit.schema import model
 from dagster.core.execution import ExecutionSelector
-from dagster_graphql.implementation.fetch import (
+from dagster_graphql.implementation.fetch_types import get_config_type, get_runtime_type
+from dagster_graphql.implementation.fetch_pipelines import (
     get_pipeline,
     get_pipeline_or_raise,
     get_pipelines,
@@ -58,14 +59,10 @@ class DauphinQuery(dauphin.ObjectType):
     )
 
     def resolve_configTypeOrError(self, graphene_info, **kwargs):
-        return model.get_config_type(
-            graphene_info, kwargs['pipelineName'], kwargs['configTypeName']
-        )
+        return get_config_type(graphene_info, kwargs['pipelineName'], kwargs['configTypeName'])
 
     def resolve_runtimeTypeOrError(self, graphene_info, **kwargs):
-        return model.get_runtime_type(
-            graphene_info, kwargs['pipelineName'], kwargs['runtimeTypeName']
-        )
+        return get_runtime_type(graphene_info, kwargs['pipelineName'], kwargs['runtimeTypeName'])
 
     def resolve_version(self, _graphene_info):
         return __version__
