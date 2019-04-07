@@ -71,6 +71,7 @@ def _do_setup(name='dagit'):
             # FIXME: Temporarily loosen restriction while we work out kinks in publish process
             # See Issue #499
             'dagster',
+            'dagster-graphql',
             # graphql
             'graphql-core>=2.1',
             'graphene>=2.1.3',
