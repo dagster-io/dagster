@@ -92,3 +92,37 @@ class TestExecuteDagContainerized(object):
                     '\{u\'', '{\'', re.sub(' u\'', ' \'', re.sub('^u\'', '\'', result['valueRepr']))
                 ).replace('\'', '"')
             ) == json.loads(expected_results[result['step']['solid']['name']].replace('\'', '"'))
+
+
+class TestExecuteDagContainerizedFilesystemStorage(object):
+    pipeline = define_demo_execution_pipeline()
+    config_yaml = [
+        script_relative_path('test_project/env.yml'),
+    ]
+    run_id = str(uuid.uuid4())
+    execution_date = datetime.datetime.utcnow()
+    image = IMAGE
+
+    def test_execute_dag_containerized(self, dagster_airflow_docker_operator_pipeline):
+        expected_results = {
+            'multiply_the_word': '"barbar"',
+            'count_letters': '{"b": 2, "a": 2, "r": 2}',
+        }
+        for result in dagster_airflow_docker_operator_pipeline:
+            assert 'data' in result
+            assert 'executePlan' in result['data']
+            assert '__typename' in result['data']['executePlan']
+            assert result['data']['executePlan']['__typename'] == 'ExecutePlanSuccess'
+            result = list(
+                filter(
+                    lambda x: x['__typename'] == 'ExecutionStepOutputEvent',
+                    result['data']['executePlan']['stepEvents'],
+                )
+            )[0]
+            if result['step']['kind'] == 'INPUT_THUNK':
+                continue
+            assert json.loads(
+                re.sub(
+                    '\{u\'', '{\'', re.sub(' u\'', ' \'', re.sub('^u\'', '\'', result['valueRepr']))
+                ).replace('\'', '"')
+            ) == json.loads(expected_results[result['step']['solid']['name']].replace('\'', '"'))
