@@ -56,25 +56,16 @@ def _do_setup(name='dagit'):
             # standard python 2/3 compatability things
             'enum-compat==0.0.2',
             'future>=0.16.0, <0.17.0a0',
-            # cli
-            # 'click>=6.7',
-            # 'coloredlogs>=10.0',
-            # 'graphviz>=0.8.3',
             # pyyaml pinned for compatibility with docker-compose
             'pyyaml==4.2b1',
-            # core (not explicitly expressed atm)
-            'six>=1.11.0',
             # cli
             'click>=6.7',
-            # dagster
-            # 'dagster>=0.3.0rc1',
             # FIXME: Temporarily loosen restriction while we work out kinks in publish process
             # See Issue #499
             'dagster',
             'dagster-graphql',
             # graphql
             'graphql-core>=2.1',
-            'graphene>=2.1.3',
             # server
             'Flask-GraphQL>=2.0.0',
             'Flask-Sockets>=0.2.1',
@@ -83,21 +74,10 @@ def _do_setup(name='dagit'):
             'gevent-websocket==0.10.1',
             'gevent==1.3.7',
             'graphql-ws>=0.3.0',
-            'pyrsistent>=0.14.8',
             # watchdog
             'watchdog>=0.8.3',
             # notebooks support
             'nbconvert>=5.4.0',
-            # dev/test - Installed via dev-requirements.txt
-            # 'pylint>=2.3.0',
-            # 'pytest>=3.5.1',
-            # 'recommonmark>=0.4.0',
-            # 'rope>=0.10.7',
-            # 'Sphinx>=1.7.5',
-            # 'sphinx-autobuild>=0.7.1',
-            # 'yapf>=0.22.0',
-            # 'twine>=1.11.0',
-            # 'pre-commit'>=1.10.1',
         ],
         scripts=["bin/dagit"],
         entry_points={"console_scripts": ['dagit-cli = dagit.cli:main']},
