@@ -163,6 +163,7 @@ class SnowflakeSolidDefinition(SolidDefinition):
             outputs=[OutputDefinition(List(dagster_pd.DataFrame))],
             transform_fn=_snowflake_transform_fn,
             config_field=define_snowflake_config(),
+            metadata={'kind': 'sql', 'sql': '\n'.join(sql_queries)},
         )
 
 

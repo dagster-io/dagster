@@ -23,7 +23,6 @@ solids:
       spark_outputs: ["/tmp/dagster/events/data"]
       application_jar: "/tmp/dagster/events/events-assembly-0.1.0-SNAPSHOT.jar"
       deploy_mode: "client"
-      main_class: "io.dagster.events.EventPipeline"
       application_arguments: "--local-path /tmp/dagster/events/data --date 2019-01-01"
       master_url: "local[*]"
       spark_conf:

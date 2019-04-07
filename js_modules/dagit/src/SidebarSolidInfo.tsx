@@ -26,7 +26,7 @@ interface ISidebarSolidInfoProps {
 export default class SidebarSolidInfo extends React.Component<
   ISidebarSolidInfoProps,
   {}
-> {
+  > {
   static fragments = {
     SidebarSolidInfoFragment: gql`
       fragment SidebarSolidInfoFragment on Solid {
