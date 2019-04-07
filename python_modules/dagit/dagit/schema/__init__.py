@@ -1,10 +1,6 @@
 from __future__ import absolute_import
 from dagster_graphql import dauphin
 
-# from .dauphin import DauphinRegistry
-
-# dauphin = DauphinRegistry()
-
 
 def create_schema():
     # dauphin depends on import-based side effects
