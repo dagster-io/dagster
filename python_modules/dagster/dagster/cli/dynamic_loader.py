@@ -3,12 +3,47 @@ from enum import Enum
 import imp
 import importlib
 import os
+import sys
 
 import click
 
 from dagster import PipelineDefinition, RepositoryDefinition, check
 
 from dagster.utils import load_yaml_from_path
+
+
+class RepositoryContainer(object):
+    '''
+    This class solely exists to implement reloading semantics. We need to have a single object
+    that the graphql server has access that stays the same object between reload. This container
+    object allows the RepositoryInfo to be written in an immutable fashion.
+    '''
+
+    def __init__(self, repository_target_info=None, repository=None):
+        self.repo_error = None
+        if repository_target_info is not None:
+            self.repository_target_info = repository_target_info
+            try:
+                self.repo = check.inst(
+                    load_repository_from_target_info(repository_target_info), RepositoryDefinition
+                )
+            except:  # pylint: disable=W0702
+                self.repo_error = sys.exc_info()
+        elif repository is not None:
+            self.repository_target_info = None
+            self.repo = repository
+
+    @property
+    def repository(self):
+        return self.repo
+
+    @property
+    def error(self):
+        return self.repo_error
+
+    @property
+    def repository_info(self):
+        return self.repository_target_info
 
 
 INFO_FIELDS = set(['repository_yaml', 'pipeline_name', 'python_file', 'fn_name', 'module_name'])

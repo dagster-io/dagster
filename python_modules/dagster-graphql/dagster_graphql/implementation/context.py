@@ -1,4 +1,5 @@
 from dagster import check
+from dagster.cli.dynamic_loader import RepositoryContainer
 from .pipeline_run_storage import PipelineRunStorage
 from .pipeline_execution_manager import PipelineExecutionManager
 
@@ -12,7 +13,6 @@ class DagsterGraphQLContext(object):
         throw_on_user_error=False,
         version=None,
     ):
-        from dagit.app import RepositoryContainer
 
         self.repository_container = check.inst_param(
             repository_container, 'repository_container', RepositoryContainer

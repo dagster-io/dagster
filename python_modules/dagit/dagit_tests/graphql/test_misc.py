@@ -12,13 +12,13 @@ from dagster import (
     check,
 )
 
+from dagster.cli.dynamic_loader import RepositoryContainer
 from dagster.core.types.config import ALL_CONFIG_BUILTINS
 
 from dagster.utils import script_relative_path
 
 from dagster_pandas import DataFrame
 
-from dagit.app import RepositoryContainer
 from dagster_graphql.implementation.context import DagsterGraphQLContext
 from dagster_graphql.implementation.pipeline_execution_manager import SynchronousExecutionManager
 from dagster_graphql.implementation.pipeline_run_storage import PipelineRunStorage

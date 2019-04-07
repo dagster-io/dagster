@@ -11,7 +11,11 @@ from graphql.execution.executors.gevent import GeventExecutor as Executor
 
 
 from dagster import check, seven
-from dagster.cli.dynamic_loader import repository_target_argument, load_target_info_from_cli_args
+from dagster.cli.dynamic_loader import (
+    RepositoryContainer,
+    load_target_info_from_cli_args,
+    repository_target_argument,
+)
 from dagster_graphql.implementation.context import DagsterGraphQLContext
 from dagster_graphql.implementation.pipeline_execution_manager import SynchronousExecutionManager
 from dagster_graphql.implementation.pipeline_run_storage import (
@@ -20,7 +24,7 @@ from dagster_graphql.implementation.pipeline_run_storage import (
     InMemoryPipelineRun,
 )
 
-from .app import create_app, RepositoryContainer
+from .app import create_app
 from .schema import create_schema
 from .version import __version__
 

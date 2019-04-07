@@ -375,7 +375,7 @@ class DagsterPythonOperator(PythonOperator, DagsterOperator):
     def make_python_callable(cls, dag_id, pipeline, env_config, step_keys):
         try:
             from dagster import RepositoryDefinition
-            from dagit.app import RepositoryContainer
+            from dagster.cli.dynamic_loader import RepositoryContainer
             from dagit.cli import execute_query_from_cli
         except ImportError:
             raise AirflowException(

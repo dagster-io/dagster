@@ -5,7 +5,7 @@ from dagster_graphql.implementation.pipeline_run_storage import PipelineRunStora
 from dagster_graphql.implementation.pipeline_execution_manager import SynchronousExecutionManager
 from dagster_graphql.schema import create_schema
 
-from dagit.app import RepositoryContainer
+from dagster.cli.dynamic_loader import RepositoryContainer
 
 from dagster.utils import script_relative_path
 from dagster import (
