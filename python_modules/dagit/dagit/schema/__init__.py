@@ -11,9 +11,9 @@ def create_schema():
         execution,
         paging,
         pipelines,
+        roots,
         runs,
         runtime_types,
     )
-    from dagit.schema import roots
 
     return dauphin.create_schema()

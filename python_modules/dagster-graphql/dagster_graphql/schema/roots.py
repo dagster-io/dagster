@@ -1,5 +1,6 @@
-from dagit.schema import dauphin
 from dagster.core.execution import ExecutionSelector
+
+from dagster_graphql import dauphin
 from dagster_graphql.implementation.execution import (
     do_execute_plan,
     get_pipeline_run_observable,
