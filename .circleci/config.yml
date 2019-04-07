@@ -247,6 +247,7 @@ jobs:
           command: |
             sudo pip install -r python_modules/dagster/dev-requirements.txt -qqq
             sudo pip install -e python_modules/dagster -qqq
+            sudo pip install -e python_modules/dagster-graphql -qqq
             sudo pip install -e python_modules/dagit -qqq
             sudo pip install -r python_modules/dagit/dev-requirements.txt -qqq
             sudo pip install -e python_modules/dagstermill -qqq
@@ -257,7 +258,7 @@ jobs:
           at: /tmp/workspace
 
       # only block warnings for now
-      - run: pylint -j 0 python_modules/dagster/dagster python_modules/dagster/dagster_tests python_modules/dagit/dagit python_modules/dagit/dagit_tests python_modules/dagstermill/dagstermill python_modules/dagster-pandas/dagster_pandas python_modules/dagster-sqlalchemy/dagster_sqlalchemy --rcfile=.pylintrc --disable=R,C
+      - run: pylint -j 0 python_modules/dagster/dagster python_modules/dagster/dagster_tests python_modules/dagit/dagit python_modules/dagit/dagit_tests python_modules/dagstermill/dagstermill python_modules/dagster-pandas/dagster_pandas python_modules/dagster-sqlalchemy/dagster_sqlalchemy python_modules/dagster-graphql/dagster_graphql --rcfile=.pylintrc --disable=R,C
 
   dagit-py36: &dagit-template
     docker:
@@ -713,6 +714,7 @@ jobs:
           command: |
             sudo pip install -r python_modules/dagster/dev-requirements.txt -qqq
             sudo pip install -e python_modules/dagster -qqq
+            sudo pip install -e python_modules/dagster-graphql -qqq
             sudo pip install -e python_modules/dagit -qqq
             sudo pip install -r python_modules/dagit/dev-requirements.txt -qqq
             cd js_modules/dagit

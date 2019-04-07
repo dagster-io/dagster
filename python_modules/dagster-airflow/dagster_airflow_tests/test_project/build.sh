@@ -5,11 +5,13 @@
 # versions of dagit and dagster.
 
 cp -R ../../../dagster . && \
+cp -R ../../../dagster-graphql . && \
 cp -R ../../../dagit . && \
 \
-rm -rf dagster/.tox dagit/.tox dagster/dist dagit/dist dagster/*.egg-info \
-    dagit/*.egg-info dagster/build dagit/build && \
+rm -rf dagster/.tox dagster-graphql/.tox dagit/.tox dagster/dist dagster-graphql/dist \
+    dagit/dist dagster/*.egg-info dagster-graphql/*.egg-info dagit/*.egg-info dagster/build \
+    dagster-graphql/build dagit/build && \
 \
 docker build -t dagster-airflow-demo . && \
 \
-rm -rf dagster dagit
+rm -rf dagster dagster-graphql dagit

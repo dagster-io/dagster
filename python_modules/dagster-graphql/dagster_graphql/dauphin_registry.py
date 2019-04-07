@@ -1,3 +1,29 @@
+'''
+Dauphin is wrapper module around graphene meant to provide a couple additional
+features. Most importantly is a type registry. Instead of referring to
+the class that corresponds to the GraphQL type everywhere, you are instead
+allows to use the GraphQL string. This solves an immediate short term problem
+in that it is quite irritating to manage dependencies in a graphql schema
+where the types refer to each other in cyclic fashion. Breaking up a schema
+into multiple files without this feature (Python has no notion of forward
+declarations) is difficult.
+
+Dauphin is meant to totally wrap graphene. That means if you are viewing a code
+sample online or within the graphene docs, one should be be able use
+dauphin.ChooseYourClass instead of graphene.ChooseYourClass.
+
+We also use dauphin as disintermediation layer between our application code and
+graphene in places where we want additional strictness or more convenient idioms.
+
+e.g. 
+
+dauphin.non_null_list(dauphin.String)
+
+as opposed to
+
+graphene.NonNull(graphene.List(graphene.NonNull(graphene.String)))
+
+'''
 from functools import partial
 from graphql.type.introspection import IntrospectionSchema
 

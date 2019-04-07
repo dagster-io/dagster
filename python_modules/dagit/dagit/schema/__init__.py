@@ -1,7 +1,5 @@
 from __future__ import absolute_import
-from .dauphin import DauphinRegistry
-
-dauphin = DauphinRegistry()
+from dagster_graphql import dauphin
 
 
 def create_schema():
