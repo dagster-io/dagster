@@ -2,9 +2,9 @@ from __future__ import absolute_import
 
 from dagster import check
 from dagster.core.execution_plan.objects import ExecutionStep, ExecutionPlan, StepInput, StepOutput
+from dagster_graphql.schema.runtime_types import to_dauphin_runtime_type
 
 from dagit.schema import dauphin
-from .runtime_types import to_dauphin_runtime_type
 
 
 class DauphinExecutionPlan(dauphin.ObjectType):
