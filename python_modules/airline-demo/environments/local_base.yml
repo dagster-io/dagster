@@ -1,7 +1,5 @@
 context:
   local:
-    config:
-      log_level: ERROR
     resources:
       db_info:
         config:
