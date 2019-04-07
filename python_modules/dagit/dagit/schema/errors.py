@@ -16,10 +16,11 @@ from dagster.core.types.evaluator import (
 
 from dagster.utils.error import SerializableErrorInfo
 
+from dagster_graphql.schema.config_types import to_dauphin_config_type
+
 from dagit.schema import dauphin
 
 from .runs import DauphinStepEvent
-from .config_types import to_dauphin_config_type
 
 
 class DauphinError(dauphin.Interface):

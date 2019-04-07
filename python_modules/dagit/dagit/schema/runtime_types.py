@@ -2,7 +2,7 @@ from dagster import check
 from dagster.core.types.runtime import RuntimeType
 from dagit.schema import dauphin
 
-from .config_types import DauphinConfigType, to_dauphin_config_type
+from dagster_graphql.schema.config_types import DauphinConfigType, to_dauphin_config_type
 
 
 def config_type_for_schema(schema):

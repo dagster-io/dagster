@@ -17,7 +17,8 @@ from dagster.core.types.evaluator import evaluate_config_value
 
 from dagster.utils.error import serializable_error_info_from_exc_info
 
-from .config_types import to_dauphin_config_type
+from dagster_graphql.schema.config_types import to_dauphin_config_type
+
 from .execution import DauphinExecutionStep
 from .runtime_types import to_dauphin_runtime_type
 from .utils import EitherValue, EitherError
