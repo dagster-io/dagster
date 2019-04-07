@@ -8,6 +8,12 @@ from dagster_graphql.implementation.fetch_pipelines import (
     get_pipelines,
     get_pipelines_or_raise,
 )
+from dagster_graphql.implementation.fetch_runs import (
+    get_execution_plan,
+    get_run,
+    get_runs,
+    validate_pipeline_config,
+)
 
 
 class DauphinQuery(dauphin.ObjectType):
@@ -79,16 +85,16 @@ class DauphinQuery(dauphin.ObjectType):
         return get_pipelines_or_raise(graphene_info)
 
     def resolve_pipelineRuns(self, graphene_info):
-        return model.get_runs(graphene_info)
+        return get_runs(graphene_info)
 
     def resolve_pipelineRunOrError(self, graphene_info, runId):
-        return model.get_run(graphene_info, runId)
+        return get_run(graphene_info, runId)
 
     def resolve_isPipelineConfigValid(self, graphene_info, pipeline, config):
-        return model.validate_pipeline_config(graphene_info, pipeline.to_selector(), config)
+        return validate_pipeline_config(graphene_info, pipeline.to_selector(), config)
 
     def resolve_executionPlan(self, graphene_info, pipeline, config):
-        return model.get_execution_plan(graphene_info, pipeline.to_selector(), config)
+        return get_execution_plan(graphene_info, pipeline.to_selector(), config)
 
 
 class DauphinStepOutputHandle(dauphin.InputObjectType):
