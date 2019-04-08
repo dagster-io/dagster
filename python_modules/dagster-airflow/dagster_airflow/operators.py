@@ -15,13 +15,14 @@ from airflow.operators.python_operator import PythonOperator
 from airflow.utils.file import TemporaryDirectory
 from docker import APIClient, from_env
 
+from dagster import seven
 from dagster.seven.json import JSONDecodeError
 
 from .format import format_config_for_graphql
 from .query import DAGSTER_OPERATOR_COMMAND_TEMPLATE, QUERY_TEMPLATE
 
 
-DOCKER_TEMPDIR = '/tmp'
+DOCKER_TEMPDIR = '/tmp/dagster'
 
 DEFAULT_ENVIRONMENT = {
     'AWS_ACCESS_KEY_ID': os.getenv('AWS_ACCESS_KEY_ID'),
@@ -257,6 +258,7 @@ class DagsterDockerOperator(ModifiedDockerOperator, DagsterOperator):
         cls, pipeline, env_config, solid_name, step_keys, dag, dag_id, op_kwargs
     ):
         tmp_dir = op_kwargs.pop('tmp_dir', DOCKER_TEMPDIR)
+        host_tmp_dir = op_kwargs.pop('host_tmp_dir', seven.get_system_temp_directory())
 
         if 'storage' not in env_config:
             env_config['storage'] = {'filesystem': {'base_dir': tmp_dir}}
@@ -274,6 +276,7 @@ class DagsterDockerOperator(ModifiedDockerOperator, DagsterOperator):
             pipeline_name=pipeline.name,
             step_keys=step_keys,
             task_id=solid_name,
+            host_tmp_dir=host_tmp_dir,
             **op_kwargs
         )
         # fmt: on
@@ -366,6 +369,15 @@ class DagsterDockerOperator(ModifiedDockerOperator, DagsterOperator):
 
                 return res
 
+            if res_type == 'PythonError':
+                self.log.info('Plan execution failed.')
+                raise AirflowException(
+                    'Subplan execution failed: {message}\n{stack}'.format(message=res_data['message'], stack=res_data['stack'])
+                )
+
+            # Catchall
+            return res
+
         finally:
             self._run_id = None
 
@@ -375,6 +387,10 @@ class DagsterDockerOperator(ModifiedDockerOperator, DagsterOperator):
     def __get_tls_config(self):
         # pylint:disable=no-member
         return super(DagsterDockerOperator, self)._ModifiedDockerOperator__get_tls_config()
+
+    @contextmanager
+    def get_host_tmp_dir(self):
+        yield self.host_tmp_dir
 
 
 class DagsterPythonOperator(PythonOperator, DagsterOperator):
