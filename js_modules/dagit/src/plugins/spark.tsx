@@ -45,9 +45,7 @@ export class SidebarComponent extends React.Component<IPluginSidebarProps> {
         }
         isOpen={this.state.open}
       >
-        <div className={Classes.DIALOG_BODY}>
-          {displayString}
-        </div>
+        <div className={Classes.DIALOG_BODY}>{displayString}</div>
         <div className={Classes.DIALOG_FOOTER}>
           <div className={Classes.DIALOG_FOOTER_ACTIONS}>
             <Button onClick={() => this.setState({ open: false })}>
