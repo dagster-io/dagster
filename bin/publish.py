@@ -467,7 +467,7 @@ def publish(nightly):
         )
         git_push()
         git_push(tags=True)
-    publish_all(nightly)
+    # publish_all(nightly)
 
 
 @cli.command()
