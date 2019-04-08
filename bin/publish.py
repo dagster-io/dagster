@@ -63,7 +63,7 @@ def construct_publish_comands(additional_steps=None, nightly=False):
 
 '''For dagit, we need to build the JS assets.'''
 DAGIT_ADDITIONAL_STEPS = [
-    'pushd ../../js_modules/dagit', 'yarn install', 'yarn build-for-python', 'popd'
+    'pushd ../../js_modules/dagit; yarn install && yarn build-for-python; popd'
 ]
 
 
@@ -107,7 +107,7 @@ def pushd_module(module_name):
 
 def publish_module(module, nightly=False, additional_steps=''):
     with pushd_module(module) as cwd:
-        for command in get_publish_comands(additional_steps=additional_steps, nightly=nightly):
+        for command in construct_publish_comands(additional_steps=additional_steps, nightly=nightly):
             print('About to run command: {}'.format(command))
             process = subprocess.Popen(
                 command, stderr=subprocess.PIPE, cwd=cwd, shell=True, stdout=subprocess.PIPE
@@ -474,7 +474,7 @@ def publish(nightly):
         )
         git_push()
         git_push(tags=True)
-    # publish_all(nightly)
+    publish_all(nightly)
 
 
 @cli.command()
