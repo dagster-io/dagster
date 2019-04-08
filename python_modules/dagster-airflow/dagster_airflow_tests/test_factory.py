@@ -19,7 +19,10 @@ from .test_project.dagster_airflow_demo import define_demo_execution_pipeline
 
 class TestExecuteDag(object):
     pipeline = define_demo_execution_pipeline()
-    config_yaml = [script_relative_path('test_project/env.yml')]
+    config_yaml = [
+        script_relative_path('test_project/env.yml'),
+        script_relative_path('test_project/env_local.yml'),
+    ]
     run_id = str(uuid.uuid4())
     execution_date = datetime.datetime.utcnow()
 
