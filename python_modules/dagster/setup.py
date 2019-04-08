@@ -29,6 +29,7 @@ def get_version(name):
     else:
         raise Exception('Shouldn\'t be here: bad package name {name}'.format(name=name))
 
+
 parser = argparse.ArgumentParser()
 parser.add_argument('--nightly', action='store_true')
 
