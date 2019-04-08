@@ -1,3 +1,4 @@
+import argparse
 import sys
 
 from setuptools import find_packages, setup
@@ -22,7 +23,8 @@ def get_version(name):
         raise Exception('Shouldn\'t be here: bad package name {name}'.format(name=name))
 
 
-# TODO: setup should take care of moving the plugin
+parser = argparse.ArgumentParser()
+parser.add_argument('--nightly', action='store_true')
 
 
 def _do_setup(name='dagster-airflow'):
