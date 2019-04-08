@@ -453,6 +453,7 @@ const MOCKS = [
                         type: {
                           name: "PandasDataFrame",
                           __typename: "RegularRuntimeType",
+                          isNothing: false,
                           displayName: "PandasDataFrame",
                           description:
                             "Two-dimensional size-mutable, potentially heterogeneous\n    tabular data structure with labeled axes (rows and columns).\n    See http://pandas.pydata.org/"
@@ -483,6 +484,7 @@ const MOCKS = [
                         type: {
                           name: "PandasDataFrame",
                           __typename: "RegularRuntimeType",
+                          isNothing: false,
                           displayName: "PandasDataFrame",
                           description:
                             "Two-dimensional size-mutable, potentially heterogeneous\n    tabular data structure with labeled axes (rows and columns).\n    See http://pandas.pydata.org/"
@@ -512,6 +514,7 @@ const MOCKS = [
                         type: {
                           name: "PandasDataFrame",
                           __typename: "RegularRuntimeType",
+                          isNothing: false,
                           displayName: "PandasDataFrame",
                           description:
                             "Two-dimensional size-mutable, potentially heterogeneous\n    tabular data structure with labeled axes (rows and columns).\n    See http://pandas.pydata.org/"
@@ -531,6 +534,7 @@ const MOCKS = [
                         type: {
                           name: "PandasDataFrame",
                           __typename: "RegularRuntimeType",
+                          isNothing: false,
                           displayName: "PandasDataFrame",
                           description:
                             "Two-dimensional size-mutable, potentially heterogeneous\n    tabular data structure with labeled axes (rows and columns).\n    See http://pandas.pydata.org/"
@@ -642,6 +646,7 @@ const MOCKS = [
                         type: {
                           name: "PandasDataFrame",
                           __typename: "RegularRuntimeType",
+                          isNothing: false,
                           displayName: "PandasDataFrame",
                           description:
                             "Two-dimensional size-mutable, potentially heterogeneous\n    tabular data structure with labeled axes (rows and columns).\n    See http://pandas.pydata.org/"
@@ -662,6 +667,7 @@ const MOCKS = [
                           name: "PandasDataFrame",
                           __typename: "RegularRuntimeType",
                           displayName: "PandasDataFrame",
+                          isNothing: false,
                           description:
                             "Two-dimensional size-mutable, potentially heterogeneous\n    tabular data structure with labeled axes (rows and columns).\n    See http://pandas.pydata.org/"
                         },

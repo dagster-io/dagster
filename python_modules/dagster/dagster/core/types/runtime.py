@@ -117,6 +117,10 @@ class RuntimeType(object):
     def inner_types(self):
         return []
 
+    @property
+    def is_nothing(self):
+        return False
+
 
 class BuiltinScalarRuntimeType(RuntimeType):
     def __init__(self, *args, **kwargs):
@@ -217,6 +221,20 @@ def define_any_type(name, description=None):
             super(NamedAnyType, self).__init__(key=name, name=name, description=description)
 
     return NamedAnyType
+
+
+class Nothing(RuntimeType):
+    def __init__(self):
+        super(Nothing, self).__init__(
+            key='Nothing', name='Nothing', input_schema=None, output_schema=None, is_builtin=True
+        )
+
+    @property
+    def is_nothing(self):
+        return True
+
+    def coerce_runtime_value(self, value):
+        return self.throw_if_false(lambda v: v is None, value)
 
 
 class PythonObjectType(RuntimeType):
@@ -356,6 +374,7 @@ _RUNTIME_MAP = {
     BuiltinEnum.INT: Int.inst(),
     BuiltinEnum.PATH: Path.inst(),
     BuiltinEnum.STRING: String.inst(),
+    BuiltinEnum.NOTHING: Nothing.inst(),
 }
 
 

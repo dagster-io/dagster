@@ -132,6 +132,32 @@ def _validate_dependencies(dependencies, solid_dict, alias_lookup):
                     'Solid {dep.solid} does not have output {dep.output}'.format(dep=dep)
                 )
 
+            input_def = solid_dict[from_solid].definition.input_def_named(from_input)
+            output_def = solid_dict[dep.solid].definition.output_def_named(dep.output)
+
+            _validate_input_output_pair(input_def, output_def, from_solid, dep)
+
+
+def _validate_input_output_pair(input_def, output_def, from_solid, dep):
+    # Currently, we opt to be overly permissive with input/output type mismatches.
+
+    # Here we check for the case where no value will be provided where one is expected.
+    if output_def.runtime_type.is_nothing and not input_def.runtime_type.is_nothing:
+        raise DagsterInvalidDefinitionError(
+            (
+                'Input "{input_def.name}" to solid "{from_solid}" can not depend on the output '
+                '"{output_def.name}" from solid "{dep.solid}". '
+                'Input "{input_def.name} expects a value of type {input_def.runtime_type.name} '
+                'and output "{output_def.name}" returns type {output_def.runtime_type.name}{extra}.'
+            ).format(
+                from_solid=from_solid,
+                dep=dep,
+                output_def=output_def,
+                input_def=input_def,
+                extra=' (which produces no value)' if output_def.runtime_type.is_nothing else '',
+            )
+        )
+
 
 def iterate_solid_def_types(solid_def):
     if solid_def.config_field:

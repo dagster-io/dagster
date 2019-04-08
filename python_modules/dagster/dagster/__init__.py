@@ -70,6 +70,7 @@ from dagster.core.types import (
     PythonObjectType,
     Selector,
     String,
+    Nothing,
 )
 
 from dagster.core.types.decorator import dagster_type, as_dagster_type
@@ -142,6 +143,7 @@ __all__ = [
     'Selector',
     'String',
     'SerializationStrategy',
+    'Nothing',
     # type creation
     'as_dagster_type',
     'dagster_type',

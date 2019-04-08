@@ -156,6 +156,8 @@ def get_input_source_step_handle(pipeline_def, environment_config, plan_builder,
     elif dependency_structure.has_dep(input_handle):
         solid_output_handle = dependency_structure.get_dep(input_handle)
         return plan_builder.step_output_map[solid_output_handle]
+    elif input_def.runtime_type.is_nothing:
+        return None
     else:
         raise DagsterInvariantViolationError(
             (
@@ -180,6 +182,9 @@ def create_step_inputs(pipeline_def, environment_config, plan_builder, solid):
         prev_step_output_handle = get_input_source_step_handle(
             pipeline_def, environment_config, plan_builder, solid, input_def
         )
+
+        if not prev_step_output_handle:
+            continue
 
         subplan = create_subplan_for_input(
             pipeline_def, environment_config, solid, prev_step_output_handle, input_def

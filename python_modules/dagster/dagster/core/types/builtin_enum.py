@@ -8,3 +8,4 @@ class BuiltinEnum(Enum):
     INT = 'Int'
     PATH = 'Path'
     STRING = 'String'
+    NOTHING = 'Nothing'
