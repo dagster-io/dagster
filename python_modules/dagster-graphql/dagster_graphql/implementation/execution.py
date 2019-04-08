@@ -10,7 +10,6 @@ from dagster import RunConfig, check
 from dagster.core.events import DagsterEventType, DagsterEvent
 from dagster.core.execution import ExecutionSelector, create_execution_plan, execute_plan
 from dagster.core.execution_context import ReexecutionConfig, make_new_run_id
-from dagster.core.runs import RunStorageMode
 
 
 from dagster_graphql.schema.execution import DauphinExecutionStep

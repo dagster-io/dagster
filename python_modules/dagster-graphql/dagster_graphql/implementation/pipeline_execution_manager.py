@@ -8,14 +8,7 @@ import time
 import gevent
 import six
 
-from dagster import (
-    InProcessExecutorConfig,
-    PipelineDefinition,
-    RunConfig,
-    RunStorageMode,
-    check,
-    execute_pipeline,
-)
+from dagster import InProcessExecutorConfig, PipelineDefinition, RunConfig, check, execute_pipeline
 from dagster.cli.dynamic_loader import RepositoryContainer
 from dagster.core.events.logging import DagsterEventRecord
 from dagster.core.events import DagsterEvent, DagsterEventType, PipelineProcessStartedData
