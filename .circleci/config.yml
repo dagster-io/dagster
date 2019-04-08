@@ -88,15 +88,6 @@ workflows:
       - dagster-airflow-py27:
           context: coveralls
 
-      - dagma-py37:
-          context: coveralls
-      - dagma-py36:
-          context: coveralls
-      - dagma-py35:
-          context: coveralls
-      - dagma-py27:
-          context: coveralls
-
       - airline-demo-py37:
           context: coveralls
       - airline-demo-py36:
@@ -185,10 +176,6 @@ workflows:
             - dagster-airflow-py36
             - dagster-airflow-py35
             - dagster-airflow-py27
-
-            - dagma-py37
-            - dagma-py36
-            - dagma-py35
 
             # https://github.com/dagster-io/dagster/issues/1124
             - airline-demo-py37
@@ -479,28 +466,6 @@ jobs:
           paths:
             - .coverage*
 
-  dagma-py36: &dagma-template
-    docker:
-      - image: dagster/cci-test:3.6.8
-    environment:
-      TOXENV: py36
-    working_directory: ~/repo
-    steps:
-      - checkout
-      - run:
-          name: Run Dagster Tests
-          command: |
-            pushd python_modules/dagma
-            tox -e $TOXENV
-            popd
-      - run:
-          command: |
-            mv python_modules/dagma/.coverage python_modules/.coverage.dagma.${CIRCLE_BUILD_NUM}
-      - persist_to_workspace:
-          root: python_modules/
-          paths:
-            - .coverage*
-
   dagit-py37:
     <<: *dagit-template
     docker:
@@ -739,27 +704,6 @@ jobs:
           root: python_modules/
           paths:
             - .coverage*
-
-  dagma-py37:
-    <<: *dagma-template
-    docker:
-      - image: dagster/cci-test:3.7.3
-    environment:
-      TOXENV: py37
-
-  dagma-py35:
-    <<: *dagma-template
-    docker:
-      - image: dagster/cci-test:3.5.7
-    environment:
-      TOXENV: py35
-
-  dagma-py27:
-    <<: *dagma-template
-    docker:
-      - image: dagster/cci-test:2.7.16
-    environment:
-      TOXENV: py27
 
   dagit-webapp:
     docker:
