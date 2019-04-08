@@ -4,21 +4,23 @@ For detailed usage instructions, please consult the command line help,
 available by running `python publish.py --help`.
 """
 import contextlib
+import datetime
+import distutils
 import os
 import re
 import subprocess
 
-import click
-import distutils
-import packaging.version
-
 from itertools import groupby
 
-from .pypirc import ConfigFileError, RCParser
+import click
+import packaging.version
 
 
-PYPIRC_EXCEPTION_MESSAGE = '''You must have credentials available to PyPI in the form of a ~/.pypirc'
-'file (see: https://docs.python.org/2/distutils/packageindex.html#pypirc):
+from pypirc import ConfigFileError, RCParser
+
+
+PYPIRC_EXCEPTION_MESSAGE = '''You must have credentials available to PyPI in the form of a '
+'~/.pypirc file (see: https://docs.python.org/2/distutils/packageindex.html#pypirc):
 
     [distutils]
     index-servers =
@@ -58,8 +60,9 @@ popd
 '''
 
 MODULE_NAMES = [
+    'airline-demo',
     'dagit',
-    'dagma',
+    'dagster-airflow',
     'dagster-ge',
     'dagster-pandas',
     'dagster-sqlalchemy',
@@ -128,10 +131,15 @@ def publish_dagster_pandas(nightly):
     publish_module('dagster-pandas', nightly)
 
 
+def publish_dagster_airflow(nightly):
+    publish_module('dagster-airflow', nightly)
+
+
 def publish_all(nightly):
     publish_dagster(nightly)
     publish_dagit(nightly)
     publish_dagstermill(nightly)
+    publish_dagster_airflow(nightly)
     publish_dagster_ge(nightly)
     publish_dagster_pandas(nightly)
     publish_dagster_sqlalchemy(nightly)
@@ -200,9 +208,8 @@ def format_module_versions(module_versions, nightly=False):
     if nightly:
         return '\n'.join(
             [
-                '    {module_name}: {version}{nightly}'.format(
+                '    {module_name}: {nightly}'.format(
                     module_name=module_name,
-                    version=module_version['__version__'],
                     nightly=module_version['__nightly__'],
                 )
                 for module_name, module_version in module_versions.items()
@@ -221,17 +228,19 @@ def format_module_versions(module_versions, nightly=False):
 
 def get_module_versions(module_name):
     with pushd_module(module_name):
-        version = {}
+        module_version = {}
         with open(
             '{module_name}/version.py'.format(module_name=normalize_module_name(module_name))
         ) as fp:
-            exec(fp.read(), version)  # pylint: disable=W0122
-        return version
+            exec(fp.read(), module_version)  # pylint: disable=W0122
+        return module_version
 
 
-def get_versions(modules=MODULE_NAMES):
+def get_versions(modules=None):
+    if modules is None:
+        modules = MODULE_NAMES
     module_versions = {}
-    for module_name in MODULE_NAMES:
+    for module_name in modules:
         module_versions[module_name] = get_module_versions(module_name)
     return module_versions
 
@@ -253,13 +262,13 @@ def check_versions_equal(nightly=False):
 
 
 def check_versions(nightly=False):
-    version = check_versions_equal(nightly)
+    module_version = check_versions_equal(nightly)
     if not nightly:
         git_tag = get_git_tag()
         assert (
-            version['__version__'] == git_tag
+            module_version['__version__'] == git_tag
         ), 'Version {version} does not match expected git tag {git_tag}'.format(
-            version=version['__version__'], git_tag=git_tag
+            version=module_version['__version__'], git_tag=git_tag
         )
 
     return version
@@ -280,13 +289,13 @@ def set_version(module_name, version, nightly):
             )
 
 
-def increment_nightly_version(module_name, version):
-    new_nightly = '.dev' + str(int(version['__nightly__'].split('.dev')[1]) + 1)
-    set_version(module_name, version['__version__'], new_nightly)
+def get_nightly_version():
+    return datetime.datetime.utcnow().strftime('%Y%m%d')
 
 
-def reset_nightly_version(module_name, version):
-    set_version(module_name, version['__version__'], '.dev0')
+def increment_nightly_version(module_name, module_version):
+    new_nightly = get_nightly_version()
+    set_version(module_name, module_version['__version__'], new_nightly)
 
 
 def increment_nightly_versions():
