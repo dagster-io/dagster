@@ -6,6 +6,7 @@ available by running `python publish.py --help`.
 import contextlib
 import datetime
 import distutils
+import inspect
 import os
 import re
 import subprocess
@@ -33,15 +34,22 @@ PYPIRC_EXCEPTION_MESSAGE = '''You must have credentials available to PyPI in the
 '''
 
 
+def script_relative_path(file_path):
+    scriptdir = inspect.stack()[1][1]
+    return os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(scriptdir)), file_path))
+
+
 def _which(exe):
+    '''Uses distutils to look for an executable, mimicking unix which'''
     # https://github.com/PyCQA/pylint/issues/73
     return distutils.spawn.find_executable(exe)  # pylint: disable=no-member
 
 
-def get_publish_comands(additional_steps=None, nightly=False):
+def construct_publish_comands(additional_steps=None, nightly=False):
+    '''Get the shell commands we'll use to actually build and publish a package to PyPI.'''
     publish_commands = (
         ['rm -rf dist']
-        + ([additional_steps] if additional_steps else [])
+        + (additional_steps if additional_steps else [])
         + [
             'python setup.py sdist bdist_wheel{nightly}'.format(
                 nightly=' --nightly' if nightly else ''
@@ -53,14 +61,14 @@ def get_publish_comands(additional_steps=None, nightly=False):
     return publish_commands
 
 
-DAGIT_ADDITIONAL_STEPS = '''pushd ../../js_modules/dagit; \\
-yarn install && \\
-yarn build-for-python; \\
-popd
-'''
+'''For dagit, we need to build the JS assets.'''
+DAGIT_ADDITIONAL_STEPS = [
+    'pushd ../../js_modules/dagit', 'yarn install', 'yarn build-for-python', 'popd'
+]
 
+
+'''The modules managed by this script.'''
 MODULE_NAMES = [
-    'airline-demo',
     'dagit',
     'dagster-airflow',
     'dagster-ge',
@@ -72,6 +80,7 @@ MODULE_NAMES = [
 
 
 def normalize_module_name(name):
+    '''Our package convention is to find the source for module foo_bar in foo-bar/foo_bar.'''
     return name.replace('-', '_')
 
 
@@ -81,8 +90,7 @@ def all_equal(iterable):
 
 
 def path_to_module(module_name):
-    relative_path = 'python_modules/{module_name}'.format(module_name=module_name)
-    return os.path.abspath(relative_path)
+    return script_relative_path('../python_modules/{module_name}'.format(module_name=module_name))
 
 
 @contextlib.contextmanager
@@ -205,21 +213,12 @@ def set_git_tag(tag, signed=False):
 
 
 def format_module_versions(module_versions, nightly=False):
-    if nightly:
-        return '\n'.join(
-            [
-                '    {module_name}: {nightly}'.format(
-                    module_name=module_name,
-                    nightly=module_version['__nightly__'],
-                )
-                for module_name, module_version in module_versions.items()
-            ]
-        )
-
     return '\n'.join(
         [
-            '    {module_name}: {version}'.format(
-                module_name=module_name, version=module_version['__version__']
+            '    {module_name}: {version} {nightly}'.format(
+                module_name=module_name,
+                version=module_version['__version__'],
+                nightly=module_version['__nightly__'],
             )
             for module_name, module_version in module_versions.items()
         ]
@@ -271,7 +270,7 @@ def check_versions(nightly=False):
             version=module_version['__version__'], git_tag=git_tag
         )
 
-    return version
+    return module_version
 
 
 def set_version(module_name, version, nightly):
@@ -305,9 +304,9 @@ def increment_nightly_versions():
     return versions[MODULE_NAMES[0]]
 
 
-def set_new_version(version):
+def set_new_version(new_version):
     for module_name in MODULE_NAMES:
-        set_version(module_name, version, '.dev0')
+        set_version(module_name, new_version, get_nightly_version())
 
 
 def commit_new_version(version):
@@ -427,8 +426,8 @@ def publish(nightly):
     """
 
     try:
-        assert RCParser.from_file().get_repository_config()
-    except:
+        RCParser.from_file()
+    except ConfigFileError:
         raise ConfigFileError(PYPIRC_EXCEPTION_MESSAGE)
 
     assert '\nwheel' in subprocess.check_output(['pip', 'list']).decode('utf-8'), (
@@ -446,34 +445,24 @@ def publish(nightly):
         'https://yarnpkg.com/lang/en/docs/install/'
     )
 
+    print('Checking that module versions are in lockstep')
+    check_versions(nightly=nightly)
     if not nightly:
-        print(
-            'Checking that module versions are in lockstep and match git tag on most recent commit...'
-        )
-        check_versions()
+        print('... and match git tag on most recent commit...')
         check_git_status()
-    else:
-        version = check_versions(nightly=True)
 
     print('Publishing packages to PyPI...')
 
     if nightly:
-        tags = subprocess.check_output(['git', 'tag']).decode('utf-8').split('\n')
-        versions = [packaging.version.parse(tag) for tag in tags]
-
-        if max(versions) > packaging.version.parse(version['__version__']):
-            version = {'__version__': str(max(versions)), '__nightly__': 'dev0'}
-            set_new_version(str(max(versions)))
-        else:
-            version = increment_nightly_versions()
+        version = increment_nightly_versions()
         commit_new_version(
-            '{version}{nightly}'.format(
-                version=version['__version__'], nightly=version['__nightly__']
+            'nightly: {nightly}'.format(
+                nightly=version['__nightly__']
             )
         )
         set_git_tag(
-            '{version}{nightly}'.format(
-                version=version['__version__'], nightly=version['__nightly__']
+            '{nightly}'.format(
+                nightly=version['__nightly__']
             )
         )
         git_push()
