@@ -180,7 +180,25 @@ class Bool(BuiltinScalarRuntimeType):
         return self.throw_if_false(lambda v: isinstance(v, bool), value)
 
 
-class Any(RuntimeType):
+class Anyish(RuntimeType):
+    def __init__(
+        self, key, name, input_schema=None, output_schema=None, is_builtin=False, description=None
+    ):
+        super(Anyish, self).__init__(
+            key=key,
+            name=name,
+            input_schema=input_schema,
+            output_schema=output_schema,
+            is_builtin=is_builtin,
+            description=description,
+        )
+
+    @property
+    def is_any(self):
+        return True
+
+
+class Any(Anyish):
     def __init__(self):
         super(Any, self).__init__(
             key='Any',
@@ -190,9 +208,13 @@ class Any(RuntimeType):
             is_builtin=True,
         )
 
-    @property
-    def is_any(self):
-        return True
+
+def define_any_type(name, description=None):
+    class NamedAnyType(Anyish):
+        def __init__(self):
+            super(NamedAnyType, self).__init__(key=name, name=name, description=description)
+
+    return NamedAnyType
 
 
 class PythonObjectType(RuntimeType):
