@@ -13,6 +13,7 @@ from dagster import (
     PipelineDefinition,
     SolidInstance,
     String,
+    OnSuccess,
 )
 from dagster.utils import safe_isfile, mkdir_p
 
@@ -62,9 +63,7 @@ def define_event_ingest_pipeline():
             SolidInstance('gunzipper'): {'gzip_file': DependencyDefinition('download_from_s3')},
             SolidInstance('event_ingest'): {'spark_inputs': DependencyDefinition('gunzipper')},
             SolidInstance('snowflake_load'): {
-                SnowflakeSolidDefinition.INPUT_READY: DependencyDefinition(
-                    'event_ingest', 'output_success'
-                )
+                SnowflakeSolidDefinition.INPUT_READY: OnSuccess('event_ingest')
             },
         },
     )

@@ -116,6 +116,10 @@ class RuntimeType(object):
     def inner_types(self):
         return []
 
+    @property
+    def is_event(self):
+        return False
+
 
 class BuiltinScalarRuntimeType(RuntimeType):
     def __init__(self, *args, **kwargs):
@@ -216,6 +220,17 @@ def define_any_type(name, description=None):
             super(NamedAnyType, self).__init__(key=name, name=name, description=description)
 
     return NamedAnyType
+
+
+class Event(RuntimeType):
+    def __init__(self):
+        super(Event, self).__init__(
+            key='Event', name='Event', input_schema=None, output_schema=None, is_builtin=True
+        )
+
+    @property
+    def is_event(self):
+        return True
 
 
 class PythonObjectType(RuntimeType):
@@ -355,6 +370,7 @@ _RUNTIME_MAP = {
     BuiltinEnum.INT: Int.inst(),
     BuiltinEnum.PATH: Path.inst(),
     BuiltinEnum.STRING: String.inst(),
+    BuiltinEnum.EVENT: Event.inst(),
 }
 
 

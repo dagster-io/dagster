@@ -1,11 +1,12 @@
 # encoding: utf-8
 # py27 compat
 
-from dagster import Field, PipelineDefinition, execute_pipeline, solid, types
+from dagster import Field, PipelineDefinition, OutputDefinition, execute_pipeline, solid, types
 
 
 @solid(
-    config_field=Field(types.String, is_optional=True, default_value='en-us')
+    config_field=Field(types.String, is_optional=True, default_value='en-us'),
+    outputs=[OutputDefinition(types.String)],
 )
 def configurable_hello(context):
     if len(context.solid_config) >= 3 and context.solid_config[:3] == 'haw':
@@ -17,13 +18,10 @@ def configurable_hello(context):
 
 
 def define_configurable_hello_pipeline():
-    return PipelineDefinition(
-        name='configurable_hello_pipeline', solids=[configurable_hello]
-    )
+    return PipelineDefinition(name='configurable_hello_pipeline', solids=[configurable_hello])
 
 
 def test_intro_tutorial_part_four():
     execute_pipeline(
-        define_configurable_hello_pipeline(),
-        {'solids': {'configurable_hello': {'config': 'cn'}}},
+        define_configurable_hello_pipeline(), {'solids': {'configurable_hello': {'config': 'cn'}}}
     )

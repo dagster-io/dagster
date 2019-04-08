@@ -87,7 +87,7 @@ def test_solid():
 
 
 def test_solid_one_output():
-    @lambda_solid
+    @lambda_solid(output=OutputDefinition())
     def hello_world():
         return {'foo': 'bar'}
 
@@ -173,7 +173,7 @@ def test_solid_with_explicit_empty_outputs():
 
 
 def test_solid_with_implicit_single_output():
-    @solid()
+    @solid(outputs=[OutputDefinition()])
     def hello_world(_context):
         return 'foo'
 
@@ -197,7 +197,7 @@ def test_solid_return_list_instead_of_multiple_results():
 
 
 def test_lambda_solid_with_name():
-    @lambda_solid(name="foobar")
+    @lambda_solid(name="foobar", output=OutputDefinition())
     def hello_world():
         return {'foo': 'bar'}
 
@@ -221,7 +221,7 @@ def test_solid_with_name():
 
 
 def test_solid_with_input():
-    @lambda_solid(inputs=[InputDefinition(name="foo_to_foo")])
+    @lambda_solid(inputs=[InputDefinition(name="foo_to_foo")], output=OutputDefinition())
     def hello_world(foo_to_foo):
         return foo_to_foo
 

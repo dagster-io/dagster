@@ -33,7 +33,7 @@ from ..marks import aws, nettest
 
 
 def define_inty_pipeline():
-    @lambda_solid
+    @lambda_solid(output=OutputDefinition())
     def return_one():
         return 1
 

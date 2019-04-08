@@ -1,5 +1,5 @@
 from dagster import check
-from dagster.core.types.runtime import RuntimeType, resolve_to_runtime_type
+from dagster.core.types.runtime import RuntimeType, resolve_to_runtime_type, Event
 
 from .expectation import ExpectationDefinition
 from .utils import check_valid_name, DEFAULT_OUTPUT
@@ -36,3 +36,7 @@ class OutputDefinition(object):
     @property
     def descriptive_key(self):
         return 'output'
+
+
+def SuccessEventOutput(event_name='on_success'):
+    return OutputDefinition(Event, event_name)

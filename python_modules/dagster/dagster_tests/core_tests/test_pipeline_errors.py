@@ -242,11 +242,11 @@ def test_user_error_propogation():
     def throws_user_error():
         raise UserError(err_msg)
 
-    @lambda_solid
+    @lambda_solid(output=OutputDefinition())
     def return_one():
         return 1
 
-    @lambda_solid(inputs=[InputDefinition('num')])
+    @lambda_solid(inputs=[InputDefinition('num')], output=OutputDefinition())
     def add_one(num):
         return num + 1
 

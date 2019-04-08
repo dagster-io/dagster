@@ -14,11 +14,11 @@ from dagster.core.execution import create_execution_plan, execute_plan
 
 
 def define_two_int_pipeline():
-    @lambda_solid
+    @lambda_solid(output=OutputDefinition())
     def return_one():
         return 1
 
-    @lambda_solid(inputs=[InputDefinition('num')])
+    @lambda_solid(inputs=[InputDefinition('num')], output=OutputDefinition())
     def add_one(num):
         return num + 1
 
@@ -87,6 +87,6 @@ def test_reentrant_execute_plan():
     step_events = execute_plan(execution_plan, run_config=RunConfig(tags={'foo': 'bar'}))
 
     assert called['yup']
-    assert len(step_events) == 3
+    assert len(step_events) == 2  # start, success
 
     assert step_events[0].tags['foo'] == 'bar'

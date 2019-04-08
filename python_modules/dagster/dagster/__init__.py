@@ -31,7 +31,11 @@ from dagster.core.definitions import (
     Materialization,
     SolidDefinition,
     SolidInstance,
+    EventTriggerInput,
+    SuccessEventOutput,
 )
+
+from dagster.core.definitions.dependency import OnSuccess
 
 from dagster.core.definitions.resource import ResourceDefinition, resource
 from dagster.core.definitions.decorators import MultipleResults, lambda_solid, solid
@@ -70,6 +74,7 @@ from dagster.core.types import (
     PythonObjectType,
     Selector,
     String,
+    Event,
 )
 
 from dagster.core.types.decorator import dagster_type, as_dagster_type
@@ -81,6 +86,7 @@ from dagster.core.types.runtime import RuntimeType
 from dagster.utils.test import execute_solid, execute_solids
 
 from .version import __version__
+
 
 __all__ = [
     # Definition
@@ -99,6 +105,9 @@ __all__ = [
     'SolidDefinition',
     'SolidInstance',
     'Materialization',
+    'EventTriggerInput',
+    'SuccessEventOutput',
+    'OnSuccess',
     # Decorators
     'lambda_solid',
     'solid',
@@ -134,6 +143,7 @@ __all__ = [
     'NamedDict',
     'NamedSelector',
     'Nullable',
+    'Event',
     'output_schema',
     'output_selector_schema',
     'Path',

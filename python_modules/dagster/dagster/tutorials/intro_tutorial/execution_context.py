@@ -1,7 +1,7 @@
-from dagster import PipelineDefinition, execute_pipeline, solid
+from dagster import PipelineDefinition, OutputDefinition, execute_pipeline, solid
 
 
-@solid
+@solid(outputs=[OutputDefinition()])
 def debug_message(context):
     context.log.debug('A debug message.')
     return 'foo'
@@ -18,15 +18,13 @@ def define_execution_context_pipeline_step_one():
 
 def define_execution_context_pipeline_step_two():
     return PipelineDefinition(
-        name='execution_context_pipeline',
-        solids=[debug_message, error_message],
+        name='execution_context_pipeline', solids=[debug_message, error_message]
     )
 
 
 def define_execution_context_pipeline_step_three():
     return PipelineDefinition(
-        name='execution_context_pipeline',
-        solids=[debug_message, error_message],
+        name='execution_context_pipeline', solids=[debug_message, error_message]
     )
 
 

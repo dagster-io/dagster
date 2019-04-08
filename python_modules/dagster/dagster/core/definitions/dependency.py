@@ -1,4 +1,5 @@
 from collections import defaultdict, namedtuple
+from enum import Enum
 
 from dagster import check
 
@@ -231,6 +232,11 @@ class DependencyStructure(object):
         return self._handle_dict.items()
 
 
+class DependencyType(Enum):
+    VALUE = 'VALUE'
+    EVENT = 'EVENT'
+
+
 class DependencyDefinition(namedtuple('_DependencyDefinition', 'solid output description')):
     '''Dependency definitions represent an edge in the DAG of solids. This object is
     used with a dictionary structure (whose keys represent solid/input where the dependency
@@ -255,3 +261,7 @@ class DependencyDefinition(namedtuple('_DependencyDefinition', 'solid output des
             check.str_param(output, 'output'),
             check.opt_str_param(description, 'description'),
         )
+
+
+def OnSuccess(solid, event='on_success'):
+    return DependencyDefinition(check.str_param(solid, 'solid'), check.str_param(event, 'event'))

@@ -17,6 +17,7 @@ from dagster import (
     ExecutionContext,
     PipelineContextDefinition,
     PipelineDefinition,
+    OutputDefinition,
     execute_solid,
     lambda_solid,
 )
@@ -111,7 +112,7 @@ def test_download_from_s3():
 
 
 def test_unzip_file_tempfile():
-    @lambda_solid
+    @lambda_solid(output=OutputDefinition())
     def nonce():
         return None
 
@@ -139,7 +140,7 @@ def test_unzip_file_tempfile():
 
 @spark
 def test_ingest_csv_to_spark():
-    @lambda_solid
+    @lambda_solid(output=OutputDefinition())
     def nonce():
         return None
 

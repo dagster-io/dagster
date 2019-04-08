@@ -5,6 +5,7 @@ from dagster import (
     Dict,
     Field,
     InputDefinition,
+    OutputDefinition,
     Int,
     PipelineDefinition,
     RepositoryDefinition,
@@ -14,12 +15,16 @@ from dagster import (
 )
 
 
-@solid(inputs=[InputDefinition('word', String)], config_field=Field(Dict({'factor': Field(Int)})))
+@solid(
+    inputs=[InputDefinition('word', String)],
+    config_field=Field(Dict({'factor': Field(Int)})),
+    outputs=[OutputDefinition()],
+)
 def multiply_the_word(info, word):
     return word * info.solid_config['factor']
 
 
-@lambda_solid(inputs=[InputDefinition('word')])
+@lambda_solid(inputs=[InputDefinition('word')], output=OutputDefinition())
 def count_letters(word):
     counts = defaultdict(int)
     for letter in word:

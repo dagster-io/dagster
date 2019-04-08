@@ -23,6 +23,7 @@ def create_transform_step(pipeline_def, solid, step_inputs):
                 optional=output_def.optional,
             )
             for output_def in solid.definition.output_defs
+            if not output_def.runtime_type.is_event
         ],
         compute_fn=lambda step_context, inputs: _execute_core_transform(
             step_context.for_transform(), inputs
@@ -89,8 +90,12 @@ def _execute_core_transform(transform_context, inputs):
         yield step_output
         if isinstance(step_output, StepOutputValue):
             all_results.append(step_output)
-
-    if len(all_results) != len(solid.definition.output_defs):
+    output_defs = [
+        output_def
+        for output_def in solid.definition.output_defs
+        if not output_def.runtime_type.is_event
+    ]
+    if len(all_results) != len(output_defs):
         emitted_result_names = {r.output_name for r in all_results}
         solid_output_names = {output_def.name for output_def in solid.definition.output_defs}
         omitted_outputs = solid_output_names.difference(emitted_result_names)

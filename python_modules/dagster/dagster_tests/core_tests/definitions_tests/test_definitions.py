@@ -26,7 +26,7 @@ def test_deps_equal():
 
 
 def test_pipeline_types():
-    @lambda_solid
+    @lambda_solid(output=OutputDefinition())
     def produce_string():
         return 'foo'
 

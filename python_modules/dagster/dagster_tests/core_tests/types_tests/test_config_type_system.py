@@ -736,7 +736,7 @@ def test_multilevel_good_error_handling_solid_name_solids():
 
     assert (
         'Missing required field  "config" at path root:solids:good_error_handling Expected: '
-        '"{ config: Int outputs?: [{ result?: Any.MaterializationSchema }] }"'
+        '"{ config: Int }"'
     ) in str(pe_info.value)
 
 

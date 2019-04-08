@@ -1,6 +1,7 @@
 from dagster import (
     DependencyDefinition,
     InputDefinition,
+    OutputDefinition,
     PipelineDefinition,
     RunConfig,
     execute_pipeline,
@@ -47,19 +48,21 @@ def test_diamond_multi_execution():
 
 
 def define_diamond_pipeline():
-    @lambda_solid
+    @lambda_solid(output=OutputDefinition())
     def return_two():
         return 2
 
-    @lambda_solid(inputs=[InputDefinition('num')])
+    @lambda_solid(inputs=[InputDefinition('num')], output=OutputDefinition())
     def add_three(num):
         return num + 3
 
-    @lambda_solid(inputs=[InputDefinition('num')])
+    @lambda_solid(inputs=[InputDefinition('num')], output=OutputDefinition())
     def mult_three(num):
         return num * 3
 
-    @lambda_solid(inputs=[InputDefinition('left'), InputDefinition('right')])
+    @lambda_solid(
+        inputs=[InputDefinition('left'), InputDefinition('right')], output=OutputDefinition()
+    )
     def adder(left, right):
         return left + right
 

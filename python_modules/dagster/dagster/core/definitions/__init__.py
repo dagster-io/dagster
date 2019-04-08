@@ -2,6 +2,7 @@ from .context import PipelineContextDefinition
 
 from .dependency import (
     DependencyDefinition,
+    OnSuccess,
     Solid,
     SolidInputHandle,
     SolidInstance,
@@ -10,9 +11,9 @@ from .dependency import (
 
 from .expectation import ExpectationDefinition, ExpectationResult
 
-from .input import InputDefinition
+from .input import InputDefinition, EventTriggerInput
 
-from .output import OutputDefinition
+from .output import OutputDefinition, SuccessEventOutput
 
 from .resource import ResourceDefinition
 

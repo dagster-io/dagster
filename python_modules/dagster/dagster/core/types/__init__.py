@@ -16,6 +16,7 @@ Int = BuiltinEnum.INT
 Bool = BuiltinEnum.BOOL
 Path = BuiltinEnum.PATH
 Float = BuiltinEnum.FLOAT
+Event = BuiltinEnum.EVENT
 
 
 # What sort of witchcraft is this?

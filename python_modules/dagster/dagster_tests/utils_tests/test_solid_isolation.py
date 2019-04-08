@@ -20,7 +20,7 @@ from dagster.core.errors import DagsterExecutionStepExecutionError
 
 
 def test_single_solid_in_isolation():
-    @lambda_solid
+    @lambda_solid(output=OutputDefinition())
     def solid_one():
         return 1
 
@@ -32,11 +32,11 @@ def test_single_solid_in_isolation():
 
 
 def test_single_solid_with_single():
-    @lambda_solid
+    @lambda_solid(output=OutputDefinition())
     def solid_one():
         return 1
 
-    @lambda_solid(inputs=[InputDefinition(name='num')])
+    @lambda_solid(inputs=[InputDefinition(name='num')], output=OutputDefinition())
     def add_one_solid(num):
         return num + 1
 
@@ -51,11 +51,14 @@ def test_single_solid_with_single():
 
 
 def test_single_solid_with_multiple_inputs():
-    @lambda_solid
+    @lambda_solid(output=OutputDefinition())
     def solid_one():
         return 1
 
-    @lambda_solid(inputs=[InputDefinition(name='num_one'), InputDefinition('num_two')])
+    @lambda_solid(
+        inputs=[InputDefinition(name='num_one'), InputDefinition('num_two')],
+        output=OutputDefinition(),
+    )
     def add_solid(num_one, num_two):
         return num_one + num_two
 

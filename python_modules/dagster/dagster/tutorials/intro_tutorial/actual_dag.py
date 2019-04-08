@@ -1,27 +1,30 @@
 from dagster import (
     DependencyDefinition,
     InputDefinition,
+    OutputDefinition,
     PipelineDefinition,
     lambda_solid,
 )
 
 
-@lambda_solid
+@lambda_solid(output=OutputDefinition())
 def solid_a():
     return 1
 
 
-@lambda_solid(inputs=[InputDefinition('arg_a')])
+@lambda_solid(inputs=[InputDefinition('arg_a')], output=OutputDefinition())
 def solid_b(arg_a):
     return arg_a * 2
 
 
-@lambda_solid(inputs=[InputDefinition('arg_a')])
+@lambda_solid(inputs=[InputDefinition('arg_a')], output=OutputDefinition())
 def solid_c(arg_a):
     return arg_a * 3
 
 
-@lambda_solid(inputs=[InputDefinition('arg_b'), InputDefinition('arg_c')])
+@lambda_solid(
+    inputs=[InputDefinition('arg_b'), InputDefinition('arg_c')], output=OutputDefinition()
+)
 def solid_d(arg_b, arg_c):
     return arg_b * arg_c
 

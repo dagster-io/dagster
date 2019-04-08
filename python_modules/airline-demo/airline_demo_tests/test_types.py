@@ -8,6 +8,7 @@ from dagster import (
     DependencyDefinition,
     lambda_solid,
     PipelineDefinition,
+    OutputDefinition,
     RunConfig,
     RunStorageMode,
 )
@@ -23,7 +24,7 @@ def test_spark_data_frame_serialization_file_system():
     with open(os.path.join(os.path.dirname(__file__), 'data/test.csv'), 'rb') as fd:
         input_csv_file = fd.read()
 
-    @lambda_solid
+    @lambda_solid(output=OutputDefinition())
     def nonce():
         return input_csv_file
 
@@ -60,7 +61,7 @@ def test_spark_data_frame_serialization_s3():
     with open(os.path.join(os.path.dirname(__file__), 'data/test.csv'), 'rb') as fd:
         input_csv_file = fd.read()
 
-    @lambda_solid
+    @lambda_solid(output=OutputDefinition())
     def nonce():
         return input_csv_file
 

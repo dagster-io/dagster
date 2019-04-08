@@ -154,7 +154,7 @@ def _result_for_solid(results, name):
 
 
 def load_num_csv_solid(name):
-    @lambda_solid(name=name)
+    @lambda_solid(name=name, output=OutputDefinition())
     def _return_num_csv():
         return pd.DataFrame({'num1': [1, 3], 'num2': [2, 4]})
 

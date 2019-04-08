@@ -13,6 +13,9 @@ from dagster import (
     execute_pipeline_iterator,
     lambda_solid,
     solid,
+    EventTriggerInput,
+    OnSuccess,
+    SuccessEventOutput,
 )
 
 from dagster.core.types import Nullable, List, String
@@ -339,11 +342,11 @@ def test_pipeline_name_threaded_through_context():
 
 
 def test_pipeline_subset():
-    @lambda_solid
+    @lambda_solid(output=OutputDefinition())
     def return_one():
         return 1
 
-    @lambda_solid(inputs=[InputDefinition('num')])
+    @lambda_solid(inputs=[InputDefinition('num')], output=OutputDefinition())
     def add_one(num):
         return num + 1
 
@@ -466,12 +469,12 @@ def test_pipeline_wrapping_types():
 def test_pipeline_streaming_iterator():
     events = []
 
-    @lambda_solid
+    @lambda_solid(output=OutputDefinition())
     def push_one():
         events.append(1)
         return 1
 
-    @lambda_solid(inputs=[InputDefinition('num')])
+    @lambda_solid(inputs=[InputDefinition('num')], output=OutputDefinition())
     def add_one(num):
         events.append(num + 1)
         return num + 1
@@ -522,3 +525,60 @@ def test_pipeline_streaming_multiple_outputs():
     assert two_output_step_event.step_output_data.value_repr == '2'
     assert two_output_step_event.step_output_data.output_name == 'two'
     assert events == [1, 2]
+
+
+def _define_exec_dep_pipeline():
+    @lambda_solid
+    def start_nothing():
+        pass
+
+    @lambda_solid(inputs=[EventTriggerInput('add_complete'), EventTriggerInput('yield_complete')])
+    def end_nothing():
+        pass
+
+    @lambda_solid(output=OutputDefinition(Int))
+    def emit_value():
+        return 1
+
+    @lambda_solid(
+        inputs=[InputDefinition('num', Int), EventTriggerInput('on_complete')],
+        output=OutputDefinition(Int),
+    )
+    def add_value(num):
+        return 1 + num
+
+    @solid(
+        name='yield_values',
+        inputs=[EventTriggerInput('on_complete')],
+        outputs=[
+            OutputDefinition(Int, 'num_1'),
+            OutputDefinition(Int, 'num_2'),
+            SuccessEventOutput(),
+        ],
+    )
+    def yield_values(_context):
+        yield Result(1, 'num_1')
+        yield Result(2, 'num_2')
+
+    return PipelineDefinition(
+        name='simple_exc',
+        solids=[emit_value, add_value, start_nothing, end_nothing, yield_values],
+        dependencies={
+            'add_value': {
+                'on_complete': OnSuccess('start_nothing'),
+                'num': DependencyDefinition('emit_value'),
+            },
+            'yield_values': {'on_complete': OnSuccess('start_nothing')},
+            'end_nothing': {
+                'add_complete': DependencyDefinition('add_value'),
+                'yield_complete': OnSuccess('yield_values'),
+            },
+        },
+    )
+
+
+def test_execution_dependency():
+
+    result = execute_pipeline(_define_exec_dep_pipeline())
+
+    assert result.success

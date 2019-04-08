@@ -22912,30 +22912,36 @@ determines the execution order of solids in a pipeline:</p>
 40
 41
 42
-43</pre></div></td><td class="code"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">dagster</span> <span class="k">import</span> <span class="p">(</span>
+43
+44
+45
+46</pre></div></td><td class="code"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">dagster</span> <span class="k">import</span> <span class="p">(</span>
     <span class="n">DependencyDefinition</span><span class="p">,</span>
     <span class="n">InputDefinition</span><span class="p">,</span>
+    <span class="n">OutputDefinition</span><span class="p">,</span>
     <span class="n">PipelineDefinition</span><span class="p">,</span>
     <span class="n">lambda_solid</span><span class="p">,</span>
 <span class="p">)</span>
 
 
-<span class="nd">@lambda_solid</span>
+<span class="nd">@lambda_solid</span><span class="p">(</span><span class="n">output</span><span class="o">=</span><span class="n">OutputDefinition</span><span class="p">())</span>
 <span class="k">def</span> <span class="nf">solid_a</span><span class="p">():</span>
     <span class="k">return</span> <span class="mi">1</span>
 
 
-<span class="nd">@lambda_solid</span><span class="p">(</span><span class="n">inputs</span><span class="o">=</span><span class="p">[</span><span class="n">InputDefinition</span><span class="p">(</span><span class="s1">&#39;arg_a&#39;</span><span class="p">)])</span>
+<span class="nd">@lambda_solid</span><span class="p">(</span><span class="n">inputs</span><span class="o">=</span><span class="p">[</span><span class="n">InputDefinition</span><span class="p">(</span><span class="s1">&#39;arg_a&#39;</span><span class="p">)],</span> <span class="n">output</span><span class="o">=</span><span class="n">OutputDefinition</span><span class="p">())</span>
 <span class="k">def</span> <span class="nf">solid_b</span><span class="p">(</span><span class="n">arg_a</span><span class="p">):</span>
     <span class="k">return</span> <span class="n">arg_a</span> <span class="o">*</span> <span class="mi">2</span>
 
 
-<span class="nd">@lambda_solid</span><span class="p">(</span><span class="n">inputs</span><span class="o">=</span><span class="p">[</span><span class="n">InputDefinition</span><span class="p">(</span><span class="s1">&#39;arg_a&#39;</span><span class="p">)])</span>
+<span class="nd">@lambda_solid</span><span class="p">(</span><span class="n">inputs</span><span class="o">=</span><span class="p">[</span><span class="n">InputDefinition</span><span class="p">(</span><span class="s1">&#39;arg_a&#39;</span><span class="p">)],</span> <span class="n">output</span><span class="o">=</span><span class="n">OutputDefinition</span><span class="p">())</span>
 <span class="k">def</span> <span class="nf">solid_c</span><span class="p">(</span><span class="n">arg_a</span><span class="p">):</span>
     <span class="k">return</span> <span class="n">arg_a</span> <span class="o">*</span> <span class="mi">3</span>
 
 
-<span class="nd">@lambda_solid</span><span class="p">(</span><span class="n">inputs</span><span class="o">=</span><span class="p">[</span><span class="n">InputDefinition</span><span class="p">(</span><span class="s1">&#39;arg_b&#39;</span><span class="p">),</span> <span class="n">InputDefinition</span><span class="p">(</span><span class="s1">&#39;arg_c&#39;</span><span class="p">)])</span>
+<span class="nd">@lambda_solid</span><span class="p">(</span>
+    <span class="n">inputs</span><span class="o">=</span><span class="p">[</span><span class="n">InputDefinition</span><span class="p">(</span><span class="s1">&#39;arg_b&#39;</span><span class="p">),</span> <span class="n">InputDefinition</span><span class="p">(</span><span class="s1">&#39;arg_c&#39;</span><span class="p">)],</span> <span class="n">output</span><span class="o">=</span><span class="n">OutputDefinition</span><span class="p">()</span>
+<span class="p">)</span>
 <span class="k">def</span> <span class="nf">solid_d</span><span class="p">(</span><span class="n">arg_b</span><span class="p">,</span> <span class="n">arg_c</span><span class="p">):</span>
     <span class="k">return</span> <span class="n">arg_b</span> <span class="o">*</span> <span class="n">arg_c</span>
 
@@ -23136,16 +23142,15 @@ languages.</p>
 24
 25
 26
-27
-28
-29</pre></div></td><td class="code"><div class="highlight"><pre><span></span><span class="c1"># encoding: utf-8</span>
+27</pre></div></td><td class="code"><div class="highlight"><pre><span></span><span class="c1"># encoding: utf-8</span>
 <span class="c1"># py27 compat</span>
 
-<span class="kn">from</span> <span class="nn">dagster</span> <span class="k">import</span> <span class="n">Field</span><span class="p">,</span> <span class="n">PipelineDefinition</span><span class="p">,</span> <span class="n">execute_pipeline</span><span class="p">,</span> <span class="n">solid</span><span class="p">,</span> <span class="n">types</span>
+<span class="kn">from</span> <span class="nn">dagster</span> <span class="k">import</span> <span class="n">Field</span><span class="p">,</span> <span class="n">PipelineDefinition</span><span class="p">,</span> <span class="n">OutputDefinition</span><span class="p">,</span> <span class="n">execute_pipeline</span><span class="p">,</span> <span class="n">solid</span><span class="p">,</span> <span class="n">types</span>
 
 
 <span class="nd">@solid</span><span class="p">(</span>
-    <span class="n">config_field</span><span class="o">=</span><span class="n">Field</span><span class="p">(</span><span class="n">types</span><span class="o">.</span><span class="n">String</span><span class="p">,</span> <span class="n">is_optional</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">default_value</span><span class="o">=</span><span class="s1">&#39;en-us&#39;</span><span class="p">)</span>
+    <span class="n">config_field</span><span class="o">=</span><span class="n">Field</span><span class="p">(</span><span class="n">types</span><span class="o">.</span><span class="n">String</span><span class="p">,</span> <span class="n">is_optional</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">default_value</span><span class="o">=</span><span class="s1">&#39;en-us&#39;</span><span class="p">),</span>
+    <span class="n">outputs</span><span class="o">=</span><span class="p">[</span><span class="n">OutputDefinition</span><span class="p">(</span><span class="n">types</span><span class="o">.</span><span class="n">String</span><span class="p">)],</span>
 <span class="p">)</span>
 <span class="k">def</span> <span class="nf">configurable_hello</span><span class="p">(</span><span class="n">context</span><span class="p">):</span>
     <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">context</span><span class="o">.</span><span class="n">solid_config</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="mi">3</span> <span class="ow">and</span> <span class="n">context</span><span class="o">.</span><span class="n">solid_config</span><span class="p">[:</span><span class="mi">3</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;haw&#39;</span><span class="p">:</span>
@@ -23157,15 +23162,12 @@ languages.</p>
 
 
 <span class="k">def</span> <span class="nf">define_configurable_hello_pipeline</span><span class="p">():</span>
-    <span class="k">return</span> <span class="n">PipelineDefinition</span><span class="p">(</span>
-        <span class="n">name</span><span class="o">=</span><span class="s1">&#39;configurable_hello_pipeline&#39;</span><span class="p">,</span> <span class="n">solids</span><span class="o">=</span><span class="p">[</span><span class="n">configurable_hello</span><span class="p">]</span>
-    <span class="p">)</span>
+    <span class="k">return</span> <span class="n">PipelineDefinition</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;configurable_hello_pipeline&#39;</span><span class="p">,</span> <span class="n">solids</span><span class="o">=</span><span class="p">[</span><span class="n">configurable_hello</span><span class="p">])</span>
 
 
 <span class="k">def</span> <span class="nf">test_intro_tutorial_part_four</span><span class="p">():</span>
     <span class="n">execute_pipeline</span><span class="p">(</span>
-        <span class="n">define_configurable_hello_pipeline</span><span class="p">(),</span>
-        <span class="p">{</span><span class="s1">&#39;solids&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;configurable_hello&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;config&#39;</span><span class="p">:</span> <span class="s1">&#39;cn&#39;</span><span class="p">}}},</span>
+        <span class="n">define_configurable_hello_pipeline</span><span class="p">(),</span> <span class="p">{</span><span class="s1">&#39;solids&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;configurable_hello&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;config&#39;</span><span class="p">:</span> <span class="s1">&#39;cn&#39;</span><span class="p">}}}</span>
     <span class="p">)</span>
 </pre></div>
 </td></tr></table></div>
@@ -23185,9 +23187,6 @@ The configuration passed into each solid is available to the annotated function 
 <a class="reference internal" href="../../api/apidocs/execution.html#dagster.execute_pipeline" title="dagster.execute_pipeline"><code class="xref py py-func docutils literal notranslate"><span class="pre">execute_pipeline</span></code></a>. This dict specifies <em>all</em> of the
 configuration to execute an entire pipeline. It may have many sections, but we’re only
 using one of them here: per-solid configuration specified under the key <code class="docutils literal notranslate"><span class="pre">solids</span></code>.</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">{</span><span class="s1">&#39;solids&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;configurable_hello&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;config&#39;</span><span class="p">:</span> <span class="s1">&#39;cn&#39;</span><span class="p">}}},</span>
-</pre></div>
-</div>
 <p>The <code class="docutils literal notranslate"><span class="pre">solids</span></code> dict is keyed by solid name, and each of its values in turn defines a <code class="docutils literal notranslate"><span class="pre">config</span></code>
 key corresponding to the user-defined configuration schema for each particular solid (which we set
 before using the <code class="docutils literal notranslate"><span class="pre">config_field</span></code> parameter). If these values don’t match the user-defined schema,
@@ -23429,12 +23428,7 @@ We’ll replace the config field in our solid definition with a structured, stro
 83
 84
 85
-86
-87
-88
-89
-90
-91</pre></div></td><td class="code"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">collections</span> <span class="k">import</span> <span class="n">defaultdict</span>
+86</pre></div></td><td class="code"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">collections</span> <span class="k">import</span> <span class="n">defaultdict</span>
 
 <span class="kn">from</span> <span class="nn">dagster</span> <span class="k">import</span> <span class="p">(</span>
     <span class="n">Any</span><span class="p">,</span>
@@ -23442,6 +23436,7 @@ We’ll replace the config field in our solid definition with a structured, stro
     <span class="n">Dict</span><span class="p">,</span>
     <span class="n">Field</span><span class="p">,</span>
     <span class="n">InputDefinition</span><span class="p">,</span>
+    <span class="n">OutputDefinition</span><span class="p">,</span>
     <span class="n">Int</span><span class="p">,</span>
     <span class="n">PipelineDefinition</span><span class="p">,</span>
     <span class="n">RepositoryDefinition</span><span class="p">,</span>
@@ -23451,12 +23446,14 @@ We’ll replace the config field in our solid definition with a structured, stro
 <span class="p">)</span>
 
 
-<span class="nd">@solid</span><span class="p">(</span><span class="n">inputs</span><span class="o">=</span><span class="p">[</span><span class="n">InputDefinition</span><span class="p">(</span><span class="s1">&#39;word&#39;</span><span class="p">,</span> <span class="n">String</span><span class="p">)],</span> <span class="n">config_field</span><span class="o">=</span><span class="n">Field</span><span class="p">(</span><span class="n">Any</span><span class="p">))</span>
+<span class="nd">@solid</span><span class="p">(</span>
+    <span class="n">inputs</span><span class="o">=</span><span class="p">[</span><span class="n">InputDefinition</span><span class="p">(</span><span class="s1">&#39;word&#39;</span><span class="p">,</span> <span class="n">String</span><span class="p">)],</span> <span class="n">config_field</span><span class="o">=</span><span class="n">Field</span><span class="p">(</span><span class="n">Any</span><span class="p">),</span> <span class="n">outputs</span><span class="o">=</span><span class="p">[</span><span class="n">OutputDefinition</span><span class="p">()]</span>
+<span class="p">)</span>
 <span class="k">def</span> <span class="nf">multiply_the_word</span><span class="p">(</span><span class="n">context</span><span class="p">,</span> <span class="n">word</span><span class="p">):</span>
     <span class="k">return</span> <span class="n">word</span> <span class="o">*</span> <span class="n">context</span><span class="o">.</span><span class="n">solid_config</span><span class="p">[</span><span class="s1">&#39;factor&#39;</span><span class="p">]</span>
 
 
-<span class="nd">@lambda_solid</span><span class="p">(</span><span class="n">inputs</span><span class="o">=</span><span class="p">[</span><span class="n">InputDefinition</span><span class="p">(</span><span class="s1">&#39;word&#39;</span><span class="p">)])</span>
+<span class="nd">@lambda_solid</span><span class="p">(</span><span class="n">inputs</span><span class="o">=</span><span class="p">[</span><span class="n">InputDefinition</span><span class="p">(</span><span class="s1">&#39;word&#39;</span><span class="p">)],</span> <span class="n">output</span><span class="o">=</span><span class="n">OutputDefinition</span><span class="p">())</span>
 <span class="k">def</span> <span class="nf">count_letters</span><span class="p">(</span><span class="n">word</span><span class="p">):</span>
     <span class="n">counts</span> <span class="o">=</span> <span class="n">defaultdict</span><span class="p">(</span><span class="nb">int</span><span class="p">)</span>
     <span class="k">for</span> <span class="n">letter</span> <span class="ow">in</span> <span class="n">word</span><span class="p">:</span>
@@ -23467,6 +23464,7 @@ We’ll replace the config field in our solid definition with a structured, stro
 <span class="nd">@solid</span><span class="p">(</span>
     <span class="n">inputs</span><span class="o">=</span><span class="p">[</span><span class="n">InputDefinition</span><span class="p">(</span><span class="s1">&#39;word&#39;</span><span class="p">,</span> <span class="n">String</span><span class="p">)],</span>
     <span class="n">config_field</span><span class="o">=</span><span class="n">Field</span><span class="p">(</span><span class="n">Dict</span><span class="p">({</span><span class="s1">&#39;factor&#39;</span><span class="p">:</span> <span class="n">Field</span><span class="p">(</span><span class="n">Int</span><span class="p">)})),</span>
+    <span class="n">outputs</span><span class="o">=</span><span class="p">[</span><span class="n">OutputDefinition</span><span class="p">()],</span>
 <span class="p">)</span>
 <span class="k">def</span> <span class="nf">typed_multiply_the_word</span><span class="p">(</span><span class="n">context</span><span class="p">,</span> <span class="n">word</span><span class="p">):</span>
     <span class="k">return</span> <span class="n">word</span> <span class="o">*</span> <span class="n">context</span><span class="o">.</span><span class="n">solid_config</span><span class="p">[</span><span class="s1">&#39;factor&#39;</span><span class="p">]</span>
@@ -23475,6 +23473,7 @@ We’ll replace the config field in our solid definition with a structured, stro
 <span class="nd">@solid</span><span class="p">(</span>
     <span class="n">inputs</span><span class="o">=</span><span class="p">[</span><span class="n">InputDefinition</span><span class="p">(</span><span class="s1">&#39;word&#39;</span><span class="p">,</span> <span class="n">String</span><span class="p">)],</span>
     <span class="n">config_field</span><span class="o">=</span><span class="n">Field</span><span class="p">(</span><span class="n">Dict</span><span class="p">({</span><span class="s1">&#39;factor&#39;</span><span class="p">:</span> <span class="n">Field</span><span class="p">(</span><span class="n">String</span><span class="p">)})),</span>
+    <span class="n">outputs</span><span class="o">=</span><span class="p">[</span><span class="n">OutputDefinition</span><span class="p">()],</span>
 <span class="p">)</span>
 <span class="k">def</span> <span class="nf">typed_multiply_the_word_error</span><span class="p">(</span><span class="n">context</span><span class="p">,</span> <span class="n">word</span><span class="p">):</span>
     <span class="k">return</span> <span class="n">word</span> <span class="o">*</span> <span class="n">context</span><span class="o">.</span><span class="n">solid_config</span><span class="p">[</span><span class="s1">&#39;factor&#39;</span><span class="p">]</span>
@@ -23484,11 +23483,7 @@ We’ll replace the config field in our solid definition with a structured, stro
     <span class="k">return</span> <span class="n">PipelineDefinition</span><span class="p">(</span>
         <span class="n">name</span><span class="o">=</span><span class="s1">&#39;demo_configuration_schema&#39;</span><span class="p">,</span>
         <span class="n">solids</span><span class="o">=</span><span class="p">[</span><span class="n">multiply_the_word</span><span class="p">,</span> <span class="n">count_letters</span><span class="p">],</span>
-        <span class="n">dependencies</span><span class="o">=</span><span class="p">{</span>
-            <span class="s1">&#39;count_letters&#39;</span><span class="p">:</span> <span class="p">{</span>
-                <span class="s1">&#39;word&#39;</span><span class="p">:</span> <span class="n">DependencyDefinition</span><span class="p">(</span><span class="s1">&#39;multiply_the_word&#39;</span><span class="p">)</span>
-            <span class="p">}</span>
-        <span class="p">},</span>
+        <span class="n">dependencies</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;count_letters&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;word&#39;</span><span class="p">:</span> <span class="n">DependencyDefinition</span><span class="p">(</span><span class="s1">&#39;multiply_the_word&#39;</span><span class="p">)}},</span>
     <span class="p">)</span>
 
 
@@ -23496,11 +23491,7 @@ We’ll replace the config field in our solid definition with a structured, stro
     <span class="k">return</span> <span class="n">PipelineDefinition</span><span class="p">(</span>
         <span class="n">name</span><span class="o">=</span><span class="s1">&#39;typed_demo_configuration_schema&#39;</span><span class="p">,</span>
         <span class="n">solids</span><span class="o">=</span><span class="p">[</span><span class="n">typed_multiply_the_word</span><span class="p">,</span> <span class="n">count_letters</span><span class="p">],</span>
-        <span class="n">dependencies</span><span class="o">=</span><span class="p">{</span>
-            <span class="s1">&#39;count_letters&#39;</span><span class="p">:</span> <span class="p">{</span>
-                <span class="s1">&#39;word&#39;</span><span class="p">:</span> <span class="n">DependencyDefinition</span><span class="p">(</span><span class="s1">&#39;typed_multiply_the_word&#39;</span><span class="p">)</span>
-            <span class="p">}</span>
-        <span class="p">},</span>
+        <span class="n">dependencies</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;count_letters&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;word&#39;</span><span class="p">:</span> <span class="n">DependencyDefinition</span><span class="p">(</span><span class="s1">&#39;typed_multiply_the_word&#39;</span><span class="p">)}},</span>
     <span class="p">)</span>
 
 
@@ -23509,9 +23500,7 @@ We’ll replace the config field in our solid definition with a structured, stro
         <span class="n">name</span><span class="o">=</span><span class="s1">&#39;typed_demo_configuration_schema_error&#39;</span><span class="p">,</span>
         <span class="n">solids</span><span class="o">=</span><span class="p">[</span><span class="n">typed_multiply_the_word_error</span><span class="p">,</span> <span class="n">count_letters</span><span class="p">],</span>
         <span class="n">dependencies</span><span class="o">=</span><span class="p">{</span>
-            <span class="s1">&#39;count_letters&#39;</span><span class="p">:</span> <span class="p">{</span>
-                <span class="s1">&#39;word&#39;</span><span class="p">:</span> <span class="n">DependencyDefinition</span><span class="p">(</span><span class="s1">&#39;typed_multiply_the_word_error&#39;</span><span class="p">)</span>
-            <span class="p">}</span>
+            <span class="s1">&#39;count_letters&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;word&#39;</span><span class="p">:</span> <span class="n">DependencyDefinition</span><span class="p">(</span><span class="s1">&#39;typed_multiply_the_word_error&#39;</span><span class="p">)}</span>
         <span class="p">},</span>
     <span class="p">)</span>
 
@@ -24157,10 +24146,10 @@ your production cluster environment.</p>
 <p>One of the most basic pipeline-level facilities is logging:</p>
 <div class="literal-block-wrapper docutils container" id="id1">
 <div class="code-block-caption"><span class="caption-text">execution_context.py</span><a class="headerlink" href="#id1" title="Permalink to this code">¶</a></div>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">dagster</span> <span class="k">import</span> <span class="n">PipelineDefinition</span><span class="p">,</span> <span class="n">execute_pipeline</span><span class="p">,</span> <span class="n">solid</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">dagster</span> <span class="k">import</span> <span class="n">PipelineDefinition</span><span class="p">,</span> <span class="n">OutputDefinition</span><span class="p">,</span> <span class="n">execute_pipeline</span><span class="p">,</span> <span class="n">solid</span>
 
 
-<span class="nd">@solid</span>
+<span class="nd">@solid</span><span class="p">(</span><span class="n">outputs</span><span class="o">=</span><span class="p">[</span><span class="n">OutputDefinition</span><span class="p">()])</span>
 <span class="k">def</span> <span class="nf">debug_message</span><span class="p">(</span><span class="n">context</span><span class="p">):</span>
     <span class="n">context</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;A debug message.&#39;</span><span class="p">)</span>
     <span class="k">return</span> <span class="s1">&#39;foo&#39;</span>
@@ -24691,21 +24680,21 @@ two concatenated copies of the hardcoded string.</p>
 22
 23
 24
-25
-26</pre></div></td><td class="code"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">dagster</span> <span class="k">import</span> <span class="p">(</span>
+25</pre></div></td><td class="code"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">dagster</span> <span class="k">import</span> <span class="p">(</span>
     <span class="n">DependencyDefinition</span><span class="p">,</span>
     <span class="n">InputDefinition</span><span class="p">,</span>
+    <span class="n">OutputDefinition</span><span class="p">,</span>
     <span class="n">PipelineDefinition</span><span class="p">,</span>
     <span class="n">lambda_solid</span><span class="p">,</span>
 <span class="p">)</span>
 
 
-<span class="nd">@lambda_solid</span>
+<span class="nd">@lambda_solid</span><span class="p">(</span><span class="n">output</span><span class="o">=</span><span class="n">OutputDefinition</span><span class="p">())</span>
 <span class="k">def</span> <span class="nf">solid_one</span><span class="p">():</span>
     <span class="k">return</span> <span class="s1">&#39;foo&#39;</span>
 
 
-<span class="nd">@lambda_solid</span><span class="p">(</span><span class="n">inputs</span><span class="o">=</span><span class="p">[</span><span class="n">InputDefinition</span><span class="p">(</span><span class="s1">&#39;arg_one&#39;</span><span class="p">)])</span>
+<span class="nd">@lambda_solid</span><span class="p">(</span><span class="n">inputs</span><span class="o">=</span><span class="p">[</span><span class="n">InputDefinition</span><span class="p">(</span><span class="s1">&#39;arg_one&#39;</span><span class="p">)],</span> <span class="n">output</span><span class="o">=</span><span class="n">OutputDefinition</span><span class="p">())</span>
 <span class="k">def</span> <span class="nf">solid_two</span><span class="p">(</span><span class="n">arg_one</span><span class="p">):</span>
     <span class="k">return</span> <span class="n">arg_one</span> <span class="o">*</span> <span class="mi">2</span>
 
@@ -24714,9 +24703,7 @@ two concatenated copies of the hardcoded string.</p>
     <span class="k">return</span> <span class="n">PipelineDefinition</span><span class="p">(</span>
         <span class="n">name</span><span class="o">=</span><span class="s1">&#39;hello_dag_pipeline&#39;</span><span class="p">,</span>
         <span class="n">solids</span><span class="o">=</span><span class="p">[</span><span class="n">solid_one</span><span class="p">,</span> <span class="n">solid_two</span><span class="p">],</span>
-        <span class="n">dependencies</span><span class="o">=</span><span class="p">{</span>
-            <span class="s1">&#39;solid_two&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;arg_one&#39;</span><span class="p">:</span> <span class="n">DependencyDefinition</span><span class="p">(</span><span class="s1">&#39;solid_one&#39;</span><span class="p">)}</span>
-        <span class="p">},</span>
+        <span class="n">dependencies</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;solid_two&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;arg_one&#39;</span><span class="p">:</span> <span class="n">DependencyDefinition</span><span class="p">(</span><span class="s1">&#39;solid_one&#39;</span><span class="p">)}},</span>
     <span class="p">)</span>
 </pre></div>
 </td></tr></table></div>
@@ -24733,9 +24720,9 @@ we’ll see later, optionally let dagster check the types of the inputs at runti
 You’ll notice the new argument to <a class="reference internal" href="../../api/apidocs/definitions.html#dagster.PipelineDefinition" title="dagster.PipelineDefinition"><code class="xref py py-class docutils literal notranslate"><span class="pre">PipelineDefinition</span></code></a>
 called <code class="docutils literal notranslate"><span class="pre">dependencies</span></code>, which is a dict that defines the connections between solids in a
 pipeline’s DAG.</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">dependencies</span><span class="o">=</span><span class="p">{</span>
-    <span class="s1">&#39;solid_two&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;arg_one&#39;</span><span class="p">:</span> <span class="n">DependencyDefinition</span><span class="p">(</span><span class="s1">&#39;solid_one&#39;</span><span class="p">)}</span>
-<span class="p">},</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">solids</span><span class="o">=</span><span class="p">[</span><span class="n">solid_one</span><span class="p">,</span> <span class="n">solid_two</span><span class="p">],</span>
+<span class="n">dependencies</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;solid_two&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;arg_one&#39;</span><span class="p">:</span> <span class="n">DependencyDefinition</span><span class="p">(</span><span class="s1">&#39;solid_one&#39;</span><span class="p">)}},</span>
+
 </pre></div>
 </div>
 <p>The first layer of keys in this dict are the <em>names</em> of solids in the pipeline. The second layer
@@ -25307,7 +25294,7 @@ the solid returns be parameterized based on inputs.</p>
 <span class="p">)</span>
 
 
-<span class="nd">@lambda_solid</span><span class="p">(</span><span class="n">inputs</span><span class="o">=</span><span class="p">[</span><span class="n">InputDefinition</span><span class="p">(</span><span class="s1">&#39;word&#39;</span><span class="p">)])</span>
+<span class="nd">@lambda_solid</span><span class="p">(</span><span class="n">inputs</span><span class="o">=</span><span class="p">[</span><span class="n">InputDefinition</span><span class="p">(</span><span class="s1">&#39;word&#39;</span><span class="p">)],</span> <span class="n">output</span><span class="o">=</span><span class="n">OutputDefinition</span><span class="p">())</span>
 <span class="k">def</span> <span class="nf">add_hello_to_word</span><span class="p">(</span><span class="n">word</span><span class="p">):</span>
     <span class="k">return</span> <span class="s1">&#39;Hello, &#39;</span> <span class="o">+</span> <span class="n">word</span> <span class="o">+</span> <span class="s1">&#39;!&#39;</span>
 
@@ -25433,12 +25420,12 @@ make the inputs typed.</p>
 built-in <code class="docutils literal notranslate"><span class="pre">String</span></code>.</p>
 <div class="literal-block-wrapper docutils container" id="id4">
 <div class="code-block-caption"><span class="caption-text">inputs.py</span><a class="headerlink" href="#id4" title="Permalink to this code">¶</a></div>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="nd">@lambda_solid</span><span class="p">(</span>
-<span class="hll">    <span class="n">inputs</span><span class="o">=</span><span class="p">[</span><span class="n">InputDefinition</span><span class="p">(</span><span class="s1">&#39;word&#39;</span><span class="p">,</span> <span class="n">types</span><span class="o">.</span><span class="n">String</span><span class="p">)],</span>
-</span><span class="hll">    <span class="n">output</span><span class="o">=</span><span class="n">OutputDefinition</span><span class="p">(</span><span class="n">types</span><span class="o">.</span><span class="n">String</span><span class="p">),</span>
-</span><span class="p">)</span>
-<span class="k">def</span> <span class="nf">add_hello_to_word_typed</span><span class="p">(</span><span class="n">word</span><span class="p">):</span>
-    <span class="k">return</span> <span class="s1">&#39;Hello, &#39;</span> <span class="o">+</span> <span class="n">word</span> <span class="o">+</span> <span class="s1">&#39;!&#39;</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="nd">@lambda_solid</span><span class="p">(</span><span class="n">inputs</span><span class="o">=</span><span class="p">[</span><span class="n">InputDefinition</span><span class="p">(</span><span class="s1">&#39;word&#39;</span><span class="p">,</span> <span class="n">types</span><span class="o">.</span><span class="n">String</span><span class="p">)],</span> <span class="n">output</span><span class="o">=</span><span class="n">OutputDefinition</span><span class="p">(</span><span class="n">types</span><span class="o">.</span><span class="n">String</span><span class="p">))</span>
+<span class="hll"><span class="k">def</span> <span class="nf">add_hello_to_word_typed</span><span class="p">(</span><span class="n">word</span><span class="p">):</span>
+</span><span class="hll">    <span class="k">return</span> <span class="s1">&#39;Hello, &#39;</span> <span class="o">+</span> <span class="n">word</span> <span class="o">+</span> <span class="s1">&#39;!&#39;</span>
+</span>
+
+<span class="k">def</span> <span class="nf">define_hello_typed_inputs_pipeline</span><span class="p">():</span>
 </pre></div>
 </div>
 </div>
@@ -25615,14 +25602,12 @@ happened during the computation.</p>
 37
 38
 39
-40</pre></div></td><td class="code"><div class="highlight"><pre><span></span>
-<span class="nd">@solid</span><span class="p">(</span><span class="n">inputs</span><span class="o">=</span><span class="p">[</span><span class="n">InputDefinition</span><span class="p">(</span><span class="s1">&#39;num&#39;</span><span class="p">,</span> <span class="n">dagster_type</span><span class="o">=</span><span class="n">Int</span><span class="p">)])</span>
-<span class="k">def</span> <span class="nf">log_num</span><span class="p">(</span><span class="n">context</span><span class="p">,</span> <span class="n">num</span><span class="p">):</span>
+40</pre></div></td><td class="code"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">log_num</span><span class="p">(</span><span class="n">context</span><span class="p">,</span> <span class="n">num</span><span class="p">):</span>
     <span class="n">context</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;num </span><span class="si">{num}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">num</span><span class="o">=</span><span class="n">num</span><span class="p">))</span>
     <span class="k">return</span> <span class="n">num</span>
 
 
-<span class="nd">@solid</span><span class="p">(</span><span class="n">inputs</span><span class="o">=</span><span class="p">[</span><span class="n">InputDefinition</span><span class="p">(</span><span class="s1">&#39;num&#39;</span><span class="p">,</span> <span class="n">dagster_type</span><span class="o">=</span><span class="n">Int</span><span class="p">)])</span>
+<span class="nd">@solid</span><span class="p">(</span><span class="n">inputs</span><span class="o">=</span><span class="p">[</span><span class="n">InputDefinition</span><span class="p">(</span><span class="s1">&#39;num&#39;</span><span class="p">,</span> <span class="n">dagster_type</span><span class="o">=</span><span class="n">Int</span><span class="p">)],</span> <span class="n">outputs</span><span class="o">=</span><span class="p">[</span><span class="n">OutputDefinition</span><span class="p">()])</span>
 <span class="k">def</span> <span class="nf">log_num_squared</span><span class="p">(</span><span class="n">context</span><span class="p">,</span> <span class="n">num</span><span class="p">):</span>
     <span class="n">context</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;num_squared </span><span class="si">{num_squared}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">num_squared</span><span class="o">=</span><span class="n">num</span> <span class="o">*</span> <span class="n">num</span><span class="p">))</span>
     <span class="k">return</span> <span class="n">num</span> <span class="o">*</span> <span class="n">num</span>
@@ -25630,6 +25615,8 @@ happened during the computation.</p>
 
 <span class="k">def</span> <span class="nf">define_multiple_outputs_step_one_pipeline</span><span class="p">():</span>
     <span class="k">return</span> <span class="n">PipelineDefinition</span><span class="p">(</span>
+        <span class="n">name</span><span class="o">=</span><span class="s1">&#39;multiple_outputs_step_one_pipeline&#39;</span><span class="p">,</span>
+        <span class="n">solids</span><span class="o">=</span><span class="p">[</span><span class="n">return_dict_results</span><span class="p">,</span> <span class="n">log_num</span><span class="p">,</span> <span class="n">log_num_squared</span><span class="p">],</span>
 <span class="nd">@solid</span><span class="p">(</span>
     <span class="n">outputs</span><span class="o">=</span><span class="p">[</span>
         <span class="n">OutputDefinition</span><span class="p">(</span><span class="n">dagster_type</span><span class="o">=</span><span class="n">Int</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;out_one&#39;</span><span class="p">),</span>
@@ -25639,22 +25626,22 @@ happened during the computation.</p>
 <span class="k">def</span> <span class="nf">return_dict_results</span><span class="p">(</span><span class="n">_context</span><span class="p">):</span>
     <span class="k">return</span> <span class="n">MultipleResults</span><span class="o">.</span><span class="n">from_dict</span><span class="p">({</span><span class="s1">&#39;out_one&#39;</span><span class="p">:</span> <span class="mi">23</span><span class="p">,</span> <span class="s1">&#39;out_two&#39;</span><span class="p">:</span> <span class="mi">45</span><span class="p">})</span>
 
-    <span class="k">return</span> <span class="n">PipelineDefinition</span><span class="p">(</span>
-        <span class="n">name</span><span class="o">=</span><span class="s1">&#39;multiple_outputs_step_one_pipeline&#39;</span><span class="p">,</span>
         <span class="n">solids</span><span class="o">=</span><span class="p">[</span><span class="n">return_dict_results</span><span class="p">,</span> <span class="n">log_num</span><span class="p">,</span> <span class="n">log_num_squared</span><span class="p">],</span>
         <span class="n">dependencies</span><span class="o">=</span><span class="p">{</span>
-            <span class="s1">&#39;log_num&#39;</span><span class="p">:</span> <span class="p">{</span>
-                <span class="s1">&#39;num&#39;</span><span class="p">:</span> <span class="n">DependencyDefinition</span><span class="p">(</span>
-                    <span class="n">solid</span><span class="o">=</span><span class="s1">&#39;return_dict_results&#39;</span><span class="p">,</span> <span class="n">output</span><span class="o">=</span><span class="s1">&#39;out_one&#39;</span>
-                <span class="p">)</span>
-            <span class="p">},</span>
+            <span class="s1">&#39;log_num&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;num&#39;</span><span class="p">:</span> <span class="n">DependencyDefinition</span><span class="p">(</span><span class="n">solid</span><span class="o">=</span><span class="s1">&#39;return_dict_results&#39;</span><span class="p">,</span> <span class="n">output</span><span class="o">=</span><span class="s1">&#39;out_one&#39;</span><span class="p">)},</span>
             <span class="s1">&#39;log_num_squared&#39;</span><span class="p">:</span> <span class="p">{</span>
-                <span class="s1">&#39;num&#39;</span><span class="p">:</span> <span class="n">DependencyDefinition</span><span class="p">(</span>
-                    <span class="n">solid</span><span class="o">=</span><span class="s1">&#39;return_dict_results&#39;</span><span class="p">,</span> <span class="n">output</span><span class="o">=</span><span class="s1">&#39;out_two&#39;</span>
-                <span class="p">)</span>
+                <span class="s1">&#39;num&#39;</span><span class="p">:</span> <span class="n">DependencyDefinition</span><span class="p">(</span><span class="n">solid</span><span class="o">=</span><span class="s1">&#39;return_dict_results&#39;</span><span class="p">,</span> <span class="n">output</span><span class="o">=</span><span class="s1">&#39;out_two&#39;</span><span class="p">)</span>
             <span class="p">},</span>
         <span class="p">},</span>
     <span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">define_multiple_outputs_step_two_pipeline</span><span class="p">():</span>
+    <span class="k">return</span> <span class="n">PipelineDefinition</span><span class="p">(</span>
+        <span class="n">name</span><span class="o">=</span><span class="s1">&#39;multiple_outputs_step_two_pipeline&#39;</span><span class="p">,</span>
+        <span class="n">solids</span><span class="o">=</span><span class="p">[</span><span class="n">yield_outputs</span><span class="p">,</span> <span class="n">log_num</span><span class="p">,</span> <span class="n">log_num_squared</span><span class="p">],</span>
+        <span class="n">dependencies</span><span class="o">=</span><span class="p">{</span>
+            <span class="s1">&#39;log_num&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;num&#39;</span><span class="p">:</span> <span class="n">DependencyDefinition</span><span class="p">(</span><span class="s1">&#39;yield_outputs&#39;</span><span class="p">,</span> <span class="s1">&#39;out_one&#39;</span><span class="p">)},</span>
 </pre></div>
 </td></tr></table></div>
 </div>
@@ -25756,11 +25743,8 @@ and then execute that pipeline.</p>
 25
 26
 27
-28
-29</pre></div></td><td class="code"><div class="highlight"><pre><span></span><span class="nd">@solid</span><span class="p">(</span>
-    <span class="n">config_field</span><span class="o">=</span><span class="n">Field</span><span class="p">(</span>
-        <span class="n">String</span><span class="p">,</span> <span class="n">description</span><span class="o">=</span><span class="s1">&#39;Should be either out_one or out_two&#39;</span>
-    <span class="p">),</span>
+28</pre></div></td><td class="code"><div class="highlight"><pre><span></span><span class="nd">@solid</span><span class="p">(</span>
+    <span class="n">config_field</span><span class="o">=</span><span class="n">Field</span><span class="p">(</span><span class="n">String</span><span class="p">,</span> <span class="n">description</span><span class="o">=</span><span class="s1">&#39;Should be either out_one or out_two&#39;</span><span class="p">),</span>
     <span class="n">outputs</span><span class="o">=</span><span class="p">[</span>
         <span class="n">OutputDefinition</span><span class="p">(</span><span class="n">dagster_type</span><span class="o">=</span><span class="n">Int</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;out_one&#39;</span><span class="p">,</span> <span class="n">is_optional</span><span class="o">=</span><span class="kc">True</span><span class="p">),</span>
         <span class="n">OutputDefinition</span><span class="p">(</span><span class="n">dagster_type</span><span class="o">=</span><span class="n">Int</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;out_two&#39;</span><span class="p">,</span> <span class="n">is_optional</span><span class="o">=</span><span class="kc">True</span><span class="p">),</span>
@@ -25774,16 +25758,17 @@ and then execute that pipeline.</p>
     <span class="k">else</span><span class="p">:</span>
         <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s1">&#39;invalid config&#39;</span><span class="p">)</span>
 
+
+<span class="nd">@solid</span><span class="p">(</span><span class="n">inputs</span><span class="o">=</span><span class="p">[</span><span class="n">InputDefinition</span><span class="p">(</span><span class="s1">&#39;num&#39;</span><span class="p">,</span> <span class="n">dagster_type</span><span class="o">=</span><span class="n">Int</span><span class="p">)],</span> <span class="n">outputs</span><span class="o">=</span><span class="p">[</span><span class="n">OutputDefinition</span><span class="p">()])</span>
+
+
+<span class="k">def</span> <span class="nf">define_multiple_outputs_step_three_pipeline</span><span class="p">():</span>
     <span class="k">return</span> <span class="n">PipelineDefinition</span><span class="p">(</span>
-        <span class="n">name</span><span class="o">=</span><span class="s1">&#39;multiple_outputs_step_two_pipeline&#39;</span><span class="p">,</span>
-        <span class="n">solids</span><span class="o">=</span><span class="p">[</span><span class="n">yield_outputs</span><span class="p">,</span> <span class="n">log_num</span><span class="p">,</span> <span class="n">log_num_squared</span><span class="p">],</span>
+        <span class="n">name</span><span class="o">=</span><span class="s1">&#39;multiple_outputs_step_three_pipeline&#39;</span><span class="p">,</span>
+        <span class="n">solids</span><span class="o">=</span><span class="p">[</span><span class="n">conditional</span><span class="p">,</span> <span class="n">log_num</span><span class="p">,</span> <span class="n">log_num_squared</span><span class="p">],</span>
         <span class="n">dependencies</span><span class="o">=</span><span class="p">{</span>
-            <span class="s1">&#39;log_num&#39;</span><span class="p">:</span> <span class="p">{</span>
-                <span class="s1">&#39;num&#39;</span><span class="p">:</span> <span class="n">DependencyDefinition</span><span class="p">(</span><span class="s1">&#39;yield_outputs&#39;</span><span class="p">,</span> <span class="s1">&#39;out_one&#39;</span><span class="p">)</span>
-            <span class="p">},</span>
-            <span class="s1">&#39;log_num_squared&#39;</span><span class="p">:</span> <span class="p">{</span>
-                <span class="s1">&#39;num&#39;</span><span class="p">:</span> <span class="n">DependencyDefinition</span><span class="p">(</span><span class="s1">&#39;yield_outputs&#39;</span><span class="p">,</span> <span class="s1">&#39;out_two&#39;</span><span class="p">)</span>
-            <span class="p">},</span>
+            <span class="s1">&#39;log_num&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;num&#39;</span><span class="p">:</span> <span class="n">DependencyDefinition</span><span class="p">(</span><span class="s1">&#39;conditional&#39;</span><span class="p">,</span> <span class="s1">&#39;out_one&#39;</span><span class="p">)},</span>
+            <span class="s1">&#39;log_num_squared&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;num&#39;</span><span class="p">:</span> <span class="n">DependencyDefinition</span><span class="p">(</span><span class="s1">&#39;conditional&#39;</span><span class="p">,</span> <span class="s1">&#39;out_two&#39;</span><span class="p">)},</span>
         <span class="p">},</span>
     <span class="p">)</span>
 </pre></div>
@@ -25991,16 +25976,14 @@ a yaml file to tell the CLI tool about the repository.</p>
 43
 44
 45
-46
-47
-48
-49</pre></div></td><td class="code"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">collections</span> <span class="k">import</span> <span class="n">defaultdict</span>
+46</pre></div></td><td class="code"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">collections</span> <span class="k">import</span> <span class="n">defaultdict</span>
 
 <span class="kn">from</span> <span class="nn">dagster</span> <span class="k">import</span> <span class="p">(</span>
     <span class="n">DependencyDefinition</span><span class="p">,</span>
     <span class="n">Dict</span><span class="p">,</span>
     <span class="n">Field</span><span class="p">,</span>
     <span class="n">InputDefinition</span><span class="p">,</span>
+    <span class="n">OutputDefinition</span><span class="p">,</span>
     <span class="n">Int</span><span class="p">,</span>
     <span class="n">PipelineDefinition</span><span class="p">,</span>
     <span class="n">RepositoryDefinition</span><span class="p">,</span>
@@ -26013,12 +25996,13 @@ a yaml file to tell the CLI tool about the repository.</p>
 <span class="nd">@solid</span><span class="p">(</span>
     <span class="n">inputs</span><span class="o">=</span><span class="p">[</span><span class="n">InputDefinition</span><span class="p">(</span><span class="s1">&#39;word&#39;</span><span class="p">,</span> <span class="n">String</span><span class="p">)],</span>
     <span class="n">config_field</span><span class="o">=</span><span class="n">Field</span><span class="p">(</span><span class="n">Dict</span><span class="p">({</span><span class="s1">&#39;factor&#39;</span><span class="p">:</span> <span class="n">Field</span><span class="p">(</span><span class="n">Int</span><span class="p">)})),</span>
+    <span class="n">outputs</span><span class="o">=</span><span class="p">[</span><span class="n">OutputDefinition</span><span class="p">()],</span>
 <span class="p">)</span>
 <span class="k">def</span> <span class="nf">multiply_the_word</span><span class="p">(</span><span class="n">context</span><span class="p">,</span> <span class="n">word</span><span class="p">):</span>
     <span class="k">return</span> <span class="n">word</span> <span class="o">*</span> <span class="n">context</span><span class="o">.</span><span class="n">solid_config</span><span class="p">[</span><span class="s1">&#39;factor&#39;</span><span class="p">]</span>
 
 
-<span class="nd">@lambda_solid</span><span class="p">(</span><span class="n">inputs</span><span class="o">=</span><span class="p">[</span><span class="n">InputDefinition</span><span class="p">(</span><span class="s1">&#39;word&#39;</span><span class="p">)])</span>
+<span class="nd">@lambda_solid</span><span class="p">(</span><span class="n">inputs</span><span class="o">=</span><span class="p">[</span><span class="n">InputDefinition</span><span class="p">(</span><span class="s1">&#39;word&#39;</span><span class="p">)],</span> <span class="n">output</span><span class="o">=</span><span class="n">OutputDefinition</span><span class="p">())</span>
 <span class="k">def</span> <span class="nf">count_letters</span><span class="p">(</span><span class="n">word</span><span class="p">):</span>
     <span class="n">counts</span> <span class="o">=</span> <span class="n">defaultdict</span><span class="p">(</span><span class="nb">int</span><span class="p">)</span>
     <span class="k">for</span> <span class="n">letter</span> <span class="ow">in</span> <span class="n">word</span><span class="p">:</span>
@@ -26030,18 +26014,13 @@ a yaml file to tell the CLI tool about the repository.</p>
     <span class="k">return</span> <span class="n">PipelineDefinition</span><span class="p">(</span>
         <span class="n">name</span><span class="o">=</span><span class="s1">&#39;demo_pipeline&#39;</span><span class="p">,</span>
         <span class="n">solids</span><span class="o">=</span><span class="p">[</span><span class="n">multiply_the_word</span><span class="p">,</span> <span class="n">count_letters</span><span class="p">],</span>
-        <span class="n">dependencies</span><span class="o">=</span><span class="p">{</span>
-            <span class="s1">&#39;count_letters&#39;</span><span class="p">:</span> <span class="p">{</span>
-                <span class="s1">&#39;word&#39;</span><span class="p">:</span> <span class="n">DependencyDefinition</span><span class="p">(</span><span class="s1">&#39;multiply_the_word&#39;</span><span class="p">)</span>
-            <span class="p">}</span>
-        <span class="p">},</span>
+        <span class="n">dependencies</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;count_letters&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;word&#39;</span><span class="p">:</span> <span class="n">DependencyDefinition</span><span class="p">(</span><span class="s1">&#39;multiply_the_word&#39;</span><span class="p">)}},</span>
     <span class="p">)</span>
 
 
 <span class="k">def</span> <span class="nf">define_demo_execution_repo</span><span class="p">():</span>
     <span class="k">return</span> <span class="n">RepositoryDefinition</span><span class="p">(</span>
-        <span class="n">name</span><span class="o">=</span><span class="s1">&#39;demo_execution_repo&#39;</span><span class="p">,</span>
-        <span class="n">pipeline_dict</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;demo_pipeline&#39;</span><span class="p">:</span> <span class="n">define_demo_execution_pipeline</span><span class="p">},</span>
+        <span class="n">name</span><span class="o">=</span><span class="s1">&#39;demo_execution_repo&#39;</span><span class="p">,</span> <span class="n">pipeline_dict</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;demo_pipeline&#39;</span><span class="p">:</span> <span class="n">define_demo_execution_pipeline</span><span class="p">}</span>
     <span class="p">)</span>
 </pre></div>
 </td></tr></table></div>

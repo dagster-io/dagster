@@ -27,7 +27,7 @@ def _execute_pipeline_with_subset(pipeline, environment_dict, solid_subset):
 
 
 def define_test_all_scalars_pipeline():
-    @lambda_solid(inputs=[InputDefinition('num', Int)])
+    @lambda_solid(inputs=[InputDefinition('num', Int)], output=OutputDefinition())
     def take_int(num):
         return num
 
@@ -35,7 +35,7 @@ def define_test_all_scalars_pipeline():
     def produce_int():
         return 2
 
-    @lambda_solid(inputs=[InputDefinition('string', String)])
+    @lambda_solid(inputs=[InputDefinition('string', String)], output=OutputDefinition())
     def take_string(string):
         return string
 
@@ -43,7 +43,7 @@ def define_test_all_scalars_pipeline():
     def produce_string():
         return 'foo'
 
-    @lambda_solid(inputs=[InputDefinition('path', Path)])
+    @lambda_solid(inputs=[InputDefinition('path', Path)], output=OutputDefinition())
     def take_path(path):
         return path
 
@@ -51,7 +51,7 @@ def define_test_all_scalars_pipeline():
     def produce_path():
         return '/path/to/foo'
 
-    @lambda_solid(inputs=[InputDefinition('float_number', Float)])
+    @lambda_solid(inputs=[InputDefinition('float_number', Float)], output=OutputDefinition())
     def take_float(float_number):
         return float_number
 
@@ -59,7 +59,7 @@ def define_test_all_scalars_pipeline():
     def produce_float():
         return 3.14
 
-    @lambda_solid(inputs=[InputDefinition('bool_value', Bool)])
+    @lambda_solid(inputs=[InputDefinition('bool_value', Bool)], output=OutputDefinition())
     def take_bool(bool_value):
         return bool_value
 
@@ -67,7 +67,7 @@ def define_test_all_scalars_pipeline():
     def produce_bool():
         return True
 
-    @lambda_solid(inputs=[InputDefinition('any_value', Any)])
+    @lambda_solid(inputs=[InputDefinition('any_value', Any)], output=OutputDefinition())
     def take_any(any_value):
         return any_value
 
@@ -75,11 +75,13 @@ def define_test_all_scalars_pipeline():
     def produce_any():
         return True
 
-    @lambda_solid(inputs=[InputDefinition('string_list', List(String))])
+    @lambda_solid(inputs=[InputDefinition('string_list', List(String))], output=OutputDefinition())
     def take_string_list(string_list):
         return string_list
 
-    @lambda_solid(inputs=[InputDefinition('nullable_string', Nullable(String))])
+    @lambda_solid(
+        inputs=[InputDefinition('nullable_string', Nullable(String))], output=OutputDefinition()
+    )
     def take_nullable_string(nullable_string):
         return nullable_string
 

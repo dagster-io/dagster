@@ -6,6 +6,7 @@ from dagster import (
     Dict,
     Field,
     InputDefinition,
+    OutputDefinition,
     Int,
     PipelineDefinition,
     RepositoryDefinition,
@@ -15,12 +16,14 @@ from dagster import (
 )
 
 
-@solid(inputs=[InputDefinition('word', String)], config_field=Field(Any))
+@solid(
+    inputs=[InputDefinition('word', String)], config_field=Field(Any), outputs=[OutputDefinition()]
+)
 def multiply_the_word(context, word):
     return word * context.solid_config['factor']
 
 
-@lambda_solid(inputs=[InputDefinition('word')])
+@lambda_solid(inputs=[InputDefinition('word')], output=OutputDefinition())
 def count_letters(word):
     counts = defaultdict(int)
     for letter in word:
@@ -31,6 +34,7 @@ def count_letters(word):
 @solid(
     inputs=[InputDefinition('word', String)],
     config_field=Field(Dict({'factor': Field(Int)})),
+    outputs=[OutputDefinition()],
 )
 def typed_multiply_the_word(context, word):
     return word * context.solid_config['factor']
@@ -39,6 +43,7 @@ def typed_multiply_the_word(context, word):
 @solid(
     inputs=[InputDefinition('word', String)],
     config_field=Field(Dict({'factor': Field(String)})),
+    outputs=[OutputDefinition()],
 )
 def typed_multiply_the_word_error(context, word):
     return word * context.solid_config['factor']
@@ -48,11 +53,7 @@ def define_demo_configuration_schema_pipeline():
     return PipelineDefinition(
         name='demo_configuration_schema',
         solids=[multiply_the_word, count_letters],
-        dependencies={
-            'count_letters': {
-                'word': DependencyDefinition('multiply_the_word')
-            }
-        },
+        dependencies={'count_letters': {'word': DependencyDefinition('multiply_the_word')}},
     )
 
 
@@ -60,11 +61,7 @@ def define_typed_demo_configuration_schema_pipeline():
     return PipelineDefinition(
         name='typed_demo_configuration_schema',
         solids=[typed_multiply_the_word, count_letters],
-        dependencies={
-            'count_letters': {
-                'word': DependencyDefinition('typed_multiply_the_word')
-            }
-        },
+        dependencies={'count_letters': {'word': DependencyDefinition('typed_multiply_the_word')}},
     )
 
 
@@ -73,9 +70,7 @@ def define_typed_demo_configuration_schema_error_pipeline():
         name='typed_demo_configuration_schema_error',
         solids=[typed_multiply_the_word_error, count_letters],
         dependencies={
-            'count_letters': {
-                'word': DependencyDefinition('typed_multiply_the_word_error')
-            }
+            'count_letters': {'word': DependencyDefinition('typed_multiply_the_word_error')}
         },
     )
 

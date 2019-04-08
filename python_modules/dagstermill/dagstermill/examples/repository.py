@@ -73,12 +73,12 @@ def mult_two_numbers_pm_solid():
     )
 
 
-@lambda_solid
+@lambda_solid(output=OutputDefinition())
 def return_one():
     return 1
 
 
-@lambda_solid
+@lambda_solid(output=OutputDefinition())
 def return_two():
     return 2
 
@@ -97,7 +97,7 @@ def define_add_pipeline():
     )
 
 
-@solid(inputs=[], config_field=Field(Int))
+@solid(inputs=[], config_field=Field(Int), outputs=[OutputDefinition()])
 def load_constant(context):
     return context.solid_config
 

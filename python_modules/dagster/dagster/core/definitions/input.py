@@ -1,6 +1,7 @@
 from dagster import check
 
 from dagster.core.types.runtime import RuntimeType, resolve_to_runtime_type
+from dagster.core.types import Event
 
 from .expectation import ExpectationDefinition
 from .utils import check_valid_name
@@ -32,3 +33,7 @@ class InputDefinition(object):
     @property
     def descriptive_key(self):
         return 'output'
+
+
+def EventTriggerInput(name):
+    return InputDefinition(name, Event)

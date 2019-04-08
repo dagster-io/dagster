@@ -11,7 +11,6 @@ def test_tutorial_intro_tutorial_hello_world():
 
     assert result.success
     assert len(result.solid_result_list) == 1
-    assert result.result_for_solid('hello_world').transformed_value() == 'hello'
     return result
 
 

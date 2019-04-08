@@ -8,6 +8,7 @@ from dagster import (
     PipelineContextDefinition,
     execute_pipeline,
     lambda_solid,
+    OutputDefinition,
 )
 
 from dagster.core.events.logging import construct_event_logger, EventRecord
@@ -68,7 +69,7 @@ def test_empty_pipeline():
 def test_single_solid_pipeline_success():
     events = defaultdict(list)
 
-    @lambda_solid
+    @lambda_solid(output=OutputDefinition())
     def solid_one():
         return 1
 

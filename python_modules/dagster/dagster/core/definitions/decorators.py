@@ -6,7 +6,7 @@ from dagster import check
 
 from dagster.core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
 
-from . import InputDefinition, OutputDefinition, Result, SolidDefinition
+from . import InputDefinition, OutputDefinition, Result, SolidDefinition, SuccessEventOutput
 
 if hasattr(inspect, 'signature'):
     funcsigs = inspect
@@ -108,7 +108,7 @@ class _Solid(object):
     def __init__(self, name=None, inputs=None, outputs=None, description=None, config_field=None):
         self.name = check.opt_str_param(name, 'name')
         self.input_defs = check.opt_list_param(inputs, 'inputs', InputDefinition)
-        outputs = outputs or ([OutputDefinition()] if outputs is None else [])
+        outputs = outputs or ([SuccessEventOutput()] if outputs is None else [])
         self.outputs = check.list_param(outputs, 'outputs', OutputDefinition)
         self.description = check.opt_str_param(description, 'description')
         # config_field will be checked within SolidDefinition
@@ -160,7 +160,7 @@ def lambda_solid(name=None, inputs=None, output=None, description=None):
                 return foo
 
     '''
-    output = output or OutputDefinition()
+    output = output or SuccessEventOutput()
 
     if callable(name):
         check.invariant(inputs is None)
@@ -276,7 +276,9 @@ def _create_lambda_solid_transform_wrapper(fn, input_defs, output_def):
     check.list_param(input_defs, 'input_defs', of_type=InputDefinition)
     check.inst_param(output_def, 'output_def', OutputDefinition)
 
-    input_names = [input_def.name for input_def in input_defs]
+    input_names = [
+        input_def.name for input_def in input_defs if not input_def.runtime_type.is_event
+    ]
 
     @wraps(fn)
     def transform(_context, inputs):
@@ -285,17 +287,24 @@ def _create_lambda_solid_transform_wrapper(fn, input_defs, output_def):
             kwargs[input_name] = inputs[input_name]
 
         result = fn(**kwargs)
-        yield Result(value=result, output_name=output_def.name)
+        if not output_def.runtime_type.is_event:
+            yield Result(value=result, output_name=output_def.name)
 
     return transform
 
 
-def _create_solid_transform_wrapper(fn, input_defs, output_defs):
+def _create_solid_transform_wrapper(fn, input_defs, all_output_defs):
     check.callable_param(fn, 'fn')
     check.list_param(input_defs, 'input_defs', of_type=InputDefinition)
-    check.list_param(output_defs, 'output_defs', of_type=OutputDefinition)
+    check.list_param(all_output_defs, 'output_defs', of_type=OutputDefinition)
 
-    input_names = [input_def.name for input_def in input_defs]
+    input_names = [
+        input_def.name for input_def in input_defs if not input_def.runtime_type.is_event
+    ]
+
+    output_defs = [
+        output_def for output_def in all_output_defs if not output_def.runtime_type.is_event
+    ]
 
     @wraps(fn)
     def transform(context, inputs):
@@ -367,7 +376,7 @@ def _validate_transform_fn(solid_name, transform_fn, inputs, expected_positional
         expected_positionals, 'expected_positionals', of_type=(str, tuple)
     )
 
-    names = set(inp.name for inp in inputs)
+    names = set(inp.name for inp in inputs if not inp.runtime_type.is_event)
     # Currently being super strict about naming. Might be a good idea to relax. Starting strict.
     try:
         _validate_decorated_fn(transform_fn, names, expected_positionals)
