@@ -48,6 +48,8 @@ def format_error_with_stack_trace(error):
         if error.path is not None:
             formatted_error['path'] = error.path
 
+        # this is what is different about this implementation
+        # we print out stack traces to ease debugging
         if error.original_error:
             formatted_error['stack_trace'] = get_stack_trace_array(error.original_error)
 
