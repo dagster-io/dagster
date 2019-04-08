@@ -11,15 +11,12 @@ from dagster import (
     OutputDefinition,
     PipelineDefinition,
     SolidInstance,
-    RunConfig,
     execute_pipeline,
     solid,
     ResourceDefinition,
     PipelineContextDefinition,
     ExecutionContext,
 )
-
-from dagster.core.errors import DagsterUserError
 
 
 class ErrorableResource:
@@ -34,16 +31,26 @@ def resource_init(init_context):
 
 def define_errorable_resource():
     return ResourceDefinition(
-        resource_fn=resource_init, config_field=Field(Dict({'throw_on_resource_init': Field(Bool)}))
+        resource_fn=resource_init,
+        config_field=Field(Dict({'throw_on_resource_init': Field(Bool)})),
     )
 
 
 solid_throw_config = Field(
-    Dict(fields={'throw_in_solid': Field(Bool), 'return_wrong_type': Field(Bool)})
+    Dict(
+        fields={
+            'throw_in_solid': Field(Bool),
+            'return_wrong_type': Field(Bool),
+        }
+    )
 )
 
 
-@solid(name='emit_num', outputs=[OutputDefinition(Int)], config_field=solid_throw_config)
+@solid(
+    name='emit_num',
+    outputs=[OutputDefinition(Int)],
+    config_field=solid_throw_config,
+)
 def emit_num(context):
     if context.solid_config['throw_in_solid']:
         raise Exception('throwing from in the solid')
@@ -98,12 +105,18 @@ def define_pipeline():
         solids=[emit_num, num_to_str, str_to_num],
         dependencies={
             SolidInstance('emit_num', 'start'): {},
-            SolidInstance('num_to_str', 'middle'): {'num': DependencyDefinition('start')},
-            SolidInstance('str_to_num', 'end'): {'string': DependencyDefinition('middle')},
+            SolidInstance('num_to_str', 'middle'): {
+                'num': DependencyDefinition('start')
+            },
+            SolidInstance('str_to_num', 'end'): {
+                'string': DependencyDefinition('middle')
+            },
         },
         context_definitions={
             'errorable_context': PipelineContextDefinition(
-                config_field=Field(Dict({'throw_on_context_init': Field(Bool)})),
+                config_field=Field(
+                    Dict({'throw_on_context_init': Field(Bool)})
+                ),
                 context_fn=context_init,
                 resources={'errorable_resource': define_errorable_resource()},
             )
@@ -119,14 +132,31 @@ if __name__ == '__main__':
                 'errorable_context': {
                     'config': {'throw_on_context_init': False},
                     'resources': {
-                        'errorable_resource': {'config': {'throw_on_resource_init': False}}
+                        'errorable_resource': {
+                            'config': {'throw_on_resource_init': False}
+                        }
                     },
                 }
             },
             'solids': {
-                'start': {'config': {'throw_in_solid': False, 'return_wrong_type': False}},
-                'middle': {'config': {'throw_in_solid': False, 'return_wrong_type': True}},
-                'end': {'config': {'throw_in_solid': False, 'return_wrong_type': False}},
+                'start': {
+                    'config': {
+                        'throw_in_solid': False,
+                        'return_wrong_type': False,
+                    }
+                },
+                'middle': {
+                    'config': {
+                        'throw_in_solid': False,
+                        'return_wrong_type': True,
+                    }
+                },
+                'end': {
+                    'config': {
+                        'throw_in_solid': False,
+                        'return_wrong_type': False,
+                    }
+                },
             },
         },
         # RunConfig.nonthrowing_in_process(),
