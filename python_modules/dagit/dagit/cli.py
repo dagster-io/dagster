@@ -16,6 +16,7 @@ from dagster.cli.dynamic_loader import (
     load_target_info_from_cli_args,
     repository_target_argument,
 )
+from dagster.utils.logging import get_stack_trace_array
 from dagster_graphql.implementation.context import DagsterGraphQLContext
 from dagster_graphql.implementation.pipeline_execution_manager import SynchronousExecutionManager
 from dagster_graphql.implementation.pipeline_run_storage import (
@@ -61,7 +62,23 @@ def execute_query_from_cli(repository_container, query, variables):
         executor=Executor(),
     )
 
-    str_res = seven.json.dumps(result.to_dict())
+    result_dict = result.to_dict()
+
+    # Here we detect if this is in fact an error response
+    # If so, we iterate over the result_dict and the original result
+    # which contains a GraphQLError. If that GraphQL error contains
+    # an original_error property (which is the exception the resolver
+    # has thrown, typically) we serialize the stack trace of that exception
+    # in the 'stack_trace' property of each error to ease debugging
+
+    if 'errors' in result_dict:
+        check.invariant(len(result_dict['errors']) == len(result.errors))
+        for python_error, error_dict in zip(result.errors, result_dict['errors']):
+            if python_error.original_error:
+                error_dict['stack_trace'] = get_stack_trace_array(python_error.original_error)
+
+    str_res = seven.json.dumps(result_dict)
+
     print(str_res)
     return str_res
 
