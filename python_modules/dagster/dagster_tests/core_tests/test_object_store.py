@@ -88,9 +88,7 @@ def test_file_system_object_store_with_base_dir():
         tempdir = tempfile.mkdtemp()
 
         object_store = FileSystemObjectStore(run_id=run_id, base_dir=tempdir)
-        assert object_store.root == os.path.join(
-            tempdir, 'dagster', 'runs', run_id, 'files'
-        )
+        assert object_store.root == os.path.join(tempdir, 'dagster', 'runs', run_id, 'files')
 
         with yield_pipeline_execution_context(
             PipelineDefinition([]), {}, RunConfig(run_id=run_id)
@@ -110,6 +108,7 @@ def test_file_system_object_store_with_base_dir():
             shutil.rmtree(tempdir)
         except seven.FileNotFoundError:
             pass
+
 
 def test_file_system_object_store_with_custom_serializer():
     run_id = str(uuid.uuid4())
