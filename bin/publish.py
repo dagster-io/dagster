@@ -301,13 +301,14 @@ def get_nightly_version():
 def increment_nightly_version(module_name, module_version):
     new_nightly = get_nightly_version()
     set_version(module_name, module_version['__version__'], new_nightly)
+    return {'__version__': module_version['__version__'], '__nightly__': new_nightly}
 
 
 def increment_nightly_versions():
     versions = get_versions()
     for module_name in MODULE_NAMES:
-        increment_nightly_version(module_name, versions[module_name])
-    return versions[MODULE_NAMES[0]]
+        new_version = increment_nightly_version(module_name, versions[module_name])
+    return new_version
 
 
 def set_new_version(new_version):
