@@ -24,8 +24,10 @@ def get_version(name):
 
     if name == 'dagster-pandas':
         return version['__version__']
+    elif name == 'dagster-pandas-nightly':
+        return version['__nightly__']
     else:
-        return version['__version__'] + version['__nightly__']
+        raise Exception('Shouldn\'t be here: bad package name {name}'.format(name=name))
 
 
 parser = argparse.ArgumentParser()
