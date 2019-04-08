@@ -86,8 +86,8 @@ class RuntimeType(object):
     def throw_if_false(self, fn, value):
         if not fn(value):
             raise DagsterRuntimeCoercionError(
-                'Expected valid value for {type_name} but got {value}'.format(
-                    type_name=self.name, value=repr(value)
+                'Invalid value for Dagster type {type_name}, got value {value} of Python type {type}'.format(
+                    type_name=self.name, value=repr(value), type=type(value)
                 )
             )
         return value

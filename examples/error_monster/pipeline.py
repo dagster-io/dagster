@@ -38,13 +38,18 @@ def define_errorable_resource():
     )
 
 
-solid_throw_config = Field(Dict(fields={'throw_in_solid': Field(Bool)}))
+solid_throw_config = Field(
+    Dict(fields={'throw_in_solid': Field(Bool), 'return_wrong_type': Field(Bool)})
+)
 
 
 @solid(name='emit_num', outputs=[OutputDefinition(Int)], config_field=solid_throw_config)
 def emit_num(context):
     if context.solid_config['throw_in_solid']:
         raise Exception('throwing from in the solid')
+
+    if context.solid_config['return_wrong_type']:
+        return 'wow'
 
     return 13
 
@@ -59,6 +64,9 @@ def num_to_str(context, num):
     if context.solid_config['throw_in_solid']:
         raise Exception('throwing from in the solid')
 
+    if context.solid_config['return_wrong_type']:
+        return num + num
+
     return str(num)
 
 
@@ -71,6 +79,9 @@ def num_to_str(context, num):
 def str_to_num(context, string):
     if context.solid_config['throw_in_solid']:
         raise Exception('throwing from in the solid')
+
+    if context.solid_config['return_wrong_type']:
+        return string + string
 
     return int(string)
 
@@ -113,9 +124,9 @@ if __name__ == '__main__':
                 }
             },
             'solids': {
-                'start': {'config': {'throw_in_solid': False}},
-                'middle': {'config': {'throw_in_solid': True}},
-                'end': {'config': {'throw_in_solid': False}},
+                'start': {'config': {'throw_in_solid': False, 'return_wrong_type': False}},
+                'middle': {'config': {'throw_in_solid': False, 'return_wrong_type': True}},
+                'end': {'config': {'throw_in_solid': False, 'return_wrong_type': False}},
             },
         },
         # RunConfig.nonthrowing_in_process(),
