@@ -100,6 +100,7 @@ class TestExecuteDagContainerizedFilesystemStorage(object):
     config_yaml = [script_relative_path('test_project/env.yml')]
     run_id = str(uuid.uuid4())
     execution_date = datetime.datetime.utcnow()
+    op_kwargs = {'host_tmp_dir': '/tmp'}
     image = IMAGE
 
     def test_execute_dag_containerized(self, dagster_airflow_docker_operator_pipeline):

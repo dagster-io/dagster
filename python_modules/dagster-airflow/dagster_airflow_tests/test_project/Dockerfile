@@ -1,6 +1,6 @@
 FROM python:3.7
 
-RUN mkdir -p /tmp/results
+RUN mkdir -p /tmp/dagster
 
 WORKDIR /tmp/
 
@@ -17,6 +17,6 @@ RUN pip install -r requirements.txt
 
 ADD . .
 
-ENTRYPOINT [ "dagit-cli" ]
+ENTRYPOINT [ "dagit", "--no-watch" ]
 
 EXPOSE 3000

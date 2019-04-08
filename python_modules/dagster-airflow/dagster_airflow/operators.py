@@ -372,7 +372,9 @@ class DagsterDockerOperator(ModifiedDockerOperator, DagsterOperator):
             if res_type == 'PythonError':
                 self.log.info('Plan execution failed.')
                 raise AirflowException(
-                    'Subplan execution failed: {message}\n{stack}'.format(message=res_data['message'], stack=res_data['stack'])
+                    'Subplan execution failed: {message}\n{stack}'.format(
+                        message=res_data['message'], stack=res_data['stack']
+                    )
                 )
 
             # Catchall
