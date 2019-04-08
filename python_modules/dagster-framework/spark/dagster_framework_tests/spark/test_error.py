@@ -18,7 +18,6 @@ solids:
       spark_outputs: ["/tmp/dagster/events/data"]
       application_jar: "{path}"
       deploy_mode: "client"
-      main_class: "io.dagster.events.EventPipeline"
       application_arguments: "--local-path /tmp/dagster/events/data --date 2019-01-01"
       master_url: "local[*]"
       spark_conf:
@@ -29,7 +28,7 @@ solids:
 
 
 def test_jar_not_found():
-    spark_solid = SparkSolidDefinition('spark_solid')
+    spark_solid = SparkSolidDefinition('spark_solid', main_class='something')
     pipeline = PipelineDefinition(solids=[spark_solid])
     # guid guaranteed to not exist
     environment_dict = yaml.load(CONFIG_FILE.format(path=str(uuid.uuid4())))
@@ -41,7 +40,7 @@ def test_jar_not_found():
 
 
 def test_run_invalid_jar():
-    spark_solid = SparkSolidDefinition('spark_solid')
+    spark_solid = SparkSolidDefinition('spark_solid', main_class='something')
     pipeline = PipelineDefinition(solids=[spark_solid])
     environment_dict = yaml.load(CONFIG_FILE.format(path=script_relative_path('.')))
     with pytest.raises(SparkSolidError, match='Spark job failed. Please consult your logs.'):
@@ -57,7 +56,6 @@ solids:
       spark_outputs: ["/tmp/dagster/events/data"]
       application_jar: "{path}"
       deploy_mode: "client"
-      main_class: "io.dagster.events.EventPipeline"
       application_arguments: "--local-path /tmp/dagster/events/data --date 2019-01-01"
       master_url: "local[*]"
       spark_conf:
@@ -71,7 +69,7 @@ def test_no_spark_home():
     if 'SPARK_HOME' in os.environ:
         del os.environ['SPARK_HOME']
 
-    spark_solid = SparkSolidDefinition('spark_solid')
+    spark_solid = SparkSolidDefinition('spark_solid', main_class='something')
     pipeline = PipelineDefinition(solids=[spark_solid])
     environment_dict = yaml.load(NO_SPARK_HOME_CONFIG_FILE.format(path=script_relative_path('.')))
 
