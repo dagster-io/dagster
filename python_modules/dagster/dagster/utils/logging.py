@@ -186,10 +186,15 @@ def define_debug_formatter():
 
 def get_formatted_stack_trace(exception):
     check.inst_param(exception, 'exception', Exception)
+    return ''.join(get_stack_trace_array(exception))
+
+
+def get_stack_trace_array(exception):
+    check.inst_param(exception, 'exception', Exception)
     if hasattr(exception, '__traceback__'):
         tb = exception.__traceback__
     else:
         import sys
 
         _exc_type, _exc_value, tb = sys.exc_info()
-    return ''.join(traceback.format_tb(tb))
+    return traceback.format_tb(tb)

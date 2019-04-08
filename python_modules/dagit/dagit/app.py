@@ -9,15 +9,19 @@ try:
 except ImportError:
     from pipes import quote as cmd_quote
 
+from six import text_type
+
 import nbformat
 from flask import Flask, send_file, send_from_directory, request
 from flask_cors import CORS
 from flask_graphql import GraphQLView
 from flask_sockets import Sockets
+from graphql.error.base import GraphQLError
 from graphql.execution.executors.gevent import GeventExecutor as Executor
 from nbconvert import HTMLExporter
 
 from dagster import check, seven
+from dagster.utils.logging import get_stack_trace_array
 from dagster_graphql.schema import create_schema
 
 from dagster_graphql.implementation.context import DagsterGraphQLContext
@@ -30,6 +34,26 @@ from .templates.playground import TEMPLATE as PLAYGROUND_TEMPLATE
 from .version import __version__
 
 
+# based on default_format_error copied and pasted from graphql_server 1.1.1
+def format_error_with_stack_trace(error):
+
+    # type: (Exception) -> Dict[str, Any]
+
+    formatted_error = {'message': text_type(error)}  # type: Dict[str, Any]
+    if isinstance(error, GraphQLError):
+        if error.locations is not None:
+            formatted_error['locations'] = [
+                {'line': loc.line, 'column': loc.column} for loc in error.locations
+            ]
+        if error.path is not None:
+            formatted_error['path'] = error.path
+
+        if error.original_error:
+            formatted_error['stack_trace'] = get_stack_trace_array(error.original_error)
+
+    return formatted_error
+
+
 class DagsterGraphQLView(GraphQLView):
     def __init__(self, context, **kwargs):
         super(DagsterGraphQLView, self).__init__(**kwargs)
@@ -37,6 +61,8 @@ class DagsterGraphQLView(GraphQLView):
 
     def get_context(self):
         return self.context
+
+    format_error = staticmethod(format_error_with_stack_trace)
 
 
 def dagster_graphql_subscription_view(subscription_server, context):

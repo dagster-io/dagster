@@ -46,7 +46,10 @@ def execute_dagster_graphql(context, query, variables=None):
 
     # has to check attr because in subscription case it returns AnonymousObservable
     if hasattr(result, 'errors') and result.errors:
-        raise result.errors[0]
+        if result.errors[0].original_error:
+            raise result.errors[0].original_error
+        else:
+            raise result.errors[0]
 
     return result
 
