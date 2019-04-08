@@ -41,7 +41,11 @@ def gunzipper(gzip_file):
 
 
 def define_event_ingest_pipeline():
-    event_ingest = SparkSolidDefinition('event_ingest', 'Ingest events from JSON to Parquet')
+    event_ingest = SparkSolidDefinition(
+        name='event_ingest',
+        main_class='io.dagster.events.EventPipeline',
+        description='Ingest events from JSON to Parquet',
+    )
 
     # TODO: express dependency of this solid on event_ingest
     snowflake_load = SnowflakeLoadSolidDefinition(

@@ -19,10 +19,16 @@ from .utils import run_spark_subprocess, parse_spark_config
 
 class SparkSolidDefinition(SolidDefinition):
     '''This solid is a generic representation of a parameterized Spark job.
+
+    Parameters:
+    name (str): The name of this Spark solid
+    main_class (str): The entry point for your application (e.g. org.apache.spark.examples.SparkPi)
+
     '''
 
-    def __init__(self, name, description=None):
+    def __init__(self, name, main_class, description=None):
         name = check.str_param(name, 'name')
+        main_class = check.str_param(main_class, 'main_class')
         description = check.opt_str_param(
             description,
             'description',
@@ -37,7 +43,6 @@ class SparkSolidDefinition(SolidDefinition):
 
             # Extract parameters from config
             (
-                main_class,
                 master_url,
                 deploy_mode,
                 application_jar,
@@ -49,7 +54,6 @@ class SparkSolidDefinition(SolidDefinition):
             ) = [
                 context.solid_config.get(k)
                 for k in (
-                    'main_class',
                     'master_url',
                     'deploy_mode',
                     'application_jar',
@@ -60,6 +64,9 @@ class SparkSolidDefinition(SolidDefinition):
                     'solid_output_mode',
                 )
             ]
+
+            # Let the user use env vars in the jar path
+            application_jar = os.path.expandvars(application_jar)
 
             if not os.path.exists(application_jar):
                 raise SparkSolidError(
@@ -92,6 +99,7 @@ class SparkSolidDefinition(SolidDefinition):
                 + [application_jar]
                 + ([application_arguments] if application_arguments else [])
             )
+
             context.log.info("Running spark-submit: " + ' '.join(spark_shell_cmd))
             retcode = run_spark_subprocess(spark_shell_cmd, context.log)
 
@@ -123,4 +131,5 @@ class SparkSolidDefinition(SolidDefinition):
             ],
             transform_fn=_spark_transform_fn,
             config_field=define_spark_config(),
+            metadata={'kind': 'spark', 'main_class': main_class},
         )

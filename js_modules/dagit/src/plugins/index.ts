@@ -2,10 +2,12 @@ import { SidebarSolidInfoFragment } from "../types/SidebarSolidInfoFragment";
 
 import * as ipynb from "./ipynb";
 import * as sql from "./sql";
+import * as spark from "./spark";
 
 const plugins = {
   sql: sql,
-  ipynb: ipynb
+  ipynb: ipynb,
+  spark: spark
 };
 
 export interface IPluginSidebarProps {
@@ -14,8 +16,8 @@ export interface IPluginSidebarProps {
 
 export interface IPluginInterface {
   SidebarComponent:
-    | React.ComponentClass<IPluginSidebarProps>
-    | React.SFC<IPluginSidebarProps>;
+  | React.ComponentClass<IPluginSidebarProps>
+  | React.SFC<IPluginSidebarProps>;
 }
 
 export function pluginForMetadata(

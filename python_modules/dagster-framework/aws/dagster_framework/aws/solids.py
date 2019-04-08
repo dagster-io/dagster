@@ -40,7 +40,7 @@ class S3Logger(object):
                 'target_folder': Field(
                     Path, description=('Specifies the path at which to download the object.')
                 ),
-                'skip_if_present': Field(Bool),
+                'skip_if_present': Field(Bool, is_optional=True, default_value=False),
             }
         )
     ),

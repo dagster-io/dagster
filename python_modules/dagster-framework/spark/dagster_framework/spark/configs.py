@@ -20,12 +20,6 @@ def define_spark_config():
         https://spark.apache.org/docs/latest/submitting-applications.html
     '''
 
-    main_class = Field(
-        String,
-        description='The entry point for your application (e.g. org.apache.spark.examples.SparkPi)',
-        is_optional=False,
-    )
-
     master_url = Field(
         String,
         description='The master URL for the cluster (e.g. spark://23.195.26.187:7077)',
@@ -80,7 +74,6 @@ def define_spark_config():
     return Field(
         Dict(
             fields={
-                'main_class': main_class,
                 'master_url': master_url,
                 'deploy_mode': deploy_mode,
                 'application_jar': application_jar,
