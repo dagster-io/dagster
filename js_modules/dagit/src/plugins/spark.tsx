@@ -1,7 +1,6 @@
 import * as React from "react";
 import { IPluginSidebarProps } from ".";
 
-
 export class SidebarComponent extends React.Component<IPluginSidebarProps> {
   state = {
     open: false
@@ -30,7 +29,7 @@ export class SidebarComponent extends React.Component<IPluginSidebarProps> {
       <div>
         {/* TODO: add this */}
         {spark.value}
-      </div >
+      </div>
     );
   }
 }
