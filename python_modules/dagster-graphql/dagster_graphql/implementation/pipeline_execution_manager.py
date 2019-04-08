@@ -292,7 +292,6 @@ def execute_pipeline_through_queue(
         executor_config=InProcessExecutorConfig(throw_on_user_error=False),
         reexecution_config=reexecution_config,
         step_keys_to_execute=step_keys_to_execute,
-        storage_mode=get_storage_mode(environment_dict),
     )
 
     repository_container = RepositoryContainer(repository_info)

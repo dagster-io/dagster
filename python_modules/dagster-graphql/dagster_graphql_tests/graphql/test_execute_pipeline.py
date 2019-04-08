@@ -8,7 +8,12 @@ from dagster.utils import script_relative_path, merge_dicts
 from dagster.core.object_store import has_filesystem_intermediate, get_filesystem_intermediate
 from dagster_pandas import DataFrame
 
-from .setup import execute_dagster_graphql, define_context, pandas_hello_world_solids_config
+from .setup import (
+    define_context,
+    execute_dagster_graphql,
+    pandas_hello_world_solids_config,
+    pandas_hello_world_solids_config_fs_storage,
+)
 
 
 def test_basic_start_pipeline_execution():
@@ -453,7 +458,7 @@ def test_successful_pipeline_reexecution(snapshot):
         START_PIPELINE_EXECUTION_SNAPSHOT_QUERY,
         variables={
             'pipeline': {'name': 'pandas_hello_world'},
-            'config': pandas_hello_world_solids_config(),
+            'config': pandas_hello_world_solids_config_fs_storage(),
             'executionMetadata': {'runId': run_id},
         },
     )
@@ -483,7 +488,7 @@ def test_successful_pipeline_reexecution(snapshot):
         START_PIPELINE_EXECUTION_SNAPSHOT_QUERY,
         variables={
             'pipeline': {'name': 'pandas_hello_world'},
-            'config': pandas_hello_world_solids_config(),
+            'config': pandas_hello_world_solids_config_fs_storage(),
             'stepKeys': ['sum_sq_solid.transform'],
             'executionMetadata': {'runId': new_run_id},
             'reexecutionConfig': {

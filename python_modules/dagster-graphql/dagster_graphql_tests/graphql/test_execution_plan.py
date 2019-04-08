@@ -5,7 +5,12 @@ from dagster.utils import merge_dicts
 
 from dagster_pandas import DataFrame
 
-from .setup import execute_dagster_graphql, define_context, pandas_hello_world_solids_config
+from .setup import (
+    define_context,
+    execute_dagster_graphql,
+    pandas_hello_world_solids_config,
+    pandas_hello_world_solids_config_fs_storage,
+)
 
 
 EXECUTION_PLAN_QUERY = '''
@@ -64,7 +69,7 @@ def test_success_whole_execution_plan(snapshot):
         EXECUTE_PLAN_QUERY,
         variables={
             'pipelineName': 'pandas_hello_world',
-            'config': pandas_hello_world_solids_config(),
+            'config': pandas_hello_world_solids_config_fs_storage(),
             'stepKeys': None,
             'executionMetadata': {'runId': run_id},
         },
@@ -155,7 +160,7 @@ def test_successful_one_part_execute_plan(snapshot):
         EXECUTE_PLAN_QUERY,
         variables={
             'pipelineName': 'pandas_hello_world',
-            'config': pandas_hello_world_solids_config(),
+            'config': pandas_hello_world_solids_config_fs_storage(),
             'stepKeys': ['sum_solid.num.input_thunk', 'sum_solid.transform'],
             'executionMetadata': {'runId': run_id},
         },
@@ -194,7 +199,7 @@ def test_successful_two_part_execute_plan(snapshot):
         EXECUTE_PLAN_QUERY,
         variables={
             'pipelineName': 'pandas_hello_world',
-            'config': pandas_hello_world_solids_config(),
+            'config': pandas_hello_world_solids_config_fs_storage(),
             'stepKeys': ['sum_solid.num.input_thunk', 'sum_solid.transform'],
             'executionMetadata': {'runId': run_id},
         },
@@ -209,7 +214,7 @@ def test_successful_two_part_execute_plan(snapshot):
         EXECUTE_PLAN_QUERY,
         variables={
             'pipelineName': 'pandas_hello_world',
-            'config': pandas_hello_world_solids_config(),
+            'config': pandas_hello_world_solids_config_fs_storage(),
             'stepKeys': ['sum_sq_solid.transform'],
             'executionMetadata': {'runId': run_id},
         },
