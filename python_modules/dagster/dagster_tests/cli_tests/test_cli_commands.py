@@ -159,7 +159,7 @@ def test_scaffold_command():
         execute_scaffold_command(cli_args=cli_args, print_fn=no_print)
 
 
-def test_default_filesystem_run_storage():
+def test_default_memory_run_storage():
     cli_args = {
         'repository_yaml': script_relative_path('repository_file.yml'),
         'pipeline_name': ('foo',),
@@ -172,7 +172,7 @@ def test_default_filesystem_run_storage():
 
     run_dir = os.path.join(base_run_directory(), result.run_id)
 
-    assert os.path.isdir(run_dir)
+    assert not os.path.isdir(run_dir)
 
 
 def test_override_with_in_memory_storage():
@@ -191,3 +191,21 @@ def test_override_with_in_memory_storage():
     run_dir = os.path.join(base_run_directory(), result.run_id)
 
     assert not os.path.exists(run_dir)
+
+
+def test_override_with_filesystem_storage():
+    cli_args = {
+        'repository_yaml': script_relative_path('repository_file.yml'),
+        'pipeline_name': ('foo',),
+        'python_file': None,
+        'module_name': None,
+        'fn_name': None,
+    }
+    result = execute_execute_command(
+        env=[script_relative_path('filesystem_env.yml')], cli_args=cli_args, print_fn=no_print
+    )
+    assert result.success
+
+    run_dir = os.path.join(base_run_directory(), result.run_id)
+
+    assert os.path.exists(run_dir)

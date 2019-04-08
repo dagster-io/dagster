@@ -311,15 +311,7 @@ def do_execute_command(pipeline, env_file_list, printer):
 
     environment_dict = load_yaml_from_glob_list(env_file_list) if env_file_list else {}
 
-    # Here we detect if the user has specified a storage element in the environment
-    # dictionary. If they have not, we default to using the filesystem in this context.
-    run_storage_mode = None if 'storage' in environment_dict else RunStorageMode.FILESYSTEM
-
-    return execute_pipeline(
-        pipeline,
-        environment_dict=environment_dict,
-        run_config=RunConfig(storage_mode=run_storage_mode),
-    )
+    return execute_pipeline(pipeline, environment_dict=environment_dict)
 
 
 @click.command(
