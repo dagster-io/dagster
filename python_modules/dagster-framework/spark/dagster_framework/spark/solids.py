@@ -131,5 +131,5 @@ class SparkSolidDefinition(SolidDefinition):
             ],
             transform_fn=_spark_transform_fn,
             config_field=define_spark_config(),
-            metadata={'kind': 'spark', 'spark': {'main_class': main_class}},
+            metadata={'kind': 'spark', 'main_class': main_class},
         )
