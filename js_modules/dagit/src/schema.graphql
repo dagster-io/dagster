@@ -88,7 +88,7 @@ type EvaluationStackPathEntry {
   field: ConfigTypeField!
 }
 
-union ExecutePlanResult = ExecutePlanSuccess | PipelineConfigValidationInvalid | PipelineNotFoundError | InvalidStepError
+union ExecutePlanResult = ExecutePlanSuccess | PipelineConfigValidationInvalid | PipelineNotFoundError | InvalidStepError | PythonError
 
 type ExecutePlanSuccess {
   pipeline: Pipeline!
