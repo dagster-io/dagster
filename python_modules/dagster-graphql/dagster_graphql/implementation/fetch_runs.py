@@ -57,9 +57,7 @@ def validate_pipeline_config(graphene_info, selector, config):
             )
         )
 
-    pipeline_or_error = _pipeline_or_error_from_container(
-        graphene_info, graphene_info.context.repository_container, selector
-    )
+    pipeline_or_error = _pipeline_or_error_from_container(graphene_info, selector)
     return pipeline_or_error.chain(do_validation).value()
 
 
@@ -76,7 +74,5 @@ def get_execution_plan(graphene_info, selector, config):
             )
         )
 
-    pipeline_or_error = _pipeline_or_error_from_container(
-        graphene_info, graphene_info.context.repository_container, selector
-    )
+    pipeline_or_error = _pipeline_or_error_from_container(graphene_info, selector)
     return pipeline_or_error.chain(create_plan).value()

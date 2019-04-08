@@ -92,9 +92,7 @@ def start_pipeline_execution(
         config_or_error = _config_or_error_from_pipeline(graphene_info, pipeline, environment_dict)
         return config_or_error.chain(_start_execution)
 
-    pipeline_or_error = _pipeline_or_error_from_container(
-        graphene_info, graphene_info.context.repository_container, selector
-    )
+    pipeline_or_error = _pipeline_or_error_from_container(graphene_info, selector)
     return pipeline_or_error.chain(get_config_and_start_execution).value()
 
 
@@ -130,9 +128,7 @@ def get_pipeline_run_observable(graphene_info, run_id, after=None):
         )
 
     return (
-        _pipeline_or_error_from_container(
-            graphene_info, graphene_info.context.repository_container, run.selector
-        )
+        _pipeline_or_error_from_container(graphene_info, run.selector)
         .chain(get_observable)
         .value_or_raise()
     )
@@ -152,11 +148,7 @@ def do_execute_plan(graphene_info, pipeline_name, environment_dict, execution_me
         step_keys=step_keys,
     )
     return (
-        _pipeline_or_error_from_container(
-            graphene_info,
-            graphene_info.context.repository_container,
-            ExecutionSelector(pipeline_name),
-        )
+        _pipeline_or_error_from_container(graphene_info, ExecutionSelector(pipeline_name))
         .chain(
             lambda dauphin_pipeline: _execute_plan_resolve_config(
                 execute_plan_args, dauphin_pipeline
