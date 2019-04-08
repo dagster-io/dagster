@@ -119,7 +119,7 @@ class FileSystemObjectStore(ObjectStore):
     def __init__(self, run_id, types_to_register=None, base_dir=None):
         self.run_id = check.str_param(run_id, 'run_id')
         self.storage_mode = RunStorageMode.FILESYSTEM
-        self._base_dir = check.opt_str_param(
+        self._base_dir = check.opt_nonempty_str_param(
             base_dir, 'base_dir', seven.get_system_temp_directory()
         )
         self.root = get_run_files_directory(self.base_dir, run_id)
