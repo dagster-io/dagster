@@ -62,18 +62,16 @@ def execute_query_from_cli(repository_container, query, variables):
         executor=Executor(),
     )
 
-    stack_traces = []
-
-    has_errors = bool(result.errors)
-
-    if has_errors:
-        for error in result.errors:
-            stack_traces.append(get_stack_trace_array(error))
-
     result_dict = result.to_dict()
 
-    if has_errors:
-        check.invariant('errors' in result_dict)
+    # Here we detect if this is in fact an error response
+    # If so, we iterate over the result_dict and the original result
+    # which contains a GraphQLError. If that GraphQL error contains
+    # an original_error property (which is the exception the resolver
+    # has thrown, typically) we serialize the stack trace of that exception
+    # in the 'stack_trace' property of each error to ease debugging
+
+    if 'errors' in result_dict:
         check.invariant(len(result_dict['errors']) == len(result.errors))
         for python_error, error_dict in zip(result.errors, result_dict['errors']):
             if python_error.original_error:
