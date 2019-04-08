@@ -72,6 +72,7 @@ MODULE_NAMES = [
     'dagit',
     'dagster-airflow',
     'dagster-ge',
+    'dagster-graphql',
     'dagster-pandas',
     'dagster-sqlalchemy',
     'dagster',
@@ -143,6 +144,10 @@ def publish_dagster_airflow(nightly):
     publish_module('dagster-airflow', nightly)
 
 
+def publish_dagster_graphql(nightly):
+    publish_module('dagster-graphql', nightly)
+
+
 def publish_all(nightly):
     publish_dagster(nightly)
     publish_dagit(nightly)
@@ -151,6 +156,7 @@ def publish_all(nightly):
     publish_dagster_ge(nightly)
     publish_dagster_pandas(nightly)
     publish_dagster_sqlalchemy(nightly)
+    publish_dagster_graphql(nightly)
 
 
 def get_most_recent_git_tag():
