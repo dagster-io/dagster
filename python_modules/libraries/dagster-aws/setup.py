@@ -9,6 +9,7 @@ if sys.version_info[0] < 3:
 else:
     import builtins
 
+
 def get_version(name):
     version = {}
     with open("dagster_aws/version.py") as fp:
@@ -20,6 +21,7 @@ def get_version(name):
         return version['__nightly__']
     else:
         raise Exception('Shouldn\'t be here: bad package name {name}'.format(name=name))
+
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--nightly', action='store_true')
@@ -44,6 +46,7 @@ def _do_setup(name='dagster-aws'):
         install_requires=['boto3==1.9.*', 'dagster'],
         zip_safe=False,
     )
+
 
 if __name__ == '__main__':
     parsed, unparsed = parser.parse_known_args()
