@@ -3,9 +3,11 @@ from pyspark.sql import SparkSession  # pylint: disable=no-name-in-module,import
 from pyspark.rdd import RDD  # pylint: disable=no-name-in-module,import-error
 
 from dagster import (
+    Bool,
     Dict,
     Field,
     Selector,
+    Path,
     String,
     as_dagster_type,
     check,
@@ -20,20 +22,52 @@ from dagster_framework.spark.configs_spark import spark_config
 from dagster_framework.spark.utils import flatten_dict
 
 
-@input_selector_schema(Selector({'csv': Field(Dict({'path': Field(String)}))}))
+@input_selector_schema(
+    Selector(
+        {
+            'csv': Field(
+                Dict(
+                    {
+                        'path': Field(Path),
+                        'sep': Field(String, is_optional=True),
+                        'header': Field(Bool, is_optional=True),
+                    }
+                )
+            )
+        }
+    )
+)
 def load_rdd(context, file_type, file_options):
     if file_type == 'csv':
-        return context.resources.spark.read.csv(file_options['path']).rdd
+        return context.resources.spark.read.csv(
+            file_options['path'], sep=file_options.get('sep')
+        ).rdd
     else:
         check.failed('Unsupported file type: {}'.format(file_type))
 
 
-@output_selector_schema(Selector({'csv': Field(Dict({'path': Field(String)}))}))
+@output_selector_schema(
+    Selector(
+        {
+            'csv': Field(
+                Dict(
+                    {
+                        'path': Field(Path),
+                        'sep': Field(String, is_optional=True),
+                        'header': Field(Bool, is_optional=True),
+                    }
+                )
+            )
+        }
+    )
+)
 def write_rdd(context, file_type, file_options, spark_rdd):
     if file_type == 'csv':
         df = context.resources.spark.createDataFrame(spark_rdd)
         context.log.info('DF: {}'.format(df))
-        df.write.csv(file_options['path'], header=True)
+        df.write.csv(
+            file_options['path'], header=file_options.get('header'), sep=file_options.get('sep')
+        )
     else:
         check.failed('Unsupported file type: {}'.format(file_type))
 
