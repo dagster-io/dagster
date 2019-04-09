@@ -12,6 +12,7 @@ from dagster import (
     Result,
     SolidDefinition,
     execute_pipeline,
+    Any,
 )
 
 
@@ -23,7 +24,10 @@ def test_multiple_outputs():
     solid = SolidDefinition(
         name='multiple_outputs',
         inputs=[],
-        outputs=[OutputDefinition(name='output_one'), OutputDefinition(name='output_two')],
+        outputs=[
+            OutputDefinition(dagster_type=Any, name='output_one'),
+            OutputDefinition(dagster_type=Any, name='output_two'),
+        ],
         transform_fn=_t_fn,
     )
 
@@ -62,12 +66,14 @@ def test_multiple_outputs_expectations():
         inputs=[],
         outputs=[
             OutputDefinition(
+                dagster_type=Any,
                 name='output_one',
                 expectations=[
                     ExpectationDefinition(name='some_expectation', expectation_fn=_expect_fn_one)
                 ],
             ),
             OutputDefinition(
+                dagster_type=Any,
                 name='output_two',
                 expectations=[
                     ExpectationDefinition(
@@ -95,7 +101,7 @@ def test_wrong_multiple_output():
     solid = SolidDefinition(
         name='multiple_outputs',
         inputs=[],
-        outputs=[OutputDefinition(name='output_one')],
+        outputs=[OutputDefinition(dagster_type=Any, name='output_one')],
         transform_fn=_t_fn,
     )
 
@@ -115,7 +121,7 @@ def test_multiple_outputs_of_same_name_disallowed():
     solid = SolidDefinition(
         name='multiple_outputs',
         inputs=[],
-        outputs=[OutputDefinition(name='output_one')],
+        outputs=[OutputDefinition(dagster_type=Any, name='output_one')],
         transform_fn=_t_fn,
     )
 
@@ -133,8 +139,8 @@ def test_multiple_outputs_only_emit_one():
         name='multiple_outputs',
         inputs=[],
         outputs=[
-            OutputDefinition(name='output_one'),
-            OutputDefinition(name='output_two', is_optional=True),
+            OutputDefinition(dagster_type=Any, name='output_one'),
+            OutputDefinition(dagster_type=Any, name='output_two', is_optional=True),
         ],
         transform_fn=_t_fn,
     )
@@ -200,7 +206,10 @@ def test_missing_non_optional_output_fails():
     solid = SolidDefinition(
         name='multiple_outputs',
         inputs=[],
-        outputs=[OutputDefinition(name='output_one'), OutputDefinition(name='output_two')],
+        outputs=[
+            OutputDefinition(dagster_type=Any, name='output_one'),
+            OutputDefinition(dagster_type=Any, name='output_two'),
+        ],
         transform_fn=_t_fn,
     )
 

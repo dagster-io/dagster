@@ -5,10 +5,11 @@ from dagster import (
     execute_pipeline,
     lambda_solid,
     types,
+    Any,
 )
 
 
-@lambda_solid(inputs=[InputDefinition('word')], output=OutputDefinition())
+@lambda_solid(inputs=[InputDefinition('word')], output=OutputDefinition(Any))
 def add_hello_to_word(word):
     return 'Hello, ' + word + '!'
 

@@ -11,15 +11,16 @@ from dagster import (
     execute_pipeline,
     lambda_solid,
     solid,
+    Any,
 )
 
 
 def test_aliased_solids():
-    @lambda_solid(output=OutputDefinition())
+    @lambda_solid(output=OutputDefinition(Any))
     def first():
         return ['first']
 
-    @lambda_solid(inputs=[InputDefinition(name="prev")], output=OutputDefinition())
+    @lambda_solid(inputs=[InputDefinition(name="prev")], output=OutputDefinition(Any))
     def not_first(prev):
         return prev + ['not_first']
 
@@ -39,11 +40,11 @@ def test_aliased_solids():
 
 
 def test_only_aliased_solids():
-    @lambda_solid(output=OutputDefinition())
+    @lambda_solid(output=OutputDefinition(Any))
     def first():
         return ['first']
 
-    @lambda_solid(inputs=[InputDefinition(name="prev")], output=OutputDefinition())
+    @lambda_solid(inputs=[InputDefinition(name="prev")], output=OutputDefinition(Any))
     def not_first(prev):
         return prev + ['not_first']
 
@@ -64,7 +65,7 @@ def test_only_aliased_solids():
 
 
 def test_aliased_configs():
-    @solid(inputs=[], config_field=Field(Int), outputs=[OutputDefinition()])
+    @solid(inputs=[], config_field=Field(Int), outputs=[OutputDefinition(Any)])
     def load_constant(context):
         return context.solid_config
 

@@ -12,19 +12,20 @@ from dagster import (
     String,
     lambda_solid,
     solid,
+    Any,
 )
 
 
 @solid(
     inputs=[InputDefinition('word', String)],
     config_field=Field(Dict({'factor': Field(Int)})),
-    outputs=[OutputDefinition()],
+    outputs=[OutputDefinition(Any)],
 )
 def multiply_the_word(context, word):
     return word * context.solid_config['factor']
 
 
-@lambda_solid(inputs=[InputDefinition('word')], output=OutputDefinition())
+@lambda_solid(inputs=[InputDefinition('word')], output=OutputDefinition(Any))
 def count_letters(word):
     counts = defaultdict(int)
     for letter in word:

@@ -15,6 +15,7 @@ from dagster import (
     check,
     execute_pipeline,
     lambda_solid,
+    Any,
 )
 
 from dagster.core.test_utils import execute_single_solid_in_isolation, single_output_transform
@@ -38,7 +39,7 @@ def create_root_success_solid(name):
         return passed_rows
 
     return single_output_transform(
-        name=name, inputs=[], transform_fn=root_transform, output=OutputDefinition()
+        name=name, inputs=[], transform_fn=root_transform, output=OutputDefinition(Any)
     )
 
 
@@ -47,7 +48,7 @@ def create_root_transform_failure_solid(name):
         raise Exception('Transform failed')
 
     return single_output_transform(
-        name=name, inputs=[], transform_fn=failed_transform, output=OutputDefinition()
+        name=name, inputs=[], transform_fn=failed_transform, output=OutputDefinition(Any)
     )
 
 
@@ -87,14 +88,14 @@ def test_failure_midstream():
         name='C',
         inputs=[InputDefinition(name='A'), InputDefinition(name='B')],
         transform_fn=fail_fn,
-        output=OutputDefinition(),
+        output=OutputDefinition(Any),
     )
 
     solid_d = single_output_transform(
         name='D',
         inputs=[InputDefinition(name='C')],
         transform_fn=success_fn,
-        output=OutputDefinition(),
+        output=OutputDefinition(Any),
     )
 
     pipeline = silencing_pipeline(
@@ -136,35 +137,35 @@ def test_failure_propagation():
         name='B',
         inputs=[InputDefinition(name='A')],
         transform_fn=success_fn,
-        output=OutputDefinition(),
+        output=OutputDefinition(Any),
     )
 
     solid_c = single_output_transform(
         name='C',
         inputs=[InputDefinition(name='B')],
         transform_fn=success_fn,
-        output=OutputDefinition(),
+        output=OutputDefinition(Any),
     )
 
     solid_d = single_output_transform(
         name='D',
         inputs=[InputDefinition(name='A')],
         transform_fn=fail_fn,
-        output=OutputDefinition(),
+        output=OutputDefinition(Any),
     )
 
     solid_e = single_output_transform(
         name='E',
         inputs=[InputDefinition(name='D')],
         transform_fn=success_fn,
-        output=OutputDefinition(),
+        output=OutputDefinition(Any),
     )
 
     solid_f = single_output_transform(
         name='F',
         inputs=[InputDefinition(name='C'), InputDefinition(name='E')],
         transform_fn=success_fn,
-        output=OutputDefinition(),
+        output=OutputDefinition(Any),
     )
 
     pipeline = silencing_pipeline(
@@ -195,7 +196,7 @@ def test_do_not_yield_result():
     solid_inst = SolidDefinition(
         name='do_not_yield_result',
         inputs=[],
-        outputs=[OutputDefinition()],
+        outputs=[OutputDefinition(Any)],
         transform_fn=lambda *_args, **_kwargs: Result('foo'),
     )
 
@@ -211,7 +212,7 @@ def test_yield_non_result():
         yield 'foo'
 
     solid_inst = SolidDefinition(
-        name='yield_wrong_thing', inputs=[], outputs=[OutputDefinition()], transform_fn=_tn
+        name='yield_wrong_thing', inputs=[], outputs=[OutputDefinition(Any)], transform_fn=_tn
     )
 
     with pytest.raises(
@@ -225,7 +226,7 @@ def test_single_transform_returning_result():
         'test_return_result',
         inputs=[],
         transform_fn=lambda *_args, **_kwargs: Result(None),
-        output=OutputDefinition(),
+        output=OutputDefinition(Any),
     )
 
     with pytest.raises(DagsterInvariantViolationError):
@@ -242,11 +243,11 @@ def test_user_error_propogation():
     def throws_user_error():
         raise UserError(err_msg)
 
-    @lambda_solid(output=OutputDefinition())
+    @lambda_solid(output=OutputDefinition(Any))
     def return_one():
         return 1
 
-    @lambda_solid(inputs=[InputDefinition('num')], output=OutputDefinition())
+    @lambda_solid(inputs=[InputDefinition('num')], output=OutputDefinition(Any))
     def add_one(num):
         return num + 1
 

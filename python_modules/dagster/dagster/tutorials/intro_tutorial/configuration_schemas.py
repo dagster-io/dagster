@@ -17,13 +17,13 @@ from dagster import (
 
 
 @solid(
-    inputs=[InputDefinition('word', String)], config_field=Field(Any), outputs=[OutputDefinition()]
+    inputs=[InputDefinition('word', String)], config_field=Field(Any), outputs=[OutputDefinition(Any)]
 )
 def multiply_the_word(context, word):
     return word * context.solid_config['factor']
 
 
-@lambda_solid(inputs=[InputDefinition('word')], output=OutputDefinition())
+@lambda_solid(inputs=[InputDefinition('word')], output=OutputDefinition(Any))
 def count_letters(word):
     counts = defaultdict(int)
     for letter in word:
@@ -34,7 +34,7 @@ def count_letters(word):
 @solid(
     inputs=[InputDefinition('word', String)],
     config_field=Field(Dict({'factor': Field(Int)})),
-    outputs=[OutputDefinition()],
+    outputs=[OutputDefinition(Any)],
 )
 def typed_multiply_the_word(context, word):
     return word * context.solid_config['factor']
@@ -43,7 +43,7 @@ def typed_multiply_the_word(context, word):
 @solid(
     inputs=[InputDefinition('word', String)],
     config_field=Field(Dict({'factor': Field(String)})),
-    outputs=[OutputDefinition()],
+    outputs=[OutputDefinition(Any)],
 )
 def typed_multiply_the_word_error(context, word):
     return word * context.solid_config['factor']

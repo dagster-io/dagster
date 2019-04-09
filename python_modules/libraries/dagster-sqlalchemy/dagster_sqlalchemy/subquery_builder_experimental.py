@@ -1,6 +1,15 @@
 import os
 
-from dagster import Field, InputDefinition, OutputDefinition, SolidDefinition, check, Dict, String
+from dagster import (
+    Field,
+    InputDefinition,
+    OutputDefinition,
+    SolidDefinition,
+    check,
+    Dict,
+    String,
+    Any,
+)
 from dagster.core.user_context import TransformExecutionContext
 
 from dagster.core.test_utils import single_output_transform
@@ -86,7 +95,10 @@ def create_sql_solid(name, inputs, sql_text):
     check.str_param(sql_text, 'sql_text')
 
     return single_output_transform(
-        name, inputs=inputs, transform_fn=create_sql_transform(sql_text), output=OutputDefinition()
+        name,
+        inputs=inputs,
+        transform_fn=create_sql_transform(sql_text),
+        output=OutputDefinition(Any),
     )
 
 
@@ -112,7 +124,7 @@ def create_sql_statement_solid(name, sql_text, inputs=None):
         name=name,
         transform_fn=_create_sql_alchemy_transform_fn(sql_text),
         inputs=inputs,
-        output=OutputDefinition(),
+        output=OutputDefinition(Any),
     )
 
 

@@ -728,7 +728,7 @@ def test_mix_required_inputs():
     def add_numbers(left, right):
         return left + right
 
-    @lambda_solid(output=OutputDefinition())
+    @lambda_solid(output=OutputDefinition(Any))
     def return_three():
         return 3
 

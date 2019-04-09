@@ -9,6 +9,7 @@ from dagster import (
     solid,
     String,
     Int,
+    Any,
 )
 
 
@@ -49,13 +50,13 @@ def conditional(context):
         raise Exception('invalid config')
 
 
-@solid(inputs=[InputDefinition('num', dagster_type=Int)], outputs=[OutputDefinition()])
+@solid(inputs=[InputDefinition('num', dagster_type=Int)], outputs=[OutputDefinition(Any)])
 def log_num(context, num):
     context.log.info('num {num}'.format(num=num))
     return num
 
 
-@solid(inputs=[InputDefinition('num', dagster_type=Int)], outputs=[OutputDefinition()])
+@solid(inputs=[InputDefinition('num', dagster_type=Int)], outputs=[OutputDefinition(Any)])
 def log_num_squared(context, num):
     context.log.info('num_squared {num_squared}'.format(num_squared=num * num))
     return num * num

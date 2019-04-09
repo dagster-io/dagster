@@ -4,6 +4,7 @@ from dagster import (
     OutputDefinition,
     PipelineDefinition,
     execute_pipeline,
+    Any,
 )
 
 from dagster.core.test_utils import single_output_transform
@@ -21,14 +22,14 @@ def test_execute_solid_with_dep_only_inputs_no_api():
         name='step_one_solid',
         inputs=[],
         transform_fn=lambda context, args: _set_key_value(did_run_dict, 'step_one', True),
-        output=OutputDefinition(),
+        output=OutputDefinition(Any),
     )
 
     step_two_solid = single_output_transform(
         name='step_two_solid',
         inputs=[InputDefinition('step_one_solid')],
         transform_fn=lambda context, args: _set_key_value(did_run_dict, 'step_two', True),
-        output=OutputDefinition(),
+        output=OutputDefinition(Any),
     )
 
     pipeline = PipelineDefinition(
@@ -56,14 +57,14 @@ def test_execute_solid_with_dep_only_inputs_with_api():
         name='step_one_solid',
         inputs=[],
         transform_fn=lambda context, args: _set_key_value(did_run_dict, 'step_one', True),
-        output=OutputDefinition(),
+        output=OutputDefinition(Any),
     )
 
     step_two_solid = single_output_transform(
         name='step_two_solid',
         transform_fn=lambda context, args: _set_key_value(did_run_dict, 'step_two', True),
         inputs=[InputDefinition(step_one_solid.name)],
-        output=OutputDefinition(),
+        output=OutputDefinition(Any),
     )
 
     pipeline = PipelineDefinition(

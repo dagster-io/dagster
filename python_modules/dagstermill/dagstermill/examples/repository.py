@@ -18,6 +18,7 @@ from dagster import (
     solid,
     as_dagster_type,
     SerializationStrategy,
+    Any,
 )
 from dagster_pandas import DataFrame
 
@@ -38,7 +39,7 @@ def define_hello_world_solid():
 
 def define_hello_world_with_output():
     return dm.define_dagstermill_solid(
-        'hello_world_output', nb_test_path('hello_world_output'), [], [OutputDefinition()]
+        'hello_world_output', nb_test_path('hello_world_output'), [], [OutputDefinition(Any)]
     )
 
 
@@ -73,12 +74,12 @@ def mult_two_numbers_pm_solid():
     )
 
 
-@lambda_solid(output=OutputDefinition())
+@lambda_solid(output=OutputDefinition(Any))
 def return_one():
     return 1
 
 
-@lambda_solid(output=OutputDefinition())
+@lambda_solid(output=OutputDefinition(Any))
 def return_two():
     return 2
 
@@ -97,7 +98,7 @@ def define_add_pipeline():
     )
 
 
-@solid(inputs=[], config_field=Field(Int), outputs=[OutputDefinition()])
+@solid(inputs=[], config_field=Field(Int), outputs=[OutputDefinition(Any)])
 def load_constant(context):
     return context.solid_config
 

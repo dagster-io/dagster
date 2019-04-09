@@ -13,6 +13,7 @@ from dagster import (
     lambda_solid,
     solid,
     types,
+    Any,
 )
 from dagster.core.errors import DagsterInvalidDefinitionError
 
@@ -26,7 +27,7 @@ def test_deps_equal():
 
 
 def test_pipeline_types():
-    @lambda_solid(output=OutputDefinition())
+    @lambda_solid(output=OutputDefinition(Any))
     def produce_string():
         return 'foo'
 

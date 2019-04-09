@@ -4,15 +4,16 @@ from dagster import (
     OutputDefinition,
     PipelineDefinition,
     lambda_solid,
+    Any,
 )
 
 
-@lambda_solid(output=OutputDefinition())
+@lambda_solid(output=OutputDefinition(Any))
 def solid_one():
     return 'foo'
 
 
-@lambda_solid(inputs=[InputDefinition('arg_one')], output=OutputDefinition())
+@lambda_solid(inputs=[InputDefinition('arg_one')], output=OutputDefinition(Any))
 def solid_two(arg_one):
     return arg_one * 2
 

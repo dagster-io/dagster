@@ -20,6 +20,7 @@ from dagster import (
     OutputDefinition,
     execute_solid,
     lambda_solid,
+    Any,
 )
 
 from airline_demo.solids import sql_solid, download_from_s3, ingest_csv_to_spark, unzip_file
@@ -112,7 +113,7 @@ def test_download_from_s3():
 
 
 def test_unzip_file_tempfile():
-    @lambda_solid(output=OutputDefinition())
+    @lambda_solid(output=OutputDefinition(Any))
     def nonce():
         return None
 
@@ -140,7 +141,7 @@ def test_unzip_file_tempfile():
 
 @spark
 def test_ingest_csv_to_spark():
-    @lambda_solid(output=OutputDefinition())
+    @lambda_solid(output=OutputDefinition(Any))
     def nonce():
         return None
 

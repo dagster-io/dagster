@@ -6,6 +6,7 @@ from dagster import (
     RunConfig,
     execute_pipeline,
     lambda_solid,
+    Any,
 )
 
 from dagster.core.execution import InProcessExecutorConfig, MultiprocessExecutorConfig
@@ -48,20 +49,20 @@ def test_diamond_multi_execution():
 
 
 def define_diamond_pipeline():
-    @lambda_solid(output=OutputDefinition())
+    @lambda_solid(output=OutputDefinition(Any))
     def return_two():
         return 2
 
-    @lambda_solid(inputs=[InputDefinition('num')], output=OutputDefinition())
+    @lambda_solid(inputs=[InputDefinition('num')], output=OutputDefinition(Any))
     def add_three(num):
         return num + 3
 
-    @lambda_solid(inputs=[InputDefinition('num')], output=OutputDefinition())
+    @lambda_solid(inputs=[InputDefinition('num')], output=OutputDefinition(Any))
     def mult_three(num):
         return num * 3
 
     @lambda_solid(
-        inputs=[InputDefinition('left'), InputDefinition('right')], output=OutputDefinition()
+        inputs=[InputDefinition('left'), InputDefinition('right')], output=OutputDefinition(Any)
     )
     def adder(left, right):
         return left + right

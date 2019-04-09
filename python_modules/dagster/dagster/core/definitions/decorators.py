@@ -144,7 +144,7 @@ def lambda_solid(name=None, inputs=None, output=None, description=None):
     Args:
         name (str): Name of solid.
         inputs (list[InputDefinition]): List of inputs.
-        output (OutputDefinition): The output of the solid. Defaults to ``OutputDefinition()``.
+        output (OutputDefinition): The output of the solid. Defaults to ``OutputDefinition(Any)``.
         description (str): Solid description.
 
     Examples:
@@ -207,15 +207,15 @@ def solid(name=None, inputs=None, outputs=None, config_field=None, description=N
             def hello_world(_context):
                 print('hello')
 
-            @solid(outputs=[OutputDefinition()])
+            @solid(outputs=[OutputDefinition(Any)])
             def hello_world(_context):
                 return {'foo': 'bar'}
 
-            @solid(outputs=[OutputDefinition()])
+            @solid(outputs=[OutputDefinition(Any)])
             def hello_world(_context):
                 return Result(value={'foo': 'bar'})
 
-            @solid(outputs=[OutputDefinition()])
+            @solid(outputs=[OutputDefinition(Any)])
             def hello_world(_context):
                 yield Result(value={'foo': 'bar'})
 
@@ -231,14 +231,14 @@ def solid(name=None, inputs=None, outputs=None, config_field=None, description=N
 
             @solid(
                 inputs=[InputDefinition(name="foo")],
-                outputs=[OutputDefinition()]
+                outputs=[OutputDefinition(Any)]
             )
             def hello_world(_context, foo):
                 return foo
 
             @solid(
                 inputs=[InputDefinition(name="foo")],
-                outputs=[OutputDefinition()],
+                outputs=[OutputDefinition(Any)],
             )
             def hello_world(context, foo):
                 context.log.info('log something')
@@ -246,7 +246,7 @@ def solid(name=None, inputs=None, outputs=None, config_field=None, description=N
 
             @solid(
                 inputs=[InputDefinition(name="foo")],
-                outputs=[OutputDefinition()],
+                outputs=[OutputDefinition(Any)],
                 config_field=Field(types.Dict({'str_value' : Field(types.String)})),
             )
             def hello_world(context, foo):

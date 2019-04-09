@@ -13,6 +13,7 @@ from dagster import (
     check,
     execute_pipeline,
     types,
+    Any,
 )
 
 from dagster.core.test_utils import single_output_transform
@@ -42,7 +43,7 @@ def test_execute_solid_with_input_same_name():
         'a_thing',
         inputs=[InputDefinition(name='a_thing')],
         transform_fn=lambda context, inputs: inputs['a_thing'] + inputs['a_thing'],
-        output=dagster.OutputDefinition(),
+        output=dagster.OutputDefinition(Any),
     )
 
     pipeline = PipelineDefinition(
@@ -64,14 +65,14 @@ def test_execute_two_solids_with_same_input_name():
         'solid_one',
         inputs=[input_def],
         transform_fn=lambda context, inputs: inputs['a_thing'] + inputs['a_thing'],
-        output=dagster.OutputDefinition(),
+        output=dagster.OutputDefinition(Any),
     )
 
     solid_two = single_output_transform(
         'solid_two',
         inputs=[input_def],
         transform_fn=lambda context, inputs: inputs['a_thing'] + inputs['a_thing'],
-        output=dagster.OutputDefinition(),
+        output=dagster.OutputDefinition(Any),
     )
 
     pipeline = dagster.PipelineDefinition(
@@ -110,14 +111,14 @@ def test_execute_dep_solid_different_input_name():
         'first_solid',
         inputs=[InputDefinition(name='a_thing')],
         transform_fn=lambda context, inputs: inputs['a_thing'] + inputs['a_thing'],
-        output=dagster.OutputDefinition(),
+        output=dagster.OutputDefinition(Any),
     )
 
     second_solid = single_output_transform(
         'second_solid',
         inputs=[InputDefinition(name='an_input')],
         transform_fn=lambda context, inputs: inputs['an_input'] + inputs['an_input'],
-        output=dagster.OutputDefinition(),
+        output=dagster.OutputDefinition(Any),
     )
 
     pipeline = dagster.PipelineDefinition(

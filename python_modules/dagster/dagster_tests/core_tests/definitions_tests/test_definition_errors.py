@@ -21,6 +21,7 @@ from dagster import (
     SolidDefinition,
     String,
     solid,
+    Any,
 )
 
 from dagster.core.utility_solids import define_stub_solid
@@ -31,7 +32,7 @@ def solid_a_b_list():
         SolidDefinition(
             name='A',
             inputs=[],
-            outputs=[OutputDefinition()],
+            outputs=[OutputDefinition(Any)],
             transform_fn=lambda _context, _inputs: None,
         ),
         SolidDefinition(

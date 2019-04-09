@@ -12,6 +12,7 @@ from dagster import (
     PipelineDefinition,
     RunConfig,
     lambda_solid,
+    Any,
 )
 
 from dagster.core.execution import (
@@ -33,7 +34,7 @@ from ..marks import aws, nettest
 
 
 def define_inty_pipeline():
-    @lambda_solid(output=OutputDefinition())
+    @lambda_solid(output=OutputDefinition(Any))
     def return_one():
         return 1
 

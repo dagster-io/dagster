@@ -16,6 +16,7 @@ from dagster import (
     EventTriggerInput,
     OnSuccess,
     SuccessEventOutput,
+    Any,
 )
 
 from dagster.core.types import Nullable, List, String
@@ -82,7 +83,7 @@ def create_solid_with_deps(name, *solid_deps):
     inputs = [InputDefinition(solid_dep.name) for solid_dep in solid_deps]
 
     return SolidDefinition(
-        name=name, inputs=inputs, transform_fn=_transform_fn, outputs=[OutputDefinition()]
+        name=name, inputs=inputs, transform_fn=_transform_fn, outputs=[OutputDefinition(Any)]
     )
 
 
@@ -91,7 +92,7 @@ def create_root_solid(name):
     inp = InputDefinition(input_name)
 
     return SolidDefinition(
-        name=name, inputs=[inp], transform_fn=_transform_fn, outputs=[OutputDefinition()]
+        name=name, inputs=[inp], transform_fn=_transform_fn, outputs=[OutputDefinition(Any)]
     )
 
 
@@ -342,11 +343,11 @@ def test_pipeline_name_threaded_through_context():
 
 
 def test_pipeline_subset():
-    @lambda_solid(output=OutputDefinition())
+    @lambda_solid(output=OutputDefinition(Any))
     def return_one():
         return 1
 
-    @lambda_solid(inputs=[InputDefinition('num')], output=OutputDefinition())
+    @lambda_solid(inputs=[InputDefinition('num')], output=OutputDefinition(Any))
     def add_one(num):
         return num + 1
 
@@ -469,12 +470,12 @@ def test_pipeline_wrapping_types():
 def test_pipeline_streaming_iterator():
     events = []
 
-    @lambda_solid(output=OutputDefinition())
+    @lambda_solid(output=OutputDefinition(Any))
     def push_one():
         events.append(1)
         return 1
 
-    @lambda_solid(inputs=[InputDefinition('num')], output=OutputDefinition())
+    @lambda_solid(inputs=[InputDefinition('num')], output=OutputDefinition(Any))
     def add_one(num):
         events.append(num + 1)
         return num + 1

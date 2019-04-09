@@ -14,6 +14,7 @@ from dagster import (
     execute_pipeline,
     lambda_solid,
     solid,
+    Any,
 )
 
 
@@ -26,7 +27,7 @@ from dagster.utils.logging import INFO
 def test_default_context():
     called = {}
 
-    @solid(inputs=[], outputs=[OutputDefinition()])
+    @solid(inputs=[], outputs=[OutputDefinition(Any)])
     def default_context_transform(context):
         called['yes'] = True
         for logger in context.log.loggers:
@@ -56,7 +57,7 @@ def test_run_id():
 
 
 def test_default_context_with_log_level():
-    @solid(inputs=[], outputs=[OutputDefinition()])
+    @solid(inputs=[], outputs=[OutputDefinition(Any)])
     def default_context_transform(context):
         for logger in context.log.loggers:
             assert logger.level == INFO
@@ -74,7 +75,7 @@ def test_default_context_with_log_level():
 
 def test_default_value():
     def _get_config_test_solid(config_key, config_value):
-        @solid(inputs=[], outputs=[OutputDefinition()])
+        @solid(inputs=[], outputs=[OutputDefinition(Any)])
         def config_test(context):
             assert context.resources == {config_key: config_value}
 
@@ -106,7 +107,7 @@ def test_default_value():
 
 
 def test_custom_contexts():
-    @solid(inputs=[], outputs=[OutputDefinition()])
+    @solid(inputs=[], outputs=[OutputDefinition(Any)])
     def custom_context_transform(context):
         assert context.resources == {'field_one': 'value_two'}
 
@@ -139,7 +140,7 @@ def test_custom_contexts():
 def test_yield_context():
     events = []
 
-    @solid(inputs=[], outputs=[OutputDefinition()])
+    @solid(inputs=[], outputs=[OutputDefinition(Any)])
     def custom_context_transform(context):
         assert context.resources == {'field_one': 'value_two'}
         assert context.get_tag('foo') == 'bar'  # pylint: disable=W0212

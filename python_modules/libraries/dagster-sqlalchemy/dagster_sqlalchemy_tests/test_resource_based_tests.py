@@ -14,6 +14,7 @@ from dagster import (
     String,
     check,
     execute_pipeline,
+    Any,
 )
 
 from .math_test_db import in_mem_engine
@@ -77,7 +78,7 @@ def create_sql_statement_solid(name, sql_text, inputs=None):
         name=name,
         transform_fn=_create_sql_alchemy_transform_fn(sql_text),
         inputs=inputs,
-        outputs=[OutputDefinition()],
+        outputs=[OutputDefinition(Any)],
     )
 
 

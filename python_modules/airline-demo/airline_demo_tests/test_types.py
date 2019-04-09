@@ -11,6 +11,7 @@ from dagster import (
     OutputDefinition,
     RunConfig,
     RunStorageMode,
+    Any,
 )
 from dagster.core.execution import execute_pipeline
 from dagster.core.object_store import FileSystemObjectStore, S3ObjectStore
@@ -24,7 +25,7 @@ def test_spark_data_frame_serialization_file_system():
     with open(os.path.join(os.path.dirname(__file__), 'data/test.csv'), 'rb') as fd:
         input_csv_file = fd.read()
 
-    @lambda_solid(output=OutputDefinition())
+    @lambda_solid(output=OutputDefinition(Any))
     def nonce():
         return input_csv_file
 
@@ -61,7 +62,7 @@ def test_spark_data_frame_serialization_s3():
     with open(os.path.join(os.path.dirname(__file__), 'data/test.csv'), 'rb') as fd:
         input_csv_file = fd.read()
 
-    @lambda_solid(output=OutputDefinition())
+    @lambda_solid(output=OutputDefinition(Any))
     def nonce():
         return input_csv_file
 

@@ -9,6 +9,7 @@ from dagster import (
     check,
     execute_pipeline,
     lambda_solid,
+    Any,
 )
 
 from dagster.core.test_utils import single_output_transform
@@ -154,7 +155,7 @@ def _result_for_solid(results, name):
 
 
 def load_num_csv_solid(name):
-    @lambda_solid(name=name, output=OutputDefinition())
+    @lambda_solid(name=name, output=OutputDefinition(Any))
     def _return_num_csv():
         return pd.DataFrame({'num1': [1, 3], 'num2': [2, 4]})
 

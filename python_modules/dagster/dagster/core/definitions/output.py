@@ -20,7 +20,7 @@ class OutputDefinition(object):
     '''
 
     def __init__(
-        self, dagster_type=None, name=None, expectations=None, description=None, is_optional=False
+        self, dagster_type, name=None, expectations=None, description=None, is_optional=False
     ):
         self.name = check_valid_name(check.opt_str_param(name, 'name', DEFAULT_OUTPUT))
 

@@ -8,17 +8,18 @@ from dagster import (
     lambda_solid,
     solid,
     types,
+    Any,
 )
 
 from dagster.core.execution import create_execution_plan, execute_plan
 
 
 def define_two_int_pipeline():
-    @lambda_solid(output=OutputDefinition())
+    @lambda_solid(output=OutputDefinition(Any))
     def return_one():
         return 1
 
-    @lambda_solid(inputs=[InputDefinition('num')], output=OutputDefinition())
+    @lambda_solid(inputs=[InputDefinition('num')], output=OutputDefinition(Any))
     def add_one(num):
         return num + 1
 

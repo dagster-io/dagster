@@ -1,7 +1,7 @@
-from dagster import PipelineDefinition, OutputDefinition, execute_pipeline, solid
+from dagster import PipelineDefinition, OutputDefinition, execute_pipeline, solid, Any
 
 
-@solid(outputs=[OutputDefinition()])
+@solid(outputs=[OutputDefinition(Any)])
 def debug_message(context):
     context.log.debug('A debug message.')
     return 'foo'
