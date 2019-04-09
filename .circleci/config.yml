@@ -266,8 +266,10 @@ jobs:
       - attach_workspace:
           at: /tmp/workspace
 
-      # only block warnings for now
-      - run: pylint -j 0 `cat .pylint_targets` --rcfile=.pylintrc --disable=R,C
+      - run:
+          name: Lint
+          command: |
+            make pylint
 
   dagit-py36: &dagit-template
     docker:
