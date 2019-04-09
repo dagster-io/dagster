@@ -17,6 +17,7 @@ AirflowMacroData = Dict(
 )
 
 
+# pylint: disable=unused-argument
 @resource
 def airflow_time_macro_resource(config_field=Field(AirflowMacroData)):
     pass

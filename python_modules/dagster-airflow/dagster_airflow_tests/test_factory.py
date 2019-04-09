@@ -7,6 +7,7 @@ import uuid
 
 from dagster.utils import script_relative_path
 
+# pylint: disable=unused-import
 from dagster_airflow.test_fixtures import (
     dagster_airflow_docker_operator_pipeline,
     dagster_airflow_python_operator_pipeline,
@@ -26,6 +27,7 @@ class TestExecuteDag(object):
     run_id = str(uuid.uuid4())
     execution_date = datetime.datetime.utcnow()
 
+    # pylint: disable=redefined-outer-name
     def test_execute_dag(self, dagster_airflow_python_operator_pipeline):
         expected_results = {
             'multiply_the_word': '"barbar"',
@@ -47,6 +49,7 @@ class TestExecuteDag(object):
             # This ugly beast is to deal with cross-python-version differences in `valueRepr` --
             # in py2 we'll get 'u"barbar"', in py3 we'll get '"barbar"', etc.
             assert json.loads(
+                # pylint: disable=anomalous-backslash-in-string
                 re.sub(
                     '\{u\'', '{\'', re.sub(' u\'', ' \'', re.sub('^u\'', '\'', result['valueRepr']))
                 ).replace('\'', '"')
@@ -64,6 +67,7 @@ class TestExecuteDagContainerized(object):
     execution_date = datetime.datetime.utcnow()
     image = IMAGE
 
+    # pylint: disable=redefined-outer-name
     def test_execute_dag_containerized(self, dagster_airflow_docker_operator_pipeline):
         expected_results = {
             'multiply_the_word': '"barbar"',
@@ -83,6 +87,7 @@ class TestExecuteDagContainerized(object):
             if result['step']['kind'] == 'INPUT_THUNK':
                 continue
             assert json.loads(
+                # pylint: disable=anomalous-backslash-in-string
                 re.sub(
                     '\{u\'', '{\'', re.sub(' u\'', ' \'', re.sub('^u\'', '\'', result['valueRepr']))
                 ).replace('\'', '"')

@@ -1,5 +1,4 @@
 import datetime
-import json
 
 from yaml import dump
 

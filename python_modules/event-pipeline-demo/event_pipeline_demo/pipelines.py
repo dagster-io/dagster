@@ -16,9 +16,9 @@ from dagster import (
 )
 from dagster.utils import safe_isfile, mkdir_p
 
-from dagster_framework.spark import SparkSolidDefinition
-from dagster_framework.snowflake import SnowflakeSolidDefinition, SnowflakeLoadSolidDefinition
-from dagster_framework.aws import download_from_s3
+from dagster_spark import SparkSolidDefinition
+from dagster_snowflake import SnowflakeSolidDefinition, SnowflakeLoadSolidDefinition
+from dagster_aws import download_from_s3
 
 
 @lambda_solid(inputs=[InputDefinition('gzip_file', String)], output=OutputDefinition(List(String)))

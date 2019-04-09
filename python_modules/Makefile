@@ -13,7 +13,7 @@ black:
 
 
 pylint:
-	cd ../; pylint -j 0 --disable=R,C `cat .pylint_targets` --rcfile=.pylintrc
+	pushd ../; pylint -j 0 --disable=R,C `cat .pylint_targets` --rcfile=.pylintrc; popd
 
 reinstall:
 	pip uninstall dagit
