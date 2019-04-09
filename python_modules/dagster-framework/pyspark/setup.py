@@ -18,7 +18,7 @@ setup(
     author='Elementl',
     license='Apache-2.0',
     description='Package for PySpark Dagster framework components.',
-    url='https://github.com/dagster-io/dagster/tree/master/python_modules/dagster-framework/spark',
+    url='https://github.com/dagster-io/dagster/tree/master/python_modules/dagster-framework/pyspark',
     classifiers=[
         'Programming Language :: Python :: 2.7',
         'Programming Language :: Python :: 3.5',

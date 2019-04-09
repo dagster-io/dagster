@@ -24,10 +24,18 @@ def parseNeighbors(urls):
 
 
 @solid(inputs=[InputDefinition('pagerank_data', Path)], outputs=[OutputDefinition(SparkRDD)])
-def compute_links(context, pagerank_data):
+def parse_pagerank_data(context, pagerank_data):
     lines = context.resources.spark.read.text(pagerank_data).rdd.map(lambda r: r[0])
-    links = lines.map(parseNeighbors).distinct().groupByKey().cache()
-    return links
+    return lines.map(parseNeighbors)
+
+
+@solid(inputs=[InputDefinition('urls', SparkRDD)], outputs=[OutputDefinition(SparkRDD)])
+def compute_links(_context, urls):
+    # lines = context.resources.spark.read.text(pagerank_data).rdd.map(lambda r: r[0])
+    # links = lines.map(parseNeighbors).distinct().groupByKey().cache()
+    # return links
+
+    return urls.distinct().groupByKey().cache()
 
 
 def computeContribs(urls, rank):
@@ -71,8 +79,9 @@ def define_pipeline():
         context_definitions={
             'local': PipelineContextDefinition(resources={'spark': spark_session_resource})
         },
-        solids=[compute_links, calculate_ranks, log_ranks],
+        solids=[parse_pagerank_data, compute_links, calculate_ranks, log_ranks],
         dependencies={
+            'compute_links': {'urls': DependencyDefinition('parse_pagerank_data')},
             'calculate_ranks': {'links': DependencyDefinition('compute_links')},
             'log_ranks': {'ranks': DependencyDefinition('calculate_ranks', 'ranks')},
         },

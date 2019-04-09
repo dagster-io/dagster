@@ -1,3 +1,4 @@
+from functools import partial
 import six
 
 from dagster import check
@@ -239,10 +240,10 @@ def _create_nullable_input_schema(inner_type):
         def schema_type(self):
             return nullable_type
 
-        def construct_from_config_value(self, config_value):
+        def construct_from_config_value(self, context, config_value):
             if config_value is None:
                 return None
-            return inner_type.input_schema.construct_from_config_value(config_value)
+            return inner_type.input_schema.construct_from_config_value(context, config_value)
 
     return _NullableSchema()
 
@@ -282,8 +283,9 @@ def _create_list_input_schema(inner_type):
         def schema_type(self):
             return list_type
 
-        def construct_from_config_value(self, config_value):
-            return list(map(inner_type.input_schema.construct_from_config_value, config_value))
+        def construct_from_config_value(self, context, config_value):
+            convert_item = partial(inner_type.input_schema.construct_from_config_value, context)
+            return list(map(convert_item, config_value))
 
     return _ListSchema()
 

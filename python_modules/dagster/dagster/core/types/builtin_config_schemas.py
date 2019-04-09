@@ -22,7 +22,7 @@ def define_builtin_scalar_input_schema(scalar_name, config_scalar_type):
             type_attributes=ConfigTypeAttributes(is_system_config=True),
         )
     )
-    def _builtin_input_schema(file_type, file_options):
+    def _builtin_input_schema(_context, file_type, file_options):
         if file_type == 'value':
             return file_options
         elif file_type == 'json':

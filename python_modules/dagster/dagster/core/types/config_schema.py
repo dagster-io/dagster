@@ -13,7 +13,7 @@ class InputSchema:
             'Must override schema_type in {klass}'.format(klass=type(self).__name__)
         )
 
-    def construct_from_config_value(self, config_value):
+    def construct_from_config_value(self, _context, config_value):
         return config_value
 
 
@@ -48,7 +48,7 @@ class OutputSchema:
             'Must override schema_type in {klass}'.format(klass=type(self).__name__)
         )
 
-    def materialize_runtime_value(self, _config_value, _runtime_value):
+    def materialize_runtime_value(self, _context, _config_value, _runtime_value):
         check.not_implemented('Must implement')
 
 
@@ -58,8 +58,8 @@ def _create_input_schema(config_type, func):
         def schema_type(self):
             return config_type
 
-        def construct_from_config_value(self, config_value):
-            return func(config_value)
+        def construct_from_config_value(self, context, config_value):
+            return func(context, config_value)
 
     return _InputSchema()
 
@@ -74,9 +74,9 @@ def input_selector_schema(config_cls):
     check.param_invariant(config_type.is_selector, 'config_cls')
 
     def _wrap(func):
-        def _selector(config_value):
+        def _selector(context, config_value):
             selector_key, selector_value = single_item(config_value)
-            return func(selector_key, selector_value)
+            return func(context, selector_key, selector_value)
 
         return _create_input_schema(config_type, _selector)
 
@@ -89,8 +89,8 @@ def _create_output_schema(config_type, func):
         def schema_type(self):
             return config_type
 
-        def materialize_runtime_value(self, config_value, runtime_value):
-            return func(config_value, runtime_value)
+        def materialize_runtime_value(self, context, config_value, runtime_value):
+            return func(context, config_value, runtime_value)
 
     return _OutputSchema()
 
@@ -105,9 +105,9 @@ def output_selector_schema(config_cls):
     check.param_invariant(config_type.is_selector, 'config_cls')
 
     def _wrap(func):
-        def _selector(config_value, runtime_value):
+        def _selector(context, config_value, runtime_value):
             selector_key, selector_value = single_item(config_value)
-            return func(selector_key, selector_value, runtime_value)
+            return func(context, selector_key, selector_value, runtime_value)
 
         return _create_output_schema(config_type, _selector)
 

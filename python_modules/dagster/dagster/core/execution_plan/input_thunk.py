@@ -22,8 +22,10 @@ def _create_input_thunk_execution_step(pipeline_def, solid, input_def, input_spe
 
     check.invariant(input_def.runtime_type.input_schema)
 
-    def _fn(_step_context, _inputs):
-        value = input_def.runtime_type.input_schema.construct_from_config_value(input_spec)
+    def _fn(step_context, _inputs):
+        value = input_def.runtime_type.input_schema.construct_from_config_value(
+            step_context, input_spec
+        )
         yield StepOutputValue(output_name=INPUT_THUNK_OUTPUT, value=value)
 
     return ExecutionStep(
