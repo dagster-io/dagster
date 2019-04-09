@@ -120,7 +120,7 @@ class ObjectStore(six.with_metaclass(ABCMeta)):
                     plural=plural,
                     this=this,
                     has=has,
-                    type_names=', '.join([str(x) for x in composite_overrides])
+                    type_names=', '.join([str(x) for x in composite_overrides]),
                 )
             )
 

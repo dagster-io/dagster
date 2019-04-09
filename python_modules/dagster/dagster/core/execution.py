@@ -70,7 +70,11 @@ from .intermediates_manager import (
 
 from .log import DagsterLog
 
-from .object_store import FileSystemObjectStore, S3ObjectStore, construct_type_storage_plugin_registry
+from .object_store import (
+    FileSystemObjectStore,
+    S3ObjectStore,
+    construct_type_storage_plugin_registry,
+)
 
 from .runs import (
     DagsterRunMeta,
@@ -438,7 +442,8 @@ def construct_intermediates_manager(run_config, environment_config, pipeline_def
     elif environment_config.storage.storage_mode == 'filesystem':
         return ObjectStoreIntermediatesManager(
             FileSystemObjectStore(
-                run_config.run_id, construct_type_storage_plugin_registry(pipeline_def, RunStorageMode.FILESYSTEM)
+                run_config.run_id,
+                construct_type_storage_plugin_registry(pipeline_def, RunStorageMode.FILESYSTEM),
             )
         )
     elif environment_config.storage.storage_mode == 'in_memory':
