@@ -49,31 +49,31 @@ workflows:
       - dagstermill-py27:
           context: coveralls
 
-      - dagster-pandas-py37:
+      - library-dagster-pandas-py37:
           context: coveralls
-      - dagster-pandas-py36:
+      - library-dagster-pandas-py36:
           context: coveralls
-      - dagster-pandas-py35:
+      - library-dagster-pandas-py35:
           context: coveralls
-      - dagster-pandas-py27:
-          context: coveralls
-
-      - dagster-sqlalchemy-py37:
-          context: coveralls
-      - dagster-sqlalchemy-py36:
-          context: coveralls
-      - dagster-sqlalchemy-py35:
-          context: coveralls
-      - dagster-sqlalchemy-py27:
+      - library-dagster-pandas-py27:
           context: coveralls
 
-      - dagster-ge-py37:
+      - library-dagster-sqlalchemy-py37:
           context: coveralls
-      - dagster-ge-py36:
+      - library-dagster-sqlalchemy-py36:
           context: coveralls
-      - dagster-ge-py35:
+      - library-dagster-sqlalchemy-py35:
           context: coveralls
-      - dagster-ge-py27:
+      - library-dagster-sqlalchemy-py27:
+          context: coveralls
+
+      - library-dagster-ge-py37:
+          context: coveralls
+      - library-dagster-ge-py36:
+          context: coveralls
+      - library-dagster-ge-py35:
+          context: coveralls
+      - library-dagster-ge-py27:
           context: coveralls
 
       # see: https://github.com/apache/airflow/pull/3723
@@ -104,31 +104,31 @@ workflows:
       - event-pipeline-demo-py27:
           context: coveralls
 
-      - dagster-framework-aws-py37:
+      - library-dagster-aws-py37:
           context: coveralls
-      - dagster-framework-aws-py36:
+      - library-dagster-aws-py36:
           context: coveralls
-      - dagster-framework-aws-py35:
+      - library-dagster-aws-py35:
           context: coveralls
-      - dagster-framework-aws-py27:
-          context: coveralls
-
-      - dagster-framework-snowflake-py37:
-          context: coveralls
-      - dagster-framework-snowflake-py36:
-          context: coveralls
-      - dagster-framework-snowflake-py35:
-          context: coveralls
-      - dagster-framework-snowflake-py27:
+      - library-dagster-aws-py27:
           context: coveralls
 
-      - dagster-framework-spark-py37:
+      - library-dagster-snowflake-py37:
           context: coveralls
-      - dagster-framework-spark-py36:
+      - library-dagster-snowflake-py36:
           context: coveralls
-      - dagster-framework-spark-py35:
+      - library-dagster-snowflake-py35:
           context: coveralls
-      - dagster-framework-spark-py27:
+      - library-dagster-snowflake-py27:
+          context: coveralls
+
+      - library-dagster-spark-py37:
+          context: coveralls
+      - library-dagster-spark-py36:
+          context: coveralls
+      - library-dagster-spark-py35:
+          context: coveralls
+      - library-dagster-spark-py27:
           context: coveralls
 
       - coverage:
@@ -153,20 +153,20 @@ workflows:
             - dagstermill-py35
             - dagstermill-py27
 
-            - dagster-pandas-py37
-            - dagster-pandas-py36
-            - dagster-pandas-py35
-            - dagster-pandas-py27
+            - library-dagster-pandas-py37
+            - library-dagster-pandas-py36
+            - library-dagster-pandas-py35
+            - library-dagster-pandas-py27
 
-            - dagster-sqlalchemy-py37
-            - dagster-sqlalchemy-py36
-            - dagster-sqlalchemy-py35
-            - dagster-sqlalchemy-py27
+            - library-dagster-sqlalchemy-py37
+            - library-dagster-sqlalchemy-py36
+            - library-dagster-sqlalchemy-py35
+            - library-dagster-sqlalchemy-py27
 
-            - dagster-ge-py37
-            - dagster-ge-py36
-            - dagster-ge-py35
-            - dagster-ge-py27
+            - library-dagster-ge-py37
+            - library-dagster-ge-py36
+            - library-dagster-ge-py35
+            - library-dagster-ge-py27
 
             # https://github.com/apache/airflow/pull/3723
             # - dagster-airflow-py37
@@ -185,20 +185,20 @@ workflows:
             - event-pipeline-demo-py35
             - event-pipeline-demo-py27
 
-            - dagster-framework-aws-py37
-            - dagster-framework-aws-py36
-            - dagster-framework-aws-py35
-            - dagster-framework-aws-py27
+            - library-dagster-aws-py37
+            - library-dagster-aws-py36
+            - library-dagster-aws-py35
+            - library-dagster-aws-py27
 
-            - dagster-framework-snowflake-py37
-            - dagster-framework-snowflake-py36
-            - dagster-framework-snowflake-py35
-            - dagster-framework-snowflake-py27
+            - library-dagster-snowflake-py37
+            - library-dagster-snowflake-py36
+            - library-dagster-snowflake-py35
+            - library-dagster-snowflake-py27
 
-            - dagster-framework-spark-py37
-            - dagster-framework-spark-py36
-            - dagster-framework-spark-py35
-            - dagster-framework-spark-py27
+            - library-dagster-spark-py37
+            - library-dagster-spark-py36
+            - library-dagster-spark-py35
+            - library-dagster-spark-py27
           context: coveralls
   nightly:
     triggers:
@@ -361,7 +361,7 @@ jobs:
           paths:
             - .coverage*
 
-  dagster-pandas-py36: &dagster-pandas-template
+  library-dagster-pandas-py36: &library-dagster-pandas-template
     docker:
       - image: dagster/cci-test:3.6.8
     environment:
@@ -372,18 +372,18 @@ jobs:
       - run:
           name: Run Dagster Tests
           command: |
-            pushd python_modules/dagster-pandas
+            pushd python_modules/libraries/dagster-pandas
             tox -e $TOXENV
             popd
       - run:
           command: |
-            mv python_modules/dagster-pandas/.coverage python_modules/.coverage.dagster-pandas.${CIRCLE_BUILD_NUM}
+            mv python_modules/libraries/dagster-pandas/.coverage python_modules/.coverage.library-dagster-pandas.${CIRCLE_BUILD_NUM}
       - persist_to_workspace:
           root: python_modules/
           paths:
             - .coverage*
 
-  dagster-sqlalchemy-py36: &dagster-sqlalchemy-template
+  library-dagster-sqlalchemy-py36: &library-dagster-sqlalchemy-template
     docker:
       - image: dagster/cci-test:3.6.8
     environment:
@@ -394,18 +394,18 @@ jobs:
       - run:
           name: Run Dagster Tests
           command: |
-            pushd python_modules/dagster-sqlalchemy
+            pushd python_modules/libraries/dagster-sqlalchemy
             tox -e $TOXENV
             popd
       - run:
           command: |
-            mv python_modules/dagster-sqlalchemy/.coverage python_modules/.coverage.dagster-sqlalchemy.${CIRCLE_BUILD_NUM}
+            mv python_modules/libraries/dagster-sqlalchemy/.coverage python_modules/.coverage.library-dagster-sqlalchemy.${CIRCLE_BUILD_NUM}
       - persist_to_workspace:
           root: python_modules/
           paths:
             - .coverage*
 
-  dagster-ge-py36: &dagster-ge-template
+  library-dagster-ge-py36: &library-dagster-ge-template
     docker:
       - image: dagster/cci-test:3.6.8
     environment:
@@ -416,12 +416,12 @@ jobs:
       - run:
           name: Run Dagster Tests
           command: |
-            pushd python_modules/dagster-ge
+            pushd python_modules/libraries/dagster-ge
             tox -e $TOXENV
             popd
       - run:
           command: |
-            mv python_modules/dagster-ge/.coverage python_modules/.coverage.dagster-ge.${CIRCLE_BUILD_NUM}
+            mv python_modules/libraries/dagster-ge/.coverage python_modules/.coverage.dagster-ge.${CIRCLE_BUILD_NUM}
       - persist_to_workspace:
           root: python_modules/
           paths:
@@ -552,64 +552,64 @@ jobs:
     environment:
       TOXENV: py27
 
-  dagster-pandas-py37:
-    <<: *dagster-pandas-template
+  library-dagster-pandas-py37:
+    <<: *library-dagster-pandas-template
     docker:
       - image: dagster/cci-test:3.7.3
     environment:
       TOXENV: py37
 
-  dagster-pandas-py35:
-    <<: *dagster-pandas-template
+  library-dagster-pandas-py35:
+    <<: *library-dagster-pandas-template
     docker:
       - image: dagster/cci-test:3.5.7
     environment:
       TOXENV: py35
 
-  dagster-pandas-py27:
-    <<: *dagster-pandas-template
+  library-dagster-pandas-py27:
+    <<: *library-dagster-pandas-template
     docker:
       - image: dagster/cci-test:2.7.16
     environment:
       TOXENV: py27
 
-  dagster-sqlalchemy-py37:
-    <<: *dagster-sqlalchemy-template
+  library-dagster-sqlalchemy-py37:
+    <<: *library-dagster-sqlalchemy-template
     docker:
       - image: dagster/cci-test:3.7.3
     environment:
       TOXENV: py37
 
-  dagster-sqlalchemy-py35:
-    <<: *dagster-sqlalchemy-template
+  library-dagster-sqlalchemy-py35:
+    <<: *library-dagster-sqlalchemy-template
     docker:
       - image: dagster/cci-test:3.5.7
     environment:
       TOXENV: py35
 
-  dagster-sqlalchemy-py27:
-    <<: *dagster-sqlalchemy-template
+  library-dagster-sqlalchemy-py27:
+    <<: *library-dagster-sqlalchemy-template
     docker:
       - image: dagster/cci-test:2.7.16
     environment:
       TOXENV: py27
 
-  dagster-ge-py37:
-    <<: *dagster-ge-template
+  library-dagster-ge-py37:
+    <<: *library-dagster-ge-template
     docker:
       - image: dagster/cci-test:3.7.3
     environment:
       TOXENV: py37
 
-  dagster-ge-py35:
-    <<: *dagster-ge-template
+  library-dagster-ge-py35:
+    <<: *library-dagster-ge-template
     docker:
       - image: dagster/cci-test:3.5.7
     environment:
       TOXENV: py35
 
-  dagster-ge-py27:
-    <<: *dagster-ge-template
+  library-dagster-ge-py27:
+    <<: *library-dagster-ge-template
     docker:
       - image: dagster/cci-test:2.7.16
     environment:
@@ -1013,7 +1013,7 @@ jobs:
       TOXENV: py27
       SLUGIFY_USES_TEXT_UNIDECODE: "yes"
 
-  dagster-framework-aws-py36: &dagster-framework-aws-template
+  library-dagster-aws-py36: &library-dagster-aws-template
     docker:
       - image: dagster/cci-test:3.6.8
     environment:
@@ -1026,41 +1026,41 @@ jobs:
       - run:
           name: Run Dagster Tests
           command: |
-            pushd python_modules/dagster-framework/aws
+            pushd python_modules/libraries/dagster-aws
             tox -e $TOXENV
             popd
 
       - run:
           command: |
-            mv python_modules/dagster-framework/aws/.coverage python_modules/.coverage.dagster-framework-aws.${CIRCLE_BUILD_NUM}
+            mv python_modules/libraries/dagster-aws/.coverage python_modules/.coverage.library-dagster-aws.${CIRCLE_BUILD_NUM}
 
       - persist_to_workspace:
           root: python_modules/
           paths:
             - .coverage*
 
-  dagster-framework-aws-py37:
-    <<: *dagster-framework-aws-template
+  library-dagster-aws-py37:
+    <<: *library-dagster-aws-template
     docker:
       - image: dagster/cci-test:3.7.3
     environment:
       TOXENV: py37
 
-  dagster-framework-aws-py35:
-    <<: *dagster-framework-aws-template
+  library-dagster-aws-py35:
+    <<: *library-dagster-aws-template
     docker:
       - image: dagster/cci-test:3.5.7
     environment:
       TOXENV: py35
 
-  dagster-framework-aws-py27:
-    <<: *dagster-framework-aws-template
+  library-dagster-aws-py27:
+    <<: *library-dagster-aws-template
     docker:
       - image: dagster/cci-test:2.7.16
     environment:
       TOXENV: py27
 
-  dagster-framework-snowflake-py36: &dagster-framework-snowflake-template
+  library-dagster-snowflake-py36: &library-dagster-snowflake-template
     docker:
       - image: dagster/cci-test:3.6.8
     environment:
@@ -1073,41 +1073,41 @@ jobs:
       - run:
           name: Run Dagster Tests
           command: |
-            pushd python_modules/dagster-framework/snowflake
+            pushd python_modules/libraries/dagster-snowflake
             tox -e $TOXENV
             popd
 
       - run:
           command: |
-            mv python_modules/dagster-framework/snowflake/.coverage python_modules/.coverage.dagster-framework-snowflake.${CIRCLE_BUILD_NUM}
+            mv python_modules/libraries/dagster-snowflake/.coverage python_modules/.coverage.library-dagster-snowflake.${CIRCLE_BUILD_NUM}
 
       - persist_to_workspace:
           root: python_modules/
           paths:
             - .coverage*
 
-  dagster-framework-snowflake-py37:
-    <<: *dagster-framework-snowflake-template
+  library-dagster-snowflake-py37:
+    <<: *library-dagster-snowflake-template
     docker:
       - image: dagster/cci-test:3.7.3
     environment:
       TOXENV: py37
 
-  dagster-framework-snowflake-py35:
-    <<: *dagster-framework-snowflake-template
+  library-dagster-snowflake-py35:
+    <<: *library-dagster-snowflake-template
     docker:
       - image: dagster/cci-test:3.5.7
     environment:
       TOXENV: py35
 
-  dagster-framework-snowflake-py27:
-    <<: *dagster-framework-snowflake-template
+  library-dagster-snowflake-py27:
+    <<: *library-dagster-snowflake-template
     docker:
       - image: dagster/cci-test:2.7.16
     environment:
       TOXENV: py27
 
-  dagster-framework-spark-py36: &dagster-framework-spark-template
+  library-dagster-spark-py36: &library-dagster-spark-template
     docker:
       - image: dagster/cci-test:3.6.8
     environment:
@@ -1119,35 +1119,35 @@ jobs:
       - run:
           name: Run Dagster Tests
           command: |
-            pushd python_modules/dagster-framework/spark
+            pushd python_modules/libraries/dagster-spark
             tox -e $TOXENV
             popd
 
       - run:
           command: |
-            mv python_modules/dagster-framework/spark/.coverage python_modules/.coverage.dagster-framework-spark.${CIRCLE_BUILD_NUM}
+            mv python_modules/libraries/dagster-spark/.coverage python_modules/.coverage.library-dagster-spark.${CIRCLE_BUILD_NUM}
 
       - persist_to_workspace:
           root: python_modules/
           paths:
             - .coverage*
 
-  dagster-framework-spark-py37:
-    <<: *dagster-framework-spark-template
+  library-dagster-spark-py37:
+    <<: *library-dagster-spark-template
     docker:
       - image: dagster/cci-test:3.7.3
     environment:
       TOXENV: py37
 
-  dagster-framework-spark-py35:
-    <<: *dagster-framework-spark-template
+  library-dagster-spark-py35:
+    <<: *library-dagster-spark-template
     docker:
       - image: dagster/cci-test:3.5.7
     environment:
       TOXENV: py35
 
-  dagster-framework-spark-py27:
-    <<: *dagster-framework-spark-template
+  library-dagster-spark-py27:
+    <<: *library-dagster-spark-template
     docker:
       - image: dagster/cci-test:2.7.16
     environment:
