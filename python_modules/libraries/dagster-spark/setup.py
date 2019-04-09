@@ -14,7 +14,7 @@ def get_version(name):
     with open("dagster_spark/version.py") as fp:
         exec(fp.read(), version)  # pylint: disable=W0122
 
-    if name == 'dagster-aws':
+    if name == 'dagster-spark':
         return version['__version__']
     elif name == 'dagster-spark-nightly':
         return version['__nightly__']
