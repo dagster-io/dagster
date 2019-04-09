@@ -713,17 +713,18 @@ def _execute_pipeline_iterator(context_or_failure_event):
 
     pipeline_success = True
 
-    for event in invoke_executor_on_plan(
-        pipeline_context, execution_plan, pipeline_context.run_config.step_keys_to_execute
-    ):
-        if event.is_step_failure:
-            pipeline_success = False
-        yield event
-
-    if pipeline_success:
-        yield DagsterEvent.pipeline_success(pipeline_context)
-    else:
-        yield DagsterEvent.pipeline_failure(pipeline_context)
+    try:
+        for event in invoke_executor_on_plan(
+            pipeline_context, execution_plan, pipeline_context.run_config.step_keys_to_execute
+        ):
+            if event.is_step_failure:
+                pipeline_success = False
+            yield event
+    finally:
+        if pipeline_success:
+            yield DagsterEvent.pipeline_success(pipeline_context)
+        else:
+            yield DagsterEvent.pipeline_failure(pipeline_context)
 
 
 def execute_pipeline_iterator(pipeline, environment_dict=None, run_config=None):

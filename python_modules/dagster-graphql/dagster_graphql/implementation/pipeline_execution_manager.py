@@ -4,6 +4,7 @@ import copy
 import os
 import sys
 import time
+import atexit
 
 import gevent
 import six
@@ -99,7 +100,6 @@ class SynchronousExecutionManager(PipelineExecutionManager):
     def execute_pipeline(self, repository_container, pipeline, pipeline_run, throw_on_user_error):
         check.inst_param(pipeline, 'pipeline', PipelineDefinition)
         try:
-
             return execute_pipeline(
                 pipeline,
                 pipeline_run.config,
@@ -151,11 +151,16 @@ class MultiprocessingExecutionManager(PipelineExecutionManager):
         self._processing_semaphore = gevent.lock.Semaphore(0)
 
         gevent.spawn(self._start_polling)
+        atexit.register(self._cleanup)
 
     def _start_polling(self):
         while True:
             self._poll()
             gevent.sleep(0.1)
+
+    def _cleanup(self):
+        # Wait for child processes to finish and communicate on exit
+        self.join()
 
     def _poll(self):
         with self._processes_lock:

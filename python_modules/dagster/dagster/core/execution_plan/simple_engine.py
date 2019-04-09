@@ -113,8 +113,6 @@ def start_inprocess_executor(
                 check.inst(step_event, DagsterEvent)
                 if step_event.is_step_failure:
                     failed_or_skipped_steps.add(step.key)
-                    if pipeline_context.executor_config.throw_on_user_error:
-                        step_event.reraise_user_error()
 
                 yield step_event
 
@@ -168,9 +166,6 @@ def execute_step_in_memory(step_context, inputs, intermediates_manager):
                 )
             yield step_event
     except DagsterError as dagster_error:
-        if step_context.executor_config.throw_on_user_error:
-            raise dagster_error
-
         user_facing_exc_info = (
             # pylint does not know original_exc_info exists is is_user_code_error is true
             # pylint: disable=no-member
@@ -184,7 +179,17 @@ def execute_step_in_memory(step_context, inputs, intermediates_manager):
         yield DagsterEvent.step_failure_event(
             step_context=step_context, step_failure_data=StepFailureData(error=error_info)
         )
+
+        if step_context.executor_config.throw_on_user_error:
+            raise dagster_error
+
         return
+    except:
+        error_info = serializable_error_info_from_exc_info(sys.exc_info())
+        yield DagsterEvent.step_failure_event(
+            step_context=step_context, step_failure_data=StepFailureData(error=error_info)
+        )
+        raise
 
 
 def _error_check_step_outputs(step, step_output_iter):

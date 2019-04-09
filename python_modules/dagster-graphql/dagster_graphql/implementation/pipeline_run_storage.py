@@ -7,6 +7,7 @@ from enum import Enum
 import gevent
 import gevent.lock
 import pyrsistent
+import atexit
 
 from rx import Observable
 
@@ -212,6 +213,7 @@ class PipelineRunObservableSubscribe(object):
         self.lock = gevent.lock.Semaphore()
         self.flush_scheduled = False
         self.flush_after = 0.75
+        atexit.register(self._cleanup)
 
     def __call__(self, observer):
         self.observer = observer
@@ -223,6 +225,12 @@ class PipelineRunObservableSubscribe(object):
     def handle_new_event(self, new_event):
         with self.lock:
             self.log_sequence = self.log_sequence.append(new_event)
+
+            if self.flush_after is None:
+                self.observer.on_next(self.log_sequence)
+                self.log_sequence = LogSequence()
+                return
+
             if not self.flush_scheduled:
                 self.flush_scheduled = True
                 gevent.spawn(self._flush_logs_after_delay)
@@ -233,6 +241,11 @@ class PipelineRunObservableSubscribe(object):
             self.observer.on_next(self.log_sequence)
             self.log_sequence = LogSequence()
             self.flush_scheduled = False
+
+    def _cleanup(self):
+        # Make incoming logs flush immediately to ensure we communciate failures
+        # to client on unexpected exit
+        self.flush_after = None
 
 
 class LogSequence(pyrsistent.CheckedPVector):
