@@ -115,6 +115,9 @@ def notebook_view():
 def open_file_view():
     path = request.args.get('path')
 
+    if path is None:
+        return 'Must provide path to a file.', 400
+
     # Jupyter doesn't register as a handler for ipynb files, so calling `open` won't
     # work. Instead, spawn a Jupyter notebook process.
     if path.endswith(".ipynb"):
