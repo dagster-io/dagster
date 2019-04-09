@@ -85,6 +85,15 @@ def pandas_hello_world_solids_config():
     }
 
 
+def pandas_hello_world_solids_config_fs_storage():
+    return {
+        'solids': {
+            'sum_solid': {'inputs': {'num': {'csv': {'path': script_relative_path('../num.csv')}}}}
+        },
+        'storage': {'filesystem': {}},
+    }
+
+
 def define_repository():
     return RepositoryDefinition(
         name='test',

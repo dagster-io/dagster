@@ -8,14 +8,7 @@ import time
 import gevent
 import six
 
-from dagster import (
-    InProcessExecutorConfig,
-    PipelineDefinition,
-    RunConfig,
-    RunStorageMode,
-    check,
-    execute_pipeline,
-)
+from dagster import InProcessExecutorConfig, PipelineDefinition, RunConfig, check, execute_pipeline
 from dagster.cli.dynamic_loader import RepositoryContainer
 from dagster.core.events.logging import DagsterEventRecord
 from dagster.core.events import DagsterEvent, DagsterEventType, PipelineProcessStartedData
@@ -102,13 +95,6 @@ def build_process_started_event(run_id, pipeline_name, process_id):
     )
 
 
-DAGIT_DEFAULT_STORAGE_MODE = RunStorageMode.FILESYSTEM
-
-
-def get_storage_mode(environment_dict):
-    return None if 'storage' in environment_dict else DAGIT_DEFAULT_STORAGE_MODE
-
-
 class SynchronousExecutionManager(PipelineExecutionManager):
     def execute_pipeline(self, repository_container, pipeline, pipeline_run, throw_on_user_error):
         check.inst_param(pipeline, 'pipeline', PipelineDefinition)
@@ -125,7 +111,6 @@ class SynchronousExecutionManager(PipelineExecutionManager):
                     ),
                     reexecution_config=pipeline_run.reexecution_config,
                     step_keys_to_execute=pipeline_run.step_keys_to_execute,
-                    storage_mode=get_storage_mode(pipeline_run.config),
                 ),
             )
         except:  # pylint: disable=W0702
@@ -300,7 +285,6 @@ def execute_pipeline_through_queue(
         executor_config=InProcessExecutorConfig(throw_on_user_error=False),
         reexecution_config=reexecution_config,
         step_keys_to_execute=step_keys_to_execute,
-        storage_mode=get_storage_mode(environment_dict),
     )
 
     repository_container = RepositoryContainer(repository_info)

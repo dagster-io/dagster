@@ -6,12 +6,11 @@ import yaml
 
 import click
 
-from dagster import PipelineDefinition, check, RunConfig
+from dagster import PipelineDefinition, check
 
 from dagster.core.definitions import Solid
 from dagster.core.execution import execute_pipeline
 from dagster.core.execution_plan.create import solids_in_topological_order
-from dagster.core.runs import RunStorageMode
 from dagster.graphviz import build_graphviz_graph
 from dagster.utils import load_yaml_from_glob_list
 from dagster.utils.indenting_printer import IndentingPrinter
@@ -311,15 +310,7 @@ def do_execute_command(pipeline, env_file_list, printer):
 
     environment_dict = load_yaml_from_glob_list(env_file_list) if env_file_list else {}
 
-    # Here we detect if the user has specified a storage element in the environment
-    # dictionary. If they have not, we default to using the filesystem in this context.
-    run_storage_mode = None if 'storage' in environment_dict else RunStorageMode.FILESYSTEM
-
-    return execute_pipeline(
-        pipeline,
-        environment_dict=environment_dict,
-        run_config=RunConfig(storage_mode=run_storage_mode),
-    )
+    return execute_pipeline(pipeline, environment_dict=environment_dict)
 
 
 @click.command(

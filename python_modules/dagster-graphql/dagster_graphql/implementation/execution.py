@@ -10,7 +10,6 @@ from dagster import RunConfig, check
 from dagster.core.events import DagsterEventType, DagsterEvent
 from dagster.core.execution import ExecutionSelector, create_execution_plan, execute_plan
 from dagster.core.execution_context import ReexecutionConfig, make_new_run_id
-from dagster.core.runs import RunStorageMode
 
 
 from dagster_graphql.schema.execution import DauphinExecutionStep
@@ -188,10 +187,6 @@ def _execute_plan_chain_actual_execute_or_error(
     graphql_execution_metadata = execute_plan_args.execution_metadata
     run_id = graphql_execution_metadata.get('runId')
     tags = tags_from_graphql_execution_metadata(graphql_execution_metadata)
-    run_storage_mode = (
-        None if 'storage' in execute_plan_args.environment_dict else RunStorageMode.FILESYSTEM
-    )
-
     execution_plan = create_execution_plan(
         pipeline=dauphin_pipeline.get_dagster_pipeline(),
         environment_dict=execute_plan_args.environment_dict,
@@ -204,7 +199,7 @@ def _execute_plan_chain_actual_execute_or_error(
                     invalid_step_key=step_key
                 )
 
-    run_config = RunConfig(run_id=run_id, tags=tags, storage_mode=run_storage_mode)
+    run_config = RunConfig(run_id=run_id, tags=tags)
 
     step_events = list(
         execute_plan(
