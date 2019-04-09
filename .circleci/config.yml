@@ -255,9 +255,9 @@ jobs:
             sudo pip install -e python_modules/libraries/dagster-aws -qqq
             sudo pip install -e python_modules/libraries/dagster-ge -qqq
             sudo pip install -e python_modules/libraries/dagster-pandas -qqq
-            sudo pip install -e python_modules/libraries/dagster-pyspark -qqq
             sudo pip install -e python_modules/libraries/dagster-snowflake -qqq
             sudo pip install -e python_modules/libraries/dagster-spark -qqq
+            sudo pip install -e python_modules/libraries/dagster-pyspark -qqq
             sudo pip install -e python_modules/libraries/dagster-sqlalchemy -qqq
             sudo pip install -e python_modules/airline-demo -qqq
             sudo pip install -e python_modules/automation -qqq
