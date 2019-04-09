@@ -84,50 +84,53 @@ class ObjectStore(six.with_metaclass(ABCMeta)):
     def rm_object(self, context, paths):
         pass
 
+    def _check_for_unsupported_composite_overrides(self, runtime_type):
+        composite_overrides = {
+            t.name in self.TYPE_STORAGE_PLUGIN_REGISTRY
+            for t in runtime_type.inner_types
+            if t.name in self.TYPE_STORAGE_PLUGIN_REGISTRY
+        }
+        if composite_overrides:
+            outer_type = 'composite type'
+            if runtime_type.is_list:
+                if runtime_type.is_nullable:
+                    outer_type = 'Nullable List'
+                else:
+                    outer_type = 'List'
+            elif runtime_type.is_nullable:
+                outer_type = 'Nullable'
+
+            if len(composite_overrides) > 1:
+                plural = 's'
+                this = 'These'
+                has = 'have'
+            else:
+                plural = ''
+                this = 'This'
+                has = 'has'
+
+            check.not_implemented(
+                'You are attempting to store a {outer_type} containing type{plural} '
+                '{type_names} in a object store. {this} type{plural} {has} specialized storage '
+                'behavior (configured in the TYPE_STORAGE_PLUGIN_REGISTRY). We do not '
+                'currently support storing Nullables or Lists of types with customized '
+                'storage. See https://github.com/dagster-io/dagster/issues/1190 for '
+                'details.'.format(
+                    outer_type=outer_type,
+                    plural=plural,
+                    this=this,
+                    has=has,
+                    type_names=', '.join([str(x) for x in composite_overrides])
+                )
+            )
+
     def set_value(self, obj, context, runtime_type, paths):
         if runtime_type.name is not None and runtime_type.name in self.TYPE_STORAGE_PLUGIN_REGISTRY:
             return self.TYPE_STORAGE_PLUGIN_REGISTRY[runtime_type.name].set_object(
                 self, obj, context, runtime_type, paths
             )
         elif runtime_type.name is None:
-            composite_overrides = {
-                t.name in self.TYPE_STORAGE_PLUGIN_REGISTRY
-                for t in runtime_type.inner_types
-                if t.name in self.TYPE_STORAGE_PLUGIN_REGISTRY
-            }
-            if composite_overrides:
-                outer_type = 'composite type'
-                if runtime_type.is_list:
-                    if runtime_type.is_nullable:
-                        outer_type = 'Nullable List'
-                    else:
-                        outer_type = 'List'
-                elif runtime_type.is_nullable:
-                    outer_type = 'Nullable'
-
-                if len(composite_overrides) > 1:
-                    plural = 's'
-                    this = 'These'
-                    has = 'have'
-                else:
-                    plural = ''
-                    this = 'This'
-                    has = 'has'
-
-                check.not_implemented(
-                    'You are attempting to store a {outer_type} containing type{plural} '
-                    '{type_names} in a object store. {this} type{plural} {has} specialized storage '
-                    'behavior (configured in the TYPE_STORAGE_PLUGIN_REGISTRY). We do not '
-                    'currently support storing Nullables or Lists of types with customized '
-                    'storage. See https://github.com/dagster-io/dagster/issues/1190 for '
-                    'details.'.format(
-                        outer_type=outer_type,
-                        plural=plural,
-                        this=this,
-                        has=has,
-                        type_names=', '.join([str(x) for x in composite_overrides])
-                    )
-                )
+            self._check_for_unsupported_composite_overrides(runtime_type)
         return self.set_object(obj, context, runtime_type, paths)
 
     def get_value(self, context, runtime_type, paths):
@@ -136,18 +139,7 @@ class ObjectStore(six.with_metaclass(ABCMeta)):
                 self, context, runtime_type, paths
             )
         elif runtime_type.name is None:
-            composite_overrides = {
-                t.name in self.TYPE_STORAGE_PLUGIN_REGISTRY
-                for t in runtime_type.inner_types
-                if t.name in self.TYPE_STORAGE_PLUGIN_REGISTRY
-            }
-            if composite_overrides:
-                check.not_implemented(
-                    'Don\'t know how to store a composite object with inner type storage '
-                    'overrides. Found inner types with overrides: {composite_overrides}.'.format(
-                        composite_overrides=', '.join([str(x) for x in composite_overrides])
-                    )
-                )
+            self._check_for_unsupported_composite_overrides(runtime_type)
         return self.get_object(context, runtime_type, paths)
 
 
