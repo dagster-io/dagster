@@ -9,8 +9,6 @@ from dagster_framework.spark.configs_spark import spark_config
 
 from dagster_framework.spark.utils import flatten_dict
 
-# TODO: actually make this typecheck
-# SparkRDD = define_any_type('SparkRDD')
 SparkRDD = as_dagster_type(RDD, 'SparkRDD')
 
 
