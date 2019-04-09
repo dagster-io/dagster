@@ -26,9 +26,14 @@ def parseNeighbors(urls):
     return parts[0], parts[1]
 
 
-@solid(inputs=[InputDefinition('pagerank_data', Path)], outputs=[OutputDefinition(SparkRDD)])
+@solid(
+    inputs=[InputDefinition('pagerank_data', Path)],
+    outputs=[OutputDefinition(SparkRDD)],
+)
 def parse_pagerank_data_step_four(context, pagerank_data):
-    lines = context.resources.spark.read.text(pagerank_data).rdd.map(lambda r: r[0])
+    lines = context.resources.spark.read.text(pagerank_data).rdd.map(
+        lambda r: r[0]
+    )
     return lines.map(parseNeighbors)
 
 
@@ -45,11 +50,15 @@ def rest_of_pipeline(context, urls):
     for iteration in range(iterations):
         # Calculates URL contributions to the rank of other URLs.
         contribs = links.join(ranks).flatMap(
-            lambda url_urls_rank: computeContribs(url_urls_rank[1][0], url_urls_rank[1][1])
+            lambda url_urls_rank: computeContribs(
+                url_urls_rank[1][0], url_urls_rank[1][1]
+            )
         )
 
         # Re-calculates URL ranks based on neighbor contributions.
-        ranks = contribs.reduceByKey(add).mapValues(lambda rank: rank * 0.85 + 0.15)
+        ranks = contribs.reduceByKey(add).mapValues(
+            lambda rank: rank * 0.85 + 0.15
+        )
 
     # Collects all URL ranks and dump them to console.
     for (link, rank) in ranks.collect():
@@ -61,9 +70,13 @@ def define_pyspark_pagerank_step_four():
         name='pyspark_pagerank_step_four',
         solids=[parse_pagerank_data_step_four, rest_of_pipeline],
         dependencies={
-            'rest_of_pipeline': {'urls': DependencyDefinition('parse_pagerank_data_step_four')}
+            'rest_of_pipeline': {
+                'urls': DependencyDefinition('parse_pagerank_data_step_four')
+            }
         },
         context_definitions={
-            'local': PipelineContextDefinition(resources={'spark': spark_session_resource})
+            'local': PipelineContextDefinition(
+                resources={'spark': spark_session_resource}
+            )
         },
     )

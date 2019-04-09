@@ -6,7 +6,8 @@ from dagster.utils import script_relative_path
 
 # This is needed to find production query in all cases
 sys.path.insert(0, os.path.abspath(script_relative_path('.')))
-# pylint: disable=wrong-import-position
+# above confuses pylint
+# pylint: disable=wrong-import-position, import-error
 from pyspark_pagerank_pipeline import define_pipeline
 from steps.step_one import define_pyspark_pagerank_step_one
 from steps.step_two import define_pyspark_pagerank_step_two

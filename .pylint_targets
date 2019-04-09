@@ -7,3 +7,4 @@ python_modules/dagster-pandas/dagster_pandas
 python_modules/dagster-sqlalchemy/dagster_sqlalchemy
 python_modules/dagster-graphql/dagster_graphql
 examples/toys
+examples/pyspark_pagerank
