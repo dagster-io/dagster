@@ -1,3 +1,4 @@
+import argparse
 import sys
 
 from setuptools import find_packages, setup
@@ -14,8 +15,16 @@ def get_version(name):
     with open("dagster_airflow/version.py") as fp:
         exec(fp.read(), version)  # pylint: disable=W0122
 
+    if name == 'dagster-airflow':
+        return version['__version__']
+    elif name == 'dagster-airflow-nightly':
+        return version['__nightly__']
+    else:
+        raise Exception('Shouldn\'t be here: bad package name {name}'.format(name=name))
 
-# TODO: setup should take care of moving the plugin
+
+parser = argparse.ArgumentParser()
+parser.add_argument('--nightly', action='store_true')
 
 
 def _do_setup(name='dagster-airflow'):
@@ -54,4 +63,9 @@ def _do_setup(name='dagster-airflow'):
 
 
 if __name__ == '__main__':
-    _do_setup('dagster-airflow')
+    parsed, unparsed = parser.parse_known_args()
+    sys.argv = [sys.argv[0]] + unparsed
+    if parsed.nightly:
+        _do_setup('dagster-airflow-nightly')
+    else:
+        _do_setup('dagster-airflow')
