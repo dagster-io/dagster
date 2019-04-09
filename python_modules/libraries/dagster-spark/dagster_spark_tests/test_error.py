@@ -6,7 +6,7 @@ import pytest
 
 from dagster import PipelineDefinition, execute_pipeline
 from dagster.utils import script_relative_path
-from dagster_framework.spark import SparkSolidDefinition, SparkSolidError
+from dagster_spark import SparkSolidDefinition, SparkSolidError
 
 CONFIG_FILE = '''
 solids:

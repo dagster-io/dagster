@@ -1,4 +1,4 @@
-from dagster_framework.aws.version import __version__
+from dagster_aws.version import __version__
 
 
 def test_version():

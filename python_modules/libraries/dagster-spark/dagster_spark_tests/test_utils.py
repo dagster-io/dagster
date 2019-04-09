@@ -1,4 +1,4 @@
-from dagster_framework.spark.utils import parse_spark_config
+from dagster_spark.utils import parse_spark_config
 
 
 def test_parse_spark_config():

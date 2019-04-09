@@ -1,4 +1,4 @@
-from dagster_framework.snowflake.version import __version__
+from dagster_snowflake.version import __version__
 
 
 def test_version():
