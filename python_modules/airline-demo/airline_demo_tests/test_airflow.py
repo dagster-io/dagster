@@ -4,6 +4,7 @@ import os
 from dagster.utils import script_relative_path
 
 try:
+    # pylint: disable=unused-import
     from dagster_airflow.test_fixtures import dagster_airflow_python_operator_pipeline
 except ImportError:
     pass

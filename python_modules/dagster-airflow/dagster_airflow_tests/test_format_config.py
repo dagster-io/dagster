@@ -2,8 +2,6 @@ import pytest
 
 from dagster import check
 
-from dagster.utils import script_relative_path
-
 from dagster_airflow.factory import format_config_for_graphql
 
 

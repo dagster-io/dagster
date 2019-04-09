@@ -1,5 +1,4 @@
 import datetime
-import json
 import uuid
 
 from collections import namedtuple

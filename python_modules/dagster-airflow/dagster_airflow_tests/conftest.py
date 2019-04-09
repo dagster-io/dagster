@@ -171,11 +171,6 @@ def airflow_test(docker_image, dags_path, plugins_path, host_tmp_dir):
 
 
 @pytest.fixture(scope='module')
-def pipeline():
-    yield define_demo_execution_pipeline()
-
-
-@pytest.fixture(scope='module')
 def env_config(s3_bucket):
     config = load_yaml_from_path(script_relative_path('test_project/env.yml'))
     config['storage'] = {'s3': {'s3_bucket': s3_bucket}}

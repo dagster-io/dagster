@@ -9,11 +9,11 @@ else:
     import builtins
 
 version = {}
-with open("dagster_framework/pyspark/version.py") as fp:
+with open("dagster_pyspark/version.py") as fp:
     exec(fp.read(), version)  # pylint: disable=W0122
 
 setup(
-    name='dagster_framework_pyspark',
+    name='dagster_pyspark',
     version=version['__version__'],
     author='Elementl',
     license='Apache-2.0',
@@ -27,6 +27,6 @@ setup(
         'Operating System :: OS Independent',
     ],
     packages=find_packages(exclude=['test']),
-    install_requires=['dagster', 'dagster_framework_spark', 'pyspark'],
+    install_requires=['dagster', 'dagster_spark', 'pyspark'],
     zip_safe=False,
 )

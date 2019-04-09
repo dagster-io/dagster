@@ -1,11 +1,8 @@
-import sys
-
 import pandas as pd
 import pytest
 
 from dagster import execute_pipeline
 from dagster.utils import script_relative_path
-from dagstermill import DagstermillError
 
 from dagster_pandas.examples import (
     define_pandas_papermill_pandas_hello_world_pipeline,
