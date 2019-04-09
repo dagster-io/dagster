@@ -223,7 +223,7 @@ class SparkConfigNode:
                 with printer.with_indent():
                     printer.line('fields={')
                     with printer.with_indent():
-                        for i, (k, v) in enumerate(retdict.items()):
+                        for (k, v) in retdict.items():
                             with printer.with_indent():
                                 printer.append("'{}': ".format(k))
                             v.print(printer)

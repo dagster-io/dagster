@@ -65,6 +65,7 @@ class EventGenerator:
         return self
 
     def __next__(self):
+        # pylint: disable=no-member
         return json.dumps(
             {
                 'environment': 'production',

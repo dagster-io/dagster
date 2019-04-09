@@ -7,7 +7,7 @@ import uuid
 
 from dagster.utils import script_relative_path
 
-# pylint: unused-import
+# pylint: disable=unused-import
 from dagster_airflow.test_fixtures import (
     dagster_airflow_docker_operator_pipeline,
     dagster_airflow_python_operator_pipeline,
