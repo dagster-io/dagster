@@ -27104,7 +27104,7 @@ case of a selector, the config_value dictionary has only 1 (key, value) pair.</p
         <span class="p">},</span>
     <span class="p">)</span>
 <span class="p">)</span>
-<span class="k">def</span> <span class="nf">dataframe_input_schema</span><span class="p">(</span><span class="n">file_type</span><span class="p">,</span> <span class="n">file_options</span><span class="p">):</span>
+<span class="k">def</span> <span class="nf">dataframe_input_schema</span><span class="p">(</span><span class="n">_context</span><span class="p">,</span> <span class="n">file_type</span><span class="p">,</span> <span class="n">file_options</span><span class="p">):</span>
     <span class="n">check</span><span class="o">.</span><span class="n">str_param</span><span class="p">(</span><span class="n">file_type</span><span class="p">,</span> <span class="s1">&#39;file_type&#39;</span><span class="p">)</span>
     <span class="n">check</span><span class="o">.</span><span class="n">dict_param</span><span class="p">(</span><span class="n">file_options</span><span class="p">,</span> <span class="s1">&#39;file_options&#39;</span><span class="p">)</span>
 
@@ -27156,7 +27156,7 @@ should produce some materialization that outlives the computation.</p>
         <span class="p">},</span>
     <span class="p">)</span>
 <span class="p">)</span>
-<span class="k">def</span> <span class="nf">dataframe_output_schema</span><span class="p">(</span><span class="n">file_type</span><span class="p">,</span> <span class="n">file_options</span><span class="p">,</span> <span class="n">pandas_df</span><span class="p">):</span>
+<span class="k">def</span> <span class="nf">dataframe_output_schema</span><span class="p">(</span><span class="n">_context</span><span class="p">,</span> <span class="n">file_type</span><span class="p">,</span> <span class="n">file_options</span><span class="p">,</span> <span class="n">pandas_df</span><span class="p">):</span>
     <span class="n">check</span><span class="o">.</span><span class="n">str_param</span><span class="p">(</span><span class="n">file_type</span><span class="p">,</span> <span class="s1">&#39;file_type&#39;</span><span class="p">)</span>
     <span class="n">check</span><span class="o">.</span><span class="n">dict_param</span><span class="p">(</span><span class="n">file_options</span><span class="p">,</span> <span class="s1">&#39;file_options&#39;</span><span class="p">)</span>
     <span class="n">check</span><span class="o">.</span><span class="n">inst_param</span><span class="p">(</span><span class="n">pandas_df</span><span class="p">,</span> <span class="s1">&#39;pandas_df&#39;</span><span class="p">,</span> <span class="n">DataFrame</span><span class="p">)</span>

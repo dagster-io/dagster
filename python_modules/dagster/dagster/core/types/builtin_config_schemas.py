@@ -22,7 +22,7 @@ def define_builtin_scalar_input_schema(scalar_name, config_scalar_type):
             type_attributes=ConfigTypeAttributes(is_system_config=True),
         )
     )
-    def _builtin_input_schema(file_type, file_options):
+    def _builtin_input_schema(_context, file_type, file_options):
         if file_type == 'value':
             return file_options
         elif file_type == 'json':
@@ -52,7 +52,7 @@ def define_builtin_scalar_output_schema(scalar_name):
     )
 
     @output_selector_schema(schema_cls)
-    def _builtin_output_schema(file_type, file_options, runtime_value):
+    def _builtin_output_schema(_context, file_type, file_options, runtime_value):
         if file_type == 'json':
             json_file_path = file_options['path']
             json_value = seven.json.dumps({'value': runtime_value})

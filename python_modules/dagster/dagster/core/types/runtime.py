@@ -1,3 +1,4 @@
+from functools import partial
 import six
 
 from dagster import check
@@ -180,7 +181,25 @@ class Bool(BuiltinScalarRuntimeType):
         return self.throw_if_false(lambda v: isinstance(v, bool), value)
 
 
-class Any(RuntimeType):
+class Anyish(RuntimeType):
+    def __init__(
+        self, key, name, input_schema=None, output_schema=None, is_builtin=False, description=None
+    ):
+        super(Anyish, self).__init__(
+            key=key,
+            name=name,
+            input_schema=input_schema,
+            output_schema=output_schema,
+            is_builtin=is_builtin,
+            description=description,
+        )
+
+    @property
+    def is_any(self):
+        return True
+
+
+class Any(Anyish):
     def __init__(self):
         super(Any, self).__init__(
             key='Any',
@@ -190,9 +209,13 @@ class Any(RuntimeType):
             is_builtin=True,
         )
 
-    @property
-    def is_any(self):
-        return True
+
+def define_any_type(name, description=None):
+    class NamedAnyType(Anyish):
+        def __init__(self):
+            super(NamedAnyType, self).__init__(key=name, name=name, description=description)
+
+    return NamedAnyType
 
 
 class PythonObjectType(RuntimeType):
@@ -217,10 +240,10 @@ def _create_nullable_input_schema(inner_type):
         def schema_type(self):
             return nullable_type
 
-        def construct_from_config_value(self, config_value):
+        def construct_from_config_value(self, context, config_value):
             if config_value is None:
                 return None
-            return inner_type.input_schema.construct_from_config_value(config_value)
+            return inner_type.input_schema.construct_from_config_value(context, config_value)
 
     return _NullableSchema()
 
@@ -260,8 +283,9 @@ def _create_list_input_schema(inner_type):
         def schema_type(self):
             return list_type
 
-        def construct_from_config_value(self, config_value):
-            return list(map(inner_type.input_schema.construct_from_config_value, config_value))
+        def construct_from_config_value(self, context, config_value):
+            convert_item = partial(inner_type.input_schema.construct_from_config_value, context)
+            return list(map(convert_item, config_value))
 
     return _ListSchema()
 

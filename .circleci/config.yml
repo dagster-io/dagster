@@ -253,6 +253,11 @@ jobs:
             sudo pip install -e python_modules/dagstermill -qqq
             sudo pip install -e python_modules/dagster-pandas -qqq
             sudo pip install -e python_modules/dagster-sqlalchemy -qqq
+            sudo pip install -e python_modules/dagster-framework/spark -qqq
+            sudo pip install -e python_modules/dagster-framework/aws -qqq
+            sudo pip install -e python_modules/dagster-framework/pyspark -qqq
+            sudo pip install -e python_modules/dagster-framework/snowflake -qqq
+
 
       - attach_workspace:
           at: /tmp/workspace

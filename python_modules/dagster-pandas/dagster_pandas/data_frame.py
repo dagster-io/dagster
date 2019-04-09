@@ -38,7 +38,7 @@ def dict_without_keys(ddict, *keys):
         },
     )
 )
-def dataframe_output_schema(file_type, file_options, pandas_df):
+def dataframe_output_schema(_context, file_type, file_options, pandas_df):
     check.str_param(file_type, 'file_type')
     check.dict_param(file_options, 'file_options')
     check.inst_param(pandas_df, 'pandas_df', DataFrame)
@@ -64,7 +64,7 @@ def dataframe_output_schema(file_type, file_options, pandas_df):
         },
     )
 )
-def dataframe_input_schema(file_type, file_options):
+def dataframe_input_schema(_context, file_type, file_options):
     check.str_param(file_type, 'file_type')
     check.dict_param(file_options, 'file_options')
 
