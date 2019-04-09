@@ -86,9 +86,7 @@ class ObjectStore(six.with_metaclass(ABCMeta)):
 
     def _check_for_unsupported_composite_overrides(self, runtime_type):
         composite_overrides = {
-            t.name
-            for t in runtime_type.inner_types
-            if t.name in self.TYPE_STORAGE_PLUGIN_REGISTRY
+            t.name for t in runtime_type.inner_types if t.name in self.TYPE_STORAGE_PLUGIN_REGISTRY
         }
         if composite_overrides:
             outer_type = 'composite type'
