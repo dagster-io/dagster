@@ -39,6 +39,7 @@ def test_jar_not_found():
         execute_pipeline(pipeline, environment_dict)
 
 
+@pytest.mark.skip
 def test_run_invalid_jar():
     spark_solid = SparkSolidDefinition('spark_solid', main_class='something')
     pipeline = PipelineDefinition(solids=[spark_solid])
