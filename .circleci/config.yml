@@ -236,6 +236,8 @@ jobs:
   lint:
     docker:
       - image: dagster/cci-test:3.7.3
+    environment:
+      SLUGIFY_USES_TEXT_UNIDECODE: "yes"
 
     working_directory: ~/repo
 
