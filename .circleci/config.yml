@@ -236,8 +236,6 @@ jobs:
   lint:
     docker:
       - image: dagster/cci-test:3.7.3
-    environment:
-      SLUGIFY_USES_TEXT_UNIDECODE: "yes"
 
     working_directory: ~/repo
 
@@ -253,7 +251,7 @@ jobs:
             sudo pip install -e python_modules/dagit -qqq
             sudo pip install -r python_modules/dagit/dev-requirements.txt -qqq
             sudo pip install -e python_modules/dagstermill -qqq
-            sudo pip install -e python_modules/dagster-airflow
+            sudo SLUGIFY_USES_TEXT_UNIDECODE=yes pip install -e python_modules/dagster-airflow -qqq
             sudo pip install -e python_modules/libraries/dagster-aws -qqq
             sudo pip install -e python_modules/libraries/dagster-ge -qqq
             sudo pip install -e python_modules/libraries/dagster-pandas -qqq
