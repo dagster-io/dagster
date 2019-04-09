@@ -1,9 +1,5 @@
 FROM python:3.7
 
-RUN mkdir -p /tmp/dagster
-
-WORKDIR /tmp/
-
 ADD dagster dagster
 ADD dagster-graphql dagster-graphql
 ADD dagit dagit

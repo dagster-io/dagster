@@ -1,3 +1,0 @@
-storage:
-  s3:
-    s3_bucket: dagster-airflow-scratch

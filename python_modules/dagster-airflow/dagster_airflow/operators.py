@@ -22,7 +22,7 @@ from .format import format_config_for_graphql
 from .query import DAGSTER_OPERATOR_COMMAND_TEMPLATE, QUERY_TEMPLATE
 
 
-DOCKER_TEMPDIR = '/tmp/dagster'
+DOCKER_TEMPDIR = '/tmp'
 
 DEFAULT_ENVIRONMENT = {
     'AWS_ACCESS_KEY_ID': os.getenv('AWS_ACCESS_KEY_ID'),
@@ -265,8 +265,8 @@ class DagsterDockerOperator(ModifiedDockerOperator, DagsterOperator):
                 'No storage config found -- must configure either filesystem or s3 storage for '
                 'the DagsterPythonOperator. Ex.: \n'
                 '{{\'storage\': {{\'filesystem\': {{\'base_dir\': \'{tmp_dir}\'}}}}}} or \n'
-                '{{\'storage\': {{\'s3\': {{\'s3_bucket\': \'my-s3-bucket\'}}}}}}'
-            ).format(tmp_dir=tmp_dir)
+                '{{\'storage\': {{\'s3\': {{\'s3_bucket\': \'my-s3-bucket\'}}}}}}'.format(tmp_dir=tmp_dir)
+            )
 
         # black 18.9b0 doesn't support py27-compatible formatting of the below invocation (omitting
         # the trailing comma after **op_kwargs) -- black 19.3b0 supports multiple python versions,
