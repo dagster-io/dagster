@@ -119,8 +119,17 @@ class FileSystemObjectStore(ObjectStore):
     def __init__(self, run_id, types_to_register=None, base_dir=None):
         self.run_id = check.str_param(run_id, 'run_id')
         self.storage_mode = RunStorageMode.FILESYSTEM
-        self._base_dir = check.opt_nonempty_str_param(
-            base_dir, 'base_dir', seven.get_system_temp_directory()
+        self._base_dir = os.path.abspath(
+            os.path.expanduser(
+                check.opt_nonempty_str_param(
+                    base_dir, 'base_dir', seven.get_system_temp_directory()
+                )
+            )
+        )
+        check.invariant(
+            os.path.isdir(self._base_dir),
+            'Could not find a directory at the base_dir supplied to FileSystemObjectStore: '
+            '{base_dir}'.format(base_dir=self._base_dir),
         )
         self.root = get_run_files_directory(self.base_dir, run_id)
 
