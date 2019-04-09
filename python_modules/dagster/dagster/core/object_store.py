@@ -99,8 +99,8 @@ class ObjectStore(six.with_metaclass(ABCMeta)):
         return self.get_object(context, runtime_type, paths)
 
 
-def get_run_files_directory(run_id):
-    return os.path.join(seven.get_system_temp_directory(), 'dagster', 'runs', run_id, 'files')
+def get_run_files_directory(base_dir, run_id):
+    return os.path.join(base_dir, 'dagster', 'runs', run_id, 'files')
 
 
 def get_valid_target_path(base_dir, paths):
@@ -116,12 +116,28 @@ def get_valid_target_path(base_dir, paths):
 
 
 class FileSystemObjectStore(ObjectStore):
-    def __init__(self, run_id, types_to_register=None):
+    def __init__(self, run_id, types_to_register=None, base_dir=None):
         self.run_id = check.str_param(run_id, 'run_id')
         self.storage_mode = RunStorageMode.FILESYSTEM
-        self.root = get_run_files_directory(run_id)
+        self._base_dir = os.path.abspath(
+            os.path.expanduser(
+                check.opt_nonempty_str_param(
+                    base_dir, 'base_dir', seven.get_system_temp_directory()
+                )
+            )
+        )
+        check.invariant(
+            os.path.isdir(self._base_dir),
+            'Could not find a directory at the base_dir supplied to FileSystemObjectStore: '
+            '{base_dir}'.format(base_dir=self._base_dir),
+        )
+        self.root = get_run_files_directory(self.base_dir, run_id)
 
         super(FileSystemObjectStore, self).__init__(types_to_register)
+
+    @property
+    def base_dir(self):
+        return self._base_dir
 
     def url_for_paths(self, paths):
         return 'file:///' + '/'.join([self.root] + paths)
@@ -168,7 +184,7 @@ class FileSystemObjectStore(ObjectStore):
     def copy_object_from_prev_run(
         self, context, previous_run_id, paths
     ):  # pylint: disable=unused-argument
-        prev_run_files_dir = get_run_files_directory(previous_run_id)
+        prev_run_files_dir = get_run_files_directory(self.base_dir, previous_run_id)
         check.invariant(os.path.isdir(prev_run_files_dir))
 
         copy_from_path = os.path.join(prev_run_files_dir, *paths)

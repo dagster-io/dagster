@@ -8,15 +8,12 @@ fixtures, read: https://docs.pytest.org/en/latest/fixture.html.
 import os
 import shutil
 import subprocess
-import sys
-import tempfile
 import uuid
 
-import airflow.plugins_manager
 import docker
 import pytest
 
-from dagster import check, seven
+from dagster import check
 from dagster.utils import load_yaml_from_path, mkdir_p, pushd, script_relative_path
 
 IMAGE = 'dagster-airflow-demo'
@@ -94,80 +91,6 @@ def plugins_path(airflow_home):
     path = os.path.join(airflow_home, 'plugins', '')
     mkdir_p(os.path.abspath(path))
     return path
-
-
-@pytest.fixture(scope='module')
-def host_tmp_dir():
-    '''We don't clean this up / make it a context manager because it may already exist...'''
-    mkdir_p('/tmp/results')
-    return '/tmp/results'
-
-
-@pytest.fixture(scope='module')
-def airflow_test(docker_image, dags_path, plugins_path, host_tmp_dir):
-    '''Install the docker-airflow plugin & reload airflow.operators so the plugin is available.'''
-    assert docker_image
-
-    plugin_definition_filename = 'dagster_plugin.py'
-
-    plugin_path = os.path.abspath(os.path.join(plugins_path, plugin_definition_filename))
-
-    temporary_plugin_path = None
-
-    try:
-        # If there is already a docker-airflow plugin installed, we set it aside for safekeeping
-        if os.path.exists(plugin_path):
-            temporary_plugin_file = tempfile.NamedTemporaryFile(delete=False)
-            temporary_plugin_file.close()
-            temporary_plugin_path = temporary_plugin_file.name
-            shutil.copyfile(plugin_path, temporary_plugin_path)
-
-        shutil.copyfile(
-            script_relative_path(os.path.join('..', 'dagster_airflow', plugin_definition_filename)),
-            plugin_path,
-        )
-
-        mkdir_p(os.path.abspath(dags_path))
-        sys.path.append(os.path.abspath(dags_path))
-
-        # Set up the DAGs directory if needed
-        created_init_py = False
-        init_py_path = os.path.join(os.path.abspath(dags_path), '__init__.py')
-        if not os.path.exists(init_py_path):
-            with open(init_py_path, 'a'):
-                pass
-            created_init_py = True
-
-        subprocess.check_output(['airflow', 'initdb'])
-
-        # Necromancy; follows airflow.operators.__init__
-        # This reloads airflow.operators so that the import statement below is possible
-        seven.reload_module(airflow.plugins_manager)
-        for operators_module in airflow.plugins_manager.operators_modules:
-            sys.modules[operators_module.__name__] = operators_module
-            globals()[operators_module._name] = operators_module  # pylint:disable=protected-access
-
-        # Test that we can now actually import the DagsterDockerOperator
-        # pylint: disable=import-error
-        from airflow.operators.dagster_plugin import DagsterDockerOperator
-
-        # Clean up
-        del DagsterDockerOperator
-
-        yield (docker_image, dags_path, host_tmp_dir)
-
-    finally:
-        if os.path.exists(plugin_path):
-            os.remove(plugin_path)
-
-        if temporary_plugin_path is not None:
-            shutil.copyfile(temporary_plugin_path, plugin_path)
-            os.remove(temporary_plugin_path)
-
-        if created_init_py:
-            os.remove(init_py_path)
-
-        sys.path = sys.path[:-1]
 
 
 @pytest.fixture(scope='module')

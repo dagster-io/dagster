@@ -1,9 +1,5 @@
 FROM python:3.7
 
-RUN mkdir -p /tmp/results
-
-WORKDIR /tmp/
-
 ADD dagster dagster
 ADD dagster-graphql dagster-graphql
 ADD dagit dagit
@@ -17,6 +13,6 @@ RUN pip install -r requirements.txt
 
 ADD . .
 
-ENTRYPOINT [ "dagit-cli" ]
+ENTRYPOINT [ "dagit", "--no-watch" ]
 
 EXPOSE 3000

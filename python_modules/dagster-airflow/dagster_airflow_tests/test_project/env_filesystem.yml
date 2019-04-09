@@ -1,2 +1,3 @@
 storage:
   filesystem:
+    base_dir: /tmp

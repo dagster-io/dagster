@@ -2,7 +2,7 @@ import pytest
 
 from dagster import check
 
-from dagster_airflow.factory import format_config_for_graphql
+from dagster_airflow.format import format_config_for_graphql
 
 
 def test_format_config():

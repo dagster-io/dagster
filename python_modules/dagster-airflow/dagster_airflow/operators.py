@@ -15,12 +15,14 @@ from airflow.operators.python_operator import PythonOperator
 from airflow.utils.file import TemporaryDirectory
 from docker import APIClient, from_env
 
+from dagster import seven
 from dagster.seven.json import JSONDecodeError
 
+from .format import format_config_for_graphql
 from .query import DAGSTER_OPERATOR_COMMAND_TEMPLATE, QUERY_TEMPLATE
 
 
-DOCKER_TEMPDIR = '/tmp/results'
+DOCKER_TEMPDIR = '/tmp'
 
 DEFAULT_ENVIRONMENT = {
     'AWS_ACCESS_KEY_ID': os.getenv('AWS_ACCESS_KEY_ID'),
@@ -255,6 +257,19 @@ class DagsterDockerOperator(ModifiedDockerOperator, DagsterOperator):
     def operator_for_solid(
         cls, pipeline, env_config, solid_name, step_keys, dag, dag_id, op_kwargs
     ):
+        tmp_dir = op_kwargs.pop('tmp_dir', DOCKER_TEMPDIR)
+        host_tmp_dir = op_kwargs.pop('host_tmp_dir', seven.get_system_temp_directory())
+
+        if 'storage' not in env_config:
+            raise AirflowException(
+                'No storage config found -- must configure either filesystem or s3 storage for '
+                'the DagsterPythonOperator. Ex.: \n'
+                '{{\'storage\': {{\'filesystem\': {{\'base_dir\': \'{tmp_dir}\'}}}}}} or \n'
+                '{{\'storage\': {{\'s3\': {{\'s3_bucket\': \'my-s3-bucket\'}}}}}}'.format(
+                    tmp_dir=tmp_dir
+                )
+            )
+
         # black 18.9b0 doesn't support py27-compatible formatting of the below invocation (omitting
         # the trailing comma after **op_kwargs) -- black 19.3b0 supports multiple python versions,
         # but currently doesn't know what to do with from __future__ import print_function -- see
@@ -262,12 +277,13 @@ class DagsterDockerOperator(ModifiedDockerOperator, DagsterOperator):
         # fmt: off
         return DagsterDockerOperator(
             step=solid_name,
-            config=env_config,
+            config=format_config_for_graphql(env_config),
             dag=dag,
-            tmp_dir=DOCKER_TEMPDIR,
+            tmp_dir=tmp_dir,
             pipeline_name=pipeline.name,
             step_keys=step_keys,
             task_id=solid_name,
+            host_tmp_dir=host_tmp_dir,
             **op_kwargs
         )
         # fmt: on
@@ -360,6 +376,17 @@ class DagsterDockerOperator(ModifiedDockerOperator, DagsterOperator):
 
                 return res
 
+            if res_type == 'PythonError':
+                self.log.info('Plan execution failed.')
+                raise AirflowException(
+                    'Subplan execution failed: {message}\n{stack}'.format(
+                        message=res_data['message'], stack=res_data['stack']
+                    )
+                )
+
+            # Catchall
+            return res
+
         finally:
             self._run_id = None
 
@@ -369,6 +396,10 @@ class DagsterDockerOperator(ModifiedDockerOperator, DagsterOperator):
     def __get_tls_config(self):
         # pylint:disable=no-member
         return super(DagsterDockerOperator, self)._ModifiedDockerOperator__get_tls_config()
+
+    @contextmanager
+    def get_host_tmp_dir(self):
+        yield self.host_tmp_dir
 
 
 class DagsterPythonOperator(PythonOperator, DagsterOperator):
@@ -402,6 +433,14 @@ class DagsterPythonOperator(PythonOperator, DagsterOperator):
     def operator_for_solid(
         cls, pipeline, env_config, solid_name, step_keys, dag, dag_id, op_kwargs
     ):
+        if 'storage' not in env_config:
+            raise AirflowException(
+                'No storage config found -- must configure either filesystem or s3 storage for '
+                'the DagsterPythonOperator. Ex.: \n'
+                '{\'storage\': {\'filesystem\': {\'base_dir\': \'/tmp/special_place\'}}} or \n'
+                '{\'storage\': {\'s3\': {\'s3_bucket\': \'my-s3-bucket\'}}}'
+            )
+
         # black 18.9b0 doesn't support py27-compatible formatting of the below invocation (omitting
         # the trailing comma after **op_kwargs) -- black 19.3b0 supports multiple python versions, but
         # currently doesn't know what to do with from __future__ import print_function -- see
@@ -410,7 +449,9 @@ class DagsterPythonOperator(PythonOperator, DagsterOperator):
         return PythonOperator(
             task_id=solid_name,
             provide_context=True,
-            python_callable=cls.make_python_callable(dag_id, pipeline, env_config, step_keys),
+            python_callable=cls.make_python_callable(
+                dag_id, pipeline, format_config_for_graphql(env_config), step_keys
+            ),
             dag=dag,
             **op_kwargs
         )

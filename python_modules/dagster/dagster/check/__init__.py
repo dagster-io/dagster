@@ -226,6 +226,12 @@ def opt_str_param(obj, param_name, default=None):
     return default if obj is None else obj
 
 
+def opt_nonempty_str_param(obj, param_name, default=None):
+    if obj is not None and not isinstance(obj, string_types):
+        raise_with_traceback(_param_type_mismatch_exception(obj, str, param_name))
+    return default if obj is None or obj == '' else obj
+
+
 def bool_param(obj, param_name):
     if not isinstance(obj, bool):
         raise_with_traceback(_param_type_mismatch_exception(obj, bool, param_name))

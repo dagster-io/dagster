@@ -1,5 +1,6 @@
 import os
 import shutil
+import tempfile
 import uuid
 
 from dagster import check, PipelineDefinition, RunConfig, seven
@@ -78,6 +79,35 @@ def test_file_system_object_store():
                 shutil.rmtree(object_store.root)
             except seven.FileNotFoundError:
                 pass
+
+
+def test_file_system_object_store_with_base_dir():
+    run_id = str(uuid.uuid4())
+
+    try:
+        tempdir = tempfile.mkdtemp()
+
+        object_store = FileSystemObjectStore(run_id=run_id, base_dir=tempdir)
+        assert object_store.root == os.path.join(tempdir, 'dagster', 'runs', run_id, 'files')
+
+        with yield_pipeline_execution_context(
+            PipelineDefinition([]), {}, RunConfig(run_id=run_id)
+        ) as context:
+            try:
+                object_store.set_object(True, context, Bool.inst(), ['true'])
+                assert object_store.has_object(context, ['true'])
+                assert object_store.get_object(context, Bool.inst(), ['true']) is True
+
+            finally:
+                try:
+                    shutil.rmtree(object_store.root)
+                except seven.FileNotFoundError:
+                    pass
+    finally:
+        try:
+            shutil.rmtree(tempdir)
+        except seven.FileNotFoundError:
+            pass
 
 
 def test_file_system_object_store_with_custom_serializer():

@@ -40,7 +40,7 @@ in the directory in which Airflow looks for DAGs -- this is typically `$AIRFLOW_
 
     dag, steps = make_airflow_dag(
         pipeline,
-        env_config=None,
+        env_config={'storage': {'filesystem': {'base_dir': '/tmp'}}},
         dag_id=None,
         dag_description=None,
         dag_kwargs=None,
@@ -53,15 +53,15 @@ Airflow objects, and you can do eveything you would expect with them -- for inst
 DAG as a sub-DAG in another Airflow DAG, or adding dependencies between the dynamically generated
 Airflow steps and steps that you define in your own code.
 
+Note the extra `storage` parameter in the config. You can set this for any Dagster pipeline (and
+intermediate values will be automatically materialized in either `filesystem` or `s3` storage), but
+you **must** set it when converting a pipeline to an Airflow DAG.
+
 ## Running containerized (DagsterDockerOperator)
 
 We use the DagsterDockerOperator to define an Airflow DAG that can run in completely isolated
-containers corresponding to your Dagster solids. To run containerized, you'll need to take a few
-extra steps:
-
-1. Containerize your repository
-2. Set up an S3 bucket to store intermediate results
-3. Then, define your Airflow DAG
+containers corresponding to your Dagster solids. To run containerized, you'll first need to
+containerize your repository. Then, you can define your Airflow DAG.
 
 ### Containerizing your repository
 
@@ -120,16 +120,6 @@ by name.
 For most production applications, you'll probably want to use a private Docker registry, rather
 than the public DockerHub, to store your containerized pipelines.
 
-### Setting up S3 for dagster-airflow
-
-We need a place to store intermediate results from execution of steps in your pipeline. By default,
-dagster-airflow uses Amazon S3 as a lake for this purpose.
-
-You'll need to create an S3 bucket, and provide AWS credentials granting read and write permissions
-to this bucket within your Docker containers. We recommend that you use credentials for an IAM user
-which has the [least privilege](https://docs.aws.amazon.com/IAM/latest/UserGuide/best-practices.html#grant-least-privilege)
-required to access the S3 bucket for dagster-airflow.
-
 ## Defining your pipeline as a containerized Airflow DAG
 
 As in the uncontainerized case, you'll put a new Python file defining your DAG in the directory in
@@ -146,7 +136,7 @@ which Airflow looks for DAGs.
     dag, steps = make_airflow_dag(
         pipeline,
         image,
-        env_config=None,
+        env_config={'storage': {'filesystem': {'base_dir': '/tmp'}}},
         dag_id=None,
         dag_description=None,
         dag_kwargs=None,
@@ -156,6 +146,38 @@ which Airflow looks for DAGs.
 You can pass `op_kwargs` through to the the DagsterDockerOperator to use custom TLS settings, the
 private registry of your choice, etc., just as you would configure the ordinary Airflow
 DockerOperator. 
+
+### Docker bind-mount for filesystem intermediate storage
+
+By default, the DagsterDockerOperator will bind-mount `/tmp` on the host into `/tmp` in the Docker
+container. You can control this by setting the `op_kwargs` in make_airflow_dag. For instance,
+if you'd prefer to mount `/host_tmp` on the host into `/container_tmp` in the container, and
+use this volume for interediate storage, you can run:
+
+    dag, steps = make_airflow_dag(
+        pipeline,
+        image,
+        env_config={'storage': {'filesystem': {'base_dir': '/container_tmp'}}},
+        dag_id=None,
+        dag_description=None,
+        dag_kwargs=None,
+        op_kwargs={'host_tmp_dir': '/host_tmp', 'tmp_dir': '/container_tmp'}
+    )
+
+
+### Using S3 with dagster-airflow
+
+You can also use S3 for dagster-airflow intermediate storage, and you must use S3 when running
+your DAGs with distributed executors.
+
+You'll need to create an S3 bucket, and provide AWS credentials granting read and write permissions
+to this bucket within your Docker containers. We recommend that you use credentials for an IAM user
+which has the [least privilege](https://docs.aws.amazon.com/IAM/latest/UserGuide/best-practices.html#grant-least-privilege)
+required to access the S3 bucket for dagster-airflow.
+
+You can configure S3 storage as follows:
+
+    {'storage': {'s3': {'s3_bucket': 'my-cool-bucket'}}}
 
 <!-- FIXME give an example with a Sensor and a SubDAG ### Customizing your DAG
 
