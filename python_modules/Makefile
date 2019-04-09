@@ -9,11 +9,11 @@ watch:
 
 black:
 	black . --line-length 100 -S --fast --exclude "build/|buck-out/|dist/|_build/|\.eggs/|\.git/|\.hg/|\.mypy_cache/|\.nox/|\.tox/|\.venv/|python_modules/dagster/dagster/tutorials/|snapshots/|__scaffold\.py" -N
-	black ./dagster/dagster/tutorials --line-length 79 -S --fast -N
+	black ./dagster/dagster/tutorials ../examples --line-length 79 -S --fast -N
 
 
 pylint:
-	pylint -j 0 --disable=R,C dagster/dagster dagster/dagster_tests dagit/dagit dagit/dagit_tests dagstermill/dagstermill dagster-pandas/dagster_pandas dagster-sqlalchemy/dagster_sqlalchemy dagster-graphql/dagster_graphql --rcfile=../.pylintrc
+	cd ../; pylint -j 0 --disable=R,C `cat .pylint_targets` --rcfile=.pylintrc
 
 reinstall:
 	pip uninstall dagit

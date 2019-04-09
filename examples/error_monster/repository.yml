@@ -1,3 +1,0 @@
-repository:
-  file: pipeline.py
-  fn: define_pipeline
