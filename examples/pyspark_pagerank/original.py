@@ -60,7 +60,7 @@ if __name__ == "__main__":
     spark = SparkSession.builder.appName("PythonPageRank").getOrCreate()
 
     # two urls per line with space in between)
-    lines = spark.read.text(sys.argv[1]).rdd.map(lambda r: r[0]
+    lines = spark.read.text(sys.argv[1]).rdd.map(lambda r: r[0])
 
     # Loads all URLs from input file and initialize their neighbors.
     links = lines.map(lambda urls: parseNeighbors(urls)).distinct().groupByKey().cache()
