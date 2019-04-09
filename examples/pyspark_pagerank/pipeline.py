@@ -1,8 +1,6 @@
 import re
 from operator import add
 
-from pyspark.sql import SparkSession
-
 from dagster import (
     Dict,
     DependencyDefinition,
@@ -10,35 +8,13 @@ from dagster import (
     Int,
     InputDefinition,
     OutputDefinition,
-    Result,
     Path,
     PipelineContextDefinition,
     PipelineDefinition,
-    resource,
     solid,
 )
-from dagster.core.types.runtime import define_any_type
 
-from dagster_framework.spark.configs_spark import spark_config
-
-from dagster_framework.spark.utils import flatten_dict
-
-
-@resource(config_field=Field(Dict({'spark_conf': spark_config()})))
-def spark_session_resource(init_context):
-    builder = SparkSession.builder
-    flat = flatten_dict(init_context.resource_config['spark_conf'])
-    for key, value in flat:
-        builder = builder.config(key, value)
-
-    spark = builder.getOrCreate()
-    try:
-        yield spark
-    finally:
-        spark.stop()
-
-
-SparkRDD = define_any_type('SparkRDD')
+from dagster_framework.pyspark import spark_session_resource, SparkRDD
 
 
 def parseNeighbors(urls):
