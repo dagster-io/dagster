@@ -265,7 +265,9 @@ class DagsterDockerOperator(ModifiedDockerOperator, DagsterOperator):
                 'No storage config found -- must configure either filesystem or s3 storage for '
                 'the DagsterPythonOperator. Ex.: \n'
                 '{{\'storage\': {{\'filesystem\': {{\'base_dir\': \'{tmp_dir}\'}}}}}} or \n'
-                '{{\'storage\': {{\'s3\': {{\'s3_bucket\': \'my-s3-bucket\'}}}}}}'.format(tmp_dir=tmp_dir)
+                '{{\'storage\': {{\'s3\': {{\'s3_bucket\': \'my-s3-bucket\'}}}}}}'.format(
+                    tmp_dir=tmp_dir
+                )
             )
 
         # black 18.9b0 doesn't support py27-compatible formatting of the below invocation (omitting

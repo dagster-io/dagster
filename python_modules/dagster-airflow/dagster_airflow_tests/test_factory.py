@@ -21,7 +21,10 @@ from .test_project.dagster_airflow_demo import define_demo_execution_pipeline
 
 class TestExecuteDagPythonFilesystemStorage(object):
     pipeline = define_demo_execution_pipeline()
-    config_yaml = [script_relative_path('test_project/env.yml'), script_relative_path('test_project/env_filesystem.yml')]
+    config_yaml = [
+        script_relative_path('test_project/env.yml'),
+        script_relative_path('test_project/env_filesystem.yml'),
+    ]
     run_id = str(uuid.uuid4())
     execution_date = datetime.datetime.utcnow()
 
@@ -54,7 +57,10 @@ class TestExecuteDagPythonFilesystemStorage(object):
 
 class TestExecuteDagPythonS3Storage(object):
     pipeline = define_demo_execution_pipeline()
-    config_yaml = [script_relative_path('test_project/env.yml'), script_relative_path('test_project/env_s3.yml')]
+    config_yaml = [
+        script_relative_path('test_project/env.yml'),
+        script_relative_path('test_project/env_s3.yml'),
+    ]
     run_id = str(uuid.uuid4())
     execution_date = datetime.datetime.utcnow()
 
@@ -127,7 +133,10 @@ class TestExecuteDagContainerizedS3Storage(object):
 
 class TestExecuteDagContainerizedFilesystemStorage(object):
     pipeline = define_demo_execution_pipeline()
-    config_yaml = [script_relative_path('test_project/env.yml'), script_relative_path('test_project/env_filesystem.yml')]
+    config_yaml = [
+        script_relative_path('test_project/env.yml'),
+        script_relative_path('test_project/env_filesystem.yml'),
+    ]
     run_id = str(uuid.uuid4())
     execution_date = datetime.datetime.utcnow()
     op_kwargs = {'host_tmp_dir': '/tmp'}
