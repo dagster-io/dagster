@@ -31,10 +31,6 @@ def parse_pagerank_data(context, pagerank_data):
 
 @solid(inputs=[InputDefinition('urls', SparkRDD)], outputs=[OutputDefinition(SparkRDD)])
 def compute_links(_context, urls):
-    # lines = context.resources.spark.read.text(pagerank_data).rdd.map(lambda r: r[0])
-    # links = lines.map(parseNeighbors).distinct().groupByKey().cache()
-    # return links
-
     return urls.distinct().groupByKey().cache()
 
 
