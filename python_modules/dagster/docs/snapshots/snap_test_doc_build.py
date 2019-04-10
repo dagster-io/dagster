@@ -19625,7 +19625,7 @@ Returns None if execution result isn’t a success.</p>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>run_id</strong> (<em>str</em>) – The ID to use for this run. If not provided <cite>uuid4</cite> will be used.</li>
+<li><strong>run_id</strong> (<em>str</em>) – The ID to use for this run. If not provided a new UUID will be created using <cite>uuid4</cite>.</li>
 <li><strong>tags</strong> (<em>dict</em><em>[</em><em>str</em><em>, </em><em>str</em><em>]</em>) – Key value pairs that will be added to logs.</li>
 <li><strong>event_callback</strong> (<em>callable</em>) – A callback to invoke with each <code class="xref py py-class docutils literal notranslate"><span class="pre">EventRecord</span></code> produced during execution.</li>
 <li><strong>loggers</strong> (<em>list</em>) – Additional loggers that log messages will be sent to.</li>
