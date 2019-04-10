@@ -159,11 +159,6 @@ def friendly_string_for_error(error):
 
     if error.reason == DagsterEvaluationErrorReason.MISSING_REQUIRED_FIELD:
         return error.message
-        return 'Missing required field  "{field_name}" {path_msg} Expected: "{type_msg}"'.format(
-            field_name=error.error_data.field_name,
-            path_msg=path_msg,
-            type_msg=print_config_type_to_string(type_in_context, with_lines=False),
-        )
     elif error.reason == DagsterEvaluationErrorReason.MISSING_REQUIRED_FIELDS:
         return error.message
     elif error.reason == DagsterEvaluationErrorReason.FIELD_NOT_DEFINED:
