@@ -261,7 +261,7 @@ jobs:
             sudo pip install -e python_modules/libraries/dagster-sqlalchemy -qqq
             sudo pip install -e python_modules/airline-demo -qqq
             sudo pip install -e python_modules/automation -qqq
-            sudo pip install -e python_modules/event-pipeline-demo -qqq
+            sudo pip install -e examples/event-pipeline-demo -qqq
 
       - attach_workspace:
           at: /tmp/workspace
@@ -984,12 +984,12 @@ jobs:
       - run:
           name: Run Dagster Tests
           command: |
-            pushd python_modules/event-pipeline-demo
+            pushd examples/event-pipeline-demo
             tox -e $TOXENV
             popd
       - run:
           command: |
-            mv python_modules/event-pipeline-demo/.coverage python_modules/.coverage.event-pipeline-demo.${CIRCLE_BUILD_NUM}
+            mv examples/event-pipeline-demo/.coverage python_modules/.coverage.event-pipeline-demo.${CIRCLE_BUILD_NUM}
       - persist_to_workspace:
           root: python_modules/
           paths:

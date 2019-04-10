@@ -22,8 +22,8 @@ python_modules/libraries/dagster-sqlalchemy/dagster_sqlalchemy
 python_modules/libraries/dagster-sqlalchemy/dagster_sqlalchemy_tests
 python_modules/airline-demo/airline_demo
 python_modules/airline-demo/airline_demo_tests
-python_modules/event-pipeline-demo/event_pipeline_demo
-python_modules/event-pipeline-demo/event_pipeline_demo_tests
 python_modules/automation/
 examples/toys
 examples/pyspark_pagerank
+examples/event-pipeline-demo/event_pipeline_demo
+examples/event-pipeline-demo/event_pipeline_demo_tests
