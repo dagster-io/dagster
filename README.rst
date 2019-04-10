@@ -22,25 +22,39 @@ integration, and so on -- but in essence they all describe the same activity: pe
 computations structured as a DAG (directed, acyclic graph) that end up producing data assets,
 whether those assets be tables, files, machine-learning models, etc.
 
-This repository contains a number of distinct subprojects:
-
-- **dagster**: The core programming model and abstraction stack; a stateless single-node,
-  single-process execution engine; and a CLI tool for driving that engine.
-- **dagit**: Dagit is a rich viewer for Dagster assets, including a DAG browser, a type-aware
-  config editor, and a streaming execution interface.
-- **dagster-ge**: A Dagster integration with Great Expectations. (see
-  https://github.com/great-expectations/great_expectations)
-- **dagster-pandas**: A Dagster integration with Pandas.
-- **dagster-sqlalchemy**: A Dagster integration with SQLAlchemy.
-- **dagstermill**: An experimental prototype for integrating productionized notebooks into
-  dagster pipelines. Built on the papermill library (https://github.com/nteract/papermill).
-- **airline-demo**: A substantial demo project illustrating how these tools can be used together
-  to manage a realistic data pipeline.
-- **js_modules/dagit** - a web app that is a ui for dagit
-- **dagma** - An experimental execution engine for Dagster built on top of AWS Lambda.
-
 Go to https://dagster.readthedocs.io for complete documentation, including a
 step-by-step tutorial and notes on the demo project.
 
 For details on contributing or running the project for development, see
 https://dagster.readthedocs.io/en/latest/contributing.html.
+
+This repository contains a number of distinct subprojects:
+ 
+- **dagster**: The core programming model and abstraction stack; stateless, single-node,
+  single-process and multi-process execution engines; and a CLI tool for driving those engines.
+- **dagster-graphql**: A GraphQL-based interface for interacting with the Dagster engines and
+  repositories of Dagster pipelines.
+- **dagit**: A rich viewer for Dagster assets, including a DAG browser, a type-aware config editor,
+  and a streaming execution interface.
+
+- **dagstermill**: An experimental prototype for integrating productionized Jupyter notebooks into
+  dagster pipelines. Built on the papermill library (https://github.com/nteract/papermill).
+- **dagster-airflow**: An experimental integration allowing Dagster pipelines to be scheduled and
+  executed, either containerized or uncontainerized, as Apache Airflow DAGs (https://github.com/apache/airflow)
+
+
+- **libraries/dagster-aws**: Dagster solids and tools for interacting with Amazon Web Services.
+- **libraries/dagster-ge**: A Dagster integration with Great Expectations. (see
+  https://github.com/great-expectations/great_expectations)
+- **dagster-pandas**: A Dagster integration with Pandas.
+- **dagster-pyspark**: A Dagster integration with Pyspark.
+- **dagster-snowflake**: A Dagster integration with Snowflake.
+- **dagster-spark**: A Dagster integration with Spark.
+- **dagster-sqlalchemy**: A Dagster integration with SQLAlchemy.
+
+- **airline-demo**: A substantial demo project illustrating how these tools can be used together
+  to manage a realistic data pipeline.
+- **event-pipeline-demo**: A substantial demo project illustrating a typical web event processing
+  pipeline with Spark and Scala.
+
+- **js_modules/dagit** - The web UI for dagit
