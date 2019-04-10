@@ -19,7 +19,7 @@ from dagster import seven
 from dagster.seven.json import JSONDecodeError
 
 from .format import format_config_for_graphql
-from .query import DAGSTER_OPERATOR_COMMAND_TEMPLATE, QUERY_TEMPLATE
+from .query import QUERY_TEMPLATE
 
 
 DOCKER_TEMPDIR = '/tmp'
@@ -315,7 +315,7 @@ class DagsterDockerOperator(ModifiedDockerOperator, DagsterOperator):
         elif self.command is not None:
             commands = self.command
         else:
-            commands = DAGSTER_OPERATOR_COMMAND_TEMPLATE.format(query=self.query)
+            commands = self.query
         return commands
 
     def get_hook(self):
@@ -408,11 +408,11 @@ class DagsterPythonOperator(PythonOperator, DagsterOperator):
         try:
             from dagster import RepositoryDefinition
             from dagster.cli.dynamic_loader import RepositoryContainer
-            from dagit.cli import execute_query_from_cli
+            from dagster_graphql.cli import execute_query_from_cli
         except ImportError:
             raise AirflowException(
-                'To use the DagsterPythonOperator, dagster and dagit must be installed in your '
-                'Airflow environment.'
+                'To use the DagsterPythonOperator, dagster and dagster_graphql must be installed '
+                'in your Airflow environment.'
             )
         repository = RepositoryDefinition('<<ephemeral repository>>', {dag_id: lambda: pipeline})
         repository_container = RepositoryContainer(repository=repository)

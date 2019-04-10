@@ -1,13 +1,5 @@
-DAGSTER_OPERATOR_COMMAND_TEMPLATE = '''-q '
-{query}
-'
-'''.strip(
-    '\n'
-)
-
-
 # TODO need to enrich error handling as we enrich the ultimate union type for executePlan
-QUERY_TEMPLATE = '''
+QUERY_TEMPLATE = ''' '
 mutation(
   $config: PipelineConfig = {config},
   $pipelineName: String = "{pipeline_name}",
@@ -66,6 +58,7 @@ mutation(
     }}
   }}
 }}
+'
 '''.strip(
     '\n'
 )

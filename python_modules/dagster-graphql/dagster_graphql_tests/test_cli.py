@@ -1,8 +1,11 @@
 import json
-import subprocess
+
+from click.testing import CliRunner
 
 from dagster import seven
 from dagster.utils import script_relative_path
+
+from dagster_graphql.cli import ui
 
 
 def test_basic_introspection():
@@ -10,21 +13,12 @@ def test_basic_introspection():
 
     repo_path = script_relative_path('./repository.yml')
 
-    result = subprocess.check_output(['dagit-cli', '-q', query, '-y', repo_path])
+    runner = CliRunner()
+    result = runner.invoke(ui, ['-y', repo_path, query])
 
-    result_data = json.loads(result.decode())
-    assert result_data['data']
+    assert result.exit_code == 0
 
-
-def test_no_watch_mode():
-    query = '{ __schema { types { name } } }'
-
-    repo_path = script_relative_path('./repository.yml')
-
-    # Runs the dagit wrapper instead of dagit-cli to ensure it still runs sync with --no-watch
-    result = subprocess.check_output(['dagit', '--no-watch', '-q', query, '-y', repo_path])
-
-    result_data = json.loads(result.decode())
+    result_data = json.loads(result.output)
     assert result_data['data']
 
 
@@ -33,9 +27,12 @@ def test_basic_pipelines():
 
     repo_path = script_relative_path('./repository.yml')
 
-    result = subprocess.check_output(['dagit-cli', '-q', query, '-y', repo_path])
+    runner = CliRunner()
+    result = runner.invoke(ui, ['-y', repo_path, query])
 
-    result_data = json.loads(result.decode())
+    assert result.exit_code == 0
+
+    result_data = json.loads(result.output)
     assert result_data['data']
 
 
@@ -44,8 +41,12 @@ def test_basic_variables():
     variables = '{"pipelineName": "math"}'
     repo_path = script_relative_path('./repository.yml')
 
-    result = subprocess.check_output(['dagit-cli', '-q', query, '-v', variables, '-y', repo_path])
-    result_data = json.loads(result.decode())
+    runner = CliRunner()
+    result = runner.invoke(ui, ['-y', repo_path, '-v', variables, query])
+
+    assert result.exit_code == 0
+
+    result_data = json.loads(result.output)
     assert result_data['data']
 
 
@@ -93,12 +94,13 @@ def test_start_execution():
 
     repo_path = script_relative_path('./repository.yml')
 
-    result = subprocess.check_output(
-        ['dagit-cli', '-q', START_PIPELINE_EXECUTION_QUERY, '-v', variables, '-y', repo_path]
-    )
-    decoded = result.decode()
+    runner = CliRunner()
+    result = runner.invoke(ui, ['-y', repo_path, '-v', variables, START_PIPELINE_EXECUTION_QUERY])
+
+    assert result.exit_code == 0
+
     try:
-        result_data = json.loads(result.decode())
+        result_data = json.loads(result.output.strip('\n').split('\n')[-1])
         assert result_data['data']
     except Exception as e:
-        raise Exception('Failed with {} Exception: {}'.format(decoded, e))
+        raise Exception('Failed with {} Exception: {}'.format(result.output, e))

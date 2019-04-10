@@ -51,6 +51,7 @@ def _do_setup(name='dagster-graphql'):
             'pyrsistent>=0.14.8',
             'rx>=1.6.1',
         ],
+        entry_points={"console_scripts": ['dagster-graphql = dagster_graphql.cli:main']},
     )
 
 

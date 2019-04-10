@@ -69,8 +69,8 @@ WORKDIR /tmp/
 ADD dagster/requirements.txt dagster_requirements.txt
 RUN pip install -r dagster_requirements.txt
 
-ADD dagit/requirements.txt dagit_requirements.txt
-RUN pip install -r dagit_requirements.txt
+ADD dagster-graphql/requirements.txt dagster_graphql_requirements.txt
+RUN pip install -r dagster_graphql_requirements.txt
 
 ADD dagstermill/requirements.txt dagstermill_requirements.txt
 RUN pip install -r dagstermill_requirements.txt
@@ -80,11 +80,11 @@ ADD requirements.txt .
 RUN pip install -r requirements.txt
 
 ADD dagster dagster
-ADD dagit dagit
+ADD dagster-graphql dagster-graphql
 ADD dagstermill dagstermill
 
 RUN pip install -e dagster/
-RUN pip install -e dagit/
+RUN pip install -e dagster-graphql/
 RUN pip install -e dagstermill/
 
 ADD . .
@@ -93,6 +93,6 @@ RUN pip install -e .
 
 RUN python -m airline_demo.resources
 
-ENTRYPOINT [ "dagit", "--no-watch" ]
+ENTRYPOINT [ "dagster-graphql" ]
 
 EXPOSE 3000

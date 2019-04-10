@@ -5,15 +5,15 @@
 pip install --upgrade pip
 
 cp -R ../dagster . && \
-cp -R ../dagit . && \
+cp -R ../dagster-graphql . && \
 cp -R ../dagstermill . && \
 \
 rm -rf dagster/.tox && \
-rm -rf dagit/.tox && \
+rm -rf dagster-graphql/.tox && \
 rm -rf dagstermill/.tox && \
 \
 rm -rf dagster/dist && \
-rm -rf dagit/dist && \
+rm -rf dagster-graphql/dist && \
 rm -rf dagstermill/dist && \
 \
 rm -rf .tox dist && \
@@ -22,5 +22,5 @@ docker build -t airline-demo-airflow . && \
 docker tag airline-demo-airflow dagster/airline-demo-airflow
 
 rm -rf dagster && \
-rm -rf dagit && \
+rm -rf dagster-graphql && \
 rm -rf dagstermill 
