@@ -108,12 +108,24 @@ class RepositoryDefinition(object):
                     solid_defs[solid_def.name] = solid_def
                     solid_to_pipeline[solid_def.name] = pipeline.name
 
-                if not solid_defs[solid_def.name] is solid_def:
-                    raise DagsterInvalidDefinitionError(
-                        'Trying to add duplicate solid def {} in {}, Already saw in {}'.format(
-                            solid_def.name, pipeline.name, solid_to_pipeline[solid_def.name]
+                    if not solid_defs[solid_def.name] is solid_def:
+                        first_name, second_name = sorted(
+                            [solid_to_pipeline[solid_def.name], pipeline.name]
                         )
-                    )
+                        raise DagsterInvalidDefinitionError(
+                            (
+                                'You have defined two solids named "{solid_def_name}" '
+                                'in repository "{repository_name}". Solid names must be '
+                                'unique within a repository. The solid has been defined in '
+                                'pipeline "{first_pipeline_name}" and it has been defined '
+                                'again in pipeline "{second_pipeline_name}."'
+                            ).format(
+                                solid_def_name=solid_def.name,
+                                repository_name=self.name,
+                                first_pipeline_name=first_name,
+                                second_pipeline_name=second_name,
+                            )
+                        )
 
         return solid_defs
 

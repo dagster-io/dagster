@@ -85,5 +85,11 @@ def test_dupe_solid_repo_definition():
         },
     )
 
-    with pytest.raises(DagsterInvalidDefinitionError):
+    with pytest.raises(DagsterInvalidDefinitionError) as exc_info:
         repo.get_all_pipelines()
+
+    assert str(exc_info.value) == (
+        'You have defined two solids named "same" in repository "error_repo". '
+        'Solid names must be unique within a repository. The solid has been defined '
+        'in pipeline "first" and it has been defined again in pipeline "second."'
+    )
