@@ -1198,10 +1198,12 @@ jobs:
           name: Merge master
           command: |
             git fetch --all
-            git checkout master
+            git checkout --track origin/nightly
+            git branch -D master
+            git checkout --track origin/master
             git reset --hard origin/master
             git checkout nightly
-            GIT_MERGE_AUTOEDIT=no git merge master -s theirs
+            GIT_MERGE_AUTOEDIT=no git merge --strategy recursive --strategy-option theirs --strategy-option recursive master
 
       - run:
           name: Install requirements
