@@ -4,6 +4,7 @@ import pytest
 
 from dagster import (
     DagsterInvalidDefinitionError,
+    DagsterInvariantViolationError,
     PipelineDefinition,
     RepositoryDefinition,
     SolidDefinition,
@@ -93,3 +94,27 @@ def test_dupe_solid_repo_definition():
         'Solid names must be unique within a repository. The solid has been defined '
         'in pipeline "first" and it has been defined again in pipeline "second."'
     )
+
+
+def test_dupe_solid_repo_definition_error_opt_out():
+    @lambda_solid(name='same')
+    def noop():
+        pass
+
+    @lambda_solid(name='same')
+    def noop2():
+        pass
+
+    repo = RepositoryDefinition(
+        'skip_error_repo',
+        pipeline_dict={
+            'first': lambda: PipelineDefinition(name='first', solids=[noop]),
+            'second': lambda: PipelineDefinition(name='second', solids=[noop2]),
+        },
+        enforce_solid_def_uniqueness=False,
+    )
+
+    assert repo.get_all_pipelines()
+
+    with pytest.raises(DagsterInvariantViolationError):
+        repo.get_solid_def('foo')

@@ -1,5 +1,5 @@
 from dagster import check
-from dagster.core.errors import DagsterInvalidDefinitionError
+from dagster.core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
 from .pipeline import PipelineDefinition
 
 
@@ -20,7 +20,7 @@ class RepositoryDefinition(object):
 
     '''
 
-    def __init__(self, name, pipeline_dict):
+    def __init__(self, name, pipeline_dict, enforce_solid_def_uniqueness=True):
         '''
         Args:
             name (str): Name of pipeline.
@@ -36,6 +36,10 @@ class RepositoryDefinition(object):
         self.pipeline_dict = pipeline_dict
 
         self._pipeline_cache = {}
+
+        self.enforce_solid_def_uniqueness = check.bool_param(
+            enforce_solid_def_uniqueness, 'enforce_solid_def_uniqueness'
+        )
 
     def has_pipeline(self, name):
         check.str_param(name, 'name')
@@ -108,7 +112,10 @@ class RepositoryDefinition(object):
                     solid_defs[solid_def.name] = solid_def
                     solid_to_pipeline[solid_def.name] = pipeline.name
 
-                if not solid_defs[solid_def.name] is solid_def:
+                if (
+                    self.enforce_solid_def_uniqueness
+                    and not solid_defs[solid_def.name] is solid_def
+                ):
                     first_name, second_name = sorted(
                         [solid_to_pipeline[solid_def.name], pipeline.name]
                     )
@@ -131,6 +138,14 @@ class RepositoryDefinition(object):
 
     def get_solid_def(self, name):
         check.str_param(name, 'name')
+
+        if not self.enforce_solid_def_uniqueness:
+            raise DagsterInvariantViolationError(
+                (
+                    'Cannot use get_solid_def in repo {} since solid def uniqueness '
+                    'is not enforced'
+                ).format(self.name)
+            )
 
         solid_defs = self._construct_solid_defs(self.get_all_pipelines())
 
