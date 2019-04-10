@@ -1,5 +1,5 @@
 from dagster import check
-from dagster.core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
+from dagster.core.errors import DagsterInvalidDefinitionError
 from .pipeline import PipelineDefinition
 
 
@@ -20,7 +20,7 @@ class RepositoryDefinition(object):
 
     '''
 
-    def __init__(self, name, pipeline_dict, enforce_uniqueness=True):
+    def __init__(self, name, pipeline_dict):
         '''
         Args:
             name (str): Name of pipeline.
@@ -36,8 +36,6 @@ class RepositoryDefinition(object):
         self.pipeline_dict = pipeline_dict
 
         self._pipeline_cache = {}
-
-        self.enforce_uniqueness = enforce_uniqueness
 
     def has_pipeline(self, name):
         check.str_param(name, 'name')
@@ -109,25 +107,18 @@ class RepositoryDefinition(object):
                 if solid_def.name not in solid_defs:
                     solid_defs[solid_def.name] = solid_def
                     solid_to_pipeline[solid_def.name] = pipeline.name
-                elif self.enforce_uniqueness:
-                    if not solid_defs[solid_def.name] is solid_def:
-                        raise DagsterInvalidDefinitionError(
-                            'Trying to add duplicate solid def {} in {}, Already saw in {}'.format(
-                                solid_def.name, pipeline.name, solid_to_pipeline[solid_def.name]
-                            )
+
+                if not solid_defs[solid_def.name] is solid_def:
+                    raise DagsterInvalidDefinitionError(
+                        'Trying to add duplicate solid def {} in {}, Already saw in {}'.format(
+                            solid_def.name, pipeline.name, solid_to_pipeline[solid_def.name]
                         )
+                    )
+
         return solid_defs
 
     def get_solid_def(self, name):
         check.str_param(name, 'name')
-
-        if not self.enforce_uniqueness:
-            raise DagsterInvariantViolationError(
-                (
-                    'In order for get_solid_def to have reliable semantics '
-                    'you must construct the repo with ensure_uniqueness=True'
-                )
-            )
 
         solid_defs = self._construct_solid_defs(self.get_all_pipelines())
 
