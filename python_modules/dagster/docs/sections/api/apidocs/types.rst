@@ -5,41 +5,49 @@ Types
 
 Dagster type system.
 
-Type definitions
------------------
-
+Scalar Types
+------------
 .. autoclass:: Any
-
-.. autofunction:: as_dagster_type
 
 .. autoclass:: Bool
 
-.. autofunction:: dagster_type
+.. autoclass:: Int
+
+.. autoclass:: String
+
+.. autoclass:: Path
+
+Wrapper Types
+-------------
+
+.. autofunction:: Nullable
+
+.. autofunction:: List
+
+.. autofunction:: Field
+
+.. autofunction:: Dict
+
+.. autofunction:: NamedDict
 
 .. autoclass:: ConfigType
 
-.. autofunction:: Dict
+Schema
+------
 
 .. autofunction:: input_schema
 
 .. autofunction:: input_selector_schema
 
-.. autoclass:: Int
-
-.. autofunction:: List
-
-.. autofunction:: NamedDict
-
-.. autofunction:: Nullable
-
 .. autofunction:: output_schema
 
 .. autofunction:: output_selector_schema
 
-.. autoclass:: Path
 
+Making New Types
+----------------
 .. autoclass:: PythonObjectType
 
-.. autoclass:: RuntimeType
+.. autofunction:: as_dagster_type
 
-.. autoclass:: String
+.. autofunction:: dagster_type

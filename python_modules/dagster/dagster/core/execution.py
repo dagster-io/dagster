@@ -140,9 +140,6 @@ class PipelineExecutionResult(object):
 
     def result_for_solid(self, name):
         '''Get a :py:class:`SolidExecutionResult` for a given solid name.
-
-        Returns:
-          SolidExecutionResult
         '''
         check.str_param(name, 'name')
 
@@ -740,8 +737,12 @@ def execute_pipeline_iterator(pipeline, environment_dict=None, run_config=None):
     node. For the 'synchronous' API, see :py:func:`execute_pipeline`.
 
     Parameters:
-      pipeline (PipelineDefinition): pipeline to run
-      execution (ExecutionContext): execution context of the run
+      pipeline (PipelineDefinition): Pipeline to run
+      environment_dict (dict): The enviroment configuration that parameterizes this run
+      run_config (RunConfig): Configuration for how this pipeline will be executed
+    
+    Returns:
+      Iterator[DagsterEvent]
     '''
     check.inst_param(pipeline, 'pipeline', PipelineDefinition)
     environment_dict = check.opt_dict_param(environment_dict, 'environment_dict')
@@ -766,10 +767,11 @@ def execute_pipeline(pipeline, environment_dict=None, run_config=None):
 
     Parameters:
       pipeline (PipelineDefinition): Pipeline to run
-      environment (dict): The enviroment that parameterizes this run
+      environment_dict (dict): The enviroment configuration that parameterizes this run        
+      run_config (RunConfig): Configuration for how this pipeline will be executed
 
     Returns:
-      PipelineExecutionResult
+      :py:class:`PipelineExecutionResult`
     '''
 
     check.inst_param(pipeline, 'pipeline', PipelineDefinition)

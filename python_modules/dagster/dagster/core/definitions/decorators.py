@@ -47,8 +47,8 @@ class MultipleResults(namedtuple('_MultipleResults', 'results')):
             ])
             def my_solid_from_dict():
                 return MultipleResults.from_dict({
-                'foo': 'Barb',
-                'bar': 'Glarb',
+                    'foo': 'Barb',
+                    'bar': 'Glarb',
                 })
 
     '''
