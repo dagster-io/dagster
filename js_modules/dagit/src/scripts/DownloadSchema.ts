@@ -3,7 +3,7 @@ import { getIntrospectionQuery, buildClientSchema, printSchema } from "graphql";
 import { writeFileSync } from "fs";
 
 const result = execSync(
-  `dagit --no-watch -q '${getIntrospectionQuery({ descriptions: false })}'`
+  `dagster-graphql '${getIntrospectionQuery({ descriptions: false })}'`
 ).toString();
 
 const schemaJson = JSON.parse(result).data;
@@ -19,8 +19,8 @@ const types = schemaJson.__schema.types.map(
     const { name, kind } = type;
     const possibleTypes = type.possibleTypes
       ? type.possibleTypes.map(t => ({
-          name: t.name
-        }))
+        name: t.name
+      }))
       : null;
     return { name, kind, possibleTypes };
   }
