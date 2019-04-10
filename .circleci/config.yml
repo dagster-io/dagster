@@ -285,13 +285,6 @@ jobs:
             sudo apt-get install -y xdg-utils
 
       - run:
-          name: Build dagit assets
-          command: |
-            pushd python_modules
-            make rebuild_dagit
-            popd
-
-      - run:
           name: Run Dagster Tests
           command: |
             pushd python_modules/dagit

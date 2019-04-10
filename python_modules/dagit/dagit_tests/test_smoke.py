@@ -50,8 +50,5 @@ def test_smoke_app():
     assert len(data['errors']) == 1
     assert 'must not have a sub selection' in data['errors'][0]['message']
 
-    result = client.get('index.html')
-    assert result.status_code == 200
-
     result = client.get('static/foo/bar')
     assert result.status_code == 404
