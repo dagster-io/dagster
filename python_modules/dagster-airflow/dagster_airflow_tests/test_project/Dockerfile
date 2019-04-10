@@ -12,5 +12,3 @@ RUN pip install -r requirements.txt
 ADD . .
 
 ENTRYPOINT [ "dagster-graphql" ]
-
-EXPOSE 3000
