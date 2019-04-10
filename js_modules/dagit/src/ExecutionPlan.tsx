@@ -16,6 +16,7 @@ interface IExecutionPlanProps {
   runMetadata?: IRunMetadataDict;
   onApplyStepFilter?: (step: string) => void;
   onShowStateDetails?: (step: string) => void;
+  onReexecuteStep?: (step: string) => void;
 }
 
 const EMPTY_RUN_METADATA: IRunMetadataDict = {
@@ -52,6 +53,7 @@ export default class ExecutionPlan extends React.PureComponent<
     const {
       onApplyStepFilter,
       onShowStateDetails,
+      onReexecuteStep,
       runMetadata = EMPTY_RUN_METADATA,
       executionPlan
     } = this.props;
@@ -120,6 +122,7 @@ export default class ExecutionPlan extends React.PureComponent<
                 materializations={metadata.materializations}
                 onShowStateDetails={onShowStateDetails}
                 onApplyStepFilter={onApplyStepFilter}
+                onReexecuteStep={onReexecuteStep}
                 delay={delay}
               />
             );
