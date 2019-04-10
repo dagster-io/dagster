@@ -311,6 +311,11 @@ jobs:
       - checkout
 
       - run:
+          name: Install requirements
+          command: |
+            sudo apt-get update && sudo apt-get install graphviz
+
+      - run:
           name: Run Dagster Tests
           command: |
             pushd python_modules/dagster
