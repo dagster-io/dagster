@@ -280,7 +280,7 @@ def define_pipeline_with_enum_config():
             )
         )
     )
-    def takes_an_enum(_info):
+    def takes_an_enum(_context):
         pass
 
     return PipelineDefinition(name='pipeline_with_enum_config', solids=[takes_an_enum])

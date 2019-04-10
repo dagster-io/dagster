@@ -8,21 +8,15 @@ execution. There are currently four types of contexts defined:
 
 They inherit from each other in reverse order. They are also relatively lightweight
 objects, and a new one is created for every invocation into user space.
-
-Additionally in order to maintain backwards compatibility (where info.context used
-to rule the day) we have a separate class LegacyContextAdapter which can be
-easily deleted once we break that API guarantee in 0.4.0.
 '''
 
 from abc import ABCMeta, abstractproperty, abstractmethod
 from collections import namedtuple
 import logging
-import warnings
 import six
 from dagster import check
 from dagster.utils.logging import INFO, define_colored_console_logger
 from .execution_context import (
-    SystemPipelineExecutionContext,
     SystemExpectationExecutionContext,
     SystemStepExecutionContext,
     SystemTransformExecutionContext,
@@ -51,100 +45,6 @@ class ExecutionContext(namedtuple('_ExecutionContext', 'loggers resources tags')
         )
 
 
-def _warn_about_context_property():
-    warnings.warn(
-        (
-            'As of 3.0.2 the context property is deprecated. Before your code likely looked '
-            'like info.context.some_method_or_property. All of the properties of the nested '
-            'context object have been hoisted to the top level, so just rename your info '
-            'object to context and access context.some_method_or_property. This property '
-            'will be removed in 0.4.0.'
-        )
-    )
-
-
-def _warn_about_config_property():
-    warnings.warn(
-        (
-            'As of 3.0.2 the config property is deprecated. Use solid_config instead. '
-            'This will be removed in 0.4.0.'
-        )
-    )
-
-
-# Delete this after 0.4.0
-class LegacyContextAdapter(object):
-    __slots__ = ['_pipeline_context']
-    '''
-    This class mimics the object that was at info.context prior to 0.3.1. It exists in
-    order to provide backwards compatibility.
-    '''
-
-    def __init__(self, pipeline_context):
-        self._pipeline_context = check.inst_param(
-            pipeline_context, 'pipeline_context', SystemPipelineExecutionContext
-        )
-
-    def has_tag(self, key):
-        check.str_param(key, 'key')
-        return key in self._pipeline_context.tags
-
-    def get_tag(self, key):
-        check.str_param(key, 'key')
-        return self._pipeline_context.tags[key]
-
-    @property
-    def run_id(self):
-        return self._pipeline_context.run_id
-
-    @property
-    def event_callback(self):
-        return self._pipeline_context.event_callback
-
-    @property
-    def has_event_callback(self):
-        return self._pipeline_context.event_callback is not None
-
-    @property
-    def environment_config(self):
-        return self._pipeline_context.environment_config
-
-    @property
-    def resources(self):
-        return self._pipeline_context.resources
-
-    @property
-    def tags(self):
-        return self._pipeline_context.tags
-
-    @property
-    def events(self):
-        return self._pipeline_context.events
-
-    @property
-    def log(self):
-        return self._pipeline_context.log
-
-    @property
-    def pipeline_def(self):
-        return self._pipeline_context.pipeline_def
-
-    def debug(self, msg, **kwargs):
-        return self._pipeline_context.log.debug(msg, **kwargs)
-
-    def info(self, msg, **kwargs):
-        return self._pipeline_context.log.info(msg, **kwargs)
-
-    def warning(self, msg, **kwargs):
-        return self._pipeline_context.log.warning(msg, **kwargs)
-
-    def error(self, msg, **kwargs):
-        return self._pipeline_context.log.error(msg, **kwargs)
-
-    def critical(self, msg, **kwargs):
-        return self._pipeline_context.log.critical(msg, **kwargs)
-
-
 class StepExecutionContext(object):
     __slots__ = ['_system_step_execution_context', '_legacy_context']
 
@@ -154,7 +54,6 @@ class StepExecutionContext(object):
             'system_step_execution_context',
             SystemStepExecutionContext,
         )
-        self._legacy_context = LegacyContextAdapter(system_step_execution_context)
 
     @property
     def resources(self):
@@ -175,11 +74,6 @@ class StepExecutionContext(object):
     @property
     def log(self):
         return self._system_step_execution_context.log
-
-    @property
-    def context(self):
-        _warn_about_context_property()
-        return self._legacy_context
 
     @property
     def solid_def(self):
@@ -217,10 +111,6 @@ class AbstractTransformExecutionContext(six.with_metaclass(ABCMeta)):  # pylint:
         pass
 
     @abstractproperty
-    def context(self):
-        pass
-
-    @abstractproperty
     def solid_def(self):
         pass
 
@@ -255,11 +145,6 @@ class TransformExecutionContext(StepExecutionContext, AbstractTransformExecution
     @property
     def solid_config(self):
         return self._system_transform_execution_context.solid_config
-
-    @property
-    def config(self):
-        _warn_about_config_property()
-        return self.solid_config
 
 
 class ExpectationExecutionContext(StepExecutionContext):

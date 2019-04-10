@@ -43,7 +43,7 @@ def multiple_output_pipeline():
     @solid(
         outputs=[OutputDefinition(types.Int, 'number'), OutputDefinition(types.String, 'string')]
     )
-    def return_one_and_foo(_info):
+    def return_one_and_foo(_context):
         yield Result(1, 'number')
         yield Result('foo', 'string')
 
@@ -60,7 +60,7 @@ def single_int_named_output_pipeline():
 
 def no_input_no_output_pipeline():
     @solid(outputs=[])
-    def take_nothing_return_nothing(_info):
+    def take_nothing_return_nothing(_context):
         pass
 
     return PipelineDefinition(
@@ -70,7 +70,7 @@ def no_input_no_output_pipeline():
 
 def one_input_no_output_pipeline():
     @solid(inputs=[InputDefinition('dummy')], outputs=[])
-    def take_input_return_nothing(_info, **_kwargs):
+    def take_input_return_nothing(_context, **_kwargs):
         pass
 
     return PipelineDefinition(
@@ -105,7 +105,7 @@ def test_basic_json_named_output_config_schema():
 
 
 def test_basic_json_misnamed_output_config_schema():
-    with pytest.raises(PipelineConfigEvaluationError) as exc_info:
+    with pytest.raises(PipelineConfigEvaluationError) as exc_context:
         create_environment_config(
             single_int_named_output_pipeline(),
             {
@@ -115,19 +115,19 @@ def test_basic_json_misnamed_output_config_schema():
             },
         )
 
-    assert len(exc_info.value.errors) == 1
-    assert 'Error 1: Undefined field "wrong_name"' in exc_info.value.message
-    assert 'at path root:solids:return_named_one:outputs[0]' in exc_info.value.message
+    assert len(exc_context.value.errors) == 1
+    assert 'Error 1: Undefined field "wrong_name"' in exc_context.value.message
+    assert 'at path root:solids:return_named_one:outputs[0]' in exc_context.value.message
 
 
 def test_no_outputs_no_inputs_config_schema():
     assert create_environment_config(no_input_no_output_pipeline())
 
-    with pytest.raises(PipelineConfigEvaluationError) as exc_info:
+    with pytest.raises(PipelineConfigEvaluationError) as exc_context:
         create_environment_config(no_input_no_output_pipeline(), {'solids': {'return_one': {}}})
 
-    assert len(exc_info.value.errors) == 1
-    assert 'Error 1: Undefined field "return_one" at path root:solids' in exc_info.value.message
+    assert len(exc_context.value.errors) == 1
+    assert 'Error 1: Undefined field "return_one" at path root:solids' in exc_context.value.message
 
 
 def test_no_outputs_one_input_config_schema():
@@ -136,7 +136,7 @@ def test_no_outputs_one_input_config_schema():
         {'solids': {'take_input_return_nothing': {'inputs': {'dummy': {'value': 'value'}}}}},
     )
 
-    with pytest.raises(PipelineConfigEvaluationError) as exc_info:
+    with pytest.raises(PipelineConfigEvaluationError) as exc_context:
         create_environment_config(
             one_input_no_output_pipeline(),
             {
@@ -149,9 +149,9 @@ def test_no_outputs_one_input_config_schema():
             },
         )
 
-    assert len(exc_info.value.errors) == 1
+    assert len(exc_context.value.errors) == 1
     exp_msg = 'Error 1: Undefined field "outputs" at path root:solids:take_input_return_nothing'
-    assert exp_msg in exc_info.value.message
+    assert exp_msg in exc_context.value.message
 
 
 def test_basic_int_execution_plan():
