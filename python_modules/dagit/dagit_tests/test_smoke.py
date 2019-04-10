@@ -43,3 +43,18 @@ def test_smoke_app():
     result = client.get('/dagit/notebook?path=foo.bar')
     assert result.status_code == 400
     assert result.data.decode('utf-8') == 'Invalid Path'
+
+
+    result = client.post('/graphql', data={'query': 'query { version { slkjd } }'})
+    data = json.loads(result.data.decode('utf-8'))
+    assert 'errors' in data
+    assert len(data['errors']) == 1
+    assert 'must not have a sub selection' in data['errors'][0]['message']
+
+
+    result = client.get('index.html')
+    assert result.status_code == 200
+
+    result = client.get('static/foo/bar')
+    assert result.status_code == 404
+
