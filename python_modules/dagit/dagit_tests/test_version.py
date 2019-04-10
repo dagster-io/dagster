@@ -6,6 +6,4 @@ from dagit.version import __version__
 
 
 def test_version():
-    assert subprocess.check_output(['dagit-cli', '--version']).decode('utf-8').strip('\n').strip(
-        '\r'
-    ) == 'dagit-cli, version {version}'.format(version=__version__)
+    assert __version__ == '0.3.5'

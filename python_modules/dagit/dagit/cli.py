@@ -57,7 +57,7 @@ REPO_TARGET_WARNING = (
     is_flag=True,
     help='Disable autoreloading when there are changes to the repo/pipeline being served',
 )
-@click.version_option(version=__version__)
+@click.version_option(version=__version__, prog_name='dagit')
 def ui(host, port, sync, log, log_dir, no_watch=False, **kwargs):
     repository_target_info = load_target_info_from_cli_args(kwargs)
 
