@@ -600,7 +600,7 @@ def create_missing_required_field_error(config_type, stack, expected_field):
         ).format(
             expected=expected_field,
             path_msg=_get_friendly_path_msg(stack),
-            available_fields=list(config_type.fields.keys()),
+            available_fields=sorted(list(config_type.fields.keys())),
         ),
         error_data=MissingFieldErrorData(
             field_name=expected_field, field_def=config_type.fields[expected_field]
