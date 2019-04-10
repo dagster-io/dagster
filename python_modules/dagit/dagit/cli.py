@@ -1,4 +1,3 @@
-import json
 import os
 import sys
 
@@ -6,19 +5,13 @@ import click
 
 from gevent import pywsgi
 from geventwebsocket.handler import WebSocketHandler
-from graphql import graphql
-from graphql.execution.executors.gevent import GeventExecutor as Executor
 
-
-from dagster import check, seven
+from dagster import check
 from dagster.cli.dynamic_loader import (
     RepositoryContainer,
     load_target_info_from_cli_args,
     repository_target_argument,
 )
-from dagster.utils.logging import get_stack_trace_array
-from dagster_graphql.implementation.context import DagsterGraphQLContext
-from dagster_graphql.implementation.pipeline_execution_manager import SynchronousExecutionManager
 from dagster_graphql.implementation.pipeline_run_storage import (
     PipelineRunStorage,
     LogFilePipelineRun,
@@ -26,7 +19,6 @@ from dagster_graphql.implementation.pipeline_run_storage import (
 )
 
 from .app import create_app
-from .schema import create_schema
 from .version import __version__
 
 
@@ -37,50 +29,6 @@ def create_dagit_cli():
 REPO_TARGET_WARNING = (
     'Can only use ONE of --repository-yaml/-y, --python-file/-f, --module-name/-m.'
 )
-
-
-def execute_query_from_cli(repository_container, query, variables):
-    check.str_param(query, 'query')
-    check.opt_str_param(variables, 'variables')
-
-    create_pipeline_run = InMemoryPipelineRun
-    pipeline_run_storage = PipelineRunStorage(create_pipeline_run=create_pipeline_run)
-    execution_manager = SynchronousExecutionManager()
-
-    context = DagsterGraphQLContext(
-        repository_container=repository_container,
-        pipeline_runs=pipeline_run_storage,
-        execution_manager=execution_manager,
-        version=__version__,
-    )
-
-    result = graphql(
-        request_string=query,
-        schema=create_schema(),
-        context=context,
-        variables=json.loads(variables) if variables else None,
-        executor=Executor(),
-    )
-
-    result_dict = result.to_dict()
-
-    # Here we detect if this is in fact an error response
-    # If so, we iterate over the result_dict and the original result
-    # which contains a GraphQLError. If that GraphQL error contains
-    # an original_error property (which is the exception the resolver
-    # has thrown, typically) we serialize the stack trace of that exception
-    # in the 'stack_trace' property of each error to ease debugging
-
-    if 'errors' in result_dict:
-        check.invariant(len(result_dict['errors']) == len(result.errors))
-        for python_error, error_dict in zip(result.errors, result_dict['errors']):
-            if python_error.original_error:
-                error_dict['stack_trace'] = get_stack_trace_array(python_error.original_error)
-
-    str_res = seven.json.dumps(result_dict)
-
-    print(str_res)
-    return str_res
 
 
 @click.command(
@@ -104,25 +52,17 @@ def execute_query_from_cli(repository_container, query, variables):
 @click.option('--sync', is_flag=True, help='Use the synchronous execution manager')
 @click.option('--log', is_flag=False, help='Record logs of pipeline runs')
 @click.option('--log-dir', help="Directory to record logs to", default='dagit_run_logs/')
-@click.option('--query', '-q', type=click.STRING)
-@click.option('--variables', '-v', type=click.STRING)
 @click.option(
     '--no-watch',
     is_flag=True,
     help='Disable autoreloading when there are changes to the repo/pipeline being served',
 )
 @click.version_option(version=__version__)
-def ui(host, port, sync, log, log_dir, query, variables, no_watch=False, **kwargs):
+def ui(host, port, sync, log, log_dir, no_watch=False, **kwargs):
     repository_target_info = load_target_info_from_cli_args(kwargs)
 
     sys.path.append(os.getcwd())
     repository_container = RepositoryContainer(repository_target_info)
-
-    if query:
-        return execute_query_from_cli(repository_container, query, variables)
-    else:
-        if variables:
-            raise Exception('if you specify --variables/-v you need to specify --query/-q')
 
     check.invariant(
         not no_watch,
