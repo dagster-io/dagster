@@ -19,7 +19,7 @@ def ensure_boto_requirements():
     # TODO this could be factored to check.import
     try:
         import boto3
-    except ImportError:
+    except (ImportError, ModuleNotFoundError):
         raise check.CheckError(
             'boto3 must be available for import in order to make use of an S3ObjectStore'
         )

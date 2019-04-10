@@ -11,38 +11,32 @@
 pip install --upgrade pip
 pip install -r bin/requirements.txt
 
-pip install -e python_modules/dagster
-pip install -r python_modules/dagster/requirements.txt
+pip install -e python_modules/dagster[aws]
 pip install -r python_modules/dagster/dev-requirements.txt
-
 python -m pytest python_modules/dagster
 
+pip install python_modules/libraries/dagster-pandas
+python pytest -m python_modules/libraries/dagster-pandas
+
+pip install -e python_modules/dagster-graphql
+python -m pytest python_modules/dagster-graphql
+
 pip install -e python_modules/dagstermill
-
 python -m pytest python_modules/dagstermill
-
-pip install -e python_modules/dagster-pandas
-python -m pytest python_modules/dagster-pandas
-
-pip install -e python_modules/dagster-sqlalchemy
-python -m pytest python_modules/dagster-sqlalchemy
 
 pip install -e python_modules/dagit
 pip install -r python_modules/dagit/dev-requirements.txt
-
 python -m pytest python_modules/dagit
 
-pip install -e python_modules/dagster-ge
-python -m pytest python_modules/dagster-ge
+pip install -e python_modules/dagster-graphql
+python -m pytest python_modules/dagster-graphql
 
-# commented out for now until we can conditionally do this based on python version
-# and pyyaml version conflict issues
-if 0; then
+PYTHON_37 = `python -c 'import sys; exit(1) if sys.version_info.major >= 3 and sys.version_info.minor >= 7 else exit(0)'`
 
-  # This is supposedly being fixed, but right now airflow requires you to set a
-  # flag before install to choose between GPL and non-GPL dependencies
+if [! $PYTHON_37]
+then
   SLUGIFY_USES_TEXT_UNIDECODE=yes pip install -e python_modules/dagster-airflow
-  pip install -r python_modules/dagster-airflow/dev-requirements.txt
+  python -m pytest python_modules/dagster-airflow
 
   airflow initdb
 
@@ -56,6 +50,24 @@ if 0; then
   make test_airline
   popd
 fi
+
+pip install python_modules/libraries/dagster-aws
+python pytest -m python_modules/libraries/dagster-aws
+
+pip install python_modules/libraries/dagster-sqlalchemy
+python pytest -m python_modules/libraries/dagster-sqlalchemy
+
+pip install python_modules/libraries/dagster-ge
+python pytest -m python_modules/libraries/dagster-ge
+
+pip install python_modules/libraries/dagster-spark
+python pytest -m python_modules/libraries/dagster-spark
+
+pip install python_modules/libraries/dagster-snowflake
+python pytest -m python_modules/libraries/dagster-snowflake
+
+pip install python_modules/libraries/dagster-pyspark
+python pytest -m python_modules/libraries/dagster-pyspark
 
 pushd python_modules
 make rebuild_dagit

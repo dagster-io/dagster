@@ -15,7 +15,7 @@ environment.
 
 Detailed Installation Guide
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-Dagster is tested on Python 3.7.2, 3.6.6, 3.5.6, and 2.7.15. Python 3 is strongly
+Dagster is tested on Python 3.7.3, 3.6.8, 3.5.7, and 2.7.16. Python 3 is strongly
 encouraged -- if you can, you won't regret making the switch!
 
 To check that Python and the pip package manager are already installed, you can run:

@@ -1692,7 +1692,7 @@ environment.
 
 Detailed Installation Guide
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-Dagster is tested on Python 3.7.2, 3.6.6, 3.5.6, and 2.7.15. Python 3 is strongly
+Dagster is tested on Python 3.7.3, 3.6.8, 3.5.7, and 2.7.16. Python 3 is strongly
 encouraged -- if you can, you won't regret making the switch!
 
 To check that Python and the pip package manager are already installed, you can run:
@@ -21470,7 +21470,7 @@ environment.</p>
 </div>
 <div class="section" id="detailed-installation-guide">
 <h2>Detailed Installation Guide<a class="headerlink" href="#detailed-installation-guide" title="Permalink to this headline">¶</a></h2>
-<p>Dagster is tested on Python 3.7.2, 3.6.6, 3.5.6, and 2.7.15. Python 3 is strongly
+<p>Dagster is tested on Python 3.7.3, 3.6.8, 3.5.7, and 2.7.16. Python 3 is strongly
 encouraged – if you can, you won’t regret making the switch!</p>
 <p>To check that Python and the pip package manager are already installed, you can run:</p>
 <div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$</span> python --version
