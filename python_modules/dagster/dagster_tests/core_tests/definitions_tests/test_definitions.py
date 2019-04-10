@@ -46,7 +46,7 @@ def test_solid_def():
     )
 
     assert len(pipeline_def.solids[0].output_handles()) == 1
-    
+
     assert isinstance(pipeline_def.solid_named('solid_one'), Solid)
 
     solid_one_solid = pipeline_def.solid_named('solid_one')
@@ -77,7 +77,7 @@ def test_solid_def():
         'SolidOutputHandle(solid_name="\'solid_one\'", definition_name="\'solid_one\'", '
         'output_name="\'result\'")'
     )
-    
+
     assert solid_one_solid.output_handle('result') == SolidOutputHandle(
         solid_one_solid, solid_one_solid.output_defs[0]
     )
