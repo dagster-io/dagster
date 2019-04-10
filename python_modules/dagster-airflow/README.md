@@ -81,25 +81,24 @@ FROM python:3.7
 # If you would like to set secrets at build time (with --build-arg), set args
 # ARG super_secret
 
-# Install Dagit
-RUN pip install dagit
+# Install dagster_graphql
+RUN pip install dagster_graphql
 
 # Install any Python requirements that the pipelines in your repository require to run
 ADD /path/to/requirements.txt .
 RUN pip install -r requirements.txt
 
-# Add your repository.yml file so that Dagit knows where to look to find your repository, the
-# Python file in which your repository is defined, and any local dependencies (e.g., unpackaged
+# Add your repository.yml file so that dagster_graphql knows where to look to find your repository,
+# the Python file in which your repository is defined, and any local dependencies (e.g., unpackaged
 # Python files from which your repository definition imports, or local packages that cannot be
 # installed using the requirements.txt).
 ADD /path/to/repository.yml .
 ADD /path/to/repository_definition.py .
 # ADD /path/to/additional_file.py .
 
-# The dagster-airflow machinery will use Dagit's GraphQL server to execute steps in your
-# pipelines, so we need to run Dagit (by default on port 3000) when the container starts up
-ENTRYPOINT [ "dagit", "--no-watch" ]
-EXPOSE 3000
+# The dagster-airflow machinery will use dagster_graphql to execute steps in your pipelines, so we
+# need to run dagster_graphql when the container starts up
+ENTRYPOINT [ "dagster_graphql" ]
 ```
 
 Of course, you may expand on this Dockerfile in any way that suits your needs.

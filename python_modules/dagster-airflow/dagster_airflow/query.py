@@ -1,11 +1,3 @@
-DAGSTER_OPERATOR_COMMAND_TEMPLATE = '''-q '
-{query}
-'
-'''.strip(
-    '\n'
-)
-
-
 # TODO need to enrich error handling as we enrich the ultimate union type for executePlan
 QUERY_TEMPLATE = '''
 mutation(
