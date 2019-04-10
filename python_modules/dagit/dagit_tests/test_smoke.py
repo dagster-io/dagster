@@ -38,7 +38,7 @@ def test_smoke_app():
 
     result = client.get('/dagit/open?path=foo.bar')
     assert result.status_code == 400
-    assert 'does not exist.' in result.data.decode('utf-8')
+    assert 'does not exist' in result.data.decode('utf-8')
 
     result = client.get('/dagit/notebook?path=foo.bar')
     assert result.status_code == 400
