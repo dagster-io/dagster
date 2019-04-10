@@ -1,5 +1,6 @@
 '''Internal py2/3 compatibility library. A little more than six.'''
 
+import os
 import sys
 import time
 
