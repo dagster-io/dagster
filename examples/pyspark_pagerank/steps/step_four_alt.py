@@ -10,7 +10,19 @@ from dagster import (
     PipelineDefinition,
     solid,
 )
-from dagster_pyspark import spark_session_resource, SparkRDD
+
+from dagster_pyspark import SparkRDD, spark_session_resource
+
+'''
+Steps:
+
+0) Imports
+1) Add PipelineContextDefiniton
+context_definitions={
+    'local': PipelineContextDefinition(resources={'spark': spark_session_resource})
+},
+2) eliminate SparkSession refs, spark ==> context.resources.spark, kill spark.stop()
+'''
 
 
 def computeContribs(urls, rank):
@@ -27,13 +39,17 @@ def parseNeighbors(urls):
 
 
 @solid(inputs=[InputDefinition('path', Path)], outputs=[OutputDefinition(SparkRDD)])
-def parse_pagerank_data(context, path):
+def load_pagerank_data_step_four_alt(context, path):
+    # two urls per line with space in between)
     lines = context.resources.spark.read.text(path).rdd.map(lambda r: r[0])
+
+    # Loads all URLs from input file and initialize their neighbors.
     return lines.map(parseNeighbors)
 
 
 @solid(inputs=[InputDefinition('urls', SparkRDD)])
-def execute_pagerank(context, urls):
+def execute_page_rank_step_four_alt(context, urls):
+    # Loads all URLs from input file and initialize their neighbors.
     links = urls.distinct().groupByKey().cache()
 
     # Loads all URLs with other URL(s) link to from input file and initialize ranks of them to one.
@@ -55,14 +71,20 @@ def execute_pagerank(context, urls):
     for (link, rank) in ranks.collect():
         context.log.info("%s has rank: %s." % (link, rank))
 
+    context.resources.spark.stop()
+
 
 def define_pyspark_pagerank_step_four():
     return PipelineDefinition(
         name='pyspark_pagerank_step_four',
-        solids=[parse_pagerank_data, execute_pagerank],
-        dependencies={'execute_pagerank': {'urls': DependencyDefinition('parse_pagerank_data')}},
         context_definitions={
             'local': PipelineContextDefinition(resources={'spark': spark_session_resource})
+        },
+        solids=[load_pagerank_data_step_four_alt, execute_page_rank_step_four_alt],
+        dependencies={
+            'execute_page_rank_step_four_alt': {
+                'urls': DependencyDefinition('load_pagerank_data_step_four_alt')
+            }
         },
     )
 
@@ -75,18 +97,9 @@ if __name__ == '__main__':
         define_pyspark_pagerank_step_four(),
         environment_dict={
             'solids': {
-                'parse_pagerank_data': {
+                'load_pagerank_data_step_four_alt': {
                     'inputs': {'path': script_relative_path('../pagerank_data.txt')}
                 }
-            },
-            'context': {
-                'local': {
-                    'resources': {
-                        'spark': {
-                            'config': {'spark_conf': {'spark': {'app': {'name': 'some_name'}}}}
-                        }
-                    }
-                }
-            },
+            }
         },
     )

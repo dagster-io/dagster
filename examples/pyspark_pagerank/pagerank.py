@@ -10,6 +10,7 @@ from dagster import (
     PipelineDefinition,
     solid,
 )
+
 from dagster_pyspark import spark_session_resource, SparkRDD
 
 
@@ -56,37 +57,12 @@ def execute_pagerank(context, urls):
         context.log.info("%s has rank: %s." % (link, rank))
 
 
-def define_pyspark_pagerank_step_four():
+def define_pipeline():
     return PipelineDefinition(
-        name='pyspark_pagerank_step_four',
+        name='pyspark_pagerank',
         solids=[parse_pagerank_data, execute_pagerank],
         dependencies={'execute_pagerank': {'urls': DependencyDefinition('parse_pagerank_data')}},
         context_definitions={
             'local': PipelineContextDefinition(resources={'spark': spark_session_resource})
-        },
-    )
-
-
-if __name__ == '__main__':
-    from dagster import execute_pipeline
-    from dagster.utils import script_relative_path
-
-    execute_pipeline(
-        define_pyspark_pagerank_step_four(),
-        environment_dict={
-            'solids': {
-                'parse_pagerank_data': {
-                    'inputs': {'path': script_relative_path('../pagerank_data.txt')}
-                }
-            },
-            'context': {
-                'local': {
-                    'resources': {
-                        'spark': {
-                            'config': {'spark_conf': {'spark': {'app': {'name': 'some_name'}}}}
-                        }
-                    }
-                }
-            },
         },
     )

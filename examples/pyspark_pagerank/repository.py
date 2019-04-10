@@ -19,7 +19,7 @@ def define_repository():
     return RepositoryDefinition(
         name='pyspark_pagerank_repo_step_one',
         pipeline_dict={
-            'pyspark_pagerank': define_pipeline,
+            'pyspark_pagerank_example': define_pipeline,
             'pyspark_pagerank_step_one': define_pyspark_pagerank_step_one,
             'pyspark_pagerank_step_two': define_pyspark_pagerank_step_two,
             'pyspark_pagerank_step_three': define_pyspark_pagerank_step_three,

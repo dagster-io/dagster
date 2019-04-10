@@ -17,9 +17,8 @@ from dagster import (
 )
 from dagster.core.types.runtime import define_any_type
 
-from dagster_framework.spark.configs_spark import spark_config
-
-from dagster_framework.spark.utils import flatten_dict
+from dagster_spark.configs_spark import spark_config
+from dagster_spark.utils import flatten_dict
 
 
 @input_selector_schema(
