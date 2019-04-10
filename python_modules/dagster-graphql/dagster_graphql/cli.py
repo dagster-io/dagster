@@ -35,6 +35,8 @@ def execute_query_from_cli(repository_container, query, variables):
     check.str_param(query, 'query')
     check.opt_str_param(variables, 'variables')
 
+    query = query.strip('\'" \n\t')
+
     create_pipeline_run = InMemoryPipelineRun
     pipeline_run_storage = PipelineRunStorage(create_pipeline_run=create_pipeline_run)
     execution_manager = SynchronousExecutionManager()
@@ -45,6 +47,8 @@ def execute_query_from_cli(repository_container, query, variables):
         execution_manager=execution_manager,
         version=__version__,
     )
+
+    # import pdb; pdb.set_trace()
 
     result = graphql(
         request_string=query,
@@ -66,7 +70,7 @@ def execute_query_from_cli(repository_container, query, variables):
     if 'errors' in result_dict:
         check.invariant(len(result_dict['errors']) == len(result.errors))
         for python_error, error_dict in zip(result.errors, result_dict['errors']):
-            if python_error.original_error:
+            if hasattr(python_error, 'original_error') and python_error.original_error:
                 error_dict['stack_trace'] = get_stack_trace_array(python_error.original_error)
 
     str_res = seven.json.dumps(result_dict)
@@ -97,6 +101,8 @@ def ui(variables, query, **kwargs):
     repository_target_info = load_target_info_from_cli_args(kwargs)
 
     repository_container = RepositoryContainer(repository_target_info)
+
+    query = query.strip('\'" \n\t')
 
     execute_query_from_cli(repository_container, query, variables)
 
