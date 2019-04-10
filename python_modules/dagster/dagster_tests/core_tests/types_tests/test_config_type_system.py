@@ -477,7 +477,7 @@ def test_multilevel_default_handling():
 
 def test_no_env_missing_required_error_handling():
     @solid(config_field=Field(Int))
-    def required_int_solid(_info):
+    def required_int_solid(_context):
         pass
 
     pipeline_def = PipelineDefinition(
@@ -506,7 +506,7 @@ def test_no_env_missing_required_error_handling():
 
 def test_root_extra_field():
     @solid(config_field=Field(Int))
-    def required_int_solid(_info):
+    def required_int_solid(_context):
         pass
 
     pipeline_def = PipelineDefinition(name='root_extra_field', solids=[required_int_solid])
@@ -526,7 +526,7 @@ def test_root_extra_field():
 
 def test_deeper_path():
     @solid(config_field=Field(Int))
-    def required_int_solid(_info):
+    def required_int_solid(_context):
         pass
 
     pipeline_def = PipelineDefinition(name='deeper_path', solids=[required_int_solid])
@@ -615,7 +615,7 @@ def test_context_selector_working():
 
 def test_context_selector_extra_context():
     @solid
-    def check_context(_info):
+    def check_context(_context):
         assert False
 
     pipeline_def = PipelineDefinition(
@@ -650,7 +650,7 @@ def test_context_selector_extra_context():
 
 def test_context_selector_wrong_name():
     @solid
-    def check_context(_info):
+    def check_context(_context):
         assert False
 
     pipeline_def = PipelineDefinition(
@@ -679,7 +679,7 @@ def test_context_selector_wrong_name():
 
 def test_context_selector_none_given():
     @solid
-    def check_context(_info):
+    def check_context(_context):
         assert False
 
     pipeline_def = PipelineDefinition(
@@ -706,7 +706,7 @@ def test_context_selector_none_given():
 
 def test_multilevel_good_error_handling_solids():
     @solid(config_field=Field(Int))
-    def good_error_handling(_info):
+    def good_error_handling(_context):
         pass
 
     pipeline_def = PipelineDefinition(
@@ -724,7 +724,7 @@ def test_multilevel_good_error_handling_solids():
 
 def test_multilevel_good_error_handling_solid_name_solids():
     @solid(config_field=Field(Int))
-    def good_error_handling(_info):
+    def good_error_handling(_context):
         pass
 
     pipeline_def = PipelineDefinition(
@@ -742,7 +742,7 @@ def test_multilevel_good_error_handling_solid_name_solids():
 
 def test_multilevel_good_error_handling_config_solids_name_solids():
     @solid(config_field=Field(Nullable(Int)))
-    def good_error_handling(_info):
+    def good_error_handling(_context):
         pass
 
     pipeline_def = PipelineDefinition(

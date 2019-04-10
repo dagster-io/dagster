@@ -120,7 +120,7 @@ class _Solid(object):
         if not self.name:
             self.name = fn.__name__
 
-        _validate_transform_fn(self.name, fn, self.input_defs, [('info', 'context')])
+        _validate_transform_fn(self.name, fn, self.input_defs, [('context',)])
         transform_fn = _create_solid_transform_wrapper(fn, self.input_defs, self.outputs)
         return SolidDefinition(
             name=self.name,
