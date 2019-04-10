@@ -3,11 +3,21 @@ import shutil
 import tempfile
 import uuid
 
-from dagster import check, PipelineDefinition, RunConfig, seven
+import pytest
+
+from dagster import (
+    Bool as Bool_,
+    check,
+    List as List_,
+    String as String_,
+    PipelineDefinition,
+    RunConfig,
+    seven,
+)
 from dagster.core.execution import yield_pipeline_execution_context
 from dagster.core.types.marshal import SerializationStrategy
 from dagster.core.object_store import FileSystemObjectStore, S3ObjectStore, TypeStoragePlugin
-from dagster.core.types.runtime import Bool, RuntimeType, String
+from dagster.core.types.runtime import Bool, resolve_to_runtime_type, RuntimeType, String
 from dagster.utils import mkdir_p
 
 from ..marks import aws, nettest
@@ -110,6 +120,33 @@ def test_file_system_object_store_with_base_dir():
             pass
 
 
+def test_file_system_object_store_composite_types():
+    run_id = str(uuid.uuid4())
+
+    object_store = FileSystemObjectStore(run_id=run_id)
+    assert object_store.root == os.path.join(
+        seven.get_system_temp_directory(), 'dagster', 'runs', run_id, 'files'
+    )
+
+    with yield_pipeline_execution_context(
+        PipelineDefinition([]), {}, RunConfig(run_id=run_id)
+    ) as context:
+        try:
+            object_store.set_object(
+                [True, False], context, resolve_to_runtime_type(List_(Bool_)).inst(), ['bool']
+            )
+            assert object_store.has_object(context, ['bool'])
+            assert object_store.get_object(
+                context, resolve_to_runtime_type(List_(Bool_)).inst(), ['bool']
+            ) == [True, False]
+
+        finally:
+            try:
+                shutil.rmtree(object_store.root)
+            except seven.FileNotFoundError:
+                pass
+
+
 def test_file_system_object_store_with_custom_serializer():
     run_id = str(uuid.uuid4())
 
@@ -126,6 +163,36 @@ def test_file_system_object_store_with_custom_serializer():
 
             assert object_store.has_object(context, ['foo'])
             assert object_store.get_object(context, LowercaseString.inst(), ['foo']) == 'foo'
+        finally:
+            try:
+                shutil.rmtree(object_store.root)
+            except seven.FileNotFoundError:
+                pass
+
+
+def test_file_system_object_store_composite_types_with_custom_serializer_for_inner_type():
+    run_id = str(uuid.uuid4())
+
+    object_store = FileSystemObjectStore(run_id=run_id)
+    assert object_store.root == os.path.join(
+        seven.get_system_temp_directory(), 'dagster', 'runs', run_id, 'files'
+    )
+
+    with yield_pipeline_execution_context(
+        PipelineDefinition([]), {}, RunConfig(run_id=run_id)
+    ) as context:
+        try:
+            object_store.set_object(
+                ['foo', 'bar'],
+                context,
+                resolve_to_runtime_type(List_(LowercaseString)).inst(),
+                ['list'],
+            )
+            assert object_store.has_object(context, ['list'])
+            assert object_store.get_object(
+                context, resolve_to_runtime_type(List_(Bool_)).inst(), ['list']
+            ) == ['foo', 'bar']
+
         finally:
             try:
                 shutil.rmtree(object_store.root)
@@ -184,6 +251,31 @@ def test_s3_object_store_with_custom_serializer():
             object_store.rm_object(context, ['foo'])
 
 
+@aws
+@nettest
+def test_s3_object_store_composite_types_with_custom_serializer_for_inner_type():
+    run_id = str(uuid.uuid4())
+
+    object_store = S3ObjectStore(run_id=run_id, s3_bucket='dagster-airflow-scratch')
+    with yield_pipeline_execution_context(
+        PipelineDefinition([]), {}, RunConfig(run_id=run_id)
+    ) as context:
+        try:
+            object_store.set_object(
+                ['foo', 'bar'],
+                context,
+                resolve_to_runtime_type(List_(LowercaseString)).inst(),
+                ['list'],
+            )
+            assert object_store.has_object(context, ['list'])
+            assert object_store.get_object(
+                context, resolve_to_runtime_type(List_(Bool_)).inst(), ['list']
+            ) == ['foo', 'bar']
+
+        finally:
+            object_store.rm_object(context, ['foo'])
+
+
 def test_file_system_object_store_with_type_storage_plugin():
     run_id = str(uuid.uuid4())
 
@@ -196,13 +288,30 @@ def test_file_system_object_store_with_type_storage_plugin():
         PipelineDefinition([]), {}, RunConfig(run_id=run_id)
     ) as context:
         try:
-            object_store.set_object('hello', context, String.inst(), ['obj_name'])
+            object_store.set_value('hello', context, String.inst(), ['obj_name'])
 
             assert object_store.has_object(context, ['obj_name'])
-            assert object_store.get_object(context, String.inst(), ['obj_name']) == 'hello'
+            assert object_store.get_value(context, String.inst(), ['obj_name']) == 'hello'
 
         finally:
             object_store.rm_object(context, ['obj_name'])
+
+
+def test_file_system_object_store_with_composite_type_storage_plugin():
+    run_id = str(uuid.uuid4())
+
+    # FIXME need a dedicated test bucket
+    object_store = FileSystemObjectStore(
+        run_id=run_id, types_to_register={String.inst(): FancyStringFilesystemTypeStoragePlugin}
+    )
+
+    with yield_pipeline_execution_context(
+        PipelineDefinition([]), {}, RunConfig(run_id=run_id)
+    ) as context:
+        with pytest.raises(check.NotImplementedCheckError):
+            object_store.set_value(
+                ['hello'], context, resolve_to_runtime_type(List_(String_)), ['obj_name']
+            )
 
 
 @aws
@@ -221,10 +330,31 @@ def test_s3_object_store_with_type_storage_plugin():
         PipelineDefinition([]), {}, RunConfig(run_id=run_id)
     ) as context:
         try:
-            object_store.set_object('hello', context, String.inst(), ['obj_name'])
+            object_store.set_value('hello', context, String.inst(), ['obj_name'])
 
             assert object_store.has_object(context, ['obj_name'])
-            assert object_store.get_object(context, String.inst(), ['obj_name']) == 'hello'
+            assert object_store.get_value(context, String.inst(), ['obj_name']) == 'hello'
 
         finally:
             object_store.rm_object(context, ['obj_name'])
+
+
+@aws
+@nettest
+def test_s3_object_store_with_composite_type_storage_plugin():
+    run_id = str(uuid.uuid4())
+
+    # FIXME need a dedicated test bucket
+    object_store = S3ObjectStore(
+        run_id=run_id,
+        s3_bucket='dagster-airflow-scratch',
+        types_to_register={String.inst(): FancyStringS3TypeStoragePlugin},
+    )
+
+    with yield_pipeline_execution_context(
+        PipelineDefinition([]), {}, RunConfig(run_id=run_id)
+    ) as context:
+        with pytest.raises(check.NotImplementedCheckError):
+            object_store.set_value(
+                ['hello'], context, resolve_to_runtime_type(List_(String_)), ['obj_name']
+            )

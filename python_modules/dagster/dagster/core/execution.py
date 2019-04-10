@@ -70,7 +70,11 @@ from .intermediates_manager import (
 
 from .log import DagsterLog
 
-from .object_store import FileSystemObjectStore, S3ObjectStore, construct_type_registry
+from .object_store import (
+    FileSystemObjectStore,
+    S3ObjectStore,
+    construct_type_storage_plugin_registry,
+)
 
 from .runs import (
     DagsterRunMeta,
@@ -420,7 +424,7 @@ def construct_intermediates_manager(run_config, environment_config, pipeline_def
             return ObjectStoreIntermediatesManager(
                 FileSystemObjectStore(
                     run_config.run_id,
-                    construct_type_registry(pipeline_def, RunStorageMode.FILESYSTEM),
+                    construct_type_storage_plugin_registry(pipeline_def, RunStorageMode.FILESYSTEM),
                 )
             )
         elif run_config.storage_mode == RunStorageMode.IN_MEMORY:
@@ -430,7 +434,7 @@ def construct_intermediates_manager(run_config, environment_config, pipeline_def
                 S3ObjectStore(
                     environment_config.storage.storage_config['s3_bucket'],
                     run_config.run_id,
-                    construct_type_registry(pipeline_def, RunStorageMode.S3),
+                    construct_type_storage_plugin_registry(pipeline_def, RunStorageMode.S3),
                 )
             )
         else:
@@ -438,7 +442,8 @@ def construct_intermediates_manager(run_config, environment_config, pipeline_def
     elif environment_config.storage.storage_mode == 'filesystem':
         return ObjectStoreIntermediatesManager(
             FileSystemObjectStore(
-                run_config.run_id, construct_type_registry(pipeline_def, RunStorageMode.FILESYSTEM)
+                run_config.run_id,
+                construct_type_storage_plugin_registry(pipeline_def, RunStorageMode.FILESYSTEM),
             )
         )
     elif environment_config.storage.storage_mode == 'in_memory':
@@ -448,7 +453,7 @@ def construct_intermediates_manager(run_config, environment_config, pipeline_def
             S3ObjectStore(
                 environment_config.storage.storage_config['s3_bucket'],
                 run_config.run_id,
-                construct_type_registry(pipeline_def, RunStorageMode.S3),
+                construct_type_storage_plugin_registry(pipeline_def, RunStorageMode.S3),
             )
         )
     elif environment_config.storage.storage_mode is None:
