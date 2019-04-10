@@ -8,6 +8,7 @@
    - Similarily, there is a new configuration for RunConfig that where the user can specify
      intermediate value storage via an API.
    - Dagit's Explore tab is more performant on large DAGs.
+   - Dagit's -q command line flag has been deprecated in favor of a separate command-line dagster-graphql utility.
    - API Additions and Changes
       - ``OutputDefinition`` now contains an explicit ``is_optional`` parameter and defaults to being not optional.
 
