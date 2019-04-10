@@ -1,3 +1,6 @@
+import pytest
+
+from dagster import check
 from dagster.utils.yaml_utils import (
     load_yaml_from_glob_list,
     load_yaml_from_globs,
@@ -29,3 +32,6 @@ def test_from_glob_list():
     assert load_yaml_from_globs(
         script_relative_path('yamls/yaml_one.yaml'), script_relative_path('yamls/yaml_two.yaml')
     ) == {'key_one': {'key_one_one': 'value_one', 'key_one_two': 'value_two'}}
+
+    with pytest.raises(check.CheckError):
+        load_yaml_from_glob_list(['flskhfhjsdf'])
