@@ -158,11 +158,7 @@ def friendly_string_for_error(error):
     type_msg = _get_type_msg(error, type_in_context)
 
     if error.reason == DagsterEvaluationErrorReason.MISSING_REQUIRED_FIELD:
-        return 'Missing required field  "{field_name}" {path_msg} Expected: "{type_msg}"'.format(
-            field_name=error.error_data.field_name,
-            path_msg=path_msg,
-            type_msg=print_config_type_to_string(type_in_context, with_lines=False),
-        )
+        return error.message
     elif error.reason == DagsterEvaluationErrorReason.MISSING_REQUIRED_FIELDS:
         return error.message
     elif error.reason == DagsterEvaluationErrorReason.FIELD_NOT_DEFINED:
@@ -598,10 +594,13 @@ def create_missing_required_field_error(config_type, stack, expected_field):
     return EvaluationError(
         stack=stack,
         reason=DagsterEvaluationErrorReason.MISSING_REQUIRED_FIELD,
-        message='Missing required field "{expected}" {path_msg} Expected: "{type_name}".'.format(
+        message=(
+            'Missing required field "{expected}" {path_msg} Available Fields: '
+            '"{available_fields}".'
+        ).format(
             expected=expected_field,
             path_msg=_get_friendly_path_msg(stack),
-            type_name=print_config_type_to_string(config_type, with_lines=False),
+            available_fields=sorted(list(config_type.fields.keys())),
         ),
         error_data=MissingFieldErrorData(
             field_name=expected_field, field_def=config_type.fields[expected_field]

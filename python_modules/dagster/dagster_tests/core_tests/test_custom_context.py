@@ -206,12 +206,19 @@ def test_invalid_context():
 
     with pytest.raises(
         PipelineConfigEvaluationError,
-        match=(
-            'Error 1: Missing required field  "string_field" at path '
-            'root:context:default:config Expected: "{ string_field: String }"'
-        ),
-    ):
+        # match=(
+        #     'Error 1: Missing required field  "string_field" at path '
+        #     'root:context:default:config Expected: "{ string_field: String }"'
+        # ),
+    ) as pe_info_one:
         execute_pipeline(with_argful_context_pipeline, environment_dict=environment_no_config_error)
+
+    assert len(pe_info_one.value.errors) == 1
+
+    assert pe_info_one.value.errors[0].message == (
+        '''Missing required field "string_field" at path root:context:default:config '''
+        '''Available Fields: "['string_field']".'''
+    )
 
     environment_type_mismatch_error = {'context': {'default': {'config': {'string_field': 1}}}}
 

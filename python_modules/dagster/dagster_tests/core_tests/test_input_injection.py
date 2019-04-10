@@ -62,14 +62,13 @@ def test_string_missing_inputs():
     with pytest.raises(PipelineConfigEvaluationError) as exc_info:
         execute_pipeline(pipeline)
 
-    assert (
-        'Missing required field  "solids" at document config root. Expected: "{ '
-        'context?: MissingInputs.ContextConfig execution?: '
-        'MissingInputs.ExecutionConfig '
-        'expectations?: MissingInputs.ExpectationsConfig '
-        'solids: MissingInputs.SolidsConfigDictionary '
-        'storage?: MissingInputs.StorageConfig }"'
-    ) in str(exc_info.value)
+    assert len(exc_info.value.errors) == 1
+
+    assert exc_info.value.errors[0].message == (
+        '''Missing required field "solids" at document config root. '''
+        '''Available Fields: "['context', 'execution', 'expectations', '''
+        ''''solids', 'storage']".'''
+    )
 
     assert 'yup' not in called
 

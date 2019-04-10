@@ -102,14 +102,13 @@ def test_single_required_string_field_config_type():
         'string_field': 'value'
     }
 
-    with pytest.raises(
-        DagsterEvaluateConfigValueError,
-        match=(
-            'Missing required field "string_field" at document config root. Expected: "{ '
-            'string_field: String }".'
-        ),
-    ):
+    with pytest.raises(DagsterEvaluateConfigValueError) as top_error:
         _validate(_single_required_string_config_dict(), {})
+
+    assert str(top_error.value) == (
+        '''Missing required field "string_field" at document config root. '''
+        '''Available Fields: "['string_field']".'''
+    )
 
     with pytest.raises(DagsterEvaluateConfigValueError):
         _validate(_single_required_string_config_dict(), {'extra': 'yup'})
@@ -492,16 +491,13 @@ def test_no_env_missing_required_error_handling():
     assert len(pe.errors) == 1
     mfe = pe.errors[0]
     assert mfe.reason == DagsterEvaluationErrorReason.MISSING_REQUIRED_FIELD
-    assert len(pe.error_messages) == 1
+    assert len(pe.errors) == 1
 
-    assert (
-        'Missing required field  "solids" at document config root. Expected: "{ context?: '
-        'NoEnvMissingRequiredError.ContextConfig execution?: '
-        'NoEnvMissingRequiredError.ExecutionConfig expectations?: '
-        'NoEnvMissingRequiredError.ExpectationsConfig '
-        'solids: NoEnvMissingRequiredError.SolidsConfigDictionary '
-        'storage?: NoEnvMissingRequiredError.StorageConfig }"'
-    ) in pe.message
+    assert pe.errors[0].message == (
+        '''Missing required field "solids" at document config root. '''
+        '''Available Fields: "['context', 'execution', 'expectations', '''
+        ''''solids', 'storage']".'''
+    )
 
 
 def test_root_extra_field():
@@ -716,10 +712,11 @@ def test_multilevel_good_error_handling_solids():
     with pytest.raises(PipelineConfigEvaluationError) as pe_info:
         execute_pipeline(pipeline_def, environment_dict={'solids': None})
 
-    assert (
-        'Missing required field  "good_error_handling" at path root:solids Expected: '
-        '"{ good_error_handling: MultilevelGoodErrorHandling.SolidConfig.GoodErrorHandling }"'
-    ) in str(pe_info.value)
+    assert len(pe_info.value.errors) == 1
+    assert pe_info.value.errors[0].message == (
+        '''Missing required field "good_error_handling" at path root:solids '''
+        '''Available Fields: "['good_error_handling']".'''
+    )
 
 
 def test_multilevel_good_error_handling_solid_name_solids():
@@ -734,10 +731,11 @@ def test_multilevel_good_error_handling_solid_name_solids():
     with pytest.raises(PipelineConfigEvaluationError) as pe_info:
         execute_pipeline(pipeline_def, environment_dict={'solids': {'good_error_handling': {}}})
 
-    assert (
-        'Missing required field  "config" at path root:solids:good_error_handling Expected: '
-        '"{ config: Int outputs?: [{ result?: Any.MaterializationSchema }] }"'
-    ) in str(pe_info.value)
+    assert len(pe_info.value.errors) == 1
+    assert pe_info.value.errors[0].message == (
+        '''Missing required field "config" at path root:solids:good_error_handling '''
+        '''Available Fields: "['config', 'outputs']".'''
+    )
 
 
 def test_multilevel_good_error_handling_config_solids_name_solids():
