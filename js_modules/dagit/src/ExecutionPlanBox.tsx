@@ -148,6 +148,7 @@ const ExecutionStateDot = styled.div<{ state: IStepState }>`
       [IStepState.WAITING]: Colors.GRAY1,
       [IStepState.RUNNING]: Colors.GRAY3,
       [IStepState.SUCCEEDED]: Colors.GREEN2,
+      [IStepState.SKIPPED]: Colors.GOLD3,
       [IStepState.FAILED]: Colors.RED3
     }[state])};
   &:hover {
@@ -156,6 +157,7 @@ const ExecutionStateDot = styled.div<{ state: IStepState }>`
         [IStepState.WAITING]: Colors.GRAY1,
         [IStepState.RUNNING]: Colors.GRAY3,
         [IStepState.SUCCEEDED]: Colors.GREEN2,
+        [IStepState.SKIPPED]: Colors.GOLD3,
         [IStepState.FAILED]: Colors.RED5
       }[state])};
   }
