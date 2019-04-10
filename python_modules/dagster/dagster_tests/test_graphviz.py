@@ -1,4 +1,4 @@
-from dagster.graphviz import build_graphviz_graph
+from dagster.visualize import build_graphviz_graph
 
 from .core_tests.execution_plan_tests.test_multiprocessing import define_diamond_pipeline
 
