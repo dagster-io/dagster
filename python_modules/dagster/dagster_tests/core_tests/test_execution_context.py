@@ -30,7 +30,7 @@ def test_warning_on_context():
 def test_warning_on_config():
     @solid
     def check_config_is_none(context):
-        assert context.config is None
+        assert context.context_config is None
 
     pipeline = PipelineDefinition(name='warning_on_config', solids=[check_config_is_none])
 

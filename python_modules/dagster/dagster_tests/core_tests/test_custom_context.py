@@ -195,7 +195,9 @@ def test_invalid_context():
         context_definitions={
             'default': PipelineContextDefinition(
                 config_field=Field(Dict({'string_field': Field(String)})),
-                context_fn=lambda init_context: ExecutionContext(resources=init_context.config),
+                context_fn=lambda init_context: ExecutionContext(
+                    resources=init_context.context_config
+                ),
             )
         },
     )
