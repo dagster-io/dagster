@@ -40,6 +40,7 @@ class InProcessExecutorChildProcessCommand(ChildProcessCommand):
                 execution_plan,
                 pipeline_context.intermediates_manager,
                 step_keys_to_execute=[self.step_key],
+                emit_skips=False,
             ):
                 yield step_event
 

@@ -42,7 +42,11 @@ from .objects import (
 
 
 def start_inprocess_executor(
-    pipeline_context, execution_plan, intermediates_manager, step_keys_to_execute=None
+    pipeline_context,
+    execution_plan,
+    intermediates_manager,
+    step_keys_to_execute=None,
+    emit_skips=True,
 ):
     check.inst_param(pipeline_context, 'pipeline_context', SystemPipelineExecutionContext)
     check.inst_param(execution_plan, 'execution_plan', ExecutionPlan)
@@ -73,7 +77,8 @@ def start_inprocess_executor(
             step_context = pipeline_context.for_step(step)
 
             if step_key_set and step.key not in step_key_set:
-                yield DagsterEvent.step_skipped_event(step_context)
+                if emit_skips:
+                    yield DagsterEvent.step_skipped_event(step_context)
                 continue
 
             failed_inputs = [

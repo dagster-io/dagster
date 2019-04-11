@@ -221,7 +221,6 @@ def test_successful_two_part_execute_plan(snapshot):
     )
 
     query_result = result_two.data['executePlan']
-    print(f'{query_result}')
     assert query_result['__typename'] == 'ExecutePlanSuccess'
     assert query_result['pipeline']['name'] == 'pandas_hello_world'
     assert query_result['hasFailures'] is False
