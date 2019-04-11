@@ -1,4 +1,5 @@
 import * as React from "react";
+import * as yaml from "yaml";
 import gql from "graphql-tag";
 import styled from "styled-components";
 import { Colors, Classes, Dialog } from "@blueprintjs/core";
@@ -16,6 +17,13 @@ import PythonErrorInfo from "../PythonErrorInfo";
 import ExecutionPlan from "../ExecutionPlan";
 import RunMetadataProvider from "../RunMetadataProvider";
 import LogsToolbar from "./LogsToolbar";
+import { Mutation, MutationFn } from "react-apollo";
+import {
+  HANDLE_START_EXECUTION_FRAGMENT,
+  handleStartExecutionResult
+} from "./RunUtils";
+import { ReexecuteStep, ReexecuteStepVariables } from "./types/ReexecuteStep";
+import { ReexecutionConfig } from "src/types/globalTypes";
 
 interface IPipelineRunProps {
   run: PipelineRunFragment;
@@ -34,6 +42,11 @@ export class PipelineRun extends React.Component<
   static fragments = {
     PipelineRunFragment: gql`
       fragment PipelineRunFragment on PipelineRun {
+        config
+        runId
+        pipeline {
+          name
+        }
         logs {
           nodes {
             ...LogsFilterProviderMessageFragment
@@ -52,6 +65,20 @@ export class PipelineRun extends React.Component<
         }
         executionPlan {
           ...ExecutionPlanFragment
+          steps {
+            key
+            inputs {
+              dependsOn {
+                key
+                outputs {
+                  name
+                  type {
+                    name
+                  }
+                }
+              }
+            }
+          }
         }
       }
 
@@ -92,6 +119,41 @@ export class PipelineRun extends React.Component<
     }
   };
 
+  onReexecuteStep = async (
+    mutation: MutationFn<ReexecuteStep, ReexecuteStepVariables>,
+    stepName: string
+  ) => {
+    const { run } = this.props;
+
+    const step = run.executionPlan.steps.find(s => s.key === stepName);
+    if (!step) return;
+
+    const reexecutionConfig: ReexecutionConfig = {
+      previousRunId: run.runId,
+      stepOutputHandles: []
+    };
+
+    step.inputs.forEach(input => {
+      input.dependsOn.outputs.forEach(outputOfDependentStep => {
+        reexecutionConfig.stepOutputHandles.push({
+          stepKey: input.dependsOn.key,
+          outputName: outputOfDependentStep.name
+        });
+      });
+    });
+
+    const result = await mutation({
+      variables: {
+        pipeline: { name: run.pipeline.name },
+        config: yaml.parse(run.config),
+        stepKeys: [stepName],
+        reexecutionConfig: reexecutionConfig
+      }
+    });
+
+    handleStartExecutionResult(run.pipeline.name, result);
+  };
+
   render() {
     const { logsFilter, logsVW, highlightedError } = this.state;
     const { logs } = this.props.run;
@@ -116,20 +178,30 @@ export class PipelineRun extends React.Component<
           onMove={(vw: number) => this.setState({ logsVW: vw })}
           axis="horizontal"
         />
-        <RunMetadataProvider logs={logs.nodes}>
-          {metadata => (
-            <ExecutionPlan
-              runMetadata={metadata}
-              executionPlan={this.props.run.executionPlan}
-              onShowStateDetails={this.onShowStateDetails}
-              onApplyStepFilter={stepName =>
-                this.setState({
-                  logsFilter: { ...logsFilter, text: `step:${stepName}` }
-                })
-              }
-            />
+
+        <Mutation<ReexecuteStep, ReexecuteStepVariables>
+          mutation={REEXECUTE_STEP_MUTATION}
+        >
+          {reexecuteMutation => (
+            <RunMetadataProvider logs={logs.nodes}>
+              {metadata => (
+                <ExecutionPlan
+                  runMetadata={metadata}
+                  executionPlan={this.props.run.executionPlan}
+                  onShowStateDetails={this.onShowStateDetails}
+                  onReexecuteStep={stepName =>
+                    this.onReexecuteStep(reexecuteMutation, stepName)
+                  }
+                  onApplyStepFilter={stepName =>
+                    this.setState({
+                      logsFilter: { ...logsFilter, text: `step:${stepName}` }
+                    })
+                  }
+                />
+              )}
+            </RunMetadataProvider>
           )}
-        </RunMetadataProvider>
+        </Mutation>
         <Dialog
           icon="info-sign"
           onClose={() => this.setState({ highlightedError: undefined })}
@@ -157,4 +229,24 @@ const LogsContainer = styled.div`
   display: flex;
   flex-direction: column;
   background: ${Colors.LIGHT_GRAY5};
+`;
+
+const REEXECUTE_STEP_MUTATION = gql`
+  mutation ReexecuteStep(
+    $pipeline: ExecutionSelector!
+    $config: PipelineConfig!
+    $stepKeys: [String!]
+    $reexecutionConfig: ReexecutionConfig
+  ) {
+    startPipelineExecution(
+      pipeline: $pipeline
+      config: $config
+      stepKeys: $stepKeys
+      reexecutionConfig: $reexecutionConfig
+    ) {
+      ...HandleStartExecutionFragment
+    }
+  }
+
+  ${HANDLE_START_EXECUTION_FRAGMENT}
 `;

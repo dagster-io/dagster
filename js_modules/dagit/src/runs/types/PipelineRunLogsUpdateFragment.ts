@@ -8,6 +8,11 @@ import { PipelineRunStatus, LogLevel, StepKind } from "./../../types/globalTypes
 // GraphQL fragment: PipelineRunLogsUpdateFragment
 // ====================================================
 
+export interface PipelineRunLogsUpdateFragment_pipeline {
+  __typename: "Pipeline";
+  name: string;
+}
+
 export interface PipelineRunLogsUpdateFragment_logs_nodes_LogMessageEvent_step {
   __typename: "ExecutionStep";
   name: string;
@@ -102,11 +107,35 @@ export interface PipelineRunLogsUpdateFragment_executionPlan_steps_solid {
   name: string;
 }
 
+export interface PipelineRunLogsUpdateFragment_executionPlan_steps_inputs_dependsOn_outputs_type {
+  __typename: "RegularRuntimeType" | "ListRuntimeType" | "NullableRuntimeType";
+  name: string | null;
+}
+
+export interface PipelineRunLogsUpdateFragment_executionPlan_steps_inputs_dependsOn_outputs {
+  __typename: "ExecutionStepOutput";
+  name: string;
+  type: PipelineRunLogsUpdateFragment_executionPlan_steps_inputs_dependsOn_outputs_type;
+}
+
+export interface PipelineRunLogsUpdateFragment_executionPlan_steps_inputs_dependsOn {
+  __typename: "ExecutionStep";
+  key: string;
+  outputs: PipelineRunLogsUpdateFragment_executionPlan_steps_inputs_dependsOn_outputs[];
+}
+
+export interface PipelineRunLogsUpdateFragment_executionPlan_steps_inputs {
+  __typename: "ExecutionStepInput";
+  dependsOn: PipelineRunLogsUpdateFragment_executionPlan_steps_inputs_dependsOn;
+}
+
 export interface PipelineRunLogsUpdateFragment_executionPlan_steps {
   __typename: "ExecutionStep";
   name: string;
   solid: PipelineRunLogsUpdateFragment_executionPlan_steps_solid;
   kind: StepKind;
+  key: string;
+  inputs: PipelineRunLogsUpdateFragment_executionPlan_steps_inputs[];
 }
 
 export interface PipelineRunLogsUpdateFragment_executionPlan {
@@ -118,6 +147,8 @@ export interface PipelineRunLogsUpdateFragment {
   __typename: "PipelineRun";
   runId: string;
   status: PipelineRunStatus;
+  config: string;
+  pipeline: PipelineRunLogsUpdateFragment_pipeline;
   logs: PipelineRunLogsUpdateFragment_logs;
   executionPlan: PipelineRunLogsUpdateFragment_executionPlan;
 }

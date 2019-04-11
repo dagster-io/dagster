@@ -23,7 +23,7 @@ exports[`renders execution 1`] = `
       className="bp3-navbar-divider"
     />
     <div
-      className="sc-cIShpX iWIiAw"
+      className="sc-feJyhm ehvwQP"
     >
       <span
         className="bp3-popover-wrapper"
@@ -74,24 +74,24 @@ exports[`renders execution 1`] = `
         className="bp3-navbar-divider"
       />
       <div
-        className="sc-kafWEX dOcLVX"
+        className="sc-iELTvK gedWkH"
       >
         <a
-          className="active sc-feJyhm kTrNTW"
+          className="active sc-cmTdod iaXaIC"
           href="/pandas_hello_world/explore"
           onClick={[Function]}
         >
           Explore
         </a>
         <a
-          className="sc-feJyhm kTrNTW"
+          className="sc-cmTdod iaXaIC"
           href="/pandas_hello_world/execute"
           onClick={[Function]}
         >
           Execute
         </a>
         <a
-          className="sc-feJyhm kTrNTW"
+          className="sc-cmTdod iaXaIC"
           href="/pandas_hello_world/runs"
           onClick={[Function]}
         >
@@ -104,7 +104,7 @@ exports[`renders execution 1`] = `
     className="bp3-navbar-group bp3-align-right"
   >
     <div
-      className="sc-bRBYWo jpDyyc"
+      className="sc-Rmtcm gvepfF"
       style={
         Object {
           "background": "#3DCC91",
@@ -113,7 +113,7 @@ exports[`renders execution 1`] = `
       title="Connecting..."
     />
     <span
-      className="sc-ktHwxA doWHPT"
+      className="sc-kafWEX ixdkCC"
     />
   </div>
 </div>
@@ -143,7 +143,7 @@ Array [
         className="bp3-navbar-divider"
       />
       <div
-        className="sc-cIShpX iWIiAw"
+        className="sc-feJyhm ehvwQP"
       >
         <span
           className="bp3-popover-wrapper"
@@ -196,7 +196,7 @@ Array [
       className="bp3-navbar-group bp3-align-right"
     >
       <div
-        className="sc-bRBYWo jpDyyc"
+        className="sc-Rmtcm gvepfF"
         style={
           Object {
             "background": "#3DCC91",
@@ -205,7 +205,7 @@ Array [
         title="Connecting..."
       />
       <span
-        className="sc-ktHwxA doWHPT"
+        className="sc-kafWEX ixdkCC"
       />
     </div>
   </div>,
@@ -248,7 +248,7 @@ Array [
         className="bp3-navbar-divider"
       />
       <div
-        className="sc-cIShpX iWIiAw"
+        className="sc-feJyhm ehvwQP"
       >
         <span
           className="bp3-popover-wrapper"
@@ -299,24 +299,24 @@ Array [
           className="bp3-navbar-divider"
         />
         <div
-          className="sc-kafWEX dOcLVX"
+          className="sc-iELTvK gedWkH"
         >
           <a
-            className="active sc-feJyhm kTrNTW"
+            className="active sc-cmTdod iaXaIC"
             href="/pandas_hello_world/explore"
             onClick={[Function]}
           >
             Explore
           </a>
           <a
-            className="sc-feJyhm kTrNTW"
+            className="sc-cmTdod iaXaIC"
             href="/pandas_hello_world/execute"
             onClick={[Function]}
           >
             Execute
           </a>
           <a
-            className="sc-feJyhm kTrNTW"
+            className="sc-cmTdod iaXaIC"
             href="/pandas_hello_world/runs"
             onClick={[Function]}
           >
@@ -329,7 +329,7 @@ Array [
       className="bp3-navbar-group bp3-align-right"
     >
       <div
-        className="sc-bRBYWo jpDyyc"
+        className="sc-Rmtcm gvepfF"
         style={
           Object {
             "background": "#3DCC91",
@@ -338,7 +338,7 @@ Array [
         title="Connecting..."
       />
       <span
-        className="sc-ktHwxA doWHPT"
+        className="sc-kafWEX ixdkCC"
       />
     </div>
   </div>,
@@ -928,7 +928,7 @@ exports[`renders type page 1`] = `
       className="bp3-navbar-divider"
     />
     <div
-      className="sc-cIShpX iWIiAw"
+      className="sc-feJyhm ehvwQP"
     >
       <span
         className="bp3-popover-wrapper"
@@ -979,24 +979,24 @@ exports[`renders type page 1`] = `
         className="bp3-navbar-divider"
       />
       <div
-        className="sc-kafWEX dOcLVX"
+        className="sc-iELTvK gedWkH"
       >
         <a
-          className="active sc-feJyhm kTrNTW"
+          className="active sc-cmTdod iaXaIC"
           href="/pandas_hello_world/explore"
           onClick={[Function]}
         >
           Explore
         </a>
         <a
-          className="sc-feJyhm kTrNTW"
+          className="sc-cmTdod iaXaIC"
           href="/pandas_hello_world/execute"
           onClick={[Function]}
         >
           Execute
         </a>
         <a
-          className="sc-feJyhm kTrNTW"
+          className="sc-cmTdod iaXaIC"
           href="/pandas_hello_world/runs"
           onClick={[Function]}
         >
@@ -1009,7 +1009,7 @@ exports[`renders type page 1`] = `
     className="bp3-navbar-group bp3-align-right"
   >
     <div
-      className="sc-bRBYWo jpDyyc"
+      className="sc-Rmtcm gvepfF"
       style={
         Object {
           "background": "#3DCC91",
@@ -1018,7 +1018,7 @@ exports[`renders type page 1`] = `
       title="Connecting..."
     />
     <span
-      className="sc-ktHwxA doWHPT"
+      className="sc-kafWEX ixdkCC"
     />
   </div>
 </div>
@@ -1047,7 +1047,7 @@ exports[`renders type page 2`] = `
       className="bp3-navbar-divider"
     />
     <div
-      className="sc-cIShpX iWIiAw"
+      className="sc-feJyhm ehvwQP"
     >
       <span
         className="bp3-popover-wrapper"
@@ -1098,24 +1098,24 @@ exports[`renders type page 2`] = `
         className="bp3-navbar-divider"
       />
       <div
-        className="sc-kafWEX dOcLVX"
+        className="sc-iELTvK gedWkH"
       >
         <a
-          className="active sc-feJyhm kTrNTW"
+          className="active sc-cmTdod iaXaIC"
           href="/pandas_hello_world/explore"
           onClick={[Function]}
         >
           Explore
         </a>
         <a
-          className="sc-feJyhm kTrNTW"
+          className="sc-cmTdod iaXaIC"
           href="/pandas_hello_world/execute"
           onClick={[Function]}
         >
           Execute
         </a>
         <a
-          className="sc-feJyhm kTrNTW"
+          className="sc-cmTdod iaXaIC"
           href="/pandas_hello_world/runs"
           onClick={[Function]}
         >
@@ -1128,7 +1128,7 @@ exports[`renders type page 2`] = `
     className="bp3-navbar-group bp3-align-right"
   >
     <div
-      className="sc-bRBYWo jpDyyc"
+      className="sc-Rmtcm gvepfF"
       style={
         Object {
           "background": "#3DCC91",
@@ -1137,7 +1137,7 @@ exports[`renders type page 2`] = `
       title="Connecting..."
     />
     <span
-      className="sc-ktHwxA doWHPT"
+      className="sc-kafWEX ixdkCC"
     />
   </div>
 </div>
@@ -1167,7 +1167,7 @@ Array [
         className="bp3-navbar-divider"
       />
       <div
-        className="sc-cIShpX iWIiAw"
+        className="sc-feJyhm ehvwQP"
       >
         <span
           className="bp3-popover-wrapper"
@@ -1220,7 +1220,7 @@ Array [
       className="bp3-navbar-group bp3-align-right"
     >
       <div
-        className="sc-bRBYWo jpDyyc"
+        className="sc-Rmtcm gvepfF"
         style={
           Object {
             "background": "#3DCC91",
@@ -1229,7 +1229,7 @@ Array [
         title="Connecting..."
       />
       <span
-        className="sc-ktHwxA doWHPT"
+        className="sc-kafWEX ixdkCC"
       />
     </div>
   </div>,

@@ -107,9 +107,36 @@ export interface PipelineRunRootQuery_pipelineRunOrError_PipelineRun_logs {
   nodes: PipelineRunRootQuery_pipelineRunOrError_PipelineRun_logs_nodes[];
 }
 
+export interface PipelineRunRootQuery_pipelineRunOrError_PipelineRun_pipeline {
+  __typename: "Pipeline";
+  name: string;
+}
+
 export interface PipelineRunRootQuery_pipelineRunOrError_PipelineRun_executionPlan_steps_solid {
   __typename: "Solid";
   name: string;
+}
+
+export interface PipelineRunRootQuery_pipelineRunOrError_PipelineRun_executionPlan_steps_inputs_dependsOn_outputs_type {
+  __typename: "RegularRuntimeType" | "ListRuntimeType" | "NullableRuntimeType";
+  name: string | null;
+}
+
+export interface PipelineRunRootQuery_pipelineRunOrError_PipelineRun_executionPlan_steps_inputs_dependsOn_outputs {
+  __typename: "ExecutionStepOutput";
+  name: string;
+  type: PipelineRunRootQuery_pipelineRunOrError_PipelineRun_executionPlan_steps_inputs_dependsOn_outputs_type;
+}
+
+export interface PipelineRunRootQuery_pipelineRunOrError_PipelineRun_executionPlan_steps_inputs_dependsOn {
+  __typename: "ExecutionStep";
+  key: string;
+  outputs: PipelineRunRootQuery_pipelineRunOrError_PipelineRun_executionPlan_steps_inputs_dependsOn_outputs[];
+}
+
+export interface PipelineRunRootQuery_pipelineRunOrError_PipelineRun_executionPlan_steps_inputs {
+  __typename: "ExecutionStepInput";
+  dependsOn: PipelineRunRootQuery_pipelineRunOrError_PipelineRun_executionPlan_steps_inputs_dependsOn;
 }
 
 export interface PipelineRunRootQuery_pipelineRunOrError_PipelineRun_executionPlan_steps {
@@ -117,6 +144,8 @@ export interface PipelineRunRootQuery_pipelineRunOrError_PipelineRun_executionPl
   name: string;
   solid: PipelineRunRootQuery_pipelineRunOrError_PipelineRun_executionPlan_steps_solid;
   kind: StepKind;
+  key: string;
+  inputs: PipelineRunRootQuery_pipelineRunOrError_PipelineRun_executionPlan_steps_inputs[];
 }
 
 export interface PipelineRunRootQuery_pipelineRunOrError_PipelineRun_executionPlan {
@@ -129,6 +158,8 @@ export interface PipelineRunRootQuery_pipelineRunOrError_PipelineRun {
   runId: string;
   status: PipelineRunStatus;
   logs: PipelineRunRootQuery_pipelineRunOrError_PipelineRun_logs;
+  config: string;
+  pipeline: PipelineRunRootQuery_pipelineRunOrError_PipelineRun_pipeline;
   executionPlan: PipelineRunRootQuery_pipelineRunOrError_PipelineRun_executionPlan;
 }
 

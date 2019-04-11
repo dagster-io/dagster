@@ -8,6 +8,7 @@ export enum IStepState {
   WAITING = "waiting",
   RUNNING = "running",
   SUCCEEDED = "succeeded",
+  SKIPPED = "skipped",
   FAILED = "failed"
 }
 
@@ -83,6 +84,10 @@ function extractMetadataFromLogs(
             step.transitionedAt = timestamp;
             step.elapsed = timestamp - step.start;
           }
+        });
+      } else if (log.__typename === "ExecutionStepSkippedEvent") {
+        metadata.steps[name] = produce(metadata.steps[name] || {}, step => {
+          step.state = IStepState.SKIPPED;
         });
       } else if (log.__typename === "StepMaterializationEvent") {
         metadata.steps[name] = produce(metadata.steps[name] || {}, step => {

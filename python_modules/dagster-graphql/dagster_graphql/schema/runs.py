@@ -1,4 +1,5 @@
 from __future__ import absolute_import
+import yaml
 
 from dagster import check
 from dagster.core.events.logging import EventRecord
@@ -44,7 +45,7 @@ class DauphinPipelineRun(dauphin.ObjectType):
         )
 
     def resolve_config(self, _graphene_info):
-        return self._pipeline_run.config
+        return yaml.dump(self._pipeline_run.config, default_flow_style=False)
 
 
 class DauphinLogLevel(dauphin.Enum):
