@@ -79,10 +79,11 @@ def multiprocess_execute_plan(pipeline_context, execution_plan, step_keys_to_exe
 
     for step_level in step_levels:
         for step in step_level:
-            if step_key_set and step.key not in step_key_set:
-                continue
-
             step_context = pipeline_context.for_step(step)
+
+            if step_key_set and step.key not in step_key_set:
+                yield DagsterEvent.step_skipped_event(step_context)
+                continue
 
             if not intermediates_manager.all_inputs_covered(step_context, step):
                 expected_outputs = [ni.prev_output_handle for ni in step.step_inputs]

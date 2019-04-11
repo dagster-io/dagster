@@ -69,11 +69,11 @@ def start_inprocess_executor(
 
     for step_level in step_levels:
         for step in step_level:
+            step_context = pipeline_context.for_step(step)
+
             if step_key_set and step.key not in step_key_set:
                 yield DagsterEvent.step_skipped_event(step_context)
                 continue
-
-            step_context = pipeline_context.for_step(step)
 
             failed_inputs = [
                 step_input.prev_output_handle.step_key
