@@ -14,11 +14,11 @@ export function titleForRun(run: { runId: string }) {
 export function handleStartExecutionResult(
   pipelineName: string,
   result: void | {
-    data?: { startPipelineExecution?: HandleStartExecutionFragment };
+    data?: { startPipelineExecution: HandleStartExecutionFragment };
   }
 ) {
-  if (!result || !result.data || !result.data.startPipelineExecution) {
-    alert("No data was returned.");
+  if (!result || !result.data) {
+    showCustomAlert({ message: `No data was returned. Did Dagit crash?` });
     return;
   }
 
