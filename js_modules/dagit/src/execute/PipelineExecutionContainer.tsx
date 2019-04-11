@@ -43,6 +43,7 @@ interface IPipelineExecutionContainerProps {
   data: IStorageData;
   onSave: (data: IStorageData) => void;
   pipeline?: PipelineExecutionContainerFragment;
+  pipelineName: string;
   currentSession: IExecutionSession;
 }
 
@@ -164,7 +165,7 @@ export default class PipelineExecutionContainer extends React.Component<
   };
 
   render() {
-    const { currentSession, pipeline } = this.props;
+    const { currentSession, pipeline, pipelineName } = this.props;
     const { preview } = this.state;
 
     return (
@@ -230,15 +231,11 @@ export default class PipelineExecutionContainer extends React.Component<
                 )}
               </ApolloConsumer>
               <SessionSettingsFooter className="bp3-dark">
-                {!pipeline ? (
-                  <span />
-                ) : (
-                  <SolidSelector
-                    pipelineName={pipeline.name}
-                    value={currentSession.solidSubset || null}
-                    onChange={this.onSolidSubsetChange}
-                  />
-                )}
+                <SolidSelector
+                  pipelineName={pipelineName}
+                  value={currentSession.solidSubset || null}
+                  onChange={this.onSolidSubsetChange}
+                />
               </SessionSettingsFooter>
             </Split>
             <PanelDivider
