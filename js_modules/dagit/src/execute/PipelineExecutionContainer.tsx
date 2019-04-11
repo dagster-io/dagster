@@ -182,13 +182,14 @@ export default class PipelineExecutionContainer extends React.Component<
               onRemoveSession={this.onRemoveSession}
               onSaveSession={this.onSaveSession}
             >
-              {!this.state.preview ? (
-                <Spinner size={17} />
-              ) : (
-                <ExecutionStartButton
-                  onClick={() => this.onExecute(startPipelineExecution)}
-                />
-              )}
+              {pipeline &&
+                (!this.state.preview ? (
+                  <Spinner size={17} />
+                ) : (
+                  <ExecutionStartButton
+                    onClick={() => this.onExecute(startPipelineExecution)}
+                  />
+                ))}
             </TabBar>
           )}
         </Mutation>
