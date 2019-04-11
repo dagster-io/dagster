@@ -12,7 +12,7 @@ from sleepy import define_sleepy_pipeline
 from log_spew import define_spew_pipeline
 
 
-def define_repo():
+def define_repo(repo_config):
     return RepositoryDefinition(
         name='toys_repository',
         pipeline_dict={
@@ -20,4 +20,5 @@ def define_repo():
             'error_monster': define_pipeline,
             'log_spew': define_spew_pipeline,
         },
+        repo_config=repo_config,
     )

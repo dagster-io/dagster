@@ -386,3 +386,18 @@ class DauphinExpectation(dauphin.ObjectType):
         super(DauphinExpectation, self).__init__(
             name=expectation.name, description=expectation.description
         )
+
+
+class DauphinPipelinePreset(dauphin.ObjectType):
+    class Meta:
+        name = 'PipelinePreset'
+
+    name = dauphin.NonNull(dauphin.String)
+    solidSubset = dauphin.List(dauphin.NonNull(dauphin.String))
+    environment = dauphin.String()
+
+    def __init__(self, name, subset, environment):
+        self.name = check.str_param(name, 'name')
+        self.solidSubset = check.opt_list_param(subset, 'subset', of_type=str)
+        self.environment = check.opt_str_param(environment, 'environment')
+
