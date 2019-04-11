@@ -53,9 +53,12 @@ def test_cli_execute():
         os.chdir(script_relative_path('../..'))
 
         do_execute_command(
-            define_success_pipeline(),
-            [script_relative_path('../../dagster_pandas/examples/pandas_hello_world/*.yml')],
-            lambda *_args, **_kwargs: None,
+            pipeline=define_success_pipeline(),
+            env_file_list=[
+                script_relative_path('../../dagster_pandas/examples/pandas_hello_world/*.yml')
+            ],
+            raise_on_error=True,
+            printer=lambda *_args, **_kwargs: None,
         )
     finally:
         # restore cwd
@@ -73,9 +76,12 @@ def test_cli_execute_failure():
             os.chdir(script_relative_path('../..'))
 
             do_execute_command(
-                define_failure_pipeline(),
-                [script_relative_path('../../dagster_pandas/examples/pandas_hello_world/*.yml')],
-                lambda *_args, **_kwargs: None,
+                pipeline=define_failure_pipeline(),
+                env_file_list=[
+                    script_relative_path('../../dagster_pandas/examples/pandas_hello_world/*.yml')
+                ],
+                raise_on_error=True,
+                printer=lambda *_args, **_kwargs: None,
             )
         finally:
             # restore cwd
