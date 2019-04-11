@@ -160,7 +160,11 @@ class SolidSelector extends React.PureComponent<
   // The equivalent solidSubset is `null`, not `[]`, so we do some conversion here.
 
   handleOpen = () => {
-    this.setState({ open: true, highlighted: this.props.value || [] });
+    const { value, pipeline } = this.props;
+    const valid = (value || []).filter(
+      name => !!pipeline.solids.find(s => s.name === name)
+    );
+    this.setState({ open: true, highlighted: valid });
   };
 
   handleSave = () => {
