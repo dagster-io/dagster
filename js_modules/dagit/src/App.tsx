@@ -50,7 +50,7 @@ export default class App extends React.Component {
   public render() {
     return (
       <BrowserRouter>
-        <Query query={ROOT_PIPELINES_QUERY}>
+        <Query query={ROOT_PIPELINES_QUERY} fetchPolicy="cache-and-network">
           {(queryResult: QueryResult<RootPipelinesQuery, any>) => (
             <Loading queryResult={queryResult}>
               {result => {

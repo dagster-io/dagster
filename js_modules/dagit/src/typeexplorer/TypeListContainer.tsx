@@ -17,6 +17,7 @@ export default class TypeListContainer extends React.Component<
     return (
       <Query
         query={TYPE_LIST_CONTAINER_QUERY}
+        fetchPolicy="cache-and-network"
         variables={{
           pipelineName: this.props.pipelineName
         }}

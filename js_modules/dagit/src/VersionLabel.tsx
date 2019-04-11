@@ -6,7 +6,7 @@ import { Colors } from "@blueprintjs/core";
 import { VersionQuery } from "./types/VersionQuery";
 
 export default () => (
-  <Query query={VERSION_QUERY}>
+  <Query query={VERSION_QUERY} fetchPolicy="cache-and-network">
     {(queryResult: QueryResult<VersionQuery, { pipelineName: string }>) => (
       <Label>{queryResult.data && queryResult.data.version}</Label>
     )}
