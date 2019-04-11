@@ -17,10 +17,12 @@ class RepositoryDefinition(object):
 
             As the pipelines are retrieved it ensures that the keys of the dictionary and the
             name of the pipeline are the same.
+        repo_config (Optional[dict]):
+            Preset configurations for pipelines such as environments and execution subsets
 
     '''
 
-    def __init__(self, name, pipeline_dict, enforce_solid_def_uniqueness=True):
+    def __init__(self, name, pipeline_dict, repo_config=None, enforce_solid_def_uniqueness=True):
         self.name = check.str_param(name, 'name')
 
         check.dict_param(pipeline_dict, 'pipeline_dict', key_type=str)
@@ -31,6 +33,8 @@ class RepositoryDefinition(object):
         self.pipeline_dict = pipeline_dict
 
         self._pipeline_cache = {}
+
+        self.repo_config = check.opt_dict_param(repo_config, 'repo_config')
 
         self.enforce_solid_def_uniqueness = check.bool_param(
             enforce_solid_def_uniqueness, 'enforce_solid_def_uniqueness'
@@ -157,3 +161,9 @@ class RepositoryDefinition(object):
                     return solid.definition
 
         check.failed('Did not find ' + name)
+
+    def get_presets_for_pipeline(self, pipeline_name):
+        if self.repo_config and self.repo_config.get('pipelines'):
+            return self.repo_config['pipelines'].get(pipeline_name, {}).get('presets', {})
+
+        return {}

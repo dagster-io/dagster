@@ -1,3 +1,11 @@
 repository:
   file: repo.py
   fn: define_repo
+
+  config:
+    pipelines:
+      error_monster:
+        presets:
+          passing:
+            environment_files:
+              - environments/*.yml

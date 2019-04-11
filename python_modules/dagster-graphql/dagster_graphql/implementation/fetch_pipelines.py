@@ -1,4 +1,7 @@
 import sys
+from os import path
+from glob import glob
+import yaml
 
 from graphql.execution.base import ResolveInfo
 
@@ -7,6 +10,7 @@ from dagster.core.errors import DagsterInvalidDefinitionError
 
 from dagster.core.execution import ExecutionSelector
 
+from dagster.utils.yaml_utils import merge_yamls
 from dagster.utils.error import serializable_error_info_from_exc_info
 
 from .either import EitherError, EitherValue
@@ -99,3 +103,24 @@ def _pipeline_or_error_from_repository(graphene_info, repository, selector):
         pipeline = orig_pipeline.build_sub_pipeline(selector.solid_subset)
 
         return EitherValue(graphene_info.schema.type_named('Pipeline')(pipeline))
+
+
+def get_pipeline_presets(graphene_info, pipeline_name):
+    repo = graphene_info.context.repository_container.repository
+    presets = []
+    for name, config in repo.get_presets_for_pipeline(pipeline_name).items():
+        environment_globs = config.get('environment_files', [])
+
+        environment_files = set()
+        for env_glob in environment_globs:
+            environment_files.update(map(path.realpath, glob(env_glob)))
+
+        merged = merge_yamls(list(environment_files))
+
+        presets.append(
+            graphene_info.schema.type_named('PipelinePreset')(
+                name, config.get('solid_subset'), yaml.dump(merged)
+            )
+        )
+
+    return presets
