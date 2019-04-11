@@ -11,7 +11,7 @@ from dagster import (
     check,
 )
 
-from dagster.core.definitions import Solid, SolidInputHandle, SolidOutputHandle
+from dagster.core.definitions import Solid, SolidInputHandle, SolidOutputHandle, PipelinePreset
 from dagster_graphql import dauphin
 
 from .config_types import to_dauphin_config_type
@@ -396,8 +396,14 @@ class DauphinPipelinePreset(dauphin.ObjectType):
     solidSubset = dauphin.List(dauphin.NonNull(dauphin.String))
     environment = dauphin.String()
 
-    def __init__(self, name, subset, environment):
-        self.name = check.str_param(name, 'name')
-        self.solidSubset = check.opt_list_param(subset, 'subset', of_type=str)
-        self.environment = check.opt_str_param(environment, 'environment')
+    def __init__(self, preset):
+        self.preset = check.inst_param(preset, 'preset', PipelinePreset)
 
+    def resolve_name(self, _graphene_info):
+        return self.preset.name
+
+    def resolve_solidSubset(self, _graphene_info):
+        return self.preset.solid_subset
+
+    def resolve_environment(self, _graphene_info):
+        return self.preset.environment_yaml
