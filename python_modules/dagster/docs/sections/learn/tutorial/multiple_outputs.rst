@@ -16,7 +16,7 @@ Here we present an example of a solid that has multiple outputs within a pipelin
 .. literalinclude:: ../../../../dagster/tutorials/intro_tutorial/multiple_outputs.py
    :linenos:
    :caption: multiple_outputs.py
-   :lines: 53-67, 26-34, 67-82
+   :lines: 26-33, 50-74
 
 This can be visualized in dagit:
 
@@ -81,7 +81,7 @@ and then execute that pipeline.
 .. literalinclude:: ../../../../dagster/tutorials/intro_tutorial/multiple_outputs.py
     :linenos:
     :caption: multiple_outputs.py
-    :lines: 36-52,86-97
+    :lines: 36-49,86-97
 
 You must create a config file
 

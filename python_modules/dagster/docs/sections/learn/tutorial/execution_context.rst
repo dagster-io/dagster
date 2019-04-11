@@ -52,7 +52,7 @@ Notice that even though the user only logged the message "An error occurred", by
 through the context we are able to provide richer error information -- including the name of the
 solid and a timestamp -- in a semi-structured format.
 
-You'll notice that `'A debug message.'` does not appear in the execution logs. This
+You'll notice that ``'A debug message.'`` does not appear in the execution logs. This
 is because the default log level is ``INFO``, so debug-level messages will not appear.
 
 Let's change that by specifying some config.
