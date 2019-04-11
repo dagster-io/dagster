@@ -140,6 +140,14 @@ snapshots['test_successful_pipeline_reexecution 2'] = {
                         'level': 'DEBUG'
                     },
                     {
+                        '__typename': 'ExecutionStepSkippedEvent',
+                        'level': 'INFO'
+                    },
+                    {
+                        '__typename': 'ExecutionStepSkippedEvent',
+                        'level': 'INFO'
+                    },
+                    {
                         '__typename': 'ExecutionStepStartEvent',
                         'level': 'INFO',
                         'step': {

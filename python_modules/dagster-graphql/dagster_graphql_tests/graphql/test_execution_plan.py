@@ -221,15 +221,16 @@ def test_successful_two_part_execute_plan(snapshot):
     )
 
     query_result = result_two.data['executePlan']
+    print(f'{query_result}')
     assert query_result['__typename'] == 'ExecutePlanSuccess'
     assert query_result['pipeline']['name'] == 'pandas_hello_world'
     assert query_result['hasFailures'] is False
     step_events = query_result['stepEvents']
-    assert step_events[0]['__typename'] == 'ExecutionStepStartEvent'
-    assert step_events[0]['step']['key'] == 'sum_sq_solid.transform'
-    assert step_events[1]['__typename'] == 'ExecutionStepOutputEvent'
-    assert step_events[1]['outputName'] == 'result'
-    assert step_events[2]['__typename'] == 'ExecutionStepSuccessEvent'
+    assert step_events[2]['__typename'] == 'ExecutionStepStartEvent'
+    assert step_events[2]['step']['key'] == 'sum_sq_solid.transform'
+    assert step_events[3]['__typename'] == 'ExecutionStepOutputEvent'
+    assert step_events[3]['outputName'] == 'result'
+    assert step_events[4]['__typename'] == 'ExecutionStepSuccessEvent'
 
     snapshot.assert_match(result_two.data)
 

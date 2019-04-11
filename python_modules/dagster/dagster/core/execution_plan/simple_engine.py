@@ -59,7 +59,8 @@ def start_inprocess_executor(
         ),
     )
 
-    failed_or_skipped_steps = set()
+    # failed steps or steps skipped because of failures
+    transitively_failed_steps = set()
 
     step_levels = execution_plan.topological_step_levels()
 
@@ -78,15 +79,16 @@ def start_inprocess_executor(
             failed_inputs = [
                 step_input.prev_output_handle.step_key
                 for step_input in step.step_inputs
-                if step_input.prev_output_handle.step_key in failed_or_skipped_steps
+                if step_input.prev_output_handle.step_key in transitively_failed_steps
             ]
             if failed_inputs:
                 step_context.log.info(
-                    'Dependencies for step {step} failed: {failed_inputs}. Not executing.'.format(
-                        step=step.key, failed_inputs=failed_inputs
-                    )
+                    (
+                        'Dependencies for step {step} failed or skipped: {failed_inputs}. '
+                        'Not executing.'
+                    ).format(step=step.key, failed_inputs=failed_inputs)
                 )
-                failed_or_skipped_steps.add(step.key)
+                transitively_failed_steps.add(step.key)
                 yield DagsterEvent.step_skipped_event(step_context)
                 continue
 
@@ -102,7 +104,7 @@ def start_inprocess_executor(
                         'inputs: {uncovered_inputs}'
                     ).format(uncovered_inputs=uncovered_inputs, step=step.key)
                 )
-                failed_or_skipped_steps.add(step.key)
+                transitively_failed_steps.add(step.key)
                 yield DagsterEvent.step_skipped_event(step_context)
                 continue
 
@@ -113,7 +115,7 @@ def start_inprocess_executor(
             ):
                 check.inst(step_event, DagsterEvent)
                 if step_event.is_step_failure:
-                    failed_or_skipped_steps.add(step.key)
+                    transitively_failed_steps.add(step.key)
 
                 yield step_event
 
