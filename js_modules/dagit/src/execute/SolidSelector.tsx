@@ -1,4 +1,4 @@
-import { Colors, Button, Classes, Dialog } from "@blueprintjs/core";
+import { Colors, Button, Classes, Dialog, Intent } from "@blueprintjs/core";
 import * as React from "react";
 import gql from "graphql-tag";
 import PipelineGraph from "../graph/PipelineGraph";
@@ -173,6 +173,12 @@ class SolidSelector extends React.PureComponent<
     const { pipeline } = this.props;
     const { open, highlighted, toolRectEnd, toolRectStart } = this.state;
 
+    const valid =
+      !this.props.value ||
+      this.props.value.every(
+        name => !!pipeline.solids.find(s => s.name === name)
+      );
+
     return (
       <div>
         <Dialog
@@ -234,8 +240,14 @@ class SolidSelector extends React.PureComponent<
             </div>
           </div>
         </Dialog>
-        <Button icon={IconNames.SEARCH_AROUND} onClick={this.handleOpen}>
-          {subsetDescription(this.props.value, this.props.pipeline)}
+        <Button
+          icon={valid ? IconNames.SEARCH_AROUND : IconNames.WARNING_SIGN}
+          intent={valid ? Intent.NONE : Intent.WARNING}
+          onClick={this.handleOpen}
+        >
+          {valid
+            ? subsetDescription(this.props.value, this.props.pipeline)
+            : "Invalid Solid Selection"}
         </Button>
       </div>
     );
