@@ -90,7 +90,12 @@ def setup(app):
 # further.  For a list of options available for each theme, see the
 # documentation.
 #
-html_theme_options = {'font_family': 'Roboto'}
+html_theme_options = {
+    'font_family': 'Roboto',
+    'body_max_width': 'auto',
+    'page_width': '80%',
+    'code_font_size': '0.8em'
+}
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
