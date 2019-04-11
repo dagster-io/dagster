@@ -1,9 +1,10 @@
 import * as React from "react";
 import styled from "styled-components";
-import { Colors, Spinner, Intent } from "@blueprintjs/core";
+import { Colors, Spinner, Intent, Icon } from "@blueprintjs/core";
 import { IStepState, IStepMaterialization } from "./RunMetadataProvider";
 import { Materialization } from "./Materialization";
 import { formatElapsedTime } from "./Util";
+import { IconNames } from "@blueprintjs/icons";
 
 interface IExecutionPlanBoxProps {
   state: IStepState;
@@ -14,6 +15,7 @@ interface IExecutionPlanBoxProps {
   materializations: IStepMaterialization[];
   onShowStateDetails?: (stepName: string) => void;
   onApplyStepFilter?: (stepName: string) => void;
+  onReexecuteStep?: (stepName: string) => void;
 }
 
 interface IExecutionPlanBoxState {
@@ -86,6 +88,7 @@ export class ExecutionPlanBox extends React.Component<
       delay,
       materializations,
       onApplyStepFilter,
+      onReexecuteStep,
       onShowStateDetails
     } = this.props;
 
@@ -96,31 +99,42 @@ export class ExecutionPlanBox extends React.Component<
 
     return (
       <>
-        <ExecutionPlanBoxContainer
-          state={state}
-          className={state}
-          style={{ transitionDelay: `${delay}ms` }}
-          onClick={() => onApplyStepFilter && onApplyStepFilter(name)}
-        >
-          <ExecutionFinishedFlash
+        <ExecutionPlanRowContainer>
+          <ExecutionPlanBoxContainer
+            state={state}
+            className={state}
             style={{ transitionDelay: `${delay}ms` }}
-            success={state === IStepState.SUCCEEDED}
-          />
-          <ExeuctionStateWrap
-            onClick={() => onShowStateDetails && onShowStateDetails(name)}
+            onClick={() => onApplyStepFilter && onApplyStepFilter(name)}
           >
-            {state === IStepState.RUNNING ? (
-              <Spinner intent={Intent.NONE} size={11} />
-            ) : (
-              <ExecutionStateDot
-                state={state}
-                style={{ transitionDelay: `${delay}ms` }}
-              />
+            <ExecutionFinishedFlash
+              style={{ transitionDelay: `${delay}ms` }}
+              success={state === IStepState.SUCCEEDED}
+            />
+            <ExeuctionStateWrap
+              onClick={() => onShowStateDetails && onShowStateDetails(name)}
+            >
+              {state === IStepState.RUNNING ? (
+                <Spinner intent={Intent.NONE} size={11} />
+              ) : (
+                <ExecutionStateDot
+                  state={state}
+                  style={{ transitionDelay: `${delay}ms` }}
+                />
+              )}
+            </ExeuctionStateWrap>
+            <ExecutionPlanBoxName>{name}</ExecutionPlanBoxName>
+            {elapsed !== undefined && <ExecutionTime elapsed={elapsed} />}
+          </ExecutionPlanBoxContainer>
+          {onReexecuteStep &&
+            [IStepState.FAILED, IStepState.SUCCEEDED].includes(state) && (
+              <ReExecuteContainer
+                className="reexecute"
+                onClick={() => onReexecuteStep(name)}
+              >
+                <Icon icon={IconNames.PLAY} iconSize={15} />
+              </ReExecuteContainer>
             )}
-          </ExeuctionStateWrap>
-          <ExecutionPlanBoxName>{name}</ExecutionPlanBoxName>
-          {elapsed !== undefined && <ExecutionTime elapsed={elapsed} />}
-        </ExecutionPlanBoxContainer>
+        </ExecutionPlanRowContainer>
         {(materializations || []).map(mat => (
           <Materialization
             fileLocation={mat.fileLocation}
@@ -148,6 +162,7 @@ const ExecutionStateDot = styled.div<{ state: IStepState }>`
       [IStepState.WAITING]: Colors.GRAY1,
       [IStepState.RUNNING]: Colors.GRAY3,
       [IStepState.SUCCEEDED]: Colors.GREEN2,
+      [IStepState.SKIPPED]: Colors.GOLD3,
       [IStepState.FAILED]: Colors.RED3
     }[state])};
   &:hover {
@@ -156,6 +171,7 @@ const ExecutionStateDot = styled.div<{ state: IStepState }>`
         [IStepState.WAITING]: Colors.GRAY1,
         [IStepState.RUNNING]: Colors.GRAY3,
         [IStepState.SUCCEEDED]: Colors.GREEN2,
+        [IStepState.SKIPPED]: Colors.GOLD3,
         [IStepState.FAILED]: Colors.RED5
       }[state])};
   }
@@ -171,6 +187,16 @@ const ExecutionTime = ({ elapsed }: { elapsed: number }) => {
     </ExecutionTimeContainer>
   );
 };
+
+const ReExecuteContainer = styled.div`
+  display: inline-block;
+  border: 1px solid white;
+  margin-left: 5px;
+  border-radius: 13px;
+  width: 19px;
+  height: 19px;
+  padding: 1px 2px;
+`;
 
 const ExecutionTimeContainer = styled.div`
   opacity: 0.7;
@@ -201,6 +227,24 @@ const ExecutionFinishedFlash = styled.div<{ success: boolean }>`
   pointer-events: none;
   transition: ${({ success }) =>
     success ? "400ms background-position-x linear" : ""};
+`;
+
+const ExecutionPlanRowContainer = styled.div`
+  width: 100%;
+  display: flex;
+  align-items: center;
+
+  .reexecute {
+    opacity: 0;
+  }
+  &:hover {
+    .reexecute {
+      opacity: 0.5;
+    }
+    .reexecute:hover {
+      opacity: 1;
+    }
+  }
 `;
 
 const ExecutionPlanBoxContainer = styled.div<{ state: IStepState }>`

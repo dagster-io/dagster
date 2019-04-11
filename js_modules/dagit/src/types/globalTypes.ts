@@ -47,6 +47,16 @@ export interface ExecutionSelector {
   solidSubset?: string[] | null;
 }
 
+export interface ReexecutionConfig {
+  previousRunId: string;
+  stepOutputHandles: StepOutputHandle[];
+}
+
+export interface StepOutputHandle {
+  stepKey: string;
+  outputName: string;
+}
+
 //==============================================================
 // END Enums and Input Objects
 //==============================================================

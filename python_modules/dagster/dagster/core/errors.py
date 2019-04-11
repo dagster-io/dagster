@@ -2,7 +2,6 @@ from contextlib import contextmanager
 from enum import Enum
 import sys
 import traceback
-import six
 from future.utils import raise_from
 
 
@@ -150,14 +149,6 @@ class DagsterStepOutputNotFoundError(DagsterError):
         super(DagsterStepOutputNotFoundError, self).__init__(*args, **kwargs)
 
 
-class DagsterPY4JTribalKnowledgeException(Exception):
-    '''
-    The sole purpose of this class is to catalog and note the strange conditions
-    under which py4j exceptions are raised. This is just a place to encode
-    insitutional knowledge.
-    '''
-
-
 def _add_inner_exception_for_py2(msg, exc_info):
     if sys.version_info[0] == 2:
         return (
@@ -196,11 +187,21 @@ def user_code_error_boundary(error_cls, msg, **kwargs):
             )
 
 
-HAS_P4J = True
-try:
-    import py4j
-except ImportError:
-    HAS_P4J = False
+class DagsterPY4JTribalKnowledgeException(Exception):
+    '''
+    The sole purpose of this class is to catalog and note the strange conditions
+    under which py4j exceptions are raised. This is just a place to encode
+    insitutional knowledge.
+
+    Note: We no longer throw this for now because it is masking errors
+    '''
+
+
+# HAS_P4J = True
+# try:
+#     import py4j
+# except ImportError:
+#     HAS_P4J = False
 
 TRIBAL_KNOWLEDGE_ERROR_MESSAGE = '''
 Congratulations, you have managed to encountered an error out of Py4J. These
@@ -235,19 +236,3 @@ into the JVM (such as a spark dataframe).
 Original Error Text:
 {original_error_text}
 '''
-
-
-@contextmanager
-def py4j_error_boundary():
-    if HAS_P4J:
-        try:
-            yield
-        except py4j.protocol.Py4JError as py4j_error:
-            six.raise_from(
-                DagsterPY4JTribalKnowledgeException(
-                    TRIBAL_KNOWLEDGE_ERROR_MESSAGE.format(original_error_text=str(py4j_error))
-                ),
-                py4j_error,
-            )
-    else:
-        yield

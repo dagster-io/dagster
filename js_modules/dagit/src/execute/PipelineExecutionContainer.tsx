@@ -6,8 +6,8 @@ import { Colors, Spinner } from "@blueprintjs/core";
 import { ApolloConsumer, Mutation, MutationFn } from "react-apollo";
 
 import TabBar from "./TabBar";
-import { showCustomAlert } from "../CustomAlertProvider";
 import ExecutionStartButton from "./ExecutionStartButton";
+import { handleStartExecutionResult } from "../runs/RunUtils";
 import { RunPreview } from "./RunPreview";
 import { PanelDivider } from "../PanelDivider";
 import SolidSelector from "./SolidSelector";
@@ -137,28 +137,7 @@ export default class PipelineExecutionContainer extends React.Component<
     if (!variables) return;
 
     const result = await startPipelineExecution({ variables });
-    if (!result || !result.data) {
-      alert("No data was returned.");
-      return;
-    }
-
-    const obj = result.data.startPipelineExecution;
-
-    if (obj.__typename === "StartPipelineExecutionSuccess") {
-      window.open(`/${pipeline.name}/runs/${obj.run.runId}`, "_blank");
-    } else {
-      let message = `${
-        pipeline.name
-      } cannot not be executed with the provided config.`;
-
-      if ("errors" in obj) {
-        message += ` Please fix the following errors:\n\n${obj.errors
-          .map(error => error.message)
-          .join("\n\n")}`;
-      }
-
-      showCustomAlert({ message });
-    }
+    handleStartExecutionResult(pipeline.name, result);
   };
 
   buildExecutionVariables = () => {

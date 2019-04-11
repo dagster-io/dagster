@@ -48,7 +48,9 @@ function twoDigit(v: number) {
 export function formatElapsedTime(elapsed: number) {
   let text = "";
 
-  if (elapsed < 1000) {
+  if (elapsed < 0) {
+    text = `0 msec`;
+  } else if (elapsed < 1000) {
     // < 1 second, show "X msec"
     text = `${Math.ceil(elapsed)} msec`;
   } else {

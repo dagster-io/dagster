@@ -4,7 +4,6 @@ import pickle
 import six
 
 from dagster import check
-from dagster.core.errors import py4j_error_boundary
 
 
 class SerializationStrategy(six.with_metaclass(ABCMeta)):  # pylint: disable=no-init
@@ -19,8 +18,7 @@ class SerializationStrategy(six.with_metaclass(ABCMeta)):  # pylint: disable=no-
 
 class PickleSerializationStrategy(SerializationStrategy):  # pylint: disable=no-init
     def serialize_value(self, _context, value, write_file_obj):
-        with py4j_error_boundary():
-            pickle.dump(value, write_file_obj)
+        pickle.dump(value, write_file_obj)
 
     def deserialize_value(self, _context, read_file_obj):
         return pickle.load(read_file_obj)

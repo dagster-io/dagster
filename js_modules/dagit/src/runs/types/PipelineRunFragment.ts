@@ -8,6 +8,11 @@ import { LogLevel, StepKind } from "./../../types/globalTypes";
 // GraphQL fragment: PipelineRunFragment
 // ====================================================
 
+export interface PipelineRunFragment_pipeline {
+  __typename: "Pipeline";
+  name: string;
+}
+
 export interface PipelineRunFragment_logs_nodes_LogMessageEvent_step {
   __typename: "ExecutionStep";
   name: string;
@@ -102,11 +107,35 @@ export interface PipelineRunFragment_executionPlan_steps_solid {
   name: string;
 }
 
+export interface PipelineRunFragment_executionPlan_steps_inputs_dependsOn_outputs_type {
+  __typename: "RegularRuntimeType" | "ListRuntimeType" | "NullableRuntimeType";
+  name: string | null;
+}
+
+export interface PipelineRunFragment_executionPlan_steps_inputs_dependsOn_outputs {
+  __typename: "ExecutionStepOutput";
+  name: string;
+  type: PipelineRunFragment_executionPlan_steps_inputs_dependsOn_outputs_type;
+}
+
+export interface PipelineRunFragment_executionPlan_steps_inputs_dependsOn {
+  __typename: "ExecutionStep";
+  key: string;
+  outputs: PipelineRunFragment_executionPlan_steps_inputs_dependsOn_outputs[];
+}
+
+export interface PipelineRunFragment_executionPlan_steps_inputs {
+  __typename: "ExecutionStepInput";
+  dependsOn: PipelineRunFragment_executionPlan_steps_inputs_dependsOn;
+}
+
 export interface PipelineRunFragment_executionPlan_steps {
   __typename: "ExecutionStep";
   name: string;
   solid: PipelineRunFragment_executionPlan_steps_solid;
   kind: StepKind;
+  key: string;
+  inputs: PipelineRunFragment_executionPlan_steps_inputs[];
 }
 
 export interface PipelineRunFragment_executionPlan {
@@ -116,6 +145,9 @@ export interface PipelineRunFragment_executionPlan {
 
 export interface PipelineRunFragment {
   __typename: "PipelineRun";
+  config: string;
+  runId: string;
+  pipeline: PipelineRunFragment_pipeline;
   logs: PipelineRunFragment_logs;
   executionPlan: PipelineRunFragment_executionPlan;
 }
