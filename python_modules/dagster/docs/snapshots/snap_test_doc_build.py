@@ -19948,17 +19948,11 @@ is unnamed the method with return “&lt;&lt;unnamed&gt;&gt;”.</p>
 </dd></dl>
 
 <dl class="class">
-<<<<<<< HEAD
 <dt id="dagster.DependencyDefinition">
 <em class="property">class </em><code class="descclassname">dagster.</code><code class="descname">DependencyDefinition</code><a class="headerlink" href="#dagster.DependencyDefinition" title="Permalink to this definition">¶</a></dt>
 <dd><p>Dependency definitions represent an edge in the DAG of solids. This object is
 used with a dictionary structure (whose keys represent solid/input where the dependency
 comes from) so this object only contains the target dependency information.</p>
-=======
-<dt id="dagster.RepositoryDefinition">
-<em class="property">class </em><code class="descclassname">dagster.</code><code class="descname">RepositoryDefinition</code><span class="sig-paren">(</span><em>name</em>, <em>pipeline_dict</em>, <em>enforce_solid_def_uniqueness=True</em><span class="sig-paren">)</span><a class="headerlink" href="#dagster.RepositoryDefinition" title="Permalink to this definition">¶</a></dt>
-<dd><p>Define a repository that contains a collection of pipelines.</p>
->>>>>>> sanp
 <dl class="attribute">
 <dt id="dagster.DependencyDefinition.solid">
 <code class="descname">solid</code><a class="headerlink" href="#dagster.DependencyDefinition.solid" title="Permalink to this definition">¶</a></dt>
@@ -20071,7 +20065,7 @@ pass it into a one-off PipelineDefinition</p>
 <h2>Repository<a class="headerlink" href="#repository" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="dagster.RepositoryDefinition">
-<em class="property">class </em><code class="descclassname">dagster.</code><code class="descname">RepositoryDefinition</code><span class="sig-paren">(</span><em>name</em>, <em>pipeline_dict</em><span class="sig-paren">)</span><a class="headerlink" href="#dagster.RepositoryDefinition" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">dagster.</code><code class="descname">RepositoryDefinition</code><span class="sig-paren">(</span><em>name</em>, <em>pipeline_dict</em>, <em>enforce_solid_def_uniqueness=True</em><span class="sig-paren">)</span><a class="headerlink" href="#dagster.RepositoryDefinition" title="Permalink to this definition">¶</a></dt>
 <dd><p>Define a repository that contains a collection of pipelines.</p>
 <dl class="attribute">
 <dt id="dagster.RepositoryDefinition.name">
