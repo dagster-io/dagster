@@ -573,18 +573,15 @@ function findRangeInDocumentFromPath(
   pathPart: "key" | "value"
 ): { start: number; end: number } | null {
   let node: any = nodeAtPath(doc, path);
-  if (
-    node &&
-    node.type &&
-    node.type === "PAIR" &&
-    pathPart === "value" &&
-    node.value
-  ) {
+  if (!node) return null;
+
+  if (node.type && node.type === "PAIR" && pathPart === "value" && node.value) {
     node = node.value;
   } else {
     node = node.key;
   }
-  if (node && node.range) {
+
+  if (node.range) {
     return {
       start: node.range[0],
       end: node.range[1]
