@@ -9,11 +9,12 @@ interface ILoadingProps<TData> {
 }
 
 export default class Loading<TData> extends React.Component<
-  ILoadingProps<TData>,
-  {}
+  ILoadingProps<TData>
 > {
   public render() {
-    if (this.props.queryResult.loading) {
+    const { error, data } = this.props.queryResult;
+
+    if (!data || Object.keys(data).length === 0) {
       return (
         <LoadingContainer>
           <LoadingCentering>
@@ -21,12 +22,11 @@ export default class Loading<TData> extends React.Component<
           </LoadingCentering>
         </LoadingContainer>
       );
-    } else if (this.props.queryResult.error) {
-      throw this.props.queryResult.error;
     }
-    {
-      return this.props.children(this.props.queryResult.data as TData);
+    if (error) {
+      throw error;
     }
+    return this.props.children(data as TData);
   }
 }
 

@@ -1,31 +1,78 @@
 import * as React from "react";
 import gql from "graphql-tag";
 import { Query, QueryResult } from "react-apollo";
-import { Route } from "react-router";
-import { BrowserRouter } from "react-router-dom";
+import { BrowserRouter, Switch, Route } from "react-router-dom";
+
 import Loading from "./Loading";
-import PipelinePage from "./PipelinePage";
-import { AppQuery } from "./types/AppQuery";
+import { TopNav } from "./TopNav";
+import PythonErrorInfo from "./PythonErrorInfo";
+import CustomAlertProvider from "./CustomAlertProvider";
+import { RootPipelinesQuery } from "./types/RootPipelinesQuery";
+import PipelineExecutionRoot from "./execute/PipelineExecutionRoot";
+import PipelineRunRoot from "./runs/PipelineRunRoot";
+import PipelineRunsRoot from "./runs/PipelineRunsRoot";
+import PipelineExplorerRoot from "./PipelineExplorerRoot";
+import { NonIdealState } from "@blueprintjs/core";
+
+function extractData(result: RootPipelinesQuery) {
+  if (result.pipelinesOrError.__typename === "PipelineConnection") {
+    return { pipelines: result.pipelinesOrError.nodes, error: null };
+  } else {
+    return { pipelines: [], error: result.pipelinesOrError };
+  }
+}
+
+const AppRoutes = () => (
+  <Switch>
+    <Route path="/:pipelineName/execute" component={PipelineExecutionRoot} />
+    <Route path="/:pipelineName/runs/:runId" component={PipelineRunRoot} />
+    <Route
+      exact={true}
+      path="/:pipelineName/runs"
+      component={PipelineRunsRoot}
+    />
+    <Route
+      path="/:pipelineName/explore/:solidName?"
+      component={PipelineExplorerRoot}
+    />
+    <Route
+      render={() => (
+        <NonIdealState
+          title="No pipeline selected"
+          description="Select a pipeline in the navbar"
+        />
+      )}
+    />
+  </Switch>
+);
 
 export default class App extends React.Component {
   public render() {
     return (
       <BrowserRouter>
-        <Query query={APP_QUERY}>
-          {(queryResult: QueryResult<AppQuery, any>) => (
+        <Query query={ROOT_PIPELINES_QUERY} fetchPolicy="cache-and-network">
+          {(queryResult: QueryResult<RootPipelinesQuery, any>) => (
             <Loading queryResult={queryResult}>
-              {data => (
-                <Route
-                  path="/:pipeline?/:tab?"
-                  render={({ match, history }) => (
-                    <PipelinePage
-                      pipelinesOrError={data.pipelinesOrError}
-                      history={history}
-                      match={match}
-                    />
-                  )}
-                />
-              )}
+              {result => {
+                const { pipelines, error } = extractData(result);
+                return (
+                  <>
+                    <TopNav pipelines={pipelines} />
+                    {error ? (
+                      <PythonErrorInfo
+                        contextMsg={`${
+                          error.__typename
+                        } encountered when loading pipelines:`}
+                        error={error}
+                        centered={true}
+                      />
+                    ) : (
+                      <AppRoutes />
+                    )}
+                    <CustomAlertProvider />
+                  </>
+                );
+              }}
             </Loading>
           )}
         </Query>
@@ -34,12 +81,25 @@ export default class App extends React.Component {
   }
 }
 
-export const APP_QUERY = gql`
-  query AppQuery {
+export const ROOT_PIPELINES_QUERY = gql`
+  query RootPipelinesQuery {
     pipelinesOrError {
-      ...PipelinePageFragment
+      __typename
+      ... on PythonError {
+        message
+        stack
+      }
+      ... on InvalidDefinitionError {
+        message
+        stack
+      }
+      ... on PipelineConnection {
+        nodes {
+          ...TopNavPipelinesFragment
+        }
+      }
     }
   }
 
-  ${PipelinePage.fragments.PipelinePageFragment}
+  ${TopNav.fragments.TopNavPipelinesFragment}
 `;

@@ -20,6 +20,7 @@ export default class TypeExplorerContainer extends React.Component<
     return (
       <Query
         query={TYPE_EXPLORER_CONTAINER_QUERY}
+        fetchPolicy="cache-and-network"
         variables={{
           pipelineName: this.props.pipelineName,
           runtimeTypeName: this.props.typeName

@@ -21,3 +21,6 @@ update-snaphost:
 
 jest:
 	yarn run jest
+
+render-mocks:
+	REACT_APP_RENDER_API_RESULTS=true REACT_APP_GRAPHQL_URI="ws://localhost:3333/graphql" yarn start
