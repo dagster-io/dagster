@@ -412,6 +412,11 @@ function findAutocompletionContext(
   parents = parents.filter(({ indent }) => currentIndent > indent);
   const immediateParent = parents[parents.length - 1];
 
+  if (!pipeline) {
+    // Pipeline may still be loading
+    return;
+  }
+
   let type = pipeline.configTypes.find(
     t => t.key === pipeline.environmentType.key
   );
