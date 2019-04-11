@@ -32,11 +32,7 @@ class PublicCloudStore:
         self.conn = PublicCloudConn(username, password)
 
     def record_value(self, log, key, value):
-        log.info(
-            'Setting key={key} value={value} in cloud'.format(
-                key=key, value=value
-            )
-        )
+        log.info('Setting key={key} value={value} in cloud'.format(key=key, value=value))
         set_value_in_cloud_store(self.conn, key, value)
 
 
@@ -45,11 +41,7 @@ class InMemoryStore:
         self.values = {}
 
     def record_value(self, log, key, value):
-        log.info(
-            'Setting key={key} value={value} in memory'.format(
-                key=key, value=value
-            )
-        )
+        log.info('Setting key={key} value={value} in memory'.format(key=key, value=value))
         self.values[key] = value
 
 
@@ -64,12 +56,9 @@ def define_in_memory_store_resource():
 def define_cloud_store_resource():
     return ResourceDefinition(
         resource_fn=lambda init_context: PublicCloudStore(
-            init_context.resource_config['username'],
-            init_context.resource_config['password'],
+            init_context.resource_config['username'], init_context.resource_config['password']
         ),
-        config_field=Field(
-            Dict({'username': Field(String), 'password': Field(String)})
-        ),
+        config_field=Field(Dict({'username': Field(String), 'password': Field(String)})),
         description='''This represents some cloud-hosted key value store.
         Username and password must be provided via configuration for this to
         work''',
@@ -94,9 +83,7 @@ def define_resource_test_pipeline():
             'local': PipelineContextDefinition(
                 resources={'store': define_in_memory_store_resource()}
             ),
-            'cloud': PipelineContextDefinition(
-                resources={'store': define_cloud_store_resource()}
-            ),
+            'cloud': PipelineContextDefinition(resources={'store': define_cloud_store_resource()}),
         },
     )
 
@@ -108,23 +95,11 @@ if __name__ == '__main__':
             'context': {
                 'cloud': {
                     'resources': {
-                        'store': {
-                            'config': {
-                                'username': 'some_user',
-                                'password': 'some_password',
-                            }
-                        }
+                        'store': {'config': {'username': 'some_user', 'password': 'some_password'}}
                     }
                 }
             },
-            'solids': {
-                'add_ints': {
-                    'inputs': {
-                        'num_one': {'value': 2},
-                        'num_two': {'value': 6},
-                    }
-                }
-            },
+            'solids': {'add_ints': {'inputs': {'num_one': {'value': 2}, 'num_two': {'value': 6}}}},
         },
     )
 
@@ -132,13 +107,6 @@ if __name__ == '__main__':
         define_resource_test_pipeline(),
         environment_dict={
             'context': {'local': {}},
-            'solids': {
-                'add_ints': {
-                    'inputs': {
-                        'num_one': {'value': 2},
-                        'num_two': {'value': 6},
-                    }
-                }
-            },
+            'solids': {'add_ints': {'inputs': {'num_one': {'value': 2}, 'num_two': {'value': 6}}}},
         },
     )
