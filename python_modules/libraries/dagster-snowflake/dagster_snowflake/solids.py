@@ -6,7 +6,7 @@ import pandas as pd
 import snowflake.connector
 
 import dagster_pandas as dagster_pd
-from dagster import check, Bool, InputDefinition, List, OutputDefinition, Result, SolidDefinition
+from dagster import check, InputDefinition, List, OutputDefinition, Result, SolidDefinition, Nothing
 
 from .configs import define_snowflake_config
 
@@ -159,7 +159,7 @@ class SnowflakeSolidDefinition(SolidDefinition):
         super(SnowflakeSolidDefinition, self).__init__(
             name=name,
             description=description,
-            inputs=[InputDefinition(SnowflakeSolidDefinition.INPUT_READY, Bool)],
+            inputs=[InputDefinition(SnowflakeSolidDefinition.INPUT_READY, Nothing)],
             outputs=[OutputDefinition(List(dagster_pd.DataFrame))],
             transform_fn=_snowflake_transform_fn,
             config_field=define_snowflake_config(),

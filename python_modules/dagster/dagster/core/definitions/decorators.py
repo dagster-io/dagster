@@ -276,7 +276,9 @@ def _create_lambda_solid_transform_wrapper(fn, input_defs, output_def):
     check.list_param(input_defs, 'input_defs', of_type=InputDefinition)
     check.inst_param(output_def, 'output_def', OutputDefinition)
 
-    input_names = [input_def.name for input_def in input_defs]
+    input_names = [
+        input_def.name for input_def in input_defs if not input_def.runtime_type.is_nothing
+    ]
 
     @wraps(fn)
     def transform(_context, inputs):
@@ -295,7 +297,9 @@ def _create_solid_transform_wrapper(fn, input_defs, output_defs):
     check.list_param(input_defs, 'input_defs', of_type=InputDefinition)
     check.list_param(output_defs, 'output_defs', of_type=OutputDefinition)
 
-    input_names = [input_def.name for input_def in input_defs]
+    input_names = [
+        input_def.name for input_def in input_defs if not input_def.runtime_type.is_nothing
+    ]
 
     @wraps(fn)
     def transform(context, inputs):
@@ -367,7 +371,7 @@ def _validate_transform_fn(solid_name, transform_fn, inputs, expected_positional
         expected_positionals, 'expected_positionals', of_type=(str, tuple)
     )
 
-    names = set(inp.name for inp in inputs)
+    names = set(inp.name for inp in inputs if not inp.runtime_type.is_nothing)
     # Currently being super strict about naming. Might be a good idea to relax. Starting strict.
     try:
         _validate_decorated_fn(transform_fn, names, expected_positionals)

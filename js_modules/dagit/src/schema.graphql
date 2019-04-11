@@ -253,6 +253,7 @@ type ListRuntimeType implements RuntimeType & WrappingRuntimeType {
   isNullable: Boolean!
   isList: Boolean!
   isBuiltin: Boolean!
+  isNothing: Boolean!
   inputSchemaType: ConfigType
   outputSchemaType: ConfigType
   innerTypes: [RuntimeType!]!
@@ -334,6 +335,7 @@ type NullableRuntimeType implements RuntimeType & WrappingRuntimeType {
   isNullable: Boolean!
   isList: Boolean!
   isBuiltin: Boolean!
+  isNothing: Boolean!
   inputSchemaType: ConfigType
   outputSchemaType: ConfigType
   innerTypes: [RuntimeType!]!
@@ -554,6 +556,7 @@ type RegularRuntimeType implements RuntimeType {
   isNullable: Boolean!
   isList: Boolean!
   isBuiltin: Boolean!
+  isNothing: Boolean!
   inputSchemaType: ConfigType
   outputSchemaType: ConfigType
   innerTypes: [RuntimeType!]!
@@ -582,6 +585,7 @@ interface RuntimeType {
   isNullable: Boolean!
   isList: Boolean!
   isBuiltin: Boolean!
+  isNothing: Boolean!
   inputSchemaType: ConfigType
   outputSchemaType: ConfigType
   innerTypes: [RuntimeType!]!

@@ -139,6 +139,9 @@ def _create_input_values(step_context, intermediates_manager):
 
     input_values = {}
     for step_input in step.step_inputs:
+        if step_input.runtime_type.is_nothing:
+            continue
+
         prev_output_handle = step_input.prev_output_handle
         input_value = intermediates_manager.get_intermediate(
             step_context, step_input.runtime_type, prev_output_handle

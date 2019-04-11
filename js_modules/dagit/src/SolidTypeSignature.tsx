@@ -20,6 +20,7 @@ export default class SolidTypeSignature extends React.Component<
           definition {
             name
             type {
+              isNothing
               ...RuntimeTypeWithTooltipFragment
             }
           }
@@ -28,6 +29,7 @@ export default class SolidTypeSignature extends React.Component<
           definition {
             name
             type {
+              isNothing
               ...RuntimeTypeWithTooltipFragment
             }
           }
@@ -39,20 +41,24 @@ export default class SolidTypeSignature extends React.Component<
   };
 
   render() {
-    const inputSide = this.props.solid.inputs.map((input, i) => (
-      <span key={i}>
-        {input.definition.name}:{" "}
-        <TypeWithTooltip type={input.definition.type} />
-        {i < this.props.solid.inputs.length - 1 ? ", " : ""}
-      </span>
-    ));
-    const outputSide = this.props.solid.outputs.map((output, i) => (
-      <span key={i}>
-        {output.definition.name}:{" "}
-        <TypeWithTooltip type={output.definition.type} />
-        {i < this.props.solid.outputs.length - 1 ? ", " : ""}
-      </span>
-    ));
+    const inputSide = this.props.solid.inputs
+      .filter(input => !input.definition.type.isNothing)
+      .map((input, i) => (
+        <span key={i}>
+          {input.definition.name}:{" "}
+          <TypeWithTooltip type={input.definition.type} />
+          {i < this.props.solid.inputs.length - 1 ? ", " : ""}
+        </span>
+      ));
+    const outputSide = this.props.solid.outputs
+      .filter(output => !output.definition.type.isNothing)
+      .map((output, i) => (
+        <span key={i}>
+          {output.definition.name}:{" "}
+          <TypeWithTooltip type={output.definition.type} />
+          {i < this.props.solid.outputs.length - 1 ? ", " : ""}
+        </span>
+      ));
     return (
       <TypeSignature>
         ({inputSide}) ⇒ ({outputSide})

@@ -466,6 +466,7 @@ export interface PipelinePageFragment_PipelineConnection_nodes_solids_definition
 export interface PipelinePageFragment_PipelineConnection_nodes_solids_inputs_definition_type {
   __typename: "RegularRuntimeType" | "ListRuntimeType" | "NullableRuntimeType";
   name: string | null;
+  isNothing: boolean;
   displayName: string;
   description: string | null;
 }
@@ -515,6 +516,7 @@ export interface PipelinePageFragment_PipelineConnection_nodes_solids_inputs {
 export interface PipelinePageFragment_PipelineConnection_nodes_solids_outputs_definition_type {
   __typename: "RegularRuntimeType" | "ListRuntimeType" | "NullableRuntimeType";
   name: string | null;
+  isNothing: boolean;
   displayName: string;
   description: string | null;
 }

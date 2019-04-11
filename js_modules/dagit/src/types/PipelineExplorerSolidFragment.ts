@@ -161,6 +161,7 @@ export interface PipelineExplorerSolidFragment_definition {
 export interface PipelineExplorerSolidFragment_inputs_definition_type {
   __typename: "RegularRuntimeType" | "ListRuntimeType" | "NullableRuntimeType";
   name: string | null;
+  isNothing: boolean;
   displayName: string;
   description: string | null;
 }
@@ -210,6 +211,7 @@ export interface PipelineExplorerSolidFragment_inputs {
 export interface PipelineExplorerSolidFragment_outputs_definition_type {
   __typename: "RegularRuntimeType" | "ListRuntimeType" | "NullableRuntimeType";
   name: string | null;
+  isNothing: boolean;
   displayName: string;
   description: string | null;
 }

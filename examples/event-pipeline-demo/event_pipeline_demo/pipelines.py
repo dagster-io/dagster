@@ -73,7 +73,7 @@ def define_event_ingest_pipeline():
             },
             SolidInstance('snowflake_load'): {
                 SnowflakeSolidDefinition.INPUT_READY: DependencyDefinition(
-                    'event_ingest', 'output_success'
+                    'event_ingest', 'paths'
                 )
             },
         },
