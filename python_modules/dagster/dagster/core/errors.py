@@ -237,4 +237,3 @@ into the JVM (such as a spark dataframe).
 Original Error Text:
 {original_error_text}
 '''
-
