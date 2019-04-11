@@ -17,6 +17,10 @@
 # sys.path.insert(0, os.path.abspath('.'))
 
 # -- Project information -----------------------------------------------------
+import sys
+
+from dagster.utils import script_relative_path
+sys.path.insert(0, script_relative_path('../dagster'))
 
 from recommonmark.parser import CommonMarkParser
 
@@ -157,7 +161,7 @@ texinfo_documents = [
 
 # -- Extension configuration -------------------------------------------------
 
-extensions = ['sphinx.ext.napoleon']
+extensions = extensions + ['sphinx.ext.napoleon']
 
 html_sidebars = {'**': ['globaltoc.html', 'searchbox.html']}
 
