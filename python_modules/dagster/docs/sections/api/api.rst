@@ -6,9 +6,9 @@ API Docs
   :maxdepth: 1
   :name: API Reference
 
-  apidocs/definitions
-  apidocs/decorators
+  apidocs/solids
+  apidocs/pipeline
   apidocs/execution
-  apidocs/errors
   apidocs/types
+  apidocs/errors
   apidocs/utilities

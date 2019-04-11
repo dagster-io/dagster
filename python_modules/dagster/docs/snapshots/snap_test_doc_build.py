@@ -221,10 +221,10 @@ snapshots['test_build_all_docs 1'] = [
         [
         ],
         [
-            'decorators.rst.txt',
-            'definitions.rst.txt',
             'errors.rst.txt',
             'execution.rst.txt',
+            'pipeline.rst.txt',
+            'solids.rst.txt',
             'types.rst.txt',
             'utilities.rst.txt'
         ]
@@ -400,10 +400,10 @@ snapshots['test_build_all_docs 1'] = [
         [
         ],
         [
-            'decorators.html',
-            'definitions.html',
             'errors.html',
             'execution.html',
+            'pipeline.html',
+            'solids.html',
             'types.html',
             'utilities.html'
         ]
@@ -599,10 +599,10 @@ snapshots['test_build_all_docs 3'] = '''
 <h2 id="C">C</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="sections/api/apidocs/definitions.html#dagster.PipelineContextDefinition.config_field">config_field (dagster.PipelineContextDefinition attribute)</a>
+      <li><a href="sections/api/apidocs/pipeline.html#dagster.PipelineContextDefinition.config_field">config_field (dagster.PipelineContextDefinition attribute)</a>
 
       <ul>
-        <li><a href="sections/api/apidocs/definitions.html#dagster.SolidDefinition.config_field">(dagster.SolidDefinition attribute)</a>
+        <li><a href="sections/api/apidocs/solids.html#dagster.SolidDefinition.config_field">(dagster.SolidDefinition attribute)</a>
 </li>
       </ul></li>
       <li><a href="sections/api/apidocs/types.html#dagster.ConfigType">ConfigType (class in dagster)</a>
@@ -611,9 +611,9 @@ snapshots['test_build_all_docs 3'] = '''
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="sections/api/apidocs/execution.html#dagster.SolidExecutionResult.context">context (dagster.SolidExecutionResult attribute)</a>
 </li>
-      <li><a href="sections/api/apidocs/definitions.html#dagster.PipelineDefinition.context_definitions">context_definitions (dagster.PipelineDefinition attribute)</a>
+      <li><a href="sections/api/apidocs/pipeline.html#dagster.PipelineDefinition.context_definitions">context_definitions (dagster.PipelineDefinition attribute)</a>
 </li>
-      <li><a href="sections/api/apidocs/definitions.html#dagster.PipelineContextDefinition.context_fn">context_fn (dagster.PipelineContextDefinition attribute)</a>
+      <li><a href="sections/api/apidocs/pipeline.html#dagster.PipelineContextDefinition.context_fn">context_fn (dagster.PipelineContextDefinition attribute)</a>
 </li>
   </ul></td>
 </tr></table>
@@ -637,33 +637,31 @@ snapshots['test_build_all_docs 3'] = '''
 </li>
       <li><a href="sections/api/apidocs/errors.html#dagster.DagsterUserCodeExecutionError">DagsterUserCodeExecutionError</a>
 </li>
-      <li><a href="sections/api/apidocs/definitions.html#dagster.PipelineDefinition.dependencies">dependencies (dagster.PipelineDefinition attribute)</a>
-</li>
-      <li><a href="sections/api/apidocs/definitions.html#dagster.PipelineDefinition.dependency_structure">dependency_structure (dagster.PipelineDefinition attribute)</a>
+      <li><a href="sections/api/apidocs/pipeline.html#dagster.PipelineDefinition.dependencies">dependencies (dagster.PipelineDefinition attribute)</a>
 </li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="sections/api/apidocs/definitions.html#dagster.DependencyDefinition">DependencyDefinition (class in dagster)</a>
+      <li><a href="sections/api/apidocs/pipeline.html#dagster.PipelineDefinition.dependency_structure">dependency_structure (dagster.PipelineDefinition attribute)</a>
 </li>
-      <li><a href="sections/api/apidocs/definitions.html#dagster.DependencyDefinition.description">description (dagster.DependencyDefinition attribute)</a>
+      <li><a href="sections/api/apidocs/pipeline.html#dagster.DependencyDefinition">DependencyDefinition (class in dagster)</a>
+</li>
+      <li><a href="sections/api/apidocs/pipeline.html#dagster.DependencyDefinition.description">description (dagster.DependencyDefinition attribute)</a>
 
       <ul>
-        <li><a href="sections/api/apidocs/definitions.html#dagster.ExpectationDefinition.description">(dagster.ExpectationDefinition attribute)</a>
+        <li><a href="sections/api/apidocs/solids.html#dagster.InputDefinition.description">(dagster.InputDefinition attribute)</a>
 </li>
-        <li><a href="sections/api/apidocs/definitions.html#dagster.InputDefinition.description">(dagster.InputDefinition attribute)</a>
+        <li><a href="sections/api/apidocs/solids.html#dagster.OutputDefinition.description">(dagster.OutputDefinition attribute)</a>
 </li>
-        <li><a href="sections/api/apidocs/definitions.html#dagster.OutputDefinition.description">(dagster.OutputDefinition attribute)</a>
+        <li><a href="sections/api/apidocs/pipeline.html#dagster.PipelineContextDefinition.description">(dagster.PipelineContextDefinition attribute)</a>
 </li>
-        <li><a href="sections/api/apidocs/definitions.html#dagster.PipelineContextDefinition.description">(dagster.PipelineContextDefinition attribute)</a>
+        <li><a href="sections/api/apidocs/pipeline.html#dagster.PipelineDefinition.description">(dagster.PipelineDefinition attribute)</a>
 </li>
-        <li><a href="sections/api/apidocs/definitions.html#dagster.PipelineDefinition.description">(dagster.PipelineDefinition attribute)</a>
-</li>
-        <li><a href="sections/api/apidocs/definitions.html#dagster.SolidDefinition.description">(dagster.SolidDefinition attribute)</a>
+        <li><a href="sections/api/apidocs/solids.html#dagster.SolidDefinition.description">(dagster.SolidDefinition attribute)</a>
 </li>
       </ul></li>
       <li><a href="sections/api/apidocs/types.html#dagster.Dict">Dict() (in module dagster)</a>
 </li>
-      <li><a href="sections/api/apidocs/definitions.html#dagster.PipelineDefinition.display_name">display_name (dagster.PipelineDefinition attribute)</a>
+      <li><a href="sections/api/apidocs/pipeline.html#dagster.PipelineDefinition.display_name">display_name (dagster.PipelineDefinition attribute)</a>
 </li>
   </ul></td>
 </tr></table>
@@ -675,21 +673,13 @@ snapshots['test_build_all_docs 3'] = '''
 </li>
       <li><a href="sections/api/apidocs/execution.html#dagster.execute_pipeline_iterator">execute_pipeline_iterator() (in module dagster)</a>
 </li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="sections/api/apidocs/utilities.html#dagster.execute_solid">execute_solid() (in module dagster)</a>
 </li>
       <li><a href="sections/api/apidocs/utilities.html#dagster.execute_solids">execute_solids() (in module dagster)</a>
 </li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="sections/api/apidocs/execution.html#dagster.ExecutionContext">ExecutionContext (class in dagster)</a>
-</li>
-      <li><a href="sections/api/apidocs/definitions.html#dagster.ExpectationDefinition.expectation_fn">expectation_fn (dagster.ExpectationDefinition attribute)</a>
-</li>
-      <li><a href="sections/api/apidocs/definitions.html#dagster.ExpectationDefinition">ExpectationDefinition (class in dagster)</a>
-</li>
-      <li><a href="sections/api/apidocs/definitions.html#dagster.ExpectationResult">ExpectationResult (class in dagster)</a>
-</li>
-      <li><a href="sections/api/apidocs/definitions.html#dagster.InputDefinition.expectations">expectations (dagster.InputDefinition attribute)</a>
+      <li><a href="sections/api/apidocs/solids.html#dagster.InputDefinition.expectations">expectations (dagster.InputDefinition attribute)</a>
 </li>
   </ul></td>
 </tr></table>
@@ -701,9 +691,9 @@ snapshots['test_build_all_docs 3'] = '''
 </li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="sections/api/apidocs/definitions.html#dagster.Field">Field() (in module dagster)</a>
+      <li><a href="sections/api/apidocs/types.html#dagster.Field">Field() (in module dagster)</a>
 </li>
-      <li><a href="sections/api/apidocs/decorators.html#dagster.MultipleResults.from_dict">from_dict() (dagster.MultipleResults static method)</a>
+      <li><a href="sections/api/apidocs/solids.html#dagster.MultipleResults.from_dict">from_dict() (dagster.MultipleResults static method)</a>
 </li>
   </ul></td>
 </tr></table>
@@ -711,11 +701,11 @@ snapshots['test_build_all_docs 3'] = '''
 <h2 id="G">G</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="sections/api/apidocs/definitions.html#dagster.RepositoryDefinition.get_all_pipelines">get_all_pipelines() (dagster.RepositoryDefinition method)</a>
+      <li><a href="sections/api/apidocs/pipeline.html#dagster.RepositoryDefinition.get_all_pipelines">get_all_pipelines() (dagster.RepositoryDefinition method)</a>
 </li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="sections/api/apidocs/definitions.html#dagster.RepositoryDefinition.get_pipeline">get_pipeline() (dagster.RepositoryDefinition method)</a>
+      <li><a href="sections/api/apidocs/pipeline.html#dagster.RepositoryDefinition.get_pipeline">get_pipeline() (dagster.RepositoryDefinition method)</a>
 </li>
   </ul></td>
 </tr></table>
@@ -723,7 +713,7 @@ snapshots['test_build_all_docs 3'] = '''
 <h2 id="H">H</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="sections/api/apidocs/definitions.html#dagster.PipelineDefinition.has_solid">has_solid() (dagster.PipelineDefinition method)</a>
+      <li><a href="sections/api/apidocs/pipeline.html#dagster.PipelineDefinition.has_solid">has_solid() (dagster.PipelineDefinition method)</a>
 </li>
   </ul></td>
 </tr></table>
@@ -731,7 +721,7 @@ snapshots['test_build_all_docs 3'] = '''
 <h2 id="I">I</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="sections/api/apidocs/definitions.html#dagster.SolidDefinition.input_defs">input_defs (dagster.SolidDefinition attribute)</a>
+      <li><a href="sections/api/apidocs/solids.html#dagster.SolidDefinition.input_defs">input_defs (dagster.SolidDefinition attribute)</a>
 </li>
       <li><a href="sections/api/apidocs/types.html#dagster.input_schema">input_schema() (in module dagster)</a>
 </li>
@@ -739,11 +729,11 @@ snapshots['test_build_all_docs 3'] = '''
 </li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="sections/api/apidocs/definitions.html#dagster.InputDefinition">InputDefinition (class in dagster)</a>
+      <li><a href="sections/api/apidocs/solids.html#dagster.InputDefinition">InputDefinition (class in dagster)</a>
 </li>
       <li><a href="sections/api/apidocs/types.html#dagster.Int">Int (in module dagster)</a>
 </li>
-      <li><a href="sections/api/apidocs/definitions.html#dagster.OutputDefinition.is_optional">is_optional (dagster.OutputDefinition attribute)</a>
+      <li><a href="sections/api/apidocs/solids.html#dagster.OutputDefinition.is_optional">is_optional (dagster.OutputDefinition attribute)</a>
 </li>
   </ul></td>
 </tr></table>
@@ -751,7 +741,7 @@ snapshots['test_build_all_docs 3'] = '''
 <h2 id="L">L</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="sections/api/apidocs/decorators.html#dagster.lambda_solid">lambda_solid() (in module dagster)</a>
+      <li><a href="sections/api/apidocs/solids.html#dagster.lambda_solid">lambda_solid() (in module dagster)</a>
 </li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
@@ -763,13 +753,11 @@ snapshots['test_build_all_docs 3'] = '''
 <h2 id="M">M</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="sections/api/apidocs/definitions.html#dagster.ExpectationResult.message">message (dagster.ExpectationResult attribute)</a>
+      <li><a href="sections/api/apidocs/solids.html#dagster.SolidDefinition.metadata">metadata (dagster.SolidDefinition attribute)</a>
 </li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="sections/api/apidocs/definitions.html#dagster.SolidDefinition.metadata">metadata (dagster.SolidDefinition attribute)</a>
-</li>
-      <li><a href="sections/api/apidocs/decorators.html#dagster.MultipleResults">MultipleResults (class in dagster)</a>
+      <li><a href="sections/api/apidocs/solids.html#dagster.MultipleResults">MultipleResults (class in dagster)</a>
 </li>
   </ul></td>
 </tr></table>
@@ -777,18 +765,16 @@ snapshots['test_build_all_docs 3'] = '''
 <h2 id="N">N</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="sections/api/apidocs/definitions.html#dagster.ExpectationDefinition.name">name (dagster.ExpectationDefinition attribute)</a>
+      <li><a href="sections/api/apidocs/solids.html#dagster.InputDefinition.name">name (dagster.InputDefinition attribute)</a>
 
       <ul>
-        <li><a href="sections/api/apidocs/definitions.html#dagster.InputDefinition.name">(dagster.InputDefinition attribute)</a>
+        <li><a href="sections/api/apidocs/solids.html#dagster.OutputDefinition.name">(dagster.OutputDefinition attribute)</a>
 </li>
-        <li><a href="sections/api/apidocs/definitions.html#dagster.OutputDefinition.name">(dagster.OutputDefinition attribute)</a>
+        <li><a href="sections/api/apidocs/pipeline.html#dagster.PipelineDefinition.name">(dagster.PipelineDefinition attribute)</a>
 </li>
-        <li><a href="sections/api/apidocs/definitions.html#dagster.PipelineDefinition.name">(dagster.PipelineDefinition attribute)</a>
+        <li><a href="sections/api/apidocs/pipeline.html#dagster.RepositoryDefinition.name">(dagster.RepositoryDefinition attribute)</a>
 </li>
-        <li><a href="sections/api/apidocs/definitions.html#dagster.RepositoryDefinition.name">(dagster.RepositoryDefinition attribute)</a>
-</li>
-        <li><a href="sections/api/apidocs/definitions.html#dagster.SolidDefinition.name">(dagster.SolidDefinition attribute)</a>
+        <li><a href="sections/api/apidocs/solids.html#dagster.SolidDefinition.name">(dagster.SolidDefinition attribute)</a>
 </li>
       </ul></li>
   </ul></td>
@@ -803,9 +789,9 @@ snapshots['test_build_all_docs 3'] = '''
 <h2 id="O">O</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="sections/api/apidocs/definitions.html#dagster.DependencyDefinition.output">output (dagster.DependencyDefinition attribute)</a>
+      <li><a href="sections/api/apidocs/pipeline.html#dagster.DependencyDefinition.output">output (dagster.DependencyDefinition attribute)</a>
 </li>
-      <li><a href="sections/api/apidocs/definitions.html#dagster.Result.output_name">output_name (dagster.Result attribute)</a>
+      <li><a href="sections/api/apidocs/solids.html#dagster.Result.output_name">output_name (dagster.Result attribute)</a>
 </li>
       <li><a href="sections/api/apidocs/types.html#dagster.output_schema">output_schema() (in module dagster)</a>
 </li>
@@ -813,9 +799,9 @@ snapshots['test_build_all_docs 3'] = '''
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="sections/api/apidocs/types.html#dagster.output_selector_schema">output_selector_schema() (in module dagster)</a>
 </li>
-      <li><a href="sections/api/apidocs/definitions.html#dagster.OutputDefinition">OutputDefinition (class in dagster)</a>
+      <li><a href="sections/api/apidocs/solids.html#dagster.OutputDefinition">OutputDefinition (class in dagster)</a>
 </li>
-      <li><a href="sections/api/apidocs/definitions.html#dagster.SolidDefinition.outputs_defs">outputs_defs (dagster.SolidDefinition attribute)</a>
+      <li><a href="sections/api/apidocs/solids.html#dagster.SolidDefinition.outputs_defs">outputs_defs (dagster.SolidDefinition attribute)</a>
 </li>
   </ul></td>
 </tr></table>
@@ -823,19 +809,19 @@ snapshots['test_build_all_docs 3'] = '''
 <h2 id="P">P</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="sections/api/apidocs/definitions.html#dagster.PipelineContextDefinition.passthrough_context_definition">passthrough_context_definition() (dagster.PipelineContextDefinition static method)</a>
+      <li><a href="sections/api/apidocs/pipeline.html#dagster.PipelineContextDefinition.passthrough_context_definition">passthrough_context_definition() (dagster.PipelineContextDefinition static method)</a>
 </li>
       <li><a href="sections/api/apidocs/types.html#dagster.Path">Path (in module dagster)</a>
 </li>
-      <li><a href="sections/api/apidocs/definitions.html#dagster.RepositoryDefinition.pipeline_dict">pipeline_dict (dagster.RepositoryDefinition attribute)</a>
+      <li><a href="sections/api/apidocs/pipeline.html#dagster.RepositoryDefinition.pipeline_dict">pipeline_dict (dagster.RepositoryDefinition attribute)</a>
 </li>
       <li><a href="sections/api/apidocs/errors.html#dagster.PipelineConfigEvaluationError">PipelineConfigEvaluationError</a>
 </li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="sections/api/apidocs/definitions.html#dagster.PipelineContextDefinition">PipelineContextDefinition (class in dagster)</a>
+      <li><a href="sections/api/apidocs/pipeline.html#dagster.PipelineContextDefinition">PipelineContextDefinition (class in dagster)</a>
 </li>
-      <li><a href="sections/api/apidocs/definitions.html#dagster.PipelineDefinition">PipelineDefinition (class in dagster)</a>
+      <li><a href="sections/api/apidocs/pipeline.html#dagster.PipelineDefinition">PipelineDefinition (class in dagster)</a>
 </li>
       <li><a href="sections/api/apidocs/execution.html#dagster.PipelineExecutionResult">PipelineExecutionResult (class in dagster)</a>
 </li>
@@ -847,30 +833,26 @@ snapshots['test_build_all_docs 3'] = '''
 <h2 id="R">R</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="sections/api/apidocs/definitions.html#dagster.RepositoryDefinition">RepositoryDefinition (class in dagster)</a>
+      <li><a href="sections/api/apidocs/pipeline.html#dagster.RepositoryDefinition">RepositoryDefinition (class in dagster)</a>
 </li>
-      <li><a href="sections/api/apidocs/definitions.html#dagster.ResourceDefinition">ResourceDefinition (class in dagster)</a>
+      <li><a href="sections/api/apidocs/pipeline.html#dagster.ResourceDefinition">ResourceDefinition (class in dagster)</a>
 </li>
-      <li><a href="sections/api/apidocs/definitions.html#dagster.Result">Result (class in dagster)</a>
-</li>
-      <li><a href="sections/api/apidocs/definitions.html#dagster.ExpectationResult.result_context">result_context (dagster.ExpectationResult attribute)</a>
+      <li><a href="sections/api/apidocs/solids.html#dagster.Result">Result (class in dagster)</a>
 </li>
       <li><a href="sections/api/apidocs/execution.html#dagster.PipelineExecutionResult.result_for_solid">result_for_solid() (dagster.PipelineExecutionResult method)</a>
 </li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="sections/api/apidocs/decorators.html#dagster.MultipleResults.results">results (dagster.MultipleResults attribute)</a>
+      <li><a href="sections/api/apidocs/solids.html#dagster.MultipleResults.results">results (dagster.MultipleResults attribute)</a>
 </li>
       <li><a href="sections/api/apidocs/execution.html#dagster.RunConfig">RunConfig (class in dagster)</a>
 </li>
-      <li><a href="sections/api/apidocs/definitions.html#dagster.InputDefinition.runtime_type">runtime_type (dagster.InputDefinition attribute)</a>
+      <li><a href="sections/api/apidocs/solids.html#dagster.InputDefinition.runtime_type">runtime_type (dagster.InputDefinition attribute)</a>
 
       <ul>
-        <li><a href="sections/api/apidocs/definitions.html#dagster.OutputDefinition.runtime_type">(dagster.OutputDefinition attribute)</a>
+        <li><a href="sections/api/apidocs/solids.html#dagster.OutputDefinition.runtime_type">(dagster.OutputDefinition attribute)</a>
 </li>
       </ul></li>
-      <li><a href="sections/api/apidocs/types.html#dagster.RuntimeType">RuntimeType (class in dagster)</a>
-</li>
   </ul></td>
 </tr></table>
 
@@ -879,33 +861,31 @@ snapshots['test_build_all_docs 3'] = '''
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="sections/api/apidocs/execution.html#dagster.SolidExecutionResult.skipped">skipped (dagster.SolidExecutionResult attribute)</a>
 </li>
-      <li><a href="sections/api/apidocs/definitions.html#dagster.DependencyDefinition.solid">solid (dagster.DependencyDefinition attribute)</a>
+      <li><a href="sections/api/apidocs/pipeline.html#dagster.DependencyDefinition.solid">solid (dagster.DependencyDefinition attribute)</a>
 
       <ul>
         <li><a href="sections/api/apidocs/execution.html#dagster.SolidExecutionResult.solid">(dagster.SolidExecutionResult attribute)</a>
 </li>
       </ul></li>
-      <li><a href="sections/api/apidocs/decorators.html#dagster.solid">solid() (in module dagster)</a>
+      <li><a href="sections/api/apidocs/solids.html#dagster.solid">solid() (in module dagster)</a>
 </li>
-      <li><a href="sections/api/apidocs/definitions.html#dagster.PipelineDefinition.solid_named">solid_named() (dagster.PipelineDefinition method)</a>
+      <li><a href="sections/api/apidocs/pipeline.html#dagster.PipelineDefinition.solid_named">solid_named() (dagster.PipelineDefinition method)</a>
 </li>
-      <li><a href="sections/api/apidocs/definitions.html#dagster.SolidDefinition">SolidDefinition (class in dagster)</a>
+      <li><a href="sections/api/apidocs/solids.html#dagster.SolidDefinition">SolidDefinition (class in dagster)</a>
 </li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="sections/api/apidocs/execution.html#dagster.SolidExecutionResult">SolidExecutionResult (class in dagster)</a>
 </li>
-      <li><a href="sections/api/apidocs/definitions.html#dagster.SolidInstance">SolidInstance (class in dagster)</a>
+      <li><a href="sections/api/apidocs/pipeline.html#dagster.SolidInstance">SolidInstance (class in dagster)</a>
 </li>
-      <li><a href="sections/api/apidocs/definitions.html#dagster.PipelineDefinition.solids">solids (dagster.PipelineDefinition attribute)</a>, <a href="sections/api/apidocs/definitions.html#dagster.PipelineDefinition.solids">[1]</a>
+      <li><a href="sections/api/apidocs/pipeline.html#dagster.PipelineDefinition.solids">solids (dagster.PipelineDefinition attribute)</a>, <a href="sections/api/apidocs/pipeline.html#dagster.PipelineDefinition.solids">[1]</a>
 </li>
       <li><a href="sections/api/apidocs/types.html#dagster.String">String (in module dagster)</a>
 </li>
-      <li><a href="sections/api/apidocs/definitions.html#dagster.ExpectationResult.success">success (dagster.ExpectationResult attribute)</a>
+      <li><a href="sections/api/apidocs/execution.html#dagster.PipelineExecutionResult.success">success (dagster.PipelineExecutionResult attribute)</a>
 
       <ul>
-        <li><a href="sections/api/apidocs/execution.html#dagster.PipelineExecutionResult.success">(dagster.PipelineExecutionResult attribute)</a>
-</li>
         <li><a href="sections/api/apidocs/execution.html#dagster.SolidExecutionResult.success">(dagster.SolidExecutionResult attribute)</a>
 </li>
       </ul></li>
@@ -915,7 +895,7 @@ snapshots['test_build_all_docs 3'] = '''
 <h2 id="T">T</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="sections/api/apidocs/definitions.html#dagster.SolidDefinition.transform_fn">transform_fn (dagster.SolidDefinition attribute)</a>
+      <li><a href="sections/api/apidocs/solids.html#dagster.SolidDefinition.transform_fn">transform_fn (dagster.SolidDefinition attribute)</a>
 </li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
@@ -929,7 +909,7 @@ snapshots['test_build_all_docs 3'] = '''
 <h2 id="V">V</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="sections/api/apidocs/definitions.html#dagster.Result.value">value (dagster.Result attribute)</a>
+      <li><a href="sections/api/apidocs/solids.html#dagster.Result.value">value (dagster.Result attribute)</a>
 </li>
   </ul></td>
 </tr></table>
@@ -1068,11 +1048,11 @@ snapshots['test_build_all_docs 4'] = '''
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="sections/api/api.html">API Docs</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="sections/api/apidocs/definitions.html">Definitions</a></li>
-<li class="toctree-l2"><a class="reference internal" href="sections/api/apidocs/decorators.html">Decorators</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sections/api/apidocs/solids.html">Solids</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sections/api/apidocs/pipeline.html">Pipelines</a></li>
 <li class="toctree-l2"><a class="reference internal" href="sections/api/apidocs/execution.html">Execution</a></li>
-<li class="toctree-l2"><a class="reference internal" href="sections/api/apidocs/errors.html">Errors</a></li>
 <li class="toctree-l2"><a class="reference internal" href="sections/api/apidocs/types.html">Types</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sections/api/apidocs/errors.html">Errors</a></li>
 <li class="toctree-l2"><a class="reference internal" href="sections/api/apidocs/utilities.html">Utilities</a></li>
 </ul>
 </li>
@@ -1378,75 +1358,14 @@ snapshots['test_build_all_docs 8'] = '''API Docs
   :maxdepth: 1
   :name: API Reference
 
-  apidocs/definitions
-  apidocs/decorators
+  apidocs/solids
+  apidocs/pipeline
   apidocs/execution
-  apidocs/errors
   apidocs/types
+  apidocs/errors
   apidocs/utilities'''
 
-snapshots['test_build_all_docs 9'] = '''Decorators
-===========================
-
-.. currentmodule:: dagster
-
-A more concise way to define solids.
-
-.. autofunction:: lambda_solid
-
-.. autofunction:: solid
-
-.. autoclass:: MultipleResults
-    :members:
-'''
-
-snapshots['test_build_all_docs 10'] = '''Definitions
-===========================
-
-.. currentmodule:: dagster
-
-Core API for defining solids and pipelines.
-
-.. autoclass:: DependencyDefinition
-    :members:
-
-.. autoclass:: ExpectationDefinition
-    :members:
-
-.. autoclass:: ExpectationResult
-    :members:
-
-.. autofunction:: Field
-
-.. autoclass:: InputDefinition
-    :members:
-
-.. autoclass:: OutputDefinition
-    :members:
-
-.. autoclass:: PipelineContextDefinition
-    :members:
-
-.. autoclass:: PipelineDefinition
-    :members:
-
-.. autoclass:: RepositoryDefinition
-    :members:
-
-.. autoclass:: ResourceDefinition
-    :members:
-
-.. autoclass:: Result
-    :members:
-
-.. autoclass:: SolidDefinition
-    :members:
-
-.. autoclass:: SolidInstance
-    :members:
-'''
-
-snapshots['test_build_all_docs 11'] = '''Errors
+snapshots['test_build_all_docs 9'] = '''Errors
 =========
 
 .. currentmodule:: dagster
@@ -1468,28 +1387,146 @@ Core dagster error classes.
 .. autoexception:: PipelineConfigEvaluationError
 '''
 
-snapshots['test_build_all_docs 12'] = '''Execution
+snapshots['test_build_all_docs 10'] = '''Execution
 =========
 
 .. currentmodule:: dagster
 
-Executing pipelines and solids.
+Execution Functions
+-------------------
 
 .. autofunction:: execute_pipeline
 
 .. autofunction:: execute_pipeline_iterator
 
-.. autoclass:: ExecutionContext
-   :members:
+Results
+-------
 
 .. autoclass:: PipelineExecutionResult
    :members:
 
+.. autoclass:: SolidExecutionResult
+   :members:
+
+Configuration
+-------------
+
 .. autoclass:: RunConfig 
    :members:
 
-.. autoclass:: SolidExecutionResult
-   :members:
+**Environment Dict Schema**
+  The ``environment_dict`` used by ``execute_pipeline`` and ``execute_pipeline_iterator`` has the following schema:
+  ::
+    {
+      # configuration for Solids
+      'solids': {
+
+        # these keys align with the names of the solids, or their alias in this pipeline
+        '_solid_name_': {
+
+          # pass any data that was defined via config_field
+          'config': _,
+
+           # materialize input values, keyed by input name
+           'inputs': {                    
+             '_input_name_': {'value': _value_}
+            }
+          }
+        },
+
+        # configuration for PipelineContextDefinitions
+        'context': {
+          
+          # these keys align with the names defined via context_definitions on PipelineDefinition
+          '_context_name_': {                
+            
+            # pass any config data that was defined via config_field
+            'config': _,
+            
+            # configuration for ResourceDefinitions
+            'resources': {
+                
+              # these keys align with the names defined via resources on PipelineContextDefinitions
+              '_resource_name_': {
+
+                # pass any data that was defined via config_field
+                'config': _
+              }
+            }
+          }
+        }
+      }
+    }
+
+
+
+'''
+
+snapshots['test_build_all_docs 11'] = '''Pipelines
+=========
+
+.. currentmodule:: dagster
+
+.. autoclass:: PipelineDefinition
+    :members:
+
+.. autoclass:: DependencyDefinition
+    :members:
+
+.. autoclass:: SolidInstance
+    :members:
+
+
+Contexts & Resources
+--------------------
+
+.. autoclass:: PipelineContextDefinition
+    :members:
+
+.. autoclass:: ResourceDefinition
+    :members:
+
+Repository
+----------
+
+.. autoclass:: RepositoryDefinition
+    :members:'''
+
+snapshots['test_build_all_docs 12'] = '''Solids
+======
+.. currentmodule:: dagster
+
+The foundational unit of composition in Dagster.
+
+Core
+----
+
+.. autoclass:: SolidDefinition
+    :members:
+
+.. autoclass:: Result
+    :members:
+
+.. autoclass:: InputDefinition
+    :members:
+
+.. autoclass:: OutputDefinition
+    :members:
+
+Decorators
+----------
+The concise way to define solids.
+
+.. autofunction:: lambda_solid
+
+.. autofunction:: solid
+
+.. autoclass:: MultipleResults
+    :members:
+
+
+
+
 '''
 
 snapshots['test_build_all_docs 13'] = '''Types
@@ -1499,44 +1536,52 @@ snapshots['test_build_all_docs 13'] = '''Types
 
 Dagster type system.
 
-Type definitions
------------------
-
+Scalar Types
+------------
 .. autoclass:: Any
-
-.. autofunction:: as_dagster_type
 
 .. autoclass:: Bool
 
-.. autofunction:: dagster_type
+.. autoclass:: Int
+
+.. autoclass:: String
+
+.. autoclass:: Path
+
+Wrapper Types
+-------------
+
+.. autofunction:: Nullable
+
+.. autofunction:: List
+
+.. autofunction:: Field
+
+.. autofunction:: Dict
+
+.. autofunction:: NamedDict
 
 .. autoclass:: ConfigType
 
-.. autofunction:: Dict
+Schema
+------
 
 .. autofunction:: input_schema
 
 .. autofunction:: input_selector_schema
 
-.. autoclass:: Int
-
-.. autofunction:: List
-
-.. autofunction:: NamedDict
-
-.. autofunction:: Nullable
-
 .. autofunction:: output_schema
 
 .. autofunction:: output_selector_schema
 
-.. autoclass:: Path
 
+Making New Types
+----------------
 .. autoclass:: PythonObjectType
 
-.. autoclass:: RuntimeType
+.. autofunction:: as_dagster_type
 
-.. autoclass:: String
+.. autofunction:: dagster_type
 '''
 
 snapshots['test_build_all_docs 14'] = '''Utilities
@@ -19107,7 +19152,7 @@ snapshots['test_build_all_docs 53'] = '''
     <script type="text/javascript" src="../../_static/doctools.js"></script>
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" />
-    <link rel="next" title="Definitions" href="apidocs/definitions.html" />
+    <link rel="next" title="Solids" href="apidocs/solids.html" />
     <link rel="prev" title="Upgrading to 0.3.0" href="../learn/guides/028_to_030_upgrade_guide.html" />
  
 <link rel="stylesheet" href="../../_static/custom.css" type="text/css" />
@@ -19133,7 +19178,7 @@ snapshots['test_build_all_docs 53'] = '''
             <a href="/" title="Home">Home</a>
         </li>
         <li>
-            <a href="apidocs/definitions.html" title="Next document">Definitions</a>
+            <a href="apidocs/solids.html" title="Next document">Solids</a>
             &rarr;
         </li>
     </ul>
@@ -19149,11 +19194,11 @@ snapshots['test_build_all_docs 53'] = '''
 <h1>API Docs<a class="headerlink" href="#api-docs" title="Permalink to this headline">¶</a></h1>
 <div class="toctree-wrapper compound" id="api-reference">
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="apidocs/definitions.html">Definitions</a></li>
-<li class="toctree-l1"><a class="reference internal" href="apidocs/decorators.html">Decorators</a></li>
+<li class="toctree-l1"><a class="reference internal" href="apidocs/solids.html">Solids</a></li>
+<li class="toctree-l1"><a class="reference internal" href="apidocs/pipeline.html">Pipelines</a></li>
 <li class="toctree-l1"><a class="reference internal" href="apidocs/execution.html">Execution</a></li>
-<li class="toctree-l1"><a class="reference internal" href="apidocs/errors.html">Errors</a></li>
 <li class="toctree-l1"><a class="reference internal" href="apidocs/types.html">Types</a></li>
+<li class="toctree-l1"><a class="reference internal" href="apidocs/errors.html">Errors</a></li>
 <li class="toctree-l1"><a class="reference internal" href="apidocs/utilities.html">Utilities</a></li>
 </ul>
 </div>
@@ -19173,7 +19218,7 @@ snapshots['test_build_all_docs 53'] = '''
             <a href="/" title="Home">Home</a>
         </li>
         <li>
-            <a href="apidocs/definitions.html" title="Next document">Definitions</a>
+            <a href="apidocs/solids.html" title="Next document">Solids</a>
             &rarr;
         </li>
     </ul>
@@ -19188,11 +19233,11 @@ snapshots['test_build_all_docs 53'] = '''
 <li class="toctree-l1"><a class="reference internal" href="../install/install.html">Install</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../learn/learn.html">Learn</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">API Docs</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="apidocs/definitions.html">Definitions</a></li>
-<li class="toctree-l2"><a class="reference internal" href="apidocs/decorators.html">Decorators</a></li>
+<li class="toctree-l2"><a class="reference internal" href="apidocs/solids.html">Solids</a></li>
+<li class="toctree-l2"><a class="reference internal" href="apidocs/pipeline.html">Pipelines</a></li>
 <li class="toctree-l2"><a class="reference internal" href="apidocs/execution.html">Execution</a></li>
-<li class="toctree-l2"><a class="reference internal" href="apidocs/errors.html">Errors</a></li>
 <li class="toctree-l2"><a class="reference internal" href="apidocs/types.html">Types</a></li>
+<li class="toctree-l2"><a class="reference internal" href="apidocs/errors.html">Errors</a></li>
 <li class="toctree-l2"><a class="reference internal" href="apidocs/utilities.html">Utilities</a></li>
 </ul>
 </li>
@@ -19228,7 +19273,7 @@ snapshots['test_build_all_docs 54'] = '''
   <head>
     <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    <title>Decorators &#8212; Dagster</title>
+    <title>Errors &#8212; Dagster</title>
     <link rel="stylesheet" href="../../../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
     <link rel="stylesheet" href="../../../_static/css/custom.css" type="text/css" />
@@ -19238,8 +19283,8 @@ snapshots['test_build_all_docs 54'] = '''
     <script type="text/javascript" src="../../../_static/doctools.js"></script>
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" />
-    <link rel="next" title="Execution" href="execution.html" />
-    <link rel="prev" title="Definitions" href="definitions.html" />
+    <link rel="next" title="Utilities" href="utilities.html" />
+    <link rel="prev" title="Types" href="types.html" />
  
 <link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
 
@@ -19258,13 +19303,13 @@ snapshots['test_build_all_docs 54'] = '''
     <ul>
         <li>
             &larr;
-            <a href="definitions.html" title="Previous document">Definitions</a>
+            <a href="types.html" title="Previous document">Types</a>
         </li>
         <li>
             <a href="/" title="Home">Home</a>
         </li>
         <li>
-            <a href="execution.html" title="Next document">Execution</a>
+            <a href="utilities.html" title="Next document">Utilities</a>
             &rarr;
         </li>
     </ul>
@@ -19276,186 +19321,52 @@ snapshots['test_build_all_docs 54'] = '''
 
             <div class="body" role="main">
                 
-  <div class="section" id="decorators">
-<h1>Decorators<a class="headerlink" href="#decorators" title="Permalink to this headline">¶</a></h1>
-<p>A more concise way to define solids.</p>
-<dl class="function">
-<dt id="dagster.lambda_solid">
-<code class="descclassname">dagster.</code><code class="descname">lambda_solid</code><span class="sig-paren">(</span><em>name=None</em>, <em>inputs=None</em>, <em>output=None</em>, <em>description=None</em><span class="sig-paren">)</span><a class="headerlink" href="#dagster.lambda_solid" title="Permalink to this definition">¶</a></dt>
-<dd><p>(decorator) Create a simple solid.</p>
-<p>This shortcut allows the creation of simple solids that do not require
-configuration and whose implementations do not require a context.</p>
-<p>Lambda solids take inputs and produce a single output. The body of the function
-should return a single value.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>name</strong> (<em>str</em>) – Name of solid.</li>
-<li><strong>inputs</strong> (<em>list</em><em>[</em><a class="reference internal" href="definitions.html#dagster.InputDefinition" title="dagster.InputDefinition"><em>InputDefinition</em></a><em>]</em>) – List of inputs.</li>
-<li><strong>output</strong> (<a class="reference internal" href="definitions.html#dagster.OutputDefinition" title="dagster.OutputDefinition"><em>OutputDefinition</em></a>) – The output of the solid. Defaults to <code class="docutils literal notranslate"><span class="pre">OutputDefinition()</span></code>.</li>
-<li><strong>description</strong> (<em>str</em>) – Solid description.</li>
-</ul>
-</td>
-</tr>
-</tbody>
-</table>
-<p class="rubric">Examples</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="nd">@lambda_solid</span>
-<span class="k">def</span> <span class="nf">hello_world</span><span class="p">():</span>
-    <span class="k">return</span> <span class="s1">&#39;hello&#39;</span>
-
-<span class="nd">@lambda_solid</span><span class="p">(</span><span class="n">inputs</span><span class="o">=</span><span class="p">[</span><span class="n">InputDefinition</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;foo&#39;</span><span class="p">)])</span>
-<span class="k">def</span> <span class="nf">hello_world</span><span class="p">(</span><span class="n">foo</span><span class="p">):</span>
-    <span class="k">return</span> <span class="n">foo</span>
-</pre></div>
-</div>
+  <div class="section" id="errors">
+<h1>Errors<a class="headerlink" href="#errors" title="Permalink to this headline">¶</a></h1>
+<p>Core dagster error classes.</p>
+<dl class="exception">
+<dt id="dagster.DagsterExpectationFailedError">
+<em class="property">exception </em><code class="descclassname">dagster.</code><code class="descname">DagsterExpectationFailedError</code><span class="sig-paren">(</span><em>expectation_context</em>, <em>value</em>, <em>*args</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#dagster.DagsterExpectationFailedError" title="Permalink to this definition">¶</a></dt>
+<dd><p>Thrown with pipeline configured to throw on expectation failure</p>
 </dd></dl>
 
-<dl class="function">
-<dt id="dagster.solid">
-<code class="descclassname">dagster.</code><code class="descname">solid</code><span class="sig-paren">(</span><em>name=None</em>, <em>inputs=None</em>, <em>outputs=None</em>, <em>config_field=None</em>, <em>description=None</em><span class="sig-paren">)</span><a class="headerlink" href="#dagster.solid" title="Permalink to this definition">¶</a></dt>
-<dd><p>(decorator) Create a solid with specified parameters.</p>
-<p>This shortcut simplifies the core solid API by exploding arguments into kwargs of the
-transform function and omitting additional parameters when they are not needed.
-Parameters are otherwise as in the core API, <a class="reference internal" href="definitions.html#dagster.SolidDefinition" title="dagster.SolidDefinition"><code class="xref py py-class docutils literal notranslate"><span class="pre">SolidDefinition</span></code></a>.</p>
-<p>The decorated function will be used as the solid’s transform function. Unlike in the core API,
-the transform function does not have to yield <a class="reference internal" href="definitions.html#dagster.Result" title="dagster.Result"><code class="xref py py-class docutils literal notranslate"><span class="pre">Result</span></code></a> object directly. Several
-simpler alternatives are available:</p>
-<ol class="arabic simple">
-<li>Return a value. This is returned as a <a class="reference internal" href="definitions.html#dagster.Result" title="dagster.Result"><code class="xref py py-class docutils literal notranslate"><span class="pre">Result</span></code></a> for a single output solid.</li>
-<li>Return a <a class="reference internal" href="definitions.html#dagster.Result" title="dagster.Result"><code class="xref py py-class docutils literal notranslate"><span class="pre">Result</span></code></a>. Works like yielding result.</li>
-<li>Return an instance of <a class="reference internal" href="#dagster.MultipleResults" title="dagster.MultipleResults"><code class="xref py py-class docutils literal notranslate"><span class="pre">MultipleResults</span></code></a>. Works like yielding several results for
-multiple outputs. Useful for solids that have multiple outputs.</li>
-<li>Yield <a class="reference internal" href="definitions.html#dagster.Result" title="dagster.Result"><code class="xref py py-class docutils literal notranslate"><span class="pre">Result</span></code></a>. Same as default transform behaviour.</li>
-</ol>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>name</strong> (<em>str</em>) – Name of solid.</li>
-<li><strong>inputs</strong> (<em>list</em><em>[</em><a class="reference internal" href="definitions.html#dagster.InputDefinition" title="dagster.InputDefinition"><em>InputDefinition</em></a><em>]</em>) – List of inputs.</li>
-<li><strong>outputs</strong> (<em>list</em><em>[</em><a class="reference internal" href="definitions.html#dagster.OutputDefinition" title="dagster.OutputDefinition"><em>OutputDefinition</em></a><em>]</em>) – List of outputs.</li>
-<li><strong>config_field</strong> (<em>Field</em>) – The configuration for this solid.</li>
-<li><strong>description</strong> (<em>str</em>) – Description of this solid.</li>
-</ul>
-</td>
-</tr>
-</tbody>
-</table>
-<p class="rubric">Examples</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="nd">@solid</span>
-<span class="k">def</span> <span class="nf">hello_world</span><span class="p">(</span><span class="n">_context</span><span class="p">):</span>
-    <span class="k">print</span><span class="p">(</span><span class="s1">&#39;hello&#39;</span><span class="p">)</span>
-
-<span class="nd">@solid</span><span class="p">()</span>
-<span class="k">def</span> <span class="nf">hello_world</span><span class="p">(</span><span class="n">_context</span><span class="p">):</span>
-    <span class="k">print</span><span class="p">(</span><span class="s1">&#39;hello&#39;</span><span class="p">)</span>
-
-<span class="nd">@solid</span><span class="p">(</span><span class="n">outputs</span><span class="o">=</span><span class="p">[</span><span class="n">OutputDefinition</span><span class="p">()])</span>
-<span class="k">def</span> <span class="nf">hello_world</span><span class="p">(</span><span class="n">_context</span><span class="p">):</span>
-    <span class="k">return</span> <span class="p">{</span><span class="s1">&#39;foo&#39;</span><span class="p">:</span> <span class="s1">&#39;bar&#39;</span><span class="p">}</span>
-
-<span class="nd">@solid</span><span class="p">(</span><span class="n">outputs</span><span class="o">=</span><span class="p">[</span><span class="n">OutputDefinition</span><span class="p">()])</span>
-<span class="k">def</span> <span class="nf">hello_world</span><span class="p">(</span><span class="n">_context</span><span class="p">):</span>
-    <span class="k">return</span> <span class="n">Result</span><span class="p">(</span><span class="n">value</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;foo&#39;</span><span class="p">:</span> <span class="s1">&#39;bar&#39;</span><span class="p">})</span>
-
-<span class="nd">@solid</span><span class="p">(</span><span class="n">outputs</span><span class="o">=</span><span class="p">[</span><span class="n">OutputDefinition</span><span class="p">()])</span>
-<span class="k">def</span> <span class="nf">hello_world</span><span class="p">(</span><span class="n">_context</span><span class="p">):</span>
-    <span class="k">yield</span> <span class="n">Result</span><span class="p">(</span><span class="n">value</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;foo&#39;</span><span class="p">:</span> <span class="s1">&#39;bar&#39;</span><span class="p">})</span>
-
-<span class="nd">@solid</span><span class="p">(</span><span class="n">outputs</span><span class="o">=</span><span class="p">[</span>
-    <span class="n">OutputDefinition</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;left&quot;</span><span class="p">),</span>
-    <span class="n">OutputDefinition</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;right&quot;</span><span class="p">),</span>
-<span class="p">])</span>
-<span class="k">def</span> <span class="nf">hello_world</span><span class="p">(</span><span class="n">_context</span><span class="p">):</span>
-    <span class="k">return</span> <span class="n">MultipleResults</span><span class="o">.</span><span class="n">from_dict</span><span class="p">({</span>
-        <span class="s1">&#39;left&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;foo&#39;</span><span class="p">:</span> <span class="s1">&#39;left&#39;</span><span class="p">},</span>
-        <span class="s1">&#39;right&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;foo&#39;</span><span class="p">:</span> <span class="s1">&#39;right&#39;</span><span class="p">},</span>
-    <span class="p">})</span>
-
-<span class="nd">@solid</span><span class="p">(</span>
-    <span class="n">inputs</span><span class="o">=</span><span class="p">[</span><span class="n">InputDefinition</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;foo&quot;</span><span class="p">)],</span>
-    <span class="n">outputs</span><span class="o">=</span><span class="p">[</span><span class="n">OutputDefinition</span><span class="p">()]</span>
-<span class="p">)</span>
-<span class="k">def</span> <span class="nf">hello_world</span><span class="p">(</span><span class="n">_context</span><span class="p">,</span> <span class="n">foo</span><span class="p">):</span>
-    <span class="k">return</span> <span class="n">foo</span>
-
-<span class="nd">@solid</span><span class="p">(</span>
-    <span class="n">inputs</span><span class="o">=</span><span class="p">[</span><span class="n">InputDefinition</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;foo&quot;</span><span class="p">)],</span>
-    <span class="n">outputs</span><span class="o">=</span><span class="p">[</span><span class="n">OutputDefinition</span><span class="p">()],</span>
-<span class="p">)</span>
-<span class="k">def</span> <span class="nf">hello_world</span><span class="p">(</span><span class="n">context</span><span class="p">,</span> <span class="n">foo</span><span class="p">):</span>
-    <span class="n">context</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;log something&#39;</span><span class="p">)</span>
-    <span class="k">return</span> <span class="n">foo</span>
-
-<span class="nd">@solid</span><span class="p">(</span>
-    <span class="n">inputs</span><span class="o">=</span><span class="p">[</span><span class="n">InputDefinition</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;foo&quot;</span><span class="p">)],</span>
-    <span class="n">outputs</span><span class="o">=</span><span class="p">[</span><span class="n">OutputDefinition</span><span class="p">()],</span>
-    <span class="n">config_field</span><span class="o">=</span><span class="n">Field</span><span class="p">(</span><span class="n">types</span><span class="o">.</span><span class="n">Dict</span><span class="p">({</span><span class="s1">&#39;str_value&#39;</span> <span class="p">:</span> <span class="n">Field</span><span class="p">(</span><span class="n">types</span><span class="o">.</span><span class="n">String</span><span class="p">)})),</span>
-<span class="p">)</span>
-<span class="k">def</span> <span class="nf">hello_world</span><span class="p">(</span><span class="n">context</span><span class="p">,</span> <span class="n">foo</span><span class="p">):</span>
-    <span class="c1"># context.solid_config is a dictionary with &#39;str_value&#39; key</span>
-    <span class="k">return</span> <span class="n">foo</span> <span class="o">+</span> <span class="n">context</span><span class="o">.</span><span class="n">solid_config</span><span class="p">[</span><span class="s1">&#39;str_value&#39;</span><span class="p">]</span>
-</pre></div>
-</div>
+<dl class="exception">
+<dt id="dagster.DagsterInvalidDefinitionError">
+<em class="property">exception </em><code class="descclassname">dagster.</code><code class="descname">DagsterInvalidDefinitionError</code><a class="headerlink" href="#dagster.DagsterInvalidDefinitionError" title="Permalink to this definition">¶</a></dt>
+<dd><p>Indicates that some violation of the definition rules has been violated by the user</p>
 </dd></dl>
 
-<dl class="class">
-<dt id="dagster.MultipleResults">
-<em class="property">class </em><code class="descclassname">dagster.</code><code class="descname">MultipleResults</code><a class="headerlink" href="#dagster.MultipleResults" title="Permalink to this definition">¶</a></dt>
-<dd><p>A shortcut to output multiple results.</p>
-<p>When using the <a class="reference internal" href="#dagster.solid" title="dagster.solid"><code class="xref py py-func docutils literal notranslate"><span class="pre">&#64;solid</span></code></a> API, you may return an instance of
-<code class="docutils literal notranslate"><span class="pre">MultipleResults</span></code> from a decorated transform function instead of yielding multiple results.</p>
-<dl class="attribute">
-<dt id="dagster.MultipleResults.results">
-<code class="descname">results</code><a class="headerlink" href="#dagster.MultipleResults.results" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>list[Result]</em> – list of <a class="reference internal" href="definitions.html#dagster.Result" title="dagster.Result"><code class="xref py py-class docutils literal notranslate"><span class="pre">Result</span></code></a></p>
+<dl class="exception">
+<dt id="dagster.DagsterInvariantViolationError">
+<em class="property">exception </em><code class="descclassname">dagster.</code><code class="descname">DagsterInvariantViolationError</code><a class="headerlink" href="#dagster.DagsterInvariantViolationError" title="Permalink to this definition">¶</a></dt>
+<dd><p>Indicates the user has violated a well-defined invariant that can only be deteremined
+at runtime.</p>
 </dd></dl>
 
-<p class="rubric">Examples</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="nd">@solid</span><span class="p">(</span><span class="n">outputs</span><span class="o">=</span><span class="p">[</span>
-    <span class="n">OutputDefinition</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;foo&#39;</span><span class="p">),</span>
-    <span class="n">OutputDefinition</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;bar&#39;</span><span class="p">),</span>
-<span class="p">])</span>
-<span class="k">def</span> <span class="nf">my_solid</span><span class="p">():</span>
-    <span class="k">return</span> <span class="n">MultipleResults</span><span class="p">(</span>
-        <span class="n">Result</span><span class="p">(</span><span class="s1">&#39;Barb&#39;</span><span class="p">,</span> <span class="s1">&#39;foo&#39;</span><span class="p">),</span>
-        <span class="n">Result</span><span class="p">(</span><span class="s1">&#39;Glarb&#39;</span><span class="p">,</span> <span class="s1">&#39;bar&#39;</span><span class="p">),</span>
-    <span class="p">)</span>
-
-
-<span class="nd">@solid</span><span class="p">(</span><span class="n">outputs</span><span class="o">=</span><span class="p">[</span>
-    <span class="n">OutputDefinition</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;foo&#39;</span><span class="p">),</span>
-    <span class="n">OutputDefinition</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;bar&#39;</span><span class="p">),</span>
-<span class="p">])</span>
-<span class="k">def</span> <span class="nf">my_solid_from_dict</span><span class="p">():</span>
-    <span class="k">return</span> <span class="n">MultipleResults</span><span class="o">.</span><span class="n">from_dict</span><span class="p">({</span>
-    <span class="s1">&#39;foo&#39;</span><span class="p">:</span> <span class="s1">&#39;Barb&#39;</span><span class="p">,</span>
-    <span class="s1">&#39;bar&#39;</span><span class="p">:</span> <span class="s1">&#39;Glarb&#39;</span><span class="p">,</span>
-    <span class="p">})</span>
-</pre></div>
-</div>
-<dl class="staticmethod">
-<dt id="dagster.MultipleResults.from_dict">
-<em class="property">static </em><code class="descname">from_dict</code><span class="sig-paren">(</span><em>result_dict</em><span class="sig-paren">)</span><a class="headerlink" href="#dagster.MultipleResults.from_dict" title="Permalink to this definition">¶</a></dt>
-<dd><p>Create a new <code class="docutils literal notranslate"><span class="pre">MultipleResults</span></code> object from a dictionary.</p>
-<p>Keys of the dictionary are unpacked into result names.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>result_dict</strong> (<em>dict</em>) – </td>
-</tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">(<a class="reference internal" href="#dagster.MultipleResults" title="dagster.MultipleResults"><code class="xref py py-class docutils literal notranslate"><span class="pre">MultipleResults</span></code></a>) A new <code class="docutils literal notranslate"><span class="pre">MultipleResults</span></code> object</td>
-</tr>
-</tbody>
-</table>
+<dl class="exception">
+<dt id="dagster.DagsterRuntimeCoercionError">
+<em class="property">exception </em><code class="descclassname">dagster.</code><code class="descname">DagsterRuntimeCoercionError</code><a class="headerlink" href="#dagster.DagsterRuntimeCoercionError" title="Permalink to this definition">¶</a></dt>
+<dd><p>Runtime checked faild</p>
 </dd></dl>
 
+<dl class="exception">
+<dt id="dagster.DagsterTypeError">
+<em class="property">exception </em><code class="descclassname">dagster.</code><code class="descname">DagsterTypeError</code><a class="headerlink" href="#dagster.DagsterTypeError" title="Permalink to this definition">¶</a></dt>
+<dd><p>Indicates an error in the solid type system (e.g. mismatched arguments)</p>
 </dd></dl>
+
+<dl class="exception">
+<dt id="dagster.DagsterUserCodeExecutionError">
+<em class="property">exception </em><code class="descclassname">dagster.</code><code class="descname">DagsterUserCodeExecutionError</code><span class="sig-paren">(</span><em>*args</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#dagster.DagsterUserCodeExecutionError" title="Permalink to this definition">¶</a></dt>
+<dd><p>This is base class for any exception that is meant to wrap an Exception
+thrown by user code. It wraps that existing user code. The original_exc_info
+argument to the ctor is meant to be a sys.exc_info at the site of constructor.</p>
+</dd></dl>
+
+<dl class="exception">
+<dt id="dagster.PipelineConfigEvaluationError">
+<em class="property">exception </em><code class="descclassname">dagster.</code><code class="descname">PipelineConfigEvaluationError</code><span class="sig-paren">(</span><em>pipeline</em>, <em>errors</em>, <em>config_value</em>, <em>*args</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#dagster.PipelineConfigEvaluationError" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
 
 </div>
 
@@ -19467,13 +19378,13 @@ multiple outputs. Useful for solids that have multiple outputs.</li>
     <ul>
         <li>
             &larr;
-            <a href="definitions.html" title="Previous document">Definitions</a>
+            <a href="types.html" title="Previous document">Types</a>
         </li>
         <li>
             <a href="/" title="Home">Home</a>
         </li>
         <li>
-            <a href="execution.html" title="Next document">Execution</a>
+            <a href="utilities.html" title="Next document">Utilities</a>
             &rarr;
         </li>
     </ul>
@@ -19488,11 +19399,11 @@ multiple outputs. Useful for solids that have multiple outputs.</li>
 <li class="toctree-l1"><a class="reference internal" href="../../install/install.html">Install</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../learn/learn.html">Learn</a></li>
 <li class="toctree-l1 current"><a class="reference internal" href="../api.html">API Docs</a><ul class="current">
-<li class="toctree-l2"><a class="reference internal" href="definitions.html">Definitions</a></li>
-<li class="toctree-l2 current"><a class="current reference internal" href="#">Decorators</a></li>
+<li class="toctree-l2"><a class="reference internal" href="solids.html">Solids</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pipeline.html">Pipelines</a></li>
 <li class="toctree-l2"><a class="reference internal" href="execution.html">Execution</a></li>
-<li class="toctree-l2"><a class="reference internal" href="errors.html">Errors</a></li>
 <li class="toctree-l2"><a class="reference internal" href="types.html">Types</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Errors</a></li>
 <li class="toctree-l2"><a class="reference internal" href="utilities.html">Utilities</a></li>
 </ul>
 </li>
@@ -19511,7 +19422,7 @@ multiple outputs. Useful for solids that have multiple outputs.</li>
     &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
     
     |
-    <a href="../../../_sources/sections/api/apidocs/decorators.rst.txt" rel="nofollow">Page source</a>
+    <a href="../../../_sources/sections/api/apidocs/errors.rst.txt" rel="nofollow">Page source</a>
 </div>
 
 
@@ -19528,7 +19439,7 @@ snapshots['test_build_all_docs 55'] = '''
   <head>
     <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    <title>Definitions &#8212; Dagster</title>
+    <title>Execution &#8212; Dagster</title>
     <link rel="stylesheet" href="../../../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
     <link rel="stylesheet" href="../../../_static/css/custom.css" type="text/css" />
@@ -19538,8 +19449,8 @@ snapshots['test_build_all_docs 55'] = '''
     <script type="text/javascript" src="../../../_static/doctools.js"></script>
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" />
-    <link rel="next" title="Decorators" href="decorators.html" />
-    <link rel="prev" title="API Docs" href="../api.html" />
+    <link rel="next" title="Types" href="types.html" />
+    <link rel="prev" title="Pipelines" href="pipeline.html" />
  
 <link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
 
@@ -19558,13 +19469,13 @@ snapshots['test_build_all_docs 55'] = '''
     <ul>
         <li>
             &larr;
-            <a href="../api.html" title="Previous document">API Docs</a>
+            <a href="pipeline.html" title="Previous document">Pipelines</a>
         </li>
         <li>
             <a href="/" title="Home">Home</a>
         </li>
         <li>
-            <a href="decorators.html" title="Next document">Decorators</a>
+            <a href="types.html" title="Next document">Types</a>
             &rarr;
         </li>
     </ul>
@@ -19576,237 +19487,328 @@ snapshots['test_build_all_docs 55'] = '''
 
             <div class="body" role="main">
                 
-  <div class="section" id="definitions">
-<h1>Definitions<a class="headerlink" href="#definitions" title="Permalink to this headline">¶</a></h1>
-<p>Core API for defining solids and pipelines.</p>
-<dl class="class">
-<dt id="dagster.DependencyDefinition">
-<em class="property">class </em><code class="descclassname">dagster.</code><code class="descname">DependencyDefinition</code><a class="headerlink" href="#dagster.DependencyDefinition" title="Permalink to this definition">¶</a></dt>
-<dd><p>Dependency definitions represent an edge in the DAG of solids. This object is
-used with a dictionary structure (whose keys represent solid/input where the dependency
-comes from) so this object only contains the target dependency information.</p>
-<dl class="attribute">
-<dt id="dagster.DependencyDefinition.solid">
-<code class="descname">solid</code><a class="headerlink" href="#dagster.DependencyDefinition.solid" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>str</em> – The name of the solid that is the target of the dependency.
-This is the solid where the value passed between the solids
-comes from.</p>
-</dd></dl>
-
-<dl class="attribute">
-<dt id="dagster.DependencyDefinition.output">
-<code class="descname">output</code><a class="headerlink" href="#dagster.DependencyDefinition.output" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>str</em> – The name of the output that is the target of the dependency.
-Defaults to “result”, the default output name of solids with a single output.</p>
-</dd></dl>
-
-<dl class="attribute">
-<dt id="dagster.DependencyDefinition.description">
-<code class="descname">description</code><a class="headerlink" href="#dagster.DependencyDefinition.description" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>str</em> – Description of this dependency. Optional.</p>
-</dd></dl>
-
-</dd></dl>
-
-<dl class="class">
-<dt id="dagster.ExpectationDefinition">
-<em class="property">class </em><code class="descclassname">dagster.</code><code class="descname">ExpectationDefinition</code><span class="sig-paren">(</span><em>name</em>, <em>expectation_fn</em>, <em>description=None</em><span class="sig-paren">)</span><a class="headerlink" href="#dagster.ExpectationDefinition" title="Permalink to this definition">¶</a></dt>
-<dd><p>Expectations represent a data quality test. It performs an arbitrary computation
-to see if a given input or output satisfies the expectation.</p>
-<dl class="attribute">
-<dt id="dagster.ExpectationDefinition.name">
-<code class="descname">name</code><a class="headerlink" href="#dagster.ExpectationDefinition.name" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>str</em> – The name of the expectation. Names should be unique per-solid.</p>
-</dd></dl>
-
-<dl class="attribute">
-<dt id="dagster.ExpectationDefinition.expectation_fn">
-<code class="descname">expectation_fn</code><a class="headerlink" href="#dagster.ExpectationDefinition.expectation_fn" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>callable</em> – This is the implementation of an expectation computation. It should be a callback
-with the signature (<strong>context</strong>: <cite>ExecutionContext</cite>, <strong>info</strong>:
-<cite>ExpectationExecutionInfo</cite>, <strong>value</strong>: <cite>Any</cite>) : <cite>ExpectationResult</cite>.</p>
-<p>“value” conforms to the type check performed within the Dagster type system.</p>
-<p>e.g. If the expectation is declared on an input of type <code class="docutils literal notranslate"><span class="pre">dagster_pandas.DataFrame</span></code>,
-you can assume that value is a <code class="docutils literal notranslate"><span class="pre">pandas.DataFrame</span></code>.</p>
-</dd></dl>
-
-<dl class="attribute">
-<dt id="dagster.ExpectationDefinition.description">
-<code class="descname">description</code><a class="headerlink" href="#dagster.ExpectationDefinition.description" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>str</em> – Description of expectation. Optional.</p>
-</dd></dl>
-
-<p class="rubric">Examples</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">InputDefinition</span><span class="p">(</span><span class="s1">&#39;some_input&#39;</span><span class="p">,</span> <span class="n">types</span><span class="o">.</span><span class="n">Int</span><span class="p">,</span> <span class="n">expectations</span><span class="o">=</span><span class="p">[</span>
-    <span class="n">ExpectationDefinition</span><span class="p">(</span>
-        <span class="n">name</span><span class="o">=</span><span class="s1">&#39;is_positive&#39;</span><span class="p">,</span>
-        <span class="n">expectation_fn</span><span class="o">=</span><span class="k">lambda</span><span class="p">(</span>
-            <span class="n">_info</span><span class="p">,</span>
-            <span class="n">value</span><span class="p">,</span>
-        <span class="p">):</span> <span class="n">ExpectationResult</span><span class="p">(</span><span class="n">success</span><span class="o">=</span><span class="n">value</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">),</span>
-    <span class="p">)</span>
-<span class="p">])</span>
-</pre></div>
-</div>
-</dd></dl>
-
-<dl class="class">
-<dt id="dagster.ExpectationResult">
-<em class="property">class </em><code class="descclassname">dagster.</code><code class="descname">ExpectationResult</code><span class="sig-paren">(</span><em>success</em>, <em>message=None</em>, <em>result_context=None</em><span class="sig-paren">)</span><a class="headerlink" href="#dagster.ExpectationResult" title="Permalink to this definition">¶</a></dt>
-<dd><p>Result of an expectation callback.</p>
-<p>When Expectations are evaluated in the callback passed to ExpectationDefinitions,
-the user must return an ExpectationResult object from the callback.</p>
-<dl class="attribute">
-<dt id="dagster.ExpectationResult.success">
-<code class="descname">success</code><a class="headerlink" href="#dagster.ExpectationResult.success" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>bool</em> – Whether the expectation passed or not.</p>
-</dd></dl>
-
-<dl class="attribute">
-<dt id="dagster.ExpectationResult.message">
-<code class="descname">message</code><a class="headerlink" href="#dagster.ExpectationResult.message" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>str</em> – Information about the computation. Typically only used in the failure case.</p>
-</dd></dl>
-
-<dl class="attribute">
-<dt id="dagster.ExpectationResult.result_context">
-<code class="descname">result_context</code><a class="headerlink" href="#dagster.ExpectationResult.result_context" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>Any</em> – Arbitrary information about the expectation result.</p>
-</dd></dl>
-
-</dd></dl>
-
+  <div class="section" id="execution">
+<h1>Execution<a class="headerlink" href="#execution" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="execution-functions">
+<h2>Execution Functions<a class="headerlink" href="#execution-functions" title="Permalink to this headline">¶</a></h2>
 <dl class="function">
-<dt id="dagster.Field">
-<code class="descclassname">dagster.</code><code class="descname">Field</code><span class="sig-paren">(</span><em>dagster_type</em>, <em>default_value=&lt;class \'dagster.core.types.field_utils.__FieldValueSentinel\'&gt;</em>, <em>is_optional=&lt;class \'dagster.core.types.field_utils.__InferOptionalCompositeFieldSentinel\'&gt;</em>, <em>description=None</em><span class="sig-paren">)</span><a class="headerlink" href="#dagster.Field" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="class">
-<dt id="dagster.InputDefinition">
-<em class="property">class </em><code class="descclassname">dagster.</code><code class="descname">InputDefinition</code><span class="sig-paren">(</span><em>name</em>, <em>dagster_type=None</em>, <em>expectations=None</em>, <em>description=None</em><span class="sig-paren">)</span><a class="headerlink" href="#dagster.InputDefinition" title="Permalink to this definition">¶</a></dt>
-<dd><p>An InputDefinition instance represents an argument to a transform defined within a solid.
-Inputs are values within the dagster type system that are created from previous solids.</p>
-<dl class="attribute">
-<dt id="dagster.InputDefinition.name">
-<code class="descname">name</code><a class="headerlink" href="#dagster.InputDefinition.name" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>str</em> – Name of the input.</p>
-</dd></dl>
-
-<dl class="attribute">
-<dt id="dagster.InputDefinition.runtime_type">
-<code class="descname">runtime_type</code><a class="headerlink" href="#dagster.InputDefinition.runtime_type" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>DagsterType</em> – Type of the input. Defaults to types.Any</p>
-</dd></dl>
-
-<dl class="attribute">
-<dt id="dagster.InputDefinition.expectations">
-<code class="descname">expectations</code><a class="headerlink" href="#dagster.InputDefinition.expectations" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>List[ExpectationDefinition]</em> – List of expectations that applies to the value passed to the solid.</p>
-</dd></dl>
-
-<dl class="attribute">
-<dt id="dagster.InputDefinition.description">
-<code class="descname">description</code><a class="headerlink" href="#dagster.InputDefinition.description" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>str</em> – Description of the input. Optional.</p>
-</dd></dl>
-
-</dd></dl>
-
-<dl class="class">
-<dt id="dagster.OutputDefinition">
-<em class="property">class </em><code class="descclassname">dagster.</code><code class="descname">OutputDefinition</code><span class="sig-paren">(</span><em>dagster_type=None</em>, <em>name=None</em>, <em>expectations=None</em>, <em>description=None</em>, <em>is_optional=False</em><span class="sig-paren">)</span><a class="headerlink" href="#dagster.OutputDefinition" title="Permalink to this definition">¶</a></dt>
-<dd><p>An OutputDefinition represents an output from a solid. Solids can have multiple
-outputs. In those cases the outputs must be named. Frequently solids have only one
-output, and so the user can construct a single OutputDefinition that will have
-the default name of “result”.</p>
-<dl class="attribute">
-<dt id="dagster.OutputDefinition.runtime_type">
-<code class="descname">runtime_type</code><a class="headerlink" href="#dagster.OutputDefinition.runtime_type" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>DagsterType</em> – Type of the output. Defaults to types.Any.</p>
-</dd></dl>
-
-<dl class="attribute">
-<dt id="dagster.OutputDefinition.name">
-<code class="descname">name</code><a class="headerlink" href="#dagster.OutputDefinition.name" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>str</em> – Name of the output. Defaults to “result”.</p>
-</dd></dl>
-
-<dl class="attribute">
-<dt>
-<code class="descname">expectations List[ExpectationDefinition]</code></dt>
-<dd><p>Expectations for this output.</p>
-</dd></dl>
-
-<dl class="attribute">
-<dt id="dagster.OutputDefinition.description">
-<code class="descname">description</code><a class="headerlink" href="#dagster.OutputDefinition.description" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>str</em> – Description of the output. Optional.</p>
-</dd></dl>
-
-<dl class="attribute">
-<dt id="dagster.OutputDefinition.is_optional">
-<code class="descname">is_optional</code><a class="headerlink" href="#dagster.OutputDefinition.is_optional" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>bool</em> – If this output is optional. Optional, defaults to false.</p>
-</dd></dl>
-
-</dd></dl>
-
-<dl class="class">
-<dt id="dagster.PipelineContextDefinition">
-<em class="property">class </em><code class="descclassname">dagster.</code><code class="descname">PipelineContextDefinition</code><span class="sig-paren">(</span><em>context_fn=None</em>, <em>config_field=None</em>, <em>resources=None</em>, <em>description=None</em><span class="sig-paren">)</span><a class="headerlink" href="#dagster.PipelineContextDefinition" title="Permalink to this definition">¶</a></dt>
-<dd><p>Defines a context type supported by a pipeline.</p>
-<p>Pipelines declare the different context types they support, in the form
-of PipelineContextDefinitions. For example a pipeline could declare a context
-definition for different operating environments: unittest, integration tests,
-production and so forth. The user provides a context function that returns an
-<code class="docutils literal notranslate"><span class="pre">ExecutionContext</span></code> that is passed to every solid. One can hang resources
-(such as db connections) off of that context. Thus the pipeline author
-has complete control over how the author of each individual solid within
-the pipeline interacts with its operating environment.</p>
-<p>The <code class="docutils literal notranslate"><span class="pre">PipelineContextDefinition</span></code> is passed to the <code class="docutils literal notranslate"><span class="pre">PipelineDefinition</span></code> in
-a dictionary keyed by its name so the name is not present in this object.</p>
-<dl class="attribute">
-<dt id="dagster.PipelineContextDefinition.config_field">
-<code class="descname">config_field</code><a class="headerlink" href="#dagster.PipelineContextDefinition.config_field" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>Field</em> – The configuration for the pipeline context.</p>
-</dd></dl>
-
-<dl class="attribute">
-<dt id="dagster.PipelineContextDefinition.context_fn">
-<code class="descname">context_fn</code><a class="headerlink" href="#dagster.PipelineContextDefinition.context_fn" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>callable</em> – Signature is (<strong>pipeline</strong>: <cite>PipelineDefintion</cite>, <strong>config_value</strong>: <cite>Any</cite>) :
-<cite>ExecutionContext</cite>.</p>
-<p>A callable that either returns <em>or</em> yields an <code class="docutils literal notranslate"><span class="pre">ExecutionContext</span></code>.</p>
-</dd></dl>
-
-<dl class="attribute">
-<dt id="dagster.PipelineContextDefinition.description">
-<code class="descname">description</code><a class="headerlink" href="#dagster.PipelineContextDefinition.description" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>str</em> – A description of what this context represents</p>
-</dd></dl>
-
-<dl class="staticmethod">
-<dt id="dagster.PipelineContextDefinition.passthrough_context_definition">
-<em class="property">static </em><code class="descname">passthrough_context_definition</code><span class="sig-paren">(</span><em>context_params</em><span class="sig-paren">)</span><a class="headerlink" href="#dagster.PipelineContextDefinition.passthrough_context_definition" title="Permalink to this definition">¶</a></dt>
-<dd><p>Create a context definition from a pre-existing context. This can be useful
-in testing contexts where you may want to create a context manually and then
-pass it into a one-off PipelineDefinition</p>
+<dt id="dagster.execute_pipeline">
+<code class="descclassname">dagster.</code><code class="descname">execute_pipeline</code><span class="sig-paren">(</span><em>pipeline</em>, <em>environment_dict=None</em>, <em>run_config=None</em><span class="sig-paren">)</span><a class="headerlink" href="#dagster.execute_pipeline" title="Permalink to this definition">¶</a></dt>
+<dd><p>“Synchronous” version of <a class="reference internal" href="#dagster.execute_pipeline_iterator" title="dagster.execute_pipeline_iterator"><code class="xref py py-func docutils literal notranslate"><span class="pre">execute_pipeline_iterator()</span></code></a>.</p>
+<p>Note: throw_on_user_error is very useful in testing contexts when not testing for error
+conditions</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>context</strong> (<a class="reference internal" href="execution.html#dagster.ExecutionContext" title="dagster.ExecutionContext"><em>ExecutionContext</em></a>) – The context that will provided to the pipeline.</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>pipeline</strong> (<a class="reference internal" href="pipeline.html#dagster.PipelineDefinition" title="dagster.PipelineDefinition"><em>PipelineDefinition</em></a>) – Pipeline to run</li>
+<li><strong>environment_dict</strong> (<em>dict</em>) – The enviroment configuration that parameterizes this run</li>
+<li><strong>run_config</strong> (<a class="reference internal" href="#dagster.RunConfig" title="dagster.RunConfig"><em>RunConfig</em></a>) – Configuration for how this pipeline will be executed</li>
+</ul>
+</td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">The passthrough context definition.</td>
-</tr>
-<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><a class="reference internal" href="#dagster.PipelineContextDefinition" title="dagster.PipelineContextDefinition">PipelineContextDefinition</a></td>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last"><a class="reference internal" href="#dagster.PipelineExecutionResult" title="dagster.PipelineExecutionResult"><code class="xref py py-class docutils literal notranslate"><span class="pre">PipelineExecutionResult</span></code></a></p>
+</td>
 </tr>
 </tbody>
 </table>
 </dd></dl>
 
+<dl class="function">
+<dt id="dagster.execute_pipeline_iterator">
+<code class="descclassname">dagster.</code><code class="descname">execute_pipeline_iterator</code><span class="sig-paren">(</span><em>pipeline</em>, <em>environment_dict=None</em>, <em>run_config=None</em><span class="sig-paren">)</span><a class="headerlink" href="#dagster.execute_pipeline_iterator" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns iterator that yields <a class="reference internal" href="#dagster.SolidExecutionResult" title="dagster.SolidExecutionResult"><code class="xref py py-class docutils literal notranslate"><span class="pre">SolidExecutionResult</span></code></a> for each
+solid executed in the pipeline.</p>
+<p>This is intended to allow the caller to do things between each executed
+node. For the ‘synchronous’ API, see <a class="reference internal" href="#dagster.execute_pipeline" title="dagster.execute_pipeline"><code class="xref py py-func docutils literal notranslate"><span class="pre">execute_pipeline()</span></code></a>.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>pipeline</strong> (<a class="reference internal" href="pipeline.html#dagster.PipelineDefinition" title="dagster.PipelineDefinition"><em>PipelineDefinition</em></a>) – Pipeline to run</li>
+<li><strong>environment_dict</strong> (<em>dict</em>) – The enviroment configuration that parameterizes this run</li>
+<li><strong>run_config</strong> (<a class="reference internal" href="#dagster.RunConfig" title="dagster.RunConfig"><em>RunConfig</em></a>) – Configuration for how this pipeline will be executed</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">Iterator[DagsterEvent]</p>
+</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
+</div>
+<div class="section" id="results">
+<h2>Results<a class="headerlink" href="#results" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="dagster.PipelineExecutionResult">
+<em class="property">class </em><code class="descclassname">dagster.</code><code class="descname">PipelineExecutionResult</code><span class="sig-paren">(</span><em>pipeline</em>, <em>run_id</em>, <em>event_list</em>, <em>reconstruct_context</em><span class="sig-paren">)</span><a class="headerlink" href="#dagster.PipelineExecutionResult" title="Permalink to this definition">¶</a></dt>
+<dd><p>Result of execution of the whole pipeline. Returned eg by <a class="reference internal" href="#dagster.execute_pipeline" title="dagster.execute_pipeline"><code class="xref py py-func docutils literal notranslate"><span class="pre">execute_pipeline()</span></code></a>.</p>
+<dl class="method">
+<dt id="dagster.PipelineExecutionResult.result_for_solid">
+<code class="descname">result_for_solid</code><span class="sig-paren">(</span><em>name</em><span class="sig-paren">)</span><a class="headerlink" href="#dagster.PipelineExecutionResult.result_for_solid" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get a <a class="reference internal" href="#dagster.SolidExecutionResult" title="dagster.SolidExecutionResult"><code class="xref py py-class docutils literal notranslate"><span class="pre">SolidExecutionResult</span></code></a> for a given solid name.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="dagster.PipelineExecutionResult.success">
+<code class="descname">success</code><a class="headerlink" href="#dagster.PipelineExecutionResult.success" title="Permalink to this definition">¶</a></dt>
+<dd><p>Whether the pipeline execution was successful at all steps</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="dagster.SolidExecutionResult">
+<em class="property">class </em><code class="descclassname">dagster.</code><code class="descname">SolidExecutionResult</code><span class="sig-paren">(</span><em>solid</em>, <em>step_events_by_kind</em>, <em>reconstruct_context</em><span class="sig-paren">)</span><a class="headerlink" href="#dagster.SolidExecutionResult" title="Permalink to this definition">¶</a></dt>
+<dd><p>Execution result for one solid of the pipeline.</p>
+<dl class="attribute">
+<dt id="dagster.SolidExecutionResult.context">
+<code class="descname">context</code><a class="headerlink" href="#dagster.SolidExecutionResult.context" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>ExecutionContext</em> – ExecutionContext of that particular Pipeline run.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="dagster.SolidExecutionResult.solid">
+<code class="descname">solid</code><a class="headerlink" href="#dagster.SolidExecutionResult.solid" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>SolidDefinition</em> – Solid for which this result is</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="dagster.SolidExecutionResult.failure_data">
+<code class="descname">failure_data</code><a class="headerlink" href="#dagster.SolidExecutionResult.failure_data" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the failing step’s data that happened during this solid’s execution, if any</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="dagster.SolidExecutionResult.skipped">
+<code class="descname">skipped</code><a class="headerlink" href="#dagster.SolidExecutionResult.skipped" title="Permalink to this definition">¶</a></dt>
+<dd><p>Whether the solid execution was skipped</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="dagster.SolidExecutionResult.success">
+<code class="descname">success</code><a class="headerlink" href="#dagster.SolidExecutionResult.success" title="Permalink to this definition">¶</a></dt>
+<dd><p>Whether the solid execution was successful</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="dagster.SolidExecutionResult.transformed_value">
+<code class="descname">transformed_value</code><span class="sig-paren">(</span><em>output_name=\'result\'</em><span class="sig-paren">)</span><a class="headerlink" href="#dagster.SolidExecutionResult.transformed_value" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns transformed value either for DEFAULT_OUTPUT or for the output
+given as output_name. Returns None if execution result isn’t a success.</p>
+<p>Reconstructs the pipeline context to materialize value.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="dagster.SolidExecutionResult.transformed_values">
+<code class="descname">transformed_values</code><a class="headerlink" href="#dagster.SolidExecutionResult.transformed_values" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return dictionary of transformed results, with keys being output names.
+Returns None if execution result isn’t a success.</p>
+<p>Reconstructs the pipeline context to materialize values.</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="configuration">
+<h2>Configuration<a class="headerlink" href="#configuration" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="dagster.RunConfig">
+<em class="property">class </em><code class="descclassname">dagster.</code><code class="descname">RunConfig</code><a class="headerlink" href="#dagster.RunConfig" title="Permalink to this definition">¶</a></dt>
+<dd><p>Configuration that controls the details of how Dagster will execute a pipeline.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>run_id</strong> (<em>str</em>) – The ID to use for this run. If not provided a new UUID will be created using <cite>uuid4</cite>.</li>
+<li><strong>tags</strong> (<em>dict</em><em>[</em><em>str</em><em>, </em><em>str</em><em>]</em>) – Key value pairs that will be added to logs.</li>
+<li><strong>event_callback</strong> (<em>callable</em>) – A callback to invoke with each <code class="xref py py-class docutils literal notranslate"><span class="pre">EventRecord</span></code> produced during execution.</li>
+<li><strong>loggers</strong> (<em>list</em>) – Additional loggers that log messages will be sent to.</li>
+<li><strong>executor_config</strong> (<em>ExecutorConfig</em>) – Configuration for where and how computation will occur.</li>
+<li><strong>storage_mode</strong> (<em>RunStorageMode</em>) – Where intermediate artifacts will be stored during execution.</li>
+<li><strong>rexecution_config</strong> (<em>RexecutionConfig</em>) – Information about a previous run to allow for subset rexecution.</li>
+<li><strong>step_keys_to_execute</strong> (<em>list</em><em>[</em><em>str</em><em>]</em>) – They subset of steps from a pipeline to execute this run.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="docutils">
+<dt><strong>Environment Dict Schema</strong></dt>
+<dd><p class="first">The <code class="docutils literal notranslate"><span class="pre">environment_dict</span></code> used by <code class="docutils literal notranslate"><span class="pre">execute_pipeline</span></code> and <code class="docutils literal notranslate"><span class="pre">execute_pipeline_iterator</span></code> has the following schema:</p>
+<div class="last highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
+  <span class="c1"># configuration for Solids</span>
+  <span class="s1">&#39;solids&#39;</span><span class="p">:</span> <span class="p">{</span>
+
+    <span class="c1"># these keys align with the names of the solids, or their alias in this pipeline</span>
+    <span class="s1">&#39;_solid_name_&#39;</span><span class="p">:</span> <span class="p">{</span>
+
+      <span class="c1"># pass any data that was defined via config_field</span>
+      <span class="s1">&#39;config&#39;</span><span class="p">:</span> <span class="n">_</span><span class="p">,</span>
+
+       <span class="c1"># materialize input values, keyed by input name</span>
+       <span class="s1">&#39;inputs&#39;</span><span class="p">:</span> <span class="p">{</span>
+         <span class="s1">&#39;_input_name_&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;value&#39;</span><span class="p">:</span> <span class="n">_value_</span><span class="p">}</span>
+        <span class="p">}</span>
+      <span class="p">}</span>
+    <span class="p">},</span>
+
+    <span class="c1"># configuration for PipelineContextDefinitions</span>
+    <span class="s1">&#39;context&#39;</span><span class="p">:</span> <span class="p">{</span>
+
+      <span class="c1"># these keys align with the names defined via context_definitions on PipelineDefinition</span>
+      <span class="s1">&#39;_context_name_&#39;</span><span class="p">:</span> <span class="p">{</span>
+
+        <span class="c1"># pass any config data that was defined via config_field</span>
+        <span class="s1">&#39;config&#39;</span><span class="p">:</span> <span class="n">_</span><span class="p">,</span>
+
+        <span class="c1"># configuration for ResourceDefinitions</span>
+        <span class="s1">&#39;resources&#39;</span><span class="p">:</span> <span class="p">{</span>
+
+          <span class="c1"># these keys align with the names defined via resources on PipelineContextDefinitions</span>
+          <span class="s1">&#39;_resource_name_&#39;</span><span class="p">:</span> <span class="p">{</span>
+
+            <span class="c1"># pass any data that was defined via config_field</span>
+            <span class="s1">&#39;config&#39;</span><span class="p">:</span> <span class="n">_</span>
+          <span class="p">}</span>
+        <span class="p">}</span>
+      <span class="p">}</span>
+    <span class="p">}</span>
+  <span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</dd>
+</dl>
+</div>
+</div>
+
+
+            </div>
+            <div class="related bottom">
+                &nbsp;
+<nav id="rellinks">
+    <ul>
+        <li>
+            &larr;
+            <a href="pipeline.html" title="Previous document">Pipelines</a>
+        </li>
+        <li>
+            <a href="/" title="Home">Home</a>
+        </li>
+        <li>
+            <a href="types.html" title="Next document">Types</a>
+            &rarr;
+        </li>
+    </ul>
+</nav>
+            </div>
+            
+        </div>
+    </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><h3><a href="../../../index.html">Dagster</a></h3>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../install/install.html">Install</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../learn/learn.html">Learn</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../api.html">API Docs</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="solids.html">Solids</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pipeline.html">Pipelines</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Execution</a></li>
+<li class="toctree-l2"><a class="reference internal" href="types.html">Types</a></li>
+<li class="toctree-l2"><a class="reference internal" href="errors.html">Errors</a></li>
+<li class="toctree-l2"><a class="reference internal" href="utilities.html">Utilities</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../community/community.html">Community</a></li>
+</ul>
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+<div class="footer">
+    &copy; 2019, Elementl, Inc.
+    
+    |
+    Powered by <a href="http://sphinx-doc.org/">Sphinx 1.7.5</a>
+    &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+    
+    |
+    <a href="../../../_sources/sections/api/apidocs/execution.rst.txt" rel="nofollow">Page source</a>
+</div>
+
+
+
+
+  </body>
+</html>'''
+
+snapshots['test_build_all_docs 56'] = '''
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>Pipelines &#8212; Dagster</title>
+    <link rel="stylesheet" href="../../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/css/custom.css" type="text/css" />
+    <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+    <link rel="next" title="Execution" href="execution.html" />
+    <link rel="prev" title="Solids" href="solids.html" />
+ 
+<link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
+
+
+<meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+    <div class="documentwrapper">
+        <div class="bodywrapper">
+            <div class="related top">
+                &nbsp;
+<nav id="rellinks">
+    <ul>
+        <li>
+            &larr;
+            <a href="solids.html" title="Previous document">Solids</a>
+        </li>
+        <li>
+            <a href="/" title="Home">Home</a>
+        </li>
+        <li>
+            <a href="execution.html" title="Next document">Execution</a>
+            &rarr;
+        </li>
+    </ul>
+</nav>
+            </div>
+            
+
+            
+
+            <div class="body" role="main">
+                
+  <div class="section" id="pipelines">
+<h1>Pipelines<a class="headerlink" href="#pipelines" title="Permalink to this headline">¶</a></h1>
 <dl class="class">
 <dt id="dagster.PipelineDefinition">
 <em class="property">class </em><code class="descclassname">dagster.</code><code class="descname">PipelineDefinition</code><span class="sig-paren">(</span><em>solids</em>, <em>name=None</em>, <em>description=None</em>, <em>context_definitions=None</em>, <em>dependencies=None</em><span class="sig-paren">)</span><a class="headerlink" href="#dagster.PipelineDefinition" title="Permalink to this definition">¶</a></dt>
@@ -19921,7 +19923,7 @@ is unnamed the method with return “&lt;&lt;unnamed&gt;&gt;”.</p>
 </tr>
 <tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">SolidDefinition with correct name.</td>
 </tr>
-<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><a class="reference internal" href="#dagster.SolidDefinition" title="dagster.SolidDefinition">SolidDefinition</a></td>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><a class="reference internal" href="solids.html#dagster.SolidDefinition" title="dagster.SolidDefinition">SolidDefinition</a></td>
 </tr>
 </tbody>
 </table>
@@ -19937,7 +19939,7 @@ is unnamed the method with return “&lt;&lt;unnamed&gt;&gt;”.</p>
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">List of solids.</td>
 </tr>
-<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">List[<a class="reference internal" href="#dagster.SolidDefinition" title="dagster.SolidDefinition">SolidDefinition</a>]</td>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">List[<a class="reference internal" href="solids.html#dagster.SolidDefinition" title="dagster.SolidDefinition">SolidDefinition</a>]</td>
 </tr>
 </tbody>
 </table>
@@ -19945,6 +19947,122 @@ is unnamed the method with return “&lt;&lt;unnamed&gt;&gt;”.</p>
 
 </dd></dl>
 
+<dl class="class">
+<dt id="dagster.DependencyDefinition">
+<em class="property">class </em><code class="descclassname">dagster.</code><code class="descname">DependencyDefinition</code><a class="headerlink" href="#dagster.DependencyDefinition" title="Permalink to this definition">¶</a></dt>
+<dd><p>Dependency definitions represent an edge in the DAG of solids. This object is
+used with a dictionary structure (whose keys represent solid/input where the dependency
+comes from) so this object only contains the target dependency information.</p>
+<dl class="attribute">
+<dt id="dagster.DependencyDefinition.solid">
+<code class="descname">solid</code><a class="headerlink" href="#dagster.DependencyDefinition.solid" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>str</em> – The name of the solid that is the target of the dependency.
+This is the solid where the value passed between the solids
+comes from.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="dagster.DependencyDefinition.output">
+<code class="descname">output</code><a class="headerlink" href="#dagster.DependencyDefinition.output" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>str</em> – The name of the output that is the target of the dependency.
+Defaults to “result”, the default output name of solids with a single output.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="dagster.DependencyDefinition.description">
+<code class="descname">description</code><a class="headerlink" href="#dagster.DependencyDefinition.description" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>str</em> – Description of this dependency. Optional.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="dagster.SolidInstance">
+<em class="property">class </em><code class="descclassname">dagster.</code><code class="descname">SolidInstance</code><a class="headerlink" href="#dagster.SolidInstance" title="Permalink to this definition">¶</a></dt>
+<dd><p>A solid identifier in a dependency structure. Allows supplying parameters to the solid,
+like the alias.</p>
+<p class="rubric">Example</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">pipeline</span> <span class="o">=</span> <span class="n">Pipeline</span><span class="p">(</span>
+    <span class="n">solids</span><span class="o">=</span><span class="p">[</span><span class="n">solid_1</span><span class="p">,</span> <span class="n">solid_2</span><span class="p">]</span>
+    <span class="n">dependencies</span><span class="o">=</span><span class="p">{</span>
+        <span class="n">SolidInstance</span><span class="p">(</span><span class="s1">&#39;solid_2&#39;</span><span class="p">,</span> <span class="n">alias</span><span class="o">=</span><span class="s1">&#39;other_name&#39;</span><span class="p">)</span> <span class="p">:</span> <span class="p">{</span>
+            <span class="s1">&#39;input_name&#39;</span> <span class="p">:</span> <span class="n">DependencyDefinition</span><span class="p">(</span><span class="s1">&#39;solid_2&#39;</span><span class="p">),</span>
+        <span class="p">},</span>
+        <span class="s1">&#39;solid_1&#39;</span> <span class="p">:</span> <span class="p">{</span>
+            <span class="s1">&#39;input_name&#39;</span><span class="p">:</span> <span class="n">DependencyDefinition</span><span class="p">(</span><span class="s1">&#39;other_name&#39;</span><span class="p">),</span>
+        <span class="p">},</span>
+    <span class="p">}</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<div class="section" id="contexts-resources">
+<h2>Contexts &amp; Resources<a class="headerlink" href="#contexts-resources" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="dagster.PipelineContextDefinition">
+<em class="property">class </em><code class="descclassname">dagster.</code><code class="descname">PipelineContextDefinition</code><span class="sig-paren">(</span><em>context_fn=None</em>, <em>config_field=None</em>, <em>resources=None</em>, <em>description=None</em><span class="sig-paren">)</span><a class="headerlink" href="#dagster.PipelineContextDefinition" title="Permalink to this definition">¶</a></dt>
+<dd><p>Defines a context type supported by a pipeline.</p>
+<p>Pipelines declare the different context types they support, in the form
+of PipelineContextDefinitions. For example a pipeline could declare a context
+definition for different operating environments: unittest, integration tests,
+production and so forth. The user provides a context function that returns an
+<code class="docutils literal notranslate"><span class="pre">ExecutionContext</span></code> that is passed to every solid. One can hang resources
+(such as db connections) off of that context. Thus the pipeline author
+has complete control over how the author of each individual solid within
+the pipeline interacts with its operating environment.</p>
+<p>The <code class="docutils literal notranslate"><span class="pre">PipelineContextDefinition</span></code> is passed to the <code class="docutils literal notranslate"><span class="pre">PipelineDefinition</span></code> in
+a dictionary keyed by its name so the name is not present in this object.</p>
+<dl class="attribute">
+<dt id="dagster.PipelineContextDefinition.config_field">
+<code class="descname">config_field</code><a class="headerlink" href="#dagster.PipelineContextDefinition.config_field" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>Field</em> – The configuration for the pipeline context.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="dagster.PipelineContextDefinition.context_fn">
+<code class="descname">context_fn</code><a class="headerlink" href="#dagster.PipelineContextDefinition.context_fn" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>callable</em> – Signature is (<strong>pipeline</strong>: <cite>PipelineDefintion</cite>, <strong>config_value</strong>: <cite>Any</cite>) :
+<cite>ExecutionContext</cite>.</p>
+<p>A callable that either returns <em>or</em> yields an <code class="docutils literal notranslate"><span class="pre">ExecutionContext</span></code>.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="dagster.PipelineContextDefinition.description">
+<code class="descname">description</code><a class="headerlink" href="#dagster.PipelineContextDefinition.description" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>str</em> – A description of what this context represents</p>
+</dd></dl>
+
+<dl class="staticmethod">
+<dt id="dagster.PipelineContextDefinition.passthrough_context_definition">
+<em class="property">static </em><code class="descname">passthrough_context_definition</code><span class="sig-paren">(</span><em>context_params</em><span class="sig-paren">)</span><a class="headerlink" href="#dagster.PipelineContextDefinition.passthrough_context_definition" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a context definition from a pre-existing context. This can be useful
+in testing contexts where you may want to create a context manually and then
+pass it into a one-off PipelineDefinition</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>context</strong> (<em>ExecutionContext</em>) – The context that will provided to the pipeline.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">The passthrough context definition.</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><a class="reference internal" href="#dagster.PipelineContextDefinition" title="dagster.PipelineContextDefinition">PipelineContextDefinition</a></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="dagster.ResourceDefinition">
+<em class="property">class </em><code class="descclassname">dagster.</code><code class="descname">ResourceDefinition</code><span class="sig-paren">(</span><em>resource_fn</em>, <em>config_field=None</em>, <em>description=None</em><span class="sig-paren">)</span><a class="headerlink" href="#dagster.ResourceDefinition" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</div>
+<div class="section" id="repository">
+<h2>Repository<a class="headerlink" href="#repository" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="dagster.RepositoryDefinition">
 <em class="property">class </em><code class="descclassname">dagster.</code><code class="descname">RepositoryDefinition</code><span class="sig-paren">(</span><em>name</em>, <em>pipeline_dict</em><span class="sig-paren">)</span><a class="headerlink" href="#dagster.RepositoryDefinition" title="Permalink to this definition">¶</a></dt>
@@ -20002,31 +20120,131 @@ name of the pipeline are the same.</p>
 
 </dd></dl>
 
-<dl class="class">
-<dt id="dagster.ResourceDefinition">
-<em class="property">class </em><code class="descclassname">dagster.</code><code class="descname">ResourceDefinition</code><span class="sig-paren">(</span><em>resource_fn</em>, <em>config_field=None</em>, <em>description=None</em><span class="sig-paren">)</span><a class="headerlink" href="#dagster.ResourceDefinition" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+</div>
+</div>
 
-<dl class="class">
-<dt id="dagster.Result">
-<em class="property">class </em><code class="descclassname">dagster.</code><code class="descname">Result</code><a class="headerlink" href="#dagster.Result" title="Permalink to this definition">¶</a></dt>
-<dd><p>A solid transform function return a stream of Result objects.
-An implementator of a SolidDefinition must provide a transform that
-yields objects of this type.</p>
-<dl class="attribute">
-<dt id="dagster.Result.value">
-<code class="descname">value</code><a class="headerlink" href="#dagster.Result.value" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>Any</em> – Value returned by the transform.</p>
-</dd></dl>
 
-<dl class="attribute">
-<dt id="dagster.Result.output_name">
-<code class="descname">output_name</code><a class="headerlink" href="#dagster.Result.output_name" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>str</em> – Name of the output returns. defaults to “result”</p>
-</dd></dl>
+            </div>
+            <div class="related bottom">
+                &nbsp;
+<nav id="rellinks">
+    <ul>
+        <li>
+            &larr;
+            <a href="solids.html" title="Previous document">Solids</a>
+        </li>
+        <li>
+            <a href="/" title="Home">Home</a>
+        </li>
+        <li>
+            <a href="execution.html" title="Next document">Execution</a>
+            &rarr;
+        </li>
+    </ul>
+</nav>
+            </div>
+            
+        </div>
+    </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><h3><a href="../../../index.html">Dagster</a></h3>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../install/install.html">Install</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../learn/learn.html">Learn</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../api.html">API Docs</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="solids.html">Solids</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Pipelines</a></li>
+<li class="toctree-l2"><a class="reference internal" href="execution.html">Execution</a></li>
+<li class="toctree-l2"><a class="reference internal" href="types.html">Types</a></li>
+<li class="toctree-l2"><a class="reference internal" href="errors.html">Errors</a></li>
+<li class="toctree-l2"><a class="reference internal" href="utilities.html">Utilities</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../community/community.html">Community</a></li>
+</ul>
 
-</dd></dl>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+<div class="footer">
+    &copy; 2019, Elementl, Inc.
+    
+    |
+    Powered by <a href="http://sphinx-doc.org/">Sphinx 1.7.5</a>
+    &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+    
+    |
+    <a href="../../../_sources/sections/api/apidocs/pipeline.rst.txt" rel="nofollow">Page source</a>
+</div>
 
+
+
+
+  </body>
+</html>'''
+
+snapshots['test_build_all_docs 57'] = '''
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>Solids &#8212; Dagster</title>
+    <link rel="stylesheet" href="../../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/css/custom.css" type="text/css" />
+    <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+    <link rel="next" title="Pipelines" href="pipeline.html" />
+    <link rel="prev" title="API Docs" href="../api.html" />
+ 
+<link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
+
+
+<meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+    <div class="documentwrapper">
+        <div class="bodywrapper">
+            <div class="related top">
+                &nbsp;
+<nav id="rellinks">
+    <ul>
+        <li>
+            &larr;
+            <a href="../api.html" title="Previous document">API Docs</a>
+        </li>
+        <li>
+            <a href="/" title="Home">Home</a>
+        </li>
+        <li>
+            <a href="pipeline.html" title="Next document">Pipelines</a>
+            &rarr;
+        </li>
+    </ul>
+</nav>
+            </div>
+            
+
+            
+
+            <div class="body" role="main">
+                
+  <div class="section" id="solids">
+<h1>Solids<a class="headerlink" href="#solids" title="Permalink to this headline">¶</a></h1>
+<p>The foundational unit of composition in Dagster.</p>
+<div class="section" id="core">
+<h2>Core<a class="headerlink" href="#core" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="dagster.SolidDefinition">
 <em class="property">class </em><code class="descclassname">dagster.</code><code class="descname">SolidDefinition</code><span class="sig-paren">(</span><em>name</em>, <em>inputs</em>, <em>transform_fn</em>, <em>outputs</em>, <em>config_field=None</em>, <em>description=None</em>, <em>metadata=None</em><span class="sig-paren">)</span><a class="headerlink" href="#dagster.SolidDefinition" title="Permalink to this definition">¶</a></dt>
@@ -20104,26 +20322,278 @@ certain metadata to be attached to a solid.</p>
 </dd></dl>
 
 <dl class="class">
-<dt id="dagster.SolidInstance">
-<em class="property">class </em><code class="descclassname">dagster.</code><code class="descname">SolidInstance</code><a class="headerlink" href="#dagster.SolidInstance" title="Permalink to this definition">¶</a></dt>
-<dd><p>A solid identifier in a dependency structure. Allows supplying parameters to the solid,
-like the alias.</p>
-<p class="rubric">Example</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">pipeline</span> <span class="o">=</span> <span class="n">Pipeline</span><span class="p">(</span>
-    <span class="n">solids</span><span class="o">=</span><span class="p">[</span><span class="n">solid_1</span><span class="p">,</span> <span class="n">solid_2</span><span class="p">]</span>
-    <span class="n">dependencies</span><span class="o">=</span><span class="p">{</span>
-        <span class="n">SolidInstance</span><span class="p">(</span><span class="s1">&#39;solid_2&#39;</span><span class="p">,</span> <span class="n">alias</span><span class="o">=</span><span class="s1">&#39;other_name&#39;</span><span class="p">)</span> <span class="p">:</span> <span class="p">{</span>
-            <span class="s1">&#39;input_name&#39;</span> <span class="p">:</span> <span class="n">DependencyDefinition</span><span class="p">(</span><span class="s1">&#39;solid_2&#39;</span><span class="p">),</span>
-        <span class="p">},</span>
-        <span class="s1">&#39;solid_1&#39;</span> <span class="p">:</span> <span class="p">{</span>
-            <span class="s1">&#39;input_name&#39;</span><span class="p">:</span> <span class="n">DependencyDefinition</span><span class="p">(</span><span class="s1">&#39;other_name&#39;</span><span class="p">),</span>
-        <span class="p">},</span>
-    <span class="p">}</span>
-<span class="p">)</span>
+<dt id="dagster.Result">
+<em class="property">class </em><code class="descclassname">dagster.</code><code class="descname">Result</code><a class="headerlink" href="#dagster.Result" title="Permalink to this definition">¶</a></dt>
+<dd><p>A solid transform function return a stream of Result objects.
+An implementator of a SolidDefinition must provide a transform that
+yields objects of this type.</p>
+<dl class="attribute">
+<dt id="dagster.Result.value">
+<code class="descname">value</code><a class="headerlink" href="#dagster.Result.value" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>Any</em> – Value returned by the transform.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="dagster.Result.output_name">
+<code class="descname">output_name</code><a class="headerlink" href="#dagster.Result.output_name" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>str</em> – Name of the output returns. defaults to “result”</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="dagster.InputDefinition">
+<em class="property">class </em><code class="descclassname">dagster.</code><code class="descname">InputDefinition</code><span class="sig-paren">(</span><em>name</em>, <em>dagster_type=None</em>, <em>expectations=None</em>, <em>description=None</em><span class="sig-paren">)</span><a class="headerlink" href="#dagster.InputDefinition" title="Permalink to this definition">¶</a></dt>
+<dd><p>An InputDefinition instance represents an argument to a transform defined within a solid.
+Inputs are values within the dagster type system that are created from previous solids.</p>
+<dl class="attribute">
+<dt id="dagster.InputDefinition.name">
+<code class="descname">name</code><a class="headerlink" href="#dagster.InputDefinition.name" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>str</em> – Name of the input.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="dagster.InputDefinition.runtime_type">
+<code class="descname">runtime_type</code><a class="headerlink" href="#dagster.InputDefinition.runtime_type" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>DagsterType</em> – Type of the input. Defaults to types.Any</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="dagster.InputDefinition.expectations">
+<code class="descname">expectations</code><a class="headerlink" href="#dagster.InputDefinition.expectations" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>List[ExpectationDefinition]</em> – List of expectations that applies to the value passed to the solid.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="dagster.InputDefinition.description">
+<code class="descname">description</code><a class="headerlink" href="#dagster.InputDefinition.description" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>str</em> – Description of the input. Optional.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="dagster.OutputDefinition">
+<em class="property">class </em><code class="descclassname">dagster.</code><code class="descname">OutputDefinition</code><span class="sig-paren">(</span><em>dagster_type=None</em>, <em>name=None</em>, <em>expectations=None</em>, <em>description=None</em>, <em>is_optional=False</em><span class="sig-paren">)</span><a class="headerlink" href="#dagster.OutputDefinition" title="Permalink to this definition">¶</a></dt>
+<dd><p>An OutputDefinition represents an output from a solid. Solids can have multiple
+outputs. In those cases the outputs must be named. Frequently solids have only one
+output, and so the user can construct a single OutputDefinition that will have
+the default name of “result”.</p>
+<dl class="attribute">
+<dt id="dagster.OutputDefinition.runtime_type">
+<code class="descname">runtime_type</code><a class="headerlink" href="#dagster.OutputDefinition.runtime_type" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>DagsterType</em> – Type of the output. Defaults to types.Any.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="dagster.OutputDefinition.name">
+<code class="descname">name</code><a class="headerlink" href="#dagster.OutputDefinition.name" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>str</em> – Name of the output. Defaults to “result”.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt>
+<code class="descname">expectations List[ExpectationDefinition]</code></dt>
+<dd><p>Expectations for this output.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="dagster.OutputDefinition.description">
+<code class="descname">description</code><a class="headerlink" href="#dagster.OutputDefinition.description" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>str</em> – Description of the output. Optional.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="dagster.OutputDefinition.is_optional">
+<code class="descname">is_optional</code><a class="headerlink" href="#dagster.OutputDefinition.is_optional" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>bool</em> – If this output is optional. Optional, defaults to false.</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="decorators">
+<h2>Decorators<a class="headerlink" href="#decorators" title="Permalink to this headline">¶</a></h2>
+<p>The concise way to define solids.</p>
+<dl class="function">
+<dt id="dagster.lambda_solid">
+<code class="descclassname">dagster.</code><code class="descname">lambda_solid</code><span class="sig-paren">(</span><em>name=None</em>, <em>inputs=None</em>, <em>output=None</em>, <em>description=None</em><span class="sig-paren">)</span><a class="headerlink" href="#dagster.lambda_solid" title="Permalink to this definition">¶</a></dt>
+<dd><p>(decorator) Create a simple solid.</p>
+<p>This shortcut allows the creation of simple solids that do not require
+configuration and whose implementations do not require a context.</p>
+<p>Lambda solids take inputs and produce a single output. The body of the function
+should return a single value.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>name</strong> (<em>str</em>) – Name of solid.</li>
+<li><strong>inputs</strong> (<em>list</em><em>[</em><a class="reference internal" href="#dagster.InputDefinition" title="dagster.InputDefinition"><em>InputDefinition</em></a><em>]</em>) – List of inputs.</li>
+<li><strong>output</strong> (<a class="reference internal" href="#dagster.OutputDefinition" title="dagster.OutputDefinition"><em>OutputDefinition</em></a>) – The output of the solid. Defaults to <code class="docutils literal notranslate"><span class="pre">OutputDefinition()</span></code>.</li>
+<li><strong>description</strong> (<em>str</em>) – Solid description.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Examples</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="nd">@lambda_solid</span>
+<span class="k">def</span> <span class="nf">hello_world</span><span class="p">():</span>
+    <span class="k">return</span> <span class="s1">&#39;hello&#39;</span>
+
+<span class="nd">@lambda_solid</span><span class="p">(</span><span class="n">inputs</span><span class="o">=</span><span class="p">[</span><span class="n">InputDefinition</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;foo&#39;</span><span class="p">)])</span>
+<span class="k">def</span> <span class="nf">hello_world</span><span class="p">(</span><span class="n">foo</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">foo</span>
 </pre></div>
 </div>
 </dd></dl>
 
+<dl class="function">
+<dt id="dagster.solid">
+<code class="descclassname">dagster.</code><code class="descname">solid</code><span class="sig-paren">(</span><em>name=None</em>, <em>inputs=None</em>, <em>outputs=None</em>, <em>config_field=None</em>, <em>description=None</em><span class="sig-paren">)</span><a class="headerlink" href="#dagster.solid" title="Permalink to this definition">¶</a></dt>
+<dd><p>(decorator) Create a solid with specified parameters.</p>
+<p>This shortcut simplifies the core solid API by exploding arguments into kwargs of the
+transform function and omitting additional parameters when they are not needed.
+Parameters are otherwise as in the core API, <a class="reference internal" href="#dagster.SolidDefinition" title="dagster.SolidDefinition"><code class="xref py py-class docutils literal notranslate"><span class="pre">SolidDefinition</span></code></a>.</p>
+<p>The decorated function will be used as the solid’s transform function. Unlike in the core API,
+the transform function does not have to yield <a class="reference internal" href="#dagster.Result" title="dagster.Result"><code class="xref py py-class docutils literal notranslate"><span class="pre">Result</span></code></a> object directly. Several
+simpler alternatives are available:</p>
+<ol class="arabic simple">
+<li>Return a value. This is returned as a <a class="reference internal" href="#dagster.Result" title="dagster.Result"><code class="xref py py-class docutils literal notranslate"><span class="pre">Result</span></code></a> for a single output solid.</li>
+<li>Return a <a class="reference internal" href="#dagster.Result" title="dagster.Result"><code class="xref py py-class docutils literal notranslate"><span class="pre">Result</span></code></a>. Works like yielding result.</li>
+<li>Return an instance of <a class="reference internal" href="#dagster.MultipleResults" title="dagster.MultipleResults"><code class="xref py py-class docutils literal notranslate"><span class="pre">MultipleResults</span></code></a>. Works like yielding several results for
+multiple outputs. Useful for solids that have multiple outputs.</li>
+<li>Yield <a class="reference internal" href="#dagster.Result" title="dagster.Result"><code class="xref py py-class docutils literal notranslate"><span class="pre">Result</span></code></a>. Same as default transform behaviour.</li>
+</ol>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>name</strong> (<em>str</em>) – Name of solid.</li>
+<li><strong>inputs</strong> (<em>list</em><em>[</em><a class="reference internal" href="#dagster.InputDefinition" title="dagster.InputDefinition"><em>InputDefinition</em></a><em>]</em>) – List of inputs.</li>
+<li><strong>outputs</strong> (<em>list</em><em>[</em><a class="reference internal" href="#dagster.OutputDefinition" title="dagster.OutputDefinition"><em>OutputDefinition</em></a><em>]</em>) – List of outputs.</li>
+<li><strong>config_field</strong> (<em>Field</em>) – The configuration for this solid.</li>
+<li><strong>description</strong> (<em>str</em>) – Description of this solid.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Examples</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="nd">@solid</span>
+<span class="k">def</span> <span class="nf">hello_world</span><span class="p">(</span><span class="n">_context</span><span class="p">):</span>
+    <span class="k">print</span><span class="p">(</span><span class="s1">&#39;hello&#39;</span><span class="p">)</span>
+
+<span class="nd">@solid</span><span class="p">()</span>
+<span class="k">def</span> <span class="nf">hello_world</span><span class="p">(</span><span class="n">_context</span><span class="p">):</span>
+    <span class="k">print</span><span class="p">(</span><span class="s1">&#39;hello&#39;</span><span class="p">)</span>
+
+<span class="nd">@solid</span><span class="p">(</span><span class="n">outputs</span><span class="o">=</span><span class="p">[</span><span class="n">OutputDefinition</span><span class="p">()])</span>
+<span class="k">def</span> <span class="nf">hello_world</span><span class="p">(</span><span class="n">_context</span><span class="p">):</span>
+    <span class="k">return</span> <span class="p">{</span><span class="s1">&#39;foo&#39;</span><span class="p">:</span> <span class="s1">&#39;bar&#39;</span><span class="p">}</span>
+
+<span class="nd">@solid</span><span class="p">(</span><span class="n">outputs</span><span class="o">=</span><span class="p">[</span><span class="n">OutputDefinition</span><span class="p">()])</span>
+<span class="k">def</span> <span class="nf">hello_world</span><span class="p">(</span><span class="n">_context</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">Result</span><span class="p">(</span><span class="n">value</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;foo&#39;</span><span class="p">:</span> <span class="s1">&#39;bar&#39;</span><span class="p">})</span>
+
+<span class="nd">@solid</span><span class="p">(</span><span class="n">outputs</span><span class="o">=</span><span class="p">[</span><span class="n">OutputDefinition</span><span class="p">()])</span>
+<span class="k">def</span> <span class="nf">hello_world</span><span class="p">(</span><span class="n">_context</span><span class="p">):</span>
+    <span class="k">yield</span> <span class="n">Result</span><span class="p">(</span><span class="n">value</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;foo&#39;</span><span class="p">:</span> <span class="s1">&#39;bar&#39;</span><span class="p">})</span>
+
+<span class="nd">@solid</span><span class="p">(</span><span class="n">outputs</span><span class="o">=</span><span class="p">[</span>
+    <span class="n">OutputDefinition</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;left&quot;</span><span class="p">),</span>
+    <span class="n">OutputDefinition</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;right&quot;</span><span class="p">),</span>
+<span class="p">])</span>
+<span class="k">def</span> <span class="nf">hello_world</span><span class="p">(</span><span class="n">_context</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">MultipleResults</span><span class="o">.</span><span class="n">from_dict</span><span class="p">({</span>
+        <span class="s1">&#39;left&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;foo&#39;</span><span class="p">:</span> <span class="s1">&#39;left&#39;</span><span class="p">},</span>
+        <span class="s1">&#39;right&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;foo&#39;</span><span class="p">:</span> <span class="s1">&#39;right&#39;</span><span class="p">},</span>
+    <span class="p">})</span>
+
+<span class="nd">@solid</span><span class="p">(</span>
+    <span class="n">inputs</span><span class="o">=</span><span class="p">[</span><span class="n">InputDefinition</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;foo&quot;</span><span class="p">)],</span>
+    <span class="n">outputs</span><span class="o">=</span><span class="p">[</span><span class="n">OutputDefinition</span><span class="p">()]</span>
+<span class="p">)</span>
+<span class="k">def</span> <span class="nf">hello_world</span><span class="p">(</span><span class="n">_context</span><span class="p">,</span> <span class="n">foo</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">foo</span>
+
+<span class="nd">@solid</span><span class="p">(</span>
+    <span class="n">inputs</span><span class="o">=</span><span class="p">[</span><span class="n">InputDefinition</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;foo&quot;</span><span class="p">)],</span>
+    <span class="n">outputs</span><span class="o">=</span><span class="p">[</span><span class="n">OutputDefinition</span><span class="p">()],</span>
+<span class="p">)</span>
+<span class="k">def</span> <span class="nf">hello_world</span><span class="p">(</span><span class="n">context</span><span class="p">,</span> <span class="n">foo</span><span class="p">):</span>
+    <span class="n">context</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;log something&#39;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">foo</span>
+
+<span class="nd">@solid</span><span class="p">(</span>
+    <span class="n">inputs</span><span class="o">=</span><span class="p">[</span><span class="n">InputDefinition</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;foo&quot;</span><span class="p">)],</span>
+    <span class="n">outputs</span><span class="o">=</span><span class="p">[</span><span class="n">OutputDefinition</span><span class="p">()],</span>
+    <span class="n">config_field</span><span class="o">=</span><span class="n">Field</span><span class="p">(</span><span class="n">types</span><span class="o">.</span><span class="n">Dict</span><span class="p">({</span><span class="s1">&#39;str_value&#39;</span> <span class="p">:</span> <span class="n">Field</span><span class="p">(</span><span class="n">types</span><span class="o">.</span><span class="n">String</span><span class="p">)})),</span>
+<span class="p">)</span>
+<span class="k">def</span> <span class="nf">hello_world</span><span class="p">(</span><span class="n">context</span><span class="p">,</span> <span class="n">foo</span><span class="p">):</span>
+    <span class="c1"># context.solid_config is a dictionary with &#39;str_value&#39; key</span>
+    <span class="k">return</span> <span class="n">foo</span> <span class="o">+</span> <span class="n">context</span><span class="o">.</span><span class="n">solid_config</span><span class="p">[</span><span class="s1">&#39;str_value&#39;</span><span class="p">]</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="class">
+<dt id="dagster.MultipleResults">
+<em class="property">class </em><code class="descclassname">dagster.</code><code class="descname">MultipleResults</code><a class="headerlink" href="#dagster.MultipleResults" title="Permalink to this definition">¶</a></dt>
+<dd><p>A shortcut to output multiple results.</p>
+<p>When using the <a class="reference internal" href="#dagster.solid" title="dagster.solid"><code class="xref py py-func docutils literal notranslate"><span class="pre">&#64;solid</span></code></a> API, you may return an instance of
+<code class="docutils literal notranslate"><span class="pre">MultipleResults</span></code> from a decorated transform function instead of yielding multiple results.</p>
+<dl class="attribute">
+<dt id="dagster.MultipleResults.results">
+<code class="descname">results</code><a class="headerlink" href="#dagster.MultipleResults.results" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>list[Result]</em> – list of <a class="reference internal" href="#dagster.Result" title="dagster.Result"><code class="xref py py-class docutils literal notranslate"><span class="pre">Result</span></code></a></p>
+</dd></dl>
+
+<p class="rubric">Examples</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="nd">@solid</span><span class="p">(</span><span class="n">outputs</span><span class="o">=</span><span class="p">[</span>
+    <span class="n">OutputDefinition</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;foo&#39;</span><span class="p">),</span>
+    <span class="n">OutputDefinition</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;bar&#39;</span><span class="p">),</span>
+<span class="p">])</span>
+<span class="k">def</span> <span class="nf">my_solid</span><span class="p">():</span>
+    <span class="k">return</span> <span class="n">MultipleResults</span><span class="p">(</span>
+        <span class="n">Result</span><span class="p">(</span><span class="s1">&#39;Barb&#39;</span><span class="p">,</span> <span class="s1">&#39;foo&#39;</span><span class="p">),</span>
+        <span class="n">Result</span><span class="p">(</span><span class="s1">&#39;Glarb&#39;</span><span class="p">,</span> <span class="s1">&#39;bar&#39;</span><span class="p">),</span>
+    <span class="p">)</span>
+
+
+<span class="nd">@solid</span><span class="p">(</span><span class="n">outputs</span><span class="o">=</span><span class="p">[</span>
+    <span class="n">OutputDefinition</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;foo&#39;</span><span class="p">),</span>
+    <span class="n">OutputDefinition</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;bar&#39;</span><span class="p">),</span>
+<span class="p">])</span>
+<span class="k">def</span> <span class="nf">my_solid_from_dict</span><span class="p">():</span>
+    <span class="k">return</span> <span class="n">MultipleResults</span><span class="o">.</span><span class="n">from_dict</span><span class="p">({</span>
+        <span class="s1">&#39;foo&#39;</span><span class="p">:</span> <span class="s1">&#39;Barb&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;bar&#39;</span><span class="p">:</span> <span class="s1">&#39;Glarb&#39;</span><span class="p">,</span>
+    <span class="p">})</span>
+</pre></div>
+</div>
+<dl class="staticmethod">
+<dt id="dagster.MultipleResults.from_dict">
+<em class="property">static </em><code class="descname">from_dict</code><span class="sig-paren">(</span><em>result_dict</em><span class="sig-paren">)</span><a class="headerlink" href="#dagster.MultipleResults.from_dict" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a new <code class="docutils literal notranslate"><span class="pre">MultipleResults</span></code> object from a dictionary.</p>
+<p>Keys of the dictionary are unpacked into result names.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>result_dict</strong> (<em>dict</em>) – </td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">(<a class="reference internal" href="#dagster.MultipleResults" title="dagster.MultipleResults"><code class="xref py py-class docutils literal notranslate"><span class="pre">MultipleResults</span></code></a>) A new <code class="docutils literal notranslate"><span class="pre">MultipleResults</span></code> object</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+</div>
 </div>
 
 
@@ -20140,7 +20610,7 @@ like the alias.</p>
             <a href="/" title="Home">Home</a>
         </li>
         <li>
-            <a href="decorators.html" title="Next document">Decorators</a>
+            <a href="pipeline.html" title="Next document">Pipelines</a>
             &rarr;
         </li>
     </ul>
@@ -20155,11 +20625,11 @@ like the alias.</p>
 <li class="toctree-l1"><a class="reference internal" href="../../install/install.html">Install</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../learn/learn.html">Learn</a></li>
 <li class="toctree-l1 current"><a class="reference internal" href="../api.html">API Docs</a><ul class="current">
-<li class="toctree-l2 current"><a class="current reference internal" href="#">Definitions</a></li>
-<li class="toctree-l2"><a class="reference internal" href="decorators.html">Decorators</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Solids</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pipeline.html">Pipelines</a></li>
 <li class="toctree-l2"><a class="reference internal" href="execution.html">Execution</a></li>
+<li class="toctree-l2"><a class="reference internal" href="types.html">Types</a></li>
 <li class="toctree-l2"><a class="reference internal" href="errors.html">Errors</a></li>
-<li class="toctree-l2"><a class="reference internal" href="types.html">Types</a></li>
 <li class="toctree-l2"><a class="reference internal" href="utilities.html">Utilities</a></li>
 </ul>
 </li>
@@ -20178,430 +20648,7 @@ like the alias.</p>
     &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
     
     |
-    <a href="../../../_sources/sections/api/apidocs/definitions.rst.txt" rel="nofollow">Page source</a>
-</div>
-
-
-
-
-  </body>
-</html>'''
-
-snapshots['test_build_all_docs 56'] = '''
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
-  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
-
-<html xmlns="http://www.w3.org/1999/xhtml">
-  <head>
-    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
-    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    <title>Errors &#8212; Dagster</title>
-    <link rel="stylesheet" href="../../../_static/alabaster.css" type="text/css" />
-    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
-    <link rel="stylesheet" href="../../../_static/css/custom.css" type="text/css" />
-    <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
-    <script type="text/javascript" src="../../../_static/jquery.js"></script>
-    <script type="text/javascript" src="../../../_static/underscore.js"></script>
-    <script type="text/javascript" src="../../../_static/doctools.js"></script>
-    <link rel="index" title="Index" href="../../../genindex.html" />
-    <link rel="search" title="Search" href="../../../search.html" />
-    <link rel="next" title="Types" href="types.html" />
-    <link rel="prev" title="Execution" href="execution.html" />
- 
-<link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
-
-
-<meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
-
-  </head><body>
-  
-
-    <div class="document">
-    <div class="documentwrapper">
-        <div class="bodywrapper">
-            <div class="related top">
-                &nbsp;
-<nav id="rellinks">
-    <ul>
-        <li>
-            &larr;
-            <a href="execution.html" title="Previous document">Execution</a>
-        </li>
-        <li>
-            <a href="/" title="Home">Home</a>
-        </li>
-        <li>
-            <a href="types.html" title="Next document">Types</a>
-            &rarr;
-        </li>
-    </ul>
-</nav>
-            </div>
-            
-
-            
-
-            <div class="body" role="main">
-                
-  <div class="section" id="errors">
-<h1>Errors<a class="headerlink" href="#errors" title="Permalink to this headline">¶</a></h1>
-<p>Core dagster error classes.</p>
-<dl class="exception">
-<dt id="dagster.DagsterExpectationFailedError">
-<em class="property">exception </em><code class="descclassname">dagster.</code><code class="descname">DagsterExpectationFailedError</code><span class="sig-paren">(</span><em>expectation_context</em>, <em>value</em>, <em>*args</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#dagster.DagsterExpectationFailedError" title="Permalink to this definition">¶</a></dt>
-<dd><p>Thrown with pipeline configured to throw on expectation failure</p>
-</dd></dl>
-
-<dl class="exception">
-<dt id="dagster.DagsterInvalidDefinitionError">
-<em class="property">exception </em><code class="descclassname">dagster.</code><code class="descname">DagsterInvalidDefinitionError</code><a class="headerlink" href="#dagster.DagsterInvalidDefinitionError" title="Permalink to this definition">¶</a></dt>
-<dd><p>Indicates that some violation of the definition rules has been violated by the user</p>
-</dd></dl>
-
-<dl class="exception">
-<dt id="dagster.DagsterInvariantViolationError">
-<em class="property">exception </em><code class="descclassname">dagster.</code><code class="descname">DagsterInvariantViolationError</code><a class="headerlink" href="#dagster.DagsterInvariantViolationError" title="Permalink to this definition">¶</a></dt>
-<dd><p>Indicates the user has violated a well-defined invariant that can only be deteremined
-at runtime.</p>
-</dd></dl>
-
-<dl class="exception">
-<dt id="dagster.DagsterRuntimeCoercionError">
-<em class="property">exception </em><code class="descclassname">dagster.</code><code class="descname">DagsterRuntimeCoercionError</code><a class="headerlink" href="#dagster.DagsterRuntimeCoercionError" title="Permalink to this definition">¶</a></dt>
-<dd><p>Runtime checked faild</p>
-</dd></dl>
-
-<dl class="exception">
-<dt id="dagster.DagsterTypeError">
-<em class="property">exception </em><code class="descclassname">dagster.</code><code class="descname">DagsterTypeError</code><a class="headerlink" href="#dagster.DagsterTypeError" title="Permalink to this definition">¶</a></dt>
-<dd><p>Indicates an error in the solid type system (e.g. mismatched arguments)</p>
-</dd></dl>
-
-<dl class="exception">
-<dt id="dagster.DagsterUserCodeExecutionError">
-<em class="property">exception </em><code class="descclassname">dagster.</code><code class="descname">DagsterUserCodeExecutionError</code><span class="sig-paren">(</span><em>*args</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#dagster.DagsterUserCodeExecutionError" title="Permalink to this definition">¶</a></dt>
-<dd><p>This is base class for any exception that is meant to wrap an Exception
-thrown by user code. It wraps that existing user code. The original_exc_info
-argument to the ctor is meant to be a sys.exc_info at the site of constructor.</p>
-</dd></dl>
-
-<dl class="exception">
-<dt id="dagster.PipelineConfigEvaluationError">
-<em class="property">exception </em><code class="descclassname">dagster.</code><code class="descname">PipelineConfigEvaluationError</code><span class="sig-paren">(</span><em>pipeline</em>, <em>errors</em>, <em>config_value</em>, <em>*args</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#dagster.PipelineConfigEvaluationError" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-</div>
-
-
-            </div>
-            <div class="related bottom">
-                &nbsp;
-<nav id="rellinks">
-    <ul>
-        <li>
-            &larr;
-            <a href="execution.html" title="Previous document">Execution</a>
-        </li>
-        <li>
-            <a href="/" title="Home">Home</a>
-        </li>
-        <li>
-            <a href="types.html" title="Next document">Types</a>
-            &rarr;
-        </li>
-    </ul>
-</nav>
-            </div>
-            
-        </div>
-    </div>
-      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
-        <div class="sphinxsidebarwrapper"><h3><a href="../../../index.html">Dagster</a></h3>
-<ul class="current">
-<li class="toctree-l1"><a class="reference internal" href="../../install/install.html">Install</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../learn/learn.html">Learn</a></li>
-<li class="toctree-l1 current"><a class="reference internal" href="../api.html">API Docs</a><ul class="current">
-<li class="toctree-l2"><a class="reference internal" href="definitions.html">Definitions</a></li>
-<li class="toctree-l2"><a class="reference internal" href="decorators.html">Decorators</a></li>
-<li class="toctree-l2"><a class="reference internal" href="execution.html">Execution</a></li>
-<li class="toctree-l2 current"><a class="current reference internal" href="#">Errors</a></li>
-<li class="toctree-l2"><a class="reference internal" href="types.html">Types</a></li>
-<li class="toctree-l2"><a class="reference internal" href="utilities.html">Utilities</a></li>
-</ul>
-</li>
-<li class="toctree-l1"><a class="reference internal" href="../../community/community.html">Community</a></li>
-</ul>
-
-        </div>
-      </div>
-      <div class="clearer"></div>
-    </div>
-<div class="footer">
-    &copy; 2019, Elementl, Inc.
-    
-    |
-    Powered by <a href="http://sphinx-doc.org/">Sphinx 1.7.5</a>
-    &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
-    
-    |
-    <a href="../../../_sources/sections/api/apidocs/errors.rst.txt" rel="nofollow">Page source</a>
-</div>
-
-
-
-
-  </body>
-</html>'''
-
-snapshots['test_build_all_docs 57'] = '''
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
-  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
-
-<html xmlns="http://www.w3.org/1999/xhtml">
-  <head>
-    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
-    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    <title>Execution &#8212; Dagster</title>
-    <link rel="stylesheet" href="../../../_static/alabaster.css" type="text/css" />
-    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
-    <link rel="stylesheet" href="../../../_static/css/custom.css" type="text/css" />
-    <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
-    <script type="text/javascript" src="../../../_static/jquery.js"></script>
-    <script type="text/javascript" src="../../../_static/underscore.js"></script>
-    <script type="text/javascript" src="../../../_static/doctools.js"></script>
-    <link rel="index" title="Index" href="../../../genindex.html" />
-    <link rel="search" title="Search" href="../../../search.html" />
-    <link rel="next" title="Errors" href="errors.html" />
-    <link rel="prev" title="Decorators" href="decorators.html" />
- 
-<link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
-
-
-<meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
-
-  </head><body>
-  
-
-    <div class="document">
-    <div class="documentwrapper">
-        <div class="bodywrapper">
-            <div class="related top">
-                &nbsp;
-<nav id="rellinks">
-    <ul>
-        <li>
-            &larr;
-            <a href="decorators.html" title="Previous document">Decorators</a>
-        </li>
-        <li>
-            <a href="/" title="Home">Home</a>
-        </li>
-        <li>
-            <a href="errors.html" title="Next document">Errors</a>
-            &rarr;
-        </li>
-    </ul>
-</nav>
-            </div>
-            
-
-            
-
-            <div class="body" role="main">
-                
-  <div class="section" id="execution">
-<h1>Execution<a class="headerlink" href="#execution" title="Permalink to this headline">¶</a></h1>
-<p>Executing pipelines and solids.</p>
-<dl class="function">
-<dt id="dagster.execute_pipeline">
-<code class="descclassname">dagster.</code><code class="descname">execute_pipeline</code><span class="sig-paren">(</span><em>pipeline</em>, <em>environment_dict=None</em>, <em>run_config=None</em><span class="sig-paren">)</span><a class="headerlink" href="#dagster.execute_pipeline" title="Permalink to this definition">¶</a></dt>
-<dd><p>“Synchronous” version of <a class="reference internal" href="#dagster.execute_pipeline_iterator" title="dagster.execute_pipeline_iterator"><code class="xref py py-func docutils literal notranslate"><span class="pre">execute_pipeline_iterator()</span></code></a>.</p>
-<p>Note: throw_on_user_error is very useful in testing contexts when not testing for error
-conditions</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>pipeline</strong> (<a class="reference internal" href="definitions.html#dagster.PipelineDefinition" title="dagster.PipelineDefinition"><em>PipelineDefinition</em></a>) – Pipeline to run</li>
-<li><strong>environment</strong> (<em>dict</em>) – The enviroment that parameterizes this run</li>
-</ul>
-</td>
-</tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">PipelineExecutionResult</p>
-</td>
-</tr>
-</tbody>
-</table>
-</dd></dl>
-
-<dl class="function">
-<dt id="dagster.execute_pipeline_iterator">
-<code class="descclassname">dagster.</code><code class="descname">execute_pipeline_iterator</code><span class="sig-paren">(</span><em>pipeline</em>, <em>environment_dict=None</em>, <em>run_config=None</em><span class="sig-paren">)</span><a class="headerlink" href="#dagster.execute_pipeline_iterator" title="Permalink to this definition">¶</a></dt>
-<dd><p>Returns iterator that yields <a class="reference internal" href="#dagster.SolidExecutionResult" title="dagster.SolidExecutionResult"><code class="xref py py-class docutils literal notranslate"><span class="pre">SolidExecutionResult</span></code></a> for each
-solid executed in the pipeline.</p>
-<p>This is intended to allow the caller to do things between each executed
-node. For the ‘synchronous’ API, see <a class="reference internal" href="#dagster.execute_pipeline" title="dagster.execute_pipeline"><code class="xref py py-func docutils literal notranslate"><span class="pre">execute_pipeline()</span></code></a>.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>pipeline</strong> (<a class="reference internal" href="definitions.html#dagster.PipelineDefinition" title="dagster.PipelineDefinition"><em>PipelineDefinition</em></a>) – pipeline to run</li>
-<li><strong>execution</strong> (<a class="reference internal" href="#dagster.ExecutionContext" title="dagster.ExecutionContext"><em>ExecutionContext</em></a>) – execution context of the run</li>
-</ul>
-</td>
-</tr>
-</tbody>
-</table>
-</dd></dl>
-
-<dl class="class">
-<dt id="dagster.ExecutionContext">
-<em class="property">class </em><code class="descclassname">dagster.</code><code class="descname">ExecutionContext</code><a class="headerlink" href="#dagster.ExecutionContext" title="Permalink to this definition">¶</a></dt>
-<dd><p>The user-facing object in the context creation function. The user constructs
-this in order to effect the context creation process. This could be named
-SystemPipelineExecutionContextCreationData although that seemed excessively verbose.</p>
-</dd></dl>
-
-<dl class="class">
-<dt id="dagster.PipelineExecutionResult">
-<em class="property">class </em><code class="descclassname">dagster.</code><code class="descname">PipelineExecutionResult</code><span class="sig-paren">(</span><em>pipeline</em>, <em>run_id</em>, <em>event_list</em>, <em>reconstruct_context</em><span class="sig-paren">)</span><a class="headerlink" href="#dagster.PipelineExecutionResult" title="Permalink to this definition">¶</a></dt>
-<dd><p>Result of execution of the whole pipeline. Returned eg by <a class="reference internal" href="#dagster.execute_pipeline" title="dagster.execute_pipeline"><code class="xref py py-func docutils literal notranslate"><span class="pre">execute_pipeline()</span></code></a>.</p>
-<dl class="method">
-<dt id="dagster.PipelineExecutionResult.result_for_solid">
-<code class="descname">result_for_solid</code><span class="sig-paren">(</span><em>name</em><span class="sig-paren">)</span><a class="headerlink" href="#dagster.PipelineExecutionResult.result_for_solid" title="Permalink to this definition">¶</a></dt>
-<dd><p>Get a <a class="reference internal" href="#dagster.SolidExecutionResult" title="dagster.SolidExecutionResult"><code class="xref py py-class docutils literal notranslate"><span class="pre">SolidExecutionResult</span></code></a> for a given solid name.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">SolidExecutionResult</td>
-</tr>
-</tbody>
-</table>
-</dd></dl>
-
-<dl class="attribute">
-<dt id="dagster.PipelineExecutionResult.success">
-<code class="descname">success</code><a class="headerlink" href="#dagster.PipelineExecutionResult.success" title="Permalink to this definition">¶</a></dt>
-<dd><p>Whether the pipeline execution was successful at all steps</p>
-</dd></dl>
-
-</dd></dl>
-
-<dl class="class">
-<dt id="dagster.RunConfig">
-<em class="property">class </em><code class="descclassname">dagster.</code><code class="descname">RunConfig</code><a class="headerlink" href="#dagster.RunConfig" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="class">
-<dt id="dagster.SolidExecutionResult">
-<em class="property">class </em><code class="descclassname">dagster.</code><code class="descname">SolidExecutionResult</code><span class="sig-paren">(</span><em>solid</em>, <em>step_events_by_kind</em>, <em>reconstruct_context</em><span class="sig-paren">)</span><a class="headerlink" href="#dagster.SolidExecutionResult" title="Permalink to this definition">¶</a></dt>
-<dd><p>Execution result for one solid of the pipeline.</p>
-<dl class="attribute">
-<dt id="dagster.SolidExecutionResult.context">
-<code class="descname">context</code><a class="headerlink" href="#dagster.SolidExecutionResult.context" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>ExecutionContext</em> – ExecutionContext of that particular Pipeline run.</p>
-</dd></dl>
-
-<dl class="attribute">
-<dt id="dagster.SolidExecutionResult.solid">
-<code class="descname">solid</code><a class="headerlink" href="#dagster.SolidExecutionResult.solid" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>SolidDefinition</em> – Solid for which this result is</p>
-</dd></dl>
-
-<dl class="attribute">
-<dt id="dagster.SolidExecutionResult.failure_data">
-<code class="descname">failure_data</code><a class="headerlink" href="#dagster.SolidExecutionResult.failure_data" title="Permalink to this definition">¶</a></dt>
-<dd><p>Returns the failing step’s data that happened during this solid’s execution, if any</p>
-</dd></dl>
-
-<dl class="attribute">
-<dt id="dagster.SolidExecutionResult.skipped">
-<code class="descname">skipped</code><a class="headerlink" href="#dagster.SolidExecutionResult.skipped" title="Permalink to this definition">¶</a></dt>
-<dd><p>Whether the solid execution was skipped</p>
-</dd></dl>
-
-<dl class="attribute">
-<dt id="dagster.SolidExecutionResult.success">
-<code class="descname">success</code><a class="headerlink" href="#dagster.SolidExecutionResult.success" title="Permalink to this definition">¶</a></dt>
-<dd><p>Whether the solid execution was successful</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="dagster.SolidExecutionResult.transformed_value">
-<code class="descname">transformed_value</code><span class="sig-paren">(</span><em>output_name=\'result\'</em><span class="sig-paren">)</span><a class="headerlink" href="#dagster.SolidExecutionResult.transformed_value" title="Permalink to this definition">¶</a></dt>
-<dd><p>Returns transformed value either for DEFAULT_OUTPUT or for the output
-given as output_name. Returns None if execution result isn’t a success.</p>
-<p>Reconstructs the pipeline context to materialize value.</p>
-</dd></dl>
-
-<dl class="attribute">
-<dt id="dagster.SolidExecutionResult.transformed_values">
-<code class="descname">transformed_values</code><a class="headerlink" href="#dagster.SolidExecutionResult.transformed_values" title="Permalink to this definition">¶</a></dt>
-<dd><p>Return dictionary of transformed results, with keys being output names.
-Returns None if execution result isn’t a success.</p>
-<p>Reconstructs the pipeline context to materialize values.</p>
-</dd></dl>
-
-</dd></dl>
-
-</div>
-
-
-            </div>
-            <div class="related bottom">
-                &nbsp;
-<nav id="rellinks">
-    <ul>
-        <li>
-            &larr;
-            <a href="decorators.html" title="Previous document">Decorators</a>
-        </li>
-        <li>
-            <a href="/" title="Home">Home</a>
-        </li>
-        <li>
-            <a href="errors.html" title="Next document">Errors</a>
-            &rarr;
-        </li>
-    </ul>
-</nav>
-            </div>
-            
-        </div>
-    </div>
-      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
-        <div class="sphinxsidebarwrapper"><h3><a href="../../../index.html">Dagster</a></h3>
-<ul class="current">
-<li class="toctree-l1"><a class="reference internal" href="../../install/install.html">Install</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../learn/learn.html">Learn</a></li>
-<li class="toctree-l1 current"><a class="reference internal" href="../api.html">API Docs</a><ul class="current">
-<li class="toctree-l2"><a class="reference internal" href="definitions.html">Definitions</a></li>
-<li class="toctree-l2"><a class="reference internal" href="decorators.html">Decorators</a></li>
-<li class="toctree-l2 current"><a class="current reference internal" href="#">Execution</a></li>
-<li class="toctree-l2"><a class="reference internal" href="errors.html">Errors</a></li>
-<li class="toctree-l2"><a class="reference internal" href="types.html">Types</a></li>
-<li class="toctree-l2"><a class="reference internal" href="utilities.html">Utilities</a></li>
-</ul>
-</li>
-<li class="toctree-l1"><a class="reference internal" href="../../community/community.html">Community</a></li>
-</ul>
-
-        </div>
-      </div>
-      <div class="clearer"></div>
-    </div>
-<div class="footer">
-    &copy; 2019, Elementl, Inc.
-    
-    |
-    Powered by <a href="http://sphinx-doc.org/">Sphinx 1.7.5</a>
-    &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
-    
-    |
-    <a href="../../../_sources/sections/api/apidocs/execution.rst.txt" rel="nofollow">Page source</a>
+    <a href="../../../_sources/sections/api/apidocs/solids.rst.txt" rel="nofollow">Page source</a>
 </div>
 
 
@@ -20628,8 +20675,8 @@ snapshots['test_build_all_docs 58'] = '''
     <script type="text/javascript" src="../../../_static/doctools.js"></script>
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" />
-    <link rel="next" title="Utilities" href="utilities.html" />
-    <link rel="prev" title="Errors" href="errors.html" />
+    <link rel="next" title="Errors" href="errors.html" />
+    <link rel="prev" title="Execution" href="execution.html" />
  
 <link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
 
@@ -20648,13 +20695,13 @@ snapshots['test_build_all_docs 58'] = '''
     <ul>
         <li>
             &larr;
-            <a href="errors.html" title="Previous document">Errors</a>
+            <a href="execution.html" title="Previous document">Execution</a>
         </li>
         <li>
             <a href="/" title="Home">Home</a>
         </li>
         <li>
-            <a href="utilities.html" title="Next document">Utilities</a>
+            <a href="errors.html" title="Next document">Errors</a>
             &rarr;
         </li>
     </ul>
@@ -20669,16 +20716,11 @@ snapshots['test_build_all_docs 58'] = '''
   <div class="section" id="module-dagster">
 <span id="types"></span><h1>Types<a class="headerlink" href="#module-dagster" title="Permalink to this headline">¶</a></h1>
 <p>Dagster type system.</p>
-<div class="section" id="type-definitions">
-<h2>Type definitions<a class="headerlink" href="#type-definitions" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="scalar-types">
+<h2>Scalar Types<a class="headerlink" href="#scalar-types" title="Permalink to this headline">¶</a></h2>
 <dl class="attribute">
 <dt id="dagster.Any">
 <code class="descclassname">dagster.</code><code class="descname">Any</code><a class="headerlink" href="#dagster.Any" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="function">
-<dt id="dagster.as_dagster_type">
-<code class="descclassname">dagster.</code><code class="descname">as_dagster_type</code><span class="sig-paren">(</span><em>existing_type</em>, <em>name=None</em>, <em>description=None</em>, <em>input_schema=None</em>, <em>output_schema=None</em>, <em>serialization_strategy=None</em>, <em>storage_plugins=None</em><span class="sig-paren">)</span><a class="headerlink" href="#dagster.as_dagster_type" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="attribute">
@@ -20686,34 +20728,27 @@ snapshots['test_build_all_docs 58'] = '''
 <code class="descclassname">dagster.</code><code class="descname">Bool</code><a class="headerlink" href="#dagster.Bool" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
-<dl class="function">
-<dt id="dagster.dagster_type">
-<code class="descclassname">dagster.</code><code class="descname">dagster_type</code><span class="sig-paren">(</span><em>name=None</em>, <em>description=None</em><span class="sig-paren">)</span><a class="headerlink" href="#dagster.dagster_type" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="class">
-<dt id="dagster.ConfigType">
-<em class="property">class </em><code class="descclassname">dagster.</code><code class="descname">ConfigType</code><span class="sig-paren">(</span><em>key</em>, <em>name</em>, <em>type_attributes=ConfigTypeAttributes(is_builtin=False</em>, <em>is_system_config=False)</em>, <em>description=None</em><span class="sig-paren">)</span><a class="headerlink" href="#dagster.ConfigType" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="function">
-<dt id="dagster.Dict">
-<code class="descclassname">dagster.</code><code class="descname">Dict</code><span class="sig-paren">(</span><em>fields</em><span class="sig-paren">)</span><a class="headerlink" href="#dagster.Dict" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="function">
-<dt id="dagster.input_schema">
-<code class="descclassname">dagster.</code><code class="descname">input_schema</code><span class="sig-paren">(</span><em>config_cls</em><span class="sig-paren">)</span><a class="headerlink" href="#dagster.input_schema" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="function">
-<dt id="dagster.input_selector_schema">
-<code class="descclassname">dagster.</code><code class="descname">input_selector_schema</code><span class="sig-paren">(</span><em>config_cls</em><span class="sig-paren">)</span><a class="headerlink" href="#dagster.input_selector_schema" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
 <dl class="attribute">
 <dt id="dagster.Int">
 <code class="descclassname">dagster.</code><code class="descname">Int</code><a class="headerlink" href="#dagster.Int" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="dagster.String">
+<code class="descclassname">dagster.</code><code class="descname">String</code><a class="headerlink" href="#dagster.String" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="dagster.Path">
+<code class="descclassname">dagster.</code><code class="descname">Path</code><a class="headerlink" href="#dagster.Path" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</div>
+<div class="section" id="wrapper-types">
+<h2>Wrapper Types<a class="headerlink" href="#wrapper-types" title="Permalink to this headline">¶</a></h2>
+<dl class="function">
+<dt id="dagster.Nullable">
+<code class="descclassname">dagster.</code><code class="descname">Nullable</code><span class="sig-paren">(</span><em>inner_type</em><span class="sig-paren">)</span><a class="headerlink" href="#dagster.Nullable" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="function">
@@ -20722,13 +20757,36 @@ snapshots['test_build_all_docs 58'] = '''
 <dd></dd></dl>
 
 <dl class="function">
+<dt id="dagster.Field">
+<code class="descclassname">dagster.</code><code class="descname">Field</code><span class="sig-paren">(</span><em>dagster_type</em>, <em>default_value=&lt;class \'dagster.core.types.field_utils.__FieldValueSentinel\'&gt;</em>, <em>is_optional=&lt;class \'dagster.core.types.field_utils.__InferOptionalCompositeFieldSentinel\'&gt;</em>, <em>description=None</em><span class="sig-paren">)</span><a class="headerlink" href="#dagster.Field" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="dagster.Dict">
+<code class="descclassname">dagster.</code><code class="descname">Dict</code><span class="sig-paren">(</span><em>fields</em><span class="sig-paren">)</span><a class="headerlink" href="#dagster.Dict" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
 <dt id="dagster.NamedDict">
 <code class="descclassname">dagster.</code><code class="descname">NamedDict</code><span class="sig-paren">(</span><em>name</em>, <em>fields</em>, <em>description=None</em>, <em>type_attributes=ConfigTypeAttributes(is_builtin=False</em>, <em>is_system_config=False)</em><span class="sig-paren">)</span><a class="headerlink" href="#dagster.NamedDict" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
+<dl class="class">
+<dt id="dagster.ConfigType">
+<em class="property">class </em><code class="descclassname">dagster.</code><code class="descname">ConfigType</code><span class="sig-paren">(</span><em>key</em>, <em>name</em>, <em>type_attributes=ConfigTypeAttributes(is_builtin=False</em>, <em>is_system_config=False)</em>, <em>description=None</em><span class="sig-paren">)</span><a class="headerlink" href="#dagster.ConfigType" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</div>
+<div class="section" id="schema">
+<h2>Schema<a class="headerlink" href="#schema" title="Permalink to this headline">¶</a></h2>
 <dl class="function">
-<dt id="dagster.Nullable">
-<code class="descclassname">dagster.</code><code class="descname">Nullable</code><span class="sig-paren">(</span><em>inner_type</em><span class="sig-paren">)</span><a class="headerlink" href="#dagster.Nullable" title="Permalink to this definition">¶</a></dt>
+<dt id="dagster.input_schema">
+<code class="descclassname">dagster.</code><code class="descname">input_schema</code><span class="sig-paren">(</span><em>config_cls</em><span class="sig-paren">)</span><a class="headerlink" href="#dagster.input_schema" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="dagster.input_selector_schema">
+<code class="descclassname">dagster.</code><code class="descname">input_selector_schema</code><span class="sig-paren">(</span><em>config_cls</em><span class="sig-paren">)</span><a class="headerlink" href="#dagster.input_selector_schema" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="function">
@@ -20741,24 +20799,22 @@ snapshots['test_build_all_docs 58'] = '''
 <code class="descclassname">dagster.</code><code class="descname">output_selector_schema</code><span class="sig-paren">(</span><em>config_cls</em><span class="sig-paren">)</span><a class="headerlink" href="#dagster.output_selector_schema" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
-<dl class="attribute">
-<dt id="dagster.Path">
-<code class="descclassname">dagster.</code><code class="descname">Path</code><a class="headerlink" href="#dagster.Path" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
+</div>
+<div class="section" id="making-new-types">
+<h2>Making New Types<a class="headerlink" href="#making-new-types" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="dagster.PythonObjectType">
 <em class="property">class </em><code class="descclassname">dagster.</code><code class="descname">PythonObjectType</code><span class="sig-paren">(</span><em>python_type</em>, <em>key=None</em>, <em>name=None</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#dagster.PythonObjectType" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
-<dl class="class">
-<dt id="dagster.RuntimeType">
-<em class="property">class </em><code class="descclassname">dagster.</code><code class="descname">RuntimeType</code><span class="sig-paren">(</span><em>key</em>, <em>name</em>, <em>is_builtin=False</em>, <em>description=None</em>, <em>input_schema=None</em>, <em>output_schema=None</em>, <em>serialization_strategy=None</em>, <em>storage_plugins=None</em><span class="sig-paren">)</span><a class="headerlink" href="#dagster.RuntimeType" title="Permalink to this definition">¶</a></dt>
+<dl class="function">
+<dt id="dagster.as_dagster_type">
+<code class="descclassname">dagster.</code><code class="descname">as_dagster_type</code><span class="sig-paren">(</span><em>existing_type</em>, <em>name=None</em>, <em>description=None</em>, <em>input_schema=None</em>, <em>output_schema=None</em>, <em>serialization_strategy=None</em>, <em>storage_plugins=None</em><span class="sig-paren">)</span><a class="headerlink" href="#dagster.as_dagster_type" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
-<dl class="attribute">
-<dt id="dagster.String">
-<code class="descclassname">dagster.</code><code class="descname">String</code><a class="headerlink" href="#dagster.String" title="Permalink to this definition">¶</a></dt>
+<dl class="function">
+<dt id="dagster.dagster_type">
+<code class="descclassname">dagster.</code><code class="descname">dagster_type</code><span class="sig-paren">(</span><em>name=None</em>, <em>description=None</em><span class="sig-paren">)</span><a class="headerlink" href="#dagster.dagster_type" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 </div>
@@ -20772,13 +20828,13 @@ snapshots['test_build_all_docs 58'] = '''
     <ul>
         <li>
             &larr;
-            <a href="errors.html" title="Previous document">Errors</a>
+            <a href="execution.html" title="Previous document">Execution</a>
         </li>
         <li>
             <a href="/" title="Home">Home</a>
         </li>
         <li>
-            <a href="utilities.html" title="Next document">Utilities</a>
+            <a href="errors.html" title="Next document">Errors</a>
             &rarr;
         </li>
     </ul>
@@ -20793,11 +20849,11 @@ snapshots['test_build_all_docs 58'] = '''
 <li class="toctree-l1"><a class="reference internal" href="../../install/install.html">Install</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../learn/learn.html">Learn</a></li>
 <li class="toctree-l1 current"><a class="reference internal" href="../api.html">API Docs</a><ul class="current">
-<li class="toctree-l2"><a class="reference internal" href="definitions.html">Definitions</a></li>
-<li class="toctree-l2"><a class="reference internal" href="decorators.html">Decorators</a></li>
+<li class="toctree-l2"><a class="reference internal" href="solids.html">Solids</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pipeline.html">Pipelines</a></li>
 <li class="toctree-l2"><a class="reference internal" href="execution.html">Execution</a></li>
-<li class="toctree-l2"><a class="reference internal" href="errors.html">Errors</a></li>
 <li class="toctree-l2 current"><a class="current reference internal" href="#">Types</a></li>
+<li class="toctree-l2"><a class="reference internal" href="errors.html">Errors</a></li>
 <li class="toctree-l2"><a class="reference internal" href="utilities.html">Utilities</a></li>
 </ul>
 </li>
@@ -20844,7 +20900,7 @@ snapshots['test_build_all_docs 59'] = '''
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" />
     <link rel="next" title="Community" href="../../community/community.html" />
-    <link rel="prev" title="Types" href="types.html" />
+    <link rel="prev" title="Errors" href="errors.html" />
  
 <link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
 
@@ -20863,7 +20919,7 @@ snapshots['test_build_all_docs 59'] = '''
     <ul>
         <li>
             &larr;
-            <a href="types.html" title="Previous document">Types</a>
+            <a href="errors.html" title="Previous document">Errors</a>
         </li>
         <li>
             <a href="/" title="Home">Home</a>
@@ -20903,7 +20959,7 @@ snapshots['test_build_all_docs 59'] = '''
     <ul>
         <li>
             &larr;
-            <a href="types.html" title="Previous document">Types</a>
+            <a href="errors.html" title="Previous document">Errors</a>
         </li>
         <li>
             <a href="/" title="Home">Home</a>
@@ -20924,11 +20980,11 @@ snapshots['test_build_all_docs 59'] = '''
 <li class="toctree-l1"><a class="reference internal" href="../../install/install.html">Install</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../learn/learn.html">Learn</a></li>
 <li class="toctree-l1 current"><a class="reference internal" href="../api.html">API Docs</a><ul class="current">
-<li class="toctree-l2"><a class="reference internal" href="definitions.html">Definitions</a></li>
-<li class="toctree-l2"><a class="reference internal" href="decorators.html">Decorators</a></li>
+<li class="toctree-l2"><a class="reference internal" href="solids.html">Solids</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pipeline.html">Pipelines</a></li>
 <li class="toctree-l2"><a class="reference internal" href="execution.html">Execution</a></li>
-<li class="toctree-l2"><a class="reference internal" href="errors.html">Errors</a></li>
 <li class="toctree-l2"><a class="reference internal" href="types.html">Types</a></li>
+<li class="toctree-l2"><a class="reference internal" href="errors.html">Errors</a></li>
 <li class="toctree-l2 current"><a class="current reference internal" href="#">Utilities</a></li>
 </ul>
 </li>
@@ -23107,7 +23163,7 @@ linked by a dependency definition to <strong>outputs</strong> of a previous comp
 <p>We’ll illustrate this by configuring our hello world example to speak a couple of different
 languages.</p>
 <p>This time, we’ll use a more fully-featured API to define our solid –
-<a class="reference internal" href="../../api/apidocs/decorators.html#dagster.solid" title="dagster.solid"><code class="xref py py-func docutils literal notranslate"><span class="pre">&#64;solid</span></code></a> instead of <a class="reference internal" href="../../api/apidocs/decorators.html#dagster.lambda_solid" title="dagster.lambda_solid"><code class="xref py py-func docutils literal notranslate"><span class="pre">&#64;lambda_solid</span></code></a>.</p>
+<a class="reference internal" href="../../api/apidocs/solids.html#dagster.solid" title="dagster.solid"><code class="xref py py-func docutils literal notranslate"><span class="pre">&#64;solid</span></code></a> instead of <a class="reference internal" href="../../api/apidocs/solids.html#dagster.lambda_solid" title="dagster.lambda_solid"><code class="xref py py-func docutils literal notranslate"><span class="pre">&#64;lambda_solid</span></code></a>.</p>
 <div class="literal-block-wrapper docutils container" id="id1">
 <div class="code-block-caption"><span class="caption-text">config.py</span><a class="headerlink" href="#id1" title="Permalink to this code">¶</a></div>
 <div class="highlight-default notranslate"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre> 1
@@ -23170,14 +23226,14 @@ languages.</p>
 </pre></div>
 </td></tr></table></div>
 </div>
-<p>We will be exploring the <a class="reference internal" href="../../api/apidocs/decorators.html#dagster.solid" title="dagster.solid"><code class="xref py py-func docutils literal notranslate"><span class="pre">&#64;solid</span></code></a> API in much more detail as this tutorial
+<p>We will be exploring the <a class="reference internal" href="../../api/apidocs/solids.html#dagster.solid" title="dagster.solid"><code class="xref py py-func docutils literal notranslate"><span class="pre">&#64;solid</span></code></a> API in much more detail as this tutorial
 proceeds. For now, the salient differences are:</p>
 <ol class="arabic simple">
-<li>The <a class="reference internal" href="../../api/apidocs/decorators.html#dagster.solid" title="dagster.solid"><code class="xref py py-func docutils literal notranslate"><span class="pre">&#64;solid</span></code></a> API takes an additional parameter, <cite>config_field</cite>, which
+<li>The <a class="reference internal" href="../../api/apidocs/solids.html#dagster.solid" title="dagster.solid"><code class="xref py py-func docutils literal notranslate"><span class="pre">&#64;solid</span></code></a> API takes an additional parameter, <cite>config_field</cite>, which
 defines the structure and type of configuration values that can be set on each execution of the
-solid. This parameter should be a <a class="reference internal" href="../../api/apidocs/definitions.html#dagster.Field" title="dagster.Field"><code class="xref py py-func docutils literal notranslate"><span class="pre">Field</span></code></a>, which tells the dagster
+solid. This parameter should be a <a class="reference internal" href="../../api/apidocs/types.html#dagster.Field" title="dagster.Field"><code class="xref py py-func docutils literal notranslate"><span class="pre">Field</span></code></a>, which tells the dagster
 machinery how to translate config values into runtime values available to the solid.</li>
-<li>The function annotated by the <a class="reference internal" href="../../api/apidocs/decorators.html#dagster.solid" title="dagster.solid"><code class="xref py py-func docutils literal notranslate"><span class="pre">&#64;solid</span></code></a> API receives an additional first
+<li>The function annotated by the <a class="reference internal" href="../../api/apidocs/solids.html#dagster.solid" title="dagster.solid"><code class="xref py py-func docutils literal notranslate"><span class="pre">&#64;solid</span></code></a> API receives an additional first
 parameter, <code class="docutils literal notranslate"><span class="pre">context</span></code>, of type <code class="xref py py-class docutils literal notranslate"><span class="pre">TransformExecutionContext</span></code>.
 The configuration passed into each solid is available to the annotated function as <code class="docutils literal notranslate"><span class="pre">context.solid_config</span></code>.</li>
 </ol>
@@ -24724,13 +24780,13 @@ two concatenated copies of the hardcoded string.</p>
 <p>This pipeline introduces a few new concepts.</p>
 <ol class="arabic">
 <li><p class="first">Solids can have <strong>inputs</strong> defined by instances of
-<a class="reference internal" href="../../api/apidocs/definitions.html#dagster.InputDefinition" title="dagster.InputDefinition"><code class="xref py py-class docutils literal notranslate"><span class="pre">InputDefinition</span></code></a>. Inputs allow us to connect solids to
+<a class="reference internal" href="../../api/apidocs/solids.html#dagster.InputDefinition" title="dagster.InputDefinition"><code class="xref py py-class docutils literal notranslate"><span class="pre">InputDefinition</span></code></a>. Inputs allow us to connect solids to
 each other, and give dagster information about solids’ dependencies on each other (and, as
 we’ll see later, optionally let dagster check the types of the inputs at runtime).</p>
 </li>
 <li><p class="first">Solids’ <strong>dependencies</strong> on each other are expressed by instances of
-<a class="reference internal" href="../../api/apidocs/definitions.html#dagster.DependencyDefinition" title="dagster.DependencyDefinition"><code class="xref py py-class docutils literal notranslate"><span class="pre">DependencyDefinition</span></code></a>.
-You’ll notice the new argument to <a class="reference internal" href="../../api/apidocs/definitions.html#dagster.PipelineDefinition" title="dagster.PipelineDefinition"><code class="xref py py-class docutils literal notranslate"><span class="pre">PipelineDefinition</span></code></a>
+<a class="reference internal" href="../../api/apidocs/pipeline.html#dagster.DependencyDefinition" title="dagster.DependencyDefinition"><code class="xref py py-class docutils literal notranslate"><span class="pre">DependencyDefinition</span></code></a>.
+You’ll notice the new argument to <a class="reference internal" href="../../api/apidocs/pipeline.html#dagster.PipelineDefinition" title="dagster.PipelineDefinition"><code class="xref py py-class docutils literal notranslate"><span class="pre">PipelineDefinition</span></code></a>
 called <code class="docutils literal notranslate"><span class="pre">dependencies</span></code>, which is a dict that defines the connections between solids in a
 pipeline’s DAG.</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">dependencies</span><span class="o">=</span><span class="p">{</span>
@@ -24740,7 +24796,7 @@ pipeline’s DAG.</p>
 </div>
 <p>The first layer of keys in this dict are the <em>names</em> of solids in the pipeline. The second layer
 of keys are the <em>names</em> of the inputs to each solid. Each input in the DAG must be provided a
-<a class="reference internal" href="../../api/apidocs/definitions.html#dagster.DependencyDefinition" title="dagster.DependencyDefinition"><code class="xref py py-class docutils literal notranslate"><span class="pre">DependencyDefinition</span></code></a>. (Don’t worry – if you forget
+<a class="reference internal" href="../../api/apidocs/pipeline.html#dagster.DependencyDefinition" title="dagster.DependencyDefinition"><code class="xref py py-class docutils literal notranslate"><span class="pre">DependencyDefinition</span></code></a>. (Don’t worry – if you forget
 to specify an input, a helpful error message will tell you what you missed.)</p>
 <p>In this case the dictionary encodes the fact that the input <code class="docutils literal notranslate"><span class="pre">arg_one</span></code> of solid <code class="docutils literal notranslate"><span class="pre">solid_two</span></code>
 should flow from the output of <code class="docutils literal notranslate"><span class="pre">solid_one</span></code>.</p>
@@ -24916,11 +24972,11 @@ web UI tool used to visualize your data pipelines) on your platform of choice.</
 <p>This example introduces three concepts:</p>
 <ol class="arabic simple">
 <li>A <strong>solid</strong> is a functional unit of computation in a data pipeline. In this example, we use the
-decorator <a class="reference internal" href="../../api/apidocs/decorators.html#dagster.lambda_solid" title="dagster.lambda_solid"><code class="xref py py-func docutils literal notranslate"><span class="pre">&#64;lambda_solid</span></code></a> to mark the function <code class="docutils literal notranslate"><span class="pre">hello_world</span></code>
+decorator <a class="reference internal" href="../../api/apidocs/solids.html#dagster.lambda_solid" title="dagster.lambda_solid"><code class="xref py py-func docutils literal notranslate"><span class="pre">&#64;lambda_solid</span></code></a> to mark the function <code class="docutils literal notranslate"><span class="pre">hello_world</span></code>
 as a solid: a functional unit which takes no inputs and returns the output <code class="docutils literal notranslate"><span class="pre">\'hello\'</span></code> every
 time it’s run.</li>
 <li>A <strong>pipeline</strong> is a set of solids arranged into a DAG of computation that produces data assets.
-In this example, the call to <a class="reference internal" href="../../api/apidocs/definitions.html#dagster.PipelineDefinition" title="dagster.PipelineDefinition"><code class="xref py py-class docutils literal notranslate"><span class="pre">PipelineDefinition</span></code></a> defines
+In this example, the call to <a class="reference internal" href="../../api/apidocs/pipeline.html#dagster.PipelineDefinition" title="dagster.PipelineDefinition"><code class="xref py py-class docutils literal notranslate"><span class="pre">PipelineDefinition</span></code></a> defines
 a pipeline with a single solid.</li>
 <li>We <strong>execute</strong> the pipeline by running <a class="reference internal" href="../../api/apidocs/execution.html#dagster.execute_pipeline" title="dagster.execute_pipeline"><code class="xref py py-func docutils literal notranslate"><span class="pre">execute_pipeline</span></code></a>.
 Dagster will call into each solid in the pipeline, functionally transforming its inputs, if any,
@@ -25661,16 +25717,16 @@ happened during the computation.</p>
 <p>This can be visualized in dagit:</p>
 <img alt="../../../_images/multiple_results_figure_one.png" src="../../../_images/multiple_results_figure_one.png" />
 <p>Notice how <code class="docutils literal notranslate"><span class="pre">return_dict_results</span></code> has two outputs. For the first time
-we have provided the name argument to an <a class="reference internal" href="../../api/apidocs/definitions.html#dagster.OutputDefinition" title="dagster.OutputDefinition"><code class="xref py py-class docutils literal notranslate"><span class="pre">OutputDefinition</span></code></a>.
+we have provided the name argument to an <a class="reference internal" href="../../api/apidocs/solids.html#dagster.OutputDefinition" title="dagster.OutputDefinition"><code class="xref py py-class docutils literal notranslate"><span class="pre">OutputDefinition</span></code></a>.
 (The name of an output defaults to <code class="docutils literal notranslate"><span class="pre">\'result\'</span></code>, as it does for a
-<a class="reference internal" href="../../api/apidocs/definitions.html#dagster.DependencyDefinition" title="dagster.DependencyDefinition"><code class="xref py py-class docutils literal notranslate"><span class="pre">DependencyDefinition</span></code></a>) Output names must be unique
+<a class="reference internal" href="../../api/apidocs/pipeline.html#dagster.DependencyDefinition" title="dagster.DependencyDefinition"><code class="xref py py-class docutils literal notranslate"><span class="pre">DependencyDefinition</span></code></a>) Output names must be unique
 and each result returned by a solid’s transform function must have a name that corresponds to
 one of these outputs.</p>
-<p>So from <code class="docutils literal notranslate"><span class="pre">return_dict_results</span></code> we used <a class="reference internal" href="../../api/apidocs/decorators.html#dagster.MultipleResults" title="dagster.MultipleResults"><code class="xref py py-class docutils literal notranslate"><span class="pre">MultipleResults</span></code></a>
+<p>So from <code class="docutils literal notranslate"><span class="pre">return_dict_results</span></code> we used <a class="reference internal" href="../../api/apidocs/solids.html#dagster.MultipleResults" title="dagster.MultipleResults"><code class="xref py py-class docutils literal notranslate"><span class="pre">MultipleResults</span></code></a>
 to return all outputs from this transform.</p>
 <p>Just as this tutorial gives us the first example of a named
-<a class="reference internal" href="../../api/apidocs/definitions.html#dagster.OutputDefinition" title="dagster.OutputDefinition"><code class="xref py py-class docutils literal notranslate"><span class="pre">OutputDefinition</span></code></a>, this is also the first time that we’ve
-seen a named <a class="reference internal" href="../../api/apidocs/definitions.html#dagster.DependencyDefinition" title="dagster.DependencyDefinition"><code class="xref py py-class docutils literal notranslate"><span class="pre">DependencyDefinition</span></code></a>. Recall that dependencies
+<a class="reference internal" href="../../api/apidocs/solids.html#dagster.OutputDefinition" title="dagster.OutputDefinition"><code class="xref py py-class docutils literal notranslate"><span class="pre">OutputDefinition</span></code></a>, this is also the first time that we’ve
+seen a named <a class="reference internal" href="../../api/apidocs/pipeline.html#dagster.DependencyDefinition" title="dagster.DependencyDefinition"><code class="xref py py-class docutils literal notranslate"><span class="pre">DependencyDefinition</span></code></a>. Recall that dependencies
 point to a particular <strong>output</strong> of a solid, rather than to the solid itself.</p>
 <p>With this we can run the pipeline (condensed here for brevity):</p>
 <div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$</span> dagster pipeline execute -f multiple_outputs.py <span class="se">\\</span>
@@ -25692,7 +25748,7 @@ point to a particular <strong>output</strong> of a solid, rather than to the sol
 </div>
 <div class="section" id="iterator-of-result">
 <h2>Iterator of <code class="docutils literal notranslate"><span class="pre">Result</span></code><a class="headerlink" href="#iterator-of-result" title="Permalink to this headline">¶</a></h2>
-<p>The <a class="reference internal" href="../../api/apidocs/decorators.html#dagster.MultipleResults" title="dagster.MultipleResults"><code class="xref py py-class docutils literal notranslate"><span class="pre">MultipleResults</span></code></a> class is not the only way
+<p>The <a class="reference internal" href="../../api/apidocs/solids.html#dagster.MultipleResults" title="dagster.MultipleResults"><code class="xref py py-class docutils literal notranslate"><span class="pre">MultipleResults</span></code></a> class is not the only way
 to return multiple results from a solid transform function. You can also yield
 multiple instances of the <code class="docutils literal notranslate"><span class="pre">Result</span></code> object. (Note: this is actually the core
 specification of the transform function: all other forms are implemented in terms of
@@ -26264,7 +26320,7 @@ run and visualize pipelines.</p>
 want to be able to target many pipelines at once with our tools.</p>
 <p>A <strong>repository</strong> is a collection of pipelines at which dagster tools may be pointed.</p>
 <p>Repostories are declared using a new API,
-<a class="reference internal" href="../../api/apidocs/definitions.html#dagster.RepositoryDefinition" title="dagster.RepositoryDefinition"><code class="xref py py-func docutils literal notranslate"><span class="pre">RepositoryDefinition</span></code></a>:</p>
+<a class="reference internal" href="../../api/apidocs/pipeline.html#dagster.RepositoryDefinition" title="dagster.RepositoryDefinition"><code class="xref py py-func docutils literal notranslate"><span class="pre">RepositoryDefinition</span></code></a>:</p>
 <div class="literal-block-wrapper docutils container" id="id1">
 <div class="code-block-caption"><span class="caption-text">repos.py</span><a class="headerlink" href="#id1" title="Permalink to this code">¶</a></div>
 <div class="highlight-default notranslate"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre> 1

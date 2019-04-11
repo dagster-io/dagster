@@ -27,7 +27,7 @@ class ExecutionContext(namedtuple('_ExecutionContext', 'loggers resources tags')
     '''
     The user-facing object in the context creation function. The user constructs
     this in order to effect the context creation process. This could be named
-    SystemPipelineExecutionContextCreationData although that seemed excessively verbose.
+    SystemPipelineExecutionContextCreationData although that seemed excessively verbose.    
     '''
 
     def __new__(cls, loggers=None, resources=None, tags=None):
