@@ -2,7 +2,6 @@ from contextlib import contextmanager
 from enum import Enum
 import sys
 import traceback
-import six
 from future.utils import raise_from
 
 
