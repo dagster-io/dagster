@@ -1,12 +1,16 @@
 # New Concepts in 0.3.0
 
-The upgrade guide describes the changes you are _require_ to make to install 0.3.0. This guide describes the changes you _should_ make in order to use the latest capabilities. The new concepts take some getting used to, but are quite powerful.
+The upgrade guide describes the changes you are _require_ to make to install 0.3.0. This guide
+describes the changes you _should_ make in order to use the latest capabilities. The new concepts
+take some getting used to, but are quite powerful.
 
 ## Resources
 
-In 0.2.0 the notion of resources were relatively informal. This is no longer true: They are now an officially supported abstraction. They break apart context creation into composable, reusable chunks of software.
+In 0.2.0 the notion of resources were relatively informal. This is no longer true: They are now an
+officially supported abstraction. They break apart context creation into composable, reusable
+chunks of software.
 
-**Defining a Resource**
+### Defining a Resource
 
 Let's take a typical unittest context.
 
@@ -59,9 +63,12 @@ def create_fileload_unittest_context(info):
     )
 ```
 
-That's quite the ball of wax for what should be relatively straightforward. And this doesn't even include the boilerplate `FileloadResources` class as well. We're going to break this apart using the `ResourceDefinition` abstraction and eliminate the need for that class.
+That's quite the ball of wax for what should be relatively straightforward. And this doesn't even
+include the boilerplate `FileloadResources` class as well. We're going to break this apart using
+the `ResourceDefinition` abstraction and eliminate the need for that class.
 
-The only real reusable resource here is the LocalFsHandleResource, so let's break that out into it's own `ResourceDefinition`.
+The only real reusable resource here is the LocalFsHandleResource, so let's break that out into
+itss own `ResourceDefinition`.
 
 ```py
 def define_local_fs_resource():
@@ -81,9 +88,11 @@ def define_local_fs_resource():
 
 This is now a self-contained piece that can be reused in other contexts as well.
 
-Aside: We now guarantee a system-generated run_id, so the manually created pipeline_guid resource is no longer relevant.
+Aside: We now guarantee a system-generated run_id, so the manually created pipeline_guid resource
+is no longer relevant.
 
-The rest of the "resources" in the unittesting context are None, and we have a special helper to create "none" resources.
+The rest of the "resources" in the unittesting context are None, and we have a special helper to
+create "none" resources.
 
 Let's put it all together:
 
@@ -124,11 +133,14 @@ def create_fileload_unittest_context(init_context):
     )
 ```
 
-Notice a few things. The bulk of the context creation function is now gone. Instead of having to manually create the `FileloadResources`, that is replaced by a class (a `namedtuple`) that is system-synthesized. Predictably it has N fields, one for each resource. The pipeline-code-facing API is the same, it just requires less boilerplate within the pipeline infrastructure.
+Notice a few things. The bulk of the context creation function is now gone. Instead of having to
+manually create the `FileloadResources`, that is replaced by a class (a `namedtuple`) that is
+system-synthesized. Predictably it has N fields, one for each resource. The pipeline-code-facing
+API is the same, it just requires less boilerplate within the pipeline infrastructure.
 
-**Configuring a Resource**
+### Configuring a Resource
 
-The configuration schema changes, as each resource has it's own section.
+The configuration schema changes, as each resource has itss own section.
 
 Before:
 
@@ -183,7 +195,9 @@ environment = {
 }
 ```
 
-While slightly more verbose, you will be able to count on more consistent of configuration between pipelines as you reuse resources, and you an even potentially share resource configuration _between_ pipelines using the configuration file merging feature of 0.3.0
+While slightly more verbose, you will be able to count on more consistent of configuration
+between pipelines as you reuse resources, and you an even potentially share resource configuration
+_between_ pipelines using the configuration file merging feature of 0.3.0
 
 ## Resource Libraries
 
@@ -217,11 +231,16 @@ def define_redshift_sa_resource():
     )
 ```
 
-This could be used -- unmodified -- across all your pipelines. This will also make it easier to write reusable solids as they can know that they will be using the same resource. Indeed, we may formalize this in subsequent releases, allowing solids to formally declare their dependencies on specific resource types.
+This could be used -- unmodified -- across all your pipelines. This will also make it easier to
+write reusable solids as they can know that they will be using the same resource. Indeed, we may
+formalize this in subsequent releases, allowing solids to formally declare their dependencies on
+specific resource types.
 
 ## Solid-Level Configs to Inputs
 
-With the new ability to source inputs from the environment config files, we anticipate that solid-level configuration will become much less common, and instead that we will uses inputs and outputs exclusively.
+With the new ability to source inputs from the environment config files, we anticipate that
+solid-level configuration will become much less common, and instead that we will uses inputs
+and outputs exclusively.
 
 Let's use another example from the a typical fileload pipeline.
 
@@ -245,7 +264,8 @@ def unzip_file(info):
     zipped_file = info.config['zipped_file']
 ```
 
-You'll note that in 0.2.8 we have to model the incoming zipped file as config rather than an input because `unzip_file` had no upstream dependencies and inputs
+You'll note that in 0.2.8 we have to model the incoming zipped file as config rather than an
+input because `unzip_file` had no upstream dependencies and inputs
 had to come from previous solids. In 0.3.0 this is no longer true. Inputs
 can be sourced from the config file now, which means that by default you should
 be modeling such things as inputs.
@@ -267,7 +287,8 @@ def unzip_file(context, zipped_file):
     pass
 ```
 
-In order to invoke a pipeline that contains this solid, you need to satisy this input in the environment config.
+In order to invoke a pipeline that contains this solid, you need to satisy this input in the
+environment config.
 
 Before:
 
@@ -299,4 +320,6 @@ After:
     }
 ```
 
-What's great about this new input structure is that now the unzip_file is more reusable as it could be reused in the middle of a pipeline with its input coming from a previous solid, or as a solid at the beginning of a pipeline.
+What's great about this new input structure is that now the unzip_file is more reusable as it could
+be reused in the middle of a pipeline with its input coming from a previous solid, or as a solid
+at the beginning of a pipeline.

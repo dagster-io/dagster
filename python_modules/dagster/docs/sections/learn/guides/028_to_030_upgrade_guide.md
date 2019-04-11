@@ -1,45 +1,53 @@
 # Upgrading to 0.3.0
 
-This guide is a step-by-step guide for upgrading from dagster 0.2.x to 0.3.0. This represents a substantial upgrade in capabilities but also some breaking API changes. We'll detail them, provide context and reasoning, and instructions about how to upgrade.
+This guide is a step-by-step guide for upgrading from dagster 0.2.x to 0.3.0. This represents a
+substantial upgrade in capabilities but also some breaking API changes. We'll detail them, provide
+context and reasoning, and instructions about how to upgrade.
 
 ## Required API Changes
 
-1. **No more top level config subpackage.**
+### 1. No more top level config subpackage.
 
-Error:
+**Error:**
 
 ```
 from dagster import (
 ImportError: cannot import name 'config'
 ```
 
-We have eliminated the public-facing "config" namespace. (You use raw dictionaries instead of a parallel, typed API to configure pipeline runs).
+We have eliminated the public-facing "config" namespace. (You use raw dictionaries instead of a
+parallel, typed API to configure pipeline runs).
 
-Fix: Simply eliminate the include. You'll run into related errors later.
+**Fix:** Simply eliminate the include. You'll run into related errors later.
 
-2. **No more dagster.sqlalchemy and dagster.pandas submodules**.
+### 2. No more dagster.sqlalchemy and dagster.pandas submodules.
 
-Error:
+**Error:**
 
 ```
 E   ModuleNotFoundError: No module named 'dagster.sqlalchemy'
 ```
 
-We have moved pandas and sqlalchemy code into their own separate modules (dagster-pandas and dagster-sqlalchemy). This makes the core dagster library have less dependencies.
+We have moved pandas and sqlalchemy code into their own separate modules (dagster-pandas and
+dagster-sqlalchemy). This makes the core dagster library have less dependencies.
 
-Fix: Instead of importing `dagster.sqlalchemy` you need to `pip install dagster-sqlalchemy`, add it to your virtual env, and then include `dagster_sqlalchemy` instead.
+**Fix:** Instead of importing `dagster.sqlalchemy` you need to `pip install dagster-sqlalchemy`,
+add it to your virtual env, and then include `dagster_sqlalchemy` instead.
 
-3. **ConfigDefinition no longer exists.**
+### 3. ConfigDefinition no longer exists.
 
-Error:
+**Error:**
 
 ```
 ImportError: cannot import name 'ConfigDefinition'
 ```
 
-We have eliminated a separate notion of a ConfigDefinition. Instead, we realized the user provided config in a solid, resource, or context is just a `Field` that you would use to build a `Dict` or `Selector`. So replace `ConfigDefinition` with Field. (Generally `config_def=ConfigDefinition` is now `config_field=Field`)
+We have eliminated a separate notion of a ConfigDefinition. Instead, we realized the user provided
+config in a solid, resource, or context is just a `Field` that you would use to build a `Dict` or
+`Selector`. So replace `ConfigDefinition` with Field. (Generally `config_def=ConfigDefinition` is
+now `config_field=Field`)
 
-Before:
+**Before:**
 
 ```py
 "production": PipelineContextDefinition(
@@ -49,7 +57,7 @@ Before:
     )
 ```
 
-After:
+**After:**
 
 ```py
 "production": PipelineContextDefinition(
@@ -60,16 +68,16 @@ After:
 
 ```
 
-4. **New, Simpler Dagster Type Definition API.**
+### 4. New, Simpler Dagster Type Definition API.
 
-Error:
+**Error:**
 
 ```
     description='''This represents a path to a file on disk'''
 E   TypeError: __init__() got multiple values for argument 'python_type'
 ```
 
-Another Error:
+**Another Error:**
 
 ```
 E   dagster.check.ParameterCheckError: Param "klass" was supposed to be a type. Got <dagster.core.types.runtime.PythonObjectType object at 0x11e4fbf60> instead of type <class 'dagster.core.types.runtime.PythonObjectType'>
@@ -77,7 +85,7 @@ E   dagster.check.ParameterCheckError: Param "klass" was supposed to be a type. 
 
 There are now two different type creation APIs. One for _creating_ new types, and one for _annotating_ existing types that you include.
 
-Examples:
+**Examples:**
 
 ```py
 @dagster_type(description='This represents a path to a file on disk')
@@ -101,22 +109,23 @@ Properties:
 
 Note you can use S3FileHandle and PathToFile as if they were just "normal types" as well.
 
-5. **ConfigDictionary --> NamedDict or Dict**
+### 5. ConfigDictionary --> NamedDict or Dict
 
 We have a much less verbose API for building configuration schema:
 
-Error:
+**Error:**
 
 ```
 E   AttributeError: module 'dagster.core.types' has no attribute 'ConfigDictionary
 ```
 
-First, we can discouraging the use of the `types` namespace. Instead just `from dagster import Dict` (or whatever class directly).
-Second, `ConfigDictionary` is now just `NamedDict`. If the name of the type wasn't particularily relevant
-you can also eliminate that and just use `Dict`.
+First, we are discouraging the use of the `types` namespace. Instead just
+`from dagster import Dict` (or whatever class directly).
+Second, `ConfigDictionary` is now just `NamedDict`. If the name of the type wasn't
+particularily relevant you can also eliminate that and just use `Dict`.
 Third, you do not have to name it. The net result is much nicer:
 
-Before:
+**Before:**
 
 ```py
 types.ConfigDictionary(
@@ -132,7 +141,7 @@ types.ConfigDictionary(
 )
 ```
 
-After:
+**After:**
 
 ```py
 Dict({
@@ -147,17 +156,18 @@ Dict({
 
 This is a fairly mechanical transition.
 
-6. **define_stub_solid no longer in top-level dagster**
+### 6. define_stub_solid no longer in top-level dagster
 
 This is now an internal utility function. If you really, really need it:
 
 `from dagster.core.utility_solids import define_stub_solid`
 
-7. **Environments are raw dictionaries rather that config.\* classes**
+### 7. Environments are raw dictionaries rather than config.\* classes
 
-Per update 1 config classes no longer are public or used in the execute_pipeline family of APIs. Use raw dictionaries instead. They should be shaped **exactly** like the yaml files.
+Per update 1 config classes no longer are public or used in the execute_pipeline family of APIs.
+Use raw dictionaries instead. They should be shaped **exactly** like the yaml files.
 
-Before:
+**Before:**
 
 ```py
     environment = config.Environment(
@@ -178,7 +188,7 @@ Before:
     )
 ```
 
-After:
+**After:**
 
 ```py
     environment = {
@@ -202,11 +212,12 @@ After:
     }
 ```
 
-While providing less guarantees within the python type system, this API results in very high quality error checking and messaging from the dagster config schema.
+While providing less guarantees within the python type system, this API results in very high quality
+error checking and messaging from the dagster config schema.
 
-8. **New testing APIs**
+### 8. New testing APIs
 
-Error:
+**Error:**
 
 ```
  AttributeError: type object 'PipelineDefinition' has no attribute 'create_sub_pipeline'
@@ -218,9 +229,11 @@ or
 AttributeError: type object 'PipelineDefinition' has no attribute 'create_single_solid_pipeline'
 ```
 
-The creation of "sub" and "single_solid" pipelines was awkward and error-prone. Instead we have the new functions `execute_solid` and `execute_solids`. You can now execute a single solid with a single function call.
+The creation of "sub" and "single_solid" pipelines was awkward and error-prone. Instead we have
+the new functions `execute_solid` and `execute_solids`. You can now execute a single solid with a
+single function call.
 
-Before:
+**Before:**
 
 ```py
     pipeline = PipelineDefinition.create_single_solid_pipeline(
@@ -235,7 +248,7 @@ Before:
         result.result_for_solid('unzip_file').transformed_value())
 ```
 
-After:
+**After:**
 
 ```py
     solid_result = execute_solid(
@@ -248,7 +261,7 @@ After:
     assert os.path.exists(solid_result.transformed_value())
 ```
 
-Before (with stubbed inputs):
+**Before (with stubbed inputs):**
 
 ```py
     pipeline = PipelineDefinition.create_single_solid_pipeline(
@@ -270,7 +283,7 @@ Before (with stubbed inputs):
     assert os.path.exists(solid_result.transformed_value('service_lines_file'))
 ```
 
-After (with stubbed inputs):
+**After (with stubbed inputs):**
 
 ```py
     solid_result = execute_solid(
@@ -286,7 +299,7 @@ After (with stubbed inputs):
     assert os.path.exists(solid_result.transformed_value('service_lines_file'))
 ```
 
-Before (subset execution):
+**Before (subset execution):**
 
 ```py
     pipeline = PipelineDefinition.create_sub_pipeline(
@@ -304,7 +317,7 @@ Before (subset execution):
     snapshot_check_results(snapshot, solid_result)
 ```
 
-After (subset execution):
+**After (subset execution):**
 
 ```py
     result_dict = execute_solids(
@@ -316,17 +329,21 @@ After (subset execution):
     snapshot_check_results(snapshot, result_dict['split_headers_and_service_lines'])
 ```
 
-9. **Execution Context Lifecycle Changes**
+### 9. Execution Context Lifecycle Changes
 
-Error:
+**Error:**
 
 ```
 AttributeError: 'ExecutionContext' object has no attribute 'value'
 ```
 
-This is officially the most difficult change, conceptually. We changed the system so that the `ExecutionContext` passed around to your solids (now `RuntimeExecutionContext`) is constructed by the system rather than the user. The `ExecutionContext` object the user creates can be thought of as `RuntimeExecutionContextParams`. We opted against that name because it was excessively verbose.
+This is officially the most difficult change, conceptually. We changed the system so that the
+`ExecutionContext` passed around to your solids (now `RuntimeExecutionContext`) is constructed
+by the system rather than the user. The `ExecutionContext` object the user creates can be thought
+of as `RuntimeExecutionContextParams`. We opted against that name because it was excessively
+verbose.
 
-Before:
+**Before:**
 
 ```py
     with context.value('data_source_run_id', data_source_run_id),\
@@ -339,7 +356,7 @@ Before:
         )
 ```
 
-After:
+**After:**
 
 ```py
     # because you no longer need the with clause here you can just return
@@ -358,7 +375,7 @@ After:
 
 10. **Non-null by default**
 
-Error:
+**Error:**
 
 ```
 E   dagster.core.errors.DagsterTypeError: Solid solid_name input input_name received value None which does not pass the typecheck for Dagster type PandasDataFrame. Step solid_name.transform
@@ -367,7 +384,7 @@ E   dagster.core.errors.DagsterTypeError: Solid solid_name input input_name rece
 You have encountered a type error. Likely it is because in 0.2.8, types could
 accept None by default, and this is no longer true in 0.3.0. You have to opt into accepting nulls.
 
-Before:
+**Before:**
 
 ```py
 @solid(outputs=[OutputDefinition(dagster_type=dagster_pd.DataFrame)])
@@ -375,7 +392,7 @@ def return_none(context):
     return None # None no longer allowed, would break at runtime
 ```
 
-After
+**After:**
 
 ```py
 @solid(outputs=[OutputDefinition(dagster_type=Nullable(dagster_pd.DataFrame))])
@@ -383,9 +400,9 @@ def return_none(context):
     return None # Because of Nullable wrapper, this is ok
 ```
 
-11. **Solid name uniqueness per-repository enforce by default**
+### 11. Solid name uniqueness per-repository enforce by default
 
-Error:
+**Error:**
 
 ```
  dagster.core.errors.DagsterInvalidDefinitionError: Trying to add duplicate solid def solid_one in pipeline_two, Already saw in pipeline_one.
@@ -400,7 +417,7 @@ As a temporary measure, we have added an `enforce_uniqueness` boolean flag to
 RepositoryDefinition construction. However, this will not be supported forever as
 we will be building features that rely on that property.
 
-Fix is:
+**Fix is:**
 
 ```py
 
@@ -416,12 +433,12 @@ offending pipelines with the pipeline name would be a straightforward approach
 to solve this quickly. This would also guarantee that a later change would not
 trigger this error again.
 
-12. **Context is now a top-level argument to solids**
+### 12. Context is now a top-level argument to solids
 
 This is not a breaking change, but it will improve developer ergonomics
 and is relatively straightforward to do.
 
-Before:
+**Before:**
 
 ```py
     @solid
@@ -430,7 +447,7 @@ Before:
         info.context.resources.a_resource.do_something()
 ```
 
-After:
+**After:**
 
 ```py
     @solid

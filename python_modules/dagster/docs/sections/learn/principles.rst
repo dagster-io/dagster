@@ -54,7 +54,8 @@ assumptions (known as expectations) about the data as part of the pipeline proce
 those assumptions break, the breakage can be reported quickly, easily, and with rich metadata
 and diagnostic information. These expectations can also serve as contracts between teams.
 
-   * See https://bit.ly/2mxDS1R for a primer on pipeline tests for data quality.
+   * See `Down with Pipeline Debt! <https://bit.ly/2mxDS1R>`_ for a primer on pipeline tests for
+     data quality.
 
 Gradual, optional typing
 ^^^^^^^^^^^^^^^^^^^^^^^^
