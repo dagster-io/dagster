@@ -20065,7 +20065,7 @@ pass it into a one-off PipelineDefinition</p>
 <h2>Repository<a class="headerlink" href="#repository" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="dagster.RepositoryDefinition">
-<em class="property">class </em><code class="descclassname">dagster.</code><code class="descname">RepositoryDefinition</code><span class="sig-paren">(</span><em>name</em>, <em>pipeline_dict</em><span class="sig-paren">)</span><a class="headerlink" href="#dagster.RepositoryDefinition" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">dagster.</code><code class="descname">RepositoryDefinition</code><span class="sig-paren">(</span><em>name</em>, <em>pipeline_dict</em>, <em>enforce_solid_def_uniqueness=True</em><span class="sig-paren">)</span><a class="headerlink" href="#dagster.RepositoryDefinition" title="Permalink to this definition">¶</a></dt>
 <dd><p>Define a repository that contains a collection of pipelines.</p>
 <dl class="attribute">
 <dt id="dagster.RepositoryDefinition.name">
