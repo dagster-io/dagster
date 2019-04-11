@@ -2,6 +2,7 @@ import six
 
 from dagster import check
 from dagster.core.utils import toposort_flatten
+from dagster.core.errors import DagsterInvalidDefinitionError
 
 from .context import PipelineContextDefinition, default_pipeline_context_definitions
 from .dependency import DependencyDefinition, DependencyStructure, Solid, SolidInstance
@@ -82,12 +83,7 @@ class PipelineDefinition(object):
             value_type=PipelineContextDefinition,
         )
 
-        self.dependencies = check.opt_two_dim_dict_param(
-            dependencies,
-            'dependencies',
-            key_type=six.string_types + (SolidInstance,),
-            value_type=DependencyDefinition,
-        )
+        self.dependencies = _validate_dependency_dict(dependencies)
 
         dependency_structure, pipeline_solid_dict = create_execution_structure(
             solids, self.dependencies
@@ -294,3 +290,57 @@ def _build_sub_pipeline(pipeline_def, solid_names):
         context_definitions=pipeline_def.context_definitions,
         dependencies=deps,
     )
+
+
+def _validate_dependency_dict(dependencies):
+    prelude = 'The expected type for "dependencies" is dict[Union[str, SolidInstance], dict[str, DependencyDefinition]]. '
+
+    if dependencies is None:
+        return {}
+
+    if not isinstance(dependencies, dict):
+        raise DagsterInvalidDefinitionError(
+            prelude
+            + 'Received value {val} of type {type} at the top level.'.format(
+                val=dependencies, type=type(dependencies)
+            )
+        )
+
+    for key, dep_dict in dependencies.items():
+        if not (isinstance(key, six.string_types) or isinstance(key, SolidInstance)):
+            raise DagsterInvalidDefinitionError(
+                prelude + 'Expected str or SolidInstance key in the top level dict. '
+                'Recieved value {val} of type {type}'.format(val=key, type=type(key))
+            )
+        if not isinstance(dep_dict, dict):
+            if isinstance(dep_dict, DependencyDefinition):
+                raise DagsterInvalidDefinitionError(
+                    prelude + 'Received a DependencyDefinition one layer too high under key {key}. '
+                    'The DependencyDefinition should be moved in to a dict keyed on input name.'.format(
+                        key=key
+                    )
+                )
+            else:
+                raise DagsterInvalidDefinitionError(
+                    prelude + 'Under key {key} received value {val} of type {type}. '
+                    'Expected dict[str, DependencyDefinition]'.format(
+                        key=key, val=dep_dict, type=type(dep_dict)
+                    )
+                )
+
+        for input_key, dep in dep_dict.items():
+            if not isinstance(input_key, six.string_types):
+                raise DagsterInvalidDefinitionError(
+                    prelude
+                    + 'Received non-sting key in the inner dict for key {key}.'.format(key=key)
+                )
+            if not isinstance(dep, DependencyDefinition):
+                raise DagsterInvalidDefinitionError(
+                    prelude
+                    + 'Expected DependencyDefinition for solid "{key}" input "{input_key}". '
+                    'Recieved value {val} of type {type}.'.format(
+                        key=key, input_key=input_key, val=dep, type=type(dep)
+                    )
+                )
+
+    return dependencies
