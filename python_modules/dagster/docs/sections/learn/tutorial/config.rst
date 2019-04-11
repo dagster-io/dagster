@@ -40,8 +40,8 @@ configuration to execute an entire pipeline. It may have many sections, but we'r
 using one of them here: per-solid configuration specified under the key ``solids``.
 
 .. literalinclude:: ../../../../dagster/tutorials/intro_tutorial/config.py
-   :lines: 28
-   :dedent: 8
+   :lines: 22-24
+   :dedent: 4
 
 The ``solids`` dict is keyed by solid name, and each of its values in turn defines a ``config``
 key corresponding to the user-defined configuration schema for each particular solid (which we set

@@ -19,9 +19,6 @@ Results
 .. autoclass:: MultiprocessExecutorConfig
    :members:
 
-.. autoclass:: PipelineConfigEvaluationError
-   :members:
-
 .. autoclass:: PipelineExecutionResult
    :members:
 
