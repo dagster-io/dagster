@@ -173,17 +173,6 @@ def friendly_string_for_error(error):
         )
     elif error.reason == DagsterEvaluationErrorReason.SELECTOR_FIELD_ERROR:
         return error.message
-        # if error.error_data.incoming_fields:
-        #     return (
-        #         'Specified more than one field at path "{path}". '
-        #         'You can only specify one field at this level.'
-        #     ).format(path=path)
-        # else:
-        #     return (
-        #         'You specified no fields at path "{path}". '
-        #         'You must specify one and only one field at this level.'
-        #     ).format(path=path)
-
     else:
         check.failed('{} (friendly message for this type not yet provided)'.format(error.reason))
 
