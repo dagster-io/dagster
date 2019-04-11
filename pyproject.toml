@@ -13,8 +13,6 @@ exclude = '''
   | \.nox
   | \.tox
   | \.venv
-  | python_modules/dagster/dagster/tutorials
   | snapshots
-  | python_modules/dagster-airflow/dagster_airflow_tests/test_project
 )/
 '''

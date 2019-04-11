@@ -19,10 +19,11 @@
 # -- Project information -----------------------------------------------------
 import sys
 
-from dagster.utils import script_relative_path
-sys.path.insert(0, script_relative_path('../dagster'))
-
 from recommonmark.parser import CommonMarkParser
+
+from dagster.utils import script_relative_path
+
+sys.path.insert(0, script_relative_path('../dagster'))
 
 project = 'Dagster'
 copyright = ' 2019, Elementl, Inc'  # pylint: disable=W0622
@@ -94,7 +95,7 @@ html_theme_options = {
     'font_family': 'Roboto',
     'body_max_width': 'auto',
     'page_width': '80%',
-    'code_font_size': '0.8em'
+    'code_font_size': '0.8em',
 }
 
 # Add any paths that contain custom static files (such as style sheets) here,
