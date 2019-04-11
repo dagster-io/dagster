@@ -640,8 +640,11 @@ def test_context_selector_extra_context():
 
     pe = pe_info.value
     cse = pe.errors[0]
-    assert cse.reason == DagsterEvaluationErrorReason.SELECTOR_FIELD_ERROR
-    assert 'Specified more than one field at path "root:context"' in str(pe)
+    assert cse.message == (
+        '''You can only specify a single field at path root:context. '''
+        '''You specified ['context_required_int', 'extra_context']. '''
+        '''The available fields are ['context_required_int']'''
+    )
 
 
 def test_context_selector_wrong_name():
@@ -697,7 +700,10 @@ def test_context_selector_none_given():
     pe = pe_info.value
     cse = pe.errors[0]
     assert cse.reason == DagsterEvaluationErrorReason.SELECTOR_FIELD_ERROR
-    assert 'You specified no fields at path "root:context"' in str(pe)
+    assert cse.message == (
+        '''Must specify the required field at path root:context. Defined '''
+        '''fields: ['context_required_int']'''
+    )
 
 
 def test_multilevel_good_error_handling_solids():

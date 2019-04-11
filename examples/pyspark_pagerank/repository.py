@@ -4,7 +4,6 @@ import sys
 from dagster import RepositoryDefinition
 from dagster.utils import script_relative_path
 
-# This is needed to find production query in all cases
 sys.path.insert(0, os.path.abspath(script_relative_path('.')))
 # above confuses pylint
 # pylint: disable=wrong-import-position, import-error
