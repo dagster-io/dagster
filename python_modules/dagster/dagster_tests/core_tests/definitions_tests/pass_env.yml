@@ -1,0 +1,4 @@
+solids:
+  can_fail:
+    config:
+      error: false
