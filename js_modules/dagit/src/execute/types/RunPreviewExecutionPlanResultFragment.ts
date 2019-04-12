@@ -2,15 +2,11 @@
 /* eslint-disable */
 // This file was automatically generated and should not be edited.
 
-import { StepKind } from "./../../types/globalTypes";
+import { StepKind, EvaluationErrorReason } from "./../../types/globalTypes";
 
 // ====================================================
 // GraphQL fragment: RunPreviewExecutionPlanResultFragment
 // ====================================================
-
-export interface RunPreviewExecutionPlanResultFragment_PipelineConfigValidationInvalid {
-  __typename: "PipelineConfigValidationInvalid";
-}
 
 export interface RunPreviewExecutionPlanResultFragment_ExecutionPlan_steps_solid {
   __typename: "Solid";
@@ -34,4 +30,26 @@ export interface RunPreviewExecutionPlanResultFragment_PipelineNotFoundError {
   message: string;
 }
 
-export type RunPreviewExecutionPlanResultFragment = RunPreviewExecutionPlanResultFragment_PipelineConfigValidationInvalid | RunPreviewExecutionPlanResultFragment_ExecutionPlan | RunPreviewExecutionPlanResultFragment_PipelineNotFoundError;
+export interface RunPreviewExecutionPlanResultFragment_PipelineConfigValidationInvalid_errors {
+  __typename: "FieldNotDefinedConfigError" | "FieldsNotDefinedConfigError" | "MissingFieldConfigError" | "MissingFieldsConfigError" | "RuntimeMismatchConfigError" | "SelectorTypeConfigError";
+  reason: EvaluationErrorReason;
+  message: string;
+}
+
+export interface RunPreviewExecutionPlanResultFragment_PipelineConfigValidationInvalid {
+  __typename: "PipelineConfigValidationInvalid";
+  errors: RunPreviewExecutionPlanResultFragment_PipelineConfigValidationInvalid_errors[];
+}
+
+export interface RunPreviewExecutionPlanResultFragment_PipelineConfigEvaluationError_errors {
+  __typename: "FieldNotDefinedConfigError" | "FieldsNotDefinedConfigError" | "MissingFieldConfigError" | "MissingFieldsConfigError" | "RuntimeMismatchConfigError" | "SelectorTypeConfigError";
+  reason: EvaluationErrorReason;
+  message: string;
+}
+
+export interface RunPreviewExecutionPlanResultFragment_PipelineConfigEvaluationError {
+  __typename: "PipelineConfigEvaluationError";
+  errors: RunPreviewExecutionPlanResultFragment_PipelineConfigEvaluationError_errors[];
+}
+
+export type RunPreviewExecutionPlanResultFragment = RunPreviewExecutionPlanResultFragment_ExecutionPlan | RunPreviewExecutionPlanResultFragment_PipelineNotFoundError | RunPreviewExecutionPlanResultFragment_PipelineConfigValidationInvalid | RunPreviewExecutionPlanResultFragment_PipelineConfigEvaluationError;

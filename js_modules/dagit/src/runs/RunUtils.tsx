@@ -90,5 +90,10 @@ export const HANDLE_START_EXECUTION_FRAGMENT = gql`
         message
       }
     }
+    ... on PipelineConfigEvaluationError {
+      errors {
+        message
+      }
+    }
   }
 `;

@@ -106,7 +106,7 @@ type ExecutionPlan {
   pipeline: Pipeline!
 }
 
-union ExecutionPlanResult = ExecutionPlan | PipelineConfigValidationInvalid | PipelineNotFoundError
+union ExecutionPlanResult = ExecutionPlan | PipelineConfigValidationInvalid | PipelineConfigEvaluationError | PipelineNotFoundError
 
 input ExecutionSelector {
   name: String!
@@ -377,6 +377,11 @@ type Pipeline {
 
 scalar PipelineConfig
 
+type PipelineConfigEvaluationError {
+  pipeline: Pipeline!
+  errors: [PipelineConfigValidationError!]!
+}
+
 interface PipelineConfigValidationError {
   message: String!
   path: [String!]!
@@ -635,7 +640,7 @@ type SolidNotFoundError implements Error {
   solidName: String!
 }
 
-union StartPipelineExecutionResult = InvalidStepError | InvalidOutputError | PipelineConfigValidationInvalid | PipelineNotFoundError | StartPipelineExecutionSuccess
+union StartPipelineExecutionResult = InvalidStepError | InvalidOutputError | PipelineConfigValidationInvalid | PipelineConfigEvaluationError | PipelineNotFoundError | StartPipelineExecutionSuccess
 
 type StartPipelineExecutionSuccess {
   run: PipelineRun!

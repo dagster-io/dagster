@@ -23,7 +23,7 @@ import {
 } from "../LocalStorage";
 import {
   CONFIG_EDITOR_PIPELINE_FRAGMENT,
-  CONFIG_EDITOR_VALIDATION_FRAGMENT,
+  CONFIG_EDITOR_PLAN_VALIDATION_FRAGMENT,
   responseToValidationResult
 } from "../configeditor/ConfigEditorUtils";
 
@@ -223,7 +223,7 @@ export default class PipelineExecutionContainer extends React.Component<
 
                       return responseToValidationResult(
                         config,
-                        data.isPipelineConfigValid
+                        data.executionPlan
                       );
                     }}
                   />
@@ -247,10 +247,7 @@ export default class PipelineExecutionContainer extends React.Component<
             />
             <Split>
               {preview ? (
-                <RunPreview
-                  plan={preview.executionPlan}
-                  validation={preview.isPipelineConfigValid}
-                />
+                <RunPreview plan={preview.executionPlan} />
               ) : (
                 <RunPreview />
               )}
@@ -285,6 +282,11 @@ const START_PIPELINE_EXECUTION_MUTATION = gql`
           message
         }
       }
+      ... on PipelineConfigEvaluationError {
+        errors {
+          message
+        }
+      }
     }
   }
 `;
@@ -294,17 +296,13 @@ const PREVIEW_CONFIG_QUERY = gql`
     $pipeline: ExecutionSelector!
     $config: PipelineConfig!
   ) {
-    isPipelineConfigValid(pipeline: $pipeline, config: $config) {
-      ...ConfigEditorValidationFragment
-      ...RunPreviewConfigValidationFragment
-    }
     executionPlan(pipeline: $pipeline, config: $config) {
+      ...ConfigEditorPlanValidationFragment
       ...RunPreviewExecutionPlanResultFragment
     }
   }
-  ${RunPreview.fragments.RunPreviewConfigValidationFragment}
   ${RunPreview.fragments.RunPreviewExecutionPlanResultFragment}
-  ${CONFIG_EDITOR_VALIDATION_FRAGMENT}
+  ${CONFIG_EDITOR_PLAN_VALIDATION_FRAGMENT}
 `;
 
 const PipelineExecutionWrapper = styled.div`

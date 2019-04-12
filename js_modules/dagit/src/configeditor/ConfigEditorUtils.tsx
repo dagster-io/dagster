@@ -1,6 +1,6 @@
 import gql from "graphql-tag";
 import { ValidationResult } from "./codemirror-yaml/mode";
-import { ConfigEditorValidationFragment } from "./types/ConfigEditorValidationFragment";
+import { ConfigEditorPlanValidationFragment } from "./types/ConfigEditorPlanValidationFragment";
 
 export const CONFIG_EDITOR_PIPELINE_FRAGMENT = gql`
   fragment ConfigEditorPipelineFragment on Pipeline {
@@ -53,26 +53,39 @@ export const CONFIG_EDITOR_PIPELINE_FRAGMENT = gql`
   }
 `;
 
-export const CONFIG_EDITOR_VALIDATION_FRAGMENT = gql`
-  fragment ConfigEditorValidationFragment on PipelineConfigValidationResult {
+export const CONFIG_EDITOR_PLAN_VALIDATION_FRAGMENT = gql`
+  fragment ConfigEditorPlanValidationFragment on ExecutionPlanResult {
     __typename
     ... on PipelineConfigValidationInvalid {
       errors {
         reason
         message
         stack {
-          entries {
-            __typename
-            ... on EvaluationStackPathEntry {
-              field {
-                name
-              }
-            }
-            ... on EvaluationStackListItemEntry {
-              listIndex
-            }
-          }
+          ...ConfigEditorEvaluationStack
         }
+      }
+    }
+    ... on PipelineConfigEvaluationError {
+      errors {
+        reason
+        message
+        stack {
+          ...ConfigEditorEvaluationStack
+        }
+      }
+    }
+  }
+
+  fragment ConfigEditorEvaluationStack on EvaluationStack {
+    entries {
+      __typename
+      ... on EvaluationStackPathEntry {
+        field {
+          name
+        }
+      }
+      ... on EvaluationStackListItemEntry {
+        listIndex
       }
     }
   }
@@ -80,9 +93,16 @@ export const CONFIG_EDITOR_VALIDATION_FRAGMENT = gql`
 
 export async function responseToValidationResult(
   config: object,
-  response: ConfigEditorValidationFragment
+  response: ConfigEditorPlanValidationFragment
 ): Promise<ValidationResult> {
-  if (response.__typename !== "PipelineConfigValidationInvalid") {
+  if (response.__typename === "PipelineNotFoundError") {
+    return {
+      isValid: false,
+      errors: [{ message: "Pipeline not found.", path: [], reason: "" }]
+    };
+  }
+
+  if (!("errors" in response)) {
     return { isValid: true };
   }
 

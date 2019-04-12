@@ -35,4 +35,14 @@ export interface HandleStartExecutionFragment_PipelineConfigValidationInvalid {
   errors: HandleStartExecutionFragment_PipelineConfigValidationInvalid_errors[];
 }
 
-export type HandleStartExecutionFragment = HandleStartExecutionFragment_InvalidStepError | HandleStartExecutionFragment_StartPipelineExecutionSuccess | HandleStartExecutionFragment_PipelineNotFoundError | HandleStartExecutionFragment_PipelineConfigValidationInvalid;
+export interface HandleStartExecutionFragment_PipelineConfigEvaluationError_errors {
+  __typename: "FieldNotDefinedConfigError" | "FieldsNotDefinedConfigError" | "MissingFieldConfigError" | "MissingFieldsConfigError" | "RuntimeMismatchConfigError" | "SelectorTypeConfigError";
+  message: string;
+}
+
+export interface HandleStartExecutionFragment_PipelineConfigEvaluationError {
+  __typename: "PipelineConfigEvaluationError";
+  errors: HandleStartExecutionFragment_PipelineConfigEvaluationError_errors[];
+}
+
+export type HandleStartExecutionFragment = HandleStartExecutionFragment_InvalidStepError | HandleStartExecutionFragment_StartPipelineExecutionSuccess | HandleStartExecutionFragment_PipelineNotFoundError | HandleStartExecutionFragment_PipelineConfigValidationInvalid | HandleStartExecutionFragment_PipelineConfigEvaluationError;

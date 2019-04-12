@@ -118,6 +118,14 @@ class DauphinPipelineConfigValidationResult(dauphin.Union):
         )
 
 
+class DauphinPipelineConfigEvaluationError(dauphin.ObjectType):
+    class Meta:
+        name = 'PipelineConfigEvaluationError'
+
+    pipeline = dauphin.Field(dauphin.NonNull('Pipeline'))
+    errors = dauphin.non_null_list('PipelineConfigValidationError')
+
+
 class DauphinPipelineConfigValidationError(dauphin.Interface):
     class Meta:
         name = 'PipelineConfigValidationError'
@@ -343,6 +351,7 @@ class DauphinExecutionPlanResult(dauphin.Union):
         types = (
             'ExecutionPlan',
             DauphinPipelineConfigValidationInvalid,
+            DauphinPipelineConfigEvaluationError,
             DauphinPipelineNotFoundError,
         )
 
@@ -376,6 +385,7 @@ class DauphinStartPipelineExecutionResult(dauphin.Union):
             DauphinInvalidStepError,
             DauphinInvalidOutputError,
             DauphinPipelineConfigValidationInvalid,
+            DauphinPipelineConfigEvaluationError,
             DauphinPipelineNotFoundError,
             DauphinStartPipelineExecutionSuccess,
         )

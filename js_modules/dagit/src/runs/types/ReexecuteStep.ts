@@ -37,7 +37,17 @@ export interface ReexecuteStep_startPipelineExecution_PipelineConfigValidationIn
   errors: ReexecuteStep_startPipelineExecution_PipelineConfigValidationInvalid_errors[];
 }
 
-export type ReexecuteStep_startPipelineExecution = ReexecuteStep_startPipelineExecution_InvalidStepError | ReexecuteStep_startPipelineExecution_StartPipelineExecutionSuccess | ReexecuteStep_startPipelineExecution_PipelineNotFoundError | ReexecuteStep_startPipelineExecution_PipelineConfigValidationInvalid;
+export interface ReexecuteStep_startPipelineExecution_PipelineConfigEvaluationError_errors {
+  __typename: "FieldNotDefinedConfigError" | "FieldsNotDefinedConfigError" | "MissingFieldConfigError" | "MissingFieldsConfigError" | "RuntimeMismatchConfigError" | "SelectorTypeConfigError";
+  message: string;
+}
+
+export interface ReexecuteStep_startPipelineExecution_PipelineConfigEvaluationError {
+  __typename: "PipelineConfigEvaluationError";
+  errors: ReexecuteStep_startPipelineExecution_PipelineConfigEvaluationError_errors[];
+}
+
+export type ReexecuteStep_startPipelineExecution = ReexecuteStep_startPipelineExecution_InvalidStepError | ReexecuteStep_startPipelineExecution_StartPipelineExecutionSuccess | ReexecuteStep_startPipelineExecution_PipelineNotFoundError | ReexecuteStep_startPipelineExecution_PipelineConfigValidationInvalid | ReexecuteStep_startPipelineExecution_PipelineConfigEvaluationError;
 
 export interface ReexecuteStep {
   startPipelineExecution: ReexecuteStep_startPipelineExecution;

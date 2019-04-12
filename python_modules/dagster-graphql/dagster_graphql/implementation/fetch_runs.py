@@ -1,7 +1,7 @@
 from graphql.execution.base import ResolveInfo
 
 from dagster import check
-from dagster.core.execution import ExecutionSelector, create_execution_plan
+from dagster.core.execution import ExecutionSelector, create_execution_plan, PipelineConfigEvaluationError
 from dagster.core.types.evaluator import evaluate_config_value
 
 from .either import EitherError, EitherValue
@@ -27,6 +27,24 @@ def _config_or_error_from_pipeline(graphene_info, pipeline, env_config):
     else:
         return EitherValue(validated_config)
 
+
+def _plan_or_error_from_config(graphene_info, pipeline, evaled_config):
+    try:
+        plan = create_execution_plan(pipeline.get_dagster_pipeline(), evaled_config)
+        return EitherValue(graphene_info.schema.type_named('ExecutionPlan')(pipeline, plan))
+
+    except PipelineConfigEvaluationError as e:
+        return EitherError(
+            graphene_info.schema.type_named('PipelineConfigEvaluationError')(
+                pipeline=pipeline,
+                errors=[
+                    graphene_info.schema.type_named(
+                        'PipelineConfigValidationError'
+                    ).from_dagster_error(graphene_info, err)
+                    for err in e.errors
+                ],
+            )
+        )
 
 def get_run(graphene_info, runId):
     pipeline_run_storage = graphene_info.context.pipeline_runs
@@ -65,14 +83,17 @@ def get_execution_plan(graphene_info, selector, config):
     check.inst_param(graphene_info, 'graphene_info', ResolveInfo)
     check.inst_param(selector, 'selector', ExecutionSelector)
 
-    def create_plan(pipeline):
-        config_or_error = _config_or_error_from_pipeline(graphene_info, pipeline, config)
-        return config_or_error.chain(
-            lambda evaluate_value_result: graphene_info.schema.type_named('ExecutionPlan')(
-                pipeline,
-                create_execution_plan(pipeline.get_dagster_pipeline(), evaluate_value_result.value),
-            )
-        )
+    pipeline = _pipeline_or_error_from_container(graphene_info, selector)
+    if isinstance(pipeline, EitherError):
+        return pipeline
 
-    pipeline_or_error = _pipeline_or_error_from_container(graphene_info, selector)
-    return pipeline_or_error.chain(create_plan).value()
+    def create_config():
+        return _config_or_error_from_pipeline(graphene_info, pipeline.value(), config)
+
+    def create_plan(config_eval_result):
+        return _plan_or_error_from_config(
+            graphene_info,
+            pipeline.value(),
+            config_eval_result.value)
+
+    return create_config().chain(create_plan).value()

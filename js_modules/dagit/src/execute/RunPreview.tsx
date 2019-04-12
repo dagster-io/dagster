@@ -4,30 +4,17 @@ import gql from "graphql-tag";
 import { NonIdealState, Colors, Icon } from "@blueprintjs/core";
 import { IconNames } from "@blueprintjs/icons";
 import ExecutionPlan from "../ExecutionPlan";
-import { RunPreviewExecutionPlanResultFragment } from "./types/RunPreviewExecutionPlanResultFragment";
 import {
-  RunPreviewConfigValidationFragment,
-  RunPreviewConfigValidationFragment_PipelineConfigValidationInvalid_errors
-} from "./types/RunPreviewConfigValidationFragment";
+  RunPreviewExecutionPlanResultFragment,
+  RunPreviewExecutionPlanResultFragment_PipelineConfigEvaluationError_errors
+} from "./types/RunPreviewExecutionPlanResultFragment";
 
 interface IRunPreviewProps {
   plan?: RunPreviewExecutionPlanResultFragment;
-  validation?: RunPreviewConfigValidationFragment;
 }
 
 export class RunPreview extends React.Component<IRunPreviewProps> {
   static fragments = {
-    RunPreviewConfigValidationFragment: gql`
-      fragment RunPreviewConfigValidationFragment on PipelineConfigValidationResult {
-        __typename
-        ... on PipelineConfigValidationInvalid {
-          errors {
-            reason
-            message
-          }
-        }
-      }
-    `,
     RunPreviewExecutionPlanResultFragment: gql`
       fragment RunPreviewExecutionPlanResultFragment on ExecutionPlanResult {
         __typename
@@ -37,20 +24,32 @@ export class RunPreview extends React.Component<IRunPreviewProps> {
         ... on PipelineNotFoundError {
           message
         }
+        ... on PipelineConfigValidationInvalid {
+          errors {
+            reason
+            message
+          }
+        }
+        ... on PipelineConfigEvaluationError {
+          errors {
+            reason
+            message
+          }
+        }
       }
       ${ExecutionPlan.fragments.ExecutionPlanFragment}
     `
   };
 
   render() {
-    const { plan, validation } = this.props;
+    const { plan } = this.props;
 
-    let errors: RunPreviewConfigValidationFragment_PipelineConfigValidationInvalid_errors[] = [];
-    if (
-      validation &&
-      validation.__typename === "PipelineConfigValidationInvalid"
-    ) {
-      errors = validation.errors;
+    let errors: RunPreviewExecutionPlanResultFragment_PipelineConfigEvaluationError_errors[] = [];
+    if (plan && plan.__typename === "PipelineConfigValidationInvalid") {
+      errors = plan.errors;
+    }
+    if (plan && plan.__typename === "PipelineConfigEvaluationError") {
+      errors = plan.errors;
     }
 
     return plan && plan.__typename === "ExecutionPlan" ? (
