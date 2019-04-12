@@ -1198,11 +1198,13 @@ jobs:
           name: Merge master
           command: |
             git fetch --all
-            git checkout --track origin/nightly
             git branch -D master
             git checkout --track origin/master
             git reset --hard origin/master
+            git branch -D nightly
+            git checkout --track origin/nightly
             git checkout nightly
+            git reset --hard origin/nightly
             GIT_MERGE_AUTOEDIT=no git merge --strategy recursive --strategy-option theirs --strategy-option recursive master
 
       - run:
