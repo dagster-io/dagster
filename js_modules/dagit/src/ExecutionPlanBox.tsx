@@ -118,6 +118,7 @@ export class ExecutionPlanBox extends React.Component<
               ) : (
                 <ExecutionStateDot
                   state={state}
+                  title={`${state[0].toUpperCase()}${state.substr(1)}`}
                   style={{ transitionDelay: `${delay}ms` }}
                 />
               )}
@@ -129,6 +130,7 @@ export class ExecutionPlanBox extends React.Component<
             [IStepState.FAILED, IStepState.SUCCEEDED].includes(state) && (
               <ReExecuteContainer
                 className="reexecute"
+                title="Re-run just this step with existing configuration."
                 onClick={() => onReexecuteStep(name)}
               >
                 <Icon icon={IconNames.PLAY} iconSize={15} />
