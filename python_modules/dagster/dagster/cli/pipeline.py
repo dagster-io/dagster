@@ -292,25 +292,35 @@ LOGGING_DICT = {
         '-e pandas_hello_world/env.yml'
     ),
 )
-def pipeline_execute_command(env, **kwargs):
+@click.option('--raise-on-error/--no-raise-on-error', default=True)
+def pipeline_execute_command(env, raise_on_error, **kwargs):
     check.invariant(isinstance(env, tuple))
     env = list(env)
-    execute_execute_command(env, kwargs, click.echo)
+    execute_execute_command(env, raise_on_error, kwargs, click.echo)
 
 
-def execute_execute_command(env, cli_args, print_fn):
+def execute_execute_command(env, raise_on_error, cli_args, print_fn):
     pipeline = create_pipeline_from_cli_args(cli_args)
-    return do_execute_command(pipeline, env, print_fn)
+    return do_execute_command(pipeline, env, raise_on_error, print_fn)
 
 
-def do_execute_command(pipeline, env_file_list, printer):
+from dagster import RunConfig, InProcessExecutorConfig
+
+
+def do_execute_command(pipeline, env_file_list, raise_on_error, printer):
     check.inst_param(pipeline, 'pipeline', PipelineDefinition)
     env_file_list = check.opt_list_param(env_file_list, 'env_file_list', of_type=str)
     check.callable_param(printer, 'printer')
 
     environment_dict = load_yaml_from_glob_list(env_file_list) if env_file_list else {}
 
-    return execute_pipeline(pipeline, environment_dict=environment_dict)
+    return execute_pipeline(
+        pipeline,
+        environment_dict=environment_dict,
+        run_config=RunConfig(
+            executor_config=InProcessExecutorConfig(throw_on_user_error=raise_on_error)
+        ),
+    )
 
 
 @click.command(

@@ -172,17 +172,7 @@ def friendly_string_for_error(error):
             path=path, type_msg=type_msg, message=error.message
         )
     elif error.reason == DagsterEvaluationErrorReason.SELECTOR_FIELD_ERROR:
-        if error.error_data.incoming_fields:
-            return (
-                'Specified more than one field at path "{path}". '
-                'You can only specify one field at this level.'
-            ).format(path=path)
-        else:
-            return (
-                'You specified no fields at path "{path}". '
-                'You must specify one and only one field at this level.'
-            ).format(path=path)
-
+        return error.message
     else:
         check.failed('{} (friendly message for this type not yet provided)'.format(error.reason))
 
@@ -389,9 +379,13 @@ def validate_selector_config_value(selector_type, config_value, stack):
             stack=stack,
             reason=DagsterEvaluationErrorReason.SELECTOR_FIELD_ERROR,
             message=(
-                'You can only specify a single field. You specified {incoming_fields}. '
+                'You can only specify a single field {path_msg}. You specified {incoming_fields}. '
                 'The available fields are {defined_fields}'
-            ).format(incoming_fields=incoming_fields, defined_fields=defined_fields),
+            ).format(
+                incoming_fields=incoming_fields,
+                defined_fields=defined_fields,
+                path_msg=_get_friendly_path_msg(stack),
+            ),
             error_data=SelectorTypeErrorData(
                 dagster_type=selector_type, incoming_fields=incoming_fields
             ),
@@ -419,8 +413,8 @@ def validate_selector_config_value(selector_type, config_value, stack):
                 stack=stack,
                 reason=DagsterEvaluationErrorReason.SELECTOR_FIELD_ERROR,
                 message=(
-                    'Must specify the required field. Defined fields: {defined_fields}'
-                ).format(defined_fields=defined_fields),
+                    'Must specify the required field {path_msg}. Defined fields: {defined_fields}'
+                ).format(defined_fields=defined_fields, path_msg=_get_friendly_path_msg(stack)),
                 error_data=SelectorTypeErrorData(dagster_type=selector_type, incoming_fields=[]),
             )
             return
