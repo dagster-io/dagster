@@ -89,7 +89,7 @@ def test_error_pipeline():
     pipeline = define_error_pipeline()
     result = execute_pipeline(
         pipeline,
-        run_config=RunConfig(executor_config=InProcessExecutorConfig(throw_on_user_error=False)),
+        run_config=RunConfig(executor_config=InProcessExecutorConfig(raise_on_error=False)),
     )
     assert not result.success
 

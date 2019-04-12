@@ -16,7 +16,7 @@ from dagster.core.types.evaluator import evaluate_config_value
 
 
 def execute_single_solid_in_isolation(
-    context_params, solid_def, environment=None, throw_on_user_error=True
+    context_params, solid_def, environment=None, raise_on_error=True
 ):
     '''
     Deprecated.
@@ -28,7 +28,7 @@ def execute_single_solid_in_isolation(
     check.inst_param(context_params, 'context_params', ExecutionContext)
     check.inst_param(solid_def, 'solid_def', SolidDefinition)
     environment = check.opt_dict_param(environment, 'environment')
-    check.bool_param(throw_on_user_error, 'throw_on_user_error')
+    check.bool_param(raise_on_error, 'raise_on_error')
 
     single_solid_environment = {
         'expectations': environment.get('expectations'),
@@ -47,7 +47,7 @@ def execute_single_solid_in_isolation(
         ),
         environment_dict=single_solid_environment,
         run_config=RunConfig(
-            executor_config=InProcessExecutorConfig(throw_on_user_error=throw_on_user_error)
+            executor_config=InProcessExecutorConfig(raise_on_error=raise_on_error)
         ),
     )
 

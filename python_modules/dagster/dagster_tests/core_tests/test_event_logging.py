@@ -121,7 +121,7 @@ def test_single_solid_pipeline_failure():
 
     result = execute_pipeline(
         pipeline_def,
-        run_config=RunConfig(executor_config=InProcessExecutorConfig(throw_on_user_error=False)),
+        run_config=RunConfig(executor_config=InProcessExecutorConfig(raise_on_error=False)),
     )
     assert not result.success
 

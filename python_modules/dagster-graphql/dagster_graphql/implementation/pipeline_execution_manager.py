@@ -20,7 +20,7 @@ from dagster_graphql.implementation.pipeline_run_storage import PipelineRun
 
 
 class PipelineExecutionManager(object):
-    def execute_pipeline(self, repository_container, pipeline, pipeline_run, throw_on_user_error):
+    def execute_pipeline(self, repository_container, pipeline, pipeline_run, raise_on_error):
         raise NotImplementedError()
 
 
@@ -97,7 +97,7 @@ def build_process_started_event(run_id, pipeline_name, process_id):
 
 
 class SynchronousExecutionManager(PipelineExecutionManager):
-    def execute_pipeline(self, repository_container, pipeline, pipeline_run, throw_on_user_error):
+    def execute_pipeline(self, repository_container, pipeline, pipeline_run, raise_on_error):
         check.inst_param(pipeline, 'pipeline', PipelineDefinition)
         try:
             return execute_pipeline(
@@ -106,15 +106,13 @@ class SynchronousExecutionManager(PipelineExecutionManager):
                 run_config=RunConfig(
                     pipeline_run.run_id,
                     event_callback=pipeline_run.handle_new_event,
-                    executor_config=InProcessExecutorConfig(
-                        throw_on_user_error=throw_on_user_error
-                    ),
+                    executor_config=InProcessExecutorConfig(raise_on_error=raise_on_error),
                     reexecution_config=pipeline_run.reexecution_config,
                     step_keys_to_execute=pipeline_run.step_keys_to_execute,
                 ),
             )
         except:  # pylint: disable=W0702
-            if throw_on_user_error:
+            if raise_on_error:
                 six.reraise(*sys.exc_info())
 
             pipeline_run.handle_new_event(
@@ -230,10 +228,9 @@ class MultiprocessingExecutionManager(PipelineExecutionManager):
                     return True
             gevent.sleep(0.1)
 
-    def execute_pipeline(self, repository_container, pipeline, pipeline_run, throw_on_user_error):
+    def execute_pipeline(self, repository_container, pipeline, pipeline_run, raise_on_error):
         check.invariant(
-            throw_on_user_error is False,
-            'Multiprocessing execute_pipeline does not rethrow user error',
+            raise_on_error is False, 'Multiprocessing execute_pipeline does not rethrow user error'
         )
 
         message_queue = self._multiprocessing_context.Queue()
@@ -287,7 +284,7 @@ def execute_pipeline_through_queue(
     run_config = RunConfig(
         run_id,
         event_callback=message_queue.put,
-        executor_config=InProcessExecutorConfig(throw_on_user_error=False),
+        executor_config=InProcessExecutorConfig(raise_on_error=False),
         reexecution_config=reexecution_config,
         step_keys_to_execute=step_keys_to_execute,
     )

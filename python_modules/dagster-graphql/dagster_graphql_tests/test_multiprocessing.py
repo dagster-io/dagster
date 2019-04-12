@@ -58,7 +58,7 @@ def test_running():
     )
     execution_manager = MultiprocessingExecutionManager()
     execution_manager.execute_pipeline(
-        repository_container, pipeline, pipeline_run, throw_on_user_error=False
+        repository_container, pipeline, pipeline_run, raise_on_error=False
     )
     execution_manager.join()
     assert pipeline_run.status == PipelineRunStatus.SUCCESS
@@ -99,7 +99,7 @@ def test_failing():
     )
     execution_manager = MultiprocessingExecutionManager()
     execution_manager.execute_pipeline(
-        repository_container, pipeline, pipeline_run, throw_on_user_error=False
+        repository_container, pipeline, pipeline_run, raise_on_error=False
     )
     execution_manager.join()
     assert pipeline_run.status == PipelineRunStatus.FAILURE
@@ -133,7 +133,7 @@ def test_execution_crash():
     )
     execution_manager = MultiprocessingExecutionManager()
     execution_manager.execute_pipeline(
-        repository_container, pipeline, pipeline_run, throw_on_user_error=False
+        repository_container, pipeline, pipeline_run, raise_on_error=False
     )
     execution_manager.join()
     assert pipeline_run.status == PipelineRunStatus.FAILURE

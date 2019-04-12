@@ -539,7 +539,7 @@ def _pipeline_execution_context_manager(
             else sys.exc_info()
         )
 
-        if run_config.executor_config.throw_on_user_error:
+        if run_config.executor_config.raise_on_error:
             raise dagster_error
 
         error_info = serializable_error_info_from_exc_info(user_facing_exc_info)
@@ -762,7 +762,7 @@ def execute_pipeline(pipeline, environment_dict=None, run_config=None):
     '''
     "Synchronous" version of :py:func:`execute_pipeline_iterator`.
 
-    Note: throw_on_user_error is very useful in testing contexts when not testing for error
+    Note: raise_on_error is very useful in testing contexts when not testing for error
     conditions
 
     Parameters:
