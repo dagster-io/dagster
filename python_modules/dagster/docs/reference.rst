@@ -23,6 +23,13 @@ Solids are defined using the :func:`@lambda_solid <dagster.lambda_solid>` or
 :class:`SolidDefinition <dagster.SolidDefinition>` class. These APIs wrap an underlying
 `transform function`, making its metadata queryable by higher-level tools.
 
+Transform Function
+^^^^^^^^^^^^^^^^^^
+
+The user-supplied function which forms the heart of a solid definition and will be executed when
+the solid is invoked by the Dagster engine.
+
+
 Result
 ^^^^^^
 
@@ -144,94 +151,62 @@ has a clear beginning and end, and we can always figure out what order to execut
 
 Execution Plan
 ^^^^^^^^^^^^^^
-An ExecutionPlan is the materialized DAG of ExecutionSteps created from a Pipeline and an Environment Config. The execution plan knows the topological ordering of the execution steps, enabling physical execution on one of the available executor engines.
+An execution plan is a concrete plan for executing a DAG of execution steps created by compiling a
+pipeline and a config. The execution plan is aware of the topological ordering of the execution
+steps, enabling physical execution on one of the available executor engines (e.g., in-process,
+multiprocess, using Airflow).
+
+Users do not directly instantiate or manipulate execution plans.
 
 Execution Step
 ^^^^^^^^^^^^^^
 
-ExecutionStep(s) are materialized version of a Solid that will be executed. 
+Execution steps are concrete computations, one or more of which corresponds to a solid in a pipeline
+that has been compiled with a config. Some execution steps are generated in order to compute the
+core transform functions of solids, but execution steps may also be generated in order to
+materialize outputs, check expectations against outputs, etc.
 
-Execution steps also include materialization steps, expectation steps.
+Users do not directly instantiate or manipulate execution steps.
 
 Dagster Event
 ^^^^^^^^^^^^^
 
-When a pipeline is executed, DagsterEvents communicate the progress of execution. This includes top level events for the pipeline as well as the progress, materializations, and the results of each ExcecutionStep in an ExecutionPlan.
+When a pipeline is executed, a stream of events communicate the progress of its execution. This
+includes top level events when the pipeline starts and completes, when execution steps succeed,
+fail, or are skipped due to upstream failures, and when outputs are generated and materialized.
 
-Execution Step States: start, failure, materialization, output, success, skip
-
-Execution steps may fail, but other branches of the execution plan may continue to execute
+Users do not directly instantiate or manipulate Dagster events, but they are consumed by the GraphQL
+interface that supports the Dagit tool.
 
 InputDefinition
 ^^^^^^^^^^^^^^^
 
-Optionally typed definition of the data that a solid requires in order to execute. Defined inputs may often also be shimmed through config.
+Optionally typed definition of the data that a solid requires in order to execute. Defined inputs
+may often also be shimmed through config. Inputs are defined using the
+:class:`InputDefinition <dagster.InputDefinition>` class, usually when defining a solid.
 
 OutputDefinition
 ^^^^^^^^^^^^^^^^
 
-Optionally typed definition of the results that a solid will produce.
+Optionally typed definition of the result that a solid will produce. Outputs are defined using the
+:class:`OutputDefinition <dagster.OutputDefinition>` class, usually when defining a solid.
 
 Dagster Types
 ^^^^^^^^^^^^^
 
-The user-facing interface to the dagster type system
+The Dagster type system allows authors of solids and pipelines to optionally and gradually define
+the types of the data that flows between solids, and so to introduce compile-time and runtime checks
+into their pipelines.
 
-Config Types
-^^^^^^^^^^^^
-
-Tell the dagster engine how to translate from config (dict, YAML, JSON) to data that will be available in the context of a pipeline execution
-
-Runtime Types
-^^^^^^^^^^^^^
-
-Enable type checking and custom materialization as data flows between execution steps
+Types also allow for custom materialization, and are typically defined using the
+:func:`@dagster_type <dagster.dagster_type>` decorator or the
+:func:`as_dagster_type <dagster.as_dagster_type>` API. It is also possible to inherit from
+:class:`RuntimeType <dagster.RuntimeType>` directly.
 
 Resources
 ^^^^^^^^^
 
-Resources are pipeline-scoped ways to make external resources (like database connections) available to solids during pipeline execution and clean up after execution resolves.
-(nb this isn’t true in the multiprocessing or airflow cases)
-
-Context
-^^^^^^^
-
-init, solid
-
-IntermediatesManager 
-^^^^^^^^^^^^^^^^^^^^
-
-Responsible for managing the data that is being communicated between Solids and persisting them via an ObjectStore if configured to.
-
-Object Store
-^^^^^^^^^^^^
-
-Dagster current supports storing intermediates to S3, and will support other object stores in the future.
-
-Run Config
-^^^^^^^^^^
-
-Configuration for a particular run of a pipeline, allowing you to control things such as logging and run identification.
-
-Executor
-^^^^^^^^
-
-Dagster can execute the execution plan in several modes; currently we support a simple executor (which serially executes the execution plan), and a multiprocessing executor, which runs the execution plan through an out-of-process executor.
-
-Transform Function
-^^^^^^^^^^^^^^^^^^
-
-The user-supplied function which forms the heart of a solid definition and will be executed when the solid is invoked by the dagster engine
-
-Thunk
-^^^^^
-
-Dagit
-^^^^^
-
-Execution Manager
-^^^^^^^^^^^^^^^^^
-
-SynchronousExecutionManager
-MultiprocessingExecutionManager
-
+Resources are pipeline-scoped and typically used to expose features of the execution environment
+(like database connections) to solids during pipeline execution. Resources can also clean up
+after execution resolves. They are typically defined using the :func:`@resource <dagster.resource>`
+decorator or using the :class:`ResourceDefinition` class directly.
