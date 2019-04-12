@@ -1,13 +1,13 @@
 from __future__ import print_function
+
 import logging
 import re
 import textwrap
-import yaml
 
 import click
+import yaml
 
-from dagster import PipelineDefinition, check
-
+from dagster import InProcessExecutorConfig, PipelineDefinition, RunConfig, check
 from dagster.core.definitions import Solid
 from dagster.core.execution import execute_pipeline
 from dagster.core.execution_plan.create import solids_in_topological_order
@@ -16,14 +16,13 @@ from dagster.utils.indenting_printer import IndentingPrinter
 from dagster.visualize import build_graphviz_graph
 
 from .config_scaffolder import scaffold_pipeline_config
-
 from .dynamic_loader import (
     PipelineTargetInfo,
     load_pipeline_from_target_info,
     load_repository_from_target_info,
+    load_target_info_from_cli_args,
     pipeline_target_command,
     repository_target_argument,
-    load_target_info_from_cli_args,
 )
 
 
@@ -304,27 +303,24 @@ LOGGING_DICT = {
         'on RepositoryDefinition, typically managed under the config key in repository.yml.'
     ),
 )
-def pipeline_execute_command(env, raise_on_error, **kwargs):
+def pipeline_execute_command(env, raise_on_error, preset, **kwargs):
     check.invariant(isinstance(env, tuple))
 
     if preset:
         if env:
             raise click.UsageError('Can not use --preset with --env.')
-        return execute_execute_command_with_preset(preset, kwargs, click.echo)
+        return execute_execute_command_with_preset(preset, raise_on_error, kwargs)
 
     env = list(env)
-    execute_execute_command(env, raise_on_error, kwargs, click.echo)
+    execute_execute_command(env, raise_on_error, kwargs)
 
 
-def execute_execute_command(env, raise_on_error, cli_args, print_fn):
+def execute_execute_command(env, raise_on_error, cli_args):
     pipeline = create_pipeline_from_cli_args(cli_args)
-    return do_execute_command(pipeline, env, raise_on_error, print_fn)
+    return do_execute_command(pipeline, env, raise_on_error)
 
 
-from dagster import RunConfig, InProcessExecutorConfig
-
-
-def execute_execute_command_with_preset(preset, raise_on_error, cli_args, print_fn):
+def execute_execute_command_with_preset(preset, raise_on_error, cli_args):
     pipeline_target = load_pipeline_target_from_cli_args(cli_args)
     cli_args.pop('pipeline_name')
     repository_target_info = load_target_info_from_cli_args(cli_args)
@@ -338,10 +334,9 @@ def execute_execute_command_with_preset(preset, raise_on_error, cli_args, print_
     )
 
 
-def do_execute_command(pipeline, env_file_list, raise_on_error, printer):
+def do_execute_command(pipeline, env_file_list, raise_on_error):
     check.inst_param(pipeline, 'pipeline', PipelineDefinition)
     env_file_list = check.opt_list_param(env_file_list, 'env_file_list', of_type=str)
-    check.callable_param(printer, 'printer')
 
     environment_dict = load_yaml_from_glob_list(env_file_list) if env_file_list else {}
 
