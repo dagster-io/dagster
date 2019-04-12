@@ -17,8 +17,13 @@
 # sys.path.insert(0, os.path.abspath('.'))
 
 # -- Project information -----------------------------------------------------
+import sys
 
 from recommonmark.parser import CommonMarkParser
+
+from dagster.utils import script_relative_path
+
+sys.path.insert(0, script_relative_path('../dagster'))
 
 project = 'Dagster'
 copyright = ' 2019, Elementl, Inc'  # pylint: disable=W0622
@@ -86,7 +91,12 @@ def setup(app):
 # further.  For a list of options available for each theme, see the
 # documentation.
 #
-html_theme_options = {'font_family': 'Roboto'}
+html_theme_options = {
+    'font_family': 'Roboto',
+    'body_max_width': 'auto',
+    'page_width': '80%',
+    'code_font_size': '0.8em',
+}
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
@@ -157,7 +167,7 @@ texinfo_documents = [
 
 # -- Extension configuration -------------------------------------------------
 
-extensions = ['sphinx.ext.napoleon']
+extensions = extensions + ['sphinx.ext.napoleon']
 
 html_sidebars = {'**': ['globaltoc.html', 'searchbox.html']}
 

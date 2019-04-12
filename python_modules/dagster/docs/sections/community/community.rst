@@ -7,6 +7,7 @@ code contributions and issue reports.
 .. toctree::
   :maxdepth: 1
 
+  code_of_conduct
   contributing
   release_notes
   Github <https://www.github.com/dagster-io/dagster/>

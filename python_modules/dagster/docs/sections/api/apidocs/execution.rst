@@ -13,6 +13,12 @@ Execution Functions
 Results
 -------
 
+.. autoclass:: InProcessExecutorConfig
+   :members:
+
+.. autoclass:: MultiprocessExecutorConfig
+   :members:
+
 .. autoclass:: PipelineExecutionResult
    :members:
 
@@ -23,6 +29,12 @@ Configuration
 -------------
 
 .. autoclass:: RunConfig 
+   :members:
+
+.. autoclass:: RunStorageMode 
+   :members:
+
+.. autoclass:: SolidExecutionResult
    :members:
 
 **Environment Dict Schema**

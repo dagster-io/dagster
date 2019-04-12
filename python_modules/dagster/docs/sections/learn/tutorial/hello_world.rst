@@ -7,7 +7,7 @@ Let's write our first pipeline and save it as ``hello_world.py``.
 
 .. literalinclude:: ../../../../dagster/tutorials/intro_tutorial/hello_world.py
    :linenos:
-   :lines: 1-12
+   :lines: 1-10
    :caption: hello_world.py
 
 This example introduces three concepts:
@@ -87,7 +87,7 @@ at all. Just add a few lines to `hello_world.py` (highlighted in yellow):
 .. literalinclude:: ../../../../dagster/tutorials/intro_tutorial/hello_world.py
    :linenos:
    :caption: hello_world.py
-   :emphasize-lines: 15-17
+   :emphasize-lines: 13-15
 
 Then you can just run:
 

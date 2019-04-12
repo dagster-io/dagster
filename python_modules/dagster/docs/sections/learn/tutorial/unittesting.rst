@@ -19,7 +19,7 @@ We have the following pipeline:
 .. literalinclude:: ../../../../dagster/tutorials/intro_tutorial/unittesting.py
     :linenos:
     :caption: unittesting.py
-    :lines: 1-45
+    :lines: 1-44
 
 Let's say we wanted to test *one* of these solids in isolation.
 
@@ -31,7 +31,7 @@ So let's do that. Follow along in the comments:
 .. literalinclude:: ../../../../dagster/tutorials/intro_tutorial/unittesting.py
     :linenos:
     :caption: unittesting.py
-    :lines: 47-53
+    :lines: 47-52
 
 We can also execute entire arbitrary subdags rather than a single solid using
 the ``execute_solids`` function

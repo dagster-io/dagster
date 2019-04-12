@@ -12,6 +12,4 @@ update_doc_snapshot:
 	pytest python_modules/dagster/docs --snapshot-update
 
 black:
-	black python_modules --line-length 100 -S --fast --exclude "build/|buck-out/|dist/|_build/|\.eggs/|\.git/|\.hg/|\.mypy_cache/|\.nox/|\.tox/|\.venv/|python_modules/dagster/dagster/tutorials/|snapshots/|__scaffold\.py" -N
-	black python_modules/dagster/dagster/tutorials examples --line-length 79 -S --fast -N
-
+	black python_modules --line-length 100 -S --fast --exclude "build/|buck-out/|dist/|_build/|\.eggs/|\.git/|\.hg/|\.mypy_cache/|\.nox/|\.tox/|\.venv/|snapshots/" -N

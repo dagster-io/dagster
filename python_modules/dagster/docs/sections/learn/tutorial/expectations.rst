@@ -21,7 +21,7 @@ You'll note the new concept of expecatations.
 .. literalinclude:: ../../../../dagster/tutorials/intro_tutorial/expectations.py
    :linenos:
    :caption: expectations.py
-   :emphasize-lines: 17-24
+   :emphasize-lines: 17-22
 
 At its core, an expectation is a function applied to either an input or an output.
 Generally anywhere there is a type, you can apply an expectation. This function

@@ -23,6 +23,15 @@ IGNORE_FILES = [
 ]
 
 
+def _path_starts_with(path, starts_with):
+    if not isinstance(path, list):
+        path = path.split(os.sep)
+
+    i = len(starts_with)
+
+    return path[:i] == starts_with
+
+
 # Right now, these tests fail as soon as a snapshot fails -- and there is no way to see *all* of
 # the snapshot failures associated with a diff. We should probably break doc build into a fixture,
 # and then figure out a way to either dynamically generate a test case for each snapshot
@@ -49,6 +58,12 @@ def test_build_all_docs(snapshot):
                     ),
                 )
                 for dirpath, dirnames, filenames in os.walk('.')
+                # Omit the built source files and autodocs from snapshot testing to avoid test
+                # failure fatigue
+                if (
+                    not _path_starts_with(dirpath, ['.', 'html', '_modules', 'dagster'])
+                    and not _path_starts_with(dirpath, ['.', 'html', '_sources', 'sections', 'api'])
+                )
             ],
             key=lambda x: x[0],
         )
@@ -57,7 +72,13 @@ def test_build_all_docs(snapshot):
         if sys.version_info[0] < 3:
             return
 
-        for dirpath, dirnames, filenames in walked:
+        for dirpath, _dirnames, filenames in walked:
+            # Omit the built source files and autodocs from snapshot testing to avoid test
+            # failure fatigue
+            if not _path_starts_with(
+                dirpath, ['.', 'html', '_modules', 'dagster']
+            ) and not _path_starts_with(dirpath, ['.', 'html', '_sources', 'sections', 'api']):
+                continue
             for filename in filenames:
                 if any((re.match(pattern, filename) for pattern in IGNORE_FILES)):
                     continue

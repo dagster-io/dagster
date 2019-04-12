@@ -83,6 +83,7 @@ from dagster.utils.test import execute_solid, execute_solids
 
 from .version import __version__
 
+
 __all__ = [
     # Definition
     'DependencyDefinition',
@@ -90,35 +91,42 @@ __all__ = [
     'ExpectationResult',
     'Field',
     'InputDefinition',
+    'Materialization',
     'OutputDefinition',
     'PipelineContextDefinition',
     'PipelineDefinition',
     'RepositoryDefinition',
     'ResourceDefinition',
-    'resource',
     'Result',
     'SolidDefinition',
     'SolidInstance',
-    'Materialization',
     # Decorators
     'lambda_solid',
+    'resource',
     'solid',
     'MultipleResults',
     # Execution
     'execute_pipeline_iterator',
     'execute_pipeline',
     'ExecutionContext',
+    'InProcessExecutorConfig',
+    'MultiprocessExecutorConfig',
+    'PipelineConfigEvaluationError',
     'PipelineExecutionResult',
+    'RunConfig',
+    'RunStorageMode',
     'SolidExecutionResult',
     # Errors
     'DagsterEvaluateConfigValueError',
     'DagsterExecutionStepExecutionError',
+    'DagsterExecutionStepNotFoundError',
     'DagsterExpectationFailedError',
     'DagsterInvalidDefinitionError',
     'DagsterInvariantViolationError',
     'DagsterRuntimeCoercionError',
     'DagsterTypeError',
     'DagsterUserCodeExecutionError',
+    'DagsterUserError',
     'DagsterStepOutputNotFoundError',
     # Utilities
     'execute_solid',
@@ -129,6 +137,8 @@ __all__ = [
     'input_schema',
     'input_selector_schema',
     'Dict',
+    'Enum',
+    'EnumValue',
     'Float',
     'Int',
     'List',

@@ -10,6 +10,7 @@ We'll replace the config field in our solid definition with a structured, strong
 
 .. literalinclude:: ../../../../dagster/tutorials/intro_tutorial/configuration_schemas.py
    :linenos:
+   :emphasize-lines: 31, 37
    :caption: configuration_schemas.py
 
 The configuration YAML file works as before:
@@ -73,12 +74,8 @@ And you'll get a nice error *prior* to execution:
 
 .. code-block:: console
 
-    dagster.core.execution.PipelineConfigEvaluationError:
-    Pipeline "typed_demo_configuration_schema" config errors:
-    Error 1: Type failure at path
-    "root:solids:typed_multiply_the_word:config:factor" on type
-    "Int". Got "'not_a_number'". Value not_a_number is not
-    valid for type Int.
+    dagster.core.execution.PipelineConfigEvaluationError: Pipeline "typed_demo_configuration_schema" config errors:
+    Error 1: Type failure at path "root:solids:typed_multiply_the_word:config:factor" on type "Int". Value at path root:solids:typed_multiply_the_word:config:factor is not valid. Expected "Int".
 
 
 Now, instead of a runtime failure which might arise deep inside a time-consuming or expensive
@@ -100,8 +97,8 @@ And then run the pipeline:
     -n define_demo_configuration_schema_pipeline -e configuration_schemas_wrong_field.yml
     ...
     dagster.core.execution.PipelineConfigEvaluationError: Pipeline "demo_configuration_schema" config errors:
-        Error 1: Undefined field "multiply_the_word_with_typed_config" at path root:solids
-        Error 2: Missing required field "multiply_the_word" at path root:solids
+    Error 1: Undefined field "multiply_the_word_with_typed_config" at path root:solids
+    Error 2: Missing required field "multiply_the_word" at path root:solids Expected: "{ count_letters?: DemoConfigurationSchema.SolidConfig.CountLetters multiply_the_word: DemoConfigurationSchema.SolidConfig.MultiplyTheWord }"
 
 Next, we'll see how to use the  :doc:`Execution Context <execution_context>` to further configure
 how pipeline execution interacts with its environment.
