@@ -131,6 +131,7 @@ def open_file_view():
 
     open_cmd = 'open' if sys.platform.startswith('darwin') else 'xdg-open'
     # FIXME this doesn't work on python27
+    # https://github.com/dagster-io/dagster/issues/1210
     (exitcode, output) = subprocess.getstatusoutput(open_cmd + ' ' + cmd_quote(path))
     if exitcode == 0:
         return "Success", 200
