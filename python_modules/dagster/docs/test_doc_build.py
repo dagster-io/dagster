@@ -37,6 +37,7 @@ def _path_starts_with(path, starts_with):
 # and then figure out a way to either dynamically generate a test case for each snapshot
 # (probably hard since tests are collected before fixtures are executed -- but maybe we can lever
 # the checked-in snapshots for this) or collect the test failures and display all of them.
+@pytest.mark.docs
 def test_build_all_docs(snapshot):
     pwd = os.getcwd()
     try:

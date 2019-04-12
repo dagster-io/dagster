@@ -220,7 +220,10 @@ class FileSystemObjectStore(ObjectStore):
         target_path = os.path.join(self.root, *paths)
         if not self.has_object(context, paths):
             return
-        shutil.rmtree(target_path)
+        if os.path.isfile(target_path):
+            os.unlink(target_path)
+        elif os.path.isdir(target_path):
+            shutil.rmtree(target_path)
         return
 
     def copy_object_from_prev_run(

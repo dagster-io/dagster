@@ -1,6 +1,7 @@
 import six
 
 from dagster import check
+from dagster.core.errors import DagsterInvariantViolationError
 from dagster.core.utils import toposort_flatten
 from dagster.core.errors import DagsterInvalidDefinitionError
 
@@ -155,6 +156,12 @@ class PipelineDefinition(object):
             SolidDefinition: SolidDefinition with correct name.
         '''
         check.str_param(name, 'name')
+        if name not in self._solid_dict:
+            raise DagsterInvariantViolationError(
+                'Pipeline {pipeline_name} has no solid named {name}.'.format(
+                    pipline_name=self.name, name=name
+                )
+            )
         return self._solid_dict[name]
 
     def has_config_type(self, name):

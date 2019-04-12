@@ -10,6 +10,7 @@ from dagster import (
     check,
     List as List_,
     String as String_,
+    Nullable as Nullable_,
     PipelineDefinition,
     RunConfig,
     seven,
@@ -83,7 +84,10 @@ def test_file_system_object_store():
             object_store.set_object(True, context, Bool.inst(), ['true'])
             assert object_store.has_object(context, ['true'])
             assert object_store.get_object(context, Bool.inst(), ['true']) is True
-
+            assert object_store.url_for_paths(['true']).startswith('file:///')
+            assert object_store.rm_object(context, ['true']) is None
+            assert object_store.rm_object(context, ['true']) is None
+            assert object_store.rm_object(context, ['dslkfhjsdflkjfs']) is None
         finally:
             try:
                 shutil.rmtree(object_store.root)
@@ -217,6 +221,7 @@ def test_s3_object_store():
 
             assert object_store.has_object(context, ['true'])
             assert object_store.get_object(context, Bool.inst(), ['true']) is True
+            assert object_store.url_for_paths(['true']).startswith('s3://')
 
         finally:
             object_store.rm_object(context, ['true'])
@@ -311,6 +316,30 @@ def test_file_system_object_store_with_composite_type_storage_plugin():
         with pytest.raises(check.NotImplementedCheckError):
             object_store.set_value(
                 ['hello'], context, resolve_to_runtime_type(List_(String_)), ['obj_name']
+            )
+
+    with yield_pipeline_execution_context(
+        PipelineDefinition([]), {}, RunConfig(run_id=run_id)
+    ) as context:
+        with pytest.raises(check.NotImplementedCheckError):
+            object_store.set_value(
+                ['hello'], context, resolve_to_runtime_type(Nullable_(String_)), ['obj_name']
+            )
+
+    with yield_pipeline_execution_context(
+        PipelineDefinition([]), {}, RunConfig(run_id=run_id)
+    ) as context:
+        with pytest.raises(check.NotImplementedCheckError):
+            object_store.set_value(
+                ['hello'], context, resolve_to_runtime_type(List_(Nullable_(String_))), ['obj_name']
+            )
+
+    with yield_pipeline_execution_context(
+        PipelineDefinition([]), {}, RunConfig(run_id=run_id)
+    ) as context:
+        with pytest.raises(check.NotImplementedCheckError):
+            object_store.set_value(
+                ['hello'], context, resolve_to_runtime_type(Nullable_(List_(String_))), ['obj_name']
             )
 
 

@@ -66,7 +66,7 @@ def safe_isfile(path):
     '''
     try:
         return os.path.isfile(path)
-    except ValueError:
+    except (ValueError):
         return False
 
 

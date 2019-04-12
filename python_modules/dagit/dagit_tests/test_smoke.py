@@ -16,11 +16,40 @@ def test_smoke_app():
     client = flask_app.test_client()
 
     result = client.post('/graphql', data={'query': 'query { pipelines { nodes { name }}}'})
-
     data = json.loads(result.data.decode('utf-8'))
-
     assert len(data['data']['pipelines']['nodes']) == 1
-
     assert {node_data['name'] for node_data in data['data']['pipelines']['nodes']} == set(
         ['repo_demo_pipeline']
     )
+
+    result = client.get('/graphql')
+    assert result.status_code == 400
+    data = json.loads(result.data.decode('utf-8'))
+    assert len(data['errors']) == 1
+    assert data['errors'][0]['message'] == 'Must provide query string.'
+
+    result = client.post('/dagit/open', data={'path': 'foo.bar'})
+    assert result.status_code == 405
+    assert '405 Method Not Allowed' in result.data.decode('utf-8')
+
+    result = client.get('/dagit/open', data={'path': 'foo.bar'})
+    assert result.status_code == 400
+    assert result.data.decode('utf-8') == 'Must provide path to a file.'
+
+    # FIXME this doesn't work on python 27
+    # result = client.get('/dagit/open?path=foo.bar')
+    # assert result.status_code == 400
+    # assert 'does not exist' in result.data.decode('utf-8')
+
+    result = client.get('/dagit/notebook?path=foo.bar')
+    assert result.status_code == 400
+    assert result.data.decode('utf-8') == 'Invalid Path'
+
+    result = client.post('/graphql', data={'query': 'query { version { slkjd } }'})
+    data = json.loads(result.data.decode('utf-8'))
+    assert 'errors' in data
+    assert len(data['errors']) == 1
+    assert 'must not have a sub selection' in data['errors'][0]['message']
+
+    result = client.get('static/foo/bar')
+    assert result.status_code == 404

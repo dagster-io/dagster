@@ -50,7 +50,7 @@ def format_error_with_stack_trace(error):
 
         # this is what is different about this implementation
         # we print out stack traces to ease debugging
-        if error.original_error:
+        if hasattr(error, 'original_error') and error.original_error:
             formatted_error['stack_trace'] = get_stack_trace_array(error.original_error)
 
     return formatted_error
@@ -115,6 +115,9 @@ def notebook_view():
 def open_file_view():
     path = request.args.get('path')
 
+    if path is None:
+        return 'Must provide path to a file.', 400
+
     # Jupyter doesn't register as a handler for ipynb files, so calling `open` won't
     # work. Instead, spawn a Jupyter notebook process.
     if path.endswith(".ipynb"):
@@ -127,6 +130,8 @@ def open_file_view():
         return "Success", 200
 
     open_cmd = 'open' if sys.platform.startswith('darwin') else 'xdg-open'
+    # FIXME this doesn't work on python27
+    # https://github.com/dagster-io/dagster/issues/1210
     (exitcode, output) = subprocess.getstatusoutput(open_cmd + ' ' + cmd_quote(path))
     if exitcode == 0:
         return "Success", 200

@@ -25,6 +25,15 @@ def test_int_param():
         check.int_param('s', 'param_name')
 
 
+def test_int_value_param():
+    assert check.int_value_param(-1, -1, 'param_name') == -1
+    with pytest.raises(ParameterCheckError):
+        check.int_value_param(None, -1, 'param_name')
+
+    with pytest.raises(ParameterCheckError):
+        check.int_value_param(1, 0, 'param_name')
+
+
 def test_opt_int_param():
     assert check.opt_int_param(-1, 'param_name') == -1
     assert check.opt_int_param(0, 'param_name') == 0
@@ -296,6 +305,21 @@ def test_opt_str_param():
         check.opt_str_param(1, 'str_param')
 
 
+def test_opt_nonempty_str_param():
+    assert check.opt_nonempty_str_param('a', 'str_param') == 'a'
+    assert check.opt_nonempty_str_param('', 'str_param') is None
+    assert check.opt_nonempty_str_param('', 'str_param', 'foo') == 'foo'
+    assert check.opt_nonempty_str_param(u'a', 'unicode_param') == u'a'
+    assert check.opt_nonempty_str_param(None, 'str_param') is None
+    assert check.opt_nonempty_str_param(None, 'str_param', 'foo') == 'foo'
+
+    with pytest.raises(ParameterCheckError):
+        check.opt_nonempty_str_param(0, 'str_param')
+
+    with pytest.raises(ParameterCheckError):
+        check.opt_nonempty_str_param(1, 'str_param')
+
+
 def test_bool_param():
     assert check.bool_param(True, 'b') is True
     assert check.bool_param(False, 'b') is False
@@ -390,6 +414,19 @@ def test_string_elem():
         check.str_elem(ddict, 'a_num')
 
 
+def test_opt_string_elem():
+    ddict = {'a_str': 'a', 'a_num': 1, 'a_none': None}
+
+    assert check.opt_str_elem(ddict, 'a_str') == 'a'
+
+    assert check.opt_str_elem(ddict, 'a_none') == None
+
+    assert check.opt_str_elem(ddict, 'nonexistentkey') == None
+
+    with pytest.raises(ElementCheckError):
+        check.opt_str_elem(ddict, 'a_num')
+
+
 def test_bool_elem():
     ddict = {'a_true': True, 'a_str': 'a', 'a_num': 1, 'a_none': None}
 
@@ -432,6 +469,9 @@ def test_not_implemented():
     with pytest.raises(NotImplementedCheckError, match='some string'):
         check.not_implemented('some string')
 
+    with pytest.raises(CheckError, match='desc argument must be a string'):
+        check.not_implemented(None)
+
 
 def test_inst():
     class Foo(object):
@@ -446,6 +486,9 @@ def test_inst():
 
     with pytest.raises(CheckError, match='not a Bar'):
         check.inst(Foo(), Bar)
+
+    with pytest.raises(CheckError, match='Desc: Expected only a Bar'):
+        check.inst(Foo(), Bar, 'Expected only a Bar')
 
 
 def test_inst_param():
@@ -540,6 +583,22 @@ def test_opt_dict_elem():
         check.opt_dict_elem(ddict, 'stringkey')
 
 
+def test_list_elem():
+    list_value = ['blah', 'blahblah']
+    ddict = {'listkey': list_value, 'stringkey': 'A', 'nonekey': None}
+
+    assert check.list_elem(ddict, 'listkey') == list_value
+
+    with pytest.raises(CheckError):
+        assert check.list_elem(ddict, 'nonekey') == []
+
+    with pytest.raises(CheckError):
+        assert check.list_elem(ddict, 'nonexistantkey') == []
+
+    with pytest.raises(CheckError):
+        check.list_elem(ddict, 'stringkey')
+
+
 def test_opt_list_elem():
     list_value = ['blah', 'blahblah']
     ddict = {'listkey': list_value, 'stringkey': 'A', 'nonekey': None}
@@ -604,16 +663,16 @@ def test_opt_tuple_param():
     assert check.opt_tuple_param(None, 'something', (2)) == (2)
 
     with pytest.raises(CheckError):
-        assert check.tuple_param(1, 'something')
+        assert check.opt_tuple_param(1, 'something')
 
     with pytest.raises(CheckError):
-        assert check.tuple_param([1], 'something')
+        assert check.opt_tuple_param([1], 'something')
 
     with pytest.raises(CheckError):
-        assert check.tuple_param({1: 2}, 'something')
+        assert check.opt_tuple_param({1: 2}, 'something')
 
     with pytest.raises(CheckError):
-        assert check.tuple_param('kdjfkd', 'something')
+        assert check.opt_tuple_param('kdjfkd', 'something')
 
 
 def test_opt_type_param():
@@ -756,6 +815,9 @@ def test_opt_two_dim_dict_parm():
     assert check.opt_two_dim_dict_param({'key': {'key2': 2}}, 'foo')
     assert check.opt_two_dim_dict_param(None, 'foo') == {}
 
+    with pytest.raises(CheckError):
+        assert check.opt_two_dim_dict_param('str', 'foo')
+
 
 def test_generator_param():
     def _test_gen():
@@ -825,3 +887,8 @@ def test_opt_generator():
 
     with pytest.raises(ParameterCheckError):
         assert check.opt_generator(_test_gen)
+
+
+def test_internals():
+    with pytest.raises(CheckError):
+        check._check_key_value_types(None, str, str)  # pylint: disable=protected-access

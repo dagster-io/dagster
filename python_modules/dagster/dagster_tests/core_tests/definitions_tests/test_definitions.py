@@ -14,6 +14,8 @@ from dagster import (
     solid,
     types,
 )
+from dagster.core.definitions import Solid, Materialization
+from dagster.core.definitions.dependency import SolidOutputHandle
 from dagster.core.errors import DagsterInvalidDefinitionError
 
 
@@ -23,6 +25,70 @@ def test_deps_equal():
 
     assert DependencyDefinition('foo', 'bar') == DependencyDefinition('foo', 'bar')
     assert DependencyDefinition('foo', 'bar') != DependencyDefinition('foo', 'quuz')
+
+
+def test_solid_def():
+    @lambda_solid
+    def produce_string():
+        return 'foo'
+
+    @solid(
+        inputs=[InputDefinition('input_one', types.String)],
+        outputs=[OutputDefinition(types.Any)],
+        config_field=Field(Dict({'another_field': Field(types.Int)})),
+    )
+    def solid_one(_context, input_one):
+        raise Exception('should not execute')
+
+    pipeline_def = PipelineDefinition(
+        solids=[produce_string, solid_one],
+        dependencies={'solid_one': {'input_one': DependencyDefinition('produce_string')}},
+    )
+
+    assert len(pipeline_def.solids[0].output_handles()) == 1
+
+    assert isinstance(pipeline_def.solid_named('solid_one'), Solid)
+
+    solid_one_solid = pipeline_def.solid_named('solid_one')
+
+    assert solid_one_solid.has_input('input_one')
+
+    assert isinstance(solid_one_solid.input_def_named('input_one'), InputDefinition)
+
+    assert len(solid_one_solid.input_defs) == 1
+    assert len(solid_one_solid.output_defs) == 1
+
+    assert str(solid_one_solid.input_handle('input_one')) == (
+        'SolidInputHandle(definition_name="\'solid_one\'", input_name="\'input_one\'", '
+        'solid_name="\'solid_one\'")'
+    )
+
+    assert repr(solid_one_solid.input_handle('input_one')) == (
+        'SolidInputHandle(definition_name="\'solid_one\'", input_name="\'input_one\'", '
+        'solid_name="\'solid_one\'")'
+    )
+
+    assert str(solid_one_solid.output_handle('result')) == (
+        'SolidOutputHandle(definition_name="\'solid_one\'", output_name="\'result\'", '
+        'solid_name="\'solid_one\'")'
+    )
+
+    assert repr(solid_one_solid.output_handle('result')) == (
+        'SolidOutputHandle(definition_name="\'solid_one\'", output_name="\'result\'", '
+        'solid_name="\'solid_one\'")'
+    )
+
+    assert solid_one_solid.output_handle('result') == SolidOutputHandle(
+        solid_one_solid, solid_one_solid.output_defs[0]
+    )
+
+    assert len(pipeline_def.dependency_structure.deps_of_solid_with_input('solid_one')) == 1
+
+    assert len(pipeline_def.dependency_structure.depended_by_of_solid('produce_string')) == 1
+
+    assert len(pipeline_def.dependency_structure.input_handles()) == 1
+
+    assert len(pipeline_def.dependency_structure.items()) == 1
 
 
 def test_pipeline_types():
@@ -78,3 +144,7 @@ def test_mapper_errors():
         str(excinfo_2.value)
         == 'Solid solid_b (aliased by solid_c in dependency dictionary) not found in solid list'
     )
+
+
+def test_materialization():
+    assert isinstance(Materialization('foo', 'foo.txt'), Materialization)

@@ -60,12 +60,11 @@ def test_indent_printer():
     printer.line('test')
     with printer.with_indent():
         printer.line('test indent')
+    with printer.with_indent('bop'):
+        printer.line('another')
+        printer.line('yet')
 
-    assert (
-        printer.result()
-        == '''test
-  test indent'''
-    )
+    assert printer.result() == ('test\n' '  test indent\n' 'bop\n' '  another\n' '  yet')
 
 
 def test_parameterized_indent():

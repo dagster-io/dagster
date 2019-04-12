@@ -1,6 +1,8 @@
 '''Internal py2/3 compatibility library. A little more than six.'''
 
+import os
 import sys
+import time
 
 from .json import dump, dumps, JSONDecodeError
 from .temp_dir import get_system_temp_directory
@@ -71,3 +73,11 @@ def is_ascii(str_):
             return False
     else:
         return str_.isascii()
+
+
+if sys.version_info.major >= 3 and sys.version_info.minor >= 3:
+    time_fn = time.perf_counter
+elif os.name == 'nt':
+    time_fn = time.clock
+else:
+    time_fn = time.time

@@ -375,8 +375,6 @@ def _check_two_dim_key_value_types(obj, key_type, param_name, value_type):
     _check_key_value_types(obj, key_type, dict)  # check level one
 
     for level_two_dict in obj.values():
-        if not isinstance(level_two_dict, dict):
-            raise_with_traceback(_param_type_mismatch_exception(obj, dict, param_name))
         _check_key_value_types(level_two_dict, key_type, value_type)  # check level two
 
     return obj
@@ -473,7 +471,7 @@ def list_elem(ddict, key):
     dict_param(ddict, 'ddict')
     str_param(key, 'key')
 
-    value = ddict[key]
+    value = ddict.get(key)
     if not isinstance(value, list):
         raise_with_traceback(_element_check_error(key, value, ddict, list))
     return value

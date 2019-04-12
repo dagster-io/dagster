@@ -11,9 +11,9 @@ from dagster import PipelineDefinition, check
 from dagster.core.definitions import Solid
 from dagster.core.execution import execute_pipeline
 from dagster.core.execution_plan.create import solids_in_topological_order
-from dagster.graphviz import build_graphviz_graph
 from dagster.utils import load_yaml_from_glob_list
 from dagster.utils.indenting_printer import IndentingPrinter
+from dagster.visualize import build_graphviz_graph
 
 from .config_scaffolder import scaffold_pipeline_config
 

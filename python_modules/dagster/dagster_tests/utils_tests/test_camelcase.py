@@ -6,3 +6,4 @@ def test_camelcase():
     assert camelcase('foo_bar') == 'FooBar'
     assert camelcase('foo.bar') == 'FooBar'
     assert camelcase('foo-bar') == 'FooBar'
+    assert camelcase('') == ''
