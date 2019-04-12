@@ -327,10 +327,10 @@ def execute_execute_command_with_preset(preset, raise_on_error, cli_args):
 
     repository = load_repository_from_target_info(repository_target_info)
     return execute_pipeline(
-        **repository.get_preset_pipeline(pipeline_target.pipeline_name, preset),
         run_config=RunConfig(
             executor_config=InProcessExecutorConfig(throw_on_user_error=raise_on_error)
-        )
+        ),
+        **repository.get_preset_pipeline(pipeline_target.pipeline_name, preset),
     )
 
 

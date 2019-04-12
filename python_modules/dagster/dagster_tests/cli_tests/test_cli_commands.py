@@ -222,14 +222,11 @@ def test_print_command():
 
 def test_execute_command():
     for cli_args in valid_execute_args():
-        execute_execute_command(env=None, raise_on_error=True, cli_args=cli_args, print_fn=no_print)
+        execute_execute_command(env=None, raise_on_error=True, cli_args=cli_args)
 
     for cli_args in valid_execute_args():
         execute_execute_command(
-            env=[script_relative_path('env.yml')],
-            raise_on_error=True,
-            cli_args=cli_args,
-            print_fn=no_print,
+            env=[script_relative_path('env.yml')], raise_on_error=True, cli_args=cli_args
         )
 
     runner = CliRunner()
@@ -270,9 +267,7 @@ def test_default_memory_run_storage():
         'module_name': None,
         'fn_name': None,
     }
-    result = execute_execute_command(
-        env=None, raise_on_error=True, cli_args=cli_args, print_fn=no_print
-    )
+    result = execute_execute_command(env=None, raise_on_error=True, cli_args=cli_args)
     assert result.success
 
     run_dir = os.path.join(base_run_directory(), result.run_id)
@@ -289,10 +284,7 @@ def test_override_with_in_memory_storage():
         'fn_name': None,
     }
     result = execute_execute_command(
-        env=[script_relative_path('in_memory_env.yml')],
-        raise_on_error=True,
-        cli_args=cli_args,
-        print_fn=no_print,
+        env=[script_relative_path('in_memory_env.yml')], raise_on_error=True, cli_args=cli_args
     )
     assert result.success
 
@@ -310,10 +302,7 @@ def test_override_with_filesystem_storage():
         'fn_name': None,
     }
     result = execute_execute_command(
-        env=[script_relative_path('filesystem_env.yml')],
-        raise_on_error=True,
-        cli_args=cli_args,
-        print_fn=no_print,
+        env=[script_relative_path('filesystem_env.yml')], raise_on_error=True, cli_args=cli_args
     )
     assert result.success
 

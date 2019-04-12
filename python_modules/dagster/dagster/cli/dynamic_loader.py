@@ -201,14 +201,14 @@ def perform_load(entry):
 
 
 def entrypoint_from_file_target(python_file, fn_name, kwargs=None):
-    check.opt_dict_param(kwargs, 'kwargs')
+    kwargs = check.opt_dict_param(kwargs, 'kwargs')
     module_name = os.path.splitext(os.path.basename(python_file))[0]
     module = imp.load_source(module_name, python_file)
     return LoaderEntrypoint(module, module_name, fn_name, kwargs)
 
 
 def entrypoint_from_module_target(module_name, fn_name, kwargs=None):
-    check.opt_dict_param(kwargs, 'kwargs')
+    kwargs = check.opt_dict_param(kwargs, 'kwargs')
     module = importlib.import_module(module_name)
     return LoaderEntrypoint(module, module_name, fn_name, kwargs)
 
