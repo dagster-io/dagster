@@ -8,4 +8,4 @@ repository:
         presets:
           passing:
             environment_files:
-              - environments/*.yml
+              - environments/error.yml

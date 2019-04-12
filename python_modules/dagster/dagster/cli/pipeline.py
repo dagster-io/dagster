@@ -85,7 +85,7 @@ def format_description(desc, indent):
     return filled
 
 
-def create_pipeline_from_cli_args(kwargs):
+def load_pipeline_target_from_cli_args(kwargs):
     check.dict_param(kwargs, 'kwargs')
 
     pipeline_names = list(kwargs['pipeline_name'])
@@ -111,15 +111,17 @@ def create_pipeline_from_cli_args(kwargs):
     else:
         repository_yaml = kwargs['repository_yaml']
 
-    return load_pipeline_from_target_info(
-        PipelineTargetInfo(
-            repository_yaml=repository_yaml,
-            pipeline_name=pipeline_name,
-            python_file=kwargs['python_file'],
-            module_name=kwargs['module_name'],
-            fn_name=kwargs['fn_name'],
-        )
+    return PipelineTargetInfo(
+        repository_yaml=repository_yaml,
+        pipeline_name=pipeline_name,
+        python_file=kwargs['python_file'],
+        module_name=kwargs['module_name'],
+        fn_name=kwargs['fn_name'],
     )
+
+
+def create_pipeline_from_cli_args(kwargs):
+    return load_pipeline_from_target_info(load_pipeline_target_from_cli_args(kwargs))
 
 
 def get_pipeline_instructions(command_name):
@@ -129,8 +131,8 @@ def get_pipeline_instructions(command_name):
         '\n\n2. dagster {command_name} <<pipeline_name>> -y path/to/repository.yml'
         '\n\n3. dagster {command_name} -f /path/to/file.py -n define_some_pipeline'
         '\n\n4. dagster {command_name} -m a_module.submodule  -n define_some_pipeline'
-        '\n\n5. dagster {command_name} -f /path/to/file.py -n define_some_repo -p pipeline_name'
-        '\n\n6. dagster {command_name} -m a_module.submodule -n define_some_repo -p pipeline_name'
+        '\n\n5. dagster {command_name} -f /path/to/file.py -n define_some_repo <<pipeline_name>>'
+        '\n\n6. dagster {command_name} -m a_module.submodule -n define_some_repo <<pipeline_name>>'
     ).format(command_name=command_name)
 
 
@@ -293,8 +295,23 @@ LOGGING_DICT = {
     ),
 )
 @click.option('--raise-on-error/--no-raise-on-error', default=True)
+@click.option(
+    '-p',
+    '--preset',
+    type=click.STRING,
+    help=(
+        'Specify a preset to use for this pipeline. Presets are defined on the repo_config '
+        'on RepositoryDefinition, typically managed under the config key in repository.yml.'
+    ),
+)
 def pipeline_execute_command(env, raise_on_error, **kwargs):
     check.invariant(isinstance(env, tuple))
+
+    if preset:
+        if env:
+            raise click.UsageError('Can not use --preset with --env.')
+        return execute_execute_command_with_preset(preset, kwargs, click.echo)
+
     env = list(env)
     execute_execute_command(env, raise_on_error, kwargs, click.echo)
 
@@ -305,6 +322,20 @@ def execute_execute_command(env, raise_on_error, cli_args, print_fn):
 
 
 from dagster import RunConfig, InProcessExecutorConfig
+
+
+def execute_execute_command_with_preset(preset, raise_on_error, cli_args, print_fn):
+    pipeline_target = load_pipeline_target_from_cli_args(cli_args)
+    cli_args.pop('pipeline_name')
+    repository_target_info = load_target_info_from_cli_args(cli_args)
+
+    repository = load_repository_from_target_info(repository_target_info)
+    return execute_pipeline(
+        **repository.get_preset_pipeline(pipeline_target.pipeline_name, preset),
+        run_config=RunConfig(
+            executor_config=InProcessExecutorConfig(throw_on_user_error=raise_on_error)
+        )
+    )
 
 
 def do_execute_command(pipeline, env_file_list, raise_on_error, printer):
