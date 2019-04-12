@@ -200,16 +200,16 @@ def perform_load(entry):
     return fn(**entry.kwargs)
 
 
-def entrypoint_from_file_target(python_file, fn_name, repo_config=None):
+def entrypoint_from_file_target(python_file, fn_name, kwargs=None):
+    check.opt_dict_param(kwargs, 'kwargs')
     module_name = os.path.splitext(os.path.basename(python_file))[0]
     module = imp.load_source(module_name, python_file)
-    kwargs = {'repo_config': repo_config} if repo_config else {}
     return LoaderEntrypoint(module, module_name, fn_name, kwargs)
 
 
-def entrypoint_from_module_target(module_name, fn_name, repo_config=None):
+def entrypoint_from_module_target(module_name, fn_name, kwargs=None):
+    check.opt_dict_param(kwargs, 'kwargs')
     module = importlib.import_module(module_name)
-    kwargs = {'repo_config': repo_config} if repo_config else {}
     return LoaderEntrypoint(module, module_name, fn_name, kwargs)
 
 
@@ -251,14 +251,14 @@ def entrypoint_from_yaml(file_path):
     module_name = check.opt_str_elem(repository_config, 'module')
     file_name = check.opt_str_elem(repository_config, 'file')
     fn_name = check.str_elem(repository_config, 'fn')
-    repo_config = check.opt_dict_elem(repository_config, 'config')
+    kwargs = check.opt_dict_elem(repository_config, 'kwargs')
 
     if module_name:
-        return entrypoint_from_module_target(module_name, fn_name, repo_config)
+        return entrypoint_from_module_target(module_name, fn_name, kwargs)
     else:
         # rebase file in config off of the path in the config file
         file_name = os.path.join(os.path.dirname(os.path.abspath(file_path)), file_name)
-        return entrypoint_from_file_target(file_name, fn_name, repo_config)
+        return entrypoint_from_file_target(file_name, fn_name, kwargs)
 
 
 def apply_click_params(command, *click_params):
