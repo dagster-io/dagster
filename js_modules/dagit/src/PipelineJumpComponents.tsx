@@ -126,6 +126,7 @@ export class PipelineJumpBar extends React.Component<IPipelineJumpBarProps> {
           onItemSelect={onItemSelect}
         >
           <Button
+            style={{ minWidth: 230, justifyContent: "space-between" }}
             text={
               selectedPipeline ? selectedPipeline.name : "Select a Pipeline..."
             }

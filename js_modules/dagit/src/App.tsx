@@ -14,7 +14,10 @@ import PipelineRunsRoot from "./runs/PipelineRunsRoot";
 import PipelineExplorerRoot from "./PipelineExplorerRoot";
 import { NonIdealState } from "@blueprintjs/core";
 
-function extractData(result: RootPipelinesQuery) {
+function extractData(result?: RootPipelinesQuery) {
+  if (!result || !result.pipelinesOrError) {
+    return { pipelines: [], error: null };
+  }
   if (result.pipelinesOrError.__typename === "PipelineConnection") {
     return { pipelines: result.pipelinesOrError.nodes, error: null };
   } else {
@@ -51,30 +54,26 @@ export default class App extends React.Component {
     return (
       <BrowserRouter>
         <Query query={ROOT_PIPELINES_QUERY} fetchPolicy="cache-and-network">
-          {(queryResult: QueryResult<RootPipelinesQuery, any>) => (
-            <Loading queryResult={queryResult}>
-              {result => {
-                const { pipelines, error } = extractData(result);
-                return (
-                  <>
-                    <TopNav pipelines={pipelines} />
-                    {error ? (
-                      <PythonErrorInfo
-                        contextMsg={`${
-                          error.__typename
-                        } encountered when loading pipelines:`}
-                        error={error}
-                        centered={true}
-                      />
-                    ) : (
-                      <AppRoutes />
-                    )}
-                    <CustomAlertProvider />
-                  </>
-                );
-              }}
-            </Loading>
-          )}
+          {(queryResult: QueryResult<RootPipelinesQuery, any>) => {
+            const { pipelines, error } = extractData(queryResult.data);
+            return (
+              <>
+                <TopNav pipelines={pipelines} />
+                {error ? (
+                  <PythonErrorInfo
+                    contextMsg={`${
+                      error.__typename
+                    } encountered when loading pipelines:`}
+                    error={error}
+                    centered={true}
+                  />
+                ) : (
+                  <AppRoutes />
+                )}
+                <CustomAlertProvider />
+              </>
+            );
+          }}
         </Query>
       </BrowserRouter>
     );

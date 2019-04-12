@@ -2,7 +2,7 @@
 /* eslint-disable */
 // This file was automatically generated and should not be edited.
 
-import { LogLevel, StepKind } from "./../../types/globalTypes";
+import { PipelineRunStatus, LogLevel, StepKind } from "./../../types/globalTypes";
 
 // ====================================================
 // GraphQL fragment: PipelineRunFragment
@@ -11,6 +11,11 @@ import { LogLevel, StepKind } from "./../../types/globalTypes";
 export interface PipelineRunFragment_pipeline {
   __typename: "Pipeline";
   name: string;
+}
+
+export interface PipelineRunFragment_logs_pageInfo {
+  __typename: "PageInfo";
+  lastCursor: any | null;
 }
 
 export interface PipelineRunFragment_logs_nodes_LogMessageEvent_step {
@@ -99,6 +104,7 @@ export type PipelineRunFragment_logs_nodes = PipelineRunFragment_logs_nodes_LogM
 
 export interface PipelineRunFragment_logs {
   __typename: "LogMessageConnection";
+  pageInfo: PipelineRunFragment_logs_pageInfo;
   nodes: PipelineRunFragment_logs_nodes[];
 }
 
@@ -145,9 +151,10 @@ export interface PipelineRunFragment_executionPlan {
 
 export interface PipelineRunFragment {
   __typename: "PipelineRun";
-  config: string;
   runId: string;
+  status: PipelineRunStatus;
   pipeline: PipelineRunFragment_pipeline;
   logs: PipelineRunFragment_logs;
+  config: string;
   executionPlan: PipelineRunFragment_executionPlan;
 }

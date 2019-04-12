@@ -13,6 +13,11 @@ export interface PipelineRunLogsUpdateFragment_pipeline {
   name: string;
 }
 
+export interface PipelineRunLogsUpdateFragment_logs_pageInfo {
+  __typename: "PageInfo";
+  lastCursor: any | null;
+}
+
 export interface PipelineRunLogsUpdateFragment_logs_nodes_LogMessageEvent_step {
   __typename: "ExecutionStep";
   name: string;
@@ -99,6 +104,7 @@ export type PipelineRunLogsUpdateFragment_logs_nodes = PipelineRunLogsUpdateFrag
 
 export interface PipelineRunLogsUpdateFragment_logs {
   __typename: "LogMessageConnection";
+  pageInfo: PipelineRunLogsUpdateFragment_logs_pageInfo;
   nodes: PipelineRunLogsUpdateFragment_logs_nodes[];
 }
 
@@ -147,8 +153,8 @@ export interface PipelineRunLogsUpdateFragment {
   __typename: "PipelineRun";
   runId: string;
   status: PipelineRunStatus;
-  config: string;
   pipeline: PipelineRunLogsUpdateFragment_pipeline;
   logs: PipelineRunLogsUpdateFragment_logs;
+  config: string;
   executionPlan: PipelineRunLogsUpdateFragment_executionPlan;
 }

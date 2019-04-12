@@ -12,6 +12,11 @@ export interface PipelineRunRootQuery_pipelineRunOrError_PipelineRunNotFoundErro
   __typename: "PipelineRunNotFoundError";
 }
 
+export interface PipelineRunRootQuery_pipelineRunOrError_PipelineRun_pipeline {
+  __typename: "Pipeline";
+  name: string;
+}
+
 export interface PipelineRunRootQuery_pipelineRunOrError_PipelineRun_logs_pageInfo {
   __typename: "PageInfo";
   lastCursor: any | null;
@@ -107,11 +112,6 @@ export interface PipelineRunRootQuery_pipelineRunOrError_PipelineRun_logs {
   nodes: PipelineRunRootQuery_pipelineRunOrError_PipelineRun_logs_nodes[];
 }
 
-export interface PipelineRunRootQuery_pipelineRunOrError_PipelineRun_pipeline {
-  __typename: "Pipeline";
-  name: string;
-}
-
 export interface PipelineRunRootQuery_pipelineRunOrError_PipelineRun_executionPlan_steps_solid {
   __typename: "Solid";
   name: string;
@@ -157,9 +157,9 @@ export interface PipelineRunRootQuery_pipelineRunOrError_PipelineRun {
   __typename: "PipelineRun";
   runId: string;
   status: PipelineRunStatus;
+  pipeline: PipelineRunRootQuery_pipelineRunOrError_PipelineRun_pipeline;
   logs: PipelineRunRootQuery_pipelineRunOrError_PipelineRun_logs;
   config: string;
-  pipeline: PipelineRunRootQuery_pipelineRunOrError_PipelineRun_pipeline;
   executionPlan: PipelineRunRootQuery_pipelineRunOrError_PipelineRun_executionPlan;
 }
 
