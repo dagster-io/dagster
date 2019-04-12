@@ -58,26 +58,25 @@ def test_solid_def():
     assert len(solid_one_solid.input_defs) == 1
     assert len(solid_one_solid.output_defs) == 1
 
-    # These aren't python version independent because dict orders are different
-    # assert str(solid_one_solid.input_handle('input_one')) == (
-    #     'SolidInputHandle(solid_name="\'solid_one\'", definition_name="\'solid_one\'", '
-    #     'input_name="\'input_one\'")'
-    # )
+    assert str(solid_one_solid.input_handle('input_one')) == (
+        'SolidInputHandle(definition_name="\'solid_one\'", input_name="\'input_one\'", '
+        'solid_name="\'solid_one\'")'
+    )
 
-    # assert repr(solid_one_solid.input_handle('input_one')) == (
-    #     'SolidInputHandle(solid_name="\'solid_one\'", definition_name="\'solid_one\'", '
-    #     'input_name="\'input_one\'")'
-    # )
+    assert repr(solid_one_solid.input_handle('input_one')) == (
+        'SolidInputHandle(definition_name="\'solid_one\'", input_name="\'input_one\'", '
+        'solid_name="\'solid_one\'")'
+    )
 
-    # assert str(solid_one_solid.output_handle('result')) == (
-    #     'SolidOutputHandle(solid_name="\'solid_one\'", definition_name="\'solid_one\'", '
-    #     'output_name="\'result\'")'
-    # )
+    assert str(solid_one_solid.output_handle('result')) == (
+        'SolidOutputHandle(definition_name="\'solid_one\'", output_name="\'result\'", '
+        'solid_name="\'solid_one\'")'
+    )
 
-    # assert repr(solid_one_solid.output_handle('result')) == (
-    #     'SolidOutputHandle(solid_name="\'solid_one\'", definition_name="\'solid_one\'", '
-    #     'output_name="\'result\'")'
-    # )
+    assert repr(solid_one_solid.output_handle('result')) == (
+        'SolidOutputHandle(definition_name="\'solid_one\'", output_name="\'result\'", '
+        'solid_name="\'solid_one\'")'
+    )
 
     assert solid_one_solid.output_handle('result') == SolidOutputHandle(
         solid_one_solid, solid_one_solid.output_defs[0]

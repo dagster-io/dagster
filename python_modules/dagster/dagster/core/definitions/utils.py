@@ -50,5 +50,6 @@ def _kv_str(key, value):
 
 
 def struct_to_string(name, **kwargs):
-    props_str = ', '.join([_kv_str(key, value) for key, value in kwargs.items()])
+    # Sort the kwargs to ensure consistent representations across Python versions
+    props_str = ', '.join([_kv_str(key, value) for key, value in sorted(kwargs.items())])
     return '{name}({props_str})'.format(name=name, props_str=props_str)
