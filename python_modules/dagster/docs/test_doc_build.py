@@ -49,6 +49,12 @@ def test_build_all_docs(snapshot):
                     ),
                 )
                 for dirpath, dirnames, filenames in os.walk('.')
+                # Omit the built source files and autodocs from snapshot testing to avoid test
+                # failure fatigue
+                if (
+                    not dirpath.startswith('./html/_modules/dagster')
+                    and not dirpath.startswith('./html/_sources/sections/api')
+                )
             ],
             key=lambda x: x[0],
         )
@@ -57,7 +63,13 @@ def test_build_all_docs(snapshot):
         if sys.version_info[0] < 3:
             return
 
-        for dirpath, dirnames, filenames in walked:
+        for dirpath, _dirnames, filenames in walked:
+            # Omit the built source files and autodocs from snapshot testing to avoid test
+            # failure fatigue
+            if os.path.join(*dirpath).startswith('./html/modules/dagster') or os.path.join(
+                *dirpath
+            ).startswith('./html/_sources/sections/api'):
+                continue
             for filename in filenames:
                 if any((re.match(pattern, filename) for pattern in IGNORE_FILES)):
                     continue
