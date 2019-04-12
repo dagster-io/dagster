@@ -61,7 +61,7 @@ def decorate_with_output_materializations(
         new_steps.append(
             ExecutionStep(
                 pipeline_name=pipeline_def.name,
-                key='{solid}.{output}.materialization.{mat_count}'.format(
+                key='{solid}.{output}.materialize.{mat_count}'.format(
                     solid=solid.name, output=output_def.name, mat_count=mat_count
                 ),
                 step_inputs=[
@@ -88,7 +88,7 @@ def decorate_with_output_materializations(
     return create_joining_subplan(
         pipeline_def,
         solid,
-        '{solid}.{output}.materialization.join'.format(solid=solid.name, output=output_def.name),
+        '{solid}.{output}.materialize.join'.format(solid=solid.name, output=output_def.name),
         new_steps,
         MATERIALIZATION_THUNK_OUTPUT,
     )
