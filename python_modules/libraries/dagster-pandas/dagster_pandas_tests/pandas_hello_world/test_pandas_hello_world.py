@@ -58,7 +58,6 @@ def test_cli_execute():
                 script_relative_path('../../dagster_pandas/examples/pandas_hello_world/*.yml')
             ],
             raise_on_error=True,
-            printer=lambda *_args, **_kwargs: None,
         )
     finally:
         # restore cwd
@@ -81,7 +80,6 @@ def test_cli_execute_failure():
                     script_relative_path('../../dagster_pandas/examples/pandas_hello_world/*.yml')
                 ],
                 raise_on_error=True,
-                printer=lambda *_args, **_kwargs: None,
             )
         finally:
             # restore cwd
