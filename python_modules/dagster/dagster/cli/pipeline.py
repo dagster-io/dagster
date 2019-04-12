@@ -330,7 +330,7 @@ def execute_execute_command_with_preset(preset, raise_on_error, cli_args):
         run_config=RunConfig(
             executor_config=InProcessExecutorConfig(throw_on_user_error=raise_on_error)
         ),
-        **(repository.get_preset_pipeline(pipeline_target.pipeline_name, preset)),
+        **(repository.get_preset_pipeline(pipeline_target.pipeline_name, preset))
     )
 
 
