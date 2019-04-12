@@ -122,7 +122,7 @@ export class ExecutionPlanBox extends React.Component<
                 />
               )}
             </ExeuctionStateWrap>
-            <ExecutionPlanBoxName>{name}</ExecutionPlanBoxName>
+            <ExecutionPlanBoxName title={name}>{name}</ExecutionPlanBoxName>
             {elapsed !== undefined && <ExecutionTime elapsed={elapsed} />}
           </ExecutionPlanBoxContainer>
           {onReexecuteStep &&
@@ -191,7 +191,7 @@ const ExecutionTime = ({ elapsed }: { elapsed: number }) => {
 const ReExecuteContainer = styled.div`
   display: inline-block;
   border: 1px solid white;
-  margin-left: 5px;
+  margin: 0 5px 0 3px;
   border-radius: 13px;
   width: 19px;
   height: 19px;
@@ -206,6 +206,8 @@ const ExecutionTimeContainer = styled.div`
 
 const ExecutionPlanBoxName = styled.div`
   font-weight: 500;
+  text-overflow: ellipsis;
+  overflow: hidden;
 `;
 
 const ExecutionFinishedFlash = styled.div<{ success: boolean }>`
