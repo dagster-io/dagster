@@ -10,23 +10,28 @@ import LogsFilterProvider, {
 import LogsScrollingTable from "./LogsScrollingTable";
 import {
   PipelineRunFragment,
-  PipelineRunFragment_logs_nodes_ExecutionStepFailureEvent
+  PipelineRunFragment_logs_nodes_ExecutionStepFailureEvent,
+  PipelineRunFragment_executionPlan
 } from "./types/PipelineRunFragment";
 import { PanelDivider } from "../PanelDivider";
 import PythonErrorInfo from "../PythonErrorInfo";
 import ExecutionPlan from "../ExecutionPlan";
 import RunMetadataProvider from "../RunMetadataProvider";
 import LogsToolbar from "./LogsToolbar";
-import { Mutation, MutationFn } from "react-apollo";
+import { Mutation, MutationFn, ApolloConsumer } from "react-apollo";
 import {
   HANDLE_START_EXECUTION_FRAGMENT,
   handleStartExecutionResult
 } from "./RunUtils";
 import { ReexecuteStep, ReexecuteStepVariables } from "./types/ReexecuteStep";
 import { ReexecutionConfig } from "src/types/globalTypes";
+import RunSubscriptionProvider from "./RunSubscriptionProvider";
+import { RunStatusToPageAttributes } from "./RunStatusToPageAttributes";
+import ApolloClient from "apollo-client";
 
 interface IPipelineRunProps {
-  run: PipelineRunFragment;
+  client: ApolloClient<any>;
+  run?: PipelineRunFragment;
 }
 
 interface IPipelineRunState {
@@ -42,6 +47,9 @@ export class PipelineRun extends React.Component<
   static fragments = {
     PipelineRunFragment: gql`
       fragment PipelineRunFragment on PipelineRun {
+        ...RunStatusPipelineRunFragment
+        ...RunSubscriptionPipelineRunFragment
+
         config
         runId
         pipeline {
@@ -82,10 +90,12 @@ export class PipelineRun extends React.Component<
         }
       }
 
-      ${RunMetadataProvider.fragments.RunMetadataProviderMessageFragment}
       ${ExecutionPlan.fragments.ExecutionPlanFragment}
       ${LogsFilterProvider.fragments.LogsFilterProviderMessageFragment}
       ${LogsScrollingTable.fragments.LogsScrollingTableMessageFragment}
+      ${RunStatusToPageAttributes.fragments.RunStatusPipelineRunFragment}
+      ${RunMetadataProvider.fragments.RunMetadataProviderMessageFragment}
+      ${RunSubscriptionProvider.fragments.RunSubscriptionPipelineRunFragment}
     `,
     PipelineRunPipelineRunEventFragment: gql`
       fragment PipelineRunPipelineRunEventFragment on PipelineRunEvent {
@@ -107,7 +117,10 @@ export class PipelineRun extends React.Component<
   };
 
   onShowStateDetails = (step: string) => {
-    const errorNode = this.props.run.logs.nodes.find(
+    const { run } = this.props;
+    if (!run) return;
+
+    const errorNode = run.logs.nodes.find(
       node =>
         node.__typename === "ExecutionStepFailureEvent" &&
         node.step != null &&
@@ -124,7 +137,7 @@ export class PipelineRun extends React.Component<
     stepName: string
   ) => {
     const { run } = this.props;
-
+    if (!run) return;
     const step = run.executionPlan.steps.find(s => s.key === stepName);
     if (!step) return;
 
@@ -155,13 +168,21 @@ export class PipelineRun extends React.Component<
   };
 
   render() {
+    const { client, run } = this.props;
     const { logsFilter, logsVW, highlightedError } = this.state;
-    const { logs } = this.props.run;
+
+    const logs = run ? run.logs.nodes : undefined;
+    const executionPlan: PipelineRunFragment_executionPlan = run
+      ? run.executionPlan
+      : { __typename: "ExecutionPlan", steps: [] };
 
     return (
       <PipelineRunWrapper>
+        {run && <RunSubscriptionProvider client={client} run={run} />}
+        {run && <RunStatusToPageAttributes run={run} />}
+
         <LogsContainer style={{ width: `${logsVW}vw` }}>
-          <LogsFilterProvider filter={logsFilter} nodes={logs.nodes}>
+          <LogsFilterProvider filter={logsFilter} nodes={logs}>
             {({ filteredNodes, busy }) => (
               <>
                 <LogsToolbar
@@ -183,11 +204,11 @@ export class PipelineRun extends React.Component<
           mutation={REEXECUTE_STEP_MUTATION}
         >
           {reexecuteMutation => (
-            <RunMetadataProvider logs={logs.nodes}>
+            <RunMetadataProvider logs={logs || []}>
               {metadata => (
                 <ExecutionPlan
                   runMetadata={metadata}
-                  executionPlan={this.props.run.executionPlan}
+                  executionPlan={executionPlan}
                   onShowStateDetails={this.onShowStateDetails}
                   onReexecuteStep={stepName =>
                     this.onReexecuteStep(reexecuteMutation, stepName)
@@ -249,4 +270,43 @@ const REEXECUTE_STEP_MUTATION = gql`
   }
 
   ${HANDLE_START_EXECUTION_FRAGMENT}
+`;
+
+export const PIPELINE_RUN_LOGS_UPDATE_FRAGMENT = gql`
+  fragment PipelineRunLogsUpdateFragment on PipelineRun {
+    runId
+    status
+    ...PipelineRunFragment
+    logs {
+      nodes {
+        ...PipelineRunPipelineRunEventFragment
+      }
+    }
+  }
+
+  ${PipelineRun.fragments.PipelineRunFragment}
+  ${PipelineRun.fragments.PipelineRunPipelineRunEventFragment}
+`;
+
+export const PIPELINE_RUN_LOGS_SUBSCRIPTION = gql`
+  subscription PipelineRunLogsSubscription($runId: ID!, $after: Cursor) {
+    pipelineRunLogs(runId: $runId, after: $after) {
+      __typename
+      ... on PipelineRunLogsSubscriptionSuccess {
+        messages {
+          ... on MessageEvent {
+            run {
+              runId
+            }
+          }
+          ...PipelineRunPipelineRunEventFragment
+        }
+      }
+      ... on PipelineRunLogsSubscriptionMissingRunIdFailure {
+        missingRunId
+      }
+    }
+  }
+
+  ${PipelineRun.fragments.PipelineRunPipelineRunEventFragment}
 `;

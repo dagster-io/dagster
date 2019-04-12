@@ -4,19 +4,35 @@ import { ApolloClient } from "apollo-client";
 import produce from "immer";
 import { PipelineRunStatus } from "../types/globalTypes";
 
-import { PipelineRun } from "./PipelineRun";
+import {
+  PIPELINE_RUN_LOGS_UPDATE_FRAGMENT,
+  PIPELINE_RUN_LOGS_SUBSCRIPTION
+} from "./PipelineRun";
 import { PipelineRunLogsSubscription } from "./types/PipelineRunLogsSubscription";
 import { PipelineRunLogsUpdateFragment } from "./types/PipelineRunLogsUpdateFragment";
+import { RunSubscriptionPipelineRunFragment } from "./types/RunSubscriptionPipelineRunFragment";
 
 interface IRunSubscriptionProviderProps {
   client: ApolloClient<any>;
-  runId: string;
-  runLogCursor: string;
+  run: RunSubscriptionPipelineRunFragment;
 }
 
 export default class RunSubscriptionProvider extends React.Component<
   IRunSubscriptionProviderProps
 > {
+  static fragments = {
+    RunSubscriptionPipelineRunFragment: gql`
+      fragment RunSubscriptionPipelineRunFragment on PipelineRun {
+        runId
+        logs {
+          pageInfo {
+            lastCursor
+          }
+        }
+      }
+    `
+  };
+
   _subscriptionRunId: string | null = null;
   _subscription: ZenObservable.Subscription;
 
@@ -33,19 +49,25 @@ export default class RunSubscriptionProvider extends React.Component<
   }
 
   subscribeToRun() {
-    if (this._subscriptionRunId === this.props.runId) return;
+    const {
+      runId,
+      logs: {
+        pageInfo: { lastCursor }
+      }
+    } = this.props.run;
 
+    if (this._subscriptionRunId === runId) return;
     if (this._subscription) this._subscription.unsubscribe();
 
     const observable = this.props.client.subscribe({
       query: PIPELINE_RUN_LOGS_SUBSCRIPTION,
       variables: {
-        runId: this.props.runId,
-        after: this.props.runLogCursor
+        runId: runId,
+        after: lastCursor
       }
     });
 
-    this._subscriptionRunId = this.props.runId;
+    this._subscriptionRunId = runId;
     this._subscription = observable.subscribe({
       next: msg => {
         this.handleNewMessages(msg.data);
@@ -110,42 +132,3 @@ export default class RunSubscriptionProvider extends React.Component<
     return false;
   }
 }
-
-const PIPELINE_RUN_LOGS_UPDATE_FRAGMENT = gql`
-  fragment PipelineRunLogsUpdateFragment on PipelineRun {
-    runId
-    status
-    ...PipelineRunFragment
-    logs {
-      nodes {
-        ...PipelineRunPipelineRunEventFragment
-      }
-    }
-  }
-
-  ${PipelineRun.fragments.PipelineRunFragment}
-  ${PipelineRun.fragments.PipelineRunPipelineRunEventFragment}
-`;
-
-const PIPELINE_RUN_LOGS_SUBSCRIPTION = gql`
-  subscription PipelineRunLogsSubscription($runId: ID!, $after: Cursor) {
-    pipelineRunLogs(runId: $runId, after: $after) {
-      __typename
-      ... on PipelineRunLogsSubscriptionSuccess {
-        messages {
-          ... on MessageEvent {
-            run {
-              runId
-            }
-          }
-          ...PipelineRunPipelineRunEventFragment
-        }
-      }
-      ... on PipelineRunLogsSubscriptionMissingRunIdFailure {
-        missingRunId
-      }
-    }
-  }
-
-  ${PipelineRun.fragments.PipelineRunPipelineRunEventFragment}
-`;
