@@ -16,7 +16,7 @@ import { IconNames } from "@blueprintjs/icons";
 import { showCustomAlert } from "../CustomAlertProvider";
 
 interface ILogsScrollingTableProps {
-  nodes: LogsScrollingTableMessageFragment[];
+  nodes?: LogsScrollingTableMessageFragment[];
 }
 
 interface ILogsScrollingTableSizedProps extends ILogsScrollingTableProps {
@@ -106,7 +106,7 @@ class LogsScrollingTableSized extends React.Component<
     defaultHeight: 30,
     fixedWidth: true,
     keyMapper: (rowIndex: number, columnIndex: number) =>
-      `${this.props.nodes[rowIndex].message}:${columnIndex}`
+      `${this.props.nodes && this.props.nodes[rowIndex].message}:${columnIndex}`
   });
 
   isAtBottomOrZero: boolean = true;
@@ -177,6 +177,8 @@ class LogsScrollingTableSized extends React.Component<
     key,
     style
   }: GridCellProps) => {
+    if (!this.props.nodes) return;
+
     const node = this.props.nodes[rowIndex];
     const width = this.columnWidth({ index: columnIndex });
 
@@ -217,9 +219,12 @@ class LogsScrollingTableSized extends React.Component<
   };
 
   noContentRenderer = () => {
-    return (
-      <NonIdealState icon={IconNames.CONSOLE} title="No logs to display" />
-    );
+    if (this.props.nodes) {
+      return (
+        <NonIdealState icon={IconNames.CONSOLE} title="No logs to display" />
+      );
+    }
+    return <span />;
   };
 
   columnWidth = ({ index }: { index: number }) => {
@@ -248,7 +253,7 @@ class LogsScrollingTableSized extends React.Component<
           autoContainerWidth={true}
           deferredMeasurementCache={this.cache}
           rowHeight={this.cache.rowHeight}
-          rowCount={this.props.nodes.length}
+          rowCount={this.props.nodes ? this.props.nodes.length : 0}
           noContentRenderer={this.noContentRenderer}
           overscanColumnCount={0}
           overscanRowCount={20}

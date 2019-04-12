@@ -171,7 +171,7 @@ export class PipelineRun extends React.Component<
     const { client, run } = this.props;
     const { logsFilter, logsVW, highlightedError } = this.state;
 
-    const logs = run ? run.logs.nodes : [];
+    const logs = run ? run.logs.nodes : undefined;
     const executionPlan: PipelineRunFragment_executionPlan = run
       ? run.executionPlan
       : { __typename: "ExecutionPlan", steps: [] };
@@ -204,7 +204,7 @@ export class PipelineRun extends React.Component<
           mutation={REEXECUTE_STEP_MUTATION}
         >
           {reexecuteMutation => (
-            <RunMetadataProvider logs={logs}>
+            <RunMetadataProvider logs={logs || []}>
               {metadata => (
                 <ExecutionPlan
                   runMetadata={metadata}

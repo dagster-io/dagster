@@ -28,12 +28,15 @@ export interface ILogFilter {
 
 interface ILogsFilterProviderProps<T> {
   filter: ILogFilter;
-  nodes: T[];
-  children: (props: { filteredNodes: T[]; busy: boolean }) => React.ReactChild;
+  nodes: T[] | undefined;
+  children: (props: {
+    filteredNodes: T[] | undefined;
+    busy: boolean;
+  }) => React.ReactChild;
 }
 
 interface ILogsFilterProviderState<T> {
-  results: T[];
+  results: T[] | undefined;
 }
 
 export default class LogsFilterProvider<
@@ -77,7 +80,7 @@ export default class LogsFilterProvider<
   runFilter = () => {
     const { nodes, filter } = this.props;
 
-    if (isEqual(filter, DefaultLogFilter)) {
+    if (nodes === undefined || isEqual(filter, DefaultLogFilter)) {
       this.setState({ results: nodes });
       return;
     }
