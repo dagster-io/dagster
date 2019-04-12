@@ -15,7 +15,6 @@ export default class Loading<TData> extends React.Component<
     const { error, data } = this.props.queryResult;
 
     if (!data || Object.keys(data).length === 0) {
-      console.log("here", this, data);
       return (
         <LoadingContainer>
           <LoadingCentering>
