@@ -1,5 +1,5 @@
-click>=6.7
-coloredlogs>=10.0
+click>=5.0
+coloredlogs>=6.1
 contextlib2>=0.5.5
 enum-compat==0.0.2
 # funcsigs pinned for compatibility with existing Airflow installs

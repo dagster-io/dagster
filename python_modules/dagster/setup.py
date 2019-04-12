@@ -60,8 +60,8 @@ def _do_setup(name='dagster'):
             'funcsigs==1.0.0',  # pinned for compatibility with existing Airflow installs
             'contextlib2>=0.5.5',
             # cli
-            'click>=6.7',
-            'coloredlogs>=10.0',
+            'click>=5.0',
+            'coloredlogs==6.1',
             'graphviz>=0.8.3',
             # pyyaml pinned for compatibility with docker-compose
             'pyyaml==4.2b1',
