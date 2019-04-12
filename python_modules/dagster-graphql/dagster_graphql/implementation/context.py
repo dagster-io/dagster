@@ -10,7 +10,7 @@ class DagsterGraphQLContext(object):
         repository_container,
         pipeline_runs,
         execution_manager,
-        throw_on_user_error=False,
+        raise_on_error=False,
         version=None,
     ):
 
@@ -21,5 +21,5 @@ class DagsterGraphQLContext(object):
         self.execution_manager = check.inst_param(
             execution_manager, 'pipeline_execution_manager', PipelineExecutionManager
         )
-        self.throw_on_user_error = check.bool_param(throw_on_user_error, 'throw_on_user_error')
+        self.raise_on_error = check.bool_param(raise_on_error, 'raise_on_error')
         self.version = version

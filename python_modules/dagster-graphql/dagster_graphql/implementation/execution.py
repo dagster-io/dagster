@@ -81,7 +81,7 @@ def start_pipeline_execution(
                 graphene_info.context.repository_container,
                 pipeline.get_dagster_pipeline(),
                 run,
-                throw_on_user_error=graphene_info.context.throw_on_user_error,
+                raise_on_error=graphene_info.context.raise_on_error,
             )
 
             return graphene_info.schema.type_named('StartPipelineExecutionSuccess')(

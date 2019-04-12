@@ -127,7 +127,7 @@ def test_basic_start_pipeline_execution_and_subscribe():
 
 
 def test_subscription_query_error():
-    context = define_context(throw_on_user_error=False)
+    context = define_context(raise_on_error=False)
 
     result = execute_dagster_graphql(
         context,
@@ -182,7 +182,7 @@ def test_subscription_query_error():
 
 
 def test_subscribe_bad_run_id():
-    context = define_context(throw_on_user_error=False)
+    context = define_context(raise_on_error=False)
     run_id = 'nope'
     subscription = execute_dagster_graphql(
         context, parse(SUBSCRIPTION_QUERY), variables={'runId': run_id}

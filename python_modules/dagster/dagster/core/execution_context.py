@@ -24,14 +24,14 @@ class ExecutorConfig:
 
 
 class InProcessExecutorConfig(ExecutorConfig):
-    def __init__(self, throw_on_user_error=True):
-        self.throw_on_user_error = check.bool_param(throw_on_user_error, 'throw_on_user_error')
+    def __init__(self, raise_on_error=True):
+        self.raise_on_error = check.bool_param(raise_on_error, 'raise_on_error')
 
 
 class MultiprocessExecutorConfig(ExecutorConfig):
     def __init__(self, pipeline_fn):
         self.pipeline_fn = check.callable_param(pipeline_fn, 'pipeline_fn')
-        self.throw_on_user_error = False
+        self.raise_on_error = False
 
 
 def make_new_run_id():
@@ -107,7 +107,7 @@ class RunConfig(
 
     @staticmethod
     def nonthrowing_in_process():
-        return RunConfig(executor_config=InProcessExecutorConfig(throw_on_user_error=False))
+        return RunConfig(executor_config=InProcessExecutorConfig(raise_on_error=False))
 
     def with_tags(self, **new_tags):
         new_tags = merge_dicts(self.tags, new_tags)

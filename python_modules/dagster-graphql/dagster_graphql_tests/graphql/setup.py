@@ -54,12 +54,12 @@ def execute_dagster_graphql(context, query, variables=None):
     return result
 
 
-def define_context(throw_on_user_error=True):
+def define_context(raise_on_error=True):
     return DagsterGraphQLContext(
         RepositoryContainer(repository=define_repository()),
         PipelineRunStorage(),
         execution_manager=SynchronousExecutionManager(),
-        throw_on_user_error=throw_on_user_error,
+        raise_on_error=raise_on_error,
     )
 
 

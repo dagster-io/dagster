@@ -30,6 +30,7 @@ milestones in the framework's capability.
 - The ``NoValue`` type now allows dependencies to be constructed between solids that do not have
   data dependencies.
 - Many error messages have been improved.
+- ``throw_on_user_error`` has been renamed to ``raise_on_error`` in all APIs, public and private
 
 **GraphQL**
 
