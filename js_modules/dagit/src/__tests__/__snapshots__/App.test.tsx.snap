@@ -46,6 +46,12 @@ Array [
                 className="bp3-button"
                 onKeyDown={[Function]}
                 onKeyUp={[Function]}
+                style={
+                  Object {
+                    "justifyContent": "space-between",
+                    "minWidth": 230,
+                  }
+                }
                 type="button"
               >
                 <span
@@ -80,24 +86,24 @@ Array [
           className="bp3-navbar-divider"
         />
         <div
-          className="sc-ifAKCX fZwGXo"
+          className="sc-htpNat dMCWdO"
         >
           <a
-            className="sc-EHOje dyRDtw"
+            className="sc-bxivhb cpwKZw"
             href="/pandas_hello_world/explore"
             onClick={[Function]}
           >
             Explore
           </a>
           <a
-            className="sc-EHOje dyRDtw"
+            className="sc-bxivhb cpwKZw"
             href="/pandas_hello_world/execute"
             onClick={[Function]}
           >
             Execute
           </a>
           <a
-            className="sc-EHOje dyRDtw"
+            className="sc-bxivhb cpwKZw"
             href="/pandas_hello_world/runs"
             onClick={[Function]}
           >
@@ -110,7 +116,7 @@ Array [
       className="bp3-navbar-group bp3-align-right"
     >
       <div
-        className="sc-htpNat eBXEsV"
+        className="sc-bdVaJa cgCJAY"
         style={
           Object {
             "background": "#3DCC91",
@@ -119,7 +125,7 @@ Array [
         title="Connecting..."
       />
       <span
-        className="sc-bxivhb cvIdVt"
+        className="sc-bwzfXH bRRDrI"
       />
     </div>
   </div>,
@@ -184,6 +190,12 @@ Array [
                 className="bp3-button"
                 onKeyDown={[Function]}
                 onKeyUp={[Function]}
+                style={
+                  Object {
+                    "justifyContent": "space-between",
+                    "minWidth": 230,
+                  }
+                }
                 type="button"
               >
                 <span
@@ -220,7 +232,7 @@ Array [
       className="bp3-navbar-group bp3-align-right"
     >
       <div
-        className="sc-htpNat eBXEsV"
+        className="sc-bdVaJa cgCJAY"
         style={
           Object {
             "background": "#3DCC91",
@@ -229,7 +241,7 @@ Array [
         title="Connecting..."
       />
       <span
-        className="sc-bxivhb cvIdVt"
+        className="sc-bwzfXH bRRDrI"
       />
     </div>
   </div>,
@@ -294,6 +306,12 @@ Array [
                 className="bp3-button"
                 onKeyDown={[Function]}
                 onKeyUp={[Function]}
+                style={
+                  Object {
+                    "justifyContent": "space-between",
+                    "minWidth": 230,
+                  }
+                }
                 type="button"
               >
                 <span
@@ -328,24 +346,24 @@ Array [
           className="bp3-navbar-divider"
         />
         <div
-          className="sc-ifAKCX fZwGXo"
+          className="sc-htpNat dMCWdO"
         >
           <a
-            className="sc-EHOje dyRDtw"
+            className="sc-bxivhb cpwKZw"
             href="/pandas_hello_world/explore"
             onClick={[Function]}
           >
             Explore
           </a>
           <a
-            className="sc-EHOje dyRDtw"
+            className="sc-bxivhb cpwKZw"
             href="/pandas_hello_world/execute"
             onClick={[Function]}
           >
             Execute
           </a>
           <a
-            className="sc-EHOje dyRDtw"
+            className="sc-bxivhb cpwKZw"
             href="/pandas_hello_world/runs"
             onClick={[Function]}
           >
@@ -358,7 +376,7 @@ Array [
       className="bp3-navbar-group bp3-align-right"
     >
       <div
-        className="sc-htpNat eBXEsV"
+        className="sc-bdVaJa cgCJAY"
         style={
           Object {
             "background": "#3DCC91",
@@ -367,7 +385,7 @@ Array [
         title="Connecting..."
       />
       <span
-        className="sc-bxivhb cvIdVt"
+        className="sc-bwzfXH bRRDrI"
       />
     </div>
   </div>,
@@ -432,6 +450,12 @@ Array [
                 className="bp3-button"
                 onKeyDown={[Function]}
                 onKeyUp={[Function]}
+                style={
+                  Object {
+                    "justifyContent": "space-between",
+                    "minWidth": 230,
+                  }
+                }
                 type="button"
               >
                 <span
@@ -466,24 +490,24 @@ Array [
           className="bp3-navbar-divider"
         />
         <div
-          className="sc-ifAKCX fZwGXo"
+          className="sc-htpNat dMCWdO"
         >
           <a
-            className="sc-EHOje dyRDtw"
+            className="sc-bxivhb cpwKZw"
             href="/pandas_hello_world/explore"
             onClick={[Function]}
           >
             Explore
           </a>
           <a
-            className="sc-EHOje dyRDtw"
+            className="sc-bxivhb cpwKZw"
             href="/pandas_hello_world/execute"
             onClick={[Function]}
           >
             Execute
           </a>
           <a
-            className="sc-EHOje dyRDtw"
+            className="sc-bxivhb cpwKZw"
             href="/pandas_hello_world/runs"
             onClick={[Function]}
           >
@@ -496,7 +520,7 @@ Array [
       className="bp3-navbar-group bp3-align-right"
     >
       <div
-        className="sc-htpNat eBXEsV"
+        className="sc-bdVaJa cgCJAY"
         style={
           Object {
             "background": "#3DCC91",
@@ -505,7 +529,7 @@ Array [
         title="Connecting..."
       />
       <span
-        className="sc-bxivhb cvIdVt"
+        className="sc-bwzfXH bRRDrI"
       />
     </div>
   </div>,
@@ -570,6 +594,12 @@ Array [
                 className="bp3-button"
                 onKeyDown={[Function]}
                 onKeyUp={[Function]}
+                style={
+                  Object {
+                    "justifyContent": "space-between",
+                    "minWidth": 230,
+                  }
+                }
                 type="button"
               >
                 <span
@@ -604,24 +634,24 @@ Array [
           className="bp3-navbar-divider"
         />
         <div
-          className="sc-ifAKCX fZwGXo"
+          className="sc-htpNat dMCWdO"
         >
           <a
-            className="sc-EHOje dyRDtw"
+            className="sc-bxivhb cpwKZw"
             href="/pandas_hello_world/explore"
             onClick={[Function]}
           >
             Explore
           </a>
           <a
-            className="sc-EHOje dyRDtw"
+            className="sc-bxivhb cpwKZw"
             href="/pandas_hello_world/execute"
             onClick={[Function]}
           >
             Execute
           </a>
           <a
-            className="sc-EHOje dyRDtw"
+            className="sc-bxivhb cpwKZw"
             href="/pandas_hello_world/runs"
             onClick={[Function]}
           >
@@ -634,7 +664,7 @@ Array [
       className="bp3-navbar-group bp3-align-right"
     >
       <div
-        className="sc-htpNat eBXEsV"
+        className="sc-bdVaJa cgCJAY"
         style={
           Object {
             "background": "#3DCC91",
@@ -643,7 +673,7 @@ Array [
         title="Connecting..."
       />
       <span
-        className="sc-bxivhb cvIdVt"
+        className="sc-bwzfXH bRRDrI"
       />
     </div>
   </div>,
@@ -708,6 +738,12 @@ Array [
                 className="bp3-button"
                 onKeyDown={[Function]}
                 onKeyUp={[Function]}
+                style={
+                  Object {
+                    "justifyContent": "space-between",
+                    "minWidth": 230,
+                  }
+                }
                 type="button"
               >
                 <span
@@ -744,7 +780,7 @@ Array [
       className="bp3-navbar-group bp3-align-right"
     >
       <div
-        className="sc-htpNat eBXEsV"
+        className="sc-bdVaJa cgCJAY"
         style={
           Object {
             "background": "#3DCC91",
@@ -753,7 +789,7 @@ Array [
         title="Connecting..."
       />
       <span
-        className="sc-bxivhb cvIdVt"
+        className="sc-bwzfXH bRRDrI"
       />
     </div>
   </div>,
