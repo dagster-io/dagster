@@ -10,4 +10,4 @@ graphviz>=0.8.4
 # pyyaml pinned for compatibility with docker-compose
 pyyaml==4.2b1
 six>=1.11.0
-toposort>=1.5
+toposort>=1.0
