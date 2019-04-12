@@ -1,8 +1,9 @@
+import six
+
 from dagster import check
 
-from dagster.core.definitions import Solid, OutputDefinition, PipelineDefinition
-
-from dagster.core.types.runtime import RuntimeType
+from dagster.core.definitions import Solid, OutputDefinition, PipelineDefinition, Materialization
+from dagster.core.errors import DagsterInvariantViolationError
 
 from .objects import (
     ExecutionStep,
@@ -19,16 +20,31 @@ MATERIALIZATION_THUNK_INPUT = 'materialization_thunk_input'
 MATERIALIZATION_THUNK_OUTPUT = 'materialization_thunk_output'
 
 
-def _create_materialization_lambda(runtime_type, config_spec):
-    check.inst_param(runtime_type, 'runtime_type', RuntimeType)
-    check.invariant(runtime_type.output_schema, 'Must have output schema')
+def _create_materialization_lambda(output_def, config_spec):
+    check.inst_param(output_def, 'output_def', OutputDefinition)
+    check.invariant(output_def.runtime_type.output_schema, 'Must have output schema')
 
     def _fn(step_context, inputs):
         runtime_value = inputs[MATERIALIZATION_THUNK_INPUT]
-        runtime_type.output_schema.materialize_runtime_value(
+        path = output_def.runtime_type.output_schema.materialize_runtime_value(
             step_context, config_spec, runtime_value
         )
+
+        if not isinstance(path, six.string_types):
+            raise DagsterInvariantViolationError(
+                (
+                    'materialize_runtime_value on type {type_name} has returned '
+                    'value {value} of type {python_type}. You must return a '
+                    'string (and ideally a valid file path).'
+                ).format(
+                    type_name=output_def.runtime_type.name,
+                    value=repr(path),
+                    python_type=type(path).__name__,
+                )
+            )
+
         yield StepOutputValue(output_name=MATERIALIZATION_THUNK_OUTPUT, value=runtime_value)
+        yield Materialization(name=output_def.name, path=path)
 
     return _fn
 
@@ -80,7 +96,7 @@ def decorate_with_output_materializations(
                 ],
                 kind=StepKind.MATERIALIZATION_THUNK,
                 solid=solid,
-                compute_fn=_create_materialization_lambda(output_def.runtime_type, output_spec),
+                compute_fn=_create_materialization_lambda(output_def, output_spec),
                 # tags=plan_builder.get_tags(),
             )
         )

@@ -45,13 +45,15 @@ def dataframe_output_schema(_context, file_type, file_options, pandas_df):
 
     if file_type == 'csv':
         path = file_options['path']
-        return pandas_df.to_csv(path, index=False, **dict_without_keys(file_options, 'path'))
+        pandas_df.to_csv(path, index=False, **dict_without_keys(file_options, 'path'))
     elif file_type == 'parquet':
-        return pandas_df.to_parquet(file_options['path'])
+        pandas_df.to_parquet(file_options['path'])
     elif file_type == 'table':
-        return pandas_df.to_csv(file_options['path'], sep='\t', index=False)
+        pandas_df.to_csv(file_options['path'], sep='\t', index=False)
     else:
         check.failed('Unsupported file_type {file_type}'.format(file_type=file_type))
+
+    return file_options['path']
 
 
 @input_selector_schema(
