@@ -263,7 +263,10 @@ def _execute_steps_core_loop(step_context, inputs, intermediates_manager):
         _error_check_step_outputs(step_context.step, step_output_iterator)
     ):
         if isinstance(step_output, StepOutputValue):
-            yield _create_step_output_event(step_context, step_output, intermediates_manager)
+            for event in _create_step_output_event(
+                step_context, step_output, intermediates_manager
+            ):
+                yield event
         elif isinstance(step_output, Materialization):
             yield DagsterEvent.step_materialization(
                 step_context, step_output.name, step_output.path
@@ -301,7 +304,11 @@ def _create_step_output_event(step_context, step_output_value, intermediates_man
             value=value,
         )
 
-        return DagsterEvent.step_output_event(
+        yield DagsterEvent.step_materialization(
+            step_context=step_context, name=step_output_value.output_name, path=object_key
+        )
+
+        yield DagsterEvent.step_output_event(
             step_context=step_context,
             step_output_data=StepOutputData(
                 step_output_handle=step_output_handle,

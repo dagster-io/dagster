@@ -174,14 +174,14 @@ def test_successful_one_part_execute_plan(snapshot):
 
     step_events = query_result['stepEvents']
     # 0-2 are sum_solid.num.input_thunk
-    assert step_events[3]['step']['key'] == 'sum_solid.transform'
-    assert step_events[4]['__typename'] == 'ExecutionStepOutputEvent'
-    assert step_events[4]['outputName'] == 'result'
+    assert step_events[4]['step']['key'] == 'sum_solid.transform'
+    assert step_events[6]['__typename'] == 'ExecutionStepOutputEvent'
+    assert step_events[6]['outputName'] == 'result'
     expected_value_repr = '''   num1  num2  sum
 0     1     2    3
 1     3     4    7'''
-    assert step_events[4]['valueRepr'] == expected_value_repr
-    assert step_events[5]['__typename'] == 'ExecutionStepSuccessEvent'
+    assert step_events[6]['valueRepr'] == expected_value_repr
+    assert step_events[7]['__typename'] == 'ExecutionStepSuccessEvent'
 
     snapshot.assert_match(result.data)
 
@@ -227,9 +227,10 @@ def test_successful_two_part_execute_plan(snapshot):
     step_events = query_result['stepEvents']
     assert step_events[0]['__typename'] == 'ExecutionStepStartEvent'
     assert step_events[0]['step']['key'] == 'sum_sq_solid.transform'
-    assert step_events[1]['__typename'] == 'ExecutionStepOutputEvent'
-    assert step_events[1]['outputName'] == 'result'
-    assert step_events[2]['__typename'] == 'ExecutionStepSuccessEvent'
+    assert step_events[1]['__typename'] == 'StepMaterializationEvent'
+    assert step_events[2]['__typename'] == 'ExecutionStepOutputEvent'
+    assert step_events[2]['outputName'] == 'result'
+    assert step_events[3]['__typename'] == 'ExecutionStepSuccessEvent'
 
     snapshot.assert_match(result_two.data)
 

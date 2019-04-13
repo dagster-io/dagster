@@ -5,6 +5,7 @@ import uuid
 from graphql import parse
 
 from dagster.utils import script_relative_path, merge_dicts
+from dagster.core.execution_plan.input_thunk import INPUT_THUNK_OUTPUT
 from dagster.core.object_store import has_filesystem_intermediate, get_filesystem_intermediate
 from dagster_pandas import DataFrame
 
@@ -473,7 +474,7 @@ def test_successful_pipeline_reexecution(snapshot):
 0     1     2    3       9
 1     3     4    7      49'''
 
-    assert has_filesystem_intermediate(run_id, 'sum_solid.inputs.num.read', 'input_thunk_output')
+    assert has_filesystem_intermediate(run_id, 'sum_solid.inputs.num.read', INPUT_THUNK_OUTPUT)
     assert has_filesystem_intermediate(run_id, 'sum_solid.transform')
     assert has_filesystem_intermediate(run_id, 'sum_sq_solid.transform')
     assert (
@@ -513,7 +514,7 @@ def test_successful_pipeline_reexecution(snapshot):
     snapshot.assert_match(result_two.data)
 
     assert not has_filesystem_intermediate(
-        new_run_id, 'sum_solid.inputs.num.read', 'input_thunk_output'
+        new_run_id, 'sum_solid.inputs.num.read', INPUT_THUNK_OUTPUT
     )
     assert has_filesystem_intermediate(new_run_id, 'sum_solid.transform')
     assert has_filesystem_intermediate(new_run_id, 'sum_sq_solid.transform')

@@ -12,7 +12,7 @@ from .objects import (
     SingleOutputStepCreationData,
 )
 
-INPUT_THUNK_OUTPUT = 'input_thunk_output'
+INPUT_THUNK_OUTPUT = 'hydrated_input'
 
 
 def _create_input_thunk_execution_step(pipeline_def, solid, input_def, input_spec):

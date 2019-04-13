@@ -29,9 +29,13 @@ snapshots['test_successful_pipeline_reexecution 1'] = {
                         }
                     },
                     {
+                        '__typename': 'StepMaterializationEvent',
+                        'level': 'INFO'
+                    },
+                    {
                         '__typename': 'ExecutionStepOutputEvent',
                         'level': 'INFO',
-                        'outputName': 'input_thunk_output',
+                        'outputName': 'hydrated_input',
                         'step': {
                             'key': 'sum_solid.inputs.num.read',
                             'kind': 'INPUT_THUNK'
@@ -59,6 +63,10 @@ snapshots['test_successful_pipeline_reexecution 1'] = {
                     },
                     {
                         '__typename': 'LogMessageEvent',
+                        'level': 'INFO'
+                    },
+                    {
+                        '__typename': 'StepMaterializationEvent',
                         'level': 'INFO'
                     },
                     {
@@ -92,6 +100,10 @@ snapshots['test_successful_pipeline_reexecution 1'] = {
                     },
                     {
                         '__typename': 'LogMessageEvent',
+                        'level': 'INFO'
+                    },
+                    {
+                        '__typename': 'StepMaterializationEvent',
                         'level': 'INFO'
                     },
                     {
@@ -152,6 +164,10 @@ snapshots['test_successful_pipeline_reexecution 2'] = {
                     },
                     {
                         '__typename': 'LogMessageEvent',
+                        'level': 'INFO'
+                    },
+                    {
+                        '__typename': 'StepMaterializationEvent',
                         'level': 'INFO'
                     },
                     {
