@@ -473,7 +473,7 @@ def test_successful_pipeline_reexecution(snapshot):
 0     1     2    3       9
 1     3     4    7      49'''
 
-    assert has_filesystem_intermediate(run_id, 'sum_solid.num.input_thunk', 'input_thunk_output')
+    assert has_filesystem_intermediate(run_id, 'sum_solid.inputs.num.read', 'input_thunk_output')
     assert has_filesystem_intermediate(run_id, 'sum_solid.transform')
     assert has_filesystem_intermediate(run_id, 'sum_sq_solid.transform')
     assert (
@@ -513,7 +513,7 @@ def test_successful_pipeline_reexecution(snapshot):
     snapshot.assert_match(result_two.data)
 
     assert not has_filesystem_intermediate(
-        new_run_id, 'sum_solid.num.input_thunk', 'input_thunk_output'
+        new_run_id, 'sum_solid.inputs.num.read', 'input_thunk_output'
     )
     assert has_filesystem_intermediate(new_run_id, 'sum_solid.transform')
     assert has_filesystem_intermediate(new_run_id, 'sum_sq_solid.transform')

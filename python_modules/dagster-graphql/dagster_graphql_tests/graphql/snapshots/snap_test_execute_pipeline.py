@@ -33,7 +33,7 @@ snapshots['test_successful_pipeline_reexecution 1'] = {
                         'level': 'INFO',
                         'outputName': 'input_thunk_output',
                         'step': {
-                            'key': 'sum_solid.num.input_thunk',
+                            'key': 'sum_solid.inputs.num.read',
                             'kind': 'INPUT_THUNK'
                         },
                         'storageMode': 'FILESYSTEM'
