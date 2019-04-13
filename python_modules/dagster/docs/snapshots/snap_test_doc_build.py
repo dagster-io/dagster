@@ -152,6 +152,7 @@ snapshots['test_build_all_docs 1'] = [
             'genindex.html',
             'index.html',
             'py-modindex.html',
+            'reference.html',
             'search.html'
         ]
     ),
@@ -189,7 +190,8 @@ snapshots['test_build_all_docs 1'] = [
             'sections'
         ],
         [
-            'index.rst.txt'
+            'index.rst.txt',
+            'reference.rst.txt'
         ]
     ),
     (
