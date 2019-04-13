@@ -76,9 +76,9 @@ def test_build_all_docs(snapshot):
         for dirpath, _dirnames, filenames in walked:
             # Omit the built source files and autodocs from snapshot testing to avoid test
             # failure fatigue
-            if not _path_starts_with(
+            if _path_starts_with(
                 dirpath, ['.', 'html', '_modules', 'dagster']
-            ) and not _path_starts_with(dirpath, ['.', 'html', '_sources', 'sections', 'api']):
+            ) or _path_starts_with(dirpath, ['.', 'html', '_sources', 'sections', 'api']):
                 continue
             for filename in filenames:
                 if any((re.match(pattern, filename) for pattern in IGNORE_FILES)):
