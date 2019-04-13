@@ -18,14 +18,14 @@ snapshots['test_success_whole_execution_plan 1'] = {
             {
                 '__typename': 'ExecutionStepStartEvent',
                 'step': {
-                    'key': 'sum_solid.num.read'
+                    'key': 'sum_solid.inputs.num.read'
                 }
             },
             {
                 '__typename': 'ExecutionStepOutputEvent',
                 'outputName': 'input_thunk_output',
                 'step': {
-                    'key': 'sum_solid.num.read'
+                    'key': 'sum_solid.inputs.num.read'
                 },
                 'valueRepr': '''   num1  num2
 0     1     2
@@ -34,7 +34,7 @@ snapshots['test_success_whole_execution_plan 1'] = {
             {
                 '__typename': 'ExecutionStepSuccessEvent',
                 'step': {
-                    'key': 'sum_solid.num.read'
+                    'key': 'sum_solid.inputs.num.read'
                 }
             },
             {
@@ -96,14 +96,14 @@ snapshots['test_success_whole_execution_plan_with_filesystem_config 1'] = {
             {
                 '__typename': 'ExecutionStepStartEvent',
                 'step': {
-                    'key': 'sum_solid.num.read'
+                    'key': 'sum_solid.inputs.num.read'
                 }
             },
             {
                 '__typename': 'ExecutionStepOutputEvent',
                 'outputName': 'input_thunk_output',
                 'step': {
-                    'key': 'sum_solid.num.read'
+                    'key': 'sum_solid.inputs.num.read'
                 },
                 'valueRepr': '''   num1  num2
 0     1     2
@@ -112,7 +112,7 @@ snapshots['test_success_whole_execution_plan_with_filesystem_config 1'] = {
             {
                 '__typename': 'ExecutionStepSuccessEvent',
                 'step': {
-                    'key': 'sum_solid.num.read'
+                    'key': 'sum_solid.inputs.num.read'
                 }
             },
             {
@@ -174,14 +174,14 @@ snapshots['test_success_whole_execution_plan_with_in_memory_config 1'] = {
             {
                 '__typename': 'ExecutionStepStartEvent',
                 'step': {
-                    'key': 'sum_solid.num.read'
+                    'key': 'sum_solid.inputs.num.read'
                 }
             },
             {
                 '__typename': 'ExecutionStepOutputEvent',
                 'outputName': 'input_thunk_output',
                 'step': {
-                    'key': 'sum_solid.num.read'
+                    'key': 'sum_solid.inputs.num.read'
                 },
                 'valueRepr': '''   num1  num2
 0     1     2
@@ -190,7 +190,7 @@ snapshots['test_success_whole_execution_plan_with_in_memory_config 1'] = {
             {
                 '__typename': 'ExecutionStepSuccessEvent',
                 'step': {
-                    'key': 'sum_solid.num.read'
+                    'key': 'sum_solid.inputs.num.read'
                 }
             },
             {
@@ -241,6 +241,27 @@ snapshots['test_success_whole_execution_plan_with_in_memory_config 1'] = {
     }
 }
 
+snapshots['test_invalid_config_execute_plan 1'] = {
+    'executePlan': {
+        '__typename': 'PipelineConfigValidationInvalid',
+        'errors': [
+            {
+                'message': 'Value at path root:solids:sum_solid:inputs:num:csv:path is not valid. Expected "Path"'
+            }
+        ],
+        'pipeline': {
+            'name': 'pandas_hello_world'
+        }
+    }
+}
+
+snapshots['test_pipeline_not_found_error_execute_plan 1'] = {
+    'executePlan': {
+        '__typename': 'PipelineNotFoundError',
+        'pipelineName': 'nope'
+    }
+}
+
 snapshots['test_successful_two_part_execute_plan 1'] = {
     'executePlan': {
         '__typename': 'ExecutePlanSuccess',
@@ -252,14 +273,14 @@ snapshots['test_successful_two_part_execute_plan 1'] = {
             {
                 '__typename': 'ExecutionStepStartEvent',
                 'step': {
-                    'key': 'sum_solid.num.read'
+                    'key': 'sum_solid.inputs.num.read'
                 }
             },
             {
                 '__typename': 'ExecutionStepOutputEvent',
                 'outputName': 'input_thunk_output',
                 'step': {
-                    'key': 'sum_solid.num.read'
+                    'key': 'sum_solid.inputs.num.read'
                 },
                 'valueRepr': '''   num1  num2
 0     1     2
@@ -268,7 +289,7 @@ snapshots['test_successful_two_part_execute_plan 1'] = {
             {
                 '__typename': 'ExecutionStepSuccessEvent',
                 'step': {
-                    'key': 'sum_solid.num.read'
+                    'key': 'sum_solid.inputs.num.read'
                 }
             },
             {
@@ -331,27 +352,6 @@ snapshots['test_successful_two_part_execute_plan 2'] = {
     }
 }
 
-snapshots['test_invalid_config_execute_plan 1'] = {
-    'executePlan': {
-        '__typename': 'PipelineConfigValidationInvalid',
-        'errors': [
-            {
-                'message': 'Value at path root:solids:sum_solid:inputs:num:csv:path is not valid. Expected "Path"'
-            }
-        ],
-        'pipeline': {
-            'name': 'pandas_hello_world'
-        }
-    }
-}
-
-snapshots['test_pipeline_not_found_error_execute_plan 1'] = {
-    'executePlan': {
-        '__typename': 'PipelineNotFoundError',
-        'pipelineName': 'nope'
-    }
-}
-
 snapshots['test_successful_one_part_execute_plan 1'] = {
     'executePlan': {
         '__typename': 'ExecutePlanSuccess',
@@ -363,14 +363,14 @@ snapshots['test_successful_one_part_execute_plan 1'] = {
             {
                 '__typename': 'ExecutionStepStartEvent',
                 'step': {
-                    'key': 'sum_solid.num.read'
+                    'key': 'sum_solid.inputs.num.read'
                 }
             },
             {
                 '__typename': 'ExecutionStepOutputEvent',
                 'outputName': 'input_thunk_output',
                 'step': {
-                    'key': 'sum_solid.num.read'
+                    'key': 'sum_solid.inputs.num.read'
                 },
                 'valueRepr': '''   num1  num2
 0     1     2
@@ -379,7 +379,7 @@ snapshots['test_successful_one_part_execute_plan 1'] = {
             {
                 '__typename': 'ExecutionStepSuccessEvent',
                 'step': {
-                    'key': 'sum_solid.num.read'
+                    'key': 'sum_solid.inputs.num.read'
                 }
             },
             {

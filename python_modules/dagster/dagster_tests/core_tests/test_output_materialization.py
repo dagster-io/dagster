@@ -165,8 +165,8 @@ def test_basic_int_execution_plan():
     steps = execution_plan.topological_steps()
 
     assert steps[0].key == 'return_one.transform'
-    assert steps[1].key == 'return_one.result.materialize.0'
-    assert steps[2].key == 'return_one.result.materialize.join'
+    assert steps[1].key == 'return_one.outputs.result.materialize.0'
+    assert steps[2].key == 'return_one.outputs.result.materialize.join'
 
 
 def test_basic_int_json_materialization():
@@ -224,28 +224,33 @@ def test_basic_int_and_string_execution_plan():
     assert_plan_topological_level(
         steps,
         [1, 2],
-        ['return_one_and_foo.string.materialize.0', 'return_one_and_foo.number.materialize.0'],
+        [
+            'return_one_and_foo.outputs.string.materialize.0',
+            'return_one_and_foo.outputs.number.materialize.0',
+        ],
     )
 
     assert_plan_topological_level(
         steps,
         [3, 4],
         [
-            'return_one_and_foo.string.materialize.join',
-            'return_one_and_foo.number.materialize.join',
+            'return_one_and_foo.outputs.string.materialize.join',
+            'return_one_and_foo.outputs.number.materialize.join',
         ],
     )
 
     transform_step = execution_plan.get_step_by_key('return_one_and_foo.transform')
 
-    string_mat_step = execution_plan.get_step_by_key('return_one_and_foo.string.materialize.0')
+    string_mat_step = execution_plan.get_step_by_key(
+        'return_one_and_foo.outputs.string.materialize.0'
+    )
     assert len(string_mat_step.step_inputs) == 1
     assert string_mat_step.step_inputs[0].prev_output_handle == StepOutputHandle.from_step(
         step=transform_step, output_name='string'
     )
 
     string_mat_join_step = execution_plan.get_step_by_key(
-        'return_one_and_foo.string.materialize.join'
+        'return_one_and_foo.outputs.string.materialize.join'
     )
     assert len(string_mat_join_step.step_inputs) == 1
     assert string_mat_join_step.step_inputs[0].prev_output_handle == StepOutputHandle.from_step(
@@ -315,10 +320,10 @@ def test_basic_int_and_string_json_multiple_materialization_execution_plan():
         steps,
         [1, 2, 3, 4],
         [
-            'return_one_and_foo.number.materialize.0',
-            'return_one_and_foo.number.materialize.1',
-            'return_one_and_foo.string.materialize.0',
-            'return_one_and_foo.string.materialize.1',
+            'return_one_and_foo.outputs.number.materialize.0',
+            'return_one_and_foo.outputs.number.materialize.1',
+            'return_one_and_foo.outputs.string.materialize.0',
+            'return_one_and_foo.outputs.string.materialize.1',
         ],
     )
 
@@ -326,8 +331,8 @@ def test_basic_int_and_string_json_multiple_materialization_execution_plan():
         steps,
         [5, 6],
         [
-            'return_one_and_foo.number.materialize.join',
-            'return_one_and_foo.string.materialize.join',
+            'return_one_and_foo.outputs.number.materialize.join',
+            'return_one_and_foo.outputs.string.materialize.join',
         ],
     )
 
@@ -405,10 +410,12 @@ def test_basic_int_multiple_serializations_execution_plan():
     assert steps[0].key == 'return_one.transform'
 
     assert_plan_topological_level(
-        steps, [1, 2], ['return_one.result.materialize.0', 'return_one.result.materialize.1']
+        steps,
+        [1, 2],
+        ['return_one.outputs.result.materialize.0', 'return_one.outputs.result.materialize.1'],
     )
 
-    assert steps[3].key == 'return_one.result.materialize.join'
+    assert steps[3].key == 'return_one.outputs.result.materialize.join'
 
 
 def test_basic_int_json_multiple_materializations():
