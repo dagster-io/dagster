@@ -6,7 +6,7 @@ from .pipeline import PipelineDefinition
 class RepositoryDefinition(object):
     '''Define a repository that contains a collection of pipelines.
 
-    Attributes:
+    Args:
         name (str): The name of the pipeline.
         pipeline_dict (Dict[str, callable]):
             An dictionary of pipelines. The value of the dictionary is a function that takes
@@ -21,11 +21,6 @@ class RepositoryDefinition(object):
     '''
 
     def __init__(self, name, pipeline_dict, enforce_solid_def_uniqueness=True):
-        '''
-        Args:
-            name (str): Name of pipeline.
-            pipeline_dict (Dict[str, callable]): See top-level class documentation
-        '''
         self.name = check.str_param(name, 'name')
 
         check.dict_param(pipeline_dict, 'pipeline_dict', key_type=str)

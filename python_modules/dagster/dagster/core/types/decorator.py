@@ -39,12 +39,30 @@ def _decorate_as_dagster_type(
     return bare_cls
 
 
-def dagster_type(name=None, description=None):
+def dagster_type(
+    name=None,
+    description=None,
+    input_schema=None,
+    output_schema=None,
+    serialization_strategy=None,
+    storage_plugins=None,
+):
+    '''
+    Decorator version of as_dagster_type. See documentation for :py:func:`as_dagster_type` .
+    '''
+
     def _with_args(bare_cls):
         check.type_param(bare_cls, 'bare_cls')
         new_name = name if name else bare_cls.__name__
         return _decorate_as_dagster_type(
-            bare_cls=bare_cls, key=new_name, name=new_name, description=description
+            bare_cls=bare_cls,
+            key=new_name,
+            name=new_name,
+            description=description,
+            input_schema=input_schema,
+            output_schema=output_schema,
+            serialization_strategy=serialization_strategy,
+            storage_plugins=storage_plugins,
         )
 
     # check for no args, no parens case
@@ -86,6 +104,31 @@ def as_dagster_type(
     serialization_strategy=None,
     storage_plugins=None,
 ):
+    '''
+    Takes a python cls and creates a type for it in the Dagster domain.
+
+    Args:
+        existing_type (cls)
+            The python type you want to project in to the Dagster type system.
+        name (Optional[str]):
+        description (Optiona[str]):
+        input_schema (Optional[InputSchema]):
+            An instance of a class that inherits from :py:class:`InputSchema` that
+            can map config data to a value of this type.
+
+        output_schema (Optiona[OutputSchema]):
+            An instance of a class that inherits from :py:class:`OutputSchema` that
+            can map config data to persisting values of this type.
+
+        serialization_strategy (Optional[SerializationStrategy]):
+            The default behavior for how to serialize this value for
+            persisting between execution steps.
+
+        storage_plugins (Optional[Dict[RunStorageMode, TypeStoragePlugin]]):
+            Storage type specific overrides for the serialization strategy.
+            This allows for storage specific optimzations such as effecient
+            distributed storage on S3.
+    '''
     check.type_param(existing_type, 'existing_type')
     check.opt_str_param(name, 'name')
     check.opt_str_param(description, 'description')

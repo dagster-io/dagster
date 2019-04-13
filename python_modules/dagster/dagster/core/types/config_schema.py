@@ -14,6 +14,9 @@ class InputSchema:
         )
 
     def construct_from_config_value(self, _context, config_value):
+        '''
+        How to create a runtime value from config data.
+        '''
         return config_value
 
 
@@ -49,6 +52,9 @@ class OutputSchema:
         )
 
     def materialize_runtime_value(self, _context, _config_value, _runtime_value):
+        '''
+        How to materialize a runtime value given configuration.
+        '''
         check.not_implemented('Must implement')
 
 
@@ -65,11 +71,25 @@ def _create_input_schema(config_type, func):
 
 
 def input_schema(config_cls):
+    '''
+    A decorator for annotating a function that can turn a ``config_value`` in to
+    an instance of a custom type.
+
+    Args:
+        config_cls (Any):
+    '''
     config_type = resolve_config_cls_arg(config_cls)
     return lambda func: _create_input_schema(config_type, func)
 
 
 def input_selector_schema(config_cls):
+    '''
+    A decorator for annotating a function that can take the selected properties
+    from a ``config_value`` in to an instance of a custom type.
+
+    Args:
+        config_cls (Selector)
+    '''
     config_type = resolve_config_cls_arg(config_cls)
     check.param_invariant(config_type.is_selector, 'config_cls')
 
@@ -96,11 +116,25 @@ def _create_output_schema(config_type, func):
 
 
 def output_schema(config_cls):
+    '''
+    A decorator for a annotating a function that can take a ``config_value``
+    and an instance of a custom type and materialize it.
+
+    Args:
+        config_cls (Any):
+    '''
     config_type = resolve_config_cls_arg(config_cls)
     return lambda func: _create_output_schema(config_type, func)
 
 
 def output_selector_schema(config_cls):
+    '''
+    A decorator for a annotating a function that can take the selected properties
+    of a ``config_value`` and an instance of a custom type and materialize it.
+
+    Args:
+        config_cls (Selector):
+    '''
     config_type = resolve_config_cls_arg(config_cls)
     check.param_invariant(config_type.is_selector, 'config_cls')
 

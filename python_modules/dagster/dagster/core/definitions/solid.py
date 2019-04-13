@@ -31,16 +31,19 @@ class SolidDefinition(object):
     End users should prefer the @solid and @lambda_solid decorator. SolidDefinition
     is generally used by framework authors.
 
-    Attributes:
-
+    Args:
         name (str): Name of the solid.
-        input_defs (List[InputDefinition]): Inputs of the solid.
-        transform_fn (callable): Callable with the signature (**info**: `SystemTransformExecutionContext`,
-            **inputs**: `Dict[str, Any]`) : `Iterable<Result>`
-        outputs_defs (List[OutputDefinition]): Outputs of the solid.
-        config_field (Field): How the solid configured.
-        description (str): Description of the solid.
-        metadata (dict): Arbitrary metadata for the solid. Some frameworks expect and require
+        inputs (List[InputDefinition]): Inputs of the solid.
+        transform_fn (Callable[[SystemTransformExecutionContext, ], Iterable[Union[Result, Materialization]]]):
+            The core of the solid, the function that does the actual computation. The arguments passed to
+            this function after context are deteremined by ``inputs``.
+
+            This function yields :py:class:`Result` according to ``outputs`` or :py:class:`Materialization`.
+        outputs (List[OutputDefinition]): Outputs of the solid.
+        config_field (Optional[Field]): How the solid configured.
+        description (Optional[str]): Description of the solid.
+        metadata (Optional[Dict[Any, Any]]):
+            Arbitrary metadata for the solid. Some frameworks expect and require
             certain metadata to be attached to a solid.
 
     Examples:
@@ -55,8 +58,7 @@ class SolidDefinition(object):
                 outputs=[OutputDefinition(Int)], # default name ("result")
                 transform_fn=_add_one,
             )
-
-'''
+    '''
 
     def __init__(
         self,

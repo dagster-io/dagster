@@ -1,7 +1,7 @@
+.. currentmodule:: dagster
+
 Pipelines
 =========
-
-.. currentmodule:: dagster
 
 .. autoclass:: PipelineDefinition
     :members:
@@ -12,18 +12,31 @@ Pipelines
 .. autoclass:: SolidInstance
     :members:
 
+----
 
 Contexts & Resources
---------------------
+====================
 
 .. autoclass:: PipelineContextDefinition
     :members:
 
+.. autoclass:: InitContext
+    :memebers:
+
+.. autoclass:: ExecutionContext
+    :memebers:
+
 .. autoclass:: ResourceDefinition
     :members:
 
-Repository
-----------
+.. autoclass:: InitResourceContext
+    :memebers:
+
+----
+
+Repositories
+============
 
 .. autoclass:: RepositoryDefinition
     :members:
+
