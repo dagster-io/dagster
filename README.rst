@@ -16,11 +16,7 @@
 Introduction
 ============
 
-Dagster is an opinionated system and programming model for data pipelines. This process goes by
-many names -- ETL (extract-transform-load), ELT (extract-load-transform), model production, data
-integration, and so on -- but in essence they all describe the same activity: performing a set of
-computations structured as a DAG (directed, acyclic graph) that end up producing data assets,
-whether those assets be tables, files, machine-learning models, etc.
+DDagster is a system for building modern data applications. Combining an elegant programming model and beautiful tools, Dagster allows infrastructure engineers, data engineers, and data scientists to seamlessly collaborate to process and produce the trusted, reliable data needed in today's world.
 
 Go to https://dagster.readthedocs.io for complete documentation, including a
 step-by-step tutorial and notes on the demo project.
