@@ -320,11 +320,11 @@ snapshots['test_build_all_docs 1'] = [
             'documentation_options.js',
             'jquery-3.2.1.js',
             'jquery.js',
+            'language_data.js',
             'pygments.css',
             'searchtools.js',
             'underscore-1.3.1.js',
-            'underscore.js',
-            'websupport.js'
+            'underscore.js'
         ]
     ),
     (
