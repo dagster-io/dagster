@@ -37,12 +37,6 @@ class PipelineContextDefinition(object):
             If it yields a context, the code after the yield executes after pipeline
             completion, just like a python context manager.
 
-            Environment-specific resources should be placed in the "resources" argument
-            to an execution context. This argument can be *anything* and it is made
-            avaiable to every solid in the pipeline. A typical pattern is to have this
-            resources object be a namedtuple, where each property is an object that
-            manages a particular resource, e.g. aws, a local filesystem manager, etc.
-
         config_field (Field):
             Define the configuration for the context
 

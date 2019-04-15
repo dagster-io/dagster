@@ -19,7 +19,7 @@ class SolidInstance(namedtuple('Solid', 'name alias')):
     Args:
         name (str): Name of the solid in the pipeline to instance.
         alias (Optional[str]):
-            Name for this instance of the solid. Necesarry when there are multiple instances
+            Name for this instance of the solid. Necessary when there are multiple instances
             of the same solid.
 
     Example:

@@ -67,8 +67,7 @@ class PipelineDefinition(object):
 
     Args:
         solids (List[SolidDefinition]):
-            The set of solid used in this pipeline. Multiple instances of a solid can manifest
-            in the pipeline by instantiating them with :py:class:`SolidInstance`.
+            The set of solid definitions used in this pipeline.
         name (Optional[str])
         despcription (Optional[str])
         context_definitions (Optional[Dict[str, PipelineContextDefinition]]):

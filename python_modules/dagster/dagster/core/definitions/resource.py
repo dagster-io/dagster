@@ -39,6 +39,10 @@ class ResourceDefinition(object):
 
 
 def resource(config_field=None, description=None):
+    '''A decorator for creating a resource. The decorated function will be used as the 
+    resource_fn in a ResourceDefinition.
+    '''
+
     # This case is for when decorator is used bare, without arguments.
     # E.g. @resource versus @resource()
     if callable(config_field):

@@ -29,6 +29,8 @@ Contexts & Resources
 .. autoclass:: ResourceDefinition
     :members:
 
+.. autodecorator:: resource
+
 .. autoclass:: InitResourceContext
     :memebers:
 
