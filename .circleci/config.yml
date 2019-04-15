@@ -282,6 +282,7 @@ jobs:
           name: Install Dependencies
           command: |
             sudo pip install -r python_modules/dagster/dev-requirements.txt -qqq
+            sudo pip install -e python_modules/dagster -qqq
 
       - run:
           name: Docs Snapshot Test
