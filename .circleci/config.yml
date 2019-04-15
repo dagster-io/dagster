@@ -40,6 +40,8 @@ workflows:
 
       - lint
 
+      - docs-snapshot
+
       - dagstermill-py37:
           context: coveralls
       - dagstermill-py36:
@@ -229,7 +231,6 @@ jobs:
           name: Format
           command: black python_modules --line-length 100 -S --fast --check --exclude "build/|buck-out/|dist/|_build/|\.eggs/|\.git/|\.hg/|\.mypy_cache/|\.nox/|\.tox/|\.venv/|python_modules/dagster/dagster/|snapshots/" -N
 
-
   lint:
     docker:
       - image: dagster/cci-test:3.7.3
@@ -267,6 +268,26 @@ jobs:
           name: Lint
           command: |
             make pylint
+
+  docs-snapshot:
+    docker:
+      - image: dagster/cci-test:3.7.3
+
+    working_directory: ~/repo
+
+    steps:
+      - checkout
+
+      - run:
+          name: Install Dependencies
+          command: |
+            sudo pip install -r python_modules/dagster/dev-requirements.txt -qqq
+            sudo pip install -e python_modules/dagster -qqq
+
+      - run:
+          name: Docs Snapshot Test
+          command: |
+            pytest -vv python_modules/dagster/docs
 
   dagit-py36: &dagit-template
     docker:

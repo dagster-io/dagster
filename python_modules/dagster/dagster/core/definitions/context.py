@@ -26,6 +26,21 @@ class PipelineContextDefinition(object):
 
     The ``PipelineContextDefinition`` is passed to the ``PipelineDefinition`` in
     a dictionary keyed by its name so the name is not present in this object.
+    
+    Args:
+        context_fn (Callable):
+            Signature of context_fn:
+            (pipeline: PipelineDefintion, config_value: Any) => ExecutionContext
+
+            Returns *or* yields an ExecutionContext.
+
+            If it yields a context, the code after the yield executes after pipeline
+            completion, just like a python context manager.
+
+        config_field (Field):
+            Define the configuration for the context
+
+        description (str)
 
     Attributes:
         config_field (Field): The configuration for the pipeline context.
@@ -57,26 +72,7 @@ class PipelineContextDefinition(object):
 
     def __init__(self, context_fn=None, config_field=None, resources=None, description=None):
         '''
-        Args:
-            context_fn (callable):
-                Signature of context_fn:
-                (pipeline: PipelineDefintion, config_value: Any) => ExecutionContext
-
-                Returns *or* yields an ExecutionContext.
-
-                If it yields a context, the code after the yield executes after pipeline
-                completion, just like a python context manager.
-
-                Environment-specific resources should be placed in the "resources" argument
-                to an execution context. This argument can be *anything* and it is made
-                avaiable to every solid in the pipeline. A typical pattern is to have this
-                resources object be a namedtuple, where each property is an object that
-                manages a particular resource, e.g. aws, a local filesystem manager, etc.
-
-            config_field (Field):
-                Define the configuration for the context
-
-            description (str): Description of the context definition.
+        
         '''
         if config_field is None and context_fn is None:
             config_field = _default_config_field()

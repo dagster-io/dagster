@@ -5,6 +5,12 @@ class WrappingType(object):
 
 
 def List(inner_type):
+    '''
+    Validates at runtime that the value is ``List[inner_type]``.
+
+    Args:
+        inner_type (DagsterType)
+    '''
     return WrappingListType(inner_type)
 
 
@@ -13,6 +19,12 @@ class WrappingListType(WrappingType):
 
 
 def Nullable(inner_type):
+    '''
+    Validates at runtime that the type is either ``None`` or passes validation of ``inner_type``
+
+    Args:
+        inner_type (DagsterType)
+    '''
     # Cannot check inner_type because of circular references and no fwd declarations
     return WrappingNullableType(inner_type)
 

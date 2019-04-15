@@ -5,6 +5,19 @@ from dagster.core.types.field_utils import check_user_facing_opt_field_param
 
 
 class ResourceDefinition(object):
+    '''Resources are pipeline-scoped ways to make external resources (like database connections)
+    available to solids during pipeline execution and clean up after execution resolves.
+
+    Args:
+        resource_fn (Callable[[InitResourceContext], Any]):
+            User provided function to instantiate the resource. This resource will be available to
+            solids via ``context.resources``
+        config_field (Field):
+            The type for the configuration data for this resource, passed to ``resource_fn`` via
+            ``init_context.resource_config``
+        description (str)
+    '''
+
     def __init__(self, resource_fn, config_field=None, description=None):
         self.resource_fn = check.callable_param(resource_fn, 'resource_fn')
         self.config_field = check_user_facing_opt_field_param(
@@ -26,6 +39,10 @@ class ResourceDefinition(object):
 
 
 def resource(config_field=None, description=None):
+    '''A decorator for creating a resource. The decorated function will be used as the 
+    resource_fn in a ResourceDefinition.
+    '''
+
     # This case is for when decorator is used bare, without arguments.
     # E.g. @resource versus @resource()
     if callable(config_field):

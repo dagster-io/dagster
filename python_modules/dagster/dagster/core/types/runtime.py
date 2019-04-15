@@ -28,6 +28,10 @@ def check_opt_config_cls_param(config_cls, param_name):
 
 
 class RuntimeType(object):
+    '''
+    The class backing DagsterTypes as they are used during execution.
+    '''
+
     def __init__(
         self,
         key,
