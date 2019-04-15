@@ -44,9 +44,13 @@ def solid_a_b_list():
 
 
 def test_create_pipeline_with_bad_solids_list():
-    stub_solid = define_stub_solid('stub', [{'a key': 'a value'}])
-    with pytest.raises(check.ParameterCheckError, match='Param "solids" is not a list.'):
-        PipelineDefinition(solids=stub_solid, dependencies={})
+    with pytest.raises(
+        DagsterInvalidDefinitionError,
+        match='"solids" arg to pipeline "a_pipeline" is not a list. Got',
+    ):
+        PipelineDefinition(
+            name='a_pipeline', solids=define_stub_solid('stub', [{'a key': 'a value'}])
+        )
 
 
 def test_circular_dep():

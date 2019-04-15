@@ -17,6 +17,34 @@ from .pipeline_creation import (
     construct_config_type_dictionary,
     construct_runtime_type_dictionary,
 )
+from .solid import SolidDefinition
+
+
+def _check_solids_arg(pipeline_name, solid_defs):
+    if not isinstance(solid_defs, list):
+        raise DagsterInvalidDefinitionError(
+            '"solids" arg to pipeline "{name}" is not a list. Got {val}.'.format(
+                name=pipeline_name, val=repr(solid_defs)
+            )
+        )
+    for solid_def in solid_defs:
+        if isinstance(solid_def, SolidDefinition):
+            continue
+        elif callable(solid_def):
+            raise DagsterInvalidDefinitionError(
+                '''You have passed a lambda or function {func} into pipeline {name} that is
+                not a solid. You have likely forgetten to annotate this function with
+                an @solid or @lambda_solid decorator.'
+                '''.format(
+                    name=pipeline_name, func=solid_def.__name__
+                )
+            )
+        else:
+            raise DagsterInvalidDefinitionError(
+                'Invalid item in solid list: {item}'.format(item=repr(solid_def))
+            )
+
+    return solid_defs
 
 
 class PipelineDefinition(object):
@@ -72,7 +100,9 @@ class PipelineDefinition(object):
         self.name = check.opt_str_param(name, 'name', '<<unnamed>>')
         self.description = check.opt_str_param(description, 'description')
 
-        check.list_param(solids, 'solids')
+        solids = check.list_param(
+            _check_solids_arg(self.name, solids), 'solids', of_type=SolidDefinition
+        )
 
         if context_definitions is None:
             context_definitions = default_pipeline_context_definitions()
