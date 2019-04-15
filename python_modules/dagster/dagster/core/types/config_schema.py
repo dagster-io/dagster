@@ -97,7 +97,7 @@ def _create_output_schema(config_type, func):
 
 def output_schema(config_cls):
     config_type = resolve_config_cls_arg(config_cls)
-    return lambda func: _create_input_schema(config_type, func)
+    return lambda func: _create_output_schema(config_type, func)
 
 
 def output_selector_schema(config_cls):

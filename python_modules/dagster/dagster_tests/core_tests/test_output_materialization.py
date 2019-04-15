@@ -3,6 +3,7 @@ import json
 import pytest
 
 from dagster import (
+    Int,
     InputDefinition,
     OutputDefinition,
     PipelineConfigEvaluationError,
@@ -12,11 +13,14 @@ from dagster import (
     lambda_solid,
     solid,
     types,
+    RuntimeType,
+    output_schema,
 )
 from dagster.core.definitions.environment_configs import (
     solid_has_config_entry,
     solid_has_configurable_outputs,
 )
+from dagster.core.errors import DagsterInvariantViolationError
 from dagster.core.execution import create_environment_config, create_execution_plan
 from dagster.core.execution_plan.materialization_thunk import MATERIALIZATION_THUNK_OUTPUT
 from dagster.core.execution_plan.objects import StepOutputHandle
@@ -446,3 +450,33 @@ def test_basic_int_json_multiple_materializations():
         with open(filename_two, 'r') as ff:
             value = json.loads(ff.read())
             assert value == {'value': 1}
+
+
+@output_schema(Int)
+def return_int(*_args, **_kwargs):
+    return 1
+
+
+class SomeRuntimeType(RuntimeType):
+    def __init__(self):
+        super(SomeRuntimeType, self).__init__(
+            key='SomeType', name='SomeType', output_schema=return_int
+        )
+
+
+def test_basic_bad_output_materialization():
+    @lambda_solid(output=OutputDefinition(SomeRuntimeType))
+    def return_one():
+        return 1
+
+    pipeline_def = PipelineDefinition(name='single_int_output_pipeline', solids=[return_one])
+
+    with pytest.raises(DagsterInvariantViolationError) as exc_info:
+        execute_pipeline(
+            pipeline_def, environment_dict={'solids': {'return_one': {'outputs': [{'result': 2}]}}}
+        )
+
+    assert str(exc_info.value) == (
+        'materialize_runtime_value on type SomeType has returned value '
+        '1 of type int. You must return a string (and ideally a valid file path).'
+    )
