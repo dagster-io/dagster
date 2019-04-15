@@ -27,6 +27,7 @@ export interface RunPreviewExecutionPlanResultFragment_ExecutionPlan_steps {
 export interface RunPreviewExecutionPlanResultFragment_ExecutionPlan {
   __typename: "ExecutionPlan";
   steps: RunPreviewExecutionPlanResultFragment_ExecutionPlan_steps[];
+  artifactsPersisted: boolean;
 }
 
 export interface RunPreviewExecutionPlanResultFragment_PipelineNotFoundError {

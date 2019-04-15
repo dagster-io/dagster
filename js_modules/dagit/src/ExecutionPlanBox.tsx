@@ -15,11 +15,56 @@ interface IExecutionPlanBoxProps {
   materializations: IStepMaterialization[];
   onShowStateDetails?: (stepName: string) => void;
   onApplyStepFilter?: (stepName: string) => void;
+  executionArtifactsPersisted: boolean;
+  onReexecuteStep?: (stepName: string) => void;
+}
+
+interface ReexecuteButtonProps {
+  name: string;
+  state: IStepState;
+  executionArtifactsPersisted: boolean;
   onReexecuteStep?: (stepName: string) => void;
 }
 
 interface IExecutionPlanBoxState {
   v: number;
+}
+
+function ReexecuteButton(props: ReexecuteButtonProps) {
+  const { onReexecuteStep, state, executionArtifactsPersisted, name } = props;
+
+  // If callback isnt provided, or the step does not fail or succeed - dont render anything
+  if (
+    !(
+      onReexecuteStep &&
+      [IStepState.FAILED, IStepState.SUCCEEDED].includes(state)
+    )
+  ) {
+    return null;
+  }
+
+  // if execution artifacts are not persisted, we can reexecute but we want to communicate
+  // that we could if configuration was changed
+  if (!executionArtifactsPersisted) {
+    return (
+      <ReExecuteContainer
+        className="reexecute"
+        title="Use a persisting storage mode such as 'filesystem' to enable single step re-execution"
+      >
+        <Icon icon={IconNames.DISABLE} iconSize={15} />
+      </ReExecuteContainer>
+    );
+  }
+
+  return (
+    <ReExecuteContainer
+      className="reexecute"
+      title="Re-run just this step with existing configuration."
+      onClick={() => onReexecuteStep(name)}
+    >
+      <Icon icon={IconNames.PLAY} iconSize={15} />
+    </ReExecuteContainer>
+  );
 }
 
 export class ExecutionPlanBox extends React.Component<
@@ -89,7 +134,8 @@ export class ExecutionPlanBox extends React.Component<
       materializations,
       onApplyStepFilter,
       onReexecuteStep,
-      onShowStateDetails
+      onShowStateDetails,
+      executionArtifactsPersisted
     } = this.props;
 
     let elapsed = this.props.elapsed;
@@ -126,16 +172,12 @@ export class ExecutionPlanBox extends React.Component<
             <ExecutionPlanBoxName title={name}>{name}</ExecutionPlanBoxName>
             {elapsed !== undefined && <ExecutionTime elapsed={elapsed} />}
           </ExecutionPlanBoxContainer>
-          {onReexecuteStep &&
-            [IStepState.FAILED, IStepState.SUCCEEDED].includes(state) && (
-              <ReExecuteContainer
-                className="reexecute"
-                title="Re-run just this step with existing configuration."
-                onClick={() => onReexecuteStep(name)}
-              >
-                <Icon icon={IconNames.PLAY} iconSize={15} />
-              </ReExecuteContainer>
-            )}
+          <ReexecuteButton
+            onReexecuteStep={onReexecuteStep}
+            state={state}
+            executionArtifactsPersisted={executionArtifactsPersisted}
+            name={name}
+          />
         </ExecutionPlanRowContainer>
         {(materializations || []).map(mat => (
           <Materialization

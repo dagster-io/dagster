@@ -104,6 +104,7 @@ input ExecutionMetadata {
 type ExecutionPlan {
   steps: [ExecutionStep!]!
   pipeline: Pipeline!
+  artifactsPersisted: Boolean!
 }
 
 union ExecutionPlanResult = ExecutionPlan | PipelineConfigValidationInvalid | PipelineNotFoundError

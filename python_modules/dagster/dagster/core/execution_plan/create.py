@@ -76,12 +76,13 @@ def create_execution_plan_core(pipeline_def, environment_config):
             output_handle = solid.output_handle(output_def.name)
             plan_builder.step_output_map[output_handle] = subplan.terminal_step_output_handle
 
-    return create_execution_plan_from_steps(pipeline_def, plan_builder.steps)
+    return create_execution_plan_from_steps(pipeline_def, plan_builder.steps, environment_config)
 
 
-def create_execution_plan_from_steps(pipeline_def, steps):
+def create_execution_plan_from_steps(pipeline_def, steps, environment_config):
     check.inst_param(pipeline_def, 'pipeline_def', PipelineDefinition)
     check.list_param(steps, 'steps', of_type=ExecutionStep)
+    check.inst_param(environment_config, 'environment_config', EnvironmentConfig)
 
     step_dict = {step.key: step for step in steps}
     deps = {step.key: set() for step in steps}
@@ -100,7 +101,12 @@ def create_execution_plan_from_steps(pipeline_def, steps):
         for step_input in step.step_inputs:
             deps[step.key].add(step_input.prev_output_handle.step_key)
 
-    return ExecutionPlan(pipeline_def, step_dict, deps)
+    return ExecutionPlan(
+        pipeline_def,
+        step_dict,
+        deps,
+        environment_config.storage.construct_run_storage().is_persistent,
+    )
 
 
 def create_subplan_for_input(

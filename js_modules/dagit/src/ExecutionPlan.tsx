@@ -44,6 +44,7 @@ export default class ExecutionPlan extends React.PureComponent<
           }
           kind
         }
+        artifactsPersisted
       }
     `
   };
@@ -123,6 +124,7 @@ export default class ExecutionPlan extends React.PureComponent<
                 onShowStateDetails={onShowStateDetails}
                 onApplyStepFilter={onApplyStepFilter}
                 onReexecuteStep={onReexecuteStep}
+                executionArtifactsPersisted={executionPlan.artifactsPersisted}
                 delay={delay}
               />
             );

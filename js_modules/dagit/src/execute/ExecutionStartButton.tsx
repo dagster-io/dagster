@@ -49,7 +49,6 @@ export default class ExecutionStartButton extends React.Component<
     return (
       <WebsocketStatusContext.Consumer>
         {websocketStatus => {
-          console.log("rendering start button");
           if (websocketStatus !== WebSocket.OPEN) {
             return (
               <Wrapper

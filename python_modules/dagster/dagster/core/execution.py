@@ -375,10 +375,9 @@ def construct_run_storage(run_config, environment_config):
     '''
     Construct the run storage for this pipeline. Our rules are the following:
 
-    If the called has specified a run_storage_factory_fn, we use for creating
-    the run storage.
+    If the RunConfig has a storage_mode provided, we use that.
 
-    Then we fallback to config.
+    Then we fallback to environment config.
 
     If there is no config, we default to in memory storage. This is mostly so
     that tests default to in-memory.
@@ -393,7 +392,7 @@ def construct_run_storage(run_config, environment_config):
             return InMemoryRunStorage()
         elif run_config.storage_mode == RunStorageMode.S3:
             # TODO: Revisit whether we want to use S3 run storage
-            return InMemoryRunStorage()
+            return FileSystemRunStorage()
         else:
             check.failed('Unexpected enum {}'.format(run_config.storage_mode))
     elif environment_config.storage.storage_mode == 'filesystem':
@@ -402,7 +401,7 @@ def construct_run_storage(run_config, environment_config):
         return InMemoryRunStorage()
     elif environment_config.storage.storage_mode == 's3':
         # TODO: Revisit whether we want to use S3 run storage
-        return InMemoryRunStorage()
+        return FileSystemRunStorage()
     elif environment_config.storage.storage_mode is None:
         return InMemoryRunStorage()
     else:
@@ -847,9 +846,9 @@ def invoke_executor_on_plan(pipeline_context, execution_plan, step_keys_to_execu
 def _check_reexecution_config(pipeline_context, execution_plan, run_config):
     check.invariant(pipeline_context.run_storage)
 
-    if run_config.storage_mode == RunStorageMode.IN_MEMORY:
+    if not pipeline_context.run_storage.is_persistent:
         raise DagsterInvariantViolationError(
-            'Cannot specifiy IN_MEMORY in run storage mode when attempting reexecution.'
+            'Cannot perform reexecution with non persistent run storage.'
         )
 
     previous_run_id = run_config.reexecution_config.previous_run_id
