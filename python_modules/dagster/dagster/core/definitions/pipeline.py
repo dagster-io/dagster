@@ -195,7 +195,7 @@ class PipelineDefinition(object):
         if name not in self._solid_dict:
             raise DagsterInvariantViolationError(
                 'Pipeline {pipeline_name} has no solid named {name}.'.format(
-                    pipline_name=self.name, name=name
+                    pipeline_name=self.name, name=name
                 )
             )
         return self._solid_dict[name]

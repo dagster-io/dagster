@@ -5,8 +5,6 @@ from dagster import check
 
 from dagster.core.errors import DagsterInvalidDefinitionError
 
-from dagster.core.types.builtin_enum import BuiltinEnum
-from dagster.core.types.runtime import RuntimeType, Any
 
 DEFAULT_OUTPUT = 'result'
 
