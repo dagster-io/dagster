@@ -61,6 +61,7 @@ REPO_TARGET_WARNING = (
 def ui(host, port, sync, log, log_dir, no_watch=False, **kwargs):
     repository_target_info = load_target_info_from_cli_args(kwargs)
 
+    # add the path for the cwd so imports in dynamically loaded code work correctly
     sys.path.append(os.getcwd())
     repository_container = RepositoryContainer(repository_target_info)
 
