@@ -6,7 +6,8 @@ import {
   Column,
   Cell,
   ColumnHeaderCell,
-  ICellRenderer
+  ICellRenderer,
+  SelectionModes
 } from "@blueprintjs/table";
 import { RunHistoryRunFragment } from "./types/RunHistoryRunFragment";
 import { titleForRun, RunStatus } from "./RunUtils";
@@ -149,6 +150,7 @@ export default class RunHistory extends React.Component<
           <Table
             numRows={sortedRuns.length}
             columnWidths={[35, null, null, null, null]}
+            selectionModes={SelectionModes.NONE}
           >
             <Column
               name=""
