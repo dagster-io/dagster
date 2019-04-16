@@ -51,7 +51,9 @@ milestones in the framework's capability.
 - The execute button is now greyed out when Dagit is offline.
 - The Dagit UI now includes more contextual cues to make the solid in focus and its connections
   more salient.
-
+- Dagit no longer offers to open materializations on your machine. Clicking an on-disk
+  materialization now copies the path to your clipboard.
+ 
 **Dagster-Airflow**
 
 - Dagster-Airflow includes functions to dynamically generate containerized (``DockerOperator``-based)
