@@ -6,6 +6,7 @@
     "@blueprintjs/core": "^3.9.0",
     "@blueprintjs/icons": "^3.3.0",
     "@blueprintjs/select": "^3.3.0",
+    "@blueprintjs/table": "^3.5.0",
     "@vx/gradient": "^0.0.165",
     "@vx/group": "^0.0.170",
     "@vx/legend": "^0.0.170",
