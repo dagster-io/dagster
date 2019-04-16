@@ -53,7 +53,8 @@ milestones in the framework's capability.
   more salient.
 - Dagit no longer offers to open materializations on your machine. Clicking an on-disk
   materialization now copies the path to your clipboard.
- 
+- Pressing Ctrl-Enter now starts execution in Dagit's Execute tab.
+
 **Dagster-Airflow**
 
 - Dagster-Airflow includes functions to dynamically generate containerized (``DockerOperator``-based)
