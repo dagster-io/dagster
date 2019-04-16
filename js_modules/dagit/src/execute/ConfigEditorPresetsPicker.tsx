@@ -14,13 +14,6 @@ type Preset = ConfigPresetsQuery_presetsForPipeline;
 
 const PresetSelect = Select.ofType<Preset>();
 
-const PresetDivider: Preset = {
-  __typename: "PipelinePreset",
-  name: "divider",
-  solidSubset: null,
-  environment: null
-};
-
 interface ConfigEditorPresetsPickerProps {
   pipelineName: string;
   solidSubset: string[] | null;
@@ -44,35 +37,21 @@ export default class ConfigEditorPresetsPicker extends React.Component<
             (a, b) => a.name.localeCompare(b.name)
           );
 
-          let grouped = presets.filter(p =>
-            isEqual(p.solidSubset, solidSubset)
-          );
-          if (grouped.length && grouped.length !== presets.length) {
-            grouped.push(PresetDivider);
-          }
-          grouped.push(
-            ...presets.filter(p => !isEqual(p.solidSubset, solidSubset))
-          );
-
           return (
             <div>
               <PresetSelect
-                items={grouped}
+                items={presets}
                 itemPredicate={(query, preset) =>
                   query.length === 0 || preset.name.includes(query)
                 }
-                itemRenderer={(preset, props) =>
-                  preset === PresetDivider ? (
-                    <Menu.Divider />
-                  ) : (
-                    <Menu.Item
-                      active={props.modifiers.active}
-                      onClick={props.handleClick}
-                      key={preset.name}
-                      text={preset.name}
-                    />
-                  )
-                }
+                itemRenderer={(preset, props) => (
+                  <Menu.Item
+                    active={props.modifiers.active}
+                    onClick={props.handleClick}
+                    key={preset.name}
+                    text={preset.name}
+                  />
+                )}
                 noResults={<Menu.Item disabled={true} text="No presets." />}
                 onItemSelect={p =>
                   onCreateSession({
