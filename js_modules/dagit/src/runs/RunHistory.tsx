@@ -146,7 +146,10 @@ export default class RunHistory extends React.Component<
             />
           </div>
         ) : (
-          <Table numRows={sortedRuns.length}>
+          <Table
+            numRows={sortedRuns.length}
+            columnWidths={[35, null, null, null, null]}
+          >
             <Column
               name=""
               cellRenderer={idx => (
