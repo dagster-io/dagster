@@ -27,7 +27,7 @@ milestones in the framework's capability.
 - New functionality in ``dagster.seven``: py23-compatible ``FileNotFoundError``, ``json.dump``,
   ``json.dumps``.
 - Dagster default logging is now multiline for readability.
-- The ``NoValue`` type now allows dependencies to be constructed between solids that do not have
+- The ``Nothing`` type now allows dependencies to be constructed between solids that do not have
   data dependencies.
 - Many error messages have been improved.
 - ``throw_on_user_error`` has been renamed to ``raise_on_error`` in all APIs, public and private
