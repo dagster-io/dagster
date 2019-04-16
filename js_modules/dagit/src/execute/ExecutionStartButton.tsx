@@ -5,7 +5,7 @@ import { IconNames } from "@blueprintjs/icons";
 import { WebsocketStatusContext } from "../WebsocketStatus";
 
 interface IExecutionStartButtonProps {
-  onClick: (event: React.MouseEvent<HTMLDivElement, MouseEvent>) => void;
+  onClick: () => void;
 }
 
 interface IExecutionStartButtonState {
@@ -23,6 +23,7 @@ export default class ExecutionStartButton extends React.Component<
   IExecutionStartButtonState
 > {
   _mounted: boolean = false;
+  _startButton: React.RefObject<any> = React.createRef();
 
   state = {
     starting: false
@@ -30,15 +31,30 @@ export default class ExecutionStartButton extends React.Component<
 
   componentDidMount() {
     this._mounted = true;
+    document.addEventListener("keyup", this.onKeyUp);
   }
 
   componentWillUnmount() {
     this._mounted = false;
+    document.removeEventListener("keyup", this.onKeyUp);
   }
 
-  onClick = async (event: React.MouseEvent<HTMLDivElement, MouseEvent>) => {
+  onKeyUp = (e: KeyboardEvent) => {
+    if (e.ctrlKey && (e.key === "Enter" || e.key === "Return")) {
+      // Check that the start button is present to avoid triggering
+      // a start event when dagit is offline.
+      if (!this._startButton.current) return;
+
+      // Dispatch the button click, starting execution
+      e.preventDefault();
+      e.stopPropagation();
+      this.onClick();
+    }
+  };
+
+  onClick = async () => {
     this.setState({ starting: true });
-    await this.props.onClick(event);
+    await this.props.onClick();
     setTimeout(() => {
       if (!this._mounted) return;
       this.setState({ starting: false });
@@ -82,6 +98,7 @@ export default class ExecutionStartButton extends React.Component<
           return (
             <Wrapper
               role="button"
+              ref={this._startButton}
               state={ExecutionButtonStatus.Ready}
               title={"Start pipeline execution"}
               onClick={this.onClick}
