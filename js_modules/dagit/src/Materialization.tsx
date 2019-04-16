@@ -13,13 +13,10 @@ function isFilePath(url: string) {
   return url.startsWith("file://") || url.startsWith("/");
 }
 export class Materialization extends React.Component<MaterializationProps> {
-  onCopyPath = async (event: React.MouseEvent<HTMLAnchorElement>) => {
-    event.preventDefault();
-
-    const url = event.currentTarget.getAttribute("href") || "";
+  onCopyPath = async (path: string) => {
     const el = document.createElement("input");
     document.body.appendChild(el);
-    el.value = url;
+    el.value = path;
     el.select();
     document.execCommand("copy");
     el.remove();
@@ -37,10 +34,13 @@ export class Materialization extends React.Component<MaterializationProps> {
     if (isFilePath(fileLocation)) {
       return (
         <MaterializationLink
-          onClick={this.onCopyPath}
           href={fileLocation}
           key={fileLocation}
           title={`Copy path to ${fileLocation}`}
+          onClick={e => {
+            e.preventDefault();
+            this.onCopyPath(fileLocation);
+          }}
         >
           {FileIcon} {fileName}
         </MaterializationLink>
