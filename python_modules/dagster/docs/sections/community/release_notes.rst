@@ -63,6 +63,7 @@ milestones in the framework's capability.
   SQLAlchemy has been reorganized into a new top-level libraries directory. These modules are now
   importable as ``dagster_aws``, ``dagster_ge``, ``dagster_pandas``, ``dagster_pyspark``,
   ``dagster_snowflake``, ``dagster_spark``, and ``dagster_sqlalchemy``.
+- Removed dagster-sqlalchemy
 
 **Examples**
 
