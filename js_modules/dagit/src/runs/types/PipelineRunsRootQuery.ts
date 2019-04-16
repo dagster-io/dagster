@@ -13,6 +13,16 @@ export interface PipelineRunsRootQuery_pipeline_runs_pipeline {
   name: string;
 }
 
+export interface PipelineRunsRootQuery_pipeline_runs_logs_nodes {
+  __typename: "LogMessageEvent" | "PipelineStartEvent" | "PipelineSuccessEvent" | "PipelineFailureEvent" | "PipelineInitFailureEvent" | "ExecutionStepStartEvent" | "ExecutionStepSuccessEvent" | "ExecutionStepOutputEvent" | "ExecutionStepFailureEvent" | "ExecutionStepSkippedEvent" | "PipelineProcessStartEvent" | "PipelineProcessStartedEvent" | "StepMaterializationEvent";
+  timestamp: string;
+}
+
+export interface PipelineRunsRootQuery_pipeline_runs_logs {
+  __typename: "LogMessageConnection";
+  nodes: PipelineRunsRootQuery_pipeline_runs_logs_nodes[];
+}
+
 export interface PipelineRunsRootQuery_pipeline_runs_executionPlan_steps {
   __typename: "ExecutionStep";
   name: string;
@@ -29,6 +39,7 @@ export interface PipelineRunsRootQuery_pipeline_runs {
   status: PipelineRunStatus;
   config: string;
   pipeline: PipelineRunsRootQuery_pipeline_runs_pipeline;
+  logs: PipelineRunsRootQuery_pipeline_runs_logs;
   executionPlan: PipelineRunsRootQuery_pipeline_runs_executionPlan;
 }
 

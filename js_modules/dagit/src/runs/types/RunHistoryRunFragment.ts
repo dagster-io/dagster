@@ -13,6 +13,16 @@ export interface RunHistoryRunFragment_pipeline {
   name: string;
 }
 
+export interface RunHistoryRunFragment_logs_nodes {
+  __typename: "LogMessageEvent" | "PipelineStartEvent" | "PipelineSuccessEvent" | "PipelineFailureEvent" | "PipelineInitFailureEvent" | "ExecutionStepStartEvent" | "ExecutionStepSuccessEvent" | "ExecutionStepOutputEvent" | "ExecutionStepFailureEvent" | "ExecutionStepSkippedEvent" | "PipelineProcessStartEvent" | "PipelineProcessStartedEvent" | "StepMaterializationEvent";
+  timestamp: string;
+}
+
+export interface RunHistoryRunFragment_logs {
+  __typename: "LogMessageConnection";
+  nodes: RunHistoryRunFragment_logs_nodes[];
+}
+
 export interface RunHistoryRunFragment_executionPlan_steps {
   __typename: "ExecutionStep";
   name: string;
@@ -29,5 +39,6 @@ export interface RunHistoryRunFragment {
   status: PipelineRunStatus;
   config: string;
   pipeline: RunHistoryRunFragment_pipeline;
+  logs: RunHistoryRunFragment_logs;
   executionPlan: RunHistoryRunFragment_executionPlan;
 }
