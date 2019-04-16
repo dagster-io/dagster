@@ -12,9 +12,15 @@ export interface PipelineRunRootQuery_pipelineRunOrError_PipelineRunNotFoundErro
   __typename: "PipelineRunNotFoundError";
 }
 
+export interface PipelineRunRootQuery_pipelineRunOrError_PipelineRun_pipeline_solids {
+  __typename: "Solid";
+  name: string;
+}
+
 export interface PipelineRunRootQuery_pipelineRunOrError_PipelineRun_pipeline {
   __typename: "Pipeline";
   name: string;
+  solids: PipelineRunRootQuery_pipelineRunOrError_PipelineRun_pipeline_solids[];
 }
 
 export interface PipelineRunRootQuery_pipelineRunOrError_PipelineRun_logs_pageInfo {
@@ -151,6 +157,7 @@ export interface PipelineRunRootQuery_pipelineRunOrError_PipelineRun_executionPl
 export interface PipelineRunRootQuery_pipelineRunOrError_PipelineRun_executionPlan {
   __typename: "ExecutionPlan";
   steps: PipelineRunRootQuery_pipelineRunOrError_PipelineRun_executionPlan_steps[];
+  artifactsPersisted: boolean;
 }
 
 export interface PipelineRunRootQuery_pipelineRunOrError_PipelineRun {

@@ -228,6 +228,9 @@ def check_user_facing_fields_dict(fields, type_name_msg):
 
 
 def NamedDict(name, fields, description=None, type_attributes=DEFAULT_TYPE_ATTRIBUTES):
+    '''
+    A :py:class:`Dict` with a name allowing it to be referenced by that name.
+    '''
     check_user_facing_fields_dict(fields, 'NamedDict named "{}"'.format(name))
 
     class _NamedDict(_ConfigComposite):
@@ -244,6 +247,12 @@ def NamedDict(name, fields, description=None, type_attributes=DEFAULT_TYPE_ATTRI
 
 
 def Dict(fields):
+    '''
+    Schema for configuration data with string keys and typed values via :py:class:`Field` .
+
+    Args:
+        fields (Dict[str, Field])
+    '''
     check_user_facing_fields_dict(fields, 'Dict')
 
     class _Dict(_ConfigComposite):
@@ -293,6 +302,9 @@ def Selector(fields):
     to say that a single input should be sourced from a csv and a parquet file: They must choose.
 
     Note that in other type systems this might be called an "input union."
+
+    Args:
+        fields (Dict[str, Field]):
     '''
 
     check_user_facing_fields_dict(fields, 'Selector')
@@ -312,6 +324,13 @@ def Selector(fields):
 
 
 def NamedSelector(name, fields, description=None, type_attributes=DEFAULT_TYPE_ATTRIBUTES):
+    '''
+    A :py:class`Selector` with a name, allowing it to be referenced by that name.
+    
+    Args:
+        name (str):
+        fields (Dict[str, Field])
+    '''
     check.str_param(name, 'name')
     check_user_facing_fields_dict(fields, 'NamedSelector named "{}"'.format(name))
 

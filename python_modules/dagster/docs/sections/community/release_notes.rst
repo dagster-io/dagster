@@ -30,6 +30,7 @@ milestones in the framework's capability.
 - The ``NoValue`` type now allows dependencies to be constructed between solids that do not have
   data dependencies.
 - Many error messages have been improved.
+- ``throw_on_user_error`` has been renamed to ``raise_on_error`` in all APIs, public and private
 
 **GraphQL**
 
@@ -62,6 +63,7 @@ milestones in the framework's capability.
   SQLAlchemy has been reorganized into a new top-level libraries directory. These modules are now
   importable as ``dagster_aws``, ``dagster_ge``, ``dagster_pandas``, ``dagster_pyspark``,
   ``dagster_snowflake``, ``dagster_spark``, and ``dagster_sqlalchemy``.
+- Removed dagster-sqlalchemy
 
 **Examples**
 

@@ -127,7 +127,7 @@ def test_basic_start_pipeline_execution_and_subscribe():
 
 
 def test_subscription_query_error():
-    context = define_context(throw_on_user_error=False)
+    context = define_context(raise_on_error=False)
 
     result = execute_dagster_graphql(
         context,
@@ -182,7 +182,7 @@ def test_subscription_query_error():
 
 
 def test_subscribe_bad_run_id():
-    context = define_context(throw_on_user_error=False)
+    context = define_context(raise_on_error=False)
     run_id = 'nope'
     subscription = execute_dagster_graphql(
         context, parse(SUBSCRIPTION_QUERY), variables={'runId': run_id}
@@ -473,7 +473,7 @@ def test_successful_pipeline_reexecution(snapshot):
 0     1     2    3       9
 1     3     4    7      49'''
 
-    assert has_filesystem_intermediate(run_id, 'sum_solid.num.input_thunk', 'input_thunk_output')
+    assert has_filesystem_intermediate(run_id, 'sum_solid.inputs.num.read', 'input_thunk_output')
     assert has_filesystem_intermediate(run_id, 'sum_solid.transform')
     assert has_filesystem_intermediate(run_id, 'sum_sq_solid.transform')
     assert (
@@ -513,7 +513,7 @@ def test_successful_pipeline_reexecution(snapshot):
     snapshot.assert_match(result_two.data)
 
     assert not has_filesystem_intermediate(
-        new_run_id, 'sum_solid.num.input_thunk', 'input_thunk_output'
+        new_run_id, 'sum_solid.inputs.num.read', 'input_thunk_output'
     )
     assert has_filesystem_intermediate(new_run_id, 'sum_solid.transform')
     assert has_filesystem_intermediate(new_run_id, 'sum_sq_solid.transform')

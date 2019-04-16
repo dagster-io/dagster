@@ -74,7 +74,7 @@ def _do_setup(name='dagster'):
             # 'recommonmark>=0.4.0',
             # 'rope>=0.10.7',
             # 'snapshottest==0.5.0',
-            # 'Sphinx>=1.7.5',
+            # 'Sphinx>=2.0.1',
             # 'sphinx-autobuild>=0.7.1',
             # 'yapf>=0.22.0',
             # 'twine>=1.11.0',

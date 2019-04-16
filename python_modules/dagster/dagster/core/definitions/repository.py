@@ -15,7 +15,7 @@ from .pipeline import PipelineDefinition
 class RepositoryDefinition(object):
     '''Define a repository that contains a collection of pipelines.
 
-    Attributes:
+    Args:
         name (str): The name of the pipeline.
         pipeline_dict (Dict[str, callable]):
             An dictionary of pipelines. The value of the dictionary is a function that takes
@@ -32,11 +32,6 @@ class RepositoryDefinition(object):
     '''
 
     def __init__(self, name, pipeline_dict, repo_config=None, enforce_solid_def_uniqueness=True):
-        '''
-        Args:
-            name (str): Name of pipeline.
-            pipeline_dict (Dict[str, callable]): See top-level class documentation
-        '''
         self.name = check.str_param(name, 'name')
 
         check.dict_param(pipeline_dict, 'pipeline_dict', key_type=str)
@@ -182,18 +177,17 @@ class RepositoryDefinition(object):
         return self.get_presets_for_pipeline(pipeline_name).get(solid_name)
 
     def get_presets_for_pipeline(self, pipeline_name):
-        if self.repo_config and self.repo_config.get('pipelines'):
-            return {
-                name: PipelinePreset(
-                    name, pipeline_name, config.get('solid_subset'), config.get('environment_files')
-                )
-                for name, config in self.repo_config['pipelines']
-                .get(pipeline_name, {})
-                .get('presets', {})
-                .items()
-            }
+        if not (self.repo_config and self.repo_config.get('pipelines')):
+            return {}
 
-        return {}
+        presets = self.repo_config['pipelines'].get(pipeline_name, {}).get('presets', {})
+
+        return {
+            name: PipelinePreset(
+                name, pipeline_name, config.get('solid_subset'), config.get('environment_files')
+            )
+            for name, config in presets.items()
+        }
 
     def get_preset_pipeline(self, pipeline_name, preset_name):
         pipeline = self.get_pipeline(pipeline_name)

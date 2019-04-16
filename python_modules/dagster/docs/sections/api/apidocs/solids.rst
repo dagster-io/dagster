@@ -1,16 +1,13 @@
+.. currentmodule:: dagster
+
 Solids
 ======
-.. currentmodule:: dagster
 
 The foundational unit of composition in Dagster.
 
-Core
-----
+-----
 
 .. autoclass:: SolidDefinition
-    :members:
-
-.. autoclass:: Result
     :members:
 
 .. autoclass:: InputDefinition
@@ -19,16 +16,33 @@ Core
 .. autoclass:: OutputDefinition
     :members:
 
+.. autoclass:: Result
+    :members:
+
+.. autoclass:: Materialization
+    :members:
+
+
+-----
+
 Decorators
 ----------
+
 The concise way to define solids.
 
-.. autofunction:: lambda_solid
+.. autodecorator:: lambda_solid
 
-.. autofunction:: solid
+.. autodecorator:: solid
 
 .. autoclass:: MultipleResults
     :members:
+
+-----
+
+Expectations
+------------
+
+.. autoclass:: ExpectationDefinition
 
 
 

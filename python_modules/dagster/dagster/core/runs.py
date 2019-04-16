@@ -54,6 +54,11 @@ class RunStorage(six.with_metaclass(ABCMeta)):  # pylint: disable=no-init
     def nuke(self):
         pass
 
+    @property
+    @abstractmethod
+    def is_persistent(self):
+        pass
+
 
 class FileSystemRunStorage(RunStorage):
     def __init__(self, base_dir=None):
@@ -105,6 +110,10 @@ class FileSystemRunStorage(RunStorage):
     def nuke(self):
         shutil.rmtree(self._base_dir)
 
+    @property
+    def is_persistent(self):
+        return True
+
 
 class InMemoryRunStorage(RunStorage):
     def __init__(self):
@@ -126,6 +135,10 @@ class InMemoryRunStorage(RunStorage):
 
     def nuke(self):
         self._run_metas = OrderedDict()
+
+    @property
+    def is_persistent(self):
+        return False
 
 
 class RunStorageMode(Enum):

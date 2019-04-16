@@ -191,8 +191,10 @@ class ExecutionValueSubplan(
         return ExecutionValueSubplan([], terminal_step_output_handle)
 
 
-class ExecutionPlan(namedtuple('_ExecutionPlan', 'pipeline_def step_dict, deps, steps')):
-    def __new__(cls, pipeline_def, step_dict, deps):
+class ExecutionPlan(
+    namedtuple('_ExecutionPlan', 'pipeline_def step_dict deps steps artifacts_persisted')
+):
+    def __new__(cls, pipeline_def, step_dict, deps, artifacts_persisted):
         return super(ExecutionPlan, cls).__new__(
             cls,
             pipeline_def=check.inst_param(pipeline_def, 'pipeline_def', PipelineDefinition),
@@ -201,6 +203,7 @@ class ExecutionPlan(namedtuple('_ExecutionPlan', 'pipeline_def step_dict, deps, 
             ),
             deps=check.dict_param(deps, 'deps', key_type=str, value_type=set),
             steps=list(step_dict.values()),
+            artifacts_persisted=check.bool_param(artifacts_persisted, 'artifacts_persisted'),
         )
 
     def get_step_output(self, step_output_handle):

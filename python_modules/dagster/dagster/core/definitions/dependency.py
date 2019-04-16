@@ -16,6 +16,12 @@ class SolidInstance(namedtuple('Solid', 'name alias')):
     A solid identifier in a dependency structure. Allows supplying parameters to the solid,
     like the alias.
 
+    Args:
+        name (str): Name of the solid in the pipeline to instance.
+        alias (Optional[str]):
+            Name for this instance of the solid. Necessary when there are multiple instances
+            of the same solid.
+
     Example:
 
         .. code-block:: python
@@ -236,7 +242,7 @@ class DependencyDefinition(namedtuple('_DependencyDefinition', 'solid output des
     used with a dictionary structure (whose keys represent solid/input where the dependency
     comes from) so this object only contains the target dependency information.
 
-    Attributes:
+    Args:
         solid (str):
             The name of the solid that is the target of the dependency.
             This is the solid where the value passed between the solids

@@ -51,17 +51,6 @@ def parse_raw_res(raw_res):
     return (res, last_line)
 
 
-def handle_errors(res, last_line):
-    if res is None:
-        raise AirflowException('Unhandled error type. Response: {}'.format(last_line))
-
-    if res.get('errors'):
-        raise AirflowException('Internal error in GraphQL request. Response: {}'.format(res))
-
-    if not res.get('data', {}).get('executePlan', {}).get('__typename'):
-        raise AirflowException('Unexpected response type. Response: {}'.format(res))
-
-
 class DagsterOperator(with_metaclass(ABCMeta)):  # pylint:disable=no-init
     '''Abstract base class for Dagster operators.
 
@@ -75,6 +64,59 @@ class DagsterOperator(with_metaclass(ABCMeta)):  # pylint:disable=no-init
         cls, pipeline, env_config, solid_name, step_keys, dag, dag_id, op_kwargs
     ):
         pass
+
+    @classmethod
+    def handle_errors(cls, res, last_line):
+        if res is None:
+            raise AirflowException('Unhandled error type. Response: {}'.format(last_line))
+
+        if res.get('errors'):
+            raise AirflowException('Internal error in GraphQL request. Response: {}'.format(res))
+
+        if not res.get('data', {}).get('executePlan', {}).get('__typename'):
+            raise AirflowException('Unexpected response type. Response: {}'.format(res))
+
+    @classmethod
+    def handle_result(cls, res):
+        res_data = res['data']['executePlan']
+
+        res_type = res_data['__typename']
+
+        if res_type == 'PipelineConfigValidationInvalid':
+            errors = [err['message'] for err in res_data['errors']]
+            raise AirflowException(
+                'Pipeline configuration invalid:\n{errors}'.format(errors='\n'.join(errors))
+            )
+
+        if res_type == 'PipelineNotFoundError':
+            raise AirflowException(
+                'Pipeline {pipeline_name} not found: {message}:\n{stack_entries}'.format(
+                    pipeline_name=res_data['pipelineName'],
+                    message=res_data['message'],
+                    stack_entries='\n'.join(res_data['stack']),
+                )
+            )
+
+        if res_type == 'ExecutePlanSuccess':
+            if res_data['hasFailures']:
+                errors = [
+                    step['errorMessage'] for step in res_data['stepEvents'] if not step['success']
+                ]
+                raise AirflowException(
+                    'Subplan execution failed:\n{errors}'.format(errors='\n'.join(errors))
+                )
+
+            return res
+
+        if res_type == 'PythonError':
+            raise AirflowException(
+                'Subplan execution failed: {message}\n{stack}'.format(
+                    message=res_data['message'], stack=res_data['stack']
+                )
+            )
+
+        # Catchall
+        return res
 
 
 # pylint: disable=len-as-condition
@@ -341,51 +383,9 @@ class DagsterDockerOperator(ModifiedDockerOperator, DagsterOperator):
             self.log.info('Finished executing container.')
             (res, last_line) = parse_raw_res(raw_res)
 
-            handle_errors(res, last_line)
+            self.handle_errors(res, last_line)
 
-            res_data = res['data']['executePlan']
-
-            res_type = res_data['__typename']
-
-            if res_type == 'PipelineConfigValidationInvalid':
-                errors = [err['message'] for err in res_data['errors']]
-                raise AirflowException(
-                    'Pipeline configuration invalid:\n{errors}'.format(errors='\n'.join(errors))
-                )
-
-            if res_type == 'PipelineNotFoundError':
-                raise AirflowException(
-                    'Pipeline {pipeline_name} not found: {message}:\n{stack_entries}'.format(
-                        pipeline_name=res_data['pipelineName'],
-                        message=res_data['message'],
-                        stack_entries='\n'.join(res_data['stack']),
-                    )
-                )
-
-            if res_type == 'ExecutePlanSuccess':
-                self.log.info('Plan execution succeeded.')
-                if res_data['hasFailures']:
-                    errors = [
-                        step['errorMessage']
-                        for step in res_data['stepEvents']
-                        if not step['success']
-                    ]
-                    raise AirflowException(
-                        'Subplan execution failed:\n{errors}'.format(errors='\n'.join(errors))
-                    )
-
-                return res
-
-            if res_type == 'PythonError':
-                self.log.info('Plan execution failed.')
-                raise AirflowException(
-                    'Subplan execution failed: {message}\n{stack}'.format(
-                        message=res_data['message'], stack=res_data['stack']
-                    )
-                )
-
-            # Catchall
-            return res
+            return self.handle_result(res)
 
         finally:
             self._run_id = None
@@ -425,7 +425,9 @@ class DagsterPythonOperator(PythonOperator, DagsterOperator):
                 step_keys=json.dumps(step_keys),
                 pipeline_name=pipeline.name,
             )
-            return json.loads(execute_query_from_cli(repository_container, query, variables=None))
+            res = json.loads(execute_query_from_cli(repository_container, query, variables=None))
+            cls.handle_errors(res, None)
+            return cls.handle_result(res)
 
         return python_callable
 

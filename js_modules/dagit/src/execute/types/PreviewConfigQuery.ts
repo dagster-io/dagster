@@ -67,6 +67,7 @@ export interface PreviewConfigQuery_executionPlan_ExecutionPlan_steps {
 export interface PreviewConfigQuery_executionPlan_ExecutionPlan {
   __typename: "ExecutionPlan";
   steps: PreviewConfigQuery_executionPlan_ExecutionPlan_steps[];
+  artifactsPersisted: boolean;
 }
 
 export interface PreviewConfigQuery_executionPlan_PipelineNotFoundError {

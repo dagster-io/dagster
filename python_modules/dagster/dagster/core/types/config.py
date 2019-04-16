@@ -20,6 +20,10 @@ DEFAULT_TYPE_ATTRIBUTES = ConfigTypeAttributes()
 
 
 class ConfigType(object):
+    '''
+    The class backing DagsterTypes as they are used processing configuration data.
+    '''
+
     def __init__(self, key, name, type_attributes=DEFAULT_TYPE_ATTRIBUTES, description=None):
 
         type_obj = type(self)

@@ -161,7 +161,7 @@ def test_successful_one_part_execute_plan(snapshot):
         variables={
             'pipelineName': 'pandas_hello_world',
             'config': pandas_hello_world_solids_config_fs_storage(),
-            'stepKeys': ['sum_solid.num.input_thunk', 'sum_solid.transform'],
+            'stepKeys': ['sum_solid.inputs.num.read', 'sum_solid.transform'],
             'executionMetadata': {'runId': run_id},
         },
     )
@@ -200,7 +200,7 @@ def test_successful_two_part_execute_plan(snapshot):
         variables={
             'pipelineName': 'pandas_hello_world',
             'config': pandas_hello_world_solids_config_fs_storage(),
-            'stepKeys': ['sum_solid.num.input_thunk', 'sum_solid.transform'],
+            'stepKeys': ['sum_solid.inputs.num.read', 'sum_solid.transform'],
             'executionMetadata': {'runId': run_id},
         },
     )

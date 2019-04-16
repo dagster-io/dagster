@@ -47,29 +47,15 @@ class SolidAliasMapper:
 
 
 def create_execution_structure(solids, dependencies_dict):
+    check.list_param(solids, 'solids', of_type=SolidDefinition)
     mapper = SolidAliasMapper(dependencies_dict)
 
     pipeline_solids = []
     for solid_def in solids:
-        if isinstance(solid_def, SolidDefinition):
-            uses_of_solid = mapper.get_uses_of_solid(solid_def.name) or set([solid_def.name])
+        uses_of_solid = mapper.get_uses_of_solid(solid_def.name) or set([solid_def.name])
 
-            for alias in uses_of_solid:
-                pipeline_solids.append(Solid(name=alias, definition=solid_def))
-
-        elif callable(solid_def):
-            raise DagsterInvalidDefinitionError(
-                '''You have passed a lambda or function {func} into a pipeline that is
-                not a solid. You have likely forgetten to annotate this function with
-                an @solid or @lambda_solid decorator located in dagster.core.decorators
-                '''.format(
-                    func=solid_def.__name__
-                )
-            )
-        else:
-            raise DagsterInvalidDefinitionError(
-                'Invalid item in solid list: {item}'.format(item=repr(solid_def))
-            )
+        for alias in uses_of_solid:
+            pipeline_solids.append(Solid(name=alias, definition=solid_def))
 
     pipeline_solid_dict = {ps.name: ps for ps in pipeline_solids}
 

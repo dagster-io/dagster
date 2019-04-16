@@ -344,7 +344,7 @@ def do_execute_command(pipeline, env_file_list, raise_on_error):
         pipeline,
         environment_dict=environment_dict,
         run_config=RunConfig(
-            executor_config=InProcessExecutorConfig(throw_on_user_error=raise_on_error)
+            executor_config=InProcessExecutorConfig(raise_on_error=raise_on_error)
         ),
     )
 

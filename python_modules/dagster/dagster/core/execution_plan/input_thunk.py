@@ -30,7 +30,7 @@ def _create_input_thunk_execution_step(pipeline_def, solid, input_def, input_spe
 
     return ExecutionStep(
         pipeline_name=pipeline_def.name,
-        key=solid.name + '.' + input_def.name + '.input_thunk',
+        key=solid.name + '.inputs.' + input_def.name + '.read',
         step_inputs=[],
         step_outputs=[
             StepOutput(name=INPUT_THUNK_OUTPUT, runtime_type=input_def.runtime_type, optional=False)

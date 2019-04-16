@@ -1,3 +1,5 @@
+import sys
+import os
 import click
 
 from ..version import __version__
@@ -11,6 +13,8 @@ def create_dagster_cli():
     def group():
         pass
 
+    # add the path for the cwd so imports in dynamically loaded code work correctly
+    sys.path.append(os.getcwd())
     return group
 
 

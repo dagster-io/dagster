@@ -8,9 +8,15 @@ import { PipelineRunStatus, LogLevel, StepKind } from "./../../types/globalTypes
 // GraphQL fragment: PipelineRunFragment
 // ====================================================
 
+export interface PipelineRunFragment_pipeline_solids {
+  __typename: "Solid";
+  name: string;
+}
+
 export interface PipelineRunFragment_pipeline {
   __typename: "Pipeline";
   name: string;
+  solids: PipelineRunFragment_pipeline_solids[];
 }
 
 export interface PipelineRunFragment_logs_pageInfo {
@@ -147,6 +153,7 @@ export interface PipelineRunFragment_executionPlan_steps {
 export interface PipelineRunFragment_executionPlan {
   __typename: "ExecutionPlan";
   steps: PipelineRunFragment_executionPlan_steps[];
+  artifactsPersisted: boolean;
 }
 
 export interface PipelineRunFragment {

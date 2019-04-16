@@ -183,7 +183,7 @@ def execute_step_in_memory(step_context, inputs, intermediates_manager):
             step_context=step_context, step_failure_data=StepFailureData(error=error_info)
         )
 
-        if step_context.executor_config.throw_on_user_error:
+        if step_context.executor_config.raise_on_error:
             raise dagster_error
 
         return

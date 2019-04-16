@@ -17,6 +17,34 @@ from .pipeline_creation import (
     construct_config_type_dictionary,
     construct_runtime_type_dictionary,
 )
+from .solid import SolidDefinition
+
+
+def _check_solids_arg(pipeline_name, solid_defs):
+    if not isinstance(solid_defs, list):
+        raise DagsterInvalidDefinitionError(
+            '"solids" arg to pipeline "{name}" is not a list. Got {val}.'.format(
+                name=pipeline_name, val=repr(solid_defs)
+            )
+        )
+    for solid_def in solid_defs:
+        if isinstance(solid_def, SolidDefinition):
+            continue
+        elif callable(solid_def):
+            raise DagsterInvalidDefinitionError(
+                '''You have passed a lambda or function {func} into pipeline {name} that is
+                not a solid. You have likely forgetten to annotate this function with
+                an @solid or @lambda_solid decorator.'
+                '''.format(
+                    name=pipeline_name, func=solid_def.__name__
+                )
+            )
+        else:
+            raise DagsterInvalidDefinitionError(
+                'Invalid item in solid list: {item}'.format(item=repr(solid_def))
+            )
+
+    return solid_defs
 
 
 class PipelineDefinition(object):
@@ -37,6 +65,19 @@ class PipelineDefinition(object):
         Solids within a pipeline are arranged as a DAG (directed, acyclic graph). Dependencies
         determine how the values produced by solids flow through the DAG.
 
+    Args:
+        solids (List[SolidDefinition]):
+            The set of solid definitions used in this pipeline.
+        name (Optional[str])
+        despcription (Optional[str])
+        context_definitions (Optional[Dict[str, PipelineContextDefinition]]):
+            A mapping of context names to PipelineContextDefinition.
+        dependencies (Optional[Dict[Union[str, SolidInstance], Dict[str, DependencyDefinition]]]):
+            A structure that declares where each solid gets its inputs. The keys at the top
+            level dict are either string names of solids or SolidInstances. The values
+            are dicts that map input names to DependencyDefinitions.
+
+
     Attributes:
         name (str):
             Name of the pipeline. Must be unique per-repository.
@@ -46,12 +87,14 @@ class PipelineDefinition(object):
             List of the solids in this pipeline.
         dependencies (Dict[str, Dict[str, DependencyDefinition]]) :
             Dependencies that constitute the structure of the pipeline. This is a two-dimensional
-            array that maps solid_name => input_name => DependencyDefiniion instance
+            array that maps solid_name => input_name => DependencyDefinition instance
         context_definitions (Dict[str, PipelineContextDefinition]):
             The context definitions available for consumers of this pipelines. For example, a
             unit-testing environment and a production environment probably have very different
             configuration and requirements. There would be one context definition per
             environment.
+
+            Only one context will be used at runtime, selected by environment configuration.
         dependency_structure (DependencyStructure):
             Used mostly internally. This has the same information as the dependencies data
             structure, but indexed for fast usage.
@@ -60,19 +103,12 @@ class PipelineDefinition(object):
     def __init__(
         self, solids, name=None, description=None, context_definitions=None, dependencies=None
     ):
-        '''
-        Args:
-            solids (List[SolidDefinition]): Solids in the pipeline
-            name (str): Name. This is optional, mostly for situations that require ephemeral
-                pipeline definitions for fast scaffolding or testing.
-            description (str): Description of the pipline.
-            context_definitions (Dict[str, PipelineContextDefinition]): See class description.
-            dependencies: (Dict[str, Dict[str, DependencyDefinition]]): See class description.
-        '''
         self.name = check.opt_str_param(name, 'name', '<<unnamed>>')
         self.description = check.opt_str_param(description, 'description')
 
-        check.list_param(solids, 'solids')
+        solids = check.list_param(
+            _check_solids_arg(self.name, solids), 'solids', of_type=SolidDefinition
+        )
 
         if context_definitions is None:
             context_definitions = default_pipeline_context_definitions()
@@ -159,7 +195,7 @@ class PipelineDefinition(object):
         if name not in self._solid_dict:
             raise DagsterInvariantViolationError(
                 'Pipeline {pipeline_name} has no solid named {name}.'.format(
-                    pipline_name=self.name, name=name
+                    pipeline_name=self.name, name=name
                 )
             )
         return self._solid_dict[name]

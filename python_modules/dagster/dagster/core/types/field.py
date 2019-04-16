@@ -37,6 +37,17 @@ def Field(
     is_optional=INFER_OPTIONAL_COMPOSITE_FIELD,
     description=None,
 ):
+    '''
+    The schema for configuration data that describes the type, optionality, defaults, and description.
+
+    Args:
+        dagster_type (DagsterType):
+            A ``DagsterType`` describing the schema of this field, ie `Dict({'example': Field(String)})`
+        default_value (Any):
+            A default value to use that respects the schema provided via dagster_type
+        is_optional (bool): Whether the presence of this field is optional
+        despcription (str):
+    '''
     config_type = resolve_to_config_type(dagster_type)
     if not config_type:
         raise DagsterInvalidDefinitionError(

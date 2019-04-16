@@ -3,6 +3,7 @@ import json
 import pytest
 
 from dagster import (
+    Int,
     InputDefinition,
     OutputDefinition,
     PipelineConfigEvaluationError,
@@ -12,11 +13,14 @@ from dagster import (
     lambda_solid,
     solid,
     types,
+    RuntimeType,
+    output_schema,
 )
 from dagster.core.definitions.environment_configs import (
     solid_has_config_entry,
     solid_has_configurable_outputs,
 )
+from dagster.core.errors import DagsterInvariantViolationError
 from dagster.core.execution import create_environment_config, create_execution_plan
 from dagster.core.execution_plan.materialization_thunk import MATERIALIZATION_THUNK_OUTPUT
 from dagster.core.execution_plan.objects import StepOutputHandle
@@ -165,8 +169,8 @@ def test_basic_int_execution_plan():
     steps = execution_plan.topological_steps()
 
     assert steps[0].key == 'return_one.transform'
-    assert steps[1].key == 'return_one.materialization.output.result.0'
-    assert steps[2].key == 'return_one.materialization.output.result.join'
+    assert steps[1].key == 'return_one.outputs.result.materialize.0'
+    assert steps[2].key == 'return_one.outputs.result.materialize.join'
 
 
 def test_basic_int_json_materialization():
@@ -225,8 +229,8 @@ def test_basic_int_and_string_execution_plan():
         steps,
         [1, 2],
         [
-            'return_one_and_foo.materialization.output.string.0',
-            'return_one_and_foo.materialization.output.number.0',
+            'return_one_and_foo.outputs.string.materialize.0',
+            'return_one_and_foo.outputs.number.materialize.0',
         ],
     )
 
@@ -234,15 +238,15 @@ def test_basic_int_and_string_execution_plan():
         steps,
         [3, 4],
         [
-            'return_one_and_foo.materialization.output.number.join',
-            'return_one_and_foo.materialization.output.string.join',
+            'return_one_and_foo.outputs.string.materialize.join',
+            'return_one_and_foo.outputs.number.materialize.join',
         ],
     )
 
     transform_step = execution_plan.get_step_by_key('return_one_and_foo.transform')
 
     string_mat_step = execution_plan.get_step_by_key(
-        'return_one_and_foo.materialization.output.string.0'
+        'return_one_and_foo.outputs.string.materialize.0'
     )
     assert len(string_mat_step.step_inputs) == 1
     assert string_mat_step.step_inputs[0].prev_output_handle == StepOutputHandle.from_step(
@@ -250,7 +254,7 @@ def test_basic_int_and_string_execution_plan():
     )
 
     string_mat_join_step = execution_plan.get_step_by_key(
-        'return_one_and_foo.materialization.output.string.join'
+        'return_one_and_foo.outputs.string.materialize.join'
     )
     assert len(string_mat_join_step.step_inputs) == 1
     assert string_mat_join_step.step_inputs[0].prev_output_handle == StepOutputHandle.from_step(
@@ -320,10 +324,10 @@ def test_basic_int_and_string_json_multiple_materialization_execution_plan():
         steps,
         [1, 2, 3, 4],
         [
-            'return_one_and_foo.materialization.output.number.0',
-            'return_one_and_foo.materialization.output.number.1',
-            'return_one_and_foo.materialization.output.string.0',
-            'return_one_and_foo.materialization.output.string.1',
+            'return_one_and_foo.outputs.number.materialize.0',
+            'return_one_and_foo.outputs.number.materialize.1',
+            'return_one_and_foo.outputs.string.materialize.0',
+            'return_one_and_foo.outputs.string.materialize.1',
         ],
     )
 
@@ -331,8 +335,8 @@ def test_basic_int_and_string_json_multiple_materialization_execution_plan():
         steps,
         [5, 6],
         [
-            'return_one_and_foo.materialization.output.number.join',
-            'return_one_and_foo.materialization.output.string.join',
+            'return_one_and_foo.outputs.number.materialize.join',
+            'return_one_and_foo.outputs.string.materialize.join',
         ],
     )
 
@@ -412,13 +416,10 @@ def test_basic_int_multiple_serializations_execution_plan():
     assert_plan_topological_level(
         steps,
         [1, 2],
-        [
-            'return_one.materialization.output.result.0',
-            'return_one.materialization.output.result.1',
-        ],
+        ['return_one.outputs.result.materialize.0', 'return_one.outputs.result.materialize.1'],
     )
 
-    assert steps[3].key == 'return_one.materialization.output.result.join'
+    assert steps[3].key == 'return_one.outputs.result.materialize.join'
 
 
 def test_basic_int_json_multiple_materializations():
@@ -449,3 +450,33 @@ def test_basic_int_json_multiple_materializations():
         with open(filename_two, 'r') as ff:
             value = json.loads(ff.read())
             assert value == {'value': 1}
+
+
+@output_schema(Int)
+def return_int(*_args, **_kwargs):
+    return 1
+
+
+class SomeRuntimeType(RuntimeType):
+    def __init__(self):
+        super(SomeRuntimeType, self).__init__(
+            key='SomeType', name='SomeType', output_schema=return_int
+        )
+
+
+def test_basic_bad_output_materialization():
+    @lambda_solid(output=OutputDefinition(SomeRuntimeType))
+    def return_one():
+        return 1
+
+    pipeline_def = PipelineDefinition(name='single_int_output_pipeline', solids=[return_one])
+
+    with pytest.raises(DagsterInvariantViolationError) as exc_info:
+        execute_pipeline(
+            pipeline_def, environment_dict={'solids': {'return_one': {'outputs': [{'result': 2}]}}}
+        )
+
+    assert str(exc_info.value) == (
+        'materialize_runtime_value on type SomeType has returned value '
+        '1 of type int. You must return a string (and ideally a valid file path).'
+    )
