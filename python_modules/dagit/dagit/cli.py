@@ -1,5 +1,6 @@
 import os
 import sys
+import six
 
 import click
 
@@ -89,7 +90,24 @@ def host_dagit_ui(log, log_dir, repository_container, sync, host, port):
     )
     server = pywsgi.WSGIServer((host, port), app, handler_class=WebSocketHandler)
     print('Serving on http://{host}:{port}'.format(host=host, port=port))
-    server.serve_forever()
+    try:
+        server.serve_forever()
+    except OSError as os_error:
+        if 'Address already in use' in str(os_error):
+            six.raise_from(
+                Exception(
+                    (
+                        'Another process on your machine is already listening on port {port}. '
+                        'It is possible that you have another instance of dagit '
+                        'running somewhere using the same port. Or it could be another '
+                        'random process. Either kill that process or us the -p option to '
+                        'select another port.'
+                    ).format(port=port)
+                ),
+                os_error,
+            )
+        else:
+            raise os_error
 
 
 def main():
