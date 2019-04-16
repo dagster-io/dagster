@@ -2,12 +2,11 @@ import { SidebarSolidInfoFragment } from "../types/SidebarSolidInfoFragment";
 
 import * as ipynb from "./ipynb";
 import * as sql from "./sql";
-import * as spark from "./spark";
+import * as generic from "./generic";
 
 const plugins = {
   sql: sql,
-  ipynb: ipynb,
-  spark: spark
+  ipynb: ipynb
 };
 
 export interface IPluginSidebarProps {
@@ -16,8 +15,8 @@ export interface IPluginSidebarProps {
 
 export interface IPluginInterface {
   SidebarComponent:
-  | React.ComponentClass<IPluginSidebarProps>
-  | React.SFC<IPluginSidebarProps>;
+    | React.ComponentClass<IPluginSidebarProps>
+    | React.SFC<IPluginSidebarProps>;
 }
 
 export function pluginForMetadata(
@@ -25,5 +24,5 @@ export function pluginForMetadata(
 ): IPluginInterface | null {
   const kindMetadata = metadata.find(m => m.key === "kind");
   if (!kindMetadata) return null;
-  return plugins[kindMetadata.value];
+  return plugins[kindMetadata.value] || generic;
 }
