@@ -53,6 +53,12 @@ def _get_pipelines(graphene_info):
                     serializable_error_info_from_exc_info(sys.exc_info())
                 )
             )
+        except Exception:  # pylint: disable=broad-except
+            return EitherError(
+                graphene_info.schema.type_named('PythonError')(
+                    serializable_error_info_from_exc_info(sys.exc_info())
+                )
+            )
 
     repository_or_error = _repository_or_error_from_container(graphene_info)
     return repository_or_error.chain(process_pipelines)
