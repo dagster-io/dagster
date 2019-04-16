@@ -8,9 +8,15 @@ import { PipelineRunStatus, LogLevel, StepKind } from "./../../types/globalTypes
 // GraphQL fragment: PipelineRunLogsUpdateFragment
 // ====================================================
 
+export interface PipelineRunLogsUpdateFragment_pipeline_solids {
+  __typename: "Solid";
+  name: string;
+}
+
 export interface PipelineRunLogsUpdateFragment_pipeline {
   __typename: "Pipeline";
   name: string;
+  solids: PipelineRunLogsUpdateFragment_pipeline_solids[];
 }
 
 export interface PipelineRunLogsUpdateFragment_logs_pageInfo {

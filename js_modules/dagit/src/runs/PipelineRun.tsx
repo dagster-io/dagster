@@ -54,6 +54,9 @@ export class PipelineRun extends React.Component<
         runId
         pipeline {
           name
+          solids {
+            name
+          }
         }
         logs {
           nodes {
@@ -157,7 +160,10 @@ export class PipelineRun extends React.Component<
 
     const result = await mutation({
       variables: {
-        pipeline: { name: run.pipeline.name },
+        pipeline: {
+          name: run.pipeline.name,
+          solidSubset: run.pipeline.solids.map(s => s.name)
+        },
         config: yaml.parse(run.config),
         stepKeys: [stepName],
         reexecutionConfig: reexecutionConfig
