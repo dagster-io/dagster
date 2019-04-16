@@ -1,6 +1,7 @@
 import pytest
 
 from dagster import (
+    check,
     Any,
     DagsterEvaluateConfigValueError,
     Dict,
@@ -756,3 +757,11 @@ def test_multilevel_good_error_handling_config_solids_name_solids():
     execute_pipeline(
         pipeline_def, environment_dict={'solids': {'good_error_handling': {'config': None}}}
     )
+
+
+def test_invalid_default_values():
+    with pytest.raises(check.ParameterCheckError):
+
+        @solid(config_field=Field(Int, default_value='3'))
+        def _solid():
+            pass

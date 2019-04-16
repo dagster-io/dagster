@@ -1,7 +1,16 @@
 import sys
 
-from dagster_graphql.schema.errors import DauphinPythonError
+from dagster import Field, Int, PipelineDefinition, RepositoryDefinition, solid
+
+from dagster.cli.dynamic_loader import RepositoryContainer
 from dagster.utils.error import serializable_error_info_from_exc_info
+
+from dagster_graphql.implementation.context import DagsterGraphQLContext
+from dagster_graphql.implementation.pipeline_execution_manager import SynchronousExecutionManager
+from dagster_graphql.implementation.pipeline_run_storage import PipelineRunStorage
+from dagster_graphql.schema.errors import DauphinPythonError
+
+from .graphql.setup import execute_dagster_graphql
 
 
 def test_python_error():
@@ -18,3 +27,37 @@ def test_python_error():
     assert isinstance(python_error.stack, list)
     assert len(python_error.stack) == 2
     assert 'bar' in python_error.stack[1]
+
+
+def define_bad_pipeline():
+    @solid(config_field=Field(Int, default_value='number'))
+    def bad_context():
+        pass
+
+    return PipelineDefinition(name='bad', solids=[bad_context])
+
+
+def define_error_pipeline_repo():
+    return RepositoryDefinition(name='error_pipeline', pipeline_dict={'bad': define_bad_pipeline})
+
+
+PIPELINES = '''
+{
+  pipelinesOrError {
+    ... on PythonError {
+      __typename
+      message
+    }
+  }
+}
+'''
+
+
+def test_pipelines_python_error():
+    ctx = DagsterGraphQLContext(
+        RepositoryContainer(repository=define_error_pipeline_repo()),
+        PipelineRunStorage(),
+        execution_manager=SynchronousExecutionManager(),
+    )
+    result = execute_dagster_graphql(ctx, PIPELINES)
+    assert result.data['pipelinesOrError']['__typename'] == "PythonError"
