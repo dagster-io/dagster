@@ -28,19 +28,6 @@ def test_smoke_app():
     assert len(data['errors']) == 1
     assert data['errors'][0]['message'] == 'Must provide query string.'
 
-    result = client.post('/dagit/open', data={'path': 'foo.bar'})
-    assert result.status_code == 405
-    assert '405 Method Not Allowed' in result.data.decode('utf-8')
-
-    result = client.get('/dagit/open', data={'path': 'foo.bar'})
-    assert result.status_code == 400
-    assert result.data.decode('utf-8') == 'Must provide path to a file.'
-
-    # FIXME this doesn't work on python 27
-    # result = client.get('/dagit/open?path=foo.bar')
-    # assert result.status_code == 400
-    # assert 'does not exist' in result.data.decode('utf-8')
-
     result = client.get('/dagit/notebook?path=foo.bar')
     assert result.status_code == 400
     assert result.data.decode('utf-8') == 'Invalid Path'

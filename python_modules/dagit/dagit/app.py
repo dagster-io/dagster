@@ -112,33 +112,6 @@ def notebook_view():
         return "<style>" + resources['inlining']['css'][0] + "</style>" + body, 200
 
 
-def open_file_view():
-    path = request.args.get('path')
-
-    if path is None:
-        return 'Must provide path to a file.', 400
-
-    # Jupyter doesn't register as a handler for ipynb files, so calling `open` won't
-    # work. Instead, spawn a Jupyter notebook process.
-    if path.endswith(".ipynb"):
-        subprocess.Popen(['jupyter', 'notebook', path])
-        return "Success", 200
-
-    # Fall back to `open` or `xdg-open` for other file types
-    if os.name == 'nt':  # For Windows
-        os.startfile(path, 'open')  # pylint:disable=no-member
-        return "Success", 200
-
-    open_cmd = 'open' if sys.platform.startswith('darwin') else 'xdg-open'
-    # FIXME this doesn't work on python27
-    # https://github.com/dagster-io/dagster/issues/1210
-    (exitcode, output) = subprocess.getstatusoutput(open_cmd + ' ' + cmd_quote(path))
-    if exitcode == 0:
-        return "Success", 200
-    else:
-        return output, 400
-
-
 def create_app(repository_container, pipeline_runs, use_synchronous_execution_manager=False):
     app = Flask('dagster-ui')
     sockets = Sockets(app)
@@ -178,7 +151,6 @@ def create_app(repository_container, pipeline_runs, use_synchronous_execution_ma
     # these routes are specifically for the Dagit UI and are not part of the graphql
     # API that we want other people to consume, so they're separate for now.
     app.add_url_rule('/dagit/notebook', 'notebook', notebook_view)
-    app.add_url_rule('/dagit/open', 'open', open_file_view)
 
     app.add_url_rule('/static/<path:path>/<string:file>', 'static_view', static_view)
     app.add_url_rule('/<path:_path>', 'index_catchall', index_view)
