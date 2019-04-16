@@ -1,88 +1,59 @@
 import * as React from "react";
 import styled from "styled-components";
-import { ROOT_SERVER_URI } from "./Util";
-import { Colors, Spinner } from "@blueprintjs/core";
+import { Toaster, Colors, Position, Intent } from "@blueprintjs/core";
 
-function fileLocationToHref(location: string) {
-  if (location.startsWith("/")) {
-    return `file://${location}`;
-  }
-  return location;
-}
+const SharedToaster = Toaster.create({ position: Position.TOP }, document.body);
 
 interface MaterializationProps {
   fileLocation: string;
   fileName: string;
 }
-interface MaterializationState {
-  opening: boolean;
+
+function isFilePath(url: string) {
+  return url.startsWith("file://") || url.startsWith("/");
 }
+export class Materialization extends React.Component<MaterializationProps> {
+  onCopyPath = async (path: string) => {
+    const el = document.createElement("input");
+    document.body.appendChild(el);
+    el.value = path;
+    el.select();
+    document.execCommand("copy");
+    el.remove();
 
-export class Materialization extends React.Component<
-  MaterializationProps,
-  MaterializationState
-> {
-  state = {
-    opening: false
-  };
-
-  _openingTimeout?: NodeJS.Timeout;
-
-  componentWillUnmount() {
-    if (this._openingTimeout) {
-      clearTimeout(this._openingTimeout);
-    }
-  }
-
-  onOpenFileLink = async (event: React.MouseEvent<HTMLAnchorElement>) => {
-    const url = event.currentTarget.href;
-
-    // If the file's location is a path, tell dagit to open it on the machine.
-    if (url.startsWith("file://")) {
-      event.preventDefault();
-
-      // Display a loading spinner to give Dagit and the file handler (eg: jupyter notebooks)
-      // time to open the file. Otherwise the user might just think its not working. Just
-      // set to an arbitrary amount of time - jupyter is slow.
-      this.setState({ opening: true });
-      this._openingTimeout = setTimeout(() => {
-        this.setState({ opening: false });
-      }, 2000);
-
-      const path = url.replace("file://", "");
-      const result = await fetch(
-        `${ROOT_SERVER_URI}/dagit/open?path=${encodeURIComponent(path)}`
-      );
-
-      if (result.status !== 200) {
-        const error = await result.text();
-        this.setState({ opening: false });
-        alert(`Dagit was unable to open the file.\n\n${error}`);
-      }
-    } else {
-      // If the file's location is a URL, allow the browser to open it normally.
-    }
+    SharedToaster.show({
+      message: "File path copied to clipboard",
+      icon: "clipboard",
+      intent: Intent.NONE
+    });
   };
 
   render() {
     const { fileLocation, fileName } = this.props;
 
+    if (isFilePath(fileLocation)) {
+      return (
+        <MaterializationLink
+          href={fileLocation}
+          key={fileLocation}
+          title={`Copy path to ${fileLocation}`}
+          onClick={e => {
+            e.preventDefault();
+            this.onCopyPath(fileLocation);
+          }}
+        >
+          {FileIcon} {fileName}
+        </MaterializationLink>
+      );
+    }
     return (
       <MaterializationLink
-        onClick={this.onOpenFileLink}
-        href={fileLocationToHref(fileLocation)}
+        href={fileLocation}
         key={fileLocation}
-        title={fileLocation}
+        title={`Open ${fileLocation} in a new tab`}
         target="__blank"
       >
-        {this.state.opening ? (
-          <span style={{ paddingLeft: 3, paddingRight: 3 }}>
-            <Spinner size={14} />
-          </span>
-        ) : (
-          FileIcon
-        )}{" "}
-        {fileName}
+        {LinkIcon} {fileName}
       </MaterializationLink>
     );
   }
@@ -120,6 +91,17 @@ const FileIcon = (
         stroke={Colors.GRAY3}
         strokeWidth="15"
         strokeLinecap="square"
+      />
+    </g>
+  </svg>
+);
+
+const LinkIcon = (
+  <svg width="20px" height="14px" viewBox="-300 -100 1200 1200" version="1.1">
+    <g>
+      <path
+        fill={Colors.GRAY5}
+        d="M568.2,644.1c-54.4,0-108.7-20.7-150.1-62.1c-11.2-11.2-11.2-29.5,0-40.8c11.2-11.2,29.5-11.2,40.8,0c60.3,60.3,158.4,60.3,218.7,0l209.6-209.6c60.3-60.3,60.3-158.4,0-218.7c-60.3-60.3-158.4-60.3-218.7,0L491.6,289.7c-11.2,11.2-29.5,11.2-40.8,0c-11.2-11.2-11.2-29.5,0-40.8L627.7,72.1c82.8-82.8,217.5-82.8,300.2,0c82.7,82.8,82.8,217.5,0,300.2L718.3,582C676.9,623.4,622.5,644.1,568.2,644.1L568.2,644.1L568.2,644.1z M222.2,990c-54.4,0-108.7-20.7-150.1-62.1c-82.8-82.8-82.8-217.5,0-300.2L281.7,418c82.8-82.8,217.5-82.8,300.2,0c11.2,11.2,11.2,29.5,0,40.8c-11.2,11.2-29.5,11.2-40.8,0c-60.3-60.3-158.4-60.3-218.7,0L112.9,668.4c-60.3,60.3-60.3,158.4,0,218.7c60.3,60.3,158.4,60.3,218.7,0l176.9-176.9c11.2-11.2,29.5-11.2,40.8,0c11.2,11.2,11.2,29.5,0,40.8L372.3,927.9C330.9,969.3,276.6,990,222.2,990L222.2,990L222.2,990z"
       />
     </g>
   </svg>
