@@ -394,7 +394,7 @@ def opt_nullable_dict_param(obj, param_name, key_type=None, value_type=None, val
         raise_with_traceback(_param_type_mismatch_exception(obj, dict, param_name))
 
     if not obj:
-        return {}
+        return None if obj is None else {}
 
     if value_class:
         return _check_key_value_types(obj, key_type, value_type=value_class, value_check=issubclass)

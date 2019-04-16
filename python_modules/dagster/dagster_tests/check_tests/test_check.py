@@ -293,16 +293,16 @@ def test_opt_dict_param():
 
 
 def test_opt_nullable_dict_param():
-    assert check.opt_nullable_dict_param(None, 'opt_dict_param') is None
-    assert check.opt_nullable_dict_param({}, 'opt_dict_param') == {}
+    assert check.opt_nullable_dict_param(None, 'opt_nullable_dict_param') is None
+    assert check.opt_nullable_dict_param({}, 'opt_nullable_dict_param') == {}
     ddict = {'a': 2}
-    assert check.opt_nullable_dict_param(ddict, 'opt_dict_param') == ddict
+    assert check.opt_nullable_dict_param(ddict, 'opt_nullable_dict_param') == ddict
 
     with pytest.raises(ParameterCheckError):
-        check.opt_nullable_dict_param(1, 'opt_dict_param')
+        check.opt_nullable_dict_param(1, 'opt_nullable_dict_param')
 
     with pytest.raises(ParameterCheckError):
-        check.opt_nullable_dict_param('foo', 'opt_dict_param')
+        check.opt_nullable_dict_param('foo', 'opt_nullable_dict_param')
 
 
 def test_str_param():
