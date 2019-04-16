@@ -10,7 +10,7 @@ As the API is still in flux, we aren't following strict semantic versioning rule
 intend micro versions to reflect a regular release schedule and minor versions to reflect
 milestones in the framework's capability.
 
-0.3.6
+0.4.0
 -----
 **API Changes**
 
@@ -59,11 +59,11 @@ milestones in the framework's capability.
 
 **Libraries**
 
-- Dagster integration code with AWS, Great Expectations, Pandas, Pyspark, Snowflake, Spark, and
-  SQLAlchemy has been reorganized into a new top-level libraries directory. These modules are now
+- Dagster integration code with AWS, Great Expectations, Pandas, Pyspark, Snowflake, and Spark
+  has been reorganized into a new top-level libraries directory. These modules are now
   importable as ``dagster_aws``, ``dagster_ge``, ``dagster_pandas``, ``dagster_pyspark``,
-  ``dagster_snowflake``, ``dagster_spark``, and ``dagster_sqlalchemy``.
-- Removed dagster-sqlalchemy
+  ``dagster_snowflake``, and ``dagster_spark``.
+- Removed dagster-sqlalchemy and dagma
 
 **Examples**
 
