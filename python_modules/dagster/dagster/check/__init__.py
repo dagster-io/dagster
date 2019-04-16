@@ -401,7 +401,7 @@ def opt_nullable_dict_param(obj, param_name, key_type=None, value_type=None, val
     return _check_key_value_types(obj, key_type, value_type)
 
 
-def _check_two_dim_key_value_types(obj, key_type, param_name, value_type):
+def _check_two_dim_key_value_types(obj, key_type, _param_name, value_type):
     _check_key_value_types(obj, key_type, dict)  # check level one
 
     for level_two_dict in obj.values():
