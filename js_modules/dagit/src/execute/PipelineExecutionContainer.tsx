@@ -111,7 +111,7 @@ export default class PipelineExecutionContainer extends React.Component<
     this.props.onSave(applyChangesToSession(this.props.data, session, changes));
   };
 
-  onCreateSession = (initial?: IExecutionSessionChanges) => {
+  onCreateSession = (initial?: Partial<IExecutionSession>) => {
     this.props.onSave(applyCreateSession(this.props.data, initial));
   };
 
@@ -201,14 +201,8 @@ export default class PipelineExecutionContainer extends React.Component<
                 {pipeline && (
                   <ConfigEditorPresetsPicker
                     pipelineName={pipeline.name}
-                    configCode={currentSession.config}
                     solidSubset={currentSession.solidSubset}
-                    onChange={(config, solidSubset) => {
-                      this.onSaveSession(this.props.currentSession.key, {
-                        config,
-                        solidSubset
-                      });
-                    }}
+                    onCreateSession={this.onCreateSession}
                   />
                 )}
               </ConfigEditorInsertionContainer>

@@ -8,10 +8,9 @@ import {
   ConfigPresetsQuery_presetsForPipeline
 } from "./types/ConfigPresetsQuery";
 import gql from "graphql-tag";
+import { IExecutionSession } from "../LocalStorage";
 
 type Preset = ConfigPresetsQuery_presetsForPipeline;
-
-const SWITCH_SUBSET_MESSAGE = `This preset requires you execute the solid subset below. Would you like to switch to it?\n\n[{{subset}}]`;
 
 const PresetSelect = Select.ofType<Preset>();
 
@@ -24,16 +23,15 @@ const PresetDivider: Preset = {
 
 interface ConfigEditorPresetsPickerProps {
   pipelineName: string;
-  configCode: string;
   solidSubset: string[] | null;
-  onChange: (config: string, solidSubset: string[] | null) => void;
+  onCreateSession: (initial: Partial<IExecutionSession>) => void;
 }
 
 export default class ConfigEditorPresetsPicker extends React.Component<
   ConfigEditorPresetsPickerProps
 > {
   render() {
-    const { pipelineName, configCode, solidSubset, onChange } = this.props;
+    const { pipelineName, solidSubset, onCreateSession } = this.props;
 
     return (
       <Query
@@ -56,20 +54,6 @@ export default class ConfigEditorPresetsPicker extends React.Component<
             ...presets.filter(p => !isEqual(p.solidSubset, solidSubset))
           );
 
-          const onItemSelect = (p: Preset) => {
-            let desiredSubset = solidSubset;
-
-            if (!isEqual(p.solidSubset, solidSubset)) {
-              const desc = p.solidSubset
-                ? p.solidSubset.join(", ")
-                : "All Solids";
-              if (confirm(SWITCH_SUBSET_MESSAGE.replace("{{subset}}", desc))) {
-                desiredSubset = p.solidSubset;
-              }
-            }
-            onChange(configCode + "\n" + p.environment, desiredSubset);
-          };
-
           return (
             <div>
               <PresetSelect
@@ -89,8 +73,14 @@ export default class ConfigEditorPresetsPicker extends React.Component<
                     />
                   )
                 }
-                noResults={<Menu.Item disabled={true} text="No results." />}
-                onItemSelect={onItemSelect}
+                noResults={<Menu.Item disabled={true} text="No presets." />}
+                onItemSelect={p =>
+                  onCreateSession({
+                    name: p.name,
+                    config: p.environment || "",
+                    solidSubset: p.solidSubset
+                  })
+                }
               >
                 <Button text={""} icon="insert" rightIcon="caret-down" />
               </PresetSelect>
