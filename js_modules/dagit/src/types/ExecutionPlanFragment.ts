@@ -23,4 +23,5 @@ export interface ExecutionPlanFragment_steps {
 export interface ExecutionPlanFragment {
   __typename: "ExecutionPlan";
   steps: ExecutionPlanFragment_steps[];
+  artifactsPersisted: boolean;
 }

@@ -2,6 +2,9 @@ from collections import namedtuple
 
 from dagster import check
 
+from dagster.core.runs import InMemoryRunStorage, FileSystemRunStorage
+from dagster.core.errors import DagsterInvariantViolationError
+
 DEFAULT_CONTEXT_NAME = 'default'
 
 
@@ -92,3 +95,19 @@ class StorageConfig(namedtuple('_FilesConfig', 'storage_mode storage_config')):
             storage_mode=check.opt_str_param(storage_mode, 'storage_mode'),
             storage_config=check.opt_dict_param(storage_config, 'storage_config', key_type=str),
         )
+
+    def construct_run_storage(self):
+        if self.storage_mode == 'filesystem':
+            return FileSystemRunStorage()
+        elif self.storage_mode == 'in_memory':
+            return InMemoryRunStorage()
+        elif self.storage_mode == 's3':
+            # TODO: Revisit whether we want to use S3 run storage
+            return FileSystemRunStorage()
+        elif self.storage_mode is None:
+            return InMemoryRunStorage()
+        else:
+            raise DagsterInvariantViolationError(
+                'Invalid storage specified {}'.format(self.storage_mode)
+            )
+

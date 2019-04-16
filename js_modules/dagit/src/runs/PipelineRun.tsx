@@ -180,7 +180,7 @@ export class PipelineRun extends React.Component<
     const logs = run ? run.logs.nodes : undefined;
     const executionPlan: PipelineRunFragment_executionPlan = run
       ? run.executionPlan
-      : { __typename: "ExecutionPlan", steps: [] };
+      : { __typename: "ExecutionPlan", steps: [], artifactsPersisted: false };
 
     return (
       <PipelineRunWrapper>

@@ -153,6 +153,7 @@ export interface PipelineRunFragment_executionPlan_steps {
 export interface PipelineRunFragment_executionPlan {
   __typename: "ExecutionPlan";
   steps: PipelineRunFragment_executionPlan_steps[];
+  artifactsPersisted: boolean;
 }
 
 export interface PipelineRunFragment {

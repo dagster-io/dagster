@@ -157,6 +157,7 @@ export interface PipelineRunRootQuery_pipelineRunOrError_PipelineRun_executionPl
 export interface PipelineRunRootQuery_pipelineRunOrError_PipelineRun_executionPlan {
   __typename: "ExecutionPlan";
   steps: PipelineRunRootQuery_pipelineRunOrError_PipelineRun_executionPlan_steps[];
+  artifactsPersisted: boolean;
 }
 
 export interface PipelineRunRootQuery_pipelineRunOrError_PipelineRun {

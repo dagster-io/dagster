@@ -12,6 +12,7 @@ class DauphinExecutionPlan(dauphin.ObjectType):
 
     steps = dauphin.non_null_list('ExecutionStep')
     pipeline = dauphin.NonNull('Pipeline')
+    artifactsPersisted = dauphin.NonNull(dauphin.Boolean)
 
     def __init__(self, pipeline, execution_plan):
         super(DauphinExecutionPlan, self).__init__(pipeline=pipeline)
@@ -22,6 +23,9 @@ class DauphinExecutionPlan(dauphin.ObjectType):
             DauphinExecutionStep(self._execution_plan, step)
             for step in self._execution_plan.topological_steps()
         ]
+
+    def resolve_artifactsPersisted(self, _graphene_info):
+        return self._execution_plan.artifacts_persisted
 
 
 class DauphinExecutionStepOutput(dauphin.ObjectType):
