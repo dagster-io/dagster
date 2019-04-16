@@ -123,6 +123,15 @@ class FieldImpl:
                 'required arguments should not specify default values',
             )
 
+        if config_type.is_scalar and self._default_value != FIELD_NO_DEFAULT_PROVIDED:
+            check.param_invariant(
+                config_type.is_config_scalar_valid(self._default_value),
+                'default_value',
+                'default value not valid for config type {name}, got value {val} of type {type}'.format(
+                    name=config_type.name, val=self._default_value, type=type(self._default_value)
+                ),
+            )
+
         self.is_optional = is_optional
 
     @property

@@ -56,9 +56,8 @@ def define_spark_config():
 
     spark_home = Field(
         String,
-        description='The path to your spark installation. Defaults to $SPARK_HOME',
+        description='The path to your spark installation. Defaults to $SPARK_HOME at runtime if not provided.',
         is_optional=True,
-        default_value=os.environ.get('SPARK_HOME'),
     )
 
     spark_outputs = Field(List(String), description='The outputs that this Spark job will produce')
