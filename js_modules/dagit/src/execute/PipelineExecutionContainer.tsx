@@ -12,6 +12,7 @@ import { RunPreview } from "./RunPreview";
 import { PanelDivider } from "../PanelDivider";
 import SolidSelector from "./SolidSelector";
 import ConfigEditor from "../configeditor/ConfigEditor";
+import ConfigEditorPresetsPicker from "./ConfigEditorPresetsPicker";
 import {
   applyChangesToSession,
   applySelectSession,
@@ -110,7 +111,7 @@ export default class PipelineExecutionContainer extends React.Component<
     this.props.onSave(applyChangesToSession(this.props.data, session, changes));
   };
 
-  onCreateSession = (initial?: IExecutionSessionChanges) => {
+  onCreateSession = (initial?: Partial<IExecutionSession>) => {
     this.props.onSave(applyCreateSession(this.props.data, initial));
   };
 
@@ -196,6 +197,15 @@ export default class PipelineExecutionContainer extends React.Component<
         {currentSession ? (
           <PipelineExecutionWrapper>
             <Split width={this.state.editorVW} style={{ flexShrink: 0 }}>
+              <ConfigEditorInsertionContainer className="bp3-dark">
+                {pipeline && (
+                  <ConfigEditorPresetsPicker
+                    pipelineName={pipeline.name}
+                    solidSubset={currentSession.solidSubset}
+                    onCreateSession={this.onCreateSession}
+                  />
+                )}
+              </ConfigEditorInsertionContainer>
               <ApolloConsumer>
                 {client => (
                   <ConfigEditor
@@ -331,4 +341,12 @@ const Split = styled.div<{ width?: number }>`
   position: relative;
   flex-direction: column;
   display: flex;
+`;
+
+const ConfigEditorInsertionContainer = styled.div`
+  display: inline-block;
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 10;
 `;
