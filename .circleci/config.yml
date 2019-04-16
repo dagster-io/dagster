@@ -60,14 +60,6 @@ workflows:
       - library-dagster-pandas-py27:
           context: coveralls
 
-      - library-dagster-sqlalchemy-py37:
-          context: coveralls
-      - library-dagster-sqlalchemy-py36:
-          context: coveralls
-      - library-dagster-sqlalchemy-py35:
-          context: coveralls
-      - library-dagster-sqlalchemy-py27:
-          context: coveralls
 
       - library-dagster-ge-py37:
           context: coveralls
@@ -160,11 +152,6 @@ workflows:
             - library-dagster-pandas-py35
             - library-dagster-pandas-py27
 
-            - library-dagster-sqlalchemy-py37
-            - library-dagster-sqlalchemy-py36
-            - library-dagster-sqlalchemy-py35
-            - library-dagster-sqlalchemy-py27
-
             - library-dagster-ge-py37
             - library-dagster-ge-py36
             - library-dagster-ge-py35
@@ -256,7 +243,6 @@ jobs:
             sudo pip install -e python_modules/libraries/dagster-snowflake -qqq
             sudo pip install -e python_modules/libraries/dagster-spark -qqq
             sudo pip install -e python_modules/libraries/dagster-pyspark -qqq
-            sudo pip install -e python_modules/libraries/dagster-sqlalchemy -qqq
             sudo pip install -e python_modules/airline-demo -qqq
             sudo pip install -e python_modules/automation -qqq
             sudo pip install -e examples/event-pipeline-demo -qqq
@@ -413,28 +399,6 @@ jobs:
       - run:
           command: |
             mv python_modules/libraries/dagster-pandas/.coverage python_modules/.coverage.library-dagster-pandas.${CIRCLE_BUILD_NUM}
-      - persist_to_workspace:
-          root: python_modules/
-          paths:
-            - .coverage*
-
-  library-dagster-sqlalchemy-py36: &library-dagster-sqlalchemy-template
-    docker:
-      - image: dagster/cci-test:3.6.8
-    environment:
-      TOXENV: py36
-    working_directory: ~/repo
-    steps:
-      - checkout
-      - run:
-          name: Run Dagster Tests
-          command: |
-            pushd python_modules/libraries/dagster-sqlalchemy
-            tox -e $TOXENV
-            popd
-      - run:
-          command: |
-            mv python_modules/libraries/dagster-sqlalchemy/.coverage python_modules/.coverage.library-dagster-sqlalchemy.${CIRCLE_BUILD_NUM}
       - persist_to_workspace:
           root: python_modules/
           paths:
@@ -603,27 +567,6 @@ jobs:
 
   library-dagster-pandas-py27:
     <<: *library-dagster-pandas-template
-    docker:
-      - image: dagster/cci-test:2.7.16
-    environment:
-      TOXENV: py27
-
-  library-dagster-sqlalchemy-py37:
-    <<: *library-dagster-sqlalchemy-template
-    docker:
-      - image: dagster/cci-test:3.7.3
-    environment:
-      TOXENV: py37
-
-  library-dagster-sqlalchemy-py35:
-    <<: *library-dagster-sqlalchemy-template
-    docker:
-      - image: dagster/cci-test:3.5.7
-    environment:
-      TOXENV: py35
-
-  library-dagster-sqlalchemy-py27:
-    <<: *library-dagster-sqlalchemy-template
     docker:
       - image: dagster/cci-test:2.7.16
     environment:

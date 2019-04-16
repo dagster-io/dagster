@@ -18,8 +18,6 @@ python_modules/libraries/dagster-snowflake/dagster_snowflake
 python_modules/libraries/dagster-snowflake/dagster_snowflake_tests
 python_modules/libraries/dagster-spark/dagster_spark
 python_modules/libraries/dagster-spark/dagster_spark_tests
-python_modules/libraries/dagster-sqlalchemy/dagster_sqlalchemy
-python_modules/libraries/dagster-sqlalchemy/dagster_sqlalchemy_tests
 python_modules/airline-demo/airline_demo
 python_modules/airline-demo/airline_demo_tests
 python_modules/automation/

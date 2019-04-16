@@ -107,7 +107,9 @@ def pushd_module(module_name):
 
 def publish_module(module, nightly=False, additional_steps=''):
     with pushd_module(module) as cwd:
-        for command in construct_publish_comands(additional_steps=additional_steps, nightly=nightly):
+        for command in construct_publish_comands(
+            additional_steps=additional_steps, nightly=nightly
+        ):
             print('About to run command: {}'.format(command))
             process = subprocess.Popen(
                 command, stderr=subprocess.PIPE, cwd=cwd, shell=True, stdout=subprocess.PIPE
@@ -132,10 +134,6 @@ def publish_dagster_ge(nightly):
     publish_module('dagster-ge', nightly)
 
 
-def publish_dagster_sqlalchemy(nightly):
-    publish_module('dagster-sqlalchemy', nightly)
-
-
 def publish_dagster_pandas(nightly):
     publish_module('dagster-pandas', nightly)
 
@@ -155,7 +153,6 @@ def publish_all(nightly):
     publish_dagster_airflow(nightly)
     publish_dagster_ge(nightly)
     publish_dagster_pandas(nightly)
-    publish_dagster_sqlalchemy(nightly)
     publish_dagster_graphql(nightly)
 
 
@@ -462,16 +459,8 @@ def publish(nightly):
 
     if nightly:
         version = increment_nightly_versions()
-        commit_new_version(
-            'nightly: {nightly}'.format(
-                nightly=version['__nightly__']
-            )
-        )
-        set_git_tag(
-            '{nightly}'.format(
-                nightly=version['__nightly__']
-            )
-        )
+        commit_new_version('nightly: {nightly}'.format(nightly=version['__nightly__']))
+        set_git_tag('{nightly}'.format(nightly=version['__nightly__']))
         git_push()
         git_push(tags=True)
     publish_all(nightly)
