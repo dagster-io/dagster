@@ -74,6 +74,8 @@ class SparkSolidDefinition(SolidDefinition):
                     )
                 )
 
+            spark_home = spark_home if spark_home else os.environ.get('SPARK_HOME')
+
             if spark_home is None:
                 raise SparkSolidError(
                     (
