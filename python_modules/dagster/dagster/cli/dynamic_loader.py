@@ -191,24 +191,26 @@ def create_pipeline_loading_mode_data(pipeline_target_info):
         raise InvalidPipelineLoadingComboError()
 
 
-LoaderEntrypoint = namedtuple('LoaderEntrypoint', 'module module_name fn_name')
+LoaderEntrypoint = namedtuple('LoaderEntrypoint', 'module module_name fn_name kwargs')
 
 
 def perform_load(entry):
     fn = getattr(entry.module, entry.fn_name)
     check.is_callable(fn)
-    return fn()
+    return fn(**entry.kwargs)
 
 
-def entrypoint_from_file_target(python_file, fn_name):
+def entrypoint_from_file_target(python_file, fn_name, kwargs=None):
+    kwargs = check.opt_dict_param(kwargs, 'kwargs')
     module_name = os.path.splitext(os.path.basename(python_file))[0]
     module = imp.load_source(module_name, python_file)
-    return LoaderEntrypoint(module, module_name, fn_name)
+    return LoaderEntrypoint(module, module_name, fn_name, kwargs)
 
 
-def entrypoint_from_module_target(module_name, fn_name):
+def entrypoint_from_module_target(module_name, fn_name, kwargs=None):
+    kwargs = check.opt_dict_param(kwargs, 'kwargs')
     module = importlib.import_module(module_name)
-    return LoaderEntrypoint(module, module_name, fn_name)
+    return LoaderEntrypoint(module, module_name, fn_name, kwargs)
 
 
 EMPHERMAL_NAME = '<<unnamed>>'
@@ -249,13 +251,14 @@ def entrypoint_from_yaml(file_path):
     module_name = check.opt_str_elem(repository_config, 'module')
     file_name = check.opt_str_elem(repository_config, 'file')
     fn_name = check.str_elem(repository_config, 'fn')
+    kwargs = check.opt_dict_elem(repository_config, 'kwargs')
 
     if module_name:
-        return entrypoint_from_module_target(module_name, fn_name)
+        return entrypoint_from_module_target(module_name, fn_name, kwargs)
     else:
         # rebase file in config off of the path in the config file
         file_name = os.path.join(os.path.dirname(os.path.abspath(file_path)), file_name)
-        return entrypoint_from_file_target(file_name, fn_name)
+        return entrypoint_from_file_target(file_name, fn_name, kwargs)
 
 
 def apply_click_params(command, *click_params):

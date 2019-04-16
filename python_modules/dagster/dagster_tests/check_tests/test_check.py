@@ -144,6 +144,22 @@ def test_opt_list_param():
         check.opt_list_param('3u4', 'list_param')
 
 
+def test_opt_nullable_list_param():
+    assert check.opt_nullable_list_param(None, 'list_param') is None
+    assert check.opt_nullable_list_param([], 'list_param') == []
+    obj_list = [1]
+    assert check.list_param(obj_list, 'list_param') == obj_list
+
+    with pytest.raises(ParameterCheckError):
+        check.opt_nullable_list_param(0, 'list_param')
+
+    with pytest.raises(ParameterCheckError):
+        check.opt_nullable_list_param('', 'list_param')
+
+    with pytest.raises(ParameterCheckError):
+        check.opt_nullable_list_param('3u4', 'list_param')
+
+
 def test_opt_typed_list_param():
     class Foo(object):
         pass
@@ -274,6 +290,19 @@ def test_opt_dict_param():
 
     with pytest.raises(ParameterCheckError):
         check.opt_dict_param([], 'opt_dict_param')
+
+
+def test_opt_nullable_dict_param():
+    assert check.opt_nullable_dict_param(None, 'opt_nullable_dict_param') is None
+    assert check.opt_nullable_dict_param({}, 'opt_nullable_dict_param') == {}
+    ddict = {'a': 2}
+    assert check.opt_nullable_dict_param(ddict, 'opt_nullable_dict_param') == ddict
+
+    with pytest.raises(ParameterCheckError):
+        check.opt_nullable_dict_param(1, 'opt_nullable_dict_param')
+
+    with pytest.raises(ParameterCheckError):
+        check.opt_nullable_dict_param('foo', 'opt_nullable_dict_param')
 
 
 def test_str_param():

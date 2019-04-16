@@ -9,7 +9,14 @@ from dagster import (
     RepositoryDefinition,
     SolidDefinition,
     lambda_solid,
+    solid,
+    Field,
+    Bool,
+    Dict,
+    execute_pipeline,
+    DagsterExecutionStepExecutionError,
 )
+from dagster.utils import script_relative_path
 
 
 def create_single_node_pipeline(name, called):
@@ -118,3 +125,67 @@ def test_dupe_solid_repo_definition_error_opt_out():
 
     with pytest.raises(DagsterInvariantViolationError):
         repo.get_solid_def('foo')
+
+
+def test_repo_config():
+    @solid(config_field=Field(Dict(fields={'error': Field(Bool)})))
+    def can_fail(context):
+        if context.solid_config['error']:
+            raise Exception('I did an error')
+        return 'cool'
+
+    @lambda_solid
+    def always_fail():
+        raise Exception('I always do this')
+
+    repo = RepositoryDefinition(
+        'config_test',
+        pipeline_dict={
+            'simple': lambda: PipelineDefinition(name='simple', solids=[can_fail, always_fail])
+        },
+        repo_config={
+            'pipelines': {
+                'simple': {
+                    'presets': {
+                        'passing': {
+                            'environment_files': [script_relative_path('pass_env.yml')],
+                            'solid_subset': ['can_fail'],
+                        },
+                        'failing_1': {
+                            'environment_files': [script_relative_path('fail_env.yml')],
+                            'solid_subset': ['can_fail'],
+                        },
+                        'failing_2': {'environment_files': [script_relative_path('pass_env.yml')]},
+                        'invalid_1': {
+                            'environment_files': [script_relative_path('not_a_file.yml')]
+                        },
+                        'invalid_2': {
+                            'environment_files': [
+                                script_relative_path('test_repository_definition.py')
+                            ]
+                        },
+                    }
+                }
+            }
+        },
+    )
+
+    execute_pipeline(**repo.get_preset_pipeline('simple', 'passing'))
+
+    with pytest.raises(DagsterExecutionStepExecutionError):
+        execute_pipeline(**repo.get_preset_pipeline('simple', 'failing_1'))
+
+    with pytest.raises(DagsterExecutionStepExecutionError):
+        execute_pipeline(**repo.get_preset_pipeline('simple', 'failing_2'))
+
+    with pytest.raises(DagsterInvalidDefinitionError, match="not_a_file.yml"):
+        execute_pipeline(**repo.get_preset_pipeline('simple', 'invalid_1'))
+
+    with pytest.raises(DagsterInvariantViolationError, match="error attempting to parse yaml"):
+        execute_pipeline(**repo.get_preset_pipeline('simple', 'invalid_2'))
+
+    with pytest.raises(DagsterInvariantViolationError, match="Could not find pipeline"):
+        execute_pipeline(**repo.get_preset_pipeline('not_real', 'passing'))
+
+    with pytest.raises(DagsterInvariantViolationError, match="Could not find preset"):
+        execute_pipeline(**repo.get_preset_pipeline('simple', 'not_failing'))

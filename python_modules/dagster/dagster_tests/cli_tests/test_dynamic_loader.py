@@ -38,7 +38,8 @@ def test_repository_python_file():
     assert mode_data == PipelineLoadingModeData(
         mode=PipelineTargetMode.REPOSITORY,
         data=RepositoryData(
-            entrypoint=LoaderEntrypoint(module, 'bar_repo', 'define_bar_repo'), pipeline_name='foo'
+            entrypoint=LoaderEntrypoint(module, 'bar_repo', 'define_bar_repo', {}),
+            pipeline_name='foo',
         ),
     )
 
@@ -80,7 +81,8 @@ def test_repository_module():
     assert mode_data == PipelineLoadingModeData(
         mode=PipelineTargetMode.REPOSITORY,
         data=RepositoryData(
-            entrypoint=LoaderEntrypoint(module, 'dagster', 'define_bar_repo'), pipeline_name='foo'
+            entrypoint=LoaderEntrypoint(module, 'dagster', 'define_bar_repo', {}),
+            pipeline_name='foo',
         ),
     )
 
@@ -101,7 +103,7 @@ def test_pipeline_python_file():
 
     assert mode_data == PipelineLoadingModeData(
         mode=PipelineTargetMode.PIPELINE,
-        data=LoaderEntrypoint(module, 'foo_pipeline', 'define_pipeline'),
+        data=LoaderEntrypoint(module, 'foo_pipeline', 'define_pipeline', {}),
     )
 
 
@@ -118,7 +120,7 @@ def test_pipeline_module():
 
     assert mode_data == PipelineLoadingModeData(
         mode=PipelineTargetMode.PIPELINE,
-        data=LoaderEntrypoint(importlib.import_module('dagster'), 'dagster', 'define_pipeline'),
+        data=LoaderEntrypoint(importlib.import_module('dagster'), 'dagster', 'define_pipeline', {}),
     )
 
 
@@ -137,7 +139,7 @@ def test_yaml_file():
         mode=PipelineTargetMode.REPOSITORY,
         data=RepositoryData(
             entrypoint=LoaderEntrypoint(
-                module, 'dagster.tutorials.intro_tutorial.repos', 'define_repo'
+                module, 'dagster.tutorials.intro_tutorial.repos', 'define_repo', {}
             ),
             pipeline_name='foobar',
         ),
@@ -276,14 +278,14 @@ def test_repo_entrypoints():
             python_file=None,
             fn_name=None,
         )
-    ) == LoaderEntrypoint(module, 'dagster.tutorials.intro_tutorial.repos', 'define_repo')
+    ) == LoaderEntrypoint(module, 'dagster.tutorials.intro_tutorial.repos', 'define_repo', {})
 
     module = importlib.import_module('dagster')
     assert entrypoint_from_repo_target_info(
         RepositoryTargetInfo(
             repository_yaml=None, module_name='dagster', python_file=None, fn_name='define_bar_repo'
         )
-    ) == LoaderEntrypoint(module, 'dagster', 'define_bar_repo')
+    ) == LoaderEntrypoint(module, 'dagster', 'define_bar_repo', {})
 
     python_file = script_relative_path('bar_repo.py')
     module = imp.load_source('bar_repo', python_file)
@@ -294,7 +296,7 @@ def test_repo_entrypoints():
             python_file=python_file,
             fn_name='define_bar_repo',
         )
-    ) == LoaderEntrypoint(module, 'bar_repo', 'define_bar_repo')
+    ) == LoaderEntrypoint(module, 'bar_repo', 'define_bar_repo', {})
 
 
 def test_repo_yaml_module_dynamic_load():

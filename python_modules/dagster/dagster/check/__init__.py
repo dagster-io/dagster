@@ -309,6 +309,22 @@ def opt_list_param(obj_list, param_name, of_type=None):
     return _check_list_items(obj_list, of_type)
 
 
+def opt_nullable_list_param(obj_list, param_name, of_type=None):
+    '''Ensures argument obj_list is a list or None. Returns None if input is None.
+
+    If the of_type argument is provided, also ensures that list items conform to the type specified
+    by of_type.
+    '''
+    if obj_list is not None and not isinstance(obj_list, list):
+        raise_with_traceback(_param_type_mismatch_exception(obj_list, list, param_name))
+    if not obj_list:
+        return None if obj_list is None else []
+    if not of_type:
+        return obj_list
+
+    return _check_list_items(obj_list, of_type)
+
+
 def _check_key_value_types(obj, key_type, value_type, key_check=isinstance, value_check=isinstance):
     '''Ensures argument obj is a dictionary, and enforces that the keys/values conform to the types
     specified by key_type, value_type.
@@ -365,6 +381,20 @@ def opt_dict_param(obj, param_name, key_type=None, value_type=None, value_class=
 
     if not obj:
         return {}
+
+    if value_class:
+        return _check_key_value_types(obj, key_type, value_type=value_class, value_check=issubclass)
+    return _check_key_value_types(obj, key_type, value_type)
+
+
+def opt_nullable_dict_param(obj, param_name, key_type=None, value_type=None, value_class=None):
+    '''Ensures argument obj is either a dictionary or None;
+    '''
+    if obj is not None and not isinstance(obj, dict):
+        raise_with_traceback(_param_type_mismatch_exception(obj, dict, param_name))
+
+    if not obj:
+        return None if obj is None else {}
 
     if value_class:
         return _check_key_value_types(obj, key_type, value_type=value_class, value_check=issubclass)

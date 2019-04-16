@@ -437,6 +437,12 @@ type PipelineNotFoundError implements Error {
 
 union PipelineOrError = Pipeline | PythonError | PipelineNotFoundError | SolidNotFoundError
 
+type PipelinePreset {
+  name: String!
+  solidSubset: [String!]
+  environment: String
+}
+
 type PipelineProcessStartedEvent implements MessageEvent & PipelineEvent {
   run: PipelineRun!
   message: String!
@@ -529,6 +535,7 @@ type Query {
   pipelineRunOrError(runId: ID!): PipelineRunOrError!
   isPipelineConfigValid(pipeline: ExecutionSelector!, config: PipelineConfig): PipelineConfigValidationResult!
   executionPlan(pipeline: ExecutionSelector!, config: PipelineConfig): ExecutionPlanResult!
+  presetsForPipeline(pipelineName: String!): [PipelinePreset!]
 }
 
 input ReexecutionConfig {

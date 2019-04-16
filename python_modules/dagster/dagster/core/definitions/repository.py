@@ -1,5 +1,14 @@
+import os
+from collections import namedtuple
+from glob import glob
+
+import six
+import yaml
+
 from dagster import check
 from dagster.core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
+from dagster.utils.yaml_utils import merge_yamls
+
 from .pipeline import PipelineDefinition
 
 
@@ -17,10 +26,12 @@ class RepositoryDefinition(object):
 
             As the pipelines are retrieved it ensures that the keys of the dictionary and the
             name of the pipeline are the same.
+        repo_config (Optional[dict]):
+            Preset configurations for pipelines such as environments and execution subsets
 
     '''
 
-    def __init__(self, name, pipeline_dict, enforce_solid_def_uniqueness=True):
+    def __init__(self, name, pipeline_dict, repo_config=None, enforce_solid_def_uniqueness=True):
         self.name = check.str_param(name, 'name')
 
         check.dict_param(pipeline_dict, 'pipeline_dict', key_type=str)
@@ -31,6 +42,8 @@ class RepositoryDefinition(object):
         self.pipeline_dict = pipeline_dict
 
         self._pipeline_cache = {}
+
+        self.repo_config = check.opt_dict_param(repo_config, 'repo_config')
 
         self.enforce_solid_def_uniqueness = check.bool_param(
             enforce_solid_def_uniqueness, 'enforce_solid_def_uniqueness'
@@ -57,7 +70,7 @@ class RepositoryDefinition(object):
         try:
             pipeline = self.pipeline_dict[name]()
         except KeyError:
-            raise check.CheckError(
+            raise DagsterInvariantViolationError(
                 'Could not find pipeline "{name}". Found: {pipeline_names}.'.format(
                     name=name,
                     pipeline_names=', '.join(
@@ -157,3 +170,95 @@ class RepositoryDefinition(object):
                     return solid.definition
 
         check.failed('Did not find ' + name)
+
+    def get_preset(self, pipeline_name, solid_name):
+        check.str_param(pipeline_name, 'pipeline_name')
+        check.str_param(solid_name, 'solid_name')
+        return self.get_presets_for_pipeline(pipeline_name).get(solid_name)
+
+    def get_presets_for_pipeline(self, pipeline_name):
+        if not (self.repo_config and self.repo_config.get('pipelines')):
+            return {}
+
+        presets = self.repo_config['pipelines'].get(pipeline_name, {}).get('presets', {})
+
+        return {
+            name: PipelinePreset(
+                name, pipeline_name, config.get('solid_subset'), config.get('environment_files')
+            )
+            for name, config in presets.items()
+        }
+
+    def get_preset_pipeline(self, pipeline_name, preset_name):
+        pipeline = self.get_pipeline(pipeline_name)
+        preset = self.get_preset(pipeline_name, preset_name)
+        if not preset:
+            preset_names = [name for name in self.get_presets_for_pipeline(pipeline_name)]
+            raise DagsterInvariantViolationError(
+                'Could not find preset for "{preset_name}". Available presets for pipeline "{pipeline_name}" '
+                'are {preset_names}.'.format(
+                    preset_name=preset_name, preset_names=preset_names, pipeline_name=pipeline_name
+                )
+            )
+
+        if not preset.solid_subset is None:
+            pipeline = pipeline.build_sub_pipeline(preset.solid_subset)
+
+        return {'pipeline': pipeline, 'environment_dict': preset.environment_dict}
+
+
+class PipelinePreset(
+    namedtuple('_PipelinePreset', 'name pipeline_name solid_subset environment_files')
+):
+    def __new__(cls, name, pipeline_name, solid_subset=None, environment_files=None):
+        return super(PipelinePreset, cls).__new__(
+            cls,
+            check.str_param(name, 'name'),
+            check.str_param(pipeline_name, 'pipeline_name'),
+            check.opt_nullable_list_param(solid_subset, 'solid_subset', of_type=str),
+            check.opt_nullable_list_param(environment_files, 'environment_files'),
+        )
+
+    @property
+    def environment_dict(self):
+        if self.environment_files is None:
+            return None
+
+        file_set = set()
+        for file_glob in self.environment_files:
+            files = glob(file_glob)
+            if not files:
+                raise DagsterInvalidDefinitionError(
+                    'File or glob pattern "{file_glob}" for "environment_files" in preset "{name}" for '
+                    'pipeline "{pipeline_name}" produced no results.'.format(
+                        name=self.name, file_glob=file_glob, pipeline_name=self.pipeline_name
+                    )
+                )
+
+            file_set.update(map(os.path.realpath, files))
+
+        try:
+            merged = merge_yamls(list(file_set))
+        except yaml.YAMLError as err:
+            six.raise_from(
+                DagsterInvariantViolationError(
+                    'Encountered error attempting to parse yaml. Parsing files {file_set} loaded by '
+                    'file/patterns {files} on preset "{name}" for pipeline "{pipeline_name}".'.format(
+                        file_set=file_set,
+                        files=self.environment_files,
+                        name=self.name,
+                        pipeline_name=self.pipeline_name,
+                    )
+                ),
+                err,
+            )
+
+        return merged
+
+    @property
+    def environment_yaml(self):
+        merged = self.environment_dict
+        if merged is None:
+            return None
+
+        return yaml.dump(merged, default_flow_style=False)
