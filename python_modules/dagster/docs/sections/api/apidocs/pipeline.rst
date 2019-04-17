@@ -21,10 +21,10 @@ Contexts & Resources
     :members:
 
 .. autoclass:: InitContext
-    :memebers:
+    :members:
 
 .. autoclass:: ExecutionContext
-    :memebers:
+    :members:
 
 .. autoclass:: ResourceDefinition
     :members:
@@ -32,7 +32,7 @@ Contexts & Resources
 .. autodecorator:: resource
 
 .. autoclass:: InitResourceContext
-    :memebers:
+    :members:
 
 ----
 
