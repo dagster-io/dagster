@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 """Tools to manage tagging and publishing releases of the Dagster projects.
 
 For detailed usage instructions, please consult the command line help,
@@ -20,8 +22,8 @@ import packaging.version
 from pypirc import ConfigFileError, RCParser
 
 
-PYPIRC_EXCEPTION_MESSAGE = '''You must have credentials available to PyPI in the form of a '
-'~/.pypirc file (see: https://docs.python.org/2/distutils/packageindex.html#pypirc):
+PYPIRC_EXCEPTION_MESSAGE = '''You must have credentials available to PyPI in the form of a
+~/.pypirc file (see: https://docs.python.org/2/distutils/packageindex.html#pypirc):
 
     [distutils]
     index-servers =
@@ -39,7 +41,7 @@ def script_relative_path(file_path):
     return os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(scriptdir)), file_path))
 
 
-def _which(exe):
+def which_(exe):
     '''Uses distutils to look for an executable, mimicking unix which'''
     # https://github.com/PyCQA/pylint/issues/73
     return distutils.spawn.find_executable(exe)  # pylint: disable=no-member
@@ -68,15 +70,15 @@ DAGIT_ADDITIONAL_STEPS = [
 
 
 '''The modules managed by this script.'''
-MODULE_NAMES = [
-    'dagit',
-    'dagster-airflow',
+MODULE_NAMES = ['dagster', 'dagit', 'dagster-graphql', 'dagstermill', 'dagster-airflow']
+
+LIBRARY_MODULES = [
+    'dagster-aws',
     'dagster-ge',
-    'dagster-graphql',
     'dagster-pandas',
+    'dagster-snowflake',
+    'dagster-spark',
     'dagster-sqlalchemy',
-    'dagster',
-    'dagstermill',
 ]
 
 
@@ -90,14 +92,19 @@ def all_equal(iterable):
     return next(g, True) and not next(g, False)
 
 
-def path_to_module(module_name):
+def path_to_module(module_name, library=False):
+    if library:
+        return script_relative_path(
+            '../python_modules/libraries/{module_name}'.format(module_name=module_name)
+        )
+
     return script_relative_path('../python_modules/{module_name}'.format(module_name=module_name))
 
 
 @contextlib.contextmanager
-def pushd_module(module_name):
+def pushd_module(module_name, library=False):
     old_cwd = os.getcwd()
-    new_cwd = path_to_module(module_name)
+    new_cwd = path_to_module(module_name, library)
     os.chdir(new_cwd)
     try:
         yield new_cwd
@@ -105,8 +112,8 @@ def pushd_module(module_name):
         os.chdir(old_cwd)
 
 
-def publish_module(module, nightly=False, additional_steps=''):
-    with pushd_module(module) as cwd:
+def publish_module(module, nightly=False, library=False, additional_steps=''):
+    with pushd_module(module, library) as cwd:
         for command in construct_publish_comands(
             additional_steps=additional_steps, nightly=nightly
         ):
@@ -118,42 +125,12 @@ def publish_module(module, nightly=False, additional_steps=''):
                 print(line.decode('utf-8'))
 
 
-def publish_dagster(nightly):
-    publish_module('dagster', nightly)
-
-
-def publish_dagit(nightly):
-    publish_module('dagit', nightly, additional_steps=DAGIT_ADDITIONAL_STEPS)
-
-
-def publish_dagstermill(nightly):
-    publish_module('dagstermill', nightly)
-
-
-def publish_dagster_ge(nightly):
-    publish_module('dagster-ge', nightly)
-
-
-def publish_dagster_pandas(nightly):
-    publish_module('dagster-pandas', nightly)
-
-
-def publish_dagster_airflow(nightly):
-    publish_module('dagster-airflow', nightly)
-
-
-def publish_dagster_graphql(nightly):
-    publish_module('dagster-graphql', nightly)
-
-
 def publish_all(nightly):
-    publish_dagster(nightly)
-    publish_dagit(nightly)
-    publish_dagstermill(nightly)
-    publish_dagster_airflow(nightly)
-    publish_dagster_ge(nightly)
-    publish_dagster_pandas(nightly)
-    publish_dagster_graphql(nightly)
+    for module in MODULE_NAMES:
+        publish_module(module, nightly)
+
+    for module in LIBRARY_MODULES:
+        publish_module(module, nightly, library=True)
 
 
 def get_most_recent_git_tag():
@@ -228,8 +205,8 @@ def format_module_versions(module_versions, nightly=False):
     )
 
 
-def get_module_versions(module_name):
-    with pushd_module(module_name):
+def get_module_versions(module_name, library=False):
+    with pushd_module(module_name, library):
         module_version = {}
         with open(
             '{module_name}/version.py'.format(module_name=normalize_module_name(module_name))
@@ -238,12 +215,12 @@ def get_module_versions(module_name):
         return module_version
 
 
-def get_versions(modules=None):
-    if modules is None:
-        modules = MODULE_NAMES
+def get_versions():
     module_versions = {}
-    for module_name in modules:
+    for module_name in MODULE_NAMES:
         module_versions[module_name] = get_module_versions(module_name)
+    for library_module in LIBRARY_MODULES:
+        module_versions[module_name] = get_module_versions(library_module, library=True)
     return module_versions
 
 
@@ -276,8 +253,8 @@ def check_versions(nightly=False):
     return module_version
 
 
-def set_version(module_name, version, nightly):
-    with pushd_module(module_name):
+def set_version(module_name, new_version, nightly, library=False):
+    with pushd_module(module_name, library):
         with open(
             os.path.abspath(
                 '{module_name}/version.py'.format(module_name=normalize_module_name(module_name))
@@ -285,9 +262,9 @@ def set_version(module_name, version, nightly):
             'w',
         ) as fd:
             fd.write(
-                '__version__ = \'{version}\'\n'
+                '__version__ = \'{new_version}\'\n'
                 '\n'
-                '__nightly__ = \'{nightly}\'\n'.format(version=version, nightly=nightly)
+                '__nightly__ = \'{nightly}\'\n'.format(new_version=new_version, nightly=nightly)
             )
 
 
@@ -295,9 +272,9 @@ def get_nightly_version():
     return datetime.datetime.utcnow().strftime('%Y%m%d')
 
 
-def increment_nightly_version(module_name, module_version):
+def increment_nightly_version(module_name, module_version, library=False):
     new_nightly = get_nightly_version()
-    set_version(module_name, module_version['__version__'], new_nightly)
+    set_version(module_name, module_version['__version__'], new_nightly, library)
     return {'__version__': module_version['__version__'], '__nightly__': new_nightly}
 
 
@@ -305,15 +282,19 @@ def increment_nightly_versions():
     versions = get_versions()
     for module_name in MODULE_NAMES:
         new_version = increment_nightly_version(module_name, versions[module_name])
+    for library_module in LIBRARY_MODULES:
+        new_version = increment_nightly_version(library_module, versions[module_name], library=True)
     return new_version
 
 
 def set_new_version(new_version):
     for module_name in MODULE_NAMES:
         set_version(module_name, new_version, get_nightly_version())
+    for library_module in LIBRARY_MODULES:
+        set_version(library_module, new_version, get_nightly_version(), library=True)
 
 
-def commit_new_version(version):
+def commit_new_version(new_version):
     try:
         for module_name in MODULE_NAMES:
             subprocess.check_output(
@@ -328,15 +309,28 @@ def commit_new_version(version):
                 ],
                 stderr=subprocess.STDOUT,
             )
+        for library_module in LIBRARY_MODULES:
+            subprocess.check_output(
+                [
+                    'git',
+                    'add',
+                    os.path.join(
+                        path_to_module(library_module, library=True),
+                        normalize_module_name(library_module),
+                        'version.py',
+                    ),
+                ],
+                stderr=subprocess.STDOUT,
+            )
         subprocess.check_output(
-            ['git', 'commit', '--no-verify', '-m', '{version}'.format(version=version)],
+            ['git', 'commit', '--no-verify', '-m', '{new_version}'.format(new_version=new_version)],
             stderr=subprocess.STDOUT,
         )
     except subprocess.CalledProcessError as exc_info:
         raise Exception(exc_info.output)
 
 
-def check_new_version(version):
+def check_new_version(new_version):
     parsed_version = packaging.version.parse(version)
     module_versions = get_versions()
     if not all_equal(module_versions.values()):
@@ -350,9 +344,9 @@ def check_new_version(version):
             errors[module_name] = module_version['__version__']
     if errors:
         raise Exception(
-            'Bailing: Found modules with existing versions greater than or equal to the new version '
-            '{version}:\n{versions}'.format(
-                version=version, versions=format_module_versions(module_versions)
+            'Bailing: Found modules with existing versions greater than or equal to the new '
+            'version {new_version}:\n{versions}'.format(
+                new_version=new_version, versions=format_module_versions(module_versions)
             )
         )
     return True
@@ -402,7 +396,7 @@ def git_push(tags=False):
             subprocess.check_output(['git', 'push'])
 
 
-CLI_HELP = """Tools to help tag and publish releases of the Dagster projects.
+CLI_HELP = '''Tools to help tag and publish releases of the Dagster projects.
 
 By convention, these projects live in a single monorepo, and the submodules are versioned in
 lockstep to avoid confusion, i.e., if dagster is at 0.3.0, dagit is also expected to be at
@@ -410,7 +404,7 @@ lockstep to avoid confusion, i.e., if dagster is at 0.3.0, dagit is also expecte
 
 Versions are tracked in the version.py files present in each submodule and in the git tags
 applied to the repository as a whole. These tools help ensure that these versions do not drift.
-"""
+'''
 
 
 @click.group(help=CLI_HELP)
@@ -439,12 +433,12 @@ def publish(nightly):
         '`pip install wheel`.'
     )
 
-    assert _which('twine'), (
+    assert which_('twine'), (
         'You must have twin installed in order to upload packages to PyPI -- run '
         '`pip install twine`.'
     )
 
-    assert _which('yarn'), (
+    assert which_('yarn'), (
         'You must have yarn installed in order to build dagit for release -- see '
         'https://yarnpkg.com/lang/en/docs/install/'
     )
@@ -458,9 +452,9 @@ def publish(nightly):
     print('Publishing packages to PyPI...')
 
     if nightly:
-        version = increment_nightly_versions()
-        commit_new_version('nightly: {nightly}'.format(nightly=version['__nightly__']))
-        set_git_tag('{nightly}'.format(nightly=version['__nightly__']))
+        new_version = increment_nightly_versions()
+        commit_new_version('nightly: {nightly}'.format(nightly=new_version['__nightly__']))
+        set_git_tag('{nightly}'.format(nightly=new_version['__nightly__']))
         git_push()
         git_push(tags=True)
     publish_all(nightly)
@@ -468,17 +462,17 @@ def publish(nightly):
 
 @cli.command()
 @click.argument('version')
-def release(version):
+def release(new_version):
     """Tags all submodules for a new release.
 
     Ensures that git tags, as well as the version.py files in each submodule, agree and that the
     new version is strictly greater than the current version. Will fail if the new version
     is not an increment (following PEP 440). Creates a new git tag and commit.
     """
-    check_new_version(version)
-    set_new_version(version)
-    commit_new_version(version)
-    set_git_tag(version)
+    check_new_version(new_version)
+    set_new_version(new_version)
+    commit_new_version(new_version)
+    set_git_tag(new_version)
 
 
 @cli.command()
