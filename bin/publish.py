@@ -78,7 +78,6 @@ LIBRARY_MODULES = [
     'dagster-pandas',
     'dagster-snowflake',
     'dagster-spark',
-    'dagster-sqlalchemy',
 ]
 
 
