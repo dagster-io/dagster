@@ -54,6 +54,7 @@ milestones in the framework's capability.
 - Dagit no longer offers to open materializations on your machine. Clicking an on-disk
   materialization now copies the path to your clipboard.
 - Pressing Ctrl-Enter now starts execution in Dagit's Execute tab.
+- Dagit properly shows List and Nullable types in the DAG view.
 
 **Dagster-Airflow**
 
