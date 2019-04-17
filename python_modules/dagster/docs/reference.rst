@@ -5,18 +5,18 @@ Reference
 Solid
 ^^^^^
 
-A solid is a functional unit of computation. Solids define their (optionally typed) inputs
-and outputs and the typed schema by which they can be configured, and can enfore expectations on
-their outputs.
-
-Solids can be strung together into `pipelines <#pipeline>`__ by defining
-`dependencies <#dependency-definition>`__ between their inputs and outputs.  Solids are reusable
-and instances of a solid may appear many times in a given pipeline, or across many different
-pipelines.
+A solid is a functional unit of computation with defined inputs and outputs. Solids can be strung
+together into `pipelines <#pipeline>`__ by defining `dependencies <#dependency-definition>`__
+between their inputs and outputs.  Solids are reusable and instances of a solid may appear many
+times in a given pipeline, or across many different pipelines.
 
 Solids often wrap code written in or intended to execute in other systems (e.g., SQL statements,
 Jupyter notebooks, or Spark jobs written in Scala), providing a common interface for defining,
 orchestrating, and managing data processing applications with heterogeneous components
+
+Solids can optionally define the types of their inputs and outputs, and can define a typed schema
+so that their inputs can be read from external configuration files. Solids can also enforce
+`expectations <#expectation>`__ on their inputs and outputs.
 
 Solids are defined using the :func:`@lambda_solid <dagster.lambda_solid>` or
 :func:`@solid <dagster.solid>` decorators, or using the underlying
@@ -32,6 +32,9 @@ the solid is invoked by the Dagster engine.
 
 Result
 ^^^^^^
+
+A result is how a solid's transform function communicates the value of an output, and its
+name, to Dagster.
 
 Solid transform functions are expected to yield a stream of results. Implementers of a solid must
 ensure their tranform yields :class:`Result <dagster.Result>` objects.
@@ -60,7 +63,8 @@ Materialization
 ^^^^^^^^^^^^^^^
 
 The outputs of solids can be materialized. The dagster engine can materialize outputs in a number
-of formats (e.g., json, pickle), and can store materializations locally or on S3.
+of formats (e.g., json, pickle), and can store materializations locally or in object stores such as
+S3 or GCS.
 
 Materializations make it possible to introspect the intermediate state of a pipeline execution
 and ask questions like, "Exactly what output did this solid have on this particular run?" This is
@@ -75,9 +79,12 @@ the pipeline.
 Expectation
 ^^^^^^^^^^^
 
-An expectation is a predicate on a solid’s output. Expectations can be used to enforce runtime data
-quality and integrity constraints, so that pipelines fail early -- before any downstream solids
-execute on bad data.
+An expectation is a function that determines whether the input or output of a solid passes a
+given condition -- for instance, that a value is non-null, or that it is distributed in a certain
+way.
+
+Expectations can be used to enforce runtime data quality and integrity constraints, so that
+pipelines fail early -- before any downstream solids execute on bad data.
 
 Expectations are defined using the :class:`ExpectationDefinition <dagster.ExpectationDefinition>`
 class. We also provide a `thin wrapper <https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-ge>`_
@@ -106,6 +113,14 @@ will require different credentials and expose configuration options). When a pip
 with a config corresponding to one of these contexts, it yields an execution plan suitable for the
 given environment.
 
+Resources
+^^^^^^^^^
+
+Resources are pipeline-scoped and typically used to expose features of the execution environment
+(like database connections) to solids during pipeline execution. Resources can also clean up
+after execution resolves. They are typically defined using the :func:`@resource <dagster.resource>`
+decorator or using the :class:`ResourceDefinition` class directly.
+
 Repository
 ^^^^^^^^^^
 
@@ -115,28 +130,42 @@ higher-level tools. Repositories are defined using the
 higher-level tools with a special ``repository.yml`` file that tells the tools where to look for a
 repository definition.
 
-Config
-^^^^^^
+Dagster Types
+^^^^^^^^^^^^^
 
-Config defines the external environment with which a pipeline will interact for a given execution
-plan. Config can be used to change solid behavior, define pipeline- or solid-scoped resources and
-data that will be available during execution, or even shim solid inputs.
+The Dagster type system allows authors of solids and pipelines to optionally and gradually define
+the types of the data that flows between solids, and so to introduce compile-time and runtime checks
+into their pipelines.
 
-Config is complementary to data (solid inputs and outputs) -- think of inputs and outputs as
-specifying `what` data a pipeline operates on, and config as specifying `how` it operates.
+Types also allow for custom materialization, and are typically defined using the
+:func:`@dagster_type <dagster.dagster_type>` decorator or the
+:func:`as_dagster_type <dagster.as_dagster_type>` API. It is also possible to inherit from
+:class:`RuntimeType <dagster.RuntimeType>` directly.
+
+Environment Config
+^^^^^^^^^^^^^^^^^^
+
+Environment config defines the external environment with which a pipeline will interact for a given
+execution plan. Environment config can be used to change solid behavior, define pipeline- or
+solid-scoped resources and data that will be available during execution, or even shim solid inputs.
+
+Environment config is complementary to data (solid inputs and outputs) -- think of inputs and
+outputs as specifying `what` data a pipeline operates on, and config as specifying `how` it
+operates.
 
 Concretely, imagine a pipeline of solids operating on a data warehouse. The solids might emit and
 consume table partition IDs and aggregate statistics as inputs and outputs -- the data on which they
-operate. Config might specify how to connect to the warehouse (so that the pipeline could also
-operate against a local test database), how to log the results of intermediate computations, or
-where to put artifacts like plots and summary tables.
+operate. Environment config might specify how to connect to the warehouse (so that the pipeline
+could also operate against a local test database), how to log the results of intermediate
+computations, or where to put artifacts like plots and summary tables.
 
-Config Fields
-^^^^^^^^^^^^^
+Configuration Schemas
+^^^^^^^^^^^^^^^^^^^^^
 
-Config fields define a schema for how users can config pipelines (using either Python dicts, YAML,
-or JSON). They tell the Dagster engine how to type check config provided in one of these formats
-against the pipeline context and enable many errors to be caught with rich messaging at compile time.
+Configuration schemas define how users can config pipelines (using either Python dicts, YAML,
+or JSON). They tell the Dagster engine how to type check environment config provided in one of
+these formats against the pipeline context and enable many errors to be caught with rich messaging
+at compile time.
 
 Config fields are defined using the :class:`Field <dagster.Field>` class.
 
@@ -190,23 +219,3 @@ OutputDefinition
 
 Optionally typed definition of the result that a solid will produce. Outputs are defined using the
 :class:`OutputDefinition <dagster.OutputDefinition>` class, usually when defining a solid.
-
-Dagster Types
-^^^^^^^^^^^^^
-
-The Dagster type system allows authors of solids and pipelines to optionally and gradually define
-the types of the data that flows between solids, and so to introduce compile-time and runtime checks
-into their pipelines.
-
-Types also allow for custom materialization, and are typically defined using the
-:func:`@dagster_type <dagster.dagster_type>` decorator or the
-:func:`as_dagster_type <dagster.as_dagster_type>` API. It is also possible to inherit from
-:class:`RuntimeType <dagster.RuntimeType>` directly.
-
-Resources
-^^^^^^^^^
-
-Resources are pipeline-scoped and typically used to expose features of the execution environment
-(like database connections) to solids during pipeline execution. Resources can also clean up
-after execution resolves. They are typically defined using the :func:`@resource <dagster.resource>`
-decorator or using the :class:`ResourceDefinition` class directly.
