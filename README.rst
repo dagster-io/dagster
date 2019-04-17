@@ -46,7 +46,6 @@ This repository contains a number of distinct subprojects:
 - **dagster-pyspark**: A Dagster integration with Pyspark.
 - **dagster-snowflake**: A Dagster integration with Snowflake.
 - **dagster-spark**: A Dagster integration with Spark.
-- **dagster-sqlalchemy**: A Dagster integration with SQLAlchemy.
 
 - **airline-demo**: A substantial demo project illustrating how these tools can be used together
   to manage a realistic data pipeline.
