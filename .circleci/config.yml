@@ -243,9 +243,9 @@ jobs:
             sudo pip install -e python_modules/libraries/dagster-snowflake -qqq
             sudo pip install -e python_modules/libraries/dagster-spark -qqq
             sudo pip install -e python_modules/libraries/dagster-pyspark -qqq
-            sudo pip install -e python_modules/airline-demo -qqq
             sudo pip install -e python_modules/automation -qqq
             sudo pip install -e examples/event-pipeline-demo -qqq
+            sudo pip install -e examples/airline-demo -qqq
 
       - attach_workspace:
           at: /tmp/workspace
@@ -755,7 +755,7 @@ jobs:
       - run:
           name: Build Dockerfile
           command: |
-            pushd python_modules/airline-demo/
+            pushd examples/airline-demo/
             . build.sh
             popd
       - run:
@@ -775,19 +775,19 @@ jobs:
       - run:
           name: Docker-compose for db
           command: |
-            pushd python_modules/airline-demo
+            pushd examples/airline-demo
             docker-compose up -d
       - run:
           name: Run airline-demo Tests
           command: |
-            cd python_modules/airline-demo
+            cd examples/airline-demo
             tox -e $TOXENV
             # docker login -u $DOCKERHUB_USERNAME -p $DOCKERHUB_PASSWORD
             # docker push dagster/airline-demo-airflow
       - run:
-          command: mv python_modules/airline-demo/.coverage python_modules/airline-demo/.coverage.airline-demo.${CIRCLE_BUILD_NUM}
+          command: mv examples/airline-demo/.coverage examples/airline-demo/.coverage.airline-demo.${CIRCLE_BUILD_NUM}
       - persist_to_workspace:
-          root: python_modules/airline-demo/
+          root: examples/airline-demo/
           paths:
             - .coverage*
 
@@ -812,12 +812,12 @@ jobs:
       - run:
           name: Run airline-demo Tests
           command: |
-            cd python_modules/airline-demo
+            cd examples/airline-demo
             tox -e $TOXENV
       - run:
-          command: mv python_modules/airline-demo/.coverage python_modules/airline-demo/.coverage.airline-demo.${CIRCLE_BUILD_NUM}
+          command: mv examples/airline-demo/.coverage examples/airline-demo/.coverage.airline-demo.${CIRCLE_BUILD_NUM}
       - persist_to_workspace:
-          root: python_modules/airline-demo/
+          root: examples/airline-demo/
           paths:
             - .coverage*
 
@@ -835,7 +835,7 @@ jobs:
       - run:
           name: Build Dockerfile
           command: |
-            pushd python_modules/airline-demo/
+            pushd examples/airline-demo/
             . build.sh
             popd
       - run:
@@ -849,7 +849,7 @@ jobs:
       - run:
           name: Docker-compose for db
           command: |
-            pushd python_modules/airline-demo
+            pushd examples/airline-demo
             docker-compose up -d
       - run:
           name: Set up py35 (!?)
@@ -862,12 +862,12 @@ jobs:
       - run:
           name: Run airline-demo Tests
           command: |
-            cd python_modules/airline-demo
+            cd examples/airline-demo
             tox -e $TOXENV
       - run:
-          command: mv python_modules/airline-demo/.coverage python_modules/airline-demo/.coverage.airline-demo.${CIRCLE_BUILD_NUM}
+          command: mv examples/airline-demo/.coverage examples/airline-demo/.coverage.airline-demo.${CIRCLE_BUILD_NUM}
       - persist_to_workspace:
-          root: python_modules/airline-demo/
+          root: examples/airline-demo/
           paths:
             - .coverage*
 
@@ -889,7 +889,7 @@ jobs:
       - run:
           name: Build Dockerfile
           command: |
-            pushd python_modules/airline-demo/
+            pushd examples/airline-demo/
             . build.sh
             popd
       - run:
@@ -911,17 +911,17 @@ jobs:
       - run:
           name: Docker-compose for db
           command: |
-            pushd python_modules/airline-demo
+            pushd examples/airline-demo
             docker-compose up -d
       - run:
           name: Run airline-demo Tests
           command: |
-            cd python_modules/airline-demo
+            cd examples/airline-demo
             tox -e $TOXENV
       - run:
-          command: mv python_modules/airline-demo/.coverage python_modules/airline-demo/.coverage.airline-demo.${CIRCLE_BUILD_NUM}
+          command: mv examples/airline-demo/.coverage examples/airline-demo/.coverage.airline-demo.${CIRCLE_BUILD_NUM}
       - persist_to_workspace:
-          root: python_modules/airline-demo/
+          root: examples/airline-demo/
           paths:
             - .coverage*
 
