@@ -330,7 +330,7 @@ def commit_new_version(new_version):
 
 
 def check_new_version(new_version):
-    parsed_version = packaging.version.parse(version)
+    parsed_version = packaging.version.parse(new_version)
     module_versions = get_versions()
     if not all_equal(module_versions.values()):
         print(
@@ -461,17 +461,17 @@ def publish(nightly):
 
 @cli.command()
 @click.argument('version')
-def release(new_version):
+def release(version):
     """Tags all submodules for a new release.
 
     Ensures that git tags, as well as the version.py files in each submodule, agree and that the
     new version is strictly greater than the current version. Will fail if the new version
     is not an increment (following PEP 440). Creates a new git tag and commit.
     """
-    check_new_version(new_version)
-    set_new_version(new_version)
-    commit_new_version(new_version)
-    set_git_tag(new_version)
+    check_new_version(version)
+    set_new_version(version)
+    commit_new_version(version)
+    set_git_tag(version)
 
 
 @cli.command()
