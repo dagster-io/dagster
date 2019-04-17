@@ -324,7 +324,8 @@ export interface PipelineExplorerFragment_solids_definition {
 
 export interface PipelineExplorerFragment_solids_inputs_definition_type {
   __typename: "RegularRuntimeType" | "ListRuntimeType" | "NullableRuntimeType";
-  name: string | null;
+  displayName: string;
+  isNothing: boolean;
 }
 
 export interface PipelineExplorerFragment_solids_inputs_definition {
@@ -335,7 +336,7 @@ export interface PipelineExplorerFragment_solids_inputs_definition {
 
 export interface PipelineExplorerFragment_solids_inputs_dependsOn_definition_type {
   __typename: "RegularRuntimeType" | "ListRuntimeType" | "NullableRuntimeType";
-  name: string | null;
+  displayName: string;
 }
 
 export interface PipelineExplorerFragment_solids_inputs_dependsOn_definition {
@@ -363,7 +364,8 @@ export interface PipelineExplorerFragment_solids_inputs {
 
 export interface PipelineExplorerFragment_solids_outputs_definition_type {
   __typename: "RegularRuntimeType" | "ListRuntimeType" | "NullableRuntimeType";
-  name: string | null;
+  displayName: string;
+  isNothing: boolean;
 }
 
 export interface PipelineExplorerFragment_solids_outputs_definition_expectations {
@@ -386,7 +388,7 @@ export interface PipelineExplorerFragment_solids_outputs_dependedBy_solid {
 
 export interface PipelineExplorerFragment_solids_outputs_dependedBy_definition_type {
   __typename: "RegularRuntimeType" | "ListRuntimeType" | "NullableRuntimeType";
-  name: string | null;
+  displayName: string;
 }
 
 export interface PipelineExplorerFragment_solids_outputs_dependedBy_definition {

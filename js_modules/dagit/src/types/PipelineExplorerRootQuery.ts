@@ -453,9 +453,9 @@ export interface PipelineExplorerRootQuery_pipeline_solids_definition {
 
 export interface PipelineExplorerRootQuery_pipeline_solids_inputs_definition_type {
   __typename: "RegularRuntimeType" | "ListRuntimeType" | "NullableRuntimeType";
-  name: string | null;
-  isNothing: boolean;
   displayName: string;
+  isNothing: boolean;
+  name: string | null;
   description: string | null;
 }
 
@@ -475,7 +475,7 @@ export interface PipelineExplorerRootQuery_pipeline_solids_inputs_definition {
 
 export interface PipelineExplorerRootQuery_pipeline_solids_inputs_dependsOn_definition_type {
   __typename: "RegularRuntimeType" | "ListRuntimeType" | "NullableRuntimeType";
-  name: string | null;
+  displayName: string;
 }
 
 export interface PipelineExplorerRootQuery_pipeline_solids_inputs_dependsOn_definition {
@@ -503,9 +503,9 @@ export interface PipelineExplorerRootQuery_pipeline_solids_inputs {
 
 export interface PipelineExplorerRootQuery_pipeline_solids_outputs_definition_type {
   __typename: "RegularRuntimeType" | "ListRuntimeType" | "NullableRuntimeType";
-  name: string | null;
-  isNothing: boolean;
   displayName: string;
+  isNothing: boolean;
+  name: string | null;
   description: string | null;
 }
 
@@ -530,7 +530,7 @@ export interface PipelineExplorerRootQuery_pipeline_solids_outputs_dependedBy_so
 
 export interface PipelineExplorerRootQuery_pipeline_solids_outputs_dependedBy_definition_type {
   __typename: "RegularRuntimeType" | "ListRuntimeType" | "NullableRuntimeType";
-  name: string | null;
+  displayName: string;
 }
 
 export interface PipelineExplorerRootQuery_pipeline_solids_outputs_dependedBy_definition {

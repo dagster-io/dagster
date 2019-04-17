@@ -52,14 +52,15 @@ export default class SolidNode extends React.Component<ISolidNodeProps> {
           definition {
             name
             type {
-              name
+              displayName
+              isNothing
             }
           }
           dependsOn {
             definition {
               name
               type {
-                name
+                displayName
               }
             }
             solid {
@@ -71,7 +72,8 @@ export default class SolidNode extends React.Component<ISolidNodeProps> {
           definition {
             name
             type {
-              name
+              displayName
+              isNothing
             }
             expectations {
               name
@@ -85,7 +87,7 @@ export default class SolidNode extends React.Component<ISolidNodeProps> {
             definition {
               name
               type {
-                name
+                displayName
               }
             }
           }
@@ -125,17 +127,19 @@ export default class SolidNode extends React.Component<ISolidNodeProps> {
     items: Array<SolidNodeFragment_inputs | SolidNodeFragment_outputs>,
     layout: { [ioName: string]: { layout: ILayout } }
   ) {
+    const { solid, minified, highlightedConnections } = this.props;
+
     return Object.keys(layout).map((key, i) => {
       const { x, y, width, height } = layout[key].layout;
 
       const item = items.find(o => o.definition.name === key);
       if (!item) return <g key={i} />;
 
-      const showText = width == 0 && !this.props.minified;
       const { name, type } = item.definition;
+      const showText = width == 0 && !minified && !type.isNothing;
 
       const connections: Array<{ a: string; b: string }> = [];
-      let title = `${item.definition.name}: ${item.definition.type.name}`;
+      let title = `${name}: ${type.displayName}`;
       let clickTarget: string | null = null;
 
       if ("dependsOn" in item && item.dependsOn) {
@@ -145,7 +149,7 @@ export default class SolidNode extends React.Component<ISolidNodeProps> {
         clickTarget = item.dependsOn.solid.name;
         connections.push({
           a: item.dependsOn.solid.name,
-          b: this.props.solid.name
+          b: solid.name
         });
       }
       if ("dependedBy" in item) {
@@ -160,14 +164,14 @@ export default class SolidNode extends React.Component<ISolidNodeProps> {
         connections.push(
           ...item.dependedBy.map(o => ({
             a: o.solid.name,
-            b: this.props.solid.name
+            b: solid.name
           }))
         );
       }
 
       const highlighted = connections.some(
         ({ a, b }) =>
-          !!this.props.highlightedConnections.find(
+          !!highlightedConnections.find(
             h => (h.a === a || h.a === b) && (h.b === a || h.b === b)
           )
       );
@@ -205,7 +209,7 @@ export default class SolidNode extends React.Component<ISolidNodeProps> {
             {showText && name !== DEFAULT_RESULT_NAME && (
               <SVGMonospaceText text={`${name}:`} fill="#FFF" size={14} />
             )}
-            {showText && type.name && (
+            {showText && type.displayName && (
               <SVGFlowLayoutRect
                 rx={4}
                 ry={4}
@@ -216,7 +220,11 @@ export default class SolidNode extends React.Component<ISolidNodeProps> {
                 spacing={0}
                 padding={4}
               >
-                <SVGMonospaceText text={type.name} size={14} fill="#222" />
+                <SVGMonospaceText
+                  text={type.displayName}
+                  size={14}
+                  fill="#222"
+                />
               </SVGFlowLayoutRect>
             )}
           </SVGFlowLayoutRect>

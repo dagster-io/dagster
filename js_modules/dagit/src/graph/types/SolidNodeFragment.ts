@@ -31,7 +31,8 @@ export interface SolidNodeFragment_definition {
 
 export interface SolidNodeFragment_inputs_definition_type {
   __typename: "RegularRuntimeType" | "ListRuntimeType" | "NullableRuntimeType";
-  name: string | null;
+  displayName: string;
+  isNothing: boolean;
 }
 
 export interface SolidNodeFragment_inputs_definition {
@@ -42,7 +43,7 @@ export interface SolidNodeFragment_inputs_definition {
 
 export interface SolidNodeFragment_inputs_dependsOn_definition_type {
   __typename: "RegularRuntimeType" | "ListRuntimeType" | "NullableRuntimeType";
-  name: string | null;
+  displayName: string;
 }
 
 export interface SolidNodeFragment_inputs_dependsOn_definition {
@@ -70,7 +71,8 @@ export interface SolidNodeFragment_inputs {
 
 export interface SolidNodeFragment_outputs_definition_type {
   __typename: "RegularRuntimeType" | "ListRuntimeType" | "NullableRuntimeType";
-  name: string | null;
+  displayName: string;
+  isNothing: boolean;
 }
 
 export interface SolidNodeFragment_outputs_definition_expectations {
@@ -93,7 +95,7 @@ export interface SolidNodeFragment_outputs_dependedBy_solid {
 
 export interface SolidNodeFragment_outputs_dependedBy_definition_type {
   __typename: "RegularRuntimeType" | "ListRuntimeType" | "NullableRuntimeType";
-  name: string | null;
+  displayName: string;
 }
 
 export interface SolidNodeFragment_outputs_dependedBy_definition {
