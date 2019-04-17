@@ -5,12 +5,12 @@ available by running `python publish.py --help`.
 """
 import contextlib
 import datetime
-import distutils
 import inspect
 import os
 import re
 import subprocess
 
+from distutils import spawn
 from itertools import groupby
 
 import click
@@ -42,7 +42,7 @@ def script_relative_path(file_path):
 def _which(exe):
     '''Uses distutils to look for an executable, mimicking unix which'''
     # https://github.com/PyCQA/pylint/issues/73
-    return distutils.spawn.find_executable(exe)  # pylint: disable=no-member
+    return spawn.find_executable(exe)
 
 
 def construct_publish_comands(additional_steps=None, nightly=False):
