@@ -18,10 +18,10 @@ python_modules/libraries/dagster-snowflake/dagster_snowflake
 python_modules/libraries/dagster-snowflake/dagster_snowflake_tests
 python_modules/libraries/dagster-spark/dagster_spark
 python_modules/libraries/dagster-spark/dagster_spark_tests
-python_modules/airline-demo/airline_demo
-python_modules/airline-demo/airline_demo_tests
 python_modules/automation/
-examples/toys
-examples/pyspark_pagerank
+examples/airline-demo/airline_demo
+examples/airline-demo/airline_demo_tests
 examples/event-pipeline-demo/event_pipeline_demo
 examples/event-pipeline-demo/event_pipeline_demo_tests
+examples/pyspark_pagerank
+examples/toys
