@@ -31,7 +31,8 @@ export interface PipelineGraphSolidFragment_definition {
 
 export interface PipelineGraphSolidFragment_inputs_definition_type {
   __typename: "RegularRuntimeType" | "ListRuntimeType" | "NullableRuntimeType";
-  name: string | null;
+  displayName: string;
+  isNothing: boolean;
 }
 
 export interface PipelineGraphSolidFragment_inputs_definition {
@@ -42,7 +43,7 @@ export interface PipelineGraphSolidFragment_inputs_definition {
 
 export interface PipelineGraphSolidFragment_inputs_dependsOn_definition_type {
   __typename: "RegularRuntimeType" | "ListRuntimeType" | "NullableRuntimeType";
-  name: string | null;
+  displayName: string;
 }
 
 export interface PipelineGraphSolidFragment_inputs_dependsOn_definition {
@@ -70,7 +71,8 @@ export interface PipelineGraphSolidFragment_inputs {
 
 export interface PipelineGraphSolidFragment_outputs_definition_type {
   __typename: "RegularRuntimeType" | "ListRuntimeType" | "NullableRuntimeType";
-  name: string | null;
+  displayName: string;
+  isNothing: boolean;
 }
 
 export interface PipelineGraphSolidFragment_outputs_definition_expectations {
@@ -93,7 +95,7 @@ export interface PipelineGraphSolidFragment_outputs_dependedBy_solid {
 
 export interface PipelineGraphSolidFragment_outputs_dependedBy_definition_type {
   __typename: "RegularRuntimeType" | "ListRuntimeType" | "NullableRuntimeType";
-  name: string | null;
+  displayName: string;
 }
 
 export interface PipelineGraphSolidFragment_outputs_dependedBy_definition {
