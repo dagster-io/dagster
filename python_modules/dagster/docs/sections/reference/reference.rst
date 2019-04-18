@@ -79,26 +79,26 @@ scheduled, but these conditions should be expressed separately from its underlyi
 Dependencies are defined when constructing pipelines, using the
 :class:`DependencyDefinition <dagster.DependencyDefinition>` class.
 
-Materialization
-^^^^^^^^^^^^^^^
+Intermediates
+^^^^^^^^^^^^^
 
 .. image:: materialization.png
     :scale: 42 %
     :align: center
 
-The outputs of solids can be materialized. The dagster engine can materialize outputs in a number
-of formats (e.g., json, pickle), and can store materializations locally or in object stores such as
-S3 or GCS.
+The intermediate outputs of solids in a pipeline can be materialized. The Dagster engine can
+materialize outputs in a number of formats (e.g., json, pickle), and can store materialized
+intermediates locally or in object stores such as S3 or GCS.
 
-Materializations make it possible to introspect the intermediate state of a pipeline execution
-and ask questions like, "Exactly what output did this solid have on this particular run?" This is
-useful when auditing or debugging pipelines, and makes it possible to establish the `provenance` of
-data artifacts.
+Materialized intermediates make it possible to introspect the intermediate state of a pipeline
+execution and ask questions like, "Exactly what output did this solid have on this particular run?"
+This is useful when auditing or debugging pipelines, and makes it possible to establish the
+`provenance` of data artifacts.
 
-Materializations also enable partial re-execution of pipelines "starting from" a materialized state
-of the upstream execution. This is useful when a pipeline fails halfway through, or in order to
-explore how new logic in part of a pipeline would have operated on outputs from previous runs of
-the pipeline.
+Materialized intermediates also enable `partial re-execution` of pipelines "starting from" a
+materialized state of the upstream execution. This is useful when a pipeline fails halfway through,
+or in order to explore how new logic in part of a pipeline would have operated on outputs from
+previous runs of the pipeline.
 
 Expectation
 ^^^^^^^^^^^
