@@ -1,9 +1,16 @@
 Reference
 ---------
-
+As you get started with Dagster, you'll find that there are a number of important concepts
+underpinning the system. Some of these concepts, like `DAGs <#dag>`__ will undoubtably be familiar
+if you've previously worked with tools like Airflow, but Dagster has some important differences
+from other workflow systems to facilitate operating at a higher level of abstraction.
 
 Solid
 ^^^^^
+
+.. image:: solid.png
+    :scale: 40 %
+    :align: center
 
 A solid is a functional unit of computation with defined inputs and outputs. Solids can be strung
 together into `pipelines <#pipeline>`__ by defining `dependencies <#dependency-definition>`__
@@ -12,7 +19,7 @@ times in a given pipeline, or across many different pipelines.
 
 Solids often wrap code written in or intended to execute in other systems (e.g., SQL statements,
 Jupyter notebooks, or Spark jobs written in Scala), providing a common interface for defining,
-orchestrating, and managing data processing applications with heterogeneous components
+orchestrating, and managing data processing applications with heterogeneous components.
 
 Solids can optionally define the types of their inputs and outputs, and can define a typed schema
 so that their inputs can be read from external configuration files. Solids can also enforce
@@ -26,12 +33,21 @@ Solids are defined using the :func:`@lambda_solid <dagster.lambda_solid>` or
 Transform Function
 ^^^^^^^^^^^^^^^^^^
 
-The user-supplied function which forms the heart of a solid definition and will be executed when
-the solid is invoked by the Dagster engine.
+.. image:: transform_fn.png
+    :scale: 40 %
+    :align: center
+
+The user-supplied function which forms the heart of a solid definition. The transform functions are 
+the business logic defined by you as the user; this business logic is what will be executed when the
+solid is invoked by the Dagster engine.
 
 
 Result
 ^^^^^^
+
+.. image:: result.png
+    :scale: 40 %
+    :align: center
 
 A result is how a solid's transform function communicates the value of an output, and its
 name, to Dagster.
@@ -48,6 +64,10 @@ the user to return a value instead of yielding it, and automatically wrapping th
 Dependency Definition
 ^^^^^^^^^^^^^^^^^^^^^
 
+.. image:: dependency.png
+    :scale: 40 %
+    :align: center
+
 Solids are linked together into `pipelines <#pipeline>`__ by defining the dependencies between
 their inputs and outputs. Dependencies are data-driven, not workflow-driven -- they define what
 data is required for solids to execute, not how or when they execute.
@@ -61,6 +81,10 @@ Dependencies are defined when constructing pipelines, using the
 
 Materialization
 ^^^^^^^^^^^^^^^
+
+.. image:: materialization.png
+    :scale: 42 %
+    :align: center
 
 The outputs of solids can be materialized. The dagster engine can materialize outputs in a number
 of formats (e.g., json, pickle), and can store materializations locally or in object stores such as
@@ -79,6 +103,10 @@ the pipeline.
 Expectation
 ^^^^^^^^^^^
 
+.. image:: expectation.png
+    :scale: 40 %
+    :align: center
+
 An expectation is a function that determines whether the input or output of a solid passes a
 given condition -- for instance, that a value is non-null, or that it is distributed in a certain
 way.
@@ -95,6 +123,11 @@ so you can use its existing repertoire of expectartions with Dagster.
 
 Pipeline
 ^^^^^^^^
+
+.. image:: pipeline.png
+    :scale: 40 %
+    :align: center
+
 Data pipelines are directed acyclic graphs (DAGs) of solids -- that is, they are made up of a number
 of solids which have data `dependencies <#dependency-definition>`__ on each other (but no circular
 dependencies), along with a set of associated pipeline context definitions, which declare the various
@@ -116,6 +149,10 @@ given environment.
 Resources
 ^^^^^^^^^
 
+.. image:: resource.png
+    :scale: 40 %
+    :align: center
+
 Resources are pipeline-scoped and typically used to expose features of the execution environment
 (like database connections) to solids during pipeline execution. Resources can also clean up
 after execution resolves. They are typically defined using the :func:`@resource <dagster.resource>`
@@ -123,6 +160,10 @@ decorator or using the :class:`ResourceDefinition` class directly.
 
 Repository
 ^^^^^^^^^^
+
+.. image:: repository.png
+    :scale: 40 %
+    :align: center
 
 A repository is a collection of pipelines that can be made available to the Dagit UI and other
 higher-level tools. Repositories are defined using the
