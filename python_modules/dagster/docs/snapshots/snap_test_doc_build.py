@@ -4552,8 +4552,8 @@ the ``execute_solids`` function
 snapshots['test_build_all_docs 35'] = '''Reference
 ---------
 As you get started with Dagster, you'll find that there are a number of important concepts
-underpinning the system. Some of these concepts, like `DAGs <#dag>`__ will undoubtably be familiar
-if you've previously worked with tools like Airflow, but Dagster has some important differences
+underpinning the system. Some of these concepts, like `DAGs <#dag>`__, will undoubtably be familiar
+if you've previously worked with tools like Airflow. However, Dagster has some important differences
 from other workflow systems to facilitate operating at a higher level of abstraction.
 
 Solid
@@ -28216,8 +28216,8 @@ snapshots['test_build_all_docs 82'] = '''
   <div class="section" id="reference">
 <h1>Reference<a class="headerlink" href="#reference" title="Permalink to this headline">¶</a></h1>
 <p>As you get started with Dagster, you’ll find that there are a number of important concepts
-underpinning the system. Some of these concepts, like <a class="reference external" href="#dag">DAGs</a> will undoubtably be familiar
-if you’ve previously worked with tools like Airflow, but Dagster has some important differences
+underpinning the system. Some of these concepts, like <a class="reference external" href="#dag">DAGs</a>, will undoubtably be familiar
+if you’ve previously worked with tools like Airflow. However, Dagster has some important differences
 from other workflow systems to facilitate operating at a higher level of abstraction.</p>
 <div class="section" id="solid">
 <h2>Solid<a class="headerlink" href="#solid" title="Permalink to this headline">¶</a></h2>
