@@ -12,7 +12,7 @@ Basic Typing
 ^^^^^^^^^^^^
 
 .. literalinclude:: ../../../../../libraries/dagster-pandas/dagster_pandas/data_frame.py
-   :lines: 1, 84-92, 95
+   :lines: 1, 84-92, 94
 
 What this code doing is annotating/registering an existing type as a dagster type. Now one can
 include this type and use it as an input or output of a solid. The system will do a typecheck

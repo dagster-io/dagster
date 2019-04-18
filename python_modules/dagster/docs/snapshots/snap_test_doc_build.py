@@ -625,10 +625,16 @@ snapshots['test_build_all_docs 3'] = '''
 </li>
       <li><a href="sections/api/apidocs/types.html#dagster.ConfigType">ConfigType (class in dagster)</a>
 </li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="sections/api/apidocs/execution.html#dagster.SolidExecutionResult.context">context (dagster.SolidExecutionResult attribute)</a>, <a href="sections/api/apidocs/execution.html#dagster.SolidExecutionResult.context">[1]</a>
 </li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="sections/api/apidocs/pipeline.html#dagster.InitContext.context_config">context_config (dagster.InitContext attribute)</a>
+
+      <ul>
+        <li><a href="sections/api/apidocs/pipeline.html#dagster.InitResourceContext.context_config">(dagster.InitResourceContext attribute)</a>
+</li>
+      </ul></li>
       <li><a href="sections/api/apidocs/pipeline.html#dagster.PipelineDefinition.context_definitions">context_definitions (dagster.PipelineDefinition attribute)</a>
 </li>
       <li><a href="sections/api/apidocs/pipeline.html#dagster.PipelineContextDefinition.context_fn">context_fn (dagster.PipelineContextDefinition attribute)</a>
@@ -745,14 +751,18 @@ snapshots['test_build_all_docs 3'] = '''
 <h2 id="I">I</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="sections/api/apidocs/pipeline.html#dagster.InitContext">InitContext (class in dagster)</a>
+</li>
+      <li><a href="sections/api/apidocs/pipeline.html#dagster.InitResourceContext">InitResourceContext (class in dagster)</a>
+</li>
       <li><a href="sections/api/apidocs/execution.html#dagster.InProcessExecutorConfig">InProcessExecutorConfig (class in dagster)</a>
 </li>
       <li><a href="sections/api/apidocs/types.html#dagster.input_schema">input_schema() (in module dagster)</a>
 </li>
-      <li><a href="sections/api/apidocs/types.html#dagster.input_selector_schema">input_selector_schema() (in module dagster)</a>
-</li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="sections/api/apidocs/types.html#dagster.input_selector_schema">input_selector_schema() (in module dagster)</a>
+</li>
       <li><a href="sections/api/apidocs/solids.html#dagster.InputDefinition">InputDefinition (class in dagster)</a>
 </li>
       <li><a href="sections/api/apidocs/types.html#dagster.Int">Int (in module dagster)</a>
@@ -837,10 +847,16 @@ snapshots['test_build_all_docs 3'] = '''
 </li>
       <li><a href="sections/api/apidocs/types.html#dagster.Path">Path (in module dagster)</a>
 </li>
-      <li><a href="sections/api/apidocs/errors.html#dagster.PipelineConfigEvaluationError">PipelineConfigEvaluationError</a>
+      <li><a href="sections/api/apidocs/pipeline.html#dagster.InitContext.pipeline_def">pipeline_def (dagster.InitContext attribute)</a>
+
+      <ul>
+        <li><a href="sections/api/apidocs/pipeline.html#dagster.InitResourceContext.pipeline_def">(dagster.InitResourceContext attribute)</a>
 </li>
+      </ul></li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="sections/api/apidocs/errors.html#dagster.PipelineConfigEvaluationError">PipelineConfigEvaluationError</a>
+</li>
       <li><a href="sections/api/apidocs/pipeline.html#dagster.PipelineContextDefinition">PipelineContextDefinition (class in dagster)</a>
 </li>
       <li><a href="sections/api/apidocs/pipeline.html#dagster.PipelineDefinition">PipelineDefinition (class in dagster)</a>
@@ -859,6 +875,10 @@ snapshots['test_build_all_docs 3'] = '''
 </li>
       <li><a href="sections/api/apidocs/pipeline.html#dagster.resource">resource() (in module dagster)</a>
 </li>
+      <li><a href="sections/api/apidocs/pipeline.html#dagster.InitResourceContext.resource_config">resource_config (dagster.InitResourceContext attribute)</a>
+</li>
+      <li><a href="sections/api/apidocs/pipeline.html#dagster.InitResourceContext.resource_def">resource_def (dagster.InitResourceContext attribute)</a>
+</li>
       <li><a href="sections/api/apidocs/pipeline.html#dagster.ResourceDefinition">ResourceDefinition (class in dagster)</a>
 </li>
       <li><a href="sections/api/apidocs/solids.html#dagster.Result">Result (class in dagster)</a>
@@ -869,6 +889,12 @@ snapshots['test_build_all_docs 3'] = '''
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="sections/api/apidocs/solids.html#dagster.MultipleResults.results">results (dagster.MultipleResults attribute)</a>
 </li>
+      <li><a href="sections/api/apidocs/pipeline.html#dagster.InitContext.run_id">run_id (dagster.InitContext attribute)</a>
+
+      <ul>
+        <li><a href="sections/api/apidocs/pipeline.html#dagster.InitResourceContext.run_id">(dagster.InitResourceContext attribute)</a>
+</li>
+      </ul></li>
       <li><a href="sections/api/apidocs/execution.html#dagster.RunConfig">RunConfig (class in dagster)</a>
 </li>
       <li><a href="sections/api/apidocs/execution.html#dagster.RunStorageMode">RunStorageMode (class in dagster)</a>
@@ -1095,7 +1121,7 @@ snapshots['test_build_all_docs 4'] = '''
 <li class="toctree-l2"><a class="reference internal" href="sections/reference/reference.html#transform-function">Transform Function</a></li>
 <li class="toctree-l2"><a class="reference internal" href="sections/reference/reference.html#result">Result</a></li>
 <li class="toctree-l2"><a class="reference internal" href="sections/reference/reference.html#dependency-definition">Dependency Definition</a></li>
-<li class="toctree-l2"><a class="reference internal" href="sections/reference/reference.html#materialization">Materialization</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sections/reference/reference.html#intermediates">Intermediates</a></li>
 <li class="toctree-l2"><a class="reference internal" href="sections/reference/reference.html#expectation">Expectation</a></li>
 <li class="toctree-l2"><a class="reference internal" href="sections/reference/reference.html#pipeline">Pipeline</a></li>
 <li class="toctree-l2"><a class="reference internal" href="sections/reference/reference.html#resources">Resources</a></li>
@@ -1450,6 +1476,7 @@ snapshots['test_build_all_docs 7'] = '''
 <li><a href="dagster/core/errors.html">dagster.core.errors</a></li>
 <li><a href="dagster/core/execution.html">dagster.core.execution</a></li>
 <li><a href="dagster/core/execution_context.html">dagster.core.execution_context</a></li>
+<li><a href="dagster/core/init_context.html">dagster.core.init_context</a></li>
 <li><a href="dagster/core/runs.html">dagster.core.runs</a></li>
 <li><a href="dagster/core/types/builtin_enum.html">dagster.core.types.builtin_enum</a></li>
 <li><a href="dagster/core/types/config.html">dagster.core.types.config</a></li>
@@ -3685,7 +3712,7 @@ This pipeline introduces a few new concepts.
     pipeline's DAG.
 
     .. literalinclude::  ../../../../dagster/tutorials/intro_tutorial/hello_dag.py
-       :lines: 23-25
+       :lines: 18
        :dedent: 8
 
     The first layer of keys in this dict are the *names* of solids in the pipeline. The second layer
@@ -4054,7 +4081,7 @@ and then execute that pipeline.
 .. literalinclude:: ../../../../dagster/tutorials/intro_tutorial/multiple_outputs.py
     :linenos:
     :caption: multiple_outputs.py
-    :lines: 36-49,86-97
+    :lines: 36-49,86-96
 
 You must create a config file
 
@@ -4296,7 +4323,7 @@ Now we can simply change configuration and the "in-memory" version of the
 resource will be used instead of the cloud version:
 
 .. literalinclude:: ../../../../dagster/tutorials/intro_tutorial/resources.py
-   :lines: 131-144
+   :lines: 106-112
    :emphasize-lines: 4
    :dedent: 4
 
@@ -4368,7 +4395,7 @@ Basic Typing
 ^^^^^^^^^^^^
 
 .. literalinclude:: ../../../../../libraries/dagster-pandas/dagster_pandas/data_frame.py
-   :lines: 1, 84-92, 95
+   :lines: 1, 84-92, 94
 
 What this code doing is annotating/registering an existing type as a dagster type. Now one can
 include this type and use it as an input or output of a solid. The system will do a typecheck
@@ -4630,26 +4657,26 @@ scheduled, but these conditions should be expressed separately from its underlyi
 Dependencies are defined when constructing pipelines, using the
 :class:`DependencyDefinition <dagster.DependencyDefinition>` class.
 
-Materialization
-^^^^^^^^^^^^^^^
+Intermediates
+^^^^^^^^^^^^^
 
 .. image:: materialization.png
     :scale: 42 %
     :align: center
 
-The outputs of solids can be materialized. The dagster engine can materialize outputs in a number
-of formats (e.g., json, pickle), and can store materializations locally or in object stores such as
-S3 or GCS.
+The intermediate outputs of solids in a pipeline can be materialized. The Dagster engine can
+materialize outputs in a number of formats (e.g., json, pickle), and can store materialized
+intermediates locally or in object stores such as S3 or GCS.
 
-Materializations make it possible to introspect the intermediate state of a pipeline execution
-and ask questions like, "Exactly what output did this solid have on this particular run?" This is
-useful when auditing or debugging pipelines, and makes it possible to establish the `provenance` of
-data artifacts.
+Materialized intermediates make it possible to introspect the intermediate state of a pipeline
+execution and ask questions like, "Exactly what output did this solid have on this particular run?"
+This is useful when auditing or debugging pipelines, and makes it possible to establish the
+`provenance` of data artifacts.
 
-Materializations also enable partial re-execution of pipelines "starting from" a materialized state
-of the upstream execution. This is useful when a pipeline fails halfway through, or in order to
-explore how new logic in part of a pipeline would have operated on outputs from previous runs of
-the pipeline.
+Materialized intermediates also enable `partial re-execution` of pipelines "starting from" a
+materialized state of the upstream execution. This is useful when a pipeline fails halfway through,
+or in order to explore how new logic in part of a pipeline would have operated on outputs from
+previous runs of the pipeline.
 
 Expectation
 ^^^^^^^^^^^
@@ -20075,6 +20102,48 @@ pass it into a one-off PipelineDefinition</p>
 </dd></dl>
 
 <dl class="class">
+<dt id="dagster.InitContext">
+<em class="property">class </em><code class="descclassname">dagster.</code><code class="descname">InitContext</code><a class="reference internal" href="../../../_modules/dagster/core/init_context.html#InitContext"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dagster.InitContext" title="Permalink to this definition">¶</a></dt>
+<dd><p>InitContext is the context object provided to context creation functions.
+In effect, it is the state available to those functions, and any function that
+is called prior to pipeline execution, plus the configuration value for that context.</p>
+<dl class="attribute">
+<dt id="dagster.InitContext.context_config">
+<code class="descname">context_config</code><a class="headerlink" href="#dagster.InitContext.context_config" title="Permalink to this definition">¶</a></dt>
+<dd><p>The configuration data provided by the environment config. The schema for this
+data is defined by <code class="docutils literal notranslate"><span class="pre">config_field</span></code> on the <a class="reference internal" href="#dagster.PipelineContextDefinition" title="dagster.PipelineContextDefinition"><code class="xref py py-class docutils literal notranslate"><span class="pre">PipelineContextDefinition</span></code></a></p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>Any</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="dagster.InitContext.pipeline_def">
+<code class="descname">pipeline_def</code><a class="headerlink" href="#dagster.InitContext.pipeline_def" title="Permalink to this definition">¶</a></dt>
+<dd><p>The pipeline definition currently being executed.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p><a class="reference internal" href="#dagster.PipelineDefinition" title="dagster.PipelineDefinition">PipelineDefinition</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="dagster.InitContext.run_id">
+<code class="descname">run_id</code><a class="headerlink" href="#dagster.InitContext.run_id" title="Permalink to this definition">¶</a></dt>
+<dd><p>The ID for this run of the pipeline.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
 <dt id="dagster.ExecutionContext">
 <em class="property">class </em><code class="descclassname">dagster.</code><code class="descname">ExecutionContext</code><a class="reference internal" href="../../../_modules/dagster/core/user_context.html#ExecutionContext"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dagster.ExecutionContext" title="Permalink to this definition">¶</a></dt>
 <dd><p>The user-facing object in the context creation function. The user constructs
@@ -20099,7 +20168,7 @@ available to solids during pipeline execution and clean up after execution resol
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>resource_fn</strong> (<em>Callable</em><em>[</em><em>[</em><em>InitResourceContext</em><em>]</em><em>, </em><em>Any</em><em>]</em>) – User provided function to instantiate the resource. This resource will be available to
+<li><p><strong>resource_fn</strong> (<em>Callable</em><em>[</em><em>[</em><a class="reference internal" href="#dagster.InitResourceContext" title="dagster.InitResourceContext"><em>InitResourceContext</em></a><em>]</em><em>, </em><em>Any</em><em>]</em>) – User provided function to instantiate the resource. This resource will be available to
 solids via <code class="docutils literal notranslate"><span class="pre">context.resources</span></code></p></li>
 <li><p><strong>config_field</strong> (<em>Field</em>) – The type for the configuration data for this resource, passed to <code class="docutils literal notranslate"><span class="pre">resource_fn</span></code> via
 <code class="docutils literal notranslate"><span class="pre">init_context.resource_config</span></code></p></li>
@@ -20114,6 +20183,70 @@ solids via <code class="docutils literal notranslate"><span class="pre">context.
 <code class="descclassname">&#64;</code><code class="descclassname">dagster.</code><code class="descname">resource</code><span class="sig-paren">(</span><em>config_field=None</em>, <em>description=None</em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dagster/core/definitions/resource.html#resource"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dagster.resource" title="Permalink to this definition">¶</a></dt>
 <dd><p>A decorator for creating a resource. The decorated function will be used as the
 resource_fn in a ResourceDefinition.</p>
+</dd></dl>
+
+<dl class="class">
+<dt id="dagster.InitResourceContext">
+<em class="property">class </em><code class="descclassname">dagster.</code><code class="descname">InitResourceContext</code><a class="reference internal" href="../../../_modules/dagster/core/init_context.html#InitResourceContext"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dagster.InitResourceContext" title="Permalink to this definition">¶</a></dt>
+<dd><p>Similar to InitContext, but is resource specific. It includes all the properties
+in the InitContext, plus the resource config and the resource definition.</p>
+<dl class="attribute">
+<dt id="dagster.InitResourceContext.context_config">
+<code class="descname">context_config</code><a class="headerlink" href="#dagster.InitResourceContext.context_config" title="Permalink to this definition">¶</a></dt>
+<dd><p>The configuration data provided by the environment config. The schema for this
+data is defined by <code class="docutils literal notranslate"><span class="pre">config_field</span></code> on the <a class="reference internal" href="#dagster.PipelineContextDefinition" title="dagster.PipelineContextDefinition"><code class="xref py py-class docutils literal notranslate"><span class="pre">PipelineContextDefinition</span></code></a></p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>Any</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="dagster.InitResourceContext.resource_config">
+<code class="descname">resource_config</code><a class="headerlink" href="#dagster.InitResourceContext.resource_config" title="Permalink to this definition">¶</a></dt>
+<dd><p>The configuration data provided by the environment config. The schema for this
+data is defined by <code class="docutils literal notranslate"><span class="pre">config_field</span></code> on the <a class="reference internal" href="#dagster.ResourceDefinition" title="dagster.ResourceDefinition"><code class="xref py py-class docutils literal notranslate"><span class="pre">ResourceDefinition</span></code></a></p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>Any</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="dagster.InitResourceContext.pipeline_def">
+<code class="descname">pipeline_def</code><a class="headerlink" href="#dagster.InitResourceContext.pipeline_def" title="Permalink to this definition">¶</a></dt>
+<dd><p>The pipeline definition currently being executed.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p><a class="reference internal" href="#dagster.PipelineDefinition" title="dagster.PipelineDefinition">PipelineDefinition</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="dagster.InitResourceContext.resource_def">
+<code class="descname">resource_def</code><a class="headerlink" href="#dagster.InitResourceContext.resource_def" title="Permalink to this definition">¶</a></dt>
+<dd><p>The resource definition for the resource being constructed.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p><a class="reference internal" href="#dagster.ResourceDefinition" title="dagster.ResourceDefinition">ResourceDefinition</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="dagster.InitResourceContext.run_id">
+<code class="descname">run_id</code><a class="headerlink" href="#dagster.InitResourceContext.run_id" title="Permalink to this definition">¶</a></dt>
+<dd><p>The ID for this run of the pipeline.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
 </dd></dl>
 
 </div>
@@ -25468,6 +25601,9 @@ we’ll see later, optionally let dagster check the types of the inputs at runti
 You’ll notice the new argument to <a class="reference internal" href="../../api/apidocs/pipeline.html#dagster.PipelineDefinition" title="dagster.PipelineDefinition"><code class="xref py py-class docutils literal notranslate"><span class="pre">PipelineDefinition</span></code></a>
 called <code class="docutils literal notranslate"><span class="pre">dependencies</span></code>, which is a dict that defines the connections between solids in a
 pipeline’s DAG.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">dependencies</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;solid_two&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;arg_one&#39;</span><span class="p">:</span> <span class="n">DependencyDefinition</span><span class="p">(</span><span class="s1">&#39;solid_one&#39;</span><span class="p">)}},</span>
+</pre></div>
+</div>
 <p>The first layer of keys in this dict are the <em>names</em> of solids in the pipeline. The second layer
 of keys are the <em>names</em> of the inputs to each solid. Each input in the DAG must be provided a
 <a class="reference internal" href="../../api/apidocs/pipeline.html#dagster.DependencyDefinition" title="dagster.DependencyDefinition"><code class="xref py py-class docutils literal notranslate"><span class="pre">DependencyDefinition</span></code></a>. (Don’t worry – if you forget
@@ -27261,6 +27397,15 @@ store; this version can be used in testing contexts without touching the public 
 </div>
 <p>Now we can simply change configuration and the “in-memory” version of the
 resource will be used instead of the cloud version:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">result</span> <span class="o">=</span> <span class="n">execute_pipeline</span><span class="p">(</span>
+    <span class="n">define_resource_test_pipeline</span><span class="p">(),</span>
+    <span class="n">environment_dict</span><span class="o">=</span><span class="p">{</span>
+<span class="hll">        <span class="s1">&#39;context&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;local&#39;</span><span class="p">:</span> <span class="p">{}},</span>
+</span>        <span class="s1">&#39;solids&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;add_ints&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;inputs&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;num_one&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;value&#39;</span><span class="p">:</span> <span class="mi">2</span><span class="p">},</span> <span class="s1">&#39;num_two&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;value&#39;</span><span class="p">:</span> <span class="mi">6</span><span class="p">}}}},</span>
+    <span class="p">},</span>
+<span class="p">)</span>
+</pre></div>
+</div>
 <p>In the next section, we’ll see how to declaratively specify <a class="reference internal" href="repos.html"><span class="doc">Repositories</span></a> to
 manage collections of multiple dagster pipelines.</p>
 </div>
@@ -27660,6 +27805,7 @@ in the dagster-pandas library, building it step by step along the way.</p>
 <span class="s1">    tabular data structure with labeled axes (rows and columns).</span>
 <span class="s1">    See http://pandas.pydata.org/&#39;&#39;&#39;</span><span class="p">,</span>
     <span class="n">input_schema</span><span class="o">=</span><span class="n">dataframe_input_schema</span><span class="p">,</span>
+<span class="p">)</span>
 </pre></div>
 </div>
 <p>What this code doing is annotating/registering an existing type as a dagster type. Now one can
@@ -28267,20 +28413,20 @@ scheduled, but these conditions should be expressed separately from its underlyi
 <p>Dependencies are defined when constructing pipelines, using the
 <a class="reference internal" href="../api/apidocs/pipeline.html#dagster.DependencyDefinition" title="dagster.DependencyDefinition"><code class="xref py py-class docutils literal notranslate"><span class="pre">DependencyDefinition</span></code></a> class.</p>
 </div>
-<div class="section" id="materialization">
-<h2>Materialization<a class="headerlink" href="#materialization" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="intermediates">
+<h2>Intermediates<a class="headerlink" href="#intermediates" title="Permalink to this headline">¶</a></h2>
 <a class="reference internal image-reference" href="../../_images/materialization.png"><img alt="../../_images/materialization.png" class="align-center" src="../../_images/materialization.png" style="width: 416.21999999999997px; height: 196.56px;" /></a>
-<p>The outputs of solids can be materialized. The dagster engine can materialize outputs in a number
-of formats (e.g., json, pickle), and can store materializations locally or in object stores such as
-S3 or GCS.</p>
-<p>Materializations make it possible to introspect the intermediate state of a pipeline execution
-and ask questions like, “Exactly what output did this solid have on this particular run?” This is
-useful when auditing or debugging pipelines, and makes it possible to establish the <cite>provenance</cite> of
-data artifacts.</p>
-<p>Materializations also enable partial re-execution of pipelines “starting from” a materialized state
-of the upstream execution. This is useful when a pipeline fails halfway through, or in order to
-explore how new logic in part of a pipeline would have operated on outputs from previous runs of
-the pipeline.</p>
+<p>The intermediate outputs of solids in a pipeline can be materialized. The Dagster engine can
+materialize outputs in a number of formats (e.g., json, pickle), and can store materialized
+intermediates locally or in object stores such as S3 or GCS.</p>
+<p>Materialized intermediates make it possible to introspect the intermediate state of a pipeline
+execution and ask questions like, “Exactly what output did this solid have on this particular run?”
+This is useful when auditing or debugging pipelines, and makes it possible to establish the
+<cite>provenance</cite> of data artifacts.</p>
+<p>Materialized intermediates also enable <cite>partial re-execution</cite> of pipelines “starting from” a
+materialized state of the upstream execution. This is useful when a pipeline fails halfway through,
+or in order to explore how new logic in part of a pipeline would have operated on outputs from
+previous runs of the pipeline.</p>
 </div>
 <div class="section" id="expectation">
 <h2>Expectation<a class="headerlink" href="#expectation" title="Permalink to this headline">¶</a></h2>
@@ -28441,7 +28587,7 @@ may often also be shimmed through config. Inputs are defined using the
 <li class="toctree-l2"><a class="reference internal" href="#transform-function">Transform Function</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#result">Result</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#dependency-definition">Dependency Definition</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#materialization">Materialization</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#intermediates">Intermediates</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#expectation">Expectation</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#pipeline">Pipeline</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#resources">Resources</a></li>

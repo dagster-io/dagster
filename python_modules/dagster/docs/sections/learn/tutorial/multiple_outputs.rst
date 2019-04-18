@@ -81,7 +81,7 @@ and then execute that pipeline.
 .. literalinclude:: ../../../../dagster/tutorials/intro_tutorial/multiple_outputs.py
     :linenos:
     :caption: multiple_outputs.py
-    :lines: 36-49,86-97
+    :lines: 36-49,86-96
 
 You must create a config file
 

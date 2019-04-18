@@ -73,7 +73,7 @@ Now we can simply change configuration and the "in-memory" version of the
 resource will be used instead of the cloud version:
 
 .. literalinclude:: ../../../../dagster/tutorials/intro_tutorial/resources.py
-   :lines: 131-144
+   :lines: 106-112
    :emphasize-lines: 4
    :dedent: 4
 
