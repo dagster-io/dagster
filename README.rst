@@ -22,7 +22,7 @@ Go to https://dagster.readthedocs.io for complete documentation, including a
 step-by-step tutorial and notes on the demo project.
 
 For details on contributing or running the project for development, see
-https://dagster.readthedocs.io/en/latest/contributing.html.
+https://dagster.readthedocs.io/en/0.4.0/sections/community/contributing.html.
 
 This repository contains a number of distinct subprojects:
  
