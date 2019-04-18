@@ -25,7 +25,7 @@ This pipeline introduces a few new concepts.
     pipeline's DAG.
 
     .. literalinclude::  ../../../../dagster/tutorials/intro_tutorial/hello_dag.py
-       :lines: 23-25
+       :lines: 18
        :dedent: 8
 
     The first layer of keys in this dict are the *names* of solids in the pipeline. The second layer

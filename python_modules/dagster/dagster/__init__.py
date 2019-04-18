@@ -1,6 +1,8 @@
 from dagster.core import types
 
 from dagster.core.execution import (
+    InitContext,
+    InitResourceContext,
     PipelineConfigEvaluationError,
     PipelineExecutionResult,
     SolidExecutionResult,
@@ -109,6 +111,8 @@ __all__ = [
     'execute_pipeline_iterator',
     'execute_pipeline',
     'ExecutionContext',
+    'InitContext',
+    'InitResourceContext',
     'InProcessExecutorConfig',
     'MultiprocessExecutorConfig',
     'PipelineConfigEvaluationError',

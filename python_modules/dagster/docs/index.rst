@@ -7,6 +7,7 @@
   Install <sections/install/install>
   Learn <sections/learn/learn>
   API Docs <sections/api/api>
+  Reference <sections/reference/reference>
 
   Community <sections/community/community>
 
