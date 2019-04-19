@@ -9,14 +9,6 @@ Local development setup
 
 1. Install Python. Python 3.6 or above recommended.
 
-    Note: If you use Python 3.7 dagster-airflow will not install and run properly
-    as airflow is not Python 3.7 compatible. Until [AIRFLOW-2876](https://github.com/apache/airflow/pull/3723)
-    is resolved (expected in 1.10.3), Airflow (and, as a consequence, dagster-airflow)
-    is incompatible with Python 3.7.
-
-    The rest of the modules will work properly so you can ignore this error and develop the rest
-    of the modules.
-
 2. Create and activate a virtualenv.
 
 .. code-block:: console
@@ -31,13 +23,17 @@ Local development setup
     $ brew install yarn
 
 4. Run the script dev_env_setup.sh at repo root. This sets up a full
-dagster developer environment with all modules and runs tests that
-do not require heavy external dependencies such as docker. This will
-take a few minutes.
+   dagster developer environment with all modules and runs tests that
+   do not require heavy external dependencies such as docker. This will
+   take a few minutes.
+
+.. code-block:: console
 
     $ ./dev_env_setup.sh
 
 5. Run some tests manually to make sure things are working.
+
+.. code-block:: console
 
     $ pytest python_modules/dagster/dagster_tests
 
@@ -101,5 +97,3 @@ Running a live html version of the docs can expedite documentation development.
 
     $ cd python_modules/dagster/docs
     $ make livehtml
-
-
