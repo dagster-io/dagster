@@ -22,8 +22,8 @@ Dagster is a system for building modern data applications. Combining an elegant 
 
 Or read our `complete documentation <https://dagster.readthedocs.io>`_
 
-For details on contributing or running the project for development, see
-https://dagster.readthedocs.io/en/latest/sections/community/contributing.html.
+
+For details on contributing or running the project for development, read `here <https://dagster.readthedocs.io/en/latest/sections/community/contributing.html.>`_
 
 This repository contains a number of distinct subprojects.
 
