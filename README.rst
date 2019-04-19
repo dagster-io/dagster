@@ -18,16 +18,16 @@ Introduction
 
 Dagster is a system for building modern data applications. Combining an elegant programming model and beautiful tools, Dagster allows infrastructure engineers, data engineers, and data scientists to seamlessly collaborate to process and produce the trusted, reliable data needed in today's world.
 
-Go to https://dagster.readthedocs.io/en/0.4.0/sections/learn/tutorial/index.html to immeadiately pip install and do a tutorial.
+``pip install dagster dagit`` and jump immediately to our `tutorial <https://dagster.readthedocs.io/en/0.4.0/sections/learn/tutorial/index.html>`_ 
 
-Go to https://dagster.readthedocs.io for complete documentation.
+Or read our `complete documentation <https://dagster.readthedocs.io>`_
 
 For details on contributing or running the project for development, see
 https://dagster.readthedocs.io/en/0.4.0/sections/community/contributing.html.
 
 This repository contains a number of distinct subprojects.
 
-The first group are our top level tools.
+Top Level Tools:
  
 - **dagster**: The core programming model and abstraction stack; stateless, single-node,
   single-process and multi-process execution engines; and a CLI tool for driving those engines.
@@ -46,7 +46,7 @@ Supporting Libraries:
 - **dagster-snowflake**: A Dagster integration with Snowflake.
 - **dagster-spark**: A Dagster integration with Spark.
 
-Example projects:
+Example Projects:
 
 - **airline-demo**: A substantial demo project illustrating how these tools can be used together
   to manage a realistic data pipeline.
