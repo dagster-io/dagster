@@ -18,12 +18,12 @@ Introduction
 
 Dagster is a system for building modern data applications. Combining an elegant programming model and beautiful tools, Dagster allows infrastructure engineers, data engineers, and data scientists to seamlessly collaborate to process and produce the trusted, reliable data needed in today's world.
 
-``pip install dagster dagit`` and jump immediately to our `tutorial <https://dagster.readthedocs.io/en/0.4.0/sections/learn/tutorial/index.html>`_ 
+``pip install dagster dagit`` and jump immediately to our `tutorial <https://dagster.readthedocs.io/en/latest/sections/learn/tutorial/index.html>`_
 
 Or read our `complete documentation <https://dagster.readthedocs.io>`_
 
-For details on contributing or running the project for development, see
-https://dagster.readthedocs.io/en/0.4.0/sections/community/contributing.html.
+
+For details on contributing or running the project for development, read `here <https://dagster.readthedocs.io/en/latest/sections/community/contributing.html.>`_
 
 This repository contains a number of distinct subprojects.
 
