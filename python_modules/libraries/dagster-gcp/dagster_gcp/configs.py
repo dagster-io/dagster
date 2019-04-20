@@ -257,3 +257,27 @@ def define_bigquery_create_dataset_config():
     fields['dataset'] = dataset
     fields['exists_ok'] = exists_ok
     return Field(Dict(fields=fields), description='BigQuery create dataset configuration')
+
+
+def define_bigquery_delete_dataset_config():
+    fields = _define_bigquery_base_fields({'project', 'location', 'dry_run'})
+
+    dataset = Field(Dataset, description='A dataset to create.', is_optional=False)
+
+    delete_contents = Field(
+        Bool,
+        description='''If True, delete all the tables in the dataset. If False and the dataset
+        contains tables, the request will fail. Default is False.''',
+        is_optional=True,
+    )
+
+    not_found_ok = Field(
+        Bool,
+        description='''Defaults to False. If True, ignore “not found” errors when deleting the
+        dataset.''',
+        is_optional=True,
+    )
+    fields['dataset'] = dataset
+    fields['delete_contents'] = delete_contents
+    fields['not_found_ok'] = not_found_ok
+    return Field(Dict(fields=fields), description='BigQuery delete dataset configuration')

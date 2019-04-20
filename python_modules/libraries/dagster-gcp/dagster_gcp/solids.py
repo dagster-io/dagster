@@ -16,8 +16,9 @@ from dagster import (
 )
 from .configs import (
     define_bigquery_config,
-    define_bigquery_load_config,
     define_bigquery_create_dataset_config,
+    define_bigquery_delete_dataset_config,
+    define_bigquery_load_config,
 )
 
 INPUT_READY = 'input_ready_sentinel'
@@ -210,5 +211,5 @@ class BigQueryDeleteDatasetSolidDefinition(SolidDefinition):
             inputs=[InputDefinition(INPUT_READY, Nothing)],
             outputs=[OutputDefinition(Bool)],
             transform_fn=_transform_fn,
-            config_field=define_bigquery_create_dataset_config(),
+            config_field=define_bigquery_delete_dataset_config(),
         )
