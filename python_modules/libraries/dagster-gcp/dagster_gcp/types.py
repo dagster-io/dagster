@@ -64,7 +64,7 @@ class Dataset(ConfigScalar):
         if not isinstance(config_value, six.string_types):
             return False
 
-        # Must be of form "project.dataset" or "project"
+        # Must be of form "project.dataset" or "dataset"
         return re.match(
             r'^' + RE_PROJECT + r'\.' + RE_DS_TABLE + r'$|^' + RE_DS_TABLE + r'$', config_value
         )
