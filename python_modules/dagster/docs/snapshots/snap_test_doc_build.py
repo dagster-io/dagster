@@ -1658,14 +1658,6 @@ Local development setup
 
 1. Install Python. Python 3.6 or above recommended.
 
-    Note: If you use Python 3.7 dagster-airflow will not install and run properly
-    as airflow is not Python 3.7 compatible. Until [AIRFLOW-2876](https://github.com/apache/airflow/pull/3723)
-    is resolved (expected in 1.10.3), Airflow (and, as a consequence, dagster-airflow)
-    is incompatible with Python 3.7.
-
-    The rest of the modules will work properly so you can ignore this error and develop the rest
-    of the modules.
-
 2. Create and activate a virtualenv.
 
 .. code-block:: console
@@ -1680,13 +1672,17 @@ Local development setup
     $ brew install yarn
 
 4. Run the script dev_env_setup.sh at repo root. This sets up a full
-dagster developer environment with all modules and runs tests that
-do not require heavy external dependencies such as docker. This will
-take a few minutes.
+   dagster developer environment with all modules and runs tests that
+   do not require heavy external dependencies such as docker. This will
+   take a few minutes.
+
+.. code-block:: console
 
     $ ./dev_env_setup.sh
 
 5. Run some tests manually to make sure things are working.
+
+.. code-block:: console
 
     $ pytest python_modules/dagster/dagster_tests
 
@@ -1750,8 +1746,6 @@ Running a live html version of the docs can expedite documentation development.
 
     $ cd python_modules/dagster/docs
     $ make livehtml
-
-
 '''
 
 snapshots['test_build_all_docs 12'] = '''Release Notes
@@ -1765,6 +1759,11 @@ package versions move in lockstep with each other and with git tags.
 As the API is still in flux, we aren't following strict semantic versioning rules at this point, but roughly
 intend micro versions to reflect a regular release schedule and minor versions to reflect
 milestones in the framework's capability.
+
+0.4.1
+-----
+**Compatibility**
+- Dagster-airflow now works with Python 3.7 (since Airflow 1.10.3 now supports Python 3.7).
 
 0.4.0
 -----
@@ -21811,17 +21810,8 @@ snapshots['test_build_all_docs 58'] = '''
 development environment.</p>
 <div class="section" id="local-development-setup">
 <h2>Local development setup<a class="headerlink" href="#local-development-setup" title="Permalink to this headline">¶</a></h2>
-<ol class="arabic">
-<li><p>Install Python. Python 3.6 or above recommended.</p>
-<blockquote>
-<div><p>Note: If you use Python 3.7 dagster-airflow will not install and run properly
-as airflow is not Python 3.7 compatible. Until [AIRFLOW-2876](<a class="reference external" href="https://github.com/apache/airflow/pull/3723">https://github.com/apache/airflow/pull/3723</a>)
-is resolved (expected in 1.10.3), Airflow (and, as a consequence, dagster-airflow)
-is incompatible with Python 3.7.</p>
-<p>The rest of the modules will work properly so you can ignore this error and develop the rest
-of the modules.</p>
-</div></blockquote>
-</li>
+<ol class="arabic simple">
+<li><p>Install Python. Python 3.6 or above recommended.</p></li>
 <li><p>Create and activate a virtualenv.</p></li>
 </ol>
 <div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$</span> python3 -m venv dagsterenv
@@ -21834,20 +21824,21 @@ of the modules.</p>
 <div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$</span> brew install yarn
 </pre></div>
 </div>
-<p>4. Run the script dev_env_setup.sh at repo root. This sets up a full
+<ol class="arabic simple" start="4">
+<li><p>Run the script dev_env_setup.sh at repo root. This sets up a full
 dagster developer environment with all modules and runs tests that
 do not require heavy external dependencies such as docker. This will
-take a few minutes.</p>
-<blockquote>
-<div><p>$ ./dev_env_setup.sh</p>
-</div></blockquote>
-<ol class="arabic" start="5">
-<li><p>Run some tests manually to make sure things are working.</p>
-<blockquote>
-<div><p>$ pytest python_modules/dagster/dagster_tests</p>
-</div></blockquote>
-</li>
+take a few minutes.</p></li>
 </ol>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$</span> ./dev_env_setup.sh
+</pre></div>
+</div>
+<ol class="arabic simple" start="5">
+<li><p>Run some tests manually to make sure things are working.</p></li>
+</ol>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$</span> pytest python_modules/dagster/dagster_tests
+</pre></div>
+</div>
 <p>Have fun coding!</p>
 <ol class="arabic simple" start="6">
 <li><p>Set up pre-commit hooks</p></li>
@@ -22020,7 +22011,12 @@ package versions move in lockstep with each other and with git tags.</p>
 intend micro versions to reflect a regular release schedule and minor versions to reflect
 milestones in the framework’s capability.</p>
 <div class="section" id="id1">
-<h2>0.4.0<a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h2>
+<h2>0.4.1<a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h2>
+<p><strong>Compatibility</strong>
+- Dagster-airflow now works with Python 3.7 (since Airflow 1.10.3 now supports Python 3.7).</p>
+</div>
+<div class="section" id="id2">
+<h2>0.4.0<a class="headerlink" href="#id2" title="Permalink to this headline">¶</a></h2>
 <p><strong>API Changes</strong></p>
 <ul class="simple">
 <li><p>There is now a new top-level configuration section <code class="docutils literal notranslate"><span class="pre">storage</span></code> which controls whether or not
@@ -22089,16 +22085,16 @@ into existing data processing workflows.</p></li>
 <li><p>Docs have been expanded, reorganized, and reformatted.</p></li>
 </ul>
 </div>
-<div class="section" id="id2">
-<h2>0.3.5<a class="headerlink" href="#id2" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="id3">
+<h2>0.3.5<a class="headerlink" href="#id3" title="Permalink to this headline">¶</a></h2>
 <p><strong>Dagit</strong></p>
 <ul class="simple">
 <li><p>Dagit now defaults to <code class="docutils literal notranslate"><span class="pre">--watch</span></code>; run <code class="docutils literal notranslate"><span class="pre">dagit</span> <span class="pre">--no-watch</span></code> to disable (process-based)
 autoreloading.</p></li>
 </ul>
 </div>
-<div class="section" id="id3">
-<h2>0.3.4<a class="headerlink" href="#id3" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="id4">
+<h2>0.3.4<a class="headerlink" href="#id4" title="Permalink to this headline">¶</a></h2>
 <p><strong>API Changes</strong></p>
 <ul class="simple">
 <li><p><code class="docutils literal notranslate"><span class="pre">ExecutionMetadata</span></code> has been renamed to <code class="docutils literal notranslate"><span class="pre">RunConfig</span></code></p></li>
@@ -22118,8 +22114,8 @@ accidental logging of sensitive information that might be in config files.</p></
 <li><p>Repo registration is now optional; “Hello, World” examples are now boilerplate free.</p></li>
 </ul>
 </div>
-<div class="section" id="id4">
-<h2>0.3.3<a class="headerlink" href="#id4" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="id5">
+<h2>0.3.3<a class="headerlink" href="#id5" title="Permalink to this headline">¶</a></h2>
 <p><strong>API Changes</strong></p>
 <ul class="simple">
 <li><p>Removed <code class="docutils literal notranslate"><span class="pre">step</span></code>, <code class="docutils literal notranslate"><span class="pre">environment_config</span></code>, <code class="docutils literal notranslate"><span class="pre">event_callback</span></code>, <code class="docutils literal notranslate"><span class="pre">has_event_callback</span></code>,
@@ -22148,8 +22144,8 @@ with more exact <code class="docutils literal notranslate"><span class="pre">Sta
 <li><p>#872: Dagit logs stream reliably.</p></li>
 </ul>
 </div>
-<div class="section" id="id5">
-<h2>0.3.2<a class="headerlink" href="#id5" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="id6">
+<h2>0.3.2<a class="headerlink" href="#id6" title="Permalink to this headline">¶</a></h2>
 <p><strong>API Changes</strong></p>
 <ul class="simple">
 <li><p>The <code class="docutils literal notranslate"><span class="pre">info</span></code> object passed to transform and expectation functions has been renamed to <code class="docutils literal notranslate"><span class="pre">context</span></code>.
@@ -22194,8 +22190,8 @@ Marshalling steps are now implemented as execution steps themselves.</p></li>
 <li><p>#820: Unbreak config scaffolding within dagit.</p></li>
 </ul>
 </div>
-<div class="section" id="id6">
-<h2>0.3.1<a class="headerlink" href="#id6" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="id7">
+<h2>0.3.1<a class="headerlink" href="#id7" title="Permalink to this headline">¶</a></h2>
 <p><strong>API Changes</strong></p>
 <ul class="simple">
 <li><p>New decorator-based <code class="docutils literal notranslate"><span class="pre">&#64;resource</span></code> API as a more concise alternative to <code class="docutils literal notranslate"><span class="pre">ResourceDefinition</span></code></p></li>
