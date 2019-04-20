@@ -10,6 +10,11 @@ As the API is still in flux, we aren't following strict semantic versioning rule
 intend micro versions to reflect a regular release schedule and minor versions to reflect
 milestones in the framework's capability.
 
+0.4.1
+-----
+**Compatibility**
+- Dagster-airflow now works with Python 3.7 (since Airflow 1.10.3 now supports Python 3.7).
+
 0.4.0
 -----
 **API Changes**
