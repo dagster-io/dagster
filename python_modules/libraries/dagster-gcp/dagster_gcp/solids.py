@@ -71,11 +71,7 @@ class BigQuerySolidDefinition(SolidDefinition):
     def __init__(self, name, sql_queries, description=None):
         name = check.str_param(name, 'name')
         sql_queries = check.list_param(sql_queries, 'sql queries', of_type=str)
-        description = check.opt_str_param(
-            description,
-            'description',
-            'This solid is a generic representation of a BigQuery query.',
-        )
+        description = check.opt_str_param(description, 'description', 'BigQuery query')
 
         def _transform_fn(context, _):
             project, location, kwargs = _extract_solid_base_config(context.solid_config)
@@ -192,7 +188,7 @@ class BigQueryDeleteDatasetSolidDefinition(SolidDefinition):
 
     def __init__(self, name, description=None):
         name = check.str_param(name, 'name')
-        description = check.opt_str_param(description, 'description', 'BigQuery create_dataset')
+        description = check.opt_str_param(description, 'description', 'BigQuery delete_dataset')
 
         def _transform_fn(context, _):
             project, location, kwargs = _extract_solid_base_config(context.solid_config)
