@@ -2,7 +2,7 @@ import google.api_core.exceptions
 
 from google.cloud import bigquery
 from google.cloud.bigquery.job import QueryJobConfig, LoadJobConfig
-from google.cloud.bigquery.table import EncryptionConfiguration
+from google.cloud.bigquery.table import EncryptionConfiguration, TimePartitioning
 
 import dagster_pandas as dagster_pd
 
@@ -31,8 +31,14 @@ INPUT_READY = 'input_ready_sentinel'
 
 def _extract_solid_base_config(solid_config):
     # Extract parameters from config
-    (project, location, destination_encryption_configuration) = [
-        solid_config.get(k) for k in ('project', 'location', 'destination_encryption_configuration')
+    (project, location, destination_encryption_configuration, time_partitioning) = [
+        solid_config.get(k)
+        for k in (
+            'project',
+            'location',
+            'destination_encryption_configuration',
+            'time_partitioning',
+        )
     ]
 
     fields = [
@@ -60,6 +66,12 @@ def _extract_solid_base_config(solid_config):
             kms_key_name=destination_encryption_configuration
         )
 
+    if time_partitioning is not None:
+        kwargs['time_partitioning'] = TimePartitioning(
+            field=time_partitioning['field'],
+            expiration_ms=time_partitioning['expiration_ms'],
+            require_partition_filter=time_partitioning['require_partition_filter'],
+        )
     return project, location, kwargs
 
 
