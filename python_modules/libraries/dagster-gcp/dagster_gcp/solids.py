@@ -24,7 +24,7 @@ from .configs import (
 INPUT_READY = 'input_ready_sentinel'
 
 
-def _extract_solid_config(solid_config):
+def _extract_solid_base_config(solid_config):
     # Extract parameters from config
     (project, location, destination_encryption_configuration) = [
         solid_config.get(k) for k in ('project', 'location', 'destination_encryption_configuration')
@@ -73,7 +73,7 @@ class BigQuerySolidDefinition(SolidDefinition):
         )
 
         def _transform_fn(context, _):
-            project, location, kwargs = _extract_solid_config(context.solid_config)
+            project, location, kwargs = _extract_solid_base_config(context.solid_config)
 
             client = bigquery.Client(project=project, location=location)
 
@@ -117,7 +117,7 @@ class BigQueryLoadFromDataFrameSolidDefinition(SolidDefinition):
         )
 
         def _transform_fn(context, inputs):
-            project, location, kwargs = _extract_solid_config(context.solid_config)
+            project, location, kwargs = _extract_solid_base_config(context.solid_config)
             cfg = QueryJobConfig(**kwargs) if kwargs else None
 
             client = bigquery.Client(
@@ -151,7 +151,7 @@ class BigQueryCreateDatasetSolidDefinition(SolidDefinition):
         description = check.opt_str_param(description, 'description', 'BigQuery create_dataset')
 
         def _transform_fn(context, _):
-            project, location, kwargs = _extract_solid_config(context.solid_config)
+            project, location, kwargs = _extract_solid_base_config(context.solid_config)
             dataset = context.solid_config.get('dataset')
             exists_ok = context.solid_config.get('exists_ok')
 
@@ -187,7 +187,7 @@ class BigQueryDeleteDatasetSolidDefinition(SolidDefinition):
         description = check.opt_str_param(description, 'description', 'BigQuery create_dataset')
 
         def _transform_fn(context, _):
-            project, location, kwargs = _extract_solid_config(context.solid_config)
+            project, location, kwargs = _extract_solid_base_config(context.solid_config)
             dataset = context.solid_config.get('dataset')
             delete_contents = context.solid_config.get('delete_contents')
             not_found_ok = context.solid_config.get('not_found_ok')
