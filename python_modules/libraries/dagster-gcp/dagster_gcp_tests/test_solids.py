@@ -1,9 +1,8 @@
 import datetime
-import pytest
-
 import pandas as pd
 
-from dagster import PipelineConfigEvaluationError, PipelineDefinition, execute_pipeline
+from dagster import PipelineDefinition, execute_pipeline
+from dagster.core.types.evaluator import evaluate_config_value
 
 from dagster_gcp import BigQuerySolidDefinition
 
@@ -48,29 +47,49 @@ def test_simple_queries():
     }
 
 
+# pylint: disable=line-too-long
 def test_bad_config():
-    solid_inst = BigQuerySolidDefinition('test', ['SELECT 1'])
-    pipeline_def = PipelineDefinition(name='test_config_pipeline', solids=[solid_inst])
+    configs_and_expected_errors = [
+        (
+            # Create disposition must match enum values
+            {'create_disposition': 'this is not a valid create disposition'},
+            'Value not in enum type BQCreateDisposition',
+        ),
+        (
+            # Dataset must be of form project_name.dataset_name
+            {'default_dataset': 'this is not a valid dataset'},
+            'Value at path root:solids:test:config:default_dataset is not valid. Expected "Dataset"',
+        ),
+        (
+            # Table must be of form project_name.dataset_name.table_name
+            {'destination': 'this is not a valid table'},
+            'Value at path root:solids:test:config:destination is not valid. Expected "Table"',
+        ),
+        (
+            # Priority must match enum values
+            {'priority': 'this is not a valid priority'},
+            'Value not in enum type BQPriority',
+        ),
+        (
+            # Schema update options must be a list
+            {'schema_update_options': 'this is not valid schema update options'},
+            'Value at path root:solids:test:config:schema_update_options must be list. Expected: [BQSchemaUpdateOption]',
+        ),
+        (
+            {'schema_update_options': ['this is not valid schema update options']},
+            'Value not in enum type BQSchemaUpdateOption',
+        ),
+        (
+            {'write_disposition': 'this is not a valid write disposition'},
+            'Value not in enum type BQWriteDisposition',
+        ),
+    ]
 
-    bad_create_disposition = {
-        'solids': {'test': {'config': {'create_disposition': 'bad config - not CREATE_IF_NEEDED'}}}
-    }
+    pipeline_def = PipelineDefinition(
+        name='test_config_pipeline', solids=[BigQuerySolidDefinition('test', ['SELECT 1'])]
+    )
 
-    bad_default_dataset = {
-        'solids': {'test': {'config': {'default_dataset': 'not a valid dataset'}}}
-    }
-
-    with pytest.raises(PipelineConfigEvaluationError) as exc_info:
-        execute_pipeline(pipeline_def, bad_create_disposition)
-        assert (
-            'Error 1: Type failure at path "root:solids:test:config:create_disposition" on type "BQCreateDisposition". Value not in enum type BQCreateDisposition.'
-            in str(exc_info.value)
-        )
-
-    with pytest.raises(PipelineConfigEvaluationError) as exc_info:
-        execute_pipeline(pipeline_def, bad_default_dataset)
-        assert (
-            'Error 1: Type failure at path "root:solids:test:config:default_dataset" on type "BQDataset". Value at path root:solids:test:config:default_dataset is not valid. Expected "BQDataset"'
-            in str(exc_info.value)
-        )
-
+    for config_fragment, error_message in configs_and_expected_errors:
+        config = {'solids': {'test': {'config': config_fragment}}}
+        result = evaluate_config_value(pipeline_def.environment_type, config)
+        assert result.errors[0].message == error_message

@@ -110,4 +110,3 @@ class StorageConfig(namedtuple('_FilesConfig', 'storage_mode storage_config')):
             raise DagsterInvariantViolationError(
                 'Invalid storage specified {}'.format(self.storage_mode)
             )
-

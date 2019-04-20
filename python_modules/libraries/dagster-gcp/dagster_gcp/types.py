@@ -47,9 +47,9 @@ BQWriteDisposition = Enum(
 )
 
 
-class BQDataset(ConfigScalar):
+class Dataset(ConfigScalar):
     def __init__(self):
-        super(BQDataset, self).__init__(key=type(self).__name__, name=type(self).__name__)
+        super(Dataset, self).__init__(key=type(self).__name__, name=type(self).__name__)
 
     def is_config_scalar_valid(self, config_value):
         if not isinstance(config_value, six.string_types):
@@ -58,3 +58,16 @@ class BQDataset(ConfigScalar):
         # Must be of form "project.dataset"
         split = config_value.split('.')
         return len(split) == 2 and [len(x) >= 1 for x in split]
+
+
+class Table(ConfigScalar):
+    def __init__(self):
+        super(Table, self).__init__(key=type(self).__name__, name=type(self).__name__)
+
+    def is_config_scalar_valid(self, config_value):
+        if not isinstance(config_value, six.string_types):
+            return False
+
+        # Must be of form "project.dataset.table"
+        split = config_value.split('.')
+        return len(split) == 3 and [len(x) >= 1 for x in split]

@@ -1,7 +1,8 @@
 from dagster import Bool, Dict, Field, List, Int, String
 
 from .types import (
-    BQDataset,
+    Dataset,
+    Table,
     BQCreateDisposition,
     BQPriority,
     BQSchemaUpdateOption,
@@ -9,7 +10,7 @@ from .types import (
 )
 
 
-def define_bigquery_config():
+def _define_bigquery_base_fields(subset=None):
     '''BigQuery configuration.
 
     See the BigQuery Python API documentation for reference:
@@ -57,7 +58,7 @@ def define_bigquery_config():
     )
 
     default_dataset = Field(
-        BQDataset,
+        Dataset,
         description='''the default dataset to use for unqualified table names in the query or None
         if not set. The default_dataset setter accepts a str of the fully-qualified dataset ID in
         standard SQL format. The value must included a project ID and dataset ID separated by ".". 
@@ -68,7 +69,7 @@ def define_bigquery_config():
     )
 
     destination = Field(
-        String,
+        Table,
         description='''table where results are written or None if not set. The destination setter
         accepts a str of the fully-qualified table ID in standard SQL format. The value must
         included a project ID, dataset ID, and table ID, each separated by ".". For example: 
@@ -194,29 +195,65 @@ def define_bigquery_config():
         ''',
         is_optional=True,
     )
+    fields = {
+        'project': project,
+        'location': location,
+        'allow_large_results': allow_large_results,
+        'clustering_fields': clustering_fields,
+        'create_disposition': create_disposition,
+        'default_dataset': default_dataset,
+        'destination': destination,
+        'destination_encryption_configuration': destination_encryption_configuration,
+        'dry_run': dry_run,
+        'flatten_results': flatten_results,
+        'maximum_billing_tier': maximum_billing_tier,
+        'maximum_bytes_billed': maximum_bytes_billed,
+        'priority': priority,
+        'query_parameters': query_parameters,
+        'schema_update_options': schema_update_options,
+        'use_legacy_sql': use_legacy_sql,
+        'use_query_cache': use_query_cache,
+        'write_disposition': write_disposition,
+    }
 
-    return Field(
-        Dict(
-            fields={
-                'project': project,
-                'location': location,
-                'allow_large_results': allow_large_results,
-                'clustering_fields': clustering_fields,
-                'create_disposition': create_disposition,
-                'default_dataset': default_dataset,
-                'destination': destination,
-                'destination_encryption_configuration': destination_encryption_configuration,
-                'dry_run': dry_run,
-                'flatten_results': flatten_results,
-                'maximum_billing_tier': maximum_billing_tier,
-                'maximum_bytes_billed': maximum_bytes_billed,
-                'priority': priority,
-                'query_parameters': query_parameters,
-                'schema_update_options': schema_update_options,
-                'use_legacy_sql': use_legacy_sql,
-                'use_query_cache': use_query_cache,
-                'write_disposition': write_disposition,
-            }
-        ),
-        description='BigQuery configuration',
+    # if subset keys are provided, only return those
+    return fields if subset is None else {k: v for k, v in fields.items() if k in subset}
+
+
+def define_bigquery_config():
+    fields = _define_bigquery_base_fields()
+    return Field(Dict(fields=fields), description='BigQuery configuration')
+
+
+def define_bigquery_load_config():
+    fields = _define_bigquery_base_fields()
+
+    # Destination is a required field for BQ loads
+    destination = Field(
+        Table,
+        description='''table where results are written or None if not set. The destination setter
+        accepts a str of the fully-qualified table ID in standard SQL format. The value must
+        included a project ID, dataset ID, and table ID, each separated by ".". For example: 
+        your-project.your_dataset.your_table.
+        See https://g.co/cloud/bigquery/docs/reference/rest/v2/jobs#configuration.query.destinationTable
+        ''',
+        is_optional=False,
     )
+    fields['destination'] = destination
+    return Field(Dict(fields=fields), description='BigQuery load configuration')
+
+
+def define_bigquery_create_dataset_config():
+    fields = _define_bigquery_base_fields({'project', 'location', 'dry_run'})
+
+    dataset = Field(Dataset, description='A dataset to create.', is_optional=False)
+
+    exists_ok = Field(
+        Bool,
+        description='''Defaults to False. If True, ignore “already exists” errors when creating the
+        dataset.''',
+        is_optional=True,
+    )
+    fields['dataset'] = dataset
+    fields['exists_ok'] = exists_ok
+    return Field(Dict(fields=fields), description='BigQuery create dataset configuration')
