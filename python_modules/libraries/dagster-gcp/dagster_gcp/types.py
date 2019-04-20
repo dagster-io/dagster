@@ -1,6 +1,5 @@
+import re
 import six
-
-from dagster import Enum, EnumValue, ConfigScalar
 
 from google.cloud.bigquery.job import (
     CreateDisposition,
@@ -8,6 +7,16 @@ from google.cloud.bigquery.job import (
     QueryPriority,
     WriteDisposition,
 )
+
+from dagster import DagsterUserError, Enum, EnumValue, ConfigScalar
+
+
+# Project names are permitted to have alphanumeric, dashes and underscores, up to 1024 characters.
+RE_PROJECT = r'[\w\d\-\_]{1,1024}'
+
+# Datasets and tables are permitted to have alphanumeric or underscores, no dashes allowed, up to
+# 1024 characters
+RE_DS_TABLE = r'[\w\d\_]{1,1024}'
 
 
 BQCreateDispositionCreateIfNeeded = EnumValue(CreateDisposition.CREATE_IF_NEEDED)
@@ -55,9 +64,10 @@ class Dataset(ConfigScalar):
         if not isinstance(config_value, six.string_types):
             return False
 
-        # Must be of form "project.dataset"
-        split = config_value.split('.')
-        return len(split) == 2 and [len(x) >= 1 for x in split]
+        # Must be of form "project.dataset" or "project"
+        return re.match(
+            r'^' + RE_PROJECT + r'\.' + RE_DS_TABLE + r'$|^' + RE_DS_TABLE + r'$', config_value
+        )
 
 
 class Table(ConfigScalar):
@@ -68,6 +78,22 @@ class Table(ConfigScalar):
         if not isinstance(config_value, six.string_types):
             return False
 
-        # Must be of form "project.dataset.table"
-        split = config_value.split('.')
-        return len(split) == 3 and [len(x) >= 1 for x in split]
+        # Must be of form "project.dataset.table" or "dataset.table"
+        return re.match(
+            r'^'
+            + RE_PROJECT
+            + r'\.'
+            + RE_DS_TABLE
+            + r'\.'
+            + RE_DS_TABLE
+            + r'$|^'
+            + RE_DS_TABLE
+            + r'\.'
+            + RE_DS_TABLE
+            + r'$',
+            config_value,
+        )
+
+
+class BigQueryError(DagsterUserError):
+    pass

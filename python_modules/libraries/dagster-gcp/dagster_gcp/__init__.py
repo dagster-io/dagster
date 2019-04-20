@@ -7,8 +7,11 @@ from .solids import (
     BigQueryDeleteDatasetSolidDefinition,
 )
 
+from .types import BigQueryError
+
 
 __all__ = [
+    'BigQueryError',
     'BigQuerySolidDefinition',
     'BigQueryLoadFromDataFrameSolidDefinition',
     'BigQueryCreateDatasetSolidDefinition',

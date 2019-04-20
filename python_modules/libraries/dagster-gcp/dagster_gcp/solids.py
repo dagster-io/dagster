@@ -1,5 +1,7 @@
+import google.api_core.exceptions
+
 from google.cloud import bigquery
-from google.cloud.bigquery.job import QueryJobConfig
+from google.cloud.bigquery.job import QueryJobConfig, LoadJobConfig
 from google.cloud.bigquery.table import EncryptionConfiguration
 
 import dagster_pandas as dagster_pd
@@ -14,12 +16,15 @@ from dagster import (
     SolidDefinition,
     Nothing,
 )
+
 from .configs import (
     define_bigquery_config,
     define_bigquery_create_dataset_config,
     define_bigquery_delete_dataset_config,
     define_bigquery_load_config,
 )
+
+from .types import BigQueryError
 
 INPUT_READY = 'input_ready_sentinel'
 
@@ -73,6 +78,9 @@ class BigQuerySolidDefinition(SolidDefinition):
         )
 
         def _transform_fn(context, _):
+            import time
+
+            time.sleep(3)
             project, location, kwargs = _extract_solid_base_config(context.solid_config)
 
             client = bigquery.Client(project=project, location=location)
@@ -118,7 +126,7 @@ class BigQueryLoadFromDataFrameSolidDefinition(SolidDefinition):
 
         def _transform_fn(context, inputs):
             project, location, kwargs = _extract_solid_base_config(context.solid_config)
-            cfg = QueryJobConfig(**kwargs) if kwargs else None
+            cfg = LoadJobConfig(**kwargs) if kwargs else None
 
             client = bigquery.Client(
                 project=project, location=location, default_query_job_config=cfg
@@ -127,8 +135,8 @@ class BigQueryLoadFromDataFrameSolidDefinition(SolidDefinition):
                 'executing BQ load_table_from_dataframe with config: %s'
                 % (cfg.to_api_repr() if cfg else '(no config provided)')
             )
-            client.load_table_from_dataframe(inputs['df'], kwargs['destination'])
-            yield Result(True, 'ok')
+            client.load_table_from_dataframe(inputs['df'], kwargs['destination']).result()
+            yield Result(True)
 
         super(BigQueryLoadFromDataFrameSolidDefinition, self).__init__(
             name=name,
@@ -163,8 +171,11 @@ class BigQueryCreateDatasetSolidDefinition(SolidDefinition):
                 'executing BQ create_dataset for dataset %s with config: %s'
                 % (dataset, cfg.to_api_repr() if cfg else '(no config provided)')
             )
-            client.create_dataset(dataset, exists_ok)
-            yield Result(True, 'ok')
+            try:
+                client.create_dataset(dataset, exists_ok)
+            except google.api_core.exceptions.Conflict:
+                raise BigQueryError('Dataset "%s" already exists and exists_ok is false' % dataset)
+            yield Result(True)
 
         super(BigQueryCreateDatasetSolidDefinition, self).__init__(
             name=name,
@@ -200,10 +211,15 @@ class BigQueryDeleteDatasetSolidDefinition(SolidDefinition):
                 'executing BQ delete_dataset for dataset %s with config: %s'
                 % (dataset, cfg.to_api_repr() if cfg else '(no config provided)')
             )
-            client.delete_dataset(
-                dataset=dataset, delete_contents=delete_contents, not_found_ok=not_found_ok
-            )
-            yield Result(True, 'ok')
+            try:
+                client.delete_dataset(
+                    dataset=dataset, delete_contents=delete_contents, not_found_ok=not_found_ok
+                )
+            except google.api_core.exceptions.NotFound:
+                raise BigQueryError(
+                    'Dataset "%s" does not exist and not_found_ok is false' % dataset
+                )
+            yield Result(True)
 
         super(BigQueryDeleteDatasetSolidDefinition, self).__init__(
             name=name,
