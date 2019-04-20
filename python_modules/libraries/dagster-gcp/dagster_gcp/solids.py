@@ -78,9 +78,6 @@ class BigQuerySolidDefinition(SolidDefinition):
         )
 
         def _transform_fn(context, _):
-            import time
-
-            time.sleep(3)
             project, location, kwargs = _extract_solid_base_config(context.solid_config)
 
             client = bigquery.Client(project=project, location=location)
