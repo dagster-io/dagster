@@ -1,4 +1,4 @@
-from datadog import api, initialize, statsd
+from datadog import initialize, statsd
 
 from dagster import Dict, Field, ResourceDefinition, String
 
