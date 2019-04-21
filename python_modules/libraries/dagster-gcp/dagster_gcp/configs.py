@@ -1,21 +1,27 @@
+'''BigQuery configuration.
+
+See the BigQuery Python API documentation for reference:
+    https://googleapis.github.io/google-cloud-python/latest/bigquery/reference.html
+'''
+
 from dagster import Bool, Dict, Field, List, Int, String
 
 from .types import (
     Dataset,
     Table,
     BQCreateDisposition,
+    BQEncoding,
     BQPriority,
     BQSchemaUpdateOption,
+    BQSourceFormat,
     BQWriteDisposition,
 )
 
 
-def _define_bigquery_base_fields(subset=None):
-    '''BigQuery configuration.
-
-    See the BigQuery Python API documentation for reference:
-        https://googleapis.github.io/google-cloud-python/latest/bigquery/reference.html
+def _define_shared_fields():
+    '''The following fields are shared between both QueryJobConfig and LoadJobConfig.
     '''
+
     project = Field(
         String,
         description='''Project ID for the project which the client acts on behalf of. Will be passed
@@ -27,14 +33,6 @@ def _define_bigquery_base_fields(subset=None):
     location = Field(
         String,
         description='(Optional) Default location for jobs / datasets / tables.',
-        is_optional=True,
-    )
-
-    allow_large_results = Field(
-        Bool,
-        description='''Allow large query results tables (legacy SQL, only)
-        See https://g.co/cloud/bigquery/docs/reference/rest/v2/jobs#configuration.query.allowLargeResults
-        ''',
         is_optional=True,
     )
 
@@ -57,6 +55,84 @@ def _define_bigquery_base_fields(subset=None):
         is_optional=True,
     )
 
+    destination_encryption_configuration = Field(
+        String,
+        description='''Custom encryption configuration for the destination table.
+        Custom encryption configuration (e.g., Cloud KMS keys) or None if using default encryption.
+        See https://cloud.google.com/bigquery/docs/reference/rest/v2/jobs#configuration.query.destinationEncryptionConfiguration
+        ''',
+        is_optional=True,
+    )
+
+    schema_update_options = Field(
+        List(BQSchemaUpdateOption),
+        description='''Specifies updates to the destination table schema to allow as a side effect
+        of the query job.''',
+        is_optional=True,
+    )
+
+    time_partitioning = Field(
+        Dict(
+            fields={
+                'expiration_ms': Field(
+                    Int,
+                    description='''Number of milliseconds for which to keep the storage for a 
+                    partition.''',
+                    is_optional=True,
+                ),
+                'field': Field(
+                    String,
+                    description='''If set, the table is partitioned by this field. If not set, the
+                    table is partitioned by pseudo column _PARTITIONTIME. The field must be a
+                    top-level TIMESTAMP or DATE field. Its mode must be NULLABLE or REQUIRED.''',
+                    is_optional=True,
+                ),
+                'require_partition_filter': Field(
+                    Bool,
+                    description='''If set to true, queries over the partitioned table require a
+                    partition filter that can be used for partition elimination to be specified.''',
+                    is_optional=True,
+                ),
+            }
+        ),
+        description='Specifies time-based partitioning for the destination table.',
+        is_optional=True,
+    )
+
+    write_disposition = Field(
+        BQWriteDisposition,
+        description='''
+        Action that occurs if the destination table already exists.
+        See https://cloud.google.com/bigquery/docs/reference/rest/v2/jobs#configuration.query.writeDisposition
+        ''',
+        is_optional=True,
+    )
+    return {
+        'project': project,
+        'location': location,
+        'clustering_fields': clustering_fields,
+        'create_disposition': create_disposition,
+        'destination_encryption_configuration': destination_encryption_configuration,
+        'schema_update_options': schema_update_options,
+        'time_partitioning': time_partitioning,
+        'write_disposition': write_disposition,
+    }
+
+
+def define_bigquery_query_config():
+    '''See:
+    https://googleapis.github.io/google-cloud-python/latest/bigquery/generated/google.cloud.bigquery.job.QueryJobConfig.html
+    '''
+    sf = _define_shared_fields()
+
+    allow_large_results = Field(
+        Bool,
+        description='''Allow large query results tables (legacy SQL, only)
+        See https://g.co/cloud/bigquery/docs/reference/rest/v2/jobs#configuration.query.allowLargeResults
+        ''',
+        is_optional=True,
+    )
+
     default_dataset = Field(
         Dataset,
         description='''the default dataset to use for unqualified table names in the query or None
@@ -75,15 +151,6 @@ def _define_bigquery_base_fields(subset=None):
         included a project ID, dataset ID, and table ID, each separated by ".". For example: 
         your-project.your_dataset.your_table.
         See https://g.co/cloud/bigquery/docs/reference/rest/v2/jobs#configuration.query.destinationTable
-        ''',
-        is_optional=True,
-    )
-
-    destination_encryption_configuration = Field(
-        String,
-        description='''Custom encryption configuration for the destination table.
-        Custom encryption configuration (e.g., Cloud KMS keys) or None if using default encryption.
-        See https://cloud.google.com/bigquery/docs/reference/rest/v2/jobs#configuration.query.destinationEncryptionConfiguration
         ''',
         is_optional=True,
     )
@@ -137,13 +204,6 @@ def _define_bigquery_base_fields(subset=None):
         is_optional=True,
     )
 
-    schema_update_options = Field(
-        List(BQSchemaUpdateOption),
-        description='''Specifies updates to the destination table schema to allow as a side effect
-        of the query job.''',
-        is_optional=True,
-    )
-
     # TODO:
     # Type:	Dict[str, google.cloud.bigquery.external_config.ExternalConfig]
     # table_definitions = Field(
@@ -153,34 +213,6 @@ def _define_bigquery_base_fields(subset=None):
     #     ''',
     #     is_optional=True,
     # )
-
-    time_partitioning = Field(
-        Dict(
-            fields={
-                'expiration_ms': Field(
-                    Int,
-                    description='''Number of milliseconds for which to keep the storage for a 
-                    partition.''',
-                    is_optional=True,
-                ),
-                'field': Field(
-                    String,
-                    description='''If set, the table is partitioned by this field. If not set, the
-                    table is partitioned by pseudo column _PARTITIONTIME. The field must be a
-                    top-level TIMESTAMP or DATE field. Its mode must be NULLABLE or REQUIRED.''',
-                    is_optional=True,
-                ),
-                'require_partition_filter': Field(
-                    Bool,
-                    description='''If set to true, queries over the partitioned table require a
-                    partition filter that can be used for partition elimination to be specified.''',
-                    is_optional=True,
-                ),
-            }
-        ),
-        description='Specifies time-based partitioning for the destination table.',
-        is_optional=True,
-    )
 
     # TODO: Need to add this
     # Type:	List[google.cloud.bigquery.query.UDFResource]
@@ -208,65 +240,162 @@ def _define_bigquery_base_fields(subset=None):
         is_optional=True,
     )
 
-    write_disposition = Field(
-        BQWriteDisposition,
-        description='''
-        Action that occurs if the destination table already exists.
-        See https://cloud.google.com/bigquery/docs/reference/rest/v2/jobs#configuration.query.writeDisposition
-        ''',
-        is_optional=True,
+    return Field(
+        Dict(
+            fields={
+                'project': sf['project'],
+                'location': sf['location'],
+                'query_job_config': Field(
+                    Dict(
+                        fields={
+                            'allow_large_results': allow_large_results,
+                            'clustering_fields': sf['clustering_fields'],
+                            'create_disposition': sf['create_disposition'],
+                            'default_dataset': default_dataset,
+                            'destination': destination,
+                            'destination_encryption_configuration': sf[
+                                'destination_encryption_configuration'
+                            ],
+                            'dry_run': dry_run,
+                            'flatten_results': flatten_results,
+                            # TODO: labels
+                            'maximum_billing_tier': maximum_billing_tier,
+                            'maximum_bytes_billed': maximum_bytes_billed,
+                            'priority': priority,
+                            'query_parameters': query_parameters,
+                            # TODO: table_definitions
+                            'schema_update_options': sf['schema_update_options'],
+                            'time_partitioning': sf['time_partitioning'],
+                            # TODO: udf_resources
+                            'use_legacy_sql': use_legacy_sql,
+                            'use_query_cache': use_query_cache,
+                            'write_disposition': sf['write_disposition'],
+                        }
+                    )
+                ),
+            }
+        ),
+        description='BigQuery query configuration',
     )
-    fields = {
-        'project': project,
-        'location': location,
-        'allow_large_results': allow_large_results,
-        'clustering_fields': clustering_fields,
-        'create_disposition': create_disposition,
-        'default_dataset': default_dataset,
-        'destination': destination,
-        'destination_encryption_configuration': destination_encryption_configuration,
-        'dry_run': dry_run,
-        'flatten_results': flatten_results,
-        'maximum_billing_tier': maximum_billing_tier,
-        'maximum_bytes_billed': maximum_bytes_billed,
-        'priority': priority,
-        'query_parameters': query_parameters,
-        'schema_update_options': schema_update_options,
-        'time_partitioning': time_partitioning,
-        'use_legacy_sql': use_legacy_sql,
-        'use_query_cache': use_query_cache,
-        'write_disposition': write_disposition,
-    }
-
-    # if subset keys are provided, only return those
-    return fields if subset is None else {k: v for k, v in fields.items() if k in subset}
-
-
-def define_bigquery_config():
-    fields = _define_bigquery_base_fields()
-    return Field(Dict(fields=fields), description='BigQuery configuration')
 
 
 def define_bigquery_load_config():
-    fields = _define_bigquery_base_fields()
+    sf = _define_shared_fields()
+
+    allow_jagged_rows = Field(
+        Bool, description='Allow missing trailing optional columns (CSV only).', is_optional=True
+    )
+
+    allow_quoted_newlines = Field(
+        Bool,
+        description='Allow quoted data containing newline characters (CSV only).',
+        is_optional=True,
+    )
+
+    autodetect = Field(
+        Bool,
+        description='Automatically infer the schema from a sample of the data.',
+        is_optional=True,
+    )
 
     # Destination is a required field for BQ loads
     destination = Field(
         Table,
         description='''table where results are written or None if not set. The destination setter
         accepts a str of the fully-qualified table ID in standard SQL format. The value must
-        included a project ID, dataset ID, and table ID, each separated by ".". For example: 
+        included a project ID, dataset ID, and table ID, each separated by ".". For example:
         your-project.your_dataset.your_table.
         See https://g.co/cloud/bigquery/docs/reference/rest/v2/jobs#configuration.query.destinationTable
         ''',
         is_optional=False,
     )
-    fields['destination'] = destination
-    return Field(Dict(fields=fields), description='BigQuery load configuration')
+
+    destination_table_description = Field(
+        String, description='description given to destination table.', is_optional=True
+    )
+
+    destination_table_friendly_name = Field(
+        String, description='name given to destination table.', is_optional=True
+    )
+
+    encoding = Field(
+        BQEncoding, description='The character encoding of the data.', is_optional=True
+    )
+
+    field_delimiter = Field(
+        String, description='The separator for fields in a CSV file.', is_optional=True
+    )
+
+    ignore_unknown_values = Field(
+        Bool,
+        description='Ignore extra values not represented in the table schema.',
+        is_optional=True,
+    )
+
+    max_bad_records = Field(Int, description='Number of invalid rows to ignore.', is_optional=True)
+
+    null_marker = Field(String, description='Represents a null value (CSV only).', is_optional=True)
+
+    quote_character = Field(
+        String, description='Character used to quote data sections (CSV only).', is_optional=True
+    )
+
+    skip_leading_rows = Field(
+        Int, description='Number of rows to skip when reading data (CSV only).', is_optional=True
+    )
+
+    source_format = Field(BQSourceFormat, description='File format of the data.', is_optional=True)
+
+    use_avro_logical_types = Field(
+        Bool,
+        description='''For loads of Avro data, governs whether Avro logical types are converted to
+        their corresponding BigQuery types(e.g. TIMESTAMP) rather than raw types (e.g. INTEGER).''',
+        is_optional=True,
+    )
+
+    return Field(
+        Dict(
+            fields={
+                'project': sf['project'],
+                'location': sf['location'],
+                'destination': destination,
+                'load_job_config': Field(
+                    Dict(
+                        fields={
+                            'allow_jagged_rows': allow_jagged_rows,
+                            'allow_quoted_newlines': allow_quoted_newlines,
+                            'autodetect': autodetect,
+                            'clustering_fields': sf['clustering_fields'],
+                            'create_disposition': sf['create_disposition'],
+                            'destination_encryption_configuration': sf[
+                                'destination_encryption_configuration'
+                            ],
+                            'destination_table_description': destination_table_description,
+                            'destination_table_friendly_name': destination_table_friendly_name,
+                            'encoding': encoding,
+                            'field_delimiter': field_delimiter,
+                            'ignore_unknown_values': ignore_unknown_values,
+                            'max_bad_records': max_bad_records,
+                            'null_marker': null_marker,
+                            'quote_character': quote_character,
+                            # TODO: schema
+                            'schema_update_options': sf['schema_update_options'],
+                            'skip_leading_rows': skip_leading_rows,
+                            'source_format': source_format,
+                            'time_partitioning': sf['time_partitioning'],
+                            'use_avro_logical_types': use_avro_logical_types,
+                            'write_disposition': sf['write_disposition'],
+                        }
+                    )
+                ),
+            }
+        ),
+        description='BigQuery load configuration',
+    )
 
 
 def define_bigquery_create_dataset_config():
-    fields = _define_bigquery_base_fields({'project', 'location', 'dry_run'})
+    sf = _define_shared_fields()
 
     dataset = Field(Dataset, description='A dataset to create.', is_optional=False)
 
@@ -276,15 +405,24 @@ def define_bigquery_create_dataset_config():
         dataset.''',
         is_optional=True,
     )
-    fields['dataset'] = dataset
-    fields['exists_ok'] = exists_ok
-    return Field(Dict(fields=fields), description='BigQuery create dataset configuration')
+
+    return Field(
+        Dict(
+            fields={
+                'project': sf['project'],
+                'location': sf['location'],
+                'dataset': dataset,
+                'exists_ok': exists_ok,
+            }
+        ),
+        description='BigQuery create dataset configuration',
+    )
 
 
 def define_bigquery_delete_dataset_config():
-    fields = _define_bigquery_base_fields({'project', 'location', 'dry_run'})
+    sf = _define_shared_fields()
 
-    dataset = Field(Dataset, description='A dataset to create.', is_optional=False)
+    dataset = Field(Dataset, description='A dataset to delete.', is_optional=False)
 
     delete_contents = Field(
         Bool,
@@ -299,7 +437,16 @@ def define_bigquery_delete_dataset_config():
         dataset.''',
         is_optional=True,
     )
-    fields['dataset'] = dataset
-    fields['delete_contents'] = delete_contents
-    fields['not_found_ok'] = not_found_ok
-    return Field(Dict(fields=fields), description='BigQuery delete dataset configuration')
+
+    return Field(
+        Dict(
+            fields={
+                'project': sf['project'],
+                'location': sf['location'],
+                'dataset': dataset,
+                'delete_contents': delete_contents,
+                'not_found_ok': not_found_ok,
+            }
+        ),
+        description='BigQuery delete dataset configuration',
+    )

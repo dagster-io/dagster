@@ -3,7 +3,9 @@ import six
 
 from google.cloud.bigquery.job import (
     CreateDisposition,
+    Encoding,
     SchemaUpdateOption,
+    SourceFormat,
     QueryPriority,
     WriteDisposition,
 )
@@ -52,6 +54,28 @@ BQWriteDisposition = Enum(
         BQWriteDispositionWriteAppend,
         BQWriteDispositionWriteEmpty,
         BQWriteDispositionWriteTruncate,
+    ],
+)
+
+BQEncodingISO_8859_1 = EnumValue(Encoding.ISO_8859_1)
+BQEncodingUTF_8 = EnumValue(Encoding.UTF_8)
+BQEncoding = Enum(name='BQEncoding', enum_values=[BQEncodingISO_8859_1, BQEncodingUTF_8])
+
+BQSourceFormatAvro = EnumValue(SourceFormat.AVRO)
+BQSourceFormatCsv = EnumValue(SourceFormat.CSV)
+BQSourceFormatDatastoreBackup = EnumValue(SourceFormat.DATASTORE_BACKUP)
+BQSourceFormatJson = EnumValue(SourceFormat.NEWLINE_DELIMITED_JSON)
+BQSourceFormatOrc = EnumValue(SourceFormat.ORC)
+BQSourceFormatParquet = EnumValue(SourceFormat.PARQUET)
+BQSourceFormat = Enum(
+    name='BQSourceFormat',
+    enum_values=[
+        BQSourceFormatAvro,
+        BQSourceFormatCsv,
+        BQSourceFormatDatastoreBackup,
+        BQSourceFormatJson,
+        BQSourceFormatOrc,
+        BQSourceFormatParquet,
     ],
 )
 

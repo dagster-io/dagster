@@ -3,6 +3,8 @@ import pytest
 
 import pandas as pd
 
+from dagster_pandas import DataFrame
+
 from dagster import (
     solid,
     execute_pipeline,
@@ -11,6 +13,7 @@ from dagster import (
     InputDefinition,
     List,
     OutputDefinition,
+    Path,
     PipelineDefinition,
 )
 from dagster.core.types.evaluator import evaluate_config_value
@@ -21,9 +24,8 @@ from dagster_gcp import (
     BigQueryCreateDatasetSolidDefinition,
     BigQueryDeleteDatasetSolidDefinition,
     BigQueryLoadFromDataFrameSolidDefinition,
+    BigQueryLoadFromGCSSolidDefinition,
 )
-
-from dagster_pandas import DataFrame
 
 
 def test_simple_queries():
@@ -77,12 +79,12 @@ def test_bad_config():
         (
             # Dataset must be of form project_name.dataset_name
             {'default_dataset': 'this is not a valid dataset'},
-            'Value at path root:solids:test:config:default_dataset is not valid. Expected "Dataset"',
+            'Value at path root:solids:test:config:query_job_config:default_dataset is not valid. Expected "Dataset"',
         ),
         (
             # Table must be of form project_name.dataset_name.table_name
             {'destination': 'this is not a valid table'},
-            'Value at path root:solids:test:config:destination is not valid. Expected "Table"',
+            'Value at path root:solids:test:config:query_job_config:destination is not valid. Expected "Table"',
         ),
         (
             # Priority must match enum values
@@ -92,7 +94,7 @@ def test_bad_config():
         (
             # Schema update options must be a list
             {'schema_update_options': 'this is not valid schema update options'},
-            'Value at path root:solids:test:config:schema_update_options must be list. Expected: [BQSchemaUpdateOption]',
+            'Value at path root:solids:test:config:query_job_config:schema_update_options must be list. Expected: [BQSchemaUpdateOption]',
         ),
         (
             {'schema_update_options': ['this is not valid schema update options']},
@@ -109,7 +111,7 @@ def test_bad_config():
     )
 
     for config_fragment, error_message in configs_and_expected_errors:
-        config = {'solids': {'test': {'config': config_fragment}}}
+        config = {'solids': {'test': {'config': {'query_job_config': config_fragment}}}}
         result = evaluate_config_value(pipeline_def.environment_type, config)
         assert result.errors[0].message == error_message
 
@@ -156,10 +158,6 @@ def test_pd_df_load():
     def return_df(_context, success):  # pylint: disable=unused-argument
         return test_df
 
-    @solid(inputs=[InputDefinition('df', List(DataFrame))], outputs=[OutputDefinition(Bool)])
-    def barrier(_context, df):  # pylint: disable=unused-argument
-        return True
-
     config = {
         'solids': {
             'create_solid': {'config': {'dataset': 'foo', 'exists_ok': True}},
@@ -168,13 +166,12 @@ def test_pd_df_load():
         }
     }
     pipeline = PipelineDefinition(
-        solids=[return_df, create_solid, load_solid, query_solid, barrier, delete_solid],
+        solids=[return_df, create_solid, load_solid, query_solid, delete_solid],
         dependencies={
             'return_df': {'success': DependencyDefinition('create_solid')},
             'load_solid': {'df': DependencyDefinition('return_df')},
             'query_solid': {'input_ready_sentinel': DependencyDefinition('load_solid')},
-            'barrier': {'df': DependencyDefinition('query_solid')},
-            'delete_solid': {'input_ready_sentinel': DependencyDefinition('barrier')},
+            'delete_solid': {'input_ready_sentinel': DependencyDefinition('query_solid')},
         },
     )
     result = execute_pipeline(pipeline, config)
@@ -182,3 +179,49 @@ def test_pd_df_load():
 
     values = result.result_for_solid(query_solid.name).transformed_value()
     assert values[0].to_dict() == test_df.to_dict()
+
+
+def test_gcs_load():
+    create_solid = BigQueryCreateDatasetSolidDefinition('create_solid')
+    load_solid = BigQueryLoadFromGCSSolidDefinition('load_solid')
+    query_solid = BigQuerySolidDefinition(
+        'query_solid',
+        ['SELECT string_field_0, string_field_1 FROM foo.df ORDER BY string_field_0 ASC LIMIT 1'],
+    )
+    delete_solid = BigQueryDeleteDatasetSolidDefinition('delete_solid')
+
+    @solid(inputs=[InputDefinition('success', Bool)], outputs=[OutputDefinition(List(Path))])
+    def return_gcs_uri(_context, success):  # pylint: disable=unused-argument
+        return ["gs://cloud-samples-data/bigquery/us-states/us-states.csv"]
+
+    config = {
+        'solids': {
+            'create_solid': {'config': {'dataset': 'foo', 'exists_ok': True}},
+            'load_solid': {
+                'config': {
+                    'destination': 'foo.df',
+                    'load_job_config': {
+                        'autodetect': True,
+                        'skip_leading_rows': 1,
+                        'source_format': 'CSV',
+                        'write_disposition': 'WRITE_TRUNCATE',
+                    },
+                }
+            },
+            'delete_solid': {'config': {'dataset': 'foo', 'delete_contents': True}},
+        }
+    }
+    pipeline = PipelineDefinition(
+        solids=[create_solid, return_gcs_uri, load_solid, query_solid, delete_solid],
+        dependencies={
+            'return_gcs_uri': {'success': DependencyDefinition('create_solid')},
+            'load_solid': {'source_uris': DependencyDefinition('return_gcs_uri')},
+            'query_solid': {'input_ready_sentinel': DependencyDefinition('load_solid')},
+            'delete_solid': {'input_ready_sentinel': DependencyDefinition('query_solid')},
+        },
+    )
+    result = execute_pipeline(pipeline, config)
+    assert result.success
+
+    values = result.result_for_solid(query_solid.name).transformed_value()
+    assert values[0].to_dict() == {'string_field_0': {0: 'Alabama'}, 'string_field_1': {0: 'AL'}}
