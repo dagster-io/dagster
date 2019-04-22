@@ -101,6 +101,7 @@ class FieldImpl:
         config_type,
         default_value=FIELD_NO_DEFAULT_PROVIDED,
         is_optional=INFER_OPTIONAL_COMPOSITE_FIELD,
+        is_secret=False,
         description=None,
     ):
         self.config_type = check.inst_param(config_type, 'config_type', ConfigType)
@@ -133,6 +134,8 @@ class FieldImpl:
             )
 
         self.is_optional = is_optional
+
+        self.is_secret = check.bool_param(is_secret, 'is_secret')
 
     @property
     def is_required(self):

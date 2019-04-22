@@ -109,8 +109,21 @@ def define_repository():
             'scalar_output_pipeline': define_scalar_output_pipeline,
             'pipeline_with_enum_config': define_pipeline_with_enum_config,
             'naughty_programmer_pipeline': define_naughty_programmer_pipeline,
+            'secret_pipeline': define_pipeline_with_secret,
         },
     )
+
+
+def define_pipeline_with_secret():
+    @solid(
+        config_field=Field(
+            Dict({'password': Field(String, is_secret=True), 'notpassword': Field(String)})
+        )
+    )
+    def solid_with_secret(_context):
+        pass
+
+    return PipelineDefinition(name='secret_pipeline', solids=[solid_with_secret])
 
 
 def define_context_config_pipeline():
