@@ -60,7 +60,6 @@ workflows:
       - library-dagster-pandas-py27:
           context: coveralls
 
-
       - library-dagster-ge-py37:
           context: coveralls
       - library-dagster-ge-py36:
@@ -253,7 +252,7 @@ jobs:
       - run:
           name: Lint
           command: |
-            make pylint
+            make pylint-iterative
 
   docs-snapshot:
     docker:
