@@ -1,13 +1,14 @@
 from __future__ import absolute_import
+
+import logging
 import yaml
 
 from dagster import check
 from dagster.core.events.logging import EventRecord
 from dagster.core.events import DagsterEventType
-
-from dagster.utils.logging import CRITICAL, DEBUG, ERROR, INFO, WARNING, check_valid_level_param
 from dagster.core.execution_plan.plan import ExecutionPlan
 from dagster.core.execution_plan.objects import StepFailureData
+from dagster.utils.logging import check_valid_log_level
 
 from dagster_graphql import dauphin
 from dagster_graphql.implementation.fetch_pipelines import get_pipeline_or_raise
@@ -49,31 +50,20 @@ class DauphinPipelineRun(dauphin.ObjectType):
         return yaml.dump(self._pipeline_run.config, default_flow_style=False)
 
 
-class DauphinLogLevel(dauphin.Enum):
-    class Meta:
-        name = 'LogLevel'
-
-    CRITICAL = 'CRITICAL'
-    ERROR = 'ERROR'
-    INFO = 'INFO'
-    WARNING = 'WARNING'
-    DEBUG = 'DEBUG'
-
-    @staticmethod
-    def from_level(level):
-        check_valid_level_param(level)
-        if level == CRITICAL:
-            return DauphinLogLevel.CRITICAL
-        elif level == ERROR:
-            return DauphinLogLevel.ERROR
-        elif level == INFO:
-            return DauphinLogLevel.INFO
-        elif level == WARNING:
-            return DauphinLogLevel.WARNING
-        elif level == DEBUG:
-            return DauphinLogLevel.DEBUG
-        else:
-            check.failed('unknown log level')
+def log_level_string(level):
+    check_valid_log_level(level)
+    if level == logging.CRITICAL:
+        return 'CRITICAL'
+    elif level == logging.ERROR:
+        return 'ERROR'
+    elif level == logging.INFO:
+        return 'INFO'
+    elif level == logging.WARNING:
+        return 'WARNING'
+    elif level == logging.DEBUG:
+        return 'DEBUG'
+    else:
+        return str(level)
 
 
 class DauphinMessageEvent(dauphin.Interface):
@@ -83,7 +73,7 @@ class DauphinMessageEvent(dauphin.Interface):
     run = dauphin.NonNull('PipelineRun')
     message = dauphin.NonNull(dauphin.String)
     timestamp = dauphin.NonNull(dauphin.String)
-    level = dauphin.NonNull('LogLevel')
+    level = dauphin.NonNull(dauphin.String)
     step = dauphin.Field('ExecutionStep')
 
 
@@ -309,7 +299,7 @@ class DauphinPipelineRunEvent(dauphin.Union):
             'run': dauphin_run,
             'message': event.user_message,
             'timestamp': int(event.timestamp * 1000),
-            'level': DauphinLogLevel.from_level(event.level),
+            'level': log_level_string(event.level),
             'step': dauphin_step,
         }
 

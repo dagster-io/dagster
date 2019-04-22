@@ -2,8 +2,6 @@
 /* eslint-disable */
 // This file was automatically generated and should not be edited.
 
-import { LogLevel } from "./../../types/globalTypes";
-
 // ====================================================
 // GraphQL fragment: PipelineRunPipelineRunEventFragment
 // ====================================================
@@ -17,7 +15,7 @@ export interface PipelineRunPipelineRunEventFragment_LogMessageEvent {
   __typename: "LogMessageEvent" | "PipelineStartEvent" | "PipelineSuccessEvent" | "PipelineFailureEvent" | "ExecutionStepStartEvent" | "ExecutionStepSuccessEvent" | "ExecutionStepOutputEvent" | "ExecutionStepSkippedEvent" | "PipelineProcessStartEvent";
   message: string;
   timestamp: string;
-  level: LogLevel;
+  level: string;
   step: PipelineRunPipelineRunEventFragment_LogMessageEvent_step | null;
 }
 
@@ -36,7 +34,7 @@ export interface PipelineRunPipelineRunEventFragment_PipelineInitFailureEvent {
   __typename: "PipelineInitFailureEvent";
   message: string;
   timestamp: string;
-  level: LogLevel;
+  level: string;
   error: PipelineRunPipelineRunEventFragment_PipelineInitFailureEvent_error;
   step: PipelineRunPipelineRunEventFragment_PipelineInitFailureEvent_step | null;
 }
@@ -56,7 +54,7 @@ export interface PipelineRunPipelineRunEventFragment_ExecutionStepFailureEvent {
   __typename: "ExecutionStepFailureEvent";
   message: string;
   timestamp: string;
-  level: LogLevel;
+  level: string;
   step: PipelineRunPipelineRunEventFragment_ExecutionStepFailureEvent_step | null;
   error: PipelineRunPipelineRunEventFragment_ExecutionStepFailureEvent_error;
 }
@@ -70,7 +68,7 @@ export interface PipelineRunPipelineRunEventFragment_PipelineProcessStartedEvent
   __typename: "PipelineProcessStartedEvent";
   message: string;
   timestamp: string;
-  level: LogLevel;
+  level: string;
   step: PipelineRunPipelineRunEventFragment_PipelineProcessStartedEvent_step | null;
   processId: number;
 }
@@ -90,7 +88,7 @@ export interface PipelineRunPipelineRunEventFragment_StepMaterializationEvent {
   __typename: "StepMaterializationEvent";
   message: string;
   timestamp: string;
-  level: LogLevel;
+  level: string;
   step: PipelineRunPipelineRunEventFragment_StepMaterializationEvent_step | null;
   materialization: PipelineRunPipelineRunEventFragment_StepMaterializationEvent_materialization;
 }

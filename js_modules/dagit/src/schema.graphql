@@ -129,7 +129,7 @@ type ExecutionStepFailureEvent implements MessageEvent & StepEvent {
   run: PipelineRun!
   message: String!
   timestamp: String!
-  level: LogLevel!
+  level: String!
   step: ExecutionStep
   error: PythonError!
 }
@@ -149,7 +149,7 @@ type ExecutionStepOutputEvent implements MessageEvent & StepEvent {
   run: PipelineRun!
   message: String!
   timestamp: String!
-  level: LogLevel!
+  level: String!
   step: ExecutionStep
   outputName: String!
   valueRepr: String!
@@ -160,7 +160,7 @@ type ExecutionStepSkippedEvent implements MessageEvent & StepEvent {
   run: PipelineRun!
   message: String!
   timestamp: String!
-  level: LogLevel!
+  level: String!
   step: ExecutionStep
 }
 
@@ -168,7 +168,7 @@ type ExecutionStepStartEvent implements MessageEvent & StepEvent {
   run: PipelineRun!
   message: String!
   timestamp: String!
-  level: LogLevel!
+  level: String!
   step: ExecutionStep
 }
 
@@ -176,7 +176,7 @@ type ExecutionStepSuccessEvent implements MessageEvent & StepEvent {
   run: PipelineRun!
   message: String!
   timestamp: String!
-  level: LogLevel!
+  level: String!
   step: ExecutionStep
 }
 
@@ -262,14 +262,6 @@ type ListRuntimeType implements RuntimeType & WrappingRuntimeType {
   ofType: RuntimeType!
 }
 
-enum LogLevel {
-  CRITICAL
-  ERROR
-  INFO
-  WARNING
-  DEBUG
-}
-
 type LogMessageConnection {
   nodes: [PipelineRunEvent!]!
   pageInfo: PageInfo!
@@ -279,7 +271,7 @@ type LogMessageEvent implements MessageEvent {
   run: PipelineRun!
   message: String!
   timestamp: String!
-  level: LogLevel!
+  level: String!
   step: ExecutionStep
 }
 
@@ -292,7 +284,7 @@ interface MessageEvent {
   run: PipelineRun!
   message: String!
   timestamp: String!
-  level: LogLevel!
+  level: String!
   step: ExecutionStep
 }
 
@@ -426,7 +418,7 @@ type PipelineFailureEvent implements MessageEvent & PipelineEvent {
   run: PipelineRun!
   message: String!
   timestamp: String!
-  level: LogLevel!
+  level: String!
   step: ExecutionStep
   pipeline: Pipeline!
 }
@@ -435,7 +427,7 @@ type PipelineInitFailureEvent implements MessageEvent & PipelineEvent {
   run: PipelineRun!
   message: String!
   timestamp: String!
-  level: LogLevel!
+  level: String!
   step: ExecutionStep
   pipeline: Pipeline!
   error: PythonError!
@@ -459,7 +451,7 @@ type PipelineProcessStartedEvent implements MessageEvent & PipelineEvent {
   run: PipelineRun!
   message: String!
   timestamp: String!
-  level: LogLevel!
+  level: String!
   step: ExecutionStep
   pipeline: Pipeline!
   processId: Int!
@@ -469,7 +461,7 @@ type PipelineProcessStartEvent implements MessageEvent & PipelineEvent {
   run: PipelineRun!
   message: String!
   timestamp: String!
-  level: LogLevel!
+  level: String!
   step: ExecutionStep
   pipeline: Pipeline!
 }
@@ -516,7 +508,7 @@ type PipelineStartEvent implements MessageEvent & PipelineEvent {
   run: PipelineRun!
   message: String!
   timestamp: String!
-  level: LogLevel!
+  level: String!
   step: ExecutionStep
   pipeline: Pipeline!
 }
@@ -525,7 +517,7 @@ type PipelineSuccessEvent implements MessageEvent & PipelineEvent {
   run: PipelineRun!
   message: String!
   timestamp: String!
-  level: LogLevel!
+  level: String!
   step: ExecutionStep
   pipeline: Pipeline!
 }
@@ -675,7 +667,7 @@ type StepMaterializationEvent implements MessageEvent & StepEvent {
   run: PipelineRun!
   message: String!
   timestamp: String!
-  level: LogLevel!
+  level: String!
   step: ExecutionStep
   materialization: Materialization!
 }
