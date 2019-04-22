@@ -1177,7 +1177,7 @@ jobs:
             git checkout --track origin/nightly
             git checkout nightly
             git reset --hard origin/nightly
-            GIT_MERGE_AUTOEDIT=no git merge --strategy recursive --strategy-option theirs --strategy-option recursive master
+            GIT_MERGE_AUTOEDIT=no git merge --strategy recursive --strategy-option theirs master
             git push
       - run:
           name: Install requirements
