@@ -2,9 +2,22 @@ import os
 
 import boto3
 
-from dagster import solid, Bool, Dict, Field, OutputDefinition, Path, String
+from dagster import (
+    check,
+    solid,
+    Bool,
+    Dict,
+    Field,
+    InputDefinition,
+    Nothing,
+    OutputDefinition,
+    Path,
+    Result,
+    String,
+)
 from dagster.utils import safe_isfile, mkdir_p
 
+from .configs import define_emr_run_job_flow_config
 from .types import FileExistsAtPath
 
 
@@ -79,3 +92,26 @@ def download_from_s3(context):
         s3.download_file(Bucket=bucket, Key=key, Filename=target_file, Callback=logger)
 
     return target_file
+
+
+class EmrRunJobFlowSolidDefinition:
+    INPUT_READY = 'input_ready_sentinel'
+
+    def __init__(self, name, description=None):
+        name = check.str_param(name, 'name')
+
+        description = check.opt_str_param(description, 'description', 'EMR create job flow solid.')
+
+        def _transform_fn(context, _):  # pylint: disable=too-many-locals
+            client = boto3.client('emr')
+            response = client.run_job_flow()
+            Result(True)
+
+        super(EmrRunJobFlowSolidDefinition, self).__init__(
+            name=name,
+            description=description,
+            inputs=[InputDefinition(EmrRunJobFlowSolidDefinition.INPUT_READY, Nothing)],
+            outputs=[OutputDefinition(Bool)],
+            transform_fn=_transform_fn,
+            config_field=define_emr_run_job_flow_config(),
+        )
