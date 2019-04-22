@@ -895,6 +895,7 @@ def define_emr_run_job_flow_config():
         and (if they have the proper policy permissions set) manage the cluster. If it is set to
         False, only the IAM user that created the cluster can view and manage it.''',
         is_optional=True,
+        default_value=True,
     )
 
     job_flow_role = Field(

@@ -1,4 +1,5 @@
 import os
+import time
 
 import boto3
 
@@ -98,15 +99,56 @@ def download_from_s3(context):
 class EmrRunJobFlowSolidDefinition(SolidDefinition):
     INPUT_READY = 'input_ready_sentinel'
 
-    def __init__(self, name, description=None):
+    CLUSTER_TERMINATED = 'TERMINATED'
+    CLUSTER_WAITING = 'WAITING'
+
+    def __init__(
+        self, name, description=None, max_wait_time_sec=(24 * 60 * 60), poll_interval_sec=5
+    ):
         name = check.str_param(name, 'name')
 
         description = check.opt_str_param(description, 'description', 'EMR create job flow solid.')
 
         def _transform_fn(context, _):  # pylint: disable=too-many-locals
             client = boto3.client('emr')
-            response = client.run_job_flow()
-            Result(True)
+
+            # kick off the EMR job flow
+            response = client.run_job_flow(**context.solid_config)
+
+            # Job flow IDs and cluster IDs are interchangable
+            job_flow_id = response.get('JobFlowId')
+
+            context.log.info('waiting for EMR cluster job flow completion...')
+
+            # wait at most 24 hours by default for cluster job completion
+            max_iter = max_wait_time_sec / poll_interval_sec
+
+            # wait for the task
+            done = False
+            curr_iter = 0
+            while not done and curr_iter < max_iter:
+                cluster = client.describe_cluster(ClusterId=job_flow_id)
+                status = cluster.get('Cluster', {}).get('Status', {})
+                state = status.get('State')
+                state_change_reason = status.get('StateChangeReason', {}).get('Message')
+
+                context.log.info(
+                    'EMR cluster %s state: %s state change reason: %s'
+                    % (job_flow_id, state, state_change_reason)
+                )
+
+                # This will take a while... cluster creation usually > 5 minutes
+                time.sleep(poll_interval_sec)
+
+                # The user can specify Instances.KeepJobFlowAliveWhenNoSteps, which will keep the
+                # cluster alive after the job completes.
+                done = state in [
+                    EmrRunJobFlowSolidDefinition.CLUSTER_TERMINATED,
+                    EmrRunJobFlowSolidDefinition.CLUSTER_WAITING,
+                ]
+                curr_iter += 1
+
+            yield Result(True)
 
         super(EmrRunJobFlowSolidDefinition, self).__init__(
             name=name,
