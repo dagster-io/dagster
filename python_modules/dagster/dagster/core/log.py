@@ -81,13 +81,14 @@ class DagsterLog:
         # )
 
         for logger in self.loggers:
-            logger_method = check.is_callable(getattr(logger, method))
-            if logger.name == DAGSTER_DEFAULT_LOGGER:
-                logger_method(
-                    msg_with_multiline_structured_props, extra={DAGSTER_META_KEY: all_props}
-                )
-            else:
-                logger_method(msg_with_structured_props, extra={DAGSTER_META_KEY: all_props})
+            if hasattr(logger, method):
+                logger_method = check.is_callable(getattr(logger, method))
+                if logger.name == DAGSTER_DEFAULT_LOGGER:
+                    logger_method(
+                        msg_with_multiline_structured_props, extra={DAGSTER_META_KEY: all_props}
+                    )
+                else:
+                    logger_method(msg_with_structured_props, extra={DAGSTER_META_KEY: all_props})
 
     def debug(self, msg, **kwargs):
         '''
@@ -132,3 +133,9 @@ class DagsterLog:
 
         See debug()'''
         return self._log('critical', msg, kwargs)
+
+    def __getattr__(self, name):
+        def handler(msg, **kwargs):
+            return self._log(name.lower(), msg, kwargs)
+
+        return handler

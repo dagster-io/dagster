@@ -5,7 +5,7 @@ from dagster.core.types.field_utils import check_user_facing_opt_field_param
 from dagster.core.user_context import ExecutionContext
 from dagster.core.system_config.objects import DEFAULT_CONTEXT_NAME
 
-from dagster.utils.logging import LogLevelEnum, level_from_string
+from dagster.utils.logging import DefaultLogLevelEnum, level_from_string
 
 from .resource import ResourceDefinition
 
@@ -91,7 +91,9 @@ def _default_context_fn(init_context):
 
 
 def _default_config_field():
-    return Field(Dict({'log_level': Field(LogLevelEnum, is_optional=True, default_value='INFO')}))
+    return Field(
+        Dict({'log_level': Field(DefaultLogLevelEnum, is_optional=True, default_value='INFO')})
+    )
 
 
 def default_pipeline_context_definitions():

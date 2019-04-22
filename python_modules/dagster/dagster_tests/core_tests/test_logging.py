@@ -2,6 +2,10 @@ import json
 import logging
 import re
 
+from contextlib import contextmanager
+from functools import partial
+
+from dagster import check
 from dagster.core.definitions import SolidHandle
 from dagster.core.events import DagsterEvent
 from dagster.core.execution_plan.objects import StepFailureData
@@ -12,7 +16,32 @@ REGEX_UUID = r'[a-z-0-9]{8}\-[a-z-0-9]{4}\-[a-z-0-9]{4}\-[a-z-0-9]{4}\-[a-z-0-9]
 REGEX_TS = r'\d{4}\-\d{2}\-\d{2}T\d{2}:\d{2}:\d{2}\.\d{6}'
 
 
-def _setup_logger(name):
+@contextmanager
+def _setup_logger(name, log_levels=None):
+    log_levels = check.opt_dict_param(log_levels, 'log_levels')
+
+    def add_log_level(value, name):
+        logging.addLevelName(value, name)
+        setattr(logging, name, value)
+
+    def rm_log_level(value, name):
+        if hasattr(logging, '_nameToLevel'):
+            if name in logging._nameToLevel:
+                del logging._nameToLevel[name]
+
+        if hasattr(logging, '_levelToName'):
+            if value in logging._levelToName:
+                del logging._levelToName[value]
+
+        if hasattr(logging, '_levelNames'):
+            if name in logging._levelNames:
+                del logging._levelNames[name]
+            if value in logging._levelNames and logging._levelNames[value] == name:
+                del logging._levelNames[value]
+
+    for name, value in log_levels.items():
+        add_log_level(value, name)
+
     class TestLogger(logging.Logger):
         def __init__(self, name):
             super(TestLogger, self).__init__(name)
@@ -24,10 +53,15 @@ def _setup_logger(name):
     def log_fn(msg, *args, **kwargs):  # pylint:disable=unused-argument
         captured_results.append(msg)
 
-    for level in ['debug', 'info', 'warning', 'error', 'critical']:
+    for level in ['debug', 'info', 'warning', 'error', 'critical'] + list(
+        [x.lower() for x in log_levels.keys()]
+    ):
         setattr(logger, level, log_fn)
 
-    return captured_results, logger
+    yield (captured_results, logger)
+
+    for name, value in log_levels.items():
+        rm_log_level(value, name)
 
 
 def _regex_match_kv_pair(regex, kv_pairs):
@@ -41,23 +75,33 @@ def _validate_basic(kv_pairs):
 
 
 def test_logging_basic():
-    captured_results, logger = _setup_logger('test')
+    with _setup_logger('test') as (captured_results, logger):
 
-    dl = DagsterLog('123', {}, [logger])
-    dl.info('test')
+        dl = DagsterLog('123', {}, [logger])
+        dl.info('test')
 
-    kv_pairs = set(captured_results[0].strip().split())
-    _validate_basic(kv_pairs)
+        kv_pairs = set(captured_results[0].strip().split())
+        _validate_basic(kv_pairs)
+
+
+def test_logging_custom_log_levels():
+    with _setup_logger('test', {'FOO': 3}) as (captured_results, logger):
+
+        dl = DagsterLog('123', {}, [logger])
+        dl.foo('test')
+
+        kv_pairs = set(captured_results[0].strip().split())
+        _validate_basic(kv_pairs)
 
 
 def test_multiline_logging_basic():
-    captured_results, logger = _setup_logger(DAGSTER_DEFAULT_LOGGER)
+    with _setup_logger(DAGSTER_DEFAULT_LOGGER) as (captured_results, logger):
 
-    dl = DagsterLog('123', {}, [logger])
-    dl.info('test')
+        dl = DagsterLog('123', {}, [logger])
+        dl.info('test')
 
-    kv_pairs = captured_results[0].replace(' ', '').split('\n')[1:]
-    _validate_basic(kv_pairs)
+        kv_pairs = captured_results[0].replace(' ', '').split('\n')[1:]
+        _validate_basic(kv_pairs)
 
 
 def test_multiline_logging_complex():
@@ -97,12 +141,12 @@ def test_multiline_logging_complex():
         ),
     }
 
-    captured_results, logger = _setup_logger(DAGSTER_DEFAULT_LOGGER)
+    with _setup_logger(DAGSTER_DEFAULT_LOGGER) as (captured_results, logger):
 
-    dl = DagsterLog('123', {}, [logger])
-    dl.info(msg, **kwargs)
+        dl = DagsterLog('123', {}, [logger])
+        dl.info(msg, **kwargs)
 
-    kv_pairs = set(captured_results[0].split('\n')[1:])
+        kv_pairs = set(captured_results[0].split('\n')[1:])
 
     expected_pairs = [
         '        orig_message = "DagsterEventType.STEP_FAILURE for step start.materialization.output.result.0"',
