@@ -13,6 +13,7 @@ from dagster import (
     OutputDefinition,
     Path,
     Result,
+    SolidDefinition,
     String,
 )
 from dagster.utils import safe_isfile, mkdir_p
@@ -94,7 +95,7 @@ def download_from_s3(context):
     return target_file
 
 
-class EmrRunJobFlowSolidDefinition:
+class EmrRunJobFlowSolidDefinition(SolidDefinition):
     INPUT_READY = 'input_ready_sentinel'
 
     def __init__(self, name, description=None):
