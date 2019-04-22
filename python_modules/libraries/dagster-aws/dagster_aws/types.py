@@ -33,3 +33,33 @@ EmrSupportedProducts = Enum(
     name='EmrSupportedProducts',
     enum_values=[EmrSupportedProductsMapRM3, EmrSupportedProductsMapRM5],
 )
+
+EmrScaleDownBehaviorTerminateAtInstanceHour = EnumValue('TERMINATE_AT_INSTANCE_HOUR')
+EmrScaleDownBehaviorTerminateAtTaskCompletion = EnumValue('TERMINATE_AT_TASK_COMPLETION')
+EmrScaleDownBehavior = Enum(
+    name='EmrScaleDownBehavior',
+    enum_values=[
+        EmrScaleDownBehaviorTerminateAtInstanceHour,
+        EmrScaleDownBehaviorTerminateAtTaskCompletion,
+    ],
+)
+
+EmrRepoUpgradeOnBootSecurity = EnumValue('SECURITY')
+EmrRepoUpgradeOnBootNone = EnumValue('NONE')
+EmrRepoUpgradeOnBoot = Enum(
+    name='EmrRepoUpgradeOnBoot',
+    enum_values=[EmrRepoUpgradeOnBootSecurity, EmrRepoUpgradeOnBootNone],
+)
+
+EmrMarketOnDemand = EnumValue('ON_DEMAND')
+EmrMarketSpot = EnumValue('SPOT')
+EmrMarket = Enum(name='EmrMarket', enum_values=[EmrMarketOnDemand, EmrMarketSpot])
+
+
+EmrInstanceRoleMaster = EnumValue('MASTER')
+EmrInstanceRoleCore = EnumValue('CORE')
+EmrInstanceRoleTask = EnumValue('TASK')
+EmrInstanceRole = Enum(
+    name='EmrInstanceRole',
+    enum_values=[EmrInstanceRoleMaster, EmrInstanceRoleCore, EmrInstanceRoleTask],
+)
