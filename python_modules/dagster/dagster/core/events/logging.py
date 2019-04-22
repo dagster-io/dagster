@@ -8,7 +8,7 @@ from dagster.utils.logging import (
     StructuredLoggerHandler,
     JsonEventLoggerHandler,
     StructuredLoggerMessage,
-    check_valid_level_param,
+    check_valid_log_level,
     construct_single_handler_logger,
 )
 
@@ -30,7 +30,7 @@ class EventRecord(object):
 
         self._error_info = check.opt_inst_param(error_info, 'error_info', SerializableErrorInfo)
         self._message = check.str_param(message, 'message')
-        self._level = check_valid_level_param(level)
+        self._level = check_valid_log_level(level)
         self._user_message = check.str_param(user_message, 'user_message')
         self._run_id = check.str_param(run_id, 'run_id')
         self._timestamp = check.float_param(timestamp, 'timestamp')

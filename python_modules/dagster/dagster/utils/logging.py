@@ -2,9 +2,10 @@ from __future__ import absolute_import
 
 import copy
 import logging
+import sys
 import traceback
 
-from collections import namedtuple
+from collections import namedtuple, OrderedDict
 from logging import CRITICAL, DEBUG, ERROR, INFO, WARNING
 
 import coloredlogs
@@ -12,18 +13,42 @@ import coloredlogs
 from dagster import check, seven
 from dagster.core.types.config import Enum, EnumValue
 
-VALID_LEVELS = set([CRITICAL, DEBUG, ERROR, INFO, WARNING])
+DEFAULT_LOG_LEVEL_STRINGS = ['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL']
 
-LOOKUP = {'CRITICAL': CRITICAL, 'DEBUG': DEBUG, 'ERROR': ERROR, 'INFO': INFO, 'WARNING': WARNING}
+DefaultLogLevelEnum = Enum(
+    'log_level',
+    list(
+        map(EnumValue, OrderedDict([(k, getattr(logging, k)) for k in DEFAULT_LOG_LEVEL_STRINGS]))
+    ),
+)
 
-VALID_LEVEL_STRINGS = ['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL']
 
-LogLevelEnum = Enum('log_level', list(map(EnumValue, VALID_LEVEL_STRINGS)))
+def level_from_string(level_str):
+    if hasattr(logging, level_str):
+        return getattr(logging, level_str)
+    else:
+        return int(level_str)
 
 
-def level_from_string(string):
-    check.str_param(string, 'string')
-    return LOOKUP[string]
+def check_valid_log_level(level):
+    if sys.version_info.major >= 3:
+        check.param_invariant(
+            level in logging._nameToLevel or isinstance(level, int),
+            'level',
+            'Must be valid python logging level. Got {level}'.format(level=level),
+        )
+    else:
+        try:
+            logging._checkLevel(level)
+            return level
+        except ValueError:
+            check.param_invariant(
+                isinstance(level, int),
+                'level',
+                'Must be valid python logging level. Got {level}'.format(level=level),
+            )
+
+    return level
 
 
 class JsonFileHandler(logging.Handler):
@@ -67,7 +92,7 @@ class StructuredLoggerMessage(
             cls,
             check.str_param(name, 'name'),
             check.str_param(message, 'message'),
-            check_valid_level_param(level),
+            check_valid_log_level(level),
             check.dict_param(meta, 'meta'),
             check.inst_param(record, 'record', logging.LogRecord),
         )
@@ -114,18 +139,9 @@ class StructuredLoggerHandler(logging.Handler):
             logging.exception(str(e))
 
 
-def check_valid_level_param(level):
-    check.param_invariant(
-        level in VALID_LEVELS,
-        'level',
-        'Must be valid python logging level. Got {level}'.format(level=level),
-    )
-    return level
-
-
 def construct_single_handler_logger(name, level, handler):
     check.str_param(name, 'name')
-    check_valid_level_param(level)
+    check_valid_log_level(level)
     check.inst_param(handler, 'handler', logging.Handler)
 
     klass = logging.getLoggerClass()
@@ -137,7 +153,7 @@ def construct_single_handler_logger(name, level, handler):
 def define_structured_logger(name, callback, level):
     check.str_param(name, 'name')
     check.callable_param(callback, 'callback')
-    check_valid_level_param(level)
+    check_valid_log_level(level)
 
     return construct_single_handler_logger(name, level, StructuredLoggerHandler(callback))
 
@@ -145,7 +161,7 @@ def define_structured_logger(name, callback, level):
 def define_json_file_logger(name, json_path, level):
     check.str_param(name, 'name')
     check.str_param(json_path, 'json_path')
-    check_valid_level_param(level)
+    check_valid_log_level(level)
 
     stream_handler = JsonFileHandler(json_path)
     stream_handler.setFormatter(define_default_formatter())
@@ -154,11 +170,7 @@ def define_json_file_logger(name, json_path, level):
 
 def define_colored_console_logger(name, level=INFO):
     check.str_param(name, 'name')
-    check.param_invariant(
-        level in VALID_LEVELS,
-        'level',
-        'Must be valid python logging level. Got {level}'.format(level=level),
-    )
+    check_valid_log_level(level)
 
     klass = logging.getLoggerClass()
     logger = klass(name, level=level)

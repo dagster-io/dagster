@@ -2,7 +2,7 @@
 /* eslint-disable */
 // This file was automatically generated and should not be edited.
 
-import { PipelineRunStatus, LogLevel, StepKind } from "./../../types/globalTypes";
+import { PipelineRunStatus, StepKind } from "./../../types/globalTypes";
 
 // ====================================================
 // GraphQL fragment: PipelineRunLogsUpdateFragment
@@ -33,7 +33,7 @@ export interface PipelineRunLogsUpdateFragment_logs_nodes_LogMessageEvent {
   __typename: "LogMessageEvent" | "PipelineStartEvent" | "PipelineSuccessEvent" | "PipelineFailureEvent" | "ExecutionStepStartEvent" | "ExecutionStepSuccessEvent" | "ExecutionStepOutputEvent" | "ExecutionStepSkippedEvent" | "PipelineProcessStartEvent";
   message: string;
   timestamp: string;
-  level: LogLevel;
+  level: string;
   step: PipelineRunLogsUpdateFragment_logs_nodes_LogMessageEvent_step | null;
 }
 
@@ -52,7 +52,7 @@ export interface PipelineRunLogsUpdateFragment_logs_nodes_PipelineInitFailureEve
   __typename: "PipelineInitFailureEvent";
   message: string;
   timestamp: string;
-  level: LogLevel;
+  level: string;
   step: PipelineRunLogsUpdateFragment_logs_nodes_PipelineInitFailureEvent_step | null;
   error: PipelineRunLogsUpdateFragment_logs_nodes_PipelineInitFailureEvent_error;
 }
@@ -72,7 +72,7 @@ export interface PipelineRunLogsUpdateFragment_logs_nodes_ExecutionStepFailureEv
   __typename: "ExecutionStepFailureEvent";
   message: string;
   timestamp: string;
-  level: LogLevel;
+  level: string;
   step: PipelineRunLogsUpdateFragment_logs_nodes_ExecutionStepFailureEvent_step | null;
   error: PipelineRunLogsUpdateFragment_logs_nodes_ExecutionStepFailureEvent_error;
 }
@@ -86,7 +86,7 @@ export interface PipelineRunLogsUpdateFragment_logs_nodes_PipelineProcessStarted
   __typename: "PipelineProcessStartedEvent";
   message: string;
   timestamp: string;
-  level: LogLevel;
+  level: string;
   step: PipelineRunLogsUpdateFragment_logs_nodes_PipelineProcessStartedEvent_step | null;
   processId: number;
 }
@@ -100,7 +100,7 @@ export interface PipelineRunLogsUpdateFragment_logs_nodes_StepMaterializationEve
   __typename: "StepMaterializationEvent";
   message: string;
   timestamp: string;
-  level: LogLevel;
+  level: string;
   step: PipelineRunLogsUpdateFragment_logs_nodes_StepMaterializationEvent_step | null;
   fileLocation: string;
   fileName: string;
