@@ -21065,7 +21065,7 @@ data via <code class="docutils literal notranslate"><span class="pre">config_fie
 builtin types above.</p>
 <dl class="function">
 <dt id="dagster.Field">
-<code class="descclassname">dagster.</code><code class="descname">Field</code><span class="sig-paren">(</span><em>dagster_type</em>, <em>default_value=&lt;class \'dagster.core.types.field_utils.__FieldValueSentinel\'&gt;</em>, <em>is_optional=&lt;class \'dagster.core.types.field_utils.__InferOptionalCompositeFieldSentinel\'&gt;</em>, <em>description=None</em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dagster/core/types/field.html#Field"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dagster.Field" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">dagster.</code><code class="descname">Field</code><span class="sig-paren">(</span><em>dagster_type</em>, <em>default_value=&lt;class \'dagster.core.types.field_utils.__FieldValueSentinel\'&gt;</em>, <em>is_optional=&lt;class \'dagster.core.types.field_utils.__InferOptionalCompositeFieldSentinel\'&gt;</em>, <em>is_secret=False</em>, <em>description=None</em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dagster/core/types/field.html#Field"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dagster.Field" title="Permalink to this definition">¶</a></dt>
 <dd><p>The schema for configuration data that describes the type, optionality, defaults, and description.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>

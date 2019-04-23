@@ -35,6 +35,7 @@ def Field(
     dagster_type,
     default_value=FIELD_NO_DEFAULT_PROVIDED,
     is_optional=INFER_OPTIONAL_COMPOSITE_FIELD,
+    is_secret=False,
     description=None,
 ):
     '''
@@ -56,4 +57,10 @@ def Field(
                 'dagster type usable in config (e.g. Dict, NamedDict, Int, String et al).'
             ).format(value_repr=repr(dagster_type))
         )
-    return FieldImpl(resolve_to_config_type(dagster_type), default_value, is_optional, description)
+    return FieldImpl(
+        config_type=resolve_to_config_type(dagster_type),
+        default_value=default_value,
+        is_optional=is_optional,
+        is_secret=is_secret,
+        description=description,
+    )
