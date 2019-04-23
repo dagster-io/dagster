@@ -44,6 +44,7 @@ def _do_setup(name='dagster-slack'):
         ],
         packages=find_packages(exclude=['test']),
         install_requires=['dagster'],
+        tests_require=['responses==0.10.*'],
         zip_safe=False,
     )
 
