@@ -9,7 +9,6 @@ from dagster import (
     PipelineDefinition,
     RepositoryDefinition,
     SolidDefinition,
-    check,
 )
 
 from dagster.cli.dynamic_loader import RepositoryContainer
