@@ -3,19 +3,18 @@ from .version import __version__
 from .solids import (
     BigQueryCreateDatasetSolidDefinition,
     BigQueryDeleteDatasetSolidDefinition,
-    BigQueryLoadFromDataFrameSolidDefinition,
-    BigQueryLoadFromGCSSolidDefinition,
+    BigQueryLoadSolidDefinition,
     BigQuerySolidDefinition,
 )
 
-from .types import BigQueryError
+from .types import BigQueryError, BigQueryLoadSource
 
 
 __all__ = [
     'BigQueryError',
     'BigQueryCreateDatasetSolidDefinition',
     'BigQueryDeleteDatasetSolidDefinition',
-    'BigQueryLoadFromDataFrameSolidDefinition',
-    'BigQueryLoadFromGCSSolidDefinition',
+    'BigQueryLoadSolidDefinition',
+    'BigQueryLoadSource',
     'BigQuerySolidDefinition',
 ]

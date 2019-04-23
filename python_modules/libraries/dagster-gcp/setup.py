@@ -34,6 +34,7 @@ def _do_setup(name='dagster-gcp'):
         author='Elementl',
         license='Apache-2.0',
         description='Package for GCP-specific Dagster framework solid and resource components.',
+        # pylint: disable=line-too-long
         url='https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-gcp',
         classifiers=[
             'Programming Language :: Python :: 2.7',
@@ -43,7 +44,8 @@ def _do_setup(name='dagster-gcp'):
             'Operating System :: OS Independent',
         ],
         packages=find_packages(exclude=['test']),
-        install_requires=['google-cloud-bigquery[pandas,pyarrow]>=1.11.*', 'dagster'],
+        install_requires=['google-cloud-bigquery>=1.11.*', 'dagster', 'dagster_pandas'],
+        extras_require={'pyarrow': ['pyarrow']},
         zip_safe=False,
     )
 

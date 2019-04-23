@@ -1,7 +1,13 @@
+import sys
 import datetime
 import pytest
 
 import pandas as pd
+
+try:
+    import unittest.mock as mock
+except ImportError:
+    import mock
 
 from dagster_pandas import DataFrame
 
@@ -23,8 +29,8 @@ from dagster_gcp import (
     BigQuerySolidDefinition,
     BigQueryCreateDatasetSolidDefinition,
     BigQueryDeleteDatasetSolidDefinition,
-    BigQueryLoadFromDataFrameSolidDefinition,
-    BigQueryLoadFromGCSSolidDefinition,
+    BigQueryLoadSolidDefinition,
+    BigQueryLoadSource,
 )
 
 
@@ -150,7 +156,7 @@ def test_pd_df_load():
     test_df = pd.DataFrame({'num1': [1, 3], 'num2': [2, 4]})
 
     create_solid = BigQueryCreateDatasetSolidDefinition('create_solid')
-    load_solid = BigQueryLoadFromDataFrameSolidDefinition('load_solid')
+    load_solid = BigQueryLoadSolidDefinition('load_solid', BigQueryLoadSource.DataFrame)
     query_solid = BigQuerySolidDefinition('query_solid', ['SELECT num1, num2 FROM foo.df'])
     delete_solid = BigQueryDeleteDatasetSolidDefinition('delete_solid')
 
@@ -180,10 +186,19 @@ def test_pd_df_load():
     values = result.result_for_solid(query_solid.name).transformed_value()
     assert values[0].to_dict() == test_df.to_dict()
 
+    # BQ loads should throw an exception if pyarrow and fastparquet aren't available
+    with mock.patch.dict(sys.modules, {'pyarrow': None, 'fastparquet': None}):
+        with pytest.raises(BigQueryError) as exc_info:
+            result = execute_pipeline(pipeline, config)
+        assert (
+            'loading data to BigQuery from pandas DataFrames requires either pyarrow or fastparquet'
+            ' to be installed' in str(exc_info.value)
+        )
+
 
 def test_gcs_load():
     create_solid = BigQueryCreateDatasetSolidDefinition('create_solid')
-    load_solid = BigQueryLoadFromGCSSolidDefinition('load_solid')
+    load_solid = BigQueryLoadSolidDefinition('load_solid', BigQueryLoadSource.Gcs)
     query_solid = BigQuerySolidDefinition(
         'query_solid',
         ['SELECT string_field_0, string_field_1 FROM foo.df ORDER BY string_field_0 ASC LIMIT 1'],

@@ -1,10 +1,12 @@
+import six
+
 import google.api_core.exceptions
 
 from google.cloud import bigquery
 from google.cloud.bigquery.job import QueryJobConfig, LoadJobConfig
 from google.cloud.bigquery.table import EncryptionConfiguration, TimePartitioning
 
-import dagster_pandas as dagster_pd
+from dagster_pandas import DataFrame
 
 from dagster import (
     check,
@@ -25,7 +27,7 @@ from .configs import (
     define_bigquery_load_config,
 )
 
-from .types import BigQueryError
+from .types import BigQueryError, BigQueryLoadSource
 
 INPUT_READY = 'input_ready_sentinel'
 
@@ -145,24 +147,81 @@ class BigQuerySolidDefinition(SolidDefinition):
             name=name,
             description=description,
             inputs=[InputDefinition(INPUT_READY, Nothing)],
-            outputs=[OutputDefinition(List(dagster_pd.DataFrame))],
+            outputs=[OutputDefinition(List(DataFrame))],
             transform_fn=_transform_fn,
             config_field=define_bigquery_query_config(),
             metadata={'kind': 'sql', 'sql': '\n'.join(sql_queries)},
         )
 
 
-class BigQueryLoadFromDataFrameSolidDefinition(SolidDefinition):
+class BigQueryLoadSolidDefinition(SolidDefinition):
     '''BigQuery Load.
 
-    This solid encapsulates loading data into BigQuery from a pandas DataFrame.
+    This solid encapsulates loading data into BigQuery from a pandas DataFrame or from GCS.
     '''
 
-    def __init__(self, name, description=None):
+    def _configure_for_source(self, source):
+        '''We support BigQuery loads from in-memory DataFrames, local files, and GCS URIs.
+        '''
+
+        # Load DataFrame. See: https://bit.ly/2GDhVt1
+        if source == BigQueryLoadSource.DataFrame:
+            inputs = [InputDefinition('df', DataFrame)]
+
+            def _load(client, inputs, destination, cfg):
+                try:
+                    return client.load_table_from_dataframe(
+                        inputs.get('df'), destination=destination, job_config=cfg
+                    ).result()
+                except ImportError as e:
+                    six.raise_from(
+                        BigQueryError(
+                            'loading data to BigQuery from pandas DataFrames requires either '
+                            'pyarrow or fastparquet to be installed. %s' % str(e)
+                        ),
+                        None,
+                    )
+
+            return (inputs, _load)
+
+        # Load File. See: https://cloud.google.com/bigquery/docs/loading-data-local
+        elif source == BigQueryLoadSource.File:
+            inputs = [InputDefinition('file_path', Path)]
+
+            def _load(client, inputs, destination, cfg):
+                with open(inputs.get('file_path'), 'rb') as file_obj:
+                    client.load_table_from_file(
+                        file_obj, destination=destination, job_config=cfg
+                    ).result()
+
+            return (inputs, _load)
+
+        # Load Gcs. See: https://cloud.google.com/bigquery/docs/loading-data-cloud-storage
+        elif source == BigQueryLoadSource.Gcs:
+            inputs = [InputDefinition('source_uris', List(Path))]
+
+            def _load(client, inputs, destination, cfg):
+                return client.load_table_from_uri(
+                    inputs['source_uris'], destination, job_config=cfg
+                ).result()
+
+            return (inputs, _load)
+
+        # Should not get here unless client specified incorrect source
+        else:
+            raise BigQueryError(
+                'invalid source specification -- must be one of [%s]'
+                % ','.join(
+                    [BigQueryLoadSource.DataFrame, BigQueryLoadSource.File, BigQueryLoadSource.Gcs]
+                )
+            )
+
+    def __init__(self, name, source, description=None):
         name = check.str_param(name, 'name')
         description = check.opt_str_param(
             description, 'description', 'BigQuery load_table_from_dataframe'
         )
+        inputs, _load = self._configure_for_source(source)
 
         def _transform_fn(context, inputs):
             (project, location, destination) = [
@@ -173,55 +232,17 @@ class BigQueryLoadFromDataFrameSolidDefinition(SolidDefinition):
 
             client = bigquery.Client(project=project, location=location)
             context.log.info(
-                'executing BQ load_table_from_dataframe with config: %s'
+                'executing BQ load with config: %s'
                 % (cfg.to_api_repr() if cfg else '(no config provided)')
             )
-
-            client.load_table_from_dataframe(
-                inputs['df'], destination=destination, job_config=cfg
-            ).result()
+            _load(client, inputs, destination, cfg)
 
             yield Result(True)
 
-        super(BigQueryLoadFromDataFrameSolidDefinition, self).__init__(
+        super(BigQueryLoadSolidDefinition, self).__init__(
             name=name,
             description=description,
-            inputs=[InputDefinition('df', dagster_pd.DataFrame)],
-            outputs=[OutputDefinition(Bool)],
-            transform_fn=_transform_fn,
-            config_field=define_bigquery_load_config(),
-        )
-
-
-class BigQueryLoadFromGCSSolidDefinition(SolidDefinition):
-    '''BigQuery: Load data from GCS.
-
-    This solid encapsulates loading data into BigQuery from a GCS URI.
-    '''
-
-    def __init__(self, name, description=None):
-        name = check.str_param(name, 'name')
-        description = check.opt_str_param(
-            description, 'description', 'BigQuery load_table_from_uri'
-        )
-
-        def _transform_fn(context, inputs):
-            (project, location, destination) = [
-                context.solid_config.get(k) for k in ('project', 'location', 'destination')
-            ]
-            load_job_config = context.solid_config.get('load_job_config', {})
-            cfg = _extract_load_job_config(load_job_config)
-
-            client = bigquery.Client(project=project, location=location)
-            context.log.info('executing BQ load_table_from_uri')
-
-            client.load_table_from_uri(inputs['source_uris'], destination, job_config=cfg).result()
-            yield Result(True)
-
-        super(BigQueryLoadFromGCSSolidDefinition, self).__init__(
-            name=name,
-            description=description,
-            inputs=[InputDefinition('source_uris', List(Path))],
+            inputs=inputs,
             outputs=[OutputDefinition(Bool)],
             transform_fn=_transform_fn,
             config_field=define_bigquery_load_config(),

@@ -1,4 +1,7 @@
 import re
+
+from enum import Enum as PyEnum
+
 import six
 
 from google.cloud.bigquery.job import (
@@ -21,61 +24,61 @@ RE_PROJECT = r'[\w\d\-\_]{1,1024}'
 RE_DS_TABLE = r'[\w\d\_]{1,1024}'
 
 
-BQCreateDispositionCreateIfNeeded = EnumValue(CreateDisposition.CREATE_IF_NEEDED)
-BQCreateDispositionCreateNever = EnumValue(CreateDisposition.CREATE_NEVER)
+class BigQueryLoadSource(PyEnum):
+    DataFrame = 'SOURCE_DATA_FRAME'
+    Gcs = 'SOURCE_GCS'
+    File = 'SOURCE_FILE'
+
+
 BQCreateDisposition = Enum(
     name='BQCreateDisposition',
-    enum_values=[BQCreateDispositionCreateIfNeeded, BQCreateDispositionCreateNever],
-)
-
-BQPriorityBatch = EnumValue(QueryPriority.BATCH)
-BQPriorityInteractive = EnumValue(QueryPriority.INTERACTIVE)
-BQPriority = Enum(name='BQPriority', enum_values=[BQPriorityBatch, BQPriorityInteractive])
-
-BQSchemaUpdateOptionAllowFieldAddition = EnumValue(
-    SchemaUpdateOption.ALLOW_FIELD_ADDITION,
-    description='Allow adding a nullable field to the schema.',
-)
-BQSchemaUpdateOptionAllowFieldRelaxation = EnumValue(
-    SchemaUpdateOption.ALLOW_FIELD_RELAXATION,
-    description='Allow relaxing a required field in the original schema to nullable.',
-)
-BQSchemaUpdateOption = Enum(
-    name='BQSchemaUpdateOption',
-    enum_values=[BQSchemaUpdateOptionAllowFieldAddition, BQSchemaUpdateOptionAllowFieldRelaxation],
-)
-
-BQWriteDispositionWriteAppend = EnumValue(WriteDisposition.WRITE_APPEND)
-BQWriteDispositionWriteEmpty = EnumValue(WriteDisposition.WRITE_EMPTY)
-BQWriteDispositionWriteTruncate = EnumValue(WriteDisposition.WRITE_TRUNCATE)
-BQWriteDisposition = Enum(
-    name='BQWriteDisposition',
     enum_values=[
-        BQWriteDispositionWriteAppend,
-        BQWriteDispositionWriteEmpty,
-        BQWriteDispositionWriteTruncate,
+        EnumValue(CreateDisposition.CREATE_IF_NEEDED),
+        EnumValue(CreateDisposition.CREATE_NEVER),
     ],
 )
 
-BQEncodingISO_8859_1 = EnumValue(Encoding.ISO_8859_1)
-BQEncodingUTF_8 = EnumValue(Encoding.UTF_8)
-BQEncoding = Enum(name='BQEncoding', enum_values=[BQEncodingISO_8859_1, BQEncodingUTF_8])
+BQPriority = Enum(
+    name='BQPriority',
+    enum_values=[EnumValue(QueryPriority.BATCH), EnumValue(QueryPriority.INTERACTIVE)],
+)
 
-BQSourceFormatAvro = EnumValue(SourceFormat.AVRO)
-BQSourceFormatCsv = EnumValue(SourceFormat.CSV)
-BQSourceFormatDatastoreBackup = EnumValue(SourceFormat.DATASTORE_BACKUP)
-BQSourceFormatJson = EnumValue(SourceFormat.NEWLINE_DELIMITED_JSON)
-BQSourceFormatOrc = EnumValue(SourceFormat.ORC)
-BQSourceFormatParquet = EnumValue(SourceFormat.PARQUET)
+BQSchemaUpdateOption = Enum(
+    name='BQSchemaUpdateOption',
+    enum_values=[
+        EnumValue(
+            SchemaUpdateOption.ALLOW_FIELD_ADDITION,
+            description='Allow adding a nullable field to the schema.',
+        ),
+        EnumValue(
+            SchemaUpdateOption.ALLOW_FIELD_RELAXATION,
+            description='Allow relaxing a required field in the original schema to nullable.',
+        ),
+    ],
+)
+
+BQWriteDisposition = Enum(
+    name='BQWriteDisposition',
+    enum_values=[
+        EnumValue(WriteDisposition.WRITE_APPEND),
+        EnumValue(WriteDisposition.WRITE_EMPTY),
+        EnumValue(WriteDisposition.WRITE_TRUNCATE),
+    ],
+)
+
+BQEncoding = Enum(
+    name='BQEncoding', enum_values=[EnumValue(Encoding.ISO_8859_1), EnumValue(Encoding.UTF_8)]
+)
+
 BQSourceFormat = Enum(
     name='BQSourceFormat',
     enum_values=[
-        BQSourceFormatAvro,
-        BQSourceFormatCsv,
-        BQSourceFormatDatastoreBackup,
-        BQSourceFormatJson,
-        BQSourceFormatOrc,
-        BQSourceFormatParquet,
+        EnumValue(SourceFormat.AVRO),
+        EnumValue(SourceFormat.CSV),
+        EnumValue(SourceFormat.DATASTORE_BACKUP),
+        EnumValue(SourceFormat.NEWLINE_DELIMITED_JSON),
+        EnumValue(SourceFormat.ORC),
+        EnumValue(SourceFormat.PARQUET),
     ],
 )
 
