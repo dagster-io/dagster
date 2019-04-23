@@ -669,22 +669,24 @@ def test_config_type_or_error_nested_complicated():
 
 def test_graphql_secret_field():
     result = execute_dagster_graphql(
-        define_context(),
-        ALL_CONFIG_TYPES_QUERY,
-        {
-            'pipelineName': 'secret_pipeline',
-            # 'configTypeName': 'SecretPipeline.SolidConfig.SolidWithSecret',
-        },
+        define_context(), ALL_CONFIG_TYPES_QUERY, {'pipelineName': 'secret_pipeline'}
     )
+
+    password_type_count = 0
 
     assert not result.errors
     assert result.data
-    print(result.data)
     for pipeline_data in result.data['pipelines']['nodes']:
         for config_type_data in pipeline_data['configTypes']:
             if 'password' in get_field_names(config_type_data):
+                password_field = get_field_data(config_type_data, 'password')
+                assert password_field['isSecret']
+                notpassword_field = get_field_data(config_type_data, 'notpassword')
+                assert not notpassword_field['isSecret']
 
-                print(f'PASSWORLD CONFIG TYPE: {config_type_data}')
+                password_type_count += 1
+
+    assert password_type_count == 1
 
 
 def get_field_data(config_type_data, name):
@@ -696,17 +698,3 @@ def get_field_data(config_type_data, name):
 def get_field_names(config_type_data):
     return {field_data['name'] for field_data in config_type_data.get('fields', [])}
 
-
-# {
-#  	pipelines {
-#     nodes {
-#       name
-#       configTypes {
-#         ...configTypeFragment
-#       }
-#     }
-#   }
-# }
-# print(list(result.data['configTypeOrError'].keys()))
-# print(list(result.data['configTypeOrError']['innerTypes']))
-# print(result.data['configTypeOrError']['fields'])
