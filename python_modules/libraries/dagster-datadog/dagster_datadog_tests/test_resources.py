@@ -33,8 +33,6 @@ def test_datadog_resource(
     timed,
     timing,
 ):
-    called = {}
-
     @solid
     def datadog_solid(context):
         assert context.resources.datadog
@@ -85,7 +83,7 @@ def test_datadog_resource(
         },
     )
 
-    execute_pipeline(
+    result = execute_pipeline(
         pipeline,
         {
             'context': {
@@ -97,3 +95,4 @@ def test_datadog_resource(
             }
         },
     )
+    assert result.success
