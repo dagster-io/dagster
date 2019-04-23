@@ -2,7 +2,6 @@ from __future__ import unicode_literals
 
 import datetime
 import json
-import os
 import re
 import uuid
 
@@ -28,6 +27,7 @@ class TestExecuteDagPythonFilesystemStorage(object):
     run_id = str(uuid.uuid4())
     execution_date = datetime.datetime.utcnow()
 
+    # pylint: disable=redefined-outer-name
     def test_execute_dag(self, dagster_airflow_python_operator_pipeline):
         expected_results = {
             'multiply_the_word': '"barbar"',
@@ -50,7 +50,7 @@ class TestExecuteDagPythonFilesystemStorage(object):
             # in py2 we'll get 'u"barbar"', in py3 we'll get '"barbar"', etc.
             assert json.loads(
                 re.sub(
-                    '\{u\'', '{\'', re.sub(' u\'', ' \'', re.sub('^u\'', '\'', result['valueRepr']))
+                    '{u\'', '{\'', re.sub(' u\'', ' \'', re.sub('^u\'', '\'', result['valueRepr']))
                 ).replace('\'', '"')
             ) == json.loads(expected_results[result['step']['solid']['name']].replace('\'', '"'))
 
@@ -142,6 +142,7 @@ class TestExecuteDagContainerizedFilesystemStorage(object):
     op_kwargs = {'host_tmp_dir': '/tmp'}
     image = IMAGE
 
+    # pylint: disable=redefined-outer-name
     def test_execute_dag_containerized(self, dagster_airflow_docker_operator_pipeline):
         expected_results = {
             'multiply_the_word': '"barbar"',
@@ -162,6 +163,6 @@ class TestExecuteDagContainerizedFilesystemStorage(object):
                 continue
             assert json.loads(
                 re.sub(
-                    '\{u\'', '{\'', re.sub(' u\'', ' \'', re.sub('^u\'', '\'', result['valueRepr']))
+                    '{u\'', '{\'', re.sub(' u\'', ' \'', re.sub('^u\'', '\'', result['valueRepr']))
                 ).replace('\'', '"')
             ) == json.loads(expected_results[result['step']['solid']['name']].replace('\'', '"'))

@@ -1,13 +1,6 @@
 from __future__ import absolute_import
 
 import os
-import sys
-import subprocess
-
-try:
-    from shlex import quote as cmd_quote
-except ImportError:
-    from pipes import quote as cmd_quote
 
 from six import text_type
 

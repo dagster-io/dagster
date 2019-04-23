@@ -1,15 +1,6 @@
 import os
 
-from dagster import (
-    check,
-    InputDefinition,
-    List,
-    OutputDefinition,
-    Path,
-    Result,
-    SolidDefinition,
-    Nothing,
-)
+from dagster import check, InputDefinition, List, OutputDefinition, Path, Result, SolidDefinition
 
 
 from .configs import define_spark_config
