@@ -44,6 +44,7 @@ def _do_setup(name='dagster-datadog'):
         ],
         packages=find_packages(exclude=['test']),
         install_requires=['dagster', 'datadog==0.28.*'],
+        tests_require=['mock==2.0.*'],
         zip_safe=False,
     )
 
