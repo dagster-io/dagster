@@ -710,4 +710,3 @@ def get_field_names(config_type_data):
 # print(list(result.data['configTypeOrError'].keys()))
 # print(list(result.data['configTypeOrError']['innerTypes']))
 # print(result.data['configTypeOrError']['fields'])
-
