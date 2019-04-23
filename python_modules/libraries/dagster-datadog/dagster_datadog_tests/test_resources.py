@@ -20,46 +20,55 @@ except ImportError:
 @mock.patch('datadog.statsd.decrement')
 @mock.patch('datadog.statsd.increment')
 @mock.patch('datadog.statsd.gauge')
+@mock.patch('datadog.statsd.event')
 def test_datadog_resource(
-    gauge, increment, decrement, histogram, distribution, statsd_set, service_check, timed, timing
+    event,
+    gauge,
+    increment,
+    decrement,
+    histogram,
+    distribution,
+    statsd_set,
+    service_check,
+    timed,
+    timing,
 ):
     called = {}
 
     @solid
     def datadog_solid(context):
-        called['solid'] = True
         assert context.resources.datadog
+
+        # event
+        context.resources.datadog.event('Man down!', 'This server needs assistance.')
+        event.assert_called_with('Man down!', 'This server needs assistance.')
 
         # gauge
         context.resources.datadog.gauge('users.online', 1001, tags=["protocol:http"])
-        gauge.assert_called_with('users.online', 1001, ["protocol:http"], 1)
+        gauge.assert_called_with('users.online', 1001, tags=["protocol:http"])
 
         # increment
         context.resources.datadog.increment('page.views')
-        increment.assert_called_with('page.views', 1, None, 1)
+        increment.assert_called_with('page.views')
 
         # decrement
         context.resources.datadog.decrement('page.views')
-        decrement.assert_called_with('page.views', 1, None, 1)
+        decrement.assert_called_with('page.views')
 
         context.resources.datadog.histogram('album.photo.count', 26, tags=["gender:female"])
-        histogram.assert_called_with('album.photo.count', 26, ["gender:female"], 1)
+        histogram.assert_called_with('album.photo.count', 26, tags=["gender:female"])
 
-        context.resources.datadog.distribution('album.photo.count', 26, tags=["gender:female"])
-        distribution.assert_called_with('album.photo.count', 26, ["gender:female"], 1)
+        context.resources.datadog.distribution('album.photo.count', 26, tags=["color:blue"])
+        distribution.assert_called_with('album.photo.count', 26, tags=["color:blue"])
 
         context.resources.datadog.set('visitors.uniques', 999, tags=["browser:ie"])
-        statsd_set.assert_called_with('visitors.uniques', 999, ["browser:ie"], 1)
+        statsd_set.assert_called_with('visitors.uniques', 999, tags=["browser:ie"])
 
-        context.resources.datadog.service_check(
-            'my_service.check_name', context.resources.datadog.WARNING
-        )
-        service_check.assert_called_with(
-            'my_service.check_name', context.resources.datadog.WARNING, None, None, None, None
-        )
+        context.resources.datadog.service_check('svc.check_name', context.resources.datadog.WARNING)
+        service_check.assert_called_with('svc.check_name', context.resources.datadog.WARNING)
 
         context.resources.datadog.timing("query.response.time", 1234)
-        timing.assert_called_with("query.response.time", 1234, None, 1)
+        timing.assert_called_with("query.response.time", 1234)
 
         @context.resources.datadog.timed
         def run_fn():
