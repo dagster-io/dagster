@@ -69,7 +69,7 @@ WORKDIR /tmp/
 ADD dagster/requirements.txt dagster_requirements.txt
 RUN pip install -r dagster_requirements.txt
 
-ADD dagster-graphql/requirements.txt dagster_graphql_requirements.txt
+ADD dagster-graphql/dev-requirements.txt dagster_graphql_requirements.txt
 RUN pip install -r dagster_graphql_requirements.txt
 
 ADD dagstermill/requirements.txt dagstermill_requirements.txt

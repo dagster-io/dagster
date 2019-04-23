@@ -1,3 +1,5 @@
+import os
+
 # pylint: disable=unused-argument
 import pytest
 
@@ -13,6 +15,14 @@ from airline_demo.pipelines import (
 from .marks import db, nettest, py3, spark
 
 
+def enviroment_overrides(config):
+    if os.environ.get('DAGSTER_AIRLINE_DEMO_DB_HOST'):
+        config['context']['local']['resources']['db_info']['config'][
+            'postgres_hostname'
+        ] = os.environ.get('DAGSTER_AIRLINE_DEMO_DB_HOST')
+    return config
+
+
 @db
 @nettest
 @py3
@@ -22,7 +32,7 @@ def test_airline_pipeline_0_ingest(docker_compose_db):
         script_relative_path('../environments/local_base.yml'),
         script_relative_path('../environments/local_fast_ingest.yml'),
     )
-
+    ingest_config_object = enviroment_overrides(ingest_config_object)
     result_ingest = execute_pipeline(define_airline_demo_ingest_pipeline(), ingest_config_object)
 
     assert result_ingest.success
@@ -37,7 +47,7 @@ def test_airline_pipeline_1_warehouse(docker_compose_db):
         script_relative_path('../environments/local_base.yml'),
         script_relative_path('../environments/local_warehouse.yml'),
     )
-
+    warehouse_config_object = enviroment_overrides(warehouse_config_object)
     result_warehouse = execute_pipeline(
         define_airline_demo_warehouse_pipeline(), warehouse_config_object
     )

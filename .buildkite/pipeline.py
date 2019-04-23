@@ -18,11 +18,18 @@ SupportedPythons = [
     SupportedPython.V2_7,
 ]
 
-IMAGE_MAP = {
+PY_IMAGE_MAP = {
     SupportedPython.V3_7: "python:3.7",
     SupportedPython.V3_6: "python:3.6",
     SupportedPython.V3_5: "python:3.5",
     SupportedPython.V2_7: "python:2.7",
+}
+
+INTEGRATION_IMAGE_MAP = {
+    SupportedPython.V3_7: "dagster/buildkite-integration:py3.7.3",
+    SupportedPython.V3_6: "dagster/buildkite-integration:py3.6.8",
+    SupportedPython.V3_5: "dagster/buildkite-integration:py3.5.7",
+    SupportedPython.V2_7: "dagster/buildkite-integration:py2.7.16",
 }
 
 TOX_MAP = {
@@ -41,15 +48,26 @@ class StepBuilder:
         self._step["command"] = "\n".join(argc)
         return self
 
-    def on_docker_image(self, img, env=None):
-        if img in IMAGE_MAP:
-            img = IMAGE_MAP[img]
+    def on_python_image(self, ver):
+        self._step["plugins"] = [{DOCKER_PLUGIN: {"always-pull": True, "image": PY_IMAGE_MAP[ver]}}]
+        return self
 
-        docker = {"image": img, "always-pull": True}
-        if env:
-            docker['environment'] = env
+    def on_integration_image(self, ver):
+        self._step["plugins"] = [
+            {
+                DOCKER_PLUGIN: {
+                    "always-pull": True,
+                    "image": INTEGRATION_IMAGE_MAP[ver],
+                    "volumes": ["/var/run/docker.sock:/var/run/docker.sock"],
+                }
+            }
+        ]
+        return self
 
-        self._step["plugins"] = [{DOCKER_PLUGIN: docker}]
+    def on_docker_image(self, img, env):
+        self._step["plugins"] = [
+            {DOCKER_PLUGIN: {"always-pull": True, "image": img, 'environment': env}}
+        ]
         return self
 
     def build(self):
@@ -80,10 +98,40 @@ def python_modules_tox_tests(directory, prereqs=None):
         tests.append(
             StepBuilder("{label} tests ({ver})".format(label=label, ver=TOX_MAP[version]))
             .run(*tox_command)
-            .on_docker_image(version)
+            .on_python_image(version)
             .build()
         )
 
+    return tests
+
+
+def airline_demo_tests():
+    tests = []
+    for version in SupportedPythons:
+        coverage = ".coverage.airline-demo.{version}.$BUILDKITE_BUILD_ID".format(version=version)
+        tests.append(
+            StepBuilder('airline-demo tests ({version})'.format(version=version))
+            .run(
+                "cd examples/airline-demo",
+                # Build the image we use for airflow in the demo tests
+                "./build.sh",
+                "mkdir -p /home/circleci/airflow",
+                # Run the postgres db. We are in docker running docker
+                # so this will be a sibling container.
+                "docker-compose up -d",
+                # Can't use host networking on buildkite and communicate via localhost
+                # between these sibling containers, so pass along the ip.
+                "export DAGSTER_AIRLINE_DEMO_DB_HOST=`docker inspect --format '{{ .NetworkSettings.IPAddress }}' airline-demo-db`",
+                "pip install tox",
+                "apt-get update",
+                "apt-get install libpq-dev",
+                "tox -e {ver}".format(ver=TOX_MAP[version]),
+                "mv .coverage {file}".format(file=coverage),
+                "buildkite-agent artifact upload {file}".format(file=coverage),
+            )
+            .on_integration_image(version)
+            .build()
+        )
     return tests
 
 
@@ -91,7 +139,7 @@ if __name__ == "__main__":
     steps = [
         StepBuilder("pylint")
         .run("make dev_install", "make pylint")
-        .on_docker_image(SupportedPython.V3_7)
+        .on_python_image(SupportedPython.V3_7)
         .build(),
         StepBuilder("black")
         # black 18.9b0 doesn't support py27-compatible formatting of the below invocation (omitting
@@ -99,7 +147,7 @@ if __name__ == "__main__":
         # versions, but currently doesn't know what to do with from __future__ import print_function --
         # see https://github.com/ambv/black/issues/768
         .run("pip install black==18.9b0", "make check_black")
-        .on_docker_image(SupportedPython.V3_7)
+        .on_python_image(SupportedPython.V3_7)
         .build(),
         StepBuilder("docs snapshot test")
         .run(
@@ -107,7 +155,7 @@ if __name__ == "__main__":
             "pip install -e python_modules/dagster -qqq",
             "pytest -vv python_modules/dagster/docs",
         )
-        .on_docker_image(SupportedPython.V3_7)
+        .on_python_image(SupportedPython.V3_7)
         .build(),
         StepBuilder("dagit webapp tests")
         .run(
@@ -124,7 +172,7 @@ if __name__ == "__main__":
             "yarn generate-types",
             "git diff --exit-code",
         )
-        .on_docker_image("nikolaik/python-nodejs:python3.7-nodejs11")
+        .on_integration_image(SupportedPython.V3_7)
         .build(),
     ]
     steps += python_modules_tox_tests("dagster")
@@ -136,7 +184,7 @@ if __name__ == "__main__":
     steps += python_modules_tox_tests("libraries/dagster-aws")
     steps += python_modules_tox_tests("libraries/dagster-snowflake")
     steps += python_modules_tox_tests("libraries/dagster-spark")
-
+    steps += airline_demo_tests()
     steps += [
         wait_step(),  # wait for all previous steps to finish
         StepBuilder("coverage")
@@ -149,7 +197,7 @@ if __name__ == "__main__":
             "coveralls",
         )
         .on_docker_image(
-            SupportedPython.V3_7,
+            PY_IMAGE_MAP[SupportedPython.V3_7],
             # COVERALLS_REPO_TOKEN exported by /env in ManagedSecretsBucket
             ['COVERALLS_REPO_TOKEN', 'BUILDKITE_PULL_REQUEST', 'BUILDKITE_JOB_ID', 'BUILDKITE'],
         )
