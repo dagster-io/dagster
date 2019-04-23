@@ -4,6 +4,16 @@ from dagster import resource, Dict, Field, String
 
 
 class DataDogResource:
+    '''DataDogResource
+
+    This resource is a thin wrapper over the dogstatsd library:
+
+    https://datadogpy.readthedocs.io/en/latest/#datadog-dogstatsd-module
+
+    As such, we directly mirror the public API methods of DogStatsd here; you can refer to the
+    DataDog documentation above for how to use this resource.
+    '''
+
     # Mirroring levels from the dogstatsd library
     OK, WARNING, CRITICAL, UNKNOWN = (
         DogStatsd.OK,
