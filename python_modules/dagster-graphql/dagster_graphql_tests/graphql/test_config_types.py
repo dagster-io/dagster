@@ -697,4 +697,3 @@ def get_field_data(config_type_data, name):
 
 def get_field_names(config_type_data):
     return {field_data['name'] for field_data in config_type_data.get('fields', [])}
-
