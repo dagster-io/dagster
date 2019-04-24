@@ -94,6 +94,23 @@ def test_logging_custom_log_levels():
         _validate_basic(kv_pairs)
 
 
+def test_logging_bad_custom_log_levels():
+    with _setup_logger('test') as (captured_results, logger):
+
+        dl = DagsterLog('123', {}, [logger])
+        dl.foo('test')
+
+        kv_pairs = set(captured_results[0].strip().split())
+
+        assert _regex_match_kv_pair(r'log_message_id="{0}"'.format(REGEX_UUID), kv_pairs)
+        assert _regex_match_kv_pair(r'log_timestamp="{0}"'.format(REGEX_TS), kv_pairs)
+
+        assert (
+            'orig_message="Unexpected log level: User code attempted to log at level \'FOO\', but '
+            'no logger was configured to handle that level. Original message: \'test\''
+        ) in captured_results[0]
+
+
 def test_multiline_logging_basic():
     with _setup_logger(DAGSTER_DEFAULT_LOGGER) as (captured_results, logger):
 

@@ -80,8 +80,10 @@ class DagsterLog:
         #     message_with_structured_props, extra={DAGSTER_META_KEY: all_props}
         # )
 
+        logger_found = False
         for logger in self.loggers:
             if hasattr(logger, method):
+                logger_found = True
                 logger_method = check.is_callable(getattr(logger, method))
                 if logger.name == DAGSTER_DEFAULT_LOGGER:
                     logger_method(
@@ -89,6 +91,14 @@ class DagsterLog:
                     )
                 else:
                     logger_method(msg_with_structured_props, extra={DAGSTER_META_KEY: all_props})
+
+        if not logger_found:
+            self.error(
+                'Unexpected log level: User code attempted to log at level \'{level}\', but no '
+                'logger was configured to handle that level. Original message: '
+                '\'{orig_message}\''.format(level=method.upper(), orig_message=orig_message),
+                **message_props
+            )
 
     def debug(self, msg, **kwargs):
         '''
