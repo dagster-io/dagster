@@ -6,7 +6,7 @@ import sys
 import traceback
 
 from collections import namedtuple, OrderedDict
-from logging import CRITICAL, DEBUG, ERROR, INFO, WARNING
+from logging import CRITICAL, DEBUG, ERROR, INFO, WARNING  # pylint: disable=unused-import
 
 import coloredlogs
 
