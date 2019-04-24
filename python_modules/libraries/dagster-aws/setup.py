@@ -43,7 +43,7 @@ def _do_setup(name='dagster-aws'):
             'Operating System :: OS Independent',
         ],
         packages=find_packages(exclude=['test']),
-        install_requires=['boto3==1.9.*', 'dagster'],
+        install_requires=['boto3==1.9.131', 'dagster'],
         tests_require=['moto==1.3.*'],
         zip_safe=False,
     )
