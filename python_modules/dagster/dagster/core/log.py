@@ -25,7 +25,7 @@ def _kv_message(all_items, multiline=False):
     )
 
 
-class DagsterLog:
+class DagsterLogManager:
     def __init__(self, run_id, logging_tags, loggers):
         self.run_id = check.str_param(run_id, 'run_id')
         self.logging_tags = check.dict_param(logging_tags, 'logging_tags')

@@ -3,13 +3,12 @@ import logging
 import re
 
 from contextlib import contextmanager
-from functools import partial
 
 from dagster import check
 from dagster.core.definitions import SolidHandle
 from dagster.core.events import DagsterEvent
 from dagster.core.execution_plan.objects import StepFailureData
-from dagster.core.log import DAGSTER_DEFAULT_LOGGER, DagsterLog
+from dagster.core.log import DagsterLogManager, DAGSTER_DEFAULT_LOGGER
 from dagster.utils.error import SerializableErrorInfo
 
 REGEX_UUID = r'[a-z-0-9]{8}\-[a-z-0-9]{4}\-[a-z-0-9]{4}\-[a-z-0-9]{4}\-[a-z-0-9]{12}'
@@ -77,7 +76,7 @@ def _validate_basic(kv_pairs):
 def test_logging_basic():
     with _setup_logger('test') as (captured_results, logger):
 
-        dl = DagsterLog('123', {}, [logger])
+        dl = DagsterLogManager('123', {}, [logger])
         dl.info('test')
 
         kv_pairs = set(captured_results[0].strip().split())
@@ -87,7 +86,7 @@ def test_logging_basic():
 def test_logging_custom_log_levels():
     with _setup_logger('test', {'FOO': 3}) as (captured_results, logger):
 
-        dl = DagsterLog('123', {}, [logger])
+        dl = DagsterLogManager('123', {}, [logger])
         dl.foo('test')
 
         kv_pairs = set(captured_results[0].strip().split())
@@ -97,7 +96,7 @@ def test_logging_custom_log_levels():
 def test_logging_bad_custom_log_levels():
     with _setup_logger('test') as (captured_results, logger):
 
-        dl = DagsterLog('123', {}, [logger])
+        dl = DagsterLogManager('123', {}, [logger])
         dl.foo('test')
 
         kv_pairs = set(captured_results[0].strip().split())
@@ -114,7 +113,7 @@ def test_logging_bad_custom_log_levels():
 def test_multiline_logging_basic():
     with _setup_logger(DAGSTER_DEFAULT_LOGGER) as (captured_results, logger):
 
-        dl = DagsterLog('123', {}, [logger])
+        dl = DagsterLogManager('123', {}, [logger])
         dl.info('test')
 
         kv_pairs = captured_results[0].replace(' ', '').split('\n')[1:]
@@ -160,7 +159,7 @@ def test_multiline_logging_complex():
 
     with _setup_logger(DAGSTER_DEFAULT_LOGGER) as (captured_results, logger):
 
-        dl = DagsterLog('123', {}, [logger])
+        dl = DagsterLogManager('123', {}, [logger])
         dl.info(msg, **kwargs)
 
         kv_pairs = set(captured_results[0].split('\n')[1:])

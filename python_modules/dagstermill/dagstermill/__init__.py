@@ -43,7 +43,7 @@ from dagster.core.events.logging import construct_json_event_logger, EventRecord
 from dagster.core.events import DagsterEvent
 from dagster.core.execution import yield_pipeline_execution_context
 from dagster.core.execution_context import (
-    DagsterLog,
+    DagsterLogManager,
     RunConfig,
     SystemPipelineExecutionContext,
     SystemTransformExecutionContext,
