@@ -7,7 +7,7 @@ from dagster.core.execution_context import SystemTransformExecutionContext
 from .objects import ExecutionStep, StepInput, StepKind, StepOutput, StepOutputValue
 
 
-def create_transform_step(pipeline_def, solid, step_inputs):
+def create_transform_step(pipeline_def, environment_config, solid, step_inputs):
     check.inst_param(pipeline_def, 'pipeline_def', PipelineDefinition)
     check.inst_param(solid, 'solid', Solid)
     check.list_param(step_inputs, 'step_inputs', of_type=StepInput)
@@ -29,6 +29,7 @@ def create_transform_step(pipeline_def, solid, step_inputs):
         ),
         kind=StepKind.TRANSFORM,
         solid=solid,
+        metadata=solid.step_metadata_fn(environment_config) if solid.step_metadata_fn else {},
     )
 
 

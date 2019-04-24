@@ -110,12 +110,21 @@ class ExecutionStep(
         '_ExecutionStep',
         (
             'pipeline_name key step_inputs step_input_dict step_outputs step_output_dict '
-            'compute_fn kind solid tags'
+            'compute_fn kind solid tags metadata'
         ),
     )
 ):
     def __new__(
-        cls, pipeline_name, key, step_inputs, step_outputs, compute_fn, kind, solid, tags=None
+        cls,
+        pipeline_name,
+        key,
+        step_inputs,
+        step_outputs,
+        compute_fn,
+        kind,
+        solid,
+        tags=None,
+        metadata=None,
     ):
         return super(ExecutionStep, cls).__new__(
             cls,
@@ -137,6 +146,7 @@ class ExecutionStep(
                 },
                 check.opt_dict_param(tags, 'tags'),
             ),
+            metadata=check.opt_dict_param(metadata, 'metadata', key_type=str, value_type=str),
         )
 
     @property
