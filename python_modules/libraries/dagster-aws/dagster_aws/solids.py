@@ -20,7 +20,7 @@ from dagster import (
 from dagster.utils import safe_isfile, mkdir_p
 
 from .configs import define_emr_run_job_flow_config
-from .types import FileExistsAtPath
+from .types import EmrClusterState, FileExistsAtPath
 
 
 class S3Logger(object):
@@ -99,9 +99,6 @@ def download_from_s3(context):
 class EmrRunJobFlowSolidDefinition(SolidDefinition):
     INPUT_READY = 'input_ready_sentinel'
 
-    CLUSTER_TERMINATED = 'TERMINATED'
-    CLUSTER_WAITING = 'WAITING'
-
     def __init__(
         self, name, description=None, max_wait_time_sec=(24 * 60 * 60), poll_interval_sec=5
     ):
@@ -143,8 +140,9 @@ class EmrRunJobFlowSolidDefinition(SolidDefinition):
                 # The user can specify Instances.KeepJobFlowAliveWhenNoSteps, which will keep the
                 # cluster alive after the job completes.
                 done = state in [
-                    EmrRunJobFlowSolidDefinition.CLUSTER_TERMINATED,
-                    EmrRunJobFlowSolidDefinition.CLUSTER_WAITING,
+                    EmrClusterState.Waiting,
+                    EmrClusterState.Terminated,
+                    EmrClusterState.TerminatedWithErrors,
                 ]
                 curr_iter += 1
 

@@ -1,3 +1,5 @@
+from enum import Enum as PyEnum
+
 from dagster import Enum, EnumValue
 
 from dagster.core.types.runtime import Stringish
@@ -16,6 +18,17 @@ class FileExistsAtPath(Stringish):
 EbsVolumeType = Enum(
     name='EbsVolumeType', enum_values=[EnumValue('gp2'), EnumValue('io1'), EnumValue('standard')]
 )
+
+
+class EmrClusterState(PyEnum):
+    Starting = 'STARTING'
+    Bootstrapping = 'BOOTSTRAPPING'
+    Running = 'RUNNING'
+    Waiting = 'WAITING'
+    Terminating = 'TERMINATING'
+    Terminated = 'TERMINATED'
+    TerminatedWithErrors = 'TERMINATED_WITH_ERRORS'
+
 
 EmrActionOnFailure = Enum(
     name='EmrActionOnFailure',
