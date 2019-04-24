@@ -17,9 +17,9 @@ from dagster import DagsterUserError, Enum, EnumValue, ConfigScalar
 
 
 class BigQueryLoadSource(PyEnum):
-    DataFrame = 'SOURCE_DATA_FRAME'
-    Gcs = 'SOURCE_GCS'
-    File = 'SOURCE_FILE'
+    DataFrame = 'DATA_FRAME'
+    Gcs = 'GCS'
+    File = 'FILE'
 
 
 BQCreateDisposition = Enum(
