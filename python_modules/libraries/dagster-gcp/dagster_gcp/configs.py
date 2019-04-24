@@ -18,14 +18,12 @@ from .types import (
 )
 
 
-def _define_shared_fields():
-    '''The following fields are shared between both QueryJobConfig and LoadJobConfig.
-    '''
+def bq_resource_config():
 
     project = Field(
         String,
         description='''Project ID for the project which the client acts on behalf of. Will be passed
-        when creating a dataset / job. If not passed, falls back to the default inferred from the 
+        when creating a dataset / job. If not passed, falls back to the default inferred from the
         environment.''',
         is_optional=True,
     )
@@ -35,6 +33,13 @@ def _define_shared_fields():
         description='(Optional) Default location for jobs / datasets / tables.',
         is_optional=True,
     )
+
+    return Field(Dict(fields={'project': project, 'location': location}))
+
+
+def _define_shared_fields():
+    '''The following fields are shared between both QueryJobConfig and LoadJobConfig.
+    '''
 
     clustering_fields = Field(
         List(String),
@@ -76,7 +81,7 @@ def _define_shared_fields():
             fields={
                 'expiration_ms': Field(
                     Int,
-                    description='''Number of milliseconds for which to keep the storage for a 
+                    description='''Number of milliseconds for which to keep the storage for a
                     partition.''',
                     is_optional=True,
                 ),
@@ -108,8 +113,6 @@ def _define_shared_fields():
         is_optional=True,
     )
     return {
-        'project': project,
-        'location': location,
         'clustering_fields': clustering_fields,
         'create_disposition': create_disposition,
         'destination_encryption_configuration': destination_encryption_configuration,
@@ -137,7 +140,7 @@ def define_bigquery_query_config():
         Dataset,
         description='''the default dataset to use for unqualified table names in the query or None
         if not set. The default_dataset setter accepts a str of the fully-qualified dataset ID in
-        standard SQL format. The value must included a project ID and dataset ID separated by ".". 
+        standard SQL format. The value must included a project ID and dataset ID separated by ".".
         For example: your-project.your_dataset.
         See https://g.co/cloud/bigquery/docs/reference/v2/jobs#configuration.query.defaultDataset
         ''',
@@ -148,7 +151,7 @@ def define_bigquery_query_config():
         Table,
         description='''table where results are written or None if not set. The destination setter
         accepts a str of the fully-qualified table ID in standard SQL format. The value must
-        included a project ID, dataset ID, and table ID, each separated by ".". For example: 
+        included a project ID, dataset ID, and table ID, each separated by ".". For example:
         your-project.your_dataset.your_table.
         See https://g.co/cloud/bigquery/docs/reference/rest/v2/jobs#configuration.query.destinationTable
         ''',
@@ -243,8 +246,6 @@ def define_bigquery_query_config():
     return Field(
         Dict(
             fields={
-                'project': sf['project'],
-                'location': sf['location'],
                 'query_job_config': Field(
                     Dict(
                         fields={
@@ -272,7 +273,7 @@ def define_bigquery_query_config():
                             'write_disposition': sf['write_disposition'],
                         }
                     )
-                ),
+                )
             }
         ),
         description='BigQuery query configuration',
@@ -356,8 +357,6 @@ def define_bigquery_load_config():
     return Field(
         Dict(
             fields={
-                'project': sf['project'],
-                'location': sf['location'],
                 'destination': destination,
                 'load_job_config': Field(
                     Dict(
@@ -395,8 +394,6 @@ def define_bigquery_load_config():
 
 
 def define_bigquery_create_dataset_config():
-    sf = _define_shared_fields()
-
     dataset = Field(Dataset, description='A dataset to create.', is_optional=False)
 
     exists_ok = Field(
@@ -407,21 +404,12 @@ def define_bigquery_create_dataset_config():
     )
 
     return Field(
-        Dict(
-            fields={
-                'project': sf['project'],
-                'location': sf['location'],
-                'dataset': dataset,
-                'exists_ok': exists_ok,
-            }
-        ),
+        Dict(fields={'dataset': dataset, 'exists_ok': exists_ok}),
         description='BigQuery create dataset configuration',
     )
 
 
 def define_bigquery_delete_dataset_config():
-    sf = _define_shared_fields()
-
     dataset = Field(Dataset, description='A dataset to delete.', is_optional=False)
 
     delete_contents = Field(
@@ -441,8 +429,6 @@ def define_bigquery_delete_dataset_config():
     return Field(
         Dict(
             fields={
-                'project': sf['project'],
-                'location': sf['location'],
                 'dataset': dataset,
                 'delete_contents': delete_contents,
                 'not_found_ok': not_found_ok,

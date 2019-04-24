@@ -1,8 +1,6 @@
 import six
 
-import google.api_core.exceptions
 
-from google.cloud import bigquery
 from google.cloud.bigquery.job import QueryJobConfig, LoadJobConfig
 from google.cloud.bigquery.table import EncryptionConfiguration, TimePartitioning
 
@@ -10,7 +8,6 @@ from dagster_pandas import DataFrame
 
 from dagster import (
     check,
-    Bool,
     InputDefinition,
     List,
     OutputDefinition,
@@ -114,6 +111,8 @@ def _extract_load_job_config(cfg):
 class BigQuerySolidDefinition(SolidDefinition):
     """
     Executes BigQuery SQL queries.
+
+    Expects a BQ client to be provisioned in resources as context.resources.bq.
     """
 
     def __init__(self, name, sql_queries, description=None):
@@ -122,10 +121,7 @@ class BigQuerySolidDefinition(SolidDefinition):
         description = check.opt_str_param(description, 'description', 'BigQuery query')
 
         def _transform_fn(context, _):
-            (project, location) = [context.solid_config.get(k) for k in ('project', 'location')]
             query_job_config = context.solid_config.get('query_job_config', {})
-
-            client = bigquery.Client(project=project, location=location)
 
             # Retrieve results as pandas DataFrames
             results = []
@@ -137,9 +133,7 @@ class BigQuerySolidDefinition(SolidDefinition):
                     'executing query %s with config: %s'
                     % (sql_query, cfg.to_api_repr() if cfg else '(no config provided)')
                 )
-
-                result = client.query(sql_query, job_config=cfg).to_dataframe()
-                results.append(result)
+                results.append(context.resources.bq.query(sql_query, job_config=cfg))
 
             yield Result(results)
 
@@ -158,6 +152,8 @@ class BigQueryLoadSolidDefinition(SolidDefinition):
     '''BigQuery Load.
 
     This solid encapsulates loading data into BigQuery from a pandas DataFrame or from GCS.
+
+    Expects a BQ client to be provisioned in resources as context.resources.bq.
     '''
 
     def _configure_for_source(self, source):
@@ -224,26 +220,22 @@ class BigQueryLoadSolidDefinition(SolidDefinition):
         inputs, _load = self._configure_for_source(source)
 
         def _transform_fn(context, inputs):
-            (project, location, destination) = [
-                context.solid_config.get(k) for k in ('project', 'location', 'destination')
-            ]
+            destination = context.solid_config.get('destination')
             load_job_config = context.solid_config.get('load_job_config', {})
             cfg = _extract_load_job_config(load_job_config)
+            yield Result(None)
 
-            client = bigquery.Client(project=project, location=location)
             context.log.info(
                 'executing BQ load with config: %s'
                 % (cfg.to_api_repr() if cfg else '(no config provided)')
             )
-            _load(client, inputs, destination, cfg)
-
-            yield Result(True)
+            _load(context.resources.bq.client, inputs, destination, cfg)
 
         super(BigQueryLoadSolidDefinition, self).__init__(
             name=name,
             description=description,
             inputs=inputs,
-            outputs=[OutputDefinition(Bool)],
+            outputs=[OutputDefinition(Nothing)],
             transform_fn=_transform_fn,
             config_field=define_bigquery_load_config(),
         )
@@ -253,6 +245,8 @@ class BigQueryCreateDatasetSolidDefinition(SolidDefinition):
     '''BigQuery Create Dataset.
 
     This solid encapsulates creating a BigQuery dataset.
+
+    Expects a BQ client to be provisioned in resources as context.resources.bq.
     '''
 
     def __init__(self, name, description=None):
@@ -260,25 +254,16 @@ class BigQueryCreateDatasetSolidDefinition(SolidDefinition):
         description = check.opt_str_param(description, 'description', 'BigQuery create_dataset')
 
         def _transform_fn(context, _):
-            (project, location, dataset, exists_ok) = [
-                context.solid_config.get(k) for k in ('project', 'location', 'dataset', 'exists_ok')
-            ]
-
-            client = bigquery.Client(project=project, location=location)
+            (dataset, exists_ok) = [context.solid_config.get(k) for k in ('dataset', 'exists_ok')]
             context.log.info('executing BQ create_dataset for dataset %s' % (dataset))
-
-            try:
-                client.create_dataset(dataset, exists_ok)
-            except google.api_core.exceptions.Conflict:
-                raise BigQueryError('Dataset "%s" already exists and exists_ok is false' % dataset)
-
-            yield Result(True)
+            context.resources.bq.create_dataset(dataset, exists_ok)
+            yield Result(None)
 
         super(BigQueryCreateDatasetSolidDefinition, self).__init__(
             name=name,
             description=description,
             inputs=[InputDefinition(INPUT_READY, Nothing)],
-            outputs=[OutputDefinition(Bool)],
+            outputs=[OutputDefinition(Nothing)],
             transform_fn=_transform_fn,
             config_field=define_bigquery_create_dataset_config(),
         )
@@ -288,6 +273,8 @@ class BigQueryDeleteDatasetSolidDefinition(SolidDefinition):
     '''BigQuery Delete Dataset.
 
     This solid encapsulates deleting a BigQuery dataset.
+
+    Expects a BQ client to be provisioned in resources as context.resources.bq.
     '''
 
     def __init__(self, name, description=None):
@@ -295,29 +282,18 @@ class BigQueryDeleteDatasetSolidDefinition(SolidDefinition):
         description = check.opt_str_param(description, 'description', 'BigQuery delete_dataset')
 
         def _transform_fn(context, _):
-            (project, location, dataset, delete_contents, not_found_ok) = [
-                context.solid_config.get(k)
-                for k in ('project', 'location', 'dataset', 'delete_contents', 'not_found_ok')
+            (dataset, delete_contents, not_found_ok) = [
+                context.solid_config.get(k) for k in ('dataset', 'delete_contents', 'not_found_ok')
             ]
-
-            client = bigquery.Client(project=project, location=location)
             context.log.info('executing BQ delete_dataset for dataset %s' % dataset)
-
-            try:
-                client.delete_dataset(
-                    dataset=dataset, delete_contents=delete_contents, not_found_ok=not_found_ok
-                )
-            except google.api_core.exceptions.NotFound:
-                raise BigQueryError(
-                    'Dataset "%s" does not exist and not_found_ok is false' % dataset
-                )
-            yield Result(True)
+            context.resources.bq.delete_dataset(dataset, delete_contents, not_found_ok)
+            yield Result(None)
 
         super(BigQueryDeleteDatasetSolidDefinition, self).__init__(
             name=name,
             description=description,
             inputs=[InputDefinition(INPUT_READY, Nothing)],
-            outputs=[OutputDefinition(Bool)],
+            outputs=[OutputDefinition(Nothing)],
             transform_fn=_transform_fn,
             config_field=define_bigquery_delete_dataset_config(),
         )

@@ -7,10 +7,12 @@ from .solids import (
     BigQuerySolidDefinition,
 )
 
+from .resources import bigquery_resource
 from .types import BigQueryError, BigQueryLoadSource
 
 
 __all__ = [
+    'bigquery_resource',
     'BigQueryError',
     'BigQueryCreateDatasetSolidDefinition',
     'BigQueryDeleteDatasetSolidDefinition',

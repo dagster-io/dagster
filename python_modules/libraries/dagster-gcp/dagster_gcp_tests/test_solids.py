@@ -14,17 +14,19 @@ from dagster_pandas import DataFrame
 from dagster import (
     solid,
     execute_pipeline,
-    Bool,
     DependencyDefinition,
     InputDefinition,
     List,
+    Nothing,
     OutputDefinition,
     Path,
+    PipelineContextDefinition,
     PipelineDefinition,
 )
 from dagster.core.types.evaluator import evaluate_config_value
 
 from dagster_gcp import (
+    bigquery_resource,
     BigQueryError,
     BigQuerySolidDefinition,
     BigQueryCreateDatasetSolidDefinition,
@@ -49,7 +51,12 @@ def test_simple_queries():
         ],
     )
 
-    pipeline = PipelineDefinition(solids=[solid_inst])
+    pipeline = PipelineDefinition(
+        solids=[solid_inst],
+        context_definitions={
+            'default': PipelineContextDefinition(resources={'bq': bigquery_resource})
+        },
+    )
     pipeline_result = execute_pipeline(pipeline)
     res = pipeline_result.result_for_solid(solid_inst.name)
     assert res.success
@@ -113,7 +120,11 @@ def test_bad_config():
     ]
 
     pipeline_def = PipelineDefinition(
-        name='test_config_pipeline', solids=[BigQuerySolidDefinition('test', ['SELECT 1'])]
+        name='test_config_pipeline',
+        solids=[BigQuerySolidDefinition('test', ['SELECT 1'])],
+        context_definitions={
+            'default': PipelineContextDefinition(resources={'bq': bigquery_resource})
+        },
     )
 
     for config_fragment, error_message in configs_and_expected_errors:
@@ -124,7 +135,12 @@ def test_bad_config():
 
 def test_create_delete_dataset():
     create_solid = BigQueryCreateDatasetSolidDefinition('test')
-    create_pipeline = PipelineDefinition(solids=[create_solid])
+    create_pipeline = PipelineDefinition(
+        solids=[create_solid],
+        context_definitions={
+            'default': PipelineContextDefinition(resources={'bq': bigquery_resource})
+        },
+    )
     config = {'solids': {'test': {'config': {'dataset': 'foo', 'exists_ok': True}}}}
 
     assert execute_pipeline(create_pipeline, config).result_for_solid(create_solid.name).success
@@ -135,7 +151,12 @@ def test_create_delete_dataset():
     assert 'Dataset "foo" already exists and exists_ok is false' in str(exc_info.value)
 
     delete_solid = BigQueryDeleteDatasetSolidDefinition('test')
-    delete_pipeline = PipelineDefinition(solids=[delete_solid])
+    delete_pipeline = PipelineDefinition(
+        solids=[delete_solid],
+        context_definitions={
+            'default': PipelineContextDefinition(resources={'bq': bigquery_resource})
+        },
+    )
     config = {'solids': {'test': {'config': {'dataset': 'foo'}}}}
 
     # Delete should succeed
@@ -160,8 +181,8 @@ def test_pd_df_load():
     query_solid = BigQuerySolidDefinition('query_solid', ['SELECT num1, num2 FROM foo.df'])
     delete_solid = BigQueryDeleteDatasetSolidDefinition('delete_solid')
 
-    @solid(inputs=[InputDefinition('success', Bool)], outputs=[OutputDefinition(DataFrame)])
-    def return_df(_context, success):  # pylint: disable=unused-argument
+    @solid(inputs=[InputDefinition('success', Nothing)], outputs=[OutputDefinition(DataFrame)])
+    def return_df(_context):  # pylint: disable=unused-argument
         return test_df
 
     config = {
@@ -178,6 +199,9 @@ def test_pd_df_load():
             'load_solid': {'df': DependencyDefinition('return_df')},
             'query_solid': {'input_ready_sentinel': DependencyDefinition('load_solid')},
             'delete_solid': {'input_ready_sentinel': DependencyDefinition('query_solid')},
+        },
+        context_definitions={
+            'default': PipelineContextDefinition(resources={'bq': bigquery_resource})
         },
     )
     result = execute_pipeline(pipeline, config)
@@ -205,8 +229,8 @@ def test_gcs_load():
     )
     delete_solid = BigQueryDeleteDatasetSolidDefinition('delete_solid')
 
-    @solid(inputs=[InputDefinition('success', Bool)], outputs=[OutputDefinition(List(Path))])
-    def return_gcs_uri(_context, success):  # pylint: disable=unused-argument
+    @solid(inputs=[InputDefinition('success', Nothing)], outputs=[OutputDefinition(List(Path))])
+    def return_gcs_uri(_context):  # pylint: disable=unused-argument
         return ["gs://cloud-samples-data/bigquery/us-states/us-states.csv"]
 
     config = {
@@ -233,6 +257,9 @@ def test_gcs_load():
             'load_solid': {'source_uris': DependencyDefinition('return_gcs_uri')},
             'query_solid': {'input_ready_sentinel': DependencyDefinition('load_solid')},
             'delete_solid': {'input_ready_sentinel': DependencyDefinition('query_solid')},
+        },
+        context_definitions={
+            'default': PipelineContextDefinition(resources={'bq': bigquery_resource})
         },
     )
     result = execute_pipeline(pipeline, config)
