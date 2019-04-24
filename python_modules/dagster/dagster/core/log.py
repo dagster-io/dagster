@@ -26,16 +26,34 @@ def _kv_message(all_items, multiline=False):
 
 
 class DagsterLogManager:
+    '''Centralized dispatch for logging through the execution context.
+    
+    Handles the construction of uniform structured log messages and passes through to the underlying
+    loggers.
+
+    An instance of the log manager is made available to solids as context.log.
+
+    In an attempt to support the range of Python logging possibilities, the log manager can be invoked
+    in three ways:
+
+        1. Using standard convenience methods like those built in to the Python logging library:
+           context.log.{debug, info, warning, error, critical}
+        2. With any user-defined log level, like context.log.trace, or context.log.notice. Users are
+           expected to register these levels with the Python logging library (using
+           logging.addLevelName) when instantiating custom loggers.
+        3. Using the underlying integer API directly by calling, e.g., context.log.log(5, msg).
+    '''
+
     def __init__(self, run_id, tags, loggers):
         self.run_id = check.str_param(run_id, 'run_id')
         self.tags = check.dict_param(tags, 'tags')
         self.loggers = check.list_param(loggers, 'loggers', of_type=logging.Logger)
 
-    def _log(self, method, orig_message, message_props):
+    def _log(self, level, orig_message, message_props):
         if not self.loggers:
             return
 
-        check.str_param(method, 'method')
+        check.str_param(level, 'level')
         check.str_param(orig_message, 'orig_message')
         check.dict_param(message_props, 'message_props')
 
@@ -83,11 +101,30 @@ class DagsterLogManager:
         #     message_with_structured_props, extra={DAGSTER_META_KEY: all_props}
         # )
 
-        logger_found = False
+        # HACK: getLevelName really doesn't do what it says on the box. This function was originally
+        # intended to give the user-facing name of a given int log level, e.g.,
+        # getLevelName(40) -> 'ERROR'. In fact, it also works the other way around (this was 'fixed'
+        # in Python 3.4 then immediately reverted in 3.4.2). For levels it doesn't recognize,
+        # including all ints that don't have a name registered with logging.addLevelName it does:
+        # getLevelName('foo') -> 'Level foo'; getLevelName(3) -> 'Level 3' (!)
+        # See: https://docs.python.org/3/library/logging.html#logging.getLevelName
+        if isinstance(level, int):
+            lvl = level
+        else:
+            lvl = logging.getLevelName(level.upper())
+
+        if not isinstance(lvl, int):
+            self.error(
+                'Unexpected log level: User code attempted to log at level \'{level}\', but that '
+                'level has not been registered with the Python logging library. Original message: '
+                '\'{orig_message}\''.format(level=level, orig_message=orig_message),
+                **message_props
+            )
+            return
+
         for logger in self.loggers:
-            if hasattr(logger, method):
-                logger_found = True
-                logger_method = check.is_callable(getattr(logger, method))
+            if hasattr(logger, level):
+                logger_method = check.is_callable(getattr(logger, level))
                 if logger.name == DAGSTER_DEFAULT_LOGGER:
                     logger_method(
                         msg_with_multiline_structured_props, extra={DAGSTER_META_KEY: all_props}
@@ -95,13 +132,15 @@ class DagsterLogManager:
                 else:
                     logger_method(msg_with_structured_props, extra={DAGSTER_META_KEY: all_props})
 
-        if not logger_found:
-            self.error(
-                'Unexpected log level: User code attempted to log at level \'{level}\', but no '
-                'logger was configured to handle that level. Original message: '
-                '\'{orig_message}\''.format(level=method.upper(), orig_message=orig_message),
-                **message_props
-            )
+            else:
+                if logger.name == DAGSTER_DEFAULT_LOGGER:
+                    logger.log(
+                        lvl,
+                        msg_with_multiline_structured_props,
+                        extra={DAGSTER_META_KEY: all_props},
+                    )
+                else:
+                    logger.log(lvl, msg_with_structured_props, extra={DAGSTER_META_KEY: all_props})
 
     def debug(self, msg, **kwargs):
         '''
@@ -146,6 +185,9 @@ class DagsterLogManager:
 
         See debug()'''
         return self._log('critical', msg, kwargs)
+
+    def log(lvl, self, msg, **kwargs):
+        pass
 
     def __getattr__(self, name):
         def handler(msg, **kwargs):
