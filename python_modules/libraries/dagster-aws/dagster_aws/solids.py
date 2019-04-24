@@ -23,6 +23,10 @@ from .configs import define_emr_run_job_flow_config
 from .types import EmrClusterState, FileExistsAtPath
 
 
+# wait at most 24 hours by default for cluster job completion
+_DEFAULT_CLUSTER_MAX_WAIT_TIME_SEC = 24 * 60 * 60
+
+
 class S3Logger(object):
     def __init__(self, logger, bucket, key, filename, size):
         self._logger = logger
@@ -100,7 +104,11 @@ class EmrRunJobFlowSolidDefinition(SolidDefinition):
     INPUT_READY = 'input_ready_sentinel'
 
     def __init__(
-        self, name, description=None, max_wait_time_sec=(24 * 60 * 60), poll_interval_sec=5
+        self,
+        name,
+        description=None,
+        max_wait_time_sec=_DEFAULT_CLUSTER_MAX_WAIT_TIME_SEC,
+        poll_interval_sec=5,
     ):
         name = check.str_param(name, 'name')
 
@@ -117,7 +125,6 @@ class EmrRunJobFlowSolidDefinition(SolidDefinition):
 
             context.log.info('waiting for EMR cluster job flow completion...')
 
-            # wait at most 24 hours by default for cluster job completion
             max_iter = max_wait_time_sec / poll_interval_sec
 
             # wait for the task
@@ -137,13 +144,18 @@ class EmrRunJobFlowSolidDefinition(SolidDefinition):
                 # This will take a while... cluster creation usually > 5 minutes
                 time.sleep(poll_interval_sec)
 
-                # The user can specify Instances.KeepJobFlowAliveWhenNoSteps, which will keep the
-                # cluster alive after the job completes.
-                done = state in [
-                    EmrClusterState.Waiting,
-                    EmrClusterState.Terminated,
-                    EmrClusterState.TerminatedWithErrors,
-                ]
+                # Note that the user can specify Instances.KeepJobFlowAliveWhenNoSteps, which will
+                # keep the cluster alive after the job completes. In such cases where the cluster
+                # continues in waiting state, we stop waiting here and yield.
+
+                # See: https://bit.ly/2UUq1G9
+                # pylint: disable=no-member
+                done = state in {
+                    EmrClusterState.Waiting.value,
+                    EmrClusterState.Terminated.value,
+                    EmrClusterState.TerminatedWithErrors.value,
+                }
+
                 curr_iter += 1
 
             yield Result(job_flow_id)
