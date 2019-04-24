@@ -32,7 +32,7 @@ class SlackConnection:
                 }
                 return self.sc.api_call('chat.postMessage', **api_params)
 
-        self.chat = _Chat()
+        self.chat = _Chat
 
     def api_call(self, method, timeout=None, **kwargs):
         return self.sc.api_call(method, timeout, **kwargs)
