@@ -97,7 +97,6 @@ def decorate_with_output_materializations(
                 kind=StepKind.MATERIALIZATION_THUNK,
                 solid=solid,
                 compute_fn=_create_materialization_lambda(output_def, output_spec),
-                # tags=plan_builder.get_tags(),
             )
         )
 

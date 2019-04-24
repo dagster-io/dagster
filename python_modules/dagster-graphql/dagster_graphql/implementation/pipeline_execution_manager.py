@@ -90,7 +90,7 @@ def build_process_started_event(run_id, pipeline_name, process_id):
             solid_name=None,
             solid_definition_name=None,
             step_kind_value=None,
-            tags=None,
+            logging_tags=None,
             event_specific_data=PipelineProcessStartedData(process_id),
         ),
     )
