@@ -32,6 +32,9 @@ class DagsterLogManager:
         self.loggers = check.list_param(loggers, 'loggers', of_type=logging.Logger)
 
     def _log(self, method, orig_message, message_props):
+        if not self.loggers:
+            return
+
         check.str_param(method, 'method')
         check.str_param(orig_message, 'orig_message')
         check.dict_param(message_props, 'message_props')
