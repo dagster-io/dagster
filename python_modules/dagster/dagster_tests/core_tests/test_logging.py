@@ -4,7 +4,7 @@ import re
 
 from dagster.core.events import DagsterEvent
 from dagster.core.execution_plan.objects import StepFailureData
-from dagster.core.log import DagsterLog, DAGSTER_DEFAULT_LOGGER
+from dagster.core.log import DagsterLogManager, DAGSTER_DEFAULT_LOGGER
 from dagster.utils.error import SerializableErrorInfo
 
 
@@ -43,7 +43,7 @@ def _validate_basic(kv_pairs):
 def test_logging_basic():
     captured_results, logger = _setup_logger('test')
 
-    dl = DagsterLog('123', {}, [logger])
+    dl = DagsterLogManager('123', {}, [logger])
     dl.info('test')
 
     kv_pairs = set(captured_results[0].strip().split())
@@ -52,8 +52,7 @@ def test_logging_basic():
 
 def test_multiline_logging_basic():
     captured_results, logger = _setup_logger(DAGSTER_DEFAULT_LOGGER)
-
-    dl = DagsterLog('123', {}, [logger])
+    dl = DagsterLogManager('123', {}, [logger])
     dl.info('test')
 
     kv_pairs = captured_results[0].replace(' ', '').split('\n')[1:]
@@ -100,7 +99,7 @@ def test_multiline_logging_complex():
 
     captured_results, logger = _setup_logger(DAGSTER_DEFAULT_LOGGER)
 
-    dl = DagsterLog('123', {}, [logger])
+    dl = DagsterLogManager('123', {}, [logger])
     dl.info(msg, **kwargs)
 
     kv_pairs = set(captured_results[0].split('\n')[1:])
