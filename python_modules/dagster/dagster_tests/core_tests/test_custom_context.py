@@ -1,3 +1,4 @@
+import logging
 import uuid
 
 import pytest
@@ -17,8 +18,6 @@ from dagster import (
 )
 
 
-from dagster.utils.logging import INFO
-
 # protected variable. need to test loggers
 # pylint: disable=W0212
 
@@ -30,7 +29,7 @@ def test_default_context():
     def default_context_transform(context):
         called['yes'] = True
         for logger in context.log.loggers:
-            assert logger.level == INFO
+            assert logger.level == logging.INFO
 
     pipeline = PipelineDefinition(solids=[default_context_transform])
     execute_pipeline(pipeline)
@@ -59,7 +58,7 @@ def test_default_context_with_log_level():
     @solid(inputs=[], outputs=[OutputDefinition()])
     def default_context_transform(context):
         for logger in context.log.loggers:
-            assert logger.level == INFO
+            assert logger.level == logging.INFO
 
     pipeline = PipelineDefinition(solids=[default_context_transform])
     execute_pipeline(

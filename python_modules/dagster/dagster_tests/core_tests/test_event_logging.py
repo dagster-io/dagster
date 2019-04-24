@@ -1,3 +1,5 @@
+import logging
+
 from collections import defaultdict
 
 from dagster import (
@@ -13,7 +15,7 @@ from dagster import (
 from dagster.core.events.logging import construct_event_logger, EventRecord
 from dagster.core.events import DagsterEventType
 
-from dagster.utils.logging import define_colored_console_logger, ERROR, INFO
+from dagster.utils.logging import define_colored_console_logger
 
 
 def single_dagster_event(events, event_type):
@@ -129,11 +131,11 @@ def test_single_solid_pipeline_failure():
 
     assert start_event.dagster_event.solid_name == 'solid_one'
     assert start_event.dagster_event.solid_definition_name == 'solid_one'
-    assert start_event.level == INFO
+    assert start_event.level == logging.INFO
 
     failure_event = single_dagster_event(events, DagsterEventType.STEP_FAILURE)
     assert failure_event.pipeline_name == 'single_solid_pipeline'
 
     assert failure_event.dagster_event.solid_name == 'solid_one'
     assert failure_event.dagster_event.solid_definition_name == 'solid_one'
-    assert failure_event.level == ERROR
+    assert failure_event.level == logging.ERROR

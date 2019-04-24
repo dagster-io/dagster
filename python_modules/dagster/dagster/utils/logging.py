@@ -5,16 +5,21 @@ import logging
 import traceback
 
 from collections import namedtuple
-from logging import CRITICAL, DEBUG, ERROR, INFO, WARNING
 
 import coloredlogs
 
 from dagster import check, seven
 from dagster.core.types.config import Enum, EnumValue
 
-VALID_LEVELS = set([CRITICAL, DEBUG, ERROR, INFO, WARNING])
+VALID_LEVELS = set([logging.CRITICAL, logging.DEBUG, logging.ERROR, logging.INFO, logging.WARNING])
 
-LOOKUP = {'CRITICAL': CRITICAL, 'DEBUG': DEBUG, 'ERROR': ERROR, 'INFO': INFO, 'WARNING': WARNING}
+LOOKUP = {
+    'CRITICAL': logging.CRITICAL,
+    'DEBUG': logging.DEBUG,
+    'ERROR': logging.ERROR,
+    'INFO': logging.INFO,
+    'WARNING': logging.WARNING,
+}
 
 VALID_LEVEL_STRINGS = ['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL']
 
@@ -152,8 +157,7 @@ def define_json_file_logger(name, json_path, level):
     return construct_single_handler_logger(name, level, stream_handler)
 
 
-def define_colored_console_logger(name, level=INFO):
-    check.str_param(name, 'name')
+def define_colored_console_logger(name, level=logging.INFO):
     check.param_invariant(
         level in VALID_LEVELS,
         'level',

@@ -10,12 +10,16 @@ They inherit from each other in reverse order. They are also relatively lightwei
 objects, and a new one is created for every invocation into user space.
 '''
 
+import logging
+
 from abc import ABCMeta, abstractproperty, abstractmethod
 from collections import namedtuple
-import logging
+
 import six
+
 from dagster import check
-from dagster.utils.logging import INFO, define_colored_console_logger
+from dagster.utils.logging import define_colored_console_logger
+
 from .execution_context import (
     SystemExpectationExecutionContext,
     SystemStepExecutionContext,
@@ -44,7 +48,7 @@ class ExecutionContext(namedtuple('_ExecutionContext', 'loggers resources tags')
         )
 
     @staticmethod
-    def console_logging(log_level=INFO, resources=None):
+    def console_logging(log_level=logging.INFO, resources=None):
         return ExecutionContext(
             loggers=[define_colored_console_logger('dagster', log_level)], resources=resources
         )
