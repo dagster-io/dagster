@@ -14,7 +14,7 @@ from dagster.core.errors import DagsterInvariantViolationError
 from .definitions.expectation import ExpectationDefinition
 from .definitions.input import InputDefinition
 from .definitions.output import OutputDefinition
-from .log import DagsterLog
+from .log import DagsterLogManager
 from .runs import RunStorageMode, RunStorage
 from .system_config.objects import EnvironmentConfig
 
@@ -175,7 +175,7 @@ class SystemPipelineExecutionContext(object):
             pipeline_context_data, 'pipeline_context_data', SystemPipelineExecutionContextData
         )
         self._tags = check.dict_param(tags, 'tags')
-        self._log = check.inst_param(log, 'log', DagsterLog)
+        self._log = check.inst_param(log, 'log', DagsterLogManager)
 
     def for_step(self, step):
         from .execution_plan.objects import ExecutionStep
@@ -183,7 +183,7 @@ class SystemPipelineExecutionContext(object):
         check.inst_param(step, 'step', ExecutionStep)
 
         tags = merge_dicts(self.tags, step.tags)
-        log = DagsterLog(self.run_id, tags, self.log.loggers)
+        log = DagsterLogManager(self.run_id, tags, self.log.loggers)
         return SystemStepExecutionContext(self._pipeline_context_data, tags, log, step)
 
     @property
