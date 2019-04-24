@@ -69,7 +69,7 @@ from .intermediates_manager import (
     IntermediatesManager,
 )
 
-from .log import DagsterLog
+from .log import DagsterLogManager
 
 from .object_store import FileSystemObjectStore, construct_type_storage_plugin_registry
 
@@ -582,7 +582,7 @@ def construct_pipeline_execution_context(
 
     loggers = _create_loggers(run_config, execution_context)
     logging_tags = get_logging_tags(execution_context, run_config, pipeline)
-    log = DagsterLog(run_config.run_id, logging_tags, loggers)
+    log = DagsterLogManager(run_config.run_id, logging_tags, loggers)
 
     return SystemPipelineExecutionContext(
         SystemPipelineExecutionContextData(
@@ -612,7 +612,7 @@ def _create_loggers(run_config, execution_context):
 
 def _create_context_free_log(run_config, pipeline_def):
     '''In the event of pipeline initialization failure, we want to be able to log the failure
-    without a dependency on the ExecutionContext to initialize DagsterLog
+    without a dependency on the ExecutionContext to initialize DagsterLogManager
     '''
     check.inst_param(run_config, 'run_config', RunConfig)
     check.inst_param(pipeline_def, 'pipeline_def', PipelineDefinition)
@@ -624,7 +624,9 @@ def _create_context_free_log(run_config, pipeline_def):
     elif run_config.loggers:
         loggers += run_config.loggers
 
-    return DagsterLog(run_config.run_id, get_logging_tags(None, run_config, pipeline_def), loggers)
+    return DagsterLogManager(
+        run_config.run_id, get_logging_tags(None, run_config, pipeline_def), loggers
+    )
 
 
 @contextmanager

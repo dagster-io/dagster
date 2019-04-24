@@ -4,7 +4,7 @@ from enum import Enum
 from dagster import check
 from dagster.utils.error import SerializableErrorInfo
 from dagster.core.definitions import Materialization, ExpectationResult
-from dagster.core.log import DagsterLog
+from dagster.core.log import DagsterLogManager
 
 
 class DagsterEventType(Enum):
@@ -289,7 +289,7 @@ class DagsterEvent(
     @staticmethod
     def pipeline_init_failure(pipeline_name, failure_data, log):
         check.inst_param(failure_data, 'failure_data', PipelineInitFailureData)
-        check.inst_param(log, 'log', DagsterLog)
+        check.inst_param(log, 'log', DagsterLogManager)
         # this failure happens trying to bring up context so can't use from_pipeline
 
         event = DagsterEvent(
