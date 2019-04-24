@@ -146,6 +146,6 @@ class DagsterLogManager:
 
     def __getattr__(self, name):
         def handler(msg, **kwargs):
-            return self._log(name.lower(), msg, kwargs)
+            return self._log(name, msg, kwargs)
 
         return handler
