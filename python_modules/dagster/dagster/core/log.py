@@ -17,25 +17,40 @@ def _dump_value(value):
     return seven.json.dumps(value)
 
 
-def _kv_message(all_items, multiline=False):
-    sep = '\n' if multiline else ' '
-    format_str = '{key:>20} = {value}' if multiline else '{key}={value}'
+def _kv_message(all_items):
+    sep = '\n'
+    format_str = '{key:>20} = {value}'
     return sep + sep.join(
         [format_str.format(key=key, value=_dump_value(value)) for key, value in all_items]
     )
 
 
 class DagsterLogManager:
+    '''Centralized dispatch for logging through the execution context.
+
+    Handles the construction of uniform structured log messages and passes through to the underlying
+    loggers.
+
+    An instance of the log manager is made available to solids as context.log.
+
+    In an attempt to support the range of Python logging possibilities, the log manager can be
+    invoked in two ways:
+
+        1. Using the standard convenience methods built into the Python logging library:
+           ``context.log.{debug, info, warning, error, critical}``
+        2. Using the underlying integer API directly by calling, e.g., ``context.log.log(5, msg)``.
+    '''
+
     def __init__(self, run_id, logging_tags, loggers):
         self.run_id = check.str_param(run_id, 'run_id')
         self.logging_tags = check.dict_param(logging_tags, 'logging_tags')
         self.loggers = check.list_param(loggers, 'loggers', of_type=logging.Logger)
 
-    def _log(self, method, orig_message, message_props):
+    def _log(self, level, orig_message, message_props):
         if not self.loggers:
             return
 
-        check.str_param(method, 'method')
+        check.int_param(level, 'level')
         check.str_param(orig_message, 'orig_message')
         check.dict_param(message_props, 'message_props')
 
@@ -68,9 +83,6 @@ class DagsterLogManager:
             itertools.chain(synth_props.items(), self.logging_tags.items(), message_props.items())
         )
 
-        msg_with_structured_props = _kv_message(all_props.items())
-        msg_with_multiline_structured_props = _kv_message(all_props.items(), multiline=True)
-
         # So here we use the arbitrary key DAGSTER_META_KEY to store a dictionary of
         # all the meta information that dagster injects into log message.
         # The python logging module, in its infinite wisdom, actually takes all the
@@ -79,18 +91,9 @@ class DagsterLogManager:
         # collisions with internal variables of the LogRecord class.
         # See __init__.py:363 (makeLogRecord) in the python 3.6 logging module source
         # for the gory details.
-        # getattr(self.logger, method)(
-        #     message_with_structured_props, extra={DAGSTER_META_KEY: all_props}
-        # )
 
         for logger in self.loggers:
-            logger_method = check.is_callable(getattr(logger, method))
-            if logger.name == DAGSTER_DEFAULT_LOGGER:
-                logger_method(
-                    msg_with_multiline_structured_props, extra={DAGSTER_META_KEY: all_props}
-                )
-            else:
-                logger_method(msg_with_structured_props, extra={DAGSTER_META_KEY: all_props})
+            logger.log(_kv_message(all_props.items()), extra={DAGSTER_META_KEY: all_props})
 
     def debug(self, msg, **kwargs):
         '''
@@ -110,28 +113,33 @@ class DagsterLogManager:
             msg (str): The core string
             **kwargs (Dict[str, Any]): Additional context values for only this log message.
         '''
-        return self._log('debug', msg, kwargs)
+        return self._log(logging.DEBUG, msg, kwargs)
 
     def info(self, msg, **kwargs):
         '''Log at INFO level
 
         See debug()'''
-        return self._log('info', msg, kwargs)
+        return self._log(logging.INFO, msg, kwargs)
 
     def warning(self, msg, **kwargs):
         '''Log at WARNING level
 
         See debug()'''
-        return self._log('warning', msg, kwargs)
+        return self._log(logging.WARNING, msg, kwargs)
 
     def error(self, msg, **kwargs):
         '''Log at ERROR level
 
         See debug()'''
-        return self._log('error', msg, kwargs)
+        return self._log(logging.ERROR, msg, kwargs)
 
     def critical(self, msg, **kwargs):
         '''Log at CRITICAL level
 
         See debug()'''
-        return self._log('critical', msg, kwargs)
+        return self._log(logging.CRITICAL, msg, kwargs)
+
+    def log(self, level, msg, **kwargs):
+        check.int_param(level, 'level')
+        return self._log(level, msg, kwargs)
+
