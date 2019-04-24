@@ -146,13 +146,13 @@ class EmrRunJobFlowSolidDefinition(SolidDefinition):
                 ]
                 curr_iter += 1
 
-            yield Result(True)
+            yield Result(job_flow_id)
 
         super(EmrRunJobFlowSolidDefinition, self).__init__(
             name=name,
             description=description,
             inputs=[InputDefinition(EmrRunJobFlowSolidDefinition.INPUT_READY, Nothing)],
-            outputs=[OutputDefinition(Bool)],
+            outputs=[OutputDefinition(String)],
             transform_fn=_transform_fn,
             config_field=define_emr_run_job_flow_config(),
         )
