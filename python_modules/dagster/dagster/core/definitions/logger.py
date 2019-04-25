@@ -27,7 +27,7 @@ class LoggerDefinition(object):
 
 
 def logger(config_field=None, description=None):
-    '''A decorator for creating a logger. The decorated function will be used as the 
+    '''A decorator for creating a logger. The decorated function will be used as the
     logger_fn in a LoggerDefinition.
     '''
 
