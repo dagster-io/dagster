@@ -197,8 +197,8 @@ def test_pd_df_load():
         dependencies={
             'return_df': {'success': DependencyDefinition('create_solid')},
             'load_solid': {'df': DependencyDefinition('return_df')},
-            'query_solid': {'input_ready_sentinel': DependencyDefinition('load_solid')},
-            'delete_solid': {'input_ready_sentinel': DependencyDefinition('query_solid')},
+            'query_solid': {'start': DependencyDefinition('load_solid')},
+            'delete_solid': {'start': DependencyDefinition('query_solid')},
         },
         context_definitions={
             'default': PipelineContextDefinition(resources={'bq': bigquery_resource})
@@ -255,8 +255,8 @@ def test_gcs_load():
         dependencies={
             'return_gcs_uri': {'success': DependencyDefinition('create_solid')},
             'load_solid': {'source_uris': DependencyDefinition('return_gcs_uri')},
-            'query_solid': {'input_ready_sentinel': DependencyDefinition('load_solid')},
-            'delete_solid': {'input_ready_sentinel': DependencyDefinition('query_solid')},
+            'query_solid': {'start': DependencyDefinition('load_solid')},
+            'delete_solid': {'start': DependencyDefinition('query_solid')},
         },
         context_definitions={
             'default': PipelineContextDefinition(resources={'bq': bigquery_resource})

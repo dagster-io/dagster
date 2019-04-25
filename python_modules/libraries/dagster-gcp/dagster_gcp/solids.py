@@ -23,7 +23,7 @@ from .configs import (
 
 from .types import BigQueryError, BigQueryLoadSource
 
-INPUT_READY = 'input_ready_sentinel'
+_START = 'start'
 
 
 def _preprocess_config(cfg):
@@ -73,7 +73,7 @@ class BigQuerySolidDefinition(SolidDefinition):
         super(BigQuerySolidDefinition, self).__init__(
             name=name,
             description=description,
-            inputs=[InputDefinition(INPUT_READY, Nothing)],
+            inputs=[InputDefinition(_START, Nothing)],
             outputs=[OutputDefinition(List(DataFrame))],
             transform_fn=_transform_fn,
             config_field=define_bigquery_query_config(),
@@ -157,7 +157,7 @@ class BigQueryCreateDatasetSolidDefinition(SolidDefinition):
         super(BigQueryCreateDatasetSolidDefinition, self).__init__(
             name=name,
             description=description,
-            inputs=[InputDefinition(INPUT_READY, Nothing)],
+            inputs=[InputDefinition(_START, Nothing)],
             outputs=[OutputDefinition(Nothing)],
             transform_fn=_transform_fn,
             config_field=define_bigquery_create_dataset_config(),
@@ -191,7 +191,7 @@ class BigQueryDeleteDatasetSolidDefinition(SolidDefinition):
         super(BigQueryDeleteDatasetSolidDefinition, self).__init__(
             name=name,
             description=description,
-            inputs=[InputDefinition(INPUT_READY, Nothing)],
+            inputs=[InputDefinition(_START, Nothing)],
             outputs=[OutputDefinition(Nothing)],
             transform_fn=_transform_fn,
             config_field=define_bigquery_delete_dataset_config(),
