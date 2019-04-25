@@ -27,14 +27,14 @@ def _kv_message(all_items, multiline=False):
 
 class DagsterLogManager:
     '''Centralized dispatch for logging through the execution context.
-    
+
     Handles the construction of uniform structured log messages and passes through to the underlying
     loggers.
 
     An instance of the log manager is made available to solids as context.log.
 
-    In an attempt to support the range of Python logging possibilities, the log manager can be invoked
-    in three ways:
+    In an attempt to support the range of Python logging possibilities, the log manager can be
+    invoked in three ways:
 
         1. Using standard convenience methods like those built in to the Python logging library:
            context.log.{debug, info, warning, error, critical}
@@ -51,7 +51,7 @@ class DagsterLogManager:
 
     def _log(self, level, orig_message, message_props):
         '''Actually invoke the underlying loggers.
-        
+
         Args:
             level (Union[str, int]): A built=in logging level name, a level name as registered using
                 logging.addLevelName, or an integer logging level.
@@ -172,48 +172,82 @@ class DagsterLogManager:
         message using the keyword args to this message
 
         Args:
-            msg (str): The core string
-            **kwargs (Dict[str, Any]): Additional context values for only this log message.
+            msg (str): The message to log.
+
+        Kwargs:
+            Additional context values for only this log message.
         '''
         return self._log('debug', msg, kwargs)
 
     def info(self, msg, **kwargs):
         '''Log at INFO level
 
-        See debug()
+        See ``debug()``.
+
+        Args:
+            msg (str): The message to log.
+
+        Kwargs:
+            Additional context values for only this log message.
         '''
         return self._log('info', msg, kwargs)
 
     def warning(self, msg, **kwargs):
         '''Log at WARNING level
 
-        See debug()
+        See ``debug()``.
+
+        Args:
+            msg (str): The message to log.
+
+        Kwargs:
+            Additional context values for only this log message.
         '''
         return self._log('warning', msg, kwargs)
 
     def error(self, msg, **kwargs):
         '''Log at ERROR level
 
-        See debug()
+        See ``debug()``.
+
+        Args:
+            msg (str): The message to log.
+
+        Kwargs:
+            Additional context values for only this log message.
         '''
         return self._log('error', msg, kwargs)
 
     def critical(self, msg, **kwargs):
         '''Log at CRITICAL level
 
-        See debug()
+        See ``debug()``.
+
+        Args:
+            msg (str): The message to log.
+
+        Kwargs:
+            Additional context values for only this log message.
         '''
         return self._log('critical', msg, kwargs)
 
     def log(self, lvl, msg, **kwargs):
         '''Log at the integer level ``lvl``.
 
-        See debug()
+        Args:
+            lvl (int): An integer logging level.
+            msg (str): The message to log.
+        
+        Kwargs:
+            Additional context values for only this log message.
         '''
+
         check.int_param(lvl, 'lvl')
         return self._log(lvl, msg, kwargs)
 
     def __getattr__(self, name):
+        '''Enables handling of user-defined log levels.'''
+
         def handler(msg, **kwargs):
             return self._log(name, msg, kwargs)
 
