@@ -45,7 +45,7 @@ class StepBuilder:
         if img in IMAGE_MAP:
             img = IMAGE_MAP[img]
 
-        docker = {"image": img}
+        docker = {"image": img, "always-pull": True}
         if env:
             docker['environment'] = env
 
