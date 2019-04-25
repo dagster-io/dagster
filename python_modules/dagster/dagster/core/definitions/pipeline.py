@@ -69,7 +69,7 @@ class PipelineDefinition(object):
         solids (List[SolidDefinition]):
             The set of solid definitions used in this pipeline.
         name (Optional[str])
-        despcription (Optional[str])
+        description (Optional[str])
         context_definitions (Optional[Dict[str, PipelineContextDefinition]]):
             A mapping of context names to PipelineContextDefinition.
         dependencies (Optional[Dict[Union[str, SolidInstance], Dict[str, DependencyDefinition]]]):
