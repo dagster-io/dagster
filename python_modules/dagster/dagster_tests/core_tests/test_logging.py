@@ -56,15 +56,20 @@ def _setup_logger(name, log_levels=None, register_levels=True):
     def log_fn(msg, *args, **kwargs):  # pylint:disable=unused-argument
         captured_results.append(msg)
 
+    def int_log_fn(lvl, msg, *args, **kwargs):  # pylint:disable=unused-argument
+        captured_results.append(msg)
+
     for level in ['debug', 'info', 'warning', 'error', 'critical'] + list(
         [x.lower() for x in log_levels.keys()]
     ):
         setattr(logger, level, log_fn)
+        setattr(logger, 'log', int_log_fn)
 
     yield (captured_results, logger)
 
-    for name, value in log_levels.items():
-        rm_log_level(value, name)
+    if register_levels:
+        for level_name, value in log_levels.items():
+            rm_log_level(value, level_name)
 
 
 def _regex_match_kv_pair(regex, kv_pairs):
@@ -92,6 +97,17 @@ def test_logging_custom_log_levels():
 
         dl = DagsterLogManager('123', {}, [logger])
         dl.foo('test')
+
+        kv_pairs = set(captured_results[0].strip().split())
+        _validate_basic(kv_pairs)
+
+
+def test_logging_integer_log_levels():
+    with _setup_logger('test', {'FOO': 3}) as (captured_results, logger):
+
+        dl = DagsterLogManager('123', {}, [logger])
+        dl.log(3, 'test')
+        dl.log(51, 'test')
 
         kv_pairs = set(captured_results[0].strip().split())
         _validate_basic(kv_pairs)
