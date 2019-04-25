@@ -129,7 +129,10 @@ def create_expectation_step(
         ),
         kind=kind,
         solid=solid,
-        tags={'expectation': expectation_def.name, inout_def.descriptive_key: inout_def.name},
+        logging_tags={
+            'expectation': expectation_def.name,
+            inout_def.descriptive_key: inout_def.name,
+        },
     )
 
 

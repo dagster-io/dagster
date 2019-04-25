@@ -40,7 +40,7 @@ def test_diamond_multi_execution():
 
     pids_by_solid = {}
     for solid in pipeline.solids:
-        pids_by_solid[solid.name] = transform_event(result, solid.name).tags['pid']
+        pids_by_solid[solid.name] = transform_event(result, solid.name).logging_tags['pid']
 
     # guarantee that all solids ran in their own process
     assert len(set(pids_by_solid.values())) == len(pipeline.solids)

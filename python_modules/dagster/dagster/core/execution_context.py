@@ -168,13 +168,13 @@ class SystemPipelineExecutionContextData(
 
 
 class SystemPipelineExecutionContext(object):
-    __slots__ = ['_pipeline_context_data', '_tags', '_log', '_legacy_context', '_events']
+    __slots__ = ['_pipeline_context_data', '_logging_tags', '_log', '_legacy_context', '_events']
 
-    def __init__(self, pipeline_context_data, tags, log):
+    def __init__(self, pipeline_context_data, logging_tags, log):
         self._pipeline_context_data = check.inst_param(
             pipeline_context_data, 'pipeline_context_data', SystemPipelineExecutionContextData
         )
-        self._tags = check.dict_param(tags, 'tags')
+        self._logging_tags = check.dict_param(logging_tags, 'logging_tags')
         self._log = check.inst_param(log, 'log', DagsterLog)
 
     def for_step(self, step):
@@ -182,9 +182,9 @@ class SystemPipelineExecutionContext(object):
 
         check.inst_param(step, 'step', ExecutionStep)
 
-        tags = merge_dicts(self.tags, step.tags)
-        log = DagsterLog(self.run_id, tags, self.log.loggers)
-        return SystemStepExecutionContext(self._pipeline_context_data, tags, log, step)
+        logging_tags = merge_dicts(self.logging_tags, step.logging_tags)
+        log = DagsterLog(self.run_id, logging_tags, self.log.loggers)
+        return SystemStepExecutionContext(self._pipeline_context_data, logging_tags, log, step)
 
     @property
     def executor_config(self):
@@ -211,16 +211,16 @@ class SystemPipelineExecutionContext(object):
         return self._pipeline_context_data.environment_config
 
     @property
-    def tags(self):
-        return self._tags
+    def logging_tags(self):
+        return self._logging_tags
 
     def has_tag(self, key):
         check.str_param(key, 'key')
-        return key in self._tags
+        return key in self._logging_tags
 
     def get_tag(self, key):
         check.str_param(key, 'key')
-        return self._tags[key]
+        return self._logging_tags[key]
 
     @property
     def pipeline_def(self):
@@ -257,12 +257,17 @@ class SystemStepExecutionContext(SystemPipelineExecutionContext):
 
     def for_transform(self):
         return SystemTransformExecutionContext(
-            self._pipeline_context_data, self.tags, self.log, self.step
+            self._pipeline_context_data, self.logging_tags, self.log, self.step
         )
 
     def for_expectation(self, inout_def, expectation_def):
         return SystemExpectationExecutionContext(
-            self._pipeline_context_data, self.tags, self.log, self.step, inout_def, expectation_def
+            self._pipeline_context_data,
+            self.logging_tags,
+            self.log,
+            self.step,
+            inout_def,
+            expectation_def,
         )
 
     @property

@@ -20432,7 +20432,7 @@ snapshots['test_build_all_docs 53'] = '''
 <hr class="docutils" />
 <dl class="class">
 <dt id="dagster.SolidDefinition">
-<em class="property">class </em><code class="descclassname">dagster.</code><code class="descname">SolidDefinition</code><span class="sig-paren">(</span><em>name</em>, <em>inputs</em>, <em>transform_fn</em>, <em>outputs</em>, <em>config_field=None</em>, <em>description=None</em>, <em>metadata=None</em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dagster/core/definitions/solid.html#SolidDefinition"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dagster.SolidDefinition" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">dagster.</code><code class="descname">SolidDefinition</code><span class="sig-paren">(</span><em>name</em>, <em>inputs</em>, <em>transform_fn</em>, <em>outputs</em>, <em>config_field=None</em>, <em>description=None</em>, <em>metadata=None</em>, <em>step_metadata_fn=None</em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dagster/core/definitions/solid.html#SolidDefinition"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dagster.SolidDefinition" title="Permalink to this definition">¶</a></dt>
 <dd><p>A solid (a name extracted from the acronym of “software-structured data” (SSD)) represents
 a unit of computation within a data pipeline.</p>
 <p>As its core, a solid is a function. It accepts inputs (which are values produced from

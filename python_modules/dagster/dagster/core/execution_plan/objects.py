@@ -110,12 +110,21 @@ class ExecutionStep(
         '_ExecutionStep',
         (
             'pipeline_name key step_inputs step_input_dict step_outputs step_output_dict '
-            'compute_fn kind solid tags'
+            'compute_fn kind solid logging_tags metadata'
         ),
     )
 ):
     def __new__(
-        cls, pipeline_name, key, step_inputs, step_outputs, compute_fn, kind, solid, tags=None
+        cls,
+        pipeline_name,
+        key,
+        step_inputs,
+        step_outputs,
+        compute_fn,
+        kind,
+        solid,
+        logging_tags=None,
+        metadata=None,
     ):
         return super(ExecutionStep, cls).__new__(
             cls,
@@ -128,15 +137,16 @@ class ExecutionStep(
             compute_fn=check.callable_param(compute_fn, 'compute_fn'),
             kind=check.inst_param(kind, 'kind', StepKind),
             solid=check.inst_param(solid, 'solid', Solid),
-            tags=merge_dicts(
+            logging_tags=merge_dicts(
                 {
                     'step_key': key,
                     'pipeline': pipeline_name,
                     'solid': solid.name,
                     'solid_definition': solid.definition.name,
                 },
-                check.opt_dict_param(tags, 'tags'),
+                check.opt_dict_param(logging_tags, 'logging_tags'),
             ),
+            metadata=check.opt_dict_param(metadata, 'metadata', key_type=str, value_type=str),
         )
 
     @property

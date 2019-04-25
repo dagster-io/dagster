@@ -70,7 +70,7 @@ class DagsterEvent(
     namedtuple(
         '_DagsterEvent',
         'event_type_value pipeline_name step_key solid_name solid_definition_name step_kind_value '
-        'tags event_specific_data',
+        'logging_tags event_specific_data',
     )
 ):
     @staticmethod
@@ -86,7 +86,7 @@ class DagsterEvent(
             step_context.step.solid.name,
             step_context.step.solid.definition.name,
             step_context.step.kind.value,
-            step_context.tags,
+            step_context.logging_tags,
             _validate_event_specific_data(event_type, event_specific_data),
         )
 
@@ -136,7 +136,7 @@ class DagsterEvent(
         solid_name=None,
         solid_definition_name=None,
         step_kind_value=None,
-        tags=None,
+        logging_tags=None,
         event_specific_data=None,
     ):
         return super(DagsterEvent, cls).__new__(
@@ -147,7 +147,7 @@ class DagsterEvent(
             check.opt_str_param(solid_name, 'solid_name'),
             check.opt_str_param(solid_definition_name, 'solid_definition_name'),
             check.opt_str_param(step_kind_value, 'step_kind_value'),
-            check.opt_dict_param(tags, 'tags'),
+            check.opt_dict_param(logging_tags, 'logging_tags'),
             _validate_event_specific_data(DagsterEventType(event_type_value), event_specific_data),
         )
 

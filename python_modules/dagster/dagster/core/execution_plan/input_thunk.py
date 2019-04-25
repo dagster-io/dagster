@@ -38,7 +38,7 @@ def _create_input_thunk_execution_step(pipeline_def, solid, input_def, input_spe
         compute_fn=_fn,
         kind=StepKind.INPUT_THUNK,
         solid=solid,
-        tags={'input': input_def.name},
+        logging_tags={'input': input_def.name},
     )
 
 

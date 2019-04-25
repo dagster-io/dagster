@@ -54,7 +54,6 @@ def create_join_step(pipeline_def, solid, step_key, prev_steps, prev_output_name
         compute_fn=__join_lambda,
         kind=StepKind.JOIN,
         solid=solid,
-        tags={},
     )
 
 
