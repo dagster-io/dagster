@@ -205,7 +205,7 @@ class DagsterLogManager:
         '''
         return self._log('critical', msg, kwargs)
 
-    def log(lvl, self, msg, **kwargs):
+    def log(self, lvl, msg, **kwargs):
         '''Log at the integer level ``lvl``.
 
         See debug()
