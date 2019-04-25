@@ -28,8 +28,7 @@ RUN apt-get -y install \
     apt-get update; \
     apt-get -y install docker-ce
 
-
-# setup java
+# install java
 
 # We need to use java 8 because https://stackoverflow.com/questions/53583199/pyspark-error-unsupported-class-file-major-version-55
 ##################################################################################################
@@ -90,3 +89,12 @@ RUN set -ex; \
     update-alternatives --query java | grep -q 'Status: manual'
 
 ##################################################################################################
+
+# Install sbt
+ARG SBT_VERSION=1.2.8
+RUN curl -L -o sbt-$SBT_VERSION.deb https://dl.bintray.com/sbt/debian/sbt-$SBT_VERSION.deb && \
+    dpkg -i sbt-$SBT_VERSION.deb && \
+    rm sbt-$SBT_VERSION.deb && \
+    apt-get update && \
+    apt-get install sbt && \
+    sbt sbtVersion

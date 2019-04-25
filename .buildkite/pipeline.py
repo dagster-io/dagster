@@ -48,26 +48,26 @@ class StepBuilder:
         self._step["command"] = "\n".join(argc)
         return self
 
-    def on_python_image(self, ver):
-        self._step["plugins"] = [{DOCKER_PLUGIN: {"always-pull": True, "image": PY_IMAGE_MAP[ver]}}]
+    def on_python_image(self, ver, env=None):
+        settings = {"always-pull": True, "image": PY_IMAGE_MAP[ver]}
+        if env:
+            settings['environment'] = env
+
+        self._step["plugins"] = [{DOCKER_PLUGIN: settings}]
+
         return self
 
-    def on_integration_image(self, ver):
-        self._step["plugins"] = [
-            {
-                DOCKER_PLUGIN: {
-                    "always-pull": True,
-                    "image": INTEGRATION_IMAGE_MAP[ver],
-                    "volumes": ["/var/run/docker.sock:/var/run/docker.sock"],
-                }
-            }
-        ]
-        return self
+    def on_integration_image(self, ver, env=None):
+        settings = {
+            "always-pull": True,
+            "image": INTEGRATION_IMAGE_MAP[ver],
+            "volumes": ["/var/run/docker.sock:/var/run/docker.sock"],
+        }
 
-    def on_docker_image(self, img, env):
-        self._step["plugins"] = [
-            {DOCKER_PLUGIN: {"always-pull": True, "image": img, 'environment': env}}
-        ]
+        if env:
+            settings['environment'] = env
+
+        self._step["plugins"] = [{DOCKER_PLUGIN: settings}]
         return self
 
     def build(self):
@@ -98,7 +98,7 @@ def python_modules_tox_tests(directory, prereqs=None):
         tests.append(
             StepBuilder("{label} tests ({ver})".format(label=label, ver=TOX_MAP[version]))
             .run(*tox_command)
-            .on_python_image(version)
+            .on_python_image(version, ['AWS_DEFAULT_REGION'])
             .build()
         )
 
@@ -110,7 +110,7 @@ def airline_demo_tests():
     for version in SupportedPythons:
         coverage = ".coverage.airline-demo.{version}.$BUILDKITE_BUILD_ID".format(version=version)
         tests.append(
-            StepBuilder('airline-demo tests ({version})'.format(version=version))
+            StepBuilder('airline-demo tests ({version})'.format(version=TOX_MAP[version]))
             .run(
                 "cd examples/airline-demo",
                 # Build the image we use for airflow in the demo tests
@@ -118,18 +118,41 @@ def airline_demo_tests():
                 "mkdir -p /home/circleci/airflow",
                 # Run the postgres db. We are in docker running docker
                 # so this will be a sibling container.
-                "docker-compose up -d",
+                "docker-compose up -d --remove-orphans",
                 # Can't use host networking on buildkite and communicate via localhost
                 # between these sibling containers, so pass along the ip.
                 "export DAGSTER_AIRLINE_DEMO_DB_HOST=`docker inspect --format '{{ .NetworkSettings.IPAddress }}' airline-demo-db`",
                 "pip install tox",
                 "apt-get update",
-                "apt-get install libpq-dev",
+                "apt-get -y install libpq-dev",
                 "tox -e {ver}".format(ver=TOX_MAP[version]),
                 "mv .coverage {file}".format(file=coverage),
                 "buildkite-agent artifact upload {file}".format(file=coverage),
             )
             .on_integration_image(version)
+            .build()
+        )
+    return tests
+
+
+def events_demo_tests():
+    tests = []
+    for version in SupportedPythons:
+        coverage = ".coverage.events-demo.{version}.$BUILDKITE_BUILD_ID".format(version=version)
+        tests.append(
+            StepBuilder('events-demo tests ({version})'.format(version=TOX_MAP[version]))
+            .run(
+                "mkdir -p /tmp/dagster/events",
+                "cd scala_modules",
+                "sbt events/assembly",
+                "cp ./events/target/scala-2.11/events-assembly-0.1.0-SNAPSHOT.jar /tmp/dagster/events/",
+                "cd ../examples/event-pipeline-demo",
+                "pip install tox",
+                "tox -e {ver}".format(ver=TOX_MAP[version]),
+                "mv .coverage {file}".format(file=coverage),
+                "buildkite-agent artifact upload {file}".format(file=coverage),
+            )
+            .on_integration_image(version, ['AWS_SECRET_ACCESS_KEY', 'AWS_ACCESS_KEY_ID'])
             .build()
         )
     return tests
@@ -185,6 +208,7 @@ if __name__ == "__main__":
     steps += python_modules_tox_tests("libraries/dagster-snowflake")
     steps += python_modules_tox_tests("libraries/dagster-spark")
     steps += airline_demo_tests()
+    steps += events_demo_tests()
     steps += [
         wait_step(),  # wait for all previous steps to finish
         StepBuilder("coverage")
@@ -196,8 +220,8 @@ if __name__ == "__main__":
             "coverage combine",
             "coveralls",
         )
-        .on_docker_image(
-            PY_IMAGE_MAP[SupportedPython.V3_7],
+        .on_python_image(
+            SupportedPython.V3_7,
             # COVERALLS_REPO_TOKEN exported by /env in ManagedSecretsBucket
             ['COVERALLS_REPO_TOKEN', 'BUILDKITE_PULL_REQUEST', 'BUILDKITE_JOB_ID', 'BUILDKITE'],
         )
