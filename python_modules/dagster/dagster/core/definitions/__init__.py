@@ -13,6 +13,8 @@ from .expectation import ExpectationDefinition, ExpectationResult
 
 from .input import InputDefinition
 
+from .logger import LoggerDefinition, logger
+
 from .output import OutputDefinition
 
 from .resource import ResourceDefinition

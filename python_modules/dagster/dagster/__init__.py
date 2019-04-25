@@ -25,6 +25,8 @@ from dagster.core.definitions import (
     ExpectationDefinition,
     ExpectationResult,
     InputDefinition,
+    logger,
+    LoggerDefinition,
     OutputDefinition,
     PipelineContextDefinition,
     PipelineDefinition,

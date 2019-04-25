@@ -1,9 +1,11 @@
-from collections import defaultdict
-from contextlib import contextmanager
 import itertools
+import logging
 import os
 import tempfile
 import uuid
+
+from collections import defaultdict
+from contextlib import contextmanager
 
 from dagster import (
     DagsterInvariantViolationError,
@@ -13,32 +15,46 @@ from dagster import (
     check,
     execute_pipeline,
 )
-
+from dagster.core.definitions.logger import LoggerDefinition
 from dagster.core.execution import (
     ExecutionContext,
     RunConfig,
     construct_pipeline_execution_context,
     create_environment_config,
     yield_pipeline_execution_context,
+    _create_loggers,
 )
-
 from dagster.core.intermediates_manager import InMemoryIntermediatesManager
+from dagster.core.log import DagsterLogManager
 from dagster.core.runs import InMemoryRunStorage
-
 from dagster.core.utility_solids import define_stub_solid
 
 
-def create_test_pipeline_execution_context(loggers=None, resources=None, tags=None):
+def create_test_pipeline_execution_context(
+    loggers=None, resources=None, tags=None, run_config_loggers=None
+):
     run_id = str(uuid.uuid4())
-    pipeline_def = PipelineDefinition(name='test_legacy_context', solids=[])
+    loggers = check.opt_dict_param(loggers, 'loggers', key_type=str, value_type=LoggerDefinition)
+    pipeline_def = PipelineDefinition(name='test_legacy_context', solids=[], loggers=loggers)
+    run_config_loggers = check.opt_list_param(
+        run_config_loggers, 'run_config_loggers', of_type=logging.Logger
+    )
+    run_config = RunConfig(run_id, tags=tags, loggers=run_config_loggers)
+    environment_config = create_environment_config(
+        pipeline_def, {'loggers': {key: {} for key in pipeline_def.loggers}}
+    )
+    loggers = _create_loggers(environment_config, run_config, pipeline_def)
+    log = DagsterLogManager(run_config.run_id, {}, loggers)
+
     return construct_pipeline_execution_context(
-        run_config=RunConfig(run_id, tags=tags, loggers=loggers),
+        run_config=run_config,
         pipeline=pipeline_def,
         execution_context=ExecutionContext(),
         resources=resources,
-        environment_config=create_environment_config(pipeline_def),
+        environment_config=environment_config,
         run_storage=InMemoryRunStorage(),
         intermediates_manager=InMemoryIntermediatesManager(),
+        log=log,
     )
 
 

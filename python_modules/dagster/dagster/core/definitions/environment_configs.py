@@ -18,6 +18,7 @@ from dagster.utils import camelcase, single_item
 
 from .context import PipelineContextDefinition
 from .dependency import DependencyStructure, Solid, SolidInputHandle
+from .logger import LoggerDefinition
 from .resource import ResourceDefinition
 from .solid import SolidDefinition
 
@@ -148,10 +149,10 @@ def define_solid_config_cls(name, config_field, inputs_field, outputs_field):
 class EnvironmentClassCreationData(
     namedtuple(
         'EnvironmentClassCreationData',
-        'pipeline_name solids context_definitions dependency_structure',
+        'pipeline_name solids context_definitions dependency_structure loggers',
     )
 ):
-    def __new__(cls, pipeline_name, solids, context_definitions, dependency_structure):
+    def __new__(cls, pipeline_name, solids, context_definitions, dependency_structure, loggers):
         return super(EnvironmentClassCreationData, cls).__new__(
             cls,
             check.str_param(pipeline_name, 'pipeline_name'),
@@ -163,6 +164,7 @@ class EnvironmentClassCreationData(
                 value_type=PipelineContextDefinition,
             ),
             check.inst_param(dependency_structure, 'dependency_structure', DependencyStructure),
+            check.dict_param(loggers, 'loggers', key_type=str, value_type=LoggerDefinition),
         )
 
 
@@ -181,12 +183,31 @@ def define_context_cls(pipeline_def):
     )
 
 
+def define_logger_dictionary_cls(name, creation_data):
+    check.str_param(name, 'name')
+    check.inst_param(creation_data, 'creation_data', EnvironmentClassCreationData)
+
+    return SystemNamedDict(
+        name,
+        {
+            logger_name: logger_definition.config_field
+            for logger_name, logger_definition in creation_data.loggers.items()
+        },
+    )
+
+
 def define_environment_cls(creation_data):
     check.inst_param(creation_data, 'creation_data', EnvironmentClassCreationData)
     pipeline_name = camelcase(creation_data.pipeline_name)
     return SystemNamedDict(
         name='{pipeline_name}.Environment'.format(pipeline_name=pipeline_name),
         fields={
+            'loggers': Field(
+                define_logger_dictionary_cls(
+                    '{pipeline_name}.LoggerConfig'.format(pipeline_name=pipeline_name),
+                    creation_data,
+                )
+            ),
             'context': define_maybe_optional_selector_field(
                 define_context_context_cls(pipeline_name, creation_data.context_definitions)
             ),
@@ -360,6 +381,7 @@ def construct_environment_config(config_value):
         expectations=ExpectationsConfig(**config_value['expectations']),
         context=construct_context_config(config_value['context']),
         storage=construct_storage_config(config_value.get('storage')),
+        loggers=config_value.get('loggers'),
         original_config_dict=config_value,
     )
 

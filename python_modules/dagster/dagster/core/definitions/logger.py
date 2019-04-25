@@ -1,5 +1,6 @@
 from dagster import check
 
+from dagster.core.types import Field, Dict
 from dagster.core.types.field_utils import check_user_facing_opt_field_param
 
 
@@ -34,7 +35,7 @@ def logger(config_field=None, description=None):
     # This case is for when decorator is used bare, without arguments.
     # E.g. @logger versus @logger()
     if callable(config_field):
-        return LoggerDefinition(logger_fn=config_field)
+        return LoggerDefinition(logger_fn=config_field, config_field=Field(Dict({})))
 
     def _wrap(logger_fn):
         return LoggerDefinition(logger_fn, config_field, description)

@@ -8,10 +8,9 @@ import traceback
 from collections import namedtuple, OrderedDict
 from logging import CRITICAL, DEBUG, ERROR, INFO, WARNING  # pylint: disable=unused-import
 
-import coloredlogs
-
 from dagster import check, seven
 from dagster.core.types.config import Enum, EnumValue
+from dagster.core.definitions.logger import logger
 
 DEFAULT_LOG_LEVEL_STRINGS = ['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL']
 
@@ -24,6 +23,8 @@ DefaultLogLevelEnum = Enum(
 
 
 def level_from_string(level_str):
+    if isinstance(level_str, int):
+        return level_str
     if hasattr(logging, level_str):
         return getattr(logging, level_str)
     else:
@@ -32,6 +33,7 @@ def level_from_string(level_str):
 
 def check_valid_log_level(level):
     if sys.version_info.major >= 3:
+        # pylint: disable=protected-access
         check.param_invariant(
             level in logging._nameToLevel or isinstance(level, int),
             'level',
@@ -39,7 +41,7 @@ def check_valid_log_level(level):
         )
     else:
         try:
-            logging._checkLevel(level)
+            logging._checkLevel(level)  # pylint: disable=protected-access
             return level
         except ValueError:
             check.param_invariant(
@@ -48,7 +50,7 @@ def check_valid_log_level(level):
                 'Must be valid python logging level. Got {level}'.format(level=level),
             )
 
-    return level
+    return level_from_string(level)
 
 
 class JsonFileHandler(logging.Handler):
@@ -144,10 +146,14 @@ def construct_single_handler_logger(name, level, handler):
     check_valid_log_level(level)
     check.inst_param(handler, 'handler', logging.Handler)
 
-    klass = logging.getLoggerClass()
-    logger = klass(name, level=level)
-    logger.addHandler(handler)
-    return logger
+    @logger
+    def single_handler_logger(_init_context):
+        klass = logging.getLoggerClass()
+        logger_ = klass(name, level=level)
+        logger_.addHandler(handler)
+        return logger_
+
+    return single_handler_logger
 
 
 def define_structured_logger(name, callback, level):
@@ -168,34 +174,6 @@ def define_json_file_logger(name, json_path, level):
     return construct_single_handler_logger(name, level, stream_handler)
 
 
-def define_colored_console_logger(name, level=INFO):
-    check.str_param(name, 'name')
-    check_valid_log_level(level)
-
-    klass = logging.getLoggerClass()
-    logger = klass(name, level=level)
-    coloredlogs.install(logger=logger, level=level, fmt=default_format_string())
-    return logger
-
-
-def default_format_string():
-    return '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-
-
-def define_default_formatter():
-    return logging.Formatter(default_format_string())
-
-
-def debug_format_string():
-    return '''%(name)s.%(levelname)s: %(message)s
-    time: %(asctime)s relative: %(relativeCreated)dms
-    path: %(pathname)s line: %(lineno)d'''
-
-
-def define_debug_formatter():
-    return logging.Formatter(debug_format_string())
-
-
 def get_formatted_stack_trace(exception):
     check.inst_param(exception, 'exception', Exception)
     return ''.join(get_stack_trace_array(exception))
@@ -210,3 +188,11 @@ def get_stack_trace_array(exception):
 
         _exc_type, _exc_value, tb = sys.exc_info()
     return traceback.format_tb(tb)
+
+
+def default_format_string():
+    return '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+
+
+def define_default_formatter():
+    return logging.Formatter(default_format_string())
