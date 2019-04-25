@@ -43,7 +43,7 @@ def _define_configurations():
         ),
         description='''For Amazon EMR releases 4.0 and later. The list of configurations supplied
         for the EMR cluster you are creating.
-            
+
         An optional configuration specification to be used when provisioning cluster instances,
         which can include configurations for applications and software bundled with Amazon EMR. A
         configuration consists of a classification, properties, and optional nested configurations.
@@ -489,7 +489,7 @@ def _define_instance_fleets():
         in an overage. For example, if there are 2 units remaining to fulfill capacity, and Amazon
         EMR can only provision an instance with a WeightedCapacity of 5 units, the instance is
         provisioned, and the target capacity is exceeded by 3 units.
-        
+
         Note: If not specified or set to 0, only Spot instances are provisioned for the instance
         fleet using TargetSpotCapacity. At least one of TargetSpotCapacity and
         TargetOnDemandCapacity should be greater than 0. For a master instance fleet, only one of
@@ -540,7 +540,7 @@ def _define_instance_fleets():
                         String,
                         description='''The bid price for each EC2 Spot instance type as defined
                             by InstanceType. Expressed in USD. If neither BidPrice nor
-                            BidPriceAsPercentageOfOnDemandPrice is provided, 
+                            BidPriceAsPercentageOfOnDemandPrice is provided,
                             BidPriceAsPercentageOfOnDemandPrice defaults to 100%.''',
                     ),
                     'BidPriceAsPercentageOfOnDemandPrice': Field(
@@ -825,8 +825,8 @@ def define_emr_run_job_flow_config():
         description='''
         The list of supported product configurations which allow user-supplied arguments. EMR
         accepts these arguments and forwards them to the corresponding installation script as
-        bootstrap action arguments. 
-        
+        bootstrap action arguments.
+
         A list of strings that indicates third-party software to use with the job flow that accepts
         a user argument list. EMR accepts and forwards the argument list to the corresponding
         installation script as bootstrap action arguments. For more information, see "Launch a Job
@@ -874,7 +874,7 @@ def define_emr_run_job_flow_config():
         applications for Amazon EMR to install and configure when launching the cluster. For a list
         of applications available for each Amazon EMR release version, see the Amazon EMR Release
         Guide.
-        
+
         With Amazon EMR release version 4.0 and later, the only accepted parameter is the
         application name. To pass arguments to applications, you use configuration classifications
         specified using configuration JSON objects. For more information, see the EMR Configuring
@@ -935,7 +935,7 @@ def define_emr_run_job_flow_config():
         ),
         description='''A list of tags to associate with a cluster and propagate to Amazon EC2
         instances.
-        
+
         A key/value pair containing user-defined metadata that you can associate with an Amazon EMR
         resource. Tags make it easier to associate clusters in various ways, such as grouping
         clusters to track your Amazon EMR resource allocation costs. For more information, see the

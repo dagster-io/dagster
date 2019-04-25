@@ -23,6 +23,8 @@ from .configs import define_emr_run_job_flow_config
 from .types import EmrClusterState, FileExistsAtPath
 
 
+_START = 'start'
+
 # wait at most 24 hours by default for cluster job completion
 _DEFAULT_CLUSTER_MAX_WAIT_TIME_SEC = 24 * 60 * 60
 
@@ -101,8 +103,6 @@ def download_from_s3(context):
 
 
 class EmrRunJobFlowSolidDefinition(SolidDefinition):
-    INPUT_READY = 'input_ready_sentinel'
-
     def __init__(
         self,
         name,
@@ -163,7 +163,7 @@ class EmrRunJobFlowSolidDefinition(SolidDefinition):
         super(EmrRunJobFlowSolidDefinition, self).__init__(
             name=name,
             description=description,
-            inputs=[InputDefinition(EmrRunJobFlowSolidDefinition.INPUT_READY, Nothing)],
+            inputs=[InputDefinition(_START, Nothing)],
             outputs=[OutputDefinition(String)],
             transform_fn=_transform_fn,
             config_field=define_emr_run_job_flow_config(),
