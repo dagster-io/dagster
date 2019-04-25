@@ -19848,7 +19848,7 @@ determine how the values produced by solids flow through the DAG.</p>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>solids</strong> (<em>List</em><em>[</em><a class="reference internal" href="solids.html#dagster.SolidDefinition" title="dagster.SolidDefinition"><em>SolidDefinition</em></a><em>]</em>) – The set of solid definitions used in this pipeline.</p></li>
 <li><p><strong>name</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em>) – </p></li>
-<li><p><strong>despcription</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em>) – </p></li>
+<li><p><strong>description</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em>) – </p></li>
 <li><p><strong>context_definitions</strong> (<em>Optional</em><em>[</em><em>Dict</em><em>[</em><em>str</em><em>, </em><a class="reference internal" href="#dagster.PipelineContextDefinition" title="dagster.PipelineContextDefinition"><em>PipelineContextDefinition</em></a><em>]</em><em>]</em>) – A mapping of context names to PipelineContextDefinition.</p></li>
 <li><p><strong>dependencies</strong> (<em>Optional</em><em>[</em><em>Dict</em><em>[</em><em>Union</em><em>[</em><em>str</em><em>, </em><a class="reference internal" href="#dagster.SolidInstance" title="dagster.SolidInstance"><em>SolidInstance</em></a><em>]</em><em>, </em><em>Dict</em><em>[</em><em>str</em><em>, </em><a class="reference internal" href="#dagster.DependencyDefinition" title="dagster.DependencyDefinition"><em>DependencyDefinition</em></a><em>]</em><em>]</em><em>]</em>) – A structure that declares where each solid gets its inputs. The keys at the top
 level dict are either string names of solids or SolidInstances. The values
@@ -20089,7 +20089,7 @@ completion, just like a python context manager.</p>
 <dl class="attribute">
 <dt id="dagster.PipelineContextDefinition.context_fn">
 <code class="descname">context_fn</code><a class="headerlink" href="#dagster.PipelineContextDefinition.context_fn" title="Permalink to this definition">¶</a></dt>
-<dd><p>Signature is (<strong>pipeline</strong>: <cite>PipelineDefintion</cite>, <strong>config_value</strong>: <cite>Any</cite>) :
+<dd><p>Signature is (<strong>pipeline</strong>: <cite>PipelineDefinition</cite>, <strong>config_value</strong>: <cite>Any</cite>) :
 <cite>ExecutionContext</cite>.</p>
 <p>A callable that either returns <em>or</em> yields an <code class="docutils literal notranslate"><span class="pre">ExecutionContext</span></code>.</p>
 <dl class="field-list simple">

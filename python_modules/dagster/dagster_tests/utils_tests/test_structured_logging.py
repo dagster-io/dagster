@@ -56,6 +56,6 @@ def test_structured_logger_in_context_with_bad_log_level():
     assert message.level == logging.ERROR
     assert message.meta['foo'] == 2
     assert message.meta['orig_message'] == (
-        'Unexpected log level: User code attempted to log at level \'GARGLE\', but no logger was '
-        'configured to handle that level. Original message: \'from_context\''
+        'Unexpected log level: User code attempted to log at level \'gargle\', but that level has '
+        'not been registered with the Python logging library. Original message: \'from_context\''
     )

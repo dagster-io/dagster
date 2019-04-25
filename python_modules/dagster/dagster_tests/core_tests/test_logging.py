@@ -17,7 +17,7 @@ REGEX_TS = r'\d{4}\-\d{2}\-\d{2}T\d{2}:\d{2}:\d{2}\.\d{6}'
 
 
 @contextmanager
-def _setup_logger(name, log_levels=None):
+def _setup_logger(name, log_levels=None, register_levels=True):
     log_levels = check.opt_dict_param(log_levels, 'log_levels')
 
     def add_log_level(value, name):
@@ -25,6 +25,7 @@ def _setup_logger(name, log_levels=None):
         setattr(logging, name, value)
 
     def rm_log_level(value, name):
+        # pylint: disable=protected-access
         if hasattr(logging, '_nameToLevel'):
             if name in logging._nameToLevel:
                 del logging._nameToLevel[name]
@@ -34,13 +35,15 @@ def _setup_logger(name, log_levels=None):
                 del logging._levelToName[value]
 
         if hasattr(logging, '_levelNames'):
+            # pylint: disable=no-member
             if name in logging._levelNames:
                 del logging._levelNames[name]
             if value in logging._levelNames and logging._levelNames[value] == name:
                 del logging._levelNames[value]
 
-    for name, value in log_levels.items():
-        add_log_level(value, name)
+    if register_levels:
+        for level_name, value in log_levels.items():
+            add_log_level(value, level_name)
 
     class TestLogger(logging.Logger):
         def __init__(self, name):
@@ -106,8 +109,27 @@ def test_logging_bad_custom_log_levels():
         assert _regex_match_kv_pair(r'log_timestamp="{0}"'.format(REGEX_TS), kv_pairs)
 
         assert (
-            'orig_message="Unexpected log level: User code attempted to log at level \'FOO\', but '
-            'no logger was configured to handle that level. Original message: \'test\''
+            'orig_message="Unexpected log level: User code attempted to log at level \'foo\', but '
+            'that level has not been registered with the Python logging library. Original message: '
+            '\'test\''
+        ) in captured_results[0]
+
+
+def test_logging_unregistered_custom_log_levels():
+    with _setup_logger('test', {'FOO': 3}, register_levels=False) as (captured_results, logger):
+
+        dl = DagsterLogManager('123', {}, [logger])
+        dl.foo('test')
+
+        kv_pairs = set(captured_results[0].strip().split())
+
+        assert _regex_match_kv_pair(r'log_message_id="{0}"'.format(REGEX_UUID), kv_pairs)
+        assert _regex_match_kv_pair(r'log_timestamp="{0}"'.format(REGEX_TS), kv_pairs)
+
+        assert (
+            'orig_message="Unexpected log level: User code attempted to log at level \'foo\', but '
+            'that level has not been registered with the Python logging library. Original message: '
+            '\'test\''
         ) in captured_results[0]
 
 
