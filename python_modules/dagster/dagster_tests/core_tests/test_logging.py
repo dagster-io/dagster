@@ -21,11 +21,15 @@ def _setup_logger(name):
 
     captured_results = []
 
-    def log_fn(msg, *args, **kwargs):  # pylint:disable=unused-argument
+    def log_fn(msg, *args, **kwargs):
+        captured_results.append(msg)
+
+    def int_log_fn(_lvl, msg, *args, **kwargs):
         captured_results.append(msg)
 
     for level in ['debug', 'info', 'warning', 'error', 'critical']:
         setattr(logger, level, log_fn)
+    setattr(logger, 'log', int_log_fn)
 
     return captured_results, logger
 
@@ -41,16 +45,6 @@ def _validate_basic(kv_pairs):
 
 
 def test_logging_basic():
-    captured_results, logger = _setup_logger('test')
-
-    dl = DagsterLogManager('123', {}, [logger])
-    dl.info('test')
-
-    kv_pairs = set(captured_results[0].strip().split())
-    _validate_basic(kv_pairs)
-
-
-def test_multiline_logging_basic():
     captured_results, logger = _setup_logger(DAGSTER_DEFAULT_LOGGER)
     dl = DagsterLogManager('123', {}, [logger])
     dl.info('test')
@@ -59,7 +53,16 @@ def test_multiline_logging_basic():
     _validate_basic(kv_pairs)
 
 
-def test_multiline_logging_complex():
+def test_logging_integer_log_level():
+    captured_results, logger = _setup_logger(DAGSTER_DEFAULT_LOGGER)
+    dl = DagsterLogManager('123', {}, [logger])
+    dl.log(90, 'test')
+
+    kv_pairs = captured_results[0].replace(' ', '').split('\n')[1:]
+    _validate_basic(kv_pairs)
+
+
+def test_logging_complex():
     msg = 'DagsterEventType.STEP_FAILURE for step start.materialization.output.result.0'
     kwargs = {
         'pipeline': 'example',

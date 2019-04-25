@@ -105,7 +105,7 @@ class DagsterLogManager:
         # for the gory details.
 
         for logger in self.loggers:
-            logger.log(_kv_message(all_props.items()), extra={DAGSTER_META_KEY: all_props})
+            logger.log(level, _kv_message(all_props.items()), extra={DAGSTER_META_KEY: all_props})
 
     def debug(self, msg, **kwargs):
         '''
