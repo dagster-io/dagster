@@ -130,28 +130,35 @@ class DagsterLogManager:
     def info(self, msg, **kwargs):
         '''Log at INFO level
 
-        See debug()'''
+        See debug()
+        '''
         return self._log(logging.INFO, msg, kwargs)
 
     def warning(self, msg, **kwargs):
         '''Log at WARNING level
 
-        See debug()'''
+        See debug()
+        '''
         return self._log(logging.WARNING, msg, kwargs)
 
     def error(self, msg, **kwargs):
         '''Log at ERROR level
 
-        See debug()'''
+        See debug()
+        '''
         return self._log(logging.ERROR, msg, kwargs)
 
     def critical(self, msg, **kwargs):
         '''Log at CRITICAL level
 
-        See debug()'''
+        See debug()
+        '''
         return self._log(logging.CRITICAL, msg, kwargs)
 
     def log(self, level, msg, **kwargs):
+        '''Log at the integer level ``level``.
+
+        See debug()
+        '''
         check.int_param(level, 'level')
         return self._log(level, msg, kwargs)
-
