@@ -3,7 +3,12 @@ import itertools
 import logging
 import uuid
 
+import coloredlogs
+
 from dagster import check, seven
+from dagster.core.types import Dict, Field, String
+from dagster.core.definitions.logger import logger
+from dagster.utils.logging import check_valid_log_level, default_format_string
 
 DAGSTER_META_KEY = 'dagster_meta'
 DAGSTER_DEFAULT_LOGGER = 'dagster'
@@ -42,6 +47,11 @@ class DagsterLogManager:
            expected to register these levels with the Python logging library (using
            logging.addLevelName) when instantiating custom loggers.
         3. Using the underlying integer API directly by calling, e.g., context.log.log(5, msg).
+
+    Args:
+        run_id (str): The run_id.
+        tags (dict): Tags for the run
+        loggers (List[logging.Logger]): Loggers to invoke.
     '''
 
     def __init__(self, run_id, logging_tags, loggers):
@@ -137,10 +147,10 @@ class DagsterLogManager:
             )
             return
 
-        for logger in self.loggers:
-            if not isinstance(level, int) and hasattr(logger, level):
-                logger_method = check.is_callable(getattr(logger, level))
-                if logger.name == DAGSTER_DEFAULT_LOGGER:
+        for logger_ in self.loggers:
+            if not isinstance(level, int) and hasattr(logger_, level):
+                logger_method = check.is_callable(getattr(logger_, level))
+                if logger_.name == DAGSTER_DEFAULT_LOGGER:
                     logger_method(
                         msg_with_multiline_structured_props, extra={DAGSTER_META_KEY: all_props}
                     )
@@ -148,14 +158,14 @@ class DagsterLogManager:
                     logger_method(msg_with_structured_props, extra={DAGSTER_META_KEY: all_props})
 
             else:
-                if logger.name == DAGSTER_DEFAULT_LOGGER:
-                    logger.log(
+                if logger_.name == DAGSTER_DEFAULT_LOGGER:
+                    logger_.log(
                         lvl,
                         msg_with_multiline_structured_props,
                         extra={DAGSTER_META_KEY: all_props},
                     )
                 else:
-                    logger.log(lvl, msg_with_structured_props, extra={DAGSTER_META_KEY: all_props})
+                    logger_.log(lvl, msg_with_structured_props, extra={DAGSTER_META_KEY: all_props})
 
     def debug(self, msg, **kwargs):
         '''
@@ -252,3 +262,33 @@ class DagsterLogManager:
             return self._log(name, msg, kwargs)
 
         return handler
+
+
+@logger(
+    config_field=Field(
+        Dict(
+            {
+                'log_level': Field(String, is_optional=True, default_value='INFO'),
+                'name': Field(String, is_optional=True, default_value='dagster'),
+            }
+        )
+    ),
+    description='The default colored console logger.',
+)
+def colored_console_logger(init_context):
+    level = check_valid_log_level(init_context.logger_config['log_level'])
+    name = init_context.logger_config['name']
+
+    klass = logging.getLoggerClass()
+    logger_ = klass(name, level=level)
+    coloredlogs.install(logger=logger_, level=level, fmt=default_format_string())
+    return logger_
+
+
+def default_system_loggers():
+    '''If users don't provide configuration for any loggers, we instantiate this logger.'''
+    return [colored_console_logger]
+
+
+def default_loggers():
+    return {'console': colored_console_logger}
