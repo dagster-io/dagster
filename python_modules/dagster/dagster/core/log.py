@@ -138,7 +138,7 @@ class DagsterLogManager:
             return
 
         for logger in self.loggers:
-            if hasattr(logger, level):
+            if not isinstance(level, int) and hasattr(logger, level):
                 logger_method = check.is_callable(getattr(logger, level))
                 if logger.name == DAGSTER_DEFAULT_LOGGER:
                     logger_method(
