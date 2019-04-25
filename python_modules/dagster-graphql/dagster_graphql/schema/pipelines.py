@@ -331,9 +331,8 @@ class DauphinInputDefinition(dauphin.ObjectType):
     def resolve_expectations(self, graphene_info):
         if self._input_definition.expectations:
             return [
-                graphene_info.schema.type_named('Expectation')(
-                    expectation for expectation in self._input_definition.expectations
-                )
+                graphene_info.schema.type_named('Expectation')(expectation)
+                for expectation in self._input_definition.expectations
             ]
         else:
             return []

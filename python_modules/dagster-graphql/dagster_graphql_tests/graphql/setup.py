@@ -25,6 +25,8 @@ from dagster import (
     PipelineDefinition,
     RepositoryDefinition,
     ResourceDefinition,
+    ExpectationDefinition,
+    ExpectationResult,
     SolidDefinition,
     String,
     lambda_solid,
@@ -75,6 +77,33 @@ def sum_sq_solid(sum_df):
     sum_sq_df = sum_df.copy()
     sum_sq_df['sum_sq'] = sum_df['sum'] ** 2
     return sum_sq_df
+
+
+@lambda_solid(
+    inputs=[
+        InputDefinition(
+            'sum_df',
+            DataFrame,
+            expectations=[
+                ExpectationDefinition(
+                    name='some_expectation',
+                    expectation_fn=lambda _i, _v: ExpectationResult(success=True),
+                )
+            ],
+        )
+    ],
+    output=OutputDefinition(
+        DataFrame,
+        expectations=[
+            ExpectationDefinition(
+                name='other_expectation',
+                expectation_fn=lambda _i, _v: ExpectationResult(success=True),
+            )
+        ],
+    ),
+)
+def df_expectations_solid(sum_df):
+    return sum_df
 
 
 def pandas_hello_world_solids_config():
@@ -213,10 +242,11 @@ def define_more_complicated_nested_config():
 def define_pandas_hello_world():
     return PipelineDefinition(
         name='pandas_hello_world',
-        solids=[sum_solid, sum_sq_solid],
+        solids=[sum_solid, sum_sq_solid, df_expectations_solid],
         dependencies={
             'sum_solid': {},
             'sum_sq_solid': {'sum_df': DependencyDefinition(sum_solid.name)},
+            'df_expectations_solid': {'sum_df': DependencyDefinition(sum_solid.name)},
         },
     )
 

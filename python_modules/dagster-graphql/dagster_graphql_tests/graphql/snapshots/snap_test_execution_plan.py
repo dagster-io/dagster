@@ -7,6 +7,13 @@ from snapshottest import Snapshot
 
 snapshots = Snapshot()
 
+snapshots['test_pipeline_not_found_error_execute_plan 1'] = {
+    'executePlan': {
+        '__typename': 'PipelineNotFoundError',
+        'pipelineName': 'nope'
+    }
+}
+
 snapshots['test_success_whole_execution_plan 1'] = {
     'executePlan': {
         '__typename': 'ExecutePlanSuccess',
@@ -62,6 +69,28 @@ snapshots['test_success_whole_execution_plan 1'] = {
             {
                 '__typename': 'ExecutionStepStartEvent',
                 'step': {
+                    'key': 'df_expectations_solid.output.sum_df.expectation.some_expectation'
+                }
+            },
+            {
+                '__typename': 'ExecutionStepOutputEvent',
+                'outputName': 'expectation_value',
+                'step': {
+                    'key': 'df_expectations_solid.output.sum_df.expectation.some_expectation'
+                },
+                'valueRepr': '''   num1  num2  sum
+0     1     2    3
+1     3     4    7'''
+            },
+            {
+                '__typename': 'ExecutionStepSuccessEvent',
+                'step': {
+                    'key': 'df_expectations_solid.output.sum_df.expectation.some_expectation'
+                }
+            },
+            {
+                '__typename': 'ExecutionStepStartEvent',
+                'step': {
                     'key': 'sum_sq_solid.transform'
                 }
             },
@@ -79,6 +108,94 @@ snapshots['test_success_whole_execution_plan 1'] = {
                 '__typename': 'ExecutionStepSuccessEvent',
                 'step': {
                     'key': 'sum_sq_solid.transform'
+                }
+            },
+            {
+                '__typename': 'ExecutionStepStartEvent',
+                'step': {
+                    'key': 'df_expectations_solid.output.sum_df.expectations.join'
+                }
+            },
+            {
+                '__typename': 'ExecutionStepOutputEvent',
+                'outputName': 'join_output',
+                'step': {
+                    'key': 'df_expectations_solid.output.sum_df.expectations.join'
+                },
+                'valueRepr': '''   num1  num2  sum
+0     1     2    3
+1     3     4    7'''
+            },
+            {
+                '__typename': 'ExecutionStepSuccessEvent',
+                'step': {
+                    'key': 'df_expectations_solid.output.sum_df.expectations.join'
+                }
+            },
+            {
+                '__typename': 'ExecutionStepStartEvent',
+                'step': {
+                    'key': 'df_expectations_solid.transform'
+                }
+            },
+            {
+                '__typename': 'ExecutionStepOutputEvent',
+                'outputName': 'result',
+                'step': {
+                    'key': 'df_expectations_solid.transform'
+                },
+                'valueRepr': '''   num1  num2  sum
+0     1     2    3
+1     3     4    7'''
+            },
+            {
+                '__typename': 'ExecutionStepSuccessEvent',
+                'step': {
+                    'key': 'df_expectations_solid.transform'
+                }
+            },
+            {
+                '__typename': 'ExecutionStepStartEvent',
+                'step': {
+                    'key': 'df_expectations_solid.output.result.expectation.other_expectation'
+                }
+            },
+            {
+                '__typename': 'ExecutionStepOutputEvent',
+                'outputName': 'expectation_value',
+                'step': {
+                    'key': 'df_expectations_solid.output.result.expectation.other_expectation'
+                },
+                'valueRepr': '''   num1  num2  sum
+0     1     2    3
+1     3     4    7'''
+            },
+            {
+                '__typename': 'ExecutionStepSuccessEvent',
+                'step': {
+                    'key': 'df_expectations_solid.output.result.expectation.other_expectation'
+                }
+            },
+            {
+                '__typename': 'ExecutionStepStartEvent',
+                'step': {
+                    'key': 'df_expectations_solid.output.result.expectations.join'
+                }
+            },
+            {
+                '__typename': 'ExecutionStepOutputEvent',
+                'outputName': 'join_output',
+                'step': {
+                    'key': 'df_expectations_solid.output.result.expectations.join'
+                },
+                'valueRepr': '''   num1  num2  sum
+0     1     2    3
+1     3     4    7'''
+            },
+            {
+                '__typename': 'ExecutionStepSuccessEvent',
+                'step': {
+                    'key': 'df_expectations_solid.output.result.expectations.join'
                 }
             }
         ]
@@ -140,6 +257,28 @@ snapshots['test_success_whole_execution_plan_with_filesystem_config 1'] = {
             {
                 '__typename': 'ExecutionStepStartEvent',
                 'step': {
+                    'key': 'df_expectations_solid.output.sum_df.expectation.some_expectation'
+                }
+            },
+            {
+                '__typename': 'ExecutionStepOutputEvent',
+                'outputName': 'expectation_value',
+                'step': {
+                    'key': 'df_expectations_solid.output.sum_df.expectation.some_expectation'
+                },
+                'valueRepr': '''   num1  num2  sum
+0     1     2    3
+1     3     4    7'''
+            },
+            {
+                '__typename': 'ExecutionStepSuccessEvent',
+                'step': {
+                    'key': 'df_expectations_solid.output.sum_df.expectation.some_expectation'
+                }
+            },
+            {
+                '__typename': 'ExecutionStepStartEvent',
+                'step': {
                     'key': 'sum_sq_solid.transform'
                 }
             },
@@ -157,6 +296,94 @@ snapshots['test_success_whole_execution_plan_with_filesystem_config 1'] = {
                 '__typename': 'ExecutionStepSuccessEvent',
                 'step': {
                     'key': 'sum_sq_solid.transform'
+                }
+            },
+            {
+                '__typename': 'ExecutionStepStartEvent',
+                'step': {
+                    'key': 'df_expectations_solid.output.sum_df.expectations.join'
+                }
+            },
+            {
+                '__typename': 'ExecutionStepOutputEvent',
+                'outputName': 'join_output',
+                'step': {
+                    'key': 'df_expectations_solid.output.sum_df.expectations.join'
+                },
+                'valueRepr': '''   num1  num2  sum
+0     1     2    3
+1     3     4    7'''
+            },
+            {
+                '__typename': 'ExecutionStepSuccessEvent',
+                'step': {
+                    'key': 'df_expectations_solid.output.sum_df.expectations.join'
+                }
+            },
+            {
+                '__typename': 'ExecutionStepStartEvent',
+                'step': {
+                    'key': 'df_expectations_solid.transform'
+                }
+            },
+            {
+                '__typename': 'ExecutionStepOutputEvent',
+                'outputName': 'result',
+                'step': {
+                    'key': 'df_expectations_solid.transform'
+                },
+                'valueRepr': '''   num1  num2  sum
+0     1     2    3
+1     3     4    7'''
+            },
+            {
+                '__typename': 'ExecutionStepSuccessEvent',
+                'step': {
+                    'key': 'df_expectations_solid.transform'
+                }
+            },
+            {
+                '__typename': 'ExecutionStepStartEvent',
+                'step': {
+                    'key': 'df_expectations_solid.output.result.expectation.other_expectation'
+                }
+            },
+            {
+                '__typename': 'ExecutionStepOutputEvent',
+                'outputName': 'expectation_value',
+                'step': {
+                    'key': 'df_expectations_solid.output.result.expectation.other_expectation'
+                },
+                'valueRepr': '''   num1  num2  sum
+0     1     2    3
+1     3     4    7'''
+            },
+            {
+                '__typename': 'ExecutionStepSuccessEvent',
+                'step': {
+                    'key': 'df_expectations_solid.output.result.expectation.other_expectation'
+                }
+            },
+            {
+                '__typename': 'ExecutionStepStartEvent',
+                'step': {
+                    'key': 'df_expectations_solid.output.result.expectations.join'
+                }
+            },
+            {
+                '__typename': 'ExecutionStepOutputEvent',
+                'outputName': 'join_output',
+                'step': {
+                    'key': 'df_expectations_solid.output.result.expectations.join'
+                },
+                'valueRepr': '''   num1  num2  sum
+0     1     2    3
+1     3     4    7'''
+            },
+            {
+                '__typename': 'ExecutionStepSuccessEvent',
+                'step': {
+                    'key': 'df_expectations_solid.output.result.expectations.join'
                 }
             }
         ]
@@ -218,6 +445,28 @@ snapshots['test_success_whole_execution_plan_with_in_memory_config 1'] = {
             {
                 '__typename': 'ExecutionStepStartEvent',
                 'step': {
+                    'key': 'df_expectations_solid.output.sum_df.expectation.some_expectation'
+                }
+            },
+            {
+                '__typename': 'ExecutionStepOutputEvent',
+                'outputName': 'expectation_value',
+                'step': {
+                    'key': 'df_expectations_solid.output.sum_df.expectation.some_expectation'
+                },
+                'valueRepr': '''   num1  num2  sum
+0     1     2    3
+1     3     4    7'''
+            },
+            {
+                '__typename': 'ExecutionStepSuccessEvent',
+                'step': {
+                    'key': 'df_expectations_solid.output.sum_df.expectation.some_expectation'
+                }
+            },
+            {
+                '__typename': 'ExecutionStepStartEvent',
+                'step': {
                     'key': 'sum_sq_solid.transform'
                 }
             },
@@ -236,29 +485,152 @@ snapshots['test_success_whole_execution_plan_with_in_memory_config 1'] = {
                 'step': {
                     'key': 'sum_sq_solid.transform'
                 }
+            },
+            {
+                '__typename': 'ExecutionStepStartEvent',
+                'step': {
+                    'key': 'df_expectations_solid.output.sum_df.expectations.join'
+                }
+            },
+            {
+                '__typename': 'ExecutionStepOutputEvent',
+                'outputName': 'join_output',
+                'step': {
+                    'key': 'df_expectations_solid.output.sum_df.expectations.join'
+                },
+                'valueRepr': '''   num1  num2  sum
+0     1     2    3
+1     3     4    7'''
+            },
+            {
+                '__typename': 'ExecutionStepSuccessEvent',
+                'step': {
+                    'key': 'df_expectations_solid.output.sum_df.expectations.join'
+                }
+            },
+            {
+                '__typename': 'ExecutionStepStartEvent',
+                'step': {
+                    'key': 'df_expectations_solid.transform'
+                }
+            },
+            {
+                '__typename': 'ExecutionStepOutputEvent',
+                'outputName': 'result',
+                'step': {
+                    'key': 'df_expectations_solid.transform'
+                },
+                'valueRepr': '''   num1  num2  sum
+0     1     2    3
+1     3     4    7'''
+            },
+            {
+                '__typename': 'ExecutionStepSuccessEvent',
+                'step': {
+                    'key': 'df_expectations_solid.transform'
+                }
+            },
+            {
+                '__typename': 'ExecutionStepStartEvent',
+                'step': {
+                    'key': 'df_expectations_solid.output.result.expectation.other_expectation'
+                }
+            },
+            {
+                '__typename': 'ExecutionStepOutputEvent',
+                'outputName': 'expectation_value',
+                'step': {
+                    'key': 'df_expectations_solid.output.result.expectation.other_expectation'
+                },
+                'valueRepr': '''   num1  num2  sum
+0     1     2    3
+1     3     4    7'''
+            },
+            {
+                '__typename': 'ExecutionStepSuccessEvent',
+                'step': {
+                    'key': 'df_expectations_solid.output.result.expectation.other_expectation'
+                }
+            },
+            {
+                '__typename': 'ExecutionStepStartEvent',
+                'step': {
+                    'key': 'df_expectations_solid.output.result.expectations.join'
+                }
+            },
+            {
+                '__typename': 'ExecutionStepOutputEvent',
+                'outputName': 'join_output',
+                'step': {
+                    'key': 'df_expectations_solid.output.result.expectations.join'
+                },
+                'valueRepr': '''   num1  num2  sum
+0     1     2    3
+1     3     4    7'''
+            },
+            {
+                '__typename': 'ExecutionStepSuccessEvent',
+                'step': {
+                    'key': 'df_expectations_solid.output.result.expectations.join'
+                }
             }
         ]
     }
 }
 
-snapshots['test_invalid_config_execute_plan 1'] = {
+snapshots['test_successful_one_part_execute_plan 1'] = {
     'executePlan': {
-        '__typename': 'PipelineConfigValidationInvalid',
-        'errors': [
-            {
-                'message': 'Value at path root:solids:sum_solid:inputs:num:csv:path is not valid. Expected "Path"'
-            }
-        ],
+        '__typename': 'ExecutePlanSuccess',
+        'hasFailures': False,
         'pipeline': {
             'name': 'pandas_hello_world'
-        }
-    }
-}
-
-snapshots['test_pipeline_not_found_error_execute_plan 1'] = {
-    'executePlan': {
-        '__typename': 'PipelineNotFoundError',
-        'pipelineName': 'nope'
+        },
+        'stepEvents': [
+            {
+                '__typename': 'ExecutionStepStartEvent',
+                'step': {
+                    'key': 'sum_solid.inputs.num.read'
+                }
+            },
+            {
+                '__typename': 'ExecutionStepOutputEvent',
+                'outputName': 'input_thunk_output',
+                'step': {
+                    'key': 'sum_solid.inputs.num.read'
+                },
+                'valueRepr': '''   num1  num2
+0     1     2
+1     3     4'''
+            },
+            {
+                '__typename': 'ExecutionStepSuccessEvent',
+                'step': {
+                    'key': 'sum_solid.inputs.num.read'
+                }
+            },
+            {
+                '__typename': 'ExecutionStepStartEvent',
+                'step': {
+                    'key': 'sum_solid.transform'
+                }
+            },
+            {
+                '__typename': 'ExecutionStepOutputEvent',
+                'outputName': 'result',
+                'step': {
+                    'key': 'sum_solid.transform'
+                },
+                'valueRepr': '''   num1  num2  sum
+0     1     2    3
+1     3     4    7'''
+            },
+            {
+                '__typename': 'ExecutionStepSuccessEvent',
+                'step': {
+                    'key': 'sum_solid.transform'
+                }
+            }
+        ]
     }
 }
 
@@ -352,58 +724,16 @@ snapshots['test_successful_two_part_execute_plan 2'] = {
     }
 }
 
-snapshots['test_successful_one_part_execute_plan 1'] = {
+snapshots['test_invalid_config_execute_plan 1'] = {
     'executePlan': {
-        '__typename': 'ExecutePlanSuccess',
-        'hasFailures': False,
+        '__typename': 'PipelineConfigValidationInvalid',
+        'errors': [
+            {
+                'message': 'Value at path root:solids:sum_solid:inputs:num:csv:path is not valid. Expected "Path"'
+            }
+        ],
         'pipeline': {
             'name': 'pandas_hello_world'
-        },
-        'stepEvents': [
-            {
-                '__typename': 'ExecutionStepStartEvent',
-                'step': {
-                    'key': 'sum_solid.inputs.num.read'
-                }
-            },
-            {
-                '__typename': 'ExecutionStepOutputEvent',
-                'outputName': 'input_thunk_output',
-                'step': {
-                    'key': 'sum_solid.inputs.num.read'
-                },
-                'valueRepr': '''   num1  num2
-0     1     2
-1     3     4'''
-            },
-            {
-                '__typename': 'ExecutionStepSuccessEvent',
-                'step': {
-                    'key': 'sum_solid.inputs.num.read'
-                }
-            },
-            {
-                '__typename': 'ExecutionStepStartEvent',
-                'step': {
-                    'key': 'sum_solid.transform'
-                }
-            },
-            {
-                '__typename': 'ExecutionStepOutputEvent',
-                'outputName': 'result',
-                'step': {
-                    'key': 'sum_solid.transform'
-                },
-                'valueRepr': '''   num1  num2  sum
-0     1     2    3
-1     3     4    7'''
-            },
-            {
-                '__typename': 'ExecutionStepSuccessEvent',
-                'step': {
-                    'key': 'sum_solid.transform'
-                }
-            }
-        ]
+        }
     }
 }
