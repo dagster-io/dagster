@@ -19448,7 +19448,7 @@ node. For the ‘synchronous’ API, see <a class="reference internal" href="#da
 
 <dl class="class">
 <dt id="dagster.MultiprocessExecutorConfig">
-<em class="property">class </em><code class="descclassname">dagster.</code><code class="descname">MultiprocessExecutorConfig</code><span class="sig-paren">(</span><em>pipeline_fn</em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dagster/core/execution_context.html#MultiprocessExecutorConfig"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dagster.MultiprocessExecutorConfig" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">dagster.</code><code class="descname">MultiprocessExecutorConfig</code><span class="sig-paren">(</span><em>pipeline_fn</em>, <em>max_concurrent=None</em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dagster/core/execution_context.html#MultiprocessExecutorConfig"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dagster.MultiprocessExecutorConfig" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="class">

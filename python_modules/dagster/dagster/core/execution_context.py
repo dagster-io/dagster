@@ -6,6 +6,7 @@ in the user_context module
 '''
 from collections import namedtuple
 import uuid
+import multiprocessing
 
 from dagster import check
 from dagster.utils import merge_dicts
@@ -29,8 +30,13 @@ class InProcessExecutorConfig(ExecutorConfig):
 
 
 class MultiprocessExecutorConfig(ExecutorConfig):
-    def __init__(self, pipeline_fn):
+    def __init__(self, pipeline_fn, max_concurrent=None):
         self.pipeline_fn = check.callable_param(pipeline_fn, 'pipeline_fn')
+        max_concurrent = (
+            max_concurrent if max_concurrent is not None else multiprocessing.cpu_count()
+        )
+        self.max_concurrent = check.int_param(max_concurrent, 'max_concurrent')
+        check.invariant(self.max_concurrent > 0, 'max_concurrent processes must be greater than 0')
         self.raise_on_error = False
 
 
