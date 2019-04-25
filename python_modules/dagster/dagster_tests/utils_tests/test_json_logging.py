@@ -1,20 +1,33 @@
 import json
 import logging
 
+from contextlib import contextmanager
+
+from dagster import PipelineDefinition
+from dagster.core.init_context import InitLoggerContext
 from dagster.utils.logging import define_json_file_logger
 from dagster.utils.test import create_test_pipeline_execution_context, get_temp_file_name
 
 
+@contextmanager
+def setup_json_file_logger(tf_name, name='foo', level=logging.DEBUG):
+    logger_def = define_json_file_logger(name, tf_name, level)
+    init_logger_context = InitLoggerContext({}, {}, PipelineDefinition([]), logger_def, '')
+
+    logger = logger_def.logger_fn(init_logger_context)
+    yield logger
+
+
 def test_basic_logging():
     with get_temp_file_name() as tf_name:
-        logger = define_json_file_logger('foo', tf_name, logging.DEBUG)
-        logger.debug('bar')
+        with setup_json_file_logger(tf_name) as logger:
+            logger.debug('bar')
 
         data = list(parse_json_lines(tf_name))
 
-        assert len(data) == 1
-        assert data[0]['name'] == 'foo'
-        assert data[0]['msg'] == 'bar'
+    assert len(data) == 1
+    assert data[0]['name'] == 'foo'
+    assert data[0]['msg'] == 'bar'
 
 
 def parse_json_lines(tf_name):
@@ -25,11 +38,10 @@ def parse_json_lines(tf_name):
 
 def test_no_double_write_diff_names():
     with get_temp_file_name() as tf_name:
-        foo_logger = define_json_file_logger('foo', tf_name, logging.DEBUG)
-        baaz_logger = define_json_file_logger('baaz', tf_name, logging.DEBUG)
-
-        foo_logger.debug('foo message')
-        baaz_logger.debug('baaz message')
+        with setup_json_file_logger(tf_name) as foo_logger:
+            with setup_json_file_logger(tf_name, 'baaz') as baaz_logger:
+                foo_logger.debug('foo message')
+                baaz_logger.debug('baaz message')
 
         data = list(parse_json_lines(tf_name))
 
@@ -46,11 +58,10 @@ def test_no_double_write_diff_names():
 # a separate instance with info level
 def test_no_double_write_same_names():
     with get_temp_file_name() as tf_name:
-        foo_logger_one = define_json_file_logger('foo', tf_name, logging.DEBUG)
-        foo_logger_two = define_json_file_logger('foo', tf_name, logging.INFO)
-
-        foo_logger_one.debug('logger one message')
-        foo_logger_two.debug('logger two message')
+        with setup_json_file_logger(tf_name) as foo_logger_one:
+            with setup_json_file_logger(tf_name, 'foo', logging.INFO) as foo_logger_two:
+                foo_logger_one.debug('logger one message')
+                foo_logger_two.debug('logger two message')
 
         data = list(parse_json_lines(tf_name))
         assert len(data) == 1
@@ -62,8 +73,9 @@ def test_no_double_write_same_names():
 # See extended comment in JsonFileHandler::emit
 def test_write_dagster_meta():
     with get_temp_file_name() as tf_name:
-        logger = define_json_file_logger('foo', tf_name, logging.DEBUG)
-        execution_context = create_test_pipeline_execution_context(loggers=[logger])
+        execution_context = create_test_pipeline_execution_context(
+            loggers={'json': define_json_file_logger('foo', tf_name, logging.DEBUG)}
+        )
         execution_context.log.debug('some_debug_message', context_key='context_value')
         data = list(parse_json_lines(tf_name))
         assert len(data) == 1

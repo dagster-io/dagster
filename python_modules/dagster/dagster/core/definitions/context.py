@@ -91,9 +91,8 @@ class PipelineContextDefinition(object):
         self.resources_type = namedtuple('Resources', list(resources.keys())) if resources else None
 
 
-def _default_context_fn(init_context):
-    log_level = level_from_string(init_context.context_config['log_level'])
-    return ExecutionContext.console_logging(log_level)
+def _default_context_fn(_init_context):
+    return ExecutionContext()
 
 
 def _default_config_field():

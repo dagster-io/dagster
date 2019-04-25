@@ -781,6 +781,8 @@ snapshots['test_build_all_docs 3'] = '''
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="sections/api/apidocs/types.html#dagster.List">List() (in module dagster)</a>
 </li>
+      <li><a href="sections/api/apidocs/pipeline.html#dagster.PipelineDefinition.loggers">loggers (dagster.PipelineDefinition attribute)</a>
+</li>
   </ul></td>
 </tr></table>
 
@@ -19789,7 +19791,7 @@ snapshots['test_build_all_docs 52'] = '''
 <h1>Pipelines<a class="headerlink" href="#pipelines" title="Permalink to this headline">¶</a></h1>
 <dl class="class">
 <dt id="dagster.PipelineDefinition">
-<em class="property">class </em><code class="descclassname">dagster.</code><code class="descname">PipelineDefinition</code><span class="sig-paren">(</span><em>solids</em>, <em>name=None</em>, <em>description=None</em>, <em>context_definitions=None</em>, <em>dependencies=None</em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dagster/core/definitions/pipeline.html#PipelineDefinition"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dagster.PipelineDefinition" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">dagster.</code><code class="descname">PipelineDefinition</code><span class="sig-paren">(</span><em>solids</em>, <em>name=None</em>, <em>description=None</em>, <em>context_definitions=None</em>, <em>dependencies=None</em>, <em>loggers=None</em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dagster/core/definitions/pipeline.html#PipelineDefinition"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dagster.PipelineDefinition" title="Permalink to this definition">¶</a></dt>
 <dd><p>A instance of a PipelineDefinition represents a pipeline in dagster.</p>
 <p>A pipeline is comprised of:</p>
 <ul class="simple">
@@ -19823,6 +19825,10 @@ determine how the values produced by solids flow through the DAG.</p>
 <li><p><strong>dependencies</strong> (<em>Optional</em><em>[</em><em>Dict</em><em>[</em><em>Union</em><em>[</em><em>str</em><em>, </em><a class="reference internal" href="#dagster.SolidInstance" title="dagster.SolidInstance"><em>SolidInstance</em></a><em>]</em><em>, </em><em>Dict</em><em>[</em><em>str</em><em>, </em><a class="reference internal" href="#dagster.DependencyDefinition" title="dagster.DependencyDefinition"><em>DependencyDefinition</em></a><em>]</em><em>]</em><em>]</em>) – A structure that declares where each solid gets its inputs. The keys at the top
 level dict are either string names of solids or SolidInstances. The values
 are dicts that map input names to DependencyDefinitions.</p></li>
+<li><p><strong>loggers</strong> (<em>Optional</em><em>[</em><em>Dict</em><em>[</em><em>str</em><em>, </em><em>LoggerDefinition</em><em>]</em><em>]</em>) – The loggers to invoke when solids in this pipeline generate log messages. By default,
+the system makes a set of loggers available (currently only a console logger). If config
+is not provided for a logger, it will not be invoked. If config is not provided for any
+loggers, the system will default to a console logger.</p></li>
 </ul>
 </dd>
 </dl>
@@ -19894,6 +19900,20 @@ structure, but indexed for fast usage.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type</dt>
 <dd class="field-odd"><p>DependencyStructure</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="dagster.PipelineDefinition.loggers">
+<code class="descname">loggers</code><a class="headerlink" href="#dagster.PipelineDefinition.loggers" title="Permalink to this definition">¶</a></dt>
+<dd><p>The loggers to invoke when solids in this pipeline generate log messages. By default,
+the system makes a set of loggers available (currently only a console logger). If config
+is not provided for a logger, it will not be invoked. If config is not provided for any
+loggers, the system will default to a console logger.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>Optional[Dict[str, LoggerDefinition]]</p>
 </dd>
 </dl>
 </dd></dl>
@@ -20152,7 +20172,6 @@ SystemPipelineExecutionContextCreationData although that seemed excessively verb
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>loggers</strong> (<em>List</em><em>[</em><em>Logger</em><em>]</em>) – </p></li>
 <li><p><strong>(</strong><strong>)</strong> (<em>resources</em>) – </p></li>
 <li><p><strong>tags</strong> (<em>dict</em><em>[</em><em>str</em><em>, </em><em>str</em><em>]</em>) – </p></li>
 </ul>

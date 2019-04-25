@@ -10,15 +10,12 @@ They inherit from each other in reverse order. They are also relatively lightwei
 objects, and a new one is created for every invocation into user space.
 '''
 
-import logging
-
 from abc import ABCMeta, abstractproperty, abstractmethod
 from collections import namedtuple
 
 import six
 
 from dagster import check
-from dagster.utils.logging import define_colored_console_logger
 
 from .execution_context import (
     SystemExpectationExecutionContext,
@@ -27,30 +24,20 @@ from .execution_context import (
 )
 
 
-class ExecutionContext(namedtuple('_ExecutionContext', 'loggers resources tags')):
+class ExecutionContext(namedtuple('_ExecutionContext', 'resources tags')):
     '''
     The user-facing object in the context creation function. The user constructs
     this in order to effect the context creation process. This could be named
     SystemPipelineExecutionContextCreationData although that seemed excessively verbose.
 
     Args:
-        loggers (List[Logger]):
         resources ():
         tags (dict[str, str])
     '''
 
     def __new__(cls, loggers=None, resources=None, tags=None):
         return super(ExecutionContext, cls).__new__(
-            cls,
-            loggers=check.opt_list_param(loggers, 'loggers', logging.Logger),
-            resources=resources,
-            tags=check.opt_dict_param(tags, 'tags'),
-        )
-
-    @staticmethod
-    def console_logging(log_level=logging.INFO, resources=None):
-        return ExecutionContext(
-            loggers=[define_colored_console_logger('dagster', log_level)], resources=resources
+            cls, resources=resources, tags=check.opt_dict_param(tags, 'tags')
         )
 
 

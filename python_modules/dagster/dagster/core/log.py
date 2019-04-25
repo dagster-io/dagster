@@ -3,7 +3,12 @@ import itertools
 import logging
 import uuid
 
+import coloredlogs
+
 from dagster import check, seven
+from dagster.core.types import Dict, Field, String
+from dagster.core.definitions.logger import logger
+from dagster.utils.logging import level_from_string, default_format_string
 
 DAGSTER_META_KEY = 'dagster_meta'
 DAGSTER_DEFAULT_LOGGER = 'dagster'
@@ -39,6 +44,11 @@ class DagsterLogManager:
         1. Using the standard convenience methods built into the Python logging library:
            ``context.log.{debug, info, warning, error, critical}``
         2. Using the underlying integer API directly by calling, e.g., ``context.log.log(5, msg)``.
+
+    Args:
+        run_id (str): The run_id.
+        logging_tags (dict): Tags for the run
+        loggers (List[logging.Logger]): Loggers to invoke.
     '''
 
     def __init__(self, run_id, logging_tags, loggers):
@@ -104,8 +114,8 @@ class DagsterLogManager:
         # See __init__.py:363 (makeLogRecord) in the python 3.6 logging module source
         # for the gory details.
 
-        for logger in self.loggers:
-            logger.log(level, _kv_message(all_props.items()), extra={DAGSTER_META_KEY: all_props})
+        for logger_ in self.loggers:
+            logger_.log(level, _kv_message(all_props.items()), extra={DAGSTER_META_KEY: all_props})
 
     def debug(self, msg, **kwargs):
         '''
@@ -195,3 +205,36 @@ class DagsterLogManager:
         '''
         check.int_param(level, 'level')
         return self._log(level, msg, kwargs)
+
+        check.int_param(lvl, 'lvl')
+        return self._log(lvl, msg, kwargs)
+
+
+@logger(
+    config_field=Field(
+        Dict(
+            {
+                'log_level': Field(String, is_optional=True, default_value='INFO'),
+                'name': Field(String, is_optional=True, default_value='dagster'),
+            }
+        )
+    ),
+    description='The default colored console logger.',
+)
+def colored_console_logger(init_context):
+    level = level_from_string(init_context.logger_config['log_level'])
+    name = init_context.logger_config['name']
+
+    klass = logging.getLoggerClass()
+    logger_ = klass(name, level=level)
+    coloredlogs.install(logger=logger_, level=level, fmt=default_format_string())
+    return logger_
+
+
+def default_system_loggers():
+    '''If users don't provide configuration for any loggers, we instantiate this logger.'''
+    return [colored_console_logger]
+
+
+def default_loggers():
+    return {'console': colored_console_logger}

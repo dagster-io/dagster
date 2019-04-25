@@ -70,6 +70,7 @@ def test_basic_solids_config():
                 'resources': {},
             }
         },
+        'loggers': {'console': {'log_level': '', 'name': ''}},
         'solids': {'required_field_solid': {'config': {'required_int': 0}}},
         'expectations': {'evaluate': True},
         'execution': {},
@@ -108,6 +109,7 @@ def test_two_contexts():
                 'resources': {},
             },
         },
+        'loggers': {'console': {'log_level': '', 'name': ''}},
         'solids': {},
         'expectations': {'evaluate': True},
         'execution': {},

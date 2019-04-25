@@ -2,6 +2,7 @@ import six
 
 from dagster import check
 from dagster.core.errors import DagsterInvariantViolationError
+from dagster.core.log import default_loggers
 from dagster.core.utils import toposort_flatten
 from dagster.core.errors import DagsterInvalidDefinitionError
 
@@ -12,6 +13,7 @@ from .environment_configs import (
     define_environment_cls,
     define_context_cls,
 )
+from .logger import LoggerDefinition
 from .pipeline_creation import (
     create_execution_structure,
     construct_config_type_dictionary,
@@ -76,7 +78,11 @@ class PipelineDefinition(object):
             A structure that declares where each solid gets its inputs. The keys at the top
             level dict are either string names of solids or SolidInstances. The values
             are dicts that map input names to DependencyDefinitions.
-
+        loggers (Optional[Dict[str, LoggerDefinition]]):
+            The loggers to invoke when solids in this pipeline generate log messages. By default,
+            the system makes a set of loggers available (currently only a console logger). If config
+            is not provided for a logger, it will not be invoked. If config is not provided for any
+            loggers, the system will default to a console logger.
 
     Attributes:
         name (str):
@@ -98,10 +104,21 @@ class PipelineDefinition(object):
         dependency_structure (DependencyStructure):
             Used mostly internally. This has the same information as the dependencies data
             structure, but indexed for fast usage.
+        loggers (Optional[Dict[str, LoggerDefinition]]):
+            The loggers to invoke when solids in this pipeline generate log messages. By default,
+            the system makes a set of loggers available (currently only a console logger). If config
+            is not provided for a logger, it will not be invoked. If config is not provided for any
+            loggers, the system will default to a console logger.
     '''
 
     def __init__(
-        self, solids, name=None, description=None, context_definitions=None, dependencies=None
+        self,
+        solids,
+        name=None,
+        description=None,
+        context_definitions=None,
+        dependencies=None,
+        loggers=None,
     ):
         self.name = check.opt_str_param(name, 'name', '<<unnamed>>')
         self.description = check.opt_str_param(description, 'description')
@@ -129,12 +146,18 @@ class PipelineDefinition(object):
         self._solid_dict = pipeline_solid_dict
         self.dependency_structure = dependency_structure
 
+        self.loggers = (
+            check.opt_dict_param(loggers, 'loggers', key_type=str, value_type=LoggerDefinition)
+            or default_loggers()
+        )
+
         self.environment_cls = define_environment_cls(
             EnvironmentClassCreationData(
                 self.name,
                 list(self._solid_dict.values()),
                 context_definitions,
                 dependency_structure,
+                self.loggers,
             )
         )
         self.environment_type = self.environment_cls.inst()

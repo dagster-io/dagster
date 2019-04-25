@@ -2,6 +2,7 @@ import json
 import logging
 
 from dagster import check
+from dagster.core.definitions.logger import logger
 from dagster.utils.error import SerializableErrorInfo
 
 from dagster.utils.logging import (
@@ -133,7 +134,7 @@ def construct_event_record(logger_message):
 
 def construct_event_logger(event_record_callback):
     '''
-    Callback receives a stream of event_records
+    Callback receives a stream of event_records. Piggybacks on the logging machinery.
     '''
     check.callable_param(event_record_callback, 'event_record_callback')
 
