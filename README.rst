@@ -58,3 +58,6 @@ Internal Libraries;
 - **js_modules/dagit** - The web UI for dagit
 - **dagster-graphql**: A GraphQL-based interface for interacting with the Dagster engines and
   repositories of Dagster pipelines.
+
+
+Come join our slack!: https://tinyurl.com/dagsterslack
