@@ -86,10 +86,15 @@ def test_logging_basic():
     with _setup_logger('test') as (captured_results, logger):
 
         dl = DagsterLogManager('123', {}, [logger])
+        dl.debug('test')
         dl.info('test')
+        dl.warning('test')
+        dl.error('test')
+        dl.critical('test')
 
-        kv_pairs = set(captured_results[0].strip().split())
-        _validate_basic(kv_pairs)
+        for captured_result in captured_results:
+            kv_pairs = set(captured_result.strip().split())
+            _validate_basic(kv_pairs)
 
 
 def test_logging_custom_log_levels():
