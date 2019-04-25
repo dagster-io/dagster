@@ -300,7 +300,7 @@ export interface PipelineExplorerRootQuery_pipeline_contexts {
 }
 
 export interface PipelineExplorerRootQuery_pipeline_solids_definition_metadata {
-  __typename: "SolidMetadataItemDefinition";
+  __typename: "MetadataItemDefinition";
   key: string;
   value: string;
 }

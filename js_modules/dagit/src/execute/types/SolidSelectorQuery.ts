@@ -7,7 +7,7 @@
 // ====================================================
 
 export interface SolidSelectorQuery_pipeline_solids_definition_metadata {
-  __typename: "SolidMetadataItemDefinition";
+  __typename: "MetadataItemDefinition";
   key: string;
   value: string;
 }

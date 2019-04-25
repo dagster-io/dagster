@@ -20,11 +20,12 @@ query PipelineQuery($config: PipelineConfig, $pipeline: ExecutionSelector!) {
     ... on ExecutionPlan {
       pipeline { name }
       steps {
+        key
         name
         solid {
           name
         }
-        kind 
+        kind
         inputs {
           name
           type {
@@ -39,6 +40,10 @@ query PipelineQuery($config: PipelineConfig, $pipeline: ExecutionSelector!) {
           type {
             name
           }
+        }
+        metadata {
+          key
+          value
         }
       }
     }
@@ -288,12 +293,30 @@ def test_pipeline_not_found_error_execute_plan(snapshot):
     snapshot.assert_match(result.data)
 
 
+def test_pipeline_with_execution_metadata(snapshot):
+    environment_dict = {'solids': {'solid_metadata_creation': {'config': {'str_value': 'foobar'}}}}
+    result = execute_dagster_graphql(
+        define_context(),
+        EXECUTION_PLAN_QUERY,
+        variables={'pipeline': {'name': 'pipeline_with_step_metadata'}, 'config': environment_dict},
+    )
+
+    steps_data = result.data['executionPlan']['steps']
+    assert len(steps_data) == 1
+    step_data = steps_data[0]
+    assert step_data['key'] == 'solid_metadata_creation.transform'
+    assert len(step_data['metadata']) == 1
+    assert step_data['metadata'][0] == {'key': 'computed', 'value': 'foobar1'}
+
+    snapshot.assert_match(result.data)
+
+
 EXECUTE_PLAN_QUERY = '''
 mutation (
     $pipelineName: String!
     $config: PipelineConfig
     $stepKeys: [String!]
-    $executionMetadata: ExecutionMetadata!
+    $executionMetadata: ExecutionMetadata
 ) {
     executePlan(
         pipelineName: $pipelineName
@@ -307,7 +330,13 @@ mutation (
             hasFailures
             stepEvents {
                 __typename
-                step { key }
+                step { 
+                    key 
+                    metadata {
+                       key
+                       value
+                    }
+                }
                 ... on ExecutionStepOutputEvent {
                     outputName
                     valueRepr

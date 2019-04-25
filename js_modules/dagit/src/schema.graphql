@@ -122,6 +122,7 @@ type ExecutionStep {
   outputs: [ExecutionStepOutput!]!
   solid: Solid!
   kind: StepKind!
+  metadata: [MetadataItemDefinition!]!
 }
 
 type ExecutionStepFailureEvent implements MessageEvent & StepEvent {
@@ -291,6 +292,11 @@ interface MessageEvent {
   step: ExecutionStep
 }
 
+type MetadataItemDefinition {
+  key: String!
+  value: String!
+}
+
 type MissingFieldConfigError implements PipelineConfigValidationError {
   message: String!
   path: [String!]!
@@ -313,7 +319,7 @@ type MissingRunIdErrorEvent {
 
 type Mutation {
   startPipelineExecution(config: PipelineConfig, executionMetadata: ExecutionMetadata, pipeline: ExecutionSelector!, reexecutionConfig: ReexecutionConfig, stepKeys: [String!]): StartPipelineExecutionResult!
-  executePlan(config: PipelineConfig, executionMetadata: ExecutionMetadata!, pipelineName: String!, stepKeys: [String!]): ExecutePlanResult!
+  executePlan(config: PipelineConfig, executionMetadata: ExecutionMetadata, pipelineName: String!, stepKeys: [String!]): ExecutePlanResult!
 }
 
 type NullableConfigType implements ConfigType & WrappingConfigType {
@@ -627,15 +633,10 @@ type Solid {
 type SolidDefinition {
   name: String!
   description: String
-  metadata: [SolidMetadataItemDefinition!]!
+  metadata: [MetadataItemDefinition!]!
   inputDefinitions: [InputDefinition!]!
   outputDefinitions: [OutputDefinition!]!
   configDefinition: ConfigTypeField
-}
-
-type SolidMetadataItemDefinition {
-  key: String!
-  value: String!
 }
 
 type SolidNotFoundError implements Error {

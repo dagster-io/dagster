@@ -214,7 +214,7 @@ class DauphinExecutePlan(dauphin.Mutation):
         pipelineName = dauphin.NonNull(dauphin.String)
         config = dauphin.Argument('PipelineConfig')
         stepKeys = dauphin.List(dauphin.NonNull(dauphin.String))
-        executionMetadata = dauphin.Argument(dauphin.NonNull(DauphinExecutionMetadata))
+        executionMetadata = dauphin.Argument(DauphinExecutionMetadata)
 
     Output = dauphin.NonNull('ExecutePlanResult')
 
@@ -223,7 +223,7 @@ class DauphinExecutePlan(dauphin.Mutation):
             graphene_info,
             kwargs['pipelineName'],
             kwargs.get('config'),
-            kwargs['executionMetadata'],
+            kwargs.get('executionMetadata'),
             kwargs.get('stepKeys'),
         )
 

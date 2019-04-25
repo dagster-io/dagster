@@ -48,10 +48,11 @@ def execute_dagster_graphql(context, query, variables=None):
 
     # has to check attr because in subscription case it returns AnonymousObservable
     if hasattr(result, 'errors') and result.errors:
-        if result.errors[0].original_error:
+        first_error = result.errors[0]
+        if hasattr(first_error, 'original_error') and first_error.original_error:
             raise result.errors[0].original_error
-        else:
-            raise result.errors[0]
+
+        raise result.errors[0]
 
     return result
 
@@ -139,6 +140,7 @@ def define_repository():
             'pipeline_with_enum_config': define_pipeline_with_enum_config,
             'naughty_programmer_pipeline': define_naughty_programmer_pipeline,
             'secret_pipeline': define_pipeline_with_secret,
+            'pipeline_with_step_metadata': define_pipeline_with_step_metadata,
         },
     )
 
@@ -335,3 +337,17 @@ def define_naughty_programmer_pipeline():
         raise Exception('bad programmer, bad')
 
     return PipelineDefinition(name='naughty_programmer_pipeline', solids=[throw_a_thing])
+
+
+def define_pipeline_with_step_metadata():
+    solid_def = SolidDefinition(
+        name='solid_metadata_creation',
+        inputs=[],
+        outputs=[],
+        transform_fn=lambda *args, **kwargs: None,
+        config_field=Field(Dict({'str_value': Field(String)})),
+        step_metadata_fn=lambda env_config: {
+            'computed': env_config.solids['solid_metadata_creation'].config['str_value'] + '1'
+        },
+    )
+    return PipelineDefinition(name='pipeline_with_step_metadata', solids=[solid_def])

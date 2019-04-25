@@ -245,9 +245,9 @@ class DauphinOutput(dauphin.ObjectType):
         ]
 
 
-class DauphinSolidMetadataItemDefinition(dauphin.ObjectType):
+class DauphinMetadataItemDefinition(dauphin.ObjectType):
     class Meta:
-        name = 'SolidMetadataItemDefinition'
+        name = 'MetadataItemDefinition'
 
     key = dauphin.NonNull(dauphin.String)
     value = dauphin.NonNull(dauphin.String)
@@ -259,7 +259,7 @@ class DauphinSolidDefinition(dauphin.ObjectType):
 
     name = dauphin.NonNull(dauphin.String)
     description = dauphin.String()
-    metadata = dauphin.non_null_list('SolidMetadataItemDefinition')
+    metadata = dauphin.non_null_list('MetadataItemDefinition')
     input_definitions = dauphin.non_null_list('InputDefinition')
     output_definitions = dauphin.non_null_list('OutputDefinition')
     config_definition = dauphin.Field('ConfigTypeField')
@@ -275,9 +275,7 @@ class DauphinSolidDefinition(dauphin.ObjectType):
 
     def resolve_metadata(self, graphene_info):
         return [
-            graphene_info.schema.type_named('SolidMetadataItemDefinition')(
-                key=item[0], value=item[1]
-            )
+            graphene_info.schema.type_named('MetadataItemDefinition')(key=item[0], value=item[1])
             for item in self._solid_def.metadata.items()
         ]
 

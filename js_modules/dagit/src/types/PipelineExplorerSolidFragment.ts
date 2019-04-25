@@ -7,7 +7,7 @@
 // ====================================================
 
 export interface PipelineExplorerSolidFragment_definition_metadata {
-  __typename: "SolidMetadataItemDefinition";
+  __typename: "MetadataItemDefinition";
   key: string;
   value: string;
 }
