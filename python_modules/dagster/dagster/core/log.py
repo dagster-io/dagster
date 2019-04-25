@@ -50,13 +50,27 @@ class DagsterLogManager:
         self.loggers = check.list_param(loggers, 'loggers', of_type=logging.Logger)
 
     def _log(self, level, orig_message, message_props):
+        '''Actually invoke the underlying loggers.
+        
+        Args:
+            level (Union[str, int]): A built=in logging level name, a level name as registered using
+                logging.addLevelName, or an integer logging level.
+            orig_message (str): The log message generated in user code.
+            message_props (dict): Additional properties for the structured log message.
+        '''
+        # It's conceivable that we might want DagsterLogManager to enforce that it be initialized
+        # with at least one logger
         if not self.loggers:
             return
 
-        check.str_param(level, 'level')
+        # Not clear that we want to throw check exceptions here (which could result in buried
+        # runtime errors) rather than log and continue.
+        if not isinstance(level, int):
+            check.str_param(level, 'level')
         check.str_param(orig_message, 'orig_message')
         check.dict_param(message_props, 'message_props')
 
+        # These are todos to further align with the Python logging API
         check.invariant(
             'extra' not in message_props, 'do not allow until explicit support is handled'
         )
@@ -64,6 +78,7 @@ class DagsterLogManager:
             'exc_info' not in message_props, 'do not allow until explicit support is handled'
         )
 
+        # Reserved keys in the message_props -- these are system generated.
         check.invariant('orig_message' not in message_props, 'orig_message reserved value')
         check.invariant('message' not in message_props, 'message reserved value')
         check.invariant('log_message_id' not in message_props, 'log_message_id reserved value')

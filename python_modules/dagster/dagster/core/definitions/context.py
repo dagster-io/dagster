@@ -44,7 +44,7 @@ class PipelineContextDefinition(object):
         config_field (Field): The configuration for the pipeline context.
 
         context_fn (callable):
-            Signature is (**pipeline**: `PipelineDefintion`, **config_value**: `Any`) :
+            Signature is (**pipeline**: `PipelineDefinition`, **config_value**: `Any`) :
             `ExecutionContext`.
 
             A callable that either returns *or* yields an ``ExecutionContext``.
