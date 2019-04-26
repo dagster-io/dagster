@@ -203,7 +203,6 @@ remotely in CI/CD, with access to a production or replica environment, but where
 essence; and remotely in production on live data.
 
     local_context = PipelineContextDefinition(
-        context_fn=lambda _: ExecutionContext.console_logging(log_level=logging.DEBUG),
         resources={
             'db_info': define_postgres_db_info_resource(),
             ...
@@ -211,7 +210,6 @@ essence; and remotely in production on live data.
     )
 
     prod_context = PipelineContextDefinition(
-        context_fn=lambda _: ExecutionContext.console_logging(log_level=logging.DEBUG),
         resources={
             'db_info': define_redshift_db_info_resource(),
             ...
