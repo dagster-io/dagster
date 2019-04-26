@@ -12,7 +12,7 @@ import six
 
 from dagster import InProcessExecutorConfig, PipelineDefinition, RunConfig, check, execute_pipeline
 from dagster.cli.dynamic_loader import RepositoryContainer
-from dagster.core.events.logging import DagsterEventRecord
+from dagster.core.events.log import DagsterEventRecord
 from dagster.core.events import DagsterEvent, DagsterEventType, PipelineProcessStartedData
 from dagster.utils.error import serializable_error_info_from_exc_info, SerializableErrorInfo
 from dagster.utils import get_multiprocessing_context

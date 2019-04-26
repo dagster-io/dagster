@@ -6,11 +6,11 @@ import logging
 import yaml
 
 from dagster import check
-from dagster.core.events.logging import EventRecord
+from dagster.core.events.log import EventRecord
 from dagster.core.events import DagsterEventType
 from dagster.core.execution_plan.plan import ExecutionPlan
 from dagster.core.execution_plan.objects import StepFailureData
-from dagster.utils.logging import check_valid_log_level
+from dagster.utils.log import check_valid_log_level
 
 from dagster_graphql import dauphin
 from dagster_graphql.implementation.fetch_pipelines import get_pipeline_or_raise
