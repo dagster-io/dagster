@@ -3,16 +3,14 @@ import logging
 from collections import defaultdict
 
 from dagster import (
-    ExecutionContext,
     InProcessExecutorConfig,
     RunConfig,
     PipelineDefinition,
-    PipelineContextDefinition,
     execute_pipeline,
     lambda_solid,
 )
 
-from dagster.core.events.logging import construct_event_logger, EventRecord
+from dagster.core.events.log import construct_event_logger, EventRecord
 from dagster.core.events import DagsterEventType
 from dagster.core.log import colored_console_logger
 

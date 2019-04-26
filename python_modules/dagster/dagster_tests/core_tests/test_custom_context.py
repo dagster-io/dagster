@@ -17,7 +17,7 @@ from dagster import (
 )
 
 
-from dagster.utils.logging import INFO
+from dagster.utils.log import INFO
 
 # protected variable. need to test loggers
 # pylint: disable=W0212

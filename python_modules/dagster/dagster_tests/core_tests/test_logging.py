@@ -3,7 +3,6 @@ import logging
 import re
 
 from contextlib import contextmanager
-from functools import partial
 
 from dagster import check
 from dagster.core.events import DagsterEvent
@@ -45,9 +44,8 @@ def _setup_logger(name, log_levels=None, register_levels=True):
         for level_name, value in log_levels.items():
             add_log_level(value, level_name)
 
-    class TestLogger(logging.Logger):
-        def __init__(self, name):
-            super(TestLogger, self).__init__(name)
+    class TestLogger(logging.Logger):  # py27 compat
+        pass
 
     logger = TestLogger(name)
 
