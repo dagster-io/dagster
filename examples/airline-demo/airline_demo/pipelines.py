@@ -41,37 +41,34 @@ from .solids import (
 
 
 test_context = PipelineContextDefinition(
-    context_fn=lambda _: ExecutionContext.console_logging(log_level=logging.DEBUG),
     resources={
         'spark': spark_session_local,
         's3': unsigned_s3_session,
         'db_info': redshift_db_info_resource,
         'tempfile': tempfile_resource,
         'download_manager': s3_download_manager,
-    },
+    }
 )
 
 
 local_context = PipelineContextDefinition(
-    context_fn=lambda _: ExecutionContext.console_logging(log_level=logging.DEBUG),
     resources={
         'spark': spark_session_local,
         's3': unsigned_s3_session,
         'db_info': postgres_db_info_resource,
         'tempfile': tempfile_resource,
         'download_manager': s3_download_manager,
-    },
+    }
 )
 
 
 prod_context = PipelineContextDefinition(
-    context_fn=lambda _: ExecutionContext.console_logging(log_level=logging.DEBUG),
     resources={
         'spark': spark_session_local,  # FIXME
         's3': unsigned_s3_session,
         'db_info': redshift_db_info_resource,
         'tempfile': tempfile_resource,
-    },
+    }
 )
 
 

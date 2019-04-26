@@ -8,7 +8,7 @@ import coloredlogs
 from dagster import check, seven
 from dagster.core.types import Dict, Field, String
 from dagster.core.definitions.logger import logger
-from dagster.utils.logging import check_valid_log_level, default_format_string
+from dagster.utils.log import check_valid_log_level, default_format_string
 
 DAGSTER_META_KEY = 'dagster_meta'
 DAGSTER_DEFAULT_LOGGER = 'dagster'

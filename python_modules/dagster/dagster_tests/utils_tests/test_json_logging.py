@@ -5,7 +5,7 @@ from contextlib import contextmanager
 
 from dagster import PipelineDefinition
 from dagster.core.init_context import InitLoggerContext
-from dagster.utils.logging import define_json_file_logger, DEBUG, INFO
+from dagster.utils.log import define_json_file_logger
 from dagster.utils.test import create_test_pipeline_execution_context, get_temp_file_name
 
 
