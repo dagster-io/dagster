@@ -12,7 +12,7 @@ import atexit
 from rx import Observable
 
 from dagster import check, seven
-from dagster.core.events.logging import EventRecord
+from dagster.core.events.log import EventRecord
 from dagster.core.events import DagsterEventType
 from dagster.core.execution import ExecutionSelector
 from dagster.core.execution_context import ReexecutionConfig
