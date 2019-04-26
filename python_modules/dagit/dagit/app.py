@@ -14,7 +14,7 @@ from graphql.execution.executors.gevent import GeventExecutor as Executor
 from nbconvert import HTMLExporter
 
 from dagster import check, seven
-from dagster.utils.logging import get_stack_trace_array
+from dagster.utils.log import get_stack_trace_array
 from dagster_graphql.schema import create_schema
 
 from dagster_graphql.implementation.context import DagsterGraphQLContext
