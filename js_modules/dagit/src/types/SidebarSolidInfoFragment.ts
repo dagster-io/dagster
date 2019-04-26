@@ -78,7 +78,7 @@ export interface SidebarSolidInfoFragment_inputs {
 }
 
 export interface SidebarSolidInfoFragment_definition_metadata {
-  __typename: "SolidMetadataItemDefinition";
+  __typename: "MetadataItemDefinition";
   key: string;
   value: string;
 }

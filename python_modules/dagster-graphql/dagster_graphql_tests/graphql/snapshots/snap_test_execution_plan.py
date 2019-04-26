@@ -7,13 +7,6 @@ from snapshottest import Snapshot
 
 snapshots = Snapshot()
 
-snapshots['test_pipeline_not_found_error_execute_plan 1'] = {
-    'executePlan': {
-        '__typename': 'PipelineNotFoundError',
-        'pipelineName': 'nope'
-    }
-}
-
 snapshots['test_success_whole_execution_plan 1'] = {
     'executePlan': {
         '__typename': 'ExecutePlanSuccess',
@@ -25,14 +18,18 @@ snapshots['test_success_whole_execution_plan 1'] = {
             {
                 '__typename': 'ExecutionStepStartEvent',
                 'step': {
-                    'key': 'sum_solid.inputs.num.read'
+                    'key': 'sum_solid.inputs.num.read',
+                    'metadata': [
+                    ]
                 }
             },
             {
                 '__typename': 'ExecutionStepOutputEvent',
                 'outputName': 'input_thunk_output',
                 'step': {
-                    'key': 'sum_solid.inputs.num.read'
+                    'key': 'sum_solid.inputs.num.read',
+                    'metadata': [
+                    ]
                 },
                 'valueRepr': '''   num1  num2
 0     1     2
@@ -41,20 +38,26 @@ snapshots['test_success_whole_execution_plan 1'] = {
             {
                 '__typename': 'ExecutionStepSuccessEvent',
                 'step': {
-                    'key': 'sum_solid.inputs.num.read'
+                    'key': 'sum_solid.inputs.num.read',
+                    'metadata': [
+                    ]
                 }
             },
             {
                 '__typename': 'ExecutionStepStartEvent',
                 'step': {
-                    'key': 'sum_solid.transform'
+                    'key': 'sum_solid.transform',
+                    'metadata': [
+                    ]
                 }
             },
             {
                 '__typename': 'ExecutionStepOutputEvent',
                 'outputName': 'result',
                 'step': {
-                    'key': 'sum_solid.transform'
+                    'key': 'sum_solid.transform',
+                    'metadata': [
+                    ]
                 },
                 'valueRepr': '''   num1  num2  sum
 0     1     2    3
@@ -63,20 +66,26 @@ snapshots['test_success_whole_execution_plan 1'] = {
             {
                 '__typename': 'ExecutionStepSuccessEvent',
                 'step': {
-                    'key': 'sum_solid.transform'
+                    'key': 'sum_solid.transform',
+                    'metadata': [
+                    ]
                 }
             },
             {
                 '__typename': 'ExecutionStepStartEvent',
                 'step': {
-                    'key': 'df_expectations_solid.output.sum_df.expectation.some_expectation'
+                    'key': 'df_expectations_solid.output.sum_df.expectation.some_expectation',
+                    'metadata': [
+                    ]
                 }
             },
             {
                 '__typename': 'ExecutionStepOutputEvent',
                 'outputName': 'expectation_value',
                 'step': {
-                    'key': 'df_expectations_solid.output.sum_df.expectation.some_expectation'
+                    'key': 'df_expectations_solid.output.sum_df.expectation.some_expectation',
+                    'metadata': [
+                    ]
                 },
                 'valueRepr': '''   num1  num2  sum
 0     1     2    3
@@ -85,20 +94,26 @@ snapshots['test_success_whole_execution_plan 1'] = {
             {
                 '__typename': 'ExecutionStepSuccessEvent',
                 'step': {
-                    'key': 'df_expectations_solid.output.sum_df.expectation.some_expectation'
+                    'key': 'df_expectations_solid.output.sum_df.expectation.some_expectation',
+                    'metadata': [
+                    ]
                 }
             },
             {
                 '__typename': 'ExecutionStepStartEvent',
                 'step': {
-                    'key': 'sum_sq_solid.transform'
+                    'key': 'sum_sq_solid.transform',
+                    'metadata': [
+                    ]
                 }
             },
             {
                 '__typename': 'ExecutionStepOutputEvent',
                 'outputName': 'result',
                 'step': {
-                    'key': 'sum_sq_solid.transform'
+                    'key': 'sum_sq_solid.transform',
+                    'metadata': [
+                    ]
                 },
                 'valueRepr': '''   num1  num2  sum  sum_sq
 0     1     2    3       9
@@ -107,20 +122,26 @@ snapshots['test_success_whole_execution_plan 1'] = {
             {
                 '__typename': 'ExecutionStepSuccessEvent',
                 'step': {
-                    'key': 'sum_sq_solid.transform'
+                    'key': 'sum_sq_solid.transform',
+                    'metadata': [
+                    ]
                 }
             },
             {
                 '__typename': 'ExecutionStepStartEvent',
                 'step': {
-                    'key': 'df_expectations_solid.output.sum_df.expectations.join'
+                    'key': 'df_expectations_solid.output.sum_df.expectations.join',
+                    'metadata': [
+                    ]
                 }
             },
             {
                 '__typename': 'ExecutionStepOutputEvent',
                 'outputName': 'join_output',
                 'step': {
-                    'key': 'df_expectations_solid.output.sum_df.expectations.join'
+                    'key': 'df_expectations_solid.output.sum_df.expectations.join',
+                    'metadata': [
+                    ]
                 },
                 'valueRepr': '''   num1  num2  sum
 0     1     2    3
@@ -129,20 +150,26 @@ snapshots['test_success_whole_execution_plan 1'] = {
             {
                 '__typename': 'ExecutionStepSuccessEvent',
                 'step': {
-                    'key': 'df_expectations_solid.output.sum_df.expectations.join'
+                    'key': 'df_expectations_solid.output.sum_df.expectations.join',
+                    'metadata': [
+                    ]
                 }
             },
             {
                 '__typename': 'ExecutionStepStartEvent',
                 'step': {
-                    'key': 'df_expectations_solid.transform'
+                    'key': 'df_expectations_solid.transform',
+                    'metadata': [
+                    ]
                 }
             },
             {
                 '__typename': 'ExecutionStepOutputEvent',
                 'outputName': 'result',
                 'step': {
-                    'key': 'df_expectations_solid.transform'
+                    'key': 'df_expectations_solid.transform',
+                    'metadata': [
+                    ]
                 },
                 'valueRepr': '''   num1  num2  sum
 0     1     2    3
@@ -151,20 +178,26 @@ snapshots['test_success_whole_execution_plan 1'] = {
             {
                 '__typename': 'ExecutionStepSuccessEvent',
                 'step': {
-                    'key': 'df_expectations_solid.transform'
+                    'key': 'df_expectations_solid.transform',
+                    'metadata': [
+                    ]
                 }
             },
             {
                 '__typename': 'ExecutionStepStartEvent',
                 'step': {
-                    'key': 'df_expectations_solid.output.result.expectation.other_expectation'
+                    'key': 'df_expectations_solid.output.result.expectation.other_expectation',
+                    'metadata': [
+                    ]
                 }
             },
             {
                 '__typename': 'ExecutionStepOutputEvent',
                 'outputName': 'expectation_value',
                 'step': {
-                    'key': 'df_expectations_solid.output.result.expectation.other_expectation'
+                    'key': 'df_expectations_solid.output.result.expectation.other_expectation',
+                    'metadata': [
+                    ]
                 },
                 'valueRepr': '''   num1  num2  sum
 0     1     2    3
@@ -173,20 +206,26 @@ snapshots['test_success_whole_execution_plan 1'] = {
             {
                 '__typename': 'ExecutionStepSuccessEvent',
                 'step': {
-                    'key': 'df_expectations_solid.output.result.expectation.other_expectation'
+                    'key': 'df_expectations_solid.output.result.expectation.other_expectation',
+                    'metadata': [
+                    ]
                 }
             },
             {
                 '__typename': 'ExecutionStepStartEvent',
                 'step': {
-                    'key': 'df_expectations_solid.output.result.expectations.join'
+                    'key': 'df_expectations_solid.output.result.expectations.join',
+                    'metadata': [
+                    ]
                 }
             },
             {
                 '__typename': 'ExecutionStepOutputEvent',
                 'outputName': 'join_output',
                 'step': {
-                    'key': 'df_expectations_solid.output.result.expectations.join'
+                    'key': 'df_expectations_solid.output.result.expectations.join',
+                    'metadata': [
+                    ]
                 },
                 'valueRepr': '''   num1  num2  sum
 0     1     2    3
@@ -195,7 +234,9 @@ snapshots['test_success_whole_execution_plan 1'] = {
             {
                 '__typename': 'ExecutionStepSuccessEvent',
                 'step': {
-                    'key': 'df_expectations_solid.output.result.expectations.join'
+                    'key': 'df_expectations_solid.output.result.expectations.join',
+                    'metadata': [
+                    ]
                 }
             }
         ]
@@ -213,14 +254,18 @@ snapshots['test_success_whole_execution_plan_with_filesystem_config 1'] = {
             {
                 '__typename': 'ExecutionStepStartEvent',
                 'step': {
-                    'key': 'sum_solid.inputs.num.read'
+                    'key': 'sum_solid.inputs.num.read',
+                    'metadata': [
+                    ]
                 }
             },
             {
                 '__typename': 'ExecutionStepOutputEvent',
                 'outputName': 'input_thunk_output',
                 'step': {
-                    'key': 'sum_solid.inputs.num.read'
+                    'key': 'sum_solid.inputs.num.read',
+                    'metadata': [
+                    ]
                 },
                 'valueRepr': '''   num1  num2
 0     1     2
@@ -229,20 +274,26 @@ snapshots['test_success_whole_execution_plan_with_filesystem_config 1'] = {
             {
                 '__typename': 'ExecutionStepSuccessEvent',
                 'step': {
-                    'key': 'sum_solid.inputs.num.read'
+                    'key': 'sum_solid.inputs.num.read',
+                    'metadata': [
+                    ]
                 }
             },
             {
                 '__typename': 'ExecutionStepStartEvent',
                 'step': {
-                    'key': 'sum_solid.transform'
+                    'key': 'sum_solid.transform',
+                    'metadata': [
+                    ]
                 }
             },
             {
                 '__typename': 'ExecutionStepOutputEvent',
                 'outputName': 'result',
                 'step': {
-                    'key': 'sum_solid.transform'
+                    'key': 'sum_solid.transform',
+                    'metadata': [
+                    ]
                 },
                 'valueRepr': '''   num1  num2  sum
 0     1     2    3
@@ -251,20 +302,26 @@ snapshots['test_success_whole_execution_plan_with_filesystem_config 1'] = {
             {
                 '__typename': 'ExecutionStepSuccessEvent',
                 'step': {
-                    'key': 'sum_solid.transform'
+                    'key': 'sum_solid.transform',
+                    'metadata': [
+                    ]
                 }
             },
             {
                 '__typename': 'ExecutionStepStartEvent',
                 'step': {
-                    'key': 'df_expectations_solid.output.sum_df.expectation.some_expectation'
+                    'key': 'df_expectations_solid.output.sum_df.expectation.some_expectation',
+                    'metadata': [
+                    ]
                 }
             },
             {
                 '__typename': 'ExecutionStepOutputEvent',
                 'outputName': 'expectation_value',
                 'step': {
-                    'key': 'df_expectations_solid.output.sum_df.expectation.some_expectation'
+                    'key': 'df_expectations_solid.output.sum_df.expectation.some_expectation',
+                    'metadata': [
+                    ]
                 },
                 'valueRepr': '''   num1  num2  sum
 0     1     2    3
@@ -273,20 +330,26 @@ snapshots['test_success_whole_execution_plan_with_filesystem_config 1'] = {
             {
                 '__typename': 'ExecutionStepSuccessEvent',
                 'step': {
-                    'key': 'df_expectations_solid.output.sum_df.expectation.some_expectation'
+                    'key': 'df_expectations_solid.output.sum_df.expectation.some_expectation',
+                    'metadata': [
+                    ]
                 }
             },
             {
                 '__typename': 'ExecutionStepStartEvent',
                 'step': {
-                    'key': 'sum_sq_solid.transform'
+                    'key': 'sum_sq_solid.transform',
+                    'metadata': [
+                    ]
                 }
             },
             {
                 '__typename': 'ExecutionStepOutputEvent',
                 'outputName': 'result',
                 'step': {
-                    'key': 'sum_sq_solid.transform'
+                    'key': 'sum_sq_solid.transform',
+                    'metadata': [
+                    ]
                 },
                 'valueRepr': '''   num1  num2  sum  sum_sq
 0     1     2    3       9
@@ -295,20 +358,26 @@ snapshots['test_success_whole_execution_plan_with_filesystem_config 1'] = {
             {
                 '__typename': 'ExecutionStepSuccessEvent',
                 'step': {
-                    'key': 'sum_sq_solid.transform'
+                    'key': 'sum_sq_solid.transform',
+                    'metadata': [
+                    ]
                 }
             },
             {
                 '__typename': 'ExecutionStepStartEvent',
                 'step': {
-                    'key': 'df_expectations_solid.output.sum_df.expectations.join'
+                    'key': 'df_expectations_solid.output.sum_df.expectations.join',
+                    'metadata': [
+                    ]
                 }
             },
             {
                 '__typename': 'ExecutionStepOutputEvent',
                 'outputName': 'join_output',
                 'step': {
-                    'key': 'df_expectations_solid.output.sum_df.expectations.join'
+                    'key': 'df_expectations_solid.output.sum_df.expectations.join',
+                    'metadata': [
+                    ]
                 },
                 'valueRepr': '''   num1  num2  sum
 0     1     2    3
@@ -317,20 +386,26 @@ snapshots['test_success_whole_execution_plan_with_filesystem_config 1'] = {
             {
                 '__typename': 'ExecutionStepSuccessEvent',
                 'step': {
-                    'key': 'df_expectations_solid.output.sum_df.expectations.join'
+                    'key': 'df_expectations_solid.output.sum_df.expectations.join',
+                    'metadata': [
+                    ]
                 }
             },
             {
                 '__typename': 'ExecutionStepStartEvent',
                 'step': {
-                    'key': 'df_expectations_solid.transform'
+                    'key': 'df_expectations_solid.transform',
+                    'metadata': [
+                    ]
                 }
             },
             {
                 '__typename': 'ExecutionStepOutputEvent',
                 'outputName': 'result',
                 'step': {
-                    'key': 'df_expectations_solid.transform'
+                    'key': 'df_expectations_solid.transform',
+                    'metadata': [
+                    ]
                 },
                 'valueRepr': '''   num1  num2  sum
 0     1     2    3
@@ -339,20 +414,26 @@ snapshots['test_success_whole_execution_plan_with_filesystem_config 1'] = {
             {
                 '__typename': 'ExecutionStepSuccessEvent',
                 'step': {
-                    'key': 'df_expectations_solid.transform'
+                    'key': 'df_expectations_solid.transform',
+                    'metadata': [
+                    ]
                 }
             },
             {
                 '__typename': 'ExecutionStepStartEvent',
                 'step': {
-                    'key': 'df_expectations_solid.output.result.expectation.other_expectation'
+                    'key': 'df_expectations_solid.output.result.expectation.other_expectation',
+                    'metadata': [
+                    ]
                 }
             },
             {
                 '__typename': 'ExecutionStepOutputEvent',
                 'outputName': 'expectation_value',
                 'step': {
-                    'key': 'df_expectations_solid.output.result.expectation.other_expectation'
+                    'key': 'df_expectations_solid.output.result.expectation.other_expectation',
+                    'metadata': [
+                    ]
                 },
                 'valueRepr': '''   num1  num2  sum
 0     1     2    3
@@ -361,20 +442,26 @@ snapshots['test_success_whole_execution_plan_with_filesystem_config 1'] = {
             {
                 '__typename': 'ExecutionStepSuccessEvent',
                 'step': {
-                    'key': 'df_expectations_solid.output.result.expectation.other_expectation'
+                    'key': 'df_expectations_solid.output.result.expectation.other_expectation',
+                    'metadata': [
+                    ]
                 }
             },
             {
                 '__typename': 'ExecutionStepStartEvent',
                 'step': {
-                    'key': 'df_expectations_solid.output.result.expectations.join'
+                    'key': 'df_expectations_solid.output.result.expectations.join',
+                    'metadata': [
+                    ]
                 }
             },
             {
                 '__typename': 'ExecutionStepOutputEvent',
                 'outputName': 'join_output',
                 'step': {
-                    'key': 'df_expectations_solid.output.result.expectations.join'
+                    'key': 'df_expectations_solid.output.result.expectations.join',
+                    'metadata': [
+                    ]
                 },
                 'valueRepr': '''   num1  num2  sum
 0     1     2    3
@@ -383,7 +470,9 @@ snapshots['test_success_whole_execution_plan_with_filesystem_config 1'] = {
             {
                 '__typename': 'ExecutionStepSuccessEvent',
                 'step': {
-                    'key': 'df_expectations_solid.output.result.expectations.join'
+                    'key': 'df_expectations_solid.output.result.expectations.join',
+                    'metadata': [
+                    ]
                 }
             }
         ]
@@ -401,14 +490,18 @@ snapshots['test_success_whole_execution_plan_with_in_memory_config 1'] = {
             {
                 '__typename': 'ExecutionStepStartEvent',
                 'step': {
-                    'key': 'sum_solid.inputs.num.read'
+                    'key': 'sum_solid.inputs.num.read',
+                    'metadata': [
+                    ]
                 }
             },
             {
                 '__typename': 'ExecutionStepOutputEvent',
                 'outputName': 'input_thunk_output',
                 'step': {
-                    'key': 'sum_solid.inputs.num.read'
+                    'key': 'sum_solid.inputs.num.read',
+                    'metadata': [
+                    ]
                 },
                 'valueRepr': '''   num1  num2
 0     1     2
@@ -417,20 +510,26 @@ snapshots['test_success_whole_execution_plan_with_in_memory_config 1'] = {
             {
                 '__typename': 'ExecutionStepSuccessEvent',
                 'step': {
-                    'key': 'sum_solid.inputs.num.read'
+                    'key': 'sum_solid.inputs.num.read',
+                    'metadata': [
+                    ]
                 }
             },
             {
                 '__typename': 'ExecutionStepStartEvent',
                 'step': {
-                    'key': 'sum_solid.transform'
+                    'key': 'sum_solid.transform',
+                    'metadata': [
+                    ]
                 }
             },
             {
                 '__typename': 'ExecutionStepOutputEvent',
                 'outputName': 'result',
                 'step': {
-                    'key': 'sum_solid.transform'
+                    'key': 'sum_solid.transform',
+                    'metadata': [
+                    ]
                 },
                 'valueRepr': '''   num1  num2  sum
 0     1     2    3
@@ -439,20 +538,26 @@ snapshots['test_success_whole_execution_plan_with_in_memory_config 1'] = {
             {
                 '__typename': 'ExecutionStepSuccessEvent',
                 'step': {
-                    'key': 'sum_solid.transform'
+                    'key': 'sum_solid.transform',
+                    'metadata': [
+                    ]
                 }
             },
             {
                 '__typename': 'ExecutionStepStartEvent',
                 'step': {
-                    'key': 'df_expectations_solid.output.sum_df.expectation.some_expectation'
+                    'key': 'df_expectations_solid.output.sum_df.expectation.some_expectation',
+                    'metadata': [
+                    ]
                 }
             },
             {
                 '__typename': 'ExecutionStepOutputEvent',
                 'outputName': 'expectation_value',
                 'step': {
-                    'key': 'df_expectations_solid.output.sum_df.expectation.some_expectation'
+                    'key': 'df_expectations_solid.output.sum_df.expectation.some_expectation',
+                    'metadata': [
+                    ]
                 },
                 'valueRepr': '''   num1  num2  sum
 0     1     2    3
@@ -461,20 +566,26 @@ snapshots['test_success_whole_execution_plan_with_in_memory_config 1'] = {
             {
                 '__typename': 'ExecutionStepSuccessEvent',
                 'step': {
-                    'key': 'df_expectations_solid.output.sum_df.expectation.some_expectation'
+                    'key': 'df_expectations_solid.output.sum_df.expectation.some_expectation',
+                    'metadata': [
+                    ]
                 }
             },
             {
                 '__typename': 'ExecutionStepStartEvent',
                 'step': {
-                    'key': 'sum_sq_solid.transform'
+                    'key': 'sum_sq_solid.transform',
+                    'metadata': [
+                    ]
                 }
             },
             {
                 '__typename': 'ExecutionStepOutputEvent',
                 'outputName': 'result',
                 'step': {
-                    'key': 'sum_sq_solid.transform'
+                    'key': 'sum_sq_solid.transform',
+                    'metadata': [
+                    ]
                 },
                 'valueRepr': '''   num1  num2  sum  sum_sq
 0     1     2    3       9
@@ -483,20 +594,26 @@ snapshots['test_success_whole_execution_plan_with_in_memory_config 1'] = {
             {
                 '__typename': 'ExecutionStepSuccessEvent',
                 'step': {
-                    'key': 'sum_sq_solid.transform'
+                    'key': 'sum_sq_solid.transform',
+                    'metadata': [
+                    ]
                 }
             },
             {
                 '__typename': 'ExecutionStepStartEvent',
                 'step': {
-                    'key': 'df_expectations_solid.output.sum_df.expectations.join'
+                    'key': 'df_expectations_solid.output.sum_df.expectations.join',
+                    'metadata': [
+                    ]
                 }
             },
             {
                 '__typename': 'ExecutionStepOutputEvent',
                 'outputName': 'join_output',
                 'step': {
-                    'key': 'df_expectations_solid.output.sum_df.expectations.join'
+                    'key': 'df_expectations_solid.output.sum_df.expectations.join',
+                    'metadata': [
+                    ]
                 },
                 'valueRepr': '''   num1  num2  sum
 0     1     2    3
@@ -505,20 +622,26 @@ snapshots['test_success_whole_execution_plan_with_in_memory_config 1'] = {
             {
                 '__typename': 'ExecutionStepSuccessEvent',
                 'step': {
-                    'key': 'df_expectations_solid.output.sum_df.expectations.join'
+                    'key': 'df_expectations_solid.output.sum_df.expectations.join',
+                    'metadata': [
+                    ]
                 }
             },
             {
                 '__typename': 'ExecutionStepStartEvent',
                 'step': {
-                    'key': 'df_expectations_solid.transform'
+                    'key': 'df_expectations_solid.transform',
+                    'metadata': [
+                    ]
                 }
             },
             {
                 '__typename': 'ExecutionStepOutputEvent',
                 'outputName': 'result',
                 'step': {
-                    'key': 'df_expectations_solid.transform'
+                    'key': 'df_expectations_solid.transform',
+                    'metadata': [
+                    ]
                 },
                 'valueRepr': '''   num1  num2  sum
 0     1     2    3
@@ -527,20 +650,26 @@ snapshots['test_success_whole_execution_plan_with_in_memory_config 1'] = {
             {
                 '__typename': 'ExecutionStepSuccessEvent',
                 'step': {
-                    'key': 'df_expectations_solid.transform'
+                    'key': 'df_expectations_solid.transform',
+                    'metadata': [
+                    ]
                 }
             },
             {
                 '__typename': 'ExecutionStepStartEvent',
                 'step': {
-                    'key': 'df_expectations_solid.output.result.expectation.other_expectation'
+                    'key': 'df_expectations_solid.output.result.expectation.other_expectation',
+                    'metadata': [
+                    ]
                 }
             },
             {
                 '__typename': 'ExecutionStepOutputEvent',
                 'outputName': 'expectation_value',
                 'step': {
-                    'key': 'df_expectations_solid.output.result.expectation.other_expectation'
+                    'key': 'df_expectations_solid.output.result.expectation.other_expectation',
+                    'metadata': [
+                    ]
                 },
                 'valueRepr': '''   num1  num2  sum
 0     1     2    3
@@ -549,20 +678,26 @@ snapshots['test_success_whole_execution_plan_with_in_memory_config 1'] = {
             {
                 '__typename': 'ExecutionStepSuccessEvent',
                 'step': {
-                    'key': 'df_expectations_solid.output.result.expectation.other_expectation'
+                    'key': 'df_expectations_solid.output.result.expectation.other_expectation',
+                    'metadata': [
+                    ]
                 }
             },
             {
                 '__typename': 'ExecutionStepStartEvent',
                 'step': {
-                    'key': 'df_expectations_solid.output.result.expectations.join'
+                    'key': 'df_expectations_solid.output.result.expectations.join',
+                    'metadata': [
+                    ]
                 }
             },
             {
                 '__typename': 'ExecutionStepOutputEvent',
                 'outputName': 'join_output',
                 'step': {
-                    'key': 'df_expectations_solid.output.result.expectations.join'
+                    'key': 'df_expectations_solid.output.result.expectations.join',
+                    'metadata': [
+                    ]
                 },
                 'valueRepr': '''   num1  num2  sum
 0     1     2    3
@@ -571,7 +706,9 @@ snapshots['test_success_whole_execution_plan_with_in_memory_config 1'] = {
             {
                 '__typename': 'ExecutionStepSuccessEvent',
                 'step': {
-                    'key': 'df_expectations_solid.output.result.expectations.join'
+                    'key': 'df_expectations_solid.output.result.expectations.join',
+                    'metadata': [
+                    ]
                 }
             }
         ]
@@ -589,14 +726,18 @@ snapshots['test_successful_one_part_execute_plan 1'] = {
             {
                 '__typename': 'ExecutionStepStartEvent',
                 'step': {
-                    'key': 'sum_solid.inputs.num.read'
+                    'key': 'sum_solid.inputs.num.read',
+                    'metadata': [
+                    ]
                 }
             },
             {
                 '__typename': 'ExecutionStepOutputEvent',
                 'outputName': 'input_thunk_output',
                 'step': {
-                    'key': 'sum_solid.inputs.num.read'
+                    'key': 'sum_solid.inputs.num.read',
+                    'metadata': [
+                    ]
                 },
                 'valueRepr': '''   num1  num2
 0     1     2
@@ -605,20 +746,26 @@ snapshots['test_successful_one_part_execute_plan 1'] = {
             {
                 '__typename': 'ExecutionStepSuccessEvent',
                 'step': {
-                    'key': 'sum_solid.inputs.num.read'
+                    'key': 'sum_solid.inputs.num.read',
+                    'metadata': [
+                    ]
                 }
             },
             {
                 '__typename': 'ExecutionStepStartEvent',
                 'step': {
-                    'key': 'sum_solid.transform'
+                    'key': 'sum_solid.transform',
+                    'metadata': [
+                    ]
                 }
             },
             {
                 '__typename': 'ExecutionStepOutputEvent',
                 'outputName': 'result',
                 'step': {
-                    'key': 'sum_solid.transform'
+                    'key': 'sum_solid.transform',
+                    'metadata': [
+                    ]
                 },
                 'valueRepr': '''   num1  num2  sum
 0     1     2    3
@@ -627,7 +774,9 @@ snapshots['test_successful_one_part_execute_plan 1'] = {
             {
                 '__typename': 'ExecutionStepSuccessEvent',
                 'step': {
-                    'key': 'sum_solid.transform'
+                    'key': 'sum_solid.transform',
+                    'metadata': [
+                    ]
                 }
             }
         ]
@@ -645,14 +794,18 @@ snapshots['test_successful_two_part_execute_plan 1'] = {
             {
                 '__typename': 'ExecutionStepStartEvent',
                 'step': {
-                    'key': 'sum_solid.inputs.num.read'
+                    'key': 'sum_solid.inputs.num.read',
+                    'metadata': [
+                    ]
                 }
             },
             {
                 '__typename': 'ExecutionStepOutputEvent',
                 'outputName': 'input_thunk_output',
                 'step': {
-                    'key': 'sum_solid.inputs.num.read'
+                    'key': 'sum_solid.inputs.num.read',
+                    'metadata': [
+                    ]
                 },
                 'valueRepr': '''   num1  num2
 0     1     2
@@ -661,20 +814,26 @@ snapshots['test_successful_two_part_execute_plan 1'] = {
             {
                 '__typename': 'ExecutionStepSuccessEvent',
                 'step': {
-                    'key': 'sum_solid.inputs.num.read'
+                    'key': 'sum_solid.inputs.num.read',
+                    'metadata': [
+                    ]
                 }
             },
             {
                 '__typename': 'ExecutionStepStartEvent',
                 'step': {
-                    'key': 'sum_solid.transform'
+                    'key': 'sum_solid.transform',
+                    'metadata': [
+                    ]
                 }
             },
             {
                 '__typename': 'ExecutionStepOutputEvent',
                 'outputName': 'result',
                 'step': {
-                    'key': 'sum_solid.transform'
+                    'key': 'sum_solid.transform',
+                    'metadata': [
+                    ]
                 },
                 'valueRepr': '''   num1  num2  sum
 0     1     2    3
@@ -683,7 +842,9 @@ snapshots['test_successful_two_part_execute_plan 1'] = {
             {
                 '__typename': 'ExecutionStepSuccessEvent',
                 'step': {
-                    'key': 'sum_solid.transform'
+                    'key': 'sum_solid.transform',
+                    'metadata': [
+                    ]
                 }
             }
         ]
@@ -701,14 +862,18 @@ snapshots['test_successful_two_part_execute_plan 2'] = {
             {
                 '__typename': 'ExecutionStepStartEvent',
                 'step': {
-                    'key': 'sum_sq_solid.transform'
+                    'key': 'sum_sq_solid.transform',
+                    'metadata': [
+                    ]
                 }
             },
             {
                 '__typename': 'ExecutionStepOutputEvent',
                 'outputName': 'result',
                 'step': {
-                    'key': 'sum_sq_solid.transform'
+                    'key': 'sum_sq_solid.transform',
+                    'metadata': [
+                    ]
                 },
                 'valueRepr': '''   num1  num2  sum  sum_sq
 0     1     2    3       9
@@ -717,7 +882,9 @@ snapshots['test_successful_two_part_execute_plan 2'] = {
             {
                 '__typename': 'ExecutionStepSuccessEvent',
                 'step': {
-                    'key': 'sum_sq_solid.transform'
+                    'key': 'sum_sq_solid.transform',
+                    'metadata': [
+                    ]
                 }
             }
         ]
@@ -735,5 +902,41 @@ snapshots['test_invalid_config_execute_plan 1'] = {
         'pipeline': {
             'name': 'pandas_hello_world'
         }
+    }
+}
+
+snapshots['test_pipeline_not_found_error_execute_plan 1'] = {
+    'executePlan': {
+        '__typename': 'PipelineNotFoundError',
+        'pipelineName': 'nope'
+    }
+}
+
+snapshots['test_pipeline_with_execution_metadata 1'] = {
+    'executionPlan': {
+        '__typename': 'ExecutionPlan',
+        'pipeline': {
+            'name': 'pipeline_with_step_metadata'
+        },
+        'steps': [
+            {
+                'inputs': [
+                ],
+                'key': 'solid_metadata_creation.transform',
+                'kind': 'TRANSFORM',
+                'metadata': [
+                    {
+                        'key': 'computed',
+                        'value': 'foobar1'
+                    }
+                ],
+                'name': 'solid_metadata_creation.transform',
+                'outputs': [
+                ],
+                'solid': {
+                    'name': 'solid_metadata_creation'
+                }
+            }
+        ]
     }
 }
