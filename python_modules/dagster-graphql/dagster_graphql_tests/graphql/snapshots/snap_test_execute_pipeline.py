@@ -32,7 +32,7 @@ snapshots['test_successful_pipeline_reexecution 1'] = {
                         '__typename': 'ExecutionStepOutputEvent',
                         'intermediateMaterialization': {
                             'description': None,
-                            'path': '/tmp/dagster/runs/2587a620-a059-48c2-817b-3bb8cb8af39e/files/intermediates/sum_solid.inputs.num.read/input_thunk_output'
+                            'path': '/tmp/dagster/runs/35de03ec-4d81-4737-a9c8-85b55c98a73a/files/intermediates/sum_solid.inputs.num.read/input_thunk_output'
                         },
                         'level': 'INFO',
                         'outputName': 'input_thunk_output',
@@ -68,7 +68,7 @@ snapshots['test_successful_pipeline_reexecution 1'] = {
                         '__typename': 'ExecutionStepOutputEvent',
                         'intermediateMaterialization': {
                             'description': None,
-                            'path': '/tmp/dagster/runs/2587a620-a059-48c2-817b-3bb8cb8af39e/files/intermediates/sum_solid.transform/result'
+                            'path': '/tmp/dagster/runs/35de03ec-4d81-4737-a9c8-85b55c98a73a/files/intermediates/sum_solid.transform/result'
                         },
                         'level': 'INFO',
                         'outputName': 'result',
@@ -100,7 +100,7 @@ snapshots['test_successful_pipeline_reexecution 1'] = {
                         '__typename': 'ExecutionStepOutputEvent',
                         'intermediateMaterialization': {
                             'description': None,
-                            'path': '/tmp/dagster/runs/2587a620-a059-48c2-817b-3bb8cb8af39e/files/intermediates/df_expectations_solid.output.sum_df.expectation.some_expectation/expectation_value'
+                            'path': '/tmp/dagster/runs/35de03ec-4d81-4737-a9c8-85b55c98a73a/files/intermediates/df_expectations_solid.output.sum_df.expectation.some_expectation/expectation_value'
                         },
                         'level': 'INFO',
                         'outputName': 'expectation_value',
@@ -136,7 +136,7 @@ snapshots['test_successful_pipeline_reexecution 1'] = {
                         '__typename': 'ExecutionStepOutputEvent',
                         'intermediateMaterialization': {
                             'description': None,
-                            'path': '/tmp/dagster/runs/2587a620-a059-48c2-817b-3bb8cb8af39e/files/intermediates/sum_sq_solid.transform/result'
+                            'path': '/tmp/dagster/runs/35de03ec-4d81-4737-a9c8-85b55c98a73a/files/intermediates/sum_sq_solid.transform/result'
                         },
                         'level': 'INFO',
                         'outputName': 'result',
@@ -164,7 +164,7 @@ snapshots['test_successful_pipeline_reexecution 1'] = {
                         '__typename': 'ExecutionStepOutputEvent',
                         'intermediateMaterialization': {
                             'description': None,
-                            'path': '/tmp/dagster/runs/2587a620-a059-48c2-817b-3bb8cb8af39e/files/intermediates/df_expectations_solid.output.sum_df.expectations.join/join_output'
+                            'path': '/tmp/dagster/runs/35de03ec-4d81-4737-a9c8-85b55c98a73a/files/intermediates/df_expectations_solid.output.sum_df.expectations.join/join_output'
                         },
                         'level': 'INFO',
                         'outputName': 'join_output',
@@ -200,7 +200,7 @@ snapshots['test_successful_pipeline_reexecution 1'] = {
                         '__typename': 'ExecutionStepOutputEvent',
                         'intermediateMaterialization': {
                             'description': None,
-                            'path': '/tmp/dagster/runs/2587a620-a059-48c2-817b-3bb8cb8af39e/files/intermediates/df_expectations_solid.transform/result'
+                            'path': '/tmp/dagster/runs/35de03ec-4d81-4737-a9c8-85b55c98a73a/files/intermediates/df_expectations_solid.transform/result'
                         },
                         'level': 'INFO',
                         'outputName': 'result',
@@ -232,7 +232,7 @@ snapshots['test_successful_pipeline_reexecution 1'] = {
                         '__typename': 'ExecutionStepOutputEvent',
                         'intermediateMaterialization': {
                             'description': None,
-                            'path': '/tmp/dagster/runs/2587a620-a059-48c2-817b-3bb8cb8af39e/files/intermediates/df_expectations_solid.output.result.expectation.other_expectation/expectation_value'
+                            'path': '/tmp/dagster/runs/35de03ec-4d81-4737-a9c8-85b55c98a73a/files/intermediates/df_expectations_solid.output.result.expectation.other_expectation/expectation_value'
                         },
                         'level': 'INFO',
                         'outputName': 'expectation_value',
@@ -260,7 +260,7 @@ snapshots['test_successful_pipeline_reexecution 1'] = {
                         '__typename': 'ExecutionStepOutputEvent',
                         'intermediateMaterialization': {
                             'description': None,
-                            'path': '/tmp/dagster/runs/2587a620-a059-48c2-817b-3bb8cb8af39e/files/intermediates/df_expectations_solid.output.result.expectations.join/join_output'
+                            'path': '/tmp/dagster/runs/35de03ec-4d81-4737-a9c8-85b55c98a73a/files/intermediates/df_expectations_solid.output.result.expectations.join/join_output'
                         },
                         'level': 'INFO',
                         'outputName': 'join_output',
@@ -323,7 +323,7 @@ snapshots['test_successful_pipeline_reexecution 2'] = {
                         '__typename': 'ExecutionStepOutputEvent',
                         'intermediateMaterialization': {
                             'description': None,
-                            'path': '/tmp/dagster/runs/ab21c375-13cb-4240-a161-e92c76444799/files/intermediates/sum_sq_solid.transform/result'
+                            'path': '/tmp/dagster/runs/4cc8fa02-daf2-498e-9d83-ccffa1ad1b93/files/intermediates/sum_sq_solid.transform/result'
                         },
                         'level': 'INFO',
                         'outputName': 'result',
