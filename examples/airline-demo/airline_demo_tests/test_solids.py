@@ -28,19 +28,13 @@ from .marks import nettest, postgres, redshift, skip, spark
 
 
 def _tempfile_context():
-    return {
-        'test': PipelineContextDefinition(
-            context_fn=lambda info: ExecutionContext.console_logging(log_level=logging.DEBUG),
-            resources={'tempfile': tempfile_resource},
-        )
-    }
+    return {'test': PipelineContextDefinition(resources={'tempfile': tempfile_resource})}
 
 
 def _spark_context():
     return {
         'test': PipelineContextDefinition(
-            context_fn=lambda info: ExecutionContext.console_logging(log_level=logging.DEBUG),
-            resources={'spark': spark_session_local, 'tempfile': tempfile_resource},
+            resources={'spark': spark_session_local, 'tempfile': tempfile_resource}
         )
     }
 

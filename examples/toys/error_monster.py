@@ -86,7 +86,7 @@ def str_to_num(context, string):
 def context_init(init_context):
     if init_context.context_config['throw_on_context_init']:
         raise Exception('throwing from context_fn')
-    return ExecutionContext.console_logging(log_level=logging.DEBUG)
+    return ExecutionContext()
 
 
 def define_pipeline():

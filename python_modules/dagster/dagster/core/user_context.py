@@ -35,7 +35,7 @@ class ExecutionContext(namedtuple('_ExecutionContext', 'resources tags')):
         tags (dict[str, str])
     '''
 
-    def __new__(cls, loggers=None, resources=None, tags=None):
+    def __new__(cls, resources=None, tags=None):
         return super(ExecutionContext, cls).__new__(
             cls, resources=resources, tags=check.opt_dict_param(tags, 'tags')
         )

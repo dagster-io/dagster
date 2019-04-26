@@ -5,7 +5,7 @@ from dagster.core.types.field_utils import check_user_facing_opt_field_param
 from dagster.core.user_context import ExecutionContext
 from dagster.core.system_config.objects import DEFAULT_CONTEXT_NAME
 
-from dagster.utils.logging import DefaultLogLevelEnum, level_from_string
+from dagster.utils.log import DefaultLogLevelEnum
 
 from .resource import ResourceDefinition
 

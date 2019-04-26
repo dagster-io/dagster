@@ -3,9 +3,9 @@ import logging
 from contextlib import contextmanager
 
 from dagster import PipelineDefinition
-from dagster.core.events.logging import construct_event_record, LogMessageRecord
+from dagster.core.events.log import construct_event_record, LogMessageRecord
 from dagster.core.init_context import InitLoggerContext
-from dagster.utils.logging import define_structured_logger
+from dagster.utils.log import define_structured_logger
 from dagster.utils.test import create_test_pipeline_execution_context
 
 

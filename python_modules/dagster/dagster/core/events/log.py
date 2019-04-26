@@ -1,10 +1,9 @@
 import json
 
 from dagster import check
-from dagster.core.definitions.logger import logger
 from dagster.utils.error import SerializableErrorInfo
 
-from dagster.utils.logging import (
+from dagster.utils.log import (
     DEBUG,
     StructuredLoggerHandler,
     JsonEventLoggerHandler,

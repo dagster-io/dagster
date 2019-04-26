@@ -53,7 +53,7 @@ from .errors import (
 )
 
 from .events import DagsterEvent, DagsterEventType, PipelineInitFailureData
-from .events.logging import construct_event_logger
+from .events.log import construct_event_logger
 
 from .execution_plan.plan import ExecutionPlan
 from .execution_plan.objects import StepKind
