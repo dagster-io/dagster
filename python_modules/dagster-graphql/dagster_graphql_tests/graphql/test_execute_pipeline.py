@@ -423,7 +423,6 @@ mutation (
                             step { key kind }
                             outputName
                             intermediateMaterialization {
-                                path
                                 description
                             }
                         }
