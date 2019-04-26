@@ -3,6 +3,7 @@ from enum import Enum
 
 from dagster import check
 from dagster.utils.error import SerializableErrorInfo
+from dagster.core.definitions.materialization import Materialization
 from dagster.core.log import DagsterLog
 
 
@@ -254,13 +255,12 @@ class DagsterEvent(
         )
 
     @staticmethod
-    def step_materialization(step_context, name, path):
-        check.str_param(name, 'name')
-        check.str_param(path, 'path')
+    def step_materialization(step_context, materialization):
+        check.inst_param(materialization, 'materialization', Materialization)
         return DagsterEvent.from_step(
             event_type=DagsterEventType.STEP_MATERIALIZATION,
             step_context=step_context,
-            event_specific_data=StepMaterializationData(name, path),
+            event_specific_data=StepMaterializationData(materialization),
         )
 
     @staticmethod
@@ -310,7 +310,7 @@ def get_step_output_event(events, step_key, output_name='result'):
     return None
 
 
-class StepMaterializationData(namedtuple('_StepMaterializationData', 'name path')):
+class StepMaterializationData(namedtuple('_StepMaterializationData', 'materialization')):
     pass
 
 

@@ -92,8 +92,8 @@ function extractMetadataFromLogs(
       } else if (log.__typename === "StepMaterializationEvent") {
         metadata.steps[name] = produce(metadata.steps[name] || {}, step => {
           step.materializations.push({
-            fileLocation: log.fileLocation,
-            fileName: log.fileName
+            fileLocation: log.materialization.path || "",
+            fileName: log.materialization.description || ""
           });
         });
       } else if (log.__typename === "ExecutionStepFailureEvent") {
@@ -136,8 +136,10 @@ export default class RunMetadataProvider extends React.Component<
           step {
             name
           }
-          fileLocation
-          fileName
+          materialization {
+            path
+            description
+          }
         }
       }
     `

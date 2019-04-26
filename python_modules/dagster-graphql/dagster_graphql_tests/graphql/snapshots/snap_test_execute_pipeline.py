@@ -30,13 +30,16 @@ snapshots['test_successful_pipeline_reexecution 1'] = {
                     },
                     {
                         '__typename': 'ExecutionStepOutputEvent',
+                        'intermediateMaterialization': {
+                            'description': None,
+                            'path': '/tmp/dagster/runs/2587a620-a059-48c2-817b-3bb8cb8af39e/files/intermediates/sum_solid.inputs.num.read/input_thunk_output'
+                        },
                         'level': 'INFO',
                         'outputName': 'input_thunk_output',
                         'step': {
                             'key': 'sum_solid.inputs.num.read',
                             'kind': 'INPUT_THUNK'
-                        },
-                        'storageMode': 'FILESYSTEM'
+                        }
                     },
                     {
                         '__typename': 'LogMessageEvent',
@@ -63,13 +66,16 @@ snapshots['test_successful_pipeline_reexecution 1'] = {
                     },
                     {
                         '__typename': 'ExecutionStepOutputEvent',
+                        'intermediateMaterialization': {
+                            'description': None,
+                            'path': '/tmp/dagster/runs/2587a620-a059-48c2-817b-3bb8cb8af39e/files/intermediates/sum_solid.transform/result'
+                        },
                         'level': 'INFO',
                         'outputName': 'result',
                         'step': {
                             'key': 'sum_solid.transform',
                             'kind': 'TRANSFORM'
-                        },
-                        'storageMode': 'FILESYSTEM'
+                        }
                     },
                     {
                         '__typename': 'LogMessageEvent',
@@ -92,13 +98,16 @@ snapshots['test_successful_pipeline_reexecution 1'] = {
                     },
                     {
                         '__typename': 'ExecutionStepOutputEvent',
+                        'intermediateMaterialization': {
+                            'description': None,
+                            'path': '/tmp/dagster/runs/2587a620-a059-48c2-817b-3bb8cb8af39e/files/intermediates/df_expectations_solid.output.sum_df.expectation.some_expectation/expectation_value'
+                        },
                         'level': 'INFO',
                         'outputName': 'expectation_value',
                         'step': {
                             'key': 'df_expectations_solid.output.sum_df.expectation.some_expectation',
                             'kind': 'INPUT_EXPECTATION'
-                        },
-                        'storageMode': 'FILESYSTEM'
+                        }
                     },
                     {
                         '__typename': 'LogMessageEvent',
@@ -125,13 +134,16 @@ snapshots['test_successful_pipeline_reexecution 1'] = {
                     },
                     {
                         '__typename': 'ExecutionStepOutputEvent',
+                        'intermediateMaterialization': {
+                            'description': None,
+                            'path': '/tmp/dagster/runs/2587a620-a059-48c2-817b-3bb8cb8af39e/files/intermediates/sum_sq_solid.transform/result'
+                        },
                         'level': 'INFO',
                         'outputName': 'result',
                         'step': {
                             'key': 'sum_sq_solid.transform',
                             'kind': 'TRANSFORM'
-                        },
-                        'storageMode': 'FILESYSTEM'
+                        }
                     },
                     {
                         '__typename': 'LogMessageEvent',
@@ -150,13 +162,16 @@ snapshots['test_successful_pipeline_reexecution 1'] = {
                     },
                     {
                         '__typename': 'ExecutionStepOutputEvent',
+                        'intermediateMaterialization': {
+                            'description': None,
+                            'path': '/tmp/dagster/runs/2587a620-a059-48c2-817b-3bb8cb8af39e/files/intermediates/df_expectations_solid.output.sum_df.expectations.join/join_output'
+                        },
                         'level': 'INFO',
                         'outputName': 'join_output',
                         'step': {
                             'key': 'df_expectations_solid.output.sum_df.expectations.join',
                             'kind': 'JOIN'
-                        },
-                        'storageMode': 'FILESYSTEM'
+                        }
                     },
                     {
                         '__typename': 'LogMessageEvent',
@@ -183,13 +198,16 @@ snapshots['test_successful_pipeline_reexecution 1'] = {
                     },
                     {
                         '__typename': 'ExecutionStepOutputEvent',
+                        'intermediateMaterialization': {
+                            'description': None,
+                            'path': '/tmp/dagster/runs/2587a620-a059-48c2-817b-3bb8cb8af39e/files/intermediates/df_expectations_solid.transform/result'
+                        },
                         'level': 'INFO',
                         'outputName': 'result',
                         'step': {
                             'key': 'df_expectations_solid.transform',
                             'kind': 'TRANSFORM'
-                        },
-                        'storageMode': 'FILESYSTEM'
+                        }
                     },
                     {
                         '__typename': 'LogMessageEvent',
@@ -212,13 +230,16 @@ snapshots['test_successful_pipeline_reexecution 1'] = {
                     },
                     {
                         '__typename': 'ExecutionStepOutputEvent',
+                        'intermediateMaterialization': {
+                            'description': None,
+                            'path': '/tmp/dagster/runs/2587a620-a059-48c2-817b-3bb8cb8af39e/files/intermediates/df_expectations_solid.output.result.expectation.other_expectation/expectation_value'
+                        },
                         'level': 'INFO',
                         'outputName': 'expectation_value',
                         'step': {
                             'key': 'df_expectations_solid.output.result.expectation.other_expectation',
                             'kind': 'OUTPUT_EXPECTATION'
-                        },
-                        'storageMode': 'FILESYSTEM'
+                        }
                     },
                     {
                         '__typename': 'LogMessageEvent',
@@ -237,13 +258,16 @@ snapshots['test_successful_pipeline_reexecution 1'] = {
                     },
                     {
                         '__typename': 'ExecutionStepOutputEvent',
+                        'intermediateMaterialization': {
+                            'description': None,
+                            'path': '/tmp/dagster/runs/2587a620-a059-48c2-817b-3bb8cb8af39e/files/intermediates/df_expectations_solid.output.result.expectations.join/join_output'
+                        },
                         'level': 'INFO',
                         'outputName': 'join_output',
                         'step': {
                             'key': 'df_expectations_solid.output.result.expectations.join',
                             'kind': 'JOIN'
-                        },
-                        'storageMode': 'FILESYSTEM'
+                        }
                     },
                     {
                         '__typename': 'LogMessageEvent',
@@ -297,13 +321,16 @@ snapshots['test_successful_pipeline_reexecution 2'] = {
                     },
                     {
                         '__typename': 'ExecutionStepOutputEvent',
+                        'intermediateMaterialization': {
+                            'description': None,
+                            'path': '/tmp/dagster/runs/ab21c375-13cb-4240-a161-e92c76444799/files/intermediates/sum_sq_solid.transform/result'
+                        },
                         'level': 'INFO',
                         'outputName': 'result',
                         'step': {
                             'key': 'sum_sq_solid.transform',
                             'kind': 'TRANSFORM'
-                        },
-                        'storageMode': 'FILESYSTEM'
+                        }
                     },
                     {
                         '__typename': 'LogMessageEvent',

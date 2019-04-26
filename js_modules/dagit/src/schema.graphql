@@ -152,9 +152,8 @@ type ExecutionStepOutputEvent implements MessageEvent & StepEvent {
   level: LogLevel!
   step: ExecutionStep
   outputName: String!
-  storageMode: String!
-  storageObjectId: String!
   valueRepr: String!
+  intermediateMaterialization: Materialization
 }
 
 type ExecutionStepSkippedEvent implements MessageEvent & StepEvent {
@@ -282,6 +281,11 @@ type LogMessageEvent implements MessageEvent {
   timestamp: String!
   level: LogLevel!
   step: ExecutionStep
+}
+
+type Materialization {
+  description: String
+  path: String
 }
 
 interface MessageEvent {
@@ -673,8 +677,7 @@ type StepMaterializationEvent implements MessageEvent & StepEvent {
   timestamp: String!
   level: LogLevel!
   step: ExecutionStep
-  fileName: String!
-  fileLocation: String!
+  materialization: Materialization!
 }
 
 input StepOutputHandle {

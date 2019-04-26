@@ -84,8 +84,6 @@ class InMemoryIntermediatesManager(IntermediatesManager):
         check.inst_param(step_output_handle, 'step_output_handle', StepOutputHandle)
         self.values[step_output_handle] = value
 
-        return str(id(self.values[step_output_handle]))
-
     def has_intermediate(self, context, step_output_handle):
         check.opt_inst_param(context, 'context', SystemPipelineExecutionContext)
         check.inst_param(step_output_handle, 'step_output_handle', StepOutputHandle)

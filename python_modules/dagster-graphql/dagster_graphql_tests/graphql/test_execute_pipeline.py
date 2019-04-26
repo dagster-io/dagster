@@ -5,6 +5,7 @@ import uuid
 from graphql import parse
 
 from dagster.utils import script_relative_path, merge_dicts
+from dagster.utils.test import get_temp_file_name
 from dagster.core.object_store import has_filesystem_intermediate, get_filesystem_intermediate
 from dagster_pandas import DataFrame
 
@@ -227,6 +228,12 @@ subscription subscribeTest($runId: ID!) {
                     }
                     level
                 }
+                ... on StepMaterializationEvent {
+                    materialization {
+                        path
+                        description
+                    }
+                }
             }
         }
         ... on PipelineRunLogsSubscriptionMissingRunIdFailure {
@@ -307,8 +314,7 @@ def test_basic_filesystem_sync_execution():
     sum_solid_output = get_step_output_event(logs, 'sum_solid.transform')
     assert sum_solid_output['step']['key'] == 'sum_solid.transform'
     assert sum_solid_output['outputName'] == 'result'
-    assert sum_solid_output['storageMode'] == 'FILESYSTEM'
-    output_path = sum_solid_output['storageObjectId']
+    output_path = sum_solid_output['intermediateMaterialization']['path']
 
     assert os.path.exists(output_path)
 
@@ -364,8 +370,10 @@ mutation (
                         ... on ExecutionStepOutputEvent {
                             step { key kind }
                             outputName
-                            storageMode
-                            storageObjectId
+                            intermediateMaterialization {
+                                path
+                                description
+                            }
                         }
                     }
                 }
@@ -414,7 +422,10 @@ mutation (
                         ... on ExecutionStepOutputEvent {
                             step { key kind }
                             outputName
-                            storageMode
+                            intermediateMaterialization {
+                                path
+                                description
+                            }
                         }
                     }
                 }
@@ -628,3 +639,66 @@ def test_pipeline_reexecution_invalid_output_in_step_output_handle():
     assert query_result['__typename'] == 'InvalidOutputError'
     assert query_result['stepKey'] == 'sum_solid.transform'
     assert query_result['invalidOutputName'] == 'invalid_output'
+
+
+def test_basic_start_pipeline_execution_with_materialization():
+
+    with get_temp_file_name() as out_csv_path:
+
+        environment_dict = {
+            'solids': {
+                'sum_solid': {
+                    'inputs': {'num': {'csv': {'path': script_relative_path('../num.csv')}}},
+                    'outputs': [{'result': {'csv': {'path': out_csv_path}}}],
+                }
+            }
+        }
+
+        context = define_context()
+
+        result = execute_dagster_graphql(
+            context,
+            START_PIPELINE_EXECUTION_QUERY,
+            variables={'pipeline': {'name': 'pandas_hello_world'}, 'config': environment_dict},
+        )
+
+        assert not result.errors
+        assert result.data
+
+        # just test existence
+        assert (
+            result.data['startPipelineExecution']['__typename'] == 'StartPipelineExecutionSuccess'
+        )
+        run_id = result.data['startPipelineExecution']['run']['runId']
+        assert uuid.UUID(run_id)
+        assert (
+            result.data['startPipelineExecution']['run']['pipeline']['name'] == 'pandas_hello_world'
+        )
+
+        assert os.path.exists(out_csv_path)
+
+        subscription = execute_dagster_graphql(
+            context, parse(SUBSCRIPTION_QUERY), variables={'runId': run_id}
+        )
+
+        subscribe_results = []
+        subscription.subscribe(subscribe_results.append)
+
+        assert len(subscribe_results) == 1
+
+        subscribe_result = subscribe_results[0]
+
+        assert not subscribe_result.errors
+        assert subscribe_result.data
+
+        step_mat_event = None
+
+        for message in subscribe_result.data['pipelineRunLogs']['messages']:
+            if message['__typename'] == 'StepMaterializationEvent':
+                # ensure only one event
+                assert step_mat_event is None
+                step_mat_event = message
+
+        # ensure only one event
+        assert step_mat_event
+        assert step_mat_event['materialization']['path'] == out_csv_path

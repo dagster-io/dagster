@@ -80,14 +80,19 @@ export interface PipelineRunPipelineRunEventFragment_StepMaterializationEvent_st
   name: string;
 }
 
+export interface PipelineRunPipelineRunEventFragment_StepMaterializationEvent_materialization {
+  __typename: "Materialization";
+  path: string | null;
+  description: string | null;
+}
+
 export interface PipelineRunPipelineRunEventFragment_StepMaterializationEvent {
   __typename: "StepMaterializationEvent";
   message: string;
   timestamp: string;
   level: LogLevel;
   step: PipelineRunPipelineRunEventFragment_StepMaterializationEvent_step | null;
-  fileLocation: string;
-  fileName: string;
+  materialization: PipelineRunPipelineRunEventFragment_StepMaterializationEvent_materialization;
 }
 
 export type PipelineRunPipelineRunEventFragment = PipelineRunPipelineRunEventFragment_LogMessageEvent | PipelineRunPipelineRunEventFragment_PipelineInitFailureEvent | PipelineRunPipelineRunEventFragment_ExecutionStepFailureEvent | PipelineRunPipelineRunEventFragment_PipelineProcessStartedEvent | PipelineRunPipelineRunEventFragment_StepMaterializationEvent;

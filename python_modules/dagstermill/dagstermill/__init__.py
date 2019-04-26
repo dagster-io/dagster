@@ -611,7 +611,8 @@ def _dm_solid_transform(name, notebook_path):
             )
 
             yield Materialization(
-                '{name} output notebook'.format(name=transform_context.solid.name), temp_path
+                path=temp_path,
+                description='{name} output notebook'.format(name=transform_context.solid.name),
             )
 
             for output_def in system_transform_context.solid_def.output_defs:

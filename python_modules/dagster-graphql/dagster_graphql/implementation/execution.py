@@ -243,9 +243,8 @@ def _create_dauphin_step_event(execution_plan, step_event):
         return DauphinExecutionStepOutputEvent(
             step=DauphinExecutionStep(execution_plan, step),
             output_name=step_event.step_output_data.output_name,
-            storage_object_id=step_event.step_output_data.storage_object_id,
-            storage_mode=step_event.step_output_data.storage_mode,
             value_repr=step_event.step_output_data.value_repr,
+            intermediate_materialization=step_event.step_output_data.intermediate_materialization,
         )
     elif step_event.event_type == DagsterEventType.STEP_FAILURE:
         return DauphinExecutionStepFailureEvent(

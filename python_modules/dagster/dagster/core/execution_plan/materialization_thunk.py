@@ -44,7 +44,12 @@ def _create_materialization_lambda(output_def, config_spec):
             )
 
         yield StepOutputValue(output_name=MATERIALIZATION_THUNK_OUTPUT, value=runtime_value)
-        yield Materialization(name=output_def.name, path=path)
+        yield Materialization(
+            path=path,
+            description=('Materialization of {solid_name}.{output_name}').format(
+                output_name=output_def.name, solid_name=step_context.solid.name
+            ),
+        )
 
     return _fn
 

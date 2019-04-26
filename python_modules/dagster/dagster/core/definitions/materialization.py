@@ -3,8 +3,10 @@ from collections import namedtuple
 from dagster import check
 
 
-class Materialization(namedtuple('_Materialization', 'name path')):
-    def __new__(cls, name, path):
+class Materialization(namedtuple('_Materialization', 'path description')):
+    def __new__(cls, path, description=None):
         return super(Materialization, cls).__new__(
-            cls, check.str_param(name, 'name'), check.str_param(path, 'path')
+            cls,
+            path=check.opt_str_param(path, 'path'),
+            description=check.opt_str_param(description, 'description'),
         )
