@@ -180,10 +180,7 @@ export class ExecutionPlanBox extends React.Component<
           />
         </ExecutionPlanRowContainer>
         {(materializations || []).map(mat => (
-          <Materialization
-            fileLocation={mat.fileLocation}
-            fileName={mat.fileName}
-          />
+          <Materialization path={mat.path} description={mat.description} />
         ))}
       </>
     );

@@ -13,8 +13,8 @@ export enum IStepState {
 }
 
 export interface IStepMaterialization {
-  fileName: string;
-  fileLocation: string;
+  description: string | null;
+  path: string | null;
 }
 
 export interface IStepMetadata {
@@ -92,8 +92,8 @@ function extractMetadataFromLogs(
       } else if (log.__typename === "StepMaterializationEvent") {
         metadata.steps[name] = produce(metadata.steps[name] || {}, step => {
           step.materializations.push({
-            fileLocation: log.materialization.path || "",
-            fileName: log.materialization.description || ""
+            path: log.materialization.path,
+            description: log.materialization.description
           });
         });
       } else if (log.__typename === "ExecutionStepFailureEvent") {
