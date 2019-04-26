@@ -173,8 +173,6 @@ def get_stack_trace_array(exception):
     if hasattr(exception, '__traceback__'):
         tb = exception.__traceback__
     else:
-        import sys
-
         _exc_type, _exc_value, tb = sys.exc_info()
     return traceback.format_tb(tb)
 

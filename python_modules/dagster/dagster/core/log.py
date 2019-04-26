@@ -8,7 +8,7 @@ import coloredlogs
 from dagster import check, seven
 from dagster.core.types import Dict, Field, String
 from dagster.core.definitions.logger import logger
-from dagster.utils.logging import level_from_string, default_format_string
+from dagster.utils.log import level_from_string, default_format_string
 
 DAGSTER_META_KEY = 'dagster_meta'
 DAGSTER_DEFAULT_LOGGER = 'dagster'
@@ -205,9 +205,6 @@ class DagsterLogManager:
         '''
         check.int_param(level, 'level')
         return self._log(level, msg, kwargs)
-
-        check.int_param(lvl, 'lvl')
-        return self._log(lvl, msg, kwargs)
 
 
 @logger(
