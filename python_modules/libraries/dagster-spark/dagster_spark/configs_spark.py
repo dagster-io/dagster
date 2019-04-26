@@ -1,7 +1,9 @@
 '''NOTE: THIS FILE IS AUTO-GENERATED. DO NOT EDIT
 
 Produced via:
-  python parse_spark_configs.py > ../event-pipeline-demo/event_pipeline_demo/configs_spark.py
+python automation/parse_spark_configs.py \
+	--output-file \
+	libraries/dagster-spark/dagster_spark/configs_spark.py \
 
 '''
 

@@ -44,7 +44,13 @@ def _do_setup(name='dagster-gcp'):
             'Operating System :: OS Independent',
         ],
         packages=find_packages(exclude=['test']),
-        install_requires=['google-cloud-bigquery>=1.11.*', 'dagster', 'dagster_pandas'],
+        install_requires=[
+            'dagster',
+            'dagster_pandas',
+            'google-api-python-client',
+            'google-cloud-bigquery>=1.11.*',
+            'oauth2client',
+        ],
         extras_require={'pyarrow': ['pyarrow']},
         zip_safe=False,
     )

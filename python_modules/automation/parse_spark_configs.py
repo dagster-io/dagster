@@ -4,16 +4,15 @@ This script parses the Spark configuration parameters downloaded from the Spark 
 and codegens a file that contains dagster configurations for these parameters.
 '''
 import re
+import sys
 
+from enum import Enum
+
+import click
 import requests
 import pytablereader as ptr
 
-from enum import Enum
-from six import StringIO
-
-from dagster.utils.indenting_printer import IndentingPrinter
-
-import sys
+from printer import IndentingBufferPrinter
 
 SPARK_VERSION = "v2.4.0"
 TABLE_REGEX = r"### (.{,30}?)\n\n(<table.*?>.*?<\/table>)"
@@ -151,27 +150,6 @@ CONFIG_TYPES = {
 }
 
 
-class IndentingBufferPrinter(IndentingPrinter):
-    '''Subclass of IndentingPrinter wrapping a StringIO.'''
-
-    def __init__(self, indent_level=4, current_indent=0):
-        self.buffer = StringIO()
-        self.printer = lambda x: self.buffer.write(x + '\n')
-        super(IndentingBufferPrinter, self).__init__(
-            indent_level=indent_level, printer=self.printer, current_indent=current_indent
-        )
-
-    def __enter__(self):
-        return self
-
-    def __exit__(self, _exception_type, _exception_value, _traceback):
-        self.buffer.close()
-
-    def read(self):
-        '''Get the value of the backing StringIO.'''
-        return self.buffer.getvalue()
-
-
 class SparkConfig:
     def __init__(self, path, default, meaning):
         self.path = path
@@ -235,7 +213,9 @@ class SparkConfigNode:
         return printer.read()
 
 
-def main():
+@click.command()
+@click.option('--output-file', help='Base path to write config file to', required=True)
+def run(output_file):
     r = requests.get(
         'https://raw.githubusercontent.com/apache/spark/{}/docs/configuration.md'.format(
             SPARK_VERSION
@@ -269,17 +249,7 @@ def main():
         d.value = s
 
     with IndentingBufferPrinter() as printer:
-        printer.line("'''NOTE: THIS FILE IS AUTO-GENERATED. DO NOT EDIT")
-        printer.blank_line()
-        printer.line('Produced via:')
-        printer.line(
-            '  python parse_spark_configs.py > '
-            '../event-pipeline-demo/event_pipeline_demo/configs_spark.py'
-        )
-        printer.blank_line()
-        printer.line("'''")
-        printer.blank_line()
-        printer.blank_line()
+        printer.write_header()
         printer.line('from dagster import Bool, Field, Float, Int, PermissiveDict, String')
         printer.blank_line()
         printer.blank_line()
@@ -289,8 +259,9 @@ def main():
             printer.append('return ')
             result.print(printer)
         printer.line('# pylint: enable=line-too-long')
-        print(printer.read().strip())
+        with open(output_file, 'wb') as f:
+            f.write(printer.read().strip().encode())
 
 
 if __name__ == "__main__":
-    main()
+    run()  # pylint:disable=E1120

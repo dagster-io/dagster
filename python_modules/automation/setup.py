@@ -25,9 +25,11 @@ setup(
     ],
     packages=find_packages(exclude=['test']),
     install_requires=[
+        'autoflake',
         'boto3==1.9.*',
         'click>=6.7',
         'faker>=1.0.4',
+        'pandas',
         'pytablereader',
         'random_useragent>=1.0',
         'requests',
