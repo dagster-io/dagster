@@ -1,3 +1,4 @@
+import functools
 import os
 
 from dagster import check, InputDefinition, List, OutputDefinition, Path, Result, SolidDefinition
@@ -55,15 +56,12 @@ def create_spark_shell_cmd(solid_config, main_class):
     return spark_shell_cmd
 
 
-def create_step_metadata_fn(solid_name, main_class):
-    def step_metadata_fn(environment_config):
-        return {
-            'spark_submit_command': ' '.join(
-                create_spark_shell_cmd(environment_config.solids[solid_name].config, main_class)
-            )
-        }
-
-    return step_metadata_fn
+def step_metadata_fn(environment_config, solid_name, main_class):
+    return {
+        'spark_submit_command': ' '.join(
+            create_spark_shell_cmd(environment_config.solids[solid_name].config, main_class)
+        )
+    }
 
 
 class SparkSolidDefinition(SolidDefinition):
@@ -108,5 +106,7 @@ class SparkSolidDefinition(SolidDefinition):
             transform_fn=_spark_transform_fn,
             config_field=define_spark_config(),
             metadata={'kind': 'spark', 'main_class': main_class},
-            step_metadata_fn=create_step_metadata_fn(name, main_class),
+            step_metadata_fn=functools.partial(
+                step_metadata_fn, solid_name=name, main_class=main_class
+            ),
         )
