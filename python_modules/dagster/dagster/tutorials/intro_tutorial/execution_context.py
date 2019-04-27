@@ -12,11 +12,14 @@ def error_message(context):
     context.log.error('An error occurred.')
 
 
-def define_logging_pipeline():
-    return PipelineDefinition(solids=[debug_message, error_message])
+def define_execution_context_pipeline():
+    return PipelineDefinition(
+        name='execution_context_pipeline', solids=[debug_message, error_message]
+    )
 
 
 if __name__ == '__main__':
     execute_pipeline(
-        define_logging_pipeline(), {'context': {'default': {'config': {'log_level': 'DEBUG'}}}}
+        define_execution_context_pipeline(),
+        {'context': {'default': {'config': {'log_level': 'DEBUG'}}}},
     )
