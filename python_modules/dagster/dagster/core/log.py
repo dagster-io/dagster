@@ -26,9 +26,9 @@ def _kv_message(all_items, multiline=False):
 
 
 class DagsterLog:
-    def __init__(self, run_id, tags, loggers):
+    def __init__(self, run_id, logging_tags, loggers):
         self.run_id = check.str_param(run_id, 'run_id')
-        self.tags = check.dict_param(tags, 'tags')
+        self.logging_tags = check.dict_param(logging_tags, 'logging_tags')
         self.loggers = check.list_param(loggers, 'loggers', of_type=logging.Logger)
 
     def _log(self, method, orig_message, message_props):
@@ -62,7 +62,7 @@ class DagsterLog:
         # We first generate all props for the purpose of producing the semi-structured
         # log message via _kv_messsage
         all_props = dict(
-            itertools.chain(synth_props.items(), self.tags.items(), message_props.items())
+            itertools.chain(synth_props.items(), self.logging_tags.items(), message_props.items())
         )
 
         msg_with_structured_props = _kv_message(all_props.items())

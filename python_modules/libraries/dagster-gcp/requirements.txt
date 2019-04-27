@@ -1,0 +1,1 @@
+google-cloud-bigquery[pandas,pyarrow]==1.11.2

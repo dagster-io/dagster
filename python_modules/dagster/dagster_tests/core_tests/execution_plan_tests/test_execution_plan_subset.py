@@ -89,4 +89,4 @@ def test_reentrant_execute_plan():
     assert called['yup']
     assert len(step_events) == 3
 
-    assert step_events[0].tags['foo'] == 'bar'
+    assert step_events[0].logging_tags['foo'] == 'bar'

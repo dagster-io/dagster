@@ -5,6 +5,7 @@ import yaml
 import pytest
 
 from dagster import PipelineDefinition, execute_pipeline
+from dagster.core.execution import create_execution_plan
 from dagster.utils import script_relative_path
 from dagster_spark import SparkSolidDefinition, SparkSolidError
 
@@ -14,7 +15,7 @@ solids:
     inputs:
       spark_inputs: []
     config:
-      spark_home: dummy
+      spark_home: /your/spark_home
       spark_outputs: ["/tmp/dagster/events/data"]
       application_jar: "{path}"
       deploy_mode: "client"
@@ -27,6 +28,24 @@ solids:
 '''
 
 
+def test_step_metadata():
+    spark_solid = SparkSolidDefinition('spark_solid', main_class='something')
+    pipeline = PipelineDefinition(solids=[spark_solid])
+    environment_dict = yaml.load(CONFIG_FILE.format(path=script_relative_path('fake.jar')))
+    execution_plan = create_execution_plan(pipeline, environment_dict)
+
+    step = execution_plan.get_step_by_key('spark_solid.transform')
+    assert step.metadata == {
+        'spark_submit_command': (
+            '/your/spark_home/bin/spark-submit --class something '
+            '--master local[*] --deploy-mode client --conf spark.app.name=test_app '
+            + script_relative_path('fake.jar')
+            + ' --local-path /tmp/dagster/events/data '
+            '--date 2019-01-01'
+        )
+    }
+
+
 def test_jar_not_found():
     spark_solid = SparkSolidDefinition('spark_solid', main_class='something')
     pipeline = PipelineDefinition(solids=[spark_solid])
@@ -36,15 +55,6 @@ def test_jar_not_found():
         SparkSolidError,
         match='does not exist. A valid jar must be built before running this solid.',
     ):
-        execute_pipeline(pipeline, environment_dict)
-
-
-@pytest.mark.skip
-def test_run_invalid_jar():
-    spark_solid = SparkSolidDefinition('spark_solid', main_class='something')
-    pipeline = PipelineDefinition(solids=[spark_solid])
-    environment_dict = yaml.load(CONFIG_FILE.format(path=script_relative_path('.')))
-    with pytest.raises(SparkSolidError, match='Spark job failed. Please consult your logs.'):
         execute_pipeline(pipeline, environment_dict)
 
 

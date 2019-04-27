@@ -36,13 +36,18 @@ export interface RunMetadataProviderMessageFragment_StepMaterializationEvent_ste
   name: string;
 }
 
+export interface RunMetadataProviderMessageFragment_StepMaterializationEvent_materialization {
+  __typename: "Materialization";
+  path: string | null;
+  description: string | null;
+}
+
 export interface RunMetadataProviderMessageFragment_StepMaterializationEvent {
   __typename: "StepMaterializationEvent";
   message: string;
   timestamp: string;
   step: RunMetadataProviderMessageFragment_StepMaterializationEvent_step | null;
-  fileLocation: string;
-  fileName: string;
+  materialization: RunMetadataProviderMessageFragment_StepMaterializationEvent_materialization;
 }
 
 export type RunMetadataProviderMessageFragment = RunMetadataProviderMessageFragment_LogMessageEvent | RunMetadataProviderMessageFragment_PipelineProcessStartedEvent | RunMetadataProviderMessageFragment_StepMaterializationEvent;

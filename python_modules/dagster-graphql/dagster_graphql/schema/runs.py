@@ -222,15 +222,24 @@ class DauphinExecutionStepSkippedEvent(dauphin.ObjectType):
         interfaces = (DauphinMessageEvent, DauphinStepEvent)
 
 
+class DauphinMaterialization(dauphin.ObjectType):
+    class Meta:
+        name = 'Materialization'
+
+    description = dauphin.String()
+    path = dauphin.String()
+
+
 class DauphinExecutionStepOutputEvent(dauphin.ObjectType):
     class Meta:
         name = 'ExecutionStepOutputEvent'
         interfaces = (DauphinMessageEvent, DauphinStepEvent)
 
     output_name = dauphin.NonNull(dauphin.String)
-    storage_mode = dauphin.NonNull(dauphin.String)
-    storage_object_id = dauphin.NonNull(dauphin.String)
+    # storage_mode = dauphin.NonNull(dauphin.String)
+    # storage_object_id = dauphin.NonNull(dauphin.String)
     value_repr = dauphin.NonNull(dauphin.String)
+    intermediate_materialization = dauphin.Field(DauphinMaterialization)
 
 
 class DauphinExecutionStepSuccessEvent(dauphin.ObjectType):
@@ -252,8 +261,7 @@ class DauphinStepMaterializationEvent(dauphin.ObjectType):
         name = 'StepMaterializationEvent'
         interfaces = (DauphinMessageEvent, DauphinStepEvent)
 
-    file_name = dauphin.NonNull(dauphin.String)
-    file_location = dauphin.NonNull(dauphin.String)
+    materialization = dauphin.NonNull(DauphinMaterialization)
 
 
 # Should be a union of all possible events
@@ -316,16 +324,13 @@ class DauphinPipelineRunEvent(dauphin.Union):
                 output_data = event.dagster_event.step_output_data
                 return graphene_info.schema.type_named('ExecutionStepOutputEvent')(
                     output_name=output_data.output_name,
-                    storage_mode=output_data.storage_mode.value,
-                    storage_object_id=output_data.storage_object_id,
+                    intermediate_materialization=output_data.intermediate_materialization,
                     **basic_params
                 )
             elif dagster_event.event_type == DagsterEventType.STEP_MATERIALIZATION:
                 materialization_data = dagster_event.step_materialization_data
                 return graphene_info.schema.type_named('StepMaterializationEvent')(
-                    file_name=materialization_data.name,
-                    file_location=materialization_data.path,
-                    **basic_params
+                    materialization=materialization_data.materialization, **basic_params
                 )
             elif dagster_event.event_type == DagsterEventType.STEP_FAILURE:
                 check.inst(dagster_event.step_failure_data, StepFailureData)

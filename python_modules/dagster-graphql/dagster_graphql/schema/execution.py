@@ -129,11 +129,18 @@ class DauphinExecutionStep(dauphin.ObjectType):
     outputs = dauphin.non_null_list('ExecutionStepOutput')
     solid = dauphin.NonNull('Solid')
     kind = dauphin.NonNull('StepKind')
+    metadata = dauphin.non_null_list('MetadataItemDefinition')
 
     def __init__(self, execution_plan, execution_step):
         super(DauphinExecutionStep, self).__init__()
         self._execution_step = check.inst_param(execution_step, 'execution_step', ExecutionStep)
         self._execution_plan = check.inst_param(execution_plan, 'execution_plan', ExecutionPlan)
+
+    def resolve_metadata(self, graphene_info):
+        return [
+            graphene_info.schema.type_named('MetadataItemDefinition')(key=key, value=value)
+            for key, value in self._execution_step.metadata.items()
+        ]
 
     def resolve_inputs(self, graphene_info):
         return [

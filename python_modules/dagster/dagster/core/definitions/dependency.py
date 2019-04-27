@@ -106,6 +106,10 @@ class Solid(object):
     def output_defs(self):
         return self.definition.output_defs
 
+    @property
+    def step_metadata_fn(self):
+        return self.definition.step_metadata_fn
+
 
 class SolidInputHandle(namedtuple('_SolidInputHandle', 'solid input_def')):
     def __new__(cls, solid, input_def):

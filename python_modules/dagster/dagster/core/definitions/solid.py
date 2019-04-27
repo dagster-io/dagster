@@ -69,6 +69,7 @@ class SolidDefinition(object):
         config_field=None,
         description=None,
         metadata=None,
+        step_metadata_fn=None,
     ):
         self.name = check_valid_name(name)
         self.input_defs = check.list_param(inputs, 'inputs', InputDefinition)
@@ -83,6 +84,7 @@ class SolidDefinition(object):
         self.metadata = check.opt_dict_param(metadata, 'metadata', key_type=str)
         self._input_dict = {inp.name: inp for inp in inputs}
         self._output_dict = {output.name: output for output in outputs}
+        self.step_metadata_fn = step_metadata_fn
 
     def has_input(self, name):
         check.str_param(name, 'name')

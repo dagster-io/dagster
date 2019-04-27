@@ -175,7 +175,7 @@ def _execute_plan_resolve_config(execution_subplan_args, dauphin_pipeline):
 
 def tags_from_graphql_execution_metadata(graphql_execution_metadata):
     tags = {}
-    if 'tags' in graphql_execution_metadata:
+    if graphql_execution_metadata and 'tags' in graphql_execution_metadata:
         for tag in graphql_execution_metadata['tags']:
             tags[tag['key']] = tag['value']
     return tags
@@ -185,7 +185,7 @@ def _execute_plan_chain_actual_execute_or_error(
     execute_plan_args, dauphin_pipeline, _evaluate_env_config_result
 ):
     graphql_execution_metadata = execute_plan_args.execution_metadata
-    run_id = graphql_execution_metadata.get('runId')
+    run_id = graphql_execution_metadata.get('runId') if graphql_execution_metadata else None
     tags = tags_from_graphql_execution_metadata(graphql_execution_metadata)
     execution_plan = create_execution_plan(
         pipeline=dauphin_pipeline.get_dagster_pipeline(),
@@ -243,9 +243,8 @@ def _create_dauphin_step_event(execution_plan, step_event):
         return DauphinExecutionStepOutputEvent(
             step=DauphinExecutionStep(execution_plan, step),
             output_name=step_event.step_output_data.output_name,
-            storage_object_id=step_event.step_output_data.storage_object_id,
-            storage_mode=step_event.step_output_data.storage_mode,
             value_repr=step_event.step_output_data.value_repr,
+            intermediate_materialization=step_event.step_output_data.intermediate_materialization,
         )
     elif step_event.event_type == DagsterEventType.STEP_FAILURE:
         return DauphinExecutionStepFailureEvent(

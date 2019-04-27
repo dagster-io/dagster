@@ -1,4 +1,7 @@
+from dagster import check
 from dagster.utils import script_relative_path
+from dagster.core.types.config import ALL_CONFIG_BUILTINS
+
 from .setup import execute_dagster_graphql, define_context, pandas_hello_world_solids_config
 
 CONFIG_VALIDATION_QUERY = '''
@@ -470,3 +473,227 @@ def test_config_list_item_invalid():
     last_entry = entries[3]
     assert last_entry['__typename'] == 'EvaluationStackListItemEntry'
     assert last_entry['listIndex'] == 1
+
+
+def pipeline_named(result, name):
+    for pipeline_data in result.data['pipelines']['nodes']:
+        if pipeline_data['name'] == name:
+            return pipeline_data
+    check.failed('Did not find')
+
+
+def has_config_type_with_key_prefix(pipeline_data, prefix):
+    for config_type_data in pipeline_data['configTypes']:
+        if config_type_data['key'].startswith(prefix):
+            return True
+
+    return False
+
+
+def has_config_type(pipeline_data, name):
+    for config_type_data in pipeline_data['configTypes']:
+        if config_type_data['name'] == name:
+            return True
+
+    return False
+
+
+def test_smoke_test_config_type_system():
+    result = execute_dagster_graphql(define_context(), ALL_CONFIG_TYPES_QUERY)
+
+    assert not result.errors
+    assert result.data
+
+    pipeline_data = pipeline_named(result, 'more_complicated_nested_config')
+
+    assert pipeline_data
+
+    assert has_config_type_with_key_prefix(pipeline_data, 'Dict.')
+    assert not has_config_type_with_key_prefix(pipeline_data, 'List.')
+    assert not has_config_type_with_key_prefix(pipeline_data, 'Nullable.')
+
+    for builtin_config_type in ALL_CONFIG_BUILTINS:
+        assert has_config_type(pipeline_data, builtin_config_type.name)
+
+
+ALL_CONFIG_TYPES_QUERY = '''
+fragment configTypeFragment on ConfigType {
+  __typename
+  key
+  name
+  description
+  isNullable
+  isList
+  isSelector
+  isBuiltin
+  isSystemGenerated
+  innerTypes {
+    key
+    name
+    description
+    ... on CompositeConfigType {
+        fields {
+            name
+            isOptional
+            isSecret
+            description
+        }
+    }
+    ... on WrappingConfigType {
+        ofType { key }
+    }
+  }
+  ... on EnumConfigType {
+    values {
+      value
+      description
+    }
+  }
+  ... on CompositeConfigType {
+    fields {
+      name
+      isOptional
+      isSecret
+      description
+    }
+  }
+  ... on WrappingConfigType {
+    ofType { key }
+  }
+}
+
+{
+ 	pipelines {
+    nodes {
+      name
+      configTypes {
+        ...configTypeFragment
+      }
+    }
+  } 
+}
+'''
+
+CONFIG_TYPE_QUERY = '''
+query ConfigTypeQuery($pipelineName: String! $configTypeName: String!)
+{
+    configTypeOrError(
+        pipelineName: $pipelineName
+        configTypeName: $configTypeName
+    ) {
+        __typename
+        ... on RegularConfigType {
+            name
+        }
+        ... on CompositeConfigType {
+            name
+            innerTypes { key name }
+            fields { name configType { key name } }
+        }
+        ... on EnumConfigType {
+            name
+        }
+        ... on PipelineNotFoundError {
+            pipelineName
+        }
+        ... on ConfigTypeNotFoundError {
+            pipeline { name }
+            configTypeName
+        }
+    }
+}
+'''
+
+
+def test_config_type_or_error_query_success():
+    result = execute_dagster_graphql(
+        define_context(),
+        CONFIG_TYPE_QUERY,
+        {'pipelineName': 'pandas_hello_world', 'configTypeName': 'PandasHelloWorld.Environment'},
+    )
+
+    assert not result.errors
+    assert result.data
+    assert result.data['configTypeOrError']['__typename'] == 'CompositeConfigType'
+    assert result.data['configTypeOrError']['name'] == 'PandasHelloWorld.Environment'
+
+
+def test_config_type_or_error_pipeline_not_found():
+    result = execute_dagster_graphql(
+        define_context(),
+        CONFIG_TYPE_QUERY,
+        {'pipelineName': 'nope', 'configTypeName': 'PandasHelloWorld.Environment'},
+    )
+
+    assert not result.errors
+    assert result.data
+    assert result.data['configTypeOrError']['__typename'] == 'PipelineNotFoundError'
+    assert result.data['configTypeOrError']['pipelineName'] == 'nope'
+
+
+def test_config_type_or_error_type_not_found():
+    result = execute_dagster_graphql(
+        define_context(),
+        CONFIG_TYPE_QUERY,
+        {'pipelineName': 'pandas_hello_world', 'configTypeName': 'nope'},
+    )
+
+    assert not result.errors
+    assert result.data
+    assert result.data['configTypeOrError']['__typename'] == 'ConfigTypeNotFoundError'
+    assert result.data['configTypeOrError']['pipeline']['name'] == 'pandas_hello_world'
+    assert result.data['configTypeOrError']['configTypeName'] == 'nope'
+
+
+def test_config_type_or_error_nested_complicated():
+    result = execute_dagster_graphql(
+        define_context(),
+        CONFIG_TYPE_QUERY,
+        {
+            'pipelineName': 'more_complicated_nested_config',
+            'configTypeName': (
+                'MoreComplicatedNestedConfig.SolidConfig.ASolidWithMultilayeredConfig'
+            ),
+        },
+    )
+
+    assert not result.errors
+    assert result.data
+    assert result.data['configTypeOrError']['__typename'] == 'CompositeConfigType'
+    assert (
+        result.data['configTypeOrError']['name']
+        == 'MoreComplicatedNestedConfig.SolidConfig.ASolidWithMultilayeredConfig'
+    )
+    assert len(result.data['configTypeOrError']['innerTypes']) == 6
+
+
+def test_graphql_secret_field():
+    result = execute_dagster_graphql(
+        define_context(), ALL_CONFIG_TYPES_QUERY, {'pipelineName': 'secret_pipeline'}
+    )
+
+    password_type_count = 0
+
+    assert not result.errors
+    assert result.data
+    for pipeline_data in result.data['pipelines']['nodes']:
+        for config_type_data in pipeline_data['configTypes']:
+            if 'password' in get_field_names(config_type_data):
+                password_field = get_field_data(config_type_data, 'password')
+                assert password_field['isSecret']
+                notpassword_field = get_field_data(config_type_data, 'notpassword')
+                assert not notpassword_field['isSecret']
+
+                password_type_count += 1
+
+    assert password_type_count == 1
+
+
+def get_field_data(config_type_data, name):
+    for field_data in config_type_data['fields']:
+        if field_data['name'] == name:
+            return field_data
+
+
+def get_field_names(config_type_data):
+    return {field_data['name'] for field_data in config_type_data.get('fields', [])}

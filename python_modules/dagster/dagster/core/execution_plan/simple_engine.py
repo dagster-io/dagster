@@ -262,12 +262,11 @@ def _execute_steps_core_loop(step_context, inputs, intermediates_manager):
     for step_output in check.generator(
         _error_check_step_outputs(step_context.step, step_output_iterator)
     ):
+
         if isinstance(step_output, StepOutputValue):
             yield _create_step_output_event(step_context, step_output, intermediates_manager)
         elif isinstance(step_output, Materialization):
-            yield DagsterEvent.step_materialization(
-                step_context, step_output.name, step_output.path
-            )
+            yield DagsterEvent.step_materialization(step_context, step_output)
         else:
             check.invariant(
                 'Unexpected step_output {step_output}, should have been caught earlier'.format(
@@ -306,8 +305,9 @@ def _create_step_output_event(step_context, step_output_value, intermediates_man
             step_output_data=StepOutputData(
                 step_output_handle=step_output_handle,
                 value_repr=repr(value),
-                storage_object_id=object_key,
-                storage_mode_value=intermediates_manager.storage_mode.value,
+                intermediate_materialization=Materialization(path=object_key)
+                if object_key
+                else None,
             ),
         )
     except DagsterRuntimeCoercionError as e:

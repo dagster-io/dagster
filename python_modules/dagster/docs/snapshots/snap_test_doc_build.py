@@ -1042,11 +1042,12 @@ snapshots['test_build_all_docs 4'] = '''
             
 
             
-            <div class="logo_img">
-                <img
-                    src="https://user-images.githubusercontent.com/28738937/44878798-b6e17e00-ac5c-11e8-8d25-2e47e5a53418.png" />
-            </div>
             <div class="dagster">
+                <div class="logo_img">
+                    <img
+                        src="https://user-images.githubusercontent.com/28738937/44878798-b6e17e00-ac5c-11e8-8d25-2e47e5a53418.png" />
+                </div>
+
                 <div class="why_dagster">
                     <h1>Why Dagster?</h1>
                     Dagster is a system for building modern data applications. Combining
@@ -1062,29 +1063,29 @@ snapshots['test_build_all_docs 4'] = '''
                     <div class="value_prop_block">
                         <h1>Elegant Programming Model</h1>
                         <div class="value_prop_detail">
-                          Dagster is a set of abstractions for building self-describing,
-                          testable, and reliable data applications. It embraces the
-                          principles of functional data programming; gradual, optional
-                          typing; and testability as a first-class value. 
+                            Dagster is a set of abstractions for building self-describing,
+                            testable, and reliable data applications. It embraces the
+                            principles of functional data programming; gradual, optional
+                            typing; and testability as a first-class value.
                         </div>
                     </div>
 
                     <div class="value_prop_block">
                         <h1>Beautiful Tools</h1>
                         <div class="value_prop_detail">
-                          Dagster's development environment, dagit -- designed for data
-                          engineers, machine learning engineers, data scientists -- enables
-                          astoundingly productive local development. 
+                            Dagster's development environment, dagit — designed for data
+                            engineers, machine learning engineers, data scientists — enables
+                            astoundingly productive local development.
                         </div>
                     </div>
 
                     <div class="value_prop_block">
                         <h1>Flexible and Incremental</h1>
                         <div class="value_prop_detail">
-                          Dagster integrates with your existing tools and infrastructure.
-                          Dagster can invoke any computation -- whether it be Spark, a
-                          Python, a Jupyter notebook, or SQL -- and is designed to deploy to
-                          any workflow engine, such as Airflow.
+                            Dagster integrates with your existing tools and infrastructure.
+                            Dagster can invoke any computation — whether it be Spark, a
+                            Python, a Jupyter notebook, or SQL — and is designed to deploy to
+                            any workflow engine, such as Airflow.
                         </div>
                     </div>
                 </div>
@@ -1658,14 +1659,6 @@ Local development setup
 
 1. Install Python. Python 3.6 or above recommended.
 
-    Note: If you use Python 3.7 dagster-airflow will not install and run properly
-    as airflow is not Python 3.7 compatible. Until [AIRFLOW-2876](https://github.com/apache/airflow/pull/3723)
-    is resolved (expected in 1.10.3), Airflow (and, as a consequence, dagster-airflow)
-    is incompatible with Python 3.7.
-
-    The rest of the modules will work properly so you can ignore this error and develop the rest
-    of the modules.
-
 2. Create and activate a virtualenv.
 
 .. code-block:: console
@@ -1680,13 +1673,17 @@ Local development setup
     $ brew install yarn
 
 4. Run the script dev_env_setup.sh at repo root. This sets up a full
-dagster developer environment with all modules and runs tests that
-do not require heavy external dependencies such as docker. This will
-take a few minutes.
+   dagster developer environment with all modules and runs tests that
+   do not require heavy external dependencies such as docker. This will
+   take a few minutes.
+
+.. code-block:: console
 
     $ ./dev_env_setup.sh
 
 5. Run some tests manually to make sure things are working.
+
+.. code-block:: console
 
     $ pytest python_modules/dagster/dagster_tests
 
@@ -1750,8 +1747,6 @@ Running a live html version of the docs can expedite documentation development.
 
     $ cd python_modules/dagster/docs
     $ make livehtml
-
-
 '''
 
 snapshots['test_build_all_docs 12'] = '''Release Notes
@@ -1765,6 +1760,11 @@ package versions move in lockstep with each other and with git tags.
 As the API is still in flux, we aren't following strict semantic versioning rules at this point, but roughly
 intend micro versions to reflect a regular release schedule and minor versions to reflect
 milestones in the framework's capability.
+
+0.4.1
+-----
+**Compatibility**
+- Dagster-airflow now works with Python 3.7 (since Airflow 1.10.3 now supports Python 3.7).
 
 0.4.0
 -----
@@ -20432,7 +20432,7 @@ snapshots['test_build_all_docs 53'] = '''
 <hr class="docutils" />
 <dl class="class">
 <dt id="dagster.SolidDefinition">
-<em class="property">class </em><code class="descclassname">dagster.</code><code class="descname">SolidDefinition</code><span class="sig-paren">(</span><em>name</em>, <em>inputs</em>, <em>transform_fn</em>, <em>outputs</em>, <em>config_field=None</em>, <em>description=None</em>, <em>metadata=None</em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dagster/core/definitions/solid.html#SolidDefinition"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dagster.SolidDefinition" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">dagster.</code><code class="descname">SolidDefinition</code><span class="sig-paren">(</span><em>name</em>, <em>inputs</em>, <em>transform_fn</em>, <em>outputs</em>, <em>config_field=None</em>, <em>description=None</em>, <em>metadata=None</em>, <em>step_metadata_fn=None</em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dagster/core/definitions/solid.html#SolidDefinition"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dagster.SolidDefinition" title="Permalink to this definition">¶</a></dt>
 <dd><p>A solid (a name extracted from the acronym of “software-structured data” (SSD)) represents
 a unit of computation within a data pipeline.</p>
 <p>As its core, a solid is a function. It accepts inputs (which are values produced from
@@ -21066,7 +21066,7 @@ data via <code class="docutils literal notranslate"><span class="pre">config_fie
 builtin types above.</p>
 <dl class="function">
 <dt id="dagster.Field">
-<code class="descclassname">dagster.</code><code class="descname">Field</code><span class="sig-paren">(</span><em>dagster_type</em>, <em>default_value=&lt;class \'dagster.core.types.field_utils.__FieldValueSentinel\'&gt;</em>, <em>is_optional=&lt;class \'dagster.core.types.field_utils.__InferOptionalCompositeFieldSentinel\'&gt;</em>, <em>description=None</em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dagster/core/types/field.html#Field"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dagster.Field" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">dagster.</code><code class="descname">Field</code><span class="sig-paren">(</span><em>dagster_type</em>, <em>default_value=&lt;class \'dagster.core.types.field_utils.__FieldValueSentinel\'&gt;</em>, <em>is_optional=&lt;class \'dagster.core.types.field_utils.__InferOptionalCompositeFieldSentinel\'&gt;</em>, <em>is_secret=False</em>, <em>description=None</em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dagster/core/types/field.html#Field"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dagster.Field" title="Permalink to this definition">¶</a></dt>
 <dd><p>The schema for configuration data that describes the type, optionality, defaults, and description.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -21811,17 +21811,8 @@ snapshots['test_build_all_docs 58'] = '''
 development environment.</p>
 <div class="section" id="local-development-setup">
 <h2>Local development setup<a class="headerlink" href="#local-development-setup" title="Permalink to this headline">¶</a></h2>
-<ol class="arabic">
-<li><p>Install Python. Python 3.6 or above recommended.</p>
-<blockquote>
-<div><p>Note: If you use Python 3.7 dagster-airflow will not install and run properly
-as airflow is not Python 3.7 compatible. Until [AIRFLOW-2876](<a class="reference external" href="https://github.com/apache/airflow/pull/3723">https://github.com/apache/airflow/pull/3723</a>)
-is resolved (expected in 1.10.3), Airflow (and, as a consequence, dagster-airflow)
-is incompatible with Python 3.7.</p>
-<p>The rest of the modules will work properly so you can ignore this error and develop the rest
-of the modules.</p>
-</div></blockquote>
-</li>
+<ol class="arabic simple">
+<li><p>Install Python. Python 3.6 or above recommended.</p></li>
 <li><p>Create and activate a virtualenv.</p></li>
 </ol>
 <div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$</span> python3 -m venv dagsterenv
@@ -21834,20 +21825,21 @@ of the modules.</p>
 <div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$</span> brew install yarn
 </pre></div>
 </div>
-<p>4. Run the script dev_env_setup.sh at repo root. This sets up a full
+<ol class="arabic simple" start="4">
+<li><p>Run the script dev_env_setup.sh at repo root. This sets up a full
 dagster developer environment with all modules and runs tests that
 do not require heavy external dependencies such as docker. This will
-take a few minutes.</p>
-<blockquote>
-<div><p>$ ./dev_env_setup.sh</p>
-</div></blockquote>
-<ol class="arabic" start="5">
-<li><p>Run some tests manually to make sure things are working.</p>
-<blockquote>
-<div><p>$ pytest python_modules/dagster/dagster_tests</p>
-</div></blockquote>
-</li>
+take a few minutes.</p></li>
 </ol>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$</span> ./dev_env_setup.sh
+</pre></div>
+</div>
+<ol class="arabic simple" start="5">
+<li><p>Run some tests manually to make sure things are working.</p></li>
+</ol>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$</span> pytest python_modules/dagster/dagster_tests
+</pre></div>
+</div>
 <p>Have fun coding!</p>
 <ol class="arabic simple" start="6">
 <li><p>Set up pre-commit hooks</p></li>
@@ -22020,7 +22012,12 @@ package versions move in lockstep with each other and with git tags.</p>
 intend micro versions to reflect a regular release schedule and minor versions to reflect
 milestones in the framework’s capability.</p>
 <div class="section" id="id1">
-<h2>0.4.0<a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h2>
+<h2>0.4.1<a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h2>
+<p><strong>Compatibility</strong>
+- Dagster-airflow now works with Python 3.7 (since Airflow 1.10.3 now supports Python 3.7).</p>
+</div>
+<div class="section" id="id2">
+<h2>0.4.0<a class="headerlink" href="#id2" title="Permalink to this headline">¶</a></h2>
 <p><strong>API Changes</strong></p>
 <ul class="simple">
 <li><p>There is now a new top-level configuration section <code class="docutils literal notranslate"><span class="pre">storage</span></code> which controls whether or not
@@ -22089,16 +22086,16 @@ into existing data processing workflows.</p></li>
 <li><p>Docs have been expanded, reorganized, and reformatted.</p></li>
 </ul>
 </div>
-<div class="section" id="id2">
-<h2>0.3.5<a class="headerlink" href="#id2" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="id3">
+<h2>0.3.5<a class="headerlink" href="#id3" title="Permalink to this headline">¶</a></h2>
 <p><strong>Dagit</strong></p>
 <ul class="simple">
 <li><p>Dagit now defaults to <code class="docutils literal notranslate"><span class="pre">--watch</span></code>; run <code class="docutils literal notranslate"><span class="pre">dagit</span> <span class="pre">--no-watch</span></code> to disable (process-based)
 autoreloading.</p></li>
 </ul>
 </div>
-<div class="section" id="id3">
-<h2>0.3.4<a class="headerlink" href="#id3" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="id4">
+<h2>0.3.4<a class="headerlink" href="#id4" title="Permalink to this headline">¶</a></h2>
 <p><strong>API Changes</strong></p>
 <ul class="simple">
 <li><p><code class="docutils literal notranslate"><span class="pre">ExecutionMetadata</span></code> has been renamed to <code class="docutils literal notranslate"><span class="pre">RunConfig</span></code></p></li>
@@ -22118,8 +22115,8 @@ accidental logging of sensitive information that might be in config files.</p></
 <li><p>Repo registration is now optional; “Hello, World” examples are now boilerplate free.</p></li>
 </ul>
 </div>
-<div class="section" id="id4">
-<h2>0.3.3<a class="headerlink" href="#id4" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="id5">
+<h2>0.3.3<a class="headerlink" href="#id5" title="Permalink to this headline">¶</a></h2>
 <p><strong>API Changes</strong></p>
 <ul class="simple">
 <li><p>Removed <code class="docutils literal notranslate"><span class="pre">step</span></code>, <code class="docutils literal notranslate"><span class="pre">environment_config</span></code>, <code class="docutils literal notranslate"><span class="pre">event_callback</span></code>, <code class="docutils literal notranslate"><span class="pre">has_event_callback</span></code>,
@@ -22148,8 +22145,8 @@ with more exact <code class="docutils literal notranslate"><span class="pre">Sta
 <li><p>#872: Dagit logs stream reliably.</p></li>
 </ul>
 </div>
-<div class="section" id="id5">
-<h2>0.3.2<a class="headerlink" href="#id5" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="id6">
+<h2>0.3.2<a class="headerlink" href="#id6" title="Permalink to this headline">¶</a></h2>
 <p><strong>API Changes</strong></p>
 <ul class="simple">
 <li><p>The <code class="docutils literal notranslate"><span class="pre">info</span></code> object passed to transform and expectation functions has been renamed to <code class="docutils literal notranslate"><span class="pre">context</span></code>.
@@ -22194,8 +22191,8 @@ Marshalling steps are now implemented as execution steps themselves.</p></li>
 <li><p>#820: Unbreak config scaffolding within dagit.</p></li>
 </ul>
 </div>
-<div class="section" id="id6">
-<h2>0.3.1<a class="headerlink" href="#id6" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="id7">
+<h2>0.3.1<a class="headerlink" href="#id7" title="Permalink to this headline">¶</a></h2>
 <p><strong>API Changes</strong></p>
 <ul class="simple">
 <li><p>New decorator-based <code class="docutils literal notranslate"><span class="pre">&#64;resource</span></code> API as a more concise alternative to <code class="docutils literal notranslate"><span class="pre">ResourceDefinition</span></code></p></li>

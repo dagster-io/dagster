@@ -1,7 +1,5 @@
 import pytest
 
-import dagster.check as check
-
 from dagster import (
     ConfigType,
     DagsterInvalidDefinitionError,

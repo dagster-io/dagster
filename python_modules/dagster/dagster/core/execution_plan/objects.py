@@ -4,7 +4,8 @@ from enum import Enum
 
 from dagster import check
 from dagster.core.definitions import Solid, PipelineDefinition
-from dagster.core.intermediates_manager import StepOutputHandle, RunStorageMode
+from dagster.core.definitions.materialization import Materialization
+from dagster.core.intermediates_manager import StepOutputHandle
 from dagster.core.types.runtime import RuntimeType
 from dagster.core.utils import toposort
 from dagster.utils import merge_dicts
@@ -31,29 +32,23 @@ class SingleOutputStepCreationData(namedtuple('SingleOutputStepCreationData', 's
 
 
 class StepOutputData(
-    namedtuple(
-        '_StepOutputData', 'step_output_handle value_repr storage_object_id storage_mode_value'
-    )
+    namedtuple('_StepOutputData', 'step_output_handle value_repr intermediate_materialization')
 ):
-    def __new__(cls, step_output_handle, value_repr, storage_object_id, storage_mode_value):
-        check.inst_param(RunStorageMode(storage_mode_value), 'storage_mode', RunStorageMode)
+    def __new__(cls, step_output_handle, value_repr, intermediate_materialization):
         return super(StepOutputData, cls).__new__(
             cls,
             step_output_handle=check.inst_param(
                 step_output_handle, 'step_output_handle', StepOutputHandle
             ),
             value_repr=check.str_param(value_repr, 'value_repr'),
-            storage_object_id=check.str_param(storage_object_id, 'storage_object_id'),
-            storage_mode_value=check.str_param(storage_mode_value, 'storage_mode_value'),
+            intermediate_materialization=check.opt_inst_param(
+                intermediate_materialization, 'intermediate_materialization', Materialization
+            ),
         )
 
     @property
     def output_name(self):
         return self.step_output_handle.output_name
-
-    @property
-    def storage_mode(self):
-        return RunStorageMode(self.storage_mode_value)
 
 
 class StepFailureData(namedtuple('_StepFailureData', 'error')):
@@ -110,12 +105,21 @@ class ExecutionStep(
         '_ExecutionStep',
         (
             'pipeline_name key step_inputs step_input_dict step_outputs step_output_dict '
-            'compute_fn kind solid tags'
+            'compute_fn kind solid logging_tags metadata'
         ),
     )
 ):
     def __new__(
-        cls, pipeline_name, key, step_inputs, step_outputs, compute_fn, kind, solid, tags=None
+        cls,
+        pipeline_name,
+        key,
+        step_inputs,
+        step_outputs,
+        compute_fn,
+        kind,
+        solid,
+        logging_tags=None,
+        metadata=None,
     ):
         return super(ExecutionStep, cls).__new__(
             cls,
@@ -128,15 +132,16 @@ class ExecutionStep(
             compute_fn=check.callable_param(compute_fn, 'compute_fn'),
             kind=check.inst_param(kind, 'kind', StepKind),
             solid=check.inst_param(solid, 'solid', Solid),
-            tags=merge_dicts(
+            logging_tags=merge_dicts(
                 {
                     'step_key': key,
                     'pipeline': pipeline_name,
                     'solid': solid.name,
                     'solid_definition': solid.definition.name,
                 },
-                check.opt_dict_param(tags, 'tags'),
+                check.opt_dict_param(logging_tags, 'logging_tags'),
             ),
+            metadata=check.opt_dict_param(metadata, 'metadata', key_type=str, value_type=str),
         )
 
     @property

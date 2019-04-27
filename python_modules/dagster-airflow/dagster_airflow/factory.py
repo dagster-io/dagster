@@ -99,7 +99,7 @@ def _make_airflow_dag(
             for step_input in solid_step.step_inputs:
                 prev_solid_name = execution_plan.get_step_by_key(
                     step_input.prev_output_handle.step_key
-                ).tags['solid']
+                ).solid_name
                 if solid_name != prev_solid_name:
                     tasks[prev_solid_name].set_downstream(task)
 

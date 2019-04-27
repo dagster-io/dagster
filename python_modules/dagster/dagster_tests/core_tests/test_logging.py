@@ -75,7 +75,7 @@ def test_multiline_logging_complex():
             solid_name='start',
             solid_definition_name='emit_num',
             step_kind_value='MATERIALIZATION_THUNK',
-            tags={
+            logging_tags={
                 'pipeline': 'error_monster',
                 'step_key': 'start.materialization.output.result.0',
                 'solid': 'start',
@@ -141,7 +141,7 @@ def test_multiline_logging_complex():
         'solid_name': 'start',
         'step_key': 'start.materialization.output.result.0',
         'step_kind_value': 'MATERIALIZATION_THUNK',
-        'tags': {
+        'logging_tags': {
             'pipeline': 'error_monster',
             'solid': 'start',
             'solid_definition': 'emit_num',

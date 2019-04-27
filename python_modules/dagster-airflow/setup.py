@@ -51,7 +51,8 @@ def _do_setup(name='dagster-airflow'):
             'future>=0.16.0, <0.17.0a0',  # pin to range for Airflow compat
             'six>=1.11.0',
             # airflow
-            'apache-airflow==1.10.2',
+            'apache-airflow>=1.10.2; python_version<"3.7"',
+            'apache-airflow>=1.10.3; python_version>="3.7"',
             # dagster
             'dagster>=0.2.0',
             # docker api

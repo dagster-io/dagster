@@ -304,7 +304,7 @@ def create_execution_plan(pipeline, environment_dict=None):
     return create_execution_plan_core(pipeline, environment_config)
 
 
-def get_tags(user_context_params, run_config, pipeline):
+def get_logging_tags(user_context_params, run_config, pipeline):
     check.opt_inst_param(user_context_params, 'user_context_params', ExecutionContext)
     check.opt_inst_param(run_config, 'run_config', RunConfig)
     check.inst_param(pipeline, 'pipeline', PipelineDefinition)
@@ -566,8 +566,8 @@ def construct_pipeline_execution_context(
     check.inst_param(intermediates_manager, 'intermediates_manager', IntermediatesManager)
 
     loggers = _create_loggers(run_config, execution_context)
-    tags = get_tags(execution_context, run_config, pipeline)
-    log = DagsterLog(run_config.run_id, tags, loggers)
+    logging_tags = get_logging_tags(execution_context, run_config, pipeline)
+    log = DagsterLog(run_config.run_id, logging_tags, loggers)
 
     return SystemPipelineExecutionContext(
         SystemPipelineExecutionContextData(
@@ -578,7 +578,7 @@ def construct_pipeline_execution_context(
             run_storage=run_storage,
             intermediates_manager=intermediates_manager,
         ),
-        tags=tags,
+        logging_tags=logging_tags,
         log=log,
     )
 
@@ -609,7 +609,7 @@ def _create_context_free_log(run_config, pipeline_def):
     elif run_config.loggers:
         loggers += run_config.loggers
 
-    return DagsterLog(run_config.run_id, get_tags(None, run_config, pipeline_def), loggers)
+    return DagsterLog(run_config.run_id, get_logging_tags(None, run_config, pipeline_def), loggers)
 
 
 @contextmanager

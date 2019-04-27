@@ -25,6 +25,8 @@ from dagster import (
     PipelineDefinition,
     RepositoryDefinition,
     ResourceDefinition,
+    ExpectationDefinition,
+    ExpectationResult,
     SolidDefinition,
     String,
     lambda_solid,
@@ -46,10 +48,11 @@ def execute_dagster_graphql(context, query, variables=None):
 
     # has to check attr because in subscription case it returns AnonymousObservable
     if hasattr(result, 'errors') and result.errors:
-        if result.errors[0].original_error:
+        first_error = result.errors[0]
+        if hasattr(first_error, 'original_error') and first_error.original_error:
             raise result.errors[0].original_error
-        else:
-            raise result.errors[0]
+
+        raise result.errors[0]
 
     return result
 
@@ -75,6 +78,33 @@ def sum_sq_solid(sum_df):
     sum_sq_df = sum_df.copy()
     sum_sq_df['sum_sq'] = sum_df['sum'] ** 2
     return sum_sq_df
+
+
+@lambda_solid(
+    inputs=[
+        InputDefinition(
+            'sum_df',
+            DataFrame,
+            expectations=[
+                ExpectationDefinition(
+                    name='some_expectation',
+                    expectation_fn=lambda _i, _v: ExpectationResult(success=True),
+                )
+            ],
+        )
+    ],
+    output=OutputDefinition(
+        DataFrame,
+        expectations=[
+            ExpectationDefinition(
+                name='other_expectation',
+                expectation_fn=lambda _i, _v: ExpectationResult(success=True),
+            )
+        ],
+    ),
+)
+def df_expectations_solid(sum_df):
+    return sum_df
 
 
 def pandas_hello_world_solids_config():
@@ -109,8 +139,22 @@ def define_repository():
             'scalar_output_pipeline': define_scalar_output_pipeline,
             'pipeline_with_enum_config': define_pipeline_with_enum_config,
             'naughty_programmer_pipeline': define_naughty_programmer_pipeline,
+            'secret_pipeline': define_pipeline_with_secret,
+            'pipeline_with_step_metadata': define_pipeline_with_step_metadata,
         },
     )
+
+
+def define_pipeline_with_secret():
+    @solid(
+        config_field=Field(
+            Dict({'password': Field(String, is_secret=True), 'notpassword': Field(String)})
+        )
+    )
+    def solid_with_secret(_context):
+        pass
+
+    return PipelineDefinition(name='secret_pipeline', solids=[solid_with_secret])
 
 
 def define_context_config_pipeline():
@@ -200,10 +244,11 @@ def define_more_complicated_nested_config():
 def define_pandas_hello_world():
     return PipelineDefinition(
         name='pandas_hello_world',
-        solids=[sum_solid, sum_sq_solid],
+        solids=[sum_solid, sum_sq_solid, df_expectations_solid],
         dependencies={
             'sum_solid': {},
             'sum_sq_solid': {'sum_df': DependencyDefinition(sum_solid.name)},
+            'df_expectations_solid': {'sum_df': DependencyDefinition(sum_solid.name)},
         },
     )
 
@@ -292,3 +337,17 @@ def define_naughty_programmer_pipeline():
         raise Exception('bad programmer, bad')
 
     return PipelineDefinition(name='naughty_programmer_pipeline', solids=[throw_a_thing])
+
+
+def define_pipeline_with_step_metadata():
+    solid_def = SolidDefinition(
+        name='solid_metadata_creation',
+        inputs=[],
+        outputs=[],
+        transform_fn=lambda *args, **kwargs: None,
+        config_field=Field(Dict({'str_value': Field(String)})),
+        step_metadata_fn=lambda env_config: {
+            'computed': env_config.solids['solid_metadata_creation'].config['str_value'] + '1'
+        },
+    )
+    return PipelineDefinition(name='pipeline_with_step_metadata', solids=[solid_def])

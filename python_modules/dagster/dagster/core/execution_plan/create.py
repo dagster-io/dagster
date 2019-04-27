@@ -63,7 +63,9 @@ def create_execution_plan_core(pipeline_def, environment_config):
 
         step_inputs = create_step_inputs(pipeline_def, environment_config, plan_builder, solid)
 
-        solid_transform_step = create_transform_step(pipeline_def, solid, step_inputs)
+        solid_transform_step = create_transform_step(
+            pipeline_def, environment_config, solid, step_inputs
+        )
 
         plan_builder.steps.append(solid_transform_step)
 

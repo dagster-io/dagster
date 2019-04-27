@@ -92,8 +92,7 @@ def test_single_solid_pipeline_success():
     output_event = single_dagster_event(events, DagsterEventType.STEP_OUTPUT)
     assert output_event
     assert output_event.dagster_event.step_output_data.output_name == 'result'
-    assert output_event.dagster_event.step_output_data.storage_mode_value == 'IN_MEMORY'
-    assert int(output_event.dagster_event.step_output_data.storage_object_id)
+    assert output_event.dagster_event.step_output_data.intermediate_materialization is None
 
     success_event = single_dagster_event(events, DagsterEventType.STEP_SUCCESS)
     assert success_event.pipeline_name == 'single_solid_pipeline'

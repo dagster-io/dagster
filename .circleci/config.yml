@@ -60,7 +60,6 @@ workflows:
       - library-dagster-pandas-py27:
           context: coveralls
 
-
       - library-dagster-ge-py37:
           context: coveralls
       - library-dagster-ge-py36:
@@ -230,22 +229,7 @@ jobs:
       - run:
           name: Install Dependencies
           command: |
-            sudo pip install -r python_modules/dagster/dev-requirements.txt -qqq
-            sudo pip install -e python_modules/dagster -qqq
-            sudo pip install -e python_modules/dagster-graphql -qqq
-            sudo pip install -e python_modules/dagit -qqq
-            sudo pip install -r python_modules/dagit/dev-requirements.txt -qqq
-            sudo pip install -e python_modules/dagstermill -qqq
-            sudo SLUGIFY_USES_TEXT_UNIDECODE=yes pip install -e python_modules/dagster-airflow -qqq
-            sudo pip install -e python_modules/libraries/dagster-aws -qqq
-            sudo pip install -e python_modules/libraries/dagster-ge -qqq
-            sudo pip install -e python_modules/libraries/dagster-pandas -qqq
-            sudo pip install -e python_modules/libraries/dagster-snowflake -qqq
-            sudo pip install -e python_modules/libraries/dagster-spark -qqq
-            sudo pip install -e python_modules/libraries/dagster-pyspark -qqq
-            sudo pip install -e python_modules/automation -qqq
-            sudo pip install -e examples/event-pipeline-demo -qqq
-            sudo pip install -e examples/airline-demo -qqq
+            sudo make dev_install
 
       - attach_workspace:
           at: /tmp/workspace
@@ -253,7 +237,7 @@ jobs:
       - run:
           name: Lint
           command: |
-            make pylint
+            make pylint-iterative
 
   docs-snapshot:
     docker:
@@ -1177,7 +1161,7 @@ jobs:
             git checkout --track origin/nightly
             git checkout nightly
             git reset --hard origin/nightly
-            GIT_MERGE_AUTOEDIT=no git merge --strategy recursive --strategy-option theirs --strategy-option recursive master
+            GIT_MERGE_AUTOEDIT=no git merge --strategy recursive --strategy-option theirs master
             git push
       - run:
           name: Install requirements

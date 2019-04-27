@@ -10,6 +10,8 @@ python_modules/dagster-airflow/dagster_airflow
 python_modules/dagster-airflow/dagster_airflow_tests
 python_modules/libraries/dagster-aws/dagster_aws
 python_modules/libraries/dagster-aws/dagster_aws_tests
+python_modules/libraries/dagster-gcp/dagster_gcp
+python_modules/libraries/dagster-gcp/dagster_gcp_tests
 python_modules/libraries/dagster-ge/dagster_ge
 python_modules/libraries/dagster-ge/dagster_ge_tests
 python_modules/libraries/dagster-pandas/dagster_pandas

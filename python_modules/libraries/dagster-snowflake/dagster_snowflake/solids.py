@@ -51,11 +51,6 @@ class SnowflakeSolidDefinition(SolidDefinition):
             'This solid is a generic representation of a parameterized Snowflake query.',
         )
 
-        description = (
-            description
-            or 'This solid is a generic representation of a parameterized Snowflake query job.'
-        )
-
         def _snowflake_transform_fn(context, _):  # pylint: disable=too-many-locals
             '''Define Snowflake execution.
 
