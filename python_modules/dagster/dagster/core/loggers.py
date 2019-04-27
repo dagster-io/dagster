@@ -4,7 +4,7 @@ import coloredlogs
 
 from dagster.core.types import Dict, Field, String
 from dagster.core.definitions import logger
-from dagster.utils.log import check_valid_log_level, default_format_string
+from dagster.utils.log import level_from_string, default_format_string
 
 
 @logger(
@@ -19,7 +19,7 @@ from dagster.utils.log import check_valid_log_level, default_format_string
     description='The default colored console logger.',
 )
 def colored_console_logger(init_context):
-    level = check_valid_log_level(init_context.logger_config['log_level'])
+    level = level_from_string(init_context.logger_config['log_level'])
     name = init_context.logger_config['name']
 
     klass = logging.getLoggerClass()
