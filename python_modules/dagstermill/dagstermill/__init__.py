@@ -48,6 +48,7 @@ from dagster.core.execution_context import (
     SystemPipelineExecutionContext,
     SystemTransformExecutionContext,
 )
+from dagster.core.init_context import InitLoggerContext
 from dagster.core.user_context import AbstractTransformExecutionContext, TransformExecutionContext
 from dagster.core.types.marshal import (
     serialize_to_file,
@@ -231,7 +232,11 @@ class Manager:
 
             loggers = None
             if output_log_path != 0:  # there is no output log
-                event_logger = construct_json_event_logger(output_log_path)
+                event_logger_def = construct_json_event_logger(output_log_path)
+                init_logger_context = InitLoggerContext(
+                    {}, {}, self.pipeline_def, event_logger_def, run_id
+                )
+                event_logger = event_logger_def.logger_fn(init_logger_context)
                 loggers = [event_logger]
             # do not include event_callback in ExecutionMetadata,
             # since that'll be taken care of by side-channel established by event_logger
