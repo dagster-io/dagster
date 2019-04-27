@@ -2,6 +2,7 @@ from dagster.core import types
 
 from dagster.core.execution import (
     InitContext,
+    InitLoggerContext,
     InitResourceContext,
     PipelineConfigEvaluationError,
     PipelineExecutionResult,
@@ -31,13 +32,14 @@ from dagster.core.definitions import (
     PipelineContextDefinition,
     PipelineDefinition,
     RepositoryDefinition,
+    resource,
+    ResourceDefinition,
     Result,
     Materialization,
     SolidDefinition,
     SolidInstance,
 )
 
-from dagster.core.definitions.resource import ResourceDefinition, resource
 from dagster.core.definitions.decorators import MultipleResults, lambda_solid, solid
 
 from dagster.core.errors import (
@@ -95,6 +97,7 @@ __all__ = [
     'ExpectationResult',
     'Field',
     'InputDefinition',
+    'LoggerDefinition',
     'Materialization',
     'OutputDefinition',
     'PipelineContextDefinition',
@@ -106,6 +109,7 @@ __all__ = [
     'SolidInstance',
     # Decorators
     'lambda_solid',
+    'logger',
     'resource',
     'solid',
     'MultipleResults',
@@ -114,6 +118,7 @@ __all__ = [
     'execute_pipeline',
     'ExecutionContext',
     'InitContext',
+    'InitLoggerContext',
     'InitResourceContext',
     'InProcessExecutorConfig',
     'MultiprocessExecutorConfig',

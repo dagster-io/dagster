@@ -1,34 +1,17 @@
-Execution Context
-=================
-
-One of the most important objects in the system is the execution context. The execution
-context, the logger, and the resources are threaded throughout the entire computation (
-via the ``context`` object passed to user code) and contains handles to logging facilities
-and external resources. Interactions with logging systems, databases, and external
-clusters (e.g. a Spark cluster) should be managed through these properties of the execution 
-context.
-
-This provides a powerful layer of indirection that allows a solid to abstract
-away its surrounding environment. Using an execution context allows the system and
-pipeline infrastructure to provide different implementations for different
-environments, giving the engineer the opportunity to design pipelines that
-can be executed on your local machine or your CI/CD pipeline as readily as
-your production cluster environment.
-
-Logging
-~~~~~~~
+Logging through the Execution Context
+=====================================
 
 One of the most basic pipeline-level facilities is logging:
 
-.. literalinclude:: ../../../../dagster/tutorials/intro_tutorial/execution_context.py
+.. literalinclude:: ../../../../dagster/tutorials/intro_tutorial/logging.py
    :lines: 1-16
-   :caption: execution_context.py
+   :caption: logging.py
 
 Run this example pipeline in dagit:
 
 .. code-block:: console
 
-    $ dagster pipeline execute -m dagster.tutorials.intro_tutorial.tutorial_repository -n define_repository execution_context_pipeline 
+    $ dagster pipeline execute -m dagster.tutorials.intro_tutorial.tutorial_repository -n define_repository logging_pipeline 
 
 And you'll notice log messages like this:
 
@@ -44,7 +27,7 @@ And you'll notice log messages like this:
                    solid = "error_message"
         solid_definition = "error_message"
 
-These log messages are annonated with a bunch of key value pairs that indicate where in the
+These log messages are annotated with a bunch of key value pairs that indicate where in the
 computation each log message was emitted. This happened because we logged through the execution
 context.
 
@@ -57,21 +40,24 @@ is because the default log level is ``INFO``, so debug-level messages will not a
 
 Let's change that by specifying some config.
 
-.. literalinclude:: ../../../../dagster/tutorials/intro_tutorial/execution_context.yml
+.. literalinclude:: ../../../../dagster/tutorials/intro_tutorial/logging.yml
    :language: YAML
    :linenos:
-   :caption: execution_context.yml
+   :caption: logging.yml
 
-Save it as execution_context.yml and then run:
+Save it as logging.yml and then run:
 
 .. code-block:: console
 
     $ dagster pipeline execute  \
     -m dagster.tutorials.intro_tutorial.tutorial_repository \
-    -n define_repository execution_context_pipeline \
-    -e execution_context.yml
+    -n define_repository logging_pipeline \
+    -e logging.yml
 
 You'll see now that debug messages print out to the console.
+
+Note that in our YAML fragment, we specified the logger we wanted to configure (in this case, the
+default `console` logger).
 
 Although logging is a universally useful case for the execution context, this example only touches
 on the capabilities of the context. Any pipeline-level facilities that pipeline authors might want
