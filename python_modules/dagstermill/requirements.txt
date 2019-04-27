@@ -1,4 +1,5 @@
 enum-compat==0.0.2
 future>=0.16.0, <0.17.0a0
 ipykernel>=4.9.0
-papermill==0.18.1
+nteract-scrapbook>=0.2.0
+papermill>=1.0.0

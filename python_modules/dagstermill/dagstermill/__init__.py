@@ -20,6 +20,8 @@ import papermill as pm
 from papermill.translators import translate_parameters
 from papermill.iorw import load_notebook_node, write_ipynb
 
+import scrapbook as sb
+
 from dagster import (
     DagsterRuntimeCoercionError,
     InputDefinition,
@@ -153,9 +155,9 @@ class Manager:
                 )
             runtime_type_enum = self.output_name_type_dict[output_name]
             if runtime_type_enum == SerializableRuntimeType.SCALAR:
-                pm.record(output_name, value)
+                sb.glue(output_name, value)
             elif runtime_type_enum == SerializableRuntimeType.ANY and is_json_serializable(value):
-                pm.record(output_name, value)
+                sb.glue(output_name, value)
             elif runtime_type_enum == SerializableRuntimeType.PICKLE_SERIALIZABLE:
                 out_file = os.path.join(self.marshal_dir, 'output-{}'.format(output_name))
                 serialize_to_file(
@@ -164,7 +166,7 @@ class Manager:
                     value,
                     out_file,
                 )
-                pm.record(output_name, out_file)
+                sb.glue(output_name, out_file)
             else:
                 raise DagstermillError(
                     'Output Definition for output {output_name} requires repo registration '
@@ -181,7 +183,7 @@ class Manager:
             runtime_type = self.solid_def.output_def_named(output_name).runtime_type
 
             out_file = os.path.join(self.marshal_dir, 'output-{}'.format(output_name))
-            pm.record(output_name, write_value(runtime_type, value, out_file))
+            sb.glue(output_name, write_value(runtime_type, value, out_file))
 
     def populate_context(
         self,
@@ -472,6 +474,16 @@ def get_papermill_parameters(transform_context, inputs, output_log_path):
     return parameters
 
 
+def _find_first_tagged_cell_index(nb, tag):
+    parameters_indices = []
+    for idx, cell in enumerate(nb.cells):
+        if tag in cell.metadata.tags:
+            parameters_indices.append(idx)
+    if not parameters_indices:
+        return -1
+    return parameters_indices[0]
+
+
 def replace_parameters(context, nb, parameters):
     # Uma: This is a copy-paste from papermill papermill/execute.py:104 (execute_parameters).
     # Typically, papermill injects the injected-parameters cell *below* the parameters cell
@@ -493,8 +505,6 @@ def replace_parameters(context, nb, parameters):
     # translate_parameters(kernel_name, language, parameters)
     newcell = nbformat.v4.new_code_cell(source=param_content)
     newcell.metadata['tags'] = ['injected-parameters']
-
-    from papermill.execute import _find_first_tagged_cell_index
 
     param_cell_index = _find_first_tagged_cell_index(nb, 'parameters')
     injected_cell_index = _find_first_tagged_cell_index(nb, 'injected-parameters')
@@ -602,11 +612,11 @@ def _dm_solid_transform(name, notebook_path):
                     'The process stderr is \'{stderr}\''.format(stderr=stderr)
                 )
 
-            output_nb = pm.read_notebook(temp_path)
+            output_nb = sb.read_notebook(temp_path)
 
             system_transform_context.log.debug(
                 'Notebook execution complete for {name}. Data is {data}'.format(
-                    name=name, data=output_nb.data
+                    name=name, data=output_nb.scraps
                 )
             )
 
@@ -616,9 +626,10 @@ def _dm_solid_transform(name, notebook_path):
             )
 
             for output_def in system_transform_context.solid_def.output_defs:
-                if output_def.name in output_nb.data:
+                data_dict = output_nb.scraps.data_dict
+                if output_def.name in data_dict:
 
-                    value = read_value(output_def.runtime_type, output_nb.data[output_def.name])
+                    value = read_value(output_def.runtime_type, data_dict[output_def.name])
 
                     yield Result(value, output_def.name)
 

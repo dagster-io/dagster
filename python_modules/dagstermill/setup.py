@@ -44,12 +44,13 @@ def _do_setup(name='dagstermill'):
         ],
         install_requires=[
             # standard python 2/3 compatability things
+            'dagster-pandas',
             'enum-compat==0.0.2',
             'future>=0.16.0, <0.17.0a0',
             'ipykernel>=4.9.0',
-            'papermill==0.18.1',
+            'nteract-scrapbook>=0.2.0',
+            'papermill>=1.0.0',
             'scikit-learn>=0.20.2',
-            'dagster-pandas',
         ],
         entry_points={"console_scripts": ['dagstermill = dagstermill.cli:main']},
     )
