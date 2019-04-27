@@ -6,7 +6,7 @@ to implement. As a result, it is frequently omitted from data engineering workfl
 are instead tested end-to-end in a dev environment.
 
 One of the mechanisms included in dagster to enable testing has already been discussed: the
-:doc:`Execution Context <execution_context>`. Recall that the context allows us to configure the
+ability to define multiple execution contexts. Recall that the context allows us to configure the
 pipeline-level execution environment while keeping all of the code in our pipelines unchanged.
 
 The other important testing mechanism is the ability to execute arbitrary subsets of a DAG. (This

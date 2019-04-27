@@ -14,8 +14,8 @@ Pipelines
 
 ----
 
-Contexts & Resources
-====================
+Contexts, Resources, and Logging
+================================
 
 .. autoclass:: PipelineContextDefinition
     :members:
@@ -32,6 +32,14 @@ Contexts & Resources
 .. autodecorator:: resource
 
 .. autoclass:: InitResourceContext
+    :members:
+
+.. autoclass:: LoggerDefinition
+    :members:
+
+.. autodecorator:: logger
+
+.. autoclass:: InitLoggerContext
     :members:
 
 ----

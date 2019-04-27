@@ -1,7 +1,7 @@
 Resources
 =========
 
-We've already learned about logging through the info object. We can also use the info object
+We've already learned about logging through the context object. We can also use the context object
 to manage pipelines' access to resources like the file system, databases, or cloud services.
 In general, interactions with features of the external environment like these should be modeled
 as resources.
