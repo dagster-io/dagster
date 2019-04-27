@@ -286,8 +286,12 @@ def colored_console_logger(init_context):
 
 
 def default_system_loggers():
-    '''If users don't provide configuration for any loggers, we instantiate this logger.'''
-    return [colored_console_logger]
+    '''If users don't provide configuration for any loggers, we instantiate these loggers with the
+    default config.
+
+    Returns:
+        List[Tuple[LoggerDefinition, dict]]: Default loggers and their associated configs.'''
+    return [(colored_console_logger, {'name': 'dagster', 'log_level': 'INFO'})]
 
 
 def default_loggers():

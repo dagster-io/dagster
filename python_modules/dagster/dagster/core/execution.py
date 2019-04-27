@@ -644,15 +644,32 @@ def _create_loggers(environment_config, run_config, pipeline_def):
 
 def _create_context_free_log(init_context, run_config, pipeline_def):
     '''In the event of pipeline initialization failure, we want to be able to log the failure
-    without a dependency on the ExecutionContext to initialize DagsterLogManager
+    without a dependency on the ExecutionContext to initialize DagsterLogManager.
+
+    Args:
+        init_context (dagster.core.init_context.InitContext)
+        run_config (dagster.core.execution_context.RunConfig)
+        pipeline_def (dagster.definitions.PipelineDefinition)
     '''
+    check.inst_param(init_context, 'init_context', InitContext)
     check.inst_param(run_config, 'run_config', RunConfig)
     check.inst_param(pipeline_def, 'pipeline_def', PipelineDefinition)
 
+    loggers = []
     # Use the default logger
-    loggers = [logger(init_context) for logger in default_system_loggers()]
+    for (logger_def, logger_config) in default_system_loggers():
+        loggers += [
+            logger_def.logger_fn(
+                InitLoggerContext({}, logger_config, pipeline_def, logger_def, run_config.run_id)
+            )
+        ]
     if run_config.event_callback:
-        loggers += [construct_event_logger(run_config.event_callback)]
+        event_logger_def = construct_event_logger(run_config.event_callback)
+        loggers += [
+            event_logger_def.logger_fn(
+                InitLoggerContext({}, {}, pipeline_def, event_logger_def, run_config.run_id)
+            )
+        ]
     elif run_config.loggers:
         loggers += run_config.loggers
 
