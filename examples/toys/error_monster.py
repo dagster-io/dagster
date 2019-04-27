@@ -1,5 +1,3 @@
-import logging
-
 from dagster import (
     DependencyDefinition,
     Field,
