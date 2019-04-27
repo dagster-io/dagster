@@ -174,11 +174,6 @@ def define_json_file_logger(name, json_path, level):
     return construct_single_handler_logger(name, level, stream_handler)
 
 
-def get_formatted_stack_trace(exception):
-    check.inst_param(exception, 'exception', Exception)
-    return ''.join(get_stack_trace_array(exception))
-
-
 def get_stack_trace_array(exception):
     check.inst_param(exception, 'exception', Exception)
     if hasattr(exception, '__traceback__'):

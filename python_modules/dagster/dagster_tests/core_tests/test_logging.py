@@ -85,6 +85,15 @@ def _validate_basic(kv_pairs):
     assert _regex_match_kv_pair(r'log_timestamp="{0}"'.format(REGEX_TS), kv_pairs)
 
 
+def test_logging_no_loggers_registered():
+    dl = DagsterLogManager('none', {}, [])
+    dl.debug('test')
+    dl.info('test')
+    dl.warning('test')
+    dl.error('test')
+    dl.critical('test')
+
+
 def test_logging_basic():
     with _setup_logger('test') as (captured_results, logger):
 
