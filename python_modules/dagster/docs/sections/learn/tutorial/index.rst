@@ -10,7 +10,7 @@ Tutorial
   inputs
   config
   configuration_schemas
-  execution_context
+  logging
   resources
   repos
   pipeline_cli_execution
