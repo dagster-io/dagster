@@ -171,4 +171,3 @@ def test_colored_console_logger_with_integer_log_level():
             '',
         )
     )
-
