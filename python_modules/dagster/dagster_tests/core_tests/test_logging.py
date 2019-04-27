@@ -21,7 +21,6 @@ DAGSTER_DEFAULT_LOGGER = 'dagster'
 
 @contextmanager
 def _setup_logger(name, log_levels=None, register_levels=True):
-    log_levels = check.opt_dict_param(log_levels, 'log_levels')
     '''Test helper that creates a new logger.
 
     Args:
@@ -32,6 +31,7 @@ def _setup_logger(name, log_levels=None, register_levels=True):
             module. Default True.
 
     '''
+    log_levels = check.opt_dict_param(log_levels, 'log_levels')
 
     def add_log_level(value, name):
         logging.addLevelName(value, name)
