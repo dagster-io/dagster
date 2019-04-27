@@ -5,9 +5,11 @@ import re
 from contextlib import contextmanager
 
 from dagster import check
+from dagster.core.definitions import PipelineDefinition
 from dagster.core.events import DagsterEvent
+from dagster.core.init_context import InitLoggerContext
 from dagster.core.execution_plan.objects import StepFailureData
-from dagster.core.log import DagsterLogManager, DAGSTER_DEFAULT_LOGGER
+from dagster.core.log import colored_console_logger, DagsterLogManager, DAGSTER_DEFAULT_LOGGER
 from dagster.utils.error import SerializableErrorInfo
 
 
@@ -254,3 +256,16 @@ def test_multiline_logging_complex():
         [pair for pair in kv_pairs if 'dagster_event' in pair][0].strip('       dagster_event = ')
     )
     assert dagster_event == expected_dagster_event
+
+
+def test_colored_console_logger_with_integer_log_level():
+    colored_console_logger.logger_fn(
+        InitLoggerContext(
+            {},
+            {'name': 'dagster', 'log_level': 4},
+            PipelineDefinition([]),
+            colored_console_logger,
+            '',
+        )
+    )
+
