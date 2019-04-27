@@ -140,8 +140,6 @@ def test_logging_unregistered_custom_log_levels():
         dl = DagsterLogManager('123', {}, [logger])
         dl.foo('test')
 
-        kv_pairs = set(captured_results[0].strip().split())
-
         assert re.findall(r'log_message_id = "{0}"'.format(REGEX_UUID), captured_results[0])
         assert re.findall(r'log_timestamp = "{0}"'.format(REGEX_TS), captured_results[0])
 
@@ -254,4 +252,3 @@ def test_colored_console_logger_with_integer_log_level():
             '',
         )
     )
-

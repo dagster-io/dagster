@@ -626,9 +626,9 @@ def _create_loggers(environment_config, run_config, pipeline_def):
             loggers.append(logger)
 
     if not loggers:
-        for logger_def in default_system_loggers():
+        for (logger_def, logger_config) in default_system_loggers():
             init_logger_context = InitLoggerContext(
-                environment_config.context, {}, pipeline_def, logger_def, run_config.run_id
+                environment_config.context, logger_config, pipeline_def, logger_def, run_config.run_id
             )
             loggers.append(logger_def.logger_fn(init_logger_context))
 
