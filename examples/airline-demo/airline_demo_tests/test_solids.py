@@ -6,7 +6,6 @@ requiring, e.g., a connection to S3, Spark, and a database.
 We lever pytest marks to isolate subsets of tests with different requirements. E.g., to run only
 those tests that don't require Spark, `pytest -m "not spark"`.
 """
-import logging
 import os
 
 import pyspark
@@ -14,7 +13,6 @@ import pytest
 
 from dagster import (
     DependencyDefinition,
-    ExecutionContext,
     PipelineContextDefinition,
     PipelineDefinition,
     execute_solid,

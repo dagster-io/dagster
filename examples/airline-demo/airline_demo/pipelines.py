@@ -1,9 +1,7 @@
 """Pipeline definitions for the airline_demo."""
-import logging
 
 from dagster import (
     DependencyDefinition,
-    ExecutionContext,
     PipelineContextDefinition,
     PipelineDefinition,
     SolidInstance,
