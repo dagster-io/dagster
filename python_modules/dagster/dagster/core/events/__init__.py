@@ -3,7 +3,7 @@ from enum import Enum
 
 from dagster import check
 from dagster.core.definitions import ExpectationResult, Materialization, SolidHandle
-from dagster.core.log import DagsterLogManager
+from dagster.core.log_manager import DagsterLogManager
 from dagster.utils.error import SerializableErrorInfo
 
 

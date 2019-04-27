@@ -15,7 +15,7 @@ from dagster.core.errors import DagsterInvariantViolationError
 from .definitions.expectation import ExpectationDefinition
 from .definitions.input import InputDefinition
 from .definitions.output import OutputDefinition
-from .log import DagsterLogManager
+from .log_manager import DagsterLogManager
 from .runs import RunStorageMode, RunStorage
 from .system_config.objects import EnvironmentConfig
 

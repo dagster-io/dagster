@@ -68,7 +68,8 @@ from .intermediates_manager import (
     IntermediatesManager,
 )
 
-from .log import DagsterLogManager, default_system_loggers, default_loggers
+from .loggers import default_loggers, default_system_loggers
+from .log_manager import DagsterLogManager
 
 from .object_store import FileSystemObjectStore, construct_type_storage_plugin_registry
 
