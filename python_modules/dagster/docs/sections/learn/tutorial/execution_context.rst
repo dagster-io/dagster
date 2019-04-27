@@ -1,17 +1,32 @@
-Logging through the Execution Context
-=====================================
+Execution Context
+=================
+
+One of the most important objects in the system is the execution context. The execution context,
+the logger, and the resources are threaded throughout the entire computation ( via the ``context``
+object passed to user code) and contains handles to logging facilities and external resources.
+Interactions with logging systems, databases, and external clusters (e.g. a Spark cluster) should
+be managed through these properties of the execution context.
+
+This provides a powerful layer of indirection that allows a solid to abstract away its surrounding
+environment. Using an execution context allows the system and pipeline infrastructure to provide
+different implementations for different environments, giving the engineer the opportunity to design
+pipelines that can be executed on your local machine or your CI/CD pipeline as readily as your
+production cluster environment.
+
+Logging
+~~~~~~~
 
 One of the most basic pipeline-level facilities is logging:
 
-.. literalinclude:: ../../../../dagster/tutorials/intro_tutorial/logging.py
+.. literalinclude:: ../../../../dagster/tutorials/intro_tutorial/execution_context.py
    :lines: 1-16
-   :caption: logging.py
+   :caption: execution_context.py
 
 Run this example pipeline in dagit:
 
 .. code-block:: console
 
-    $ dagster pipeline execute -m dagster.tutorials.intro_tutorial.tutorial_repository -n define_repository logging_pipeline 
+    $ dagster pipeline execute -m dagster.tutorials.intro_tutorial.tutorial_repository -n define_repository execution_context_pipeline 
 
 And you'll notice log messages like this:
 
@@ -31,7 +46,7 @@ These log messages are annotated with a bunch of key value pairs that indicate w
 computation each log message was emitted. This happened because we logged through the execution
 context.
 
-Notice that even though the user only logged the message "An error occurred", by routing logging
+Notice that even though the user only logged the message "An error occurred", by routing execution_context
 through the context we are able to provide richer error information -- including the name of the
 solid and a timestamp -- in a semi-structured format.
 
@@ -40,19 +55,19 @@ is because the default log level is ``INFO``, so debug-level messages will not a
 
 Let's change that by specifying some config.
 
-.. literalinclude:: ../../../../dagster/tutorials/intro_tutorial/logging.yml
+.. literalinclude:: ../../../../dagster/tutorials/intro_tutorial/execution_context.yml
    :language: YAML
    :linenos:
-   :caption: logging.yml
+   :caption: execution_context.yml
 
-Save it as logging.yml and then run:
+Save it as execution_context.yml and then run:
 
 .. code-block:: console
 
     $ dagster pipeline execute  \
     -m dagster.tutorials.intro_tutorial.tutorial_repository \
-    -n define_repository logging_pipeline \
-    -e logging.yml
+    -n define_repository execution_context_pipeline \
+    -e execution_context.yml
 
 You'll see now that debug messages print out to the console.
 

@@ -26,21 +26,20 @@ from dagster.core.definitions import (
     ExpectationDefinition,
     ExpectationResult,
     InputDefinition,
-    logger,
-    LoggerDefinition,
     OutputDefinition,
     PipelineContextDefinition,
     PipelineDefinition,
     RepositoryDefinition,
-    resource,
-    ResourceDefinition,
     Result,
     Materialization,
     SolidDefinition,
     SolidInstance,
 )
 
+# These specific imports are to avoid circular import issues
 from dagster.core.definitions.decorators import MultipleResults, lambda_solid, solid
+from dagster.core.definitions.logger import logger, LoggerDefinition
+from dagster.core.definitions.resource import resource, ResourceDefinition
 
 from dagster.core.events import DagsterEventType
 
