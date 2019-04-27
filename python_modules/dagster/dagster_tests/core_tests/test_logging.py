@@ -20,8 +20,17 @@ DAGSTER_DEFAULT_LOGGER = 'dagster'
 
 
 @contextmanager
-def _setup_logger(name, log_levels=None, register_levels=True):
+def _setup_logger(log_levels=None, register_levels=True):
     log_levels = check.opt_dict_param(log_levels, 'log_levels')
+    '''Test helper that creates a new logger.
+
+    Args:
+        log_levels (Optional[Dict[str, int]]): Any non-standard log levels to expose on the logger
+            (e.g., logger.success)
+        register_levels (bool): Whether to register non-standard log levels with the Python logging
+            module. Default True.
+
+    '''
 
     def add_log_level(value, name):
         logging.addLevelName(value, name)
@@ -94,7 +103,7 @@ def test_logging_no_loggers_registered():
 
 
 def test_logging_basic():
-    with _setup_logger('test') as (captured_results, logger):
+    with _setup_logger() as (captured_results, logger):
 
         dl = DagsterLogManager('123', {}, [logger])
         dl.debug('test')
@@ -108,7 +117,7 @@ def test_logging_basic():
 
 
 def test_logging_custom_log_levels():
-    with _setup_logger('test', {'FOO': 3}) as (captured_results, logger):
+    with _setup_logger({'FOO': 3}) as (captured_results, logger):
 
         dl = DagsterLogManager('123', {}, [logger])
         dl.foo('test')
@@ -118,7 +127,7 @@ def test_logging_custom_log_levels():
 
 
 def test_logging_integer_log_levels():
-    with _setup_logger('test', {'FOO': 3}) as (captured_results, logger):
+    with _setup_logger({'FOO': 3}) as (captured_results, logger):
 
         dl = DagsterLogManager('123', {}, [logger])
         dl.log(3, 'test')
@@ -129,7 +138,7 @@ def test_logging_integer_log_levels():
 
 
 def test_logging_bad_custom_log_levels():
-    with _setup_logger('test') as (captured_results, logger):
+    with _setup_logger() as (captured_results, logger):
 
         dl = DagsterLogManager('123', {}, [logger])
         dl.foo('test')
@@ -144,7 +153,7 @@ def test_logging_bad_custom_log_levels():
 
 
 def test_logging_unregistered_custom_log_levels():
-    with _setup_logger('test', {'FOO': 3}, register_levels=False) as (captured_results, logger):
+    with _setup_logger({'FOO': 3}, register_levels=False) as (captured_results, logger):
 
         dl = DagsterLogManager('123', {}, [logger])
         dl.foo('test')
@@ -196,7 +205,7 @@ def test_multiline_logging_complex():
         ),
     }
 
-    with _setup_logger(DAGSTER_DEFAULT_LOGGER) as (captured_results, logger):
+    with _setup_logger() as (captured_results, logger):
 
         dl = DagsterLogManager('123', {}, [logger])
         dl.info(msg, **kwargs)
