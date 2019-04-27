@@ -16,7 +16,7 @@ pip install -r python_modules/dagster/dev-requirements.txt
 python -m pytest python_modules/dagster
 
 pip install python_modules/libraries/dagster-pandas
-python pytest -m python_modules/libraries/dagster-pandas
+python -m pytest python_modules/libraries/dagster-pandas
 
 pip install -e python_modules/dagster-graphql
 python -m pytest python_modules/dagster-graphql
