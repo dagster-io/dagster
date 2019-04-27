@@ -3,15 +3,9 @@ import itertools
 import logging
 import uuid
 
-import coloredlogs
-
 from dagster import check, seven
-from dagster.core.types import Dict, Field, String
-from dagster.core.definitions.logger import logger
-from dagster.utils.log import level_from_string, default_format_string
 
 DAGSTER_META_KEY = 'dagster_meta'
-DAGSTER_DEFAULT_LOGGER = 'dagster'
 
 
 def _dump_value(value):
@@ -205,37 +199,3 @@ class DagsterLogManager:
         '''
         check.int_param(level, 'level')
         return self._log(level, msg, kwargs)
-
-
-@logger(
-    config_field=Field(
-        Dict(
-            {
-                'log_level': Field(String, is_optional=True, default_value='INFO'),
-                'name': Field(String, is_optional=True, default_value='dagster'),
-            }
-        )
-    ),
-    description='The default colored console logger.',
-)
-def colored_console_logger(init_context):
-    level = level_from_string(init_context.logger_config['log_level'])
-    name = init_context.logger_config['name']
-
-    klass = logging.getLoggerClass()
-    logger_ = klass(name, level=level)
-    coloredlogs.install(logger=logger_, level=level, fmt=default_format_string())
-    return logger_
-
-
-def default_system_loggers():
-    '''If users don't provide configuration for any loggers, we instantiate these loggers with the
-    default config.
-
-    Returns:
-        List[Tuple[LoggerDefinition, dict]]: Default loggers and their associated configs.'''
-    return [(colored_console_logger, {'name': 'dagster', 'log_level': 'INFO'})]
-
-
-def default_loggers():
-    return {'console': colored_console_logger}

@@ -2,7 +2,7 @@ import six
 
 from dagster import check
 from dagster.core.errors import DagsterInvariantViolationError
-from dagster.core.log import default_loggers
+from dagster.core.loggers import default_loggers
 from dagster.core.utils import toposort_flatten
 from dagster.core.errors import DagsterInvalidDefinitionError
 

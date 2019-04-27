@@ -6,12 +6,15 @@ from dagster.core.definitions import PipelineDefinition
 from dagster.core.events import DagsterEvent
 from dagster.core.init_context import InitLoggerContext
 from dagster.core.execution_plan.objects import StepFailureData
-from dagster.core.log import colored_console_logger, DagsterLogManager, DAGSTER_DEFAULT_LOGGER
+from dagster.core.log_manager import DagsterLogManager
+from dagster.core.loggers import colored_console_logger
 from dagster.utils.error import SerializableErrorInfo
 
 
 REGEX_UUID = r'[a-z-0-9]{8}\-[a-z-0-9]{4}\-[a-z-0-9]{4}\-[a-z-0-9]{4}\-[a-z-0-9]{12}'
 REGEX_TS = r'\d{4}\-\d{2}\-\d{2}T\d{2}:\d{2}:\d{2}\.\d{6}'
+
+DAGSTER_DEFAULT_LOGGER = 'dagster'
 
 
 def _setup_logger(name):

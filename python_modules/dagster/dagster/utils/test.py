@@ -24,7 +24,7 @@ from dagster.core.execution import (
     _create_loggers,
 )
 from dagster.core.intermediates_manager import InMemoryIntermediatesManager
-from dagster.core.log import DagsterLogManager
+from dagster.core.log_manager import DagsterLogManager
 from dagster.core.runs import InMemoryRunStorage
 from dagster.core.utility_solids import define_stub_solid
 
