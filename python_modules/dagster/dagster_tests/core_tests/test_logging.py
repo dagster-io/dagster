@@ -9,12 +9,15 @@ from dagster.core.definitions import PipelineDefinition
 from dagster.core.events import DagsterEvent
 from dagster.core.init_context import InitLoggerContext
 from dagster.core.execution_plan.objects import StepFailureData
-from dagster.core.log import colored_console_logger, DagsterLogManager, DAGSTER_DEFAULT_LOGGER
+from dagster.core.log_manager import DagsterLogManager
+from dagster.core.loggers import colored_console_logger
 from dagster.utils.error import SerializableErrorInfo
 
 
 REGEX_UUID = r'[a-z-0-9]{8}\-[a-z-0-9]{4}\-[a-z-0-9]{4}\-[a-z-0-9]{4}\-[a-z-0-9]{12}'
 REGEX_TS = r'\d{4}\-\d{2}\-\d{2}T\d{2}:\d{2}:\d{2}\.\d{6}'
+
+DAGSTER_DEFAULT_LOGGER = 'dagster'
 
 
 @contextmanager
@@ -92,9 +95,8 @@ def test_logging_basic():
         dl.error('test')
         dl.critical('test')
 
-        for captured_result in captured_results:
-            kv_pairs = set(captured_result.strip().split())
-            _validate_basic(kv_pairs)
+        kv_pairs = captured_results[0].replace(' ', '').split('\n')[1:]
+        _validate_basic(kv_pairs)
 
 
 def test_logging_custom_log_levels():
@@ -103,7 +105,7 @@ def test_logging_custom_log_levels():
         dl = DagsterLogManager('123', {}, [logger])
         dl.foo('test')
 
-        kv_pairs = set(captured_results[0].strip().split())
+        kv_pairs = captured_results[0].replace(' ', '').split('\n')[1:]
         _validate_basic(kv_pairs)
 
 
@@ -114,7 +116,7 @@ def test_logging_integer_log_levels():
         dl.log(3, 'test')
         dl.log(51, 'test')
 
-        kv_pairs = set(captured_results[0].strip().split())
+        kv_pairs = captured_results[0].replace(' ', '').split('\n')[1:]
         _validate_basic(kv_pairs)
 
 
@@ -124,15 +126,12 @@ def test_logging_bad_custom_log_levels():
         dl = DagsterLogManager('123', {}, [logger])
         dl.foo('test')
 
-        kv_pairs = set(captured_results[0].strip().split())
-
-        assert _regex_match_kv_pair(r'log_message_id="{0}"'.format(REGEX_UUID), kv_pairs)
-        assert _regex_match_kv_pair(r'log_timestamp="{0}"'.format(REGEX_TS), kv_pairs)
-
+        assert re.findall(r'log_message_id = "{0}"'.format(REGEX_UUID), captured_results[0])
+        assert re.findall(r'log_timestamp = "{0}"'.format(REGEX_TS), captured_results[0])
         assert (
-            'orig_message="Unexpected log level: User code attempted to log at level \'foo\', but '
-            'that level has not been registered with the Python logging library. Original message: '
-            '\'test\''
+            'orig_message = "Unexpected log level: User code attempted to log at level \'foo\', '
+            'but that level has not been registered with the Python logging library. Original '
+            'message: \'test\''
         ) in captured_results[0]
 
 
@@ -144,24 +143,14 @@ def test_logging_unregistered_custom_log_levels():
 
         kv_pairs = set(captured_results[0].strip().split())
 
-        assert _regex_match_kv_pair(r'log_message_id="{0}"'.format(REGEX_UUID), kv_pairs)
-        assert _regex_match_kv_pair(r'log_timestamp="{0}"'.format(REGEX_TS), kv_pairs)
+        assert re.findall(r'log_message_id = "{0}"'.format(REGEX_UUID), captured_results[0])
+        assert re.findall(r'log_timestamp = "{0}"'.format(REGEX_TS), captured_results[0])
 
         assert (
-            'orig_message="Unexpected log level: User code attempted to log at level \'foo\', but '
-            'that level has not been registered with the Python logging library. Original message: '
-            '\'test\''
+            'orig_message = "Unexpected log level: User code attempted to log at level \'foo\', '
+            'but that level has not been registered with the Python logging library. Original '
+            'message: \'test\''
         ) in captured_results[0]
-
-
-def test_multiline_logging_basic():
-    with _setup_logger(DAGSTER_DEFAULT_LOGGER) as (captured_results, logger):
-
-        dl = DagsterLogManager('123', {}, [logger])
-        dl.info('test')
-
-        kv_pairs = captured_results[0].replace(' ', '').split('\n')[1:]
-        _validate_basic(kv_pairs)
 
 
 def test_multiline_logging_complex():

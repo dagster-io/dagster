@@ -4,7 +4,7 @@ from enum import Enum
 from dagster import check
 from dagster.utils.error import SerializableErrorInfo
 from dagster.core.definitions.materialization import Materialization
-from dagster.core.log import DagsterLogManager
+from dagster.core.log_manager import DagsterLogManager
 
 
 class DagsterEventType(Enum):

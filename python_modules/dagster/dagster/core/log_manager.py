@@ -3,15 +3,10 @@ import itertools
 import logging
 import uuid
 
-import coloredlogs
-
 from dagster import check, seven
-from dagster.core.types import Dict, Field, String
-from dagster.core.definitions.logger import logger
-from dagster.utils.log import check_valid_log_level, default_format_string
+
 
 DAGSTER_META_KEY = 'dagster_meta'
-DAGSTER_DEFAULT_LOGGER = 'dagster'
 
 
 def _dump_value(value):
@@ -22,9 +17,9 @@ def _dump_value(value):
     return seven.json.dumps(value)
 
 
-def _kv_message(all_items, multiline=False):
-    sep = '\n' if multiline else ' '
-    format_str = '{key:>20} = {value}' if multiline else '{key}={value}'
+def _kv_message(all_items):
+    sep = '\n'
+    format_str = '{key:>20} = {value}'
     return sep + sep.join(
         [format_str.format(key=key, value=_dump_value(value)) for key, value in all_items]
     )
@@ -111,9 +106,6 @@ class DagsterLogManager:
             itertools.chain(synth_props.items(), self.logging_tags.items(), message_props.items())
         )
 
-        msg_with_structured_props = _kv_message(all_props.items())
-        msg_with_multiline_structured_props = _kv_message(all_props.items(), multiline=True)
-
         # So here we use the arbitrary key DAGSTER_META_KEY to store a dictionary of
         # all the meta information that dagster injects into log message.
         # The python logging module, in its infinite wisdom, actually takes all the
@@ -150,22 +142,12 @@ class DagsterLogManager:
         for logger_ in self.loggers:
             if not isinstance(level, int) and hasattr(logger_, level):
                 logger_method = check.is_callable(getattr(logger_, level))
-                if logger_.name == DAGSTER_DEFAULT_LOGGER:
-                    logger_method(
-                        msg_with_multiline_structured_props, extra={DAGSTER_META_KEY: all_props}
-                    )
-                else:
-                    logger_method(msg_with_structured_props, extra={DAGSTER_META_KEY: all_props})
+                logger_method(_kv_message(all_props.items()), extra={DAGSTER_META_KEY: all_props})
 
             else:
-                if logger_.name == DAGSTER_DEFAULT_LOGGER:
-                    logger_.log(
-                        lvl,
-                        msg_with_multiline_structured_props,
-                        extra={DAGSTER_META_KEY: all_props},
-                    )
-                else:
-                    logger_.log(lvl, msg_with_structured_props, extra={DAGSTER_META_KEY: all_props})
+                logger_.log(
+                    lvl, _kv_message(all_props.items()), extra={DAGSTER_META_KEY: all_props}
+                )
 
     def debug(self, msg, **kwargs):
         '''
@@ -262,37 +244,3 @@ class DagsterLogManager:
             return self._log(name, msg, kwargs)
 
         return handler
-
-
-@logger(
-    config_field=Field(
-        Dict(
-            {
-                'log_level': Field(String, is_optional=True, default_value='INFO'),
-                'name': Field(String, is_optional=True, default_value='dagster'),
-            }
-        )
-    ),
-    description='The default colored console logger.',
-)
-def colored_console_logger(init_context):
-    level = check_valid_log_level(init_context.logger_config['log_level'])
-    name = init_context.logger_config['name']
-
-    klass = logging.getLoggerClass()
-    logger_ = klass(name, level=level)
-    coloredlogs.install(logger=logger_, level=level, fmt=default_format_string())
-    return logger_
-
-
-def default_system_loggers():
-    '''If users don't provide configuration for any loggers, we instantiate these loggers with the
-    default config.
-
-    Returns:
-        List[Tuple[LoggerDefinition, dict]]: Default loggers and their associated configs.'''
-    return [(colored_console_logger, {'name': 'dagster', 'log_level': 'INFO'})]
-
-
-def default_loggers():
-    return {'console': colored_console_logger}
