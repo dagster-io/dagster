@@ -612,14 +612,17 @@ def _create_loggers(environment_config, run_config, pipeline_def):
     loggers = []
     for logger_key, logger_def in pipeline_def.loggers.items() or default_loggers().items():
         if logger_key in environment_config.loggers:
-            init_logger_context = InitLoggerContext(
-                environment_config.context,
-                environment_config.loggers.get(logger_key),
-                pipeline_def,
-                logger_def,
-                run_config.run_id,
+            loggers.append(
+                logger_def.logger_fn(
+                    InitLoggerContext(
+                        environment_config.context,
+                        environment_config.loggers.get(logger_key),
+                        pipeline_def,
+                        logger_def,
+                        run_config.run_id,
+                    )
+                )
             )
-            loggers.append(logger_def.logger_fn(init_logger_context))
 
     if run_config.loggers:
         for logger in run_config.loggers:
@@ -627,10 +630,17 @@ def _create_loggers(environment_config, run_config, pipeline_def):
 
     if not loggers:
         for (logger_def, logger_config) in default_system_loggers():
-            init_logger_context = InitLoggerContext(
-                environment_config.context, logger_config, pipeline_def, logger_def, run_config.run_id
+            loggers.append(
+                logger_def.logger_fn(
+                    InitLoggerContext(
+                        environment_config.context,
+                        logger_config,
+                        pipeline_def,
+                        logger_def,
+                        run_config.run_id,
+                    )
+                )
             )
-            loggers.append(logger_def.logger_fn(init_logger_context))
 
     if run_config.event_callback:
         init_logger_context = InitLoggerContext(
