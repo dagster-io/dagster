@@ -8,8 +8,7 @@ from dagster.core.execution_context import (
 )
 from dagster.core.events import DagsterEvent
 
-from .create import create_execution_plan_core
-from .objects import ExecutionPlan
+from .plan import ExecutionPlan
 from .simple_engine import start_inprocess_executor
 
 from .child_process_executor import ChildProcessCommand, execute_child_process_command
@@ -31,7 +30,7 @@ class InProcessExecutorChildProcessCommand(ChildProcessCommand):
             pipeline, self.environment_dict, self.run_config.with_tags(pid=str(os.getpid()))
         ) as pipeline_context:
 
-            execution_plan = create_execution_plan_core(
+            execution_plan = ExecutionPlan.build(
                 pipeline_context.pipeline_def, pipeline_context.environment_config
             )
 

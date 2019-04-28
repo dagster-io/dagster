@@ -143,15 +143,15 @@ def decorate_with_expectations(pipeline_def, environment_config, solid, transfor
     check.inst_param(transform_step, 'transform_step', ExecutionStep)
     check.inst_param(output_def, 'output_def', OutputDefinition)
 
+    terminal_step_output_handle = StepOutputHandle.from_step(transform_step, output_def.name)
+
     if environment_config.expectations.evaluate and output_def.expectations:
         return create_expectations_subplan(
             pipeline_def,
             solid,
             output_def,
-            StepOutputHandle.from_step(transform_step, output_def.name),
+            terminal_step_output_handle,
             kind=StepKind.OUTPUT_EXPECTATION,
         )
     else:
-        return ExecutionValueSubplan.empty(
-            StepOutputHandle.from_step(transform_step, output_def.name)
-        )
+        return ExecutionValueSubplan.empty(terminal_step_output_handle)

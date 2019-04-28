@@ -55,8 +55,8 @@ from .errors import (
 from .events import DagsterEvent, DagsterEventType, PipelineInitFailureData
 from .events.logging import construct_event_logger
 
-from .execution_plan.create import create_execution_plan_core
-from .execution_plan.objects import ExecutionPlan, StepKind
+from .execution_plan.plan import ExecutionPlan
+from .execution_plan.objects import StepKind
 from .execution_plan.multiprocessing_engine import multiprocess_execute_plan
 from .execution_plan.simple_engine import start_inprocess_executor
 
@@ -301,7 +301,7 @@ def create_execution_plan(pipeline, environment_dict=None):
     check.inst_param(pipeline, 'pipeline', PipelineDefinition)
     environment_dict = check.opt_dict_param(environment_dict, 'environment_dict', key_type=str)
     environment_config = create_environment_config(pipeline, environment_dict)
-    return create_execution_plan_core(pipeline, environment_config)
+    return ExecutionPlan.build(pipeline, environment_config)
 
 
 def get_logging_tags(user_context_params, run_config, pipeline):
@@ -687,7 +687,7 @@ def _execute_pipeline_iterator(context_or_failure_event):
     check.inst_param(pipeline_context, 'pipeline_context', SystemPipelineExecutionContext)
     yield DagsterEvent.pipeline_start(pipeline_context)
 
-    execution_plan = create_execution_plan_core(
+    execution_plan = ExecutionPlan.build(
         pipeline_context.pipeline_def, pipeline_context.environment_config
     )
 
@@ -739,7 +739,7 @@ def execute_pipeline_iterator(pipeline, environment_dict=None, run_config=None):
       pipeline (PipelineDefinition): Pipeline to run
       environment_dict (dict): The enviroment configuration that parameterizes this run
       run_config (RunConfig): Configuration for how this pipeline will be executed
-    
+
     Returns:
       Iterator[DagsterEvent]
     '''
@@ -766,7 +766,7 @@ def execute_pipeline(pipeline, environment_dict=None, run_config=None):
 
     Parameters:
       pipeline (PipelineDefinition): Pipeline to run
-      environment_dict (dict): The enviroment configuration that parameterizes this run        
+      environment_dict (dict): The enviroment configuration that parameterizes this run
       run_config (RunConfig): Configuration for how this pipeline will be executed
 
     Returns:

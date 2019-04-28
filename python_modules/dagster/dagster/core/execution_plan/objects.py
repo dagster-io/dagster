@@ -3,11 +3,10 @@ from enum import Enum
 
 
 from dagster import check
-from dagster.core.definitions import Solid, PipelineDefinition
+from dagster.core.definitions import Solid
 from dagster.core.definitions.materialization import Materialization
 from dagster.core.intermediates_manager import StepOutputHandle
 from dagster.core.types.runtime import RuntimeType
-from dagster.core.utils import toposort
 from dagster.utils import merge_dicts
 from dagster.utils.error import SerializableErrorInfo
 
@@ -194,41 +193,3 @@ class ExecutionValueSubplan(
     @staticmethod
     def empty(terminal_step_output_handle):
         return ExecutionValueSubplan([], terminal_step_output_handle)
-
-
-class ExecutionPlan(
-    namedtuple('_ExecutionPlan', 'pipeline_def step_dict deps steps artifacts_persisted')
-):
-    def __new__(cls, pipeline_def, step_dict, deps, artifacts_persisted):
-        return super(ExecutionPlan, cls).__new__(
-            cls,
-            pipeline_def=check.inst_param(pipeline_def, 'pipeline_def', PipelineDefinition),
-            step_dict=check.dict_param(
-                step_dict, 'step_dict', key_type=str, value_type=ExecutionStep
-            ),
-            deps=check.dict_param(deps, 'deps', key_type=str, value_type=set),
-            steps=list(step_dict.values()),
-            artifacts_persisted=check.bool_param(artifacts_persisted, 'artifacts_persisted'),
-        )
-
-    def get_step_output(self, step_output_handle):
-        check.inst_param(step_output_handle, 'step_output_handle', StepOutputHandle)
-        step = self.get_step_by_key(step_output_handle.step_key)
-        return step.step_output_named(step_output_handle.output_name)
-
-    def has_step(self, key):
-        check.str_param(key, 'key')
-        return key in self.step_dict
-
-    def get_step_by_key(self, key):
-        check.str_param(key, 'key')
-        return self.step_dict[key]
-
-    def topological_steps(self):
-        return [step for step_level in self.topological_step_levels() for step in step_level]
-
-    def topological_step_levels(self):
-        return [
-            [self.step_dict[step_key] for step_key in step_key_level]
-            for step_key_level in toposort(self.deps)
-        ]
