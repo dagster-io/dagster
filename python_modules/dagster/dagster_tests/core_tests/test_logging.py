@@ -150,15 +150,8 @@ def test_logging_bad_custom_log_levels():
     with _setup_logger('test') as (captured_results, logger):
 
         dl = DagsterLogManager('123', {}, [logger])
-        dl.foo('test')
-
-        assert re.findall(r'log_message_id = "{0}"'.format(REGEX_UUID), captured_results[0])
-        assert re.findall(r'log_timestamp = "{0}"'.format(REGEX_TS), captured_results[0])
-        assert (
-            'orig_message = "Unexpected log level: User code attempted to log at level \'foo\', '
-            'but that level has not been registered with the Python logging library. Original '
-            'message: \'test\''
-        ) in captured_results[0]
+        with pytest.raises(check.CheckError):
+            dl.foo('test')
 
 
 def test_logging_unregistered_custom_log_levels():
