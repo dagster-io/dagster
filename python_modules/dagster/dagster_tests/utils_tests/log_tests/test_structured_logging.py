@@ -2,7 +2,9 @@ import logging
 
 from contextlib import contextmanager
 
-from dagster import PipelineDefinition
+import pytest
+
+from dagster import check, PipelineDefinition
 from dagster.core.events.log import construct_event_record, LogMessageRecord
 from dagster.core.init_context import InitLoggerContext
 from dagster.utils.log import define_structured_logger
@@ -56,13 +58,5 @@ def test_structured_logger_in_context_with_bad_log_level():
 
     logger = define_structured_logger('some_name', _append_message, level=logging.DEBUG)
     context = create_test_pipeline_execution_context(loggers={'structured_logger': logger})
-    context.log.gargle('from_context', foo=2)
-    assert len(messages) == 1
-    message = messages[0]
-    assert message.name == 'some_name'
-    assert message.level == logging.ERROR
-    assert message.meta['foo'] == 2
-    assert message.meta['orig_message'] == (
-        'Unexpected log level: User code attempted to log at level \'gargle\', but that level has '
-        'not been registered with the Python logging library. Original message: \'from_context\''
-    )
+    with pytest.raises(check.CheckError):
+        context.log.gargle('from_context', foo=2)
