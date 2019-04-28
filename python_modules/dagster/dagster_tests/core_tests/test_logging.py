@@ -36,10 +36,16 @@ def _setup_logger(name, log_levels=None, register_levels=True):
     log_levels = check.opt_dict_param(log_levels, 'log_levels')
 
     def add_log_level(value, name):
+        '''Register custom log levels with the Python logging facilities so that the log manager
+        can look them up later. In general, implementers of loggers with custom log levels will
+        need to take this step.'''
         logging.addLevelName(value, name)
-        setattr(logging, name, value)
 
     def rm_log_level(value, name):
+        '''There is no unified or public API for deregistering a custom log level with the Python
+        logging facilities. logging._nameToLevel and logging._levelToName are defined only in py3,
+        logging._levelNames is defined only in py2, and is a bidict-by-convention implemented using
+        a plain dict.'''
         # pylint: disable=protected-access
         if hasattr(logging, '_nameToLevel'):
             if name in logging._nameToLevel:
