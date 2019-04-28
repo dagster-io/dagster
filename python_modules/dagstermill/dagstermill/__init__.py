@@ -17,6 +17,7 @@ import six
 from future.utils import raise_from
 
 import papermill as pm
+from papermill.parameterize import _find_first_tagged_cell_index
 from papermill.translators import translate_parameters
 from papermill.iorw import load_notebook_node, write_ipynb
 
@@ -472,16 +473,6 @@ def get_papermill_parameters(transform_context, inputs, output_log_path):
     parameters['dm_context'] = seven.json.dumps(dm_context_dict)
 
     return parameters
-
-
-def _find_first_tagged_cell_index(nb, tag):
-    parameters_indices = []
-    for idx, cell in enumerate(nb.cells):
-        if tag in cell.metadata.tags:
-            parameters_indices.append(idx)
-    if not parameters_indices:
-        return -1
-    return parameters_indices[0]
 
 
 def replace_parameters(context, nb, parameters):
