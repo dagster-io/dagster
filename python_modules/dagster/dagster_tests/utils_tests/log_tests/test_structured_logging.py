@@ -6,7 +6,7 @@ import pytest
 
 from dagster import check, PipelineDefinition
 from dagster.core.events.log import construct_event_record, LogMessageRecord
-from dagster.core.init_context import InitLoggerContext
+from dagster.core.init_logger_context import InitLoggerContext
 from dagster.utils.log import define_structured_logger
 from dagster.utils.test import create_test_pipeline_execution_context
 

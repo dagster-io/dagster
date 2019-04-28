@@ -60,8 +60,8 @@ from .execution_plan.objects import StepKind
 from .engine.engine_multiprocessing import MultiprocessingEngine
 from .engine.engine_inprocess import InProcessEngine
 
-from .init_context import InitContext, InitLoggerContext, InitResourceContext
-
+from .init_context import InitContext, InitResourceContext
+from .init_logger_context import InitLoggerContext
 from .intermediates_manager import (
     ObjectStoreIntermediatesManager,
     InMemoryIntermediatesManager,
@@ -534,6 +534,7 @@ def _pipeline_execution_context_manager(
                 environment_config,
                 execution_context,
                 run_config.run_id,
+                log,
             ) as resources:
 
                 yield construct_pipeline_execution_context(
@@ -690,7 +691,7 @@ def _create_context_free_log(init_context, run_config, pipeline_def):
 
 
 @contextmanager
-def _create_resources(pipeline_def, context_def, environment, execution_context, run_id):
+def _create_resources(pipeline_def, context_def, environment, execution_context, run_id, log):
     if not context_def.resources:
         yield ResourcesBuilder(
             execution_context.resources, ResourcesSource.CUSTOM_EXECUTION_CONTEXT
@@ -714,7 +715,7 @@ def _create_resources(pipeline_def, context_def, environment, execution_context,
     with ExitStack() as stack:
         for resource_name in context_def.resources.keys():
             user_fn = _create_resource_fn_lambda(
-                pipeline_def, context_def, resource_name, environment, run_id
+                pipeline_def, context_def, resource_name, environment, run_id, log
             )
 
             resource_obj = stack.enter_context(
@@ -732,7 +733,7 @@ def _create_resources(pipeline_def, context_def, environment, execution_context,
 
 
 def _create_resource_fn_lambda(
-    pipeline_def, context_definition, resource_name, environment, run_id
+    pipeline_def, context_definition, resource_name, environment, run_id, log_manager
 ):
     resource_def = context_definition.resources[resource_name]
     # Need to do default values
@@ -744,6 +745,7 @@ def _create_resource_fn_lambda(
             context_config=environment.context.config,
             resource_config=resource_config,
             run_id=run_id,
+            log=log_manager,
         )
     )
 
