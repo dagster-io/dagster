@@ -63,15 +63,9 @@ class DagsterLogManager:
             orig_message (str): The log message generated in user code.
             message_props (dict): Additional properties for the structured log message.
         '''
-        # It's conceivable that we might want DagsterLogManager to enforce that it be initialized
-        # with at least one logger
         if not self.loggers:
             return
 
-        # Not clear that we want to throw check exceptions here (which could result in buried
-        # runtime errors) rather than log and continue.
-        if not isinstance(level, int):
-            check.str_param(level, 'level')
         check.str_param(orig_message, 'orig_message')
         check.dict_param(message_props, 'message_props')
 
@@ -106,6 +100,13 @@ class DagsterLogManager:
             itertools.chain(synth_props.items(), self.logging_tags.items(), message_props.items())
         )
 
+        check.invariant(
+            isinstance(level, int),
+            'Unexpected log level: User code attempted called context.log.log directly at level '
+            ' \'{level}\', but context.log.log can only be called with integer arguments. Original '
+            'message: \'{orig_message}\''.format(level=level, orig_message=orig_message),
+        )
+
         # So here we use the arbitrary key DAGSTER_META_KEY to store a dictionary of
         # all the meta information that dagster injects into log message.
         # The python logging module, in its infinite wisdom, actually takes all the
@@ -117,37 +118,8 @@ class DagsterLogManager:
         # getattr(self.logger, method)(
         #     message_with_structured_props, extra={DAGSTER_META_KEY: all_props}
         # )
-
-        # HACK: getLevelName really doesn't do what it says on the box. This function was originally
-        # intended to give the user-facing name of a given int log level, e.g.,
-        # getLevelName(40) -> 'ERROR'. In fact, it also works the other way around (this was 'fixed'
-        # in Python 3.4 then immediately reverted in 3.4.2). For levels it doesn't recognize,
-        # including all ints that don't have a name registered with logging.addLevelName it does:
-        # getLevelName('foo') -> 'Level foo'; getLevelName(3) -> 'Level 3' (!)
-        # See: https://docs.python.org/3/library/logging.html#logging.getLevelName
-        if isinstance(level, int):
-            lvl = level
-        else:
-            lvl = logging.getLevelName(level.upper())
-
-        if not isinstance(lvl, int):
-            self.error(
-                'Unexpected log level: User code attempted to log at level \'{level}\', but that '
-                'level has not been registered with the Python logging library. Original message: '
-                '\'{orig_message}\''.format(level=level, orig_message=orig_message),
-                **message_props
-            )
-            return
-
         for logger_ in self.loggers:
-            if not isinstance(level, int) and hasattr(logger_, level):
-                logger_method = check.is_callable(getattr(logger_, level))
-                logger_method(_kv_message(all_props.items()), extra={DAGSTER_META_KEY: all_props})
-
-            else:
-                logger_.log(
-                    lvl, _kv_message(all_props.items()), extra={DAGSTER_META_KEY: all_props}
-                )
+            logger_.log(level, _kv_message(all_props.items()), extra={DAGSTER_META_KEY: all_props})
 
     def debug(self, msg, **kwargs):
         '''
@@ -169,7 +141,7 @@ class DagsterLogManager:
         Kwargs:
             Additional context values for only this log message.
         '''
-        return self._log('debug', msg, kwargs)
+        return self._log(logging.DEBUG, msg, kwargs)
 
     def info(self, msg, **kwargs):
         '''Log at INFO level
@@ -182,7 +154,7 @@ class DagsterLogManager:
         Kwargs:
             Additional context values for only this log message.
         '''
-        return self._log('info', msg, kwargs)
+        return self._log(logging.INFO, msg, kwargs)
 
     def warning(self, msg, **kwargs):
         '''Log at WARNING level
@@ -195,7 +167,7 @@ class DagsterLogManager:
         Kwargs:
             Additional context values for only this log message.
         '''
-        return self._log('warning', msg, kwargs)
+        return self._log(logging.WARNING, msg, kwargs)
 
     def error(self, msg, **kwargs):
         '''Log at ERROR level
@@ -208,7 +180,7 @@ class DagsterLogManager:
         Kwargs:
             Additional context values for only this log message.
         '''
-        return self._log('error', msg, kwargs)
+        return self._log(logging.ERROR, msg, kwargs)
 
     def critical(self, msg, **kwargs):
         '''Log at CRITICAL level
@@ -221,26 +193,44 @@ class DagsterLogManager:
         Kwargs:
             Additional context values for only this log message.
         '''
-        return self._log('critical', msg, kwargs)
+        return self._log(logging.CRITICAL, msg, kwargs)
 
-    def log(self, lvl, msg, **kwargs):
-        '''Log at the integer level ``lvl``.
+    def log(self, level, msg, **kwargs):
+        '''Log at the integer level ``level``.
 
         Args:
-            lvl (int): An integer logging level.
+            level (int): An integer logging level.
             msg (str): The message to log.
         
         Kwargs:
             Additional context values for only this log message.
         '''
 
-        check.int_param(lvl, 'lvl')
-        return self._log(lvl, msg, kwargs)
+        check.int_param(level, 'level')
+        return self._log(level, msg, kwargs)
 
     def __getattr__(self, name):
         '''Enables handling of user-defined log levels.'''
 
         def handler(msg, **kwargs):
-            return self._log(name, msg, kwargs)
+            # HACK: getLevelName really doesn't do what it says on the box. This function was
+            # originally intended to give the user-facing name of a given int log level, e.g.,
+            # getLevelName(40) -> 'ERROR'. In fact, it also works the other way around (this was
+            # 'fixed' in Python 3.4 then immediately reverted in 3.4.2). For levels it doesn't
+            # recognize, including all ints that don't have a name registered with
+            # logging.addLevelName it does: getLevelName('foo') -> 'Level foo';
+            # getLevelName(3) -> 'Level 3' (!)
+            # See: https://docs.python.org/3/library/logging.html#logging.getLevelName
+            level = logging.getLevelName(name.upper())
+            check.invariant(
+                isinstance(level, int),
+                'Unexpected log level: User code attempted to log at level \'{level}\', but that '
+                'level has not been registered with the Python logging library using '
+                'logger.addLevelName. Original message: '
+                '\'{orig_message}\''.format(level=level, orig_message=msg),
+            )
+            # The implicit assumption here is that custom handlers act like we expect them to, and
+            # don't do extra work beyond delegating to ``.log()`` with an integer argument.
+            return self._log(level, msg, kwargs)
 
         return handler
