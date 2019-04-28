@@ -48,7 +48,7 @@ from dagster.core.execution_context import (
     SystemPipelineExecutionContext,
     SystemTransformExecutionContext,
 )
-from dagster.core.init_context import InitLoggerContext
+from dagster.core.init_logger_context import InitLoggerContext
 from dagster.core.user_context import AbstractTransformExecutionContext, TransformExecutionContext
 from dagster.core.types.marshal import (
     serialize_to_file,
