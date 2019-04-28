@@ -783,6 +783,8 @@ snapshots['test_build_all_docs 3'] = '''
 </li>
       <li><a href="sections/api/apidocs/types.html#dagster.List">List() (in module dagster)</a>
 </li>
+      <li><a href="sections/api/apidocs/pipeline.html#dagster.InitResourceContext.log">log (dagster.InitResourceContext attribute)</a>
+</li>
       <li><a href="sections/api/apidocs/pipeline.html#dagster.logger">logger() (in module dagster)</a>
 </li>
   </ul></td>
@@ -1497,6 +1499,7 @@ snapshots['test_build_all_docs 7'] = '''
 <li><a href="dagster/core/execution.html">dagster.core.execution</a></li>
 <li><a href="dagster/core/execution_context.html">dagster.core.execution_context</a></li>
 <li><a href="dagster/core/init_context.html">dagster.core.init_context</a></li>
+<li><a href="dagster/core/init_logger_context.html">dagster.core.init_logger_context</a></li>
 <li><a href="dagster/core/runs.html">dagster.core.runs</a></li>
 <li><a href="dagster/core/types/builtin_enum.html">dagster.core.types.builtin_enum</a></li>
 <li><a href="dagster/core/types/config.html">dagster.core.types.config</a></li>
@@ -20290,6 +20293,17 @@ data is defined by <code class="docutils literal notranslate"><span class="pre">
 </dl>
 </dd></dl>
 
+<dl class="attribute">
+<dt id="dagster.InitResourceContext.log">
+<code class="descname">log</code><a class="headerlink" href="#dagster.InitResourceContext.log" title="Permalink to this definition">¶</a></dt>
+<dd><p>THe log manager for this run of the pipeline</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>DagsterLogManager</p>
+</dd>
+</dl>
+</dd></dl>
+
 </dd></dl>
 
 <dl class="class">
@@ -20319,7 +20333,7 @@ logger_fn in a LoggerDefinition.</p>
 
 <dl class="class">
 <dt id="dagster.InitLoggerContext">
-<em class="property">class </em><code class="descclassname">dagster.</code><code class="descname">InitLoggerContext</code><a class="reference internal" href="../../../_modules/dagster/core/init_context.html#InitLoggerContext"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dagster.InitLoggerContext" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">dagster.</code><code class="descname">InitLoggerContext</code><a class="reference internal" href="../../../_modules/dagster/core/init_logger_context.html#InitLoggerContext"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dagster.InitLoggerContext" title="Permalink to this definition">¶</a></dt>
 <dd><p>Similar to InitContext, but is logger-specific. It includes all the properties
 in the InitContext, plus the logger config and the logger definition.</p>
 <dl class="attribute">
