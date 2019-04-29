@@ -7,8 +7,8 @@
    :target: https://badge.fury.io/py/dagster
 .. image:: https://coveralls.io/repos/github/dagster-io/dagster/badge.svg?branch=master
    :target: https://coveralls.io/github/dagster-io/dagster?branch=master
-.. image:: https://circleci.com/gh/dagster-io/dagster.svg?style=svg
-   :target: https://circleci.com/gh/dagster-io/dagster
+.. image:: https://badge.buildkite.com/888545beab829e41e5d7303db15525a2bc3b0f0e33a72759ac.svg?branch=master
+   :target: https://buildkite.com/dagster/dagster
 .. image:: https://readthedocs.org/projects/dagster/badge/?version=master
    :target: https://dagster.readthedocs.io/en/master/
 
@@ -28,12 +28,12 @@ For details on contributing or running the project for development, read `here <
 This repository contains a number of distinct subprojects.
 
 Top Level Tools:
- 
+
 - **dagster**: The core programming model and abstraction stack; stateless, single-node,
   single-process and multi-process execution engines; and a CLI tool for driving those engines.
 - **dagit**: A rich development environment for Dagster, including a DAG browser, a type-aware config editor,
   and a streaming execution interface.
-- **dagstermill**: Built on the papermill library (https://github.com/nteract/papermill) Dagsermill is meant for integrating productionized Jupyter notebooks into dagster pipelines. 
+- **dagstermill**: Built on the papermill library (https://github.com/nteract/papermill) Dagsermill is meant for integrating productionized Jupyter notebooks into dagster pipelines.
 - **dagster-airflow**: Allows Dagster pipelines to be scheduled and executed, either containerized or uncontainerized, as Apache Airflow DAGs (https://github.com/apache/airflow)
 
 Supporting Libraries:
