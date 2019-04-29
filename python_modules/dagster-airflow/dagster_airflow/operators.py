@@ -2,7 +2,6 @@
 import ast
 import json
 import os
-import sys
 
 from abc import ABCMeta, abstractmethod
 from contextlib import contextmanager
@@ -37,8 +36,8 @@ def parse_raw_res(raw_res):
     # FIXME
     # Unfortunately, log lines don't necessarily come back in order...
     # This is error-prone, if something else logs JSON
-    lines = list(reversed(raw_res.decode('utf-8').split('\n')))
-    last_line = lines[0]
+    lines = list(filter(None, reversed(raw_res.decode('utf-8').split('\n'))))
+    last_line = lines[0] if lines else raw_res
 
     for line in lines:
         try:
@@ -147,7 +146,6 @@ class ModifiedDockerOperator(DockerOperator):
         self.log.info('Starting docker container from image %s', self.image)
 
         tls_config = self.__get_tls_config()
-
         if self.docker_conn_id:
             self.cli = self.get_hook().get_conn()
         else:
@@ -184,8 +182,8 @@ class ModifiedDockerOperator(DockerOperator):
             self.cli.start(self.container['Id'])
 
             line = ''
-            for line in self.cli.logs(container=self.container['Id'], stream=True):
-                line = line.strip()
+            for new_line in self.cli.logs(container=self.container['Id'], stream=True):
+                line = new_line.strip()
                 if hasattr(line, 'decode'):
                     line = line.decode('utf-8')
                 self.log.info(line)
@@ -285,10 +283,6 @@ class DagsterDockerOperator(ModifiedDockerOperator, DagsterOperator):
         # We do this because log lines won't necessarily be emitted in order (!) -- so we can't
         # just check the last log line to see if it's JSON.
         kwargs['xcom_all'] = True
-
-        if 'network_mode' not in kwargs:
-            # FIXME: this is not the best test to see if we're running on Docker for Mac
-            kwargs['network_mode'] = 'host' if sys.platform != 'darwin' else 'bridge'
 
         if 'environment' not in kwargs:
             kwargs['environment'] = DEFAULT_ENVIRONMENT

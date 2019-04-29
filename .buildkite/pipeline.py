@@ -152,7 +152,31 @@ def events_demo_tests():
                 "mv .coverage {file}".format(file=coverage),
                 "buildkite-agent artifact upload {file}".format(file=coverage),
             )
-            .on_integration_image(version, ['AWS_SECRET_ACCESS_KEY', 'AWS_ACCESS_KEY_ID'])
+            .on_integration_image(
+                version, ['AWS_SECRET_ACCESS_KEY', 'AWS_ACCESS_KEY_ID', 'AWS_DEFAULT_REGION']
+            )
+            .build()
+        )
+    return tests
+
+
+def airflow_tests():
+    tests = []
+    for version in SupportedPythons:
+        coverage = ".coverage.dagster-airflow.{version}.$BUILDKITE_BUILD_ID".format(version=version)
+        tests.append(
+            StepBuilder("dagster-airflow tests ({ver})".format(ver=TOX_MAP[version]))
+            .run(
+                "cd python_modules/dagster-airflow/dagster_airflow_tests/test_project",
+                "./build.sh",
+                "mkdir -p /home/circleci/airflow",
+                "cd ../../",
+                "pip install tox",
+                "tox -e {ver}".format(ver=TOX_MAP[version]),
+                "mv .coverage {file}".format(file=coverage),
+                "buildkite-agent artifact upload {file}".format(file=coverage),
+            )
+            .on_integration_image(version)
             .build()
         )
     return tests
@@ -209,6 +233,7 @@ if __name__ == "__main__":
     steps += python_modules_tox_tests("libraries/dagster-spark")
     steps += airline_demo_tests()
     steps += events_demo_tests()
+    steps += airflow_tests()
     steps += [
         wait_step(),  # wait for all previous steps to finish
         StepBuilder("coverage")
