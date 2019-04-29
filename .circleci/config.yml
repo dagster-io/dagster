@@ -229,7 +229,7 @@ jobs:
       - run:
           name: Install Dependencies
           command: |
-            sudo make dev_install
+            sudo make install_dev_python_modules
 
       - attach_workspace:
           at: /tmp/workspace

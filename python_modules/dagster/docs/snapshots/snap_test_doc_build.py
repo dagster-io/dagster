@@ -1672,14 +1672,14 @@ Local development setup
 
     $ brew install yarn
 
-4. Run the script dev_env_setup.sh at repo root. This sets up a full
+4. Run the `make dev_install` at repo root. This sets up a full
    dagster developer environment with all modules and runs tests that
    do not require heavy external dependencies such as docker. This will
    take a few minutes.
 
 .. code-block:: console
 
-    $ ./dev_env_setup.sh
+    $ make dev_install
 
 5. Run some tests manually to make sure things are working.
 
@@ -21832,12 +21832,12 @@ development environment.</p>
 </pre></div>
 </div>
 <ol class="arabic simple" start="4">
-<li><p>Run the script dev_env_setup.sh at repo root. This sets up a full
+<li><p>Run the <cite>make dev_install</cite> at repo root. This sets up a full
 dagster developer environment with all modules and runs tests that
 do not require heavy external dependencies such as docker. This will
 take a few minutes.</p></li>
 </ol>
-<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$</span> ./dev_env_setup.sh
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$</span> make dev_install
 </pre></div>
 </div>
 <ol class="arabic simple" start="5">

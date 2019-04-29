@@ -161,7 +161,7 @@ def events_demo_tests():
 if __name__ == "__main__":
     steps = [
         StepBuilder("pylint")
-        .run("make dev_install", "make pylint")
+        .run("make install_dev_python_modules", "make pylint")
         .on_python_image(SupportedPython.V3_7)
         .build(),
         StepBuilder("black")
