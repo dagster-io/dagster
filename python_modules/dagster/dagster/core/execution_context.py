@@ -202,7 +202,7 @@ class SystemPipelineExecutionContext(object):
 
     @property
     def resources(self):
-        return self._pipeline_context_data.resources
+        return self._pipeline_context_data.resources.build()
 
     @property
     def run_id(self):
@@ -287,6 +287,12 @@ class SystemStepExecutionContext(SystemPipelineExecutionContext):
     @property
     def solid(self):
         return self._step.solid
+
+    @property
+    def resources(self):
+        return self._pipeline_context_data.resources.build(
+            self.solid.resource_mapper_fn, self.solid_def.resources
+        )
 
 
 class SystemTransformExecutionContext(SystemStepExecutionContext):

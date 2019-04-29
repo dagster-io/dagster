@@ -151,6 +151,9 @@ class PipelineDefinition(object):
 
         self._runtime_type_dict = construct_runtime_type_dictionary(solids)
 
+        # Validate solid resource dependencies
+        _validate_resource_dependencies(self.context_definitions, solids)
+
     @property
     def display_name(self):
         '''Name suitable for exception messages, logging etc. If pipeline
@@ -336,7 +339,10 @@ def _build_sub_pipeline(pipeline_def, solid_names):
 
 
 def _validate_dependency_dict(dependencies):
-    prelude = 'The expected type for "dependencies" is dict[Union[str, SolidInstance], dict[str, DependencyDefinition]]. '
+    prelude = (
+        'The expected type for "dependencies" is dict[Union[str, SolidInstance], dict[str, '
+        'DependencyDefinition]]. '
+    )
 
     if dependencies is None:
         return {}
@@ -353,15 +359,14 @@ def _validate_dependency_dict(dependencies):
         if not (isinstance(key, six.string_types) or isinstance(key, SolidInstance)):
             raise DagsterInvalidDefinitionError(
                 prelude + 'Expected str or SolidInstance key in the top level dict. '
-                'Recieved value {val} of type {type}'.format(val=key, type=type(key))
+                'Received value {val} of type {type}'.format(val=key, type=type(key))
             )
         if not isinstance(dep_dict, dict):
             if isinstance(dep_dict, DependencyDefinition):
                 raise DagsterInvalidDefinitionError(
                     prelude + 'Received a DependencyDefinition one layer too high under key {key}. '
-                    'The DependencyDefinition should be moved in to a dict keyed on input name.'.format(
-                        key=key
-                    )
+                    'The DependencyDefinition should be moved in to a dict keyed on '
+                    'input name.'.format(key=key)
                 )
             else:
                 raise DagsterInvalidDefinitionError(
@@ -381,9 +386,34 @@ def _validate_dependency_dict(dependencies):
                 raise DagsterInvalidDefinitionError(
                     prelude
                     + 'Expected DependencyDefinition for solid "{key}" input "{input_key}". '
-                    'Recieved value {val} of type {type}.'.format(
+                    'Received value {val} of type {type}.'.format(
                         key=key, input_key=input_key, val=dep, type=type(dep)
                     )
                 )
 
     return dependencies
+
+
+def _validate_resource_dependencies(context_definitions, solids):
+    '''This validation ensures that each pipeline context provides the resources that are required
+    by each solid.
+    '''
+    check.dict_param(
+        context_definitions, 'context_definitions', str, value_type=PipelineContextDefinition
+    )
+    check.list_param(solids, 'solids', of_type=SolidDefinition)
+
+    for context_name, context in context_definitions.items():
+        context_resources = set(context.resources.keys())
+
+        for solid in solids:
+            for resource in solid.resources:
+                if resource not in context_resources:
+                    raise DagsterInvalidDefinitionError(
+                        (
+                            'Resource "{resource}" is required by solid {solid_name}, but is not '
+                            'provided by context "{context_name}"'
+                        ).format(
+                            resource=resource, solid_name=solid.name, context_name=context_name
+                        )
+                    )

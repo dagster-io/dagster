@@ -29,6 +29,7 @@ from dagster.utils.error import serializable_error_info_from_exc_info
 from dagster.utils.logging import define_colored_console_logger
 
 from .definitions import PipelineDefinition, Solid
+from .definitions.resource import ResourcesBuilder, ResourcesSource
 from .definitions.utils import DEFAULT_OUTPUT
 from .definitions.environment_configs import construct_environment_config
 
@@ -561,6 +562,7 @@ def construct_pipeline_execution_context(
     check.inst_param(run_config, 'run_config', RunConfig)
     check.inst_param(execution_context, 'execution_context', ExecutionContext)
     check.inst_param(pipeline, 'pipeline', PipelineDefinition)
+    check.opt_inst_param(resources, 'resources', ResourcesBuilder)
     check.inst_param(environment_config, 'environment_config', EnvironmentConfig)
     check.inst_param(run_storage, 'run_storage', RunStorage)
     check.inst_param(intermediates_manager, 'intermediates_manager', IntermediatesManager)
@@ -615,7 +617,9 @@ def _create_context_free_log(run_config, pipeline_def):
 @contextmanager
 def _create_resources(pipeline_def, context_def, environment, execution_context, run_id):
     if not context_def.resources:
-        yield execution_context.resources
+        yield ResourcesBuilder(
+            execution_context.resources, ResourcesSource.CUSTOM_EXECUTION_CONTEXT
+        )
         return
 
     resources = {}
@@ -649,11 +653,7 @@ def _create_resources(pipeline_def, context_def, environment, execution_context,
             )
 
             resources[resource_name] = resource_obj
-
-        context_name = environment.context.name
-
-        resources_type = pipeline_def.context_definitions[context_name].resources_type
-        yield resources_type(**resources)
+        yield ResourcesBuilder(resources, ResourcesSource.PIPELINE_CONTEXT_DEF)
 
 
 def _create_resource_fn_lambda(

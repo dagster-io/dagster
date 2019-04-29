@@ -20438,7 +20438,7 @@ snapshots['test_build_all_docs 53'] = '''
 <hr class="docutils" />
 <dl class="class">
 <dt id="dagster.SolidDefinition">
-<em class="property">class </em><code class="descclassname">dagster.</code><code class="descname">SolidDefinition</code><span class="sig-paren">(</span><em>name</em>, <em>inputs</em>, <em>transform_fn</em>, <em>outputs</em>, <em>config_field=None</em>, <em>description=None</em>, <em>metadata=None</em>, <em>step_metadata_fn=None</em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dagster/core/definitions/solid.html#SolidDefinition"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dagster.SolidDefinition" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">dagster.</code><code class="descname">SolidDefinition</code><span class="sig-paren">(</span><em>name</em>, <em>inputs</em>, <em>transform_fn</em>, <em>outputs</em>, <em>config_field=None</em>, <em>description=None</em>, <em>metadata=None</em>, <em>resources=None</em>, <em>step_metadata_fn=None</em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dagster/core/definitions/solid.html#SolidDefinition"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dagster.SolidDefinition" title="Permalink to this definition">¶</a></dt>
 <dd><p>A solid (a name extracted from the acronym of “software-structured data” (SSD)) represents
 a unit of computation within a data pipeline.</p>
 <p>As its core, a solid is a function. It accepts inputs (which are values produced from
@@ -20459,15 +20459,18 @@ is generally used by framework authors.</p>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>name</strong> (<em>str</em>) – Name of the solid.</p></li>
 <li><p><strong>inputs</strong> (<em>List</em><em>[</em><a class="reference internal" href="#dagster.InputDefinition" title="dagster.InputDefinition"><em>InputDefinition</em></a><em>]</em>) – Inputs of the solid.</p></li>
-<li><p><strong>transform_fn</strong> (<em>Callable</em><em>[</em><em>[</em><em>SystemTransformExecutionContext</em><em>, </em><em>]</em><em>, </em><em>Iterable</em><em>[</em><em>Union</em><em>[</em><a class="reference internal" href="#dagster.Result" title="dagster.Result"><em>Result</em></a><em>, </em><a class="reference internal" href="#dagster.Materialization" title="dagster.Materialization"><em>Materialization</em></a><em>]</em><em>]</em><em>]</em>) – <p>The core of the solid, the function that does the actual computation. The arguments passed to
-this function after context are deteremined by <code class="docutils literal notranslate"><span class="pre">inputs</span></code>.</p>
-<p>This function yields <a class="reference internal" href="#dagster.Result" title="dagster.Result"><code class="xref py py-class docutils literal notranslate"><span class="pre">Result</span></code></a> according to <code class="docutils literal notranslate"><span class="pre">outputs</span></code> or <a class="reference internal" href="#dagster.Materialization" title="dagster.Materialization"><code class="xref py py-class docutils literal notranslate"><span class="pre">Materialization</span></code></a>.</p>
+<li><p><strong>(</strong><strong>Callable</strong><strong>[</strong><strong>[</strong><strong>SystemTransformExecutionContext</strong><strong>, </strong><strong>]</strong><strong>, </strong><strong>Iterable</strong><strong>[</strong><strong>Union</strong><strong>[</strong><strong>Result</strong><strong>,</strong> (<em>transform_fn</em>) – <p>Materialization]]]): The core of the solid, the function that does the actual
+computation. The arguments passed to this function after context are deteremined by
+<code class="docutils literal notranslate"><span class="pre">inputs</span></code>.</p>
+<p>This function yields <a class="reference internal" href="#dagster.Result" title="dagster.Result"><code class="xref py py-class docutils literal notranslate"><span class="pre">Result</span></code></a> according to <code class="docutils literal notranslate"><span class="pre">outputs</span></code> or
+<a class="reference internal" href="#dagster.Materialization" title="dagster.Materialization"><code class="xref py py-class docutils literal notranslate"><span class="pre">Materialization</span></code></a>.</p>
 </p></li>
 <li><p><strong>outputs</strong> (<em>List</em><em>[</em><a class="reference internal" href="#dagster.OutputDefinition" title="dagster.OutputDefinition"><em>OutputDefinition</em></a><em>]</em>) – Outputs of the solid.</p></li>
 <li><p><strong>config_field</strong> (<em>Optional</em><em>[</em><em>Field</em><em>]</em>) – How the solid configured.</p></li>
 <li><p><strong>description</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em>) – Description of the solid.</p></li>
 <li><p><strong>metadata</strong> (<em>Optional</em><em>[</em><em>Dict</em><em>[</em><em>Any</em><em>, </em><em>Any</em><em>]</em><em>]</em>) – Arbitrary metadata for the solid. Some frameworks expect and require
 certain metadata to be attached to a solid.</p></li>
+<li><p><strong>resources</strong> (<em>Optional</em><em>[</em><em>Set</em><em>[</em><em>str</em><em>]</em><em>]</em>) – List of resources handles required by this solid.</p></li>
 </ul>
 </dd>
 </dl>
@@ -20666,7 +20669,7 @@ should return a single value.</p>
 
 <dl class="function">
 <dt id="dagster.solid">
-<code class="descclassname">&#64;</code><code class="descclassname">dagster.</code><code class="descname">solid</code><span class="sig-paren">(</span><em>name=None</em>, <em>inputs=None</em>, <em>outputs=None</em>, <em>config_field=None</em>, <em>description=None</em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dagster/core/definitions/decorators.html#solid"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dagster.solid" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">&#64;</code><code class="descclassname">dagster.</code><code class="descname">solid</code><span class="sig-paren">(</span><em>name=None</em>, <em>inputs=None</em>, <em>outputs=None</em>, <em>config_field=None</em>, <em>description=None</em>, <em>resources=None</em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dagster/core/definitions/decorators.html#solid"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dagster.solid" title="Permalink to this definition">¶</a></dt>
 <dd><p>(decorator) Create a solid with specified parameters.</p>
 <p>This shortcut simplifies the core solid API by exploding arguments into kwargs of the
 transform function and omitting additional parameters when they are not needed.
@@ -20689,6 +20692,7 @@ multiple outputs. Useful for solids that have multiple outputs.</p></li>
 <li><p><strong>outputs</strong> (<em>list</em><em>[</em><a class="reference internal" href="#dagster.OutputDefinition" title="dagster.OutputDefinition"><em>OutputDefinition</em></a><em>]</em>) – List of outputs.</p></li>
 <li><p><strong>config_field</strong> (<em>Field</em>) – The configuration for this solid.</p></li>
 <li><p><strong>description</strong> (<em>str</em>) – Description of this solid.</p></li>
+<li><p><strong>resources</strong> (<em>set</em><em>[</em><em>str</em><em>]</em>) – Set of resource instances required by this solid.</p></li>
 </ul>
 </dd>
 </dl>

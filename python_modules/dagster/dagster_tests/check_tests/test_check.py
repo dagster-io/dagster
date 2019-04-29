@@ -82,6 +82,23 @@ def test_list_param():
         check.list_param('3u4', 'list_param')
 
 
+def test_set_param():
+    assert check.set_param(set(), 'set_param') == set()
+
+    with pytest.raises(ParameterCheckError):
+        check.set_param(None, 'set_param')
+
+    with pytest.raises(ParameterCheckError):
+        check.set_param('3u4', 'set_param')
+
+    obj_set = {1}
+    assert check.set_param(obj_set, 'set_param') == obj_set
+
+    obj_set_two = {1, 1, 2}
+    obj_set_two_deduped = {1, 2}
+    assert check.set_param(obj_set_two, 'set_param') == obj_set_two_deduped
+
+
 def test_is_list():
     assert check.is_list([]) == []
 
@@ -142,6 +159,20 @@ def test_opt_list_param():
 
     with pytest.raises(ParameterCheckError):
         check.opt_list_param('3u4', 'list_param')
+
+
+def test_opt_set_param():
+    assert check.opt_set_param(None, 'set_param') == set()
+    assert check.opt_set_param(set(), 'set_param') == set()
+
+    with pytest.raises(ParameterCheckError):
+        check.opt_set_param(0, 'set_param')
+
+    with pytest.raises(ParameterCheckError):
+        check.opt_set_param('', 'set_param')
+
+    with pytest.raises(ParameterCheckError):
+        check.opt_set_param('3u4', 'set_param')
 
 
 def test_opt_nullable_list_param():

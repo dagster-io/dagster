@@ -34,17 +34,22 @@ class SolidDefinition(object):
     Args:
         name (str): Name of the solid.
         inputs (List[InputDefinition]): Inputs of the solid.
-        transform_fn (Callable[[SystemTransformExecutionContext, ], Iterable[Union[Result, Materialization]]]):
-            The core of the solid, the function that does the actual computation. The arguments passed to
-            this function after context are deteremined by ``inputs``.
 
-            This function yields :py:class:`Result` according to ``outputs`` or :py:class:`Materialization`.
+        transform_fn (Callable[[SystemTransformExecutionContext, ], Iterable[Union[Result,
+            Materialization]]]): The core of the solid, the function that does the actual
+            computation. The arguments passed to this function after context are deteremined by
+            ``inputs``.
+
+            This function yields :py:class:`Result` according to ``outputs`` or
+            :py:class:`Materialization`.
+
         outputs (List[OutputDefinition]): Outputs of the solid.
         config_field (Optional[Field]): How the solid configured.
         description (Optional[str]): Description of the solid.
         metadata (Optional[Dict[Any, Any]]):
             Arbitrary metadata for the solid. Some frameworks expect and require
             certain metadata to be attached to a solid.
+        resources (Optional[Set[str]]): List of resources handles required by this solid.
 
     Examples:
         .. code-block:: python
@@ -69,6 +74,7 @@ class SolidDefinition(object):
         config_field=None,
         description=None,
         metadata=None,
+        resources=None,
         step_metadata_fn=None,
     ):
         self.name = check_valid_name(name)
@@ -82,6 +88,7 @@ class SolidDefinition(object):
             'of a SolidDefinition or @solid named "{name}"'.format(name=name),
         )
         self.metadata = check.opt_dict_param(metadata, 'metadata', key_type=str)
+        self.resources = check.opt_set_param(resources, 'resources', of_type=str)
         self._input_dict = {inp.name: inp for inp in inputs}
         self._output_dict = {output.name: output for output in outputs}
         self.step_metadata_fn = step_metadata_fn

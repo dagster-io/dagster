@@ -1,5 +1,3 @@
-from collections import namedtuple
-
 from dagster import check
 
 from dagster.core.types import Field, Dict
@@ -26,7 +24,7 @@ class PipelineContextDefinition(object):
 
     The ``PipelineContextDefinition`` is passed to the ``PipelineDefinition`` in
     a dictionary keyed by its name so the name is not present in this object.
-    
+
     Args:
         context_fn (Callable):
             Signature of context_fn:
@@ -71,9 +69,6 @@ class PipelineContextDefinition(object):
         return {DEFAULT_CONTEXT_NAME: context_definition}
 
     def __init__(self, context_fn=None, config_field=None, resources=None, description=None):
-        '''
-        
-        '''
         if config_field is None and context_fn is None:
             config_field = _default_config_field()
             context_fn = _default_context_fn
@@ -88,7 +83,6 @@ class PipelineContextDefinition(object):
             resources, 'resources', key_type=str, value_type=ResourceDefinition
         )
         self.description = description
-        self.resources_type = namedtuple('Resources', list(resources.keys())) if resources else None
 
 
 def _default_context_fn(init_context):

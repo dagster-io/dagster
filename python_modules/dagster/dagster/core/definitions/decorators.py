@@ -63,12 +63,12 @@ class MultipleResults(namedtuple('_MultipleResults', 'results')):
     @staticmethod
     def from_dict(result_dict):
         '''Create a new ``MultipleResults`` object from a dictionary.
-        
+
         Keys of the dictionary are unpacked into result names.
-        
+
         Args:
             result_dict (dict) - The dictionary to unpack.
-        
+
         Returns:
             (:py:class:`MultipleResults <dagster.MultipleResults>`) A new ``MultipleResults`` object
 
@@ -105,12 +105,24 @@ class _LambdaSolid(object):
 
 
 class _Solid(object):
-    def __init__(self, name=None, inputs=None, outputs=None, description=None, config_field=None):
+    def __init__(
+        self,
+        name=None,
+        inputs=None,
+        outputs=None,
+        description=None,
+        resources=None,
+        config_field=None,
+    ):
         self.name = check.opt_str_param(name, 'name')
         self.input_defs = check.opt_list_param(inputs, 'inputs', InputDefinition)
         outputs = outputs or ([OutputDefinition()] if outputs is None else [])
         self.outputs = check.list_param(outputs, 'outputs', OutputDefinition)
         self.description = check.opt_str_param(description, 'description')
+
+        # resources will be checked within SolidDefinition
+        self.resources = resources
+
         # config_field will be checked within SolidDefinition
         self.config_field = config_field
 
@@ -129,6 +141,7 @@ class _Solid(object):
             transform_fn=transform_fn,
             config_field=self.config_field,
             description=self.description,
+            resources=self.resources,
         )
 
 
@@ -170,7 +183,9 @@ def lambda_solid(name=None, inputs=None, output=None, description=None):
     return _LambdaSolid(name=name, inputs=inputs, output=output, description=description)
 
 
-def solid(name=None, inputs=None, outputs=None, config_field=None, description=None):
+def solid(
+    name=None, inputs=None, outputs=None, config_field=None, description=None, resources=None
+):
     '''(decorator) Create a solid with specified parameters.
 
     This shortcut simplifies the core solid API by exploding arguments into kwargs of the
@@ -194,6 +209,7 @@ def solid(name=None, inputs=None, outputs=None, config_field=None, description=N
         config_field (Field):
             The configuration for this solid.
         description (str): Description of this solid.
+        resources (set[str]): Set of resource instances required by this solid.
 
     Examples:
 
@@ -260,6 +276,7 @@ def solid(name=None, inputs=None, outputs=None, config_field=None, description=N
         check.invariant(outputs is None)
         check.invariant(description is None)
         check.invariant(config_field is None)
+        check.invariant(resources is None)
         return _Solid()(name)
 
     return _Solid(
@@ -268,6 +285,7 @@ def solid(name=None, inputs=None, outputs=None, config_field=None, description=N
         outputs=outputs,
         config_field=config_field,
         description=description,
+        resources=resources,
     )
 
 

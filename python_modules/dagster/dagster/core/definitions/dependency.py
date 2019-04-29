@@ -11,7 +11,7 @@ from .output import OutputDefinition
 from .utils import DEFAULT_OUTPUT, struct_to_string
 
 
-class SolidInstance(namedtuple('Solid', 'name alias')):
+class SolidInstance(namedtuple('Solid', 'name alias resource_mapper_fn')):
     '''
     A solid identifier in a dependency structure. Allows supplying parameters to the solid,
     like the alias.
@@ -39,15 +39,22 @@ class SolidInstance(namedtuple('Solid', 'name alias')):
             )
     '''
 
-    def __new__(cls, name, alias=None):
+    def __new__(cls, name, alias=None, resource_mapper_fn=None):
         name = check.str_param(name, 'name')
         alias = check.opt_str_param(alias, 'alias')
-        return super(cls, SolidInstance).__new__(cls, name, alias)
+        resource_mapper_fn = check.opt_callable_param(
+            resource_mapper_fn, 'resource_mapper_fn', SolidInstance.default_resource_mapper_fn
+        )
+        return super(cls, SolidInstance).__new__(cls, name, alias, resource_mapper_fn)
+
+    @staticmethod
+    def default_resource_mapper_fn(resources, resource_deps):
+        return {r: resources.get(r) for r in resource_deps}
 
 
 class Solid(object):
     '''
-    Solid instance within a pipeline. Defined by it's name inside the pipeline.
+    Solid instance within a pipeline. Defined by its name inside the pipeline.
 
     Attributes:
         name (str):
@@ -56,9 +63,10 @@ class Solid(object):
             Definition of the solid.
     '''
 
-    def __init__(self, name, definition):
+    def __init__(self, name, definition, resource_mapper_fn):
         self.name = check.str_param(name, 'name')
         self.definition = check.inst_param(definition, 'definition', SolidDefinition)
+        self.resource_mapper_fn = check.callable_param(resource_mapper_fn, 'resource_mapper_fn')
 
         input_handles = {}
         for input_def in self.definition.input_defs:
