@@ -1,6 +1,6 @@
-db:
+airline-demo-db:
   image: postgres:11
-  container_name: db
+  container_name: airline-demo-db
   ports:
     - "5432:5432"
   environment:

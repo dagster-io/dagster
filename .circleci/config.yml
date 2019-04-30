@@ -229,7 +229,7 @@ jobs:
       - run:
           name: Install Dependencies
           command: |
-            sudo make dev_install
+            sudo make install_dev_python_modules
 
       - attach_workspace:
           at: /tmp/workspace
@@ -740,7 +740,7 @@ jobs:
           name: Build Dockerfile
           command: |
             pushd examples/airline-demo/
-            . build.sh
+            ./build.sh
             popd
       - run:
           name: Setup AIRFLOW_HOME
@@ -820,7 +820,7 @@ jobs:
           name: Build Dockerfile
           command: |
             pushd examples/airline-demo/
-            . build.sh
+            ./build.sh
             popd
       - run:
           name: Setup AIRFLOW_HOME
@@ -874,7 +874,7 @@ jobs:
           name: Build Dockerfile
           command: |
             pushd examples/airline-demo/
-            . build.sh
+            ./build.sh
             popd
       - run:
           name: Setup AIRFLOW_HOME

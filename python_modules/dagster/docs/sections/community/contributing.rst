@@ -22,14 +22,14 @@ Local development setup
 
     $ brew install yarn
 
-4. Run the script dev_env_setup.sh at repo root. This sets up a full
+4. Run the `make dev_install` at repo root. This sets up a full
    dagster developer environment with all modules and runs tests that
    do not require heavy external dependencies such as docker. This will
    take a few minutes.
 
 .. code-block:: console
 
-    $ ./dev_env_setup.sh
+    $ make dev_install
 
 5. Run some tests manually to make sure things are working.
 
@@ -39,15 +39,21 @@ Local development setup
 
 Have fun coding!
 
-6. Set up pre-commit hooks
+6. Optional: Set up pre-commit hooks
 
-We use black to enforce a consistent code style. To set up a pre-commit hook, just run:
+We use black to enforce a consistent code style. We test this in our CI/CD pipeline.
+
+To set up a pre-commit hook, just run:
 
 .. code-block:: console
 
     $ pre-commit install
 
 (The `pre-commit` package is installed in dagster's dev-requirements.)
+
+Otherwise, we recommend setting up your development environment to format on save.
+
+Lastly there is always the option to run `make black` from the `python_modules/` directory
 
 Running dagit webapp in development
 -------------------------------------

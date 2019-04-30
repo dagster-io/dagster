@@ -21,12 +21,12 @@ def docker_compose_db():
         return
 
     with pushd(script_relative_path('../')):
-        subprocess.check_output(['docker-compose', 'up', '-d', 'db'])
+        subprocess.check_output(['docker-compose', 'up', '-d', 'airline-demo-db'])
 
     yield
 
     with pushd(script_relative_path('../')):
-        subprocess.check_output(['docker-compose', 'stop', 'db'])
-        subprocess.check_output(['docker-compose', 'rm', '-f', 'db'])
+        subprocess.check_output(['docker-compose', 'stop', 'airline-demo-db'])
+        subprocess.check_output(['docker-compose', 'rm', '-f', 'airline-demo-db'])
 
     return

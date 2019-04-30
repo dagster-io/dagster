@@ -31,7 +31,6 @@ from dagster.core.intermediates_manager import IntermediatesManager
 from dagster.utils.error import serializable_error_info_from_exc_info
 
 from .objects import (
-    ExecutionPlan,
     ExecutionStep,
     StepOutputHandle,
     StepOutputValue,
@@ -39,6 +38,8 @@ from .objects import (
     StepFailureData,
     StepSuccessData,
 )
+
+from .plan import ExecutionPlan
 
 
 def start_inprocess_executor(

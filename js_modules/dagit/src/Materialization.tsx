@@ -5,8 +5,8 @@ import { Toaster, Colors, Position, Intent } from "@blueprintjs/core";
 const SharedToaster = Toaster.create({ position: Position.TOP }, document.body);
 
 interface MaterializationProps {
-  fileLocation: string;
-  fileName: string;
+  path: string | null;
+  description: string | null;
 }
 
 function isFilePath(url: string) {
@@ -29,31 +29,35 @@ export class Materialization extends React.Component<MaterializationProps> {
   };
 
   render() {
-    const { fileLocation, fileName } = this.props;
+    const { path, description } = this.props;
 
-    if (isFilePath(fileLocation)) {
+    if (!path) {
+      return null;
+    }
+
+    if (isFilePath(path)) {
       return (
         <MaterializationLink
-          href={fileLocation}
-          key={fileLocation}
-          title={`Copy path to ${fileLocation}`}
+          href={path}
+          key={path}
+          title={`Copy path to ${path}`}
           onClick={e => {
             e.preventDefault();
-            this.onCopyPath(fileLocation);
+            this.onCopyPath(path);
           }}
         >
-          {FileIcon} {fileName}
+          {FileIcon} {description}
         </MaterializationLink>
       );
     }
     return (
       <MaterializationLink
-        href={fileLocation}
-        key={fileLocation}
-        title={`Open ${fileLocation} in a new tab`}
+        href={path}
+        key={path}
+        title={`Open ${path} in a new tab`}
         target="__blank"
       >
-        {LinkIcon} {fileName}
+        {LinkIcon} {description}
       </MaterializationLink>
     );
   }

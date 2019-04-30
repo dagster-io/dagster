@@ -9,5 +9,7 @@ matplotlib==2.2.4; python_version < '3.5'
 # wheel for 2.0.2
 pyproj==2.0.1
 pyspark==2.4.0
-sqlalchemy-redshift==0.7.1
+# See setup.py for comment on this
+psycopg2==2.7.6.1
+sqlalchemy-redshift>=0.7.2
 SQLAlchemy-Utils==0.33.8

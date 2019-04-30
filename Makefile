@@ -20,22 +20,29 @@ black:
 check_black:
 	black python_modules --check --line-length 100 -S --fast --exclude "build/|buck-out/|dist/|_build/|\.eggs/|\.git/|\.hg/|\.mypy_cache/|\.nox/|\.tox/|\.venv/|snapshots/" -N
 
-dev_install:
-	pip install -r python_modules/dagster/dev-requirements.txt -qqq
-	pip install -e python_modules/dagster -qqq
-	pip install -e python_modules/dagster-graphql -qqq
-	pip install -e python_modules/dagit -qqq
-	pip install -r python_modules/dagit/dev-requirements.txt -qqq
-	pip install -e python_modules/dagstermill -qqq
-	SLUGIFY_USES_TEXT_UNIDECODE=yes pip install -e python_modules/dagster-airflow -qqq
-	pip install -e python_modules/libraries/dagster-aws -qqq
-	pip install -r python_modules/libraries/dagster-aws/dev-requirements.txt -qqq
-	pip install -e python_modules/libraries/dagster-gcp -qqq
-	pip install -e python_modules/libraries/dagster-ge -qqq
-	pip install -e python_modules/libraries/dagster-pandas -qqq
-	pip install -e python_modules/libraries/dagster-snowflake -qqq
-	pip install -e python_modules/libraries/dagster-spark -qqq
-	pip install -e python_modules/libraries/dagster-pyspark -qqq
-	pip install -e python_modules/automation -qqq
-	pip install -e examples/event-pipeline-demo -qqq
-	pip install -e examples/airline-demo -qqq
+install_dev_python_modules:
+	pip install --upgrade pip
+	pip install -r python_modules/dagster/dev-requirements.txt
+	pip install -e python_modules/dagster
+	pip install -e python_modules/dagster-graphql
+	pip install -e python_modules/dagit
+	pip install -r python_modules/dagit/dev-requirements.txt
+	pip install -e python_modules/dagstermill
+	SLUGIFY_USES_TEXT_UNIDECODE=yes pip install -e python_modules/dagster-airflow
+	pip install -e python_modules/libraries/dagster-aws
+	pip install -r python_modules/libraries/dagster-aws/dev-requirements.txt
+	pip install -e python_modules/libraries/dagster-gcp
+	pip install -e python_modules/libraries/dagster-ge
+	pip install -e python_modules/libraries/dagster-pandas
+	pip install -e python_modules/libraries/dagster-snowflake
+	pip install -e python_modules/libraries/dagster-spark
+	pip install -e python_modules/libraries/dagster-pyspark
+	pip install -e python_modules/automation
+	pip install -e examples/event-pipeline-demo
+	pip install -e examples/airline-demo
+
+rebuild_dagit:
+	cd js_modules/dagit/; yarn install && yarn build-for-python
+
+dev_install: install_dev_python_modules rebuild_dagit
+
