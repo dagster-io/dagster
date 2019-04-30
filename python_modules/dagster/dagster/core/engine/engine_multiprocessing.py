@@ -6,10 +6,11 @@ from dagster.core.execution_context import (
     SystemPipelineExecutionContext,
 )
 
-from .plan import ExecutionPlan
-from .simple_engine import start_inprocess_executor
+from dagster.core.execution_plan.plan import ExecutionPlan
 
 from .child_process_executor import ChildProcessCommand, execute_child_process_command
+from .engine_base import BaseEngine
+from .engine_inprocess import InProcessEngine
 
 
 class InProcessExecutorChildProcessCommand(ChildProcessCommand):
@@ -32,11 +33,8 @@ class InProcessExecutorChildProcessCommand(ChildProcessCommand):
                 pipeline_context.pipeline_def, pipeline_context.environment_config
             )
 
-            for step_event in start_inprocess_executor(
-                pipeline_context,
-                execution_plan,
-                pipeline_context.intermediates_manager,
-                step_keys_to_execute=[self.step_key],
+            for step_event in InProcessEngine.execute(
+                pipeline_context, execution_plan, step_keys_to_execute=[self.step_key]
             ):
                 yield step_event
 
@@ -83,43 +81,45 @@ def bounded_parallel_executor(step_contexts, limit):
             del active_iters[key]
 
 
-def multiprocess_execute_plan(pipeline_context, execution_plan, step_keys_to_execute=None):
-    check.inst_param(pipeline_context, 'pipeline_context', SystemPipelineExecutionContext)
-    check.inst_param(execution_plan, 'execution_plan', ExecutionPlan)
-    check.opt_list_param(step_keys_to_execute, 'step_keys_to_execute', of_type=str)
+class MultiprocessingEngine(BaseEngine):  # pylint: disable=no-init
+    @staticmethod
+    def execute(pipeline_context, execution_plan, step_keys_to_execute=None):
+        check.inst_param(pipeline_context, 'pipeline_context', SystemPipelineExecutionContext)
+        check.inst_param(execution_plan, 'execution_plan', ExecutionPlan)
+        check.opt_list_param(step_keys_to_execute, 'step_keys_to_execute', of_type=str)
 
-    step_levels = execution_plan.topological_step_levels()
+        step_levels = execution_plan.topological_step_levels()
 
-    intermediates_manager = pipeline_context.intermediates_manager
+        intermediates_manager = pipeline_context.intermediates_manager
 
-    limit = pipeline_context.executor_config.max_concurrent
+        limit = pipeline_context.executor_config.max_concurrent
 
-    step_key_set = None if step_keys_to_execute is None else set(step_keys_to_execute)
+        step_key_set = None if step_keys_to_execute is None else set(step_keys_to_execute)
 
-    # It would be good to implement a reference tracking algorithm here so we could
-    # garbage collection results that are no longer needed by any steps
-    # https://github.com/dagster-io/dagster/issues/811
+        # It would be good to implement a reference tracking algorithm here so we could
+        # garbage collection results that are no longer needed by any steps
+        # https://github.com/dagster-io/dagster/issues/811
 
-    for step_level in step_levels:
-        step_contexts_to_execute = []
-        for step in step_level:
-            if step_key_set and step.key not in step_key_set:
-                continue
+        for step_level in step_levels:
+            step_contexts_to_execute = []
+            for step in step_level:
+                if step_key_set and step.key not in step_key_set:
+                    continue
 
-            step_context = pipeline_context.for_step(step)
+                step_context = pipeline_context.for_step(step)
 
-            if not intermediates_manager.all_inputs_covered(step_context, step):
-                expected_outputs = [ni.prev_output_handle for ni in step.step_inputs]
+                if not intermediates_manager.all_inputs_covered(step_context, step):
+                    expected_outputs = [ni.prev_output_handle for ni in step.step_inputs]
 
-                step_context.log.error(
-                    (
-                        'Not all inputs covered for {step}. Not executing.'
-                        'Outputs need for inputs {expected_outputs}'
-                    ).format(expected_outputs=expected_outputs, step=step.key)
-                )
-                continue
+                    step_context.log.error(
+                        (
+                            'Not all inputs covered for {step}. Not executing.'
+                            'Outputs need for inputs {expected_outputs}'
+                        ).format(expected_outputs=expected_outputs, step=step.key)
+                    )
+                    continue
 
-            step_contexts_to_execute.append(step_context)
+                step_contexts_to_execute.append(step_context)
 
-        for step_event in bounded_parallel_executor(step_contexts_to_execute, limit):
-            yield step_event
+            for step_event in bounded_parallel_executor(step_contexts_to_execute, limit):
+                yield step_event

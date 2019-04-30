@@ -58,8 +58,8 @@ from .events.logging import construct_event_logger
 
 from .execution_plan.plan import ExecutionPlan
 from .execution_plan.objects import StepKind
-from .execution_plan.multiprocessing_engine import multiprocess_execute_plan
-from .execution_plan.simple_engine import start_inprocess_executor
+from .engine.engine_multiprocessing import MultiprocessingEngine
+from .engine.engine_inprocess import InProcessEngine
 
 from .init_context import InitContext, InitResourceContext
 
@@ -825,22 +825,20 @@ def invoke_executor_on_plan(pipeline_context, execution_plan, step_keys_to_execu
             if not execution_plan.has_step(step_key):
                 raise DagsterExecutionStepNotFoundError(step_key=step_key)
 
-    if isinstance(pipeline_context.executor_config, InProcessExecutorConfig):
-        step_events_gen = start_inprocess_executor(
-            pipeline_context,
-            execution_plan,
-            pipeline_context.intermediates_manager,
-            step_keys_to_execute,
-        )
-    elif isinstance(pipeline_context.executor_config, MultiprocessExecutorConfig):
-        step_events_gen = multiprocess_execute_plan(
-            pipeline_context, execution_plan, step_keys_to_execute
-        )
-    else:
-        check.failed('Unsupported config {}'.format(pipeline_context.executor_config))
+    # Toggle engine based on executor config supplied by the pipeline context
+    def get_engine_for_config(cfg):
+        if isinstance(cfg, InProcessExecutorConfig):
+            return InProcessEngine
+        elif isinstance(cfg, MultiprocessExecutorConfig):
+            return MultiprocessingEngine
+        else:
+            check.failed('Unsupported config {}'.format(cfg))
 
-    for step_event in step_events_gen:
-        yield step_event
+    # Engine execution returns a generator of yielded events, so returning here means this function
+    # also returns a generator
+    return get_engine_for_config(pipeline_context.executor_config).execute(
+        pipeline_context, execution_plan, step_keys_to_execute
+    )
 
 
 def _check_reexecution_config(pipeline_context, execution_plan, run_config):

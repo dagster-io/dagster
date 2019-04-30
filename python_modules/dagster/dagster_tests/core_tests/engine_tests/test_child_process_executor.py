@@ -1,7 +1,8 @@
 import os
 import time
 import pytest
-from dagster.core.execution_plan.child_process_executor import (
+
+from dagster.core.engine.child_process_executor import (
     ChildProcessCommand,
     execute_child_process_command,
     ChildProcessStartEvent,
