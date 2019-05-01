@@ -12,9 +12,122 @@ export interface PipelineRunRootQuery_pipelineRunOrError_PipelineRunNotFoundErro
   __typename: "PipelineRunNotFoundError";
 }
 
+export interface PipelineRunRootQuery_pipelineRunOrError_PipelineRun_pipeline_solids_definition_metadata {
+  __typename: "MetadataItemDefinition";
+  key: string;
+  value: string;
+}
+
+export interface PipelineRunRootQuery_pipelineRunOrError_PipelineRun_pipeline_solids_definition_configDefinition_configType {
+  __typename: "EnumConfigType" | "CompositeConfigType" | "RegularConfigType" | "ListConfigType" | "NullableConfigType";
+  name: string | null;
+  description: string | null;
+}
+
+export interface PipelineRunRootQuery_pipelineRunOrError_PipelineRun_pipeline_solids_definition_configDefinition {
+  __typename: "ConfigTypeField";
+  configType: PipelineRunRootQuery_pipelineRunOrError_PipelineRun_pipeline_solids_definition_configDefinition_configType;
+}
+
+export interface PipelineRunRootQuery_pipelineRunOrError_PipelineRun_pipeline_solids_definition {
+  __typename: "SolidDefinition";
+  metadata: PipelineRunRootQuery_pipelineRunOrError_PipelineRun_pipeline_solids_definition_metadata[];
+  configDefinition: PipelineRunRootQuery_pipelineRunOrError_PipelineRun_pipeline_solids_definition_configDefinition | null;
+}
+
+export interface PipelineRunRootQuery_pipelineRunOrError_PipelineRun_pipeline_solids_inputs_definition_type {
+  __typename: "RegularRuntimeType" | "ListRuntimeType" | "NullableRuntimeType";
+  displayName: string;
+  isNothing: boolean;
+}
+
+export interface PipelineRunRootQuery_pipelineRunOrError_PipelineRun_pipeline_solids_inputs_definition {
+  __typename: "InputDefinition";
+  name: string;
+  type: PipelineRunRootQuery_pipelineRunOrError_PipelineRun_pipeline_solids_inputs_definition_type;
+}
+
+export interface PipelineRunRootQuery_pipelineRunOrError_PipelineRun_pipeline_solids_inputs_dependsOn_definition_type {
+  __typename: "RegularRuntimeType" | "ListRuntimeType" | "NullableRuntimeType";
+  displayName: string;
+}
+
+export interface PipelineRunRootQuery_pipelineRunOrError_PipelineRun_pipeline_solids_inputs_dependsOn_definition {
+  __typename: "OutputDefinition";
+  name: string;
+  type: PipelineRunRootQuery_pipelineRunOrError_PipelineRun_pipeline_solids_inputs_dependsOn_definition_type;
+}
+
+export interface PipelineRunRootQuery_pipelineRunOrError_PipelineRun_pipeline_solids_inputs_dependsOn_solid {
+  __typename: "Solid";
+  name: string;
+}
+
+export interface PipelineRunRootQuery_pipelineRunOrError_PipelineRun_pipeline_solids_inputs_dependsOn {
+  __typename: "Output";
+  definition: PipelineRunRootQuery_pipelineRunOrError_PipelineRun_pipeline_solids_inputs_dependsOn_definition;
+  solid: PipelineRunRootQuery_pipelineRunOrError_PipelineRun_pipeline_solids_inputs_dependsOn_solid;
+}
+
+export interface PipelineRunRootQuery_pipelineRunOrError_PipelineRun_pipeline_solids_inputs {
+  __typename: "Input";
+  definition: PipelineRunRootQuery_pipelineRunOrError_PipelineRun_pipeline_solids_inputs_definition;
+  dependsOn: PipelineRunRootQuery_pipelineRunOrError_PipelineRun_pipeline_solids_inputs_dependsOn | null;
+}
+
+export interface PipelineRunRootQuery_pipelineRunOrError_PipelineRun_pipeline_solids_outputs_definition_type {
+  __typename: "RegularRuntimeType" | "ListRuntimeType" | "NullableRuntimeType";
+  displayName: string;
+  isNothing: boolean;
+}
+
+export interface PipelineRunRootQuery_pipelineRunOrError_PipelineRun_pipeline_solids_outputs_definition_expectations {
+  __typename: "Expectation";
+  name: string;
+  description: string | null;
+}
+
+export interface PipelineRunRootQuery_pipelineRunOrError_PipelineRun_pipeline_solids_outputs_definition {
+  __typename: "OutputDefinition";
+  name: string;
+  type: PipelineRunRootQuery_pipelineRunOrError_PipelineRun_pipeline_solids_outputs_definition_type;
+  expectations: PipelineRunRootQuery_pipelineRunOrError_PipelineRun_pipeline_solids_outputs_definition_expectations[];
+}
+
+export interface PipelineRunRootQuery_pipelineRunOrError_PipelineRun_pipeline_solids_outputs_dependedBy_solid {
+  __typename: "Solid";
+  name: string;
+}
+
+export interface PipelineRunRootQuery_pipelineRunOrError_PipelineRun_pipeline_solids_outputs_dependedBy_definition_type {
+  __typename: "RegularRuntimeType" | "ListRuntimeType" | "NullableRuntimeType";
+  displayName: string;
+}
+
+export interface PipelineRunRootQuery_pipelineRunOrError_PipelineRun_pipeline_solids_outputs_dependedBy_definition {
+  __typename: "InputDefinition";
+  name: string;
+  type: PipelineRunRootQuery_pipelineRunOrError_PipelineRun_pipeline_solids_outputs_dependedBy_definition_type;
+}
+
+export interface PipelineRunRootQuery_pipelineRunOrError_PipelineRun_pipeline_solids_outputs_dependedBy {
+  __typename: "Input";
+  solid: PipelineRunRootQuery_pipelineRunOrError_PipelineRun_pipeline_solids_outputs_dependedBy_solid;
+  definition: PipelineRunRootQuery_pipelineRunOrError_PipelineRun_pipeline_solids_outputs_dependedBy_definition;
+}
+
+export interface PipelineRunRootQuery_pipelineRunOrError_PipelineRun_pipeline_solids_outputs {
+  __typename: "Output";
+  definition: PipelineRunRootQuery_pipelineRunOrError_PipelineRun_pipeline_solids_outputs_definition;
+  dependedBy: PipelineRunRootQuery_pipelineRunOrError_PipelineRun_pipeline_solids_outputs_dependedBy[];
+}
+
 export interface PipelineRunRootQuery_pipelineRunOrError_PipelineRun_pipeline_solids {
   __typename: "Solid";
   name: string;
+  definition: PipelineRunRootQuery_pipelineRunOrError_PipelineRun_pipeline_solids_definition;
+  inputs: PipelineRunRootQuery_pipelineRunOrError_PipelineRun_pipeline_solids_inputs[];
+  outputs: PipelineRunRootQuery_pipelineRunOrError_PipelineRun_pipeline_solids_outputs[];
 }
 
 export interface PipelineRunRootQuery_pipelineRunOrError_PipelineRun_pipeline {
@@ -172,6 +285,8 @@ export interface PipelineRunRootQuery_pipelineRunOrError_PipelineRun {
   pipeline: PipelineRunRootQuery_pipelineRunOrError_PipelineRun_pipeline;
   logs: PipelineRunRootQuery_pipelineRunOrError_PipelineRun_logs;
   config: string;
+  solidSubset: string[] | null;
+  startedAt: string;
   executionPlan: PipelineRunRootQuery_pipelineRunOrError_PipelineRun_executionPlan;
 }
 

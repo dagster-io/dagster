@@ -26,6 +26,8 @@ class DauphinPipelineRun(dauphin.ObjectType):
     logs = dauphin.NonNull('LogMessageConnection')
     executionPlan = dauphin.NonNull('ExecutionPlan')
     config = dauphin.NonNull(dauphin.String)
+    started_at = dauphin.NonNull(dauphin.String)
+    solid_subset = dauphin.List(dauphin.NonNull(dauphin.String))
 
     def __init__(self, pipeline_run):
         super(DauphinPipelineRun, self).__init__(
@@ -48,6 +50,11 @@ class DauphinPipelineRun(dauphin.ObjectType):
     def resolve_config(self, _graphene_info):
         return yaml.dump(self._pipeline_run.config, default_flow_style=False)
 
+    def resolve_started_at(self, _): 
+        return self._pipeline_run._started_at.isoformat()
+
+    def resolve_solid_subset(self, _):
+        return self._pipeline_run.selector.solid_subset
 
 class DauphinLogLevel(dauphin.Enum):
     class Meta:

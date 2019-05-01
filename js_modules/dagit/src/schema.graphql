@@ -481,6 +481,8 @@ type PipelineRun {
   logs: LogMessageConnection!
   executionPlan: ExecutionPlan!
   config: String!
+  startedAt: String!
+  solidSubset: [String!]
 }
 
 union PipelineRunEvent = LogMessageEvent | PipelineStartEvent | PipelineSuccessEvent | PipelineFailureEvent | PipelineInitFailureEvent | ExecutionStepStartEvent | ExecutionStepSuccessEvent | ExecutionStepOutputEvent | ExecutionStepFailureEvent | ExecutionStepSkippedEvent | PipelineProcessStartEvent | PipelineProcessStartedEvent | StepMaterializationEvent

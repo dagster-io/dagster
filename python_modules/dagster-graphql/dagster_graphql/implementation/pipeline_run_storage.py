@@ -1,5 +1,6 @@
 import os
 import time
+import datetime
 
 from collections import OrderedDict
 from enum import Enum
@@ -67,6 +68,7 @@ class PipelineRun(object):
         self._reexecution_config = check.opt_inst_param(
             reexecution_config, 'reexecution_config', ReexecutionConfig
         )
+        self._started_at = datetime.datetime.now()
         check.opt_list_param(step_keys_to_execute, 'step_keys_to_execute', of_type=str)
         self._step_keys_to_execute = step_keys_to_execute
 

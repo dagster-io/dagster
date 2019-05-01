@@ -8,9 +8,122 @@ import { PipelineRunStatus, LogLevel, StepKind } from "./../../types/globalTypes
 // GraphQL fragment: PipelineRunLogsUpdateFragment
 // ====================================================
 
+export interface PipelineRunLogsUpdateFragment_pipeline_solids_definition_metadata {
+  __typename: "MetadataItemDefinition";
+  key: string;
+  value: string;
+}
+
+export interface PipelineRunLogsUpdateFragment_pipeline_solids_definition_configDefinition_configType {
+  __typename: "EnumConfigType" | "CompositeConfigType" | "RegularConfigType" | "ListConfigType" | "NullableConfigType";
+  name: string | null;
+  description: string | null;
+}
+
+export interface PipelineRunLogsUpdateFragment_pipeline_solids_definition_configDefinition {
+  __typename: "ConfigTypeField";
+  configType: PipelineRunLogsUpdateFragment_pipeline_solids_definition_configDefinition_configType;
+}
+
+export interface PipelineRunLogsUpdateFragment_pipeline_solids_definition {
+  __typename: "SolidDefinition";
+  metadata: PipelineRunLogsUpdateFragment_pipeline_solids_definition_metadata[];
+  configDefinition: PipelineRunLogsUpdateFragment_pipeline_solids_definition_configDefinition | null;
+}
+
+export interface PipelineRunLogsUpdateFragment_pipeline_solids_inputs_definition_type {
+  __typename: "RegularRuntimeType" | "ListRuntimeType" | "NullableRuntimeType";
+  displayName: string;
+  isNothing: boolean;
+}
+
+export interface PipelineRunLogsUpdateFragment_pipeline_solids_inputs_definition {
+  __typename: "InputDefinition";
+  name: string;
+  type: PipelineRunLogsUpdateFragment_pipeline_solids_inputs_definition_type;
+}
+
+export interface PipelineRunLogsUpdateFragment_pipeline_solids_inputs_dependsOn_definition_type {
+  __typename: "RegularRuntimeType" | "ListRuntimeType" | "NullableRuntimeType";
+  displayName: string;
+}
+
+export interface PipelineRunLogsUpdateFragment_pipeline_solids_inputs_dependsOn_definition {
+  __typename: "OutputDefinition";
+  name: string;
+  type: PipelineRunLogsUpdateFragment_pipeline_solids_inputs_dependsOn_definition_type;
+}
+
+export interface PipelineRunLogsUpdateFragment_pipeline_solids_inputs_dependsOn_solid {
+  __typename: "Solid";
+  name: string;
+}
+
+export interface PipelineRunLogsUpdateFragment_pipeline_solids_inputs_dependsOn {
+  __typename: "Output";
+  definition: PipelineRunLogsUpdateFragment_pipeline_solids_inputs_dependsOn_definition;
+  solid: PipelineRunLogsUpdateFragment_pipeline_solids_inputs_dependsOn_solid;
+}
+
+export interface PipelineRunLogsUpdateFragment_pipeline_solids_inputs {
+  __typename: "Input";
+  definition: PipelineRunLogsUpdateFragment_pipeline_solids_inputs_definition;
+  dependsOn: PipelineRunLogsUpdateFragment_pipeline_solids_inputs_dependsOn | null;
+}
+
+export interface PipelineRunLogsUpdateFragment_pipeline_solids_outputs_definition_type {
+  __typename: "RegularRuntimeType" | "ListRuntimeType" | "NullableRuntimeType";
+  displayName: string;
+  isNothing: boolean;
+}
+
+export interface PipelineRunLogsUpdateFragment_pipeline_solids_outputs_definition_expectations {
+  __typename: "Expectation";
+  name: string;
+  description: string | null;
+}
+
+export interface PipelineRunLogsUpdateFragment_pipeline_solids_outputs_definition {
+  __typename: "OutputDefinition";
+  name: string;
+  type: PipelineRunLogsUpdateFragment_pipeline_solids_outputs_definition_type;
+  expectations: PipelineRunLogsUpdateFragment_pipeline_solids_outputs_definition_expectations[];
+}
+
+export interface PipelineRunLogsUpdateFragment_pipeline_solids_outputs_dependedBy_solid {
+  __typename: "Solid";
+  name: string;
+}
+
+export interface PipelineRunLogsUpdateFragment_pipeline_solids_outputs_dependedBy_definition_type {
+  __typename: "RegularRuntimeType" | "ListRuntimeType" | "NullableRuntimeType";
+  displayName: string;
+}
+
+export interface PipelineRunLogsUpdateFragment_pipeline_solids_outputs_dependedBy_definition {
+  __typename: "InputDefinition";
+  name: string;
+  type: PipelineRunLogsUpdateFragment_pipeline_solids_outputs_dependedBy_definition_type;
+}
+
+export interface PipelineRunLogsUpdateFragment_pipeline_solids_outputs_dependedBy {
+  __typename: "Input";
+  solid: PipelineRunLogsUpdateFragment_pipeline_solids_outputs_dependedBy_solid;
+  definition: PipelineRunLogsUpdateFragment_pipeline_solids_outputs_dependedBy_definition;
+}
+
+export interface PipelineRunLogsUpdateFragment_pipeline_solids_outputs {
+  __typename: "Output";
+  definition: PipelineRunLogsUpdateFragment_pipeline_solids_outputs_definition;
+  dependedBy: PipelineRunLogsUpdateFragment_pipeline_solids_outputs_dependedBy[];
+}
+
 export interface PipelineRunLogsUpdateFragment_pipeline_solids {
   __typename: "Solid";
   name: string;
+  definition: PipelineRunLogsUpdateFragment_pipeline_solids_definition;
+  inputs: PipelineRunLogsUpdateFragment_pipeline_solids_inputs[];
+  outputs: PipelineRunLogsUpdateFragment_pipeline_solids_outputs[];
 }
 
 export interface PipelineRunLogsUpdateFragment_pipeline {
@@ -168,5 +281,7 @@ export interface PipelineRunLogsUpdateFragment {
   pipeline: PipelineRunLogsUpdateFragment_pipeline;
   logs: PipelineRunLogsUpdateFragment_logs;
   config: string;
+  solidSubset: string[] | null;
+  startedAt: string;
   executionPlan: PipelineRunLogsUpdateFragment_executionPlan;
 }

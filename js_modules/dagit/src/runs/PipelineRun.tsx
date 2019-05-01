@@ -28,6 +28,8 @@ import { ReexecutionConfig } from "src/types/globalTypes";
 import RunSubscriptionProvider from "./RunSubscriptionProvider";
 import { RunStatusToPageAttributes } from "./RunStatusToPageAttributes";
 import ApolloClient from "apollo-client";
+import RunMetadataBar from './RunMetadataBar'
+import SolidNode from '../graph/SolidNode'
 
 interface IPipelineRunProps {
   client: ApolloClient<any>;
@@ -52,10 +54,12 @@ export class PipelineRun extends React.Component<
 
         config
         runId
+        solidSubset
+        startedAt
         pipeline {
           name
           solids {
-            name
+            ...SolidNodeFragment
           }
         }
         logs {
@@ -99,6 +103,7 @@ export class PipelineRun extends React.Component<
       ${RunStatusToPageAttributes.fragments.RunStatusPipelineRunFragment}
       ${RunMetadataProvider.fragments.RunMetadataProviderMessageFragment}
       ${RunSubscriptionProvider.fragments.RunSubscriptionPipelineRunFragment}
+      ${SolidNode.fragments.SolidNodeFragment}
     `,
     PipelineRunPipelineRunEventFragment: gql`
       fragment PipelineRunPipelineRunEventFragment on PipelineRunEvent {
@@ -191,11 +196,13 @@ export class PipelineRun extends React.Component<
           <LogsFilterProvider filter={logsFilter} nodes={logs}>
             {({ filteredNodes, busy }) => (
               <>
+                {run && <RunMetadataBar run={run}/>}
                 <LogsToolbar
                   showSpinner={busy}
                   filter={logsFilter}
                   onSetFilter={filter => this.setState({ logsFilter: filter })}
                 />
+              
                 <LogsScrollingTable nodes={filteredNodes} />
               </>
             )}
