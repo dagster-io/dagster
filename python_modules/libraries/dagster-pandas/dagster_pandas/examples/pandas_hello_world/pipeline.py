@@ -48,7 +48,7 @@ def define_failure_pipeline():
     )
 
 
-def define_success_pipeline():
+def define_pandas_hello_world_pipeline():
     return PipelineDefinition(
         name='pandas_hello_world',
         solids=[sum_solid, sum_sq_solid],
