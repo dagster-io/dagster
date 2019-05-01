@@ -1,17 +1,12 @@
 import * as React from "react";
-import {
-  Colors,
-  Button,
-  ButtonGroup,
-  Dialog,
-} from "@blueprintjs/core";
-import { RunMetadataBar } from "./types/RunMetadataBar";
-import { PipelineRunFragment } from "./types/PipelineRunFragment";
 import styled from "styled-components";
 import { format as formatDate } from "date-fns";
+import { Colors, Button, ButtonGroup, Dialog } from "@blueprintjs/core";
+import { PipelineRunFragment } from "./types/PipelineRunFragment";
+
+import ConfigEditor from "../configeditor/ConfigEditor";
 import PipelineGraph from "../graph/PipelineGraph";
 import { getDagrePipelineLayout } from "../graph/getFullSolidLayout";
-import ConfigEditor from "../configeditor/ConfigEditor";
 
 type Props = {
   run: PipelineRunFragment;
@@ -23,23 +18,23 @@ enum ModalState {
   Closed
 }
 
-const RunMetadataBar: React.FC<Props> = props => {
+let getShortId = (run: { runId: string }) => run.runId.split("_");
+
+const RunMetadataBar: React.FC<Props> = ({ run }) => {
   const [modalState, setModalState] = React.useState(ModalState.Closed);
 
   return (
     <>
       <BarContainer>
         <RunInfo>
-          <RunName>Run {props.run.runId.split("-")[0]}</RunName>
-          <RunTime>
-            {formatDate(props.run.startedAt, "MM/DD/YY hh:mm:ss A")}
-          </RunTime>
+          <RunName>Run {getShortId(run)}</RunName>
+          <RunTime>{formatDate(run.startedAt, "MM/DD/YY hh:mm:ss A")}</RunTime>
         </RunInfo>
         <ButtonGroup>
           <Button small={true} onClick={() => setModalState(ModalState.Config)}>
             View Config
           </Button>
-          {props.run.solidSubset && (
+          {run.solidSubset && (
             <Button
               small={true}
               onClick={() => setModalState(ModalState.SolidSubset)}
@@ -60,15 +55,13 @@ const RunMetadataBar: React.FC<Props> = props => {
       >
         <ConfigEditor
           onConfigChange={() => {}}
-          configCode={props.run.config}
+          configCode={run.config}
           readOnly={true}
-          checkConfig={async () => {
-            return { isValid: true };
-          }}
+          checkConfig={async () => ({ isValid: true })}
         />
       </Dialog>
 
-      {props.run.solidSubset && (
+      {run.solidSubset && (
         <Dialog
           icon="info-sign"
           onClose={() => setModalState(ModalState.Closed)}
@@ -78,12 +71,10 @@ const RunMetadataBar: React.FC<Props> = props => {
           isOpen={modalState === ModalState.SolidSubset}
         >
           <PipelineGraph
-            pipeline={props.run.pipeline}
-            layout={getDagrePipelineLayout(props.run.pipeline)}
-            highlightedSolids={props.run.pipeline.solids.filter(
-              solid =>
-                props.run.solidSubset &&
-                props.run.solidSubset.includes(solid.name)
+            pipeline={run.pipeline}
+            layout={getDagrePipelineLayout(run.pipeline)}
+            highlightedSolids={run.pipeline.solids.filter(
+              solid => run.solidSubset && run.solidSubset.includes(solid.name)
             )}
           />
         </Dialog>
