@@ -18,7 +18,7 @@ enum ModalState {
   Closed
 }
 
-let getShortId = (run: { runId: string }) => run.runId.split("_");
+let getShortId = (run: { runId: string }) => run.runId.split("-")[0];
 
 const RunMetadataBar: React.FC<Props> = ({ run }) => {
   const [modalState, setModalState] = React.useState(ModalState.Closed);
