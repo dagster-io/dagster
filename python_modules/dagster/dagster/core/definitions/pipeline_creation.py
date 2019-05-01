@@ -14,63 +14,105 @@ from .dependency import DependencyStructure, SolidInstance, Solid
 from .solid import SolidDefinition
 
 
-class SolidAliasMapper:
-    def __init__(self, dependencies_dict):
-        aliased_dependencies_dict = {}
-        solid_uses = defaultdict(set)
-        alias_lookup = {}
+def _build_pipeline_solid_dict(solids, name_to_aliases, alias_to_solid_instance):
+    pipeline_solids = []
+    for solid_def in solids:
+        uses_of_solid = name_to_aliases.get(solid_def.name, {solid_def.name})
 
-        for solid_key, input_dep_dict in dependencies_dict.items():
-            if not isinstance(solid_key, SolidInstance):
-                solid_key = SolidInstance(solid_key)
+        for alias in uses_of_solid:
+            solid_instance = alias_to_solid_instance.get(alias)
+            resource_mapper_fn = (
+                solid_instance.resource_mapper_fn
+                if solid_instance
+                else SolidInstance.default_resource_mapper_fn
+            )
+            pipeline_solids.append(
+                Solid(name=alias, definition=solid_def, resource_mapper_fn=resource_mapper_fn)
+            )
 
-            if solid_key.alias:
-                key = solid_key.name
-                alias = solid_key.alias
-            else:
-                key = solid_key.name
-                alias = solid_key.name
-
-            solid_uses[key].add(alias)
-            aliased_dependencies_dict[alias] = input_dep_dict
-            alias_lookup[alias] = key
-
-            for dependency in input_dep_dict.values():
-                solid_uses[dependency.solid].add(dependency.solid)
-
-        self.solid_uses = solid_uses
-        self.aliased_dependencies_dict = aliased_dependencies_dict
-        self.alias_lookup = alias_lookup
-
-    def get_uses_of_solid(self, solid_def_name):
-        return self.solid_uses.get(solid_def_name)
+    return {ps.name: ps for ps in pipeline_solids}
 
 
 def create_execution_structure(solids, dependencies_dict):
-    check.list_param(solids, 'solids', of_type=SolidDefinition)
-    mapper = SolidAliasMapper(dependencies_dict)
+    '''This builder takes the dependencies dictionary specified during creation of the
+    PipelineDefinition object and builds (1) the execution structure and (2) a solid dependency
+    dictionary.
 
-    pipeline_solids = []
-    for solid_def in solids:
-        uses_of_solid = mapper.get_uses_of_solid(solid_def.name) or set([solid_def.name])
+    For example, for the following dependencies:
 
-        for alias in uses_of_solid:
-            pipeline_solids.append(Solid(name=alias, definition=solid_def))
+    dep_dict = {
+            SolidInstance('giver'): {},
+            SolidInstance('sleeper', alias='sleeper_1'): {
+                'units': DependencyDefinition('giver', 'out_1')
+            },
+            SolidInstance('sleeper', alias='sleeper_2'): {
+                'units': DependencyDefinition('giver', 'out_2')
+            },
+            SolidInstance('sleeper', alias='sleeper_3'): {
+                'units': DependencyDefinition('giver', 'out_3')
+            },
+            SolidInstance('sleeper', alias='sleeper_4'): {
+                'units': DependencyDefinition('giver', 'out_4')
+            },
+            SolidInstance('total'): {
+                'in_1': DependencyDefinition('sleeper_1', 'total'),
+                'in_2': DependencyDefinition('sleeper_2', 'total'),
+                'in_3': DependencyDefinition('sleeper_3', 'total'),
+                'in_4': DependencyDefinition('sleeper_4', 'total'),
+            },
+        },
 
-    pipeline_solid_dict = {ps.name: ps for ps in pipeline_solids}
+    This will create:
 
-    _validate_dependencies(
-        mapper.aliased_dependencies_dict, pipeline_solid_dict, mapper.alias_lookup
+    pipeline_solid_dict = {
+        'giver': <dagster.core.definitions.dependency.Solid object>,
+        'sleeper_1': <dagster.core.definitions.dependency.Solid object>,
+        'sleeper_2': <dagster.core.definitions.dependency.Solid object>,
+        'sleeper_3': <dagster.core.definitions.dependency.Solid object>,
+        'sleeper_4': <dagster.core.definitions.dependency.Solid object>,
+        'total': <dagster.core.definitions.dependency.Solid object>
+    }
+
+    as well as a dagster.core.definitions.dependency.DependencyStructure object.
+    '''
+    # Same as dep_dict but with SolidInstance replaced by alias string
+    aliased_dependencies_dict = {}
+
+    # Keep track of solid name -> all aliases used and alias -> name
+    name_to_aliases = defaultdict(set)
+    alias_to_solid_instance = {}
+    alias_to_name = {}
+
+    for solid_key, input_dep_dict in dependencies_dict.items():
+        # We allow deps of the form dependencies={'foo': DependencyDefition('bar')}
+        # Here, we replace 'foo' with SolidInstance('foo')
+        if not isinstance(solid_key, SolidInstance):
+            solid_key = SolidInstance(solid_key)
+
+        alias = solid_key.alias or solid_key.name
+
+        name_to_aliases[solid_key.name].add(alias)
+        alias_to_solid_instance[alias] = solid_key
+        alias_to_name[alias] = solid_key.name
+        aliased_dependencies_dict[alias] = input_dep_dict
+
+        for dependency in input_dep_dict.values():
+            name_to_aliases[dependency.solid].add(dependency.solid)
+
+    pipeline_solid_dict = _build_pipeline_solid_dict(
+        solids, name_to_aliases, alias_to_solid_instance
     )
 
+    _validate_dependencies(aliased_dependencies_dict, pipeline_solid_dict, alias_to_name)
+
     dependency_structure = DependencyStructure.from_definitions(
-        pipeline_solid_dict, mapper.aliased_dependencies_dict
+        pipeline_solid_dict, aliased_dependencies_dict
     )
 
     return dependency_structure, pipeline_solid_dict
 
 
-def _validate_dependencies(dependencies, solid_dict, alias_lookup):
+def _validate_dependencies(dependencies, solid_dict, alias_to_name):
     for from_solid, dep_by_input in dependencies.items():
         for from_input, dep in dep_by_input.items():
             if from_solid == dep.solid:
@@ -81,7 +123,7 @@ def _validate_dependencies(dependencies, solid_dict, alias_lookup):
                 )
 
             if not from_solid in solid_dict:
-                aliased_solid = alias_lookup.get(from_solid)
+                aliased_solid = alias_to_name.get(from_solid)
                 if aliased_solid == from_solid:
                     raise DagsterInvalidDefinitionError(
                         'Solid {solid} in dependency dictionary not found in solid list'.format(

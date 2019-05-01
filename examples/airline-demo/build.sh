@@ -11,6 +11,7 @@ function cleanup {
     rm -rf dagster-graphql
     rm -rf dagstermill
 }
+# ensure cleanup happens on error or normal exit
 trap cleanup EXIT
 
 cp -R ../../python_modules/dagster .

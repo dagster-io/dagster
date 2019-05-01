@@ -41,14 +41,19 @@ class LongRunningCommand(ChildProcessCommand):  # pylint: disable=no-init
 
 
 def test_basic_child_process_command():
-    events = list(execute_child_process_command(DoubleAStringChildProcessCommand('aa')))
+    events = list(
+        filter(lambda x: x, execute_child_process_command(DoubleAStringChildProcessCommand('aa')))
+    )
     assert events == ['aaaa']
 
 
 def test_basic_child_process_command_with_process_events():
     events = list(
-        execute_child_process_command(
-            DoubleAStringChildProcessCommand('aa'), return_process_events=True
+        filter(
+            lambda x: x,
+            execute_child_process_command(
+                DoubleAStringChildProcessCommand('aa'), return_process_events=True
+            ),
         )
     )
     assert len(events) == 3

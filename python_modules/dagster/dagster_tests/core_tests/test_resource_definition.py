@@ -19,7 +19,7 @@ def define_string_resource():
 def test_basic_resource():
     called = {}
 
-    @solid
+    @solid(resources={'a_string'})
     def a_solid(context):
         called['yup'] = True
         assert context.resources.a_string == 'foo'
@@ -43,7 +43,7 @@ def test_basic_resource():
 def test_yield_resource():
     called = {}
 
-    @solid
+    @solid(resources={'a_string'})
     def a_solid(context):
         called['yup'] = True
         assert context.resources.a_string == 'foo'
@@ -74,7 +74,7 @@ def test_yield_multiple_resources():
 
     saw = []
 
-    @solid
+    @solid(resources={'string_one', 'string_two'})
     def a_solid(context):
         called['yup'] = True
         assert context.resources.string_one == 'foo'
@@ -123,7 +123,7 @@ def test_resource_decorator():
 
     saw = []
 
-    @solid
+    @solid(resources={'string_one', 'string_two'})
     def a_solid(context):
         called['yup'] = True
         assert context.resources.string_one == 'foo'
@@ -174,7 +174,7 @@ def test_mixed_multiple_resources():
 
     saw = []
 
-    @solid
+    @solid(resources={'returned_string', 'yielded_string'})
     def a_solid(context):
         called['yup'] = True
         assert context.resources.returned_string == 'foo'
@@ -235,7 +235,7 @@ def test_mixed_multiple_resources():
 def test_none_resource():
     called = {}
 
-    @solid
+    @solid(resources={'test_null'})
     def solid_test_null(context):
         assert context.resources.test_null is None
         called['yup'] = True
@@ -259,7 +259,7 @@ def test_none_resource():
 def test_string_resource():
     called = {}
 
-    @solid
+    @solid(resources={'test_string'})
     def solid_test_string(context):
         assert context.resources.test_string == 'foo'
         called['yup'] = True
@@ -290,7 +290,7 @@ def test_no_config_resource_pass_none():
         called['resource'] = True
         return 'thing'
 
-    @solid
+    @solid(resources={'return_thing'})
     def check_thing(context):
         called['solid'] = True
         assert context.resources.return_thing == 'thing'
@@ -317,7 +317,7 @@ def test_no_config_resource_no_arg():
         called['resource'] = True
         return 'thing'
 
-    @solid
+    @solid(resources={'return_thing'})
     def check_thing(context):
         called['solid'] = True
         assert context.resources.return_thing == 'thing'
@@ -344,7 +344,7 @@ def test_no_config_resource_bare_no_arg():
         called['resource'] = True
         return 'thing'
 
-    @solid
+    @solid(resources={'return_thing'})
     def check_thing(context):
         called['solid'] = True
         assert context.resources.return_thing == 'thing'
@@ -370,7 +370,7 @@ def test_no_config_resource_definition():
         called['resource'] = True
         return 'thing'
 
-    @solid
+    @solid(resources={'return_thing'})
     def check_thing(context):
         called['solid'] = True
         assert context.resources.return_thing == 'thing'

@@ -4,6 +4,7 @@ import datetime
 import json
 import re
 import uuid
+import pytest
 
 from dagster.utils import script_relative_path
 
@@ -105,6 +106,7 @@ class TestExecuteDagContainerizedS3Storage(object):
     image = IMAGE
 
     # pylint: disable=redefined-outer-name
+    @pytest.mark.skip_on_circle  # issue 1323
     def test_execute_dag_containerized(self, dagster_airflow_docker_operator_pipeline):
         expected_results = {
             'multiply_the_word': '"barbar"',
@@ -143,6 +145,7 @@ class TestExecuteDagContainerizedFilesystemStorage(object):
     image = IMAGE
 
     # pylint: disable=redefined-outer-name
+    @pytest.mark.skip_on_circle  # issue 1323
     def test_execute_dag_containerized(self, dagster_airflow_docker_operator_pipeline):
         expected_results = {
             'multiply_the_word': '"barbar"',

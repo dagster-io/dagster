@@ -93,7 +93,12 @@ def create_root_solid(name):
 
 
 def _do_construct(solids, dependencies):
-    solids = {s.name: Solid(name=s.name, definition=s) for s in solids}
+    solids = {
+        s.name: Solid(
+            name=s.name, definition=s, resource_mapper_fn=SolidInstance.default_resource_mapper_fn
+        )
+        for s in solids
+    }
     dependency_structure = DependencyStructure.from_definitions(solids, dependencies)
     return _create_adjacency_lists(list(solids.values()), dependency_structure)
 

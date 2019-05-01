@@ -264,6 +264,16 @@ def list_param(obj_list, param_name, of_type=None):
     return _check_list_items(obj_list, of_type)
 
 
+def set_param(obj_set, param_name, of_type=None):
+    if not isinstance(obj_set, set):
+        raise_with_traceback(_param_type_mismatch_exception(obj_set, set, param_name))
+
+    if not of_type:
+        return obj_set
+
+    return _check_set_items(obj_set, of_type)
+
+
 def tuple_param(obj, param_name):
     if not isinstance(obj, tuple):
         raise_with_traceback(_param_type_mismatch_exception(obj, tuple, param_name))
@@ -292,6 +302,22 @@ def _check_list_items(obj_list, of_type):
     return obj_list
 
 
+def _check_set_items(obj_set, of_type):
+    if of_type is str:
+        of_type = string_types
+
+    for obj in obj_set:
+
+        if not isinstance(obj, of_type):
+            raise_with_traceback(
+                CheckError(
+                    'Member of set mismatches type. Expected {of_type}. Got {obj_repr} of type '
+                    '{obj_type}.'.format(of_type=of_type, obj_repr=repr(obj), obj_type=type(obj))
+                )
+            )
+    return obj_set
+
+
 def opt_list_param(obj_list, param_name, of_type=None):
     '''Ensures argument obj_list is a list or None; in the latter case, instantiates an empty list
     and returns it.
@@ -307,6 +333,23 @@ def opt_list_param(obj_list, param_name, of_type=None):
         return obj_list
 
     return _check_list_items(obj_list, of_type)
+
+
+def opt_set_param(obj_set, param_name, of_type=None):
+    '''Ensures argument obj_set is a set or None; in the latter case, instantiates an empty set
+    and returns it.
+
+    If the of_type argument is provided, also ensures that list items conform to the type specified
+    by of_type.
+    '''
+    if obj_set is not None and not isinstance(obj_set, set):
+        raise_with_traceback(_param_type_mismatch_exception(obj_set, set, param_name))
+    if not obj_set:
+        return set()
+    if not of_type:
+        return obj_set
+
+    return _check_set_items(obj_set, of_type)
 
 
 def opt_nullable_list_param(obj_list, param_name, of_type=None):

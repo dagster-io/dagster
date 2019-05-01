@@ -19,10 +19,7 @@ from dagster import (
 )
 
 
-@lambda_solid(
-    inputs=[InputDefinition('units', List(Int))],
-    output=OutputDefinition(Int, 'total'),
-)
+@lambda_solid(inputs=[InputDefinition('units', List(Int))], output=OutputDefinition(Int, 'total'))
 def sleeper(units):
     tot = 0
     for sec in units:
@@ -33,9 +30,7 @@ def sleeper(units):
 
 
 @solid(
-    config_field=Field(
-        List(Int), is_optional=True, default_value=[1, 1, 1, 1]
-    ),
+    config_field=Field(List(Int), is_optional=True, default_value=[1, 1, 1, 1]),
     outputs=[
         OutputDefinition(List(Int), 'out_1'),
         OutputDefinition(List(Int), 'out_2'),
@@ -106,7 +101,4 @@ if __name__ == '__main__':
         ),
     )
 
-    print(
-        'Total Sleep Time: ',
-        result.result_for_solid('total').transformed_value(),
-    )
+    print('Total Sleep Time: ', result.result_for_solid('total').transformed_value())
