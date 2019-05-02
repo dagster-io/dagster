@@ -30,7 +30,7 @@ from dagster.core.intermediates_manager import IntermediatesManager
 
 from dagster.utils.error import serializable_error_info_from_exc_info
 
-from .objects import (
+from dagster.core.execution_plan.objects import (
     ExecutionStep,
     StepOutputHandle,
     StepOutputValue,
@@ -39,83 +39,86 @@ from .objects import (
     StepSuccessData,
 )
 
-from .plan import ExecutionPlan
+from dagster.core.execution_plan.plan import ExecutionPlan
+
+from .engine_base import BaseEngine
 
 
-def start_inprocess_executor(
-    pipeline_context, execution_plan, intermediates_manager, step_keys_to_execute=None
-):
-    check.inst_param(pipeline_context, 'pipeline_context', SystemPipelineExecutionContext)
-    check.inst_param(execution_plan, 'execution_plan', ExecutionPlan)
-    check.inst_param(intermediates_manager, 'intermediates_manager', IntermediatesManager)
-    check.opt_list_param(step_keys_to_execute, 'step_keys_to_execute', of_type=str)
+class InProcessEngine(BaseEngine):  # pylint: disable=no-init
+    @staticmethod
+    def execute(pipeline_context, execution_plan, step_keys_to_execute=None):
+        check.inst_param(pipeline_context, 'pipeline_context', SystemPipelineExecutionContext)
+        check.inst_param(execution_plan, 'execution_plan', ExecutionPlan)
+        check.opt_list_param(step_keys_to_execute, 'step_keys_to_execute', of_type=str)
 
-    step_key_set = None if step_keys_to_execute is None else set(step_keys_to_execute)
+        step_key_set = None if step_keys_to_execute is None else set(step_keys_to_execute)
 
-    check.param_invariant(
-        isinstance(pipeline_context.executor_config, ExecutorConfig),
-        'pipeline_context',
-        'Expected executor_config to be ExecutorConfig got {}'.format(
-            pipeline_context.executor_config
-        ),
-    )
+        check.param_invariant(
+            isinstance(pipeline_context.executor_config, ExecutorConfig),
+            'pipeline_context',
+            'Expected executor_config to be ExecutorConfig got {}'.format(
+                pipeline_context.executor_config
+            ),
+        )
 
-    failed_or_skipped_steps = set()
+        failed_or_skipped_steps = set()
 
-    step_levels = execution_plan.topological_step_levels()
+        step_levels = execution_plan.topological_step_levels()
 
-    # It would be good to implement a reference tracking algorithm here so we could
-    # garbage collection results that are no longer needed by any steps
-    # https://github.com/dagster-io/dagster/issues/811
+        intermediates_manager = pipeline_context.intermediates_manager
 
-    for step_level in step_levels:
-        for step in step_level:
-            if step_key_set and step.key not in step_key_set:
-                continue
+        # It would be good to implement a reference tracking algorithm here so we could
+        # garbage collection results that are no longer needed by any steps
+        # https://github.com/dagster-io/dagster/issues/811
 
-            step_context = pipeline_context.for_step(step)
+        for step_level in step_levels:
+            for step in step_level:
+                if step_key_set and step.key not in step_key_set:
+                    continue
 
-            failed_inputs = [
-                step_input.prev_output_handle.step_key
-                for step_input in step.step_inputs
-                if step_input.prev_output_handle.step_key in failed_or_skipped_steps
-            ]
-            if failed_inputs:
-                step_context.log.info(
-                    'Dependencies for step {step} failed: {failed_inputs}. Not executing.'.format(
-                        step=step.key, failed_inputs=failed_inputs
+                step_context = pipeline_context.for_step(step)
+
+                failed_inputs = [
+                    step_input.prev_output_handle.step_key
+                    for step_input in step.step_inputs
+                    if step_input.prev_output_handle.step_key in failed_or_skipped_steps
+                ]
+                if failed_inputs:
+                    step_context.log.info(
+                        'Dependencies for step {step} failed: {failed_inputs}. Not executing.'.format(
+                            step=step.key, failed_inputs=failed_inputs
+                        )
                     )
-                )
-                failed_or_skipped_steps.add(step.key)
-                yield DagsterEvent.step_skipped_event(step_context)
-                continue
-
-            uncovered_inputs = intermediates_manager.uncovered_inputs(step_context, step)
-            if uncovered_inputs:
-                # In partial pipeline execution, we may end up here without having validated the
-                # missing dependent outputs were optional
-                _assert_missing_inputs_optional(uncovered_inputs, execution_plan, step.key)
-
-                step_context.log.info(
-                    (
-                        'Not all inputs covered for {step}. Not executing. Output missing for '
-                        'inputs: {uncovered_inputs}'
-                    ).format(uncovered_inputs=uncovered_inputs, step=step.key)
-                )
-                failed_or_skipped_steps.add(step.key)
-                yield DagsterEvent.step_skipped_event(step_context)
-                continue
-
-            input_values = _create_input_values(step_context, intermediates_manager)
-
-            for step_event in check.generator(
-                execute_step_in_memory(step_context, input_values, intermediates_manager)
-            ):
-                check.inst(step_event, DagsterEvent)
-                if step_event.is_step_failure:
                     failed_or_skipped_steps.add(step.key)
+                    yield DagsterEvent.step_skipped_event(step_context)
+                    continue
 
-                yield step_event
+                uncovered_inputs = intermediates_manager.uncovered_inputs(step_context, step)
+                if uncovered_inputs:
+                    # In partial pipeline execution, we may end up here without having validated the
+                    # missing dependent outputs were optional
+                    _assert_missing_inputs_optional(uncovered_inputs, execution_plan, step.key)
+
+                    step_context.log.info(
+                        (
+                            'Not all inputs covered for {step}. Not executing. Output missing for '
+                            'inputs: {uncovered_inputs}'
+                        ).format(uncovered_inputs=uncovered_inputs, step=step.key)
+                    )
+                    failed_or_skipped_steps.add(step.key)
+                    yield DagsterEvent.step_skipped_event(step_context)
+                    continue
+
+                input_values = _create_input_values(step_context, intermediates_manager)
+
+                for step_event in check.generator(
+                    execute_step_in_memory(step_context, input_values, intermediates_manager)
+                ):
+                    check.inst(step_event, DagsterEvent)
+                    if step_event.is_step_failure:
+                        failed_or_skipped_steps.add(step.key)
+
+                    yield step_event
 
 
 def _assert_missing_inputs_optional(uncovered_inputs, execution_plan, step_key):

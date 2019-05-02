@@ -1,7 +1,7 @@
 import pytest
 
 from dagster.core.execution import create_execution_plan, PipelineConfigEvaluationError
-from .test_multiprocessing import define_diamond_pipeline
+from ..engine_tests.test_multiprocessing import define_diamond_pipeline
 
 
 def test_topological_sort():
