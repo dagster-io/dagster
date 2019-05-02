@@ -14,7 +14,7 @@ from dagster import (
 from dagster.core.execution import execute_pipeline
 from dagster.core.object_store import FileSystemObjectStore
 
-from dagster_aws.s3_object_store import S3ObjectStore
+from dagster_aws.s3.object_store import S3ObjectStore
 
 from airline_demo.solids import ingest_csv_to_spark
 

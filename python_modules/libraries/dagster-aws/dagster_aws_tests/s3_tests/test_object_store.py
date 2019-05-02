@@ -36,7 +36,7 @@ from dagster.core.types.runtime import (
 
 from dagster.utils.test import yield_empty_pipeline_context
 
-from dagster_aws.s3_object_store import (
+from dagster_aws.s3.object_store import (
     get_s3_intermediate,
     has_s3_intermediate,
     rm_s3_intermediate,

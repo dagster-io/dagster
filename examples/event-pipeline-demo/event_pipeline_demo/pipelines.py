@@ -17,17 +17,11 @@ from dagster import (
 from dagster.utils import safe_isfile, mkdir_p
 
 from dagster_spark import SparkSolidDefinition
-from dagster_snowflake import (
-    SnowflakeSolidDefinition,
-    SnowflakeLoadSolidDefinition,
-)
-from dagster_aws import download_from_s3
+from dagster_snowflake import SnowflakeSolidDefinition, SnowflakeLoadSolidDefinition
+from dagster_aws.s3.solids import download_from_s3
 
 
-@lambda_solid(
-    inputs=[InputDefinition('gzip_file', String)],
-    output=OutputDefinition(List(String)),
-)
+@lambda_solid(inputs=[InputDefinition('gzip_file', String)], output=OutputDefinition(List(String)))
 def gunzipper(gzip_file):
     '''gunzips /path/to/foo.gz to /path/to/raw/2019/01/01/data.json
     '''
@@ -65,16 +59,10 @@ def define_event_ingest_pipeline():
         name='event_ingest_pipeline',
         solids=[download_from_s3, gunzipper, event_ingest, snowflake_load],
         dependencies={
-            SolidInstance('gunzipper'): {
-                'gzip_file': DependencyDefinition('download_from_s3')
-            },
-            SolidInstance('event_ingest'): {
-                'spark_inputs': DependencyDefinition('gunzipper')
-            },
+            SolidInstance('gunzipper'): {'gzip_file': DependencyDefinition('download_from_s3')},
+            SolidInstance('event_ingest'): {'spark_inputs': DependencyDefinition('gunzipper')},
             SolidInstance('snowflake_load'): {
-                SnowflakeSolidDefinition.INPUT_READY: DependencyDefinition(
-                    'event_ingest', 'paths'
-                )
+                SnowflakeSolidDefinition.INPUT_READY: DependencyDefinition('event_ingest', 'paths')
             },
         },
     )
