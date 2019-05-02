@@ -1769,6 +1769,10 @@ milestones in the framework's capability.
 
 0.4.1
 -----
+**API Changes**
+- Solids can now emit ``ExpectationResult`` in addition to ``Result`` and ``Materialization``.
+- ``DagsterEventType`` is now a top-level import.
+
 **Compatibility**
 - Dagster-airflow now works with Python 3.7 (since Airflow 1.10.3 now supports Python 3.7).
 
@@ -22026,6 +22030,9 @@ intend micro versions to reflect a regular release schedule and minor versions t
 milestones in the framework’s capability.</p>
 <div class="section" id="id1">
 <h2>0.4.1<a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h2>
+<p><strong>API Changes</strong>
+- Solids can now emit <code class="docutils literal notranslate"><span class="pre">ExpectationResult</span></code> in addition to <code class="docutils literal notranslate"><span class="pre">Result</span></code> and <code class="docutils literal notranslate"><span class="pre">Materialization</span></code>.
+- <code class="docutils literal notranslate"><span class="pre">DagsterEventType</span></code> is now a top-level import.</p>
 <p><strong>Compatibility</strong>
 - Dagster-airflow now works with Python 3.7 (since Airflow 1.10.3 now supports Python 3.7).</p>
 </div>

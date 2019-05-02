@@ -1,4 +1,5 @@
 from __future__ import absolute_import
+import json
 import yaml
 
 from dagster import check
@@ -231,6 +232,15 @@ class DauphinMaterialization(dauphin.ObjectType):
     path = dauphin.String()
 
 
+class DauphinExpectationResult(dauphin.ObjectType):
+    class Meta:
+        name = 'ExpectationResult'
+
+    success = dauphin.NonNull(dauphin.Boolean)
+    message = dauphin.String()
+    resultMetadataJsonString = dauphin.String()
+
+
 class DauphinExecutionStepOutputEvent(dauphin.ObjectType):
     class Meta:
         name = 'ExecutionStepOutputEvent'
@@ -265,6 +275,14 @@ class DauphinStepMaterializationEvent(dauphin.ObjectType):
     materialization = dauphin.NonNull(DauphinMaterialization)
 
 
+class DauphinStepExpectationResultEvent(dauphin.ObjectType):
+    class Meta:
+        name = 'StepExpectationResultEvent'
+        interfaces = (DauphinMessageEvent, DauphinStepEvent)
+
+    expectation_result = dauphin.NonNull(DauphinExpectationResult)
+
+
 # Should be a union of all possible events
 class DauphinPipelineRunEvent(dauphin.Union):
     class Meta:
@@ -283,6 +301,7 @@ class DauphinPipelineRunEvent(dauphin.Union):
             DauphinPipelineProcessStartEvent,
             DauphinPipelineProcessStartedEvent,
             DauphinStepMaterializationEvent,
+            DauphinStepExpectationResultEvent,
         )
 
     @staticmethod
@@ -326,12 +345,24 @@ class DauphinPipelineRunEvent(dauphin.Union):
                 return graphene_info.schema.type_named('ExecutionStepOutputEvent')(
                     output_name=output_data.output_name,
                     intermediate_materialization=output_data.intermediate_materialization,
-                    **basic_params
+                    # parens make black not put trailing commas, which in turn break py27
+                    **(basic_params)
                 )
             elif dagster_event.event_type == DagsterEventType.STEP_MATERIALIZATION:
                 materialization_data = dagster_event.step_materialization_data
                 return graphene_info.schema.type_named('StepMaterializationEvent')(
                     materialization=materialization_data.materialization, **basic_params
+                )
+            elif dagster_event.event_type == DagsterEventType.STEP_EXPECTATION_RESULT:
+                expectation_result = dagster_event.event_specific_data.expectation_result
+                return graphene_info.schema.type_named('StepExpectationResultEvent')(
+                    expectation_result=DauphinExpectationResult(
+                        success=expectation_result.success,
+                        message=expectation_result.message,
+                        resultMetadataJsonString=json.dumps(expectation_result.result_metadata),
+                    ),
+                    # parens make black not put trailing commas, which in turn break py27
+                    **(basic_params)
                 )
             elif dagster_event.event_type == DagsterEventType.STEP_FAILURE:
                 check.inst(dagster_event.step_failure_data, StepFailureData)
@@ -339,7 +370,8 @@ class DauphinPipelineRunEvent(dauphin.Union):
                     error=graphene_info.schema.type_named('PythonError')(
                         dagster_event.step_failure_data.error
                     ),
-                    **basic_params
+                    # parens make black not put trailing commas, which in turn break py27
+                    **(basic_params)
                 )
             elif dagster_event.event_type == DagsterEventType.PIPELINE_START:
                 return graphene_info.schema.type_named('PipelineStartEvent')(
@@ -368,12 +400,12 @@ class DauphinPipelineRunEvent(dauphin.Union):
                     error=graphene_info.schema.type_named('PythonError')(
                         dagster_event.pipeline_init_failure_data.error
                     ),
-                    **basic_params
+                    # parens make black not put trailing commas, which in turn break py27
+                    **(basic_params)
                 )
-
             else:
                 raise Exception(
-                    ('Unknown DAGSTER_EVENT type {inner_type} found in logs').format(
+                    'Unknown DAGSTER_EVENT type {inner_type} found in logs'.format(
                         inner_type=dagster_event.event_type
                     )
                 )

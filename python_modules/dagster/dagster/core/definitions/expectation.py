@@ -1,9 +1,10 @@
+from collections import namedtuple
 from dagster import check
 
 from .utils import check_valid_name
 
 
-class ExpectationResult(object):
+class ExpectationResult(namedtuple('_ExpectationResult', 'success message result_metadata')):
     ''' Result of an expectation callback.
 
     When Expectations are evaluated in the callback passed to ExpectationDefinitions,
@@ -13,13 +14,16 @@ class ExpectationResult(object):
 
         success (bool): Whether the expectation passed or not.
         message (str): Information about the computation. Typically only used in the failure case.
-        result_context (Any): Arbitrary information about the expectation result.
+        result_metadata (dict): Arbitrary information about the expectation result.
     '''
 
-    def __init__(self, success, message=None, result_context=None):
-        self.success = check.bool_param(success, 'success')
-        self.message = check.opt_str_param(message, 'message')
-        self.result_context = check.opt_dict_param(result_context, 'result_context')
+    def __new__(cls, success, message=None, result_metadata=None):
+        return super(ExpectationResult, cls).__new__(
+            cls,
+            success=check.bool_param(success, 'success'),
+            message=check.opt_str_param(message, 'message'),
+            result_metadata=check.opt_dict_param(result_metadata, 'result_metadata'),
+        )
 
 
 class ExpectationDefinition(object):

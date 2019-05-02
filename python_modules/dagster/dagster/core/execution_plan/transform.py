@@ -1,5 +1,11 @@
 from dagster import check
-from dagster.core.definitions import Result, Solid, Materialization, PipelineDefinition
+from dagster.core.definitions import (
+    Result,
+    Solid,
+    Materialization,
+    PipelineDefinition,
+    ExpectationResult,
+)
 from dagster.core.errors import DagsterInvariantViolationError
 from dagster.core.user_context import TransformExecutionContext
 from dagster.core.execution_context import SystemTransformExecutionContext
@@ -59,8 +65,9 @@ def _yield_transform_results(transform_context, inputs):
             )
             yield StepOutputValue(output_name=result.output_name, value=result.value)
 
-        elif isinstance(result, Materialization):
+        elif isinstance(result, (Materialization, ExpectationResult)):
             yield result
+
         else:
             raise DagsterInvariantViolationError(
                 (

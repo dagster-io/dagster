@@ -7,242 +7,6 @@ from snapshottest import Snapshot
 
 snapshots = Snapshot()
 
-snapshots['test_success_whole_execution_plan_with_in_memory_config 1'] = {
-    'executePlan': {
-        '__typename': 'ExecutePlanSuccess',
-        'hasFailures': False,
-        'pipeline': {
-            'name': 'pandas_hello_world'
-        },
-        'stepEvents': [
-            {
-                '__typename': 'ExecutionStepStartEvent',
-                'step': {
-                    'key': 'sum_solid.inputs.num.read',
-                    'metadata': [
-                    ]
-                }
-            },
-            {
-                '__typename': 'ExecutionStepOutputEvent',
-                'outputName': 'input_thunk_output',
-                'step': {
-                    'key': 'sum_solid.inputs.num.read',
-                    'metadata': [
-                    ]
-                },
-                'valueRepr': '''   num1  num2
-0     1     2
-1     3     4'''
-            },
-            {
-                '__typename': 'ExecutionStepSuccessEvent',
-                'step': {
-                    'key': 'sum_solid.inputs.num.read',
-                    'metadata': [
-                    ]
-                }
-            },
-            {
-                '__typename': 'ExecutionStepStartEvent',
-                'step': {
-                    'key': 'sum_solid.transform',
-                    'metadata': [
-                    ]
-                }
-            },
-            {
-                '__typename': 'ExecutionStepOutputEvent',
-                'outputName': 'result',
-                'step': {
-                    'key': 'sum_solid.transform',
-                    'metadata': [
-                    ]
-                },
-                'valueRepr': '''   num1  num2  sum
-0     1     2    3
-1     3     4    7'''
-            },
-            {
-                '__typename': 'ExecutionStepSuccessEvent',
-                'step': {
-                    'key': 'sum_solid.transform',
-                    'metadata': [
-                    ]
-                }
-            },
-            {
-                '__typename': 'ExecutionStepStartEvent',
-                'step': {
-                    'key': 'df_expectations_solid.output.sum_df.expectation.some_expectation',
-                    'metadata': [
-                    ]
-                }
-            },
-            {
-                '__typename': 'ExecutionStepOutputEvent',
-                'outputName': 'expectation_value',
-                'step': {
-                    'key': 'df_expectations_solid.output.sum_df.expectation.some_expectation',
-                    'metadata': [
-                    ]
-                },
-                'valueRepr': '''   num1  num2  sum
-0     1     2    3
-1     3     4    7'''
-            },
-            {
-                '__typename': 'ExecutionStepSuccessEvent',
-                'step': {
-                    'key': 'df_expectations_solid.output.sum_df.expectation.some_expectation',
-                    'metadata': [
-                    ]
-                }
-            },
-            {
-                '__typename': 'ExecutionStepStartEvent',
-                'step': {
-                    'key': 'sum_sq_solid.transform',
-                    'metadata': [
-                    ]
-                }
-            },
-            {
-                '__typename': 'ExecutionStepOutputEvent',
-                'outputName': 'result',
-                'step': {
-                    'key': 'sum_sq_solid.transform',
-                    'metadata': [
-                    ]
-                },
-                'valueRepr': '''   num1  num2  sum  sum_sq
-0     1     2    3       9
-1     3     4    7      49'''
-            },
-            {
-                '__typename': 'ExecutionStepSuccessEvent',
-                'step': {
-                    'key': 'sum_sq_solid.transform',
-                    'metadata': [
-                    ]
-                }
-            },
-            {
-                '__typename': 'ExecutionStepStartEvent',
-                'step': {
-                    'key': 'df_expectations_solid.output.sum_df.expectations.join',
-                    'metadata': [
-                    ]
-                }
-            },
-            {
-                '__typename': 'ExecutionStepOutputEvent',
-                'outputName': 'join_output',
-                'step': {
-                    'key': 'df_expectations_solid.output.sum_df.expectations.join',
-                    'metadata': [
-                    ]
-                },
-                'valueRepr': '''   num1  num2  sum
-0     1     2    3
-1     3     4    7'''
-            },
-            {
-                '__typename': 'ExecutionStepSuccessEvent',
-                'step': {
-                    'key': 'df_expectations_solid.output.sum_df.expectations.join',
-                    'metadata': [
-                    ]
-                }
-            },
-            {
-                '__typename': 'ExecutionStepStartEvent',
-                'step': {
-                    'key': 'df_expectations_solid.transform',
-                    'metadata': [
-                    ]
-                }
-            },
-            {
-                '__typename': 'ExecutionStepOutputEvent',
-                'outputName': 'result',
-                'step': {
-                    'key': 'df_expectations_solid.transform',
-                    'metadata': [
-                    ]
-                },
-                'valueRepr': '''   num1  num2  sum
-0     1     2    3
-1     3     4    7'''
-            },
-            {
-                '__typename': 'ExecutionStepSuccessEvent',
-                'step': {
-                    'key': 'df_expectations_solid.transform',
-                    'metadata': [
-                    ]
-                }
-            },
-            {
-                '__typename': 'ExecutionStepStartEvent',
-                'step': {
-                    'key': 'df_expectations_solid.output.result.expectation.other_expectation',
-                    'metadata': [
-                    ]
-                }
-            },
-            {
-                '__typename': 'ExecutionStepOutputEvent',
-                'outputName': 'expectation_value',
-                'step': {
-                    'key': 'df_expectations_solid.output.result.expectation.other_expectation',
-                    'metadata': [
-                    ]
-                },
-                'valueRepr': '''   num1  num2  sum
-0     1     2    3
-1     3     4    7'''
-            },
-            {
-                '__typename': 'ExecutionStepSuccessEvent',
-                'step': {
-                    'key': 'df_expectations_solid.output.result.expectation.other_expectation',
-                    'metadata': [
-                    ]
-                }
-            },
-            {
-                '__typename': 'ExecutionStepStartEvent',
-                'step': {
-                    'key': 'df_expectations_solid.output.result.expectations.join',
-                    'metadata': [
-                    ]
-                }
-            },
-            {
-                '__typename': 'ExecutionStepOutputEvent',
-                'outputName': 'join_output',
-                'step': {
-                    'key': 'df_expectations_solid.output.result.expectations.join',
-                    'metadata': [
-                    ]
-                },
-                'valueRepr': '''   num1  num2  sum
-0     1     2    3
-1     3     4    7'''
-            },
-            {
-                '__typename': 'ExecutionStepSuccessEvent',
-                'step': {
-                    'key': 'df_expectations_solid.output.result.expectations.join',
-                    'metadata': [
-                    ]
-                }
-            }
-        ]
-    }
-}
-
 snapshots['test_success_whole_execution_plan 1'] = {
     'executePlan': {
         '__typename': 'ExecutePlanSuccess',
@@ -310,34 +74,6 @@ snapshots['test_success_whole_execution_plan 1'] = {
             {
                 '__typename': 'ExecutionStepStartEvent',
                 'step': {
-                    'key': 'df_expectations_solid.output.sum_df.expectation.some_expectation',
-                    'metadata': [
-                    ]
-                }
-            },
-            {
-                '__typename': 'ExecutionStepOutputEvent',
-                'outputName': 'expectation_value',
-                'step': {
-                    'key': 'df_expectations_solid.output.sum_df.expectation.some_expectation',
-                    'metadata': [
-                    ]
-                },
-                'valueRepr': '''   num1  num2  sum
-0     1     2    3
-1     3     4    7'''
-            },
-            {
-                '__typename': 'ExecutionStepSuccessEvent',
-                'step': {
-                    'key': 'df_expectations_solid.output.sum_df.expectation.some_expectation',
-                    'metadata': [
-                    ]
-                }
-            },
-            {
-                '__typename': 'ExecutionStepStartEvent',
-                'step': {
                     'key': 'sum_sq_solid.transform',
                     'metadata': [
                     ]
@@ -359,118 +95,6 @@ snapshots['test_success_whole_execution_plan 1'] = {
                 '__typename': 'ExecutionStepSuccessEvent',
                 'step': {
                     'key': 'sum_sq_solid.transform',
-                    'metadata': [
-                    ]
-                }
-            },
-            {
-                '__typename': 'ExecutionStepStartEvent',
-                'step': {
-                    'key': 'df_expectations_solid.output.sum_df.expectations.join',
-                    'metadata': [
-                    ]
-                }
-            },
-            {
-                '__typename': 'ExecutionStepOutputEvent',
-                'outputName': 'join_output',
-                'step': {
-                    'key': 'df_expectations_solid.output.sum_df.expectations.join',
-                    'metadata': [
-                    ]
-                },
-                'valueRepr': '''   num1  num2  sum
-0     1     2    3
-1     3     4    7'''
-            },
-            {
-                '__typename': 'ExecutionStepSuccessEvent',
-                'step': {
-                    'key': 'df_expectations_solid.output.sum_df.expectations.join',
-                    'metadata': [
-                    ]
-                }
-            },
-            {
-                '__typename': 'ExecutionStepStartEvent',
-                'step': {
-                    'key': 'df_expectations_solid.transform',
-                    'metadata': [
-                    ]
-                }
-            },
-            {
-                '__typename': 'ExecutionStepOutputEvent',
-                'outputName': 'result',
-                'step': {
-                    'key': 'df_expectations_solid.transform',
-                    'metadata': [
-                    ]
-                },
-                'valueRepr': '''   num1  num2  sum
-0     1     2    3
-1     3     4    7'''
-            },
-            {
-                '__typename': 'ExecutionStepSuccessEvent',
-                'step': {
-                    'key': 'df_expectations_solid.transform',
-                    'metadata': [
-                    ]
-                }
-            },
-            {
-                '__typename': 'ExecutionStepStartEvent',
-                'step': {
-                    'key': 'df_expectations_solid.output.result.expectation.other_expectation',
-                    'metadata': [
-                    ]
-                }
-            },
-            {
-                '__typename': 'ExecutionStepOutputEvent',
-                'outputName': 'expectation_value',
-                'step': {
-                    'key': 'df_expectations_solid.output.result.expectation.other_expectation',
-                    'metadata': [
-                    ]
-                },
-                'valueRepr': '''   num1  num2  sum
-0     1     2    3
-1     3     4    7'''
-            },
-            {
-                '__typename': 'ExecutionStepSuccessEvent',
-                'step': {
-                    'key': 'df_expectations_solid.output.result.expectation.other_expectation',
-                    'metadata': [
-                    ]
-                }
-            },
-            {
-                '__typename': 'ExecutionStepStartEvent',
-                'step': {
-                    'key': 'df_expectations_solid.output.result.expectations.join',
-                    'metadata': [
-                    ]
-                }
-            },
-            {
-                '__typename': 'ExecutionStepOutputEvent',
-                'outputName': 'join_output',
-                'step': {
-                    'key': 'df_expectations_solid.output.result.expectations.join',
-                    'metadata': [
-                    ]
-                },
-                'valueRepr': '''   num1  num2  sum
-0     1     2    3
-1     3     4    7'''
-            },
-            {
-                '__typename': 'ExecutionStepSuccessEvent',
-                'step': {
-                    'key': 'df_expectations_solid.output.result.expectations.join',
                     'metadata': [
                     ]
                 }
@@ -546,16 +170,84 @@ snapshots['test_success_whole_execution_plan_with_filesystem_config 1'] = {
             {
                 '__typename': 'ExecutionStepStartEvent',
                 'step': {
-                    'key': 'df_expectations_solid.output.sum_df.expectation.some_expectation',
+                    'key': 'sum_sq_solid.transform',
                     'metadata': [
                     ]
                 }
             },
             {
                 '__typename': 'ExecutionStepOutputEvent',
-                'outputName': 'expectation_value',
+                'outputName': 'result',
                 'step': {
-                    'key': 'df_expectations_solid.output.sum_df.expectation.some_expectation',
+                    'key': 'sum_sq_solid.transform',
+                    'metadata': [
+                    ]
+                },
+                'valueRepr': '''   num1  num2  sum  sum_sq
+0     1     2    3       9
+1     3     4    7      49'''
+            },
+            {
+                '__typename': 'ExecutionStepSuccessEvent',
+                'step': {
+                    'key': 'sum_sq_solid.transform',
+                    'metadata': [
+                    ]
+                }
+            }
+        ]
+    }
+}
+
+snapshots['test_success_whole_execution_plan_with_in_memory_config 1'] = {
+    'executePlan': {
+        '__typename': 'ExecutePlanSuccess',
+        'hasFailures': False,
+        'pipeline': {
+            'name': 'pandas_hello_world'
+        },
+        'stepEvents': [
+            {
+                '__typename': 'ExecutionStepStartEvent',
+                'step': {
+                    'key': 'sum_solid.inputs.num.read',
+                    'metadata': [
+                    ]
+                }
+            },
+            {
+                '__typename': 'ExecutionStepOutputEvent',
+                'outputName': 'input_thunk_output',
+                'step': {
+                    'key': 'sum_solid.inputs.num.read',
+                    'metadata': [
+                    ]
+                },
+                'valueRepr': '''   num1  num2
+0     1     2
+1     3     4'''
+            },
+            {
+                '__typename': 'ExecutionStepSuccessEvent',
+                'step': {
+                    'key': 'sum_solid.inputs.num.read',
+                    'metadata': [
+                    ]
+                }
+            },
+            {
+                '__typename': 'ExecutionStepStartEvent',
+                'step': {
+                    'key': 'sum_solid.transform',
+                    'metadata': [
+                    ]
+                }
+            },
+            {
+                '__typename': 'ExecutionStepOutputEvent',
+                'outputName': 'result',
+                'step': {
+                    'key': 'sum_solid.transform',
                     'metadata': [
                     ]
                 },
@@ -566,7 +258,7 @@ snapshots['test_success_whole_execution_plan_with_filesystem_config 1'] = {
             {
                 '__typename': 'ExecutionStepSuccessEvent',
                 'step': {
-                    'key': 'df_expectations_solid.output.sum_df.expectation.some_expectation',
+                    'key': 'sum_solid.transform',
                     'metadata': [
                     ]
                 }
@@ -595,118 +287,6 @@ snapshots['test_success_whole_execution_plan_with_filesystem_config 1'] = {
                 '__typename': 'ExecutionStepSuccessEvent',
                 'step': {
                     'key': 'sum_sq_solid.transform',
-                    'metadata': [
-                    ]
-                }
-            },
-            {
-                '__typename': 'ExecutionStepStartEvent',
-                'step': {
-                    'key': 'df_expectations_solid.output.sum_df.expectations.join',
-                    'metadata': [
-                    ]
-                }
-            },
-            {
-                '__typename': 'ExecutionStepOutputEvent',
-                'outputName': 'join_output',
-                'step': {
-                    'key': 'df_expectations_solid.output.sum_df.expectations.join',
-                    'metadata': [
-                    ]
-                },
-                'valueRepr': '''   num1  num2  sum
-0     1     2    3
-1     3     4    7'''
-            },
-            {
-                '__typename': 'ExecutionStepSuccessEvent',
-                'step': {
-                    'key': 'df_expectations_solid.output.sum_df.expectations.join',
-                    'metadata': [
-                    ]
-                }
-            },
-            {
-                '__typename': 'ExecutionStepStartEvent',
-                'step': {
-                    'key': 'df_expectations_solid.transform',
-                    'metadata': [
-                    ]
-                }
-            },
-            {
-                '__typename': 'ExecutionStepOutputEvent',
-                'outputName': 'result',
-                'step': {
-                    'key': 'df_expectations_solid.transform',
-                    'metadata': [
-                    ]
-                },
-                'valueRepr': '''   num1  num2  sum
-0     1     2    3
-1     3     4    7'''
-            },
-            {
-                '__typename': 'ExecutionStepSuccessEvent',
-                'step': {
-                    'key': 'df_expectations_solid.transform',
-                    'metadata': [
-                    ]
-                }
-            },
-            {
-                '__typename': 'ExecutionStepStartEvent',
-                'step': {
-                    'key': 'df_expectations_solid.output.result.expectation.other_expectation',
-                    'metadata': [
-                    ]
-                }
-            },
-            {
-                '__typename': 'ExecutionStepOutputEvent',
-                'outputName': 'expectation_value',
-                'step': {
-                    'key': 'df_expectations_solid.output.result.expectation.other_expectation',
-                    'metadata': [
-                    ]
-                },
-                'valueRepr': '''   num1  num2  sum
-0     1     2    3
-1     3     4    7'''
-            },
-            {
-                '__typename': 'ExecutionStepSuccessEvent',
-                'step': {
-                    'key': 'df_expectations_solid.output.result.expectation.other_expectation',
-                    'metadata': [
-                    ]
-                }
-            },
-            {
-                '__typename': 'ExecutionStepStartEvent',
-                'step': {
-                    'key': 'df_expectations_solid.output.result.expectations.join',
-                    'metadata': [
-                    ]
-                }
-            },
-            {
-                '__typename': 'ExecutionStepOutputEvent',
-                'outputName': 'join_output',
-                'step': {
-                    'key': 'df_expectations_solid.output.result.expectations.join',
-                    'metadata': [
-                    ]
-                },
-                'valueRepr': '''   num1  num2  sum
-0     1     2    3
-1     3     4    7'''
-            },
-            {
-                '__typename': 'ExecutionStepSuccessEvent',
-                'step': {
-                    'key': 'df_expectations_solid.output.result.expectations.join',
                     'metadata': [
                     ]
                 }

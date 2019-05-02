@@ -221,13 +221,16 @@ def _execute_plan_chain_actual_execute_or_error(
     )
 
 
+# This should be consolidate with the logic in DauphinPipelineRunEvent::from_dagster_event
+# https://github.com/dagster-io/dagster/issues/1327
 def _create_dauphin_step_event(execution_plan, step_event):
     from dagster_graphql.schema.runs import (
-        DauphinExecutionStepOutputEvent,
-        DauphinExecutionStepSuccessEvent,
         DauphinExecutionStepFailureEvent,
-        DauphinExecutionStepStartEvent,
+        DauphinExecutionStepOutputEvent,
         DauphinExecutionStepSkippedEvent,
+        DauphinExecutionStepStartEvent,
+        DauphinExecutionStepSuccessEvent,
+        DauphinStepExpectationResultEvent,
         DauphinStepMaterializationEvent,
     )
 
@@ -255,8 +258,15 @@ def _create_dauphin_step_event(execution_plan, step_event):
         return DauphinExecutionStepSuccessEvent(step=DauphinExecutionStep(execution_plan, step))
     elif step_event.event_type == DagsterEventType.STEP_MATERIALIZATION:
         return DauphinStepMaterializationEvent(
+            # BUG BUG BUG
+            # See https://github.com/dagster-io/dagster/issues/1327
             file_name=step_event.step_materialization_data.name,
             file_location=step_event.step_materialization_data.path,
+            step=DauphinExecutionStep(execution_plan, step),
+        )
+    elif step_event.event_type == DagsterEventType.STEP_EXPECTATION_RESULT:
+        return DauphinStepExpectationResultEvent(
+            expectation_result=step_event.event_specific_data.expectation_result,
             step=DauphinExecutionStep(execution_plan, step),
         )
 

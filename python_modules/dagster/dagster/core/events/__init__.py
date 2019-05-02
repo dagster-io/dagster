@@ -3,7 +3,7 @@ from enum import Enum
 
 from dagster import check
 from dagster.utils.error import SerializableErrorInfo
-from dagster.core.definitions.materialization import Materialization
+from dagster.core.definitions import Materialization, ExpectationResult
 from dagster.core.log import DagsterLog
 
 
@@ -14,6 +14,7 @@ class DagsterEventType(Enum):
     STEP_SUCCESS = 'STEP_SUCCESS'
     STEP_SKIPPED = 'STEP_SKIPPED'
     STEP_MATERIALIZATION = 'STEP_MATERIALIZATION'
+    STEP_EXPECTATION_RESULT = 'STEP_EXPECTATION_RESULT'
 
     PIPELINE_INIT_FAILURE = 'PIPELINE_INIT_FAILURE'
 
@@ -32,6 +33,7 @@ STEP_EVENTS = {
     DagsterEventType.STEP_SUCCESS,
     DagsterEventType.STEP_SKIPPED,
     DagsterEventType.STEP_MATERIALIZATION,
+    DagsterEventType.STEP_EXPECTATION_RESULT,
 }
 
 FAILURE_EVENTS = {
@@ -94,7 +96,7 @@ class DagsterEvent(
         log_fn = step_context.log.error if event_type in FAILURE_EVENTS else step_context.log.info
 
         log_fn(
-            ('{event_type} for step {step_key}').format(
+            '{event_type} for step {step_key}'.format(
                 event_type=event_type, step_key=step_context.step.key
             ),
             dagster_event=event,
@@ -264,6 +266,15 @@ class DagsterEvent(
         )
 
     @staticmethod
+    def step_expectation_result(step_context, expectation_result):
+        check.inst_param(expectation_result, 'expectation_result', ExpectationResult)
+        return DagsterEvent.from_step(
+            event_type=DagsterEventType.STEP_EXPECTATION_RESULT,
+            step_context=step_context,
+            event_specific_data=StepExpectationResultData(expectation_result),
+        )
+
+    @staticmethod
     def pipeline_start(pipeline_context):
         return DagsterEvent.from_pipeline(DagsterEventType.PIPELINE_START, pipeline_context)
 
@@ -311,6 +322,10 @@ def get_step_output_event(events, step_key, output_name='result'):
 
 
 class StepMaterializationData(namedtuple('_StepMaterializationData', 'materialization')):
+    pass
+
+
+class StepExpectationResultData(namedtuple('_StepExpectationResultData', 'expectation_result')):
     pass
 
 

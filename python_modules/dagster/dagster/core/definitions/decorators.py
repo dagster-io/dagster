@@ -6,7 +6,14 @@ from dagster import check
 
 from dagster.core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
 
-from . import InputDefinition, OutputDefinition, Result, SolidDefinition
+from . import (
+    ExpectationResult,
+    InputDefinition,
+    Materialization,
+    OutputDefinition,
+    Result,
+    SolidDefinition,
+)
 
 if hasattr(inspect, 'signature'):
     funcsigs = inspect
@@ -331,6 +338,17 @@ def _create_solid_transform_wrapper(fn, input_defs, output_defs):
             for item in result:
                 yield item
         else:
+            if isinstance(result, (Materialization, ExpectationResult)):
+                raise DagsterInvariantViolationError(
+                    (
+                        'Error in solid {solid_name}: If you are returning a Materialization '
+                        'or an ExpectationResult from solid you must yield them to avoid '
+                        'ambiguity with an implied result from returning a value.'.format(
+                            solid_name=context.solid.name
+                        )
+                    )
+                )
+
             if isinstance(result, Result):
                 yield result
             elif isinstance(result, MultipleResults):
@@ -342,31 +360,34 @@ def _create_solid_transform_wrapper(fn, input_defs, output_defs):
                 if not output_defs:
                     raise DagsterInvariantViolationError(
                         (
-                            'Solid unexpectedly returned output {result} of type {type_}. Solid is '
-                            'explicitly defined to return no results.'
-                        ).format(result=result, type_=type(result))
+                            'Error in solid {solid_name}: Unexpectedly returned output {result} '
+                            'of type {type_}. Solid is explicitly defined to return no '
+                            'results.'
+                        ).format(solid_name=context.solid.name, result=result, type_=type(result))
                     )
-                else:
-                    raise DagsterInvariantViolationError(
-                        (
-                            'Solid unexpectedly returned output {result} of type {type_}. Should '
-                            'be a MultipleResults object, or a generator, containing or yielding '
-                            '{n_results} results: {{{expected_results}}}.'
-                        ).format(
-                            result=result,
-                            type_=type(result),
-                            n_results=len(output_defs),
-                            expected_results=', '.join(
-                                [
-                                    '\'{result_name}\': {runtime_type}'.format(
-                                        result_name=output_def.name,
-                                        runtime_type=output_def.runtime_type,
-                                    )
-                                    for output_def in output_defs
-                                ]
-                            ),
-                        )
+
+                raise DagsterInvariantViolationError(
+                    (
+                        'Error in solid {solid_name}: Solid unexpectedly returned '
+                        'output {result} of type {type_}. Should '
+                        'be a MultipleResults object, or a generator, containing or yielding '
+                        '{n_results} results: {{{expected_results}}}.'
+                    ).format(
+                        solid_name=context.solid.name,
+                        result=result,
+                        type_=type(result),
+                        n_results=len(output_defs),
+                        expected_results=', '.join(
+                            [
+                                '\'{result_name}\': {runtime_type}'.format(
+                                    result_name=output_def.name,
+                                    runtime_type=output_def.runtime_type,
+                                )
+                                for output_def in output_defs
+                            ]
+                        ),
                     )
+                )
 
     return transform
 
