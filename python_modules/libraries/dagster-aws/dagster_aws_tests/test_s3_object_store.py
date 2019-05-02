@@ -34,6 +34,8 @@ from dagster.core.types.runtime import (
     Bool as RuntimeBool,
 )
 
+from dagster.utils.test import yield_empty_pipeline_context
+
 from dagster_aws.s3_object_store import (
     get_s3_intermediate,
     has_s3_intermediate,
@@ -182,9 +184,7 @@ def test_s3_object_store_with_type_storage_plugin():
         types_to_register={RuntimeString.inst(): FancyStringS3TypeStoragePlugin},
     )
 
-    with yield_pipeline_execution_context(
-        PipelineDefinition([]), {}, RunConfig(run_id=run_id)
-    ) as context:
+    with yield_empty_pipeline_context(run_id=run_id) as context:
         try:
             object_store.set_value('hello', context, RuntimeString.inst(), ['obj_name'])
 
@@ -207,9 +207,7 @@ def test_s3_object_store_with_composite_type_storage_plugin():
         types_to_register={RuntimeString.inst(): FancyStringS3TypeStoragePlugin},
     )
 
-    with yield_pipeline_execution_context(
-        PipelineDefinition([]), {}, RunConfig(run_id=run_id)
-    ) as context:
+    with yield_empty_pipeline_context(run_id=run_id) as context:
         with pytest.raises(check.NotImplementedCheckError):
             object_store.set_value(
                 ['hello'], context, resolve_to_runtime_type(List(String)), ['obj_name']
@@ -222,9 +220,7 @@ def test_s3_object_store_composite_types_with_custom_serializer_for_inner_type()
     run_id = str(uuid.uuid4())
 
     object_store = S3ObjectStore(run_id=run_id, s3_bucket='dagster-airflow-scratch')
-    with yield_pipeline_execution_context(
-        PipelineDefinition([]), {}, RunConfig(run_id=run_id)
-    ) as context:
+    with yield_empty_pipeline_context(run_id=run_id) as context:
         try:
             object_store.set_object(
                 ['foo', 'bar'],
@@ -249,9 +245,7 @@ def test_s3_object_store_with_custom_serializer():
     # FIXME need a dedicated test bucket
     object_store = S3ObjectStore(run_id=run_id, s3_bucket='dagster-airflow-scratch')
 
-    with yield_pipeline_execution_context(
-        PipelineDefinition([]), {}, RunConfig(run_id=run_id)
-    ) as context:
+    with yield_empty_pipeline_context(run_id=run_id) as context:
         try:
             object_store.set_object('foo', context, LowercaseString.inst(), ['foo'])
 
@@ -279,9 +273,7 @@ def test_s3_object_store():
     object_store = S3ObjectStore(run_id=run_id, s3_bucket='dagster-airflow-scratch')
     assert object_store.root == '/'.join(['dagster', 'runs', run_id, 'files'])
 
-    with yield_pipeline_execution_context(
-        PipelineDefinition([]), {}, RunConfig(run_id=run_id)
-    ) as context:
+    with yield_empty_pipeline_context(run_id=run_id) as context:
         try:
             object_store.set_object(True, context, RuntimeBool.inst(), ['true'])
 

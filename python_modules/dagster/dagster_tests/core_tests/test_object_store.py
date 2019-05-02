@@ -5,21 +5,17 @@ import uuid
 
 import pytest
 
-from dagster import (
-    Bool as Bool_,
-    check,
-    List as List_,
-    String as String_,
-    Nullable as Nullable_,
-    PipelineDefinition,
-    RunConfig,
-    seven,
-)
-from dagster.core.execution import yield_pipeline_execution_context
+from dagster import check, String, Nullable, seven, List, Bool
 from dagster.core.types.marshal import SerializationStrategy
 from dagster.core.object_store import FileSystemObjectStore, TypeStoragePlugin
-from dagster.core.types.runtime import Bool, resolve_to_runtime_type, RuntimeType, String
+from dagster.core.types.runtime import (
+    Bool as RuntimeBool,
+    resolve_to_runtime_type,
+    RuntimeType,
+    String as RuntimeString,
+)
 from dagster.utils import mkdir_p
+from dagster.utils.test import yield_empty_pipeline_context
 
 
 class UppercaseSerializationStrategy(SerializationStrategy):  # pylint: disable=no-init
@@ -60,13 +56,11 @@ def test_file_system_object_store():
         seven.get_system_temp_directory(), 'dagster', 'runs', run_id, 'files'
     )
 
-    with yield_pipeline_execution_context(
-        PipelineDefinition([]), {}, RunConfig(run_id=run_id)
-    ) as context:
+    with yield_empty_pipeline_context(run_id=run_id) as context:
         try:
-            object_store.set_object(True, context, Bool.inst(), ['true'])
+            object_store.set_object(True, context, RuntimeBool.inst(), ['true'])
             assert object_store.has_object(context, ['true'])
-            assert object_store.get_object(context, Bool.inst(), ['true']) is True
+            assert object_store.get_object(context, RuntimeBool.inst(), ['true']) is True
             assert object_store.url_for_paths(['true']).startswith('file:///')
             assert object_store.rm_object(context, ['true']) is None
             assert object_store.rm_object(context, ['true']) is None
@@ -87,13 +81,11 @@ def test_file_system_object_store_with_base_dir():
         object_store = FileSystemObjectStore(run_id=run_id, base_dir=tempdir)
         assert object_store.root == os.path.join(tempdir, 'dagster', 'runs', run_id, 'files')
 
-        with yield_pipeline_execution_context(
-            PipelineDefinition([]), {}, RunConfig(run_id=run_id)
-        ) as context:
+        with yield_empty_pipeline_context(run_id=run_id) as context:
             try:
-                object_store.set_object(True, context, Bool.inst(), ['true'])
+                object_store.set_object(True, context, RuntimeBool.inst(), ['true'])
                 assert object_store.has_object(context, ['true'])
-                assert object_store.get_object(context, Bool.inst(), ['true']) is True
+                assert object_store.get_object(context, RuntimeBool.inst(), ['true']) is True
 
             finally:
                 try:
@@ -115,16 +107,14 @@ def test_file_system_object_store_composite_types():
         seven.get_system_temp_directory(), 'dagster', 'runs', run_id, 'files'
     )
 
-    with yield_pipeline_execution_context(
-        PipelineDefinition([]), {}, RunConfig(run_id=run_id)
-    ) as context:
+    with yield_empty_pipeline_context(run_id=run_id) as context:
         try:
             object_store.set_object(
-                [True, False], context, resolve_to_runtime_type(List_(Bool_)).inst(), ['bool']
+                [True, False], context, resolve_to_runtime_type(List(Bool)).inst(), ['bool']
             )
             assert object_store.has_object(context, ['bool'])
             assert object_store.get_object(
-                context, resolve_to_runtime_type(List_(Bool_)).inst(), ['bool']
+                context, resolve_to_runtime_type(List(Bool)).inst(), ['bool']
             ) == [True, False]
 
         finally:
@@ -139,9 +129,7 @@ def test_file_system_object_store_with_custom_serializer():
 
     object_store = FileSystemObjectStore(run_id=run_id)
 
-    with yield_pipeline_execution_context(
-        PipelineDefinition([]), {}, RunConfig(run_id=run_id)
-    ) as context:
+    with yield_empty_pipeline_context(run_id=run_id) as context:
         try:
             object_store.set_object('foo', context, LowercaseString.inst(), ['foo'])
 
@@ -165,19 +153,17 @@ def test_file_system_object_store_composite_types_with_custom_serializer_for_inn
         seven.get_system_temp_directory(), 'dagster', 'runs', run_id, 'files'
     )
 
-    with yield_pipeline_execution_context(
-        PipelineDefinition([]), {}, RunConfig(run_id=run_id)
-    ) as context:
+    with yield_empty_pipeline_context(run_id=run_id) as context:
         try:
             object_store.set_object(
                 ['foo', 'bar'],
                 context,
-                resolve_to_runtime_type(List_(LowercaseString)).inst(),
+                resolve_to_runtime_type(List(LowercaseString)).inst(),
                 ['list'],
             )
             assert object_store.has_object(context, ['list'])
             assert object_store.get_object(
-                context, resolve_to_runtime_type(List_(Bool_)).inst(), ['list']
+                context, resolve_to_runtime_type(List(Bool)).inst(), ['list']
             ) == ['foo', 'bar']
 
         finally:
@@ -192,17 +178,16 @@ def test_file_system_object_store_with_type_storage_plugin():
 
     # FIXME need a dedicated test bucket
     object_store = FileSystemObjectStore(
-        run_id=run_id, types_to_register={String.inst(): FancyStringFilesystemTypeStoragePlugin}
+        run_id=run_id,
+        types_to_register={RuntimeString.inst(): FancyStringFilesystemTypeStoragePlugin},
     )
 
-    with yield_pipeline_execution_context(
-        PipelineDefinition([]), {}, RunConfig(run_id=run_id)
-    ) as context:
+    with yield_empty_pipeline_context(run_id=run_id) as context:
         try:
-            object_store.set_value('hello', context, String.inst(), ['obj_name'])
+            object_store.set_value('hello', context, RuntimeString.inst(), ['obj_name'])
 
             assert object_store.has_object(context, ['obj_name'])
-            assert object_store.get_value(context, String.inst(), ['obj_name']) == 'hello'
+            assert object_store.get_value(context, RuntimeString.inst(), ['obj_name']) == 'hello'
 
         finally:
             object_store.rm_object(context, ['obj_name'])
@@ -213,37 +198,30 @@ def test_file_system_object_store_with_composite_type_storage_plugin():
 
     # FIXME need a dedicated test bucket
     object_store = FileSystemObjectStore(
-        run_id=run_id, types_to_register={String.inst(): FancyStringFilesystemTypeStoragePlugin}
+        run_id=run_id,
+        types_to_register={RuntimeString.inst(): FancyStringFilesystemTypeStoragePlugin},
     )
 
-    with yield_pipeline_execution_context(
-        PipelineDefinition([]), {}, RunConfig(run_id=run_id)
-    ) as context:
+    with yield_empty_pipeline_context(run_id=run_id) as context:
         with pytest.raises(check.NotImplementedCheckError):
             object_store.set_value(
-                ['hello'], context, resolve_to_runtime_type(List_(String_)), ['obj_name']
+                ['hello'], context, resolve_to_runtime_type(List(String)), ['obj_name']
             )
 
-    with yield_pipeline_execution_context(
-        PipelineDefinition([]), {}, RunConfig(run_id=run_id)
-    ) as context:
+    with yield_empty_pipeline_context(run_id=run_id) as context:
         with pytest.raises(check.NotImplementedCheckError):
             object_store.set_value(
-                ['hello'], context, resolve_to_runtime_type(Nullable_(String_)), ['obj_name']
+                ['hello'], context, resolve_to_runtime_type(Nullable(String)), ['obj_name']
             )
 
-    with yield_pipeline_execution_context(
-        PipelineDefinition([]), {}, RunConfig(run_id=run_id)
-    ) as context:
+    with yield_empty_pipeline_context(run_id=run_id) as context:
         with pytest.raises(check.NotImplementedCheckError):
             object_store.set_value(
-                ['hello'], context, resolve_to_runtime_type(List_(Nullable_(String_))), ['obj_name']
+                ['hello'], context, resolve_to_runtime_type(List(Nullable(String))), ['obj_name']
             )
 
-    with yield_pipeline_execution_context(
-        PipelineDefinition([]), {}, RunConfig(run_id=run_id)
-    ) as context:
+    with yield_empty_pipeline_context(run_id=run_id) as context:
         with pytest.raises(check.NotImplementedCheckError):
             object_store.set_value(
-                ['hello'], context, resolve_to_runtime_type(Nullable_(List_(String_))), ['obj_name']
+                ['hello'], context, resolve_to_runtime_type(Nullable(List(String))), ['obj_name']
             )
