@@ -45,7 +45,8 @@ class InitContext(namedtuple('_InitContext', 'context_config pipeline_def run_id
 
 class InitResourceContext(
     namedtuple(
-        'InitResourceContext', 'context_config resource_config pipeline_def resource_def run_id log'
+        'InitResourceContext',
+        'context_config resource_config pipeline_def resource_def run_id log_manager',
     )
 ):
     '''
@@ -57,16 +58,19 @@ class InitResourceContext(
         context_config (Any):
             The configuration data provided by the environment config. The schema for this
             data is defined by ``config_field`` on the :py:class:`PipelineContextDefinition`
-        resource_config (Any): 
+        resource_config (Any):
             The configuration data provided by the environment config. The schema for this
             data is defined by ``config_field`` on the :py:class:`ResourceDefinition`
         pipeline_def (PipelineDefinition): The pipeline definition currently being executed.
-        resource_def (ResourceDefinition): The resource definition for the resource being constructed.
+        resource_def (ResourceDefinition): The resource definition for the resource being
+            constructed.
         run_id (str): The ID for this run of the pipeline.
-        log (DagsterLogManager): THe log manager for this run of the pipeline
+        log_manager (DagsterLogManager): The log manager for this run of the pipeline
     '''
 
-    def __new__(cls, context_config, resource_config, pipeline_def, resource_def, run_id, log=None):
+    def __new__(
+        cls, context_config, resource_config, pipeline_def, resource_def, run_id, log_manager=None
+    ):
         return super(InitResourceContext, cls).__new__(
             cls,
             context_config,
@@ -74,8 +78,12 @@ class InitResourceContext(
             check.inst_param(pipeline_def, 'pipeline_def', PipelineDefinition),
             check.inst_param(resource_def, 'resource_def', ResourceDefinition),
             check.str_param(run_id, 'run_id'),
-            check.opt_inst_param(log, 'log', DagsterLogManager),
+            check.opt_inst_param(log_manager, 'log_manager', DagsterLogManager),
         )
+
+    @property
+    def log(self):
+        return self.log_manager
 
     @property
     def config(self):
