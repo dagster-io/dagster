@@ -13,15 +13,9 @@ export interface RunPreviewExecutionPlanResultFragment_PipelineConfigValidationI
   __typename: "PipelineConfigValidationInvalid";
 }
 
-export interface RunPreviewExecutionPlanResultFragment_ExecutionPlan_steps_solid {
-  __typename: "Solid";
-  name: string;
-}
-
 export interface RunPreviewExecutionPlanResultFragment_ExecutionPlan_steps {
   __typename: "ExecutionStep";
   name: string;
-  solid: RunPreviewExecutionPlanResultFragment_ExecutionPlan_steps_solid;
   kind: StepKind;
 }
 

@@ -1,8 +1,7 @@
 from collections import namedtuple
+
 from dagster import check
-
-from dagster.utils import camelcase, single_item
-
+from dagster.core.definitions import SolidHandle
 from dagster.core.system_config.objects import (
     ContextConfig,
     EnvironmentConfig,
@@ -11,15 +10,15 @@ from dagster.core.system_config.objects import (
     SolidConfig,
     StorageConfig,
 )
-
 from dagster.core.types import Bool, Dict, Field, List, NamedDict, NamedSelector, String
 from dagster.core.types.config import ConfigType, ConfigTypeAttributes
 from dagster.core.types.default_applier import apply_default_values
-from dagster.core.types.field_utils import check_opt_field_param, FieldImpl
+from dagster.core.types.field_utils import FieldImpl, check_opt_field_param
+from dagster.utils import camelcase, single_item
 
 from .context import PipelineContextDefinition
+from .dependency import DependencyStructure, Solid, SolidInputHandle
 from .resource import ResourceDefinition
-from .dependency import Solid, SolidInputHandle, DependencyStructure
 from .solid import SolidDefinition
 
 
@@ -383,7 +382,7 @@ def construct_context_config(config_value):
 
 def construct_solid_dictionary(solid_dict_value):
     return {
-        key: SolidConfig(
+        str(SolidHandle(key, None)): SolidConfig(
             config=value.get('config'),
             inputs=value.get('inputs', {}),
             outputs=value.get('outputs', []),

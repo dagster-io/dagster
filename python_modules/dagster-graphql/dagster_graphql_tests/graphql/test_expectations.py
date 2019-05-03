@@ -10,7 +10,7 @@ def get_expectation_results(logs, solid_name):
         for log in logs:
             if (
                 log['__typename'] == 'StepExpectationResultEvent'
-                and log['step']['solid']['name'] == solid_name
+                and log['step']['solidHandle'] == solid_name
             ):
                 yield log
 

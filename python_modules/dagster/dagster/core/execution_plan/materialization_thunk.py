@@ -1,17 +1,22 @@
 import six
 
 from dagster import check
+from dagster.core.definitions import (
+    Materialization,
+    OutputDefinition,
+    PipelineDefinition,
+    Solid,
+    SolidHandle,
+)
 
-from dagster.core.definitions import Solid, OutputDefinition, PipelineDefinition, Materialization
 from dagster.core.errors import DagsterInvariantViolationError
-
 from .objects import (
     ExecutionStep,
     ExecutionValueSubplan,
     StepInput,
+    StepKind,
     StepOutput,
     StepOutputValue,
-    StepKind,
 )
 
 from .utility import create_joining_subplan
@@ -47,7 +52,7 @@ def _create_materialization_lambda(output_def, config_spec):
         yield Materialization(
             path=path,
             description=('Materialization of {solid_name}.{output_name}').format(
-                output_name=output_def.name, solid_name=step_context.solid.name
+                output_name=output_def.name, solid_name=step_context.solid_handle.name
             ),
         )
 
@@ -82,8 +87,8 @@ def decorate_with_output_materializations(
         new_steps.append(
             ExecutionStep(
                 pipeline_name=pipeline_def.name,
-                key='{solid}.outputs.{output}.materialize.{mat_count}'.format(
-                    solid=solid.name, output=output_def.name, mat_count=mat_count
+                key_suffix='outputs.{output}.materialize.{mat_count}'.format(
+                    output=output_def.name, mat_count=mat_count
                 ),
                 step_inputs=[
                     StepInput(
@@ -100,7 +105,7 @@ def decorate_with_output_materializations(
                     )
                 ],
                 kind=StepKind.MATERIALIZATION_THUNK,
-                solid=solid,
+                solid_handle=SolidHandle(solid.name, solid.definition.name),
                 compute_fn=_create_materialization_lambda(output_def, output_spec),
             )
         )
@@ -108,9 +113,7 @@ def decorate_with_output_materializations(
     return create_joining_subplan(
         pipeline_def,
         solid,
-        '{solid}.outputs.{output}.materialize.join'.format(
-            solid=solid.name, output=output_def.name
-        ),
+        'outputs.{output}.materialize.join'.format(output=output_def.name),
         new_steps,
         MATERIALIZATION_THUNK_OUTPUT,
     )

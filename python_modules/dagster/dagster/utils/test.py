@@ -91,7 +91,7 @@ def build_pipeline_with_input_stubs(pipeline_def, inputs):
     stub_solid_defs = []
 
     for solid_name, input_dict in inputs.items():
-        if not pipeline_def.has_solid(solid_name):
+        if not pipeline_def.has_solid_named(solid_name):
             raise DagsterInvariantViolationError(
                 (
                     'You are injecting an input value for solid {solid_name} '

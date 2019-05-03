@@ -119,6 +119,23 @@ class Solid(object):
         return self.definition.step_metadata_fn
 
 
+class SolidHandle(namedtuple('_SolidHandle', 'name definition_name parent')):
+    def __new__(cls, name, definition_name, parent=None):
+        return super(SolidHandle, cls).__new__(
+            cls,
+            check.str_param(name, 'name'),
+            check.opt_str_param(definition_name, 'definition_name'),
+            check.opt_inst_param(parent, 'parent', SolidHandle),
+        )
+
+    def __str__(self):
+        return self.to_string()
+
+    def to_string(self):
+        # Return unique name of the solid and its lineage (omits solid definition names)
+        return self.parent.to_string() + '.' + self.name if self.parent else self.name
+
+
 class SolidInputHandle(namedtuple('_SolidInputHandle', 'solid input_def')):
     def __new__(cls, solid, input_def):
         return super(SolidInputHandle, cls).__new__(

@@ -743,7 +743,7 @@ snapshots['test_build_all_docs 3'] = '''
 <h2 id="H">H</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="sections/api/apidocs/pipeline.html#dagster.PipelineDefinition.has_solid">has_solid() (dagster.PipelineDefinition method)</a>
+      <li><a href="sections/api/apidocs/pipeline.html#dagster.PipelineDefinition.has_solid_named">has_solid_named() (dagster.PipelineDefinition method)</a>
 </li>
   </ul></td>
 </tr></table>
@@ -19944,8 +19944,8 @@ is unnamed the method with return “&lt;&lt;unnamed&gt;&gt;”.</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="dagster.PipelineDefinition.has_solid">
-<code class="descname">has_solid</code><span class="sig-paren">(</span><em>name</em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dagster/core/definitions/pipeline.html#PipelineDefinition.has_solid"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dagster.PipelineDefinition.has_solid" title="Permalink to this definition">¶</a></dt>
+<dt id="dagster.PipelineDefinition.has_solid_named">
+<code class="descname">has_solid_named</code><span class="sig-paren">(</span><em>name</em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dagster/core/definitions/pipeline.html#PipelineDefinition.has_solid_named"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dagster.PipelineDefinition.has_solid_named" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return whether or not the solid is in the piepline</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>

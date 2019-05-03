@@ -24,9 +24,7 @@ query PipelineQuery($config: PipelineConfig, $pipeline: ExecutionSelector!) {
       steps {
         key
         name
-        solid {
-          name
-        }
+        solidHandle
         kind
         inputs {
           name
@@ -75,8 +73,8 @@ mutation (
             hasFailures
             stepEvents {
                 __typename
-                step { 
-                    key 
+                step {
+                    key
                     metadata {
                        key
                        value

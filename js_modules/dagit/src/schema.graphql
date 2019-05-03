@@ -120,7 +120,7 @@ type ExecutionStep {
   key: String!
   inputs: [ExecutionStepInput!]!
   outputs: [ExecutionStepOutput!]!
-  solid: Solid!
+  solidHandle: String!
   kind: StepKind!
   metadata: [MetadataItemDefinition!]!
 }

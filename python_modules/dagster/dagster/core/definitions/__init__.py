@@ -3,6 +3,7 @@ from .context import PipelineContextDefinition
 from .dependency import (
     DependencyDefinition,
     Solid,
+    SolidHandle,
     SolidInputHandle,
     SolidInstance,
     SolidOutputHandle,

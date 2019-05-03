@@ -6,7 +6,7 @@ from dagster.core.utils import toposort_flatten
 from dagster.core.errors import DagsterInvalidDefinitionError
 
 from .context import PipelineContextDefinition, default_pipeline_context_definitions
-from .dependency import DependencyDefinition, DependencyStructure, Solid, SolidInstance
+from .dependency import DependencyDefinition, DependencyStructure, Solid, SolidHandle, SolidInstance
 from .environment_configs import (
     EnvironmentClassCreationData,
     define_environment_cls,
@@ -173,7 +173,7 @@ class PipelineDefinition(object):
         '''
         return list(set(self._solid_dict.values()))
 
-    def has_solid(self, name):
+    def has_solid_named(self, name):
         '''Return whether or not the solid is in the piepline
 
         Args:
@@ -202,6 +202,22 @@ class PipelineDefinition(object):
                 )
             )
         return self._solid_dict[name]
+
+    def get_solid(self, handle):
+        check.inst_param(handle, 'handle', SolidHandle)
+        current = handle
+        lineage = []
+        while current:
+            lineage.append(current.name)
+            current = current.parent
+
+        name = lineage.pop()
+        solid = self.solid_named(name)
+        while lineage:
+            name = lineage.pop()
+            solid = solid.definition.solid_named(name)
+
+        return solid
 
     def has_config_type(self, name):
         check.str_param(name, 'name')

@@ -215,7 +215,7 @@ def _error_check_step_outputs(step, step_output_iter):
         step_output_value = step_output
         if not step.has_step_output(step_output_value.output_name):
             raise DagsterInvariantViolationError(
-                'Core transform for solid "{step.solid.name}" returned an output '
+                'Core transform for solid "{step.solid_handle.name}" returned an output '
                 '"{step_output_value.output_name}" that does not exist. The available '
                 'outputs are {output_names}'.format(
                     step=step, step_output_value=step_output_value, output_names=output_names
@@ -224,7 +224,7 @@ def _error_check_step_outputs(step, step_output_iter):
 
         if step_output_value.output_name in seen_outputs:
             raise DagsterInvariantViolationError(
-                'Core transform for solid "{step.solid.name}" returned an output '
+                'Core transform for solid "{step.solid_handle.name}" returned an output '
                 '"{step_output_value.output_name}" multiple times'.format(
                     step=step, step_output_value=step_output_value
                 )
@@ -236,7 +236,7 @@ def _error_check_step_outputs(step, step_output_iter):
     for step_output_def in step.step_outputs:
         if not step_output_def.name in seen_outputs and not step_output_def.optional:
             raise DagsterStepOutputNotFoundError(
-                'Core transform for solid "{step.solid.name}" did not return an output '
+                'Core transform for solid "{step.solid_handle.name}" did not return an output '
                 'for non-optional output "{step_output_def.name}"'.format(
                     step=step, step_output_def=step_output_def
                 ),
@@ -319,7 +319,7 @@ def _create_step_output_event(step_context, step_output_value, intermediates_man
     except DagsterRuntimeCoercionError as e:
         raise DagsterInvariantViolationError(
             (
-                'In solid "{step.solid.name}" the output "{output_name}" returned '
+                'In solid "{step.solid_handle.name}" the output "{output_name}" returned '
                 'an invalid type: {error_msg}.'
             ).format(
                 step=step, error_msg=','.join(e.args), output_name=step_output_value.output_name
@@ -338,7 +338,7 @@ def _get_evaluated_input(step, input_name, input_value):
         raise_from(
             DagsterTypeError(
                 (
-                    'In solid "{step.solid.name}" the input "{input_name}" received value {input_value} '
+                    'In solid "{step.solid_handle.name}" the input "{input_name}" received value {input_value} '
                     'of Python type {input_type} which does not pass the typecheck for '
                     'Dagster type {step_input.runtime_type.name}. Step {step.key}.'
                 ).format(

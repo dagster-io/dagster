@@ -98,7 +98,7 @@ def _pipeline_or_error_from_repository(graphene_info, repository, selector):
         orig_pipeline = repository.get_pipeline(selector.name)
         if selector.solid_subset:
             for solid_name in selector.solid_subset:
-                if not orig_pipeline.has_solid(solid_name):
+                if not orig_pipeline.has_solid_named(solid_name):
                     return EitherError(
                         graphene_info.schema.type_named('SolidNotFoundError')(solid_name=solid_name)
                     )

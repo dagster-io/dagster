@@ -140,7 +140,7 @@ class PipelineExecutionResult(object):
         '''
         check.str_param(name, 'name')
 
-        if not self.pipeline.has_solid(name):
+        if not self.pipeline.has_solid_named(name):
             raise DagsterInvariantViolationError(
                 'Try to get result for solid {name} in {pipeline}. No such solid.'.format(
                     name=name, pipeline=self.pipeline.display_name
