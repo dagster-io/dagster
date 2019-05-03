@@ -138,9 +138,7 @@ def _validate_dependencies(dependencies, solid_dict, alias_to_name):
                         ).format(aliased_solid=aliased_solid, from_solid=from_solid)
                     )
             if not solid_dict[from_solid].definition.has_input(from_input):
-                input_list = [
-                    input_def.name for input_def in solid_dict[from_solid].definition.input_defs
-                ]
+                input_list = solid_dict[from_solid].definition.input_dict.keys()
                 raise DagsterInvalidDefinitionError(
                     'Solid "{from_solid}" does not have input "{from_input}". '.format(
                         from_solid=from_solid, from_input=from_input
@@ -221,12 +219,12 @@ def _gather_all_config_types(solid_defs, context_definitions, environment_type):
 def construct_runtime_type_dictionary(solid_defs):
     type_dict = {t.name: t for t in ALL_RUNTIME_BUILTINS}
     for solid_def in solid_defs:
-        for input_def in solid_def.input_defs:
+        for input_def in solid_def.input_dict.values():
             type_dict[input_def.runtime_type.name] = input_def.runtime_type
             for inner_type in input_def.runtime_type.inner_types:
                 type_dict[inner_type.name] = inner_type
 
-        for output_def in solid_def.output_defs:
+        for output_def in solid_def.output_dict.values():
             type_dict[output_def.runtime_type.name] = output_def.runtime_type
             for inner_type in output_def.runtime_type.inner_types:
                 type_dict[inner_type.name] = inner_type

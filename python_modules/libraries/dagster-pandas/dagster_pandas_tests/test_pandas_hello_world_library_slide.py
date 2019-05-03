@@ -29,7 +29,7 @@ def test_hello_world_with_dataframe_fns():
 
 
 def run_hello_world(hello_world):
-    assert len(hello_world.input_defs) == 1
+    assert len(hello_world.input_dict) == 1
 
     pipeline = PipelineDefinition(solids=[hello_world], dependencies={'hello_world': {}})
 

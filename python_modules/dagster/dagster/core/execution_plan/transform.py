@@ -25,11 +25,9 @@ def create_transform_step(pipeline_def, environment_config, solid, step_inputs):
         step_inputs=step_inputs,
         step_outputs=[
             StepOutput(
-                name=output_def.name,
-                runtime_type=output_def.runtime_type,
-                optional=output_def.optional,
+                name=name, runtime_type=output_def.runtime_type, optional=output_def.optional
             )
-            for output_def in solid.definition.output_defs
+            for name, output_def in solid.definition.output_dict.items()
         ],
         compute_fn=lambda step_context, inputs: _execute_core_transform(
             step_context.for_transform(), inputs, solid.definition.transform_fn

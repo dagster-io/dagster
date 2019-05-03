@@ -55,8 +55,8 @@ def test_solid_def():
 
     assert isinstance(solid_one_solid.input_def_named('input_one'), InputDefinition)
 
-    assert len(solid_one_solid.input_defs) == 1
-    assert len(solid_one_solid.output_defs) == 1
+    assert len(solid_one_solid.input_dict) == 1
+    assert len(solid_one_solid.output_dict) == 1
 
     assert str(solid_one_solid.input_handle('input_one')) == (
         'SolidInputHandle(definition_name="\'solid_one\'", input_name="\'input_one\'", '
@@ -79,7 +79,7 @@ def test_solid_def():
     )
 
     assert solid_one_solid.output_handle('result') == SolidOutputHandle(
-        solid_one_solid, solid_one_solid.output_defs[0]
+        solid_one_solid, solid_one_solid.output_dict['result']
     )
 
     assert len(pipeline_def.dependency_structure.deps_of_solid_with_input('solid_one')) == 1

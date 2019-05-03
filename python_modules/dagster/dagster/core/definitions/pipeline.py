@@ -17,7 +17,7 @@ from .pipeline_creation import (
     construct_config_type_dictionary,
     construct_runtime_type_dictionary,
 )
-from .solid import SolidDefinition
+from .solid import ISolidDefinition
 
 
 def _check_solids_arg(pipeline_name, solid_defs):
@@ -28,7 +28,7 @@ def _check_solids_arg(pipeline_name, solid_defs):
             )
         )
     for solid_def in solid_defs:
-        if isinstance(solid_def, SolidDefinition):
+        if isinstance(solid_def, ISolidDefinition):
             continue
         elif callable(solid_def):
             raise DagsterInvalidDefinitionError(
@@ -107,7 +107,7 @@ class PipelineDefinition(object):
         self.description = check.opt_str_param(description, 'description')
 
         solids = check.list_param(
-            _check_solids_arg(self.name, solids), 'solids', of_type=SolidDefinition
+            _check_solids_arg(self.name, solids), 'solids', of_type=ISolidDefinition
         )
 
         if context_definitions is None:
@@ -417,7 +417,7 @@ def _validate_resource_dependencies(context_definitions, solids):
     check.dict_param(
         context_definitions, 'context_definitions', str, value_type=PipelineContextDefinition
     )
-    check.list_param(solids, 'solids', of_type=SolidDefinition)
+    check.list_param(solids, 'solids', of_type=ISolidDefinition)
 
     for context_name, context in context_definitions.items():
         context_resources = set(context.resources.keys())

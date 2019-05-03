@@ -221,15 +221,15 @@ def print_solid(printer, solid):
 
         printer.line('Outputs:')
 
-        for output_def in solid.definition.output_defs:
-            printer.line(output_def.name)
+        for name in solid.definition.output_dict.keys():
+            printer.line(name)
 
 
 def print_inputs(printer, solid):
     printer.line('Inputs:')
-    for input_def in solid.definition.input_defs:
+    for name in solid.definition.input_dict.keys():
         with printer.with_indent():
-            printer.line('Input: {name}'.format(name=input_def.name))
+            printer.line('Input: {name}'.format(name=name))
 
 
 def format_argument_dict(arg_def_dict):

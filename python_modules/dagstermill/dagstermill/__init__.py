@@ -444,8 +444,7 @@ def get_papermill_parameters(transform_context, inputs, output_log_path):
 
     input_name_type_dict = {}
 
-    input_defs = transform_context.solid_def.input_defs
-    input_def_dict = {inp.name: inp for inp in input_defs}
+    input_def_dict = transform_context.solid_def.input_dict
     for input_name, input_value in inputs.items():
         assert (
             input_name != 'dm_context'
@@ -461,12 +460,10 @@ def get_papermill_parameters(transform_context, inputs, output_log_path):
 
     dm_context_dict['input_name_type_dict'] = input_name_type_dict
 
-    output_name_type_dict = {}
-    output_defs = transform_context.solid_def.output_defs
-    for output_def in output_defs:
-        output_name_type_dict[output_def.name] = output_name_serialization_enum(
-            output_def.runtime_type
-        ).value
+    output_name_type_dict = {
+        name: output_name_serialization_enum(output_def.runtime_type).value
+        for name, output_def in transform_context.solid_def.output_dict.items()
+    }
 
     dm_context_dict['output_name_type_dict'] = output_name_type_dict
 
@@ -616,13 +613,13 @@ def _dm_solid_transform(name, notebook_path):
                 description='{name} output notebook'.format(name=transform_context.solid.name),
             )
 
-            for output_def in system_transform_context.solid_def.output_defs:
+            for output_name, output_def in system_transform_context.solid_def.output_dict.items():
                 data_dict = output_nb.scraps.data_dict
-                if output_def.name in data_dict:
+                if output_name in data_dict:
 
-                    value = read_value(output_def.runtime_type, data_dict[output_def.name])
+                    value = read_value(output_def.runtime_type, data_dict[output_name])
 
-                    yield Result(value, output_def.name)
+                    yield Result(value, output_name)
 
         finally:
             if do_cleanup and os.path.exists(temp_path):

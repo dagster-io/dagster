@@ -253,12 +253,12 @@ def define_storage_config_cls(name):
 
 def solid_has_configurable_inputs(solid_def):
     check.inst_param(solid_def, 'solid_def', SolidDefinition)
-    return any(map(lambda inp: inp.runtime_type.input_schema, solid_def.input_defs))
+    return any(map(lambda inp: inp.runtime_type.input_schema, solid_def.input_dict.values()))
 
 
 def solid_has_configurable_outputs(solid_def):
     check.inst_param(solid_def, 'solid_def', SolidDefinition)
-    return any(map(lambda out: out.runtime_type.output_schema, solid_def.output_defs))
+    return any(map(lambda out: out.runtime_type.output_schema, solid_def.output_dict.values()))
 
 
 def get_inputs_field(creation_data, solid):
@@ -269,12 +269,13 @@ def get_inputs_field(creation_data, solid):
         return None
 
     inputs_field_fields = {}
-    for inp in [inp for inp in solid.definition.input_defs if inp.runtime_type.input_schema]:
-        inp_handle = SolidInputHandle(solid, inp)
-        # If this input is not satisfied by a dependency you must
-        # provide it via config
-        if not creation_data.dependency_structure.has_dep(inp_handle):
-            inputs_field_fields[inp.name] = FieldImpl(inp.runtime_type.input_schema.schema_type)
+    for name, inp in solid.definition.input_dict.items():
+        if inp.runtime_type.input_schema:
+            inp_handle = SolidInputHandle(solid, inp)
+            # If this input is not satisfied by a dependency you must
+            # provide it via config
+            if not creation_data.dependency_structure.has_dep(inp_handle):
+                inputs_field_fields[name] = FieldImpl(inp.runtime_type.input_schema.schema_type)
 
     if not inputs_field_fields:
         return None
@@ -300,10 +301,11 @@ def get_outputs_field(creation_data, solid):
         return None
 
     output_dict_fields = {}
-    for out in [out for out in solid_def.output_defs if out.runtime_type.output_schema]:
-        output_dict_fields[out.name] = Field(
-            type(out.runtime_type.output_schema.schema_type), is_optional=True
-        )
+    for name, out in solid_def.output_dict.items():
+        if out.runtime_type.output_schema:
+            output_dict_fields[name] = Field(
+                type(out.runtime_type.output_schema.schema_type), is_optional=True
+            )
 
     output_entry_dict = SystemNamedDict(
         '{pipeline_name}.{solid_name}.Outputs'.format(

@@ -2,7 +2,7 @@ from collections import defaultdict, namedtuple
 
 from dagster import check
 
-from .solid import SolidDefinition
+from .solid import ISolidDefinition
 
 from .input import InputDefinition
 
@@ -65,18 +65,18 @@ class Solid(object):
 
     def __init__(self, name, definition, resource_mapper_fn):
         self.name = check.str_param(name, 'name')
-        self.definition = check.inst_param(definition, 'definition', SolidDefinition)
+        self.definition = check.inst_param(definition, 'definition', ISolidDefinition)
         self.resource_mapper_fn = check.callable_param(resource_mapper_fn, 'resource_mapper_fn')
 
         input_handles = {}
-        for input_def in self.definition.input_defs:
-            input_handles[input_def.name] = SolidInputHandle(self, input_def)
+        for name, input_def in self.definition.input_dict.items():
+            input_handles[name] = SolidInputHandle(self, input_def)
 
         self._input_handles = input_handles
 
         output_handles = {}
-        for output_def in self.definition.output_defs:
-            output_handles[output_def.name] = SolidOutputHandle(self, output_def)
+        for name, output_def in self.definition.output_dict.items():
+            output_handles[name] = SolidOutputHandle(self, output_def)
 
         self._output_handles = output_handles
 
@@ -107,12 +107,12 @@ class Solid(object):
         return self.definition.output_def_named(name)
 
     @property
-    def input_defs(self):
-        return self.definition.input_defs
+    def input_dict(self):
+        return self.definition.input_dict
 
     @property
-    def output_defs(self):
-        return self.definition.output_defs
+    def output_dict(self):
+        return self.definition.output_dict
 
     @property
     def step_metadata_fn(self):

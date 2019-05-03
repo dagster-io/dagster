@@ -26,7 +26,9 @@ def get_solid_transformed_value(_context, solid_inst):
     pipeline = PipelineDefinition(
         solids=[load_num_csv_solid('load_csv'), solid_inst],
         dependencies={
-            solid_inst.name: {solid_inst.input_defs[0].name: DependencyDefinition('load_csv')}
+            solid_inst.name: {
+                list(solid_inst.input_dict.values())[0].name: DependencyDefinition('load_csv')
+            }
         },
     )
 
