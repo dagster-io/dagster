@@ -71,11 +71,7 @@ from .intermediates_manager import (
 
 from .log import DagsterLog
 
-from .object_store import (
-    FileSystemObjectStore,
-    S3ObjectStore,
-    construct_type_storage_plugin_registry,
-)
+from .object_store import FileSystemObjectStore, construct_type_storage_plugin_registry
 
 from .runs import (
     DagsterRunMeta,
@@ -411,6 +407,17 @@ def construct_run_storage(run_config, environment_config):
         )
 
 
+def ensure_dagster_aws_requirements():
+    try:
+        import dagster_aws
+    except (ImportError, ModuleNotFoundError):
+        raise check.CheckError(
+            'dagster_aws must be available for import in order to make use of an S3ObjectStore'
+        )
+
+    return dagster_aws
+
+
 def construct_intermediates_manager(run_config, environment_config, pipeline_def):
     check.inst_param(run_config, 'run_config', RunConfig)
     check.inst_param(environment_config, 'environment_config', EnvironmentConfig)
@@ -427,6 +434,9 @@ def construct_intermediates_manager(run_config, environment_config, pipeline_def
         elif run_config.storage_mode == RunStorageMode.IN_MEMORY:
             return InMemoryIntermediatesManager()
         elif run_config.storage_mode == RunStorageMode.S3:
+            _dagster_aws = ensure_dagster_aws_requirements()
+            from dagster_aws.s3_object_store import S3ObjectStore
+
             return ObjectStoreIntermediatesManager(
                 S3ObjectStore(
                     environment_config.storage.storage_config['s3_bucket'],
@@ -446,6 +456,9 @@ def construct_intermediates_manager(run_config, environment_config, pipeline_def
     elif environment_config.storage.storage_mode == 'in_memory':
         return InMemoryIntermediatesManager()
     elif environment_config.storage.storage_mode == 's3':
+        _dagster_aws = ensure_dagster_aws_requirements()
+        from dagster_aws.s3_object_store import S3ObjectStore
+
         return ObjectStoreIntermediatesManager(
             S3ObjectStore(
                 environment_config.storage.storage_config['s3_bucket'],

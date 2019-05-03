@@ -1,4 +1,4 @@
-from dagster_gcp.types import _is_valid_dataset, _is_valid_table
+from dagster_gcp.bigquery.types import _is_valid_dataset, _is_valid_table
 
 
 def test_dataset():

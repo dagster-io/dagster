@@ -45,4 +45,3 @@ rebuild_dagit:
 	cd js_modules/dagit/; yarn install && yarn build-for-python
 
 dev_install: install_dev_python_modules rebuild_dagit
-

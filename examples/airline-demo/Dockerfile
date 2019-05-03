@@ -75,6 +75,9 @@ RUN pip install -r dagster_graphql_requirements.txt
 ADD dagstermill/requirements.txt dagstermill_requirements.txt
 RUN pip install -r dagstermill_requirements.txt
 
+ADD dagster-aws/requirements.txt dagster_aws_requirements.txt
+RUN pip install -r dagster_aws_requirements.txt
+
 ADD requirements.txt .
 
 RUN pip install -r requirements.txt
@@ -82,10 +85,13 @@ RUN pip install -r requirements.txt
 ADD dagster dagster
 ADD dagster-graphql dagster-graphql
 ADD dagstermill dagstermill
+ADD dagster-aws dagster-aws
+
 
 RUN pip install -e dagster/
 RUN pip install -e dagster-graphql/
 RUN pip install -e dagstermill/
+RUN pip install -e dagster-aws/
 
 ADD . .
 
