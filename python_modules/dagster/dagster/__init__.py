@@ -81,7 +81,7 @@ from dagster.core.types.decorator import dagster_type, as_dagster_type
 from dagster.core.types.marshal import SerializationStrategy
 from dagster.core.types.config import ConfigType, ConfigScalar, Enum, EnumValue
 from dagster.core.types.evaluator import DagsterEvaluateConfigValueError
-from dagster.core.types.runtime import RuntimeType
+from dagster.core.types.runtime import Bytes, RuntimeType
 
 from dagster.utils.test import execute_solid, execute_solids
 
@@ -141,6 +141,7 @@ __all__ = [
     # types
     'Any',
     'Bool',
+    'Bytes',
     'input_schema',
     'input_selector_schema',
     'Dict',

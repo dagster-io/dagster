@@ -10,15 +10,17 @@ from dagster import (
     InputDefinition,
     OutputDefinition,
     List,
+    PipelineContextDefinition,
     PipelineDefinition,
     SolidInstance,
     String,
 )
 from dagster.utils import safe_isfile, mkdir_p
 
-from dagster_spark import SparkSolidDefinition
+from dagster_aws.s3.resources import s3_resource
+from dagster_aws.s3.solids import download_from_s3_to_file
 from dagster_snowflake import SnowflakeSolidDefinition, SnowflakeLoadSolidDefinition
-from dagster_aws.s3.solids import download_from_s3
+from dagster_spark import SparkSolidDefinition
 
 
 @lambda_solid(inputs=[InputDefinition('gzip_file', String)], output=OutputDefinition(List(String)))
@@ -57,12 +59,15 @@ def define_event_ingest_pipeline():
 
     return PipelineDefinition(
         name='event_ingest_pipeline',
-        solids=[download_from_s3, gunzipper, event_ingest, snowflake_load],
+        solids=[download_from_s3_to_file, gunzipper, event_ingest, snowflake_load],
         dependencies={
-            SolidInstance('gunzipper'): {'gzip_file': DependencyDefinition('download_from_s3')},
+            SolidInstance('gunzipper'): {
+                'gzip_file': DependencyDefinition('download_from_s3_to_file')
+            },
             SolidInstance('event_ingest'): {'spark_inputs': DependencyDefinition('gunzipper')},
             SolidInstance('snowflake_load'): {
                 SnowflakeSolidDefinition.INPUT_READY: DependencyDefinition('event_ingest', 'paths')
             },
         },
+        context_definitions={'default': PipelineContextDefinition(resources={'s3': s3_resource})},
     )

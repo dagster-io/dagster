@@ -1,4 +1,5 @@
 from functools import partial
+from io import BytesIO
 import six
 
 from dagster import check
@@ -188,6 +189,27 @@ class Bool(BuiltinScalarRuntimeType):
 
     def coerce_runtime_value(self, value):
         return self.throw_if_false(lambda v: isinstance(v, bool), value)
+
+
+class Bytes(RuntimeType, BytesIO):
+    def __init__(self):
+        from dagster import RunStorageMode
+
+        storage_plugins = {}
+        try:
+            from dagster_aws.s3 import BytesIOS3StoragePlugin
+
+            storage_plugins[RunStorageMode.S3] = BytesIOS3StoragePlugin
+        except ImportError:
+            pass
+
+        super(Bytes, self).__init__('Bytes', 'Bytes')
+
+    def coerce_runtime_value(self, value):
+        if isinstance(value, BytesIO):
+            return value
+        if isinstance(value, bytes):
+            return BytesIO(value)
 
 
 class Anyish(RuntimeType):
