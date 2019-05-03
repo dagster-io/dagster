@@ -783,7 +783,7 @@ snapshots['test_build_all_docs 3'] = '''
 </li>
       <li><a href="sections/api/apidocs/types.html#dagster.List">List() (in module dagster)</a>
 </li>
-      <li><a href="sections/api/apidocs/pipeline.html#dagster.InitResourceContext.log">log (dagster.InitResourceContext attribute)</a>
+      <li><a href="sections/api/apidocs/pipeline.html#dagster.InitResourceContext.log_manager">log_manager (dagster.InitResourceContext attribute)</a>
 </li>
       <li><a href="sections/api/apidocs/pipeline.html#dagster.logger">logger() (in module dagster)</a>
 </li>
@@ -1789,6 +1789,10 @@ As the API is still in flux, we aren't following strict semantic versioning rule
 intend micro versions to reflect a regular release schedule and minor versions to reflect
 milestones in the framework's capability.
 
+0.4.2
+-----
+**API Changes**
+- 
 0.4.1
 -----
 **Compatibility**
@@ -20274,7 +20278,8 @@ data is defined by <code class="docutils literal notranslate"><span class="pre">
 <dl class="attribute">
 <dt id="dagster.InitResourceContext.resource_def">
 <code class="descname">resource_def</code><a class="headerlink" href="#dagster.InitResourceContext.resource_def" title="Permalink to this definition">¶</a></dt>
-<dd><p>The resource definition for the resource being constructed.</p>
+<dd><p>The resource definition for the resource being
+constructed.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type</dt>
 <dd class="field-odd"><p><a class="reference internal" href="#dagster.ResourceDefinition" title="dagster.ResourceDefinition">ResourceDefinition</a></p>
@@ -20294,9 +20299,9 @@ data is defined by <code class="docutils literal notranslate"><span class="pre">
 </dd></dl>
 
 <dl class="attribute">
-<dt id="dagster.InitResourceContext.log">
-<code class="descname">log</code><a class="headerlink" href="#dagster.InitResourceContext.log" title="Permalink to this definition">¶</a></dt>
-<dd><p>THe log manager for this run of the pipeline</p>
+<dt id="dagster.InitResourceContext.log_manager">
+<code class="descname">log_manager</code><a class="headerlink" href="#dagster.InitResourceContext.log_manager" title="Permalink to this definition">¶</a></dt>
+<dd><p>The log manager for this run of the pipeline</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type</dt>
 <dd class="field-odd"><p>DagsterLogManager</p>
@@ -22166,8 +22171,12 @@ package versions move in lockstep with each other and with git tags.</p>
 intend micro versions to reflect a regular release schedule and minor versions to reflect
 milestones in the framework’s capability.</p>
 <div class="section" id="id1">
-<h2>0.4.1<a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h2>
-<p><strong>Compatibility</strong>
+<h2>0.4.2<a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h2>
+<p><strong>API Changes</strong>
+-
+0.4.1
+—–
+<strong>Compatibility</strong>
 - Dagster-airflow now works with Python 3.7 (since Airflow 1.10.3 now supports Python 3.7).</p>
 </div>
 <div class="section" id="id2">
