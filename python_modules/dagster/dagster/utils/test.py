@@ -44,7 +44,7 @@ def create_test_pipeline_execution_context(
         pipeline_def, {'loggers': {key: {} for key in pipeline_def.loggers}}
     )
     loggers = _create_loggers(environment_config, run_config, pipeline_def)
-    log = DagsterLogManager(run_config.run_id, {}, loggers)
+    log_manager = DagsterLogManager(run_config.run_id, {}, loggers)
 
     return construct_pipeline_execution_context(
         run_config=run_config,
@@ -54,7 +54,7 @@ def create_test_pipeline_execution_context(
         environment_config=environment_config,
         run_storage=InMemoryRunStorage(),
         intermediates_manager=InMemoryIntermediatesManager(),
-        log=log,
+        log_manager=log_manager,
     )
 
 

@@ -9,7 +9,7 @@ import pytest
 from dagster import check
 from dagster.core.definitions import PipelineDefinition, SolidHandle
 from dagster.core.events import DagsterEvent
-from dagster.core.init_context import InitLoggerContext
+from dagster.core.init_logger_context import InitLoggerContext
 from dagster.core.execution_plan.objects import StepFailureData
 from dagster.core.log_manager import DagsterLogManager
 from dagster.core.loggers import colored_console_logger
