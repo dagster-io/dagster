@@ -60,8 +60,8 @@ from .execution_plan.objects import StepKind
 from .engine.engine_multiprocessing import MultiprocessingEngine
 from .engine.engine_inprocess import InProcessEngine
 
-from .init_context import InitContext, InitLoggerContext, InitResourceContext
-
+from .init_context import InitContext, InitResourceContext
+from .init_logger_context import InitLoggerContext
 from .intermediates_manager import (
     ObjectStoreIntermediatesManager,
     InMemoryIntermediatesManager,
@@ -516,7 +516,7 @@ def _pipeline_execution_context_manager(
     )
 
     loggers = _create_loggers(environment_config, run_config, pipeline_def)
-    log = DagsterLogManager(run_config.run_id, {}, loggers)
+    log_manager = DagsterLogManager(run_config.run_id, {}, loggers)
 
     try:
         with user_code_context_manager(
@@ -534,6 +534,7 @@ def _pipeline_execution_context_manager(
                 environment_config,
                 execution_context,
                 run_config.run_id,
+                log_manager,
             ) as resources:
 
                 yield construct_pipeline_execution_context(
@@ -544,7 +545,7 @@ def _pipeline_execution_context_manager(
                     environment_config,
                     run_storage,
                     intermediates_manager,
-                    log,
+                    log_manager,
                 )
 
     except DagsterError as dagster_error:
@@ -563,7 +564,7 @@ def _pipeline_execution_context_manager(
         yield DagsterEvent.pipeline_init_failure(
             pipeline_name=pipeline_def.name,
             failure_data=PipelineInitFailureData(error=error_info),
-            log=_create_context_free_log(init_context, run_config, pipeline_def),
+            log_manager=_create_context_free_log_manager(init_context, run_config, pipeline_def),
         )
 
 
@@ -575,7 +576,7 @@ def construct_pipeline_execution_context(
     environment_config,
     run_storage,
     intermediates_manager,
-    log,
+    log_manager,
 ):
     check.inst_param(run_config, 'run_config', RunConfig)
     check.inst_param(execution_context, 'execution_context', ExecutionContext)
@@ -584,11 +585,11 @@ def construct_pipeline_execution_context(
     check.inst_param(environment_config, 'environment_config', EnvironmentConfig)
     check.inst_param(run_storage, 'run_storage', RunStorage)
     check.inst_param(intermediates_manager, 'intermediates_manager', IntermediatesManager)
-    check.inst_param(log, 'log', DagsterLogManager)
+    check.inst_param(log_manager, 'log_manager', DagsterLogManager)
 
     logging_tags = get_logging_tags(execution_context, run_config, pipeline)
 
-    log.logging_tags = logging_tags
+    log_manager.logging_tags = logging_tags
 
     return SystemPipelineExecutionContext(
         SystemPipelineExecutionContextData(
@@ -600,7 +601,7 @@ def construct_pipeline_execution_context(
             intermediates_manager=intermediates_manager,
         ),
         logging_tags=logging_tags,
-        log=log,
+        log_manager=log_manager,
     )
 
 
@@ -653,7 +654,7 @@ def _create_loggers(environment_config, run_config, pipeline_def):
     return loggers
 
 
-def _create_context_free_log(init_context, run_config, pipeline_def):
+def _create_context_free_log_manager(init_context, run_config, pipeline_def):
     '''In the event of pipeline initialization failure, we want to be able to log the failure
     without a dependency on the ExecutionContext to initialize DagsterLogManager.
 
@@ -690,7 +691,7 @@ def _create_context_free_log(init_context, run_config, pipeline_def):
 
 
 @contextmanager
-def _create_resources(pipeline_def, context_def, environment, execution_context, run_id):
+def _create_resources(pipeline_def, context_def, environment, execution_context, run_id, log):
     if not context_def.resources:
         yield ResourcesBuilder(
             execution_context.resources, ResourcesSource.CUSTOM_EXECUTION_CONTEXT
@@ -714,7 +715,7 @@ def _create_resources(pipeline_def, context_def, environment, execution_context,
     with ExitStack() as stack:
         for resource_name in context_def.resources.keys():
             user_fn = _create_resource_fn_lambda(
-                pipeline_def, context_def, resource_name, environment, run_id
+                pipeline_def, context_def, resource_name, environment, run_id, log
             )
 
             resource_obj = stack.enter_context(
@@ -732,7 +733,7 @@ def _create_resources(pipeline_def, context_def, environment, execution_context,
 
 
 def _create_resource_fn_lambda(
-    pipeline_def, context_definition, resource_name, environment, run_id
+    pipeline_def, context_definition, resource_name, environment, run_id, log_manager
 ):
     resource_def = context_definition.resources[resource_name]
     # Need to do default values
@@ -744,6 +745,7 @@ def _create_resource_fn_lambda(
             context_config=environment.context.config,
             resource_config=resource_config,
             run_id=run_id,
+            log_manager=log_manager,
         )
     )
 
