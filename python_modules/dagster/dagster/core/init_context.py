@@ -73,13 +73,3 @@ class InitResourceContext(
             check.inst_param(resource_def, 'resource_def', ResourceDefinition),
             check.str_param(run_id, 'run_id'),
         )
-
-    @property
-    def config(self):
-        warnings.warn(
-            (
-                'As of 0.3.2 the config property is deprecated. Use resource_config instead.'
-                'This will be removed in 0.4.0.'
-            )
-        )
-        return self.resource_config
