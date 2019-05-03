@@ -1,0 +1,9 @@
+{
+  "linters": {
+    "repro": {
+      "type": "pylint",
+      "pylint.config": ".pylintrc",
+      "include": "(\\.py$)"
+    }
+  }
+}
