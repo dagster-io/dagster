@@ -301,9 +301,7 @@ export const PIPELINE_RUN_LOGS_SUBSCRIPTION = gql`
       ... on PipelineRunLogsSubscriptionSuccess {
         messages {
           ... on MessageEvent {
-            run {
-              runId
-            }
+            runId
           }
           ...PipelineRunPipelineRunEventFragment
         }

@@ -7,12 +7,13 @@ from graphql.execution.base import ResolveInfo
 
 from dagster import RunConfig, check
 
-from dagster.core.events import DagsterEventType, DagsterEvent
+from dagster.core.events import DagsterEventType
 from dagster.core.execution import ExecutionSelector, create_execution_plan, execute_plan
 from dagster.core.execution_context import ReexecutionConfig, make_new_run_id
 
 
-from dagster_graphql.schema.execution import DauphinExecutionStep
+from dagster_graphql.schema.runs import from_event_record, from_dagster_event_record
+
 
 from .fetch_pipelines import _pipeline_or_error_from_container
 from .fetch_runs import _config_or_error_from_pipeline
@@ -114,13 +115,10 @@ def get_pipeline_run_observable(graphene_info, run_id, after=None):
         return Observable.create(_get_error_observable)  # pylint: disable=E1101
 
     def get_observable(pipeline):
-        pipeline_run_event_type = graphene_info.schema.type_named('PipelineRunEvent')
         return run.observable_after_cursor(after).map(
             lambda events: graphene_info.schema.type_named('PipelineRunLogsSubscriptionSuccess')(
                 messages=[
-                    pipeline_run_event_type.from_dagster_event(
-                        graphene_info, event, pipeline, run.execution_plan
-                    )
+                    from_event_record(graphene_info, event, pipeline, run.execution_plan)
                     for event in events
                 ]
             )
@@ -157,16 +155,15 @@ def do_execute_plan(graphene_info, pipeline_name, environment_dict, execution_me
     )
 
 
-def _execute_plan_resolve_config(execution_subplan_args, dauphin_pipeline):
+def _execute_plan_resolve_config(execute_plan_args, dauphin_pipeline):
+    check.inst_param(execute_plan_args, 'execute_plan_args', ExecutePlanArgs)
     return (
         _config_or_error_from_pipeline(
-            execution_subplan_args.graphene_info,
-            dauphin_pipeline,
-            execution_subplan_args.environment_dict,
+            execute_plan_args.graphene_info, dauphin_pipeline, execute_plan_args.environment_dict
         )
         .chain(
             lambda evaluate_env_config_result: _execute_plan_chain_actual_execute_or_error(
-                execution_subplan_args, dauphin_pipeline, evaluate_env_config_result
+                execute_plan_args, dauphin_pipeline, evaluate_env_config_result
             )
         )
         .value()
@@ -184,6 +181,8 @@ def tags_from_graphql_execution_metadata(graphql_execution_metadata):
 def _execute_plan_chain_actual_execute_or_error(
     execute_plan_args, dauphin_pipeline, _evaluate_env_config_result
 ):
+    check.inst_param(execute_plan_args, 'execute_plan_args', ExecutePlanArgs)
+
     graphql_execution_metadata = execute_plan_args.execution_metadata
     run_id = graphql_execution_metadata.get('runId') if graphql_execution_metadata else None
     tags = tags_from_graphql_execution_metadata(graphql_execution_metadata)
@@ -199,76 +198,30 @@ def _execute_plan_chain_actual_execute_or_error(
                     invalid_step_key=step_key
                 )
 
-    run_config = RunConfig(run_id=run_id, tags=tags)
+    event_records = []
 
-    step_events = list(
-        execute_plan(
-            execution_plan=execution_plan,
-            environment_dict=execute_plan_args.environment_dict,
-            run_config=run_config,
-            step_keys_to_execute=execute_plan_args.step_keys,
-        )
+    run_config = RunConfig(run_id=run_id, tags=tags, event_callback=event_records.append)
+
+    execute_plan(
+        execution_plan=execution_plan,
+        environment_dict=execute_plan_args.environment_dict,
+        run_config=run_config,
+        step_keys_to_execute=execute_plan_args.step_keys,
     )
 
     return execute_plan_args.graphene_info.schema.type_named('ExecutePlanSuccess')(
         pipeline=dauphin_pipeline,
         has_failures=any(
-            se for se in step_events if se.event_type == DagsterEventType.STEP_FAILURE
+            er
+            for er in event_records
+            if er.is_dagster_event and er.dagster_event.event_type == DagsterEventType.STEP_FAILURE
         ),
         step_events=list(
-            map(lambda se: _create_dauphin_step_event(execution_plan, se), step_events)
+            map(
+                lambda er: from_dagster_event_record(
+                    execute_plan_args.graphene_info, er, dauphin_pipeline, execution_plan
+                ),
+                filter(lambda er: er.is_dagster_event, event_records),
+            )
         ),
     )
-
-
-# This should be consolidate with the logic in DauphinPipelineRunEvent::from_dagster_event
-# https://github.com/dagster-io/dagster/issues/1327
-def _create_dauphin_step_event(execution_plan, step_event):
-    from dagster_graphql.schema.runs import (
-        DauphinExecutionStepFailureEvent,
-        DauphinExecutionStepOutputEvent,
-        DauphinExecutionStepSkippedEvent,
-        DauphinExecutionStepStartEvent,
-        DauphinExecutionStepSuccessEvent,
-        DauphinStepExpectationResultEvent,
-        DauphinStepMaterializationEvent,
-    )
-
-    check.inst_param(step_event, 'step_event', DagsterEvent)
-
-    step = execution_plan.get_step_by_key(step_event.step_key)
-
-    if step_event.event_type == DagsterEventType.STEP_START:
-        return DauphinExecutionStepStartEvent(step=DauphinExecutionStep(execution_plan, step))
-    if step_event.event_type == DagsterEventType.STEP_SKIPPED:
-        return DauphinExecutionStepSkippedEvent(step=DauphinExecutionStep(execution_plan, step))
-    elif step_event.event_type == DagsterEventType.STEP_OUTPUT:
-        return DauphinExecutionStepOutputEvent(
-            step=DauphinExecutionStep(execution_plan, step),
-            output_name=step_event.step_output_data.output_name,
-            value_repr=step_event.step_output_data.value_repr,
-            intermediate_materialization=step_event.step_output_data.intermediate_materialization,
-        )
-    elif step_event.event_type == DagsterEventType.STEP_FAILURE:
-        return DauphinExecutionStepFailureEvent(
-            step=DauphinExecutionStep(execution_plan, step),
-            error=step_event.step_failure_data.error,
-        )
-    elif step_event.event_type == DagsterEventType.STEP_SUCCESS:
-        return DauphinExecutionStepSuccessEvent(step=DauphinExecutionStep(execution_plan, step))
-    elif step_event.event_type == DagsterEventType.STEP_MATERIALIZATION:
-        return DauphinStepMaterializationEvent(
-            # BUG BUG BUG
-            # See https://github.com/dagster-io/dagster/issues/1327
-            file_name=step_event.step_materialization_data.name,
-            file_location=step_event.step_materialization_data.path,
-            step=DauphinExecutionStep(execution_plan, step),
-        )
-    elif step_event.event_type == DagsterEventType.STEP_EXPECTATION_RESULT:
-        return DauphinStepExpectationResultEvent(
-            expectation_result=step_event.event_specific_data.expectation_result,
-            step=DauphinExecutionStep(execution_plan, step),
-        )
-
-    else:
-        check.failed('Unsupported step event: {step_event}'.format(step_event=step_event))

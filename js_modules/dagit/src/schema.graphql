@@ -126,7 +126,7 @@ type ExecutionStep {
 }
 
 type ExecutionStepFailureEvent implements MessageEvent & StepEvent {
-  run: PipelineRun!
+  runId: String!
   message: String!
   timestamp: String!
   level: LogLevel!
@@ -146,7 +146,7 @@ type ExecutionStepOutput {
 }
 
 type ExecutionStepOutputEvent implements MessageEvent & StepEvent {
-  run: PipelineRun!
+  runId: String!
   message: String!
   timestamp: String!
   level: LogLevel!
@@ -157,7 +157,7 @@ type ExecutionStepOutputEvent implements MessageEvent & StepEvent {
 }
 
 type ExecutionStepSkippedEvent implements MessageEvent & StepEvent {
-  run: PipelineRun!
+  runId: String!
   message: String!
   timestamp: String!
   level: LogLevel!
@@ -165,7 +165,7 @@ type ExecutionStepSkippedEvent implements MessageEvent & StepEvent {
 }
 
 type ExecutionStepStartEvent implements MessageEvent & StepEvent {
-  run: PipelineRun!
+  runId: String!
   message: String!
   timestamp: String!
   level: LogLevel!
@@ -173,7 +173,7 @@ type ExecutionStepStartEvent implements MessageEvent & StepEvent {
 }
 
 type ExecutionStepSuccessEvent implements MessageEvent & StepEvent {
-  run: PipelineRun!
+  runId: String!
   message: String!
   timestamp: String!
   level: LogLevel!
@@ -188,6 +188,12 @@ input ExecutionTag {
 type Expectation {
   name: String!
   description: String
+}
+
+type ExpectationResult {
+  success: Boolean!
+  message: String
+  resultMetadataJsonString: String
 }
 
 type FieldNotDefinedConfigError implements PipelineConfigValidationError {
@@ -276,7 +282,7 @@ type LogMessageConnection {
 }
 
 type LogMessageEvent implements MessageEvent {
-  run: PipelineRun!
+  runId: String!
   message: String!
   timestamp: String!
   level: LogLevel!
@@ -289,7 +295,7 @@ type Materialization {
 }
 
 interface MessageEvent {
-  run: PipelineRun!
+  runId: String!
   message: String!
   timestamp: String!
   level: LogLevel!
@@ -423,7 +429,7 @@ interface PipelineEvent {
 }
 
 type PipelineFailureEvent implements MessageEvent & PipelineEvent {
-  run: PipelineRun!
+  runId: String!
   message: String!
   timestamp: String!
   level: LogLevel!
@@ -432,7 +438,7 @@ type PipelineFailureEvent implements MessageEvent & PipelineEvent {
 }
 
 type PipelineInitFailureEvent implements MessageEvent & PipelineEvent {
-  run: PipelineRun!
+  runId: String!
   message: String!
   timestamp: String!
   level: LogLevel!
@@ -456,7 +462,7 @@ type PipelinePreset {
 }
 
 type PipelineProcessStartedEvent implements MessageEvent & PipelineEvent {
-  run: PipelineRun!
+  runId: String!
   message: String!
   timestamp: String!
   level: LogLevel!
@@ -466,7 +472,7 @@ type PipelineProcessStartedEvent implements MessageEvent & PipelineEvent {
 }
 
 type PipelineProcessStartEvent implements MessageEvent & PipelineEvent {
-  run: PipelineRun!
+  runId: String!
   message: String!
   timestamp: String!
   level: LogLevel!
@@ -483,7 +489,7 @@ type PipelineRun {
   config: String!
 }
 
-union PipelineRunEvent = LogMessageEvent | PipelineStartEvent | PipelineSuccessEvent | PipelineFailureEvent | PipelineInitFailureEvent | ExecutionStepStartEvent | ExecutionStepSuccessEvent | ExecutionStepOutputEvent | ExecutionStepFailureEvent | ExecutionStepSkippedEvent | PipelineProcessStartEvent | PipelineProcessStartedEvent | StepMaterializationEvent
+union PipelineRunEvent = LogMessageEvent | PipelineStartEvent | PipelineSuccessEvent | PipelineFailureEvent | PipelineInitFailureEvent | ExecutionStepStartEvent | ExecutionStepSuccessEvent | ExecutionStepOutputEvent | ExecutionStepFailureEvent | ExecutionStepSkippedEvent | PipelineProcessStartEvent | PipelineProcessStartedEvent | StepMaterializationEvent | StepExpectationResultEvent
 
 type PipelineRunLogsSubscriptionMissingRunIdFailure {
   missingRunId: String!
@@ -513,7 +519,7 @@ enum PipelineRunStatus {
 union PipelinesOrError = PipelineConnection | PythonError | InvalidDefinitionError
 
 type PipelineStartEvent implements MessageEvent & PipelineEvent {
-  run: PipelineRun!
+  runId: String!
   message: String!
   timestamp: String!
   level: LogLevel!
@@ -522,7 +528,7 @@ type PipelineStartEvent implements MessageEvent & PipelineEvent {
 }
 
 type PipelineSuccessEvent implements MessageEvent & PipelineEvent {
-  run: PipelineRun!
+  runId: String!
   message: String!
   timestamp: String!
   level: LogLevel!
@@ -659,6 +665,15 @@ interface StepEvent {
   step: ExecutionStep
 }
 
+type StepExpectationResultEvent implements MessageEvent & StepEvent {
+  runId: String!
+  message: String!
+  timestamp: String!
+  level: LogLevel!
+  step: ExecutionStep
+  expectationResult: ExpectationResult!
+}
+
 enum StepKind {
   TRANSFORM
   INPUT_EXPECTATION
@@ -672,7 +687,7 @@ enum StepKind {
 }
 
 type StepMaterializationEvent implements MessageEvent & StepEvent {
-  run: PipelineRun!
+  runId: String!
   message: String!
   timestamp: String!
   level: LogLevel!

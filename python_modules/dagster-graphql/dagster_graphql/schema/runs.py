@@ -49,6 +49,10 @@ class DauphinPipelineRun(dauphin.ObjectType):
     def resolve_config(self, _graphene_info):
         return yaml.dump(self._pipeline_run.config, default_flow_style=False)
 
+    @property
+    def run_id(self):
+        return self.runId
+
 
 class DauphinLogLevel(dauphin.Enum):
     class Meta:
@@ -81,7 +85,7 @@ class DauphinMessageEvent(dauphin.Interface):
     class Meta:
         name = 'MessageEvent'
 
-    run = dauphin.NonNull('PipelineRun')
+    runId = dauphin.NonNull(dauphin.String)
     message = dauphin.NonNull(dauphin.String)
     timestamp = dauphin.NonNull(dauphin.String)
     level = dauphin.NonNull('LogLevel')
@@ -102,9 +106,7 @@ class DauphinLogMessageConnection(dauphin.ObjectType):
     def resolve_nodes(self, graphene_info):
         pipeline = get_pipeline_or_raise(graphene_info, self._pipeline_run.selector)
         return [
-            graphene_info.schema.type_named('PipelineRunEvent').from_dagster_event(
-                graphene_info, log, pipeline, self._pipeline_run.execution_plan
-            )
+            from_event_record(graphene_info, log, pipeline, self._pipeline_run.execution_plan)
             for log in self._logs
         ]
 
@@ -247,8 +249,6 @@ class DauphinExecutionStepOutputEvent(dauphin.ObjectType):
         interfaces = (DauphinMessageEvent, DauphinStepEvent)
 
     output_name = dauphin.NonNull(dauphin.String)
-    # storage_mode = dauphin.NonNull(dauphin.String)
-    # storage_object_id = dauphin.NonNull(dauphin.String)
     value_repr = dauphin.NonNull(dauphin.String)
     intermediate_materialization = dauphin.Field(DauphinMaterialization)
 
@@ -304,111 +304,133 @@ class DauphinPipelineRunEvent(dauphin.Union):
             DauphinStepExpectationResultEvent,
         )
 
-    @staticmethod
-    def from_dagster_event(graphene_info, event, dauphin_pipeline, execution_plan):
-        check.inst_param(event, 'event', EventRecord)
-        check.inst_param(
-            dauphin_pipeline, 'dauphin_pipeline', graphene_info.schema.type_named('Pipeline')
+
+def from_dagster_event_record(graphene_info, event_record, dauphin_pipeline, execution_plan):
+    # Lots of event types. Pylint thinks there are too many branches
+    # pylint: disable=too-many-branches
+    check.inst_param(event_record, 'event_record', EventRecord)
+    check.param_invariant(event_record.is_dagster_event, 'event_record')
+    check.inst_param(
+        dauphin_pipeline, 'dauphin_pipeline', graphene_info.schema.type_named('Pipeline')
+    )
+    check.inst_param(execution_plan, 'execution_plan', ExecutionPlan)
+
+    dagster_event = event_record.dagster_event
+    basic_params = construct_basic_params(graphene_info, event_record, execution_plan)
+    if dagster_event.event_type == DagsterEventType.STEP_START:
+        return graphene_info.schema.type_named('ExecutionStepStartEvent')(**basic_params)
+    elif dagster_event.event_type == DagsterEventType.STEP_SKIPPED:
+        return graphene_info.schema.type_named('ExecutionStepSkippedEvent')(**basic_params)
+    elif dagster_event.event_type == DagsterEventType.STEP_SUCCESS:
+        return graphene_info.schema.type_named('ExecutionStepSuccessEvent')(**basic_params)
+    elif dagster_event.event_type == DagsterEventType.STEP_OUTPUT:
+        output_data = event_record.dagster_event.step_output_data
+        return graphene_info.schema.type_named('ExecutionStepOutputEvent')(
+            output_name=output_data.output_name,
+            intermediate_materialization=output_data.intermediate_materialization,
+            value_repr=dagster_event.step_output_data.value_repr,
+            # parens make black not put trailing commas, which in turn break py27
+            **(basic_params)
         )
-        check.inst_param(execution_plan, 'execution_plan', ExecutionPlan)
-
-        pipeline_run = graphene_info.context.pipeline_runs.get_run_by_id(event.run_id)
-        dauphin_run = DauphinPipelineRun(pipeline_run)
-
-        dauphin_step = (
-            graphene_info.schema.type_named('ExecutionStep')(
-                pipeline_run.execution_plan,
-                pipeline_run.execution_plan.get_step_by_key(event.step_key),
+    elif dagster_event.event_type == DagsterEventType.STEP_MATERIALIZATION:
+        materialization_data = dagster_event.step_materialization_data
+        return graphene_info.schema.type_named('StepMaterializationEvent')(
+            materialization=materialization_data.materialization, **basic_params
+        )
+    elif dagster_event.event_type == DagsterEventType.STEP_EXPECTATION_RESULT:
+        expectation_result = dagster_event.event_specific_data.expectation_result
+        return graphene_info.schema.type_named('StepExpectationResultEvent')(
+            expectation_result=DauphinExpectationResult(
+                success=expectation_result.success,
+                message=expectation_result.message,
+                resultMetadataJsonString=json.dumps(expectation_result.result_metadata),
+            ),
+            # parens make black not put trailing commas, which in turn break py27
+            **(basic_params)
+        )
+    elif dagster_event.event_type == DagsterEventType.STEP_FAILURE:
+        check.inst(dagster_event.step_failure_data, StepFailureData)
+        return graphene_info.schema.type_named('ExecutionStepFailureEvent')(
+            error=graphene_info.schema.type_named('PythonError')(
+                dagster_event.step_failure_data.error
+            ),
+            # parens make black not put trailing commas, which in turn break py27
+            **(basic_params)
+        )
+    elif dagster_event.event_type == DagsterEventType.PIPELINE_START:
+        return graphene_info.schema.type_named('PipelineStartEvent')(
+            pipeline=dauphin_pipeline, **basic_params
+        )
+    elif dagster_event.event_type == DagsterEventType.PIPELINE_SUCCESS:
+        return graphene_info.schema.type_named('PipelineSuccessEvent')(
+            pipeline=dauphin_pipeline, **basic_params
+        )
+    elif dagster_event.event_type == DagsterEventType.PIPELINE_FAILURE:
+        return graphene_info.schema.type_named('PipelineFailureEvent')(
+            pipeline=dauphin_pipeline, **basic_params
+        )
+    elif dagster_event.event_type == DagsterEventType.PIPELINE_PROCESS_START:
+        return graphene_info.schema.type_named('PipelineProcessStartEvent')(
+            pipeline=dauphin_pipeline, **basic_params
+        )
+    elif dagster_event.event_type == DagsterEventType.PIPELINE_PROCESS_STARTED:
+        process_data = dagster_event.pipeline_process_started_data
+        return graphene_info.schema.type_named('PipelineProcessStartedEvent')(
+            pipeline=dauphin_pipeline, process_id=process_data.process_id, **basic_params
+        )
+    elif dagster_event.event_type == DagsterEventType.PIPELINE_INIT_FAILURE:
+        return graphene_info.schema.type_named('PipelineInitFailureEvent')(
+            pipeline=dauphin_pipeline,
+            error=graphene_info.schema.type_named('PythonError')(
+                dagster_event.pipeline_init_failure_data.error
+            ),
+            # parens make black not put trailing commas, which in turn break py27
+            **(basic_params)
+        )
+    else:
+        raise Exception(
+            'Unknown DAGSTER_EVENT type {inner_type} found in logs'.format(
+                inner_type=dagster_event.event_type
             )
-            if event.step_key
-            else None
         )
 
-        basic_params = {
-            'run': dauphin_run,
-            'message': event.user_message,
-            'timestamp': int(event.timestamp * 1000),
-            'level': DauphinLogLevel.from_level(event.level),
-            'step': dauphin_step,
-        }
 
-        if event.is_dagster_event:
-            dagster_event = event.dagster_event
-            if dagster_event.event_type == DagsterEventType.STEP_START:
-                return graphene_info.schema.type_named('ExecutionStepStartEvent')(**basic_params)
-            elif dagster_event.event_type == DagsterEventType.STEP_SKIPPED:
-                return graphene_info.schema.type_named('ExecutionStepSkippedEvent')(**basic_params)
-            elif dagster_event.event_type == DagsterEventType.STEP_SUCCESS:
-                return graphene_info.schema.type_named('ExecutionStepSuccessEvent')(**basic_params)
-            elif dagster_event.event_type == DagsterEventType.STEP_OUTPUT:
-                output_data = event.dagster_event.step_output_data
-                return graphene_info.schema.type_named('ExecutionStepOutputEvent')(
-                    output_name=output_data.output_name,
-                    intermediate_materialization=output_data.intermediate_materialization,
-                    # parens make black not put trailing commas, which in turn break py27
-                    **(basic_params)
-                )
-            elif dagster_event.event_type == DagsterEventType.STEP_MATERIALIZATION:
-                materialization_data = dagster_event.step_materialization_data
-                return graphene_info.schema.type_named('StepMaterializationEvent')(
-                    materialization=materialization_data.materialization, **basic_params
-                )
-            elif dagster_event.event_type == DagsterEventType.STEP_EXPECTATION_RESULT:
-                expectation_result = dagster_event.event_specific_data.expectation_result
-                return graphene_info.schema.type_named('StepExpectationResultEvent')(
-                    expectation_result=DauphinExpectationResult(
-                        success=expectation_result.success,
-                        message=expectation_result.message,
-                        resultMetadataJsonString=json.dumps(expectation_result.result_metadata),
-                    ),
-                    # parens make black not put trailing commas, which in turn break py27
-                    **(basic_params)
-                )
-            elif dagster_event.event_type == DagsterEventType.STEP_FAILURE:
-                check.inst(dagster_event.step_failure_data, StepFailureData)
-                return graphene_info.schema.type_named('ExecutionStepFailureEvent')(
-                    error=graphene_info.schema.type_named('PythonError')(
-                        dagster_event.step_failure_data.error
-                    ),
-                    # parens make black not put trailing commas, which in turn break py27
-                    **(basic_params)
-                )
-            elif dagster_event.event_type == DagsterEventType.PIPELINE_START:
-                return graphene_info.schema.type_named('PipelineStartEvent')(
-                    pipeline=dauphin_pipeline, **basic_params
-                )
-            elif dagster_event.event_type == DagsterEventType.PIPELINE_SUCCESS:
-                return graphene_info.schema.type_named('PipelineSuccessEvent')(
-                    pipeline=dauphin_pipeline, **basic_params
-                )
-            elif dagster_event.event_type == DagsterEventType.PIPELINE_FAILURE:
-                return graphene_info.schema.type_named('PipelineFailureEvent')(
-                    pipeline=dauphin_pipeline, **basic_params
-                )
-            elif dagster_event.event_type == DagsterEventType.PIPELINE_PROCESS_START:
-                return graphene_info.schema.type_named('PipelineProcessStartEvent')(
-                    pipeline=dauphin_pipeline, **basic_params
-                )
-            elif dagster_event.event_type == DagsterEventType.PIPELINE_PROCESS_STARTED:
-                process_data = dagster_event.pipeline_process_started_data
-                return graphene_info.schema.type_named('PipelineProcessStartedEvent')(
-                    pipeline=dauphin_pipeline, process_id=process_data.process_id, **basic_params
-                )
-            elif dagster_event.event_type == DagsterEventType.PIPELINE_INIT_FAILURE:
-                return graphene_info.schema.type_named('PipelineInitFailureEvent')(
-                    pipeline=dauphin_pipeline,
-                    error=graphene_info.schema.type_named('PythonError')(
-                        dagster_event.pipeline_init_failure_data.error
-                    ),
-                    # parens make black not put trailing commas, which in turn break py27
-                    **(basic_params)
-                )
-            else:
-                raise Exception(
-                    'Unknown DAGSTER_EVENT type {inner_type} found in logs'.format(
-                        inner_type=dagster_event.event_type
-                    )
-                )
+def from_event_record(graphene_info, event_record, dauphin_pipeline, execution_plan):
+    check.inst_param(event_record, 'event_record', EventRecord)
+    check.inst_param(
+        dauphin_pipeline, 'dauphin_pipeline', graphene_info.schema.type_named('Pipeline')
+    )
+    check.inst_param(execution_plan, 'execution_plan', ExecutionPlan)
 
-        else:
-            return graphene_info.schema.type_named('LogMessageEvent')(**basic_params)
+    if event_record.is_dagster_event:
+        return from_dagster_event_record(
+            graphene_info, event_record, dauphin_pipeline, execution_plan
+        )
+    else:
+        return graphene_info.schema.type_named('LogMessageEvent')(
+            **construct_basic_params(graphene_info, event_record, execution_plan)
+        )
+
+
+def create_dauphin_step(graphene_info, event_record, execution_plan):
+    check.inst_param(event_record, 'event_record', EventRecord)
+    check.inst_param(execution_plan, 'execution_plan', ExecutionPlan)
+    return (
+        graphene_info.schema.type_named('ExecutionStep')(
+            execution_plan, execution_plan.get_step_by_key(event_record.step_key)
+        )
+        if event_record.step_key
+        else None
+    )
+
+
+def construct_basic_params(graphene_info, event_record, execution_plan):
+    check.inst_param(event_record, 'event_record', EventRecord)
+    check.inst_param(execution_plan, 'execution_plan', ExecutionPlan)
+    return {
+        'runId': event_record.run_id,
+        'message': event_record.user_message,
+        'timestamp': int(event_record.timestamp * 1000),
+        'level': DauphinLogLevel.from_level(event_record.level),
+        'step': create_dauphin_step(graphene_info, event_record, execution_plan),
+    }

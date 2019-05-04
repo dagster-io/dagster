@@ -123,7 +123,7 @@ class DagsterEvent(
         )
 
         log_fn(
-            ('{event_type} for pipeline {pipeline_name}').format(
+            '{event_type} for pipeline {pipeline_name}'.format(
                 event_type=event_type, pipeline_name=pipeline_name
             ),
             dagster_event=event,

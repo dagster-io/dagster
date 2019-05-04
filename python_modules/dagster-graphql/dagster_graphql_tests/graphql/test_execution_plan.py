@@ -1,5 +1,4 @@
 import uuid
-import pytest
 from dagster import check
 from dagster.core.object_store import has_filesystem_intermediate, get_filesystem_intermediate
 from dagster.utils import merge_dicts, script_relative_path
@@ -86,6 +85,12 @@ mutation (
                 ... on ExecutionStepOutputEvent {
                     outputName
                     valueRepr
+                }
+                ... on StepMaterializationEvent {
+                    materialization {
+                        path
+                        description
+                    }
                 }
                 ... on ExecutionStepFailureEvent {
                     error {
@@ -362,7 +367,6 @@ def test_pipeline_with_execution_metadata(snapshot):
     snapshot.assert_match(result.data)
 
 
-@pytest.mark.skip('https://github.com/dagster-io/dagster/issues/1327')
 def test_basic_execute_plan_with_materialization():
     with get_temp_file_name() as out_csv_path:
 
@@ -391,7 +395,7 @@ def test_basic_execute_plan_with_materialization():
             'sum_sq_solid.transform',
         ]
 
-        run_logs = execute_dagster_graphql(
+        result = execute_dagster_graphql(
             define_context(),
             EXECUTE_PLAN_QUERY,
             variables={
@@ -408,9 +412,11 @@ def test_basic_execute_plan_with_materialization():
             },
         )
 
+        assert result.data
+
         step_mat_event = None
 
-        for message in run_logs['messages']:
+        for message in result.data['executePlan']['stepEvents']:
             if message['__typename'] == 'StepMaterializationEvent':
                 # ensure only one event
                 assert step_mat_event is None
