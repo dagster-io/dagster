@@ -1770,11 +1770,31 @@ milestones in the framework's capability.
 0.4.1
 -----
 **API Changes**
+
 - Solids can now emit ``ExpectationResult`` in addition to ``Result`` and ``Materialization``.
 - ``DagsterEventType`` is now a top-level import.
+- Added ``is_secret`` to Field, to allow users to indicate which config fields are sensitive and should be hidden to the user in tooling.
+- Added ``step_metadata_fn`` to ``SolidDefinition``. This allows the user to generate metadata attached to an execution step. We anticipate this to be used to generate strings that can be rendered in dagit, such as fully materialized SQL generated from SQL templates and configuration, or fully-specified spark-submit commands that require config to be generated.
+- Transforms can now emit expectation results.
+- The ``config`` property of the ``InitResourceContext`` has been removed.
 
 **Compatibility**
+
 - Dagster-airflow now works with Python 3.7 (since Airflow 1.10.3 now supports Python 3.7).
+- Dagstermill now relies on Papermill 1.0 and above.
+
+**Libraries**
+
+- Added dagster-datadog which contains ``datadog_resource``
+- Added dagster-pagerduty which contains ``pagerduty_resource``
+- Added dagster-slack which contains ``slack_resource``
+- Added dagster-gcp with builtin solid for BigQuery and Dataproc.
+- In dagster-aws, added support for EMR.
+
+**GraphQL**
+
+- Added ``isSecret`` to ``Field``.
+- Added ``Materialization`` as a generate object used within both explicit materialization events and also as an optional intermediate materialization in step output events.
 
 0.4.0
 -----
@@ -22030,11 +22050,33 @@ intend micro versions to reflect a regular release schedule and minor versions t
 milestones in the framework’s capability.</p>
 <div class="section" id="id1">
 <h2>0.4.1<a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h2>
-<p><strong>API Changes</strong>
-- Solids can now emit <code class="docutils literal notranslate"><span class="pre">ExpectationResult</span></code> in addition to <code class="docutils literal notranslate"><span class="pre">Result</span></code> and <code class="docutils literal notranslate"><span class="pre">Materialization</span></code>.
-- <code class="docutils literal notranslate"><span class="pre">DagsterEventType</span></code> is now a top-level import.</p>
-<p><strong>Compatibility</strong>
-- Dagster-airflow now works with Python 3.7 (since Airflow 1.10.3 now supports Python 3.7).</p>
+<p><strong>API Changes</strong></p>
+<ul class="simple">
+<li><p>Solids can now emit <code class="docutils literal notranslate"><span class="pre">ExpectationResult</span></code> in addition to <code class="docutils literal notranslate"><span class="pre">Result</span></code> and <code class="docutils literal notranslate"><span class="pre">Materialization</span></code>.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">DagsterEventType</span></code> is now a top-level import.</p></li>
+<li><p>Added <code class="docutils literal notranslate"><span class="pre">is_secret</span></code> to Field, to allow users to indicate which config fields are sensitive and should be hidden to the user in tooling.</p></li>
+<li><p>Added <code class="docutils literal notranslate"><span class="pre">step_metadata_fn</span></code> to <code class="docutils literal notranslate"><span class="pre">SolidDefinition</span></code>. This allows the user to generate metadata attached to an execution step. We anticipate this to be used to generate strings that can be rendered in dagit, such as fully materialized SQL generated from SQL templates and configuration, or fully-specified spark-submit commands that require config to be generated.</p></li>
+<li><p>Transforms can now emit expectation results.</p></li>
+<li><p>The <code class="docutils literal notranslate"><span class="pre">config</span></code> property of the <code class="docutils literal notranslate"><span class="pre">InitResourceContext</span></code> has been removed.</p></li>
+</ul>
+<p><strong>Compatibility</strong></p>
+<ul class="simple">
+<li><p>Dagster-airflow now works with Python 3.7 (since Airflow 1.10.3 now supports Python 3.7).</p></li>
+<li><p>Dagstermill now relies on Papermill 1.0 and above.</p></li>
+</ul>
+<p><strong>Libraries</strong></p>
+<ul class="simple">
+<li><p>Added dagster-datadog which contains <code class="docutils literal notranslate"><span class="pre">datadog_resource</span></code></p></li>
+<li><p>Added dagster-pagerduty which contains <code class="docutils literal notranslate"><span class="pre">pagerduty_resource</span></code></p></li>
+<li><p>Added dagster-slack which contains <code class="docutils literal notranslate"><span class="pre">slack_resource</span></code></p></li>
+<li><p>Added dagster-gcp with builtin solid for BigQuery and Dataproc.</p></li>
+<li><p>In dagster-aws, added support for EMR.</p></li>
+</ul>
+<p><strong>GraphQL</strong></p>
+<ul class="simple">
+<li><p>Added <code class="docutils literal notranslate"><span class="pre">isSecret</span></code> to <code class="docutils literal notranslate"><span class="pre">Field</span></code>.</p></li>
+<li><p>Added <code class="docutils literal notranslate"><span class="pre">Materialization</span></code> as a generate object used within both explicit materialization events and also as an optional intermediate materialization in step output events.</p></li>
+</ul>
 </div>
 <div class="section" id="id2">
 <h2>0.4.0<a class="headerlink" href="#id2" title="Permalink to this headline">¶</a></h2>

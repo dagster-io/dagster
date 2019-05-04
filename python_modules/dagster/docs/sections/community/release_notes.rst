@@ -13,11 +13,31 @@ milestones in the framework's capability.
 0.4.1
 -----
 **API Changes**
+
 - Solids can now emit ``ExpectationResult`` in addition to ``Result`` and ``Materialization``.
 - ``DagsterEventType`` is now a top-level import.
+- Added ``is_secret`` to Field, to allow users to indicate which config fields are sensitive and should be hidden to the user in tooling.
+- Added ``step_metadata_fn`` to ``SolidDefinition``. This allows the user to generate metadata attached to an execution step. We anticipate this to be used to generate strings that can be rendered in dagit, such as fully materialized SQL generated from SQL templates and configuration, or fully-specified spark-submit commands that require config to be generated.
+- Transforms can now emit expectation results.
+- The ``config`` property of the ``InitResourceContext`` has been removed.
 
 **Compatibility**
+
 - Dagster-airflow now works with Python 3.7 (since Airflow 1.10.3 now supports Python 3.7).
+- Dagstermill now relies on Papermill 1.0 and above.
+
+**Libraries**
+
+- Added dagster-datadog which contains ``datadog_resource``
+- Added dagster-pagerduty which contains ``pagerduty_resource``
+- Added dagster-slack which contains ``slack_resource``
+- Added dagster-gcp with builtin solid for BigQuery and Dataproc.
+- In dagster-aws, added support for EMR.
+
+**GraphQL**
+
+- Added ``isSecret`` to ``Field``.
+- Added ``Materialization`` as a generate object used within both explicit materialization events and also as an optional intermediate materialization in step output events.
 
 0.4.0
 -----
