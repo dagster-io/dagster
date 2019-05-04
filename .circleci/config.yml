@@ -30,6 +30,11 @@ jobs:
             git config --global user.name "$GITHUB_NAME"
 
       - run:
+          name: Clean Phabricator Tags
+          command: |
+            git tag | grep phabricator | xargs git push -d origin
+
+      - run:
           name: Merge master
           command: |
             git fetch --all

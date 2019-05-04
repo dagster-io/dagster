@@ -33,7 +33,7 @@ Top Level Tools:
   single-process and multi-process execution engines; and a CLI tool for driving those engines.
 - **dagit**: A rich development environment for Dagster, including a DAG browser, a type-aware config editor,
   and a streaming execution interface.
-- **dagstermill**: Built on the papermill library (https://github.com/nteract/papermill) Dagsermill is meant for integrating productionized Jupyter notebooks into dagster pipelines.
+- **dagstermill**: Built on the papermill library (https://github.com/nteract/papermill) Dagstermill is meant for integrating productionized Jupyter notebooks into dagster pipelines.
 - **dagster-airflow**: Allows Dagster pipelines to be scheduled and executed, either containerized or uncontainerized, as Apache Airflow DAGs (https://github.com/apache/airflow)
 
 Supporting Libraries:

@@ -1,7 +1,10 @@
 import uuid
+import pytest
 from dagster import check
 from dagster.core.object_store import has_filesystem_intermediate, get_filesystem_intermediate
-from dagster.utils import merge_dicts
+from dagster.utils import merge_dicts, script_relative_path
+from dagster.utils.test import get_temp_file_name
+
 
 from dagster_pandas import DataFrame
 
@@ -51,6 +54,54 @@ query PipelineQuery($config: PipelineConfig, $pipeline: ExecutionSelector!) {
         pipelineName
     }
   }
+}
+'''
+
+EXECUTE_PLAN_QUERY = '''
+mutation (
+    $pipelineName: String!
+    $config: PipelineConfig
+    $stepKeys: [String!]
+    $executionMetadata: ExecutionMetadata
+) {
+    executePlan(
+        pipelineName: $pipelineName
+        config: $config
+        stepKeys: $stepKeys
+        executionMetadata: $executionMetadata
+    ) {
+        __typename
+        ... on ExecutePlanSuccess {
+            pipeline { name }
+            hasFailures
+            stepEvents {
+                __typename
+                step { 
+                    key 
+                    metadata {
+                       key
+                       value
+                    }
+                }
+                ... on ExecutionStepOutputEvent {
+                    outputName
+                    valueRepr
+                }
+                ... on ExecutionStepFailureEvent {
+                    error {
+                        message
+                    }
+                }
+            }
+        }
+        ... on PipelineConfigValidationInvalid {
+            pipeline { name }
+            errors { message }
+        }
+        ... on PipelineNotFoundError {
+            pipelineName
+        }
+    }
 }
 '''
 
@@ -311,50 +362,60 @@ def test_pipeline_with_execution_metadata(snapshot):
     snapshot.assert_match(result.data)
 
 
-EXECUTE_PLAN_QUERY = '''
-mutation (
-    $pipelineName: String!
-    $config: PipelineConfig
-    $stepKeys: [String!]
-    $executionMetadata: ExecutionMetadata
-) {
-    executePlan(
-        pipelineName: $pipelineName
-        config: $config
-        stepKeys: $stepKeys
-        executionMetadata: $executionMetadata
-    ) {
-        __typename
-        ... on ExecutePlanSuccess {
-            pipeline { name }
-            hasFailures
-            stepEvents {
-                __typename
-                step { 
-                    key 
-                    metadata {
-                       key
-                       value
-                    }
-                }
-                ... on ExecutionStepOutputEvent {
-                    outputName
-                    valueRepr
-                }
-                ... on ExecutionStepFailureEvent {
-                    error {
-                        message
-                    }
+@pytest.mark.skip('https://github.com/dagster-io/dagster/issues/1327')
+def test_basic_execute_plan_with_materialization():
+    with get_temp_file_name() as out_csv_path:
+
+        environment_dict = {
+            'solids': {
+                'sum_solid': {
+                    'inputs': {'num': {'csv': {'path': script_relative_path('../num.csv')}}},
+                    'outputs': [{'result': {'csv': {'path': out_csv_path}}}],
                 }
             }
         }
-        ... on PipelineConfigValidationInvalid {
-            pipeline { name }
-            errors { message }
-        }
-        ... on PipelineNotFoundError {
-            pipelineName
-        }
-    }
-}
-'''
+
+        result = execute_dagster_graphql(
+            define_context(),
+            EXECUTION_PLAN_QUERY,
+            variables={'pipeline': {'name': 'pandas_hello_world'}, 'config': environment_dict},
+        )
+
+        steps_data = result.data['executionPlan']['steps']
+
+        assert [step_data['key'] for step_data in steps_data] == [
+            'sum_solid.inputs.num.read',
+            'sum_solid.transform',
+            'sum_solid.outputs.result.materialize.0',
+            'sum_solid.outputs.result.materialize.join',
+            'sum_sq_solid.transform',
+        ]
+
+        run_logs = execute_dagster_graphql(
+            define_context(),
+            EXECUTE_PLAN_QUERY,
+            variables={
+                'pipelineName': 'pandas_hello_world',
+                'config': environment_dict,
+                'stepKeys': [
+                    'sum_solid.inputs.num.read',
+                    'sum_solid.transform',
+                    'sum_solid.outputs.result.materialize.0',
+                    'sum_solid.outputs.result.materialize.join',
+                    'sum_sq_solid.transform',
+                ],
+                'executionMetadata': {'runId': 'kdjkfjdfd'},
+            },
+        )
+
+        step_mat_event = None
+
+        for message in run_logs['messages']:
+            if message['__typename'] == 'StepMaterializationEvent':
+                # ensure only one event
+                assert step_mat_event is None
+                step_mat_event = message
+
+        # ensure only one event
+        assert step_mat_event
+        assert step_mat_event['materialization']['path'] == out_csv_path

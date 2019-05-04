@@ -38,6 +38,8 @@ from dagster.core.definitions import (
 from dagster.core.definitions.resource import ResourceDefinition, resource
 from dagster.core.definitions.decorators import MultipleResults, lambda_solid, solid
 
+from dagster.core.events import DagsterEventType
+
 from dagster.core.errors import (
     DagsterExecutionStepExecutionError,
     DagsterExecutionStepNotFoundError,
@@ -110,6 +112,7 @@ __all__ = [
     # Execution
     'execute_pipeline_iterator',
     'execute_pipeline',
+    'DagsterEventType',
     'ExecutionContext',
     'InitContext',
     'InitResourceContext',

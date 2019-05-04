@@ -2,6 +2,7 @@ from dagster import check
 
 from dagster.core.definitions import (
     ExpectationDefinition,
+    ExpectationResult,
     InputDefinition,
     OutputDefinition,
     PipelineDefinition,
@@ -10,7 +11,7 @@ from dagster.core.definitions import (
 
 from dagster.core.execution_context import SystemStepExecutionContext
 
-from dagster.core.errors import DagsterExpectationFailedError
+from dagster.core.errors import DagsterExpectationFailedError, DagsterInvariantViolationError
 
 from dagster.core.system_config.objects import EnvironmentConfig
 
@@ -45,12 +46,26 @@ def _create_expectation_lambda(solid, inout_def, expectation_def, internal_outpu
         expt_result = expectation_def.expectation_fn(
             ExpectationExecutionContext(expectation_context), value
         )
+
+        if not isinstance(expt_result, ExpectationResult):
+            raise DagsterInvariantViolationError(
+                (
+                    'Expectation for solid {solid_name} on {desc_key} {inout_name} '
+                    'did not return an ExpectationResult'.format(
+                        solid_name=solid.name,
+                        desc_key=inout_def.descriptive_key,
+                        inout_name=inout_def.name,
+                    )
+                )
+            )
+
         if expt_result.success:
             expectation_context.log.debug(
                 'Expectation {key} succeeded on {value}.'.format(
                     key=expectation_context.step.key, value=value
                 )
             )
+            yield expt_result
             yield StepOutputValue(output_name=internal_output_name, value=inputs[EXPECTATION_INPUT])
         else:
             expectation_context.log.debug(

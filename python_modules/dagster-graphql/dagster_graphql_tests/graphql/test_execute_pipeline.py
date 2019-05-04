@@ -9,6 +9,14 @@ from dagster.utils.test import get_temp_file_name
 from dagster.core.object_store import has_filesystem_intermediate, get_filesystem_intermediate
 from dagster_pandas import DataFrame
 
+from .execution_queries import (
+    SUBSCRIPTION_QUERY,
+    START_PIPELINE_EXECUTION_QUERY,
+    START_PIPELINE_EXECUTION_SNAPSHOT_QUERY,
+)
+
+from .utils import sync_execute_get_run_log_data
+
 from .setup import (
     define_context,
     execute_dagster_graphql,
@@ -70,11 +78,7 @@ def test_basis_start_pipeline_not_found_error():
 
 
 def test_basic_start_pipeline_execution_and_subscribe():
-    context = define_context()
-
-    result = execute_dagster_graphql(
-        context,
-        START_PIPELINE_EXECUTION_QUERY,
+    run_logs = sync_execute_get_run_log_data(
         variables={
             'pipeline': {'name': 'pandas_hello_world'},
             'config': {
@@ -84,37 +88,12 @@ def test_basic_start_pipeline_execution_and_subscribe():
                     }
                 }
             },
-        },
+        }
     )
 
-    assert not result.errors
-    assert result.data
-
-    # just test existence
-    assert result.data['startPipelineExecution']['__typename'] == 'StartPipelineExecutionSuccess'
-    run_id = result.data['startPipelineExecution']['run']['runId']
-    assert uuid.UUID(run_id)
-
-    subscription = execute_dagster_graphql(
-        context, parse(SUBSCRIPTION_QUERY), variables={'runId': run_id}
-    )
-
-    subscribe_results = []
-    subscription.subscribe(subscribe_results.append)
-
-    assert len(subscribe_results) == 1
-
-    subscribe_result = subscribe_results[0]
-
-    assert not subscribe_result.errors
-    assert subscribe_result.data
-    assert subscribe_result.data['pipelineRunLogs']
-    assert (
-        subscribe_result.data['pipelineRunLogs']['__typename']
-        == 'PipelineRunLogsSubscriptionSuccess'
-    )
+    assert run_logs['__typename'] == 'PipelineRunLogsSubscriptionSuccess'
     log_messages = []
-    for message in subscribe_result.data['pipelineRunLogs']['messages']:
+    for message in run_logs['messages']:
         if message['__typename'] == 'LogMessageEvent':
             log_messages.append(message)
         else:
@@ -128,44 +107,14 @@ def test_basic_start_pipeline_execution_and_subscribe():
 
 
 def test_subscription_query_error():
-    context = define_context(raise_on_error=False)
-
-    result = execute_dagster_graphql(
-        context,
-        START_PIPELINE_EXECUTION_QUERY,
-        variables={'pipeline': {'name': 'naughty_programmer_pipeline'}},
+    run_logs = sync_execute_get_run_log_data(
+        variables={'pipeline': {'name': 'naughty_programmer_pipeline'}}, raise_on_error=False
     )
 
-    assert not result.errors
-    assert result.data
-
-    # just test existence
-    assert result.data['startPipelineExecution']['__typename'] == 'StartPipelineExecutionSuccess'
-    run_id = result.data['startPipelineExecution']['run']['runId']
-    assert uuid.UUID(run_id)
-
-    subscription = execute_dagster_graphql(
-        context, parse(SUBSCRIPTION_QUERY), variables={'runId': run_id}
-    )
-
-    subscribe_results = []
-    subscription.subscribe(subscribe_results.append)
-
-    assert len(subscribe_results) == 1
-    subscribe_result = subscribe_results[0]
-    assert not subscribe_result.errors
-    assert subscribe_result.data
-    assert subscribe_result.data['pipelineRunLogs']
-
-    assert (
-        subscribe_result.data['pipelineRunLogs']['__typename']
-        == 'PipelineRunLogsSubscriptionSuccess'
-    )
+    assert run_logs['__typename'] == 'PipelineRunLogsSubscriptionSuccess'
 
     step_run_log_entry = _get_step_run_log_entry(
-        subscribe_result.data['pipelineRunLogs'],
-        'throw_a_thing.transform',
-        'ExecutionStepFailureEvent',
+        run_logs, 'throw_a_thing.transform', 'ExecutionStepFailureEvent'
     )
 
     assert step_run_log_entry
@@ -207,41 +156,6 @@ def _get_step_run_log_entry(pipeline_run_logs, step_key, typename):
         if message_data['__typename'] == typename:
             if message_data['step']['key'] == step_key:
                 return message_data
-
-
-SUBSCRIPTION_QUERY = '''
-subscription subscribeTest($runId: ID!) {
-    pipelineRunLogs(runId: $runId) {
-        __typename
-        ... on PipelineRunLogsSubscriptionSuccess {
-            messages {
-                __typename
-                ... on MessageEvent {
-                    message
-                    step {key }
-                    level
-                }
-                ... on ExecutionStepFailureEvent {
-                    error {
-                        message
-                        stack
-                    }
-                    level
-                }
-                ... on StepMaterializationEvent {
-                    materialization {
-                        path
-                        description
-                    }
-                }
-            }
-        }
-        ... on PipelineRunLogsSubscriptionMissingRunIdFailure {
-            missingRunId
-        }
-    }
-}
-'''
 
 
 def test_basic_sync_execution_no_config():
@@ -335,118 +249,6 @@ def first_event_of_type(logs, message_type):
 
 def has_event_of_type(logs, message_type):
     return first_event_of_type(logs, message_type) is not None
-
-
-START_PIPELINE_EXECUTION_QUERY = '''
-mutation (
-    $pipeline: ExecutionSelector!,
-    $config: PipelineConfig,
-    $stepKeys: [String!],
-    $executionMetadata: ExecutionMetadata,
-    $reexecutionConfig: ReexecutionConfig
-) {
-    startPipelineExecution(
-        pipeline: $pipeline,
-        config: $config,
-        stepKeys: $stepKeys,
-        executionMetadata: $executionMetadata,
-        reexecutionConfig: $reexecutionConfig
-    ) {
-        __typename
-        ... on StartPipelineExecutionSuccess {
-            run {
-                runId
-                pipeline { name }
-                logs {
-                    nodes {
-                        __typename
-                        ... on MessageEvent {
-                            message
-                            level
-                        }
-                        ... on ExecutionStepStartEvent {
-                            step { kind }
-                        }
-                        ... on ExecutionStepOutputEvent {
-                            step { key kind }
-                            outputName
-                            intermediateMaterialization {
-                                path
-                                description
-                            }
-                        }
-                    }
-                }
-            }
-        }
-        ... on PipelineConfigValidationInvalid {
-            pipeline { name }
-            errors { message }
-        }
-        ... on PipelineNotFoundError {
-            pipelineName
-        }
-    }
-}
-'''
-
-
-START_PIPELINE_EXECUTION_SNAPSHOT_QUERY = '''
-mutation (
-    $pipeline: ExecutionSelector!,
-    $config: PipelineConfig,
-    $stepKeys: [String!],
-    $executionMetadata: ExecutionMetadata,
-    $reexecutionConfig: ReexecutionConfig
-) {
-    startPipelineExecution(
-        pipeline: $pipeline,
-        config: $config,
-        stepKeys: $stepKeys,
-        executionMetadata: $executionMetadata,
-        reexecutionConfig: $reexecutionConfig
-    ) {
-        __typename
-        ... on StartPipelineExecutionSuccess {
-            run {
-                pipeline { name }
-                logs {
-                    nodes {
-                        __typename
-                        ... on MessageEvent {
-                            level
-                        }
-                        ... on ExecutionStepStartEvent {
-                            step { kind }
-                        }
-                        ... on ExecutionStepOutputEvent {
-                            step { key kind }
-                            outputName
-                            intermediateMaterialization {
-                                description
-                            }
-                        }
-                    }
-                }
-            }
-        }
-        ... on PipelineConfigValidationInvalid {
-            pipeline { name }
-            errors { message }
-        }
-        ... on PipelineNotFoundError {
-            pipelineName
-        }
-        ... on InvalidStepError {
-            invalidStepKey
-        }
-        ... on InvalidOutputError {
-            stepKey
-            invalidOutputName
-        }
-    }
-}
-'''
 
 
 def get_step_output_event(logs, step_key, output_name='result'):
@@ -653,46 +455,13 @@ def test_basic_start_pipeline_execution_with_materialization():
             }
         }
 
-        context = define_context()
-
-        result = execute_dagster_graphql(
-            context,
-            START_PIPELINE_EXECUTION_QUERY,
-            variables={'pipeline': {'name': 'pandas_hello_world'}, 'config': environment_dict},
+        run_logs = sync_execute_get_run_log_data(
+            variables={'pipeline': {'name': 'pandas_hello_world'}, 'config': environment_dict}
         )
-
-        assert not result.errors
-        assert result.data
-
-        # just test existence
-        assert (
-            result.data['startPipelineExecution']['__typename'] == 'StartPipelineExecutionSuccess'
-        )
-        run_id = result.data['startPipelineExecution']['run']['runId']
-        assert uuid.UUID(run_id)
-        assert (
-            result.data['startPipelineExecution']['run']['pipeline']['name'] == 'pandas_hello_world'
-        )
-
-        assert os.path.exists(out_csv_path)
-
-        subscription = execute_dagster_graphql(
-            context, parse(SUBSCRIPTION_QUERY), variables={'runId': run_id}
-        )
-
-        subscribe_results = []
-        subscription.subscribe(subscribe_results.append)
-
-        assert len(subscribe_results) == 1
-
-        subscribe_result = subscribe_results[0]
-
-        assert not subscribe_result.errors
-        assert subscribe_result.data
 
         step_mat_event = None
 
-        for message in subscribe_result.data['pipelineRunLogs']['messages']:
+        for message in run_logs['messages']:
             if message['__typename'] == 'StepMaterializationEvent':
                 # ensure only one event
                 assert step_mat_event is None

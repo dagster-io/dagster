@@ -435,7 +435,7 @@ def construct_intermediates_manager(run_config, environment_config, pipeline_def
             return InMemoryIntermediatesManager()
         elif run_config.storage_mode == RunStorageMode.S3:
             _dagster_aws = ensure_dagster_aws_requirements()
-            from dagster_aws.s3_object_store import S3ObjectStore
+            from dagster_aws.s3.object_store import S3ObjectStore
 
             return ObjectStoreIntermediatesManager(
                 S3ObjectStore(
@@ -457,7 +457,7 @@ def construct_intermediates_manager(run_config, environment_config, pipeline_def
         return InMemoryIntermediatesManager()
     elif environment_config.storage.storage_mode == 's3':
         _dagster_aws = ensure_dagster_aws_requirements()
-        from dagster_aws.s3_object_store import S3ObjectStore
+        from dagster_aws.s3.object_store import S3ObjectStore
 
         return ObjectStoreIntermediatesManager(
             S3ObjectStore(

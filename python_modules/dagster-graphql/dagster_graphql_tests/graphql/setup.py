@@ -15,6 +15,8 @@ from dagster import (
     Dict,
     Enum,
     EnumValue,
+    ExpectationDefinition,
+    ExpectationResult,
     Field,
     InputDefinition,
     Int,
@@ -25,8 +27,6 @@ from dagster import (
     PipelineDefinition,
     RepositoryDefinition,
     ResourceDefinition,
-    ExpectationDefinition,
-    ExpectationResult,
     SolidDefinition,
     String,
     lambda_solid,
@@ -133,6 +133,7 @@ def define_repository():
             'more_complicated_nested_config': define_more_complicated_nested_config,
             'pandas_hello_world': define_pandas_hello_world,
             'pandas_hello_world_two': define_pipeline_two,
+            'pandas_hello_world_with_expectations': define_pandas_hello_world_with_expectations,
             'pipeline_with_list': define_pipeline_with_list,
             'pandas_hello_world_df_input': define_pipeline_with_pandas_df_input,
             'no_config_pipeline': define_no_config_pipeline,
@@ -141,7 +142,27 @@ def define_repository():
             'naughty_programmer_pipeline': define_naughty_programmer_pipeline,
             'secret_pipeline': define_pipeline_with_secret,
             'pipeline_with_step_metadata': define_pipeline_with_step_metadata,
+            'pipeline_with_expectations': define_pipeline_with_expectation,
         },
+    )
+
+
+def define_pipeline_with_expectation():
+    @solid(outputs=[])
+    def emit_successful_expectation(_context):
+        yield ExpectationResult(
+            success=True, message='Successful', result_metadata={'reason': 'Just because.'}
+        )
+
+    @solid(outputs=[])
+    def emit_failed_expectation(_context):
+        yield ExpectationResult(
+            success=False, message='Failure', result_metadata={'reason': 'Relentless pessimism.'}
+        )
+
+    return PipelineDefinition(
+        name='pipeline_with_expectations',
+        solids=[emit_successful_expectation, emit_failed_expectation],
     )
 
 
@@ -244,6 +265,17 @@ def define_more_complicated_nested_config():
 def define_pandas_hello_world():
     return PipelineDefinition(
         name='pandas_hello_world',
+        solids=[sum_solid, sum_sq_solid],
+        dependencies={
+            'sum_solid': {},
+            'sum_sq_solid': {'sum_df': DependencyDefinition(sum_solid.name)},
+        },
+    )
+
+
+def define_pandas_hello_world_with_expectations():
+    return PipelineDefinition(
+        name='pandas_hello_world_with_expectations',
         solids=[sum_solid, sum_sq_solid, df_expectations_solid],
         dependencies={
             'sum_solid': {},

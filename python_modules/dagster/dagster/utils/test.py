@@ -19,6 +19,7 @@ from dagster.core.execution import (
     RunConfig,
     construct_pipeline_execution_context,
     create_environment_config,
+    yield_pipeline_execution_context,
 )
 
 from dagster.core.intermediates_manager import InMemoryIntermediatesManager
@@ -139,3 +140,11 @@ def execute_solid(pipeline_def, solid_name, inputs=None, environment_dict=None):
     return execute_solids(
         pipeline_def, [solid_name], {solid_name: inputs} if inputs else None, environment_dict
     )[solid_name]
+
+
+@contextmanager
+def yield_empty_pipeline_context(run_id=None):
+    with yield_pipeline_execution_context(
+        PipelineDefinition([]), {}, RunConfig(run_id=run_id)
+    ) as context:
+        yield context

@@ -22,7 +22,7 @@ from dagster.core.execution_context import (
     SystemStepExecutionContext,
 )
 
-from dagster.core.definitions import Materialization
+from dagster.core.definitions import Materialization, ExpectationResult
 
 from dagster.core.events import DagsterEvent, DagsterEventType
 
@@ -271,8 +271,10 @@ def _execute_steps_core_loop(step_context, inputs, intermediates_manager):
             yield _create_step_output_event(step_context, step_output, intermediates_manager)
         elif isinstance(step_output, Materialization):
             yield DagsterEvent.step_materialization(step_context, step_output)
+        elif isinstance(step_output, ExpectationResult):
+            yield DagsterEvent.step_expectation_result(step_context, step_output)
         else:
-            check.invariant(
+            check.failed(
                 'Unexpected step_output {step_output}, should have been caught earlier'.format(
                     step_output=step_output
                 )
