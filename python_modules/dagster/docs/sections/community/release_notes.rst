@@ -10,7 +10,7 @@ As the API is still in flux, we aren't following strict semantic versioning rule
 intend micro versions to reflect a regular release schedule and minor versions to reflect
 milestones in the framework's capability.
 
-0.4.1
+0.4.2
 -----
 **API Changes**
 
