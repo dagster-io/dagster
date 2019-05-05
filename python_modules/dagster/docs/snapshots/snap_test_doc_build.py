@@ -1767,7 +1767,7 @@ As the API is still in flux, we aren't following strict semantic versioning rule
 intend micro versions to reflect a regular release schedule and minor versions to reflect
 milestones in the framework's capability.
 
-0.4.1
+0.4.2
 -----
 **API Changes**
 
@@ -22049,7 +22049,7 @@ package versions move in lockstep with each other and with git tags.</p>
 intend micro versions to reflect a regular release schedule and minor versions to reflect
 milestones in the framework’s capability.</p>
 <div class="section" id="id1">
-<h2>0.4.1<a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h2>
+<h2>0.4.2<a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h2>
 <p><strong>API Changes</strong></p>
 <ul class="simple">
 <li><p>Solids can now emit <code class="docutils literal notranslate"><span class="pre">ExpectationResult</span></code> in addition to <code class="docutils literal notranslate"><span class="pre">Result</span></code> and <code class="docutils literal notranslate"><span class="pre">Materialization</span></code>.</p></li>
