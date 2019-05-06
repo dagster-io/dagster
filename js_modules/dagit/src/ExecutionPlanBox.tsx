@@ -60,6 +60,7 @@ function ReexecuteButton(props: ReexecuteButtonProps) {
     <ReExecuteContainer
       className="reexecute"
       title="Re-run just this step with existing configuration."
+      style={{ border: `1px solid white` }}
       onClick={() => onReexecuteStep(name)}
     >
       <Icon icon={IconNames.PLAY} iconSize={15} />
@@ -231,7 +232,6 @@ const ExecutionTime = ({ elapsed }: { elapsed: number }) => {
 
 const ReExecuteContainer = styled.div`
   display: inline-block;
-  border: 1px solid white;
   margin: 0 5px 0 3px;
   border-radius: 13px;
   width: 19px;
