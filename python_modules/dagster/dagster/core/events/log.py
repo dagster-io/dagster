@@ -4,7 +4,6 @@ from dagster import check
 from dagster.utils.error import SerializableErrorInfo
 
 from dagster.utils.log import (
-    DEBUG,
     StructuredLoggerHandler,
     JsonEventLoggerHandler,
     StructuredLoggerMessage,
@@ -139,7 +138,7 @@ def construct_event_logger(event_record_callback):
 
     return construct_single_handler_logger(
         'event-logger',
-        DEBUG,
+        'debug',
         StructuredLoggerHandler(
             lambda logger_message: event_record_callback(construct_event_record(logger_message))
         ),
@@ -151,7 +150,7 @@ def construct_json_event_logger(json_path):
     check.str_param(json_path, 'json_path')
     return construct_single_handler_logger(
         "json-event-record-logger",
-        DEBUG,
+        'debug',
         JsonEventLoggerHandler(
             json_path,
             lambda record: construct_event_record(

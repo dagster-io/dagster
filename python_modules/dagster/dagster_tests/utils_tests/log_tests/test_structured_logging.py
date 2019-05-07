@@ -58,5 +58,5 @@ def test_structured_logger_in_context_with_bad_log_level():
 
     logger = define_structured_logger('some_name', _append_message, level=logging.DEBUG)
     context = create_test_pipeline_execution_context(loggers={'structured_logger': logger})
-    with pytest.raises(check.CheckError):
+    with pytest.raises(AttributeError):
         context.log.gargle('from_context', foo=2)

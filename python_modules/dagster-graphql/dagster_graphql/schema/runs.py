@@ -68,6 +68,17 @@ def log_level_string(level):
         return str(level)
 
 
+class DauphinLogLevel(dauphin.Enum):
+    class Meta:
+        name = 'LogLevel'
+
+    CRITICAL = 'CRITICAL'
+    ERROR = 'ERROR'
+    INFO = 'INFO'
+    WARNING = 'WARNING'
+    DEBUG = 'DEBUG'
+
+
 class DauphinMessageEvent(dauphin.Interface):
     class Meta:
         name = 'MessageEvent'
@@ -75,7 +86,7 @@ class DauphinMessageEvent(dauphin.Interface):
     run = dauphin.NonNull('PipelineRun')
     message = dauphin.NonNull(dauphin.String)
     timestamp = dauphin.NonNull(dauphin.String)
-    level = dauphin.NonNull(dauphin.String)
+    level = dauphin.NonNull('LogLevel')
     step = dauphin.Field('ExecutionStep')
 
 

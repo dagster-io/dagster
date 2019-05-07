@@ -4,9 +4,24 @@ import logging
 import uuid
 
 from dagster import check, seven
-
+from dagster.utils import frozendict
 
 DAGSTER_META_KEY = 'dagster_meta'
+
+
+PYTHON_LOGGING_LEVELS_MAPPING = frozendict(
+    {'CRITICAL': 50, 'ERROR': 40, 'WARNING': 30, 'INFO': 20, 'DEBUG': 10}
+)
+
+PYTHON_LOGGING_LEVELS_ALIASES = frozendict({'FATAL': 'CRITICAL', 'WARN': 'WARNING'})
+
+PYTHON_LOGGING_LEVELS_NAMES = frozenset(
+    [
+        level_name.lower()
+        for level_name in list(PYTHON_LOGGING_LEVELS_MAPPING.keys())
+        + list(PYTHON_LOGGING_LEVELS_ALIASES.keys())
+    ]
+)
 
 
 def _dump_value(value):
@@ -33,15 +48,18 @@ class DagsterLogManager:
 
     An instance of the log manager is made available to solids as context.log.
 
-    In an attempt to support the range of Python logging possibilities, the log manager can be
-    invoked in three ways:
+    The log manager supports standard convenience methods like those built into the Python logging
+    library (i.e., ``DagsterLogManager.{debug, info, warning, error, critical}``, expects
+    corresponding methods to be defined on the loggers passed to its constructor, and will delegate
+    to those methods on each logger.
 
-        1. Using standard convenience methods like those built in to the Python logging library:
-           context.log.{debug, info, warning, error, critical}
-        2. With any user-defined log level, like context.log.trace, or context.log.notice. Users are
-           expected to register these levels with the Python logging library (using
-           logging.addLevelName) when instantiating custom loggers.
-        3. Using the underlying integer API directly by calling, e.g., context.log.log(5, msg).
+    The underlying integer API can also be called directly using, e.g.,
+    ``DagsterLogManager.log(5, msg)``, and the log manager will delegate to the `log` method defined
+    on each of the loggers it manages.
+
+    User-defined custom log levels are not supported, and calls to, e.g.,
+    ``DagsterLogManager.trace()`` or ``DagsterLogManager.notice`` will result in hard exceptions at
+    runtime.
 
     Args:
         run_id (str): The run_id.
@@ -54,18 +72,7 @@ class DagsterLogManager:
         self.logging_tags = check.dict_param(logging_tags, 'logging_tags')
         self.loggers = check.list_param(loggers, 'loggers', of_type=logging.Logger)
 
-    def _log(self, level, orig_message, message_props):
-        '''Actually invoke the underlying loggers.
-
-        Args:
-            level (Union[str, int]): A built=in logging level name, a level name as registered using
-                logging.addLevelName, or an integer logging level.
-            orig_message (str): The log message generated in user code.
-            message_props (dict): Additional properties for the structured log message.
-        '''
-        if not self.loggers:
-            return
-
+    def _prepare_message(self, orig_message, message_props):
         check.str_param(orig_message, 'orig_message')
         check.dict_param(message_props, 'message_props')
 
@@ -100,13 +107,6 @@ class DagsterLogManager:
             itertools.chain(synth_props.items(), self.logging_tags.items(), message_props.items())
         )
 
-        check.invariant(
-            isinstance(level, int),
-            'Unexpected log level: User code attempted called context.log.log directly at level '
-            ' \'{level}\', but context.log.log can only be called with integer arguments. Original '
-            'message: \'{orig_message}\''.format(level=level, orig_message=orig_message),
-        )
-
         # So here we use the arbitrary key DAGSTER_META_KEY to store a dictionary of
         # all the meta information that dagster injects into log message.
         # The python logging module, in its infinite wisdom, actually takes all the
@@ -115,11 +115,54 @@ class DagsterLogManager:
         # collisions with internal variables of the LogRecord class.
         # See __init__.py:363 (makeLogRecord) in the python 3.6 logging module source
         # for the gory details.
-        # getattr(self.logger, method)(
-        #     message_with_structured_props, extra={DAGSTER_META_KEY: all_props}
-        # )
+        return (_kv_message(all_props.items()), {DAGSTER_META_KEY: all_props})
+
+    def _log(self, level, orig_message, message_props):
+        '''Actually invoke the underlying loggers for a given integer log level.
+
+        Args:
+            level (int): An integer represeting a Python logging level.
+            orig_message (str): The log message generated in user code.
+            message_props (dict): Additional properties for the structured log message.
+        '''
+        if not self.loggers:
+            return
+
+        check.int_param(level, 'level')
+
+        message, extra = self._prepare_message(orig_message, message_props)
+
         for logger_ in self.loggers:
-            logger_.log(level, _kv_message(all_props.items()), extra={DAGSTER_META_KEY: all_props})
+            logger_.log(level, message, extra=extra)
+
+    def _log_at_str_level(self, level, orig_message, message_props):
+        '''Actually invoke the underlying loggers for a given string log level.
+
+        Args:
+            level (str): A valid string Python logging level.
+            orig_message (str): The log message generated in user code.
+            message_props (dict): Additional properties for the structured log message.
+        '''
+        if not self.loggers:
+            return
+
+        check.invariant(
+            level in PYTHON_LOGGING_LEVELS_NAMES,
+            'Bad value for log level {level}: permissible values are {levels}.'.format(
+                level=level,
+                levels=', '.join(
+                    ['\'{level_name}\'' for level_name in PYTHON_LOGGING_LEVELS_NAMES]
+                ),
+            ),
+        )
+
+        level_to_log = PYTHON_LOGGING_LEVELS_ALIASES.get(level, level)
+
+        message, extra = self._prepare_message(orig_message, message_props)
+
+        for logger_ in self.loggers:
+            log_method = getattr(logger_, level_to_log)
+            log_method(message, extra=extra)
 
     def debug(self, msg, **kwargs):
         '''
@@ -141,7 +184,9 @@ class DagsterLogManager:
         Kwargs:
             Additional context values for only this log message.
         '''
-        return self._log(logging.DEBUG, msg, kwargs)
+
+        check.str_param(msg, 'msg')
+        return self._log_at_str_level('debug', msg, kwargs)
 
     def info(self, msg, **kwargs):
         '''Log at INFO level
@@ -154,7 +199,9 @@ class DagsterLogManager:
         Kwargs:
             Additional context values for only this log message.
         '''
-        return self._log(logging.INFO, msg, kwargs)
+
+        check.str_param(msg, 'msg')
+        return self._log_at_str_level('info', msg, kwargs)
 
     def warning(self, msg, **kwargs):
         '''Log at WARNING level
@@ -167,7 +214,12 @@ class DagsterLogManager:
         Kwargs:
             Additional context values for only this log message.
         '''
-        return self._log(logging.WARNING, msg, kwargs)
+
+        check.str_param(msg, 'msg')
+        return self._log_at_str_level('warning', msg, kwargs)
+
+    # Define the alias .warn()
+    warn = warning
 
     def error(self, msg, **kwargs):
         '''Log at ERROR level
@@ -180,7 +232,9 @@ class DagsterLogManager:
         Kwargs:
             Additional context values for only this log message.
         '''
-        return self._log(logging.ERROR, msg, kwargs)
+
+        check.str_param(msg, 'msg')
+        return self._log_at_str_level('error', msg, kwargs)
 
     def critical(self, msg, **kwargs):
         '''Log at CRITICAL level
@@ -193,7 +247,12 @@ class DagsterLogManager:
         Kwargs:
             Additional context values for only this log message.
         '''
-        return self._log(logging.CRITICAL, msg, kwargs)
+
+        check.str_param(msg, 'msg')
+        return self._log_at_str_level('critical', msg, kwargs)
+
+    # Define the alias .fatal()
+    fatal = critical
 
     def log(self, level, msg, **kwargs):
         '''Log at the integer level ``level``.
@@ -207,30 +266,5 @@ class DagsterLogManager:
         '''
 
         check.int_param(level, 'level')
+        check.str_param(msg, 'msg')
         return self._log(level, msg, kwargs)
-
-    def __getattr__(self, name):
-        '''Enables handling of user-defined log levels.'''
-
-        def handler(msg, **kwargs):
-            # HACK: getLevelName really doesn't do what it says on the box. This function was
-            # originally intended to give the user-facing name of a given int log level, e.g.,
-            # getLevelName(40) -> 'ERROR'. In fact, it also works the other way around (this was
-            # 'fixed' in Python 3.4 then immediately reverted in 3.4.2). For levels it doesn't
-            # recognize, including all ints that don't have a name registered with
-            # logging.addLevelName it does: getLevelName('foo') -> 'Level foo';
-            # getLevelName(3) -> 'Level 3' (!)
-            # See: https://docs.python.org/3/library/logging.html#logging.getLevelName
-            level = logging.getLevelName(name.upper())
-            check.invariant(
-                isinstance(level, int),
-                'Unexpected log level: User code attempted to log at level \'{level}\', but that '
-                'level has not been registered with the Python logging library using '
-                'logger.addLevelName. Original message: '
-                '\'{orig_message}\''.format(level=level, orig_message=msg),
-            )
-            # The implicit assumption here is that custom handlers act like we expect them to, and
-            # don't do extra work beyond delegating to ``.log()`` with an integer argument.
-            return self._log(level, msg, kwargs)
-
-        return handler

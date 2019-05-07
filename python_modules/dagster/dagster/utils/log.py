@@ -5,52 +5,28 @@ import logging
 import sys
 import traceback
 
-from collections import namedtuple, OrderedDict
-from logging import CRITICAL, DEBUG, ERROR, INFO, WARNING  # pylint: disable=unused-import
+from collections import namedtuple
 
 from dagster import check, seven
 from dagster.core.types.config import Enum, EnumValue
 from dagster.core.definitions.logger import logger
-
-DEFAULT_LOG_LEVEL_STRINGS = ['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL']
-
-DefaultLogLevelEnum = Enum(
-    'log_level',
-    list(
-        map(EnumValue, OrderedDict([(k, getattr(logging, k)) for k in DEFAULT_LOG_LEVEL_STRINGS]))
-    ),
+from dagster.core.log_manager import (
+    PYTHON_LOGGING_LEVELS_ALIASES,
+    PYTHON_LOGGING_LEVELS_MAPPING,
+    PYTHON_LOGGING_LEVELS_NAMES,
 )
 
-
-def level_from_string(level_str):
-    if isinstance(level_str, int):
-        return level_str
-    if hasattr(logging, level_str):
-        return getattr(logging, level_str)
-    else:
-        return int(level_str)
+LogLevelEnum = Enum('log_level', list(map(EnumValue, PYTHON_LOGGING_LEVELS_MAPPING.keys())))
 
 
-def check_valid_log_level(level):
-    if sys.version_info.major >= 3:
-        # pylint: disable=protected-access
-        check.param_invariant(
-            level in logging._nameToLevel or isinstance(level, int),
-            'level',
-            'Must be valid python logging level. Got {level}'.format(level=level),
-        )
-    else:
-        try:
-            logging._checkLevel(level)  # pylint: disable=protected-access
-            return level
-        except ValueError:
-            check.param_invariant(
-                isinstance(level, int),
-                'level',
-                'Must be valid python logging level. Got {level}'.format(level=level),
-            )
-
-    return level_from_string(level)
+def check_valid_log_level(log_level):
+    '''Convert a log level into an integer for consumption by the low-level Python logging API.'''
+    if isinstance(log_level, int):
+        return log_level
+    check.str_param(log_level, 'log_level')
+    check.invariant(log_level.lower() in PYTHON_LOGGING_LEVELS_NAMES)
+    log_level = PYTHON_LOGGING_LEVELS_ALIASES.get(log_level.upper(), log_level.upper())
+    return PYTHON_LOGGING_LEVELS_MAPPING[log_level]
 
 
 class JsonFileHandler(logging.Handler):
@@ -143,8 +119,9 @@ class StructuredLoggerHandler(logging.Handler):
 
 def construct_single_handler_logger(name, level, handler):
     check.str_param(name, 'name')
-    check_valid_log_level(level)
     check.inst_param(handler, 'handler', logging.Handler)
+
+    level = check_valid_log_level(level)
 
     @logger
     def single_handler_logger(_init_context):
@@ -159,7 +136,7 @@ def construct_single_handler_logger(name, level, handler):
 def define_structured_logger(name, callback, level):
     check.str_param(name, 'name')
     check.callable_param(callback, 'callback')
-    check_valid_log_level(level)
+    level = check_valid_log_level(level)
 
     return construct_single_handler_logger(name, level, StructuredLoggerHandler(callback))
 
@@ -167,7 +144,7 @@ def define_structured_logger(name, callback, level):
 def define_json_file_logger(name, json_path, level):
     check.str_param(name, 'name')
     check.str_param(json_path, 'json_path')
-    check_valid_log_level(level)
+    level = check_valid_log_level(level)
 
     stream_handler = JsonFileHandler(json_path)
     stream_handler.setFormatter(define_default_formatter())
