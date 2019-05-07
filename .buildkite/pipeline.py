@@ -19,10 +19,10 @@ SupportedPythons = [
 ]
 
 PY_IMAGE_MAP = {
-    SupportedPython.V3_7: "python:3.7",
-    SupportedPython.V3_6: "python:3.6",
-    SupportedPython.V3_5: "python:3.5",
-    SupportedPython.V2_7: "python:2.7",
+    SupportedPython.V3_7: "python:3.7.3-stretch",
+    SupportedPython.V3_6: "python:3.6.8-stretch",
+    SupportedPython.V3_5: "python:3.5.7-stretch",
+    SupportedPython.V2_7: "python:2.7.16-stretch",
 }
 
 INTEGRATION_IMAGE_MAP = {
