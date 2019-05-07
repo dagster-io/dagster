@@ -3,6 +3,8 @@ import itertools
 import logging
 import uuid
 
+from collections import OrderedDict
+
 from dagster import check, seven
 from dagster.utils import frozendict
 
@@ -10,16 +12,17 @@ DAGSTER_META_KEY = 'dagster_meta'
 
 
 PYTHON_LOGGING_LEVELS_MAPPING = frozendict(
-    {'CRITICAL': 50, 'ERROR': 40, 'WARNING': 30, 'INFO': 20, 'DEBUG': 10}
+    OrderedDict({'CRITICAL': 50, 'ERROR': 40, 'WARNING': 30, 'INFO': 20, 'DEBUG': 10})
 )
 
-PYTHON_LOGGING_LEVELS_ALIASES = frozendict({'FATAL': 'CRITICAL', 'WARN': 'WARNING'})
+PYTHON_LOGGING_LEVELS_ALIASES = frozendict(OrderedDict({'FATAL': 'CRITICAL', 'WARN': 'WARNING'}))
 
 PYTHON_LOGGING_LEVELS_NAMES = frozenset(
     [
         level_name.lower()
-        for level_name in list(PYTHON_LOGGING_LEVELS_MAPPING.keys())
-        + list(PYTHON_LOGGING_LEVELS_ALIASES.keys())
+        for level_name in sorted(
+            list(PYTHON_LOGGING_LEVELS_MAPPING.keys()) + list(PYTHON_LOGGING_LEVELS_ALIASES.keys())
+        )
     ]
 )
 
