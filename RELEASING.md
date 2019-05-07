@@ -5,9 +5,9 @@ Dagster versions follow the guidelines in [PEP 440](https://www.python.org/dev/p
 To make dependency management easier in the context of a monorepo with many installable projects,
 package versions move in lockstep with each other and with git tags. 
 
-As the API is still in flux, we aren't following strict semantic versioning rules at this point, but roughly
-intend micro versions to reflect a regular release schedule and minor versions to reflect
-milestones in the framework's capability.
+As the API is still in flux, we aren't following strict semantic versioning rules at this point, but
+roughly intend micro versions to reflect a regular release schedule and minor versions to reflect
+milestones in the framework's capabilities and the maturity of its internals.
 
 Breaking API changes should be recorded in `CHANGELOG.rst`.
 
@@ -19,9 +19,13 @@ Our release automation tools are contained in `bin/publish.py`. These tools are 
 guard against some kinds of mistakes, but could and should be smarter. Generally speaking, it's
 preferable to invest in these tools rather than to complicate the release process.
 
-It's good practice to run the release process for a pre-release version before releasing a new
-version, i.e., first for version 0.3.0.pre0, and then for version 0.3.0 only when you know that
-the process is going to succeed without issues. This ensures a clean release history.
+**Run a pre-release before releasing a new version**: it's good practice to run the release process
+for a pre-release version before releasing a new version, i.e., first for version 0.3.0.pre0, and
+then for version 0.3.0 only when you know that the process is going to succeed without issues.
+This ensures a clean release history.
+
+Keep in mind that there is no undo in some of the third-party systems (e.g., PyPI) we use to
+release softeware.
 
 You should also run releases from a clean clone of the repository. This is to guard against any
 issues that might be introduced by local build artifacts.

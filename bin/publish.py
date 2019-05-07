@@ -2,17 +2,21 @@
 
 """Tools to manage tagging and publishing releases of the Dagster projects.
 
+Please follow the checklist in RELEASING.md at the root of this repository.
+
 For detailed usage instructions, please consult the command line help,
 available by running `python publish.py --help`.
 """
 import contextlib
 import datetime
+import fnmatch
 import inspect
 import os
 import re
 import subprocess
 
-from distutils import spawn
+# https://github.com/PyCQA/pylint/issues/73
+from distutils import spawn  # pylint: disable=no-name-in-module
 from itertools import groupby
 
 import click
@@ -74,8 +78,13 @@ MODULE_NAMES = ['dagster', 'dagit', 'dagster-graphql', 'dagstermill', 'dagster-a
 
 LIBRARY_MODULES = [
     'dagster-aws',
+    'dagster-datadog',
+    'dagster-gcp',
     'dagster-ge',
+    'dagster-pagerduty',
     'dagster-pandas',
+    'dagster-pyspark',
+    'dagster-slack',
     'dagster-snowflake',
     'dagster-spark',
 ]
@@ -211,7 +220,14 @@ def get_module_versions(module_name, library=False):
             '{module_name}/version.py'.format(module_name=normalize_module_name(module_name))
         ) as fp:
             exec(fp.read(), module_version)  # pylint: disable=W0122
-        return module_version
+
+        assert (
+            '__version__' in module_version and '__nightly__' in module_version
+        ), 'Bad version for module {module_name}'.format(module_name=module_name)
+        return {
+            '__version__': module_version['__version__'],
+            '__nightly__': module_version['__nightly__'],
+        }
 
 
 def get_versions():
@@ -348,6 +364,23 @@ def check_new_version(new_version):
                 new_version=new_version, versions=format_module_versions(module_versions)
             )
         )
+
+    if not (
+        parsed_version.is_prerelease
+        or parsed_version.is_postrelease
+        or parsed_version.is_devrelease
+    ):
+        parsed_previous_version = packaging.version.parse(module_version['__version__'])
+        if not (parsed_previous_version.release == parsed_version.release):
+            should_continue = input(
+                'You appear to be releasing a new version, {new_version}, without having '
+                'previously run a prerelease.\n(Last version found was {previous_version})\n'
+                'Are you sure you know what you\'re doing? (Y/n)'.format(
+                    new_version=new_version, previous_version=module_version['__version__']
+                )
+            )
+            if not should_continue == 'Y':
+                raise Exception('Bailing! Run a pre-release before continuing.')
     return True
 
 
@@ -357,6 +390,128 @@ def check_git_status():
         raise Exception(
             'Bailing: Cannot publish with changes present in git repo:\n{changes}'.format(
                 changes=changes
+            )
+        )
+
+
+def check_for_cruft():
+    CRUFTY_DIRECTORIES = ['.tox', 'build', 'dist', '*.egg-info']
+    found_cruft = []
+    for module_name in MODULE_NAMES:
+        for dir_ in os.listdir(path_to_module(module_name, library=False)):
+            for potential_cruft in CRUFTY_DIRECTORIES:
+                if fnmatch.fnmatch(dir_, potential_cruft):
+                    found_cruft.append(
+                        os.path.join(path_to_module(module_name, library=False), dir_)
+                    )
+
+    for library_module_name in LIBRARY_MODULES:
+        for dir_ in os.listdir(path_to_module(library_module_name, library=True)):
+            for potential_cruft in CRUFTY_DIRECTORIES:
+                if fnmatch.fnmatch(dir_, potential_cruft):
+                    found_cruft.append(
+                        os.path.join(path_to_module(library_module_name, library=True), dir_)
+                    )
+
+    if found_cruft:
+        raise Exception(
+            'Bailing: Cowardly refusing to publish with potentially crufty directories '
+            'present:\n    {found_cruft}'.format(found_cruft='\n    '.join(found_cruft))
+        )
+
+
+def check_directory_structure():
+    EXPECTED_PYTHON_MODULES = [
+        'automation',
+        'dagit',
+        'dagster',
+        'dagster-airflow',
+        'dagster-graphql',
+        'dagstermill',
+        'libraries',
+    ]
+    EXPECTED_LIBRARIES = LIBRARY_MODULES
+
+    unexpected_modules = []
+    expected_modules_not_found = []
+    unexpected_libraries = []
+    expected_libraries_not_found = []
+
+    module_directories = [
+        dir_
+        for dir_ in os.scandir(script_relative_path(os.path.join('..', 'python_modules')))
+        if dir_.is_dir()
+    ]
+
+    for module_dir in module_directories:
+        if module_dir.name not in EXPECTED_PYTHON_MODULES:
+            unexpected_modules.append(module_dir.path)
+
+    for module_dir_name in EXPECTED_PYTHON_MODULES:
+        if module_dir_name not in [module_dir.name for module_dir in module_directories]:
+            expected_modules_not_found.append(module_dir_name)
+
+    library_directories = [
+        dir_
+        for dir_ in os.scandir(
+            script_relative_path(os.path.join('..', 'python_modules', 'libraries'))
+        )
+        if dir_.is_dir()
+    ]
+
+    for library_dir in library_directories:
+        if library_dir.name not in EXPECTED_LIBRARIES:
+            unexpected_libraries.append(library_dir.path)
+
+    for library_dir_name in EXPECTED_LIBRARIES:
+        if library_dir_name not in [library_dir.name for library_dir in library_directories]:
+            expected_libraries_not_found.append(library_dir_name)
+
+    if (
+        unexpected_modules
+        or unexpected_libraries
+        or expected_modules_not_found
+        or expected_libraries_not_found
+    ):
+        raise Exception(
+            'Bailing: something looks wrong. We\'re either missing modules we expected or modules '
+            'are present that we don\'t know about:\n'
+            '{expected_modules_not_found_msg}'
+            '{unexpected_modules_msg}'
+            '{expected_libraries_not_found_msg}'
+            '{unexpected_libraries_msg}'.format(
+                expected_modules_not_found_msg=(
+                    ('\nDidn\'t find expected modules:\n    {expected_modules_not_found}').format(
+                        expected_modules_not_found='\n    '.join(sorted(expected_modules_not_found))
+                    )
+                    if expected_modules_not_found
+                    else ''
+                ),
+                unexpected_modules_msg=(
+                    '\nFound unexpected modules:\n    {unexpected_modules}'.format(
+                        unexpected_modules='\n    '.join(sorted(unexpected_modules))
+                    )
+                    if unexpected_modules
+                    else ''
+                ),
+                expected_libraries_not_found_msg=(
+                    (
+                        '\nDidn\'t find expected libraries:\n    {expected_libraries_not_found}'
+                    ).format(
+                        expected_libraries_not_found='\n    '.join(
+                            sorted(expected_libraries_not_found)
+                        )
+                    )
+                    if expected_libraries_not_found
+                    else ''
+                ),
+                unexpected_libraries_msg=(
+                    '\nFound unexpected libraries:\n    {unexpected_libraries}'.format(
+                        unexpected_libraries='\n    '.join(sorted(unexpected_libraries))
+                    )
+                    if unexpected_libraries
+                    else ''
+                ),
             )
         )
 
@@ -447,6 +602,10 @@ def publish(nightly):
     if not nightly:
         print('... and match git tag on most recent commit...')
         check_git_status()
+    print('... and that there is no cruft present...')
+    check_for_cruft()
+    print('... and that the directories look like we expect')
+    check_directory_structure()
 
     print('Publishing packages to PyPI...')
 
