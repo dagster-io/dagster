@@ -13,13 +13,13 @@ from dagster.core.types import Bool, Dict, Field, List, NamedDict, NamedSelector
 from dagster.core.types.config import ConfigType, ConfigTypeAttributes
 from dagster.core.types.default_applier import apply_default_values
 from dagster.core.types.field_utils import FieldImpl, check_opt_field_param
-from dagster.utils import camelcase, single_item, merge_dicts
+from dagster.utils import camelcase, merge_dicts, single_item
 
 from .context import PipelineContextDefinition
-from .dependency import DependencyStructure, Solid, SolidInputHandle
+from .dependency import DependencyStructure, Solid, SolidHandle, SolidInputHandle
 from .mode import ModeDefinition
 from .resource import ResourceDefinition
-from .solid import ISolidDefinition
+from .solid import CompositeSolidDefinition, ISolidDefinition, SolidDefinition
 
 
 def SystemNamedDict(name, fields, description=None):
@@ -222,7 +222,9 @@ def define_environment_cls(creation_data):
                             '{pipeline_name}.SolidsConfigDictionary'.format(
                                 pipeline_name=pipeline_name
                             ),
-                            creation_data,
+                            creation_data.solids,
+                            creation_data.dependency_structure,
+                            creation_data.pipeline_name,
                         )
                     ),
                     'expectations': Field(
@@ -293,9 +295,11 @@ def solid_has_configurable_outputs(solid_def):
     return any(map(lambda out: out.runtime_type.output_schema, solid_def.output_dict.values()))
 
 
-def get_inputs_field(creation_data, solid):
-    check.inst_param(creation_data, 'creation_data', EnvironmentClassCreationData)
+def get_inputs_field(solid, handle, dependency_structure, pipeline_name):
     check.inst_param(solid, 'solid', Solid)
+    check.inst_param(handle, 'handle', SolidHandle)
+    check.inst_param(dependency_structure, 'dependency_structure', DependencyStructure)
+    check.str_param(pipeline_name, 'pipeline_name')
 
     if not solid_has_configurable_inputs(solid.definition):
         return None
@@ -306,7 +310,7 @@ def get_inputs_field(creation_data, solid):
             inp_handle = SolidInputHandle(solid, inp)
             # If this input is not satisfied by a dependency you must
             # provide it via config
-            if not creation_data.dependency_structure.has_dep(inp_handle):
+            if not dependency_structure.has_dep(inp_handle):
                 inputs_field_fields[name] = FieldImpl(inp.runtime_type.input_schema.schema_type)
 
     if not inputs_field_fields:
@@ -314,18 +318,18 @@ def get_inputs_field(creation_data, solid):
 
     return Field(
         SystemNamedDict(
-            '{pipeline_name}.{solid_name}.Inputs'.format(
-                pipeline_name=camelcase(creation_data.pipeline_name),
-                solid_name=camelcase(solid.name),
+            '{pipeline_name}.{solid_handle}.Inputs'.format(
+                pipeline_name=camelcase(pipeline_name), solid_handle=handle.camelcase()
             ),
             inputs_field_fields,
         )
     )
 
 
-def get_outputs_field(creation_data, solid):
-    check.inst_param(creation_data, 'creation_data', EnvironmentClassCreationData)
+def get_outputs_field(solid, handle, pipeline_name):
     check.inst_param(solid, 'solid', Solid)
+    check.inst_param(handle, 'handle', SolidHandle)
+    check.str_param(pipeline_name, 'pipeline_name')
 
     solid_def = solid.definition
 
@@ -340,8 +344,8 @@ def get_outputs_field(creation_data, solid):
             )
 
     output_entry_dict = SystemNamedDict(
-        '{pipeline_name}.{solid_name}.Outputs'.format(
-            pipeline_name=camelcase(creation_data.pipeline_name), solid_name=camelcase(solid.name)
+        '{pipeline_name}.{solid_handle}.Outputs'.format(
+            pipeline_name=camelcase(pipeline_name), solid_handle=handle.camelcase()
         ),
         output_dict_fields,
     )
@@ -351,30 +355,83 @@ def get_outputs_field(creation_data, solid):
 
 def solid_has_config_entry(solid_def):
     check.inst_param(solid_def, 'solid_def', ISolidDefinition)
+
+    has_solid_config = False
+    if isinstance(solid_def, CompositeSolidDefinition):
+        has_solid_config = any(
+            map(solid_has_config_entry, [solid.definition for solid in solid_def.solids])
+        )
+    elif isinstance(solid_def, SolidDefinition):
+        has_solid_config = solid_def.config_field
+    else:
+        check.invariant('Unexpected ISolidDefinition type {type}'.format(type=type(solid_def)))
+
     return (
-        solid_def.config_field
+        has_solid_config
         or solid_has_configurable_inputs(solid_def)
         or solid_has_configurable_outputs(solid_def)
     )
 
 
-def define_solid_dictionary_cls(name, creation_data):
+def define_isolid_field(solid, handle, dependency_structure, pipeline_name):
+    check.inst_param(solid, 'solid', Solid)
+    check.inst_param(handle, 'handle', SolidHandle)
+
+    check.str_param(pipeline_name, 'pipeline_name')
+
+    if isinstance(solid.definition, CompositeSolidDefinition):
+        composite_def = solid.definition
+        solid_cfg = Field(
+            define_solid_dictionary_cls(
+                '{pipeline_name}.CompositeSolidsDict.{solid_handle}'.format(
+                    pipeline_name=camelcase(pipeline_name), solid_handle=handle.camelcase()
+                ),
+                composite_def.solids,
+                composite_def.dependency_structure,
+                pipeline_name,
+                handle,
+            )
+        )
+        return Field(
+            SystemNamedDict(
+                '{name}CompositeSolidConfig'.format(name=str(handle)), {'solids': solid_cfg}
+            )
+        )
+
+    elif isinstance(solid.definition, SolidDefinition):
+        solid_config_type = define_solid_config_cls(
+            '{pipeline_name}.SolidConfig.{solid_handle}'.format(
+                pipeline_name=camelcase(pipeline_name), solid_handle=handle.camelcase()
+            ),
+            solid.definition.config_field,
+            inputs_field=get_inputs_field(solid, handle, dependency_structure, pipeline_name),
+            outputs_field=get_outputs_field(solid, handle, pipeline_name),
+        )
+        return Field(solid_config_type)
+    else:
+        check.invariant(
+            'Unexpected ISolidDefinition type {type}'.format(type=type(solid.definition))
+        )
+
+
+def define_solid_dictionary_cls(
+    name, solids, dependency_structure, pipeline_name, parent_handle=None
+):
     check.str_param(name, 'name')
-    check.inst_param(creation_data, 'creation_data', EnvironmentClassCreationData)
+    check.list_param(solids, 'solids', of_type=Solid)
+    check.inst_param(dependency_structure, 'dependency_structure', DependencyStructure)
+    check.str_param(pipeline_name, 'pipeline_name')
+    check.opt_inst_param(parent_handle, 'parent_handle', SolidHandle)
 
     fields = {}
-    for solid in creation_data.solids:
+    for solid in solids:
         if solid_has_config_entry(solid.definition):
-            solid_config_type = define_solid_config_cls(
-                '{pipeline_name}.SolidConfig.{solid_name}'.format(
-                    pipeline_name=camelcase(creation_data.pipeline_name),
-                    solid_name=camelcase(solid.name),
-                ),
-                solid.definition.config_field,
-                inputs_field=get_inputs_field(creation_data, solid),
-                outputs_field=get_outputs_field(creation_data, solid),
+            fields[solid.name] = define_isolid_field(
+                solid,
+                SolidHandle(solid.name, solid.definition.name, parent_handle),
+                dependency_structure,
+                pipeline_name,
             )
-            fields[solid.name] = Field(solid_config_type)
 
     return SystemNamedDict(name, fields)
 
@@ -418,12 +475,16 @@ def construct_context_config(config_value):
     )
 
 
-def construct_solid_dictionary(solid_dict_value):
-    return {
-        key: SolidConfig(
-            config=value.get('config'),
-            inputs=value.get('inputs', {}),
-            outputs=value.get('outputs', []),
+def construct_solid_dictionary(solid_dict_value, parent_handle=None, config_map=None):
+    config_map = {} if config_map is None else config_map
+    for name, value in solid_dict_value.items():
+        key = SolidHandle(name, None, parent_handle)
+        config = value.get('config')
+        config_map[str(key)] = SolidConfig(
+            config=config, inputs=value.get('inputs', {}), outputs=value.get('outputs', [])
         )
-        for key, value in solid_dict_value.items()
-    }
+        # solids implies a composite solid config
+        if value.get('solids'):
+            construct_solid_dictionary(value['solids'], key, config_map)
+
+    return config_map

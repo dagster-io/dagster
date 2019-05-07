@@ -286,7 +286,7 @@ def test_solid_dictionary_type():
     pipeline_def = define_test_solids_config_pipeline()
 
     solid_dict_type = define_solid_dictionary_cls(
-        'foobar', create_creation_data(pipeline_def)
+        'foobar', pipeline_def.solids, pipeline_def.dependency_structure, pipeline_def.name
     ).inst()
 
     value = construct_solid_dictionary(
@@ -371,7 +371,7 @@ def test_solid_dictionary_some_no_config():
     )
 
     solid_dict_type = define_solid_dictionary_cls(
-        'foobar', create_creation_data(pipeline_def)
+        'foobar', pipeline_def.solids, pipeline_def.dependency_structure, pipeline_def.name
     ).inst()
 
     value = construct_solid_dictionary(
@@ -432,8 +432,9 @@ def test_whole_environment():
 
 
 def test_solid_config_error():
+    pipeline_def = define_test_solids_config_pipeline()
     solid_dict_type = define_solid_dictionary_cls(
-        'slkdfjkjdsf', create_creation_data(define_test_solids_config_pipeline())
+        'slkdfjkjdsf', pipeline_def.solids, pipeline_def.dependency_structure, pipeline_def.name
     ).inst()
 
     int_solid_config_type = solid_dict_type.fields['int_config_solid'].config_type

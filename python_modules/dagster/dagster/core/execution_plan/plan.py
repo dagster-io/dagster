@@ -229,9 +229,9 @@ def get_input_source_step_handle(plan_builder, solid, input_name, input_def, han
     check.opt_inst_param(handle, 'handle', SolidHandle)
 
     input_handle = solid.input_handle(input_name)
-    solid_config = plan_builder.environment_config.solids.get(solid.name)
-    dependency_structure = plan_builder.get_current_dependency_structure()
 
+    solid_config = plan_builder.environment_config.solids.get(str(handle))
+    dependency_structure = plan_builder.get_current_dependency_structure()
     if solid_config and input_def.name in solid_config.inputs:
         step_creation_data = create_input_thunk_execution_step(
             plan_builder.pipeline_name,

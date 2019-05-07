@@ -1,6 +1,7 @@
 from collections import defaultdict, namedtuple
 
 from dagster import check
+from dagster.utils import camelcase
 
 from .input import InputDefinition
 from .output import OutputDefinition
@@ -132,6 +133,13 @@ class SolidHandle(namedtuple('_SolidHandle', 'name definition_name parent')):
     def to_string(self):
         # Return unique name of the solid and its lineage (omits solid definition names)
         return self.parent.to_string() + '.' + self.name if self.parent else self.name
+
+    def camelcase(self):
+        return (
+            self.parent.camelcase() + '.' + camelcase(self.name)
+            if self.parent
+            else camelcase(self.name)
+        )
 
 
 class SolidInputHandle(namedtuple('_SolidInputHandle', 'solid input_def')):

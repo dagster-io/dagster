@@ -4,6 +4,10 @@ from dagster import (
     PipelineDefinition,
     SolidInstance,
     execute_pipeline,
+    Field,
+    String,
+    solid,
+    InputDefinition,
 )
 from dagster.core.utility_solids import (
     create_root_solid,
@@ -53,4 +57,40 @@ def test_composite_basic_execution():
 
     empty_composite = CompositeSolidDefinition(name='empty', solids=[])
     result = execute_pipeline(PipelineDefinition(solids=[empty_composite]))
+    assert result.success
+
+
+def test_composite_config():
+    @solid(config_field=Field(String))
+    def configured(context):
+        assert context.solid_config is 'yes'
+
+    inner = CompositeSolidDefinition(name='inner', solids=[configured])
+    outer = CompositeSolidDefinition(name='outer', solids=[inner])
+    pipeline = PipelineDefinition(name='composites_pipeline', solids=[outer])
+    result = execute_pipeline(
+        pipeline,
+        {'solids': {'outer': {'solids': {'inner': {'solids': {'configured': {'config': 'yes'}}}}}}},
+    )
+    assert result.success
+
+
+def test_composite_config_input():
+    @solid(inputs=[InputDefinition('one')])
+    def node_a(_context, one):
+        assert one is 1
+
+    inner = CompositeSolidDefinition(name='inner', solids=[node_a])
+    outer = CompositeSolidDefinition(name='outer', solids=[inner])
+    pipeline = PipelineDefinition(name='composites_pipeline', solids=[outer])
+    result = execute_pipeline(
+        pipeline,
+        {
+            'solids': {
+                'outer': {
+                    'solids': {'inner': {'solids': {'node_a': {'inputs': {'one': {'value': 1}}}}}}
+                }
+            }
+        },
+    )
     assert result.success
