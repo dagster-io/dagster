@@ -1,3 +1,4 @@
+// @generated
 /* tslint:disable */
 /* eslint-disable */
 // This file was automatically generated and should not be edited.
@@ -14,7 +15,7 @@ export interface PipelineRunsRootQuery_pipeline_runs_pipeline {
 }
 
 export interface PipelineRunsRootQuery_pipeline_runs_logs_nodes {
-  __typename: "LogMessageEvent" | "PipelineStartEvent" | "PipelineSuccessEvent" | "PipelineFailureEvent" | "PipelineInitFailureEvent" | "ExecutionStepStartEvent" | "ExecutionStepSuccessEvent" | "ExecutionStepOutputEvent" | "ExecutionStepFailureEvent" | "ExecutionStepSkippedEvent" | "PipelineProcessStartEvent" | "PipelineProcessStartedEvent" | "StepMaterializationEvent";
+  __typename: "LogMessageEvent" | "PipelineStartEvent" | "PipelineSuccessEvent" | "PipelineFailureEvent" | "PipelineInitFailureEvent" | "ExecutionStepStartEvent" | "ExecutionStepSuccessEvent" | "ExecutionStepOutputEvent" | "ExecutionStepFailureEvent" | "ExecutionStepSkippedEvent" | "PipelineProcessStartEvent" | "PipelineProcessStartedEvent" | "StepMaterializationEvent" | "StepExpectationResultEvent";
   timestamp: string;
 }
 

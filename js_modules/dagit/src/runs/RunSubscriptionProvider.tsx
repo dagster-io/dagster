@@ -88,7 +88,7 @@ export default class RunSubscriptionProvider extends React.Component<
       return;
     }
     const messages = result.pipelineRunLogs.messages;
-    const runId = messages[0].run.runId;
+    const runId = messages[0].runId;
     const id = `PipelineRun.${runId}`;
 
     let localData: PipelineRunLogsUpdateFragment | null = this.props.client.readFragment(

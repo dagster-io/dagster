@@ -1,3 +1,4 @@
+// @generated
 /* tslint:disable */
 /* eslint-disable */
 // This file was automatically generated and should not be edited.
@@ -30,7 +31,7 @@ export interface PipelineRunLogsUpdateFragment_logs_nodes_LogMessageEvent_step {
 }
 
 export interface PipelineRunLogsUpdateFragment_logs_nodes_LogMessageEvent {
-  __typename: "LogMessageEvent" | "PipelineStartEvent" | "PipelineSuccessEvent" | "PipelineFailureEvent" | "ExecutionStepStartEvent" | "ExecutionStepSuccessEvent" | "ExecutionStepOutputEvent" | "ExecutionStepSkippedEvent" | "PipelineProcessStartEvent";
+  __typename: "LogMessageEvent" | "PipelineStartEvent" | "PipelineSuccessEvent" | "PipelineFailureEvent" | "ExecutionStepStartEvent" | "ExecutionStepSuccessEvent" | "ExecutionStepOutputEvent" | "ExecutionStepSkippedEvent" | "PipelineProcessStartEvent" | "StepExpectationResultEvent";
   message: string;
   timestamp: string;
   level: LogLevel;
