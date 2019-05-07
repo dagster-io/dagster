@@ -1,12 +1,5 @@
 from dagster import check
-from dagster.core.definitions import (
-    ExpectationResult,
-    Materialization,
-    PipelineDefinition,
-    Result,
-    Solid,
-    SolidHandle,
-)
+from dagster.core.definitions import ExpectationResult, Materialization, Result, Solid, SolidHandle
 from dagster.core.errors import DagsterInvariantViolationError
 from dagster.core.execution.execution_context import SystemTransformExecutionContext
 from dagster.core.execution.user_context import TransformExecutionContext
@@ -14,13 +7,14 @@ from dagster.core.execution.user_context import TransformExecutionContext
 from .objects import ExecutionStep, StepInput, StepKind, StepOutput, StepOutputValue
 
 
-def create_transform_step(pipeline_def, environment_config, solid, step_inputs):
-    check.inst_param(pipeline_def, 'pipeline_def', PipelineDefinition)
+def create_transform_step(pipeline_name, environment_config, solid, step_inputs, handle):
+    check.str_param(pipeline_name, 'pipeline_name')
     check.inst_param(solid, 'solid', Solid)
     check.list_param(step_inputs, 'step_inputs', of_type=StepInput)
+    check.opt_inst_param(handle, 'handle', SolidHandle)
 
     return ExecutionStep(
-        pipeline_name=pipeline_def.name,
+        pipeline_name=pipeline_name,
         key_suffix='transform',
         step_inputs=step_inputs,
         step_outputs=[
@@ -33,7 +27,7 @@ def create_transform_step(pipeline_def, environment_config, solid, step_inputs):
             step_context.for_transform(), inputs, solid.definition.transform_fn
         ),
         kind=StepKind.TRANSFORM,
-        solid_handle=SolidHandle(solid.name, solid.definition.name),
+        solid_handle=handle,
         metadata=solid.step_metadata_fn(environment_config) if solid.step_metadata_fn else {},
     )
 

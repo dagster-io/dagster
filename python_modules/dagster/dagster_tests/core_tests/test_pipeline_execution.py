@@ -7,7 +7,6 @@ from dagster import (
     OutputDefinition,
     PipelineDefinition,
     Result,
-    SolidDefinition,
     SolidInstance,
     execute_pipeline,
     execute_pipeline_iterator,
@@ -19,12 +18,17 @@ from dagster.core.types import Nullable, List, String
 
 from dagster.core.definitions import Solid, solids_in_topological_order
 from dagster.core.definitions.dependency import DependencyStructure
-from dagster.core.definitions.pipeline import _create_adjacency_lists
+from dagster.core.definitions.container import _create_adjacency_lists
 
 from dagster.core.execution.api import step_output_event_filter
 from dagster.core.execution.results import SolidExecutionResult
 
-from dagster.core.utility_solids import define_stub_solid
+from dagster.core.utility_solids import (
+    define_stub_solid,
+    create_root_solid,
+    create_solid_with_deps,
+    input_set,
+)
 
 from dagster.utils.test import execute_solid
 
@@ -58,39 +62,6 @@ def make_transform():
         return result
 
     return transform
-
-
-def _transform_fn(context, inputs):
-    passed_rows = []
-    seen = set()
-    for row in inputs.values():
-        for item in row:
-            key = list(item.keys())[0]
-            if key not in seen:
-                seen.add(key)
-                passed_rows.append(item)
-
-    result = []
-    result.extend(passed_rows)
-    result.append({context.solid.name: 'transform_called'})
-    yield Result(result)
-
-
-def create_solid_with_deps(name, *solid_deps):
-    inputs = [InputDefinition(solid_dep.name) for solid_dep in solid_deps]
-
-    return SolidDefinition(
-        name=name, inputs=inputs, transform_fn=_transform_fn, outputs=[OutputDefinition()]
-    )
-
-
-def create_root_solid(name):
-    input_name = name + '_input'
-    inp = InputDefinition(input_name)
-
-    return SolidDefinition(
-        name=name, inputs=[inp], transform_fn=_transform_fn, outputs=[OutputDefinition()]
-    )
 
 
 def _do_construct(solids, dependencies):
@@ -186,10 +157,6 @@ def test_diamond_toposort():
         'C',
         'D',
     ]
-
-
-def input_set(name):
-    return {name: 'input_set'}
 
 
 def transform_called(name):

@@ -1,14 +1,11 @@
-import six
-
 from dagster import check
-from dagster.core.errors import DagsterInvariantViolationError
-from dagster.core.utils import toposort_flatten
-from dagster.core.errors import DagsterInvalidDefinitionError
+from dagster.core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
 
+from .container import IContainSolids, create_execution_structure, validate_dependency_dict
 from .context import PipelineContextDefinition, default_pipeline_context_definitions
-from .dependency import DependencyDefinition, DependencyStructure, Solid, SolidHandle, SolidInstance
+from .dependency import DependencyDefinition, SolidHandle, SolidInstance
 from .mode import ModeDefinition
-from .pipeline_creation import create_execution_structure, construct_runtime_type_dictionary
+from .pipeline_creation import construct_runtime_type_dictionary
 from .solid import ISolidDefinition
 
 
@@ -39,7 +36,7 @@ def _check_solids_arg(pipeline_name, solid_defs):
     return solid_defs
 
 
-class PipelineDefinition(object):
+class PipelineDefinition(IContainSolids, object):
     '''A instance of a PipelineDefinition represents a pipeline in dagster.
 
     A pipeline is comprised of:
@@ -127,14 +124,14 @@ class PipelineDefinition(object):
             value_type=PipelineContextDefinition,
         )
 
-        self.dependencies = _validate_dependency_dict(dependencies)
+        self.dependencies = validate_dependency_dict(dependencies)
 
         dependency_structure, pipeline_solid_dict = create_execution_structure(
             solids, self.dependencies
         )
 
         self._solid_dict = pipeline_solid_dict
-        self.dependency_structure = dependency_structure
+        self._dependency_structure = dependency_structure
 
         self._runtime_type_dict = construct_runtime_type_dictionary(solids)
 
@@ -256,6 +253,10 @@ class PipelineDefinition(object):
 
         return solid
 
+    @property
+    def dependency_structure(self):
+        return self._dependency_structure
+
     def has_runtime_type(self, name):
         check.str_param(name, 'name')
         return name in self._runtime_type_dict
@@ -297,45 +298,6 @@ class PipelineDefinition(object):
         return self if solid_subset is None else _build_sub_pipeline(self, solid_subset)
 
 
-def _create_adjacency_lists(solids, dep_structure):
-    check.list_param(solids, 'solids', Solid)
-    check.inst_param(dep_structure, 'dep_structure', DependencyStructure)
-
-    visit_dict = {s.name: False for s in solids}
-    forward_edges = {s.name: set() for s in solids}
-    backward_edges = {s.name: set() for s in solids}
-
-    def visit(solid_name):
-        if visit_dict[solid_name]:
-            return
-
-        visit_dict[solid_name] = True
-
-        for output_handle in dep_structure.deps_of_solid(solid_name):
-            forward_node = output_handle.solid.name
-            backward_node = solid_name
-            if forward_node in forward_edges:
-                forward_edges[forward_node].add(backward_node)
-                backward_edges[backward_node].add(forward_node)
-                visit(forward_node)
-
-    for s in solids:
-        visit(s.name)
-
-    return (forward_edges, backward_edges)
-
-
-def solids_in_topological_order(pipeline):
-    check.inst_param(pipeline, 'pipeline', PipelineDefinition)
-
-    _forward_edges, backward_edges = _create_adjacency_lists(
-        pipeline.solids, pipeline.dependency_structure
-    )
-
-    order = toposort_flatten(backward_edges)
-    return [pipeline.solid_named(solid_name) for solid_name in order]
-
-
 def _dep_key_of(solid):
     return SolidInstance(solid.definition.name, solid.name)
 
@@ -374,62 +336,6 @@ def _build_sub_pipeline(pipeline_def, solid_names):
         context_definitions=pipeline_def.context_definitions,
         dependencies=deps,
     )
-
-
-def _validate_dependency_dict(dependencies):
-    prelude = (
-        'The expected type for "dependencies" is dict[Union[str, SolidInstance], dict[str, '
-        'DependencyDefinition]]. '
-    )
-
-    if dependencies is None:
-        return {}
-
-    if not isinstance(dependencies, dict):
-        raise DagsterInvalidDefinitionError(
-            prelude
-            + 'Received value {val} of type {type} at the top level.'.format(
-                val=dependencies, type=type(dependencies)
-            )
-        )
-
-    for key, dep_dict in dependencies.items():
-        if not (isinstance(key, six.string_types) or isinstance(key, SolidInstance)):
-            raise DagsterInvalidDefinitionError(
-                prelude + 'Expected str or SolidInstance key in the top level dict. '
-                'Received value {val} of type {type}'.format(val=key, type=type(key))
-            )
-        if not isinstance(dep_dict, dict):
-            if isinstance(dep_dict, DependencyDefinition):
-                raise DagsterInvalidDefinitionError(
-                    prelude + 'Received a DependencyDefinition one layer too high under key {key}. '
-                    'The DependencyDefinition should be moved in to a dict keyed on '
-                    'input name.'.format(key=key)
-                )
-            else:
-                raise DagsterInvalidDefinitionError(
-                    prelude + 'Under key {key} received value {val} of type {type}. '
-                    'Expected dict[str, DependencyDefinition]'.format(
-                        key=key, val=dep_dict, type=type(dep_dict)
-                    )
-                )
-
-        for input_key, dep in dep_dict.items():
-            if not isinstance(input_key, six.string_types):
-                raise DagsterInvalidDefinitionError(
-                    prelude
-                    + 'Received non-sting key in the inner dict for key {key}.'.format(key=key)
-                )
-            if not isinstance(dep, DependencyDefinition):
-                raise DagsterInvalidDefinitionError(
-                    prelude
-                    + 'Expected DependencyDefinition for solid "{key}" input "{input_key}". '
-                    'Received value {val} of type {type}.'.format(
-                        key=key, input_key=input_key, val=dep, type=type(dep)
-                    )
-                )
-
-    return dependencies
 
 
 def _validate_resource_dependencies(context_definitions, solids):

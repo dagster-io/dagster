@@ -9,6 +9,7 @@ from dagster.utils import frozendict
 from .input import InputDefinition
 from .output import OutputDefinition
 from .utils import check_valid_name
+from .container import IContainSolids, create_execution_structure, validate_dependency_dict
 
 
 class ISolidDefinition(six.with_metaclass(ABCMeta)):
@@ -124,7 +125,36 @@ class SolidDefinition(ISolidDefinition):
         super(SolidDefinition, self).__init__(name, input_dict, output_dict, description, metadata)
 
 
-class CompositeSolidDefinition(ISolidDefinition):
-    def __init__(self, name, description=None, metadata=None):
+class CompositeSolidDefinition(ISolidDefinition, IContainSolids):
+    def __init__(self, name, solids, dependencies=None, description=None, metadata=None):
+        self.dependencies = validate_dependency_dict(dependencies)
+        dependency_structure, pipeline_solid_dict = create_execution_structure(
+            solids, self.dependencies
+        )
 
+        self._solid_dict = pipeline_solid_dict
+        self._dependency_structure = dependency_structure
         super(CompositeSolidDefinition, self).__init__(name, {}, {}, description, metadata)
+
+    @property
+    def solids(self):
+        return list(self._solid_dict.values())
+
+    def solid_named(self, name):
+        return self._solid_dict[name]
+
+    @property
+    def dependency_structure(self):
+        return self._dependency_structure
+
+    @property
+    def config_field(self):
+        return None
+
+    @property
+    def resources(self):
+        resources = set()
+        for solid in self.solids:
+            resources.update(solid.definition.resources)
+
+        return resources

@@ -5,7 +5,6 @@ from dagster.core.definitions import (
     ExpectationResult,
     InputDefinition,
     OutputDefinition,
-    PipelineDefinition,
     Solid,
     SolidHandle,
 )
@@ -79,8 +78,10 @@ def _create_expectation_lambda(solid, inout_def, expectation_def, internal_outpu
     return _do_expectation
 
 
-def create_expectations_subplan(pipeline_def, solid, inout_def, prev_step_output_handle, kind):
-    check.inst_param(pipeline_def, 'pipeline_def', PipelineDefinition)
+def create_expectations_subplan(
+    pipeline_name, solid, inout_def, prev_step_output_handle, kind, handle
+):
+    check.str_param(pipeline_name, 'pipeline_name')
     check.inst_param(solid, 'solid', Solid)
     check.inst_param(inout_def, 'inout_def', (InputDefinition, OutputDefinition))
     check.inst_param(prev_step_output_handle, 'prev_step_output_handle', StepOutputHandle)
@@ -89,7 +90,7 @@ def create_expectations_subplan(pipeline_def, solid, inout_def, prev_step_output
     input_expect_steps = []
     for expectation_def in inout_def.expectations:
         expect_step = create_expectation_step(
-            pipeline_def=pipeline_def,
+            pipeline_name=pipeline_name,
             solid=solid,
             expectation_def=expectation_def,
             key_suffix='{desc_key}.{inout_name}.expectation.{expectation_name}'.format(
@@ -100,33 +101,45 @@ def create_expectations_subplan(pipeline_def, solid, inout_def, prev_step_output
             kind=kind,
             prev_step_output_handle=prev_step_output_handle,
             inout_def=inout_def,
+            handle=handle,
         )
         input_expect_steps.append(expect_step)
 
     return create_joining_subplan(
-        pipeline_def,
+        pipeline_name,
         solid,
         '{desc_key}.{inout_name}.expectations.join'.format(
             desc_key=inout_def.descriptive_key, inout_name=inout_def.name
         ),
         input_expect_steps,
         EXPECTATION_VALUE_OUTPUT,
+        handle,
     )
 
 
 def create_expectation_step(
-    pipeline_def, solid, expectation_def, key_suffix, kind, prev_step_output_handle, inout_def
+    pipeline_name,
+    solid,
+    expectation_def,
+    key_suffix,
+    kind,
+    prev_step_output_handle,
+    inout_def,
+    handle,
 ):
-    check.inst_param(pipeline_def, 'pipeline_def', PipelineDefinition)
+    check.str_param(pipeline_name, 'pipeline_name')
     check.inst_param(solid, 'solid', Solid)
-    check.inst_param(expectation_def, 'input_expct_def', ExpectationDefinition)
+    check.inst_param(expectation_def, 'expectation_def', ExpectationDefinition)
+    check.str_param(key_suffix, 'key_suffix')
+    check.inst_param(kind, 'kind', StepKind)
     check.inst_param(prev_step_output_handle, 'prev_step_output_handle', StepOutputHandle)
     check.inst_param(inout_def, 'inout_def', (InputDefinition, OutputDefinition))
+    check.opt_inst_param(handle, 'handle', SolidHandle)
 
     value_type = inout_def.runtime_type
 
     return ExecutionStep(
-        pipeline_name=pipeline_def.name,
+        pipeline_name=pipeline_name,
         key_suffix=key_suffix,
         step_inputs=[
             StepInput(
@@ -143,7 +156,7 @@ def create_expectation_step(
             solid, inout_def, expectation_def, EXPECTATION_VALUE_OUTPUT
         ),
         kind=kind,
-        solid_handle=SolidHandle(solid.name, solid.definition.name),
+        solid_handle=handle,
         logging_tags={
             'expectation': expectation_def.name,
             inout_def.descriptive_key: inout_def.name,
@@ -151,22 +164,26 @@ def create_expectation_step(
     )
 
 
-def decorate_with_expectations(pipeline_def, environment_config, solid, transform_step, output_def):
-    check.inst_param(pipeline_def, 'pipeline_def', PipelineDefinition)
+def decorate_with_expectations(
+    pipeline_name, environment_config, solid, transform_step, output_def, handle
+):
+    check.str_param(pipeline_name, 'pipeline_name')
     check.inst_param(environment_config, 'environment_config', EnvironmentConfig)
     check.inst_param(solid, 'solid', Solid)
     check.inst_param(transform_step, 'transform_step', ExecutionStep)
     check.inst_param(output_def, 'output_def', OutputDefinition)
+    check.opt_inst_param(handle, 'handle', SolidHandle)
 
     terminal_step_output_handle = StepOutputHandle.from_step(transform_step, output_def.name)
 
     if environment_config.expectations.evaluate and output_def.expectations:
         return create_expectations_subplan(
-            pipeline_def,
+            pipeline_name,
             solid,
             output_def,
             terminal_step_output_handle,
             kind=StepKind.OUTPUT_EXPECTATION,
+            handle=handle,
         )
     else:
         return ExecutionValueSubplan.empty(terminal_step_output_handle)

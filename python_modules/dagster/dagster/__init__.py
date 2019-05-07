@@ -33,6 +33,7 @@ from dagster.core.definitions import (
     Materialization,
     ModeDefinition,
     SolidDefinition,
+    CompositeSolidDefinition,
     SolidInstance,
 )
 

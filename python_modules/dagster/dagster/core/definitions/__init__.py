@@ -31,8 +31,8 @@ from .mode import ModeDefinition
 
 from .repository import RepositoryDefinition, PipelinePreset
 
-from .pipeline import PipelineDefinition, solids_in_topological_order
+from .pipeline import PipelineDefinition
 
-from .pipeline_creation import create_execution_structure
+from .container import solids_in_topological_order, create_execution_structure
 
-from .solid import SolidDefinition, ISolidDefinition
+from .solid import SolidDefinition, ISolidDefinition, CompositeSolidDefinition

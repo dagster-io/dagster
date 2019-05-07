@@ -1,7 +1,6 @@
 from collections import namedtuple
 
 from dagster import check
-from dagster.core.definitions import SolidHandle
 from dagster.core.system_config.objects import (
     ContextConfig,
     EnvironmentConfig,
@@ -20,7 +19,7 @@ from .context import PipelineContextDefinition
 from .dependency import DependencyStructure, Solid, SolidInputHandle
 from .mode import ModeDefinition
 from .resource import ResourceDefinition
-from .solid import SolidDefinition
+from .solid import ISolidDefinition
 
 
 def SystemNamedDict(name, fields, description=None):
@@ -285,12 +284,12 @@ def define_storage_config_cls(name):
 
 
 def solid_has_configurable_inputs(solid_def):
-    check.inst_param(solid_def, 'solid_def', SolidDefinition)
+    check.inst_param(solid_def, 'solid_def', ISolidDefinition)
     return any(map(lambda inp: inp.runtime_type.input_schema, solid_def.input_dict.values()))
 
 
 def solid_has_configurable_outputs(solid_def):
-    check.inst_param(solid_def, 'solid_def', SolidDefinition)
+    check.inst_param(solid_def, 'solid_def', ISolidDefinition)
     return any(map(lambda out: out.runtime_type.output_schema, solid_def.output_dict.values()))
 
 
@@ -351,7 +350,7 @@ def get_outputs_field(creation_data, solid):
 
 
 def solid_has_config_entry(solid_def):
-    check.inst_param(solid_def, 'solid_def', SolidDefinition)
+    check.inst_param(solid_def, 'solid_def', ISolidDefinition)
     return (
         solid_def.config_field
         or solid_has_configurable_inputs(solid_def)
@@ -421,7 +420,7 @@ def construct_context_config(config_value):
 
 def construct_solid_dictionary(solid_dict_value):
     return {
-        str(SolidHandle(key, None)): SolidConfig(
+        key: SolidConfig(
             config=value.get('config'),
             inputs=value.get('inputs', {}),
             outputs=value.get('outputs', []),

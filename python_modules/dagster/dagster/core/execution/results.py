@@ -31,19 +31,19 @@ class PipelineExecutionResult(object):
         step_events_by_solid_by_kind = defaultdict(lambda: defaultdict(list))
         step_event_list = [event for event in event_list if event.is_step_event]
         for step_event in step_event_list:
-            solid_name = step_event.solid_name
-            if solid_name not in solid_set:
-                solid_order.append(solid_name)
-                solid_set.add(solid_name)
+            solid_handle = step_event.solid_handle
+            if solid_handle not in solid_set:
+                solid_order.append(solid_handle)
+                solid_set.add(solid_handle)
 
-            step_events_by_solid_by_kind[solid_name][step_event.step_kind].append(step_event)
+            step_events_by_solid_by_kind[solid_handle][step_event.step_kind].append(step_event)
 
         solid_result_dict = OrderedDict()
 
-        for solid_name in solid_order:
-            solid_result_dict[solid_name] = SolidExecutionResult(
-                self.pipeline.solid_named(solid_name),
-                dict(step_events_by_solid_by_kind[solid_name]),
+        for solid_handle in solid_order:
+            solid_result_dict[solid_handle] = SolidExecutionResult(
+                self.pipeline.get_solid(solid_handle),
+                dict(step_events_by_solid_by_kind[solid_handle]),
                 self.reconstruct_context,
             )
         return solid_result_dict
@@ -68,15 +68,19 @@ class PipelineExecutionResult(object):
                     name=name, pipeline=self.pipeline.display_name
                 )
             )
-
-        if name not in self.solid_result_dict:
+        top_level_results = {
+            solid_id.name: result
+            for solid_id, result in self.solid_result_dict.items()
+            if solid_id.parent is None
+        }
+        if name not in top_level_results:
             raise DagsterInvariantViolationError(
                 'Did not find result for solid {name} in pipeline execution result'.format(
                     name=name
                 )
             )
 
-        return self.solid_result_dict[name]
+        return top_level_results[name]
 
 
 class SolidExecutionResult(object):

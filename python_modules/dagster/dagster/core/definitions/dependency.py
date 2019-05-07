@@ -2,12 +2,8 @@ from collections import defaultdict, namedtuple
 
 from dagster import check
 
-from .solid import ISolidDefinition
-
 from .input import InputDefinition
-
 from .output import OutputDefinition
-
 from .utils import DEFAULT_OUTPUT, struct_to_string
 
 
@@ -64,6 +60,8 @@ class Solid(object):
     '''
 
     def __init__(self, name, definition, resource_mapper_fn):
+        from .solid import ISolidDefinition
+
         self.name = check.str_param(name, 'name')
         self.definition = check.inst_param(definition, 'definition', ISolidDefinition)
         self.resource_mapper_fn = check.callable_param(resource_mapper_fn, 'resource_mapper_fn')
@@ -120,7 +118,7 @@ class Solid(object):
 
 
 class SolidHandle(namedtuple('_SolidHandle', 'name definition_name parent')):
-    def __new__(cls, name, definition_name, parent=None):
+    def __new__(cls, name, definition_name, parent):
         return super(SolidHandle, cls).__new__(
             cls,
             check.str_param(name, 'name'),

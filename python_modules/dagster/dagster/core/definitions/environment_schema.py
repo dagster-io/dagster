@@ -9,13 +9,22 @@ from .context import PipelineContextDefinition
 from .environment_configs import define_environment_cls, EnvironmentClassCreationData
 from .pipeline import PipelineDefinition
 from .pipeline_creation import construct_runtime_type_dictionary
-from .solid import SolidDefinition
+from .solid import CompositeSolidDefinition, SolidDefinition, ISolidDefinition
 
 
 def iterate_solid_def_types(solid_def):
-    if solid_def.config_field:
-        for runtime_type in iterate_config_types(solid_def.config_field.config_type):
-            yield runtime_type
+
+    if isinstance(solid_def, SolidDefinition):
+        if solid_def.config_field:
+            for runtime_type in iterate_config_types(solid_def.config_field.config_type):
+                yield runtime_type
+    elif isinstance(solid_def, CompositeSolidDefinition):
+        for solid in solid_def.solids:
+            for def_type in iterate_solid_def_types(solid.definition):
+                yield def_type
+
+    else:
+        check.invariant('Unexpected ISolidDefinition type {type}'.format(type=type(solid_def)))
 
 
 def _gather_all_schemas(solid_defs):
@@ -30,7 +39,7 @@ def _gather_all_schemas(solid_defs):
 
 
 def _gather_all_config_types(solid_defs, context_definitions, environment_type):
-    check.list_param(solid_defs, 'solid_defs', SolidDefinition)
+    check.list_param(solid_defs, 'solid_defs', ISolidDefinition)
     check.dict_param(
         context_definitions,
         'context_definitions',
@@ -55,7 +64,7 @@ def _gather_all_config_types(solid_defs, context_definitions, environment_type):
 
 
 def construct_config_type_dictionary(solid_defs, context_definitions, environment_type):
-    check.list_param(solid_defs, 'solid_defs', SolidDefinition)
+    check.list_param(solid_defs, 'solid_defs', ISolidDefinition)
     check.dict_param(
         context_definitions,
         'context_definitions',
