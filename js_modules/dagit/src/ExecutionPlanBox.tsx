@@ -1,8 +1,8 @@
 import * as React from "react";
 import styled from "styled-components";
 import { Colors, Spinner, Intent, Icon } from "@blueprintjs/core";
-import { IStepState, IStepMaterialization } from "./RunMetadataProvider";
-import { Materialization } from "./Materialization";
+import { IStepState, IStepDisplayEvent } from "./RunMetadataProvider";
+import { DisplayEvent } from "./DisplayEvent";
 import { formatElapsedTime } from "./Util";
 import { IconNames } from "@blueprintjs/icons";
 
@@ -12,7 +12,7 @@ interface IExecutionPlanBoxProps {
   start: number | undefined;
   elapsed: number | undefined;
   delay: number;
-  materializations: IStepMaterialization[];
+  displayEvents: IStepDisplayEvent[];
   onShowStateDetails?: (stepName: string) => void;
   onApplyStepFilter?: (stepName: string) => void;
   executionArtifactsPersisted: boolean;
@@ -27,6 +27,7 @@ interface ReexecuteButtonProps {
 }
 
 interface IExecutionPlanBoxState {
+  expanded: boolean;
   v: number;
 }
 
@@ -73,6 +74,7 @@ export class ExecutionPlanBox extends React.Component<
   IExecutionPlanBoxState
 > {
   state = {
+    expanded: false,
     v: 0
   };
 
@@ -86,6 +88,7 @@ export class ExecutionPlanBox extends React.Component<
       nextProps.state !== this.props.state ||
       nextProps.name !== this.props.name ||
       nextProps.elapsed !== this.props.elapsed ||
+      nextState.expanded !== this.state.expanded ||
       nextState.v !== this.state.v
     );
   }
@@ -132,17 +135,21 @@ export class ExecutionPlanBox extends React.Component<
       start,
       name,
       delay,
-      materializations,
+      displayEvents,
       onApplyStepFilter,
       onReexecuteStep,
       onShowStateDetails,
       executionArtifactsPersisted
     } = this.props;
 
+    const { expanded } = this.state;
+
     let elapsed = this.props.elapsed;
     if (state === IStepState.RUNNING && start) {
       elapsed = Math.floor((Date.now() - start) / 1000) * 1000;
     }
+
+    const hiddenEvents = displayEvents.filter(e => e.hidden);
 
     return (
       <>
@@ -157,21 +164,42 @@ export class ExecutionPlanBox extends React.Component<
               style={{ transitionDelay: `${delay}ms` }}
               success={state === IStepState.SUCCEEDED}
             />
-            <ExeuctionStateWrap
-              onClick={() => onShowStateDetails && onShowStateDetails(name)}
+            <div
+              style={{
+                display: "inline-flex",
+                alignItems: "center"
+              }}
             >
-              {state === IStepState.RUNNING ? (
-                <Spinner intent={Intent.NONE} size={11} />
-              ) : (
-                <ExecutionStateDot
-                  state={state}
-                  title={`${state[0].toUpperCase()}${state.substr(1)}`}
-                  style={{ transitionDelay: `${delay}ms` }}
-                />
-              )}
-            </ExeuctionStateWrap>
-            <ExecutionPlanBoxName title={name}>{name}</ExecutionPlanBoxName>
-            {elapsed !== undefined && <ExecutionTime elapsed={elapsed} />}
+              <ExeuctionStateWrap
+                onClick={() => onShowStateDetails && onShowStateDetails(name)}
+              >
+                {state === IStepState.RUNNING ? (
+                  <Spinner intent={Intent.NONE} size={11} />
+                ) : (
+                  <ExecutionStateDot
+                    state={state}
+                    title={`${state[0].toUpperCase()}${state.substr(1)}`}
+                    style={{ transitionDelay: `${delay}ms` }}
+                  />
+                )}
+                <div style={{ width: 4 }} />
+                {hiddenEvents.length > 0 && (
+                  <DisclosureTriangle
+                    onClick={() => this.setState({ expanded: !expanded })}
+                    expanded={expanded}
+                  />
+                )}
+              </ExeuctionStateWrap>
+              <ExecutionPlanBoxName title={name}>{name}</ExecutionPlanBoxName>
+              {elapsed !== undefined && <ExecutionTime elapsed={elapsed} />}
+            </div>
+            {expanded && (
+              <HiddenEventsContainer>
+                {hiddenEvents.map(e => (
+                  <DisplayEvent event={e} key={`${e.key}`} showIcons={false} />
+                ))}
+              </HiddenEventsContainer>
+            )}
           </ExecutionPlanBoxContainer>
           <ReexecuteButton
             onReexecuteStep={onReexecuteStep}
@@ -180,17 +208,33 @@ export class ExecutionPlanBox extends React.Component<
             name={name}
           />
         </ExecutionPlanRowContainer>
-        {(materializations || []).map(mat => (
-          <Materialization path={mat.path} description={mat.description} />
-        ))}
+        <div style={{ paddingLeft: 21, color: Colors.GRAY3 }}>
+          {displayEvents
+            .filter(e => !e.hidden)
+            .map(e => (
+              <DisplayEvent key={`${e.key}`} event={e} showIcons={true} />
+            ))}
+        </div>
       </>
     );
   }
 }
 
 const ExeuctionStateWrap = styled.div`
-  display: inherit;
-  margin-right: 9px;
+  display: flex;
+  margin-right: 5px;
+  align-items: center;
+`;
+
+const DisclosureTriangle = styled.div<{ expanded: boolean }>`
+  width: 0;
+  height: 0;
+  border-left: 5px solid transparent;
+  border-right: 5px solid transparent;
+  border-top: 8px solid rgba(0, 0, 0, 0.5);
+  transition: transform 150ms linear;
+  transform: ${({ expanded }) =>
+    expanded ? "rotate(0deg)" : "rotate(-90deg)"};
 `;
 
 const ExecutionStateDot = styled.div<{ state: IStepState }>`
@@ -299,10 +343,8 @@ const ExecutionPlanBoxContainer = styled.div<{ state: IStepState }>`
   padding-right: 10px;
   margin: 3px;
   margin-left: 12px;
-  display: inline-flex;
-  min-width: 150px;
-  align-items: center;
   border-radius: 3px;
+  min-width: 150px;
   position: relative;
   z-index: 2;
   transition: background 200ms linear;
@@ -313,4 +355,10 @@ const ExecutionPlanBoxContainer = styled.div<{ state: IStepState }>`
     border: 2px solid ${({ state }) =>
       state === IStepState.WAITING ? Colors.LIGHT_GRAY4 : Colors.WHITE};
   }
+`;
+
+const HiddenEventsContainer = styled.div`
+  color: ${Colors.BLACK};
+  border-top: 1px solid rgba(0, 0, 0, 0.15);
+  margin-top: 4px;
 `;

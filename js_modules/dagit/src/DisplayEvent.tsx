@@ -1,78 +1,97 @@
 import * as React from "react";
 import styled from "styled-components";
 import { Toaster, Colors, Position, Intent } from "@blueprintjs/core";
+import { IStepDisplayEvent } from "./RunMetadataProvider";
 
 const SharedToaster = Toaster.create({ position: Position.TOP }, document.body);
 
-interface MaterializationProps {
-  path: string | null;
-  description: string | null;
+interface DisplayEventProps {
+  event: IStepDisplayEvent;
+  showIcons?: boolean;
 }
 
 function isFilePath(url: string) {
   return url.startsWith("file://") || url.startsWith("/");
 }
-export class Materialization extends React.Component<MaterializationProps> {
-  onCopyPath = async (path: string) => {
+
+export class DisplayEvent extends React.Component<DisplayEventProps> {
+  onCopyValue = async (event: React.MouseEvent<any>, value: string) => {
+    event.preventDefault();
+
     const el = document.createElement("input");
     document.body.appendChild(el);
-    el.value = path;
+    el.value = value;
     el.select();
     document.execCommand("copy");
     el.remove();
 
     SharedToaster.show({
-      message: "File path copied to clipboard",
+      message: "Copied to clipboard!",
       icon: "clipboard",
       intent: Intent.NONE
     });
   };
 
   render() {
-    const { path, description } = this.props;
+    const { showIcons, event } = this.props;
+    const value = event.value !== null ? event.value : "none";
 
-    if (!path) {
-      return null;
-    }
-
-    if (isFilePath(path)) {
+    if (isFilePath(value)) {
       return (
-        <MaterializationLink
-          href={path}
-          key={path}
-          title={`Copy path to ${path}`}
-          onClick={e => {
-            e.preventDefault();
-            this.onCopyPath(path);
-          }}
-        >
-          {FileIcon} {description}
-        </MaterializationLink>
+        <DisplayEventContainer>
+          {showIcons && FileIcon}
+          {` ${event.key} `}
+          <DisplayEventLink
+            href={value}
+            title={value}
+            onClick={e => this.onCopyValue(e, value)}
+          >
+            [copy path]
+          </DisplayEventLink>
+        </DisplayEventContainer>
+      );
+    } else if (value.includes("://")) {
+      return (
+        <DisplayEventContainer>
+          {showIcons && LinkIcon}
+          {` ${event.key} `}
+          <DisplayEventLink
+            href={value}
+            title={`Open ${value} in a new tab`}
+            target="__blank"
+          >
+            [open link]
+          </DisplayEventLink>
+        </DisplayEventContainer>
       );
     }
+
     return (
-      <MaterializationLink
-        href={path}
-        key={path}
-        title={`Open ${path} in a new tab`}
-        target="__blank"
-      >
-        {LinkIcon} {description}
-      </MaterializationLink>
+      <DisplayEventContainer>
+        {` ${event.key}: `}
+        <DisplayEventLink
+          href={value}
+          title={`Copy ${value}`}
+          onClick={e => this.onCopyValue(e, value)}
+        >
+          {value}
+        </DisplayEventLink>
+      </DisplayEventContainer>
     );
   }
 }
 
-const MaterializationLink = styled.a`
-  display: block;
-  color: ${Colors.GRAY3};
-  display: inline-block;
-  padding: 6px 3px;
-  padding-left: 23px;
-  display: inline-flex;
+const DisplayEventContainer = styled.div`
+  padding: 2.5px 3px;
+  white-space: pre-wrap;
+  display: flex;
   font-size: 12px;
+`;
+
+const DisplayEventLink = styled.a`
+  color: inherit;
   &:hover {
-    color: ${Colors.WHITE};
+    color: inherit;
   }
 `;
 
@@ -81,18 +100,18 @@ const FileIcon = (
     <g stroke="none" strokeWidth="1" fill="none" fillRule="evenodd">
       <path
         d="M-100,96 L0,96"
-        stroke={Colors.GRAY3}
+        stroke="currentColor"
         strokeWidth="15"
         strokeLinecap="square"
       />
       <polygon
-        stroke={Colors.GRAY3}
+        stroke="currentColor"
         strokeWidth="15"
         points="5.4296875 236.507812 5.4296875 5.84765625 137.851562 5.84765625 188.003906 56 188.003906 236.507812"
       />
       <path
         d="M187.5,62.5078125 L130.5,62.5078125 M130.5,5.84765625 L130.5,62.5078125"
-        stroke={Colors.GRAY3}
+        stroke="currentColor"
         strokeWidth="15"
         strokeLinecap="square"
       />

@@ -12,9 +12,11 @@ export enum IStepState {
   FAILED = "failed"
 }
 
-export interface IStepMaterialization {
-  description: string | null;
-  path: string | null;
+export interface IStepDisplayEvent {
+  type: "materialization" | "intermediate" | "other";
+  key: string | null;
+  value: string | null;
+  hidden: boolean; // true to place inside disclosure triangle
 }
 
 export interface IStepMetadata {
@@ -22,7 +24,7 @@ export interface IStepMetadata {
   start?: number;
   elapsed?: number;
   transitionedAt: number;
-  materializations: IStepMaterialization[];
+  displayEvents: IStepDisplayEvent[];
 }
 
 export interface IRunMetadataDict {
@@ -75,7 +77,7 @@ function extractMetadataFromLogs(
           state: IStepState.RUNNING,
           start: timestamp,
           transitionedAt: timestamp,
-          materializations: []
+          displayEvents: []
         };
       } else if (log.__typename === "ExecutionStepSuccessEvent") {
         metadata.steps[name] = produce(metadata.steps[name] || {}, step => {
@@ -91,9 +93,23 @@ function extractMetadataFromLogs(
         });
       } else if (log.__typename === "StepMaterializationEvent") {
         metadata.steps[name] = produce(metadata.steps[name] || {}, step => {
-          step.materializations.push({
-            path: log.materialization.path,
-            description: log.materialization.description
+          step.displayEvents.push({
+            type: "materialization",
+            key: log.materialization.description,
+            value: log.materialization.path,
+            hidden: false
+          });
+          step.displayEvents.push({
+            type: "materialization",
+            key: "plan_type",
+            value: "complex",
+            hidden: true
+          });
+          step.displayEvents.push({
+            type: "materialization",
+            key: "conversion_speed_seed",
+            value: "123.1511",
+            hidden: true
           });
         });
       } else if (log.__typename === "ExecutionStepFailureEvent") {
