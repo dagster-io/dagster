@@ -2,6 +2,7 @@ import yaml
 
 DOCKER_PLUGIN = "docker#v3.1.0"
 
+TIMEOUT_IN_MIN = 15
 
 # This should be an enum once we make our own buildkite AMI with py3
 class SupportedPython:
@@ -42,10 +43,10 @@ TOX_MAP = {
 
 class StepBuilder:
     def __init__(self, label):
-        self._step = {"label": label}
+        self._step = {"label": label, "timeout_in_minutes": TIMEOUT_IN_MIN}
 
     def run(self, *argc):
-        self._step["command"] = "\n".join(argc)
+        self._step["commands"] = list(argc)
         return self
 
     def on_python_image(self, ver, env=None):
@@ -186,7 +187,7 @@ if __name__ == "__main__":
     steps = [
         StepBuilder("pylint")
         .run("make install_dev_python_modules", "make pylint")
-        .on_python_image(SupportedPython.V3_7)
+        .on_integration_image(SupportedPython.V3_7)
         .build(),
         StepBuilder("black")
         # black 18.9b0 doesn't support py27-compatible formatting of the below invocation (omitting
@@ -260,4 +261,4 @@ if __name__ == "__main__":
         .build(),
     ]
 
-    print(yaml.dump({"steps": steps}, default_flow_style=False, default_style="|"))
+    print(yaml.dump({"steps": steps}, default_flow_style=False))
