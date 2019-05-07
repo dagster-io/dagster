@@ -127,11 +127,11 @@ def test_logging_basic():
 
 
 def test_logging_custom_log_levels():
-    with _setup_logger('test', {'FOO': 3}) as (captured_results, logger):
+    with _setup_logger('test', {'FOO': 3}) as (_captured_results, logger):
 
         dl = DagsterLogManager('123', {}, [logger])
         with pytest.raises(AttributeError):
-            dl.foo('test')
+            dl.foo('test')  # pylint: disable=no-member
 
 
 def test_logging_integer_log_levels():
@@ -150,7 +150,7 @@ def test_logging_bad_custom_log_levels():
 
         dl = DagsterLogManager('123', {}, [logger])
         with pytest.raises(check.CheckError):
-            dl._log_at_str_level('test', 'foobar', {})
+            dl._log_at_str_level('test', 'foobar', {})  # pylint: disable=protected-access
 
 
 def test_multiline_logging_complex():
