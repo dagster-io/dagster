@@ -10,7 +10,7 @@ from dagster.core.events.log import EventRecord
 from dagster.core.events import DagsterEventType
 from dagster.core.execution_plan.plan import ExecutionPlan
 from dagster.core.execution_plan.objects import StepFailureData
-from dagster.utils.log import check_valid_log_level
+from dagster.core.log_manager import coerce_valid_log_level
 
 from dagster_graphql import dauphin
 from dagster_graphql.implementation.fetch_pipelines import get_pipeline_or_raise
@@ -57,7 +57,7 @@ class DauphinPipelineRun(dauphin.ObjectType):
 
 
 def log_level_string(level):
-    check_valid_log_level(level)
+    coerce_valid_log_level(level)
     if level == logging.CRITICAL:
         return 'CRITICAL'
     elif level == logging.ERROR:
@@ -72,6 +72,17 @@ def log_level_string(level):
         return str(level)
 
 
+class DauphinLogLevel(dauphin.Enum):
+    class Meta:
+        name = 'LogLevel'
+
+    CRITICAL = 'CRITICAL'
+    ERROR = 'ERROR'
+    INFO = 'INFO'
+    WARNING = 'WARNING'
+    DEBUG = 'DEBUG'
+
+
 class DauphinMessageEvent(dauphin.Interface):
     class Meta:
         name = 'MessageEvent'
@@ -79,7 +90,7 @@ class DauphinMessageEvent(dauphin.Interface):
     runId = dauphin.NonNull(dauphin.String)
     message = dauphin.NonNull(dauphin.String)
     timestamp = dauphin.NonNull(dauphin.String)
-    level = dauphin.NonNull(dauphin.String)
+    level = dauphin.NonNull('LogLevel')
     step = dauphin.Field('ExecutionStep')
 
 
