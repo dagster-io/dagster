@@ -65,7 +65,7 @@ def test_basic_solids_config():
     assert scaffold_pipeline_config(pipeline_def, skip_optional=False) == {
         'context': {
             'default': {
-                'config': {'log_level': 'CRITICAL|ERROR|WARNING|INFO|DEBUG'},
+                'config': {'log_level': 'CRITICAL|DEBUG|ERROR|INFO|WARNING'},
                 'persistence': {'file': {}},
                 'resources': {},
             }
