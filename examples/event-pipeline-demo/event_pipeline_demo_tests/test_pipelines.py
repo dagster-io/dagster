@@ -52,28 +52,19 @@ def test_event_pipeline(snowflake_connect):
     try:
         if not spark_home_set:
             try:
-                pyspark_show = subprocess.check_output(
-                    ['pip', 'show', 'pyspark']
-                )
+                pyspark_show = subprocess.check_output(['pip', 'show', 'pyspark'])
             except subprocess.CalledProcessError:
                 pass
             else:
                 os.environ['SPARK_HOME'] = os.path.join(
                     list(
-                        filter(
-                            lambda x: 'Location' in x,
-                            pyspark_show.decode('utf-8').split('\n'),
-                        )
+                        filter(lambda x: 'Location' in x, pyspark_show.decode('utf-8').split('\n'))
                     )[0].split(' ')[1],
                     'pyspark',
                 )
 
-        config = load_yaml_from_globs(
-            script_relative_path('../environments/default.yml')
-        )
-        result_pipeline = execute_pipeline(
-            define_event_ingest_pipeline(), config
-        )
+        config = load_yaml_from_globs(script_relative_path('../environments/default.yml'))
+        result_pipeline = execute_pipeline(define_event_ingest_pipeline(), config)
         assert result_pipeline.success
 
         # We're not testing Snowflake loads here, so at least test that we called the connect

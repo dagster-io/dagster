@@ -124,11 +124,6 @@ export interface PipelineRunRootQuery_pipelineRunOrError_PipelineRun_logs {
   nodes: PipelineRunRootQuery_pipelineRunOrError_PipelineRun_logs_nodes[];
 }
 
-export interface PipelineRunRootQuery_pipelineRunOrError_PipelineRun_executionPlan_steps_solid {
-  __typename: "Solid";
-  name: string;
-}
-
 export interface PipelineRunRootQuery_pipelineRunOrError_PipelineRun_executionPlan_steps_inputs_dependsOn_outputs_type {
   __typename: "RegularRuntimeType" | "ListRuntimeType" | "NullableRuntimeType";
   name: string | null;
@@ -154,7 +149,6 @@ export interface PipelineRunRootQuery_pipelineRunOrError_PipelineRun_executionPl
 export interface PipelineRunRootQuery_pipelineRunOrError_PipelineRun_executionPlan_steps {
   __typename: "ExecutionStep";
   name: string;
-  solid: PipelineRunRootQuery_pipelineRunOrError_PipelineRun_executionPlan_steps_solid;
   kind: StepKind;
   key: string;
   inputs: PipelineRunRootQuery_pipelineRunOrError_PipelineRun_executionPlan_steps_inputs[];

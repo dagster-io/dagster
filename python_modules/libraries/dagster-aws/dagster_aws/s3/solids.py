@@ -1,42 +1,53 @@
-import os
+from dagster import (
+    solid,
+    Bool,
+    Bytes,
+    Dict,
+    Field,
+    InputDefinition,
+    OutputDefinition,
+    Path,
+    Result,
+    String,
+)
 
-import boto3
-
-from dagster import solid, Bool, Dict, Field, OutputDefinition, Path, String
-from dagster.utils import safe_isfile, mkdir_p
-
+from .configs import put_object_configs
 from .types import FileExistsAtPath
 
 
-class S3Logger(object):
-    def __init__(self, logger, bucket, key, filename, size):
-        self._logger = logger
-        self._bucket = bucket
-        self._key = key
-        self._filename = filename
-        self._seen_so_far = 0
-        self._size = size
-
-    def __call__(self, bytes_amount):
-        self._seen_so_far += bytes_amount
-        percentage = (self._seen_so_far / self._size) * 100
-        self._logger(
-            'Download of {bucket}/{key} to {target_file}: {percentage:.2f}% complete'.format(
-                bucket=self._bucket,
-                key=self._key,
-                target_file=self._filename,
-                percentage=percentage,
-            )
-        )
-
-
 @solid(
-    name='download_from_s3',
+    name='download_from_s3_to_bytes',
     config_field=Field(
         Dict(
             fields={
-                'bucket': Field(String),
-                'key': Field(String),
+                'bucket': Field(String, description='S3 bucket name'),
+                'key': Field(String, description='S3 key name'),
+            }
+        )
+    ),
+    description='Downloads an object from S3.',
+    outputs=[OutputDefinition(Bytes, description='The contents of the downloaded object.')],
+    resources={'s3'},
+)
+def download_from_s3_to_bytes(context):
+    '''Download an object from S3 as an in-memory bytes object.
+
+    Returns:
+        str:
+            The path to the downloaded object.
+    '''
+    (bucket, key) = (context.solid_config.get(k) for k in ('bucket', 'key'))
+
+    return context.resources.s3.download_from_s3_to_bytes(bucket, key)
+
+
+@solid(
+    name='download_from_s3_to_file',
+    config_field=Field(
+        Dict(
+            fields={
+                'bucket': Field(String, description='S3 bucket name'),
+                'key': Field(String, description='S3 key name'),
                 'target_folder': Field(
                     Path, description=('Specifies the path at which to download the object.')
                 ),
@@ -44,38 +55,54 @@ class S3Logger(object):
             }
         )
     ),
-    description='Downloads an object from S3.',
+    description='Downloads an object from S3 to a file.',
     outputs=[OutputDefinition(FileExistsAtPath, description='The path to the downloaded object.')],
+    resources={'s3'},
 )
-def download_from_s3(context):
+def download_from_s3_to_file(context):
+    '''Download an object from S3 to a local file.
+    '''
     (bucket, key, target_folder, skip_if_present) = (
         context.solid_config.get(k) for k in ('bucket', 'key', 'target_folder', 'skip_if_present')
     )
 
-    # file name is S3 key path suffix after last /
-    target_file = os.path.join(target_folder, key.split('/')[-1])
+    return context.resources.s3.download_from_s3_to_file(
+        context, bucket, key, target_folder, skip_if_present
+    )
 
-    if skip_if_present and safe_isfile(target_file):
-        context.log.info(
-            'Skipping download, file already present at {target_file}'.format(
-                target_file=target_file
-            )
-        )
-    else:
-        if not os.path.exists(target_folder):
-            mkdir_p(target_folder)
 
-        context.log.info(
-            'Starting download of {bucket}/{key} to {target_file}'.format(
-                bucket=bucket, key=key, target_file=target_file
-            )
-        )
-        s3 = boto3.client('s3')
+@solid(
+    name='put_object_to_s3_bytes',
+    config_field=put_object_configs(),
+    inputs=[InputDefinition('file_obj', Bytes, description='The file to upload.')],
+    description='Uploads a file to S3.',
+    outputs=[
+        OutputDefinition(
+            String, description='The bucket to which the file was uploaded.', name='bucket'
+        ),
+        OutputDefinition(String, description='The key to which the file was uploaded.', name='key'),
+    ],
+    resources={'s3'},
+)
+def put_object_to_s3_bytes(context, file_obj):
+    '''Upload file contents to s3.
 
-        headers = s3.head_object(Bucket=bucket, Key=key)
-        logger = S3Logger(
-            context.log.debug, bucket, key, target_file, int(headers['ContentLength'])
-        )
-        s3.download_file(Bucket=bucket, Key=key, Filename=target_file, Callback=logger)
+    Args:
+        file_obj (Bytes): The bytes of a file object.
 
-    return target_file
+    Returns:
+        (str, str):
+            The bucket and key to which the file was uploaded.
+    '''
+    bucket = context.solid_config['Bucket']
+    key = context.solid_config['Key']
+
+    # the s3 put_object API expects the actual bytes to be on the 'Body' key in kwargs; since we
+    # get all other fields from config, we copy the config object and add 'Body' here.
+    cfg = context.solid_config.copy()
+    cfg['Body'] = file_obj.read()
+
+    context.resources.s3.put_object(**cfg)
+
+    yield Result(bucket, 'bucket')
+    yield Result(key, 'key')

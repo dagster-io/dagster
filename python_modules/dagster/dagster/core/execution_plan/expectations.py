@@ -7,6 +7,7 @@ from dagster.core.definitions import (
     OutputDefinition,
     PipelineDefinition,
     Solid,
+    SolidHandle,
 )
 
 from dagster.core.execution_context import SystemStepExecutionContext
@@ -91,8 +92,7 @@ def create_expectations_subplan(pipeline_def, solid, inout_def, prev_step_output
             pipeline_def=pipeline_def,
             solid=solid,
             expectation_def=expectation_def,
-            key='{solid}.{desc_key}.{inout_name}.expectation.{expectation_name}'.format(
-                solid=solid.name,
+            key_suffix='{desc_key}.{inout_name}.expectation.{expectation_name}'.format(
                 desc_key=inout_def.descriptive_key,
                 inout_name=inout_def.name,
                 expectation_name=expectation_def.name,
@@ -106,8 +106,8 @@ def create_expectations_subplan(pipeline_def, solid, inout_def, prev_step_output
     return create_joining_subplan(
         pipeline_def,
         solid,
-        '{solid}.{desc_key}.{inout_name}.expectations.join'.format(
-            solid=solid.name, desc_key=inout_def.descriptive_key, inout_name=inout_def.name
+        '{desc_key}.{inout_name}.expectations.join'.format(
+            desc_key=inout_def.descriptive_key, inout_name=inout_def.name
         ),
         input_expect_steps,
         EXPECTATION_VALUE_OUTPUT,
@@ -115,7 +115,7 @@ def create_expectations_subplan(pipeline_def, solid, inout_def, prev_step_output
 
 
 def create_expectation_step(
-    pipeline_def, solid, expectation_def, key, kind, prev_step_output_handle, inout_def
+    pipeline_def, solid, expectation_def, key_suffix, kind, prev_step_output_handle, inout_def
 ):
     check.inst_param(pipeline_def, 'pipeline_def', PipelineDefinition)
     check.inst_param(solid, 'solid', Solid)
@@ -127,7 +127,7 @@ def create_expectation_step(
 
     return ExecutionStep(
         pipeline_name=pipeline_def.name,
-        key=key,
+        key_suffix=key_suffix,
         step_inputs=[
             StepInput(
                 name=EXPECTATION_INPUT,
@@ -143,7 +143,7 @@ def create_expectation_step(
             solid, inout_def, expectation_def, EXPECTATION_VALUE_OUTPUT
         ),
         kind=kind,
-        solid=solid,
+        solid_handle=SolidHandle(solid.name, solid.definition.name),
         logging_tags={
             'expectation': expectation_def.name,
             inout_def.descriptive_key: inout_def.name,

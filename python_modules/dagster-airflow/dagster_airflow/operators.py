@@ -50,6 +50,20 @@ def parse_raw_res(raw_res):
     return (res, last_line)
 
 
+def airflow_storage_exception(tmp_dir):
+    return AirflowException(
+        'No storage config found -- must configure either filesystem or s3 storage for '
+        'the DagsterPythonOperator. Ex.: \n'
+        'storage:\n'
+        '  filesystem:\n'
+        '    base_dir: \'{tmp_dir}\''
+        '\n\n --or--\n\n'
+        'storage:\n'
+        '  s3:\n'
+        '    s3_bucket: \'my-s3-bucket\'\n'.format(tmp_dir=tmp_dir)
+    )
+
+
 class DagsterOperator(with_metaclass(ABCMeta)):  # pylint:disable=no-init
     '''Abstract base class for Dagster operators.
 
@@ -297,14 +311,7 @@ class DagsterDockerOperator(ModifiedDockerOperator, DagsterOperator):
         host_tmp_dir = op_kwargs.pop('host_tmp_dir', seven.get_system_temp_directory())
 
         if 'storage' not in env_config:
-            raise AirflowException(
-                'No storage config found -- must configure either filesystem or s3 storage for '
-                'the DagsterPythonOperator. Ex.: \n'
-                '{{\'storage\': {{\'filesystem\': {{\'base_dir\': \'{tmp_dir}\'}}}}}} or \n'
-                '{{\'storage\': {{\'s3\': {{\'s3_bucket\': \'my-s3-bucket\'}}}}}}'.format(
-                    tmp_dir=tmp_dir
-                )
-            )
+            raise airflow_storage_exception(tmp_dir)
 
         # black 18.9b0 doesn't support py27-compatible formatting of the below invocation (omitting
         # the trailing comma after **op_kwargs) -- black 19.3b0 supports multiple python versions,
@@ -430,12 +437,7 @@ class DagsterPythonOperator(PythonOperator, DagsterOperator):
         cls, pipeline, env_config, solid_name, step_keys, dag, dag_id, op_kwargs
     ):
         if 'storage' not in env_config:
-            raise AirflowException(
-                'No storage config found -- must configure either filesystem or s3 storage for '
-                'the DagsterPythonOperator. Ex.: \n'
-                '{\'storage\': {\'filesystem\': {\'base_dir\': \'/tmp/special_place\'}}} or \n'
-                '{\'storage\': {\'s3\': {\'s3_bucket\': \'my-s3-bucket\'}}}'
-            )
+            raise airflow_storage_exception('/tmp/special_place')
 
         # black 18.9b0 doesn't support py27-compatible formatting of the below invocation (omitting
         # the trailing comma after **op_kwargs) -- black 19.3b0 supports multiple python versions, but

@@ -32,7 +32,7 @@ def airflow_home():
 @pytest.fixture(scope='module')
 def temp_dir():
     '''Context manager for temporary directories.
-    
+
     pytest implicitly wraps in try/except.
     '''
     dir_path = os.path.join('/tmp', str(uuid.uuid4()))

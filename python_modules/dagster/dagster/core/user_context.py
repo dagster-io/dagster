@@ -81,12 +81,18 @@ class StepExecutionContext(object):
         return self._system_step_execution_context.log
 
     @property
-    def solid_def(self):
-        return self._system_step_execution_context.solid_def
+    def solid_handle(self):
+        return self._system_step_execution_context.solid_handle
 
     @property
     def solid(self):
-        return self._system_step_execution_context.solid
+        return self._system_step_execution_context.pipeline_def.get_solid(self.solid_handle)
+
+    @property
+    def solid_def(self):
+        return self._system_step_execution_context.pipeline_def.get_solid(
+            self.solid_handle
+        ).definition
 
     def has_tag(self, key):
         return self._system_step_execution_context.has_tag(key)

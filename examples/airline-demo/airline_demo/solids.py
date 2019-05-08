@@ -9,13 +9,12 @@ from io import BytesIO
 from sqlalchemy import text
 
 from dagster import (
-    Any,
+    Bytes,
     Dict,
     Field,
     InputDefinition,
     Int,
     OutputDefinition,
-    Path,
     Result,
     SolidDefinition,
     String,
@@ -24,7 +23,7 @@ from dagster import (
 )
 from dagstermill import define_dagstermill_solid
 
-from .types import Bytes, FileFromPath, SparkDataFrameType, SqlTableName
+from .types import FileFromPath, SparkDataFrameType, SqlTableName
 
 
 PARQUET_SPECIAL_CHARACTERS = r'[ ,;{}()\n\t=]'
@@ -128,73 +127,6 @@ def sql_solid(name, select_statement, materialization_strategy, table_name=None,
         description=description,
         metadata={'kind': 'sql', 'sql': sql_statement},
     )
-
-
-@solid(
-    name='download_from_s3',
-    config_field=Field(
-        Dict(fields={'target_file': Field(Path, description=('Specifies the object to download.'))})
-    ),
-    description='Downloads an object from S3.',
-    outputs=[OutputDefinition(Bytes, description='The contents of the downloaded object.')],
-)
-def download_from_s3(context):
-    '''Download an object from s3.
-
-    Args:
-        info (ExpectationExecutionInfo): Must expose a boto3 S3 client as its `s3` resource.
-
-    Returns:
-        str:
-            The path to the downloaded object.
-    '''
-    target_file = context.solid_config['target_file']
-    return context.resources.download_manager.download_file_contents(context, target_file)
-
-
-@solid(
-    name='upload_to_s3',
-    config_field=Field(
-        Dict(
-            fields={
-                # Probably want to make the region configuable too
-                'bucket': Field(String, description='The S3 bucket to which to upload the file.'),
-                'key': Field(String, description='The key to which to upload the file.'),
-                'kwargs': Field(
-                    Any,  # TODO fix
-                    description='Kwargs to pass through to the S3 client',
-                    is_optional=True,
-                ),
-            }
-        )
-    ),
-    inputs=[InputDefinition('file_obj', Bytes, description='The file to upload.')],
-    description='Uploads a file to S3.',
-    outputs=[
-        OutputDefinition(
-            String, description='The bucket to which the file was uploaded.', name='bucket'
-        ),
-        OutputDefinition(String, description='The key to which the file was uploaded.', name='key'),
-    ],
-)
-def upload_to_s3(context, file_obj):
-    '''Upload a file to s3.
-
-    Args:
-        info (ExpectationExecutionInfo): Must expose a boto3 S3 client as its `s3` resource.
-
-    Returns:
-        (str, str):
-            The bucket and key to which the file was uploaded.
-    '''
-    bucket = context.solid_config['bucket']
-    key = context.solid_config['key']
-
-    context.resources.s3.put_object(
-        Bucket=bucket, Body=file_obj.read(), Key=key, **(context.solid_config.get('kwargs') or {})
-    )
-    yield Result(bucket, 'bucket')
-    yield Result(key, 'key')
 
 
 @solid(

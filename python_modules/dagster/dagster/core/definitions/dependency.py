@@ -2,7 +2,7 @@ from collections import defaultdict, namedtuple
 
 from dagster import check
 
-from .solid import SolidDefinition
+from .solid import ISolidDefinition
 
 from .input import InputDefinition
 
@@ -65,18 +65,18 @@ class Solid(object):
 
     def __init__(self, name, definition, resource_mapper_fn):
         self.name = check.str_param(name, 'name')
-        self.definition = check.inst_param(definition, 'definition', SolidDefinition)
+        self.definition = check.inst_param(definition, 'definition', ISolidDefinition)
         self.resource_mapper_fn = check.callable_param(resource_mapper_fn, 'resource_mapper_fn')
 
         input_handles = {}
-        for input_def in self.definition.input_defs:
-            input_handles[input_def.name] = SolidInputHandle(self, input_def)
+        for name, input_def in self.definition.input_dict.items():
+            input_handles[name] = SolidInputHandle(self, input_def)
 
         self._input_handles = input_handles
 
         output_handles = {}
-        for output_def in self.definition.output_defs:
-            output_handles[output_def.name] = SolidOutputHandle(self, output_def)
+        for name, output_def in self.definition.output_dict.items():
+            output_handles[name] = SolidOutputHandle(self, output_def)
 
         self._output_handles = output_handles
 
@@ -107,16 +107,33 @@ class Solid(object):
         return self.definition.output_def_named(name)
 
     @property
-    def input_defs(self):
-        return self.definition.input_defs
+    def input_dict(self):
+        return self.definition.input_dict
 
     @property
-    def output_defs(self):
-        return self.definition.output_defs
+    def output_dict(self):
+        return self.definition.output_dict
 
     @property
     def step_metadata_fn(self):
         return self.definition.step_metadata_fn
+
+
+class SolidHandle(namedtuple('_SolidHandle', 'name definition_name parent')):
+    def __new__(cls, name, definition_name, parent=None):
+        return super(SolidHandle, cls).__new__(
+            cls,
+            check.str_param(name, 'name'),
+            check.opt_str_param(definition_name, 'definition_name'),
+            check.opt_inst_param(parent, 'parent', SolidHandle),
+        )
+
+    def __str__(self):
+        return self.to_string()
+
+    def to_string(self):
+        # Return unique name of the solid and its lineage (omits solid definition names)
+        return self.parent.to_string() + '.' + self.name if self.parent else self.name
 
 
 class SolidInputHandle(namedtuple('_SolidInputHandle', 'solid input_def')):

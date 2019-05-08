@@ -53,15 +53,9 @@ export interface PreviewConfigQuery_executionPlan_PipelineConfigValidationInvali
   __typename: "PipelineConfigValidationInvalid";
 }
 
-export interface PreviewConfigQuery_executionPlan_ExecutionPlan_steps_solid {
-  __typename: "Solid";
-  name: string;
-}
-
 export interface PreviewConfigQuery_executionPlan_ExecutionPlan_steps {
   __typename: "ExecutionStep";
   name: string;
-  solid: PreviewConfigQuery_executionPlan_ExecutionPlan_steps_solid;
   kind: StepKind;
 }
 

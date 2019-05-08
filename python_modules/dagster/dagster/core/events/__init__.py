@@ -2,9 +2,9 @@ from collections import namedtuple
 from enum import Enum
 
 from dagster import check
-from dagster.utils.error import SerializableErrorInfo
-from dagster.core.definitions import Materialization, ExpectationResult
+from dagster.core.definitions import ExpectationResult, Materialization, SolidHandle
 from dagster.core.log import DagsterLog
+from dagster.utils.error import SerializableErrorInfo
 
 
 class DagsterEventType(Enum):
@@ -72,7 +72,7 @@ def _validate_event_specific_data(event_type, event_specific_data):
 class DagsterEvent(
     namedtuple(
         '_DagsterEvent',
-        'event_type_value pipeline_name step_key solid_name solid_definition_name step_kind_value '
+        'event_type_value pipeline_name step_key solid_handle step_kind_value '
         'logging_tags event_specific_data',
     )
 ):
@@ -86,8 +86,7 @@ class DagsterEvent(
             check.inst_param(event_type, 'event_type', DagsterEventType).value,
             step_context.pipeline_def.name,
             step_context.step.key,
-            step_context.step.solid.name,
-            step_context.step.solid.definition.name,
+            step_context.step.solid_handle,
             step_context.step.kind.value,
             step_context.logging_tags,
             _validate_event_specific_data(event_type, event_specific_data),
@@ -136,8 +135,7 @@ class DagsterEvent(
         event_type_value,
         pipeline_name,
         step_key=None,
-        solid_name=None,
-        solid_definition_name=None,
+        solid_handle=None,
         step_kind_value=None,
         logging_tags=None,
         event_specific_data=None,
@@ -147,12 +145,19 @@ class DagsterEvent(
             check.str_param(event_type_value, 'event_type_value'),
             check.str_param(pipeline_name, 'pipeline_name'),
             check.opt_str_param(step_key, 'step_key'),
-            check.opt_str_param(solid_name, 'solid_name'),
-            check.opt_str_param(solid_definition_name, 'solid_definition_name'),
+            check.opt_inst_param(solid_handle, 'solid_handle', SolidHandle),
             check.opt_str_param(step_kind_value, 'step_kind_value'),
             check.opt_dict_param(logging_tags, 'logging_tags'),
             _validate_event_specific_data(DagsterEventType(event_type_value), event_specific_data),
         )
+
+    @property
+    def solid_name(self):
+        return self.solid_handle.name
+
+    @property
+    def solid_definition_name(self):
+        return self.solid_handle.definition_name
 
     @property
     def event_type(self):

@@ -1,15 +1,13 @@
 from dagster import check
-
-from dagster.core.definitions import InputDefinition, Solid, PipelineDefinition
-
+from dagster.core.definitions import InputDefinition, PipelineDefinition, Solid, SolidHandle
 from dagster.core.errors import DagsterInvariantViolationError
 
 from .objects import (
     ExecutionStep,
+    SingleOutputStepCreationData,
+    StepKind,
     StepOutput,
     StepOutputValue,
-    StepKind,
-    SingleOutputStepCreationData,
 )
 
 INPUT_THUNK_OUTPUT = 'input_thunk_output'
@@ -30,14 +28,14 @@ def _create_input_thunk_execution_step(pipeline_def, solid, input_def, input_spe
 
     return ExecutionStep(
         pipeline_name=pipeline_def.name,
-        key=solid.name + '.inputs.' + input_def.name + '.read',
+        key_suffix='inputs.' + input_def.name + '.read',
         step_inputs=[],
         step_outputs=[
             StepOutput(name=INPUT_THUNK_OUTPUT, runtime_type=input_def.runtime_type, optional=False)
         ],
         compute_fn=_fn,
         kind=StepKind.INPUT_THUNK,
-        solid=solid,
+        solid_handle=SolidHandle(solid.name, solid.definition.name),
         logging_tags={'input': input_def.name},
     )
 

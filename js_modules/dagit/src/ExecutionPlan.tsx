@@ -39,9 +39,6 @@ export default class ExecutionPlan extends React.PureComponent<
       fragment ExecutionPlanFragment on ExecutionPlan {
         steps {
           name
-          solid {
-            name
-          }
           kind
         }
         artifactsPersisted

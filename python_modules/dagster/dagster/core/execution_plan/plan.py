@@ -119,19 +119,22 @@ def create_subplan_for_output(
     )
 
 
-def get_input_source_step_handle(pipeline_def, environment_config, plan_builder, solid, input_def):
+def get_input_source_step_handle(
+    pipeline_def, environment_config, plan_builder, solid, input_name, input_def
+):
     check.inst_param(pipeline_def, 'pipeline_def', PipelineDefinition)
     check.inst_param(environment_config, 'environment_config', EnvironmentConfig)
     check.inst_param(plan_builder, 'plan_builder', _PlanBuilder)
     check.inst_param(solid, 'solid', Solid)
+    check.str_param(input_name, 'input_name')
     check.inst_param(input_def, 'input_def', InputDefinition)
 
-    input_handle = solid.input_handle(input_def.name)
+    input_handle = solid.input_handle(input_name)
     solid_config = environment_config.solids.get(solid.name)
     dependency_structure = pipeline_def.dependency_structure
     if solid_config and input_def.name in solid_config.inputs:
         step_creation_data = create_input_thunk_execution_step(
-            pipeline_def, solid, input_def, solid_config.inputs[input_def.name]
+            pipeline_def, solid, input_def, solid_config.inputs[input_name]
         )
         plan_builder.add_step(step_creation_data.step)
         return step_creation_data.step_output_handle
@@ -146,9 +149,7 @@ def get_input_source_step_handle(pipeline_def, environment_config, plan_builder,
                 'In pipeline {pipeline_name} solid {solid_name}, input {input_name} '
                 'must get a value either (a) from a dependency or (b) from the '
                 'inputs section of its configuration.'
-            ).format(
-                pipeline_name=pipeline_def.name, solid_name=solid.name, input_name=input_def.name
-            )
+            ).format(pipeline_name=pipeline_def.name, solid_name=solid.name, input_name=input_name)
         )
 
 
@@ -208,9 +209,9 @@ class ExecutionPlan(
             ### 1. INPUTS
             # Create and add execution plan steps for solid inputs
             step_inputs = []
-            for input_def in solid.definition.input_defs:
+            for input_name, input_def in solid.definition.input_dict.items():
                 prev_step_output_handle = get_input_source_step_handle(
-                    pipeline_def, environment_config, plan_builder, solid, input_def
+                    pipeline_def, environment_config, plan_builder, solid, input_name, input_def
                 )
 
                 # We return None for the handle (see above in get_input_source_step_handle) when the
@@ -239,13 +240,13 @@ class ExecutionPlan(
 
             ### 3. OUTPUTS
             # Create and add execution plan steps (and output handles) for solid outputs
-            for output_def in solid.definition.output_defs:
+            for name, output_def in solid.definition.output_dict.items():
                 subplan = create_subplan_for_output(
                     pipeline_def, environment_config, solid, solid_transform_step, output_def
                 )
                 plan_builder.add_steps(subplan.steps)
 
-                output_handle = solid.output_handle(output_def.name)
+                output_handle = solid.output_handle(name)
                 plan_builder.set_output_handle(output_handle, subplan.terminal_step_output_handle)
 
         # Finally, we build and return the execution plan

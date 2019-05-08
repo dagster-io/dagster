@@ -8,13 +8,15 @@ from dagster import (
     PipelineDefinition,
     SolidInstance,
 )
+
+from dagster_aws.s3.resources import s3_resource
+from dagster_aws.s3.solids import download_from_s3_to_bytes, put_object_to_s3_bytes
+
 from .resources import (
     postgres_db_info_resource,
     redshift_db_info_resource,
     spark_session_local,
     tempfile_resource,
-    unsigned_s3_session,
-    s3_download_manager,
 )
 from .solids import (
     average_sfo_outbound_avg_delays_by_destination,
@@ -22,7 +24,6 @@ from .solids import (
     delays_by_geography,
     delays_vs_fares,
     delays_vs_fares_nb,
-    download_from_s3,
     eastbound_delays,
     ingest_csv_to_spark,
     join_spark_data_frames,
@@ -35,7 +36,6 @@ from .solids import (
     tickets_with_destination,
     union_spark_data_frames,
     unzip_file,
-    upload_to_s3,
     westbound_delays,
 )
 
@@ -44,10 +44,9 @@ test_context = PipelineContextDefinition(
     context_fn=lambda _: ExecutionContext.console_logging(log_level=logging.DEBUG),
     resources={
         'spark': spark_session_local,
-        's3': unsigned_s3_session,
         'db_info': redshift_db_info_resource,
         'tempfile': tempfile_resource,
-        'download_manager': s3_download_manager,
+        's3': s3_resource,
     },
 )
 
@@ -56,10 +55,9 @@ local_context = PipelineContextDefinition(
     context_fn=lambda _: ExecutionContext.console_logging(log_level=logging.DEBUG),
     resources={
         'spark': spark_session_local,
-        's3': unsigned_s3_session,
+        's3': s3_resource,
         'db_info': postgres_db_info_resource,
         'tempfile': tempfile_resource,
-        'download_manager': s3_download_manager,
     },
 )
 
@@ -68,7 +66,7 @@ prod_context = PipelineContextDefinition(
     context_fn=lambda _: ExecutionContext.console_logging(log_level=logging.DEBUG),
     resources={
         'spark': spark_session_local,  # FIXME
-        's3': unsigned_s3_session,
+        's3': s3_resource,
         'db_info': redshift_db_info_resource,
         'tempfile': tempfile_resource,
     },
@@ -81,7 +79,7 @@ CONTEXT_DEFINITIONS = {'test': test_context, 'local': local_context, 'prod': pro
 def define_airline_demo_ingest_pipeline():
     solids = [
         canonicalize_column_names,
-        download_from_s3,
+        download_from_s3_to_bytes,
         ingest_csv_to_spark,
         join_spark_data_frames,
         load_data_to_database_from_spark,
@@ -92,14 +90,14 @@ def define_airline_demo_ingest_pipeline():
         unzip_file,
     ]
     dependencies = {
-        SolidInstance('download_from_s3', alias='download_april_on_time_data'): {},
-        SolidInstance('download_from_s3', alias='download_may_on_time_data'): {},
-        SolidInstance('download_from_s3', alias='download_june_on_time_data'): {},
-        SolidInstance('download_from_s3', alias='download_master_cord_data'): {},
-        SolidInstance('download_from_s3', alias='download_q2_coupon_data'): {},
-        SolidInstance('download_from_s3', alias='download_q2_market_data'): {},
-        SolidInstance('download_from_s3', alias='download_q2_ticket_data'): {},
-        SolidInstance('download_from_s3', alias='download_q2_sfo_weather'): {},
+        SolidInstance('download_from_s3_to_bytes', alias='download_april_on_time_data'): {},
+        SolidInstance('download_from_s3_to_bytes', alias='download_may_on_time_data'): {},
+        SolidInstance('download_from_s3_to_bytes', alias='download_june_on_time_data'): {},
+        SolidInstance('download_from_s3_to_bytes', alias='download_master_cord_data'): {},
+        SolidInstance('download_from_s3_to_bytes', alias='download_q2_coupon_data'): {},
+        SolidInstance('download_from_s3_to_bytes', alias='download_q2_market_data'): {},
+        SolidInstance('download_from_s3_to_bytes', alias='download_q2_ticket_data'): {},
+        SolidInstance('download_from_s3_to_bytes', alias='download_q2_sfo_weather'): {},
         SolidInstance('unzip_file', alias='unzip_april_on_time_data'): {
             'archive_file': DependencyDefinition('download_april_on_time_data')
         },
@@ -234,7 +232,7 @@ def define_airline_demo_warehouse_pipeline():
             q2_sfo_outbound_flights,
             sfo_delays_by_destination,
             tickets_with_destination,
-            upload_to_s3,
+            put_object_to_s3_bytes,
             westbound_delays,
         ],
         dependencies={
@@ -259,13 +257,13 @@ def define_airline_demo_warehouse_pipeline():
                 'eastbound_delays': DependencyDefinition('eastbound_delays'),
                 'westbound_delays': DependencyDefinition('westbound_delays'),
             },
-            SolidInstance('upload_to_s3', alias='upload_outbound_avg_delay_pdf_plots'): {
+            SolidInstance('put_object_to_s3_bytes', alias='upload_outbound_avg_delay_pdf_plots'): {
                 'file_obj': DependencyDefinition('sfo_delays_by_destination')
             },
-            SolidInstance('upload_to_s3', alias='upload_delays_vs_fares_pdf_plots'): {
+            SolidInstance('put_object_to_s3_bytes', alias='upload_delays_vs_fares_pdf_plots'): {
                 'file_obj': DependencyDefinition('fares_vs_delays')
             },
-            SolidInstance('upload_to_s3', alias='upload_delays_by_geography_pdf_plots'): {
+            SolidInstance('put_object_to_s3_bytes', alias='upload_delays_by_geography_pdf_plots'): {
                 'file_obj': DependencyDefinition('delays_by_geography')
             },
         },

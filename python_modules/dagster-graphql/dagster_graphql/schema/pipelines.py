@@ -7,11 +7,15 @@ from dagster import (
     PipelineContextDefinition,
     PipelineDefinition,
     ResourceDefinition,
-    SolidDefinition,
     check,
 )
-
-from dagster.core.definitions import Solid, SolidInputHandle, SolidOutputHandle, PipelinePreset
+from dagster.core.definitions import (
+    ISolidDefinition,
+    PipelinePreset,
+    Solid,
+    SolidInputHandle,
+    SolidOutputHandle,
+)
 from dagster_graphql import dauphin
 
 from .config_types import to_dauphin_config_type
@@ -271,7 +275,7 @@ class DauphinSolidDefinition(dauphin.ObjectType):
             name=solid_def.name, description=solid_def.description
         )
 
-        self._solid_def = check.inst_param(solid_def, 'solid_def', SolidDefinition)
+        self._solid_def = check.inst_param(solid_def, 'solid_def', ISolidDefinition)
 
     def resolve_metadata(self, graphene_info):
         return [

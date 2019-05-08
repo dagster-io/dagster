@@ -128,7 +128,7 @@ class DauphinExecutionStep(dauphin.ObjectType):
     key = dauphin.NonNull(dauphin.String)
     inputs = dauphin.non_null_list('ExecutionStepInput')
     outputs = dauphin.non_null_list('ExecutionStepOutput')
-    solid = dauphin.NonNull('Solid')
+    solidHandle = dauphin.NonNull(dauphin.String)
     kind = dauphin.NonNull('StepKind')
     metadata = dauphin.non_null_list('MetadataItemDefinition')
 
@@ -161,8 +161,8 @@ class DauphinExecutionStep(dauphin.ObjectType):
     def resolve_name(self, _graphene_info):
         return self._execution_step.key
 
-    def resolve_solid(self, graphene_info):
-        return graphene_info.schema.type_named('Solid')(self._execution_step.solid)
+    def resolve_solidHandle(self, _graphene_info):
+        return str(self._execution_step.solid_handle)
 
     def resolve_kind(self, _graphene_info):
         return self._execution_step.kind

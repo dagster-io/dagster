@@ -19,10 +19,10 @@ SupportedPythons = [
 ]
 
 PY_IMAGE_MAP = {
-    SupportedPython.V3_7: "python:3.7",
-    SupportedPython.V3_6: "python:3.6",
-    SupportedPython.V3_5: "python:3.5",
-    SupportedPython.V2_7: "python:2.7",
+    SupportedPython.V3_7: "python:3.7.3-stretch",
+    SupportedPython.V3_6: "python:3.6.8-stretch",
+    SupportedPython.V3_5: "python:3.5.7-stretch",
+    SupportedPython.V2_7: "python:2.7.16-stretch",
 }
 
 INTEGRATION_IMAGE_MAP = {
@@ -218,6 +218,8 @@ if __name__ == "__main__":
             "yarn run check-prettier",
             "yarn generate-types",
             "git diff --exit-code",
+            "mv coverage/lcov.info lcov.dagit.$BUILDKITE_BUILD_ID.info",
+            "buildkite-agent artifact upload lcov.dagit.$BUILDKITE_BUILD_ID.info",
         )
         .on_integration_image(SupportedPython.V3_7)
         .build(),
@@ -238,12 +240,17 @@ if __name__ == "__main__":
         wait_step(),  # wait for all previous steps to finish
         StepBuilder("coverage")
         .run(
-            "pip install coverage coveralls",
+            "apt-get update",
+            "apt-get -qq -y install lcov ruby-full",
+            "pip install coverage coveralls coveralls-merge",
+            "gem install coveralls-lcov",
             "mkdir -p tmp",
             'buildkite-agent artifact download ".coverage*" tmp/',
+            'buildkite-agent artifact download "lcov.*" tmp/',
             "cd tmp",
             "coverage combine",
-            "coveralls",
+            "coveralls-lcov -v -n lcov.* > coverage.js.json",
+            "coveralls-merge coverage.js.json",
         )
         .on_python_image(
             SupportedPython.V3_7,

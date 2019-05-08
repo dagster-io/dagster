@@ -281,12 +281,16 @@ class SystemStepExecutionContext(SystemPipelineExecutionContext):
         return self._step
 
     @property
+    def solid_handle(self):
+        return self._step.solid_handle
+
+    @property
     def solid_def(self):
-        return self._step.solid.definition
+        return self.solid.definition
 
     @property
     def solid(self):
-        return self._step.solid
+        return self.pipeline_def.get_solid(self._step.solid_handle)
 
     @property
     def resources(self):
@@ -298,7 +302,7 @@ class SystemStepExecutionContext(SystemPipelineExecutionContext):
 class SystemTransformExecutionContext(SystemStepExecutionContext):
     @property
     def solid_config(self):
-        solid_config = self.environment_config.solids.get(self.solid.name)
+        solid_config = self.environment_config.solids.get(str(self.solid_handle))
         return solid_config.config if solid_config else None
 
 

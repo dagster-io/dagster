@@ -21,13 +21,8 @@ from dagster import (
     lambda_solid,
 )
 
-from airline_demo.solids import sql_solid, download_from_s3, ingest_csv_to_spark, unzip_file
-from airline_demo.resources import (
-    spark_session_local,
-    tempfile_resource,
-    unsigned_s3_session,
-    s3_download_manager,
-)
+from airline_demo.solids import sql_solid, ingest_csv_to_spark, unzip_file
+from airline_demo.resources import spark_session_local, tempfile_resource
 
 from .marks import nettest, postgres, redshift, skip, spark
 
@@ -37,19 +32,6 @@ def _tempfile_context():
         'test': PipelineContextDefinition(
             context_fn=lambda info: ExecutionContext.console_logging(log_level=logging.DEBUG),
             resources={'tempfile': tempfile_resource},
-        )
-    }
-
-
-def _s3_context():
-    return {
-        'test': PipelineContextDefinition(
-            context_fn=lambda info: ExecutionContext.console_logging(log_level=logging.DEBUG),
-            resources={
-                's3': unsigned_s3_session,
-                'tempfile': tempfile_resource,
-                'download_manager': s3_download_manager,
-            },
         )
     }
 
@@ -81,33 +63,6 @@ def test_sql_solid():
     result = sql_solid('foo', 'select * from bar', 'table', 'quux')
     assert result
     # TODO: test execution?
-
-
-@nettest
-def test_download_from_s3():
-    result = execute_solid(
-        PipelineDefinition([download_from_s3], context_definitions=_s3_context()),
-        'download_from_s3',
-        environment_dict={
-            'context': {
-                'test': {
-                    'resources': {
-                        'download_manager': {
-                            'config': {
-                                'skip_if_present': False,
-                                'bucket': 'dagster-airline-demo-source-data',
-                                'key': 'test',
-                                'target_folder': 'test',
-                            }
-                        }
-                    }
-                }
-            },
-            'solids': {'download_from_s3': {'config': {'target_file': 'test_file'}}},
-        },
-    )
-    assert result.success
-    assert result.transformed_value().read() == b'test\n'
 
 
 def test_unzip_file_tempfile():

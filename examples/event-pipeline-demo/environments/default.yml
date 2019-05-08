@@ -2,9 +2,9 @@ context:
   default:
     config:
       log_level: DEBUG
-         
+
 solids:
-  download_from_s3:
+  download_from_s3_to_file:
     config:
       bucket: "elementl-public"
       key: "example-json.gz"

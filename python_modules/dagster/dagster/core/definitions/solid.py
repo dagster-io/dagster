@@ -1,15 +1,42 @@
-from dagster import check
+from abc import ABCMeta
 
+import six
+
+from dagster import check
 from dagster.core.types.field_utils import check_user_facing_opt_field_param
+from dagster.utils import frozendict
 
 from .input import InputDefinition
-
 from .output import OutputDefinition
-
 from .utils import check_valid_name
 
 
-class SolidDefinition(object):
+class ISolidDefinition(six.with_metaclass(ABCMeta)):
+    def __init__(self, name, input_dict, output_dict, description=None, metadata=None):
+        self.name = check_valid_name(name)
+        self.description = check.opt_str_param(description, 'description')
+        self.metadata = check.opt_dict_param(metadata, 'metadata', key_type=str)
+        self.input_dict = frozendict(input_dict)
+        self.output_dict = frozendict(output_dict)
+
+    def has_input(self, name):
+        check.str_param(name, 'name')
+        return name in self.input_dict
+
+    def input_def_named(self, name):
+        check.str_param(name, 'name')
+        return self.input_dict[name]
+
+    def has_output(self, name):
+        check.str_param(name, 'name')
+        return name in self.output_dict
+
+    def output_def_named(self, name):
+        check.str_param(name, 'name')
+        return self.output_dict[name]
+
+
+class SolidDefinition(ISolidDefinition):
     '''A solid (a name extracted from the acronym of "software-structured data" (SSD)) represents
     a unit of computation within a data pipeline.
 
@@ -78,9 +105,7 @@ class SolidDefinition(object):
         step_metadata_fn=None,
     ):
         self.name = check_valid_name(name)
-        self.input_defs = check.list_param(inputs, 'inputs', InputDefinition)
         self.transform_fn = check.callable_param(transform_fn, 'transform_fn')
-        self.output_defs = check.list_param(outputs, 'outputs', OutputDefinition)
         self.description = check.opt_str_param(description, 'description')
         self.config_field = check_user_facing_opt_field_param(
             config_field,
@@ -89,22 +114,17 @@ class SolidDefinition(object):
         )
         self.metadata = check.opt_dict_param(metadata, 'metadata', key_type=str)
         self.resources = check.opt_set_param(resources, 'resources', of_type=str)
-        self._input_dict = {inp.name: inp for inp in inputs}
-        self._output_dict = {output.name: output for output in outputs}
         self.step_metadata_fn = step_metadata_fn
 
-    def has_input(self, name):
-        check.str_param(name, 'name')
-        return name in self._input_dict
+        input_dict = {inp.name: inp for inp in check.list_param(inputs, 'inputs', InputDefinition)}
+        output_dict = {
+            output.name: output for output in check.list_param(outputs, 'outputs', OutputDefinition)
+        }
 
-    def input_def_named(self, name):
-        check.str_param(name, 'name')
-        return self._input_dict[name]
+        super(SolidDefinition, self).__init__(name, input_dict, output_dict, description, metadata)
 
-    def has_output(self, name):
-        check.str_param(name, 'name')
-        return name in self._output_dict
 
-    def output_def_named(self, name):
-        check.str_param(name, 'name')
-        return self._output_dict[name]
+class CompositeSolidDefinition(ISolidDefinition):
+    def __init__(self, name, description=None, metadata=None):
+
+        super(CompositeSolidDefinition, self).__init__(name, {}, {}, description, metadata)

@@ -1,14 +1,14 @@
 from dagster import check
-from dagster.core.definitions import Solid, PipelineDefinition
+from dagster.core.definitions import PipelineDefinition, Solid, SolidHandle
 
 from .objects import (
-    ExecutionValueSubplan,
     ExecutionStep,
+    ExecutionValueSubplan,
     StepInput,
+    StepKind,
     StepOutput,
     StepOutputHandle,
     StepOutputValue,
-    StepKind,
 )
 
 JOIN_OUTPUT = 'join_output'
@@ -18,10 +18,10 @@ def __join_lambda(_context, inputs):
     yield StepOutputValue(output_name=JOIN_OUTPUT, value=list(inputs.values())[0])
 
 
-def create_join_step(pipeline_def, solid, step_key, prev_steps, prev_output_name):
+def create_join_step(pipeline_def, solid, key_suffix, prev_steps, prev_output_name):
     check.inst_param(pipeline_def, 'pipeline_def', PipelineDefinition)
     check.inst_param(solid, 'solid', Solid)
-    check.str_param(step_key, 'step_key')
+    check.str_param(key_suffix, 'key_suffix')
     check.list_param(prev_steps, 'prev_steps', of_type=ExecutionStep)
     check.invariant(len(prev_steps) > 0)
     check.str_param(prev_output_name, 'output_name')
@@ -48,12 +48,12 @@ def create_join_step(pipeline_def, solid, step_key, prev_steps, prev_output_name
 
     return ExecutionStep(
         pipeline_name=pipeline_def.name,
-        key=step_key,
+        key_suffix=key_suffix,
         step_inputs=step_inputs,
         step_outputs=[StepOutput(JOIN_OUTPUT, seen_runtime_type, optional=seen_optionality)],
         compute_fn=__join_lambda,
         kind=StepKind.JOIN,
-        solid=solid,
+        solid_handle=SolidHandle(solid.name, solid.definition.name),
     )
 
 

@@ -62,15 +62,11 @@ def execute_pagerank():
     for _ in range(int(sys.argv[2])):
         # Calculates URL contributions to the rank of other URLs.
         contribs = links.join(ranks).flatMap(
-            lambda url_urls_rank: computeContribs(
-                url_urls_rank[1][0], url_urls_rank[1][1]
-            )
+            lambda url_urls_rank: computeContribs(url_urls_rank[1][0], url_urls_rank[1][1])
         )
 
         # Re-calculates URL ranks based on neighbor contributions.
-        ranks = contribs.reduceByKey(add).mapValues(
-            lambda rank: rank * 0.85 + 0.15
-        )
+        ranks = contribs.reduceByKey(add).mapValues(lambda rank: rank * 0.85 + 0.15)
 
     # Collects all URL ranks and dump them to console.
     for (link, rank) in ranks.collect():

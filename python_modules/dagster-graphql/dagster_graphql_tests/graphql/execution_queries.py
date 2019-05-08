@@ -118,7 +118,7 @@ subscription subscribeTest($runId: ID!) {
                 __typename
                 ... on MessageEvent {
                     message
-                    step { key solid { name } }
+                    step { key solidHandle }
                     level
                 }
                 ... on ExecutionStepFailureEvent {

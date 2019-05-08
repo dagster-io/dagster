@@ -120,11 +120,6 @@ export interface PipelineRunLogsUpdateFragment_logs {
   nodes: PipelineRunLogsUpdateFragment_logs_nodes[];
 }
 
-export interface PipelineRunLogsUpdateFragment_executionPlan_steps_solid {
-  __typename: "Solid";
-  name: string;
-}
-
 export interface PipelineRunLogsUpdateFragment_executionPlan_steps_inputs_dependsOn_outputs_type {
   __typename: "RegularRuntimeType" | "ListRuntimeType" | "NullableRuntimeType";
   name: string | null;
@@ -150,7 +145,6 @@ export interface PipelineRunLogsUpdateFragment_executionPlan_steps_inputs {
 export interface PipelineRunLogsUpdateFragment_executionPlan_steps {
   __typename: "ExecutionStep";
   name: string;
-  solid: PipelineRunLogsUpdateFragment_executionPlan_steps_solid;
   kind: StepKind;
   key: string;
   inputs: PipelineRunLogsUpdateFragment_executionPlan_steps_inputs[];

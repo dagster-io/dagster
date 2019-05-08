@@ -2,11 +2,11 @@ import json
 import logging
 import re
 
+from dagster.core.definitions import SolidHandle
 from dagster.core.events import DagsterEvent
 from dagster.core.execution_plan.objects import StepFailureData
-from dagster.core.log import DagsterLog, DAGSTER_DEFAULT_LOGGER
+from dagster.core.log import DAGSTER_DEFAULT_LOGGER, DagsterLog
 from dagster.utils.error import SerializableErrorInfo
-
 
 REGEX_UUID = r'[a-z-0-9]{8}\-[a-z-0-9]{4}\-[a-z-0-9]{4}\-[a-z-0-9]{4}\-[a-z-0-9]{12}'
 REGEX_TS = r'\d{4}\-\d{2}\-\d{2}T\d{2}:\d{2}:\d{2}\.\d{6}'
@@ -72,8 +72,7 @@ def test_multiline_logging_complex():
             event_type_value='STEP_FAILURE',
             pipeline_name='error_monster',
             step_key='start.materialization.output.result.0',
-            solid_name='start',
-            solid_definition_name='emit_num',
+            solid_handle=SolidHandle('start', 'emit_num'),
             step_kind_value='MATERIALIZATION_THUNK',
             logging_tags={
                 'pipeline': 'error_monster',
@@ -137,8 +136,7 @@ def test_multiline_logging_complex():
         ],
         'event_type_value': 'STEP_FAILURE',
         'pipeline_name': 'error_monster',
-        'solid_definition_name': 'emit_num',
-        'solid_name': 'start',
+        'solid_handle': ['start', 'emit_num', None],
         'step_key': 'start.materialization.output.result.0',
         'step_kind_value': 'MATERIALIZATION_THUNK',
         'logging_tags': {

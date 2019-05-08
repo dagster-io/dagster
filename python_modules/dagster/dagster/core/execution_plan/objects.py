@@ -3,7 +3,7 @@ from enum import Enum
 
 
 from dagster import check
-from dagster.core.definitions import Solid
+from dagster.core.definitions import SolidHandle
 from dagster.core.definitions.materialization import Materialization
 from dagster.core.intermediates_manager import StepOutputHandle
 from dagster.core.types.runtime import RuntimeType
@@ -103,40 +103,40 @@ class ExecutionStep(
     namedtuple(
         '_ExecutionStep',
         (
-            'pipeline_name key step_inputs step_input_dict step_outputs step_output_dict '
-            'compute_fn kind solid logging_tags metadata'
+            'pipeline_name key_suffix step_inputs step_input_dict step_outputs step_output_dict '
+            'compute_fn kind solid_handle logging_tags metadata'
         ),
     )
 ):
     def __new__(
         cls,
         pipeline_name,
-        key,
+        key_suffix,
         step_inputs,
         step_outputs,
         compute_fn,
         kind,
-        solid,
+        solid_handle,
         logging_tags=None,
         metadata=None,
     ):
         return super(ExecutionStep, cls).__new__(
             cls,
             pipeline_name=check.str_param(pipeline_name, 'pipeline_name'),
-            key=check.str_param(key, 'key'),
+            key_suffix=check.str_param(key_suffix, 'key_suffix'),
             step_inputs=check.list_param(step_inputs, 'step_inputs', of_type=StepInput),
             step_input_dict={si.name: si for si in step_inputs},
             step_outputs=check.list_param(step_outputs, 'step_outputs', of_type=StepOutput),
             step_output_dict={so.name: so for so in step_outputs},
             compute_fn=check.callable_param(compute_fn, 'compute_fn'),
             kind=check.inst_param(kind, 'kind', StepKind),
-            solid=check.inst_param(solid, 'solid', Solid),
+            solid_handle=check.inst_param(solid_handle, 'solid_handle', SolidHandle),
             logging_tags=merge_dicts(
                 {
-                    'step_key': key,
+                    'step_key': str(solid_handle) + '.' + key_suffix,
                     'pipeline': pipeline_name,
-                    'solid': solid.name,
-                    'solid_definition': solid.definition.name,
+                    'solid': solid_handle.name,
+                    'solid_definition': solid_handle.definition_name,
                 },
                 check.opt_dict_param(logging_tags, 'logging_tags'),
             ),
@@ -144,12 +144,16 @@ class ExecutionStep(
         )
 
     @property
+    def key(self):
+        return str(self.solid_handle) + '.' + self.key_suffix
+
+    @property
     def solid_name(self):
-        return self.solid.name
+        return self.solid_handle.name
 
     @property
     def solid_definition_name(self):
-        return self.solid.definition.name
+        return self.solid_handle.definition_name
 
     def has_step_output(self, name):
         check.str_param(name, 'name')
