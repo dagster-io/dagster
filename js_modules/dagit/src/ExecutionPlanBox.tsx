@@ -149,8 +149,6 @@ export class ExecutionPlanBox extends React.Component<
       elapsed = Math.floor((Date.now() - start) / 1000) * 1000;
     }
 
-    const hiddenEvents = displayEvents.filter(e => e.hidden);
-
     return (
       <>
         <ExecutionPlanRowContainer>
@@ -183,7 +181,7 @@ export class ExecutionPlanBox extends React.Component<
                   />
                 )}
                 <div style={{ width: 4 }} />
-                {hiddenEvents.length > 0 && (
+                {displayEvents.length > 0 && (
                   <DisclosureTriangle
                     onClick={() => this.setState({ expanded: !expanded })}
                     expanded={expanded}
@@ -194,11 +192,11 @@ export class ExecutionPlanBox extends React.Component<
               {elapsed !== undefined && <ExecutionTime elapsed={elapsed} />}
             </div>
             {expanded && (
-              <HiddenEventsContainer>
-                {hiddenEvents.map(e => (
-                  <DisplayEvent event={e} key={`${e.key}`} showIcons={false} />
+              <DisplayEventsContainer>
+                {displayEvents.map((e, idx) => (
+                  <DisplayEvent event={e} key={`${idx}`} />
                 ))}
-              </HiddenEventsContainer>
+              </DisplayEventsContainer>
             )}
           </ExecutionPlanBoxContainer>
           <ReexecuteButton
@@ -208,13 +206,6 @@ export class ExecutionPlanBox extends React.Component<
             name={name}
           />
         </ExecutionPlanRowContainer>
-        <div style={{ paddingLeft: 21, color: Colors.GRAY3 }}>
-          {displayEvents
-            .filter(e => !e.hidden)
-            .map(e => (
-              <DisplayEvent key={`${e.key}`} event={e} showIcons={true} />
-            ))}
-        </div>
       </>
     );
   }
@@ -357,7 +348,7 @@ const ExecutionPlanBoxContainer = styled.div<{ state: IStepState }>`
   }
 `;
 
-const HiddenEventsContainer = styled.div`
+const DisplayEventsContainer = styled.div`
   color: ${Colors.BLACK};
   border-top: 1px solid rgba(0, 0, 0, 0.15);
   margin-top: 4px;

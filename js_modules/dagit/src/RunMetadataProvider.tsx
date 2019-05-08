@@ -13,10 +13,20 @@ export enum IStepState {
 }
 
 export interface IStepDisplayEvent {
-  type: "materialization" | "intermediate" | "other";
-  key: string | null;
-  value: string | null;
-  hidden: boolean; // true to place inside disclosure triangle
+  icon:
+    | "dot-success"
+    | "dot-failure"
+    | "dot-pending"
+    | "file"
+    | "link"
+    | "none";
+  text: string;
+  items: {
+    text: string; // shown in gray on the left
+    action: "open-in-tab" | "copy" | "show-in-modal" | "none";
+    actionText: string; // shown after `text`, optionally with a click action
+    actionValue: string; // value passed to the click action
+  }[];
 }
 
 export interface IStepMetadata {
@@ -94,22 +104,16 @@ function extractMetadataFromLogs(
       } else if (log.__typename === "StepMaterializationEvent") {
         metadata.steps[name] = produce(metadata.steps[name] || {}, step => {
           step.displayEvents.push({
-            type: "materialization",
-            key: log.materialization.description,
-            value: log.materialization.path,
-            hidden: false
-          });
-          step.displayEvents.push({
-            type: "materialization",
-            key: "plan_type",
-            value: "complex",
-            hidden: true
-          });
-          step.displayEvents.push({
-            type: "materialization",
-            key: "conversion_speed_seed",
-            value: "123.1511",
-            hidden: true
+            icon: "link",
+            text: "Materialization",
+            items: [
+              {
+                text: (log.materialization.path || "").split("/").pop()!,
+                actionText: "[Copy Path]",
+                action: "copy",
+                actionValue: log.materialization.path || ""
+              }
+            ]
           });
         });
       } else if (log.__typename === "ExecutionStepFailureEvent") {
