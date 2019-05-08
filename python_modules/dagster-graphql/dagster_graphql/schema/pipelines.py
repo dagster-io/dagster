@@ -15,6 +15,8 @@ from dagster.core.definitions import (
     Solid,
     SolidInputHandle,
     SolidOutputHandle,
+    create_environment_schema,
+    create_environment_type,
 )
 from dagster_graphql import dauphin
 
@@ -56,11 +58,12 @@ class DauphinPipeline(dauphin.ObjectType):
         ]
 
     def resolve_environment_type(self, _graphene_info):
-        return to_dauphin_config_type(self._pipeline.environment_type)
+        return to_dauphin_config_type(create_environment_type(self._pipeline))
 
     def resolve_config_types(self, _graphene_info):
+        environment_schema = create_environment_schema(self._pipeline)
         return sorted(
-            list(map(to_dauphin_config_type, self._pipeline.all_config_types())),
+            list(map(to_dauphin_config_type, environment_schema.all_config_types())),
             key=lambda config_type: config_type.key,
         )
 

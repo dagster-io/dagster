@@ -1,4 +1,5 @@
 from dagster.core.execution import ExecutionSelector
+from dagster.core.definitions import create_environment_schema
 from dagster_graphql.schema.config_types import to_dauphin_config_type
 from dagster_graphql.schema.runtime_types import to_dauphin_runtime_type
 
@@ -8,14 +9,17 @@ from .fetch_pipelines import _pipeline_or_error_from_container
 
 def _config_type_or_error(graphene_info, dauphin_pipeline, config_type_name):
     pipeline = dauphin_pipeline.get_dagster_pipeline()
-    if not pipeline.has_config_type(config_type_name):
+    environment_schema = create_environment_schema(pipeline)
+    if not environment_schema.has_config_type(config_type_name):
         return EitherError(
             graphene_info.schema.type_named('ConfigTypeNotFoundError')(
                 pipeline=pipeline, config_type_name=config_type_name
             )
         )
     else:
-        dauphin_config_type = to_dauphin_config_type(pipeline.config_type_named(config_type_name))
+        dauphin_config_type = to_dauphin_config_type(
+            environment_schema.config_type_named(config_type_name)
+        )
         return EitherValue(dauphin_config_type)
 
 

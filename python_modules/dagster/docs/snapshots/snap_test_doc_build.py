@@ -19986,7 +19986,7 @@ is unnamed the method with return “&lt;&lt;unnamed&gt;&gt;”.</p>
 <dd class="field-odd"><p>List of solids.</p>
 </dd>
 <dt class="field-even">Return type</dt>
-<dd class="field-even"><p>List[<a class="reference internal" href="solids.html#dagster.SolidDefinition" title="dagster.SolidDefinition">SolidDefinition</a>]</p>
+<dd class="field-even"><p>List[Solid]</p>
 </dd>
 </dl>
 </dd></dl>

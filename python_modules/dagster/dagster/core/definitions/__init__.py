@@ -9,6 +9,12 @@ from .dependency import (
     SolidOutputHandle,
 )
 
+from .environment_schema import (
+    EnvironmentSchema,
+    create_environment_schema,
+    create_environment_type,
+)
+
 from .expectation import ExpectationDefinition, ExpectationResult
 
 from .input import InputDefinition

@@ -1,6 +1,7 @@
 from graphql.execution.base import ResolveInfo
 
 from dagster import check
+from dagster.core.definitions import create_environment_schema
 from dagster.core.execution import ExecutionSelector, create_execution_plan
 from dagster.core.types.evaluator import evaluate_config_value
 
@@ -9,8 +10,9 @@ from .fetch_pipelines import _pipeline_or_error_from_container
 
 
 def _config_or_error_from_pipeline(graphene_info, pipeline, env_config):
-    pipeline_env_type = pipeline.get_dagster_pipeline().environment_type
-    validated_config = evaluate_config_value(pipeline_env_type, env_config)
+    configuration_schema = create_environment_schema(pipeline.get_dagster_pipeline())
+
+    validated_config = evaluate_config_value(configuration_schema.environment_type, env_config)
 
     if not validated_config.success:
         return EitherError(

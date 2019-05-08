@@ -23,6 +23,7 @@ from dagster import (
     PipelineContextDefinition,
     PipelineDefinition,
 )
+from dagster.core.definitions import create_environment_type
 from dagster.core.types.evaluator import evaluate_config_value
 
 from dagster_gcp import (
@@ -127,9 +128,10 @@ def test_bad_config():
         },
     )
 
+    env_type = create_environment_type(pipeline_def)
     for config_fragment, error_message in configs_and_expected_errors:
         config = {'solids': {'test': {'config': {'query_job_config': config_fragment}}}}
-        result = evaluate_config_value(pipeline_def.environment_type, config)
+        result = evaluate_config_value(env_type, config)
         assert result.errors[0].message == error_message
 
 

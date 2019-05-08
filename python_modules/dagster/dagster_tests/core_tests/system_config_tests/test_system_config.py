@@ -29,6 +29,8 @@ from dagster.core.system_config.objects import (
     SolidConfig,
 )
 
+from dagster.core.definitions import create_environment_type, create_environment_schema
+
 from dagster.core.definitions.environment_configs import (
     construct_context_config,
     construct_environment_config,
@@ -144,7 +146,9 @@ def test_all_types_provided():
         },
     )
 
-    all_types = list(pipeline_def.all_config_types())
+    environment_schema = create_environment_schema(pipeline_def)
+
+    all_types = list(environment_schema.all_config_types())
     type_names = set(t.name for t in all_types)
     assert 'SomeContextNamedDict' in type_names
     assert 'Pipeline.ContextDefinitionConfig.SomeContext' in type_names
@@ -168,7 +172,7 @@ def test_provided_default_config():
         ],
     )
 
-    env_type = pipeline_def.environment_type
+    env_type = create_environment_type(pipeline_def)
     some_context_field = env_type.fields['context'].config_type.fields['some_context']
     assert some_context_field.is_optional
 
@@ -182,9 +186,7 @@ def test_provided_default_config():
         'persistence': {'file': {}},
     }
 
-    value = construct_environment_config(
-        throwing_evaluate_config_value(pipeline_def.environment_type, {})
-    )
+    value = construct_environment_config(throwing_evaluate_config_value(env_type, {}))
     assert value.context.name == 'some_context'
     assert env_type.type_attributes.is_system_config
 
@@ -199,7 +201,7 @@ def test_default_environment():
     )
 
     env_obj = construct_environment_config(
-        throwing_evaluate_config_value(pipeline_def.environment_type, {})
+        throwing_evaluate_config_value(create_environment_type(pipeline_def), {})
     )
 
     assert env_obj.expectations.evaluate is True
@@ -331,7 +333,7 @@ def assert_has_fields(dtype, *fields):
 
 
 def test_solid_configs_defaults():
-    env_type = define_test_solids_config_pipeline().environment_type
+    env_type = create_environment_type(define_test_solids_config_pipeline())
 
     solids_field = env_type.fields['solids']
 
@@ -401,7 +403,7 @@ def test_whole_environment():
         ],
     )
 
-    environment_type = pipeline_def.environment_type
+    environment_type = create_environment_type(pipeline_def)
 
     assert environment_type.fields['context'].config_type.name == 'SomePipeline.ContextConfig'
     solids_type = environment_type.fields['solids'].config_type
@@ -417,7 +419,7 @@ def test_whole_environment():
 
     env = construct_environment_config(
         throwing_evaluate_config_value(
-            pipeline_def.environment_type,
+            environment_type,
             {'context': {'test': {'config': 1}}, 'solids': {'int_config_solid': {'config': 123}}},
         )
     )
@@ -485,7 +487,7 @@ def test_optional_solid_with_optional_scalar_config():
         ],
     )
 
-    env_type = pipeline_def.environment_type
+    env_type = create_environment_type(pipeline_def)
 
     assert env_type.fields['solids'].is_optional is True
 
@@ -497,9 +499,7 @@ def test_optional_solid_with_optional_scalar_config():
 
     assert solids_default_obj['int_config_solid'].config is None
 
-    env_obj = construct_environment_config(
-        throwing_evaluate_config_value(pipeline_def.environment_type, {})
-    )
+    env_obj = construct_environment_config(throwing_evaluate_config_value(env_type, {}))
 
     assert env_obj.solids['int_config_solid'].config is None
 
@@ -521,7 +521,7 @@ def test_optional_solid_with_required_scalar_config():
         ],
     )
 
-    env_type = pipeline_def.environment_type
+    env_type = create_environment_type(pipeline_def)
 
     assert env_type.fields['solids'].is_optional is False
 
@@ -554,7 +554,7 @@ def test_required_solid_with_required_subfield():
         ],
     )
 
-    env_type = pipeline_def.environment_type
+    env_type = create_environment_type(pipeline_def)
 
     assert env_type.fields['solids'].is_optional is False
     assert env_type.fields['solids'].config_type
@@ -570,18 +570,17 @@ def test_required_solid_with_required_subfield():
 
     env_obj = construct_environment_config(
         throwing_evaluate_config_value(
-            pipeline_def.environment_type,
-            {'solids': {'int_config_solid': {'config': {'required_field': 'foobar'}}}},
+            env_type, {'solids': {'int_config_solid': {'config': {'required_field': 'foobar'}}}}
         )
     )
 
     assert env_obj.solids['int_config_solid'].config['required_field'] == 'foobar'
 
     with pytest.raises(DagsterEvaluateConfigValueError):
-        throwing_evaluate_config_value(pipeline_def.environment_type, {'solids': {}})
+        throwing_evaluate_config_value(env_type, {'solids': {}})
 
     with pytest.raises(DagsterEvaluateConfigValueError):
-        throwing_evaluate_config_value(pipeline_def.environment_type, {})
+        throwing_evaluate_config_value(env_type, {})
 
 
 def test_optional_solid_with_optional_subfield():
@@ -600,7 +599,7 @@ def test_optional_solid_with_optional_subfield():
         ],
     )
 
-    env_type = pipeline_def.environment_type
+    env_type = create_environment_type(pipeline_def)
     assert env_type.fields['solids'].is_optional
     assert env_type.fields['context'].is_optional
     assert env_type.fields['execution'].is_optional
@@ -619,7 +618,7 @@ def test_required_context_with_required_subfield():
         },
     )
 
-    env_type = pipeline_def.environment_type
+    env_type = create_environment_type(pipeline_def)
     assert env_type.fields['solids'].is_optional
     assert env_type.fields['context'].is_optional is False
     assert env_type.fields['execution'].is_optional
@@ -641,7 +640,7 @@ def test_all_optional_field_on_single_context_dict():
         },
     )
 
-    env_type = pipeline_def.environment_type
+    env_type = create_environment_type(pipeline_def)
     assert env_type.fields['solids'].is_optional
     assert env_type.fields['context'].is_optional
     assert env_type.fields['execution'].is_optional
@@ -666,7 +665,7 @@ def test_optional_and_required_context():
         },
     )
 
-    env_type = pipeline_def.environment_type
+    env_type = create_environment_type(pipeline_def)
     assert env_type.fields['solids'].is_optional
     assert env_type.fields['context'].is_optional is False
     context_type = env_type.fields['context'].config_type
@@ -679,7 +678,7 @@ def test_optional_and_required_context():
 
     env_obj = construct_environment_config(
         throwing_evaluate_config_value(
-            pipeline_def.environment_type,
+            env_type,
             {'context': {'optional_field_context': {'config': {'optional_field': 'foobar'}}}},
         )
     )
@@ -702,7 +701,7 @@ def test_required_inputs():
         },
     )
 
-    env_type = pipeline_def.environment_type
+    env_type = create_environment_type(pipeline_def)
 
     solids_type = env_type.fields['solids'].config_type
 
@@ -738,7 +737,8 @@ def test_mix_required_inputs():
         dependencies={'add_numbers': {'right': DependencyDefinition('return_three')}},
     )
 
-    solids_type = pipeline_def.environment_type.fields['solids'].config_type
+    env_type = create_environment_type(pipeline_def)
+    solids_type = env_type.fields['solids'].config_type
     add_numbers_type = solids_type.fields['add_numbers'].config_type
     inputs_fields_dict = add_numbers_type.fields['inputs'].config_type.fields
 
@@ -749,7 +749,7 @@ def test_mix_required_inputs():
 def test_files_default_config():
     pipeline_def = PipelineDefinition(name='pipeline', solids=[])
 
-    env_type = pipeline_def.environment_type
+    env_type = create_environment_type(pipeline_def)
     assert 'storage' in env_type.fields
 
     config_value = throwing_evaluate_config_value(env_type, {})
@@ -760,7 +760,7 @@ def test_files_default_config():
 def test_storage_in_memory_config():
     pipeline_def = PipelineDefinition(name='pipeline', solids=[])
 
-    env_type = pipeline_def.environment_type
+    env_type = create_environment_type(pipeline_def)
     assert 'storage' in env_type.fields
 
     config_value = throwing_evaluate_config_value(env_type, {'storage': {'in_memory': {}}})

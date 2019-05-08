@@ -21,6 +21,7 @@ from dagster import (
 )
 
 
+from dagster.core.definitions import create_environment_schema
 from dagster.core.types.evaluator import evaluate_config_value, DagsterEvaluationErrorReason
 
 from dagster.core.test_utils import throwing_evaluate_config_value
@@ -778,7 +779,8 @@ def test_secret_field():
 
     pipeline_def = PipelineDefinition(name='secret_pipeline', solids=[solid_with_secret])
 
-    config_type = pipeline_def.config_type_named('SecretPipeline.SolidConfig.SolidWithSecret')
+    environment_schema = create_environment_schema(pipeline_def)
+    config_type = environment_schema.config_type_named('SecretPipeline.SolidConfig.SolidWithSecret')
 
     assert config_type
 
