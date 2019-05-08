@@ -1,15 +1,14 @@
-# For some reason pylint is not finding the Mapping class
-from collections import Mapping  # pylint: disable=no-name-in-module
 import contextlib
 import errno
 import inspect
 import os
 import re
-import yaml
 import multiprocessing
 
-from dagster import check
+import yaml
 
+from dagster import check
+from dagster.seven.abc import Mapping
 from .yaml_utils import load_yaml_from_path, load_yaml_from_globs, load_yaml_from_glob_list
 
 
