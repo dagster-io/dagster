@@ -395,7 +395,7 @@ def check_git_status():
 
 
 def check_for_cruft():
-    CRUFTY_DIRECTORIES = ['.tox', 'build', 'dist', '*.egg-info']
+    CRUFTY_DIRECTORIES = ['.tox', 'build', 'dist', '*.egg-info', '__pycache__']
     found_cruft = []
     for module_name in MODULE_NAMES:
         for dir_ in os.listdir(path_to_module(module_name, library=False)):
@@ -414,9 +414,12 @@ def check_for_cruft():
                     )
 
     if found_cruft:
+        # TODO: offer to delete these here, also handle .pyc files
+        # find . -name "*.pyc" -exec rm -f {} \; or equiv
         raise Exception(
             'Bailing: Cowardly refusing to publish with potentially crufty directories '
-            'present:\n    {found_cruft}'.format(found_cruft='\n    '.join(found_cruft))
+            'present:\n    {found_cruft}\n\nWe strongly recommend releasing from a fresh git '
+            'clone.'.format(found_cruft='\n    '.join(found_cruft))
         )
 
 
