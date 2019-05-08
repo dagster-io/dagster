@@ -199,6 +199,8 @@ def set_git_tag(tag, signed=False):
             )
         raise Exception(str(exc_info.output))
 
+    return tag
+
 
 def format_module_versions(module_versions, nightly=False):
     return '\n'.join(
@@ -519,38 +521,34 @@ def check_directory_structure():
         )
 
 
-def git_push(tags=False):
+def git_push(tag=None):
     github_token = os.getenv('GITHUB_TOKEN')
     github_username = os.getenv('GITHUB_USERNAME')
     if github_token and github_username:
-        if tags:
+        if tag:
             subprocess.check_output(
                 [
                     'git',
                     'push',
-                    '--tags',
-                    '-q',
                     'https://{github_username}:{github_token}@github.com/dagster-io/dagster.git'.format(
                         github_username=github_username, github_token=github_token
                     ),
+                    tag,
                 ]
             )
-        else:
-            subprocess.check_output(
-                [
-                    'git',
-                    'push',
-                    '-q',
-                    'https://{github_username}:{github_token}@github.com/dagster-io/dagster.git'.format(
-                        github_username=github_username, github_token=github_token
-                    ),
-                ]
-            )
+        subprocess.check_output(
+            [
+                'git',
+                'push',
+                'https://{github_username}:{github_token}@github.com/dagster-io/dagster.git'.format(
+                    github_username=github_username, github_token=github_token
+                ),
+            ]
+        )
     else:
-        if tags:
-            subprocess.check_output(['git', 'push', '--tags'])
-        else:
-            subprocess.check_output(['git', 'push'])
+        if tag:
+            subprocess.check_output(['git', 'push', 'origin', tag])
+        subprocess.check_output(['git', 'push'])
 
 
 CLI_HELP = '''Tools to help tag and publish releases of the Dagster projects.
@@ -615,9 +613,9 @@ def publish(nightly):
     if nightly:
         new_version = increment_nightly_versions()
         commit_new_version('nightly: {nightly}'.format(nightly=new_version['__nightly__']))
-        set_git_tag('{nightly}'.format(nightly=new_version['__nightly__']))
+        tag = set_git_tag('{nightly}'.format(nightly=new_version['__nightly__']))
         git_push()
-        git_push(tags=True)
+        git_push(tag)
     publish_all(nightly)
 
 
