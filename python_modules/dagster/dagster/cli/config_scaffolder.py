@@ -1,4 +1,5 @@
 from dagster import PipelineDefinition, check
+from dagster.core.definitions import create_environment_type
 
 from dagster.core.types.config import ConfigType
 
@@ -7,7 +8,7 @@ def scaffold_pipeline_config(pipeline_def, skip_optional=True):
     check.inst_param(pipeline_def, 'pipeline_def', PipelineDefinition)
     check.bool_param(skip_optional, 'skip_optional')
 
-    env_config_type = pipeline_def.environment_type
+    env_config_type = create_environment_type(pipeline_def)
 
     env_dict = {}
 
@@ -17,7 +18,7 @@ def scaffold_pipeline_config(pipeline_def, skip_optional=True):
 
         # unfortunately we have to treat this special for now
         if env_field_name == 'context':
-            if skip_optional and pipeline_def.environment_type.fields['context'].is_optional:
+            if skip_optional and env_config_type.fields['context'].is_optional:
                 continue
 
         env_dict[env_field_name] = scaffold_type(env_field.config_type, skip_optional)

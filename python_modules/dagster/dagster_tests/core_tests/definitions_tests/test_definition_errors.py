@@ -21,6 +21,8 @@ from dagster import (
     solid,
 )
 
+from dagster.core.definitions import create_environment_schema
+
 from dagster.core.utility_solids import define_stub_solid
 
 
@@ -146,7 +148,7 @@ def test_double_type_name():
         raise Exception('should not execute')
 
     with pytest.raises(DagsterInvalidDefinitionError) as exc_info:
-        PipelineDefinition(solids=[solid_one, solid_two])
+        create_environment_schema(PipelineDefinition(solids=[solid_one, solid_two]))
 
     assert str(exc_info.value) == (
         'Type names must be unique. You have constructed two different instances of '
@@ -172,7 +174,7 @@ def test_double_type_key():
         raise Exception('should not execute')
 
     with pytest.raises(DagsterInvalidDefinitionError) as exc_info:
-        PipelineDefinition(solids=[solid_one, solid_two])
+        create_environment_schema(PipelineDefinition(solids=[solid_one, solid_two]))
 
     assert str(exc_info.value) == (
         'Type keys must be unique. You have constructed two different instances of types '

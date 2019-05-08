@@ -7,16 +7,7 @@ from dagster.core.errors import DagsterInvalidDefinitionError
 
 from .context import PipelineContextDefinition, default_pipeline_context_definitions
 from .dependency import DependencyDefinition, DependencyStructure, Solid, SolidHandle, SolidInstance
-from .environment_configs import (
-    EnvironmentClassCreationData,
-    define_environment_cls,
-    define_context_cls,
-)
-from .pipeline_creation import (
-    create_execution_structure,
-    construct_config_type_dictionary,
-    construct_runtime_type_dictionary,
-)
+from .pipeline_creation import create_execution_structure, construct_runtime_type_dictionary
 from .solid import ISolidDefinition
 
 
@@ -129,26 +120,6 @@ class PipelineDefinition(object):
         self._solid_dict = pipeline_solid_dict
         self.dependency_structure = dependency_structure
 
-        self.environment_cls = define_environment_cls(
-            EnvironmentClassCreationData(
-                self.name,
-                list(self._solid_dict.values()),
-                context_definitions,
-                dependency_structure,
-            )
-        )
-        self.environment_type = self.environment_cls.inst()
-
-        self.context_cls = define_context_cls(self)
-        self.context_type = self.context_cls.inst()
-
-        (
-            self._config_type_dict_by_name,
-            self._config_type_dict_by_key,
-        ) = construct_config_type_dictionary(
-            solids, self.context_definitions, self.environment_type
-        )
-
         self._runtime_type_dict = construct_runtime_type_dictionary(solids)
 
         # Validate solid resource dependencies
@@ -169,7 +140,7 @@ class PipelineDefinition(object):
         '''Return the solids in the pipeline.
 
         Returns:
-            List[SolidDefinition]: List of solids.
+            List[Solid]: List of solids.
         '''
         return list(set(self._solid_dict.values()))
 
@@ -219,18 +190,6 @@ class PipelineDefinition(object):
 
         return solid
 
-    def has_config_type(self, name):
-        check.str_param(name, 'name')
-        return name in self._config_type_dict_by_name
-
-    def config_type_named(self, name):
-        check.str_param(name, 'name')
-        return self._config_type_dict_by_name[name]
-
-    def config_type_keyed(self, key):
-        check.str_param(key, 'key')
-        return self._config_type_dict_by_key[key]
-
     def has_runtime_type(self, name):
         check.str_param(name, 'name')
         return name in self._runtime_type_dict
@@ -238,9 +197,6 @@ class PipelineDefinition(object):
     def runtime_type_named(self, name):
         check.str_param(name, 'name')
         return self._runtime_type_dict[name]
-
-    def all_config_types(self):
-        return self._config_type_dict_by_key.values()
 
     def has_context(self, name):
         check.str_param(name, 'name')

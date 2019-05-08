@@ -28,7 +28,7 @@ from dagster.utils import merge_dicts
 from dagster.utils.error import serializable_error_info_from_exc_info
 from dagster.utils.logging import define_colored_console_logger
 
-from .definitions import PipelineDefinition, Solid
+from .definitions import PipelineDefinition, Solid, create_environment_type
 from .definitions.resource import ResourcesBuilder, ResourcesSource
 from .definitions.utils import DEFAULT_OUTPUT
 from .definitions.environment_configs import construct_environment_config
@@ -930,7 +930,9 @@ def create_environment_config(pipeline, environment_dict=None):
     check.inst_param(pipeline, 'pipeline', PipelineDefinition)
     check.opt_dict_param(environment_dict, 'environment')
 
-    result = evaluate_config_value(pipeline.environment_type, environment_dict)
+    environment_type = create_environment_type(pipeline)
+
+    result = evaluate_config_value(environment_type, environment_dict)
 
     if not result.success:
         raise PipelineConfigEvaluationError(pipeline, result.errors, environment_dict)
