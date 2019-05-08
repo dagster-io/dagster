@@ -21,7 +21,8 @@ from dagster.core.definitions import Solid, solids_in_topological_order
 from dagster.core.definitions.dependency import DependencyStructure
 from dagster.core.definitions.pipeline import _create_adjacency_lists
 
-from dagster.core.execution import SolidExecutionResult, step_output_event_filter
+from dagster.core.execution.api import step_output_event_filter
+from dagster.core.execution.results import SolidExecutionResult
 
 from dagster.core.utility_solids import define_stub_solid
 

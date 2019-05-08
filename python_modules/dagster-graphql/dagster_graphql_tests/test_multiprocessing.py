@@ -8,8 +8,8 @@ from dagster import (
 )
 from dagster.cli.dynamic_loader import RepositoryTargetInfo, RepositoryContainer
 from dagster.core.events import DagsterEventType
-from dagster.core.execution import create_execution_plan, ExecutionSelector
-from dagster.core.execution_context import make_new_run_id
+from dagster.core.execution.api import create_execution_plan, ExecutionSelector
+from dagster.core.execution.execution_context import make_new_run_id
 from dagster.utils import script_relative_path
 
 from dagster_graphql.implementation.pipeline_execution_manager import (

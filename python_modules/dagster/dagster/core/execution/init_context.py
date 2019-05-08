@@ -4,8 +4,8 @@ import warnings
 
 from dagster import check
 
-from .definitions.pipeline import PipelineDefinition
-from .definitions.resource import ResourceDefinition
+from dagster.core.definitions.pipeline import PipelineDefinition
+from dagster.core.definitions.resource import ResourceDefinition
 
 
 class InitContext(namedtuple('_InitContext', 'context_config pipeline_def run_id')):

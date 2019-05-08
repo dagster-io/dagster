@@ -10,7 +10,7 @@ from dagster import (
     types,
 )
 
-from dagster.core.execution import create_execution_plan, execute_plan
+from dagster.core.execution.api import create_execution_plan, execute_plan
 
 
 def define_two_int_pipeline():

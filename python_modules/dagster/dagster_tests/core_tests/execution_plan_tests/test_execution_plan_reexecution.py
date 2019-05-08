@@ -20,9 +20,9 @@ from dagster.core.errors import (
     DagsterRunNotFoundError,
     DagsterStepOutputNotFoundError,
 )
-from dagster.core.execution import create_execution_plan, execute_plan
+from dagster.core.execution.api import create_execution_plan, execute_plan
+from dagster.core.execution.execution_context import ReexecutionConfig
 from dagster.core.intermediates_manager import StepOutputHandle
-from dagster.core.execution_context import ReexecutionConfig
 from dagster.core.object_store import get_filesystem_intermediate
 from dagster.core.events import get_step_output_event
 

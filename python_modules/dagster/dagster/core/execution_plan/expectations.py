@@ -10,13 +10,13 @@ from dagster.core.definitions import (
     SolidHandle,
 )
 
-from dagster.core.execution_context import SystemStepExecutionContext
+from dagster.core.execution.execution_context import SystemStepExecutionContext
 
 from dagster.core.errors import DagsterExpectationFailedError, DagsterInvariantViolationError
 
 from dagster.core.system_config.objects import EnvironmentConfig
 
-from dagster.core.user_context import ExpectationExecutionContext
+from dagster.core.execution.user_context import ExpectationExecutionContext
 
 from .objects import (
     ExecutionStep,

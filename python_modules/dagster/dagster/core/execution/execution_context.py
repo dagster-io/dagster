@@ -12,12 +12,12 @@ from dagster import check
 from dagster.utils import merge_dicts
 from dagster.core.errors import DagsterInvariantViolationError
 
-from .definitions.expectation import ExpectationDefinition
-from .definitions.input import InputDefinition
-from .definitions.output import OutputDefinition
-from .log import DagsterLog
-from .runs import RunStorageMode, RunStorage
-from .system_config.objects import EnvironmentConfig
+from dagster.core.definitions.expectation import ExpectationDefinition
+from dagster.core.definitions.input import InputDefinition
+from dagster.core.definitions.output import OutputDefinition
+from dagster.core.log import DagsterLog
+from dagster.core.runs import RunStorageMode, RunStorage
+from dagster.core.system_config.objects import EnvironmentConfig
 
 
 class ExecutorConfig:
@@ -148,8 +148,8 @@ class SystemPipelineExecutionContextData(
         run_storage,
         intermediates_manager,
     ):
-        from .definitions import PipelineDefinition
-        from .intermediates_manager import IntermediatesManager
+        from dagster.core.definitions import PipelineDefinition
+        from dagster.core.intermediates_manager import IntermediatesManager
 
         return super(SystemPipelineExecutionContextData, cls).__new__(
             cls,
@@ -189,7 +189,7 @@ class SystemPipelineExecutionContext(object):
         self._log = check.inst_param(log, 'log', DagsterLog)
 
     def for_step(self, step):
-        from .execution_plan.objects import ExecutionStep
+        from dagster.core.execution_plan.objects import ExecutionStep
 
         check.inst_param(step, 'step', ExecutionStep)
 
@@ -261,7 +261,7 @@ class SystemStepExecutionContext(SystemPipelineExecutionContext):
     __slots__ = ['_step']
 
     def __init__(self, pipeline_context_data, tags, log, step):
-        from .execution_plan.objects import ExecutionStep
+        from dagster.core.execution_plan.objects import ExecutionStep
 
         self._step = check.inst_param(step, 'step', ExecutionStep)
         super(SystemStepExecutionContext, self).__init__(pipeline_context_data, tags, log)

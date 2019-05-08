@@ -8,8 +8,8 @@ from dagster.core.definitions import (
     SolidHandle,
 )
 from dagster.core.errors import DagsterInvariantViolationError
-from dagster.core.execution_context import SystemTransformExecutionContext
-from dagster.core.user_context import TransformExecutionContext
+from dagster.core.execution.execution_context import SystemTransformExecutionContext
+from dagster.core.execution.user_context import TransformExecutionContext
 
 from .objects import ExecutionStep, StepInput, StepKind, StepOutput, StepOutputValue
 

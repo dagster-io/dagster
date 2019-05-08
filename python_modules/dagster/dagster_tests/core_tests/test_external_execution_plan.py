@@ -8,18 +8,14 @@ from dagster import (
     DependencyDefinition,
     InputDefinition,
     Int,
+    MultiprocessExecutorConfig,
     OutputDefinition,
     PipelineDefinition,
     RunConfig,
     lambda_solid,
 )
 
-from dagster.core.execution import (
-    MultiprocessExecutorConfig,
-    DagsterEventType,
-    create_execution_plan,
-    execute_plan,
-)
+from dagster.core.execution.api import DagsterEventType, create_execution_plan, execute_plan
 from dagster.core.object_store import get_filesystem_intermediate, has_filesystem_intermediate
 
 

@@ -1,4 +1,4 @@
-from dagster.core.execution import ExecutionSelector
+from dagster.core.execution.api import ExecutionSelector
 
 from dagster_graphql import dauphin
 from dagster_graphql.implementation.execution import (
@@ -127,7 +127,7 @@ class DauphinReexecutionConfig(dauphin.InputObjectType):
     stepOutputHandles = dauphin.non_null_list(DauphinStepOutputHandle)
 
     def to_reexecution_config(self):
-        from dagster.core.execution_context import ReexecutionConfig
+        from dagster.core.execution.execution_context import ReexecutionConfig
         from dagster.core.intermediates_manager import StepOutputHandle
 
         return ReexecutionConfig(

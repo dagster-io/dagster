@@ -1,7 +1,7 @@
 import os
 from dagster import check
 
-from dagster.core.execution_context import (
+from dagster.core.execution.execution_context import (
     MultiprocessExecutorConfig,
     SystemPipelineExecutionContext,
 )
@@ -20,7 +20,7 @@ class InProcessExecutorChildProcessCommand(ChildProcessCommand):
         self.step_key = step_key
 
     def execute(self):
-        from dagster.core.execution import yield_pipeline_execution_context
+        from dagster.core.execution.api import yield_pipeline_execution_context
 
         check.inst(self.run_config.executor_config, MultiprocessExecutorConfig)
         pipeline = self.run_config.executor_config.pipeline_fn()

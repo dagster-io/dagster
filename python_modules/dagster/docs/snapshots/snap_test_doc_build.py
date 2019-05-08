@@ -1475,9 +1475,12 @@ snapshots['test_build_all_docs 7'] = '''
 <li><a href="dagster/core/definitions/result.html">dagster.core.definitions.result</a></li>
 <li><a href="dagster/core/definitions/solid.html">dagster.core.definitions.solid</a></li>
 <li><a href="dagster/core/errors.html">dagster.core.errors</a></li>
-<li><a href="dagster/core/execution.html">dagster.core.execution</a></li>
-<li><a href="dagster/core/execution_context.html">dagster.core.execution_context</a></li>
-<li><a href="dagster/core/init_context.html">dagster.core.init_context</a></li>
+<li><a href="dagster/core/execution/api.html">dagster.core.execution.api</a></li>
+<li><a href="dagster/core/execution/context_creation_pipeline.html">dagster.core.execution.context_creation_pipeline</a></li>
+<li><a href="dagster/core/execution/execution_context.html">dagster.core.execution.execution_context</a></li>
+<li><a href="dagster/core/execution/init_context.html">dagster.core.execution.init_context</a></li>
+<li><a href="dagster/core/execution/results.html">dagster.core.execution.results</a></li>
+<li><a href="dagster/core/execution/user_context.html">dagster.core.execution.user_context</a></li>
 <li><a href="dagster/core/runs.html">dagster.core.runs</a></li>
 <li><a href="dagster/core/types/builtin_enum.html">dagster.core.types.builtin_enum</a></li>
 <li><a href="dagster/core/types/config.html">dagster.core.types.config</a></li>
@@ -1487,7 +1490,6 @@ snapshots['test_build_all_docs 7'] = '''
 <li><a href="dagster/core/types/field_utils.html">dagster.core.types.field_utils</a></li>
 <li><a href="dagster/core/types/runtime.html">dagster.core.types.runtime</a></li>
 <li><a href="dagster/core/types/wrapping.html">dagster.core.types.wrapping</a></li>
-<li><a href="dagster/core/user_context.html">dagster.core.user_context</a></li>
 <li><a href="dagster/utils/test.html">dagster.utils.test</a></li>
 </ul>
 
@@ -19293,7 +19295,7 @@ argument to the ctor is meant to be a sys.exc_info at the site of constructor.</
 
 <dl class="exception">
 <dt id="dagster.PipelineConfigEvaluationError">
-<em class="property">exception </em><code class="descclassname">dagster.</code><code class="descname">PipelineConfigEvaluationError</code><span class="sig-paren">(</span><em>pipeline</em>, <em>errors</em>, <em>config_value</em>, <em>*args</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dagster/core/execution.html#PipelineConfigEvaluationError"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dagster.PipelineConfigEvaluationError" title="Permalink to this definition">¶</a></dt>
+<em class="property">exception </em><code class="descclassname">dagster.</code><code class="descname">PipelineConfigEvaluationError</code><span class="sig-paren">(</span><em>pipeline</em>, <em>errors</em>, <em>config_value</em>, <em>*args</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dagster/core/execution/context_creation_pipeline.html#PipelineConfigEvaluationError"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dagster.PipelineConfigEvaluationError" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 </div>
@@ -19423,7 +19425,7 @@ snapshots['test_build_all_docs 51'] = '''
 <h2>Execution Functions<a class="headerlink" href="#execution-functions" title="Permalink to this headline">¶</a></h2>
 <dl class="function">
 <dt id="dagster.execute_pipeline">
-<code class="descclassname">dagster.</code><code class="descname">execute_pipeline</code><span class="sig-paren">(</span><em>pipeline</em>, <em>environment_dict=None</em>, <em>run_config=None</em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dagster/core/execution.html#execute_pipeline"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dagster.execute_pipeline" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">dagster.</code><code class="descname">execute_pipeline</code><span class="sig-paren">(</span><em>pipeline</em>, <em>environment_dict=None</em>, <em>run_config=None</em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dagster/core/execution/api.html#execute_pipeline"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dagster.execute_pipeline" title="Permalink to this definition">¶</a></dt>
 <dd><p>“Synchronous” version of <a class="reference internal" href="#dagster.execute_pipeline_iterator" title="dagster.execute_pipeline_iterator"><code class="xref py py-func docutils literal notranslate"><span class="pre">execute_pipeline_iterator()</span></code></a>.</p>
 <p>Note: raise_on_error is very useful in testing contexts when not testing for error
 conditions</p>
@@ -19443,7 +19445,7 @@ conditions</p>
 
 <dl class="function">
 <dt id="dagster.execute_pipeline_iterator">
-<code class="descclassname">dagster.</code><code class="descname">execute_pipeline_iterator</code><span class="sig-paren">(</span><em>pipeline</em>, <em>environment_dict=None</em>, <em>run_config=None</em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dagster/core/execution.html#execute_pipeline_iterator"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dagster.execute_pipeline_iterator" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">dagster.</code><code class="descname">execute_pipeline_iterator</code><span class="sig-paren">(</span><em>pipeline</em>, <em>environment_dict=None</em>, <em>run_config=None</em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dagster/core/execution/api.html#execute_pipeline_iterator"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dagster.execute_pipeline_iterator" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns iterator that yields <a class="reference internal" href="#dagster.SolidExecutionResult" title="dagster.SolidExecutionResult"><code class="xref py py-class docutils literal notranslate"><span class="pre">SolidExecutionResult</span></code></a> for each
 solid executed in the pipeline.</p>
 <p>This is intended to allow the caller to do things between each executed
@@ -19467,21 +19469,21 @@ node. For the ‘synchronous’ API, see <a class="reference internal" href="#da
 <h2>Results<a class="headerlink" href="#results" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="dagster.InProcessExecutorConfig">
-<em class="property">class </em><code class="descclassname">dagster.</code><code class="descname">InProcessExecutorConfig</code><span class="sig-paren">(</span><em>raise_on_error=True</em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dagster/core/execution_context.html#InProcessExecutorConfig"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dagster.InProcessExecutorConfig" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">dagster.</code><code class="descname">InProcessExecutorConfig</code><span class="sig-paren">(</span><em>raise_on_error=True</em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dagster/core/execution/execution_context.html#InProcessExecutorConfig"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dagster.InProcessExecutorConfig" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="class">
 <dt id="dagster.MultiprocessExecutorConfig">
-<em class="property">class </em><code class="descclassname">dagster.</code><code class="descname">MultiprocessExecutorConfig</code><span class="sig-paren">(</span><em>pipeline_fn</em>, <em>max_concurrent=None</em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dagster/core/execution_context.html#MultiprocessExecutorConfig"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dagster.MultiprocessExecutorConfig" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">dagster.</code><code class="descname">MultiprocessExecutorConfig</code><span class="sig-paren">(</span><em>pipeline_fn</em>, <em>max_concurrent=None</em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dagster/core/execution/execution_context.html#MultiprocessExecutorConfig"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dagster.MultiprocessExecutorConfig" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="class">
 <dt id="dagster.PipelineExecutionResult">
-<em class="property">class </em><code class="descclassname">dagster.</code><code class="descname">PipelineExecutionResult</code><span class="sig-paren">(</span><em>pipeline</em>, <em>run_id</em>, <em>event_list</em>, <em>reconstruct_context</em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dagster/core/execution.html#PipelineExecutionResult"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dagster.PipelineExecutionResult" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">dagster.</code><code class="descname">PipelineExecutionResult</code><span class="sig-paren">(</span><em>pipeline</em>, <em>run_id</em>, <em>event_list</em>, <em>reconstruct_context</em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dagster/core/execution/results.html#PipelineExecutionResult"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dagster.PipelineExecutionResult" title="Permalink to this definition">¶</a></dt>
 <dd><p>Result of execution of the whole pipeline. Returned eg by <a class="reference internal" href="#dagster.execute_pipeline" title="dagster.execute_pipeline"><code class="xref py py-func docutils literal notranslate"><span class="pre">execute_pipeline()</span></code></a>.</p>
 <dl class="method">
 <dt id="dagster.PipelineExecutionResult.result_for_solid">
-<code class="descname">result_for_solid</code><span class="sig-paren">(</span><em>name</em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dagster/core/execution.html#PipelineExecutionResult.result_for_solid"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dagster.PipelineExecutionResult.result_for_solid" title="Permalink to this definition">¶</a></dt>
+<code class="descname">result_for_solid</code><span class="sig-paren">(</span><em>name</em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dagster/core/execution/results.html#PipelineExecutionResult.result_for_solid"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dagster.PipelineExecutionResult.result_for_solid" title="Permalink to this definition">¶</a></dt>
 <dd><p>Get a <a class="reference internal" href="#dagster.SolidExecutionResult" title="dagster.SolidExecutionResult"><code class="xref py py-class docutils literal notranslate"><span class="pre">SolidExecutionResult</span></code></a> for a given solid name.</p>
 </dd></dl>
 
@@ -19495,7 +19497,7 @@ node. For the ‘synchronous’ API, see <a class="reference internal" href="#da
 
 <dl class="class">
 <dt id="dagster.SolidExecutionResult">
-<em class="property">class </em><code class="descclassname">dagster.</code><code class="descname">SolidExecutionResult</code><span class="sig-paren">(</span><em>solid</em>, <em>step_events_by_kind</em>, <em>reconstruct_context</em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dagster/core/execution.html#SolidExecutionResult"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dagster.SolidExecutionResult" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">dagster.</code><code class="descname">SolidExecutionResult</code><span class="sig-paren">(</span><em>solid</em>, <em>step_events_by_kind</em>, <em>reconstruct_context</em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dagster/core/execution/results.html#SolidExecutionResult"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dagster.SolidExecutionResult" title="Permalink to this definition">¶</a></dt>
 <dd><p>Execution result for one solid of the pipeline.</p>
 <dl class="attribute">
 <dt id="dagster.SolidExecutionResult.context">
@@ -19539,7 +19541,7 @@ node. For the ‘synchronous’ API, see <a class="reference internal" href="#da
 
 <dl class="method">
 <dt id="dagster.SolidExecutionResult.transformed_value">
-<code class="descname">transformed_value</code><span class="sig-paren">(</span><em>output_name=\'result\'</em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dagster/core/execution.html#SolidExecutionResult.transformed_value"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dagster.SolidExecutionResult.transformed_value" title="Permalink to this definition">¶</a></dt>
+<code class="descname">transformed_value</code><span class="sig-paren">(</span><em>output_name=\'result\'</em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dagster/core/execution/results.html#SolidExecutionResult.transformed_value"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dagster.SolidExecutionResult.transformed_value" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns transformed value either for DEFAULT_OUTPUT or for the output
 given as output_name. Returns None if execution result isn’t a success.</p>
 <p>Reconstructs the pipeline context to materialize value.</p>
@@ -19560,7 +19562,7 @@ Returns None if execution result isn’t a success.</p>
 <h2>Configuration<a class="headerlink" href="#configuration" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="dagster.RunConfig">
-<em class="property">class </em><code class="descclassname">dagster.</code><code class="descname">RunConfig</code><a class="reference internal" href="../../../_modules/dagster/core/execution_context.html#RunConfig"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dagster.RunConfig" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">dagster.</code><code class="descname">RunConfig</code><a class="reference internal" href="../../../_modules/dagster/core/execution/execution_context.html#RunConfig"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dagster.RunConfig" title="Permalink to this definition">¶</a></dt>
 <dd><p>Configuration that controls the details of how Dagster will execute a pipeline.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -19589,7 +19591,7 @@ for subset rexecution.</p></li>
 
 <dl class="class">
 <dt>
-<em class="property">class </em><code class="descclassname">dagster.</code><code class="descname">SolidExecutionResult</code><span class="sig-paren">(</span><em>solid</em>, <em>step_events_by_kind</em>, <em>reconstruct_context</em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dagster/core/execution.html#SolidExecutionResult"><span class="viewcode-link">[source]</span></a></dt>
+<em class="property">class </em><code class="descclassname">dagster.</code><code class="descname">SolidExecutionResult</code><span class="sig-paren">(</span><em>solid</em>, <em>step_events_by_kind</em>, <em>reconstruct_context</em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dagster/core/execution/results.html#SolidExecutionResult"><span class="viewcode-link">[source]</span></a></dt>
 <dd><p>Execution result for one solid of the pipeline.</p>
 <dl class="attribute">
 <dt>
@@ -19633,7 +19635,7 @@ for subset rexecution.</p></li>
 
 <dl class="method">
 <dt>
-<code class="descname">transformed_value</code><span class="sig-paren">(</span><em>output_name=\'result\'</em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dagster/core/execution.html#SolidExecutionResult.transformed_value"><span class="viewcode-link">[source]</span></a></dt>
+<code class="descname">transformed_value</code><span class="sig-paren">(</span><em>output_name=\'result\'</em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dagster/core/execution/results.html#SolidExecutionResult.transformed_value"><span class="viewcode-link">[source]</span></a></dt>
 <dd><p>Returns transformed value either for DEFAULT_OUTPUT or for the output
 given as output_name. Returns None if execution result isn’t a success.</p>
 <p>Reconstructs the pipeline context to materialize value.</p>
@@ -20136,7 +20138,7 @@ pass it into a one-off PipelineDefinition</p>
 
 <dl class="class">
 <dt id="dagster.InitContext">
-<em class="property">class </em><code class="descclassname">dagster.</code><code class="descname">InitContext</code><a class="reference internal" href="../../../_modules/dagster/core/init_context.html#InitContext"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dagster.InitContext" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">dagster.</code><code class="descname">InitContext</code><a class="reference internal" href="../../../_modules/dagster/core/execution/init_context.html#InitContext"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dagster.InitContext" title="Permalink to this definition">¶</a></dt>
 <dd><p>InitContext is the context object provided to context creation functions.
 In effect, it is the state available to those functions, and any function that
 is called prior to pipeline execution, plus the configuration value for that context.</p>
@@ -20178,7 +20180,7 @@ data is defined by <code class="docutils literal notranslate"><span class="pre">
 
 <dl class="class">
 <dt id="dagster.ExecutionContext">
-<em class="property">class </em><code class="descclassname">dagster.</code><code class="descname">ExecutionContext</code><a class="reference internal" href="../../../_modules/dagster/core/user_context.html#ExecutionContext"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dagster.ExecutionContext" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">dagster.</code><code class="descname">ExecutionContext</code><a class="reference internal" href="../../../_modules/dagster/core/execution/user_context.html#ExecutionContext"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dagster.ExecutionContext" title="Permalink to this definition">¶</a></dt>
 <dd><p>The user-facing object in the context creation function. The user constructs
 this in order to effect the context creation process. This could be named
 SystemPipelineExecutionContextCreationData although that seemed excessively verbose.</p>
@@ -20220,7 +20222,7 @@ resource_fn in a ResourceDefinition.</p>
 
 <dl class="class">
 <dt id="dagster.InitResourceContext">
-<em class="property">class </em><code class="descclassname">dagster.</code><code class="descname">InitResourceContext</code><a class="reference internal" href="../../../_modules/dagster/core/init_context.html#InitResourceContext"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dagster.InitResourceContext" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">dagster.</code><code class="descname">InitResourceContext</code><a class="reference internal" href="../../../_modules/dagster/core/execution/init_context.html#InitResourceContext"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dagster.InitResourceContext" title="Permalink to this definition">¶</a></dt>
 <dd><p>Similar to InitContext, but is resource specific. It includes all the properties
 in the InitContext, plus the resource config and the resource definition.</p>
 <dl class="attribute">

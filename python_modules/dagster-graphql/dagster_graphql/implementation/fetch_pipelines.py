@@ -5,7 +5,7 @@ from graphql.execution.base import ResolveInfo
 from dagster import check
 from dagster.core.errors import DagsterInvalidDefinitionError
 
-from dagster.core.execution import ExecutionSelector
+from dagster.core.execution.api import ExecutionSelector
 
 from dagster.utils.error import serializable_error_info_from_exc_info
 

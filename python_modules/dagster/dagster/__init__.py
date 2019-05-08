@@ -1,24 +1,24 @@
 from dagster.core import types
 
-from dagster.core.execution import (
-    InitContext,
-    InitResourceContext,
-    PipelineConfigEvaluationError,
-    PipelineExecutionResult,
-    SolidExecutionResult,
-    execute_pipeline,
-    execute_pipeline_iterator,
-)
 
-from dagster.core.execution_context import (
+from dagster.core.execution.api import execute_pipeline, execute_pipeline_iterator
+
+from dagster.core.execution.results import PipelineExecutionResult, SolidExecutionResult
+
+from dagster.core.execution.context_creation_pipeline import PipelineConfigEvaluationError
+
+from dagster.core.execution.init_context import InitContext, InitResourceContext
+
+from dagster.core.execution.execution_context import (
     InProcessExecutorConfig,
     MultiprocessExecutorConfig,
     RunConfig,
 )
 
+from dagster.core.execution.user_context import ExecutionContext
+
 from dagster.core.runs import RunStorageMode
 
-from dagster.core.user_context import ExecutionContext
 
 from dagster.core.definitions import (
     DependencyDefinition,

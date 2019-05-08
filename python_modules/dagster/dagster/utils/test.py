@@ -14,13 +14,15 @@ from dagster import (
     execute_pipeline,
 )
 
-from dagster.core.execution import (
-    ExecutionContext,
-    RunConfig,
-    construct_pipeline_execution_context,
+from dagster.core.execution.user_context import ExecutionContext
+
+from dagster.core.execution.api import RunConfig, yield_pipeline_execution_context
+
+from dagster.core.execution.context_creation_pipeline import (
     create_environment_config,
-    yield_pipeline_execution_context,
+    construct_pipeline_execution_context,
 )
+
 
 from dagster.core.intermediates_manager import InMemoryIntermediatesManager
 from dagster.core.runs import InMemoryRunStorage

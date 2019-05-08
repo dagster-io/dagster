@@ -1,9 +1,9 @@
 import contextlib
 import errno
 import inspect
+import multiprocessing
 import os
 import re
-import multiprocessing
 
 import yaml
 

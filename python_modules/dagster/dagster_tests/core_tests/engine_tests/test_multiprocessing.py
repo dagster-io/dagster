@@ -1,13 +1,14 @@
 from dagster import (
     DependencyDefinition,
+    InProcessExecutorConfig,
     InputDefinition,
+    MultiprocessExecutorConfig,
     PipelineDefinition,
     RunConfig,
     execute_pipeline,
     lambda_solid,
 )
 
-from dagster.core.execution import InProcessExecutorConfig, MultiprocessExecutorConfig
 from dagster.core.runs import RunStorageMode
 
 

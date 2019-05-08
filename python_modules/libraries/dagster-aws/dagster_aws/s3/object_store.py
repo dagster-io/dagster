@@ -3,7 +3,7 @@ from io import BytesIO
 import boto3
 
 from dagster import RunStorageMode, check
-from dagster.core.execution_context import SystemPipelineExecutionContext
+from dagster.core.execution.execution_context import SystemPipelineExecutionContext
 from dagster.core.types.runtime import resolve_to_runtime_type, RuntimeType
 from dagster.core.object_store import ObjectStore
 

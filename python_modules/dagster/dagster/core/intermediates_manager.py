@@ -5,7 +5,7 @@ import six
 
 from dagster import check
 
-from .execution_context import SystemPipelineExecutionContext
+from dagster.core.execution.execution_context import SystemPipelineExecutionContext
 from .object_store import ObjectStore
 from .runs import RunStorageMode
 from .types.runtime import RuntimeType

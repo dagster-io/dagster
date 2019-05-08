@@ -16,7 +16,7 @@ from dagster.core.errors import (
     user_code_error_boundary,
 )
 
-from dagster.core.execution_context import (
+from dagster.core.execution.execution_context import (
     ExecutorConfig,
     SystemPipelineExecutionContext,
     SystemStepExecutionContext,

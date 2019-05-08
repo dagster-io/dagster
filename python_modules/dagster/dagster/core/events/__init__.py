@@ -78,7 +78,7 @@ class DagsterEvent(
 ):
     @staticmethod
     def from_step(event_type, step_context, event_specific_data=None):
-        from dagster.core.execution_context import SystemStepExecutionContext
+        from dagster.core.execution.execution_context import SystemStepExecutionContext
 
         check.inst_param(step_context, 'step_context', SystemStepExecutionContext)
 
@@ -105,7 +105,7 @@ class DagsterEvent(
 
     @staticmethod
     def from_pipeline(event_type, pipeline_context):
-        from dagster.core.execution import SystemPipelineExecutionContext
+        from dagster.core.execution.execution_context import SystemPipelineExecutionContext
 
         check.inst_param(pipeline_context, 'pipeline_context', SystemPipelineExecutionContext)
         pipeline_name = pipeline_context.pipeline_def.name

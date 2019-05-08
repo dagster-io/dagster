@@ -2,7 +2,7 @@ from graphql.execution.base import ResolveInfo
 
 from dagster import check
 from dagster.core.definitions import create_environment_schema
-from dagster.core.execution import ExecutionSelector, create_execution_plan
+from dagster.core.execution.api import ExecutionSelector, create_execution_plan
 from dagster.core.types.evaluator import evaluate_config_value
 
 from .either import EitherError, EitherValue

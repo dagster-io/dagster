@@ -8,8 +8,8 @@ from graphql.execution.base import ResolveInfo
 from dagster import RunConfig, check
 
 from dagster.core.events import DagsterEventType
-from dagster.core.execution import ExecutionSelector, create_execution_plan, execute_plan
-from dagster.core.execution_context import ReexecutionConfig, make_new_run_id
+from dagster.core.execution.api import ExecutionSelector, create_execution_plan, execute_plan
+from dagster.core.execution.execution_context import ReexecutionConfig, make_new_run_id
 
 
 from dagster_graphql.schema.runs import from_event_record, from_dagster_event_record

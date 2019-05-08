@@ -1,5 +1,5 @@
 from dagster import PipelineDefinition, SolidDefinition, Field, Dict, String
-from dagster.core.execution import create_execution_plan
+from dagster.core.execution.api import create_execution_plan
 
 
 def test_execution_plan_create_metadata():

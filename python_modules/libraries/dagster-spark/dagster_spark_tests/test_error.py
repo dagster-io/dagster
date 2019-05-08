@@ -5,7 +5,7 @@ import yaml
 import pytest
 
 from dagster import PipelineDefinition, execute_pipeline
-from dagster.core.execution import create_execution_plan
+from dagster.core.execution.api import create_execution_plan
 from dagster.utils import script_relative_path
 from dagster_spark import SparkSolidDefinition, SparkSolidError
 

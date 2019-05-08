@@ -16,6 +16,7 @@ import logging
 import six
 from dagster import check
 from dagster.utils.logging import INFO, define_colored_console_logger
+
 from .execution_context import (
     SystemExpectationExecutionContext,
     SystemStepExecutionContext,

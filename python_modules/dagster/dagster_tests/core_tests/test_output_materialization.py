@@ -21,7 +21,8 @@ from dagster.core.definitions.environment_configs import (
     solid_has_configurable_outputs,
 )
 from dagster.core.errors import DagsterInvariantViolationError
-from dagster.core.execution import create_environment_config, create_execution_plan
+from dagster.core.execution.api import create_execution_plan
+from dagster.core.execution.context_creation_pipeline import create_environment_config
 from dagster.core.execution_plan.materialization_thunk import MATERIALIZATION_THUNK_OUTPUT
 from dagster.core.execution_plan.objects import StepOutputHandle
 from dagster.utils.test import get_temp_file_name, get_temp_file_names
