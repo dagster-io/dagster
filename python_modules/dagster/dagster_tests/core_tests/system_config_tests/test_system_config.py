@@ -53,6 +53,7 @@ def create_creation_data(pipeline_def):
         pipeline_def.solids,
         pipeline_def.context_definitions,
         pipeline_def.dependency_structure,
+        mode_definition=None,
     )
 
 

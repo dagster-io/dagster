@@ -28,7 +28,13 @@ from dagster.utils import merge_dicts
 from dagster.utils.error import serializable_error_info_from_exc_info
 from dagster.utils.logging import define_colored_console_logger
 
-from .definitions import PipelineDefinition, Solid, create_environment_type
+from .definitions import (
+    ModeDefinition,
+    PipelineContextDefinition,
+    PipelineDefinition,
+    Solid,
+    create_environment_type,
+)
 from .definitions.resource import ResourcesBuilder, ResourcesSource
 from .definitions.utils import DEFAULT_OUTPUT
 from .definitions.environment_configs import construct_environment_config
@@ -286,7 +292,37 @@ class SolidExecutionResult(object):
                 return result.step_failure_data
 
 
-def check_run_config_param(run_config):
+def check_run_config_param(run_config, pipeline_def):
+    check.inst_param(pipeline_def, 'pipeline_def', PipelineDefinition)
+
+    if run_config and run_config.mode:
+        if pipeline_def.is_modeless:
+            raise DagsterInvariantViolationError(
+                (
+                    'You have attempted to execute pipeline {name} with mode {mode} '
+                    'when it has no modes defined'
+                ).format(name=pipeline_def.name, mode=run_config.mode)
+            )
+
+        if not pipeline_def.has_mode_definition(run_config.mode):
+            raise DagsterInvariantViolationError(
+                (
+                    'You have attempted to execute pipeline {name} with mode {mode}. '
+                    'Available modes: {modes}'
+                ).format(
+                    name=pipeline_def.name, mode=run_config.mode, modes=pipeline_def.available_modes
+                )
+            )
+    else:
+        if not (pipeline_def.is_modeless or pipeline_def.is_single_mode):
+            raise DagsterInvariantViolationError(
+                (
+                    'Pipeline {name} has multiple modes (Avaiable modes: {modes}) and you have '
+                    'attempted to execute it without specifying a mode. Set '
+                    'mode property on the RunConfig object.'
+                ).format(name=pipeline_def.name, modes=pipeline_def.available_modes)
+            )
+
     return (
         check.inst_param(run_config, 'run_config', RunConfig)
         if run_config
@@ -294,9 +330,10 @@ def check_run_config_param(run_config):
     )
 
 
-def create_execution_plan(pipeline, environment_dict=None):
+def create_execution_plan(pipeline, environment_dict=None, mode=None):
     check.inst_param(pipeline, 'pipeline', PipelineDefinition)
     environment_dict = check.opt_dict_param(environment_dict, 'environment_dict', key_type=str)
+    check.opt_str_param(mode, 'mode')
     environment_config = create_environment_config(pipeline, environment_dict)
     return ExecutionPlan.build(pipeline, environment_config)
 
@@ -499,8 +536,6 @@ def _pipeline_execution_context_manager(
     check.inst_param(run_config, 'run_config', RunConfig)
     check.inst_param(intermediates_manager, 'intermediates_manager', IntermediatesManager)
 
-    context_definition = pipeline_def.context_definitions[environment_config.context.name]
-
     run_storage = construct_run_storage(run_config, environment_config)
 
     run_storage.write_dagster_run_meta(
@@ -510,27 +545,44 @@ def _pipeline_execution_context_manager(
     )
 
     init_context = InitContext(
-        context_config=environment_config.context.config,
+        context_config=environment_config.context.config if environment_config.context else {},
         pipeline_def=pipeline_def,
         run_id=run_config.run_id,
     )
 
     try:
+
+        context_definition = (
+            pipeline_def.context_definitions[environment_config.context.name]
+            if environment_config.context
+            else None
+        )
+
+        import logging
+
         with user_code_context_manager(
-            lambda: context_definition.context_fn(init_context),
+            lambda: (
+                context_definition.context_fn(init_context)
+                if context_definition
+                # hardcoded default for now until we have top-level logging as well
+                else ExecutionContext.console_logging(logging.INFO)
+            ),
             DagsterContextFunctionError,
             'Error executing context_fn on ContextDefinition {name}'.format(
-                name=environment_config.context.name
+                name=environment_config.context.name if environment_config.context else 'NOCONTEXT'
             ),
         ) as execution_context:
             check.inst(execution_context, ExecutionContext)
 
+            resource_creation_adapter = ResourceCreationAdapter(
+                execution_context=execution_context,
+                context_definition=context_definition,
+                mode_definition=pipeline_def.get_mode_definition(run_config.mode),
+                environment_config=environment_config,
+            )
+
             with _create_resources(
-                pipeline_def,
-                context_definition,
-                environment_config,
-                execution_context,
-                run_config.run_id,
+                pipeline_def, resource_creation_adapter, environment_config, run_config.run_id
             ) as resources:
 
                 yield construct_pipeline_execution_context(
@@ -627,32 +679,90 @@ def _create_context_free_log(run_config, pipeline_def):
     return DagsterLog(run_config.run_id, get_logging_tags(None, run_config, pipeline_def), loggers)
 
 
+class ResourceCreationAdapter:
+    '''
+    This class exists temporarily to handle the transition period where we have three ways
+    of creating resources:
+    1) Override in a context function
+    2) Specifiying a set of resources on a context definition
+    3) Specifiying a set of resources on a mode definition
+
+    When we are done with this refactor only 3 will be necessary. The elimination of this
+    class will be a good marker of when this is "done" -- schrockn (05-08-2019)
+    '''
+
+    def __init__(self, execution_context, environment_config, context_definition, mode_definition):
+        self.execution_context = check.inst_param(
+            execution_context, 'execution_context', ExecutionContext
+        )
+
+        self.environment_config = check.inst_param(
+            environment_config, 'environment_config', EnvironmentConfig
+        )
+
+        check.invariant(context_definition or mode_definition)
+        check.invariant(not (context_definition and mode_definition))
+
+        self.context_definition = check.opt_inst_param(
+            context_definition, 'context_definition', PipelineContextDefinition
+        )
+
+        self.mode_definition = check.opt_inst_param(
+            mode_definition, 'mode_definition', ModeDefinition
+        )
+
+    @property
+    def is_resource_override(self):
+        return bool(self.execution_context.resources)
+
+    def get_override_resources(self):
+        check.invariant(self.is_resource_override)
+        return self.execution_context.resources
+
+    def get_resource_config(self, resource_name):
+        if self.context_definition:
+            check.invariant(self.environment_config.resources is None)
+            return self.environment_config.context.resources.get(resource_name, {}).get('config')
+        else:
+            check.invariant(self.environment_config.context is None)
+            return self.environment_config.resources.get(resource_name, {}).get('config')
+
+    @property
+    def resource_defs(self):
+        return (
+            self.context_definition.resource_defs
+            if self.context_definition
+            else self.mode_definition.resource_defs
+        )
+
+
 @contextmanager
-def _create_resources(pipeline_def, context_def, environment, execution_context, run_id):
-    if not context_def.resources:
+def _create_resources(pipeline_def, resource_creation_adapter, environment, run_id):
+    check.inst_param(
+        resource_creation_adapter, 'resource_creation_adapter', ResourceCreationAdapter
+    )
+
+    if resource_creation_adapter.is_resource_override:
         yield ResourcesBuilder(
-            execution_context.resources, ResourcesSource.CUSTOM_EXECUTION_CONTEXT
+            resource_creation_adapter.get_override_resources(),
+            ResourcesSource.CUSTOM_EXECUTION_CONTEXT,
         )
         return
 
     resources = {}
-    check.invariant(
-        not execution_context.resources,
-        (
-            'If resources explicitly specified on context definition, the context '
-            'creation function should not return resources as a property of the '
-            'ExecutionContext.'
-        ),
-    )
 
     # See https://bit.ly/2zIXyqw
     # The "ExitStack" allows one to stack up N context managers and then yield
     # something. We do this so that resources can cleanup after themselves. We
     # can potentially have many resources so we need to use this abstraction.
     with ExitStack() as stack:
-        for resource_name in context_def.resources.keys():
+        for resource_name, resource_def in resource_creation_adapter.resource_defs.items():
             user_fn = _create_resource_fn_lambda(
-                pipeline_def, context_def, resource_name, environment, run_id
+                pipeline_def,
+                resource_def,
+                resource_creation_adapter.get_resource_config(resource_name),
+                environment,
+                run_id,
             )
 
             resource_obj = stack.enter_context(
@@ -669,17 +779,12 @@ def _create_resources(pipeline_def, context_def, environment, execution_context,
         yield ResourcesBuilder(resources, ResourcesSource.PIPELINE_CONTEXT_DEF)
 
 
-def _create_resource_fn_lambda(
-    pipeline_def, context_definition, resource_name, environment, run_id
-):
-    resource_def = context_definition.resources[resource_name]
-    # Need to do default values
-    resource_config = environment.context.resources.get(resource_name, {}).get('config')
+def _create_resource_fn_lambda(pipeline_def, resource_def, resource_config, environment, run_id):
     return lambda: resource_def.resource_fn(
         InitResourceContext(
             pipeline_def=pipeline_def,
             resource_def=resource_def,
-            context_config=environment.context.config,
+            context_config=environment.context.config if environment.context else None,
             resource_config=resource_config,
             run_id=run_id,
         )
@@ -758,7 +863,7 @@ def execute_pipeline_iterator(pipeline, environment_dict=None, run_config=None):
     '''
     check.inst_param(pipeline, 'pipeline', PipelineDefinition)
     environment_dict = check.opt_dict_param(environment_dict, 'environment_dict')
-    run_config = check_run_config_param(run_config)
+    run_config = check_run_config_param(run_config, pipeline)
     environment_config = create_environment_config(pipeline, environment_dict)
     intermediates_manager = construct_intermediates_manager(
         run_config, environment_config, pipeline
@@ -788,8 +893,8 @@ def execute_pipeline(pipeline, environment_dict=None, run_config=None):
 
     check.inst_param(pipeline, 'pipeline', PipelineDefinition)
     environment_dict = check.opt_dict_param(environment_dict, 'environment_dict')
-    run_config = check_run_config_param(run_config)
-    environment_config = create_environment_config(pipeline, environment_dict)
+    run_config = check_run_config_param(run_config, pipeline)
+    environment_config = create_environment_config(pipeline, environment_dict, run_config.mode)
     intermediates_manager = construct_intermediates_manager(
         run_config, environment_config, pipeline
     )
@@ -897,7 +1002,7 @@ def _check_reexecution_config(pipeline_context, execution_plan, run_config):
 def execute_plan(execution_plan, environment_dict=None, run_config=None, step_keys_to_execute=None):
     check.inst_param(execution_plan, 'execution_plan', ExecutionPlan)
     environment_dict = check.opt_dict_param(environment_dict, 'environment_dict')
-    run_config = check_run_config_param(run_config)
+    run_config = check_run_config_param(run_config, execution_plan.pipeline_def)
     check.opt_list_param(step_keys_to_execute, 'step_keys_to_execute', of_type=str)
 
     if step_keys_to_execute:
@@ -926,11 +1031,12 @@ def _setup_reexecution(run_config, pipeline_context, execution_plan):
             )
 
 
-def create_environment_config(pipeline, environment_dict=None):
+def create_environment_config(pipeline, environment_dict=None, mode=None):
     check.inst_param(pipeline, 'pipeline', PipelineDefinition)
     check.opt_dict_param(environment_dict, 'environment')
+    check.opt_str_param(mode, 'mode')
 
-    environment_type = create_environment_type(pipeline)
+    environment_type = create_environment_type(pipeline, mode)
 
     result = evaluate_config_value(environment_type, environment_dict)
 

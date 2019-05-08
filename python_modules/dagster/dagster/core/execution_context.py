@@ -55,7 +55,7 @@ class RunConfig(
         '_RunConfig',
         (
             'run_id tags event_callback loggers executor_config storage_mode reexecution_config '
-            'step_keys_to_execute'
+            'step_keys_to_execute mode'
         ),
     )
 ):
@@ -63,13 +63,16 @@ class RunConfig(
     Configuration that controls the details of how Dagster will execute a pipeline.
 
     Args:
-      run_id (str): The ID to use for this run. If not provided a new UUID will be created using `uuid4`.
+      run_id (str): The ID to use for this run. If not provided a new UUID will
+        be created using `uuid4`.
       tags (dict[str, str]): Key value pairs that will be added to logs.
-      event_callback (callable): A callback to invoke with each :py:class:`EventRecord` produced during execution.
+      event_callback (callable): A callback to invoke with each :py:class:`EventRecord`
+        produced during execution.
       loggers (list): Additional loggers that log messages will be sent to.
       executor_config (ExecutorConfig): Configuration for where and how computation will occur.
       storage_mode (RunStorageMode): Where intermediate artifacts will be stored during execution.
-      rexecution_config (RexecutionConfig): Information about a previous run to allow for subset rexecution.
+      rexecution_config (RexecutionConfig): Information about a previous run to allow
+        for subset rexecution.
       step_keys_to_execute (list[str]): They subset of steps from a pipeline to execute this run.
     '''
 
@@ -83,6 +86,7 @@ class RunConfig(
         storage_mode=None,
         reexecution_config=None,
         step_keys_to_execute=None,
+        mode=None,
     ):
         if (
             isinstance(executor_config, MultiprocessExecutorConfig)
@@ -109,6 +113,7 @@ class RunConfig(
                 reexecution_config, 'reexecution_config', ReexecutionConfig
             ),
             step_keys_to_execute=step_keys_to_execute,
+            mode=check.opt_str_param(mode, 'mode'),
         )
 
     @staticmethod

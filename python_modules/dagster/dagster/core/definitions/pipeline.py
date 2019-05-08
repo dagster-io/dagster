@@ -7,6 +7,7 @@ from dagster.core.errors import DagsterInvalidDefinitionError
 
 from .context import PipelineContextDefinition, default_pipeline_context_definitions
 from .dependency import DependencyDefinition, DependencyStructure, Solid, SolidHandle, SolidInstance
+from .mode import ModeDefinition
 from .pipeline_creation import create_execution_structure, construct_runtime_type_dictionary
 from .solid import ISolidDefinition
 
@@ -92,10 +93,25 @@ class PipelineDefinition(object):
     '''
 
     def __init__(
-        self, solids, name=None, description=None, context_definitions=None, dependencies=None
+        self,
+        solids,
+        name=None,
+        description=None,
+        context_definitions=None,
+        dependencies=None,
+        mode_definitions=None,
     ):
         self.name = check.opt_str_param(name, 'name', '<<unnamed>>')
         self.description = check.opt_str_param(description, 'description')
+
+        check.invariant(
+            not (context_definitions and mode_definitions),
+            'Cannot specify both context_definitions and modes',
+        )
+
+        self.mode_definitions = check.opt_list_param(
+            mode_definitions, 'mode_definitions', of_type=ModeDefinition
+        )
 
         solids = check.list_param(
             _check_solids_arg(self.name, solids), 'solids', of_type=ISolidDefinition
@@ -124,6 +140,49 @@ class PipelineDefinition(object):
 
         # Validate solid resource dependencies
         _validate_resource_dependencies(self.context_definitions, solids)
+
+    def _get_mode_definition(self, mode):
+        check.str_param(mode, 'mode')
+        for mode_definition in self.mode_definitions:
+            if mode_definition.name == mode:
+                return mode_definition
+
+        return None
+
+    @property
+    def is_modeless(self):
+        return not self.mode_definitions
+
+    @property
+    def is_single_mode(self):
+        return len(self.mode_definitions) == 1
+
+    def has_mode_definition(self, mode):
+        check.str_param(mode, 'mode')
+        return bool(self._get_mode_definition(mode))
+
+    def get_mode_definition(self, mode=None):
+        check.opt_str_param(mode, 'mode')
+        if mode is None:
+            check.invariant(self.is_modeless or self.is_single_mode)
+            if self.is_modeless:
+                return None
+            else:
+                check.invariant(self.is_single_mode)
+                return self.mode_definitions[0]
+
+        mode_def = self._get_mode_definition(mode)
+
+        if mode_def is None:
+            check.failed(
+                'Could not find mode {mode} in pipeline {name}'.format(mode=mode, name=self.name)
+            )
+
+        return mode_def
+
+    @property
+    def available_modes(self):
+        return [mode_def.name for mode_def in self.mode_definitions]
 
     @property
     def display_name(self):
@@ -376,7 +435,7 @@ def _validate_resource_dependencies(context_definitions, solids):
     check.list_param(solids, 'solids', of_type=ISolidDefinition)
 
     for context_name, context in context_definitions.items():
-        context_resources = set(context.resources.keys())
+        context_resources = set(context.resource_defs.keys())
 
         for solid in solids:
             for resource in solid.resources:

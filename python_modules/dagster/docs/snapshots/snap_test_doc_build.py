@@ -19565,13 +19565,16 @@ Returns None if execution result isn’t a success.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>run_id</strong> (<em>str</em>) – The ID to use for this run. If not provided a new UUID will be created using <cite>uuid4</cite>.</p></li>
+<li><p><strong>run_id</strong> (<em>str</em>) – The ID to use for this run. If not provided a new UUID will
+be created using <cite>uuid4</cite>.</p></li>
 <li><p><strong>tags</strong> (<em>dict</em><em>[</em><em>str</em><em>, </em><em>str</em><em>]</em>) – Key value pairs that will be added to logs.</p></li>
-<li><p><strong>event_callback</strong> (<em>callable</em>) – A callback to invoke with each <code class="xref py py-class docutils literal notranslate"><span class="pre">EventRecord</span></code> produced during execution.</p></li>
+<li><p><strong>event_callback</strong> (<em>callable</em>) – A callback to invoke with each <code class="xref py py-class docutils literal notranslate"><span class="pre">EventRecord</span></code>
+produced during execution.</p></li>
 <li><p><strong>loggers</strong> (<em>list</em>) – Additional loggers that log messages will be sent to.</p></li>
 <li><p><strong>executor_config</strong> (<em>ExecutorConfig</em>) – Configuration for where and how computation will occur.</p></li>
 <li><p><strong>storage_mode</strong> (<a class="reference internal" href="#dagster.RunStorageMode" title="dagster.RunStorageMode"><em>RunStorageMode</em></a>) – Where intermediate artifacts will be stored during execution.</p></li>
-<li><p><strong>rexecution_config</strong> (<em>RexecutionConfig</em>) – Information about a previous run to allow for subset rexecution.</p></li>
+<li><p><strong>rexecution_config</strong> (<em>RexecutionConfig</em>) – Information about a previous run to allow
+for subset rexecution.</p></li>
 <li><p><strong>step_keys_to_execute</strong> (<em>list</em><em>[</em><em>str</em><em>]</em>) – They subset of steps from a pipeline to execute this run.</p></li>
 </ul>
 </dd>
@@ -19819,7 +19822,7 @@ snapshots['test_build_all_docs 52'] = '''
 <h1>Pipelines<a class="headerlink" href="#pipelines" title="Permalink to this headline">¶</a></h1>
 <dl class="class">
 <dt id="dagster.PipelineDefinition">
-<em class="property">class </em><code class="descclassname">dagster.</code><code class="descname">PipelineDefinition</code><span class="sig-paren">(</span><em>solids</em>, <em>name=None</em>, <em>description=None</em>, <em>context_definitions=None</em>, <em>dependencies=None</em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dagster/core/definitions/pipeline.html#PipelineDefinition"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dagster.PipelineDefinition" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">dagster.</code><code class="descname">PipelineDefinition</code><span class="sig-paren">(</span><em>solids</em>, <em>name=None</em>, <em>description=None</em>, <em>context_definitions=None</em>, <em>dependencies=None</em>, <em>mode_definitions=None</em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dagster/core/definitions/pipeline.html#PipelineDefinition"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dagster.PipelineDefinition" title="Permalink to this definition">¶</a></dt>
 <dd><p>A instance of a PipelineDefinition represents a pipeline in dagster.</p>
 <p>A pipeline is comprised of:</p>
 <ul class="simple">

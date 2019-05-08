@@ -31,6 +31,7 @@ from dagster.core.definitions import (
     RepositoryDefinition,
     Result,
     Materialization,
+    ModeDefinition,
     SolidDefinition,
     SolidInstance,
 )
@@ -96,6 +97,7 @@ __all__ = [
     'Field',
     'InputDefinition',
     'Materialization',
+    'ModeDefinition',
     'OutputDefinition',
     'PipelineContextDefinition',
     'PipelineDefinition',
