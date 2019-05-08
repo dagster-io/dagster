@@ -12,6 +12,7 @@ from dagster.core.definitions import (
     SolidOutputHandle,
     solids_in_topological_order,
 )
+from dagster.core.definitions.dependency import DependencyStructure
 from dagster.core.errors import DagsterInvariantViolationError
 from dagster.core.system_config.objects import EnvironmentConfig
 from dagster.core.utils import toposort
@@ -42,7 +43,6 @@ class _PlanBuilder:
         self.steps = []
         self.step_output_map = dict()
         self.seen_keys = set()
-        self._deps_stack = []
 
     @property
     def pipeline_name(self):
@@ -73,9 +73,6 @@ class _PlanBuilder:
         check.inst_param(val, 'val', StepOutputHandle)
         self.step_output_map[key] = val
 
-    def get_current_dependency_structure(self):
-        return self._deps_stack[-1]
-
     def build(self):
         '''Builds the execution plan.
         '''
@@ -101,9 +98,9 @@ class _PlanBuilder:
             self.environment_config.storage.construct_run_storage().is_persistent,
         )
 
-    def _build_from_sorted_solids(self, solids, dependency_structure, parent_handle=None):
-        self._deps_stack.append(dependency_structure)
-
+    def _build_from_sorted_solids(
+        self, solids, dependency_structure, parent_handle=None, parent_step_inputs=None
+    ):
         terminal_transform_step = None
         for solid in solids:
             handle = SolidHandle(solid.name, solid.definition.name, parent_handle)
@@ -113,7 +110,13 @@ class _PlanBuilder:
             step_inputs = []
             for input_name, input_def in solid.definition.input_dict.items():
                 prev_step_output_handle = get_input_source_step_handle(
-                    self, solid, input_name, input_def, handle
+                    self,
+                    solid,
+                    input_name,
+                    input_def,
+                    dependency_structure,
+                    handle,
+                    parent_step_inputs,
                 )
 
                 # We return None for the handle (see above in get_input_source_step_handle) when the
@@ -134,7 +137,7 @@ class _PlanBuilder:
 
                 step_inputs.append(
                     StepInput(
-                        input_def.name, input_def.runtime_type, subplan.terminal_step_output_handle
+                        input_name, input_def.runtime_type, subplan.terminal_step_output_handle
                     )
                 )
 
@@ -152,6 +155,7 @@ class _PlanBuilder:
                     solids_in_topological_order(solid.definition),
                     solid.definition.dependency_structure,
                     parent_handle=handle,
+                    parent_step_inputs=step_inputs,
                 )
             else:
                 check.invariant(
@@ -177,7 +181,6 @@ class _PlanBuilder:
                 output_handle = solid.output_handle(name)
                 self.set_output_handle(output_handle, subplan.terminal_step_output_handle)
 
-        self._deps_stack.pop()
         return terminal_transform_step
 
 
@@ -221,24 +224,27 @@ def create_subplan_for_output(
     )
 
 
-def get_input_source_step_handle(plan_builder, solid, input_name, input_def, handle):
+def get_input_source_step_handle(
+    plan_builder, solid, input_name, input_def, dependency_structure, handle, parent_step_inputs
+):
     check.inst_param(plan_builder, 'plan_builder', _PlanBuilder)
     check.inst_param(solid, 'solid', Solid)
     check.str_param(input_name, 'input_name')
     check.inst_param(input_def, 'input_def', InputDefinition)
+    check.inst_param(dependency_structure, 'dependency_structure', DependencyStructure)
     check.opt_inst_param(handle, 'handle', SolidHandle)
-
-    input_handle = solid.input_handle(input_name)
+    check.opt_list_param(parent_step_inputs, 'parent_step_inputs', of_type=StepInput)
 
     solid_config = plan_builder.environment_config.solids.get(str(handle))
-    dependency_structure = plan_builder.get_current_dependency_structure()
-    if solid_config and input_def.name in solid_config.inputs:
+
+    if solid_config and input_name in solid_config.inputs:
         step_creation_data = create_input_thunk_execution_step(
             plan_builder.pipeline_name,
             dependency_structure,
             solid,
+            input_name,
             input_def,
-            solid_config.inputs[input_def.name],
+            solid_config.inputs[input_name],
             handle,
         )
         plan_builder.add_step(step_creation_data.step)
@@ -247,9 +253,16 @@ def get_input_source_step_handle(plan_builder, solid, input_name, input_def, han
     if input_def.runtime_type.is_nothing:
         return None
 
+    input_handle = solid.input_handle(input_name)
     if dependency_structure.has_dep(input_handle):
         solid_output_handle = dependency_structure.get_dep(input_handle)
         return plan_builder.get_output_handle(solid_output_handle)
+
+    if solid.parent_maps_input(input_name):
+        parent_name = solid.parent_mapped_input(input_name).definition.name
+        parent_inputs = {step_input.name: step_input for step_input in parent_step_inputs}
+        if parent_name in parent_inputs:
+            return parent_inputs[parent_name].prev_output_handle
 
     raise DagsterInvariantViolationError(
         (

@@ -1,3 +1,4 @@
+from collections import namedtuple
 from dagster import check
 
 from dagster.core.types.runtime import RuntimeType, resolve_to_runtime_type
@@ -32,3 +33,16 @@ class InputDefinition(object):
     @property
     def descriptive_key(self):
         return 'output'
+
+    def mapping_to(self, solid_name, input_name):
+        return InputMapping(self, solid_name, input_name)
+
+
+class InputMapping(namedtuple('_InputMapping', 'definition solid_name input_name')):
+    def __new__(cls, definition, solid_name, input_name):
+        return super(InputMapping, cls).__new__(
+            cls,
+            check.inst_param(definition, 'definition', InputDefinition),
+            check.str_param(solid_name, 'solid_name'),
+            check.str_param(input_name, 'input_name'),
+        )

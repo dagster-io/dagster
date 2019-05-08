@@ -310,7 +310,7 @@ def get_inputs_field(solid, handle, dependency_structure, pipeline_name):
             inp_handle = SolidInputHandle(solid, inp)
             # If this input is not satisfied by a dependency you must
             # provide it via config
-            if not dependency_structure.has_dep(inp_handle):
+            if not dependency_structure.has_dep(inp_handle) and not solid.parent_maps_input(name):
                 inputs_field_fields[name] = FieldImpl(inp.runtime_type.input_schema.schema_type)
 
     if not inputs_field_fields:
@@ -394,7 +394,16 @@ def define_isolid_field(solid, handle, dependency_structure, pipeline_name):
         )
         return Field(
             SystemNamedDict(
-                '{name}CompositeSolidConfig'.format(name=str(handle)), {'solids': solid_cfg}
+                '{name}CompositeSolidConfig'.format(name=str(handle)),
+                remove_none_entries(
+                    {
+                        'solids': solid_cfg,
+                        'inputs': get_inputs_field(
+                            solid, handle, dependency_structure, pipeline_name
+                        ),
+                        'outputs': get_outputs_field(solid, handle, pipeline_name),
+                    }
+                ),
             )
         )
 

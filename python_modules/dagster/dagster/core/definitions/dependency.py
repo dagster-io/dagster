@@ -60,12 +60,13 @@ class Solid(object):
             Definition of the solid.
     '''
 
-    def __init__(self, name, definition, resource_mapper_fn):
-        from .solid import ISolidDefinition
+    def __init__(self, name, definition, resource_mapper_fn, parent=None):
+        from .solid import ISolidDefinition, CompositeSolidDefinition
 
         self.name = check.str_param(name, 'name')
         self.definition = check.inst_param(definition, 'definition', ISolidDefinition)
         self.resource_mapper_fn = check.callable_param(resource_mapper_fn, 'resource_mapper_fn')
+        self.parent = check.opt_inst_param(parent, 'parent', CompositeSolidDefinition)
 
         input_handles = {}
         for name, input_def in self.definition.input_dict.items():
@@ -116,6 +117,15 @@ class Solid(object):
     @property
     def step_metadata_fn(self):
         return self.definition.step_metadata_fn
+
+    def parent_maps_input(self, input_name):
+        if self.parent is None:
+            return False
+
+        return self.parent.mapped_input(self.name, input_name) is not None
+
+    def parent_mapped_input(self, input_name):
+        return self.parent.mapped_input(self.name, input_name)
 
 
 class SolidHandle(namedtuple('_SolidHandle', 'name definition_name parent')):

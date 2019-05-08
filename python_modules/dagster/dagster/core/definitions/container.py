@@ -118,7 +118,7 @@ def validate_dependency_dict(dependencies):
     return dependencies
 
 
-def create_execution_structure(solids, dependencies_dict):
+def create_execution_structure(solids, dependencies_dict, parent):
     '''This builder takes the dependencies dictionary specified during creation of the
     PipelineDefinition object and builds (1) the execution structure and (2) a solid dependency
     dictionary.
@@ -185,7 +185,7 @@ def create_execution_structure(solids, dependencies_dict):
             name_to_aliases[dependency.solid].add(dependency.solid)
 
     pipeline_solid_dict = _build_pipeline_solid_dict(
-        solids, name_to_aliases, alias_to_solid_instance
+        solids, name_to_aliases, alias_to_solid_instance, parent
     )
 
     _validate_dependencies(aliased_dependencies_dict, pipeline_solid_dict, alias_to_name)
@@ -197,7 +197,7 @@ def create_execution_structure(solids, dependencies_dict):
     return dependency_structure, pipeline_solid_dict
 
 
-def _build_pipeline_solid_dict(solids, name_to_aliases, alias_to_solid_instance):
+def _build_pipeline_solid_dict(solids, name_to_aliases, alias_to_solid_instance, parent):
     pipeline_solids = []
     for solid_def in solids:
         uses_of_solid = name_to_aliases.get(solid_def.name, {solid_def.name})
@@ -210,7 +210,12 @@ def _build_pipeline_solid_dict(solids, name_to_aliases, alias_to_solid_instance)
                 else SolidInstance.default_resource_mapper_fn
             )
             pipeline_solids.append(
-                Solid(name=alias, definition=solid_def, resource_mapper_fn=resource_mapper_fn)
+                Solid(
+                    name=alias,
+                    definition=solid_def,
+                    resource_mapper_fn=resource_mapper_fn,
+                    parent=parent,
+                )
             )
 
     return {ps.name: ps for ps in pipeline_solids}

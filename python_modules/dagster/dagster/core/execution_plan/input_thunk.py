@@ -42,13 +42,14 @@ def _create_input_thunk_execution_step(pipeline_name, solid, input_def, input_sp
 
 
 def create_input_thunk_execution_step(
-    pipeline_name, dependency_structure, solid, input_def, input_spec, handle
+    pipeline_name, dependency_structure, solid, input_name, input_def, input_spec, handle
 ):
     check.str_param(pipeline_name, 'pipeline_name')
     check.inst_param(solid, 'solid', Solid)
+    check.str_param(input_name, 'intput_name')
     check.inst_param(input_def, 'input_def', InputDefinition)
 
-    input_handle = solid.input_handle(input_def.name)
+    input_handle = solid.input_handle(input_name)
 
     if dependency_structure.has_dep(input_handle):
         raise DagsterInvariantViolationError(
@@ -57,7 +58,7 @@ def create_input_thunk_execution_step(
                 'you have specified an input via config while also specifying '
                 'a dependency. Either remove the dependency, specify a subdag '
                 'to execute, or remove the inputs specification in the environment.'
-            ).format(pipeline_name=pipeline_name, solid_name=solid.name, input_name=input_def.name)
+            ).format(pipeline_name=pipeline_name, solid_name=solid.name, input_name=input_name)
         )
 
     input_thunk = _create_input_thunk_execution_step(

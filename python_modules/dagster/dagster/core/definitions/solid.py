@@ -4,10 +4,11 @@ import six
 
 from dagster import check
 from dagster.core.types.field_utils import check_user_facing_opt_field_param
+from dagster.core.errors import DagsterInvalidDefinitionError
 from dagster.utils import frozendict
 
-from .input import InputDefinition
-from .output import OutputDefinition
+from .input import InputDefinition, InputMapping
+from .output import OutputDefinition, OutputMapping
 from .utils import check_valid_name
 from .container import IContainSolids, create_execution_structure, validate_dependency_dict
 
@@ -126,15 +127,42 @@ class SolidDefinition(ISolidDefinition):
 
 
 class CompositeSolidDefinition(ISolidDefinition, IContainSolids):
-    def __init__(self, name, solids, dependencies=None, description=None, metadata=None):
+    def __init__(
+        self,
+        name,
+        solids,
+        input_mappings=None,
+        output_mappings=None,
+        dependencies=None,
+        description=None,
+        metadata=None,
+    ):
+        self._input_mappings = check.opt_list_param(input_mappings, 'input_mappings')
+        self._output_mappings = check.opt_list_param(output_mappings, 'input_mappings')
+        _validate_in_mappings(self._input_mappings)
+        _validate_out_mappings(self._output_mappings)
+
         self.dependencies = validate_dependency_dict(dependencies)
         dependency_structure, pipeline_solid_dict = create_execution_structure(
-            solids, self.dependencies
+            solids, self.dependencies, self
         )
 
         self._solid_dict = pipeline_solid_dict
         self._dependency_structure = dependency_structure
-        super(CompositeSolidDefinition, self).__init__(name, {}, {}, description, metadata)
+
+        input_dict = {
+            input_mapping.definition.name: input_mapping.definition
+            for input_mapping in self._input_mappings
+        }
+
+        output_dict = {
+            output_mapping.definition.name: output_mapping.definition
+            for output_mapping in self._output_mappings
+        }
+
+        super(CompositeSolidDefinition, self).__init__(
+            name, input_dict, output_dict, description, metadata
+        )
 
     @property
     def solids(self):
@@ -158,3 +186,47 @@ class CompositeSolidDefinition(ISolidDefinition, IContainSolids):
             resources.update(solid.definition.resources)
 
         return resources
+
+    def mapped_input(self, solid_name, input_name):
+        for mapping in self._input_mappings:
+            if mapping.solid_name == solid_name and mapping.input_name == input_name:
+                return mapping
+        return None
+
+
+def _validate_in_mappings(input_mappings):
+    for mapping in input_mappings:
+        if isinstance(mapping, InputMapping):
+            continue
+        elif isinstance(mapping, InputDefinition):
+            raise DagsterInvalidDefinitionError(
+                "You passed an InputDefinition named '{input_name}' directly "
+                "in to input_mappings. Return an InputMapping by calling "
+                "mapping_to on the InputDefinition.".format(input_name=mapping.name)
+            )
+        else:
+            raise DagsterInvalidDefinitionError(
+                "Received unexpected type '{type}' in output_mappings. "
+                "Provide an OutputMapping using InputDefinition(...).mapping_to(...)".format(
+                    type=type(mapping)
+                )
+            )
+
+
+def _validate_out_mappings(output_mappings):
+    for mapping in output_mappings:
+        if isinstance(mapping, OutputMapping):
+            continue
+        elif isinstance(mapping, OutputDefinition):
+            raise DagsterInvalidDefinitionError(
+                "You passed an OutputDefinition named '{output_name}' directly "
+                "in to output_mappings. Return an OutputMapping by calling "
+                "mapping_from on the OutputDefinition.".format(output_name=mapping.name)
+            )
+        else:
+            raise DagsterInvalidDefinitionError(
+                "Received unexpected type '{type}' in output_mappings. "
+                "Provide an OutputMapping using OutputDefinition(...).mapping_from(...)".format(
+                    type=type(mapping)
+                )
+            )

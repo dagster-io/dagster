@@ -17,9 +17,9 @@ from .environment_schema import (
 
 from .expectation import ExpectationDefinition, ExpectationResult
 
-from .input import InputDefinition
+from .input import InputDefinition, InputMapping
 
-from .output import OutputDefinition
+from .output import OutputDefinition, OutputMapping
 
 from .resource import ResourceDefinition
 

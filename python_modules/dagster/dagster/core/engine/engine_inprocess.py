@@ -70,7 +70,6 @@ class InProcessEngine(BaseEngine):  # pylint: disable=no-init
         # It would be good to implement a reference tracking algorithm here so we could
         # garbage collection results that are no longer needed by any steps
         # https://github.com/dagster-io/dagster/issues/811
-
         for step_level in step_levels:
             for step in step_level:
                 if step_key_set and step.key not in step_key_set:
@@ -256,7 +255,6 @@ def _execute_steps_core_loop(step_context, inputs, intermediates_manager):
         evaluated_inputs[input_name] = _get_evaluated_input(
             step_context.step, input_name, input_value
         )
-
     yield DagsterEvent.step_start_event(step_context)
 
     with time_execution_scope() as timer_result:
