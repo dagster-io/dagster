@@ -13,17 +13,26 @@ import fnmatch
 import inspect
 import os
 import re
+
+# import shlex
 import subprocess
+import sys
+import tempfile
 
 # https://github.com/PyCQA/pylint/issues/73
 from distutils import spawn  # pylint: disable=no-name-in-module
 from itertools import groupby
+from threading import Thread
 
 import click
 import packaging.version
-
+import slack
+import virtualenv
 
 from pypirc import ConfigFileError, RCParser
+
+assert os.getenv('SLACK_RELEASE_BOT_TOKEN'), 'No SLACK_RELEASE_BOT_TOKEN env variable found.'
+slack_client = slack.WebClient(token=os.environ['SLACK_RELEASE_BOT_TOKEN'])
 
 
 PYPIRC_EXCEPTION_MESSAGE = '''You must have credentials available to PyPI in the form of a
@@ -199,6 +208,8 @@ def set_git_tag(tag, signed=False):
             )
         raise Exception(str(exc_info.output))
 
+    return tag
+
 
 def format_module_versions(module_versions, nightly=False):
     return '\n'.join(
@@ -284,7 +295,7 @@ def set_version(module_name, new_version, nightly, library=False):
 
 
 def get_nightly_version():
-    return datetime.datetime.utcnow().strftime('%Y%m%d')
+    return datetime.datetime.utcnow().strftime('%Y.%m.%d')
 
 
 def increment_nightly_version(module_name, module_version, library=False):
@@ -345,14 +356,19 @@ def commit_new_version(new_version):
         raise Exception(exc_info.output)
 
 
-def check_new_version(new_version):
-    parsed_version = packaging.version.parse(new_version)
+def check_existing_version():
     module_versions = get_versions()
     if not all_equal(module_versions.values()):
         print(
             'Warning! Found repository in a bad state. Existing package versions were not '
             'equal:\n{versions}'.format(versions=format_module_versions(module_versions))
         )
+    return module_versions
+
+
+def check_new_version(new_version):
+    parsed_version = packaging.version.parse(new_version)
+    module_versions = check_existing_version()
     errors = {}
     for module_name, module_version in module_versions.items():
         if packaging.version.parse(module_version['__version__']) >= parsed_version:
@@ -395,7 +411,7 @@ def check_git_status():
 
 
 def check_for_cruft():
-    CRUFTY_DIRECTORIES = ['.tox', 'build', 'dist', '*.egg-info']
+    CRUFTY_DIRECTORIES = ['.tox', 'build', 'dist', '*.egg-info', '__pycache__', '.pytest_cache']
     found_cruft = []
     for module_name in MODULE_NAMES:
         for dir_ in os.listdir(path_to_module(module_name, library=False)):
@@ -414,10 +430,44 @@ def check_for_cruft():
                     )
 
     if found_cruft:
-        raise Exception(
-            'Bailing: Cowardly refusing to publish with potentially crufty directories '
-            'present:\n    {found_cruft}'.format(found_cruft='\n    '.join(found_cruft))
+        # find . -name "*.pyc" -exec rm -f {} \; or equiv
+
+        wipeout = input(
+            'Found potentially crufty directories:\n'
+            '    {found_cruft}\n\n'
+            'We strongly recommend releasing from a fresh git clone!\n'
+            'Automatically remove these directories and continue? (Y/n)'
         )
+        if wipeout == 'Y':
+            for cruft_dir in found_cruft:
+                subprocess.check_output(['rm', '-rfv', cruft_dir])
+        else:
+            raise Exception(
+                'Bailing: Cowardly refusing to publish with potentially crufty directories '
+                'present! We strongly recommend releasing from a fresh git clone.'
+            )
+
+    found_pyc_files = []
+
+    for root, dir_, files in os.walk(script_relative_path('..')):
+        for file_ in files:
+            if file_.endswith('.pyc'):
+                found_pyc_files.append(os.path.join(root, file_))
+
+    if found_pyc_files:
+        wipeout = input(
+            'Found {n_files} .pyc files.\n'
+            'We strongly recommend releasing from a fresh git clone!\n'
+            'Automatically remove these files and continue? (Y/n)'
+        )
+        if wipeout == 'Y':
+            for file_ in found_pyc_files:
+                os.unlink(file_)
+        else:
+            raise Exception(
+                'Bailing: Cowardly refusing to publish with .pyc files present! '
+                'We strongly recommend releasing from a fresh git clone.'
+            )
 
 
 def check_directory_structure():
@@ -440,7 +490,7 @@ def check_directory_structure():
     module_directories = [
         dir_
         for dir_ in os.scandir(script_relative_path(os.path.join('..', 'python_modules')))
-        if dir_.is_dir()
+        if dir_.is_dir() and not dir_.name.startswith('.')
     ]
 
     for module_dir in module_directories:
@@ -456,7 +506,7 @@ def check_directory_structure():
         for dir_ in os.scandir(
             script_relative_path(os.path.join('..', 'python_modules', 'libraries'))
         )
-        if dir_.is_dir()
+        if dir_.is_dir() and not dir_.name.startswith('.')
     ]
 
     for library_dir in library_directories:
@@ -516,38 +566,34 @@ def check_directory_structure():
         )
 
 
-def git_push(tags=False):
+def git_push(tag=None):
     github_token = os.getenv('GITHUB_TOKEN')
     github_username = os.getenv('GITHUB_USERNAME')
     if github_token and github_username:
-        if tags:
+        if tag:
             subprocess.check_output(
                 [
                     'git',
                     'push',
-                    '--tags',
-                    '-q',
                     'https://{github_username}:{github_token}@github.com/dagster-io/dagster.git'.format(
                         github_username=github_username, github_token=github_token
                     ),
+                    tag,
                 ]
             )
-        else:
-            subprocess.check_output(
-                [
-                    'git',
-                    'push',
-                    '-q',
-                    'https://{github_username}:{github_token}@github.com/dagster-io/dagster.git'.format(
-                        github_username=github_username, github_token=github_token
-                    ),
-                ]
-            )
+        subprocess.check_output(
+            [
+                'git',
+                'push',
+                'https://{github_username}:{github_token}@github.com/dagster-io/dagster.git'.format(
+                    github_username=github_username, github_token=github_token
+                ),
+            ]
+        )
     else:
-        if tags:
-            subprocess.check_output(['git', 'push', '--tags'])
-        else:
-            subprocess.check_output(['git', 'push'])
+        if tag:
+            subprocess.check_output(['git', 'push', 'origin', tag])
+        subprocess.check_output(['git', 'push'])
 
 
 CLI_HELP = '''Tools to help tag and publish releases of the Dagster projects.
@@ -612,10 +658,18 @@ def publish(nightly):
     if nightly:
         new_version = increment_nightly_versions()
         commit_new_version('nightly: {nightly}'.format(nightly=new_version['__nightly__']))
-        set_git_tag('{nightly}'.format(nightly=new_version['__nightly__']))
+        tag = set_git_tag('{nightly}'.format(nightly=new_version['__nightly__']))
         git_push()
-        git_push(tags=True)
+        git_push(tag)
     publish_all(nightly)
+    git_user = (
+        subprocess.check_output(['git', 'config', '--get', 'user.name']).decode('utf-8').strip()
+    )
+    slack_client.chat_postMessage(
+        channel='#general',
+        text='{git_user} just published a new version: {version}. Don\'t forget to switch the '
+        'active version of the docs at ReadTheDocs!'.format(git_user=git_user, version=version),
+    )
 
 
 @cli.command()
@@ -631,12 +685,66 @@ def release(version):
     set_new_version(version)
     commit_new_version(version)
     set_git_tag(version)
+    print(
+        'Successfully set new version and created git tag {version}. You may continue with the '
+        'release checklist.'.format(version=version)
+    )
 
 
 @cli.command()
 def version():
     """Gets the most recent tagged version."""
-    print(get_most_recent_git_tag())
+    module_versions = check_existing_version()
+    git_tag = get_most_recent_git_tag()
+    parsed_version = packaging.version.parse(git_tag)
+    errors = {}
+    for module_name, module_version in module_versions.items():
+        if packaging.version.parse(module_version['__version__']) >= parsed_version:
+            errors[module_name] = module_version['__version__']
+    if errors:
+        print(
+            'Warning: Found modules with existing versions that did not match the most recent '
+            'tagged version {git_tag}:\n{versions}'.format(
+                git_tag=git_tag, versions=format_module_versions(module_versions)
+            )
+        )
+    else:
+        print('All modules in lockstep with most recent tagged version: {git_tag}'.format(git_tag))
+
+
+@cli.command()
+@click.argument('version')
+def audit(version):
+    """Checks that the given version is installable from PyPI in a new virtualenv."""
+
+    bootstrap_text = '''
+def after_install(options, home_dir):
+    for module_name in [{module_names}]:
+        subprocess.check_output([
+            os.path.join(home_dir, 'bin', 'pip'), 'install', '{{module}}=={version}'.format(
+                module=module_name
+            )
+        ])
+
+'''.format(
+        module_names=', '.join(
+            [
+                '\'{module_name}\''.format(module_name=module_name)
+                for module_name in MODULE_NAMES + LIBRARY_MODULES
+            ]
+        ),
+        version=version,
+    )
+
+    bootstrap_script = virtualenv.create_bootstrap_script(bootstrap_text)
+
+    with tempfile.TemporaryDirectory() as venv_dir:
+        with tempfile.NamedTemporaryFile('w') as bootstrap_script_file:
+            bootstrap_script_file.write(bootstrap_script)
+
+            args = ['python', bootstrap_script_file.name, venv_dir]
+
+            print(subprocess.check_output(args).decode('utf-8'))
 
 
 cli = click.CommandCollection(sources=[cli], help=CLI_HELP)
