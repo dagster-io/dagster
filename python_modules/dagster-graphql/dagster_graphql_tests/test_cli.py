@@ -2,16 +2,47 @@ import json
 
 from click.testing import CliRunner
 
-from dagster import seven
+from dagster import (
+    DependencyDefinition,
+    InputDefinition,
+    Int,
+    OutputDefinition,
+    PipelineDefinition,
+    RepositoryDefinition,
+    lambda_solid,
+    seven,
+)
 from dagster.utils import script_relative_path
 
 from dagster_graphql.cli import ui
 
 
+@lambda_solid(inputs=[InputDefinition('num', Int)], output=OutputDefinition(Int))
+def add_one(num):
+    return num + 1
+
+
+@lambda_solid(inputs=[InputDefinition('num', Int)], output=OutputDefinition(Int))
+def mult_two(num):
+    return num * 2
+
+
+def define_pandas_hello_world():
+    return PipelineDefinition(
+        name='math',
+        solids=[add_one, mult_two],
+        dependencies={'add_one': {}, 'mult_two': {'num': DependencyDefinition(add_one.name)}},
+    )
+
+
+def define_repository():
+    return RepositoryDefinition(name='test', pipeline_dict={'math': define_pandas_hello_world})
+
+
 def test_basic_introspection():
     query = '{ __schema { types { name } } }'
 
-    repo_path = script_relative_path('./repository.yml')
+    repo_path = script_relative_path('./cli_test_repository.yml')
 
     runner = CliRunner()
     result = runner.invoke(ui, ['-y', repo_path, query])
@@ -25,7 +56,7 @@ def test_basic_introspection():
 def test_basic_pipelines():
     query = '{ pipelines { nodes { name } } }'
 
-    repo_path = script_relative_path('./repository.yml')
+    repo_path = script_relative_path('./cli_test_repository.yml')
 
     runner = CliRunner()
     result = runner.invoke(ui, ['-y', repo_path, query])
@@ -39,7 +70,7 @@ def test_basic_pipelines():
 def test_basic_variables():
     query = 'query FooBar($pipelineName: String!){ pipeline(params:{name: $pipelineName}){ name} }'
     variables = '{"pipelineName": "math"}'
-    repo_path = script_relative_path('./repository.yml')
+    repo_path = script_relative_path('./cli_test_repository.yml')
 
     runner = CliRunner()
     result = runner.invoke(ui, ['-y', repo_path, '-v', variables, query])

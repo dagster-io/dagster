@@ -2,6 +2,7 @@ START_PIPELINE_EXECUTION_QUERY = '''
 mutation (
     $pipeline: ExecutionSelector!,
     $config: PipelineConfig,
+    $mode: String,
     $stepKeys: [String!],
     $executionMetadata: ExecutionMetadata,
     $reexecutionConfig: ReexecutionConfig
@@ -9,6 +10,7 @@ mutation (
     startPipelineExecution(
         pipeline: $pipeline,
         config: $config,
+        mode: $mode,
         stepKeys: $stepKeys,
         executionMetadata: $executionMetadata,
         reexecutionConfig: $reexecutionConfig
@@ -123,6 +125,9 @@ subscription subscribeTest($runId: ID!) {
         ... on PipelineRunLogsSubscriptionSuccess {
             messages {
                 __typename
+                ... on ExecutionStepOutputEvent {
+                    valueRepr
+                }
                 ... on MessageEvent {
                     message
                     step { key solidHandle }

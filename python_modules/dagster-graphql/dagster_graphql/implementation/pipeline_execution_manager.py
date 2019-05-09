@@ -104,6 +104,7 @@ class SynchronousExecutionManager(PipelineExecutionManager):
                 pipeline_run.config,
                 run_config=RunConfig(
                     pipeline_run.run_id,
+                    mode=pipeline_run.mode,
                     event_callback=pipeline_run.handle_new_event,
                     executor_config=InProcessExecutorConfig(raise_on_error=raise_on_error),
                     reexecution_config=pipeline_run.reexecution_config,
@@ -243,6 +244,7 @@ class MultiprocessingExecutionManager(PipelineExecutionManager):
             ),
             kwargs={
                 'run_id': pipeline_run.run_id,
+                'mode': pipeline_run.mode,
                 'message_queue': message_queue,
                 'reexecution_config': pipeline_run.reexecution_config,
                 'step_keys_to_execute': pipeline_run.step_keys_to_execute,
@@ -269,6 +271,7 @@ def execute_pipeline_through_queue(
     pipeline_name,
     solid_subset,
     environment_dict,
+    mode,
     run_id,
     message_queue,
     reexecution_config,
@@ -278,10 +281,13 @@ def execute_pipeline_through_queue(
     Execute pipeline using message queue as a transport
     """
 
+    check.opt_str_param(mode, 'mode')
+
     message_queue.put(ProcessStartedSentinel(os.getpid()))
 
     run_config = RunConfig(
         run_id,
+        mode=mode,
         event_callback=message_queue.put,
         executor_config=InProcessExecutorConfig(raise_on_error=False),
         reexecution_config=reexecution_config,

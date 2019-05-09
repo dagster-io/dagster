@@ -32,6 +32,13 @@ fragment PipelineFragment on Pipeline {
     }
     __typename
   }
+  modes {
+    name
+    description
+    resources {
+      name
+    }
+  }
   ...PipelineGraphFragment
   ...ConfigEditorFragment
   __typename

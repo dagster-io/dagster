@@ -52,7 +52,8 @@ def test_running():
         run_id,
         selector,
         env_config,
-        create_execution_plan(pipeline, env_config),
+        mode=None,
+        execution_plan=create_execution_plan(pipeline, env_config),
         reexecution_config=None,
         step_keys_to_execute=None,
     )
@@ -93,7 +94,8 @@ def test_failing():
         run_id,
         selector,
         env_config,
-        create_execution_plan(pipeline, env_config),
+        mode=None,
+        execution_plan=create_execution_plan(pipeline, env_config),
         reexecution_config=None,
         step_keys_to_execute=None,
     )
@@ -127,7 +129,8 @@ def test_execution_crash():
         run_id,
         selector,
         env_config,
-        create_execution_plan(pipeline, env_config),
+        mode=None,
+        execution_plan=create_execution_plan(pipeline, env_config),
         reexecution_config=None,
         step_keys_to_execute=None,
     )

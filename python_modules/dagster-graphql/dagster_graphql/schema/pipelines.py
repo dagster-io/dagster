@@ -3,6 +3,7 @@ from __future__ import absolute_import
 from dagster import (
     ExpectationDefinition,
     InputDefinition,
+    ModeDefinition,
     OutputDefinition,
     PipelineContextDefinition,
     PipelineDefinition,
@@ -36,20 +37,24 @@ class DauphinPipeline(dauphin.ObjectType):
     config_types = dauphin.non_null_list('ConfigType')
     runtime_types = dauphin.non_null_list('RuntimeType')
     runs = dauphin.non_null_list('PipelineRun')
+    modes = dauphin.non_null_list('Mode')
 
     def __init__(self, pipeline):
         super(DauphinPipeline, self).__init__(name=pipeline.name, description=pipeline.description)
         self._pipeline = check.inst_param(pipeline, 'pipeline', PipelineDefinition)
 
     def resolve_solids(self, graphene_info):
-        return [
-            graphene_info.schema.type_named('Solid')(
-                solid,
-                self._pipeline.dependency_structure.deps_of_solid_with_input(solid.name),
-                self._pipeline.dependency_structure.depended_by_of_solid(solid.name),
-            )
-            for solid in self._pipeline.solids
-        ]
+        return sorted(
+            [
+                graphene_info.schema.type_named('Solid')(
+                    solid,
+                    self._pipeline.dependency_structure.deps_of_solid_with_input(solid.name),
+                    self._pipeline.dependency_structure.depended_by_of_solid(solid.name),
+                )
+                for solid in self._pipeline.solids
+            ],
+            key=lambda solid: solid.name,
+        )
 
     def resolve_contexts(self, graphene_info):
         return [
@@ -58,10 +63,15 @@ class DauphinPipeline(dauphin.ObjectType):
         ]
 
     def resolve_environment_type(self, _graphene_info):
-        return to_dauphin_config_type(create_environment_type(self._pipeline))
+        return to_dauphin_config_type(
+            create_environment_type(self._pipeline, self._pipeline.get_default_mode_name())
+        )
 
     def resolve_config_types(self, _graphene_info):
-        environment_schema = create_environment_schema(self._pipeline)
+        # TODO Core UI. Need to rework sidebar
+        environment_schema = create_environment_schema(
+            self._pipeline, self._pipeline.get_default_mode_name()
+        )
         return sorted(
             list(map(to_dauphin_config_type, environment_schema.all_config_types())),
             key=lambda config_type: config_type.key,
@@ -96,6 +106,15 @@ class DauphinPipeline(dauphin.ObjectType):
         else:
             check.failed('Not a config type or runtime type')
 
+    def resolve_modes(self, graphene_info):
+        return sorted(
+            [
+                graphene_info.schema.type_named('Mode')(mode_definition)
+                for mode_definition in self._pipeline.mode_definitions
+            ],
+            key=lambda item: item.name,
+        )
+
 
 class DauphinPipelineConnection(dauphin.ObjectType):
     class Meta:
@@ -125,6 +144,27 @@ class DauphinResource(dauphin.ObjectType):
             if self._resource.config_field
             else None
         )
+
+
+class DauphinMode(dauphin.ObjectType):
+    def __init__(self, mode_definition):
+        self._mode_definition = check.inst_param(mode_definition, 'mode_definition', ModeDefinition)
+
+    class Meta:
+        name = 'Mode'
+
+    name = dauphin.NonNull(dauphin.String)
+    description = dauphin.String()
+    resources = dauphin.non_null_list('Resource')
+
+    def resolve_name(self, _graphene_info):
+        return self._mode_definition.name
+
+    def resolve_description(self, _graphene_info):
+        return self._mode_definition.description
+
+    def resolve_resources(self, _graphene_info):
+        return [DauphinResource(*item) for item in self._mode_definition.resource_defs.items()]
 
 
 class DauphinPipelineContext(dauphin.ObjectType):

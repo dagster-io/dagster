@@ -40,6 +40,7 @@ class DauphinQuery(dauphin.ObjectType):
         dauphin.NonNull('ConfigTypeOrError'),
         pipelineName=dauphin.Argument(dauphin.NonNull(dauphin.String)),
         configTypeName=dauphin.Argument(dauphin.NonNull(dauphin.String)),
+        mode=dauphin.Argument(dauphin.String),
     )
 
     runtimeTypeOrError = dauphin.Field(
@@ -58,6 +59,7 @@ class DauphinQuery(dauphin.ObjectType):
         args={
             'pipeline': dauphin.Argument(dauphin.NonNull('ExecutionSelector')),
             'config': dauphin.Argument('PipelineConfig'),
+            'mode': dauphin.Argument(dauphin.String),
         },
     )
 
@@ -66,6 +68,7 @@ class DauphinQuery(dauphin.ObjectType):
         args={
             'pipeline': dauphin.Argument(dauphin.NonNull('ExecutionSelector')),
             'config': dauphin.Argument('PipelineConfig'),
+            'mode': dauphin.Argument(dauphin.String),
         },
     )
 
@@ -75,7 +78,9 @@ class DauphinQuery(dauphin.ObjectType):
     )
 
     def resolve_configTypeOrError(self, graphene_info, **kwargs):
-        return get_config_type(graphene_info, kwargs['pipelineName'], kwargs['configTypeName'])
+        return get_config_type(
+            graphene_info, kwargs['pipelineName'], kwargs['configTypeName'], kwargs.get('mode')
+        )
 
     def resolve_runtimeTypeOrError(self, graphene_info, **kwargs):
         return get_runtime_type(graphene_info, kwargs['pipelineName'], kwargs['runtimeTypeName'])
@@ -101,11 +106,13 @@ class DauphinQuery(dauphin.ObjectType):
     def resolve_pipelineRunOrError(self, graphene_info, runId):
         return get_run(graphene_info, runId)
 
-    def resolve_isPipelineConfigValid(self, graphene_info, pipeline, config):
-        return validate_pipeline_config(graphene_info, pipeline.to_selector(), config)
+    def resolve_isPipelineConfigValid(self, graphene_info, pipeline, config, **kwargs):
+        return validate_pipeline_config(
+            graphene_info, pipeline.to_selector(), config, kwargs.get('mode')
+        )
 
-    def resolve_executionPlan(self, graphene_info, pipeline, config):
-        return get_execution_plan(graphene_info, pipeline.to_selector(), config)
+    def resolve_executionPlan(self, graphene_info, pipeline, config, **kwargs):
+        return get_execution_plan(graphene_info, pipeline.to_selector(), config, kwargs.get('mode'))
 
     def resolve_presetsForPipeline(self, graphene_info, pipelineName):
         return get_pipeline_presets(graphene_info, pipelineName)
@@ -143,6 +150,7 @@ class DauphinStartPipelineExecutionMutation(dauphin.Mutation):
     class Arguments:
         pipeline = dauphin.NonNull('ExecutionSelector')
         config = dauphin.Argument('PipelineConfig')
+        mode = dauphin.Argument(dauphin.String)
         stepKeys = dauphin.List(dauphin.NonNull(dauphin.String))
         executionMetadata = dauphin.Argument('ExecutionMetadata')
         reexecutionConfig = dauphin.Argument('ReexecutionConfig')
@@ -159,6 +167,7 @@ class DauphinStartPipelineExecutionMutation(dauphin.Mutation):
             graphene_info,
             kwargs['pipeline'].to_selector(),
             kwargs.get('config'),
+            kwargs.get('mode'),
             kwargs.get('stepKeys'),
             reexecution_config,
             kwargs.get('executionMetadata'),
@@ -213,6 +222,7 @@ class DauphinExecutePlan(dauphin.Mutation):
     class Arguments:
         pipelineName = dauphin.NonNull(dauphin.String)
         config = dauphin.Argument('PipelineConfig')
+        mode = dauphin.Argument(dauphin.String)
         stepKeys = dauphin.List(dauphin.NonNull(dauphin.String))
         executionMetadata = dauphin.Argument(DauphinExecutionMetadata)
 
@@ -223,6 +233,7 @@ class DauphinExecutePlan(dauphin.Mutation):
             graphene_info,
             kwargs['pipelineName'],
             kwargs.get('config'),
+            kwargs.get('mode'),
             kwargs.get('executionMetadata'),
             kwargs.get('stepKeys'),
         )

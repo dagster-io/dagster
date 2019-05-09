@@ -1,3 +1,5 @@
+from dagster import check
+
 from dagster.core.execution.api import ExecutionSelector
 from dagster.core.definitions import create_environment_schema
 from dagster_graphql.schema.config_types import to_dauphin_config_type
@@ -7,9 +9,12 @@ from .either import EitherError, EitherValue
 from .fetch_pipelines import _pipeline_or_error_from_container
 
 
-def _config_type_or_error(graphene_info, dauphin_pipeline, config_type_name):
+def _config_type_or_error(graphene_info, dauphin_pipeline, config_type_name, mode):
+    check.str_param(config_type_name, 'config_type_name')
+    check.opt_str_param(mode, 'mode')
+
     pipeline = dauphin_pipeline.get_dagster_pipeline()
-    environment_schema = create_environment_schema(pipeline)
+    environment_schema = create_environment_schema(pipeline, mode)
     if not environment_schema.has_config_type(config_type_name):
         return EitherError(
             graphene_info.schema.type_named('ConfigTypeNotFoundError')(
@@ -23,13 +28,16 @@ def _config_type_or_error(graphene_info, dauphin_pipeline, config_type_name):
         return EitherValue(dauphin_config_type)
 
 
-def get_config_type(graphene_info, pipeline_name, type_name):
+def get_config_type(graphene_info, pipeline_name, config_type_name, mode):
+    check.str_param(pipeline_name, 'pipeline_name')
+    check.str_param(config_type_name, 'config_type_name')
+    check.opt_str_param(mode, 'mode')
     pipeline_or_error = _pipeline_or_error_from_container(
         graphene_info, ExecutionSelector(pipeline_name)
     )
 
     return pipeline_or_error.chain(
-        lambda pipeline: _config_type_or_error(graphene_info, pipeline, type_name)
+        lambda pipeline: _config_type_or_error(graphene_info, pipeline, config_type_name, mode)
     ).value()
 
 

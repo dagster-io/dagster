@@ -92,7 +92,7 @@ def create_execution_plan(pipeline, environment_dict=None, mode=None):
     check.inst_param(pipeline, 'pipeline', PipelineDefinition)
     environment_dict = check.opt_dict_param(environment_dict, 'environment_dict', key_type=str)
     check.opt_str_param(mode, 'mode')
-    environment_config = create_environment_config(pipeline, environment_dict)
+    environment_config = create_environment_config(pipeline, environment_dict, mode)
     return ExecutionPlan.build(pipeline, environment_config)
 
 

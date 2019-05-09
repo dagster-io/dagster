@@ -21,6 +21,7 @@ from dagster import (
     InputDefinition,
     Int,
     List,
+    ModeDefinition,
     Nullable,
     OutputDefinition,
     PipelineContextDefinition,
@@ -30,6 +31,7 @@ from dagster import (
     SolidDefinition,
     String,
     lambda_solid,
+    resource,
     solid,
 )
 from dagster_pandas import DataFrame
@@ -143,6 +145,7 @@ def define_repository():
             'secret_pipeline': define_pipeline_with_secret,
             'pipeline_with_step_metadata': define_pipeline_with_step_metadata,
             'pipeline_with_expectations': define_pipeline_with_expectation,
+            'multi_mode_with_resources': define_multi_mode_with_resources_pipeline,
         },
     )
 
@@ -397,3 +400,47 @@ def define_pipeline_with_step_metadata():
         },
     )
     return PipelineDefinition(name='pipeline_with_step_metadata', solids=[solid_def])
+
+
+def define_multi_mode_with_resources_pipeline():
+    @resource(config_field=Field(Int))
+    def adder_resource(init_context):
+        return lambda x: x + init_context.resource_config
+
+    @resource(config_field=Field(Int))
+    def multer_resource(init_context):
+        return lambda x: x * init_context.resource_config
+
+    @resource(config_field=Field(Dict({'num_one': Field(Int), 'num_two': Field(Int)})))
+    def double_adder_resource(init_context):
+        return (
+            lambda x: x
+            + init_context.resource_config['num_one']
+            + init_context.resource_config['num_two']
+        )
+
+    @solid
+    def apply_to_three(context):
+        return context.resources.op(3)
+
+    return PipelineDefinition(
+        name='multi_mode_with_resources',
+        solids=[apply_to_three],
+        mode_definitions=[
+            ModeDefinition(
+                name='add_mode',
+                resources={'op': adder_resource},
+                description='Mode that adds things',
+            ),
+            ModeDefinition(
+                name='mult_mode',
+                resources={'op': multer_resource},
+                description='Mode that multiplies things',
+            ),
+            ModeDefinition(
+                name='double_adder',
+                resources={'op': double_adder_resource},
+                description='Mode that adds two numbers to thing',
+            ),
+        ],
+    )

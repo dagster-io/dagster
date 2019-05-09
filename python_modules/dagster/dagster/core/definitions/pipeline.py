@@ -157,9 +157,16 @@ class PipelineDefinition(object):
     def is_single_mode(self):
         return len(self.mode_definitions) == 1
 
+    @property
+    def is_multi_mode(self):
+        return len(self.mode_definitions) > 1
+
     def has_mode_definition(self, mode):
         check.str_param(mode, 'mode')
         return bool(self._get_mode_definition(mode))
+
+    def get_default_mode_name(self):
+        return None if self.is_modeless else self.mode_definitions[0].name
 
     def get_mode_definition(self, mode=None):
         check.opt_str_param(mode, 'mode')
