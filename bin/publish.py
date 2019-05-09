@@ -434,9 +434,11 @@ def check_for_cruft():
 
         wipeout = input(
             'Found potentially crufty directories:\n'
-            '    {found_cruft}\n\n'
+            '    {found_cruft}'
             'We strongly recommend releasing from a fresh git clone!\n'
-            'Automatically remove these directories and continue? (Y/n)'
+            'Automatically remove these directories and continue? (Y/n)'.format(
+                found_cruft='\n    '.join(found_cruft)
+            )
         )
         if wipeout == 'Y':
             for cruft_dir in found_cruft:
