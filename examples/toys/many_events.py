@@ -41,6 +41,9 @@ def create_raw_file_solid(name):
                 ],
             )
         ],
+        description='Inject raw file for input to table {} and do expectation on output'.format(
+            name
+        ),
     )
     def _f(_context):
         yield Materialization(path='/path/to/{}.raw'.format(name))
@@ -70,7 +73,11 @@ def create_raw_file_inputs():
     return list(map(lambda name: InputDefinition(name + '_ready', Nothing), raw_files))
 
 
-@solid(inputs=create_raw_file_inputs(), outputs=[OutputDefinition(Nothing)])
+@solid(
+    inputs=create_raw_file_inputs(),
+    outputs=[OutputDefinition(Nothing)],
+    description='Load a bunch of raw tables from corresponding files',
+)
 def many_table_materializations(_context):
     for table in raw_tables:
         yield Materialization(path='/path/to/{}'.format(table), description='This is a table.')
@@ -78,7 +85,13 @@ def many_table_materializations(_context):
     yield Result(None)
 
 
-@solid(inputs=[InputDefinition('start', Nothing)], outputs=[OutputDefinition(Nothing)])
+@solid(
+    inputs=[InputDefinition('start', Nothing)],
+    outputs=[OutputDefinition(Nothing)],
+    description='This simulates a solid that would wrap something like dbt, '
+    'where it emits a bunch of tables and then say an expectation on each table, '
+    'all in one solid',
+)
 def many_materializations_and_passing_expectations(_context):
     tables = [
         'users',
@@ -99,7 +112,11 @@ def many_materializations_and_passing_expectations(_context):
     yield Result(None)
 
 
-@solid(inputs=[InputDefinition('start', Nothing)], outputs=[])
+@solid(
+    inputs=[InputDefinition('start', Nothing)],
+    outputs=[],
+    description='A solid that just does a couple inline expectations, one of which fails',
+)
 def check_users_and_groups_one_fails_one_succeeds(_context):
     yield ExpectationResult(
         success=True,
@@ -124,7 +141,11 @@ def check_users_and_groups_one_fails_one_succeeds(_context):
     )
 
 
-@solid(inputs=[InputDefinition('start', Nothing)], outputs=[])
+@solid(
+    inputs=[InputDefinition('start', Nothing)],
+    outputs=[],
+    description='A solid that just does a couple inline expectations',
+)
 def check_admins_both_succeed(_context):
     yield ExpectationResult(success=True, message='Group admins check out')
     yield ExpectationResult(success=True, message='Event admins check out')
