@@ -51,7 +51,7 @@ def test_spark_data_frame_serialization_file_system():
 
     assert '_SUCCESS' in os.listdir(result_dir)
 
-    spark = _spark_context()['test'].resources['spark'].resource_fn(None)
+    spark = _spark_context()['test'].resource_defs['spark'].resource_fn(None)
 
     df = spark.read.parquet(result_dir)
     assert isinstance(df, pyspark.sql.dataframe.DataFrame)

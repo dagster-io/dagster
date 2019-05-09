@@ -143,12 +143,15 @@ def create_environment_schema(pipeline_def, mode=None):
     check.inst_param(pipeline_def, 'pipeline_def', PipelineDefinition)
     check.opt_str_param(mode, 'mode')
 
+    mode_definition = pipeline_def.get_mode_definition(mode)
+
     environment_cls = define_environment_cls(
         EnvironmentClassCreationData(
             pipeline_def.name,
             pipeline_def.solids,
-            pipeline_def.context_definitions,
+            pipeline_def.context_definitions if mode_definition is None else None,
             pipeline_def.dependency_structure,
+            mode_definition,
         )
     )
 

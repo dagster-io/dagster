@@ -27,6 +27,8 @@ from .result import Result
 
 from .materialization import Materialization
 
+from .mode import ModeDefinition
+
 from .repository import RepositoryDefinition, PipelinePreset
 
 from .pipeline import PipelineDefinition, solids_in_topological_order

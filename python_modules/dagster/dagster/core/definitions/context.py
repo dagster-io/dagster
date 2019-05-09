@@ -79,7 +79,7 @@ class PipelineContextDefinition(object):
         self.context_fn = check.opt_callable_param(
             context_fn, 'context_fn', lambda *args, **kwargs: ExecutionContext()
         )
-        self.resources = check.opt_dict_param(
+        self.resource_defs = check.opt_dict_param(
             resources, 'resources', key_type=str, value_type=ResourceDefinition
         )
         self.description = description

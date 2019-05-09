@@ -150,7 +150,7 @@ class DauphinPipelineContext(dauphin.ObjectType):
         )
 
     def resolve_resources(self, _graphene_info):
-        return [DauphinResource(*item) for item in self._context.resources.items()]
+        return [DauphinResource(*item) for item in self._context.resource_defs.items()]
 
 
 class DauphinSolid(dauphin.ObjectType):
