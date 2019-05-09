@@ -69,8 +69,14 @@ def create_raw_file_solids():
     return list(map(create_raw_file_solid, raw_files))
 
 
+def input_name_for_raw_file(raw_file):
+    return raw_file + '_ready'
+
+
 def create_raw_file_inputs():
-    return list(map(lambda name: InputDefinition(name + '_ready', Nothing), raw_files))
+    return list(
+        map(lambda raw_file: InputDefinition(input_name_for_raw_file(raw_file), Nothing), raw_files)
+    )
 
 
 @solid(
@@ -164,7 +170,8 @@ def define_many_events_pipeline():
         dependencies=merge_dicts(
             {
                 'many_table_materializations': {
-                    raw_file + '_ready': DependencyDefinition(raw_file) for raw_file in raw_files
+                    input_name_for_raw_file(raw_file): DependencyDefinition(raw_file)
+                    for raw_file in raw_files
                 }
             },
             {
