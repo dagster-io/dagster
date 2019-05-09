@@ -29,7 +29,9 @@ raw_files = [
 
 def create_raw_file_solid(name):
     def do_expectation(_context, _value):
-        return ExpectationResult(success=True, message='Checked {name} exists')
+        return ExpectationResult(
+            success=True, name='output_table_exists', message='Checked {name} exists'
+        )
 
     @solid(
         name=name,
@@ -113,7 +115,9 @@ def many_materializations_and_passing_expectations(_context):
 
     for table in tables:
         yield Materialization(path='/path/to/{}'.format(table), description='This is a table.')
-        yield ExpectationResult(success=True, message='Row count passed for {}'.format(table))
+        yield ExpectationResult(
+            success=True, name='row_count', message='Row count passed for {}'.format(table)
+        )
 
     yield Result(None)
 
@@ -126,6 +130,7 @@ def many_materializations_and_passing_expectations(_context):
 def check_users_and_groups_one_fails_one_succeeds(_context):
     yield ExpectationResult(
         success=True,
+        name='user_expectations',
         message='Battery of expectations for user',
         result_metadata={
             'columns': {
@@ -137,6 +142,7 @@ def check_users_and_groups_one_fails_one_succeeds(_context):
 
     yield ExpectationResult(
         success=False,
+        name='groups_expectations',
         message='Battery of expectations for groups',
         result_metadata={
             'columns': {

@@ -151,18 +151,32 @@ def define_pipeline_with_expectation():
     @solid(outputs=[])
     def emit_successful_expectation(_context):
         yield ExpectationResult(
-            success=True, message='Successful', result_metadata={'reason': 'Just because.'}
+            success=True,
+            name='always_true',
+            message='Successful',
+            result_metadata={'reason': 'Just because.'},
         )
 
     @solid(outputs=[])
     def emit_failed_expectation(_context):
         yield ExpectationResult(
-            success=False, message='Failure', result_metadata={'reason': 'Relentless pessimism.'}
+            success=False,
+            name='always_false',
+            message='Failure',
+            result_metadata={'reason': 'Relentless pessimism.'},
         )
+
+    @solid(outputs=[])
+    def emit_successful_expectation_no_metadata(_context):
+        yield ExpectationResult(success=True, name='no_metadata', message='Successful')
 
     return PipelineDefinition(
         name='pipeline_with_expectations',
-        solids=[emit_successful_expectation, emit_failed_expectation],
+        solids=[
+            emit_successful_expectation,
+            emit_failed_expectation,
+            emit_successful_expectation_no_metadata,
+        ],
     )
 
 

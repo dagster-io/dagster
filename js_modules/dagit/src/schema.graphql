@@ -192,6 +192,7 @@ type Expectation {
 
 type ExpectationResult {
   success: Boolean!
+  name: String
   message: String
   resultMetadataJsonString: String
 }

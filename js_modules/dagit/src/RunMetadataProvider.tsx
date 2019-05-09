@@ -116,6 +116,32 @@ function extractMetadataFromLogs(
             ]
           });
         });
+      } else if (log.__typename == "StepExpectationResultEvent") {
+        metadata.steps[name] = produce(metadata.steps[name] || {}, step => {
+          step.displayEvents.push({
+            icon: log.expectationResult.success ? "dot-success" : "dot-failure",
+            text: log.expectationResult.name
+              ? "Expectation: " + log.expectationResult.name
+              : "Expectation",
+            items: log.expectationResult.resultMetadataJsonString
+              ? [
+                  {
+                    text: "",
+                    actionText: "[Show Metadata]",
+                    action: "show-in-modal",
+                    // take JSON string, parse, and then pretty print
+                    actionValue: JSON.stringify(
+                      JSON.parse(
+                        log.expectationResult.resultMetadataJsonString
+                      ),
+                      null,
+                      2
+                    )
+                  }
+                ]
+              : []
+          });
+        });
       } else if (log.__typename === "ExecutionStepFailureEvent") {
         metadata.steps[name] = produce(metadata.steps[name] || {}, step => {
           step.state = IStepState.FAILED;
@@ -159,6 +185,13 @@ export default class RunMetadataProvider extends React.Component<
           materialization {
             path
             description
+          }
+        }
+        ... on StepExpectationResultEvent {
+          expectationResult {
+            success
+            name
+            resultMetadataJsonString
           }
         }
       }

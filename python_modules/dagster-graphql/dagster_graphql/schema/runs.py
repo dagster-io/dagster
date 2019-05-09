@@ -239,6 +239,7 @@ class DauphinExpectationResult(dauphin.ObjectType):
         name = 'ExpectationResult'
 
     success = dauphin.NonNull(dauphin.Boolean)
+    name = dauphin.String()
     message = dauphin.String()
     resultMetadataJsonString = dauphin.String()
 
@@ -342,8 +343,11 @@ def from_dagster_event_record(graphene_info, event_record, dauphin_pipeline, exe
         return graphene_info.schema.type_named('StepExpectationResultEvent')(
             expectation_result=DauphinExpectationResult(
                 success=expectation_result.success,
+                name=expectation_result.name,
                 message=expectation_result.message,
-                resultMetadataJsonString=json.dumps(expectation_result.result_metadata),
+                resultMetadataJsonString=json.dumps(expectation_result.result_metadata)
+                if expectation_result.result_metadata
+                else None,
             ),
             # parens make black not put trailing commas, which in turn break py27
             **(basic_params)

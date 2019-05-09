@@ -33,6 +33,7 @@ def test_basic_expectations_within_transforms():
     failed_result_metadata = json.loads(
         emit_failed_expectation_event['expectationResult']['resultMetadataJsonString']
     )
+    assert emit_failed_expectation_event['expectationResult']['name'] == 'always_false'
 
     assert failed_result_metadata == {'reason': 'Relentless pessimism.'}
 
@@ -40,11 +41,16 @@ def test_basic_expectations_within_transforms():
 
     assert emit_successful_expectation_event['expectationResult']['success'] is True
     assert emit_successful_expectation_event['expectationResult']['message'] == 'Successful'
+    assert emit_successful_expectation_event['expectationResult']['name'] == 'always_true'
     successful_result_metadata = json.loads(
         emit_successful_expectation_event['expectationResult']['resultMetadataJsonString']
     )
 
     assert successful_result_metadata == {'reason': 'Just because.'}
+
+    emit_no_metadata = get_expectation_result(logs, 'emit_successful_expectation_no_metadata')
+
+    assert emit_no_metadata['expectationResult']['resultMetadataJsonString'] is None
 
 
 def test_basic_input_output_expectations(snapshot):

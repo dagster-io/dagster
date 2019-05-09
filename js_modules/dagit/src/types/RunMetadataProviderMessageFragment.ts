@@ -13,7 +13,7 @@ export interface RunMetadataProviderMessageFragment_LogMessageEvent_step {
 }
 
 export interface RunMetadataProviderMessageFragment_LogMessageEvent {
-  __typename: "LogMessageEvent" | "PipelineStartEvent" | "PipelineSuccessEvent" | "PipelineFailureEvent" | "PipelineInitFailureEvent" | "ExecutionStepStartEvent" | "ExecutionStepSuccessEvent" | "ExecutionStepOutputEvent" | "ExecutionStepFailureEvent" | "ExecutionStepSkippedEvent" | "PipelineProcessStartEvent" | "StepExpectationResultEvent";
+  __typename: "LogMessageEvent" | "PipelineStartEvent" | "PipelineSuccessEvent" | "PipelineFailureEvent" | "PipelineInitFailureEvent" | "ExecutionStepStartEvent" | "ExecutionStepSuccessEvent" | "ExecutionStepOutputEvent" | "ExecutionStepFailureEvent" | "ExecutionStepSkippedEvent" | "PipelineProcessStartEvent";
   message: string;
   timestamp: string;
   step: RunMetadataProviderMessageFragment_LogMessageEvent_step | null;
@@ -51,4 +51,24 @@ export interface RunMetadataProviderMessageFragment_StepMaterializationEvent {
   materialization: RunMetadataProviderMessageFragment_StepMaterializationEvent_materialization;
 }
 
-export type RunMetadataProviderMessageFragment = RunMetadataProviderMessageFragment_LogMessageEvent | RunMetadataProviderMessageFragment_PipelineProcessStartedEvent | RunMetadataProviderMessageFragment_StepMaterializationEvent;
+export interface RunMetadataProviderMessageFragment_StepExpectationResultEvent_step {
+  __typename: "ExecutionStep";
+  name: string;
+}
+
+export interface RunMetadataProviderMessageFragment_StepExpectationResultEvent_expectationResult {
+  __typename: "ExpectationResult";
+  success: boolean;
+  name: string | null;
+  resultMetadataJsonString: string | null;
+}
+
+export interface RunMetadataProviderMessageFragment_StepExpectationResultEvent {
+  __typename: "StepExpectationResultEvent";
+  message: string;
+  timestamp: string;
+  step: RunMetadataProviderMessageFragment_StepExpectationResultEvent_step | null;
+  expectationResult: RunMetadataProviderMessageFragment_StepExpectationResultEvent_expectationResult;
+}
+
+export type RunMetadataProviderMessageFragment = RunMetadataProviderMessageFragment_LogMessageEvent | RunMetadataProviderMessageFragment_PipelineProcessStartedEvent | RunMetadataProviderMessageFragment_StepMaterializationEvent | RunMetadataProviderMessageFragment_StepExpectationResultEvent;

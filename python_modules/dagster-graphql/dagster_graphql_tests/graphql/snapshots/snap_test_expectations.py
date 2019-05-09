@@ -12,7 +12,8 @@ snapshots['test_basic_input_output_expectations 1'] = [
         '__typename': 'StepExpectationResultEvent',
         'expectationResult': {
             'message': None,
-            'resultMetadataJsonString': '{}',
+            'name': None,
+            'resultMetadataJsonString': None,
             'success': True
         },
         'level': 'INFO',
@@ -26,7 +27,8 @@ snapshots['test_basic_input_output_expectations 1'] = [
         '__typename': 'StepExpectationResultEvent',
         'expectationResult': {
             'message': None,
-            'resultMetadataJsonString': '{}',
+            'name': None,
+            'resultMetadataJsonString': None,
             'success': True
         },
         'level': 'INFO',

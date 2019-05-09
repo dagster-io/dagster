@@ -36,6 +36,13 @@ mutation (
                                 description
                             }
                         }
+                        ... on StepExpectationResultEvent {
+                            expectationResult {
+                                success
+                                name
+                                resultMetadataJsonString
+                            }
+                        }
                     }
                 }
             }
@@ -137,6 +144,7 @@ subscription subscribeTest($runId: ID!) {
                 ... on StepExpectationResultEvent {
                     expectationResult {
                         success
+                        name
                         message
                         resultMetadataJsonString
                     }
