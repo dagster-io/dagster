@@ -8,7 +8,7 @@ On Windows, dagit is known not to work with Python 2.7. See: https://arrow.apach
 
 Usage
 ~~~~~
-Eg in dagster_examples
+In one of the folders in examples, such as examples/toys
 
 .. code-block:: sh
 
