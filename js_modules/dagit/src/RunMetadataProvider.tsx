@@ -12,9 +12,21 @@ export enum IStepState {
   FAILED = "failed"
 }
 
-export interface IStepMaterialization {
-  description: string | null;
-  path: string | null;
+export interface IStepDisplayEvent {
+  icon:
+    | "dot-success"
+    | "dot-failure"
+    | "dot-pending"
+    | "file"
+    | "link"
+    | "none";
+  text: string;
+  items: {
+    text: string; // shown in gray on the left
+    action: "open-in-tab" | "copy" | "show-in-modal" | "none";
+    actionText: string; // shown after `text`, optionally with a click action
+    actionValue: string; // value passed to the click action
+  }[];
 }
 
 export interface IStepMetadata {
@@ -22,7 +34,7 @@ export interface IStepMetadata {
   start?: number;
   elapsed?: number;
   transitionedAt: number;
-  materializations: IStepMaterialization[];
+  displayEvents: IStepDisplayEvent[];
 }
 
 export interface IRunMetadataDict {
@@ -75,7 +87,7 @@ function extractMetadataFromLogs(
           state: IStepState.RUNNING,
           start: timestamp,
           transitionedAt: timestamp,
-          materializations: []
+          displayEvents: []
         };
       } else if (log.__typename === "ExecutionStepSuccessEvent") {
         metadata.steps[name] = produce(metadata.steps[name] || {}, step => {
@@ -91,9 +103,17 @@ function extractMetadataFromLogs(
         });
       } else if (log.__typename === "StepMaterializationEvent") {
         metadata.steps[name] = produce(metadata.steps[name] || {}, step => {
-          step.materializations.push({
-            path: log.materialization.path,
-            description: log.materialization.description
+          step.displayEvents.push({
+            icon: "link",
+            text: "Materialization",
+            items: [
+              {
+                text: (log.materialization.path || "").split("/").pop()!,
+                actionText: "[Copy Path]",
+                action: "copy",
+                actionValue: log.materialization.path || ""
+              }
+            ]
           });
         });
       } else if (log.__typename === "ExecutionStepFailureEvent") {
