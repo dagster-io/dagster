@@ -1,0 +1,120 @@
+import os
+import sys
+
+import click
+import yaml
+
+from dagster.utils.indenting_printer import IndentingStringIoPrinter
+
+if sys.version_info.major >= 3:
+    from io import StringIO  # pylint:disable=import-error
+else:
+    from StringIO import StringIO  # pylint:disable=import-error
+
+
+def _construct_yml(config_file, dag_name):
+    configs = {}
+    if config_file is not None:
+        with open(config_file, 'rb') as f:
+            configs = yaml.safe_load(f)
+
+    if 'storage' not in configs:
+        configs['storage'] = {
+            'filesystem': {'base_dir': '/tmp/dagster-airflow/{}'.format(dag_name)}
+        }
+
+    with StringIO() as f:
+        yaml.dump(configs, f, default_flow_style=False, allow_unicode=True)
+        return f.getvalue()
+
+
+@click.group()
+def main():
+    pass
+
+
+@main.command()
+@click.option('--dag-name', help='The name of the output Airflow DAG', required=True)
+@click.option('--module-name', '-m', help='The name of the source module', required=True)
+@click.option('--fn-name', '-n', help='The name of the pipeline definition function', required=True)
+@click.option(
+    '--output-path',
+    '-o',
+    help='Optional. If unset, $AIRFLOW_HOME will be used.',
+    default=os.getenv('AIRFLOW_HOME'),
+)
+@click.option(
+    '--config-file', '-c', help='''Optional. Path to a Dagster configuration YAML to install.'''
+)
+def scaffold(dag_name, module_name, fn_name, output_path, config_file):
+    '''Creates a DAG file for a specified dagster pipeline'''
+
+    # Validate output path
+    if not output_path:
+        raise 'You must specify --output-path or set AIRFLOW_HOME to use this script.'
+
+    # We construct the YAML config and then put it directly in the DAG file
+    yml = _construct_yml(config_file, dag_name)
+
+    printer = IndentingStringIoPrinter(indent_level=4)
+    printer.line('\'\'\'')
+    printer.line(
+        'The airflow DAG scaffold for {module_name}.{fn_name}'.format(
+            module_name=module_name, fn_name=fn_name
+        )
+    )
+    printer.blank_line()
+    printer.line('Note that this docstring must contain the strings "airflow" and "DAG" for')
+    printer.line('Airflow to properly detect it as a DAG')
+    printer.line('See: http://bit.ly/307VMum')
+    printer.line('\'\'\'')
+    printer.line('import datetime')
+    printer.line('import yaml')
+    printer.blank_line()
+
+    printer.line('from dagster_airflow.factory import make_airflow_dag')
+    printer.blank_line()
+    printer.comment(
+        'NOTE: you must ensure that {module_name} is installed or available on sys.path.'.format(
+            module_name=module_name
+        )
+    )
+    printer.comment('otherwise, this import will fail.')
+    printer.line(
+        'from {module_name} import {fn_name}'.format(module_name=module_name, fn_name=fn_name)
+    )
+    printer.blank_line()
+    printer.blank_line()
+    printer.line('CONFIG = \'\'\'')
+    printer.line(yml)
+    printer.line('\'\'\'')
+    printer.blank_line()
+    printer.blank_line()
+    printer.comment('NOTE: these configurations should be edited for your environment')
+    printer.line('DEFAULT_ARGS = {')
+    with printer.with_indent():
+        printer.line("'owner': 'airflow',")
+        printer.line("'depends_on_past': False,")
+        printer.line("'start_date': datetime.datetime(2019, 5, 7),")
+        printer.line("'email': ['airflow@example.com'],")
+        printer.line("'email_on_failure': False,")
+        printer.line("'email_on_retry': False,")
+    printer.line('}')
+    printer.blank_line()
+    printer.line('dag, tasks = make_airflow_dag(')
+    with printer.with_indent():
+        printer.line('pipeline={fn_name}(),'.format(fn_name=fn_name))
+        printer.line("env_config=yaml.load(CONFIG),")
+        printer.line("dag_kwargs={'default_args': DEFAULT_ARGS, 'max_active_runs': 1}")
+    printer.line(')')
+
+    # Ensure output_path/dags exists
+    os.makedirs(os.path.join(output_path, 'dags'), exist_ok=True)
+
+    dag_file = os.path.join(output_path, 'dags', dag_name + '.py')
+    with open(dag_file, 'wb') as f:
+        f.write(printer.read().encode())
+
+
+if __name__ == '__main__':
+    main()  # pylint:disable=no-value-for-parameter
