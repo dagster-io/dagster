@@ -4,7 +4,6 @@ from airflow import DAG
 
 from dagster import check, PipelineDefinition
 from dagster.core.execution.api import create_execution_plan
-from dagster.utils.indenting_printer import IndentingStringIoPrinter
 
 from .operators import DagsterDockerOperator, DagsterOperator, DagsterPythonOperator
 from .compile import coalesce_execution_steps
