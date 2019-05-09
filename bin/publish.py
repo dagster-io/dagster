@@ -430,8 +430,6 @@ def check_for_cruft():
                     )
 
     if found_cruft:
-        # find . -name "*.pyc" -exec rm -f {} \; or equiv
-
         wipeout = input(
             'Found potentially crufty directories:\n'
             '    {found_cruft}'
@@ -460,7 +458,9 @@ def check_for_cruft():
         wipeout = input(
             'Found {n_files} .pyc files.\n'
             'We strongly recommend releasing from a fresh git clone!\n'
-            'Automatically remove these files and continue? (Y/n)'
+            'Automatically remove these files and continue? (Y/n)'.format(
+                n_files=len(found_pyc_files)
+            )
         )
         if wipeout == 'Y':
             for file_ in found_pyc_files:
