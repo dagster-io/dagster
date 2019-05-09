@@ -646,7 +646,7 @@ def publish(nightly):
     )
 
     print('Checking that module versions are in lockstep')
-    check_versions(nightly=nightly)
+    checked_version = check_versions(nightly=nightly)
     if not nightly:
         print('... and match git tag on most recent commit...')
         check_git_status()
@@ -667,11 +667,14 @@ def publish(nightly):
     git_user = (
         subprocess.check_output(['git', 'config', '--get', 'user.name']).decode('utf-8').strip()
     )
-    slack_client.chat_postMessage(
-        channel='#general',
-        text='{git_user} just published a new version: {version}. Don\'t forget to switch the '
-        'active version of the docs at ReadTheDocs!'.format(git_user=git_user, version=version),
-    )
+    if not nightly:
+        slack_client.chat_postMessage(
+            channel='#general',
+            text='{git_user} just published a new version: {version}. Don\'t forget to switch the '
+            'active version of the docs at ReadTheDocs!'.format(
+                git_user=git_user, version=checked_version['__version__']
+            ),
+        )
 
 
 @cli.command()
