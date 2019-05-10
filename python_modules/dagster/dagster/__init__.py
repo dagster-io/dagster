@@ -3,6 +3,7 @@ from dagster.core import types
 from dagster.core.definitions import (
     ExecutionTargetHandle,
     DependencyDefinition,
+    MultiDependencyDefinition,
     ExpectationDefinition,
     ExpectationResult,
     InputDefinition,

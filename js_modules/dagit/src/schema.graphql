@@ -227,7 +227,7 @@ type FieldsNotDefinedConfigError implements PipelineConfigValidationError {
 type Input {
   solid: Solid!
   definition: InputDefinition!
-  dependsOn: Output
+  dependsOn: [Output!]!
 }
 
 type InputDefinition {

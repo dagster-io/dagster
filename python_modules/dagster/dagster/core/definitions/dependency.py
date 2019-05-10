@@ -1,4 +1,7 @@
+from abc import ABCMeta, abstractmethod
 from collections import defaultdict, namedtuple
+
+import six
 
 from dagster import check
 from dagster.utils import camelcase
@@ -210,30 +213,34 @@ class SolidOutputHandle(namedtuple('_SolidOutputHandle', 'solid output_def')):
         return self.solid.name == other.solid.name and self.output_def.name == other.output_def.name
 
 
-class InputToOutputHandleDict(dict):
+class InputToOutputHandleDict(defaultdict):
+    def __init__(self):
+        defaultdict.__init__(self, list)
+
     def __getitem__(self, key):
         check.inst_param(key, 'key', SolidInputHandle)
-        return dict.__getitem__(self, key)
+        return defaultdict.__getitem__(self, key)
 
     def __setitem__(self, key, val):
         check.inst_param(key, 'key', SolidInputHandle)
-        check.inst_param(val, 'val', SolidOutputHandle)
-        return dict.__setitem__(self, key, val)
+        check.list_param(val, 'val', of_type=SolidOutputHandle)
+        return defaultdict.__setitem__(self, key, val)
 
 
 def _create_handle_dict(solid_dict, dep_dict):
     check.dict_param(solid_dict, 'solid_dict', key_type=str, value_type=Solid)
-    check.two_dim_dict_param(dep_dict, 'dep_dict', value_type=DependencyDefinition)
+    check.two_dim_dict_param(dep_dict, 'dep_dict', value_type=IDependencyDefinition)
 
     handle_dict = InputToOutputHandleDict()
 
     for solid_name, input_dict in dep_dict.items():
         for input_name, dep_def in input_dict.items():
-            from_solid = solid_dict[solid_name]
-            to_solid = solid_dict[dep_def.solid]
-            handle_dict[from_solid.input_handle(input_name)] = to_solid.output_handle(
-                dep_def.output
-            )
+            for dep in dep_def.get_definitions():
+                from_solid = solid_dict[solid_name]
+                to_solid = solid_dict[dep.solid]
+                handle_dict[from_solid.input_handle(input_name)].append(
+                    to_solid.output_handle(dep.output)
+                )
 
     return handle_dict
 
@@ -252,28 +259,36 @@ class DependencyStructure(object):
 
     def deps_of_solid(self, solid_name):
         check.str_param(solid_name, 'solid_name')
+
         return list(handles[1] for handles in self.__gen_deps_of_solid(solid_name))
 
     def deps_of_solid_with_input(self, solid_name):
         check.str_param(solid_name, 'solid_name')
-        return dict(self.__gen_deps_of_solid(solid_name))
+        result = defaultdict(list)
+        for input_handle, output_handle in self.__gen_deps_of_solid(solid_name):
+            result[input_handle].append(output_handle)
+        return result
 
     def __gen_deps_of_solid(self, solid_name):
-        for input_handle, output_handle in self._handle_dict.items():
+        for input_handle, output_handles in self._handle_dict.items():
             if input_handle.solid.name == solid_name:
-                yield (input_handle, output_handle)
+                for output_handle in output_handles:
+                    yield (input_handle, output_handle)
 
     def depended_by_of_solid(self, solid_name):
         check.str_param(solid_name, 'solid_name')
         result = defaultdict(list)
-        for input_handle, output_handle in self._handle_dict.items():
-            if output_handle.solid.name == solid_name:
-                result[output_handle].append(input_handle)
+        for input_handle, output_handles in self._handle_dict.items():
+            for output_handle in output_handles:
+                if output_handle.solid.name == solid_name:
+                    result[output_handle].append(input_handle)
+
         return result
 
     def get_dep(self, solid_input_handle):
         check.inst_param(solid_input_handle, 'solid_input_handle', SolidInputHandle)
-        return self._handle_dict[solid_input_handle]
+        check.invariant(len(self._handle_dict[solid_input_handle]) == 1)
+        return self._handle_dict[solid_input_handle][0]
 
     def input_handles(self):
         return list(self._handle_dict.keys())
@@ -282,7 +297,15 @@ class DependencyStructure(object):
         return self._handle_dict.items()
 
 
-class DependencyDefinition(namedtuple('_DependencyDefinition', 'solid output description')):
+class IDependencyDefinition(six.with_metaclass(ABCMeta)):  # pylint: disable=no-init
+    @abstractmethod
+    def get_definitions(self):
+        pass
+
+
+class DependencyDefinition(
+    namedtuple('_DependencyDefinition', 'solid output description'), IDependencyDefinition
+):
     '''Dependency definitions represent an edge in the DAG of solids. This object is
     used with a dictionary structure (whose keys represent solid/input where the dependency
     comes from) so this object only contains the target dependency information.
@@ -306,3 +329,18 @@ class DependencyDefinition(namedtuple('_DependencyDefinition', 'solid output des
             check.str_param(output, 'output'),
             check.opt_str_param(description, 'description'),
         )
+
+    def get_definitions(self):
+        return [self]
+
+
+class MultiDependencyDefinition(
+    namedtuple('_MultiDependencyDefinition', 'dependencies'), IDependencyDefinition
+):
+    def __new__(cls, dependencies):
+        return super(MultiDependencyDefinition, cls).__new__(
+            cls, check.list_param(dependencies, 'dependencies', of_type=DependencyDefinition)
+        )
+
+    def get_definitions(self):
+        return self.dependencies

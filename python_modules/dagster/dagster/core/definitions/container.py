@@ -7,7 +7,13 @@ from dagster import check
 from dagster.core.errors import DagsterInvalidDefinitionError
 from dagster.core.utils import toposort_flatten
 
-from .dependency import DependencyDefinition, DependencyStructure, Solid, SolidInstance
+from .dependency import (
+    MultiDependencyDefinition,
+    IDependencyDefinition,
+    DependencyStructure,
+    Solid,
+    SolidInstance,
+)
 
 
 class IContainSolids(six.with_metaclass(ABCMeta)):  # pylint: disable=no-init
@@ -86,9 +92,10 @@ def validate_dependency_dict(dependencies):
                 'Received value {val} of type {type}'.format(val=key, type=type(key))
             )
         if not isinstance(dep_dict, dict):
-            if isinstance(dep_dict, DependencyDefinition):
+            if isinstance(dep_dict, IDependencyDefinition):
                 raise DagsterInvalidDefinitionError(
-                    prelude + 'Received a DependencyDefinition one layer too high under key {key}. '
+                    prelude
+                    + 'Received a IDependencyDefinition one layer too high under key {key}. '
                     'The DependencyDefinition should be moved in to a dict keyed on '
                     'input name.'.format(key=key)
                 )
@@ -106,10 +113,10 @@ def validate_dependency_dict(dependencies):
                     prelude
                     + 'Received non-sting key in the inner dict for key {key}.'.format(key=key)
                 )
-            if not isinstance(dep, DependencyDefinition):
+            if not isinstance(dep, IDependencyDefinition):
                 raise DagsterInvalidDefinitionError(
                     prelude
-                    + 'Expected DependencyDefinition for solid "{key}" input "{input_key}". '
+                    + 'Expected IDependencyDefinition for solid "{key}" input "{input_key}". '
                     'Received value {val} of type {type}.'.format(
                         key=key, input_key=input_key, val=dep, type=type(dep)
                     )
@@ -182,7 +189,8 @@ def create_execution_structure(solids, dependencies_dict, parent):
         aliased_dependencies_dict[alias] = input_dep_dict
 
         for dependency in input_dep_dict.values():
-            name_to_aliases[dependency.solid].add(dependency.solid)
+            for dep in dependency.get_definitions():
+                name_to_aliases[dep.solid].add(dep.solid)
 
     pipeline_solid_dict = _build_pipeline_solid_dict(
         solids, name_to_aliases, alias_to_solid_instance, parent
@@ -223,54 +231,74 @@ def _build_pipeline_solid_dict(solids, name_to_aliases, alias_to_solid_instance,
 
 def _validate_dependencies(dependencies, solid_dict, alias_to_name):
     for from_solid, dep_by_input in dependencies.items():
-        for from_input, dep in dep_by_input.items():
-            if from_solid == dep.solid:
-                raise DagsterInvalidDefinitionError(
-                    'Circular reference detected in solid {from_solid} input {from_input}.'.format(
-                        from_solid=from_solid, from_input=from_input
-                    )
-                )
+        for from_input, dep_def in dep_by_input.items():
+            for dep in dep_def.get_definitions():
 
-            if not from_solid in solid_dict:
-                aliased_solid = alias_to_name.get(from_solid)
-                if aliased_solid == from_solid:
-                    raise DagsterInvalidDefinitionError(
-                        'Solid {solid} in dependency dictionary not found in solid list'.format(
-                            solid=from_solid
-                        )
-                    )
-                else:
+                if from_solid == dep.solid:
                     raise DagsterInvalidDefinitionError(
                         (
-                            'Solid {aliased_solid} (aliased by {from_solid} in dependency '
-                            'dictionary) not found in solid list'
-                        ).format(aliased_solid=aliased_solid, from_solid=from_solid)
+                            'Circular reference detected in solid {from_solid} input {from_input}.'
+                        ).format(from_solid=from_solid, from_input=from_input)
                     )
-            if not solid_dict[from_solid].definition.has_input(from_input):
-                input_list = solid_dict[from_solid].definition.input_dict.keys()
-                raise DagsterInvalidDefinitionError(
-                    'Solid "{from_solid}" does not have input "{from_input}". '.format(
-                        from_solid=from_solid, from_input=from_input
+
+                if not from_solid in solid_dict:
+                    aliased_solid = alias_to_name.get(from_solid)
+                    if aliased_solid == from_solid:
+                        raise DagsterInvalidDefinitionError(
+                            'Solid {solid} in dependency dictionary not found in solid list'.format(
+                                solid=from_solid
+                            )
+                        )
+                    else:
+                        raise DagsterInvalidDefinitionError(
+                            (
+                                'Solid {aliased_solid} (aliased by {from_solid} in dependency '
+                                'dictionary) not found in solid list'
+                            ).format(aliased_solid=aliased_solid, from_solid=from_solid)
+                        )
+                if not solid_dict[from_solid].definition.has_input(from_input):
+                    input_list = solid_dict[from_solid].definition.input_dict.keys()
+                    raise DagsterInvalidDefinitionError(
+                        'Solid "{from_solid}" does not have input "{from_input}". '.format(
+                            from_solid=from_solid, from_input=from_input
+                        )
+                        + 'Input list: {input_list}'.format(input_list=input_list)
                     )
-                    + 'Input list: {input_list}'.format(input_list=input_list)
+
+                if not dep.solid in solid_dict:
+                    raise DagsterInvalidDefinitionError(
+                        'Solid {dep.solid} in DependencyDefinition not found in solid list'.format(
+                            dep=dep
+                        )
+                    )
+
+                if not solid_dict[dep.solid].definition.has_output(dep.output):
+                    raise DagsterInvalidDefinitionError(
+                        'Solid {dep.solid} does not have output {dep.output}'.format(dep=dep)
+                    )
+
+                input_def = solid_dict[from_solid].definition.input_def_named(from_input)
+                output_def = solid_dict[dep.solid].definition.output_def_named(dep.output)
+
+                _validate_input_output_pair(input_def, output_def, from_solid, dep)
+
+            if isinstance(dep_def, MultiDependencyDefinition):
+                _validate_fanin_dependency(
+                    dep_def,
+                    solid_dict[from_solid].definition.input_def_named(from_input),
+                    from_solid,
                 )
 
-            if not dep.solid in solid_dict:
-                raise DagsterInvalidDefinitionError(
-                    'Solid {dep.solid} in DependencyDefinition not found in solid list'.format(
-                        dep=dep
-                    )
-                )
 
-            if not solid_dict[dep.solid].definition.has_output(dep.output):
-                raise DagsterInvalidDefinitionError(
-                    'Solid {dep.solid} does not have output {dep.output}'.format(dep=dep)
-                )
-
-            input_def = solid_dict[from_solid].definition.input_def_named(from_input)
-            output_def = solid_dict[dep.solid].definition.output_def_named(dep.output)
-
-            _validate_input_output_pair(input_def, output_def, from_solid, dep)
+def _validate_fanin_dependency(_dependency_definition, input_def, from_solid):
+    if not input_def.runtime_type.is_nothing:
+        raise DagsterInvalidDefinitionError(
+            (
+                'A FanInDependency can not be used to satisfy the input "{input_def.name}" '
+                'to solid "{from_solid}" since it expects a value of type '
+                '"{input_def.runtime_type.name}". FanInDependency only supports type "Nothing".'
+            ).format(input_def=input_def, from_solid=from_solid)
+        )
 
 
 def _validate_input_output_pair(input_def, output_def, from_solid, dep):
@@ -282,7 +310,7 @@ def _validate_input_output_pair(input_def, output_def, from_solid, dep):
             (
                 'Input "{input_def.name}" to solid "{from_solid}" can not depend on the output '
                 '"{output_def.name}" from solid "{dep.solid}". '
-                'Input "{input_def.name} expects a value of type {input_def.runtime_type.name} '
+                'Input "{input_def.name}" expects a value of type {input_def.runtime_type.name} '
                 'and output "{output_def.name}" returns type {output_def.runtime_type.name}{extra}.'
             ).format(
                 from_solid=from_solid,

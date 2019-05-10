@@ -1,19 +1,22 @@
+from collections import defaultdict
+
 import pytest
 
 from dagster import (
-    lambda_solid,
-    solid,
-    InputDefinition,
-    OutputDefinition,
-    Nothing,
-    Int,
-    PipelineDefinition,
-    execute_pipeline,
-    Result,
-    DependencyDefinition,
     DagsterInvalidDefinitionError,
     DagsterInvariantViolationError,
+    DependencyDefinition,
+    InputDefinition,
+    Int,
+    MultiDependencyDefinition,
+    Nothing,
+    OutputDefinition,
+    PipelineDefinition,
+    Result,
     SolidInstance,
+    execute_pipeline,
+    lambda_solid,
+    solid,
 )
 
 
@@ -159,3 +162,81 @@ def test_nothing_inputs():
     )
     result = execute_pipeline(pipeline)
     assert result.success
+
+
+def test_fanin_deps():
+    called = defaultdict(int)
+
+    @lambda_solid
+    def emit_two():
+        return 2
+
+    @lambda_solid(output=OutputDefinition(Nothing))
+    def emit_nothing():
+        called['emit_nothing'] += 1
+
+    @solid(
+        inputs=[
+            InputDefinition('ready', Nothing),
+            InputDefinition('num_1', Int),
+            InputDefinition('num_2', Int),
+        ]
+    )
+    def adder(_context, num_1, num_2):
+        assert called['emit_nothing'] == 3
+        called['adder'] += 1
+        return num_1 + num_2
+
+    pipeline = PipelineDefinition(
+        name='input_test',
+        solids=[emit_two, emit_nothing, adder],
+        dependencies={
+            SolidInstance('emit_two', 'emit_1'): {},
+            SolidInstance('emit_two', 'emit_2'): {},
+            SolidInstance('emit_nothing', '_one'): {},
+            SolidInstance('emit_nothing', '_two'): {},
+            SolidInstance('emit_nothing', '_three'): {},
+            'adder': {
+                'ready': MultiDependencyDefinition(
+                    [
+                        DependencyDefinition('_one'),
+                        DependencyDefinition('_two'),
+                        DependencyDefinition('_three'),
+                    ]
+                ),
+                'num_1': DependencyDefinition('emit_1'),
+                'num_2': DependencyDefinition('emit_2'),
+            },
+        },
+    )
+    result = execute_pipeline(pipeline)
+    assert result.success
+    assert called['adder'] == 1
+    assert called['emit_nothing'] == 3
+
+
+def test_invalid_fanin():
+    @solid(inputs=[InputDefinition('num', Int)])
+    def adder(_context, num):
+        return num + 1
+
+    @lambda_solid()
+    def emit_nothing():
+        pass
+
+    with pytest.raises(
+        DagsterInvalidDefinitionError, match='FanInDependency only supports type "Nothing"'
+    ):
+        PipelineDefinition(
+            name='input_test',
+            solids=[emit_nothing, adder],
+            dependencies={
+                SolidInstance('emit_nothing', '_one'): {},
+                SolidInstance('emit_nothing', '_two'): {},
+                'adder': {
+                    'num': MultiDependencyDefinition(
+                        [DependencyDefinition('_one'), DependencyDefinition('_two')]
+                    )
+                },
+            },
+        )

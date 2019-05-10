@@ -4,6 +4,7 @@ from .context import PipelineContextDefinition
 
 from .dependency import (
     DependencyDefinition,
+    MultiDependencyDefinition,
     Solid,
     SolidHandle,
     SolidInputHandle,

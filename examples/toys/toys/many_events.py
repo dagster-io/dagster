@@ -10,6 +10,7 @@ from dagster import (
     InputDefinition,
     ExpectationDefinition,
     String,
+    MultiDependencyDefinition,
 )
 
 from dagster.utils import merge_dicts
@@ -75,14 +76,8 @@ def input_name_for_raw_file(raw_file):
     return raw_file + '_ready'
 
 
-def create_raw_file_inputs():
-    return list(
-        map(lambda raw_file: InputDefinition(input_name_for_raw_file(raw_file), Nothing), raw_files)
-    )
-
-
 @solid(
-    inputs=create_raw_file_inputs(),
+    inputs=[InputDefinition('start', Nothing)],
     outputs=[OutputDefinition(Nothing)],
     description='Load a bunch of raw tables from corresponding files',
 )
@@ -174,13 +169,13 @@ def define_many_events_pipeline():
         ]
         + create_raw_file_solids(),
         dependencies=merge_dicts(
+            {'many_table_materializations': {}},
             {
                 'many_table_materializations': {
-                    input_name_for_raw_file(raw_file): DependencyDefinition(raw_file)
-                    for raw_file in raw_files
-                }
-            },
-            {
+                    'start': MultiDependencyDefinition(
+                        [DependencyDefinition(raw_file) for raw_file in raw_files]
+                    )
+                },
                 'many_materializations_and_passing_expectations': {
                     'start': DependencyDefinition('many_table_materializations')
                 },

@@ -80,7 +80,7 @@ export interface SolidNodeFragment_inputs_dependsOn {
 export interface SolidNodeFragment_inputs {
   __typename: "Input";
   definition: SolidNodeFragment_inputs_definition;
-  dependsOn: SolidNodeFragment_inputs_dependsOn | null;
+  dependsOn: SolidNodeFragment_inputs_dependsOn[];
 }
 
 export interface SolidNodeFragment_outputs_definition_type {

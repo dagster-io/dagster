@@ -51,7 +51,8 @@ snapshots['test_composites 1'] = {
                             'definition': {
                                 'name': 'num'
                             },
-                            'dependsOn': None
+                            'dependsOn': [
+                            ]
                         }
                     ],
                     'name': 'add_four',
@@ -111,7 +112,8 @@ snapshots['test_composites 1'] = {
                             'definition': {
                                 'name': 'num'
                             },
-                            'dependsOn': None
+                            'dependsOn': [
+                            ]
                         }
                     ],
                     'name': 'adder_1',
@@ -141,7 +143,8 @@ snapshots['test_composites 1'] = {
                             'definition': {
                                 'name': 'num'
                             },
-                            'dependsOn': None
+                            'dependsOn': [
+                            ]
                         }
                     ],
                     'name': 'adder_1',
@@ -171,11 +174,13 @@ snapshots['test_composites 1'] = {
                             'definition': {
                                 'name': 'num'
                             },
-                            'dependsOn': {
-                                'solid': {
-                                    'name': 'adder_1'
+                            'dependsOn': [
+                                {
+                                    'solid': {
+                                        'name': 'adder_1'
+                                    }
                                 }
-                            }
+                            ]
                         }
                     ],
                     'name': 'adder_2',
@@ -230,11 +235,13 @@ snapshots['test_composites 1'] = {
                             'definition': {
                                 'name': 'num'
                             },
-                            'dependsOn': {
-                                'solid': {
-                                    'name': 'adder_1'
+                            'dependsOn': [
+                                {
+                                    'solid': {
+                                        'name': 'adder_1'
+                                    }
                                 }
-                            }
+                            ]
                         }
                     ],
                     'name': 'adder_2',
@@ -259,7 +266,8 @@ snapshots['test_composites 1'] = {
                             'definition': {
                                 'name': 'num'
                             },
-                            'dependsOn': None
+                            'dependsOn': [
+                            ]
                         }
                     ],
                     'name': 'adder_1',
@@ -289,11 +297,13 @@ snapshots['test_composites 1'] = {
                             'definition': {
                                 'name': 'num'
                             },
-                            'dependsOn': {
-                                'solid': {
-                                    'name': 'adder_1'
+                            'dependsOn': [
+                                {
+                                    'solid': {
+                                        'name': 'adder_1'
+                                    }
                                 }
-                            }
+                            ]
                         }
                     ],
                     'name': 'adder_2',
@@ -348,11 +358,13 @@ snapshots['test_composites 1'] = {
                             'definition': {
                                 'name': 'num'
                             },
-                            'dependsOn': {
-                                'solid': {
-                                    'name': 'add_four'
+                            'dependsOn': [
+                                {
+                                    'solid': {
+                                        'name': 'add_four'
+                                    }
                                 }
-                            }
+                            ]
                         }
                     ],
                     'name': 'div_four',
@@ -377,7 +389,8 @@ snapshots['test_composites 1'] = {
                             'definition': {
                                 'name': 'num'
                             },
-                            'dependsOn': None
+                            'dependsOn': [
+                            ]
                         }
                     ],
                     'name': 'div_1',
@@ -407,11 +420,13 @@ snapshots['test_composites 1'] = {
                             'definition': {
                                 'name': 'num'
                             },
-                            'dependsOn': {
-                                'solid': {
-                                    'name': 'div_1'
+                            'dependsOn': [
+                                {
+                                    'solid': {
+                                        'name': 'div_1'
+                                    }
                                 }
-                            }
+                            ]
                         }
                     ],
                     'name': 'div_2',

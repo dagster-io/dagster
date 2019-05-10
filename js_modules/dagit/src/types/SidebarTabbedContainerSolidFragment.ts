@@ -75,7 +75,7 @@ export interface SidebarTabbedContainerSolidFragment_inputs_dependsOn {
 export interface SidebarTabbedContainerSolidFragment_inputs {
   __typename: "Input";
   definition: SidebarTabbedContainerSolidFragment_inputs_definition;
-  dependsOn: SidebarTabbedContainerSolidFragment_inputs_dependsOn | null;
+  dependsOn: SidebarTabbedContainerSolidFragment_inputs_dependsOn[];
 }
 
 export interface SidebarTabbedContainerSolidFragment_definition_CompositeSolidDefinition_metadata {

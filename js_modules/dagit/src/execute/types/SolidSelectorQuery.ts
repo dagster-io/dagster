@@ -80,7 +80,7 @@ export interface SolidSelectorQuery_pipeline_solids_inputs_dependsOn {
 export interface SolidSelectorQuery_pipeline_solids_inputs {
   __typename: "Input";
   definition: SolidSelectorQuery_pipeline_solids_inputs_definition;
-  dependsOn: SolidSelectorQuery_pipeline_solids_inputs_dependsOn | null;
+  dependsOn: SolidSelectorQuery_pipeline_solids_inputs_dependsOn[];
 }
 
 export interface SolidSelectorQuery_pipeline_solids_outputs_definition_type {

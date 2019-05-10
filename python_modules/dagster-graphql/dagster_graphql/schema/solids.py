@@ -68,12 +68,16 @@ class DauphinSolid(dauphin.ObjectType):
 
     def __init__(self, solid, depends_on=None, depended_by=None):
         super(DauphinSolid, self).__init__(name=solid.name)
+        check.opt_dict_param(depends_on, 'depends_on', key_type=SolidInputHandle, value_type=list)
+        check.opt_dict_param(
+            depended_by, 'depended_by', key_type=SolidOutputHandle, value_type=list
+        )
 
         self._solid = check.inst_param(solid, 'solid', Solid)
 
         if depends_on:
             self.depends_on = {
-                input_handle: output_handle for input_handle, output_handle in depends_on.items()
+                input_handle: output_handles for input_handle, output_handles in depends_on.items()
             }
         else:
             self.depends_on = {}
@@ -278,7 +282,7 @@ class DauphinInput(dauphin.ObjectType):
 
     solid = dauphin.NonNull('Solid')
     definition = dauphin.NonNull('InputDefinition')
-    depends_on = dauphin.Field('Output')
+    depends_on = dauphin.non_null_list('Output')
 
     def __init__(self, input_handle, solid):
         super(DauphinInput, self).__init__(solid=solid)
@@ -291,15 +295,12 @@ class DauphinInput(dauphin.ObjectType):
         )
 
     def resolve_depends_on(self, graphene_info):
-        if self._input_handle in self._solid.depends_on:
-            return graphene_info.schema.type_named('Output')(
-                self._solid.depends_on[self._input_handle],
-                graphene_info.schema.type_named('Solid')(
-                    self._solid.depends_on[self._input_handle].solid
-                ),
+        return [
+            graphene_info.schema.type_named('Output')(
+                dep, graphene_info.schema.type_named('Solid')(dep.solid)
             )
-        else:
-            return None
+            for dep in self._solid.depends_on.get(self._input_handle, [])
+        ]
 
 
 class DauphinOutput(dauphin.ObjectType):

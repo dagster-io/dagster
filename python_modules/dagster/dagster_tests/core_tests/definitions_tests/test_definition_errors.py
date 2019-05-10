@@ -114,7 +114,7 @@ def test_invalid_item_in_solid_list():
 def test_one_layer_off_dependencies():
     with pytest.raises(
         DagsterInvalidDefinitionError,
-        match="Received a DependencyDefinition one layer too high under key B",
+        match="Received a IDependencyDefinition one layer too high under key B",
     ):
         PipelineDefinition(solids=solid_a_b_list(), dependencies={'B': DependencyDefinition('A')})
 
@@ -122,7 +122,7 @@ def test_one_layer_off_dependencies():
 def test_malformed_dependencies():
     with pytest.raises(
         DagsterInvalidDefinitionError,
-        match='Expected DependencyDefinition for solid "B" input "b_input"',
+        match='Expected IDependencyDefinition for solid "B" input "b_input"',
     ):
         PipelineDefinition(
             solids=solid_a_b_list(),

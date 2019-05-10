@@ -102,14 +102,16 @@ export default class SidebarSolidInfo extends React.Component<
           <Description description={definition.description} />
           {dependsOn && (
             <Text>
-              Depends on{" "}
-              <Link to={`./${dependsOn.solid.name}`}>
-                <Code>
-                  {dependsOn.definition.name !== DEFAULT_RESULT_NAME
-                    ? `${dependsOn.solid.name}:${dependsOn.definition.name}`
-                    : dependsOn.solid.name}
-                </Code>
-              </Link>
+              Depends on:{" "}
+              {dependsOn.map(i => (
+                <Link to={`./${i.solid.name}`}>
+                  <Code>
+                    {i.solid.name !== DEFAULT_RESULT_NAME
+                      ? `${i.solid.name}:${i.definition.name}`
+                      : i.solid.name}
+                  </Code>
+                </Link>
+              ))}
             </Text>
           )}
           {definition.expectations.length > 0 ? <H6>Expectations</H6> : null}

@@ -145,14 +145,20 @@ export default class SolidNode extends React.Component<ISolidNodeProps> {
       let clickTarget: string | null = null;
 
       if ("dependsOn" in item && item.dependsOn) {
-        title += `\n\nFrom:\n${item.dependsOn.solid.name}: ${
-          item.dependsOn.definition.name
-        }`;
-        clickTarget = item.dependsOn.solid.name;
-        connections.push({
-          a: item.dependsOn.solid.name,
-          b: solid.name
-        });
+        title +=
+          `\n\nFrom:\n` +
+          item.dependsOn
+            .map(o => `${o.solid.name}: ${o.definition.name}`)
+            .join("\n");
+        clickTarget =
+          item.dependsOn.length === 1 ? item.dependsOn[0].solid.name : null;
+
+        connections.push(
+          ...item.dependsOn.map(o => ({
+            a: o.solid.name,
+            b: solid.name
+          }))
+        );
       }
       if ("dependedBy" in item) {
         title +=

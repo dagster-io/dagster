@@ -80,7 +80,7 @@ export interface PipelineGraphSolidFragment_inputs_dependsOn {
 export interface PipelineGraphSolidFragment_inputs {
   __typename: "Input";
   definition: PipelineGraphSolidFragment_inputs_definition;
-  dependsOn: PipelineGraphSolidFragment_inputs_dependsOn | null;
+  dependsOn: PipelineGraphSolidFragment_inputs_dependsOn[];
 }
 
 export interface PipelineGraphSolidFragment_outputs_definition_type {

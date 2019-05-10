@@ -220,7 +220,7 @@ export interface PipelineExplorerRootQuery_pipeline_solids_inputs_dependsOn {
 export interface PipelineExplorerRootQuery_pipeline_solids_inputs {
   __typename: "Input";
   definition: PipelineExplorerRootQuery_pipeline_solids_inputs_definition;
-  dependsOn: PipelineExplorerRootQuery_pipeline_solids_inputs_dependsOn | null;
+  dependsOn: PipelineExplorerRootQuery_pipeline_solids_inputs_dependsOn[];
 }
 
 export interface PipelineExplorerRootQuery_pipeline_solids_outputs_definition_type {

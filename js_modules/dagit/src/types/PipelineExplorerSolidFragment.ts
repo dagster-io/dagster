@@ -220,7 +220,7 @@ export interface PipelineExplorerSolidFragment_inputs_dependsOn {
 export interface PipelineExplorerSolidFragment_inputs {
   __typename: "Input";
   definition: PipelineExplorerSolidFragment_inputs_definition;
-  dependsOn: PipelineExplorerSolidFragment_inputs_dependsOn | null;
+  dependsOn: PipelineExplorerSolidFragment_inputs_dependsOn[];
 }
 
 export interface PipelineExplorerSolidFragment_outputs_definition_type {
