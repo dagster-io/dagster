@@ -36,8 +36,7 @@ def parse_raw_res(raw_res):
     # FIXME
     # Unfortunately, log lines don't necessarily come back in order...
     # This is error-prone, if something else logs JSON
-    lines = list(filter(None, reversed(raw_res.decode('utf-8').split('\n'))))
-    last_line = lines[0] if lines else raw_res
+    lines = list(filter(None, reversed(raw_res.split('\n'))))
 
     for line in lines:
         try:
@@ -47,7 +46,7 @@ def parse_raw_res(raw_res):
         except JSONDecodeError:
             continue
 
-    return (res, last_line)
+    return (res, raw_res)
 
 
 def airflow_storage_exception(tmp_dir):
@@ -79,9 +78,9 @@ class DagsterOperator(with_metaclass(ABCMeta)):  # pylint:disable=no-init
         pass
 
     @classmethod
-    def handle_errors(cls, res, last_line):
+    def handle_errors(cls, res, raw_res):
         if res is None:
-            raise AirflowException('Unhandled error type. Response: {}'.format(last_line))
+            raise AirflowException('Unhandled error type. Raw response: {}'.format(raw_res))
 
         if res.get('errors'):
             raise AirflowException('Internal error in GraphQL request. Response: {}'.format(res))
@@ -195,19 +194,22 @@ class ModifiedDockerOperator(DockerOperator):
             )
             self.cli.start(self.container['Id'])
 
+            res = []
             line = ''
             for new_line in self.cli.logs(container=self.container['Id'], stream=True):
                 line = new_line.strip()
                 if hasattr(line, 'decode'):
                     line = line.decode('utf-8')
                 self.log.info(line)
+                res.append(line)
 
             result = self.cli.wait(self.container['Id'])
             if result['StatusCode'] != 0:
                 raise AirflowException('docker container failed: ' + repr(result))
 
             if self.xcom_push_flag:
-                return self.cli.logs(container=self.container['Id']) if self.xcom_all else str(line)
+                # Try to avoid any kind of race condition?
+                return '\n'.join(res) + '\n' if self.xcom_all else str(line)
 
     # This is a class-private name on DockerOperator for no good reason --
     # all that the status quo does is inhibit extension of the class.
@@ -382,9 +384,10 @@ class DagsterDockerOperator(ModifiedDockerOperator, DagsterOperator):
 
             raw_res = super(DagsterDockerOperator, self).execute(context)
             self.log.info('Finished executing container.')
-            (res, last_line) = parse_raw_res(raw_res)
 
-            self.handle_errors(res, last_line)
+            (res, raw_res) = parse_raw_res(raw_res)
+
+            self.handle_errors(res, raw_res)
 
             return self.handle_result(res)
 

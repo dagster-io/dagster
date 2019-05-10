@@ -1,6 +1,6 @@
 import yaml
 
-DOCKER_PLUGIN = "docker#v3.1.0"
+DOCKER_PLUGIN = "docker#v3.2.0"
 
 TIMEOUT_IN_MIN = 15
 
