@@ -194,7 +194,10 @@ def get_additional_fields(pipeline_name, creation_data):
         return {
             'resources': Field(
                 define_resource_dictionary_cls(
-                    '{pipeline_name}.Mode.{mode}.Resources',
+                    '{pipeline_name}.Mode.{mode}.Resources'.format(
+                        pipeline_name=pipeline_name,
+                        mode=camelcase(creation_data.mode_definition.name),
+                    ),
                     creation_data.mode_definition.resource_defs,
                 )
             )
@@ -213,7 +216,11 @@ def define_environment_cls(creation_data):
     pipeline_name = camelcase(creation_data.pipeline_name)
 
     return SystemNamedDict(
-        name='{pipeline_name}.Environment'.format(pipeline_name=pipeline_name),
+        name='{pipeline_name}.Mode.{mode_name}.Environment'.format(
+            pipeline_name=pipeline_name, mode_name=camelcase(creation_data.mode_definition.name)
+        )
+        if creation_data.mode_definition
+        else '{pipeline_name}.Environment'.format(pipeline_name=pipeline_name),
         fields=remove_none_entries(
             merge_dicts(
                 {

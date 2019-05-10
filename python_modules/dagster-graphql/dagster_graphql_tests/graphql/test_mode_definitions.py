@@ -1,4 +1,3 @@
-from .production_query import PRODUCTION_QUERY
 from .setup import execute_dagster_graphql, define_context
 from .utils import sync_execute_get_events
 
@@ -38,6 +37,54 @@ def test_multi_mode_successful():
     assert get_step_output(double_adder_mode_logs, 'apply_to_three.transform')['valueRepr'] == '9'
 
 
+MODE_QUERY = '''
+query ModesQuery($pipelineName: String!, $mode: String)
+{
+  pipeline(params: { name: $pipelineName }) {
+    configTypes(mode: $mode) {
+      key
+    }
+    environmentType(mode: $mode){
+      name
+      ... on CompositeConfigType {
+        fields {
+          configType {
+            name
+          }
+        }
+      }
+    }
+    modes {
+      name
+      description
+      resources {
+        name
+        config {
+          configType {
+            name
+            ... on CompositeConfigType {
+              fields {
+                name
+                configType {
+                  name
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+'''
+
+
+def execute_modes_query(pipeline_name, mode):
+    return execute_dagster_graphql(
+        define_context(), MODE_QUERY, variables={'pipelineName': pipeline_name, 'mode': mode}
+    )
+
+
 def get_pipeline(result, name):
     for pipeline_data in result.data['pipelinesOrError']['nodes']:
         if pipeline_data['name'] == name:
@@ -47,9 +94,11 @@ def get_pipeline(result, name):
 
 
 def test_query_multi_mode(snapshot):
-    result = execute_dagster_graphql(define_context(), PRODUCTION_QUERY)
-    pipeline_data = get_pipeline(result, 'multi_mode_with_resources')
-    snapshot.assert_match(pipeline_data['modes'])
+    modeless_result = execute_modes_query('multi_mode_with_resources', mode=None)
+    snapshot.assert_match(modeless_result.data)
+
+    modeless_result = execute_modes_query('multi_mode_with_resources', mode='add_mode')
+    snapshot.assert_match(modeless_result.data)
 
 
 # delete once https://github.com/dagster-io/dagster/issues/1343 is resolved

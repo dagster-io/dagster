@@ -328,9 +328,15 @@ type MissingRunIdErrorEvent {
   invalidRunId: String!
 }
 
+type Mode {
+  name: String!
+  description: String
+  resources: [Resource!]!
+}
+
 type Mutation {
-  startPipelineExecution(config: PipelineConfig, executionMetadata: ExecutionMetadata, pipeline: ExecutionSelector!, reexecutionConfig: ReexecutionConfig, stepKeys: [String!]): StartPipelineExecutionResult!
-  executePlan(config: PipelineConfig, executionMetadata: ExecutionMetadata, pipelineName: String!, stepKeys: [String!]): ExecutePlanResult!
+  startPipelineExecution(config: PipelineConfig, executionMetadata: ExecutionMetadata, mode: String, pipeline: ExecutionSelector!, reexecutionConfig: ReexecutionConfig, stepKeys: [String!]): StartPipelineExecutionResult!
+  executePlan(config: PipelineConfig, executionMetadata: ExecutionMetadata, mode: String, pipelineName: String!, stepKeys: [String!]): ExecutePlanResult!
 }
 
 type NullableConfigType implements ConfigType & WrappingConfigType {
@@ -388,10 +394,11 @@ type Pipeline {
   description: String
   solids: [Solid!]!
   contexts: [PipelineContext!]!
-  environmentType: ConfigType!
-  configTypes: [ConfigType!]!
+  environmentType(mode: String): ConfigType!
+  configTypes(mode: String): [ConfigType!]!
   runtimeTypes: [RuntimeType!]!
   runs: [PipelineRun!]!
+  modes: [Mode!]!
 }
 
 scalar PipelineConfig
@@ -548,12 +555,12 @@ type Query {
   pipeline(params: ExecutionSelector!): Pipeline!
   pipelinesOrError: PipelinesOrError!
   pipelines: PipelineConnection!
-  configTypeOrError(pipelineName: String!, configTypeName: String!): ConfigTypeOrError!
+  configTypeOrError(pipelineName: String!, configTypeName: String!, mode: String): ConfigTypeOrError!
   runtimeTypeOrError(pipelineName: String!, runtimeTypeName: String!): RuntimeTypeOrError!
   pipelineRuns: [PipelineRun!]!
   pipelineRunOrError(runId: ID!): PipelineRunOrError!
-  isPipelineConfigValid(pipeline: ExecutionSelector!, config: PipelineConfig): PipelineConfigValidationResult!
-  executionPlan(pipeline: ExecutionSelector!, config: PipelineConfig): ExecutionPlanResult!
+  isPipelineConfigValid(pipeline: ExecutionSelector!, config: PipelineConfig, mode: String): PipelineConfigValidationResult!
+  executionPlan(pipeline: ExecutionSelector!, config: PipelineConfig, mode: String): ExecutionPlanResult!
   presetsForPipeline(pipelineName: String!): [PipelinePreset!]
 }
 

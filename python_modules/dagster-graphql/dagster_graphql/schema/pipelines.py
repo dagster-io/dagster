@@ -33,8 +33,12 @@ class DauphinPipeline(dauphin.ObjectType):
     description = dauphin.String()
     solids = dauphin.non_null_list('Solid')
     contexts = dauphin.non_null_list('PipelineContext')
-    environment_type = dauphin.NonNull('ConfigType')
-    config_types = dauphin.non_null_list('ConfigType')
+    environment_type = dauphin.Field(
+        dauphin.NonNull('ConfigType'), mode=dauphin.String(required=False)
+    )
+    config_types = dauphin.Field(
+        dauphin.non_null_list('ConfigType'), mode=dauphin.String(required=False)
+    )
     runtime_types = dauphin.non_null_list('RuntimeType')
     runs = dauphin.non_null_list('PipelineRun')
     modes = dauphin.non_null_list('Mode')
@@ -62,15 +66,21 @@ class DauphinPipeline(dauphin.ObjectType):
             for name, context in self._pipeline.context_definitions.items()
         ]
 
-    def resolve_environment_type(self, _graphene_info):
+    def resolve_environment_type(self, _graphene_info, mode=None):
         return to_dauphin_config_type(
-            create_environment_type(self._pipeline, self._pipeline.get_default_mode_name())
+            create_environment_type(
+                self._pipeline,
+                # should be able to get rid of get_default_mode_name
+                # https://github.com/dagster-io/dagster/issues/1343
+                mode if mode else self._pipeline.get_default_mode_name(),
+            )
         )
 
-    def resolve_config_types(self, _graphene_info):
+    def resolve_config_types(self, _graphene_info, mode=None):
         # TODO Core UI. Need to rework sidebar
+        # https://github.com/dagster-io/dagster/issues/1343
         environment_schema = create_environment_schema(
-            self._pipeline, self._pipeline.get_default_mode_name()
+            self._pipeline, mode if mode else self._pipeline.get_default_mode_name()
         )
         return sorted(
             list(map(to_dauphin_config_type, environment_schema.all_config_types())),

@@ -8,6 +8,8 @@ from dagster import (
     execute_pipeline,
 )
 
+from dagster.core.definitions.environment_schema import create_environment_type
+
 from ..test_repository import (
     define_modeless_pipeline,
     define_multi_mode_pipeline,
@@ -33,6 +35,12 @@ def test_mode_takes_a_name():
 def test_execute_modeless():
     pipeline_result = execute_pipeline(define_modeless_pipeline())
     assert pipeline_result.result_for_solid('return_one').transformed_value() == 1
+
+
+def test_modeless_env_type_name():
+    env_type = create_environment_type(define_modeless_pipeline())
+    assert env_type.key == 'Modeless.Environment'
+    assert env_type.name == 'Modeless.Environment'
 
 
 def test_execute_single_mode():
@@ -109,3 +117,34 @@ def test_execute_multi_mode_with_resources():
     )
 
     assert mult_mode_result.result_for_solid('apply_to_three').transformed_value() == 9
+
+
+def test_correct_env_type_names_for_named():
+    pipeline_def = define_multi_mode_with_resources_pipeline()
+
+    mult_type_name = create_environment_type(pipeline_def, 'mult_mode')
+    assert mult_type_name.key == 'MultiModeWithResources.Mode.MultMode.Environment'
+    assert mult_type_name.name == 'MultiModeWithResources.Mode.MultMode.Environment'
+
+    assert (
+        mult_type_name.fields['resources'].config_type.key
+        == 'MultiModeWithResources.Mode.MultMode.Resources'
+    )
+    assert (
+        mult_type_name.fields['resources'].config_type.name
+        == 'MultiModeWithResources.Mode.MultMode.Resources'
+    )
+
+    add_type_name = create_environment_type(pipeline_def, 'add_mode')
+
+    assert add_type_name.key == 'MultiModeWithResources.Mode.AddMode.Environment'
+    assert add_type_name.name == 'MultiModeWithResources.Mode.AddMode.Environment'
+
+    assert (
+        add_type_name.fields['resources'].config_type.key
+        == 'MultiModeWithResources.Mode.AddMode.Resources'
+    )
+    assert (
+        add_type_name.fields['resources'].config_type.name
+        == 'MultiModeWithResources.Mode.AddMode.Resources'
+    )
