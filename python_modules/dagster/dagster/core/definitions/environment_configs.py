@@ -192,7 +192,6 @@ def define_context_cls(pipeline_def):
 def get_additional_fields(pipeline_name, creation_data):
     if creation_data.mode_definition:
         check.invariant(not creation_data.context_definitions)
-        print(f'MODE DEFINITION: {creation_data.mode_definition.name}')
         return {
             'resources': Field(
                 define_resource_dictionary_cls(

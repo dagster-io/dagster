@@ -56,13 +56,7 @@ def _do_setup(name='dagster-pandas'):
             'Operating System :: OS Independent',
         ],
         packages=find_packages(exclude=['dagster_pandas_tests']),
-        install_requires=[
-            'dagster',
-            'dagstermill',
-            'pandas>=0.22.0',
-            'pyarrow>=0.11.0',
-            'matplotlib',
-        ],
+        install_requires=['dagster', 'pandas==0.24.2', 'pyarrow>=0.11.0', 'matplotlib'],
     )
 
 

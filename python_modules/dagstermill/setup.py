@@ -50,7 +50,7 @@ def _do_setup(name='dagstermill'):
             'ipykernel>=4.9.0',
             'nteract-scrapbook>=0.2.0',
             'papermill>=1.0.0',
-            'scikit-learn>=0.20.2',
+            'scikit-learn==0.20.3',
         ],
         entry_points={"console_scripts": ['dagstermill = dagstermill.cli:main']},
     )
