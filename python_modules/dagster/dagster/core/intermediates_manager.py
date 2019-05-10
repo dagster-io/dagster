@@ -115,7 +115,12 @@ class ObjectStoreIntermediatesManager(IntermediatesManager):
         check.inst_param(context, 'context', SystemPipelineExecutionContext)
         check.inst_param(runtime_type, 'runtime_type', RuntimeType)
         check.inst_param(step_output_handle, 'step_output_handle', StepOutputHandle)
-        check.invariant(not self.has_intermediate(context, step_output_handle))
+
+        if self.has_intermediate(context, step_output_handle):
+            context.log.warning(
+                'Replacing existing intermediate for %s.%s'
+                % (step_output_handle.step_key, step_output_handle.output_name)
+            )
 
         return self._object_store.set_value(
             obj=value,

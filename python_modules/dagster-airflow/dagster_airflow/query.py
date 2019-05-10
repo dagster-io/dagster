@@ -28,7 +28,6 @@ mutation(
     }}
     ... on PipelineNotFoundError {{
         message
-        stack
         pipelineName
     }}
     ... on ExecutePlanSuccess {{

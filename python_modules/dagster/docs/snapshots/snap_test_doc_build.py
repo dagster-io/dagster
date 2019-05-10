@@ -19427,6 +19427,8 @@ snapshots['test_build_all_docs 51'] = '''
 <dt id="dagster.execute_pipeline">
 <code class="descclassname">dagster.</code><code class="descname">execute_pipeline</code><span class="sig-paren">(</span><em>pipeline</em>, <em>environment_dict=None</em>, <em>run_config=None</em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dagster/core/execution/api.html#execute_pipeline"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dagster.execute_pipeline" title="Permalink to this definition">¶</a></dt>
 <dd><p>“Synchronous” version of <a class="reference internal" href="#dagster.execute_pipeline_iterator" title="dagster.execute_pipeline_iterator"><code class="xref py py-func docutils literal notranslate"><span class="pre">execute_pipeline_iterator()</span></code></a>.</p>
+<p>This is the entry point for dagster CLI and dagit execution. For the dagster-graphql entry
+point, see execute_plan() below.</p>
 <p>Note: raise_on_error is very useful in testing contexts when not testing for error
 conditions</p>
 <dl class="field-list simple">

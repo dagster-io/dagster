@@ -1,6 +1,7 @@
 '''The dagster-airflow operators.'''
 import ast
 import json
+import logging
 import os
 
 from abc import ABCMeta, abstractmethod
@@ -102,10 +103,8 @@ class DagsterOperator(with_metaclass(ABCMeta)):  # pylint:disable=no-init
 
         if res_type == 'PipelineNotFoundError':
             raise AirflowException(
-                'Pipeline {pipeline_name} not found: {message}:\n{stack_entries}'.format(
-                    pipeline_name=res_data['pipelineName'],
-                    message=res_data['message'],
-                    stack_entries='\n'.join(res_data['stack']),
+                'Pipeline "{pipeline_name}" not found: {message}:'.format(
+                    pipeline_name=res_data['pipelineName'], message=res_data['message']
                 )
             )
 
@@ -408,7 +407,7 @@ class DagsterDockerOperator(ModifiedDockerOperator, DagsterOperator):
 
 class DagsterPythonOperator(PythonOperator, DagsterOperator):
     @classmethod
-    def make_python_callable(cls, dag_id, pipeline, env_config, step_keys):
+    def make_python_callable(cls, pipeline, env_config, step_keys):
         try:
             from dagster import RepositoryDefinition
             from dagster.cli.dynamic_loader import RepositoryContainer
@@ -418,7 +417,9 @@ class DagsterPythonOperator(PythonOperator, DagsterOperator):
                 'To use the DagsterPythonOperator, dagster and dagster_graphql must be installed '
                 'in your Airflow environment.'
             )
-        repository = RepositoryDefinition('<<ephemeral repository>>', {dag_id: lambda: pipeline})
+        repository = RepositoryDefinition(
+            '<<ephemeral repository>>', {pipeline.name: lambda: pipeline}
+        )
         repository_container = RepositoryContainer(repository=repository)
 
         def python_callable(**kwargs):
@@ -429,6 +430,20 @@ class DagsterPythonOperator(PythonOperator, DagsterOperator):
                 step_keys=json.dumps(step_keys),
                 pipeline_name=pipeline.name,
             )
+
+            # TODO: This removes config that we need to scrub for secrets, but it's very useful
+            # for debugging to understand the GraphQL query that's being executed. We should update
+            # to include the sanitized config.
+            logging.info(
+                'Executing GraphQL query:\n'
+                + QUERY_TEMPLATE.format(
+                    config='REDACTED',
+                    run_id=run_id,
+                    step_keys=json.dumps(step_keys),
+                    pipeline_name=pipeline.name,
+                )
+            )
+
             res = json.loads(execute_query_from_cli(repository_container, query, variables=None))
             cls.handle_errors(res, None)
             return cls.handle_result(res)
@@ -443,15 +458,15 @@ class DagsterPythonOperator(PythonOperator, DagsterOperator):
             raise airflow_storage_exception('/tmp/special_place')
 
         # black 18.9b0 doesn't support py27-compatible formatting of the below invocation (omitting
-        # the trailing comma after **op_kwargs) -- black 19.3b0 supports multiple python versions, but
-        # currently doesn't know what to do with from __future__ import print_function -- see
+        # the trailing comma after **op_kwargs) -- black 19.3b0 supports multiple python versions,
+        # but currently doesn't know what to do with from __future__ import print_function -- see
         # https://github.com/ambv/black/issues/768
         # fmt: off
         return PythonOperator(
             task_id=solid_name,
             provide_context=True,
             python_callable=cls.make_python_callable(
-                dag_id, pipeline, format_config_for_graphql(env_config), step_keys
+                pipeline, format_config_for_graphql(env_config), step_keys
             ),
             dag=dag,
             **op_kwargs

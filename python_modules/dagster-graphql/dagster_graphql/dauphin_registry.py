@@ -15,7 +15,7 @@ dauphin.ChooseYourClass instead of graphene.ChooseYourClass.
 We also use dauphin as disintermediation layer between our application code and
 graphene in places where we want additional strictness or more convenient idioms.
 
-e.g. 
+e.g.
 
 dauphin.non_null_list(dauphin.String)
 
@@ -108,8 +108,7 @@ class DauphinRegistry(object):
         graphene_type = self.getTypeOrNull(typeName)
         if not graphene_type:
             raise Exception('No such type {typeName}.'.format(typeName=typeName))
-        else:
-            return graphene_type
+        return graphene_type
 
     def getAllTypes(self):
         return self._typeMap.values()

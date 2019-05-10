@@ -184,6 +184,9 @@ def execute_pipeline(pipeline, environment_dict=None, run_config=None):
     '''
     "Synchronous" version of :py:func:`execute_pipeline_iterator`.
 
+    This is the entry point for dagster CLI and dagit execution. For the dagster-graphql entry
+    point, see execute_plan() below.
+
     Note: raise_on_error is very useful in testing contexts when not testing for error
     conditions
 
@@ -282,6 +285,9 @@ def _check_reexecution_config(pipeline_context, execution_plan, run_config):
 
 
 def execute_plan(execution_plan, environment_dict=None, run_config=None, step_keys_to_execute=None):
+    '''This is the entry point of dagster-graphql executions. For the dagster CLI entry point, see
+    execute_pipeline() above.
+    '''
     check.inst_param(execution_plan, 'execution_plan', ExecutionPlan)
     environment_dict = check.opt_dict_param(environment_dict, 'environment_dict')
     run_config = check_run_config_param(run_config, execution_plan.pipeline_def)

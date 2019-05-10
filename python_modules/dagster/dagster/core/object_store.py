@@ -178,7 +178,10 @@ class FileSystemObjectStore(ObjectStore):
 
         target_path = get_valid_target_path(self.root, paths)
 
-        check.invariant(not os.path.exists(target_path))
+        if os.path.exists(target_path):
+            context.log.warning('Removing existing path {path}'.format(path=target_path))
+            os.unlink(target_path)
+
         # This is not going to be right in the general case, e.g. for types like Spark
         # datasets/dataframes, which naturally serialize to
         # union(parquet_file, directory([parquet_file])) -- we will need a) to pass the

@@ -87,12 +87,12 @@ def execute_query_from_cli(repository_container, query, variables):
         '\n\n{warning}'.format(warning=REPO_TARGET_WARNING)
     )
     + '\n\n Examples:'
-    '\n\n1. dagit'
-    '\n\n2. dagit -y path/to/repository.yml'
-    '\n\n3. dagit -f path/to/file.py -n define_repo'
-    '\n\n4. dagit -m some_module -n define_repo'
-    '\n\n5. dagit -f path/to/file.py -n define_pipeline'
-    '\n\n6. dagit -m some_module -n define_pipeline',
+    '\n\n1. dagster-graphql'
+    '\n\n2. dagster-graphql -y path/to/repository.yml'
+    '\n\n3. dagster-graphql -f path/to/file.py -n define_repo'
+    '\n\n4. dagster-graphql -m some_module -n define_repo'
+    '\n\n5. dagster-graphql -f path/to/file.py -n define_pipeline'
+    '\n\n6. dagster-graphql -m some_module -n define_pipeline',
 )
 @click.option('--variables', '-v', type=click.STRING)
 @click.version_option(version=__version__)
