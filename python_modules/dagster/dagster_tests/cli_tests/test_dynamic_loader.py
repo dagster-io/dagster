@@ -2,21 +2,18 @@ import pytest
 import imp
 import importlib
 
-from dagster import PipelineDefinition, RepositoryDefinition, lambda_solid
+from dagster import PipelineDefinition, RepositoryDefinition, RepositoryTargetInfo, lambda_solid
 
 from dagster.cli.dynamic_loader import (
     InvalidPipelineLoadingComboError,
     PipelineLoadingModeData,
     PipelineTargetInfo,
     PipelineTargetMode,
-    RepositoryTargetInfo,
-    LoaderEntrypoint,
     RepositoryData,
-    entrypoint_from_repo_target_info,
     create_pipeline_loading_mode_data,
     load_pipeline_from_target_info,
-    load_repository_from_target_info,
 )
+from dagster.core.definitions import LoaderEntrypoint
 
 from dagster.utils import script_relative_path
 
@@ -271,36 +268,29 @@ def test_loader_from_default_repository_file_yaml():
 
 def test_repo_entrypoints():
     module = importlib.import_module('dagster.tutorials.intro_tutorial.repos')
-    assert entrypoint_from_repo_target_info(
-        RepositoryTargetInfo(
-            repository_yaml=script_relative_path('repository.yml'),
-            module_name=None,
-            python_file=None,
-            fn_name=None,
-        )
-    ) == LoaderEntrypoint(module, 'dagster.tutorials.intro_tutorial.repos', 'define_repo', {})
+    assert RepositoryTargetInfo(
+        repository_yaml=script_relative_path('repository.yml'),
+        module_name=None,
+        python_file=None,
+        fn_name=None,
+    ).get_entrypoint() == LoaderEntrypoint(
+        module, 'dagster.tutorials.intro_tutorial.repos', 'define_repo', {}
+    )
 
     module = importlib.import_module('dagster')
-    assert entrypoint_from_repo_target_info(
-        RepositoryTargetInfo(
-            repository_yaml=None, module_name='dagster', python_file=None, fn_name='define_bar_repo'
-        )
-    ) == LoaderEntrypoint(module, 'dagster', 'define_bar_repo', {})
+    assert RepositoryTargetInfo(
+        repository_yaml=None, module_name='dagster', python_file=None, fn_name='define_bar_repo'
+    ).get_entrypoint() == LoaderEntrypoint(module, 'dagster', 'define_bar_repo', {})
 
     python_file = script_relative_path('bar_repo.py')
     module = imp.load_source('bar_repo', python_file)
-    assert entrypoint_from_repo_target_info(
-        RepositoryTargetInfo(
-            repository_yaml=None,
-            module_name=None,
-            python_file=python_file,
-            fn_name='define_bar_repo',
-        )
-    ) == LoaderEntrypoint(module, 'bar_repo', 'define_bar_repo', {})
+    assert RepositoryTargetInfo(
+        repository_yaml=None, module_name=None, python_file=python_file, fn_name='define_bar_repo'
+    ).get_entrypoint() == LoaderEntrypoint(module, 'bar_repo', 'define_bar_repo', {})
 
 
 def test_repo_yaml_module_dynamic_load():
-    repository = load_repository_from_target_info(
+    repository = RepositoryDefinition.load_for_target_info(
         RepositoryTargetInfo(
             repository_yaml=script_relative_path('repository_module.yml'),
             module_name=None,
@@ -314,7 +304,7 @@ def test_repo_yaml_module_dynamic_load():
 
 
 def test_repo_yaml_file_dynamic_load():
-    repository = load_repository_from_target_info(
+    repository = RepositoryDefinition.load_for_target_info(
         RepositoryTargetInfo(
             repository_yaml=script_relative_path('repository_file.yml'),
             module_name=None,
@@ -328,7 +318,7 @@ def test_repo_yaml_file_dynamic_load():
 
 
 def test_repo_module_dynamic_load():
-    repository = load_repository_from_target_info(
+    repository = RepositoryDefinition.load_for_target_info(
         RepositoryTargetInfo(
             repository_yaml=None,
             module_name='dagster.tutorials.intro_tutorial.repos',
@@ -342,7 +332,7 @@ def test_repo_module_dynamic_load():
 
 
 def test_repo_file_dynamic_load():
-    repository = load_repository_from_target_info(
+    repository = RepositoryDefinition.load_for_target_info(
         RepositoryTargetInfo(
             repository_yaml=None,
             module_name=None,
@@ -356,7 +346,7 @@ def test_repo_file_dynamic_load():
 
 
 def test_repo_module_dynamic_load_from_pipeline():
-    repository = load_repository_from_target_info(
+    repository = RepositoryDefinition.load_for_target_info(
         RepositoryTargetInfo(
             repository_yaml=None,
             module_name='dagster.tutorials.intro_tutorial.repos',
@@ -371,7 +361,7 @@ def test_repo_module_dynamic_load_from_pipeline():
 
 
 def test_repo_file_dynamic_load_from_pipeline():
-    repository = load_repository_from_target_info(
+    repository = RepositoryDefinition.load_for_target_info(
         RepositoryTargetInfo(
             repository_yaml=None,
             module_name=None,

@@ -6,7 +6,7 @@ from dagster.core.execution.api import ExecutionSelector, create_execution_plan
 from dagster.core.types.evaluator import evaluate_config_value
 
 from .either import EitherError, EitherValue
-from .fetch_pipelines import _pipeline_or_error_from_container
+from .fetch_pipelines import _pipeline_or_error_from_repository
 
 
 def _config_or_error_from_pipeline(graphene_info, pipeline, env_config, mode):
@@ -67,7 +67,7 @@ def validate_pipeline_config(graphene_info, selector, config, mode):
             )
         )
 
-    pipeline_or_error = _pipeline_or_error_from_container(graphene_info, selector)
+    pipeline_or_error = _pipeline_or_error_from_repository(graphene_info, selector)
     return pipeline_or_error.chain(do_validation).value()
 
 
@@ -98,5 +98,5 @@ def get_execution_plan(graphene_info, selector, config, mode):
             )
         )
 
-    pipeline_or_error = _pipeline_or_error_from_container(graphene_info, selector)
+    pipeline_or_error = _pipeline_or_error_from_repository(graphene_info, selector)
     return pipeline_or_error.chain(create_plan).value()

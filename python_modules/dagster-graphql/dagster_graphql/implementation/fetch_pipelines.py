@@ -33,7 +33,7 @@ def get_pipelines_or_raise(graphene_info):
 def _get_pipeline(graphene_info, selector):
     check.inst_param(graphene_info, 'graphene_info', ResolveInfo)
     check.inst_param(selector, 'selector', ExecutionSelector)
-    return _pipeline_or_error_from_container(graphene_info, selector)
+    return _pipeline_or_error_from_repository(graphene_info, selector)
 
 
 def _get_pipelines(graphene_info):
@@ -44,8 +44,10 @@ def _get_pipelines(graphene_info):
             pipeline_instances = []
             for pipeline_def in repository.get_all_pipelines():
                 pipeline_instances.append(graphene_info.schema.type_named('Pipeline')(pipeline_def))
-            return graphene_info.schema.type_named('PipelineConnection')(
-                nodes=sorted(pipeline_instances, key=lambda pipeline: pipeline.name)
+            return EitherValue(
+                graphene_info.schema.type_named('PipelineConnection')(
+                    nodes=sorted(pipeline_instances, key=lambda pipeline: pipeline.name)
+                )
             )
         except DagsterInvalidDefinitionError:
             return EitherError(
@@ -60,36 +62,11 @@ def _get_pipelines(graphene_info):
                 )
             )
 
-    repository_or_error = _repository_or_error_from_container(graphene_info)
-    return repository_or_error.chain(process_pipelines)
+    return process_pipelines(graphene_info.context.repository)
 
 
-def _pipeline_or_error_from_container(graphene_info, selector):
-    return _repository_or_error_from_container(graphene_info).chain(
-        lambda repository: _pipeline_or_error_from_repository(graphene_info, repository, selector)
-    )
-
-
-def _repository_or_error_from_container(graphene_info):
-    container = graphene_info.context.repository_container
-    error = container.error
-    if error is not None:
-        return EitherError(
-            graphene_info.schema.type_named('PythonError')(
-                serializable_error_info_from_exc_info(error)
-            )
-        )
-    try:
-        return EitherValue(container.repository)
-    except Exception:  # pylint: disable=broad-except
-        return EitherError(
-            graphene_info.schema.type_named('PythonError')(
-                serializable_error_info_from_exc_info(sys.exc_info())
-            )
-        )
-
-
-def _pipeline_or_error_from_repository(graphene_info, repository, selector):
+def _pipeline_or_error_from_repository(graphene_info, selector):
+    repository = graphene_info.context.repository
     if not repository.has_pipeline(selector.name):
         return EitherError(
             graphene_info.schema.type_named('PipelineNotFoundError')(pipeline_name=selector.name)
@@ -108,7 +85,7 @@ def _pipeline_or_error_from_repository(graphene_info, repository, selector):
 
 
 def get_pipeline_presets(graphene_info, pipeline_name):
-    repo = graphene_info.context.repository_container.repository
+    repo = graphene_info.context.repository
 
     return [
         graphene_info.schema.type_named('PipelinePreset')(preset)

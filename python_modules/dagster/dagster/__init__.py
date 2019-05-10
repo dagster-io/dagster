@@ -29,6 +29,7 @@ from dagster.core.definitions import (
     PipelineContextDefinition,
     PipelineDefinition,
     RepositoryDefinition,
+    RepositoryTargetInfo,
     Result,
     Materialization,
     ModeDefinition,

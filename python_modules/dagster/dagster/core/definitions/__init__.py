@@ -15,6 +15,8 @@ from .environment_schema import (
     create_environment_type,
 )
 
+from .entrypoint import LoaderEntrypoint
+
 from .expectation import ExpectationDefinition, ExpectationResult
 
 from .input import InputDefinition, InputMapping
@@ -29,7 +31,7 @@ from .materialization import Materialization
 
 from .mode import ModeDefinition
 
-from .repository import RepositoryDefinition, PipelinePreset
+from .repository import RepositoryDefinition, RepositoryTargetInfo, PipelinePreset
 
 from .pipeline import PipelineDefinition
 

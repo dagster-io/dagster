@@ -2,11 +2,11 @@ import os
 from dagster import (
     DependencyDefinition,
     PipelineDefinition,
+    RepositoryTargetInfo,
     InputDefinition,
     OutputDefinition,
     lambda_solid,
 )
-from dagster.cli.dynamic_loader import RepositoryTargetInfo, RepositoryContainer
 from dagster.core.events import DagsterEventType
 from dagster.core.execution.api import create_execution_plan, ExecutionSelector
 from dagster.core.execution.execution_context import make_new_run_id
@@ -33,13 +33,11 @@ def get_events_of_type(events, event_type):
 
 def test_running():
     run_id = make_new_run_id()
-    repository_container = RepositoryContainer(
-        RepositoryTargetInfo(
-            repository_yaml=None,
-            python_file=__file__,
-            fn_name='define_passing_pipeline',
-            module_name=None,
-        )
+    repository_target_info = RepositoryTargetInfo(
+        repository_yaml=None,
+        python_file=__file__,
+        fn_name='define_passing_pipeline',
+        module_name=None,
     )
     pipeline = define_passing_pipeline()
     env_config = {
@@ -59,7 +57,7 @@ def test_running():
     )
     execution_manager = MultiprocessingExecutionManager()
     execution_manager.execute_pipeline(
-        repository_container, pipeline, pipeline_run, raise_on_error=False
+        repository_target_info, pipeline, pipeline_run, raise_on_error=False
     )
     execution_manager.join()
     assert pipeline_run.status == PipelineRunStatus.SUCCESS
@@ -75,13 +73,11 @@ def test_running():
 
 def test_failing():
     run_id = make_new_run_id()
-    repository_container = RepositoryContainer(
-        RepositoryTargetInfo(
-            repository_yaml=None,
-            python_file=__file__,
-            fn_name='define_failing_pipeline',
-            module_name=None,
-        )
+    repository_target_info = RepositoryTargetInfo(
+        repository_yaml=None,
+        python_file=__file__,
+        fn_name='define_failing_pipeline',
+        module_name=None,
     )
     pipeline = define_failing_pipeline()
     env_config = {
@@ -101,7 +97,7 @@ def test_failing():
     )
     execution_manager = MultiprocessingExecutionManager()
     execution_manager.execute_pipeline(
-        repository_container, pipeline, pipeline_run, raise_on_error=False
+        repository_target_info, pipeline, pipeline_run, raise_on_error=False
     )
     execution_manager.join()
     assert pipeline_run.status == PipelineRunStatus.FAILURE
@@ -110,13 +106,11 @@ def test_failing():
 
 def test_execution_crash():
     run_id = make_new_run_id()
-    repository_container = RepositoryContainer(
-        RepositoryTargetInfo(
-            repository_yaml=None,
-            python_file=__file__,
-            fn_name='define_crashy_pipeline',
-            module_name=None,
-        )
+    repository_target_info = RepositoryTargetInfo(
+        repository_yaml=None,
+        python_file=__file__,
+        fn_name='define_crashy_pipeline',
+        module_name=None,
     )
     pipeline = define_crashy_pipeline()
     env_config = {
@@ -136,7 +130,7 @@ def test_execution_crash():
     )
     execution_manager = MultiprocessingExecutionManager()
     execution_manager.execute_pipeline(
-        repository_container, pipeline, pipeline_run, raise_on_error=False
+        repository_target_info, pipeline, pipeline_run, raise_on_error=False
     )
     execution_manager.join()
     assert pipeline_run.status == PipelineRunStatus.FAILURE

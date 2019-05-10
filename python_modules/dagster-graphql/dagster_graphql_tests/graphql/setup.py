@@ -5,8 +5,6 @@ from dagster_graphql.implementation.pipeline_run_storage import PipelineRunStora
 from dagster_graphql.implementation.pipeline_execution_manager import SynchronousExecutionManager
 from dagster_graphql.schema import create_schema
 
-from dagster.cli.dynamic_loader import RepositoryContainer
-
 from dagster.utils import script_relative_path
 from dagster import (
     Any,
@@ -63,8 +61,8 @@ def execute_dagster_graphql(context, query, variables=None):
 # See https://github.com/dagster-io/dagster/issues/1345
 def define_context(repo_config=None, raise_on_error=True):
     return DagsterGraphQLContext(
-        RepositoryContainer(repository=define_repository(repo_config)),
-        PipelineRunStorage(),
+        repository=define_repository(repo_config),
+        pipeline_runs=PipelineRunStorage(),
         execution_manager=SynchronousExecutionManager(),
         raise_on_error=raise_on_error,
     )

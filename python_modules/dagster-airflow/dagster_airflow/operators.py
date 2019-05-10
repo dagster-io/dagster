@@ -410,7 +410,6 @@ class DagsterPythonOperator(PythonOperator, DagsterOperator):
     def make_python_callable(cls, pipeline, env_config, step_keys):
         try:
             from dagster import RepositoryDefinition
-            from dagster.cli.dynamic_loader import RepositoryContainer
             from dagster_graphql.cli import execute_query_from_cli
         except ImportError:
             raise AirflowException(
@@ -420,7 +419,6 @@ class DagsterPythonOperator(PythonOperator, DagsterOperator):
         repository = RepositoryDefinition(
             '<<ephemeral repository>>', {pipeline.name: lambda: pipeline}
         )
-        repository_container = RepositoryContainer(repository=repository)
 
         def python_callable(**kwargs):
             run_id = kwargs.get('dag_run').run_id
@@ -444,7 +442,7 @@ class DagsterPythonOperator(PythonOperator, DagsterOperator):
                 )
             )
 
-            res = json.loads(execute_query_from_cli(repository_container, query, variables=None))
+            res = json.loads(execute_query_from_cli(repository, query, variables=None))
             cls.handle_errors(res, None)
             return cls.handle_result(res)
 

@@ -9,8 +9,14 @@ import atexit
 import gevent
 import six
 
-from dagster import InProcessExecutorConfig, PipelineDefinition, RunConfig, check, execute_pipeline
-from dagster.cli.dynamic_loader import RepositoryContainer
+from dagster import (
+    InProcessExecutorConfig,
+    PipelineDefinition,
+    RepositoryDefinition,
+    RunConfig,
+    check,
+    execute_pipeline,
+)
 from dagster.core.events.logging import DagsterEventRecord
 from dagster.core.events import DagsterEvent, DagsterEventType, PipelineProcessStartedData
 from dagster.utils.error import serializable_error_info_from_exc_info, SerializableErrorInfo
@@ -20,7 +26,7 @@ from dagster_graphql.implementation.pipeline_run_storage import PipelineRun
 
 
 class PipelineExecutionManager(object):
-    def execute_pipeline(self, repository_container, pipeline, pipeline_run, raise_on_error):
+    def execute_pipeline(self, repository_info, pipeline, pipeline_run, raise_on_error):
         raise NotImplementedError()
 
 
@@ -96,7 +102,7 @@ def build_process_started_event(run_id, pipeline_name, process_id):
 
 
 class SynchronousExecutionManager(PipelineExecutionManager):
-    def execute_pipeline(self, repository_container, pipeline, pipeline_run, raise_on_error):
+    def execute_pipeline(self, _, pipeline, pipeline_run, raise_on_error):
         check.inst_param(pipeline, 'pipeline', PipelineDefinition)
         try:
             return execute_pipeline(
@@ -228,7 +234,7 @@ class MultiprocessingExecutionManager(PipelineExecutionManager):
                     return True
             gevent.sleep(0.1)
 
-    def execute_pipeline(self, repository_container, pipeline, pipeline_run, raise_on_error):
+    def execute_pipeline(self, repository_info, pipeline, pipeline_run, raise_on_error):
         check.invariant(
             raise_on_error is False, 'Multiprocessing execute_pipeline does not rethrow user error'
         )
@@ -237,7 +243,7 @@ class MultiprocessingExecutionManager(PipelineExecutionManager):
         p = self._multiprocessing_context.Process(
             target=execute_pipeline_through_queue,
             args=(
-                repository_container.repository_info,
+                repository_info,
                 pipeline_run.selector.name,
                 pipeline_run.selector.solid_subset,
                 pipeline_run.config,
@@ -294,20 +300,16 @@ def execute_pipeline_through_queue(
         step_keys_to_execute=step_keys_to_execute,
     )
 
-    repository_container = RepositoryContainer(repository_info)
-    if repository_container.repo_error:
-        message_queue.put(
-            MultiprocessingError(
-                serializable_error_info_from_exc_info(repository_container.repo_error)
-            )
-        )
+    try:
+        repository = RepositoryDefinition.load_for_target_info(repository_info)
+    except:  # pylint: disable=W0702
+        repo_error = sys.exc_info()
+        message_queue.put(MultiprocessingError(serializable_error_info_from_exc_info(repo_error)))
         return
 
     try:
         result = execute_pipeline(
-            repository_container.repository.get_pipeline(pipeline_name).build_sub_pipeline(
-                solid_subset
-            ),
+            repository.get_pipeline(pipeline_name).build_sub_pipeline(solid_subset),
             environment_dict,
             run_config=run_config,
         )

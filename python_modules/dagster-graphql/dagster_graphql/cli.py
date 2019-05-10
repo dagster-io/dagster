@@ -5,12 +5,8 @@ import click
 from graphql import graphql
 from graphql.execution.executors.gevent import GeventExecutor as Executor
 
-from dagster import check, seven
-from dagster.cli.dynamic_loader import (
-    RepositoryContainer,
-    load_target_info_from_cli_args,
-    repository_target_argument,
-)
+from dagster import check, seven, RepositoryDefinition
+from dagster.cli.dynamic_loader import load_target_info_from_cli_args, repository_target_argument
 from dagster.utils.logging import get_stack_trace_array
 
 from .implementation.context import DagsterGraphQLContext
@@ -31,7 +27,7 @@ def create_dagster_graphql_cli():
     return ui
 
 
-def execute_query_from_cli(repository_container, query, variables):
+def execute_query_from_cli(repository, query, variables):
     check.str_param(query, 'query')
     check.opt_str_param(variables, 'variables')
 
@@ -42,7 +38,7 @@ def execute_query_from_cli(repository_container, query, variables):
     execution_manager = SynchronousExecutionManager()
 
     context = DagsterGraphQLContext(
-        repository_container=repository_container,
+        repository=repository,
         pipeline_runs=pipeline_run_storage,
         execution_manager=execution_manager,
         version=__version__,
@@ -100,11 +96,10 @@ def execute_query_from_cli(repository_container, query, variables):
 def ui(variables, query, **kwargs):
     repository_target_info = load_target_info_from_cli_args(kwargs)
 
-    repository_container = RepositoryContainer(repository_target_info)
-
     query = query.strip('\'" \n\t')
 
-    execute_query_from_cli(repository_container, query, variables)
+    repository = RepositoryDefinition.load_for_target_info(repository_target_info)
+    execute_query_from_cli(repository, query, variables)
 
 
 def main():

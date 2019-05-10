@@ -7,12 +7,8 @@ import click
 from gevent import pywsgi
 from geventwebsocket.handler import WebSocketHandler
 
-from dagster import check
-from dagster.cli.dynamic_loader import (
-    RepositoryContainer,
-    load_target_info_from_cli_args,
-    repository_target_argument,
-)
+from dagster import check, RepositoryDefinition
+from dagster.cli.dynamic_loader import load_target_info_from_cli_args, repository_target_argument
 from dagster_graphql.implementation.pipeline_run_storage import (
     PipelineRunStorage,
     LogFilePipelineRun,
@@ -64,17 +60,16 @@ def ui(host, port, sync, log, log_dir, no_watch=False, **kwargs):
 
     # add the path for the cwd so imports in dynamically loaded code work correctly
     sys.path.append(os.getcwd())
-    repository_container = RepositoryContainer(repository_target_info)
 
     check.invariant(
         not no_watch,
         'Do not set no_watch when calling the Dagit Python CLI directly -- this flag is a no-op'
         'at this level and should be set only when invoking dagit/bin/dagit.',
     )
-    host_dagit_ui(log, log_dir, repository_container, sync, host, port)
+    host_dagit_ui(log, log_dir, repository_target_info, sync, host, port)
 
 
-def host_dagit_ui(log, log_dir, repository_container, sync, host, port):
+def host_dagit_ui(log, log_dir, repository_target_info, sync, host, port):
     if log:
 
         def create_pipeline_run(*args, **kwargs):
@@ -86,7 +81,9 @@ def host_dagit_ui(log, log_dir, repository_container, sync, host, port):
     pipeline_run_storage = PipelineRunStorage(create_pipeline_run=create_pipeline_run)
 
     app = create_app(
-        repository_container, pipeline_run_storage, use_synchronous_execution_manager=sync
+        RepositoryDefinition.load_for_target_info(repository_target_info),
+        pipeline_run_storage,
+        use_synchronous_execution_manager=sync,
     )
     server = pywsgi.WSGIServer((host, port), app, handler_class=WebSocketHandler)
     print('Serving on http://{host}:{port}'.format(host=host, port=port))

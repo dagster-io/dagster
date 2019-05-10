@@ -7,16 +7,11 @@ import click
 from papermill.iorw import load_notebook_node, write_ipynb
 import nbformat
 
-from dagster import check
-from dagster.cli.dynamic_loader import (
-    repository_target_argument,
-    load_target_info_from_cli_args,
-    RepositoryTargetInfo,
-    entrypoint_from_module_target,
-    load_yaml_from_path,
-    InvalidRepositoryLoadingComboError,
-)
-from dagster.utils import safe_isfile
+from dagster import check, RepositoryTargetInfo
+from dagster.cli.dynamic_loader import repository_target_argument, load_target_info_from_cli_args
+from dagster.core.definitions import LoaderEntrypoint
+from dagster.core.errors import InvalidRepositoryLoadingComboError
+from dagster.utils import load_yaml_from_path, safe_isfile
 
 
 def get_acceptable_entrypoint(repo_target_info):
@@ -28,10 +23,12 @@ def get_acceptable_entrypoint(repo_target_info):
         module_name = check.opt_str_elem(repository_config, 'module')
         fn_name = check.str_elem(repository_config, 'fn')
         if module_name:
-            return entrypoint_from_module_target(module_name, fn_name)
+            return LoaderEntrypoint.from_module_target(module_name, fn_name)
         return None
     elif repo_target_info.module_name and repo_target_info.fn_name:
-        return entrypoint_from_module_target(repo_target_info.module_name, repo_target_info.fn_name)
+        return LoaderEntrypoint.from_module_target(
+            repo_target_info.module_name, repo_target_info.fn_name
+        )
     elif repo_target_info.python_file and repo_target_info.fn_name:
         return None
     else:

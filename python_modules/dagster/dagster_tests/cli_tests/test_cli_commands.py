@@ -17,7 +17,7 @@ from dagster.cli.pipeline import (
     pipeline_print_command,
     pipeline_scaffold_command,
 )
-from dagster.cli.dynamic_loader import InvalidRepositoryLoadingComboError
+from dagster.core.errors import InvalidRepositoryLoadingComboError
 
 from dagster.utils import script_relative_path
 

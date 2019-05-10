@@ -11,8 +11,6 @@ from dagster import (
     SolidDefinition,
 )
 
-from dagster.cli.dynamic_loader import RepositoryContainer
-
 from dagster.utils import script_relative_path
 
 from dagster_pandas import DataFrame
@@ -87,11 +85,11 @@ fragment innerInfo on ConfigType {
       }
       isOptional
     }
-  }  
+  }
 }
 
 {
-  pipeline(params: { name: "more_complicated_nested_config" }) { 
+  pipeline(params: { name: "more_complicated_nested_config" }) {
     name
     solids {
       name
@@ -158,11 +156,13 @@ def test_pipelines_or_error_invalid():
     repository = RepositoryDefinition(
         name='test', pipeline_dict={'pipeline': define_circular_dependency_pipeline}
     )
+
     context = DagsterGraphQLContext(
-        RepositoryContainer(repository=repository),
-        PipelineRunStorage(),
+        repository=repository,
+        pipeline_runs=PipelineRunStorage(),
         execution_manager=SynchronousExecutionManager(),
     )
+
     result = execute_dagster_graphql(
         context, '{ pipelinesOrError { ... on InvalidDefinitionError { message } } }'
     )

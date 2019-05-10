@@ -6,7 +6,7 @@ from dagster_graphql.schema.config_types import to_dauphin_config_type
 from dagster_graphql.schema.runtime_types import to_dauphin_runtime_type
 
 from .either import EitherError, EitherValue
-from .fetch_pipelines import _pipeline_or_error_from_container
+from .fetch_pipelines import _pipeline_or_error_from_repository
 
 
 def _config_type_or_error(graphene_info, dauphin_pipeline, config_type_name, mode):
@@ -32,7 +32,7 @@ def get_config_type(graphene_info, pipeline_name, config_type_name, mode):
     check.str_param(pipeline_name, 'pipeline_name')
     check.str_param(config_type_name, 'config_type_name')
     check.opt_str_param(mode, 'mode')
-    pipeline_or_error = _pipeline_or_error_from_container(
+    pipeline_or_error = _pipeline_or_error_from_repository(
         graphene_info, ExecutionSelector(pipeline_name)
     )
 
@@ -57,7 +57,7 @@ def _runtime_type_or_error(graphene_info, dauphin_pipeline, runtime_type_name):
 
 
 def get_runtime_type(graphene_info, pipeline_name, type_name):
-    pipeline_or_error = _pipeline_or_error_from_container(
+    pipeline_or_error = _pipeline_or_error_from_repository(
         graphene_info, ExecutionSelector(pipeline_name)
     )
 

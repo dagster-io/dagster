@@ -11,12 +11,10 @@ from dagster.core.events import DagsterEventType
 from dagster.core.execution.api import ExecutionSelector, create_execution_plan, execute_plan
 from dagster.core.execution.execution_context import ReexecutionConfig, make_new_run_id
 
-
 from dagster_graphql.schema.runs import from_event_record, from_dagster_event_record
 
-
-from .fetch_pipelines import _pipeline_or_error_from_container
 from .fetch_runs import _config_or_error_from_pipeline
+from .fetch_pipelines import _pipeline_or_error_from_repository
 
 
 def start_pipeline_execution(
@@ -88,7 +86,7 @@ def start_pipeline_execution(
                         )
 
             graphene_info.context.execution_manager.execute_pipeline(
-                graphene_info.context.repository_container,
+                graphene_info.context.repository,
                 pipeline.get_dagster_pipeline(),
                 run,
                 raise_on_error=graphene_info.context.raise_on_error,
@@ -108,7 +106,7 @@ def start_pipeline_execution(
         )
         return config_or_error.chain(_start_execution)
 
-    pipeline_or_error = _pipeline_or_error_from_container(graphene_info, selector)
+    pipeline_or_error = _pipeline_or_error_from_repository(graphene_info, selector)
     return pipeline_or_error.chain(get_config_and_start_execution).value()
 
 
@@ -141,7 +139,7 @@ def get_pipeline_run_observable(graphene_info, run_id, after=None):
         )
 
     return (
-        _pipeline_or_error_from_container(graphene_info, run.selector)
+        _pipeline_or_error_from_repository(graphene_info, run.selector)
         .chain(get_observable)
         .value_or_raise()
     )
@@ -167,7 +165,7 @@ def do_execute_plan(
         step_keys=step_keys,
     )
     return (
-        _pipeline_or_error_from_container(graphene_info, ExecutionSelector(pipeline_name))
+        _pipeline_or_error_from_repository(graphene_info, ExecutionSelector(pipeline_name))
         .chain(
             lambda dauphin_pipeline: _execute_plan_resolve_config(
                 execute_plan_args, dauphin_pipeline

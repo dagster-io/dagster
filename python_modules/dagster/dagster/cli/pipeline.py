@@ -7,7 +7,14 @@ import textwrap
 import click
 import yaml
 
-from dagster import InProcessExecutorConfig, PipelineDefinition, RunConfig, check, execute_pipeline
+from dagster import (
+    InProcessExecutorConfig,
+    PipelineDefinition,
+    RepositoryDefinition,
+    RunConfig,
+    check,
+    execute_pipeline,
+)
 from dagster.core.definitions import solids_in_topological_order, Solid
 from dagster.utils import load_yaml_from_glob_list
 from dagster.utils.indenting_printer import IndentingPrinter
@@ -17,7 +24,6 @@ from .config_scaffolder import scaffold_pipeline_config
 from .dynamic_loader import (
     PipelineTargetInfo,
     load_pipeline_from_target_info,
-    load_repository_from_target_info,
     load_target_info_from_cli_args,
     pipeline_target_command,
     repository_target_argument,
@@ -50,7 +56,7 @@ def pipeline_list_command(**kwargs):
 
 def execute_list_command(cli_args, print_fn):
     repository_target_info = load_target_info_from_cli_args(cli_args)
-    repository = load_repository_from_target_info(repository_target_info)
+    repository = RepositoryDefinition.load_for_target_info(repository_target_info)
 
     title = 'Repository {name}'.format(name=repository.name)
     print_fn(title)
@@ -323,8 +329,9 @@ def execute_execute_command_with_preset(preset, raise_on_error, cli_args, mode):
     pipeline_target = load_pipeline_target_from_cli_args(cli_args)
     cli_args.pop('pipeline_name')
     repository_target_info = load_target_info_from_cli_args(cli_args)
-    repository = load_repository_from_target_info(repository_target_info)
+    repository = RepositoryDefinition.load_for_target_info(repository_target_info)
     kwargs = repository.get_preset_pipeline(pipeline_target.pipeline_name, preset)
+
     return execute_pipeline(
         run_config=RunConfig(
             mode=mode, executor_config=InProcessExecutorConfig(raise_on_error=raise_on_error)

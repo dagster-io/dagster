@@ -2,7 +2,6 @@ import sys
 
 from dagster import Field, Int, PipelineDefinition, RepositoryDefinition, solid
 
-from dagster.cli.dynamic_loader import RepositoryContainer
 from dagster.utils.error import serializable_error_info_from_exc_info
 
 from dagster_graphql.implementation.context import DagsterGraphQLContext
@@ -55,8 +54,8 @@ PIPELINES = '''
 
 def test_pipelines_python_error():
     ctx = DagsterGraphQLContext(
-        RepositoryContainer(repository=define_error_pipeline_repo()),
-        PipelineRunStorage(),
+        repository=define_error_pipeline_repo(),
+        pipeline_runs=PipelineRunStorage(),
         execution_manager=SynchronousExecutionManager(),
     )
     result = execute_dagster_graphql(ctx, PIPELINES)
