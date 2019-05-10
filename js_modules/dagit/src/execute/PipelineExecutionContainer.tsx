@@ -13,6 +13,7 @@ import { PanelDivider } from "../PanelDivider";
 import SolidSelector from "./SolidSelector";
 import ConfigEditor from "../configeditor/ConfigEditor";
 import ConfigEditorPresetsPicker from "./ConfigEditorPresetsPicker";
+import ConfigEditorModePicker from "./ConfigEditorModePicker";
 import {
   applyChangesToSession,
   applySelectSession,
@@ -61,8 +62,12 @@ export default class PipelineExecutionContainer extends React.Component<
     PipelineExecutionContainerFragment: gql`
       fragment PipelineExecutionContainerFragment on Pipeline {
         name
-        environmentType {
+        environmentType(mode: $mode) {
           key
+        }
+        modes {
+          name
+          description
         }
         ...ConfigEditorPipelineFragment
       }
@@ -101,6 +106,10 @@ export default class PipelineExecutionContainer extends React.Component<
 
   onSolidSubsetChange = (solidSubset: string[] | null) => {
     this.onSaveSession(this.props.currentSession.key, { solidSubset });
+  };
+
+  onModeChange = (mode: string) => {
+    this.onSaveSession(this.props.currentSession.key, { mode });
   };
 
   onSelectSession = (session: string) => {
@@ -161,7 +170,8 @@ export default class PipelineExecutionContainer extends React.Component<
       pipeline: {
         name: pipeline.name,
         solidSubset: currentSession.solidSubset
-      }
+      },
+      mode: currentSession.mode
     };
   };
 
@@ -197,7 +207,7 @@ export default class PipelineExecutionContainer extends React.Component<
         {currentSession ? (
           <PipelineExecutionWrapper>
             <Split width={this.state.editorVW} style={{ flexShrink: 0 }}>
-              <ConfigEditorInsertionContainer className="bp3-dark">
+              <ConfigEditorPresetInsertionContainer className="bp3-dark">
                 {pipeline && (
                   <ConfigEditorPresetsPicker
                     pipelineName={pipeline.name}
@@ -205,7 +215,7 @@ export default class PipelineExecutionContainer extends React.Component<
                     onCreateSession={this.onCreateSession}
                   />
                 )}
-              </ConfigEditorInsertionContainer>
+              </ConfigEditorPresetInsertionContainer>
               <ApolloConsumer>
                 {client => (
                   <ConfigEditor
@@ -227,7 +237,8 @@ export default class PipelineExecutionContainer extends React.Component<
                           pipeline: {
                             name: pipeline.name,
                             solidSubset: currentSession.solidSubset
-                          }
+                          },
+                          mode: currentSession.mode
                         }
                       });
 
@@ -247,6 +258,14 @@ export default class PipelineExecutionContainer extends React.Component<
                   value={currentSession.solidSubset || null}
                   onChange={this.onSolidSubsetChange}
                 />
+
+                {pipeline && pipeline.modes.length ? ( // only render if modes for now
+                  <ConfigEditorModePicker
+                    pipeline={pipeline}
+                    onModeChange={this.onModeChange}
+                    modeName={currentSession.mode}
+                  />
+                ) : null}
               </SessionSettingsFooter>
             </Split>
             <PanelDivider
@@ -276,8 +295,9 @@ const START_PIPELINE_EXECUTION_MUTATION = gql`
   mutation StartPipelineExecution(
     $pipeline: ExecutionSelector!
     $config: PipelineConfig!
+    $mode: String
   ) {
-    startPipelineExecution(pipeline: $pipeline, config: $config) {
+    startPipelineExecution(pipeline: $pipeline, config: $config, mode: $mode) {
       __typename
 
       ... on StartPipelineExecutionSuccess {
@@ -301,12 +321,13 @@ const PREVIEW_CONFIG_QUERY = gql`
   query PreviewConfigQuery(
     $pipeline: ExecutionSelector!
     $config: PipelineConfig!
+    $mode: String
   ) {
-    isPipelineConfigValid(pipeline: $pipeline, config: $config) {
+    isPipelineConfigValid(pipeline: $pipeline, config: $config, mode: $mode) {
       ...ConfigEditorValidationFragment
       ...RunPreviewConfigValidationFragment
     }
-    executionPlan(pipeline: $pipeline, config: $config) {
+    executionPlan(pipeline: $pipeline, config: $config, mode: $mode) {
       ...RunPreviewExecutionPlanResultFragment
     }
   }
@@ -343,7 +364,7 @@ const Split = styled.div<{ width?: number }>`
   display: flex;
 `;
 
-const ConfigEditorInsertionContainer = styled.div`
+const ConfigEditorPresetInsertionContainer = styled.div`
   display: inline-block;
   position: absolute;
   top: 10px;

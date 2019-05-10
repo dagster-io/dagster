@@ -12,6 +12,12 @@ export interface PipelineExecutionRootQuery_pipeline_environmentType {
   key: string;
 }
 
+export interface PipelineExecutionRootQuery_pipeline_modes {
+  __typename: "Mode";
+  name: string;
+  description: string | null;
+}
+
 export interface PipelineExecutionRootQuery_pipeline_configTypes_RegularConfigType {
   __typename: "RegularConfigType" | "ListConfigType" | "NullableConfigType";
   key: string;
@@ -98,6 +104,7 @@ export interface PipelineExecutionRootQuery_pipeline {
   __typename: "Pipeline";
   name: string;
   environmentType: PipelineExecutionRootQuery_pipeline_environmentType;
+  modes: PipelineExecutionRootQuery_pipeline_modes[];
   configTypes: PipelineExecutionRootQuery_pipeline_configTypes[];
 }
 
@@ -108,4 +115,5 @@ export interface PipelineExecutionRootQuery {
 export interface PipelineExecutionRootQueryVariables {
   name: string;
   solidSubset?: string[] | null;
+  mode?: string | null;
 }

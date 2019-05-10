@@ -1,5 +1,4 @@
 import * as React from "react";
-import { isEqual } from "lodash";
 import { Button, Menu } from "@blueprintjs/core";
 import { Select } from "@blueprintjs/select";
 import { Query, QueryResult } from "react-apollo";
@@ -20,6 +19,7 @@ interface ConfigEditorPresetsPickerProps {
   onCreateSession: (initial: Partial<IExecutionSession>) => void;
 }
 
+// TODO: How to handle mode in the presets picker?
 export default class ConfigEditorPresetsPicker extends React.Component<
   ConfigEditorPresetsPickerProps
 > {

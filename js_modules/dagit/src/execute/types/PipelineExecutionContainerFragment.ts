@@ -12,6 +12,12 @@ export interface PipelineExecutionContainerFragment_environmentType {
   key: string;
 }
 
+export interface PipelineExecutionContainerFragment_modes {
+  __typename: "Mode";
+  name: string;
+  description: string | null;
+}
+
 export interface PipelineExecutionContainerFragment_configTypes_RegularConfigType {
   __typename: "RegularConfigType" | "ListConfigType" | "NullableConfigType";
   key: string;
@@ -98,5 +104,6 @@ export interface PipelineExecutionContainerFragment {
   __typename: "Pipeline";
   name: string;
   environmentType: PipelineExecutionContainerFragment_environmentType;
+  modes: PipelineExecutionContainerFragment_modes[];
   configTypes: PipelineExecutionContainerFragment_configTypes[];
 }
