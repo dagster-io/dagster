@@ -112,5 +112,7 @@ def get_pipeline_presets(graphene_info, pipeline_name):
 
     return [
         graphene_info.schema.type_named('PipelinePreset')(preset)
-        for preset in repo.get_presets_for_pipeline(pipeline_name).values()
+        for preset in sorted(
+            repo.get_presets_for_pipeline(pipeline_name).values(), key=lambda p: p.name
+        )
     ]

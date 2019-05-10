@@ -195,8 +195,10 @@ class RepositoryDefinition(object):
         if not preset:
             preset_names = [name for name in self.get_presets_for_pipeline(pipeline_name)]
             raise DagsterInvariantViolationError(
-                'Could not find preset for "{preset_name}". Available presets for pipeline "{pipeline_name}" '
-                'are {preset_names}.'.format(
+                (
+                    'Could not find preset for "{preset_name}". Available presets '
+                    'for pipeline "{pipeline_name}" are {preset_names}.'
+                ).format(
                     preset_name=preset_name, preset_names=preset_names, pipeline_name=pipeline_name
                 )
             )

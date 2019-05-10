@@ -59,9 +59,11 @@ def execute_dagster_graphql(context, query, variables=None):
     return result
 
 
-def define_context(raise_on_error=True):
+# TODO: super lame to pass throught repo_config
+# See https://github.com/dagster-io/dagster/issues/1345
+def define_context(repo_config=None, raise_on_error=True):
     return DagsterGraphQLContext(
-        RepositoryContainer(repository=define_repository()),
+        RepositoryContainer(repository=define_repository(repo_config)),
         PipelineRunStorage(),
         execution_manager=SynchronousExecutionManager(),
         raise_on_error=raise_on_error,
@@ -126,14 +128,17 @@ def pandas_hello_world_solids_config_fs_storage():
     }
 
 
-def define_repository():
+def define_repository(repo_config=None):
     return RepositoryDefinition(
         name='test',
         pipeline_dict={
             'context_config_pipeline': define_context_config_pipeline,
             'more_complicated_config': define_more_complicated_config,
             'more_complicated_nested_config': define_more_complicated_nested_config,
-            'pandas_hello_world': define_pandas_hello_world,
+            'pandas_hello_world': get_define_pandas_hello_world('pandas_hello_world'),
+            'pandas_hello_world_with_presets': get_define_pandas_hello_world(
+                'pandas_hello_world_with_presets'
+            ),
             'pandas_hello_world_two': define_pipeline_two,
             'pandas_hello_world_with_expectations': define_pandas_hello_world_with_expectations,
             'pipeline_with_list': define_pipeline_with_list,
@@ -147,6 +152,7 @@ def define_repository():
             'pipeline_with_expectations': define_pipeline_with_expectation,
             'multi_mode_with_resources': define_multi_mode_with_resources_pipeline,
         },
+        repo_config=repo_config,
     )
 
 
@@ -279,9 +285,9 @@ def define_more_complicated_nested_config():
     )
 
 
-def define_pandas_hello_world():
-    return PipelineDefinition(
-        name='pandas_hello_world',
+def get_define_pandas_hello_world(name):
+    return lambda: PipelineDefinition(
+        name=name,
         solids=[sum_solid, sum_sq_solid],
         dependencies={
             'sum_solid': {},

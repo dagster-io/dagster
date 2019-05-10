@@ -1,3 +1,15 @@
 repository:
   file: graphql/setup.py
   fn: define_repository
+
+  kwargs:
+    repo_config:
+      pipelines:
+        pandas_hello_world_with_presets:
+          presets:
+            test:
+              environment_files:
+                - environments/pandas_hello_world_test.yml
+            prod:
+              environment_files:
+                - environments/pandas_hello_world_prod.yml
