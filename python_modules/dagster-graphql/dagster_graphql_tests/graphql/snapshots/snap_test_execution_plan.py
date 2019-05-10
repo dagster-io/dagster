@@ -485,7 +485,7 @@ snapshots['test_pipeline_with_execution_metadata 1'] = {
                 'name': 'solid_metadata_creation.transform',
                 'outputs': [
                 ],
-                'solidHandle': 'solid_metadata_creation'
+                'solidHandleID': 'solid_metadata_creation'
             }
         ]
     }

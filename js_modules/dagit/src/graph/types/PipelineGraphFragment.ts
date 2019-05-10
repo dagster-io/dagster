@@ -7,28 +7,41 @@
 // GraphQL fragment: PipelineGraphFragment
 // ====================================================
 
-export interface PipelineGraphFragment_solids_definition_metadata {
+export interface PipelineGraphFragment_solids_definition_CompositeSolidDefinition_metadata {
   __typename: "MetadataItemDefinition";
   key: string;
   value: string;
 }
 
-export interface PipelineGraphFragment_solids_definition_configDefinition_configType {
+export interface PipelineGraphFragment_solids_definition_CompositeSolidDefinition {
+  __typename: "CompositeSolidDefinition";
+  metadata: PipelineGraphFragment_solids_definition_CompositeSolidDefinition_metadata[];
+}
+
+export interface PipelineGraphFragment_solids_definition_SolidDefinition_metadata {
+  __typename: "MetadataItemDefinition";
+  key: string;
+  value: string;
+}
+
+export interface PipelineGraphFragment_solids_definition_SolidDefinition_configDefinition_configType {
   __typename: "EnumConfigType" | "CompositeConfigType" | "RegularConfigType" | "ListConfigType" | "NullableConfigType";
   name: string | null;
   description: string | null;
 }
 
-export interface PipelineGraphFragment_solids_definition_configDefinition {
+export interface PipelineGraphFragment_solids_definition_SolidDefinition_configDefinition {
   __typename: "ConfigTypeField";
-  configType: PipelineGraphFragment_solids_definition_configDefinition_configType;
+  configType: PipelineGraphFragment_solids_definition_SolidDefinition_configDefinition_configType;
 }
 
-export interface PipelineGraphFragment_solids_definition {
+export interface PipelineGraphFragment_solids_definition_SolidDefinition {
   __typename: "SolidDefinition";
-  metadata: PipelineGraphFragment_solids_definition_metadata[];
-  configDefinition: PipelineGraphFragment_solids_definition_configDefinition | null;
+  metadata: PipelineGraphFragment_solids_definition_SolidDefinition_metadata[];
+  configDefinition: PipelineGraphFragment_solids_definition_SolidDefinition_configDefinition | null;
 }
+
+export type PipelineGraphFragment_solids_definition = PipelineGraphFragment_solids_definition_CompositeSolidDefinition | PipelineGraphFragment_solids_definition_SolidDefinition;
 
 export interface PipelineGraphFragment_solids_inputs_definition_type {
   __typename: "RegularRuntimeType" | "ListRuntimeType" | "NullableRuntimeType";

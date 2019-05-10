@@ -41,10 +41,12 @@ export default class SolidNode extends React.Component<ISolidNodeProps> {
             key
             value
           }
-          configDefinition {
-            configType {
-              name
-              description
+          ... on SolidDefinition {
+            configDefinition {
+              configType {
+                name
+                description
+              }
             }
           }
         }
@@ -270,8 +272,13 @@ export default class SolidNode extends React.Component<ISolidNodeProps> {
 
   public render() {
     const { solid, layout, dim, selected, minified } = this.props;
-    const { configDefinition, metadata } = solid.definition;
+    const { metadata } = solid.definition;
     const { x, y, width, height } = layout.solid;
+
+    let configDefinition = null;
+    if (solid.definition.__typename === "SolidDefinition") {
+      configDefinition = solid.definition.configDefinition;
+    }
 
     const kind = metadata.find(m => m.key === "kind");
 

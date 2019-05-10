@@ -137,10 +137,10 @@ class CompositeSolidDefinition(ISolidDefinition, IContainSolids):
         description=None,
         metadata=None,
     ):
-        self._input_mappings = check.opt_list_param(input_mappings, 'input_mappings')
-        self._output_mappings = check.opt_list_param(output_mappings, 'input_mappings')
-        _validate_in_mappings(self._input_mappings)
-        _validate_out_mappings(self._output_mappings)
+        self.input_mappings = check.opt_list_param(input_mappings, 'input_mappings')
+        self.output_mappings = check.opt_list_param(output_mappings, 'input_mappings')
+        _validate_in_mappings(self.input_mappings)
+        _validate_out_mappings(self.output_mappings)
 
         self.dependencies = validate_dependency_dict(dependencies)
         dependency_structure, pipeline_solid_dict = create_execution_structure(
@@ -152,12 +152,12 @@ class CompositeSolidDefinition(ISolidDefinition, IContainSolids):
 
         input_dict = {
             input_mapping.definition.name: input_mapping.definition
-            for input_mapping in self._input_mappings
+            for input_mapping in self.input_mappings
         }
 
         output_dict = {
             output_mapping.definition.name: output_mapping.definition
-            for output_mapping in self._output_mappings
+            for output_mapping in self.output_mappings
         }
 
         super(CompositeSolidDefinition, self).__init__(
@@ -176,10 +176,6 @@ class CompositeSolidDefinition(ISolidDefinition, IContainSolids):
         return self._dependency_structure
 
     @property
-    def config_field(self):
-        return None
-
-    @property
     def resources(self):
         resources = set()
         for solid in self.solids:
@@ -188,7 +184,7 @@ class CompositeSolidDefinition(ISolidDefinition, IContainSolids):
         return resources
 
     def mapped_input(self, solid_name, input_name):
-        for mapping in self._input_mappings:
+        for mapping in self.input_mappings:
             if mapping.solid_name == solid_name and mapping.input_name == input_name:
                 return mapping
         return None

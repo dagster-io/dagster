@@ -55,7 +55,7 @@ class TestExecuteDagPythonFilesystemStorage(object):
                 re.sub(
                     '{u\'', '{\'', re.sub(' u\'', ' \'', re.sub('^u\'', '\'', result['valueRepr']))
                 ).replace('\'', '"')
-            ) == json.loads(expected_results[result['step']['solidHandle']].replace('\'', '"'))
+            ) == json.loads(expected_results[result['step']['solidHandleID']].replace('\'', '"'))
 
 
 class TestExecuteDagPythonS3Storage(object):
@@ -94,7 +94,7 @@ class TestExecuteDagPythonS3Storage(object):
                 re.sub(
                     '\{u\'', '{\'', re.sub(' u\'', ' \'', re.sub('^u\'', '\'', result['valueRepr']))
                 ).replace('\'', '"')
-            ) == json.loads(expected_results[result['step']['solidHandle']].replace('\'', '"'))
+            ) == json.loads(expected_results[result['step']['solidHandleID']].replace('\'', '"'))
 
 
 @nettest
@@ -133,7 +133,7 @@ class TestExecuteDagContainerizedS3Storage(object):
                 re.sub(
                     '\{u\'', '{\'', re.sub(' u\'', ' \'', re.sub('^u\'', '\'', result['valueRepr']))
                 ).replace('\'', '"')
-            ) == json.loads(expected_results[result['step']['solidHandle']].replace('\'', '"'))
+            ) == json.loads(expected_results[result['step']['solidHandleID']].replace('\'', '"'))
 
 
 class TestExecuteDagContainerizedFilesystemStorage(object):
@@ -171,7 +171,7 @@ class TestExecuteDagContainerizedFilesystemStorage(object):
                 re.sub(
                     '{u\'', '{\'', re.sub(' u\'', ' \'', re.sub('^u\'', '\'', result['valueRepr']))
                 ).replace('\'', '"')
-            ) == json.loads(expected_results[result['step']['solidHandle']].replace('\'', '"'))
+            ) == json.loads(expected_results[result['step']['solidHandleID']].replace('\'', '"'))
 
 
 def test_rename_for_airflow():

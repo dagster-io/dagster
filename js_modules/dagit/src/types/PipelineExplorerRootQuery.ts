@@ -7,18 +7,30 @@
 // GraphQL query operation: PipelineExplorerRootQuery
 // ====================================================
 
-export interface PipelineExplorerRootQuery_pipeline_solids_definition_metadata {
+export interface PipelineExplorerRootQuery_pipeline_solids_definition_CompositeSolidDefinition_metadata {
   __typename: "MetadataItemDefinition";
   key: string;
   value: string;
 }
 
-export interface PipelineExplorerRootQuery_pipeline_solids_definition_configDefinition_configType_EnumConfigType_innerTypes_EnumConfigType_innerTypes {
+export interface PipelineExplorerRootQuery_pipeline_solids_definition_CompositeSolidDefinition {
+  __typename: "CompositeSolidDefinition";
+  metadata: PipelineExplorerRootQuery_pipeline_solids_definition_CompositeSolidDefinition_metadata[];
+  description: string | null;
+}
+
+export interface PipelineExplorerRootQuery_pipeline_solids_definition_SolidDefinition_metadata {
+  __typename: "MetadataItemDefinition";
+  key: string;
+  value: string;
+}
+
+export interface PipelineExplorerRootQuery_pipeline_solids_definition_SolidDefinition_configDefinition_configType_EnumConfigType_innerTypes_EnumConfigType_innerTypes {
   __typename: "EnumConfigType" | "CompositeConfigType" | "RegularConfigType" | "ListConfigType" | "NullableConfigType";
   key: string;
 }
 
-export interface PipelineExplorerRootQuery_pipeline_solids_definition_configDefinition_configType_EnumConfigType_innerTypes_EnumConfigType {
+export interface PipelineExplorerRootQuery_pipeline_solids_definition_SolidDefinition_configDefinition_configType_EnumConfigType_innerTypes_EnumConfigType {
   __typename: "EnumConfigType" | "RegularConfigType" | "ListConfigType" | "NullableConfigType";
   key: string;
   name: string | null;
@@ -26,28 +38,28 @@ export interface PipelineExplorerRootQuery_pipeline_solids_definition_configDefi
   isList: boolean;
   isNullable: boolean;
   isSelector: boolean;
-  innerTypes: PipelineExplorerRootQuery_pipeline_solids_definition_configDefinition_configType_EnumConfigType_innerTypes_EnumConfigType_innerTypes[];
+  innerTypes: PipelineExplorerRootQuery_pipeline_solids_definition_SolidDefinition_configDefinition_configType_EnumConfigType_innerTypes_EnumConfigType_innerTypes[];
 }
 
-export interface PipelineExplorerRootQuery_pipeline_solids_definition_configDefinition_configType_EnumConfigType_innerTypes_CompositeConfigType_innerTypes {
+export interface PipelineExplorerRootQuery_pipeline_solids_definition_SolidDefinition_configDefinition_configType_EnumConfigType_innerTypes_CompositeConfigType_innerTypes {
   __typename: "EnumConfigType" | "CompositeConfigType" | "RegularConfigType" | "ListConfigType" | "NullableConfigType";
   key: string;
 }
 
-export interface PipelineExplorerRootQuery_pipeline_solids_definition_configDefinition_configType_EnumConfigType_innerTypes_CompositeConfigType_fields_configType {
+export interface PipelineExplorerRootQuery_pipeline_solids_definition_SolidDefinition_configDefinition_configType_EnumConfigType_innerTypes_CompositeConfigType_fields_configType {
   __typename: "EnumConfigType" | "CompositeConfigType" | "RegularConfigType" | "ListConfigType" | "NullableConfigType";
   key: string;
 }
 
-export interface PipelineExplorerRootQuery_pipeline_solids_definition_configDefinition_configType_EnumConfigType_innerTypes_CompositeConfigType_fields {
+export interface PipelineExplorerRootQuery_pipeline_solids_definition_SolidDefinition_configDefinition_configType_EnumConfigType_innerTypes_CompositeConfigType_fields {
   __typename: "ConfigTypeField";
   name: string;
   description: string | null;
   isOptional: boolean;
-  configType: PipelineExplorerRootQuery_pipeline_solids_definition_configDefinition_configType_EnumConfigType_innerTypes_CompositeConfigType_fields_configType;
+  configType: PipelineExplorerRootQuery_pipeline_solids_definition_SolidDefinition_configDefinition_configType_EnumConfigType_innerTypes_CompositeConfigType_fields_configType;
 }
 
-export interface PipelineExplorerRootQuery_pipeline_solids_definition_configDefinition_configType_EnumConfigType_innerTypes_CompositeConfigType {
+export interface PipelineExplorerRootQuery_pipeline_solids_definition_SolidDefinition_configDefinition_configType_EnumConfigType_innerTypes_CompositeConfigType {
   __typename: "CompositeConfigType";
   key: string;
   name: string | null;
@@ -55,13 +67,13 @@ export interface PipelineExplorerRootQuery_pipeline_solids_definition_configDefi
   isList: boolean;
   isNullable: boolean;
   isSelector: boolean;
-  innerTypes: PipelineExplorerRootQuery_pipeline_solids_definition_configDefinition_configType_EnumConfigType_innerTypes_CompositeConfigType_innerTypes[];
-  fields: PipelineExplorerRootQuery_pipeline_solids_definition_configDefinition_configType_EnumConfigType_innerTypes_CompositeConfigType_fields[];
+  innerTypes: PipelineExplorerRootQuery_pipeline_solids_definition_SolidDefinition_configDefinition_configType_EnumConfigType_innerTypes_CompositeConfigType_innerTypes[];
+  fields: PipelineExplorerRootQuery_pipeline_solids_definition_SolidDefinition_configDefinition_configType_EnumConfigType_innerTypes_CompositeConfigType_fields[];
 }
 
-export type PipelineExplorerRootQuery_pipeline_solids_definition_configDefinition_configType_EnumConfigType_innerTypes = PipelineExplorerRootQuery_pipeline_solids_definition_configDefinition_configType_EnumConfigType_innerTypes_EnumConfigType | PipelineExplorerRootQuery_pipeline_solids_definition_configDefinition_configType_EnumConfigType_innerTypes_CompositeConfigType;
+export type PipelineExplorerRootQuery_pipeline_solids_definition_SolidDefinition_configDefinition_configType_EnumConfigType_innerTypes = PipelineExplorerRootQuery_pipeline_solids_definition_SolidDefinition_configDefinition_configType_EnumConfigType_innerTypes_EnumConfigType | PipelineExplorerRootQuery_pipeline_solids_definition_SolidDefinition_configDefinition_configType_EnumConfigType_innerTypes_CompositeConfigType;
 
-export interface PipelineExplorerRootQuery_pipeline_solids_definition_configDefinition_configType_EnumConfigType {
+export interface PipelineExplorerRootQuery_pipeline_solids_definition_SolidDefinition_configDefinition_configType_EnumConfigType {
   __typename: "EnumConfigType" | "RegularConfigType" | "ListConfigType" | "NullableConfigType";
   name: string | null;
   description: string | null;
@@ -69,15 +81,15 @@ export interface PipelineExplorerRootQuery_pipeline_solids_definition_configDefi
   isList: boolean;
   isNullable: boolean;
   isSelector: boolean;
-  innerTypes: PipelineExplorerRootQuery_pipeline_solids_definition_configDefinition_configType_EnumConfigType_innerTypes[];
+  innerTypes: PipelineExplorerRootQuery_pipeline_solids_definition_SolidDefinition_configDefinition_configType_EnumConfigType_innerTypes[];
 }
 
-export interface PipelineExplorerRootQuery_pipeline_solids_definition_configDefinition_configType_CompositeConfigType_innerTypes_EnumConfigType_innerTypes {
+export interface PipelineExplorerRootQuery_pipeline_solids_definition_SolidDefinition_configDefinition_configType_CompositeConfigType_innerTypes_EnumConfigType_innerTypes {
   __typename: "EnumConfigType" | "CompositeConfigType" | "RegularConfigType" | "ListConfigType" | "NullableConfigType";
   key: string;
 }
 
-export interface PipelineExplorerRootQuery_pipeline_solids_definition_configDefinition_configType_CompositeConfigType_innerTypes_EnumConfigType {
+export interface PipelineExplorerRootQuery_pipeline_solids_definition_SolidDefinition_configDefinition_configType_CompositeConfigType_innerTypes_EnumConfigType {
   __typename: "EnumConfigType" | "RegularConfigType" | "ListConfigType" | "NullableConfigType";
   key: string;
   name: string | null;
@@ -85,28 +97,28 @@ export interface PipelineExplorerRootQuery_pipeline_solids_definition_configDefi
   isList: boolean;
   isNullable: boolean;
   isSelector: boolean;
-  innerTypes: PipelineExplorerRootQuery_pipeline_solids_definition_configDefinition_configType_CompositeConfigType_innerTypes_EnumConfigType_innerTypes[];
+  innerTypes: PipelineExplorerRootQuery_pipeline_solids_definition_SolidDefinition_configDefinition_configType_CompositeConfigType_innerTypes_EnumConfigType_innerTypes[];
 }
 
-export interface PipelineExplorerRootQuery_pipeline_solids_definition_configDefinition_configType_CompositeConfigType_innerTypes_CompositeConfigType_innerTypes {
+export interface PipelineExplorerRootQuery_pipeline_solids_definition_SolidDefinition_configDefinition_configType_CompositeConfigType_innerTypes_CompositeConfigType_innerTypes {
   __typename: "EnumConfigType" | "CompositeConfigType" | "RegularConfigType" | "ListConfigType" | "NullableConfigType";
   key: string;
 }
 
-export interface PipelineExplorerRootQuery_pipeline_solids_definition_configDefinition_configType_CompositeConfigType_innerTypes_CompositeConfigType_fields_configType {
+export interface PipelineExplorerRootQuery_pipeline_solids_definition_SolidDefinition_configDefinition_configType_CompositeConfigType_innerTypes_CompositeConfigType_fields_configType {
   __typename: "EnumConfigType" | "CompositeConfigType" | "RegularConfigType" | "ListConfigType" | "NullableConfigType";
   key: string;
 }
 
-export interface PipelineExplorerRootQuery_pipeline_solids_definition_configDefinition_configType_CompositeConfigType_innerTypes_CompositeConfigType_fields {
+export interface PipelineExplorerRootQuery_pipeline_solids_definition_SolidDefinition_configDefinition_configType_CompositeConfigType_innerTypes_CompositeConfigType_fields {
   __typename: "ConfigTypeField";
   name: string;
   description: string | null;
   isOptional: boolean;
-  configType: PipelineExplorerRootQuery_pipeline_solids_definition_configDefinition_configType_CompositeConfigType_innerTypes_CompositeConfigType_fields_configType;
+  configType: PipelineExplorerRootQuery_pipeline_solids_definition_SolidDefinition_configDefinition_configType_CompositeConfigType_innerTypes_CompositeConfigType_fields_configType;
 }
 
-export interface PipelineExplorerRootQuery_pipeline_solids_definition_configDefinition_configType_CompositeConfigType_innerTypes_CompositeConfigType {
+export interface PipelineExplorerRootQuery_pipeline_solids_definition_SolidDefinition_configDefinition_configType_CompositeConfigType_innerTypes_CompositeConfigType {
   __typename: "CompositeConfigType";
   key: string;
   name: string | null;
@@ -114,26 +126,26 @@ export interface PipelineExplorerRootQuery_pipeline_solids_definition_configDefi
   isList: boolean;
   isNullable: boolean;
   isSelector: boolean;
-  innerTypes: PipelineExplorerRootQuery_pipeline_solids_definition_configDefinition_configType_CompositeConfigType_innerTypes_CompositeConfigType_innerTypes[];
-  fields: PipelineExplorerRootQuery_pipeline_solids_definition_configDefinition_configType_CompositeConfigType_innerTypes_CompositeConfigType_fields[];
+  innerTypes: PipelineExplorerRootQuery_pipeline_solids_definition_SolidDefinition_configDefinition_configType_CompositeConfigType_innerTypes_CompositeConfigType_innerTypes[];
+  fields: PipelineExplorerRootQuery_pipeline_solids_definition_SolidDefinition_configDefinition_configType_CompositeConfigType_innerTypes_CompositeConfigType_fields[];
 }
 
-export type PipelineExplorerRootQuery_pipeline_solids_definition_configDefinition_configType_CompositeConfigType_innerTypes = PipelineExplorerRootQuery_pipeline_solids_definition_configDefinition_configType_CompositeConfigType_innerTypes_EnumConfigType | PipelineExplorerRootQuery_pipeline_solids_definition_configDefinition_configType_CompositeConfigType_innerTypes_CompositeConfigType;
+export type PipelineExplorerRootQuery_pipeline_solids_definition_SolidDefinition_configDefinition_configType_CompositeConfigType_innerTypes = PipelineExplorerRootQuery_pipeline_solids_definition_SolidDefinition_configDefinition_configType_CompositeConfigType_innerTypes_EnumConfigType | PipelineExplorerRootQuery_pipeline_solids_definition_SolidDefinition_configDefinition_configType_CompositeConfigType_innerTypes_CompositeConfigType;
 
-export interface PipelineExplorerRootQuery_pipeline_solids_definition_configDefinition_configType_CompositeConfigType_fields_configType {
+export interface PipelineExplorerRootQuery_pipeline_solids_definition_SolidDefinition_configDefinition_configType_CompositeConfigType_fields_configType {
   __typename: "EnumConfigType" | "CompositeConfigType" | "RegularConfigType" | "ListConfigType" | "NullableConfigType";
   key: string;
 }
 
-export interface PipelineExplorerRootQuery_pipeline_solids_definition_configDefinition_configType_CompositeConfigType_fields {
+export interface PipelineExplorerRootQuery_pipeline_solids_definition_SolidDefinition_configDefinition_configType_CompositeConfigType_fields {
   __typename: "ConfigTypeField";
   name: string;
   description: string | null;
   isOptional: boolean;
-  configType: PipelineExplorerRootQuery_pipeline_solids_definition_configDefinition_configType_CompositeConfigType_fields_configType;
+  configType: PipelineExplorerRootQuery_pipeline_solids_definition_SolidDefinition_configDefinition_configType_CompositeConfigType_fields_configType;
 }
 
-export interface PipelineExplorerRootQuery_pipeline_solids_definition_configDefinition_configType_CompositeConfigType {
+export interface PipelineExplorerRootQuery_pipeline_solids_definition_SolidDefinition_configDefinition_configType_CompositeConfigType {
   __typename: "CompositeConfigType";
   name: string | null;
   description: string | null;
@@ -141,23 +153,25 @@ export interface PipelineExplorerRootQuery_pipeline_solids_definition_configDefi
   isList: boolean;
   isNullable: boolean;
   isSelector: boolean;
-  innerTypes: PipelineExplorerRootQuery_pipeline_solids_definition_configDefinition_configType_CompositeConfigType_innerTypes[];
-  fields: PipelineExplorerRootQuery_pipeline_solids_definition_configDefinition_configType_CompositeConfigType_fields[];
+  innerTypes: PipelineExplorerRootQuery_pipeline_solids_definition_SolidDefinition_configDefinition_configType_CompositeConfigType_innerTypes[];
+  fields: PipelineExplorerRootQuery_pipeline_solids_definition_SolidDefinition_configDefinition_configType_CompositeConfigType_fields[];
 }
 
-export type PipelineExplorerRootQuery_pipeline_solids_definition_configDefinition_configType = PipelineExplorerRootQuery_pipeline_solids_definition_configDefinition_configType_EnumConfigType | PipelineExplorerRootQuery_pipeline_solids_definition_configDefinition_configType_CompositeConfigType;
+export type PipelineExplorerRootQuery_pipeline_solids_definition_SolidDefinition_configDefinition_configType = PipelineExplorerRootQuery_pipeline_solids_definition_SolidDefinition_configDefinition_configType_EnumConfigType | PipelineExplorerRootQuery_pipeline_solids_definition_SolidDefinition_configDefinition_configType_CompositeConfigType;
 
-export interface PipelineExplorerRootQuery_pipeline_solids_definition_configDefinition {
+export interface PipelineExplorerRootQuery_pipeline_solids_definition_SolidDefinition_configDefinition {
   __typename: "ConfigTypeField";
-  configType: PipelineExplorerRootQuery_pipeline_solids_definition_configDefinition_configType;
+  configType: PipelineExplorerRootQuery_pipeline_solids_definition_SolidDefinition_configDefinition_configType;
 }
 
-export interface PipelineExplorerRootQuery_pipeline_solids_definition {
+export interface PipelineExplorerRootQuery_pipeline_solids_definition_SolidDefinition {
   __typename: "SolidDefinition";
-  metadata: PipelineExplorerRootQuery_pipeline_solids_definition_metadata[];
-  configDefinition: PipelineExplorerRootQuery_pipeline_solids_definition_configDefinition | null;
+  metadata: PipelineExplorerRootQuery_pipeline_solids_definition_SolidDefinition_metadata[];
+  configDefinition: PipelineExplorerRootQuery_pipeline_solids_definition_SolidDefinition_configDefinition | null;
   description: string | null;
 }
+
+export type PipelineExplorerRootQuery_pipeline_solids_definition = PipelineExplorerRootQuery_pipeline_solids_definition_CompositeSolidDefinition | PipelineExplorerRootQuery_pipeline_solids_definition_SolidDefinition;
 
 export interface PipelineExplorerRootQuery_pipeline_solids_inputs_definition_type {
   __typename: "RegularRuntimeType" | "ListRuntimeType" | "NullableRuntimeType";

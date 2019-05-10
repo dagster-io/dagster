@@ -7,28 +7,41 @@
 // GraphQL query operation: SolidSelectorQuery
 // ====================================================
 
-export interface SolidSelectorQuery_pipeline_solids_definition_metadata {
+export interface SolidSelectorQuery_pipeline_solids_definition_CompositeSolidDefinition_metadata {
   __typename: "MetadataItemDefinition";
   key: string;
   value: string;
 }
 
-export interface SolidSelectorQuery_pipeline_solids_definition_configDefinition_configType {
+export interface SolidSelectorQuery_pipeline_solids_definition_CompositeSolidDefinition {
+  __typename: "CompositeSolidDefinition";
+  metadata: SolidSelectorQuery_pipeline_solids_definition_CompositeSolidDefinition_metadata[];
+}
+
+export interface SolidSelectorQuery_pipeline_solids_definition_SolidDefinition_metadata {
+  __typename: "MetadataItemDefinition";
+  key: string;
+  value: string;
+}
+
+export interface SolidSelectorQuery_pipeline_solids_definition_SolidDefinition_configDefinition_configType {
   __typename: "EnumConfigType" | "CompositeConfigType" | "RegularConfigType" | "ListConfigType" | "NullableConfigType";
   name: string | null;
   description: string | null;
 }
 
-export interface SolidSelectorQuery_pipeline_solids_definition_configDefinition {
+export interface SolidSelectorQuery_pipeline_solids_definition_SolidDefinition_configDefinition {
   __typename: "ConfigTypeField";
-  configType: SolidSelectorQuery_pipeline_solids_definition_configDefinition_configType;
+  configType: SolidSelectorQuery_pipeline_solids_definition_SolidDefinition_configDefinition_configType;
 }
 
-export interface SolidSelectorQuery_pipeline_solids_definition {
+export interface SolidSelectorQuery_pipeline_solids_definition_SolidDefinition {
   __typename: "SolidDefinition";
-  metadata: SolidSelectorQuery_pipeline_solids_definition_metadata[];
-  configDefinition: SolidSelectorQuery_pipeline_solids_definition_configDefinition | null;
+  metadata: SolidSelectorQuery_pipeline_solids_definition_SolidDefinition_metadata[];
+  configDefinition: SolidSelectorQuery_pipeline_solids_definition_SolidDefinition_configDefinition | null;
 }
+
+export type SolidSelectorQuery_pipeline_solids_definition = SolidSelectorQuery_pipeline_solids_definition_CompositeSolidDefinition | SolidSelectorQuery_pipeline_solids_definition_SolidDefinition;
 
 export interface SolidSelectorQuery_pipeline_solids_inputs_definition_type {
   __typename: "RegularRuntimeType" | "ListRuntimeType" | "NullableRuntimeType";

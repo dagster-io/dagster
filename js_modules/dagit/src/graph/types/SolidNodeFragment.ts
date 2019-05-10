@@ -7,28 +7,41 @@
 // GraphQL fragment: SolidNodeFragment
 // ====================================================
 
-export interface SolidNodeFragment_definition_metadata {
+export interface SolidNodeFragment_definition_CompositeSolidDefinition_metadata {
   __typename: "MetadataItemDefinition";
   key: string;
   value: string;
 }
 
-export interface SolidNodeFragment_definition_configDefinition_configType {
+export interface SolidNodeFragment_definition_CompositeSolidDefinition {
+  __typename: "CompositeSolidDefinition";
+  metadata: SolidNodeFragment_definition_CompositeSolidDefinition_metadata[];
+}
+
+export interface SolidNodeFragment_definition_SolidDefinition_metadata {
+  __typename: "MetadataItemDefinition";
+  key: string;
+  value: string;
+}
+
+export interface SolidNodeFragment_definition_SolidDefinition_configDefinition_configType {
   __typename: "EnumConfigType" | "CompositeConfigType" | "RegularConfigType" | "ListConfigType" | "NullableConfigType";
   name: string | null;
   description: string | null;
 }
 
-export interface SolidNodeFragment_definition_configDefinition {
+export interface SolidNodeFragment_definition_SolidDefinition_configDefinition {
   __typename: "ConfigTypeField";
-  configType: SolidNodeFragment_definition_configDefinition_configType;
+  configType: SolidNodeFragment_definition_SolidDefinition_configDefinition_configType;
 }
 
-export interface SolidNodeFragment_definition {
+export interface SolidNodeFragment_definition_SolidDefinition {
   __typename: "SolidDefinition";
-  metadata: SolidNodeFragment_definition_metadata[];
-  configDefinition: SolidNodeFragment_definition_configDefinition | null;
+  metadata: SolidNodeFragment_definition_SolidDefinition_metadata[];
+  configDefinition: SolidNodeFragment_definition_SolidDefinition_configDefinition | null;
 }
+
+export type SolidNodeFragment_definition = SolidNodeFragment_definition_CompositeSolidDefinition | SolidNodeFragment_definition_SolidDefinition;
 
 export interface SolidNodeFragment_inputs_definition_type {
   __typename: "RegularRuntimeType" | "ListRuntimeType" | "NullableRuntimeType";

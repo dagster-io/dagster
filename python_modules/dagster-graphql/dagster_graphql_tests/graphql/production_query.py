@@ -48,9 +48,11 @@ fragment SolidFragment on Solid {
       value
       __typename
     }
-    configDefinition {
-      ...ConfigFieldFragment
-      __typename
+    ... on SolidDefinition {
+      configDefinition {
+        ...ConfigFieldFragment
+        __typename
+      }
     }
     __typename
   }

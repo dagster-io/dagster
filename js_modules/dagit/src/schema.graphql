@@ -11,6 +11,17 @@ type CompositeConfigType implements ConfigType {
   fields: [ConfigTypeField!]!
 }
 
+type CompositeSolidDefinition implements ISolidDefinition & SolidContainer {
+  name: String!
+  description: String
+  metadata: [MetadataItemDefinition!]!
+  inputDefinitions: [InputDefinition!]!
+  outputDefinitions: [OutputDefinition!]!
+  solids: [Solid!]!
+  inputMappings: [InputMapping!]!
+  outputMappings: [OutputMapping!]!
+}
+
 interface ConfigType {
   key: String!
   name: String
@@ -120,7 +131,7 @@ type ExecutionStep {
   key: String!
   inputs: [ExecutionStepInput!]!
   outputs: [ExecutionStepOutput!]!
-  solidHandle: String!
+  solidHandleID: String!
   kind: StepKind!
   metadata: [MetadataItemDefinition!]!
 }
@@ -227,6 +238,11 @@ type InputDefinition {
   expectations: [Expectation!]!
 }
 
+type InputMapping {
+  mappedInput: Input!
+  definition: InputDefinition!
+}
+
 type InvalidDefinitionError implements Error {
   message: String!
   stack: [String!]!
@@ -239,6 +255,14 @@ type InvalidOutputError {
 
 type InvalidStepError {
   invalidStepKey: String!
+}
+
+interface ISolidDefinition {
+  name: String!
+  description: String
+  metadata: [MetadataItemDefinition!]!
+  inputDefinitions: [InputDefinition!]!
+  outputDefinitions: [OutputDefinition!]!
 }
 
 type ListConfigType implements ConfigType & WrappingConfigType {
@@ -388,6 +412,11 @@ type OutputDefinition {
   expectations: [Expectation!]!
 }
 
+type OutputMapping {
+  mappedOutput: Output!
+  definition: OutputDefinition!
+}
+
 type PageInfo {
   lastCursor: Cursor
   hasNextPage: Boolean
@@ -396,15 +425,16 @@ type PageInfo {
   totalCount: Int!
 }
 
-type Pipeline {
+type Pipeline implements SolidContainer {
+  solids: [Solid!]!
   name: String!
   description: String
-  solids: [Solid!]!
   environmentType(mode: String): ConfigType!
   configTypes(mode: String): [ConfigType!]!
   runtimeTypes: [RuntimeType!]!
   runs: [PipelineRun!]!
   modes: [Mode!]!
+  solidHandles: [SolidHandle!]!
 }
 
 scalar PipelineConfig
@@ -642,18 +672,28 @@ type SelectorTypeConfigError implements PipelineConfigValidationError {
 
 type Solid {
   name: String!
-  definition: SolidDefinition!
+  definition: ISolidDefinition!
   inputs: [Input!]!
   outputs: [Output!]!
 }
 
-type SolidDefinition {
+interface SolidContainer {
+  solids: [Solid!]!
+}
+
+type SolidDefinition implements ISolidDefinition {
   name: String!
   description: String
   metadata: [MetadataItemDefinition!]!
   inputDefinitions: [InputDefinition!]!
   outputDefinitions: [OutputDefinition!]!
   configDefinition: ConfigTypeField
+}
+
+type SolidHandle {
+  handleID: String!
+  solid: Solid!
+  parent: Solid
 }
 
 type SolidNotFoundError implements Error {

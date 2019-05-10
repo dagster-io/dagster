@@ -98,11 +98,13 @@ fragment innerInfo on ConfigType {
     solids {
       name
       definition {
-        configDefinition {
-          configType {
-            ...innerInfo
-            innerTypes {
+        ... on SolidDefinition {
+          configDefinition {
+            configType {
               ...innerInfo
+              innerTypes {
+                ...innerInfo
+              }
             }
           }
         }

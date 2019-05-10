@@ -39,7 +39,7 @@ mutation(
         step {{
           key
           kind
-          solidHandle
+          solidHandleID
         }}
         __typename
         ... on ExecutionStepOutputEvent {{

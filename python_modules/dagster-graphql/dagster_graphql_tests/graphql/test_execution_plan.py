@@ -23,7 +23,7 @@ query PipelineQuery($config: PipelineConfig, $pipeline: ExecutionSelector!) {
       steps {
         key
         name
-        solidHandle
+        solidHandleID
         kind
         inputs {
           name

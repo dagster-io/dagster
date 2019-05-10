@@ -38,9 +38,11 @@ export default class SidebarSolidInfo extends React.Component<
             key
             value
           }
-          configDefinition {
-            configType {
-              ...ConfigTypeSchemaFragment
+          ... on SolidDefinition {
+            configDefinition {
+              configType {
+                ...ConfigTypeSchemaFragment
+              }
             }
           }
         }
@@ -153,6 +155,10 @@ export default class SidebarSolidInfo extends React.Component<
   public render() {
     const { solid } = this.props;
     const Plugin = pluginForMetadata(solid.definition.metadata);
+    const configDefinition =
+      solid.definition.__typename == "SolidDefinition"
+        ? solid.definition.configDefinition
+        : null;
 
     return (
       <div>
@@ -167,11 +173,9 @@ export default class SidebarSolidInfo extends React.Component<
             <Plugin.SidebarComponent solid={solid} />
           )}
         </SidebarSection>
-        {solid.definition.configDefinition && (
+        {configDefinition && (
           <SidebarSection title={"Config"}>
-            <ConfigTypeSchema
-              type={solid.definition.configDefinition.configType}
-            />
+            <ConfigTypeSchema type={configDefinition.configType} />
           </SidebarSection>
         )}
         <SidebarSection title={"Inputs"}>{this.renderInputs()}</SidebarSection>

@@ -31,6 +31,9 @@ from dagster import (
     PipelineDefinition,
     RepositoryDefinition,
     SolidDefinition,
+    SolidInstance,
+    CompositeSolidDefinition,
+    Float,
     String,
     lambda_solid,
     resource,
@@ -189,6 +192,7 @@ def define_repository(repo_config=None):
             'pipeline_with_expectations': define_pipeline_with_expectation,
             'multi_mode_with_resources': define_multi_mode_with_resources_pipeline,
             'multi_mode_with_loggers': define_multi_mode_with_loggers_pipeline,
+            'composites_pipeline': define_composites_pipeline,
         },
         repo_config=repo_config,
     )
@@ -509,4 +513,53 @@ def define_multi_mode_with_loggers_pipeline():
                 description='Mode with multiple loggers',
             ),
         ],
+    )
+
+
+def define_composites_pipeline():
+    @lambda_solid(inputs=[InputDefinition('num', Int)])
+    def add_one(num):
+        return num + 1
+
+    @lambda_solid(inputs=[InputDefinition('num')])
+    def div_two(num):
+        return num / 2
+
+    add_two = CompositeSolidDefinition(
+        'add_two',
+        solids=[add_one],
+        dependencies={
+            SolidInstance('add_one', 'adder_1'): {},
+            SolidInstance('add_one', 'adder_2'): {'num': DependencyDefinition('adder_1')},
+        },
+        input_mappings=[InputDefinition('num', Int).mapping_to('adder_1', 'num')],
+        output_mappings=[OutputDefinition(Int).mapping_from('adder_2')],
+    )
+
+    add_four = CompositeSolidDefinition(
+        'add_four',
+        solids=[add_two],
+        dependencies={
+            SolidInstance('add_two', 'adder_1'): {},
+            SolidInstance('add_two', 'adder_2'): {'num': DependencyDefinition('adder_1')},
+        },
+        input_mappings=[InputDefinition('num', Int).mapping_to('adder_1', 'num')],
+        output_mappings=[OutputDefinition(Int).mapping_from('adder_2')],
+    )
+
+    div_four = CompositeSolidDefinition(
+        'div_four',
+        solids=[div_two],
+        dependencies={
+            SolidInstance('div_two', 'div_1'): {},
+            SolidInstance('div_two', 'div_2'): {'num': DependencyDefinition('div_1')},
+        },
+        input_mappings=[InputDefinition('num', Int).mapping_to('div_1', 'num')],
+        output_mappings=[OutputDefinition(Float).mapping_from('div_2')],
+    )
+
+    return PipelineDefinition(
+        name='composites_pipeline',
+        solids=[add_four, div_four],
+        dependencies={'div_four': {'num': DependencyDefinition('add_four')}},
     )
