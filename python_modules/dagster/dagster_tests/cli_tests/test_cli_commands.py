@@ -220,25 +220,93 @@ def test_print_command():
         assert result.exit_code == 0
 
 
+def test_execute_mode_command():
+    runner = CliRunner()
+
+    add_result = runner_pipeline_execute(
+        runner,
+        [
+            '-y',
+            script_relative_path('../repository.yml'),
+            '--env',
+            script_relative_path('../environments/multi_mode_with_resources/add_mode.yml'),
+            '-d',
+            'add_mode',
+            'multi_mode_with_resources',  # pipeline name
+        ],
+    )
+
+    # this is quite horrific and fragile easiest way to check for correcness
+    assert 'Step apply_to_three.transform emitted 5 for output result' in add_result.stdout
+
+    mult_result = runner_pipeline_execute(
+        runner,
+        [
+            '-y',
+            script_relative_path('../repository.yml'),
+            '--env',
+            script_relative_path('../environments/multi_mode_with_resources/mult_mode.yml'),
+            '-d',
+            'mult_mode',
+            'multi_mode_with_resources',  # pipeline name
+        ],
+    )
+
+    assert 'Step apply_to_three.transform emitted 12 for output result' in mult_result.stdout
+
+    double_adder_result = runner_pipeline_execute(
+        runner,
+        [
+            '-y',
+            script_relative_path('../repository.yml'),
+            '--env',
+            script_relative_path('../environments/multi_mode_with_resources/double_adder_mode.yml'),
+            '-d',
+            'double_adder_mode',
+            'multi_mode_with_resources',  # pipeline name
+        ],
+    )
+
+    assert (
+        'Step apply_to_three.transform emitted 25 for output result' in double_adder_result.stdout
+    )
+
+
 def test_execute_command():
     for cli_args in valid_execute_args():
         execute_execute_command(env=None, raise_on_error=True, cli_args=cli_args)
 
     for cli_args in valid_execute_args():
         execute_execute_command(
-            env=[script_relative_path('env.yml')], raise_on_error=True, cli_args=cli_args
+            env=[script_relative_path('default_log_error_env.yml')],
+            raise_on_error=True,
+            cli_args=cli_args,
         )
 
     runner = CliRunner()
 
     for cli_args in valid_cli_args():
-        result = runner.invoke(pipeline_execute_command, cli_args)
-        assert result.exit_code == 0
+        runner_pipeline_execute(runner, cli_args)
 
-        result = runner.invoke(
-            pipeline_execute_command, ['--env', script_relative_path('env.yml')] + cli_args
+        runner_pipeline_execute(
+            runner, ['--env', script_relative_path('default_log_error_env.yml')] + cli_args
         )
-        assert result.exit_code == 0
+
+
+def runner_pipeline_execute(runner, cli_args):
+    result = runner.invoke(pipeline_execute_command, cli_args)
+    if result.exit_code != 0:
+        # CliRunner captures stdout so printing it out here
+        raise Exception(
+            (
+                'dagster pipeline execute commands with cli_args {cli_args} '
+                'returned exit_code {exit_code} with stdout:\n"{stdout}" and '
+                '\nresult as string: "{result}"'
+            ).format(
+                cli_args=cli_args, exit_code=result.exit_code, stdout=result.stdout, result=result
+            )
+        )
+    return result
 
 
 def test_scaffold_command():

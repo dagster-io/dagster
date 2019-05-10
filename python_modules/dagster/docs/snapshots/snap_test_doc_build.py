@@ -691,16 +691,18 @@ snapshots['test_build_all_docs 3'] = '''
 <h2 id="E">E</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="sections/api/apidocs/pipeline.html#dagster.RepositoryDefinition.eager_construction">eager_construction() (dagster.RepositoryDefinition static method)</a>
+</li>
       <li><a href="sections/api/apidocs/execution.html#dagster.execute_pipeline">execute_pipeline() (in module dagster)</a>
 </li>
       <li><a href="sections/api/apidocs/execution.html#dagster.execute_pipeline_iterator">execute_pipeline_iterator() (in module dagster)</a>
 </li>
       <li><a href="sections/api/apidocs/utilities.html#dagster.execute_solid">execute_solid() (in module dagster)</a>
 </li>
-      <li><a href="sections/api/apidocs/utilities.html#dagster.execute_solids">execute_solids() (in module dagster)</a>
-</li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="sections/api/apidocs/utilities.html#dagster.execute_solids">execute_solids() (in module dagster)</a>
+</li>
       <li><a href="sections/api/apidocs/pipeline.html#dagster.ExecutionContext">ExecutionContext (class in dagster)</a>
 </li>
       <li><a href="sections/api/apidocs/solids.html#dagster.ExpectationDefinition.expectation_fn">expectation_fn (dagster.ExpectationDefinition attribute)</a>
@@ -20309,6 +20311,14 @@ name of the pipeline are the same.</p>
 </ul>
 </dd>
 </dl>
+<dl class="staticmethod">
+<dt id="dagster.RepositoryDefinition.eager_construction">
+<em class="property">static </em><code class="descname">eager_construction</code><span class="sig-paren">(</span><em>name</em>, <em>pipelines</em>, <em>*args</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dagster/core/definitions/repository.html#RepositoryDefinition.eager_construction"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dagster.RepositoryDefinition.eager_construction" title="Permalink to this definition">¶</a></dt>
+<dd><p>Useful help when you are unconcerned about the the performance of
+pipeline construction. You can just pass a list of pipelines and it will
+handle constructing the dictionary of pipeline name to functions for you</p>
+</dd></dl>
+
 <dl class="method">
 <dt id="dagster.RepositoryDefinition.get_all_pipelines">
 <code class="descname">get_all_pipelines</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dagster/core/definitions/repository.html#RepositoryDefinition.get_all_pipelines"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dagster.RepositoryDefinition.get_all_pipelines" title="Permalink to this definition">¶</a></dt>

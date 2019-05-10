@@ -49,6 +49,23 @@ class RepositoryDefinition(object):
             enforce_solid_def_uniqueness, 'enforce_solid_def_uniqueness'
         )
 
+    @staticmethod
+    def eager_construction(name, pipelines, *args, **kwargs):
+        '''Useful help when you are unconcerned about the the performance of
+        pipeline construction. You can just pass a list of pipelines and it will
+        handle constructing the dictionary of pipeline name to functions for you'''
+
+        check.list_param(pipelines, 'pipelines', of_type=PipelineDefinition)
+
+        # avoids lint violation cell-var-from-loop and crazy loop scoping rules
+        # see https://stackoverflow.com/questions/12423614/
+        def lambdify(item):
+            return lambda: item
+
+        return RepositoryDefinition(
+            name, {pipeline.name: lambdify(pipeline) for pipeline in pipelines}, *args, **kwargs
+        )
+
     def has_pipeline(self, name):
         check.str_param(name, 'name')
         return name in self.pipeline_dict

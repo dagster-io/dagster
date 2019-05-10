@@ -301,38 +301,39 @@ LOGGING_DICT = {
         'on RepositoryDefinition, typically managed under the config key in repository.yml.'
     ),
 )
-def pipeline_execute_command(env, raise_on_error, preset, **kwargs):
+@click.option('-d', '--mode', type=click.STRING)
+def pipeline_execute_command(env, raise_on_error, preset, mode, **kwargs):
     check.invariant(isinstance(env, tuple))
 
     if preset:
         if env:
             raise click.UsageError('Can not use --preset with --env.')
-        return execute_execute_command_with_preset(preset, raise_on_error, kwargs)
+        return execute_execute_command_with_preset(preset, raise_on_error, kwargs, mode)
 
     env = list(env)
-    execute_execute_command(env, raise_on_error, kwargs)
+    execute_execute_command(env, raise_on_error, kwargs, mode)
 
 
-def execute_execute_command(env, raise_on_error, cli_args):
+def execute_execute_command(env, raise_on_error, cli_args, mode=None):
     pipeline = create_pipeline_from_cli_args(cli_args)
-    return do_execute_command(pipeline, env, raise_on_error)
+    return do_execute_command(pipeline, env, raise_on_error, mode)
 
 
-def execute_execute_command_with_preset(preset, raise_on_error, cli_args):
+def execute_execute_command_with_preset(preset, raise_on_error, cli_args, mode):
     pipeline_target = load_pipeline_target_from_cli_args(cli_args)
     cli_args.pop('pipeline_name')
     repository_target_info = load_target_info_from_cli_args(cli_args)
-
     repository = load_repository_from_target_info(repository_target_info)
+    kwargs = repository.get_preset_pipeline(pipeline_target.pipeline_name, preset)
     return execute_pipeline(
         run_config=RunConfig(
-            executor_config=InProcessExecutorConfig(raise_on_error=raise_on_error)
+            mode=mode, executor_config=InProcessExecutorConfig(raise_on_error=raise_on_error)
         ),
-        **(repository.get_preset_pipeline(pipeline_target.pipeline_name, preset))
+        **kwargs
     )
 
 
-def do_execute_command(pipeline, env_file_list, raise_on_error):
+def do_execute_command(pipeline, env_file_list, raise_on_error, mode=None):
     check.inst_param(pipeline, 'pipeline', PipelineDefinition)
     env_file_list = check.opt_list_param(env_file_list, 'env_file_list', of_type=str)
 
@@ -342,7 +343,7 @@ def do_execute_command(pipeline, env_file_list, raise_on_error):
         pipeline,
         environment_dict=environment_dict,
         run_config=RunConfig(
-            executor_config=InProcessExecutorConfig(raise_on_error=raise_on_error)
+            mode=mode, executor_config=InProcessExecutorConfig(raise_on_error=raise_on_error)
         ),
     )
 

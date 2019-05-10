@@ -1,15 +1,18 @@
 import pytest
 
 from dagster import (
-    PipelineDefinition,
-    ModeDefinition,
-    execute_pipeline,
-    RunConfig,
-    Field,
-    Int,
-    solid,
-    resource,
     DagsterInvariantViolationError,
+    ModeDefinition,
+    PipelineDefinition,
+    RunConfig,
+    execute_pipeline,
+)
+
+from ..test_repository import (
+    define_modeless_pipeline,
+    define_multi_mode_pipeline,
+    define_multi_mode_with_resources_pipeline,
+    define_single_mode_pipeline,
 )
 
 
@@ -25,36 +28,6 @@ def test_mode_takes_a_name():
         name='takes a mode', solids=[], mode_definitions=[ModeDefinition(name='a_mode')]
     )
     assert pipeline_def
-
-
-def define_modeless_pipeline():
-    @solid
-    def return_one(_context):
-        return 1
-
-    return PipelineDefinition(name='modeless', solids=[return_one])
-
-
-def define_single_mode_pipeline():
-    @solid
-    def return_two(_context):
-        return 2
-
-    return PipelineDefinition(
-        name='single_mode', solids=[return_two], mode_definitions=[ModeDefinition(name='the_mode')]
-    )
-
-
-def define_multi_mode_pipeline():
-    @solid
-    def return_three(_context):
-        return 3
-
-    return PipelineDefinition(
-        name='multi_mode',
-        solids=[return_three],
-        mode_definitions=[ModeDefinition(name='mode_one'), ModeDefinition('mode_two')],
-    )
 
 
 def test_execute_modeless():
@@ -116,29 +89,6 @@ def test_execute_multi_mode_errors():
 
     with pytest.raises(DagsterInvariantViolationError):
         execute_pipeline(multi_mode_pipeline, run_config=RunConfig(mode='wrong_mode'))
-
-
-def define_multi_mode_with_resources_pipeline():
-    @resource(config_field=Field(Int))
-    def adder_resource(init_context):
-        return lambda x: x + init_context.resource_config
-
-    @resource(config_field=Field(Int))
-    def multer_resource(init_context):
-        return lambda x: x * init_context.resource_config
-
-    @solid
-    def apply_to_three(context):
-        return context.resources.op(3)
-
-    return PipelineDefinition(
-        name='multi_mode',
-        solids=[apply_to_three],
-        mode_definitions=[
-            ModeDefinition(name='add_mode', resources={'op': adder_resource}),
-            ModeDefinition(name='mult_mode', resources={'op': multer_resource}),
-        ],
-    )
 
 
 def test_execute_multi_mode_with_resources():
