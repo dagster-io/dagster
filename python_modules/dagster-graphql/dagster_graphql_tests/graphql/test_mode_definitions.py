@@ -42,7 +42,7 @@ query ModesQuery($pipelineName: String!, $mode: String)
 {
   pipeline(params: { name: $pipelineName }) {
     configTypes(mode: $mode) {
-      key
+      name
     }
     environmentType(mode: $mode){
       name

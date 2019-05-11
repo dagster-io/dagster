@@ -11,163 +11,163 @@ snapshots['test_query_multi_mode 1'] = {
     'pipeline': {
         'configTypes': [
             {
-                'key': 'Any'
+                'name': 'Any'
             },
             {
-                'key': 'Any.InputSchema'
+                'name': 'Any.InputSchema'
             },
             {
-                'key': 'Any.MaterializationSchema'
+                'name': 'Any.MaterializationSchema'
             },
             {
-                'key': 'Bool'
+                'name': 'Bool'
             },
             {
-                'key': 'Bool.InputSchema'
+                'name': 'Bool.InputSchema'
             },
             {
-                'key': 'Bool.MaterializationSchema'
+                'name': 'Bool.MaterializationSchema'
             },
             {
-                'key': 'Dict.1'
+                'name': None
             },
             {
-                'key': 'Dict.10'
+                'name': None
             },
             {
-                'key': 'Dict.11'
+                'name': None
             },
             {
-                'key': 'Dict.12'
+                'name': None
             },
             {
-                'key': 'Dict.13'
+                'name': None
             },
             {
-                'key': 'Dict.14'
+                'name': None
             },
             {
-                'key': 'Dict.15'
+                'name': None
             },
             {
-                'key': 'Dict.16'
+                'name': None
             },
             {
-                'key': 'Dict.17'
+                'name': None
             },
             {
-                'key': 'Dict.18'
+                'name': None
             },
             {
-                'key': 'Dict.19'
+                'name': None
             },
             {
-                'key': 'Dict.2'
+                'name': None
             },
             {
-                'key': 'Dict.20'
+                'name': None
             },
             {
-                'key': 'Dict.21'
+                'name': None
             },
             {
-                'key': 'Dict.22'
+                'name': None
             },
             {
-                'key': 'Dict.3'
+                'name': None
             },
             {
-                'key': 'Dict.4'
+                'name': None
             },
             {
-                'key': 'Dict.457'
+                'name': None
             },
             {
-                'key': 'Dict.5'
+                'name': None
             },
             {
-                'key': 'Dict.6'
+                'name': None
             },
             {
-                'key': 'Dict.7'
+                'name': None
             },
             {
-                'key': 'Dict.8'
+                'name': None
             },
             {
-                'key': 'Dict.9'
+                'name': None
             },
             {
-                'key': 'Float'
+                'name': 'Float'
             },
             {
-                'key': 'Float.InputSchema'
+                'name': 'Float.InputSchema'
             },
             {
-                'key': 'Float.MaterializationSchema'
+                'name': 'Float.MaterializationSchema'
             },
             {
-                'key': 'Int'
+                'name': 'Int'
             },
             {
-                'key': 'Int.InputSchema'
+                'name': 'Int.InputSchema'
             },
             {
-                'key': 'Int.MaterializationSchema'
+                'name': 'Int.MaterializationSchema'
             },
             {
-                'key': 'MultiModeWithResources.ApplyToThree.Outputs'
+                'name': 'MultiModeWithResources.ApplyToThree.Outputs'
             },
             {
-                'key': 'MultiModeWithResources.ExecutionConfig'
+                'name': 'MultiModeWithResources.ExecutionConfig'
             },
             {
-                'key': 'MultiModeWithResources.ExpectationsConfig'
+                'name': 'MultiModeWithResources.ExpectationsConfig'
             },
             {
-                'key': 'MultiModeWithResources.Mode.AddMode.Environment'
+                'name': 'MultiModeWithResources.Mode.AddMode.Environment'
             },
             {
-                'key': 'MultiModeWithResources.Mode.AddMode.Resources'
+                'name': 'MultiModeWithResources.Mode.AddMode.Resources'
             },
             {
-                'key': 'MultiModeWithResources.Mode.AddMode.Resources.op'
+                'name': 'MultiModeWithResources.Mode.AddMode.Resources.op'
             },
             {
-                'key': 'MultiModeWithResources.SolidConfig.ApplyToThree'
+                'name': 'MultiModeWithResources.SolidConfig.ApplyToThree'
             },
             {
-                'key': 'MultiModeWithResources.SolidsConfigDictionary'
+                'name': 'MultiModeWithResources.SolidsConfigDictionary'
             },
             {
-                'key': 'MultiModeWithResources.StorageConfig'
+                'name': 'MultiModeWithResources.StorageConfig'
             },
             {
-                'key': 'MultiModeWithResources.StorageConfig.Files'
+                'name': 'MultiModeWithResources.StorageConfig.Files'
             },
             {
-                'key': 'MultiModeWithResources.StorageConfig.InMem'
+                'name': 'MultiModeWithResources.StorageConfig.InMem'
             },
             {
-                'key': 'MultiModeWithResources.StorageConfig.S3'
+                'name': 'MultiModeWithResources.StorageConfig.S3'
             },
             {
-                'key': 'Path'
+                'name': 'Path'
             },
             {
-                'key': 'Path.MaterializationSchema'
+                'name': 'Path.MaterializationSchema'
             },
             {
-                'key': 'String'
+                'name': 'String'
             },
             {
-                'key': 'String.InputSchema'
+                'name': 'String.InputSchema'
             },
             {
-                'key': 'String.MaterializationSchema'
+                'name': 'String.MaterializationSchema'
             },
             {
-                'key': 'log_level'
+                'name': 'log_level'
             }
         ],
         'environmentType': {
@@ -265,163 +265,163 @@ snapshots['test_query_multi_mode 2'] = {
     'pipeline': {
         'configTypes': [
             {
-                'key': 'Any'
+                'name': 'Any'
             },
             {
-                'key': 'Any.InputSchema'
+                'name': 'Any.InputSchema'
             },
             {
-                'key': 'Any.MaterializationSchema'
+                'name': 'Any.MaterializationSchema'
             },
             {
-                'key': 'Bool'
+                'name': 'Bool'
             },
             {
-                'key': 'Bool.InputSchema'
+                'name': 'Bool.InputSchema'
             },
             {
-                'key': 'Bool.MaterializationSchema'
+                'name': 'Bool.MaterializationSchema'
             },
             {
-                'key': 'Dict.1'
+                'name': None
             },
             {
-                'key': 'Dict.10'
+                'name': None
             },
             {
-                'key': 'Dict.11'
+                'name': None
             },
             {
-                'key': 'Dict.12'
+                'name': None
             },
             {
-                'key': 'Dict.13'
+                'name': None
             },
             {
-                'key': 'Dict.14'
+                'name': None
             },
             {
-                'key': 'Dict.15'
+                'name': None
             },
             {
-                'key': 'Dict.16'
+                'name': None
             },
             {
-                'key': 'Dict.17'
+                'name': None
             },
             {
-                'key': 'Dict.18'
+                'name': None
             },
             {
-                'key': 'Dict.19'
+                'name': None
             },
             {
-                'key': 'Dict.2'
+                'name': None
             },
             {
-                'key': 'Dict.20'
+                'name': None
             },
             {
-                'key': 'Dict.21'
+                'name': None
             },
             {
-                'key': 'Dict.22'
+                'name': None
             },
             {
-                'key': 'Dict.3'
+                'name': None
             },
             {
-                'key': 'Dict.4'
+                'name': None
             },
             {
-                'key': 'Dict.459'
+                'name': None
             },
             {
-                'key': 'Dict.5'
+                'name': None
             },
             {
-                'key': 'Dict.6'
+                'name': None
             },
             {
-                'key': 'Dict.7'
+                'name': None
             },
             {
-                'key': 'Dict.8'
+                'name': None
             },
             {
-                'key': 'Dict.9'
+                'name': None
             },
             {
-                'key': 'Float'
+                'name': 'Float'
             },
             {
-                'key': 'Float.InputSchema'
+                'name': 'Float.InputSchema'
             },
             {
-                'key': 'Float.MaterializationSchema'
+                'name': 'Float.MaterializationSchema'
             },
             {
-                'key': 'Int'
+                'name': 'Int'
             },
             {
-                'key': 'Int.InputSchema'
+                'name': 'Int.InputSchema'
             },
             {
-                'key': 'Int.MaterializationSchema'
+                'name': 'Int.MaterializationSchema'
             },
             {
-                'key': 'MultiModeWithResources.ApplyToThree.Outputs'
+                'name': 'MultiModeWithResources.ApplyToThree.Outputs'
             },
             {
-                'key': 'MultiModeWithResources.ExecutionConfig'
+                'name': 'MultiModeWithResources.ExecutionConfig'
             },
             {
-                'key': 'MultiModeWithResources.ExpectationsConfig'
+                'name': 'MultiModeWithResources.ExpectationsConfig'
             },
             {
-                'key': 'MultiModeWithResources.Mode.AddMode.Environment'
+                'name': 'MultiModeWithResources.Mode.AddMode.Environment'
             },
             {
-                'key': 'MultiModeWithResources.Mode.AddMode.Resources'
+                'name': 'MultiModeWithResources.Mode.AddMode.Resources'
             },
             {
-                'key': 'MultiModeWithResources.Mode.AddMode.Resources.op'
+                'name': 'MultiModeWithResources.Mode.AddMode.Resources.op'
             },
             {
-                'key': 'MultiModeWithResources.SolidConfig.ApplyToThree'
+                'name': 'MultiModeWithResources.SolidConfig.ApplyToThree'
             },
             {
-                'key': 'MultiModeWithResources.SolidsConfigDictionary'
+                'name': 'MultiModeWithResources.SolidsConfigDictionary'
             },
             {
-                'key': 'MultiModeWithResources.StorageConfig'
+                'name': 'MultiModeWithResources.StorageConfig'
             },
             {
-                'key': 'MultiModeWithResources.StorageConfig.Files'
+                'name': 'MultiModeWithResources.StorageConfig.Files'
             },
             {
-                'key': 'MultiModeWithResources.StorageConfig.InMem'
+                'name': 'MultiModeWithResources.StorageConfig.InMem'
             },
             {
-                'key': 'MultiModeWithResources.StorageConfig.S3'
+                'name': 'MultiModeWithResources.StorageConfig.S3'
             },
             {
-                'key': 'Path'
+                'name': 'Path'
             },
             {
-                'key': 'Path.MaterializationSchema'
+                'name': 'Path.MaterializationSchema'
             },
             {
-                'key': 'String'
+                'name': 'String'
             },
             {
-                'key': 'String.InputSchema'
+                'name': 'String.InputSchema'
             },
             {
-                'key': 'String.MaterializationSchema'
+                'name': 'String.MaterializationSchema'
             },
             {
-                'key': 'log_level'
+                'name': 'log_level'
             }
         ],
         'environmentType': {
