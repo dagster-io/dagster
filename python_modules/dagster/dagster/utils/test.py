@@ -14,7 +14,7 @@ from dagster import (
     execute_pipeline,
 )
 
-from dagster.core.execution.user_context import ExecutionContext
+from dagster.core.execution.context.execution import ExecutionContext
 
 from dagster.core.execution.api import RunConfig, yield_pipeline_execution_context
 

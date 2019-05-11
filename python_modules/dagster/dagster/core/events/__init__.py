@@ -53,7 +53,7 @@ def _assert_type(method, expected_type, actual_type):
 
 
 def _validate_event_specific_data(event_type, event_specific_data):
-    from dagster.core.execution_plan.objects import StepOutputData, StepFailureData, StepSuccessData
+    from dagster.core.execution.plan.objects import StepOutputData, StepFailureData, StepSuccessData
 
     if event_type == DagsterEventType.STEP_OUTPUT:
         check.inst_param(event_specific_data, 'event_specific_data', StepOutputData)
@@ -78,7 +78,7 @@ class DagsterEvent(
 ):
     @staticmethod
     def from_step(event_type, step_context, event_specific_data=None):
-        from dagster.core.execution.execution_context import SystemStepExecutionContext
+        from dagster.core.execution.context.system import SystemStepExecutionContext
 
         check.inst_param(step_context, 'step_context', SystemStepExecutionContext)
 
@@ -105,7 +105,7 @@ class DagsterEvent(
 
     @staticmethod
     def from_pipeline(event_type, pipeline_context):
-        from dagster.core.execution.execution_context import SystemPipelineExecutionContext
+        from dagster.core.execution.context.system import SystemPipelineExecutionContext
 
         check.inst_param(pipeline_context, 'pipeline_context', SystemPipelineExecutionContext)
         pipeline_name = pipeline_context.pipeline_def.name
@@ -169,7 +169,7 @@ class DagsterEvent(
 
     @property
     def step_kind(self):
-        from dagster.core.execution_plan.objects import StepKind
+        from dagster.core.execution.plan.objects import StepKind
 
         return StepKind(self.step_kind_value)
 

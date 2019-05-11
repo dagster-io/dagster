@@ -1480,11 +1480,11 @@ snapshots['test_build_all_docs 7'] = '''
 <li><a href="dagster/core/definitions/solid.html">dagster.core.definitions.solid</a></li>
 <li><a href="dagster/core/errors.html">dagster.core.errors</a></li>
 <li><a href="dagster/core/execution/api.html">dagster.core.execution.api</a></li>
+<li><a href="dagster/core/execution/config.html">dagster.core.execution.config</a></li>
+<li><a href="dagster/core/execution/context/execution.html">dagster.core.execution.context.execution</a></li>
+<li><a href="dagster/core/execution/context/init.html">dagster.core.execution.context.init</a></li>
 <li><a href="dagster/core/execution/context_creation_pipeline.html">dagster.core.execution.context_creation_pipeline</a></li>
-<li><a href="dagster/core/execution/execution_context.html">dagster.core.execution.execution_context</a></li>
-<li><a href="dagster/core/execution/init_context.html">dagster.core.execution.init_context</a></li>
 <li><a href="dagster/core/execution/results.html">dagster.core.execution.results</a></li>
-<li><a href="dagster/core/execution/user_context.html">dagster.core.execution.user_context</a></li>
 <li><a href="dagster/core/runs.html">dagster.core.runs</a></li>
 <li><a href="dagster/core/types/builtin_enum.html">dagster.core.types.builtin_enum</a></li>
 <li><a href="dagster/core/types/config.html">dagster.core.types.config</a></li>
@@ -19475,12 +19475,12 @@ node. For the ‘synchronous’ API, see <a class="reference internal" href="#da
 <h2>Results<a class="headerlink" href="#results" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="dagster.InProcessExecutorConfig">
-<em class="property">class </em><code class="descclassname">dagster.</code><code class="descname">InProcessExecutorConfig</code><span class="sig-paren">(</span><em>raise_on_error=True</em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dagster/core/execution/execution_context.html#InProcessExecutorConfig"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dagster.InProcessExecutorConfig" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">dagster.</code><code class="descname">InProcessExecutorConfig</code><span class="sig-paren">(</span><em>raise_on_error=True</em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dagster/core/execution/config.html#InProcessExecutorConfig"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dagster.InProcessExecutorConfig" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="class">
 <dt id="dagster.MultiprocessExecutorConfig">
-<em class="property">class </em><code class="descclassname">dagster.</code><code class="descname">MultiprocessExecutorConfig</code><span class="sig-paren">(</span><em>pipeline_fn</em>, <em>max_concurrent=None</em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dagster/core/execution/execution_context.html#MultiprocessExecutorConfig"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dagster.MultiprocessExecutorConfig" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">dagster.</code><code class="descname">MultiprocessExecutorConfig</code><span class="sig-paren">(</span><em>pipeline_fn</em>, <em>max_concurrent=None</em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dagster/core/execution/config.html#MultiprocessExecutorConfig"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dagster.MultiprocessExecutorConfig" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="class">
@@ -19568,7 +19568,7 @@ Returns None if execution result isn’t a success.</p>
 <h2>Configuration<a class="headerlink" href="#configuration" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="dagster.RunConfig">
-<em class="property">class </em><code class="descclassname">dagster.</code><code class="descname">RunConfig</code><a class="reference internal" href="../../../_modules/dagster/core/execution/execution_context.html#RunConfig"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dagster.RunConfig" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">dagster.</code><code class="descname">RunConfig</code><a class="reference internal" href="../../../_modules/dagster/core/execution/config.html#RunConfig"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dagster.RunConfig" title="Permalink to this definition">¶</a></dt>
 <dd><p>Configuration that controls the details of how Dagster will execute a pipeline.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -20144,7 +20144,7 @@ pass it into a one-off PipelineDefinition</p>
 
 <dl class="class">
 <dt id="dagster.InitContext">
-<em class="property">class </em><code class="descclassname">dagster.</code><code class="descname">InitContext</code><a class="reference internal" href="../../../_modules/dagster/core/execution/init_context.html#InitContext"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dagster.InitContext" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">dagster.</code><code class="descname">InitContext</code><a class="reference internal" href="../../../_modules/dagster/core/execution/context/init.html#InitContext"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dagster.InitContext" title="Permalink to this definition">¶</a></dt>
 <dd><p>InitContext is the context object provided to context creation functions.
 In effect, it is the state available to those functions, and any function that
 is called prior to pipeline execution, plus the configuration value for that context.</p>
@@ -20186,7 +20186,7 @@ data is defined by <code class="docutils literal notranslate"><span class="pre">
 
 <dl class="class">
 <dt id="dagster.ExecutionContext">
-<em class="property">class </em><code class="descclassname">dagster.</code><code class="descname">ExecutionContext</code><a class="reference internal" href="../../../_modules/dagster/core/execution/user_context.html#ExecutionContext"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dagster.ExecutionContext" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">dagster.</code><code class="descname">ExecutionContext</code><a class="reference internal" href="../../../_modules/dagster/core/execution/context/execution.html#ExecutionContext"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dagster.ExecutionContext" title="Permalink to this definition">¶</a></dt>
 <dd><p>The user-facing object in the context creation function. The user constructs
 this in order to effect the context creation process. This could be named
 SystemPipelineExecutionContextCreationData although that seemed excessively verbose.</p>
@@ -20228,7 +20228,7 @@ resource_fn in a ResourceDefinition.</p>
 
 <dl class="class">
 <dt id="dagster.InitResourceContext">
-<em class="property">class </em><code class="descclassname">dagster.</code><code class="descname">InitResourceContext</code><a class="reference internal" href="../../../_modules/dagster/core/execution/init_context.html#InitResourceContext"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dagster.InitResourceContext" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">dagster.</code><code class="descname">InitResourceContext</code><a class="reference internal" href="../../../_modules/dagster/core/execution/context/init.html#InitResourceContext"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dagster.InitResourceContext" title="Permalink to this definition">¶</a></dt>
 <dd><p>Similar to InitContext, but is resource specific. It includes all the properties
 in the InitContext, plus the resource config and the resource definition.</p>
 <dl class="attribute">

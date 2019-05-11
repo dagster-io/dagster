@@ -1,12 +1,9 @@
 import os
 from dagster import check
 
-from dagster.core.execution.execution_context import (
-    MultiprocessExecutorConfig,
-    SystemPipelineExecutionContext,
-)
-
-from dagster.core.execution_plan.plan import ExecutionPlan
+from dagster.core.execution.context.system import SystemPipelineExecutionContext
+from dagster.core.execution.config import MultiprocessExecutorConfig
+from dagster.core.execution.plan.plan import ExecutionPlan
 
 from .child_process_executor import ChildProcessCommand, execute_child_process_command
 from .engine_base import BaseEngine

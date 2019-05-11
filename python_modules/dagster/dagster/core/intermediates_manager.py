@@ -5,7 +5,7 @@ import six
 
 from dagster import check
 
-from dagster.core.execution.execution_context import SystemPipelineExecutionContext
+from dagster.core.execution.context.system import SystemPipelineExecutionContext
 from .object_store import ObjectStore
 from .runs import RunStorageMode
 from .types.runtime import RuntimeType
@@ -14,7 +14,7 @@ from .types.runtime import RuntimeType
 class StepOutputHandle(namedtuple('_StepOutputHandle', 'step_key output_name')):
     @staticmethod
     def from_step(step, output_name='result'):
-        from .execution_plan.objects import ExecutionStep
+        from .execution.plan.objects import ExecutionStep
 
         check.inst_param(step, 'step', ExecutionStep)
 
@@ -49,7 +49,7 @@ class IntermediatesManager(six.with_metaclass(ABCMeta)):  # pylint: disable=no-i
         return len(self.uncovered_inputs(context, step)) == 0
 
     def uncovered_inputs(self, context, step):
-        from .execution_plan.objects import ExecutionStep
+        from .execution.plan.objects import ExecutionStep
 
         check.inst_param(step, 'step', ExecutionStep)
         uncovered_inputs = []

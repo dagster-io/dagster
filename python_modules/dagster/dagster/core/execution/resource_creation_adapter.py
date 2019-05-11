@@ -3,7 +3,7 @@ from dagster import check
 from dagster.core.definitions import ModeDefinition, PipelineContextDefinition
 from dagster.core.system_config.objects import EnvironmentConfig
 
-from .user_context import ExecutionContext
+from .context.execution import ExecutionContext
 
 
 class ResourceCreationAdapter:

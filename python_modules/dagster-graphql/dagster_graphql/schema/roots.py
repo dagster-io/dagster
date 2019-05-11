@@ -134,7 +134,7 @@ class DauphinReexecutionConfig(dauphin.InputObjectType):
     stepOutputHandles = dauphin.non_null_list(DauphinStepOutputHandle)
 
     def to_reexecution_config(self):
-        from dagster.core.execution.execution_context import ReexecutionConfig
+        from dagster.core.execution.config import ReexecutionConfig
         from dagster.core.intermediates_manager import StepOutputHandle
 
         return ReexecutionConfig(

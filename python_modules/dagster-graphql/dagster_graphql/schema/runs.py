@@ -7,8 +7,8 @@ from dagster.core.events.logging import EventRecord
 from dagster.core.events import DagsterEventType
 
 from dagster.utils.logging import CRITICAL, DEBUG, ERROR, INFO, WARNING, check_valid_level_param
-from dagster.core.execution_plan.plan import ExecutionPlan
-from dagster.core.execution_plan.objects import StepFailureData
+from dagster.core.execution.plan.plan import ExecutionPlan
+from dagster.core.execution.plan.objects import StepFailureData
 
 from dagster_graphql import dauphin
 from dagster_graphql.implementation.fetch_pipelines import get_pipeline_or_raise

@@ -8,7 +8,7 @@ import six
 from dagster import check, seven
 from dagster.utils import mkdir_p
 
-from dagster.core.execution.execution_context import SystemPipelineExecutionContext
+from dagster.core.execution.context.system import SystemPipelineExecutionContext
 from .runs import RunStorageMode
 from .types.runtime import RuntimeType, resolve_to_runtime_type
 

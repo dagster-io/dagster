@@ -42,16 +42,16 @@ from dagster.core.errors import DagsterSubprocessExecutionError
 from dagster.core.events.logging import construct_json_event_logger, EventRecord
 from dagster.core.events import DagsterEvent
 from dagster.core.execution.api import yield_pipeline_execution_context
-from dagster.core.execution.execution_context import (
-    DagsterLog,
-    RunConfig,
+from dagster.core.execution.config import RunConfig
+from dagster.core.execution.context.system import (
     SystemPipelineExecutionContext,
     SystemTransformExecutionContext,
 )
-from dagster.core.execution.user_context import (
+from dagster.core.execution.context.transform import (
     AbstractTransformExecutionContext,
     TransformExecutionContext,
 )
+from dagster.core.log import DagsterLog
 from dagster.core.types.marshal import (
     serialize_to_file,
     deserialize_from_file,

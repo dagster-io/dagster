@@ -53,14 +53,11 @@ from dagster.core.types.evaluator import (
     friendly_string_for_error,
 )
 
-from .execution_context import (
-    RunConfig,
-    SystemPipelineExecutionContextData,
-    SystemPipelineExecutionContext,
-)
-from .init_context import InitContext, InitResourceContext
+from .config import RunConfig
+from .context.execution import ExecutionContext
+from .context.init import InitContext, InitResourceContext
+from .context.system import SystemPipelineExecutionContextData, SystemPipelineExecutionContext
 from .resource_creation_adapter import ResourceCreationAdapter
-from .user_context import ExecutionContext
 
 
 class PipelineConfigEvaluationError(Exception):

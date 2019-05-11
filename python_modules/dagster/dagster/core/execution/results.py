@@ -7,7 +7,7 @@ from dagster.core.definitions import PipelineDefinition, Solid
 from dagster.core.definitions.utils import DEFAULT_OUTPUT
 from dagster.core.errors import DagsterInvariantViolationError
 from dagster.core.events import DagsterEvent, DagsterEventType
-from dagster.core.execution_plan.objects import StepKind
+from dagster.core.execution.plan.objects import StepKind
 
 
 class PipelineExecutionResult(object):

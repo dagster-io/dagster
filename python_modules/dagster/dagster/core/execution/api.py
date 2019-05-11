@@ -12,23 +12,16 @@ will not invoke *any* outputs (and their APIs don't allow the user to).
 
 '''
 
-# too many lines
-# pylint: disable=C0302
-
 from dagster import check
-
 from dagster.core.definitions import PipelineDefinition
-
 from dagster.core.errors import (
     DagsterExecutionStepNotFoundError,
     DagsterInvariantViolationError,
     DagsterRunNotFoundError,
     DagsterStepOutputNotFoundError,
 )
-
 from dagster.core.events import DagsterEvent, DagsterEventType
-
-from dagster.core.execution_plan.plan import ExecutionPlan
+from dagster.core.execution.plan.plan import ExecutionPlan
 from dagster.core.engine.engine_multiprocessing import MultiprocessingEngine
 from dagster.core.engine.engine_inprocess import InProcessEngine
 
@@ -38,15 +31,8 @@ from .context_creation_pipeline import (
     scoped_pipeline_context,
     yield_pipeline_execution_context,
 )
-
-from .execution_context import (
-    RunConfig,
-    InProcessExecutorConfig,
-    MultiprocessExecutorConfig,
-    SystemPipelineExecutionContext,
-)
-
-
+from .config import RunConfig, InProcessExecutorConfig, MultiprocessExecutorConfig
+from .context.system import SystemPipelineExecutionContext
 from .results import PipelineExecutionResult
 
 

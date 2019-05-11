@@ -4,7 +4,7 @@ import re
 
 from dagster.core.definitions import SolidHandle
 from dagster.core.events import DagsterEvent
-from dagster.core.execution_plan.objects import StepFailureData
+from dagster.core.execution.plan.objects import StepFailureData
 from dagster.core.log import DAGSTER_DEFAULT_LOGGER, DagsterLog
 from dagster.utils.error import SerializableErrorInfo
 

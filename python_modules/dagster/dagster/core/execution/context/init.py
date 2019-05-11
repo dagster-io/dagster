@@ -16,7 +16,7 @@ class InitContext(namedtuple('_InitContext', 'context_config pipeline_def run_id
 
     Attributes:
         context_config (Any):
-            The configuration data provided by the environment config. The schema for this 
+            The configuration data provided by the environment config. The schema for this
             data is defined by ``config_field`` on the :py:class:`PipelineContextDefinition`
         pipeline_def (PipelineDefinition): The pipeline definition currently being executed.
         run_id (str): The ID for this run of the pipeline.
@@ -56,7 +56,7 @@ class InitResourceContext(
         context_config (Any):
             The configuration data provided by the environment config. The schema for this
             data is defined by ``config_field`` on the :py:class:`PipelineContextDefinition`
-        resource_config (Any): 
+        resource_config (Any):
             The configuration data provided by the environment config. The schema for this
             data is defined by ``config_field`` on the :py:class:`ResourceDefinition`
         pipeline_def (PipelineDefinition): The pipeline definition currently being executed.

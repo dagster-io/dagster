@@ -15,8 +15,8 @@ from dagster import check, seven
 from dagster.core.events.logging import EventRecord
 from dagster.core.events import DagsterEventType
 from dagster.core.execution.api import ExecutionSelector
-from dagster.core.execution.execution_context import ReexecutionConfig
-from dagster.core.execution_plan.plan import ExecutionPlan
+from dagster.core.execution.config import ReexecutionConfig
+from dagster.core.execution.plan.plan import ExecutionPlan
 
 
 class PipelineRunStatus(Enum):
