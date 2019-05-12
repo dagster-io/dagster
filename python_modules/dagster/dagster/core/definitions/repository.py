@@ -20,9 +20,16 @@ from .pipeline import PipelineDefinition
 EPHEMERAL_NAME = '<<unnamed>>'
 
 
-class RepositoryTargetInfo(
-    namedtuple('_RepositoryTargetInfo', 'repository_yaml module_name python_file fn_name')
-):
+class RepositoryTargetInfo:
+    def __init__(
+        self, repository_yaml=None, module_name=None, python_file=None, fn_name=None, kwargs=None
+    ):
+        self.repository_yaml = check.opt_str_param(repository_yaml, 'repository_yaml')
+        self.module_name = check.opt_str_param(module_name, 'module_name')
+        self.python_file = check.opt_str_param(python_file, 'python_file')
+        self.fn_name = check.opt_str_param(fn_name, 'fn_name')
+        self.kwargs = check.opt_dict_param(kwargs, 'kwargs')
+
     def get_entrypoint(self):
         def _repo_load_invariant(condition):
             if not condition:
@@ -32,18 +39,19 @@ class RepositoryTargetInfo(
             _repo_load_invariant(self.module_name is None)
             _repo_load_invariant(self.python_file is None)
             _repo_load_invariant(self.fn_name is None)
+            _repo_load_invariant(not self.kwargs)
             return LoaderEntrypoint.from_yaml(self.repository_yaml)
         elif self.module_name and self.fn_name:
             _repo_load_invariant(self.repository_yaml is None)
             _repo_load_invariant(self.python_file is None)
             return LoaderEntrypoint.from_module_target(
-                module_name=self.module_name, fn_name=self.fn_name
+                module_name=self.module_name, fn_name=self.fn_name, kwargs=self.kwargs
             )
         elif self.python_file and self.fn_name:
             _repo_load_invariant(self.repository_yaml is None)
             _repo_load_invariant(self.module_name is None)
             return LoaderEntrypoint.from_file_target(
-                python_file=self.python_file, fn_name=self.fn_name
+                python_file=self.python_file, fn_name=self.fn_name, kwargs=self.kwargs
             )
         else:
             raise InvalidRepositoryLoadingComboError()

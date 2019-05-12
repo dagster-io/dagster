@@ -34,10 +34,7 @@ def get_events_of_type(events, event_type):
 def test_running():
     run_id = make_new_run_id()
     repository_target_info = RepositoryTargetInfo(
-        repository_yaml=None,
-        python_file=__file__,
-        fn_name='define_passing_pipeline',
-        module_name=None,
+        python_file=__file__, fn_name='define_passing_pipeline'
     )
     pipeline = define_passing_pipeline()
     env_config = {
@@ -74,10 +71,7 @@ def test_running():
 def test_failing():
     run_id = make_new_run_id()
     repository_target_info = RepositoryTargetInfo(
-        repository_yaml=None,
-        python_file=__file__,
-        fn_name='define_failing_pipeline',
-        module_name=None,
+        python_file=__file__, fn_name='define_failing_pipeline'
     )
     pipeline = define_failing_pipeline()
     env_config = {
@@ -107,10 +101,7 @@ def test_failing():
 def test_execution_crash():
     run_id = make_new_run_id()
     repository_target_info = RepositoryTargetInfo(
-        repository_yaml=None,
-        python_file=__file__,
-        fn_name='define_crashy_pipeline',
-        module_name=None,
+        python_file=__file__, fn_name='define_crashy_pipeline'
     )
     pipeline = define_crashy_pipeline()
     env_config = {

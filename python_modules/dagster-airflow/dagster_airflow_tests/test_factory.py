@@ -5,6 +5,7 @@ import json
 import re
 import uuid
 
+from dagster import RepositoryTargetInfo
 from dagster.utils import script_relative_path
 
 # pylint: disable=unused-import
@@ -14,13 +15,16 @@ from dagster_airflow.test_fixtures import (
 )
 from dagster_airflow.factory import _rename_for_airflow, AIRFLOW_MAX_DAG_NAME_LEN
 
-from .conftest import IMAGE
-from .marks import nettest
-from .test_project.dagster_airflow_demo import define_demo_execution_pipeline
+from dagster_airflow_tests.conftest import IMAGE
+from dagster_airflow_tests.marks import nettest
+from dagster_airflow_tests.test_project.dagster_airflow_demo import define_demo_execution_pipeline
 
 
 class TestExecuteDagPythonFilesystemStorage(object):
-    pipeline = define_demo_execution_pipeline()
+    repository_target_info = RepositoryTargetInfo(
+        python_file=__file__, fn_name='define_demo_execution_pipeline'
+    )
+    pipeline_name = 'demo_pipeline'
     config_yaml = [
         script_relative_path('test_project/env.yml'),
         script_relative_path('test_project/env_filesystem.yml'),
@@ -57,7 +61,10 @@ class TestExecuteDagPythonFilesystemStorage(object):
 
 
 class TestExecuteDagPythonS3Storage(object):
-    pipeline = define_demo_execution_pipeline()
+    repository_target_info = RepositoryTargetInfo(
+        python_file=__file__, fn_name='define_demo_execution_pipeline'
+    )
+    pipeline_name = 'demo_pipeline'
     config_yaml = [
         script_relative_path('test_project/env.yml'),
         script_relative_path('test_project/env_s3.yml'),
@@ -96,7 +103,10 @@ class TestExecuteDagPythonS3Storage(object):
 
 @nettest
 class TestExecuteDagContainerizedS3Storage(object):
-    pipeline = define_demo_execution_pipeline()
+    repository_target_info = RepositoryTargetInfo(
+        python_file=__file__, fn_name='define_demo_execution_pipeline'
+    )
+    pipeline_name = 'demo_pipeline'
     config_yaml = [
         script_relative_path('test_project/env.yml'),
         script_relative_path('test_project/env_s3.yml'),
@@ -133,7 +143,10 @@ class TestExecuteDagContainerizedS3Storage(object):
 
 
 class TestExecuteDagContainerizedFilesystemStorage(object):
-    pipeline = define_demo_execution_pipeline()
+    repository_target_info = RepositoryTargetInfo(
+        python_file=__file__, fn_name='define_demo_execution_pipeline'
+    )
+    pipeline_name = 'demo_pipeline'
     config_yaml = [
         script_relative_path('test_project/env.yml'),
         script_relative_path('test_project/env_filesystem.yml'),

@@ -1,6 +1,7 @@
 # pylint: disable=redefined-outer-name
 import os
 
+from dagster import RepositoryTargetInfo
 from dagster.utils import script_relative_path
 
 try:
@@ -9,7 +10,7 @@ try:
 except ImportError:
     pass
 
-from airline_demo.pipelines import (
+from airline_demo.pipelines import (  # pylint: disable=unused-import
     define_airline_demo_ingest_pipeline,
     define_airline_demo_warehouse_pipeline,
 )
@@ -20,7 +21,10 @@ from .marks import airflow, slow
 @slow
 @airflow
 class TestAirflowPython_0IngestExecution:
-    pipeline = define_airline_demo_ingest_pipeline()
+    repository_target_info = RepositoryTargetInfo(
+        python_file=__file__, fn_name='define_airline_demo_ingest_pipeline'
+    )
+    pipeline_name = 'airline_demo_ingest_pipeline'
     config_yaml = [
         script_relative_path(os.path.join('..', 'environments', 'local_base.yml')),
         script_relative_path(os.path.join('..', 'environments', 'local_airflow.yml')),
@@ -34,7 +38,10 @@ class TestAirflowPython_0IngestExecution:
 @slow
 @airflow
 class TestAirflowPython_1WarehouseExecution:
-    pipeline = define_airline_demo_warehouse_pipeline()
+    repository_target_info = RepositoryTargetInfo(
+        python_file=__file__, fn_name='define_airline_demo_warehouse_pipeline'
+    )
+    pipeline_name = 'airline_demo_warehouse_pipeline'
     config_yaml = [
         script_relative_path(os.path.join('..', 'environments', 'local_base.yml')),
         script_relative_path(os.path.join('..', 'environments', 'local_airflow.yml')),

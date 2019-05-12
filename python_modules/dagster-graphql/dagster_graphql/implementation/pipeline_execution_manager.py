@@ -13,6 +13,7 @@ from dagster import (
     InProcessExecutorConfig,
     PipelineDefinition,
     RepositoryDefinition,
+    RepositoryTargetInfo,
     RunConfig,
     check,
     execute_pipeline,
@@ -235,6 +236,7 @@ class MultiprocessingExecutionManager(PipelineExecutionManager):
             gevent.sleep(0.1)
 
     def execute_pipeline(self, repository_info, pipeline, pipeline_run, raise_on_error):
+        check.inst_param(repository_info, 'repository_info', RepositoryTargetInfo)
         check.invariant(
             raise_on_error is False, 'Multiprocessing execute_pipeline does not rethrow user error'
         )

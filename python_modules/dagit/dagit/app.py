@@ -105,7 +105,7 @@ def notebook_view():
         return "<style>" + resources['inlining']['css'][0] + "</style>" + body, 200
 
 
-def create_app(repository, pipeline_runs, use_synchronous_execution_manager=False):
+def create_app(repository_target_info, pipeline_runs, use_synchronous_execution_manager=False):
     app = Flask('dagster-ui')
     sockets = Sockets(app)
     app.app_protocol = lambda environ_path_info: 'graphql-ws'
@@ -118,7 +118,7 @@ def create_app(repository, pipeline_runs, use_synchronous_execution_manager=Fals
     else:
         execution_manager = MultiprocessingExecutionManager()
     context = DagsterGraphQLContext(
-        repository=repository,
+        repository_target_info=repository_target_info,
         pipeline_runs=pipeline_runs,
         execution_manager=execution_manager,
         version=__version__,

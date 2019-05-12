@@ -1,14 +1,20 @@
-from dagster import check, RepositoryDefinition
+from dagster import check, RepositoryTargetInfo
 from .pipeline_run_storage import PipelineRunStorage
 from .pipeline_execution_manager import PipelineExecutionManager
 
 
 class DagsterGraphQLContext(object):
     def __init__(
-        self, repository, pipeline_runs, execution_manager, raise_on_error=False, version=None
+        self,
+        repository_target_info,
+        pipeline_runs,
+        execution_manager,
+        raise_on_error=False,
+        version=None,
     ):
-
-        self.repository = check.inst_param(repository, 'repository', RepositoryDefinition)
+        self.repository_target_info = check.inst_param(
+            repository_target_info, 'repository_target_info', RepositoryTargetInfo
+        )
         self.pipeline_runs = check.inst_param(pipeline_runs, 'pipeline_runs', PipelineRunStorage)
         self.execution_manager = check.inst_param(
             execution_manager, 'pipeline_execution_manager', PipelineExecutionManager

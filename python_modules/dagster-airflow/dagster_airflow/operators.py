@@ -74,7 +74,15 @@ class DagsterOperator(with_metaclass(ABCMeta)):  # pylint:disable=no-init
     @classmethod
     @abstractmethod
     def operator_for_solid(
-        cls, pipeline, env_config, solid_name, step_keys, dag, dag_id, op_kwargs
+        cls,
+        repository_target_info,
+        pipeline_name,
+        env_config,
+        solid_name,
+        step_keys,
+        dag,
+        dag_id,
+        op_kwargs,
     ):
         pass
 
@@ -306,7 +314,15 @@ class DagsterDockerOperator(ModifiedDockerOperator, DagsterOperator):
 
     @classmethod
     def operator_for_solid(
-        cls, pipeline, env_config, solid_name, step_keys, dag, dag_id, op_kwargs
+        cls,
+        repository_target_info,
+        pipeline_name,
+        env_config,
+        solid_name,
+        step_keys,
+        dag,
+        dag_id,
+        op_kwargs,
     ):
         tmp_dir = op_kwargs.pop('tmp_dir', DOCKER_TEMPDIR)
         host_tmp_dir = op_kwargs.pop('host_tmp_dir', seven.get_system_temp_directory())
@@ -324,7 +340,7 @@ class DagsterDockerOperator(ModifiedDockerOperator, DagsterOperator):
             config=format_config_for_graphql(env_config),
             dag=dag,
             tmp_dir=tmp_dir,
-            pipeline_name=pipeline.name,
+            pipeline_name=pipeline_name,
             step_keys=step_keys,
             task_id=solid_name,
             host_tmp_dir=host_tmp_dir,
@@ -407,18 +423,14 @@ class DagsterDockerOperator(ModifiedDockerOperator, DagsterOperator):
 
 class DagsterPythonOperator(PythonOperator, DagsterOperator):
     @classmethod
-    def make_python_callable(cls, pipeline, env_config, step_keys):
+    def make_python_callable(cls, repository_target_info, pipeline_name, env_config, step_keys):
         try:
-            from dagster import RepositoryDefinition
             from dagster_graphql.cli import execute_query_from_cli
         except ImportError:
             raise AirflowException(
                 'To use the DagsterPythonOperator, dagster and dagster_graphql must be installed '
                 'in your Airflow environment.'
             )
-        repository = RepositoryDefinition(
-            '<<ephemeral repository>>', {pipeline.name: lambda: pipeline}
-        )
 
         def python_callable(**kwargs):
             run_id = kwargs.get('dag_run').run_id
@@ -426,7 +438,7 @@ class DagsterPythonOperator(PythonOperator, DagsterOperator):
                 config=env_config,
                 run_id=run_id,
                 step_keys=json.dumps(step_keys),
-                pipeline_name=pipeline.name,
+                pipeline_name=pipeline_name,
             )
 
             # TODO: This removes config that we need to scrub for secrets, but it's very useful
@@ -438,11 +450,11 @@ class DagsterPythonOperator(PythonOperator, DagsterOperator):
                     config='REDACTED',
                     run_id=run_id,
                     step_keys=json.dumps(step_keys),
-                    pipeline_name=pipeline.name,
+                    pipeline_name=pipeline_name,
                 )
             )
 
-            res = json.loads(execute_query_from_cli(repository, query, variables=None))
+            res = json.loads(execute_query_from_cli(repository_target_info, query, variables=None))
             cls.handle_errors(res, None)
             return cls.handle_result(res)
 
@@ -450,7 +462,15 @@ class DagsterPythonOperator(PythonOperator, DagsterOperator):
 
     @classmethod
     def operator_for_solid(
-        cls, pipeline, env_config, solid_name, step_keys, dag, dag_id, op_kwargs
+        cls,
+        repository_target_info,
+        pipeline_name,
+        env_config,
+        solid_name,
+        step_keys,
+        dag,
+        dag_id,
+        op_kwargs,
     ):
         if 'storage' not in env_config:
             raise airflow_storage_exception('/tmp/special_place')
@@ -464,7 +484,10 @@ class DagsterPythonOperator(PythonOperator, DagsterOperator):
             task_id=solid_name,
             provide_context=True,
             python_callable=cls.make_python_callable(
-                pipeline, format_config_for_graphql(env_config), step_keys
+                repository_target_info,
+                pipeline_name,
+                format_config_for_graphql(env_config),
+                step_keys
             ),
             dag=dag,
             **op_kwargs

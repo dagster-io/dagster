@@ -7,7 +7,7 @@ import click
 from gevent import pywsgi
 from geventwebsocket.handler import WebSocketHandler
 
-from dagster import check, RepositoryDefinition
+from dagster import check
 from dagster.cli.dynamic_loader import load_target_info_from_cli_args, repository_target_argument
 from dagster_graphql.implementation.pipeline_run_storage import (
     PipelineRunStorage,
@@ -81,9 +81,7 @@ def host_dagit_ui(log, log_dir, repository_target_info, sync, host, port):
     pipeline_run_storage = PipelineRunStorage(create_pipeline_run=create_pipeline_run)
 
     app = create_app(
-        RepositoryDefinition.load_for_target_info(repository_target_info),
-        pipeline_run_storage,
-        use_synchronous_execution_manager=sync,
+        repository_target_info, pipeline_run_storage, use_synchronous_execution_manager=sync
     )
     server = pywsgi.WSGIServer((host, port), app, handler_class=WebSocketHandler)
     print('Serving on http://{host}:{port}'.format(host=host, port=port))

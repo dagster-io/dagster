@@ -8,6 +8,7 @@ from dagster import (
     OutputDefinition,
     PipelineDefinition,
     RepositoryDefinition,
+    RepositoryTargetInfo,
     SolidDefinition,
 )
 
@@ -19,7 +20,11 @@ from dagster_graphql.implementation.context import DagsterGraphQLContext
 from dagster_graphql.implementation.pipeline_execution_manager import SynchronousExecutionManager
 from dagster_graphql.implementation.pipeline_run_storage import PipelineRunStorage
 
-from .setup import define_context, define_repository, execute_dagster_graphql
+from dagster_graphql_tests.graphql.setup import (
+    define_context,
+    define_repository,
+    execute_dagster_graphql,
+)
 
 # This is needed to find production query in all cases
 sys.path.insert(0, os.path.abspath(script_relative_path('.')))
@@ -152,13 +157,18 @@ def test_pipelines_or_error():
     }
 
 
-def test_pipelines_or_error_invalid():
-    repository = RepositoryDefinition(
+def define_test_repository():
+    return RepositoryDefinition(
         name='test', pipeline_dict={'pipeline': define_circular_dependency_pipeline}
     )
 
+
+def test_pipelines_or_error_invalid():
+
     context = DagsterGraphQLContext(
-        repository=repository,
+        repository_target_info=RepositoryTargetInfo(
+            python_file=__file__, fn_name='define_test_repository'
+        ),
         pipeline_runs=PipelineRunStorage(),
         execution_manager=SynchronousExecutionManager(),
     )

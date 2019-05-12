@@ -269,34 +269,26 @@ def test_loader_from_default_repository_file_yaml():
 def test_repo_entrypoints():
     module = importlib.import_module('dagster.tutorials.intro_tutorial.repos')
     assert RepositoryTargetInfo(
-        repository_yaml=script_relative_path('repository.yml'),
-        module_name=None,
-        python_file=None,
-        fn_name=None,
+        repository_yaml=script_relative_path('repository.yml')
     ).get_entrypoint() == LoaderEntrypoint(
         module, 'dagster.tutorials.intro_tutorial.repos', 'define_repo', {}
     )
 
     module = importlib.import_module('dagster')
     assert RepositoryTargetInfo(
-        repository_yaml=None, module_name='dagster', python_file=None, fn_name='define_bar_repo'
+        module_name='dagster', fn_name='define_bar_repo'
     ).get_entrypoint() == LoaderEntrypoint(module, 'dagster', 'define_bar_repo', {})
 
     python_file = script_relative_path('bar_repo.py')
     module = imp.load_source('bar_repo', python_file)
     assert RepositoryTargetInfo(
-        repository_yaml=None, module_name=None, python_file=python_file, fn_name='define_bar_repo'
+        python_file=python_file, fn_name='define_bar_repo'
     ).get_entrypoint() == LoaderEntrypoint(module, 'bar_repo', 'define_bar_repo', {})
 
 
 def test_repo_yaml_module_dynamic_load():
     repository = RepositoryDefinition.load_for_target_info(
-        RepositoryTargetInfo(
-            repository_yaml=script_relative_path('repository_module.yml'),
-            module_name=None,
-            python_file=None,
-            fn_name=None,
-        )
+        RepositoryTargetInfo(repository_yaml=script_relative_path('repository_module.yml'))
     )
 
     assert isinstance(repository, RepositoryDefinition)
@@ -305,12 +297,7 @@ def test_repo_yaml_module_dynamic_load():
 
 def test_repo_yaml_file_dynamic_load():
     repository = RepositoryDefinition.load_for_target_info(
-        RepositoryTargetInfo(
-            repository_yaml=script_relative_path('repository_file.yml'),
-            module_name=None,
-            python_file=None,
-            fn_name=None,
-        )
+        RepositoryTargetInfo(repository_yaml=script_relative_path('repository_file.yml'))
     )
 
     assert isinstance(repository, RepositoryDefinition)
@@ -320,9 +307,7 @@ def test_repo_yaml_file_dynamic_load():
 def test_repo_module_dynamic_load():
     repository = RepositoryDefinition.load_for_target_info(
         RepositoryTargetInfo(
-            repository_yaml=None,
             module_name='dagster.tutorials.intro_tutorial.repos',
-            python_file=None,
             fn_name='define_repo_demo_pipeline',
         )
     )
@@ -334,10 +319,7 @@ def test_repo_module_dynamic_load():
 def test_repo_file_dynamic_load():
     repository = RepositoryDefinition.load_for_target_info(
         RepositoryTargetInfo(
-            repository_yaml=None,
-            module_name=None,
-            python_file=script_relative_path('test_dynamic_loader.py'),
-            fn_name='define_bar_repo',
+            python_file=script_relative_path('test_dynamic_loader.py'), fn_name='define_bar_repo'
         )
     )
 
@@ -348,9 +330,7 @@ def test_repo_file_dynamic_load():
 def test_repo_module_dynamic_load_from_pipeline():
     repository = RepositoryDefinition.load_for_target_info(
         RepositoryTargetInfo(
-            repository_yaml=None,
             module_name='dagster.tutorials.intro_tutorial.repos',
-            python_file=None,
             fn_name='define_repo_demo_pipeline',
         )
     )
@@ -363,8 +343,6 @@ def test_repo_module_dynamic_load_from_pipeline():
 def test_repo_file_dynamic_load_from_pipeline():
     repository = RepositoryDefinition.load_for_target_info(
         RepositoryTargetInfo(
-            repository_yaml=None,
-            module_name=None,
             python_file=script_relative_path('test_dynamic_loader.py'),
             fn_name='define_foo_pipeline',
         )
