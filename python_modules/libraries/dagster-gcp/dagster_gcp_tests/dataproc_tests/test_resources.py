@@ -10,7 +10,7 @@ except ImportError:
     import mock
 
 
-from dagster import execute_pipeline, seven, PipelineContextDefinition, PipelineDefinition
+from dagster import execute_pipeline, seven, PipelineDefinition, ModeDefinition
 
 from dagster_gcp import dataproc_solid, dataproc_resource
 
@@ -88,9 +88,7 @@ def test_dataproc_resource():
         pipeline = PipelineDefinition(
             name='test_dataproc_resource',
             solids=[dataproc_solid],
-            context_definitions={
-                'default': PipelineContextDefinition(resources={'dataproc': dataproc_resource})
-            },
+            mode_definitions=[ModeDefinition(resources={'dataproc': dataproc_resource})],
         )
 
         result = execute_pipeline(
@@ -109,26 +107,22 @@ def test_dataproc_resource():
                         }
                     }
                 },
-                'context': {
-                    'default': {
-                        'resources': {
-                            'dataproc': {
-                                'config': {
-                                    'projectId': PROJECT_ID,
-                                    'clusterName': CLUSTER_NAME,
-                                    'region': REGION,
-                                    'cluster_config': {
-                                        'softwareConfig': {
-                                            'properties': {
-                                                # Create a single-node cluster
-                                                # This needs to be the string "true" when
-                                                # serialized, not a boolean true
-                                                'dataproc:dataproc.allow.zero.workers': 'true'
-                                            }
-                                        }
-                                    },
+                'resources': {
+                    'dataproc': {
+                        'config': {
+                            'projectId': PROJECT_ID,
+                            'clusterName': CLUSTER_NAME,
+                            'region': REGION,
+                            'cluster_config': {
+                                'softwareConfig': {
+                                    'properties': {
+                                        # Create a single-node cluster
+                                        # This needs to be the string "true" when
+                                        # serialized, not a boolean true
+                                        'dataproc:dataproc.allow.zero.workers': 'true'
+                                    }
                                 }
-                            }
+                            },
                         }
                     }
                 },
