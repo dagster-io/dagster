@@ -847,8 +847,6 @@ snapshots['test_build_all_docs 3'] = '''
 <h2 id="P">P</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="sections/api/apidocs/pipeline.html#dagster.PipelineContextDefinition.passthrough_context_definition">passthrough_context_definition() (dagster.PipelineContextDefinition static method)</a>
-</li>
       <li><a href="sections/api/apidocs/types.html#dagster.Path">Path (in module dagster)</a>
 </li>
       <li><a href="sections/api/apidocs/pipeline.html#dagster.InitContext.pipeline_def">pipeline_def (dagster.InitContext attribute)</a>
@@ -857,10 +855,10 @@ snapshots['test_build_all_docs 3'] = '''
         <li><a href="sections/api/apidocs/pipeline.html#dagster.InitResourceContext.pipeline_def">(dagster.InitResourceContext attribute)</a>
 </li>
       </ul></li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="sections/api/apidocs/errors.html#dagster.PipelineConfigEvaluationError">PipelineConfigEvaluationError</a>
 </li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="sections/api/apidocs/pipeline.html#dagster.PipelineContextDefinition">PipelineContextDefinition (class in dagster)</a>
 </li>
       <li><a href="sections/api/apidocs/pipeline.html#dagster.PipelineDefinition">PipelineDefinition (class in dagster)</a>
@@ -20117,25 +20115,6 @@ completion, just like a python context manager.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type</dt>
 <dd class="field-odd"><p>str</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="staticmethod">
-<dt id="dagster.PipelineContextDefinition.passthrough_context_definition">
-<em class="property">static </em><code class="descname">passthrough_context_definition</code><span class="sig-paren">(</span><em>context_params</em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dagster/core/definitions/context.html#PipelineContextDefinition.passthrough_context_definition"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dagster.PipelineContextDefinition.passthrough_context_definition" title="Permalink to this definition">¶</a></dt>
-<dd><p>Create a context definition from a pre-existing context. This can be useful
-in testing contexts where you may want to create a context manually and then
-pass it into a one-off PipelineDefinition</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>context</strong> (<a class="reference internal" href="#dagster.ExecutionContext" title="dagster.ExecutionContext"><em>ExecutionContext</em></a>) – The context that will provided to the pipeline.</p>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><p>The passthrough context definition.</p>
-</dd>
-<dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p><a class="reference internal" href="#dagster.PipelineContextDefinition" title="dagster.PipelineContextDefinition">PipelineContextDefinition</a></p>
 </dd>
 </dl>
 </dd></dl>

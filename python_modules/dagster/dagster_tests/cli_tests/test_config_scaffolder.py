@@ -78,9 +78,9 @@ def test_basic_solids_config():
     }
 
 
-def test_two_contexts():
+def test_two_modes():
     pipeline_def = PipelineDefinition(
-        name='TwoContextsPipeline',
+        name='TwoModePipelines',
         solids=[],
         context_definitions={
             'context_one': PipelineContextDefinition(
