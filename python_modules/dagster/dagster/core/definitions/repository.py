@@ -1,3 +1,4 @@
+import inspect
 import os
 from collections import namedtuple
 from glob import glob
@@ -55,6 +56,26 @@ class RepositoryTargetInfo:
             )
         else:
             raise InvalidRepositoryLoadingComboError()
+
+    @staticmethod
+    def for_pipeline_fn(pipeline_fn, kwargs=None):  # pylint: disable=unused-argument
+        '''This builder is a bit magical, but it inspects its caller to determine how to build a
+        RepositoryTargetInfo object via python_file and fn_name.
+
+        This will work since fn_name is ensured to be in scope in the python_file caller's scope.
+        '''
+        # Retrieve the calling file
+        stack = inspect.stack()
+        previous_stack_frame = stack[1]
+        python_file = previous_stack_frame[1]
+
+        # Retrieve the original name of pipeline_fn
+        frame = inspect.currentframe()
+        args, _, _, values = inspect.getargvalues(frame)  # pylint: disable=deprecated-method
+        fn_name = values[args[0]].__name__
+        check.invariant(fn_name == pipeline_fn.__name__)
+
+        return RepositoryTargetInfo(python_file=python_file, fn_name=fn_name, kwargs=kwargs)
 
 
 class RepositoryDefinition(object):

@@ -21,8 +21,8 @@ from .marks import airflow, slow
 @slow
 @airflow
 class TestAirflowPython_0IngestExecution:
-    repository_target_info = RepositoryTargetInfo(
-        python_file=__file__, fn_name='define_airline_demo_ingest_pipeline'
+    repository_target_info = RepositoryTargetInfo.for_pipeline_fn(
+        define_airline_demo_ingest_pipeline
     )
     pipeline_name = 'airline_demo_ingest_pipeline'
     config_yaml = [
@@ -38,8 +38,8 @@ class TestAirflowPython_0IngestExecution:
 @slow
 @airflow
 class TestAirflowPython_1WarehouseExecution:
-    repository_target_info = RepositoryTargetInfo(
-        python_file=__file__, fn_name='define_airline_demo_warehouse_pipeline'
+    repository_target_info = RepositoryTargetInfo.for_pipeline_fn(
+        define_airline_demo_warehouse_pipeline
     )
     pipeline_name = 'airline_demo_warehouse_pipeline'
     config_yaml = [

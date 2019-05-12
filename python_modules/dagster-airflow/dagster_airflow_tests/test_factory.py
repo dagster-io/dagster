@@ -21,9 +21,7 @@ from dagster_airflow_tests.test_project.dagster_airflow_demo import define_demo_
 
 
 class TestExecuteDagPythonFilesystemStorage(object):
-    repository_target_info = RepositoryTargetInfo(
-        python_file=__file__, fn_name='define_demo_execution_pipeline'
-    )
+    repository_target_info = RepositoryTargetInfo.for_pipeline_fn(define_demo_execution_pipeline)
     pipeline_name = 'demo_pipeline'
     config_yaml = [
         script_relative_path('test_project/env.yml'),
@@ -61,9 +59,7 @@ class TestExecuteDagPythonFilesystemStorage(object):
 
 
 class TestExecuteDagPythonS3Storage(object):
-    repository_target_info = RepositoryTargetInfo(
-        python_file=__file__, fn_name='define_demo_execution_pipeline'
-    )
+    repository_target_info = RepositoryTargetInfo.for_pipeline_fn(define_demo_execution_pipeline)
     pipeline_name = 'demo_pipeline'
     config_yaml = [
         script_relative_path('test_project/env.yml'),
@@ -103,9 +99,7 @@ class TestExecuteDagPythonS3Storage(object):
 
 @nettest
 class TestExecuteDagContainerizedS3Storage(object):
-    repository_target_info = RepositoryTargetInfo(
-        python_file=__file__, fn_name='define_demo_execution_pipeline'
-    )
+    repository_target_info = RepositoryTargetInfo.for_pipeline_fn(define_demo_execution_pipeline)
     pipeline_name = 'demo_pipeline'
     config_yaml = [
         script_relative_path('test_project/env.yml'),
@@ -143,9 +137,7 @@ class TestExecuteDagContainerizedS3Storage(object):
 
 
 class TestExecuteDagContainerizedFilesystemStorage(object):
-    repository_target_info = RepositoryTargetInfo(
-        python_file=__file__, fn_name='define_demo_execution_pipeline'
-    )
+    repository_target_info = RepositoryTargetInfo.for_pipeline_fn(define_demo_execution_pipeline)
     pipeline_name = 'demo_pipeline'
     config_yaml = [
         script_relative_path('test_project/env.yml'),
