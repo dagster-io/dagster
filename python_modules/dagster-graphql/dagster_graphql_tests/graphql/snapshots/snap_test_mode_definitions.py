@@ -128,7 +128,7 @@ snapshots['test_query_multi_mode 1'] = {
                 'name': 'MultiModeWithResources.Mode.AddMode.Resources'
             },
             {
-                'name': 'MultiModeWithResources.Mode.AddMode.Resources.op'
+                'name': 'MultiModeWithResources.Mode.AddMode.Resources.Op'
             },
             {
                 'name': 'MultiModeWithResources.SolidConfig.ApplyToThree'
@@ -376,7 +376,7 @@ snapshots['test_query_multi_mode 2'] = {
                 'name': 'MultiModeWithResources.Mode.AddMode.Resources'
             },
             {
-                'name': 'MultiModeWithResources.Mode.AddMode.Resources.op'
+                'name': 'MultiModeWithResources.Mode.AddMode.Resources.Op'
             },
             {
                 'name': 'MultiModeWithResources.SolidConfig.ApplyToThree'

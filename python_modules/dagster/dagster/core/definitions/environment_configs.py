@@ -55,6 +55,15 @@ def define_maybe_optional_selector_field(config_cls):
     )
 
 
+def define_resource_cls(parent_name, resource_name, resource_def):
+    return SystemNamedDict(
+        '{parent_name}.{resource_name}'.format(
+            parent_name=parent_name, resource_name=camelcase(resource_name)
+        ),
+        {'config': resource_def.config_field},
+    )
+
+
 def define_resource_dictionary_cls(name, resources):
     check.str_param(name, 'name')
     check.dict_param(resources, 'resources', key_type=str, value_type=ResourceDefinition)
@@ -62,9 +71,7 @@ def define_resource_dictionary_cls(name, resources):
     fields = {}
     for resource_name, resource in resources.items():
         if resource.config_field:
-            fields[resource_name] = Field(
-                SystemNamedDict(name + '.' + resource_name, {'config': resource.config_field})
-            )
+            fields[resource_name] = Field(define_resource_cls(name, resource_name, resource))
 
     return SystemNamedDict(name=name, fields=fields)
 
@@ -188,18 +195,24 @@ def define_context_cls(pipeline_def):
     )
 
 
+def define_mode_resources_dictionary_cls(pipeline_name, mode_definition):
+    check.str_param(pipeline_name, 'pipeline_name')
+    check.inst_param(mode_definition, 'mode_definition', ModeDefinition)
+
+    return define_resource_dictionary_cls(
+        '{pipeline_name}.Mode.{mode}.Resources'.format(
+            pipeline_name=pipeline_name, mode=camelcase(mode_definition.name)
+        ),
+        mode_definition.resource_defs,
+    )
+
+
 def get_additional_fields(pipeline_name, creation_data):
     if creation_data.mode_definition:
         check.invariant(not creation_data.context_definitions)
         return {
             'resources': Field(
-                define_resource_dictionary_cls(
-                    '{pipeline_name}.Mode.{mode}.Resources'.format(
-                        pipeline_name=pipeline_name,
-                        mode=camelcase(creation_data.mode_definition.name),
-                    ),
-                    creation_data.mode_definition.resource_defs,
-                )
+                define_mode_resources_dictionary_cls(pipeline_name, creation_data.mode_definition)
             )
         }
     else:
