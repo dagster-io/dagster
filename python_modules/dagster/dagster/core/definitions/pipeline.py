@@ -101,6 +101,13 @@ class PipelineDefinition(IContainSolids, object):
         self.name = check.opt_str_param(name, 'name', '<<unnamed>>')
         self.description = check.opt_str_param(description, 'description')
 
+        if context_definitions and mode_definitions:
+            raise DagsterInvalidDefinitionError(
+                (
+                    'Cannot specify both context definitions and mode definitions on pipeline "{}"'
+                ).format(self.name)
+            )
+
         check.invariant(
             not (context_definitions and mode_definitions),
             'Cannot specify both context_definitions and modes',
@@ -116,6 +123,16 @@ class PipelineDefinition(IContainSolids, object):
 
         if self.mode_definitions:
             self.context_definitions = {}
+            seen_modes = set()
+            for mode_def in mode_definitions:
+                if mode_def.name in seen_modes:
+                    raise DagsterInvalidDefinitionError(
+                        (
+                            'Two modes seen with the name "{mode_name}" in "{pipeline_name}". '
+                            'Modes must have unique names.'
+                        ).format(mode_name=mode_def.name, pipeline_name=self.name)
+                    )
+                seen_modes.add(mode_def.name)
         else:
             self.context_definitions = (
                 default_pipeline_context_definitions()

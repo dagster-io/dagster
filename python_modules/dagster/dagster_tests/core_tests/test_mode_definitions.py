@@ -4,6 +4,7 @@ from dagster import (
     DagsterInvalidDefinitionError,
     DagsterInvariantViolationError,
     ModeDefinition,
+    PipelineContextDefinition,
     PipelineDefinition,
     RunConfig,
     execute_pipeline,
@@ -73,6 +74,42 @@ def test_wrong_single_mode():
             .transformed_value()
             == 2
         )
+
+
+def test_mode_and_context():
+    with pytest.raises(DagsterInvalidDefinitionError):
+        PipelineDefinition(
+            name='both_context_and_resources',
+            solids=[],
+            context_definitions={'some_context': PipelineContextDefinition()},
+            mode_definitions=[ModeDefinition()],
+        )
+
+
+def test_mode_double_default_name():
+    with pytest.raises(DagsterInvalidDefinitionError) as ide:
+        PipelineDefinition(
+            name='double_default', solids=[], mode_definitions=[ModeDefinition(), ModeDefinition()]
+        )
+
+    assert (
+        str(ide.value) == 'Two modes seen with the name "default" in "double_default". '
+        'Modes must have unique names.'
+    )
+
+
+def test_mode_double_given_name():
+    with pytest.raises(DagsterInvalidDefinitionError) as ide:
+        PipelineDefinition(
+            name='double_given',
+            solids=[],
+            mode_definitions=[ModeDefinition(name='given'), ModeDefinition(name='given')],
+        )
+
+    assert (
+        str(ide.value) == 'Two modes seen with the name "given" in "double_given". '
+        'Modes must have unique names.'
+    )
 
 
 def test_execute_multi_mode():
