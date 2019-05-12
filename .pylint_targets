@@ -26,4 +26,4 @@ examples/airline-demo/airline_demo_tests
 examples/event-pipeline-demo/event_pipeline_demo
 examples/event-pipeline-demo/event_pipeline_demo_tests
 examples/pyspark_pagerank
-examples/toys
+examples/toys/toys

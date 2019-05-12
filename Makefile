@@ -40,6 +40,7 @@ install_dev_python_modules:
 	pip install -e python_modules/automation
 	pip install -e examples/event-pipeline-demo
 	pip install -e examples/airline-demo
+	pip install -e examples/toys
 
 rebuild_dagit:
 	cd js_modules/dagit/; yarn install && yarn build-for-python

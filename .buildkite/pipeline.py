@@ -79,8 +79,8 @@ def wait_step():
     return "wait"
 
 
-def python_modules_tox_tests(directory, prereqs=None):
-    label = directory.replace("/", "-")
+def python_modules_tox_tests(directory, prereqs=None, label=None):
+    label = label if label else directory.replace("/", "-")
     tests = []
     for version in SupportedPythons:
         coverage = ".coverage.{label}.{version}.$BUILDKITE_BUILD_ID".format(
@@ -234,6 +234,7 @@ if __name__ == "__main__":
     steps += python_modules_tox_tests("libraries/dagster-aws")
     steps += python_modules_tox_tests("libraries/dagster-snowflake")
     steps += python_modules_tox_tests("libraries/dagster-spark")
+    steps += python_modules_tox_tests("../examples/toys", label='examples-toys')
     steps += airline_demo_tests()
     steps += events_demo_tests()
     steps += airflow_tests()
