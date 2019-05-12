@@ -119,7 +119,7 @@ class PipelineDefinition(IContainSolids, object):
         else:
             self.context_definitions = (
                 default_pipeline_context_definitions()
-                if context_definitions is None
+                if not context_definitions
                 else check.dict_param(
                     context_definitions,
                     'context_definitions',
@@ -127,6 +127,8 @@ class PipelineDefinition(IContainSolids, object):
                     value_type=PipelineContextDefinition,
                 )
             )
+
+            check.invariant(self.context_definitions)
 
         self.dependencies = validate_dependency_dict(dependencies)
 
@@ -338,6 +340,7 @@ def _build_sub_pipeline(pipeline_def, solid_names):
         name=pipeline_def.name,
         solids=list({solid.definition for solid in solids}),
         context_definitions=pipeline_def.context_definitions,
+        mode_definitions=pipeline_def.mode_definitions,
         dependencies=deps,
     )
 

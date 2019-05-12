@@ -116,6 +116,7 @@ def build_pipeline_with_input_stubs(pipeline_def, inputs):
         name=pipeline_def.name + '_stubbed',
         solids=pipeline_def.solid_defs + stub_solid_defs,
         context_definitions=pipeline_def.context_definitions,
+        mode_definitions=pipeline_def.mode_definitions,
         dependencies=deps,
     )
 

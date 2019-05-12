@@ -9,6 +9,7 @@ from dagster import (
     execute_pipeline,
     resource,
     solid,
+    execute_solids,
 )
 
 from dagster.core.definitions.environment_schema import create_environment_type
@@ -202,3 +203,40 @@ def test_mode_with_resource_deps():
     execute_pipeline(pipeline_def_no_deps)
 
     assert called['count'] == 2
+
+
+def test_subset_with_mode_definitions():
+
+    called = {'a': 0, 'b': 0}
+
+    @resource
+    def resource_a(_init_context):
+        return 1
+
+    @solid(resources={'a'})
+    def requires_a(context):
+        called['a'] += 1
+        assert context.resources.a == 1
+
+    @resource
+    def resource_b(_init_context):
+        return 2
+
+    @solid(resources={'b'})
+    def requires_b(context):
+        called['b'] += 1
+        assert context.resources.b == 2
+
+    pipeline_def = PipelineDefinition(
+        name='subset_test',
+        solids=[requires_a, requires_b],
+        mode_definitions=[ModeDefinition(resources={'a': resource_a, 'b': resource_b})],
+    )
+
+    assert execute_pipeline(pipeline_def).success is True
+
+    assert called == {'a': 1, 'b': 1}
+
+    assert execute_solids(pipeline_def, solid_names=['requires_a'])['requires_a'].success is True
+
+    assert called == {'a': 2, 'b': 1}
