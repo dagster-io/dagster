@@ -1,6 +1,6 @@
 from dagster import (
     Field,
-    PipelineContextDefinition,
+    ModeDefinition,
     PipelineDefinition,
     ResourceDefinition,
     String,
@@ -27,14 +27,10 @@ def test_basic_resource():
     pipeline_def = PipelineDefinition(
         name='with_a_resource',
         solids=[a_solid],
-        context_definitions={
-            'default': PipelineContextDefinition(resources={'a_string': define_string_resource()})
-        },
+        mode_definitions=[ModeDefinition(resources={'a_string': define_string_resource()})],
     )
 
-    result = execute_pipeline(
-        pipeline_def, {'context': {'default': {'resources': {'a_string': {'config': 'foo'}}}}}
-    )
+    result = execute_pipeline(pipeline_def, {'resources': {'a_string': {'config': 'foo'}}})
 
     assert result.success
     assert called['yup']
@@ -56,14 +52,10 @@ def test_yield_resource():
     pipeline_def = PipelineDefinition(
         name='with_a_yield_resource',
         solids=[a_solid],
-        context_definitions={
-            'default': PipelineContextDefinition(resources={'a_string': yield_string_resource})
-        },
+        mode_definitions=[ModeDefinition(resources={'a_string': yield_string_resource})],
     )
 
-    result = execute_pipeline(
-        pipeline_def, {'context': {'default': {'resources': {'a_string': {'config': 'foo'}}}}}
-    )
+    result = execute_pipeline(pipeline_def, {'resources': {'a_string': {'config': 'foo'}}})
 
     assert result.success
     assert called['yup']
@@ -90,22 +82,16 @@ def test_yield_multiple_resources():
     pipeline_def = PipelineDefinition(
         name='with_yield_resources',
         solids=[a_solid],
-        context_definitions={
-            'default': PipelineContextDefinition(
+        mode_definitions=[
+            ModeDefinition(
                 resources={'string_one': yield_string_resource, 'string_two': yield_string_resource}
             )
-        },
+        ],
     )
 
     result = execute_pipeline(
         pipeline_def,
-        {
-            'context': {
-                'default': {
-                    'resources': {'string_one': {'config': 'foo'}, 'string_two': {'config': 'bar'}}
-                }
-            }
-        },
+        {'resources': {'string_one': {'config': 'foo'}, 'string_two': {'config': 'bar'}}},
     )
 
     assert result.success
@@ -138,25 +124,19 @@ def test_resource_decorator():
     pipeline_def = PipelineDefinition(
         name='with_yield_resources',
         solids=[a_solid],
-        context_definitions={
-            'default': PipelineContextDefinition(
+        mode_definitions=[
+            ModeDefinition(
                 resources={
                     'string_one': yielding_string_resource,
                     'string_two': yielding_string_resource,
                 }
             )
-        },
+        ],
     )
 
     result = execute_pipeline(
         pipeline_def,
-        {
-            'context': {
-                'default': {
-                    'resources': {'string_one': {'config': 'foo'}, 'string_two': {'config': 'bar'}}
-                }
-            }
-        },
+        {'resources': {'string_one': {'config': 'foo'}, 'string_two': {'config': 'bar'}}},
     )
 
     assert result.success
@@ -200,28 +180,19 @@ def test_mixed_multiple_resources():
     pipeline_def = PipelineDefinition(
         name='with_a_yield_resource',
         solids=[a_solid],
-        context_definitions={
-            'default': PipelineContextDefinition(
+        mode_definitions=[
+            ModeDefinition(
                 resources={
                     'yielded_string': yield_string_resource,
                     'returned_string': return_string_resource,
                 }
             )
-        },
+        ],
     )
 
     result = execute_pipeline(
         pipeline_def,
-        {
-            'context': {
-                'default': {
-                    'resources': {
-                        'returned_string': {'config': 'foo'},
-                        'yielded_string': {'config': 'bar'},
-                    }
-                }
-            }
-        },
+        {'resources': {'returned_string': {'config': 'foo'}, 'yielded_string': {'config': 'bar'}}},
     )
 
     assert result.success
@@ -243,11 +214,9 @@ def test_none_resource():
     pipeline = PipelineDefinition(
         name='test_none_resource',
         solids=[solid_test_null],
-        context_definitions={
-            'default': PipelineContextDefinition(
-                resources={'test_null': ResourceDefinition.none_resource()}
-            )
-        },
+        mode_definitions=[
+            ModeDefinition(resources={'test_null': ResourceDefinition.none_resource()})
+        ],
     )
 
     result = execute_pipeline(pipeline)
@@ -267,16 +236,12 @@ def test_string_resource():
     pipeline = PipelineDefinition(
         name='test_string_resource',
         solids=[solid_test_string],
-        context_definitions={
-            'default': PipelineContextDefinition(
-                resources={'test_string': ResourceDefinition.string_resource()}
-            )
-        },
+        mode_definitions=[
+            ModeDefinition(resources={'test_string': ResourceDefinition.string_resource()})
+        ],
     )
 
-    result = execute_pipeline(
-        pipeline, {'context': {'default': {'resources': {'test_string': {'config': 'foo'}}}}}
-    )
+    result = execute_pipeline(pipeline, {'resources': {'test_string': {'config': 'foo'}}})
 
     assert result.success
     assert called['yup']
@@ -298,9 +263,7 @@ def test_no_config_resource_pass_none():
     pipeline = PipelineDefinition(
         name='test_no_config_resource',
         solids=[check_thing],
-        context_definitions={
-            'default': PipelineContextDefinition(resources={'return_thing': return_thing})
-        },
+        mode_definitions=[ModeDefinition(resources={'return_thing': return_thing})],
     )
 
     execute_pipeline(pipeline)
@@ -325,9 +288,7 @@ def test_no_config_resource_no_arg():
     pipeline = PipelineDefinition(
         name='test_no_config_resource',
         solids=[check_thing],
-        context_definitions={
-            'default': PipelineContextDefinition(resources={'return_thing': return_thing})
-        },
+        mode_definitions=[ModeDefinition(resources={'return_thing': return_thing})],
     )
 
     execute_pipeline(pipeline)
@@ -352,9 +313,7 @@ def test_no_config_resource_bare_no_arg():
     pipeline = PipelineDefinition(
         name='test_no_config_resource',
         solids=[check_thing],
-        context_definitions={
-            'default': PipelineContextDefinition(resources={'return_thing': return_thing})
-        },
+        mode_definitions=[ModeDefinition(resources={'return_thing': return_thing})],
     )
 
     execute_pipeline(pipeline)
@@ -378,11 +337,11 @@ def test_no_config_resource_definition():
     pipeline = PipelineDefinition(
         name='test_no_config_resource',
         solids=[check_thing],
-        context_definitions={
-            'default': PipelineContextDefinition(
+        mode_definitions=[
+            ModeDefinition(
                 resources={'return_thing': ResourceDefinition(_return_thing_resource_fn)}
             )
-        },
+        ],
     )
 
     execute_pipeline(pipeline)
