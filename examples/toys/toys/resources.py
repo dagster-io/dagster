@@ -1,24 +1,26 @@
 from dagster import (
     resource,
     MultiprocessExecutorConfig,
-    PipelineContextDefinition,
+    ModeDefinition,
     PipelineDefinition,
     RunConfig,
     execute_pipeline,
     solid,
     RunStorageMode,
+    Field,
+    Int,
 )
 
 
-def define_resource():
-    @resource
-    def a_resource(_):
-        return None
+def define_resource(num):
+    @resource(config_field=Field(Int, is_optional=True))
+    def a_resource(context):
+        return num if context.resource_config is None else context.resource_config
 
     return a_resource
 
 
-lots_of_resources = {'R' + str(r): define_resource() for r in range(20)}
+lots_of_resources = {'R' + str(r): define_resource(r) for r in range(20)}
 
 
 @solid(resources=set(lots_of_resources.keys()))
@@ -27,8 +29,8 @@ def all_resources(_):
 
 
 @solid(resources={'R1'})
-def one(_):
-    return 1
+def one(context):
+    return 1 + context.resources.R1
 
 
 @solid(resources={'R2'})
@@ -45,7 +47,7 @@ def define_resource_pipeline():
     return PipelineDefinition(
         name='resources for days',
         solids=[all_resources, one, two, one_and_two_and_three],
-        context_definitions={'default': PipelineContextDefinition(resources=lots_of_resources)},
+        mode_definitions=[ModeDefinition(resources=lots_of_resources)],
     )
 
 
