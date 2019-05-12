@@ -114,15 +114,19 @@ class PipelineDefinition(IContainSolids, object):
             _check_solids_arg(self.name, solids), 'solids', of_type=ISolidDefinition
         )
 
-        if context_definitions is None:
-            context_definitions = default_pipeline_context_definitions()
-
-        self.context_definitions = check.dict_param(
-            context_definitions,
-            'context_definitions',
-            key_type=str,
-            value_type=PipelineContextDefinition,
-        )
+        if self.mode_definitions:
+            self.context_definitions = {}
+        else:
+            self.context_definitions = (
+                default_pipeline_context_definitions()
+                if context_definitions is None
+                else check.dict_param(
+                    context_definitions,
+                    'context_definitions',
+                    key_type=str,
+                    value_type=PipelineContextDefinition,
+                )
+            )
 
         self.dependencies = validate_dependency_dict(dependencies)
 
@@ -136,7 +140,7 @@ class PipelineDefinition(IContainSolids, object):
         self._runtime_type_dict = construct_runtime_type_dictionary(solids)
 
         # Validate solid resource dependencies
-        _validate_resource_dependencies(self.context_definitions, solids)
+        _validate_resource_dependencies(self.context_definitions, self.mode_definitions, solids)
 
     def _get_mode_definition(self, mode):
         check.str_param(mode, 'mode')
@@ -338,15 +342,41 @@ def _build_sub_pipeline(pipeline_def, solid_names):
     )
 
 
-def _validate_resource_dependencies(context_definitions, solids):
+def _validate_resource_dependencies(context_definitions, mode_definitions, solids):
     '''This validation ensures that each pipeline context provides the resources that are required
     by each solid.
     '''
-    check.dict_param(
+    check.opt_dict_param(
         context_definitions, 'context_definitions', str, value_type=PipelineContextDefinition
     )
+    check.opt_list_param(mode_definitions, 'mode_definintions', of_type=ModeDefinition)
     check.list_param(solids, 'solids', of_type=ISolidDefinition)
 
+    check.invariant(context_definitions or mode_definitions)
+    check.invariant(not (context_definitions and mode_definitions))
+
+    if context_definitions:
+        _validate_resource_deps_on_context_defs(context_definitions, solids)
+    else:
+        check.invariant(mode_definitions)
+        _validate_resources_on_mode_defs(mode_definitions, solids)
+
+
+def _validate_resources_on_mode_defs(mode_definitions, solids):
+    for mode_def in mode_definitions:
+        mode_resources = set(mode_def.resource_defs.keys())
+        for solid in solids:
+            for resource in solid.resources:
+                if resource not in mode_resources:
+                    raise DagsterInvalidDefinitionError(
+                        (
+                            'Resource "{resource}" is required by solid {solid_name}, but is not '
+                            'provided by mode "{mode_name}"'
+                        ).format(resource=resource, solid_name=solid.name, mode_name=mode_def.name)
+                    )
+
+
+def _validate_resource_deps_on_context_defs(context_definitions, solids):
     for context_name, context in context_definitions.items():
         context_resources = set(context.resource_defs.keys())
 

@@ -95,9 +95,6 @@ snapshots['test_query_multi_mode 1'] = {
                 'name': None
             },
             {
-                'name': None
-            },
-            {
                 'name': 'Float'
             },
             {
@@ -165,9 +162,6 @@ snapshots['test_query_multi_mode 1'] = {
             },
             {
                 'name': 'String.MaterializationSchema'
-            },
-            {
-                'name': 'log_level'
             }
         ],
         'environmentType': {
@@ -349,9 +343,6 @@ snapshots['test_query_multi_mode 2'] = {
                 'name': None
             },
             {
-                'name': None
-            },
-            {
                 'name': 'Float'
             },
             {
@@ -419,9 +410,6 @@ snapshots['test_query_multi_mode 2'] = {
             },
             {
                 'name': 'String.MaterializationSchema'
-            },
-            {
-                'name': 'log_level'
             }
         ],
         'environmentType': {

@@ -1,11 +1,14 @@
 import pytest
 
 from dagster import (
+    DagsterInvalidDefinitionError,
     DagsterInvariantViolationError,
     ModeDefinition,
     PipelineDefinition,
     RunConfig,
     execute_pipeline,
+    resource,
+    solid,
 )
 
 from dagster.core.definitions.environment_schema import create_environment_type
@@ -148,3 +151,54 @@ def test_correct_env_type_names_for_named():
         add_type_name.fields['resources'].config_type.name
         == 'MultiModeWithResources.Mode.AddMode.Resources'
     )
+
+
+def test_mode_with_resource_deps():
+
+    called = {'count': 0}
+
+    @resource
+    def resource_a(_init_context):
+        return 1
+
+    @solid(resources={'a'})
+    def requires_a(context):
+        called['count'] += 1
+        assert context.resources.a == 1
+
+    pipeline_def_good_deps = PipelineDefinition(
+        name='mode_with_good_deps',
+        solids=[requires_a],
+        mode_definitions=[ModeDefinition(resources={'a': resource_a})],
+    )
+
+    execute_pipeline(pipeline_def_good_deps)
+
+    assert called['count'] == 1
+
+    with pytest.raises(DagsterInvalidDefinitionError) as ide:
+        PipelineDefinition(
+            name='mode_with_bad_deps',
+            solids=[requires_a],
+            mode_definitions=[ModeDefinition(resources={'ab': resource_a})],
+        )
+
+    assert (
+        str(ide.value)
+        == 'Resource "a" is required by solid requires_a, but is not provided by mode "default"'
+    )
+
+    @solid
+    def no_deps(context):
+        called['count'] += 1
+        assert context.resources.a == 1
+
+    pipeline_def_no_deps = PipelineDefinition(
+        name='mode_with_no_deps',
+        solids=[no_deps],
+        mode_definitions=[ModeDefinition(resources={'a': resource_a})],
+    )
+
+    execute_pipeline(pipeline_def_no_deps)
+
+    assert called['count'] == 2
