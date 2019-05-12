@@ -1,6 +1,20 @@
-from dagster import execute_pipeline
+import pytest
+
+from dagster import (
+    DagsterInvariantViolationError,
+    DagsterResourceFunctionError,
+    RunConfig,
+    execute_pipeline,
+)
 from toys.many_events import define_many_events_pipeline
 from toys.resources import define_resource_pipeline
+from toys.error_monster import define_error_monster_pipeline
+
+
+def test_define_repo():
+    from toys.repo import define_repo
+
+    assert define_repo()
 
 
 def test_many_events_pipeline():
@@ -17,3 +31,76 @@ def test_resource_pipeline_with_config():
         define_resource_pipeline(), environment_dict={'resources': {'R1': {'config': 2}}}
     )
     assert result.result_for_solid('one').transformed_value() == 3
+
+
+def test_error_monster_success():
+    assert execute_pipeline(
+        define_error_monster_pipeline(),
+        environment_dict={
+            'solids': {
+                'start': {'config': {'throw_in_solid': False, 'return_wrong_type': False}},
+                'middle': {'config': {'throw_in_solid': False, 'return_wrong_type': False}},
+                'end': {'config': {'throw_in_solid': False, 'return_wrong_type': False}},
+            },
+            'resources': {'errorable_resource': {'config': {'throw_on_resource_init': False}}},
+        },
+    )
+
+    assert execute_pipeline(
+        define_error_monster_pipeline(),
+        environment_dict={
+            'solids': {
+                'start': {'config': {'throw_in_solid': False, 'return_wrong_type': False}},
+                'middle': {'config': {'throw_in_solid': False, 'return_wrong_type': False}},
+                'end': {'config': {'throw_in_solid': False, 'return_wrong_type': False}},
+            },
+            'resources': {'errorable_resource': {'config': {'throw_on_resource_init': False}}},
+        },
+        run_config=RunConfig(mode='errorable_mode'),
+    )
+
+
+def test_error_monster_wrong_mode():
+    with pytest.raises(DagsterInvariantViolationError):
+        assert execute_pipeline(
+            define_error_monster_pipeline(),
+            environment_dict={
+                'solids': {
+                    'start': {'config': {'throw_in_solid': False, 'return_wrong_type': False}},
+                    'middle': {'config': {'throw_in_solid': False, 'return_wrong_type': False}},
+                    'end': {'config': {'throw_in_solid': False, 'return_wrong_type': False}},
+                },
+                'resources': {'errorable_resource': {'config': {'throw_on_resource_init': False}}},
+            },
+            run_config=RunConfig(mode='nope'),
+        )
+
+
+def test_error_monster_success_error_on_resource():
+    with pytest.raises(DagsterResourceFunctionError):
+        execute_pipeline(
+            define_error_monster_pipeline(),
+            environment_dict={
+                'solids': {
+                    'start': {'config': {'throw_in_solid': False, 'return_wrong_type': False}},
+                    'middle': {'config': {'throw_in_solid': False, 'return_wrong_type': False}},
+                    'end': {'config': {'throw_in_solid': False, 'return_wrong_type': False}},
+                },
+                'resources': {'errorable_resource': {'config': {'throw_on_resource_init': True}}},
+            },
+        )
+
+
+def test_error_monster_type_error():
+    with pytest.raises(DagsterInvariantViolationError):
+        execute_pipeline(
+            define_error_monster_pipeline(),
+            environment_dict={
+                'solids': {
+                    'start': {'config': {'throw_in_solid': False, 'return_wrong_type': False}},
+                    'middle': {'config': {'throw_in_solid': False, 'return_wrong_type': True}},
+                    'end': {'config': {'throw_in_solid': False, 'return_wrong_type': False}},
+                },
+                'resources': {'errorable_resource': {'config': {'throw_on_resource_init': False}}},
+            },
+        )

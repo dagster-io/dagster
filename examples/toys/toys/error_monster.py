@@ -1,21 +1,18 @@
-import logging
-
 from dagster import (
+    Bool,
     DependencyDefinition,
+    Dict,
     Field,
     InputDefinition,
     Int,
-    Bool,
-    String,
-    Dict,
+    ModeDefinition,
     OutputDefinition,
     PipelineDefinition,
+    ResourceDefinition,
     SolidInstance,
+    String,
     execute_pipeline,
     solid,
-    ResourceDefinition,
-    PipelineContextDefinition,
-    ExecutionContext,
 )
 
 
@@ -83,49 +80,33 @@ def str_to_num(context, string):
     return int(string)
 
 
-def context_init(init_context):
-    if init_context.context_config['throw_on_context_init']:
-        raise Exception('throwing from context_fn')
-    return ExecutionContext.console_logging(log_level=logging.DEBUG)
-
-
-def define_pipeline():
+def define_error_monster_pipeline():
     return PipelineDefinition(
-        name="error_monster",
+        name='error_monster',
         solids=[emit_num, num_to_str, str_to_num],
         dependencies={
             SolidInstance('emit_num', 'start'): {},
             SolidInstance('num_to_str', 'middle'): {'num': DependencyDefinition('start')},
             SolidInstance('str_to_num', 'end'): {'string': DependencyDefinition('middle')},
         },
-        context_definitions={
-            'errorable_context': PipelineContextDefinition(
-                config_field=Field(Dict({'throw_on_context_init': Field(Bool)})),
-                context_fn=context_init,
-                resources={'errorable_resource': define_errorable_resource()},
+        mode_definitions=[
+            ModeDefinition(
+                name='errorable_mode', resources={'errorable_resource': define_errorable_resource()}
             )
-        },
+        ],
     )
 
 
 if __name__ == '__main__':
     result = execute_pipeline(
-        define_pipeline(),
+        define_error_monster_pipeline(),
         {
-            'context': {
-                'errorable_context': {
-                    'config': {'throw_on_context_init': False},
-                    'resources': {
-                        'errorable_resource': {'config': {'throw_on_resource_init': False}}
-                    },
-                }
-            },
             'solids': {
                 'start': {'config': {'throw_in_solid': False, 'return_wrong_type': False}},
                 'middle': {'config': {'throw_in_solid': False, 'return_wrong_type': True}},
                 'end': {'config': {'throw_in_solid': False, 'return_wrong_type': False}},
             },
+            'resources': {'errorable_resource': {'config': {'throw_on_resource_init': False}}},
         },
-        # RunConfig.nonthrowing_in_process(),
     )
     print('Pipeline Success: ', result.success)
