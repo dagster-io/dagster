@@ -64,14 +64,14 @@ def define_resource_cls(parent_name, resource_name, resource_def):
     )
 
 
-def define_resource_dictionary_cls(name, resources):
+def define_resource_dictionary_cls(name, resource_defs):
     check.str_param(name, 'name')
-    check.dict_param(resources, 'resources', key_type=str, value_type=ResourceDefinition)
+    check.dict_param(resource_defs, 'resource_defs', key_type=str, value_type=ResourceDefinition)
 
     fields = {}
-    for resource_name, resource in resources.items():
-        if resource.config_field:
-            fields[resource_name] = Field(define_resource_cls(name, resource_name, resource))
+    for resource_name, resource_def in resource_defs.items():
+        if resource_def.config_field:
+            fields[resource_name] = Field(define_resource_cls(name, resource_name, resource_def))
 
     return SystemNamedDict(name=name, fields=fields)
 

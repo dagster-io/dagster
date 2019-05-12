@@ -5,13 +5,13 @@ from dagster import (
     DagsterEvaluateConfigValueError,
     DependencyDefinition,
     Dict,
-    ExecutionContext,
     Field,
     InputDefinition,
     Int,
+    ModeDefinition,
     NamedDict,
     OutputDefinition,
-    PipelineContextDefinition,
+    ResourceDefinition,
     PipelineDefinition,
     SolidDefinition,
     SolidInstance,
@@ -22,20 +22,14 @@ from dagster import (
 )
 
 
-from dagster.core.system_config.objects import (
-    ContextConfig,
-    EnvironmentConfig,
-    ExpectationsConfig,
-    SolidConfig,
-)
+from dagster.core.system_config.objects import EnvironmentConfig, ExpectationsConfig, SolidConfig
 
 from dagster.core.definitions import create_environment_type, create_environment_schema
 
 from dagster.core.definitions.environment_configs import (
-    construct_context_config,
     construct_environment_config,
     construct_solid_dictionary,
-    define_context_context_cls,
+    define_resource_cls,
     define_expectations_config_cls,
     define_solid_config_cls,
     define_solid_dictionary_cls,
@@ -57,42 +51,14 @@ def create_creation_data(pipeline_def):
     )
 
 
-def test_context_config_any():
-    context_defs = {
-        'test': PipelineContextDefinition(
-            config_field=Field(Any), context_fn=lambda *args: ExecutionContext()
-        )
-    }
+def test_resource_config_any():
+    resource_type = define_resource_cls(
+        'Parent', 'Foo', ResourceDefinition(lambda: None, Field(Any))
+    ).inst()
 
-    context_config_type = define_context_context_cls('something', context_defs).inst()
+    assert resource_type.type_attributes.is_system_config
 
-    assert context_config_type.type_attributes.is_system_config
-
-    output = construct_context_config(
-        throwing_evaluate_config_value(context_config_type, {'test': {'config': 1}})
-    )
-    assert output.name == 'test'
-    assert output.config == 1
-
-
-def test_context_config():
-    context_defs = {
-        'test': PipelineContextDefinition(
-            config_field=Field(dagster_type=Dict({'some_str': Field(String)})),
-            context_fn=lambda *args: ExecutionContext(),
-        )
-    }
-
-    context_config_type = define_context_context_cls('something', context_defs).inst()
-
-    output = construct_context_config(
-        throwing_evaluate_config_value(
-            context_config_type, {'test': {'config': {'some_str': 'something'}}}
-        )
-    )
-    assert isinstance(output, ContextConfig)
-    assert output.name == 'test'
-    assert output.config == {'some_str': 'something'}
+    assert throwing_evaluate_config_value(resource_type, {'config': 1}) == {'config': 1}
 
 
 def test_default_expectations():
@@ -107,65 +73,62 @@ def test_default_expectations():
     )
 
 
-def test_default_context_config():
-    pipeline_def = PipelineDefinition(
-        solids=[
-            SolidDefinition(
-                name='some_solid', inputs=[], outputs=[], transform_fn=lambda *args: None
-            )
-        ]
-    )
-
-    context_config_type = define_context_context_cls(
-        pipeline_def.name, pipeline_def.context_definitions
-    ).inst()
-    assert 'default' in context_config_type.fields
-    assert context_config_type.fields['default'].is_optional
-    default_context_config_type = context_config_type.fields['default'].config_type
-
-    assert 'config' in default_context_config_type.fields
-
-    context_dict = throwing_evaluate_config_value(context_config_type, {})
-
-    assert 'default' in context_dict
-
-
 def test_all_types_provided():
     pipeline_def = PipelineDefinition(
         name='pipeline',
         solids=[],
-        context_definitions={
-            'some_context': PipelineContextDefinition(
-                config_field=Field(
-                    NamedDict(
-                        'SomeContextNamedDict',
-                        {'with_default_int': Field(Int, is_optional=True, default_value=23434)},
+        mode_definitions=[
+            ModeDefinition(
+                name='SomeMode',
+                resources={
+                    'some_resource': ResourceDefinition(
+                        lambda: None,
+                        config_field=Field(
+                            NamedDict(
+                                'SomeModeNamedDict',
+                                {
+                                    'with_default_int': Field(
+                                        Int, is_optional=True, default_value=23434
+                                    )
+                                },
+                            )
+                        ),
                     )
-                ),
-                context_fn=lambda *args: None,
+                },
             )
-        },
+        ],
     )
 
     environment_schema = create_environment_schema(pipeline_def)
 
     all_types = list(environment_schema.all_config_types())
     type_names = set(t.name for t in all_types)
-    assert 'SomeContextNamedDict' in type_names
-    assert 'Pipeline.ContextDefinitionConfig.SomeContext' in type_names
-    assert 'Pipeline.ContextDefinitionConfig.SomeContext.Resources' in type_names
+    assert 'SomeModeNamedDict' in type_names
+    assert 'Pipeline.Mode.SomeMode.Environment' in type_names
+    assert 'Pipeline.Mode.SomeMode.Resources.SomeResource' in type_names
 
 
-def test_provided_default_config():
+def test_provided_default_on_resources_config():
     pipeline_def = PipelineDefinition(
-        context_definitions={
-            'some_context': PipelineContextDefinition(
-                config_field=Field(
-                    Dict({'with_default_int': Field(Int, is_optional=True, default_value=23434)})
-                ),
-                context_fn=lambda *args: None,
+        mode_definitions=[
+            ModeDefinition(
+                name='some_mode',
+                resources={
+                    'some_resource': ResourceDefinition(
+                        resource_fn=lambda: None,
+                        config_field=Field(
+                            Dict(
+                                {
+                                    'with_default_int': Field(
+                                        Int, is_optional=True, default_value=23434
+                                    )
+                                }
+                            )
+                        ),
+                    )
+                },
             )
-        },
+        ],
         solids=[
             SolidDefinition(
                 name='some_solid', inputs=[], outputs=[], transform_fn=lambda *args: None
@@ -174,22 +137,18 @@ def test_provided_default_config():
     )
 
     env_type = create_environment_type(pipeline_def)
-    some_context_field = env_type.fields['context'].config_type.fields['some_context']
-    assert some_context_field.is_optional
+    assert env_type.type_attributes.is_system_config
+    some_resource_field = env_type.fields['resources'].config_type.fields['some_resource']
+    assert some_resource_field.is_optional
 
-    some_context_config_field = some_context_field.config_type.fields['config']
-    assert some_context_config_field.is_optional
-    assert some_context_config_field.default_value == {'with_default_int': 23434}
+    some_resource_config_field = some_resource_field.config_type.fields['config']
+    assert some_resource_config_field.is_optional
+    assert some_resource_config_field.default_value == {'with_default_int': 23434}
 
-    assert some_context_field.default_value == {
-        'config': {'with_default_int': 23434},
-        'resources': {},
-        'persistence': {'file': {}},
-    }
+    assert some_resource_field.default_value == {'config': {'with_default_int': 23434}}
 
     value = construct_environment_config(throwing_evaluate_config_value(env_type, {}))
-    assert value.context.name == 'some_context'
-    assert env_type.type_attributes.is_system_config
+    assert value.resources == {'some_resource': {'config': {'with_default_int': 23434}}}
 
 
 def test_default_environment():
@@ -208,57 +167,18 @@ def test_default_environment():
     assert env_obj.expectations.evaluate is True
 
 
-def test_errors():
-    context_defs = {
-        'test': PipelineContextDefinition(
-            config_field=Field(Dict({'required_int': Field(Int)})),
-            context_fn=lambda *args: ExecutionContext(),
-        )
-    }
+def test_resource_def_config_errors():
+    takes_int_resource_def = ResourceDefinition(
+        resource_fn=lambda: None, config_field=Field(Dict({'required_int': Field(Int)}))
+    )
 
-    context_config_type = define_context_context_cls('something', context_defs).inst()
+    resource_type = define_resource_cls('Parent', 'takes_int', takes_int_resource_def).inst()
 
-    assert not evaluate_config_value(context_config_type, 1).success
-    assert not evaluate_config_value(context_config_type, {}).success
-
-    invalid_value = {'context_one': 1, 'context_two': 2}
-
-    result = evaluate_config_value(context_config_type, invalid_value)
-    assert not result.success
-    assert len(result.errors) == 1
-
-
-def test_select_context():
-    context_defs = {
-        'int_context': PipelineContextDefinition(
-            config_field=Field(Int), context_fn=lambda *args: ExecutionContext()
-        ),
-        'string_context': PipelineContextDefinition(
-            config_field=Field(String), context_fn=lambda *args: ExecutionContext()
-        ),
-    }
-
-    context_config_type = define_context_context_cls('something', context_defs).inst()
-
-    assert construct_context_config(
-        throwing_evaluate_config_value(context_config_type, {'int_context': {'config': 1}})
-    ) == ContextConfig(name='int_context', config=1)
-
-    assert construct_context_config(
-        throwing_evaluate_config_value(context_config_type, {'string_context': {'config': 'bar'}})
-    ) == ContextConfig(name='string_context', config='bar')
-
-    # mismatched field type mismatch
-    with pytest.raises(DagsterEvaluateConfigValueError):
-        assert throwing_evaluate_config_value(
-            context_config_type, {'int_context': {'config': 'bar'}}
-        )
-
-    # mismatched field type mismatch
-    with pytest.raises(DagsterEvaluateConfigValueError):
-        assert throwing_evaluate_config_value(
-            context_config_type, {'string_context': {'config': 1}}
-        )
+    assert not evaluate_config_value(resource_type, 1).success
+    assert not evaluate_config_value(resource_type, {}).success
+    assert not evaluate_config_value(resource_type, {'config': {}}).success
+    assert evaluate_config_value(resource_type, {'config': {'required_int': 2}}).success
+    assert not evaluate_config_value(resource_type, {'config': {'required_int': 'kdjfkd'}}).success
 
 
 def test_solid_config():
@@ -385,11 +305,16 @@ def test_solid_dictionary_some_no_config():
 def test_whole_environment():
     pipeline_def = PipelineDefinition(
         name='some_pipeline',
-        context_definitions={
-            'test': PipelineContextDefinition(
-                config_field=Field(Any), context_fn=lambda *args: ExecutionContext()
+        mode_definitions=[
+            ModeDefinition(
+                name='test_mode',
+                resources={
+                    'test_resource': ResourceDefinition(
+                        resource_fn=lambda: None, config_field=Field(Any)
+                    )
+                },
             )
-        },
+        ],
         solids=[
             SolidDefinition(
                 name='int_config_solid',
@@ -406,7 +331,10 @@ def test_whole_environment():
 
     environment_type = create_environment_type(pipeline_def)
 
-    assert environment_type.fields['context'].config_type.name == 'SomePipeline.ContextConfig'
+    assert (
+        environment_type.fields['resources'].config_type.name
+        == 'SomePipeline.Mode.TestMode.Resources'
+    )
     solids_type = environment_type.fields['solids'].config_type
     assert solids_type.name == 'SomePipeline.SolidsConfigDictionary'
     assert (
@@ -421,14 +349,17 @@ def test_whole_environment():
     env = construct_environment_config(
         throwing_evaluate_config_value(
             environment_type,
-            {'context': {'test': {'config': 1}}, 'solids': {'int_config_solid': {'config': 123}}},
+            {
+                'resources': {'test_resource': {'config': 1}},
+                'solids': {'int_config_solid': {'config': 123}},
+            },
         )
     )
 
     assert isinstance(env, EnvironmentConfig)
-    assert env.context == ContextConfig('test', 1, persistence={'file': {}})
     assert env.solids == {'int_config_solid': SolidConfig(123)}
     assert env.expectations == ExpectationsConfig(evaluate=True)
+    assert env.resources == {'test_resource': {'config': 1}}
 
 
 def test_solid_config_error():
@@ -566,7 +497,6 @@ def test_required_solid_with_required_subfield():
     int_config_solid_type = solids_type.fields['int_config_solid'].config_type
     assert int_config_solid_type.fields['config'].is_optional is False
 
-    assert env_type.fields['context'].is_optional
     assert env_type.fields['execution'].is_optional
     assert env_type.fields['expectations'].is_optional
 
@@ -603,90 +533,135 @@ def test_optional_solid_with_optional_subfield():
 
     env_type = create_environment_type(pipeline_def)
     assert env_type.fields['solids'].is_optional
-    assert env_type.fields['context'].is_optional
     assert env_type.fields['execution'].is_optional
     assert env_type.fields['expectations'].is_optional
 
 
-def test_required_context_with_required_subfield():
+def nested_field(config_type, *field_names):
+    assert field_names
+
+    field = config_type.fields[field_names[0]]
+
+    for field_name in field_names[1:]:
+        field = field.config_type.fields[field_name]
+
+    return field
+
+
+def test_required_resource_with_required_subfield():
     pipeline_def = PipelineDefinition(
         name='some_pipeline',
         solids=[],
-        context_definitions={
-            'some_context': PipelineContextDefinition(
-                context_fn=lambda *args: None,
-                config_field=Field(Dict({'required_field': Field(String)})),
+        mode_definitions=[
+            ModeDefinition(
+                resources={
+                    'with_required': ResourceDefinition(
+                        resource_fn=lambda: None,
+                        config_field=Field(Dict({'required_field': Field(String)})),
+                    )
+                }
             )
-        },
+        ],
     )
 
     env_type = create_environment_type(pipeline_def)
     assert env_type.fields['solids'].is_optional
-    assert env_type.fields['context'].is_optional is False
     assert env_type.fields['execution'].is_optional
     assert env_type.fields['expectations'].is_optional
+    assert env_type.fields['resources'].is_required
+    assert nested_field(env_type, 'resources', 'with_required').is_required
+    assert nested_field(env_type, 'resources', 'with_required', 'config').is_required
+    assert nested_field(
+        env_type, 'resources', 'with_required', 'config', 'required_field'
+    ).is_required
 
-    context_union_config_type = env_type.fields['context'].config_type
-    assert context_union_config_type.fields['some_context'].is_optional is False
 
-
-def test_all_optional_field_on_single_context_dict():
+def test_all_optional_field_on_single_resource():
     pipeline_def = PipelineDefinition(
         name='some_pipeline',
         solids=[],
-        context_definitions={
-            'some_context': PipelineContextDefinition(
-                context_fn=lambda *args: None,
-                config_field=Field(Dict({'optional_field': Field(String, is_optional=True)})),
+        mode_definitions=[
+            ModeDefinition(
+                resources={
+                    'with_optional': ResourceDefinition(
+                        resource_fn=lambda: None,
+                        config_field=Field(
+                            Dict({'optional_field': Field(String, is_optional=True)})
+                        ),
+                    )
+                }
             )
-        },
+        ],
     )
 
     env_type = create_environment_type(pipeline_def)
     assert env_type.fields['solids'].is_optional
-    assert env_type.fields['context'].is_optional
     assert env_type.fields['execution'].is_optional
     assert env_type.fields['expectations'].is_optional
+    assert env_type.fields['resources'].is_optional
+    assert nested_field(env_type, 'resources', 'with_optional').is_optional
+    assert nested_field(env_type, 'resources', 'with_optional', 'config').is_optional
+    assert nested_field(
+        env_type, 'resources', 'with_optional', 'config', 'optional_field'
+    ).is_optional
 
 
 def test_optional_and_required_context():
     pipeline_def = PipelineDefinition(
         name='some_pipeline',
         solids=[],
-        context_definitions={
-            'optional_field_context': PipelineContextDefinition(
-                context_fn=lambda *args: None,
-                config_field=Field(
-                    dagster_type=Dict(fields={'optional_field': Field(String, is_optional=True)})
-                ),
-            ),
-            'required_field_context': PipelineContextDefinition(
-                context_fn=lambda *args: None,
-                config_field=Field(dagster_type=Dict(fields={'required_field': Field(String)})),
-            ),
-        },
+        mode_definitions=[
+            ModeDefinition(
+                name='mixed',
+                resources={
+                    'optional_resource': ResourceDefinition(
+                        lambda: None,
+                        config_field=Field(
+                            dagster_type=Dict(
+                                fields={'optional_field': Field(String, is_optional=True)}
+                            )
+                        ),
+                    ),
+                    'required_resource': ResourceDefinition(
+                        lambda: None,
+                        config_field=Field(
+                            dagster_type=Dict(fields={'required_field': Field(String)})
+                        ),
+                    ),
+                },
+            )
+        ],
     )
 
     env_type = create_environment_type(pipeline_def)
     assert env_type.fields['solids'].is_optional
-    assert env_type.fields['context'].is_optional is False
-    context_type = env_type.fields['context'].config_type
-
-    assert context_type.fields['optional_field_context'].is_optional
-    assert context_type.fields['required_field_context'].is_optional
 
     assert env_type.fields['execution'].is_optional
     assert env_type.fields['expectations'].is_optional
 
+    assert nested_field(env_type, 'resources').is_required
+    assert nested_field(env_type, 'resources', 'optional_resource').is_optional
+    assert nested_field(env_type, 'resources', 'optional_resource', 'config').is_optional
+    assert nested_field(
+        env_type, 'resources', 'optional_resource', 'config', 'optional_field'
+    ).is_optional
+
+    assert nested_field(env_type, 'resources', 'required_resource').is_required
+    assert nested_field(env_type, 'resources', 'required_resource', 'config').is_required
+    assert nested_field(
+        env_type, 'resources', 'required_resource', 'config', 'required_field'
+    ).is_required
+
     env_obj = construct_environment_config(
         throwing_evaluate_config_value(
-            env_type,
-            {'context': {'optional_field_context': {'config': {'optional_field': 'foobar'}}}},
+            env_type, {'resources': {'required_resource': {'config': {'required_field': 'foo'}}}}
         )
     )
 
-    assert env_obj.context.name == 'optional_field_context'
-    assert env_obj.context.config == {'optional_field': 'foobar'}
+    assert env_obj.resources == {
+        'optional_resource': {'config': {}},
+        'required_resource': {'config': {'required_field': 'foo'}},
+    }
 
 
 def test_required_inputs():
