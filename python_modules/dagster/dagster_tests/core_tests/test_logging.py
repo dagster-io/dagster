@@ -2,10 +2,12 @@ import json
 import logging
 import re
 
+from dagster import PipelineDefinition, solid, execute_pipeline
 from dagster.core.definitions import SolidHandle
 from dagster.core.events import DagsterEvent
 from dagster.core.execution.plan.objects import StepFailureData
 from dagster.core.log import DAGSTER_DEFAULT_LOGGER, DagsterLog
+from dagster.utils.logging import INFO
 from dagster.utils.error import SerializableErrorInfo
 
 REGEX_UUID = r'[a-z-0-9]{8}\-[a-z-0-9]{4}\-[a-z-0-9]{4}\-[a-z-0-9]{4}\-[a-z-0-9]{12}'
@@ -150,3 +152,18 @@ def test_multiline_logging_complex():
         [pair for pair in kv_pairs if 'dagster_event' in pair][0].strip('       dagster_event = ')
     )
     assert dagster_event == expected_dagster_event
+
+
+def test_default_context_logging():
+    called = {}
+
+    @solid(inputs=[], outputs=[])
+    def default_context_transform(context):
+        called['yes'] = True
+        for logger in context.log.loggers:
+            assert logger.level == INFO
+
+    pipeline = PipelineDefinition(solids=[default_context_transform])
+    execute_pipeline(pipeline)
+
+    assert called['yes']

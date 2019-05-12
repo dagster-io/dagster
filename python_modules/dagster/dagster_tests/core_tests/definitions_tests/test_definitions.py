@@ -1,18 +1,18 @@
 import pytest
 
 from dagster import (
+    Any,
     DependencyDefinition,
     Dict,
     Field,
     InputDefinition,
+    Int,
     OutputDefinition,
-    PipelineContextDefinition,
     PipelineDefinition,
     SolidInstance,
     String,
     lambda_solid,
     solid,
-    types,
 )
 from dagster.core.definitions import Solid, Materialization, create_environment_schema
 from dagster.core.definitions.dependency import SolidOutputHandle
@@ -33,9 +33,9 @@ def test_solid_def():
         return 'foo'
 
     @solid(
-        inputs=[InputDefinition('input_one', types.String)],
-        outputs=[OutputDefinition(types.Any)],
-        config_field=Field(Dict({'another_field': Field(types.Int)})),
+        inputs=[InputDefinition('input_one', String)],
+        outputs=[OutputDefinition(Any)],
+        config_field=Field(Dict({'another_field': Field(Int)})),
     )
     def solid_one(_context, input_one):
         raise Exception('should not execute')
@@ -97,9 +97,9 @@ def test_pipeline_types():
         return 'foo'
 
     @solid(
-        inputs=[InputDefinition('input_one', types.String)],
-        outputs=[OutputDefinition(types.Any)],
-        config_field=Field(Dict({'another_field': Field(types.Int)})),
+        inputs=[InputDefinition('input_one', String)],
+        outputs=[OutputDefinition(Any)],
+        config_field=Field(Dict({'another_field': Field(Int)})),
     )
     def solid_one(_context, input_one):
         raise Exception('should not execute')
@@ -107,11 +107,6 @@ def test_pipeline_types():
     pipeline_def = PipelineDefinition(
         solids=[produce_string, solid_one],
         dependencies={'solid_one': {'input_one': DependencyDefinition('produce_string')}},
-        context_definitions={
-            'context_one': PipelineContextDefinition(
-                context_fn=lambda: None, config_field=Field(Dict({'field_one': Field(String)}))
-            )
-        },
     )
 
     environment_schema = create_environment_schema(pipeline_def)
