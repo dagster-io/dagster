@@ -10,7 +10,7 @@ from dagster import (
     InputDefinition,
     OutputDefinition,
     List,
-    PipelineContextDefinition,
+    ModeDefinition,
     PipelineDefinition,
     SolidInstance,
     String,
@@ -69,5 +69,5 @@ def define_event_ingest_pipeline():
                 SnowflakeSolidDefinition.INPUT_READY: DependencyDefinition('event_ingest', 'paths')
             },
         },
-        context_definitions={'default': PipelineContextDefinition(resources={'s3': s3_resource})},
+        mode_definitions=[ModeDefinition(resources={'s3': s3_resource})],
     )
