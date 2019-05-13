@@ -598,7 +598,7 @@ type RegularRuntimeType implements RuntimeType {
 type Resource {
   name: String!
   description: String
-  config: ConfigTypeField
+  configField: ConfigTypeField
 }
 
 type RuntimeMismatchConfigError implements PipelineConfigValidationError {

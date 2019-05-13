@@ -59,7 +59,7 @@ query ModesQuery($pipelineName: String!, $mode: String)
       description
       resources {
         name
-        config {
+        configField {
           configType {
             name
             ... on CompositeConfigType {

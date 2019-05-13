@@ -200,7 +200,7 @@ snapshots['test_query_multi_mode 1'] = {
                 'name': 'add_mode',
                 'resources': [
                     {
-                        'config': {
+                        'configField': {
                             'configType': {
                                 'name': 'Int'
                             }
@@ -214,7 +214,7 @@ snapshots['test_query_multi_mode 1'] = {
                 'name': 'mult_mode',
                 'resources': [
                     {
-                        'config': {
+                        'configField': {
                             'configType': {
                                 'name': 'Int'
                             }
@@ -228,7 +228,7 @@ snapshots['test_query_multi_mode 1'] = {
                 'name': 'double_adder',
                 'resources': [
                     {
-                        'config': {
+                        'configField': {
                             'configType': {
                                 'fields': [
                                     {
@@ -448,7 +448,7 @@ snapshots['test_query_multi_mode 2'] = {
                 'name': 'add_mode',
                 'resources': [
                     {
-                        'config': {
+                        'configField': {
                             'configType': {
                                 'name': 'Int'
                             }
@@ -462,7 +462,7 @@ snapshots['test_query_multi_mode 2'] = {
                 'name': 'mult_mode',
                 'resources': [
                     {
-                        'config': {
+                        'configField': {
                             'configType': {
                                 'name': 'Int'
                             }
@@ -476,7 +476,7 @@ snapshots['test_query_multi_mode 2'] = {
                 'name': 'double_adder',
                 'resources': [
                     {
-                        'config': {
+                        'configField': {
                             'configType': {
                                 'fields': [
                                     {

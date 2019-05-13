@@ -12,12 +12,12 @@ export interface SidebarTabbedContainerPipelineFragment_environmentType {
   name: string | null;
 }
 
-export interface SidebarTabbedContainerPipelineFragment_contexts_config_configType_EnumConfigType_innerTypes_EnumConfigType_innerTypes {
+export interface SidebarTabbedContainerPipelineFragment_modes_resources_configField_configType_EnumConfigType_innerTypes_EnumConfigType_innerTypes {
   __typename: "EnumConfigType" | "CompositeConfigType" | "RegularConfigType" | "ListConfigType" | "NullableConfigType";
   key: string;
 }
 
-export interface SidebarTabbedContainerPipelineFragment_contexts_config_configType_EnumConfigType_innerTypes_EnumConfigType {
+export interface SidebarTabbedContainerPipelineFragment_modes_resources_configField_configType_EnumConfigType_innerTypes_EnumConfigType {
   __typename: "EnumConfigType" | "RegularConfigType" | "ListConfigType" | "NullableConfigType";
   key: string;
   name: string | null;
@@ -25,28 +25,28 @@ export interface SidebarTabbedContainerPipelineFragment_contexts_config_configTy
   isList: boolean;
   isNullable: boolean;
   isSelector: boolean;
-  innerTypes: SidebarTabbedContainerPipelineFragment_contexts_config_configType_EnumConfigType_innerTypes_EnumConfigType_innerTypes[];
+  innerTypes: SidebarTabbedContainerPipelineFragment_modes_resources_configField_configType_EnumConfigType_innerTypes_EnumConfigType_innerTypes[];
 }
 
-export interface SidebarTabbedContainerPipelineFragment_contexts_config_configType_EnumConfigType_innerTypes_CompositeConfigType_innerTypes {
+export interface SidebarTabbedContainerPipelineFragment_modes_resources_configField_configType_EnumConfigType_innerTypes_CompositeConfigType_innerTypes {
   __typename: "EnumConfigType" | "CompositeConfigType" | "RegularConfigType" | "ListConfigType" | "NullableConfigType";
   key: string;
 }
 
-export interface SidebarTabbedContainerPipelineFragment_contexts_config_configType_EnumConfigType_innerTypes_CompositeConfigType_fields_configType {
+export interface SidebarTabbedContainerPipelineFragment_modes_resources_configField_configType_EnumConfigType_innerTypes_CompositeConfigType_fields_configType {
   __typename: "EnumConfigType" | "CompositeConfigType" | "RegularConfigType" | "ListConfigType" | "NullableConfigType";
   key: string;
 }
 
-export interface SidebarTabbedContainerPipelineFragment_contexts_config_configType_EnumConfigType_innerTypes_CompositeConfigType_fields {
+export interface SidebarTabbedContainerPipelineFragment_modes_resources_configField_configType_EnumConfigType_innerTypes_CompositeConfigType_fields {
   __typename: "ConfigTypeField";
   name: string;
   description: string | null;
   isOptional: boolean;
-  configType: SidebarTabbedContainerPipelineFragment_contexts_config_configType_EnumConfigType_innerTypes_CompositeConfigType_fields_configType;
+  configType: SidebarTabbedContainerPipelineFragment_modes_resources_configField_configType_EnumConfigType_innerTypes_CompositeConfigType_fields_configType;
 }
 
-export interface SidebarTabbedContainerPipelineFragment_contexts_config_configType_EnumConfigType_innerTypes_CompositeConfigType {
+export interface SidebarTabbedContainerPipelineFragment_modes_resources_configField_configType_EnumConfigType_innerTypes_CompositeConfigType {
   __typename: "CompositeConfigType";
   key: string;
   name: string | null;
@@ -54,13 +54,13 @@ export interface SidebarTabbedContainerPipelineFragment_contexts_config_configTy
   isList: boolean;
   isNullable: boolean;
   isSelector: boolean;
-  innerTypes: SidebarTabbedContainerPipelineFragment_contexts_config_configType_EnumConfigType_innerTypes_CompositeConfigType_innerTypes[];
-  fields: SidebarTabbedContainerPipelineFragment_contexts_config_configType_EnumConfigType_innerTypes_CompositeConfigType_fields[];
+  innerTypes: SidebarTabbedContainerPipelineFragment_modes_resources_configField_configType_EnumConfigType_innerTypes_CompositeConfigType_innerTypes[];
+  fields: SidebarTabbedContainerPipelineFragment_modes_resources_configField_configType_EnumConfigType_innerTypes_CompositeConfigType_fields[];
 }
 
-export type SidebarTabbedContainerPipelineFragment_contexts_config_configType_EnumConfigType_innerTypes = SidebarTabbedContainerPipelineFragment_contexts_config_configType_EnumConfigType_innerTypes_EnumConfigType | SidebarTabbedContainerPipelineFragment_contexts_config_configType_EnumConfigType_innerTypes_CompositeConfigType;
+export type SidebarTabbedContainerPipelineFragment_modes_resources_configField_configType_EnumConfigType_innerTypes = SidebarTabbedContainerPipelineFragment_modes_resources_configField_configType_EnumConfigType_innerTypes_EnumConfigType | SidebarTabbedContainerPipelineFragment_modes_resources_configField_configType_EnumConfigType_innerTypes_CompositeConfigType;
 
-export interface SidebarTabbedContainerPipelineFragment_contexts_config_configType_EnumConfigType {
+export interface SidebarTabbedContainerPipelineFragment_modes_resources_configField_configType_EnumConfigType {
   __typename: "EnumConfigType" | "RegularConfigType" | "ListConfigType" | "NullableConfigType";
   key: string;
   name: string | null;
@@ -68,15 +68,15 @@ export interface SidebarTabbedContainerPipelineFragment_contexts_config_configTy
   isList: boolean;
   isNullable: boolean;
   isSelector: boolean;
-  innerTypes: SidebarTabbedContainerPipelineFragment_contexts_config_configType_EnumConfigType_innerTypes[];
+  innerTypes: SidebarTabbedContainerPipelineFragment_modes_resources_configField_configType_EnumConfigType_innerTypes[];
 }
 
-export interface SidebarTabbedContainerPipelineFragment_contexts_config_configType_CompositeConfigType_innerTypes_EnumConfigType_innerTypes {
+export interface SidebarTabbedContainerPipelineFragment_modes_resources_configField_configType_CompositeConfigType_innerTypes_EnumConfigType_innerTypes {
   __typename: "EnumConfigType" | "CompositeConfigType" | "RegularConfigType" | "ListConfigType" | "NullableConfigType";
   key: string;
 }
 
-export interface SidebarTabbedContainerPipelineFragment_contexts_config_configType_CompositeConfigType_innerTypes_EnumConfigType {
+export interface SidebarTabbedContainerPipelineFragment_modes_resources_configField_configType_CompositeConfigType_innerTypes_EnumConfigType {
   __typename: "EnumConfigType" | "RegularConfigType" | "ListConfigType" | "NullableConfigType";
   key: string;
   name: string | null;
@@ -84,28 +84,28 @@ export interface SidebarTabbedContainerPipelineFragment_contexts_config_configTy
   isList: boolean;
   isNullable: boolean;
   isSelector: boolean;
-  innerTypes: SidebarTabbedContainerPipelineFragment_contexts_config_configType_CompositeConfigType_innerTypes_EnumConfigType_innerTypes[];
+  innerTypes: SidebarTabbedContainerPipelineFragment_modes_resources_configField_configType_CompositeConfigType_innerTypes_EnumConfigType_innerTypes[];
 }
 
-export interface SidebarTabbedContainerPipelineFragment_contexts_config_configType_CompositeConfigType_innerTypes_CompositeConfigType_innerTypes {
+export interface SidebarTabbedContainerPipelineFragment_modes_resources_configField_configType_CompositeConfigType_innerTypes_CompositeConfigType_innerTypes {
   __typename: "EnumConfigType" | "CompositeConfigType" | "RegularConfigType" | "ListConfigType" | "NullableConfigType";
   key: string;
 }
 
-export interface SidebarTabbedContainerPipelineFragment_contexts_config_configType_CompositeConfigType_innerTypes_CompositeConfigType_fields_configType {
+export interface SidebarTabbedContainerPipelineFragment_modes_resources_configField_configType_CompositeConfigType_innerTypes_CompositeConfigType_fields_configType {
   __typename: "EnumConfigType" | "CompositeConfigType" | "RegularConfigType" | "ListConfigType" | "NullableConfigType";
   key: string;
 }
 
-export interface SidebarTabbedContainerPipelineFragment_contexts_config_configType_CompositeConfigType_innerTypes_CompositeConfigType_fields {
+export interface SidebarTabbedContainerPipelineFragment_modes_resources_configField_configType_CompositeConfigType_innerTypes_CompositeConfigType_fields {
   __typename: "ConfigTypeField";
   name: string;
   description: string | null;
   isOptional: boolean;
-  configType: SidebarTabbedContainerPipelineFragment_contexts_config_configType_CompositeConfigType_innerTypes_CompositeConfigType_fields_configType;
+  configType: SidebarTabbedContainerPipelineFragment_modes_resources_configField_configType_CompositeConfigType_innerTypes_CompositeConfigType_fields_configType;
 }
 
-export interface SidebarTabbedContainerPipelineFragment_contexts_config_configType_CompositeConfigType_innerTypes_CompositeConfigType {
+export interface SidebarTabbedContainerPipelineFragment_modes_resources_configField_configType_CompositeConfigType_innerTypes_CompositeConfigType {
   __typename: "CompositeConfigType";
   key: string;
   name: string | null;
@@ -113,26 +113,26 @@ export interface SidebarTabbedContainerPipelineFragment_contexts_config_configTy
   isList: boolean;
   isNullable: boolean;
   isSelector: boolean;
-  innerTypes: SidebarTabbedContainerPipelineFragment_contexts_config_configType_CompositeConfigType_innerTypes_CompositeConfigType_innerTypes[];
-  fields: SidebarTabbedContainerPipelineFragment_contexts_config_configType_CompositeConfigType_innerTypes_CompositeConfigType_fields[];
+  innerTypes: SidebarTabbedContainerPipelineFragment_modes_resources_configField_configType_CompositeConfigType_innerTypes_CompositeConfigType_innerTypes[];
+  fields: SidebarTabbedContainerPipelineFragment_modes_resources_configField_configType_CompositeConfigType_innerTypes_CompositeConfigType_fields[];
 }
 
-export type SidebarTabbedContainerPipelineFragment_contexts_config_configType_CompositeConfigType_innerTypes = SidebarTabbedContainerPipelineFragment_contexts_config_configType_CompositeConfigType_innerTypes_EnumConfigType | SidebarTabbedContainerPipelineFragment_contexts_config_configType_CompositeConfigType_innerTypes_CompositeConfigType;
+export type SidebarTabbedContainerPipelineFragment_modes_resources_configField_configType_CompositeConfigType_innerTypes = SidebarTabbedContainerPipelineFragment_modes_resources_configField_configType_CompositeConfigType_innerTypes_EnumConfigType | SidebarTabbedContainerPipelineFragment_modes_resources_configField_configType_CompositeConfigType_innerTypes_CompositeConfigType;
 
-export interface SidebarTabbedContainerPipelineFragment_contexts_config_configType_CompositeConfigType_fields_configType {
+export interface SidebarTabbedContainerPipelineFragment_modes_resources_configField_configType_CompositeConfigType_fields_configType {
   __typename: "EnumConfigType" | "CompositeConfigType" | "RegularConfigType" | "ListConfigType" | "NullableConfigType";
   key: string;
 }
 
-export interface SidebarTabbedContainerPipelineFragment_contexts_config_configType_CompositeConfigType_fields {
+export interface SidebarTabbedContainerPipelineFragment_modes_resources_configField_configType_CompositeConfigType_fields {
   __typename: "ConfigTypeField";
   name: string;
   description: string | null;
   isOptional: boolean;
-  configType: SidebarTabbedContainerPipelineFragment_contexts_config_configType_CompositeConfigType_fields_configType;
+  configType: SidebarTabbedContainerPipelineFragment_modes_resources_configField_configType_CompositeConfigType_fields_configType;
 }
 
-export interface SidebarTabbedContainerPipelineFragment_contexts_config_configType_CompositeConfigType {
+export interface SidebarTabbedContainerPipelineFragment_modes_resources_configField_configType_CompositeConfigType {
   __typename: "CompositeConfigType";
   key: string;
   name: string | null;
@@ -140,169 +140,29 @@ export interface SidebarTabbedContainerPipelineFragment_contexts_config_configTy
   isList: boolean;
   isNullable: boolean;
   isSelector: boolean;
-  innerTypes: SidebarTabbedContainerPipelineFragment_contexts_config_configType_CompositeConfigType_innerTypes[];
-  fields: SidebarTabbedContainerPipelineFragment_contexts_config_configType_CompositeConfigType_fields[];
+  innerTypes: SidebarTabbedContainerPipelineFragment_modes_resources_configField_configType_CompositeConfigType_innerTypes[];
+  fields: SidebarTabbedContainerPipelineFragment_modes_resources_configField_configType_CompositeConfigType_fields[];
 }
 
-export type SidebarTabbedContainerPipelineFragment_contexts_config_configType = SidebarTabbedContainerPipelineFragment_contexts_config_configType_EnumConfigType | SidebarTabbedContainerPipelineFragment_contexts_config_configType_CompositeConfigType;
+export type SidebarTabbedContainerPipelineFragment_modes_resources_configField_configType = SidebarTabbedContainerPipelineFragment_modes_resources_configField_configType_EnumConfigType | SidebarTabbedContainerPipelineFragment_modes_resources_configField_configType_CompositeConfigType;
 
-export interface SidebarTabbedContainerPipelineFragment_contexts_config {
+export interface SidebarTabbedContainerPipelineFragment_modes_resources_configField {
   __typename: "ConfigTypeField";
-  configType: SidebarTabbedContainerPipelineFragment_contexts_config_configType;
+  configType: SidebarTabbedContainerPipelineFragment_modes_resources_configField_configType;
 }
 
-export interface SidebarTabbedContainerPipelineFragment_contexts_resources_config_configType_EnumConfigType_innerTypes_EnumConfigType_innerTypes {
-  __typename: "EnumConfigType" | "CompositeConfigType" | "RegularConfigType" | "ListConfigType" | "NullableConfigType";
-  key: string;
-}
-
-export interface SidebarTabbedContainerPipelineFragment_contexts_resources_config_configType_EnumConfigType_innerTypes_EnumConfigType {
-  __typename: "EnumConfigType" | "RegularConfigType" | "ListConfigType" | "NullableConfigType";
-  key: string;
-  name: string | null;
-  description: string | null;
-  isList: boolean;
-  isNullable: boolean;
-  isSelector: boolean;
-  innerTypes: SidebarTabbedContainerPipelineFragment_contexts_resources_config_configType_EnumConfigType_innerTypes_EnumConfigType_innerTypes[];
-}
-
-export interface SidebarTabbedContainerPipelineFragment_contexts_resources_config_configType_EnumConfigType_innerTypes_CompositeConfigType_innerTypes {
-  __typename: "EnumConfigType" | "CompositeConfigType" | "RegularConfigType" | "ListConfigType" | "NullableConfigType";
-  key: string;
-}
-
-export interface SidebarTabbedContainerPipelineFragment_contexts_resources_config_configType_EnumConfigType_innerTypes_CompositeConfigType_fields_configType {
-  __typename: "EnumConfigType" | "CompositeConfigType" | "RegularConfigType" | "ListConfigType" | "NullableConfigType";
-  key: string;
-}
-
-export interface SidebarTabbedContainerPipelineFragment_contexts_resources_config_configType_EnumConfigType_innerTypes_CompositeConfigType_fields {
-  __typename: "ConfigTypeField";
-  name: string;
-  description: string | null;
-  isOptional: boolean;
-  configType: SidebarTabbedContainerPipelineFragment_contexts_resources_config_configType_EnumConfigType_innerTypes_CompositeConfigType_fields_configType;
-}
-
-export interface SidebarTabbedContainerPipelineFragment_contexts_resources_config_configType_EnumConfigType_innerTypes_CompositeConfigType {
-  __typename: "CompositeConfigType";
-  key: string;
-  name: string | null;
-  description: string | null;
-  isList: boolean;
-  isNullable: boolean;
-  isSelector: boolean;
-  innerTypes: SidebarTabbedContainerPipelineFragment_contexts_resources_config_configType_EnumConfigType_innerTypes_CompositeConfigType_innerTypes[];
-  fields: SidebarTabbedContainerPipelineFragment_contexts_resources_config_configType_EnumConfigType_innerTypes_CompositeConfigType_fields[];
-}
-
-export type SidebarTabbedContainerPipelineFragment_contexts_resources_config_configType_EnumConfigType_innerTypes = SidebarTabbedContainerPipelineFragment_contexts_resources_config_configType_EnumConfigType_innerTypes_EnumConfigType | SidebarTabbedContainerPipelineFragment_contexts_resources_config_configType_EnumConfigType_innerTypes_CompositeConfigType;
-
-export interface SidebarTabbedContainerPipelineFragment_contexts_resources_config_configType_EnumConfigType {
-  __typename: "EnumConfigType" | "RegularConfigType" | "ListConfigType" | "NullableConfigType";
-  key: string;
-  name: string | null;
-  description: string | null;
-  isList: boolean;
-  isNullable: boolean;
-  isSelector: boolean;
-  innerTypes: SidebarTabbedContainerPipelineFragment_contexts_resources_config_configType_EnumConfigType_innerTypes[];
-}
-
-export interface SidebarTabbedContainerPipelineFragment_contexts_resources_config_configType_CompositeConfigType_innerTypes_EnumConfigType_innerTypes {
-  __typename: "EnumConfigType" | "CompositeConfigType" | "RegularConfigType" | "ListConfigType" | "NullableConfigType";
-  key: string;
-}
-
-export interface SidebarTabbedContainerPipelineFragment_contexts_resources_config_configType_CompositeConfigType_innerTypes_EnumConfigType {
-  __typename: "EnumConfigType" | "RegularConfigType" | "ListConfigType" | "NullableConfigType";
-  key: string;
-  name: string | null;
-  description: string | null;
-  isList: boolean;
-  isNullable: boolean;
-  isSelector: boolean;
-  innerTypes: SidebarTabbedContainerPipelineFragment_contexts_resources_config_configType_CompositeConfigType_innerTypes_EnumConfigType_innerTypes[];
-}
-
-export interface SidebarTabbedContainerPipelineFragment_contexts_resources_config_configType_CompositeConfigType_innerTypes_CompositeConfigType_innerTypes {
-  __typename: "EnumConfigType" | "CompositeConfigType" | "RegularConfigType" | "ListConfigType" | "NullableConfigType";
-  key: string;
-}
-
-export interface SidebarTabbedContainerPipelineFragment_contexts_resources_config_configType_CompositeConfigType_innerTypes_CompositeConfigType_fields_configType {
-  __typename: "EnumConfigType" | "CompositeConfigType" | "RegularConfigType" | "ListConfigType" | "NullableConfigType";
-  key: string;
-}
-
-export interface SidebarTabbedContainerPipelineFragment_contexts_resources_config_configType_CompositeConfigType_innerTypes_CompositeConfigType_fields {
-  __typename: "ConfigTypeField";
-  name: string;
-  description: string | null;
-  isOptional: boolean;
-  configType: SidebarTabbedContainerPipelineFragment_contexts_resources_config_configType_CompositeConfigType_innerTypes_CompositeConfigType_fields_configType;
-}
-
-export interface SidebarTabbedContainerPipelineFragment_contexts_resources_config_configType_CompositeConfigType_innerTypes_CompositeConfigType {
-  __typename: "CompositeConfigType";
-  key: string;
-  name: string | null;
-  description: string | null;
-  isList: boolean;
-  isNullable: boolean;
-  isSelector: boolean;
-  innerTypes: SidebarTabbedContainerPipelineFragment_contexts_resources_config_configType_CompositeConfigType_innerTypes_CompositeConfigType_innerTypes[];
-  fields: SidebarTabbedContainerPipelineFragment_contexts_resources_config_configType_CompositeConfigType_innerTypes_CompositeConfigType_fields[];
-}
-
-export type SidebarTabbedContainerPipelineFragment_contexts_resources_config_configType_CompositeConfigType_innerTypes = SidebarTabbedContainerPipelineFragment_contexts_resources_config_configType_CompositeConfigType_innerTypes_EnumConfigType | SidebarTabbedContainerPipelineFragment_contexts_resources_config_configType_CompositeConfigType_innerTypes_CompositeConfigType;
-
-export interface SidebarTabbedContainerPipelineFragment_contexts_resources_config_configType_CompositeConfigType_fields_configType {
-  __typename: "EnumConfigType" | "CompositeConfigType" | "RegularConfigType" | "ListConfigType" | "NullableConfigType";
-  key: string;
-}
-
-export interface SidebarTabbedContainerPipelineFragment_contexts_resources_config_configType_CompositeConfigType_fields {
-  __typename: "ConfigTypeField";
-  name: string;
-  description: string | null;
-  isOptional: boolean;
-  configType: SidebarTabbedContainerPipelineFragment_contexts_resources_config_configType_CompositeConfigType_fields_configType;
-}
-
-export interface SidebarTabbedContainerPipelineFragment_contexts_resources_config_configType_CompositeConfigType {
-  __typename: "CompositeConfigType";
-  key: string;
-  name: string | null;
-  description: string | null;
-  isList: boolean;
-  isNullable: boolean;
-  isSelector: boolean;
-  innerTypes: SidebarTabbedContainerPipelineFragment_contexts_resources_config_configType_CompositeConfigType_innerTypes[];
-  fields: SidebarTabbedContainerPipelineFragment_contexts_resources_config_configType_CompositeConfigType_fields[];
-}
-
-export type SidebarTabbedContainerPipelineFragment_contexts_resources_config_configType = SidebarTabbedContainerPipelineFragment_contexts_resources_config_configType_EnumConfigType | SidebarTabbedContainerPipelineFragment_contexts_resources_config_configType_CompositeConfigType;
-
-export interface SidebarTabbedContainerPipelineFragment_contexts_resources_config {
-  __typename: "ConfigTypeField";
-  configType: SidebarTabbedContainerPipelineFragment_contexts_resources_config_configType;
-}
-
-export interface SidebarTabbedContainerPipelineFragment_contexts_resources {
+export interface SidebarTabbedContainerPipelineFragment_modes_resources {
   __typename: "Resource";
   name: string;
   description: string | null;
-  config: SidebarTabbedContainerPipelineFragment_contexts_resources_config | null;
+  configField: SidebarTabbedContainerPipelineFragment_modes_resources_configField | null;
 }
 
-export interface SidebarTabbedContainerPipelineFragment_contexts {
-  __typename: "PipelineContext";
+export interface SidebarTabbedContainerPipelineFragment_modes {
+  __typename: "Mode";
   name: string;
   description: string | null;
-  config: SidebarTabbedContainerPipelineFragment_contexts_config | null;
-  resources: SidebarTabbedContainerPipelineFragment_contexts_resources[];
+  resources: SidebarTabbedContainerPipelineFragment_modes_resources[];
 }
 
 export interface SidebarTabbedContainerPipelineFragment {
@@ -310,5 +170,5 @@ export interface SidebarTabbedContainerPipelineFragment {
   name: string;
   environmentType: SidebarTabbedContainerPipelineFragment_environmentType;
   description: string | null;
-  contexts: SidebarTabbedContainerPipelineFragment_contexts[];
+  modes: SidebarTabbedContainerPipelineFragment_modes[];
 }

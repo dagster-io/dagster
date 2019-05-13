@@ -8,7 +8,7 @@ RESOURCE_QUERY = '''
       resources {
         name
         description
-        config {
+        configField {
           configType {
             name
             ... on CompositeConfigType {

@@ -144,9 +144,9 @@ class DauphinResource(dauphin.ObjectType):
 
     name = dauphin.NonNull(dauphin.String)
     description = dauphin.String()
-    config = dauphin.Field('ConfigTypeField')
+    configField = dauphin.Field('ConfigTypeField')
 
-    def resolve_config(self, graphene_info):
+    def resolve_configField(self, graphene_info):
         return (
             graphene_info.schema.type_named('ConfigTypeField')(
                 name="config", field=self._resource.config_field

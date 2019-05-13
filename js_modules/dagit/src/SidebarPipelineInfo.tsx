@@ -28,18 +28,13 @@ export default class SidebarPipelineInfo extends React.Component<
       fragment SidebarPipelineInfoFragment on Pipeline {
         name
         description
-        contexts {
+        modes {
           name
           description
-          config {
-            configType {
-              ...ConfigTypeSchemaFragment
-            }
-          }
           resources {
             name
             description
-            config {
+            configField {
               configType {
                 ...ConfigTypeSchemaFragment
               }
@@ -64,17 +59,12 @@ export default class SidebarPipelineInfo extends React.Component<
             description={pipeline ? pipeline.description : NO_DESCRIPTION}
           />
         </SidebarSection>
-        <SidebarSection title={"Contexts"}>
-          {pipeline.contexts.map(context => (
-            <SectionItemContainer key={context.name}>
-              <SectionItemHeader>{context.name}</SectionItemHeader>
-              <Description
-                description={context.description || NO_DESCRIPTION}
-              />
-              {context.config && (
-                <ConfigTypeSchema type={context.config.configType} />
-              )}
-              {context.resources.map(resource => (
+        <SidebarSection title={"Modes"}>
+          {pipeline.modes.map(mode => (
+            <SectionItemContainer key={mode.name}>
+              <SectionItemHeader>{mode.name}</SectionItemHeader>
+              <Description description={mode.description || NO_DESCRIPTION} />
+              {mode.resources.map(resource => (
                 <ContextResourceContainer key={resource.name}>
                   <Icon
                     iconSize={14}
@@ -88,8 +78,10 @@ export default class SidebarPipelineInfo extends React.Component<
                     <Description
                       description={resource.description || NO_DESCRIPTION}
                     />
-                    {resource.config && (
-                      <ConfigTypeSchema type={resource.config.configType} />
+                    {resource.configField && (
+                      <ConfigTypeSchema
+                        type={resource.configField.configType}
+                      />
                     )}
                   </div>
                 </ContextResourceContainer>

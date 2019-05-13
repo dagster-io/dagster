@@ -40,7 +40,6 @@ fragment PipelineFragment on Pipeline {
     }
   }
   ...PipelineGraphFragment
-  ...ConfigEditorFragment
   __typename
 }
 
@@ -226,37 +225,6 @@ fragment SolidNodeFragment on Solid {
       expectations {
         name
         description
-        __typename
-      }
-      __typename
-    }
-    __typename
-  }
-  __typename
-}
-
-fragment ConfigEditorFragment on Pipeline {
-  name
-  ...ConfigExplorerFragment
-  __typename
-}
-
-fragment ConfigExplorerFragment on Pipeline {
-  contexts {
-    name
-    description
-    config {
-      ...ConfigFieldFragment
-      __typename
-    }
-    __typename
-  }
-  solids {
-    definition {
-      name
-      description
-      configDefinition {
-        ...ConfigFieldFragment
         __typename
       }
       __typename
