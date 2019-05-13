@@ -23,20 +23,15 @@ fragment PipelineFragment on Pipeline {
     ...SolidFragment
     __typename
   }
-  contexts {
-    name
-    description
-    config {
-      ...ConfigFieldFragment
-      __typename
-    }
-    __typename
-  }
   modes {
     name
     description
     resources {
       name
+      configField {
+        ...ConfigFieldFragment
+        __typename
+      }
     }
   }
   ...PipelineGraphFragment

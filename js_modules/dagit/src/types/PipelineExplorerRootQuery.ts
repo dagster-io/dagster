@@ -7,12 +7,6 @@
 // GraphQL query operation: PipelineExplorerRootQuery
 // ====================================================
 
-export interface PipelineExplorerRootQuery_pipeline_contexts {
-  __typename: "PipelineContext";
-  name: string;
-  description: string | null;
-}
-
 export interface PipelineExplorerRootQuery_pipeline_solids_definition_metadata {
   __typename: "MetadataItemDefinition";
   key: string;
@@ -435,7 +429,6 @@ export interface PipelineExplorerRootQuery_pipeline {
   __typename: "Pipeline";
   name: string;
   description: string | null;
-  contexts: PipelineExplorerRootQuery_pipeline_contexts[];
   solids: PipelineExplorerRootQuery_pipeline_solids[];
   environmentType: PipelineExplorerRootQuery_pipeline_environmentType;
   modes: PipelineExplorerRootQuery_pipeline_modes[];

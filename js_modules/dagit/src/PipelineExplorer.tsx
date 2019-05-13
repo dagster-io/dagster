@@ -32,10 +32,6 @@ export default class PipelineExplorer extends React.Component<
       fragment PipelineExplorerFragment on Pipeline {
         name
         description
-        contexts {
-          name
-          description
-        }
         ...PipelineGraphFragment
         ...SidebarTabbedContainerPipelineFragment
       }

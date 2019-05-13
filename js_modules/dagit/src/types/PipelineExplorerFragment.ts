@@ -7,12 +7,6 @@
 // GraphQL fragment: PipelineExplorerFragment
 // ====================================================
 
-export interface PipelineExplorerFragment_contexts {
-  __typename: "PipelineContext";
-  name: string;
-  description: string | null;
-}
-
 export interface PipelineExplorerFragment_solids_definition_metadata {
   __typename: "MetadataItemDefinition";
   key: string;
@@ -293,7 +287,6 @@ export interface PipelineExplorerFragment {
   __typename: "Pipeline";
   name: string;
   description: string | null;
-  contexts: PipelineExplorerFragment_contexts[];
   solids: PipelineExplorerFragment_solids[];
   environmentType: PipelineExplorerFragment_environmentType;
   modes: PipelineExplorerFragment_modes[];

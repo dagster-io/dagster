@@ -393,7 +393,6 @@ type Pipeline {
   name: String!
   description: String
   solids: [Solid!]!
-  contexts: [PipelineContext!]!
   environmentType(mode: String): ConfigType!
   configTypes(mode: String): [ConfigType!]!
   runtimeTypes: [RuntimeType!]!
@@ -423,13 +422,6 @@ type PipelineConfigValidationValid {
 
 type PipelineConnection {
   nodes: [Pipeline!]!
-}
-
-type PipelineContext {
-  name: String!
-  description: String
-  config: ConfigTypeField
-  resources: [Resource!]!
 }
 
 interface PipelineEvent {

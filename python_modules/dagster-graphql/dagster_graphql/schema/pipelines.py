@@ -5,7 +5,6 @@ from dagster import (
     InputDefinition,
     ModeDefinition,
     OutputDefinition,
-    PipelineContextDefinition,
     PipelineDefinition,
     ResourceDefinition,
     check,
@@ -32,7 +31,6 @@ class DauphinPipeline(dauphin.ObjectType):
     name = dauphin.NonNull(dauphin.String)
     description = dauphin.String()
     solids = dauphin.non_null_list('Solid')
-    contexts = dauphin.non_null_list('PipelineContext')
     environment_type = dauphin.Field(
         dauphin.NonNull('ConfigType'), mode=dauphin.String(required=False)
     )
@@ -59,12 +57,6 @@ class DauphinPipeline(dauphin.ObjectType):
             ],
             key=lambda solid: solid.name,
         )
-
-    def resolve_contexts(self, graphene_info):
-        return [
-            graphene_info.schema.type_named('PipelineContext')(name=name, context=context)
-            for name, context in self._pipeline.context_definitions.items()
-        ]
 
     def resolve_environment_type(self, _graphene_info, mode=None):
         return to_dauphin_config_type(
@@ -175,32 +167,6 @@ class DauphinMode(dauphin.ObjectType):
 
     def resolve_resources(self, _graphene_info):
         return [DauphinResource(*item) for item in self._mode_definition.resource_defs.items()]
-
-
-class DauphinPipelineContext(dauphin.ObjectType):
-    class Meta:
-        name = 'PipelineContext'
-
-    name = dauphin.NonNull(dauphin.String)
-    description = dauphin.String()
-    config = dauphin.Field('ConfigTypeField')
-    resources = dauphin.non_null_list('Resource')
-
-    def __init__(self, name, context):
-        super(DauphinPipelineContext, self).__init__(name=name, description=context.description)
-        self._context = check.inst_param(context, 'context', PipelineContextDefinition)
-
-    def resolve_config(self, graphene_info):
-        return (
-            graphene_info.schema.type_named('ConfigTypeField')(
-                name="config", field=self._context.config_field
-            )
-            if self._context.config_field
-            else None
-        )
-
-    def resolve_resources(self, _graphene_info):
-        return [DauphinResource(*item) for item in self._context.resource_defs.items()]
 
 
 class DauphinSolid(dauphin.ObjectType):
