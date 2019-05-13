@@ -1,21 +1,21 @@
 import pytest
 
 from dagster import (
-    check,
     Any,
     DagsterEvaluateConfigValueError,
     Dict,
-    ExecutionContext,
     Field,
     Int,
     List,
+    ModeDefinition,
     Nullable,
     PermissiveDict,
     PipelineConfigEvaluationError,
-    PipelineContextDefinition,
     PipelineDefinition,
+    ResourceDefinition,
     SolidDefinition,
     String,
+    check,
     execute_pipeline,
     solid,
 )
@@ -373,34 +373,25 @@ def fail_me():
     assert False
 
 
-def test_multiple_context():
+def dummy_resource(config_field=None):
+    return ResourceDefinition(lambda: None, config_field=config_field)
+
+
+def test_wrong_resources():
     pipeline_def = PipelineDefinition(
         name='pipeline_test_multiple_context',
-        context_definitions={
-            'context_one': PipelineContextDefinition(context_fn=lambda *_args: fail_me()),
-            'context_two': PipelineContextDefinition(context_fn=lambda *_args: fail_me()),
-        },
-        solids=[],
-    )
-
-    with pytest.raises(PipelineConfigEvaluationError):
-        execute_pipeline(pipeline_def, {'context': {'context_one': {}, 'context_two': {}}})
-
-
-def test_wrong_context():
-    pipeline_def = PipelineDefinition(
-        name='pipeline_test_multiple_context',
-        context_definitions={
-            'context_one': PipelineContextDefinition(context_fn=lambda *_args: fail_me()),
-            'context_two': PipelineContextDefinition(context_fn=lambda *_args: fail_me()),
-        },
+        mode_definitions=[
+            ModeDefinition(
+                resources={'resource_one': dummy_resource(), 'resource_two': dummy_resource()}
+            )
+        ],
         solids=[],
     )
 
     with pytest.raises(
-        PipelineConfigEvaluationError, match='Undefined field "nope" at path root:context'
+        PipelineConfigEvaluationError, match='Undefined field "nope" at path root:resources'
     ):
-        execute_pipeline(pipeline_def, {'context': {'nope': {}}})
+        execute_pipeline(pipeline_def, {'resources': {'nope': {}}})
 
 
 def test_solid_list_config():
@@ -582,129 +573,22 @@ def test_item_error_list_path():
     assert 'Type failure at path "root:solids:required_list_int_solid:config[1]"' in str(pe)
 
 
-def test_context_selector_working():
-    called = {}
-
-    @solid
-    def check_context(context):
-        assert context.resources == 32
-        called['yup'] = True
-
+def test_required_resource_not_given():
     pipeline_def = PipelineDefinition(
-        name='context_selector_working',
-        solids=[check_context],
-        context_definitions={
-            'context_required_int': PipelineContextDefinition(
-                context_fn=lambda init_context: ExecutionContext(
-                    resources=init_context.context_config
-                ),
-                config_field=Field(Int),
-            )
-        },
-    )
-
-    result = execute_pipeline(
-        pipeline_def, environment_dict={'context': {'context_required_int': {'config': 32}}}
-    )
-
-    assert result.success
-    assert called['yup']
-
-
-def test_context_selector_extra_context():
-    @solid
-    def check_context(_context):
-        assert False
-
-    pipeline_def = PipelineDefinition(
-        name='context_selector_extra_context',
-        solids=[check_context],
-        context_definitions={
-            'context_required_int': PipelineContextDefinition(
-                context_fn=lambda init_context: ExecutionContext(
-                    resources=init_context.solid_config
-                ),
-                config_field=Field(Int),
-            )
-        },
+        name='required_resource_not_given',
+        solids=[],
+        mode_definitions=[ModeDefinition(resources={'required': dummy_resource(Field(Int))})],
     )
 
     with pytest.raises(PipelineConfigEvaluationError) as pe_info:
-        execute_pipeline(
-            pipeline_def,
-            environment_dict={
-                'context': {
-                    'context_required_int': {'config': 32},
-                    'extra_context': {'config': None},
-                }
-            },
-        )
+        execute_pipeline(pipeline_def, environment_dict={'resources': None})
 
     pe = pe_info.value
-    cse = pe.errors[0]
-    assert cse.message == (
-        '''You can only specify a single field at path root:context. '''
-        '''You specified ['context_required_int', 'extra_context']. '''
-        '''The available fields are ['context_required_int']'''
-    )
-
-
-def test_context_selector_wrong_name():
-    @solid
-    def check_context(_context):
-        assert False
-
-    pipeline_def = PipelineDefinition(
-        name='context_selector_wrong_name',
-        solids=[check_context],
-        context_definitions={
-            'context_required_int': PipelineContextDefinition(
-                context_fn=lambda init_context: ExecutionContext(
-                    resources=init_context.solid_config
-                ),
-                config_field=Field(Int),
-            )
-        },
-    )
-
-    with pytest.raises(PipelineConfigEvaluationError) as pe_info:
-        execute_pipeline(
-            pipeline_def, environment_dict={'context': {'wrong_name': {'config': None}}}
-        )
-
-    pe = pe_info.value
-    cse = pe.errors[0]
-    assert cse.reason == DagsterEvaluationErrorReason.FIELD_NOT_DEFINED
-    assert 'Undefined field "wrong_name" at path root:context' in str(pe)
-
-
-def test_context_selector_none_given():
-    @solid
-    def check_context(_context):
-        assert False
-
-    pipeline_def = PipelineDefinition(
-        name='context_selector_none_given',
-        solids=[check_context],
-        context_definitions={
-            'context_required_int': PipelineContextDefinition(
-                context_fn=lambda init_context: ExecutionContext(
-                    resources=init_context.solid_config
-                ),
-                config_field=Field(Int),
-            )
-        },
-    )
-
-    with pytest.raises(PipelineConfigEvaluationError) as pe_info:
-        execute_pipeline(pipeline_def, environment_dict={'context': None})
-
-    pe = pe_info.value
-    cse = pe.errors[0]
-    assert cse.reason == DagsterEvaluationErrorReason.SELECTOR_FIELD_ERROR
-    assert cse.message == (
-        '''Must specify the required field at path root:context. Defined '''
-        '''fields: ['context_required_int']'''
+    error = pe.errors[0]
+    assert error.reason == DagsterEvaluationErrorReason.MISSING_REQUIRED_FIELD
+    assert (
+        error.message == 'Missing required field "required" at path root:resources '
+        'Available Fields: "[\'required\']".'
     )
 
 
