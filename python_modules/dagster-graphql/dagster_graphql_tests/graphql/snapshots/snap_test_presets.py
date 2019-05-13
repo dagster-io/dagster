@@ -14,9 +14,7 @@ snapshots['test_basic_preset_query_with_presets 1'] = {
             'environment': '''solids:
   sum_solid:
     inputs:
-      num:
-        csv:
-          path: data/num_prod.csv
+      num: data/num_prod.csv
 ''',
             'name': 'prod',
             'solidSubset': None
@@ -26,9 +24,7 @@ snapshots['test_basic_preset_query_with_presets 1'] = {
             'environment': '''solids:
   sum_solid:
     inputs:
-      num:
-        csv:
-          path: data/num.csv
+      num: data/num.csv
 ''',
             'name': 'test',
             'solidSubset': None

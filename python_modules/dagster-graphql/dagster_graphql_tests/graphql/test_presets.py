@@ -20,20 +20,16 @@ def execute_preset_query(pipeline_name):
         define_context(
             repo_config={
                 'pipelines': {
-                    'pandas_hello_world_with_presets': {
+                    'csv_hello_world_with_presets': {
                         'presets': {
                             'test': {
                                 'environment_files': [
-                                    script_relative_path(
-                                        '../environments/pandas_hello_world_test.yml'
-                                    )
+                                    script_relative_path('../environments/csv_hello_world_test.yml')
                                 ]
                             },
                             'prod': {
                                 'environment_files': [
-                                    script_relative_path(
-                                        '../environments/pandas_hello_world_prod.yml'
-                                    )
+                                    script_relative_path('../environments/csv_hello_world_prod.yml')
                                 ]
                             },
                         }
@@ -47,12 +43,12 @@ def execute_preset_query(pipeline_name):
 
 
 def test_basic_preset_query_no_presets():
-    result = execute_preset_query('pandas_hello_world')
+    result = execute_preset_query('csv_hello_world')
     assert result.data == {'presetsForPipeline': []}
 
 
 def test_basic_preset_query_with_presets(snapshot):
-    result = execute_preset_query('pandas_hello_world_with_presets')
+    result = execute_preset_query('csv_hello_world_with_presets')
 
     assert [preset_data['name'] for preset_data in result.data['presetsForPipeline']] == [
         'prod',

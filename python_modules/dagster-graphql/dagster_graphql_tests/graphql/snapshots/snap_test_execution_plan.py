@@ -12,7 +12,7 @@ snapshots['test_success_whole_execution_plan 1'] = {
         '__typename': 'ExecutePlanSuccess',
         'hasFailures': False,
         'pipeline': {
-            'name': 'pandas_hello_world'
+            'name': 'csv_hello_world'
         },
         'stepEvents': [
             {
@@ -31,9 +31,7 @@ snapshots['test_success_whole_execution_plan 1'] = {
                     'metadata': [
                     ]
                 },
-                'valueRepr': '''   num1  num2
-0     1     2
-1     3     4'''
+                'valueRepr': "[OrderedDict([('num1', '1'), ('num2', '2')]), OrderedDict([('num1', '3'), ('num2', '4')])]"
             },
             {
                 '__typename': 'ExecutionStepSuccessEvent',
@@ -59,9 +57,7 @@ snapshots['test_success_whole_execution_plan 1'] = {
                     'metadata': [
                     ]
                 },
-                'valueRepr': '''   num1  num2  sum
-0     1     2    3
-1     3     4    7'''
+                'valueRepr': "[OrderedDict([('num1', '1'), ('num2', '2'), ('sum', 3)]), OrderedDict([('num1', '3'), ('num2', '4'), ('sum', 7)])]"
             },
             {
                 '__typename': 'ExecutionStepSuccessEvent',
@@ -87,9 +83,7 @@ snapshots['test_success_whole_execution_plan 1'] = {
                     'metadata': [
                     ]
                 },
-                'valueRepr': '''   num1  num2  sum  sum_sq
-0     1     2    3       9
-1     3     4    7      49'''
+                'valueRepr': "[OrderedDict([('num1', '1'), ('num2', '2'), ('sum', 3), ('sum_sq', 9)]), OrderedDict([('num1', '3'), ('num2', '4'), ('sum', 7), ('sum_sq', 49)])]"
             },
             {
                 '__typename': 'ExecutionStepSuccessEvent',
@@ -108,7 +102,7 @@ snapshots['test_success_whole_execution_plan_with_filesystem_config 1'] = {
         '__typename': 'ExecutePlanSuccess',
         'hasFailures': False,
         'pipeline': {
-            'name': 'pandas_hello_world'
+            'name': 'csv_hello_world'
         },
         'stepEvents': [
             {
@@ -127,9 +121,7 @@ snapshots['test_success_whole_execution_plan_with_filesystem_config 1'] = {
                     'metadata': [
                     ]
                 },
-                'valueRepr': '''   num1  num2
-0     1     2
-1     3     4'''
+                'valueRepr': "[OrderedDict([('num1', '1'), ('num2', '2')]), OrderedDict([('num1', '3'), ('num2', '4')])]"
             },
             {
                 '__typename': 'ExecutionStepSuccessEvent',
@@ -155,9 +147,7 @@ snapshots['test_success_whole_execution_plan_with_filesystem_config 1'] = {
                     'metadata': [
                     ]
                 },
-                'valueRepr': '''   num1  num2  sum
-0     1     2    3
-1     3     4    7'''
+                'valueRepr': "[OrderedDict([('num1', '1'), ('num2', '2'), ('sum', 3)]), OrderedDict([('num1', '3'), ('num2', '4'), ('sum', 7)])]"
             },
             {
                 '__typename': 'ExecutionStepSuccessEvent',
@@ -183,9 +173,7 @@ snapshots['test_success_whole_execution_plan_with_filesystem_config 1'] = {
                     'metadata': [
                     ]
                 },
-                'valueRepr': '''   num1  num2  sum  sum_sq
-0     1     2    3       9
-1     3     4    7      49'''
+                'valueRepr': "[OrderedDict([('num1', '1'), ('num2', '2'), ('sum', 3), ('sum_sq', 9)]), OrderedDict([('num1', '3'), ('num2', '4'), ('sum', 7), ('sum_sq', 49)])]"
             },
             {
                 '__typename': 'ExecutionStepSuccessEvent',
@@ -204,7 +192,7 @@ snapshots['test_success_whole_execution_plan_with_in_memory_config 1'] = {
         '__typename': 'ExecutePlanSuccess',
         'hasFailures': False,
         'pipeline': {
-            'name': 'pandas_hello_world'
+            'name': 'csv_hello_world'
         },
         'stepEvents': [
             {
@@ -223,9 +211,7 @@ snapshots['test_success_whole_execution_plan_with_in_memory_config 1'] = {
                     'metadata': [
                     ]
                 },
-                'valueRepr': '''   num1  num2
-0     1     2
-1     3     4'''
+                'valueRepr': "[OrderedDict([('num1', '1'), ('num2', '2')]), OrderedDict([('num1', '3'), ('num2', '4')])]"
             },
             {
                 '__typename': 'ExecutionStepSuccessEvent',
@@ -251,9 +237,7 @@ snapshots['test_success_whole_execution_plan_with_in_memory_config 1'] = {
                     'metadata': [
                     ]
                 },
-                'valueRepr': '''   num1  num2  sum
-0     1     2    3
-1     3     4    7'''
+                'valueRepr': "[OrderedDict([('num1', '1'), ('num2', '2'), ('sum', 3)]), OrderedDict([('num1', '3'), ('num2', '4'), ('sum', 7)])]"
             },
             {
                 '__typename': 'ExecutionStepSuccessEvent',
@@ -279,9 +263,7 @@ snapshots['test_success_whole_execution_plan_with_in_memory_config 1'] = {
                     'metadata': [
                     ]
                 },
-                'valueRepr': '''   num1  num2  sum  sum_sq
-0     1     2    3       9
-1     3     4    7      49'''
+                'valueRepr': "[OrderedDict([('num1', '1'), ('num2', '2'), ('sum', 3), ('sum_sq', 9)]), OrderedDict([('num1', '3'), ('num2', '4'), ('sum', 7), ('sum_sq', 49)])]"
             },
             {
                 '__typename': 'ExecutionStepSuccessEvent',
@@ -300,7 +282,7 @@ snapshots['test_successful_one_part_execute_plan 1'] = {
         '__typename': 'ExecutePlanSuccess',
         'hasFailures': False,
         'pipeline': {
-            'name': 'pandas_hello_world'
+            'name': 'csv_hello_world'
         },
         'stepEvents': [
             {
@@ -319,9 +301,7 @@ snapshots['test_successful_one_part_execute_plan 1'] = {
                     'metadata': [
                     ]
                 },
-                'valueRepr': '''   num1  num2
-0     1     2
-1     3     4'''
+                'valueRepr': "[OrderedDict([('num1', '1'), ('num2', '2')]), OrderedDict([('num1', '3'), ('num2', '4')])]"
             },
             {
                 '__typename': 'ExecutionStepSuccessEvent',
@@ -347,9 +327,7 @@ snapshots['test_successful_one_part_execute_plan 1'] = {
                     'metadata': [
                     ]
                 },
-                'valueRepr': '''   num1  num2  sum
-0     1     2    3
-1     3     4    7'''
+                'valueRepr': "[OrderedDict([('num1', '1'), ('num2', '2'), ('sum', 3)]), OrderedDict([('num1', '3'), ('num2', '4'), ('sum', 7)])]"
             },
             {
                 '__typename': 'ExecutionStepSuccessEvent',
@@ -368,7 +346,7 @@ snapshots['test_successful_two_part_execute_plan 1'] = {
         '__typename': 'ExecutePlanSuccess',
         'hasFailures': False,
         'pipeline': {
-            'name': 'pandas_hello_world'
+            'name': 'csv_hello_world'
         },
         'stepEvents': [
             {
@@ -387,9 +365,7 @@ snapshots['test_successful_two_part_execute_plan 1'] = {
                     'metadata': [
                     ]
                 },
-                'valueRepr': '''   num1  num2
-0     1     2
-1     3     4'''
+                'valueRepr': "[OrderedDict([('num1', '1'), ('num2', '2')]), OrderedDict([('num1', '3'), ('num2', '4')])]"
             },
             {
                 '__typename': 'ExecutionStepSuccessEvent',
@@ -415,9 +391,7 @@ snapshots['test_successful_two_part_execute_plan 1'] = {
                     'metadata': [
                     ]
                 },
-                'valueRepr': '''   num1  num2  sum
-0     1     2    3
-1     3     4    7'''
+                'valueRepr': "[OrderedDict([('num1', '1'), ('num2', '2'), ('sum', 3)]), OrderedDict([('num1', '3'), ('num2', '4'), ('sum', 7)])]"
             },
             {
                 '__typename': 'ExecutionStepSuccessEvent',
@@ -436,7 +410,7 @@ snapshots['test_successful_two_part_execute_plan 2'] = {
         '__typename': 'ExecutePlanSuccess',
         'hasFailures': False,
         'pipeline': {
-            'name': 'pandas_hello_world'
+            'name': 'csv_hello_world'
         },
         'stepEvents': [
             {
@@ -455,9 +429,7 @@ snapshots['test_successful_two_part_execute_plan 2'] = {
                     'metadata': [
                     ]
                 },
-                'valueRepr': '''   num1  num2  sum  sum_sq
-0     1     2    3       9
-1     3     4    7      49'''
+                'valueRepr': "[OrderedDict([('num1', '1'), ('num2', '2'), ('sum', 3), ('sum_sq', 9)]), OrderedDict([('num1', '3'), ('num2', '4'), ('sum', 7), ('sum_sq', 49)])]"
             },
             {
                 '__typename': 'ExecutionStepSuccessEvent',
@@ -476,11 +448,11 @@ snapshots['test_invalid_config_execute_plan 1'] = {
         '__typename': 'PipelineConfigValidationInvalid',
         'errors': [
             {
-                'message': 'Value at path root:solids:sum_solid:inputs:num:csv:path is not valid. Expected "Path"'
+                'message': 'Value at path root:solids:sum_solid:inputs:num is not valid. Expected "Path"'
             }
         ],
         'pipeline': {
-            'name': 'pandas_hello_world'
+            'name': 'csv_hello_world'
         }
     }
 }

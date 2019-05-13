@@ -7,7 +7,6 @@ from graphql import parse
 from dagster.utils import script_relative_path, merge_dicts
 from dagster.utils.test import get_temp_file_name
 from dagster.core.object_store import has_filesystem_intermediate, get_filesystem_intermediate
-from dagster_pandas import DataFrame
 
 from .execution_queries import (
     SUBSCRIPTION_QUERY,
@@ -20,8 +19,9 @@ from .utils import sync_execute_get_run_log_data
 from .setup import (
     define_context,
     execute_dagster_graphql,
-    pandas_hello_world_solids_config,
-    pandas_hello_world_solids_config_fs_storage,
+    csv_hello_world_solids_config,
+    csv_hello_world_solids_config_fs_storage,
+    PoorMansDataFrame,
 )
 
 
@@ -30,8 +30,8 @@ def test_basic_start_pipeline_execution():
         define_context(),
         START_PIPELINE_EXECUTION_QUERY,
         variables={
-            'pipeline': {'name': 'pandas_hello_world'},
-            'config': pandas_hello_world_solids_config(),
+            'pipeline': {'name': 'csv_hello_world'},
+            'config': csv_hello_world_solids_config(),
         },
     )
 
@@ -41,7 +41,7 @@ def test_basic_start_pipeline_execution():
     # just test existence
     assert result.data['startPipelineExecution']['__typename'] == 'StartPipelineExecutionSuccess'
     assert uuid.UUID(result.data['startPipelineExecution']['run']['runId'])
-    assert result.data['startPipelineExecution']['run']['pipeline']['name'] == 'pandas_hello_world'
+    assert result.data['startPipelineExecution']['run']['pipeline']['name'] == 'csv_hello_world'
 
 
 def test_basic_start_pipeline_execution_config_failure():
@@ -49,8 +49,8 @@ def test_basic_start_pipeline_execution_config_failure():
         define_context(),
         START_PIPELINE_EXECUTION_QUERY,
         variables={
-            'pipeline': {'name': 'pandas_hello_world'},
-            'config': {'solids': {'sum_solid': {'inputs': {'num': {'csv': {'path': 384938439}}}}}},
+            'pipeline': {'name': 'csv_hello_world'},
+            'config': {'solids': {'sum_solid': {'inputs': {'num': 384938439}}}},
         },
     )
 
@@ -65,7 +65,7 @@ def test_basis_start_pipeline_not_found_error():
         START_PIPELINE_EXECUTION_QUERY,
         variables={
             'pipeline': {'name': 'sjkdfkdjkf'},
-            'config': {'solids': {'sum_solid': {'inputs': {'num': {'csv': {'path': 'test.csv'}}}}}},
+            'config': {'solids': {'sum_solid': {'inputs': {'num': 'test.csv'}}}},
         },
     )
 
@@ -80,12 +80,10 @@ def test_basis_start_pipeline_not_found_error():
 def test_basic_start_pipeline_execution_and_subscribe():
     run_logs = sync_execute_get_run_log_data(
         variables={
-            'pipeline': {'name': 'pandas_hello_world'},
+            'pipeline': {'name': 'csv_hello_world'},
             'config': {
                 'solids': {
-                    'sum_solid': {
-                        'inputs': {'num': {'csv': {'path': script_relative_path('../num.csv')}}}
-                    }
+                    'sum_solid': {'inputs': {'num': script_relative_path('../data/num.csv')}}
                 }
             },
         }
@@ -181,8 +179,8 @@ def test_basic_inmemory_sync_execution():
         context,
         START_PIPELINE_EXECUTION_QUERY,
         variables={
-            'config': pandas_hello_world_solids_config(),
-            'pipeline': {'name': 'pandas_hello_world'},
+            'config': csv_hello_world_solids_config(),
+            'pipeline': {'name': 'csv_hello_world'},
         },
     )
 
@@ -207,10 +205,8 @@ def test_basic_filesystem_sync_execution():
         context,
         START_PIPELINE_EXECUTION_QUERY,
         variables={
-            'config': merge_dicts(
-                pandas_hello_world_solids_config(), {'storage': {'filesystem': {}}}
-            ),
-            'pipeline': {'name': 'pandas_hello_world'},
+            'config': merge_dicts(csv_hello_world_solids_config(), {'storage': {'filesystem': {}}}),
+            'pipeline': {'name': 'csv_hello_world'},
         },
     )
 
@@ -234,9 +230,10 @@ def test_basic_filesystem_sync_execution():
 
     with open(output_path, 'rb') as ff:
         df = pickle.load(ff)
-        expected_value_repr = '''   num1  num2  sum
-0     1     2    3
-1     3     4    7'''
+        expected_value_repr = (
+            '''[OrderedDict([('num1', '1'), ('num2', '2'), ('sum', 3)]), '''
+            '''OrderedDict([('num1', '3'), ('num2', '4'), ('sum', 7)])]'''
+        )
         assert str(df) == expected_value_repr
 
 
@@ -269,8 +266,8 @@ def test_successful_pipeline_reexecution(snapshot):
         define_context(),
         START_PIPELINE_EXECUTION_SNAPSHOT_QUERY,
         variables={
-            'pipeline': {'name': 'pandas_hello_world'},
-            'config': pandas_hello_world_solids_config_fs_storage(),
+            'pipeline': {'name': 'csv_hello_world'},
+            'config': csv_hello_world_solids_config_fs_storage(),
             'executionMetadata': {'runId': run_id},
         },
     )
@@ -281,15 +278,17 @@ def test_successful_pipeline_reexecution(snapshot):
 
     snapshot.assert_match(result_one.data)
 
-    expected_value_repr = '''   num1  num2  sum  sum_sq
-0     1     2    3       9
-1     3     4    7      49'''
+    expected_value_repr = (
+        '''[OrderedDict([('num1', '1'), ('num2', '2'), ('sum', 3), '''
+        '''('sum_sq', 9)]), OrderedDict([('num1', '3'), ('num2', '4'), ('sum', 7), '''
+        '''('sum_sq', 49)])]'''
+    )
 
     assert has_filesystem_intermediate(run_id, 'sum_solid.inputs.num.read', 'input_thunk_output')
     assert has_filesystem_intermediate(run_id, 'sum_solid.transform')
     assert has_filesystem_intermediate(run_id, 'sum_sq_solid.transform')
     assert (
-        str(get_filesystem_intermediate(run_id, 'sum_sq_solid.transform', DataFrame))
+        str(get_filesystem_intermediate(run_id, 'sum_sq_solid.transform', PoorMansDataFrame))
         == expected_value_repr
     )
 
@@ -299,8 +298,8 @@ def test_successful_pipeline_reexecution(snapshot):
         define_context(),
         START_PIPELINE_EXECUTION_SNAPSHOT_QUERY,
         variables={
-            'pipeline': {'name': 'pandas_hello_world'},
-            'config': pandas_hello_world_solids_config_fs_storage(),
+            'pipeline': {'name': 'csv_hello_world'},
+            'config': csv_hello_world_solids_config_fs_storage(),
             'stepKeys': ['sum_sq_solid.transform'],
             'executionMetadata': {'runId': new_run_id},
             'reexecutionConfig': {
@@ -330,7 +329,7 @@ def test_successful_pipeline_reexecution(snapshot):
     assert has_filesystem_intermediate(new_run_id, 'sum_solid.transform')
     assert has_filesystem_intermediate(new_run_id, 'sum_sq_solid.transform')
     assert (
-        str(get_filesystem_intermediate(new_run_id, 'sum_sq_solid.transform', DataFrame))
+        str(get_filesystem_intermediate(new_run_id, 'sum_sq_solid.transform', PoorMansDataFrame))
         == expected_value_repr
     )
 
@@ -341,8 +340,8 @@ def test_pipeline_reexecution_invalid_step_in_subset():
         define_context(),
         START_PIPELINE_EXECUTION_SNAPSHOT_QUERY,
         variables={
-            'pipeline': {'name': 'pandas_hello_world'},
-            'config': pandas_hello_world_solids_config(),
+            'pipeline': {'name': 'csv_hello_world'},
+            'config': csv_hello_world_solids_config(),
             'executionMetadata': {'runId': run_id},
         },
     )
@@ -353,8 +352,8 @@ def test_pipeline_reexecution_invalid_step_in_subset():
         define_context(),
         START_PIPELINE_EXECUTION_SNAPSHOT_QUERY,
         variables={
-            'pipeline': {'name': 'pandas_hello_world'},
-            'config': pandas_hello_world_solids_config(),
+            'pipeline': {'name': 'csv_hello_world'},
+            'config': csv_hello_world_solids_config(),
             'stepKeys': ['nope'],
             'executionMetadata': {'runId': new_run_id},
             'reexecutionConfig': {
@@ -375,8 +374,8 @@ def test_pipeline_reexecution_invalid_step_in_step_output_handle():
         define_context(),
         START_PIPELINE_EXECUTION_SNAPSHOT_QUERY,
         variables={
-            'pipeline': {'name': 'pandas_hello_world'},
-            'config': pandas_hello_world_solids_config(),
+            'pipeline': {'name': 'csv_hello_world'},
+            'config': csv_hello_world_solids_config(),
             'executionMetadata': {'runId': run_id},
         },
     )
@@ -387,8 +386,8 @@ def test_pipeline_reexecution_invalid_step_in_step_output_handle():
         define_context(),
         START_PIPELINE_EXECUTION_SNAPSHOT_QUERY,
         variables={
-            'pipeline': {'name': 'pandas_hello_world'},
-            'config': pandas_hello_world_solids_config(),
+            'pipeline': {'name': 'csv_hello_world'},
+            'config': csv_hello_world_solids_config(),
             'stepKeys': ['sum_sq_solid.transform'],
             'executionMetadata': {'runId': new_run_id},
             'reexecutionConfig': {
@@ -411,8 +410,8 @@ def test_pipeline_reexecution_invalid_output_in_step_output_handle():
         define_context(),
         START_PIPELINE_EXECUTION_SNAPSHOT_QUERY,
         variables={
-            'pipeline': {'name': 'pandas_hello_world'},
-            'config': pandas_hello_world_solids_config(),
+            'pipeline': {'name': 'csv_hello_world'},
+            'config': csv_hello_world_solids_config(),
             'executionMetadata': {'runId': run_id},
         },
     )
@@ -423,8 +422,8 @@ def test_pipeline_reexecution_invalid_output_in_step_output_handle():
         define_context(),
         START_PIPELINE_EXECUTION_SNAPSHOT_QUERY,
         variables={
-            'pipeline': {'name': 'pandas_hello_world'},
-            'config': pandas_hello_world_solids_config(),
+            'pipeline': {'name': 'csv_hello_world'},
+            'config': csv_hello_world_solids_config(),
             'stepKeys': ['sum_sq_solid.transform'],
             'executionMetadata': {'runId': new_run_id},
             'reexecutionConfig': {
@@ -449,14 +448,14 @@ def test_basic_start_pipeline_execution_with_materialization():
         environment_dict = {
             'solids': {
                 'sum_solid': {
-                    'inputs': {'num': {'csv': {'path': script_relative_path('../num.csv')}}},
-                    'outputs': [{'result': {'csv': {'path': out_csv_path}}}],
+                    'inputs': {'num': script_relative_path('../data/num.csv')},
+                    'outputs': [{'result': out_csv_path}],
                 }
             }
         }
 
         run_logs = sync_execute_get_run_log_data(
-            variables={'pipeline': {'name': 'pandas_hello_world'}, 'config': environment_dict}
+            variables={'pipeline': {'name': 'csv_hello_world'}, 'config': environment_dict}
         )
 
         step_mat_event = None

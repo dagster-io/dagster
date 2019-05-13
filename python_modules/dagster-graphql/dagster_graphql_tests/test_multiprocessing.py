@@ -1,11 +1,20 @@
+import csv
 import os
+
+from collections import OrderedDict
+from copy import deepcopy
+
 from dagster import (
+    as_dagster_type,
     DependencyDefinition,
+    input_schema,
+    InputDefinition,
+    lambda_solid,
+    output_schema,
+    OutputDefinition,
+    Path,
     PipelineDefinition,
     RepositoryTargetInfo,
-    InputDefinition,
-    OutputDefinition,
-    lambda_solid,
 )
 from dagster.core.events import DagsterEventType
 from dagster.core.execution.api import create_execution_plan, ExecutionSelector
@@ -20,7 +29,32 @@ from dagster_graphql.implementation.pipeline_run_storage import (
     PipelineRunStatus,
 )
 
-import dagster_pandas as dagster_pd
+
+class PoorMansDataFrame_(list):
+    pass
+
+
+@input_schema(Path)
+def df_input_schema(_context, path):
+    with open(path, 'r') as fd:
+        return PoorMansDataFrame_(
+            [OrderedDict(sorted(x.items(), key=lambda x: x[0])) for x in csv.DictReader(fd)]
+        )
+
+
+@output_schema(Path)
+def df_output_schema(_context, path, value):
+    with open(path, 'w') as fd:
+        writer = csv.DictWriter(fd, fieldnames=value[0].keys())
+        writer.writeheader()
+        writer.writerows(rowdicts=value)
+
+    return path
+
+
+PoorMansDataFrame = as_dagster_type(
+    PoorMansDataFrame_, input_schema=df_input_schema, output_schema=df_output_schema
+)
 
 
 def get_events_of_type(events, event_type):
@@ -36,11 +70,9 @@ def test_running():
     repository_target_info = RepositoryTargetInfo.for_pipeline_fn(define_passing_pipeline)
     pipeline = define_passing_pipeline()
     env_config = {
-        'solids': {
-            'sum_solid': {'inputs': {'num': {'csv': {'path': script_relative_path('num.csv')}}}}
-        }
+        'solids': {'sum_solid': {'inputs': {'num': script_relative_path('data/num.csv')}}}
     }
-    selector = ExecutionSelector('pandas_hello_world')
+    selector = ExecutionSelector('csv_hello_world')
     pipeline_run = InMemoryPipelineRun(
         run_id,
         selector,
@@ -71,11 +103,9 @@ def test_failing():
     repository_target_info = RepositoryTargetInfo.for_pipeline_fn(define_failing_pipeline)
     pipeline = define_failing_pipeline()
     env_config = {
-        'solids': {
-            'sum_solid': {'inputs': {'num': {'csv': {'path': script_relative_path('num.csv')}}}}
-        }
+        'solids': {'sum_solid': {'inputs': {'num': script_relative_path('data/num.csv')}}}
     }
-    selector = ExecutionSelector('pandas_hello_world')
+    selector = ExecutionSelector('csv_hello_world')
     pipeline_run = InMemoryPipelineRun(
         run_id,
         selector,
@@ -99,11 +129,9 @@ def test_execution_crash():
     repository_target_info = RepositoryTargetInfo.for_pipeline_fn(define_crashy_pipeline)
     pipeline = define_crashy_pipeline()
     env_config = {
-        'solids': {
-            'sum_solid': {'inputs': {'num': {'csv': {'path': script_relative_path('num.csv')}}}}
-        }
+        'solids': {'sum_solid': {'inputs': {'num': script_relative_path('data/num.csv')}}}
     }
-    selector = ExecutionSelector('pandas_hello_world')
+    selector = ExecutionSelector('csv_hello_world')
     pipeline_run = InMemoryPipelineRun(
         run_id,
         selector,
@@ -129,26 +157,26 @@ def test_execution_crash():
 
 
 @lambda_solid(
-    inputs=[InputDefinition('num', dagster_pd.DataFrame)],
-    output=OutputDefinition(dagster_pd.DataFrame),
+    inputs=[InputDefinition('num', PoorMansDataFrame)], output=OutputDefinition(PoorMansDataFrame)
 )
 def sum_solid(num):
-    sum_df = num.copy()
-    sum_df['sum'] = sum_df['num1'] + sum_df['num2']
-    return sum_df
+    sum_df = deepcopy(num)
+    for x in sum_df:
+        x['sum'] = x['num1'] + x['num2']
+    return PoorMansDataFrame(sum_df)
 
 
 @lambda_solid(
-    inputs=[InputDefinition('sum_df', dagster_pd.DataFrame)],
-    output=OutputDefinition(dagster_pd.DataFrame),
+    inputs=[InputDefinition('sum_df', PoorMansDataFrame)],
+    output=OutputDefinition(PoorMansDataFrame),
 )
 def error_solid(sum_df):  # pylint: disable=W0613
     raise Exception('foo')
 
 
 @lambda_solid(
-    inputs=[InputDefinition('sum_df', dagster_pd.DataFrame)],
-    output=OutputDefinition(dagster_pd.DataFrame),
+    inputs=[InputDefinition('sum_df', PoorMansDataFrame)],
+    output=OutputDefinition(PoorMansDataFrame),
 )
 def crashy_solid(sum_df):  # pylint: disable=W0613
     os._exit(1)  # pylint: disable=W0212
@@ -156,13 +184,13 @@ def crashy_solid(sum_df):  # pylint: disable=W0613
 
 def define_passing_pipeline():
     return PipelineDefinition(
-        name='pandas_hello_world', solids=[sum_solid], dependencies={'sum_solid': {}}
+        name='csv_hello_world', solids=[sum_solid], dependencies={'sum_solid': {}}
     )
 
 
 def define_failing_pipeline():
     return PipelineDefinition(
-        name='pandas_hello_world',
+        name='csv_hello_world',
         solids=[sum_solid, error_solid],
         dependencies={
             'sum_solid': {},
@@ -173,7 +201,7 @@ def define_failing_pipeline():
 
 def define_crashy_pipeline():
     return PipelineDefinition(
-        name='pandas_hello_world',
+        name='csv_hello_world',
         solids=[sum_solid, crashy_solid],
         dependencies={
             'sum_solid': {},

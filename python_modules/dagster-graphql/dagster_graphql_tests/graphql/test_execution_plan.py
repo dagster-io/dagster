@@ -5,13 +5,12 @@ from dagster.utils import merge_dicts, script_relative_path
 from dagster.utils.test import get_temp_file_name
 
 
-from dagster_pandas import DataFrame
-
 from .setup import (
     define_context,
     execute_dagster_graphql,
-    pandas_hello_world_solids_config,
-    pandas_hello_world_solids_config_fs_storage,
+    csv_hello_world_solids_config,
+    csv_hello_world_solids_config_fs_storage,
+    PoorMansDataFrame,
 )
 
 
@@ -127,8 +126,8 @@ def test_success_whole_execution_plan(snapshot):
         define_context(),
         EXECUTE_PLAN_QUERY,
         variables={
-            'pipelineName': 'pandas_hello_world',
-            'config': pandas_hello_world_solids_config_fs_storage(),
+            'pipelineName': 'csv_hello_world',
+            'config': csv_hello_world_solids_config_fs_storage(),
             'stepKeys': None,
             'executionMetadata': {'runId': run_id},
         },
@@ -137,7 +136,7 @@ def test_success_whole_execution_plan(snapshot):
     query_result = result.data['executePlan']
 
     assert query_result['__typename'] == 'ExecutePlanSuccess'
-    assert query_result['pipeline']['name'] == 'pandas_hello_world'
+    assert query_result['pipeline']['name'] == 'csv_hello_world'
     assert query_result['hasFailures'] is False
     step_events = {
         step_event['step']['key']: step_event for step_event in query_result['stepEvents']
@@ -156,10 +155,8 @@ def test_success_whole_execution_plan_with_filesystem_config(snapshot):
         define_context(),
         EXECUTE_PLAN_QUERY,
         variables={
-            'pipelineName': 'pandas_hello_world',
-            'config': merge_dicts(
-                pandas_hello_world_solids_config(), {'storage': {'filesystem': {}}}
-            ),
+            'pipelineName': 'csv_hello_world',
+            'config': merge_dicts(csv_hello_world_solids_config(), {'storage': {'filesystem': {}}}),
             'stepKeys': None,
             'executionMetadata': {'runId': run_id},
         },
@@ -168,7 +165,7 @@ def test_success_whole_execution_plan_with_filesystem_config(snapshot):
     query_result = result.data['executePlan']
 
     assert query_result['__typename'] == 'ExecutePlanSuccess'
-    assert query_result['pipeline']['name'] == 'pandas_hello_world'
+    assert query_result['pipeline']['name'] == 'csv_hello_world'
     assert query_result['hasFailures'] is False
     step_events = {
         step_event['step']['key']: step_event for step_event in query_result['stepEvents']
@@ -187,10 +184,8 @@ def test_success_whole_execution_plan_with_in_memory_config(snapshot):
         define_context(),
         EXECUTE_PLAN_QUERY,
         variables={
-            'pipelineName': 'pandas_hello_world',
-            'config': merge_dicts(
-                pandas_hello_world_solids_config(), {'storage': {'in_memory': {}}}
-            ),
+            'pipelineName': 'csv_hello_world',
+            'config': merge_dicts(csv_hello_world_solids_config(), {'storage': {'in_memory': {}}}),
             'stepKeys': None,
             'executionMetadata': {'runId': run_id},
         },
@@ -199,7 +194,7 @@ def test_success_whole_execution_plan_with_in_memory_config(snapshot):
     query_result = result.data['executePlan']
 
     assert query_result['__typename'] == 'ExecutePlanSuccess'
-    assert query_result['pipeline']['name'] == 'pandas_hello_world'
+    assert query_result['pipeline']['name'] == 'csv_hello_world'
     assert query_result['hasFailures'] is False
     step_events = {
         step_event['step']['key']: step_event for step_event in query_result['stepEvents']
@@ -218,8 +213,8 @@ def test_successful_one_part_execute_plan(snapshot):
         define_context(),
         EXECUTE_PLAN_QUERY,
         variables={
-            'pipelineName': 'pandas_hello_world',
-            'config': pandas_hello_world_solids_config_fs_storage(),
+            'pipelineName': 'csv_hello_world',
+            'config': csv_hello_world_solids_config_fs_storage(),
             'stepKeys': ['sum_solid.inputs.num.read', 'sum_solid.transform'],
             'executionMetadata': {'runId': run_id},
         },
@@ -228,7 +223,7 @@ def test_successful_one_part_execute_plan(snapshot):
     query_result = result.data['executePlan']
 
     assert query_result['__typename'] == 'ExecutePlanSuccess'
-    assert query_result['pipeline']['name'] == 'pandas_hello_world'
+    assert query_result['pipeline']['name'] == 'csv_hello_world'
     assert query_result['hasFailures'] is False
 
     step_events = query_result['stepEvents']
@@ -236,9 +231,10 @@ def test_successful_one_part_execute_plan(snapshot):
     assert step_events[3]['step']['key'] == 'sum_solid.transform'
     assert step_events[4]['__typename'] == 'ExecutionStepOutputEvent'
     assert step_events[4]['outputName'] == 'result'
-    expected_value_repr = '''   num1  num2  sum
-0     1     2    3
-1     3     4    7'''
+    expected_value_repr = (
+        '''[OrderedDict([('num1', '1'), ('num2', '2'), ('sum', 3)]), '''
+        '''OrderedDict([('num1', '3'), ('num2', '4'), ('sum', 7)])]'''
+    )
     assert step_events[4]['valueRepr'] == expected_value_repr
     assert step_events[5]['__typename'] == 'ExecutionStepSuccessEvent'
 
@@ -246,7 +242,7 @@ def test_successful_one_part_execute_plan(snapshot):
 
     assert has_filesystem_intermediate(run_id, 'sum_solid.transform')
     assert (
-        str(get_filesystem_intermediate(run_id, 'sum_solid.transform', DataFrame))
+        str(get_filesystem_intermediate(run_id, 'sum_solid.transform', PoorMansDataFrame))
         == expected_value_repr
     )
 
@@ -257,8 +253,8 @@ def test_successful_two_part_execute_plan(snapshot):
         define_context(),
         EXECUTE_PLAN_QUERY,
         variables={
-            'pipelineName': 'pandas_hello_world',
-            'config': pandas_hello_world_solids_config_fs_storage(),
+            'pipelineName': 'csv_hello_world',
+            'config': csv_hello_world_solids_config_fs_storage(),
             'stepKeys': ['sum_solid.inputs.num.read', 'sum_solid.transform'],
             'executionMetadata': {'runId': run_id},
         },
@@ -272,8 +268,8 @@ def test_successful_two_part_execute_plan(snapshot):
         define_context(),
         EXECUTE_PLAN_QUERY,
         variables={
-            'pipelineName': 'pandas_hello_world',
-            'config': pandas_hello_world_solids_config_fs_storage(),
+            'pipelineName': 'csv_hello_world',
+            'config': csv_hello_world_solids_config_fs_storage(),
             'stepKeys': ['sum_sq_solid.transform'],
             'executionMetadata': {'runId': run_id},
         },
@@ -281,7 +277,7 @@ def test_successful_two_part_execute_plan(snapshot):
 
     query_result = result_two.data['executePlan']
     assert query_result['__typename'] == 'ExecutePlanSuccess'
-    assert query_result['pipeline']['name'] == 'pandas_hello_world'
+    assert query_result['pipeline']['name'] == 'csv_hello_world'
     assert query_result['hasFailures'] is False
     step_events = query_result['stepEvents']
     assert step_events[0]['__typename'] == 'ExecutionStepStartEvent'
@@ -292,13 +288,15 @@ def test_successful_two_part_execute_plan(snapshot):
 
     snapshot.assert_match(result_two.data)
 
-    expected_value_repr = '''   num1  num2  sum  sum_sq
-0     1     2    3       9
-1     3     4    7      49'''
+    expected_value_repr = (
+        '''[OrderedDict([('num1', '1'), ('num2', '2'), ('sum', 3), '''
+        '''('sum_sq', 9)]), OrderedDict([('num1', '3'), ('num2', '4'), ('sum', 7), '''
+        '''('sum_sq', 49)])]'''
+    )
 
     assert has_filesystem_intermediate(run_id, 'sum_sq_solid.transform')
     assert (
-        str(get_filesystem_intermediate(run_id, 'sum_sq_solid.transform', DataFrame))
+        str(get_filesystem_intermediate(run_id, 'sum_sq_solid.transform', PoorMansDataFrame))
         == expected_value_repr
     )
 
@@ -308,7 +306,7 @@ def test_invalid_config_execute_plan(snapshot):
         define_context(),
         EXECUTE_PLAN_QUERY,
         variables={
-            'pipelineName': 'pandas_hello_world',
+            'pipelineName': 'csv_hello_world',
             'config': {'solids': {'sum_solid': {'inputs': {'num': {'csv': {'path': 384938439}}}}}},
             'stepKeys': [
                 'sum_solid.num.input_thunk',
@@ -371,8 +369,8 @@ def test_basic_execute_plan_with_materialization():
         environment_dict = {
             'solids': {
                 'sum_solid': {
-                    'inputs': {'num': {'csv': {'path': script_relative_path('../num.csv')}}},
-                    'outputs': [{'result': {'csv': {'path': out_csv_path}}}],
+                    'inputs': {'num': script_relative_path('../data/num.csv')},
+                    'outputs': [{'result': out_csv_path}],
                 }
             }
         }
@@ -380,7 +378,7 @@ def test_basic_execute_plan_with_materialization():
         result = execute_dagster_graphql(
             define_context(),
             EXECUTION_PLAN_QUERY,
-            variables={'pipeline': {'name': 'pandas_hello_world'}, 'config': environment_dict},
+            variables={'pipeline': {'name': 'csv_hello_world'}, 'config': environment_dict},
         )
 
         steps_data = result.data['executionPlan']['steps']
@@ -397,7 +395,7 @@ def test_basic_execute_plan_with_materialization():
             define_context(),
             EXECUTE_PLAN_QUERY,
             variables={
-                'pipelineName': 'pandas_hello_world',
+                'pipelineName': 'csv_hello_world',
                 'config': environment_dict,
                 'stepKeys': [
                     'sum_solid.inputs.num.read',

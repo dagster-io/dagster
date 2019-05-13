@@ -2,7 +2,7 @@ from dagster import check
 from dagster.utils import script_relative_path
 from dagster.core.types.config import ALL_CONFIG_BUILTINS
 
-from .setup import execute_dagster_graphql, define_context, pandas_hello_world_solids_config
+from .setup import execute_dagster_graphql, define_context, csv_hello_world_solids_config
 
 CONFIG_VALIDATION_QUERY = '''
 query PipelineQuery($config: PipelineConfig, $pipeline: ExecutionSelector!, $mode: String)
@@ -108,22 +108,20 @@ def test_pipeline_not_found():
 
 def test_basic_valid_config():
     result = execute_config_graphql(
-        pipeline_name='pandas_hello_world', env_config=pandas_hello_world_solids_config()
+        pipeline_name='csv_hello_world', env_config=csv_hello_world_solids_config()
     )
 
     assert not result.errors
     assert result.data
     assert result.data['isPipelineConfigValid']['__typename'] == 'PipelineConfigValidationValid'
-    assert result.data['isPipelineConfigValid']['pipeline']['name'] == 'pandas_hello_world'
+    assert result.data['isPipelineConfigValid']['pipeline']['name'] == 'csv_hello_world'
 
 
 def test_root_field_not_defined():
     result = execute_config_graphql(
-        pipeline_name='pandas_hello_world',
+        pipeline_name='csv_hello_world',
         env_config={
-            'solids': {
-                'sum_solid': {'inputs': {'num': {'csv': {'path': script_relative_path('num.csv')}}}}
-            },
+            'solids': {'sum_solid': {'inputs': {'num': script_relative_path('../data/num.csv')}}},
             'nope': {},
         },
     )
@@ -131,7 +129,7 @@ def test_root_field_not_defined():
     assert not result.errors
     assert result.data
     assert result.data['isPipelineConfigValid']['__typename'] == 'PipelineConfigValidationInvalid'
-    assert result.data['isPipelineConfigValid']['pipeline']['name'] == 'pandas_hello_world'
+    assert result.data['isPipelineConfigValid']['pipeline']['name'] == 'csv_hello_world'
     errors = result.data['isPipelineConfigValid']['errors']
     assert len(errors) == 1
     error = errors[0]
@@ -142,36 +140,28 @@ def test_root_field_not_defined():
 
 def test_basic_invalid_not_defined_field():
     result = execute_config_graphql(
-        pipeline_name='pandas_hello_world',
-        env_config={
-            'solids': {
-                'sum_solid': {'inputs': {'num': {'csv': {'path': 'foo.txt', 'extra': 'nope'}}}}
-            }
-        },
+        pipeline_name='csv_hello_world',
+        env_config={'solids': {'sum_solid': {'inputs': {'num': 'foo.txt', 'extra': 'nope'}}}},
     )
 
     assert not result.errors
     assert result.data
     assert result.data['isPipelineConfigValid']['__typename'] == 'PipelineConfigValidationInvalid'
-    assert result.data['isPipelineConfigValid']['pipeline']['name'] == 'pandas_hello_world'
+    assert result.data['isPipelineConfigValid']['pipeline']['name'] == 'csv_hello_world'
     assert len(result.data['isPipelineConfigValid']['errors']) == 1
     error_data = result.data['isPipelineConfigValid']['errors'][0]
-    assert ['solids', 'sum_solid', 'inputs', 'num', 'csv'] == field_stack(error_data)
+    assert ['solids', 'sum_solid', 'inputs'] == field_stack(error_data)
     assert error_data['reason'] == 'FIELD_NOT_DEFINED'
     assert error_data['fieldName'] == 'extra'
 
 
 def test_multiple_not_defined_fields():
     result = execute_config_graphql(
-        pipeline_name='pandas_hello_world',
+        pipeline_name='csv_hello_world',
         env_config={
             'solids': {
                 'sum_solid': {
-                    'inputs': {
-                        'num': {
-                            'csv': {'path': 'foo.txt', 'extra_one': 'nope', 'extra_two': 'nope'}
-                        }
-                    }
+                    'inputs': {'num': 'foo.txt', 'extra_one': 'nope', 'extra_two': 'nope'}
                 }
             }
         },
@@ -180,20 +170,20 @@ def test_multiple_not_defined_fields():
     assert not result.errors
     assert result.data
     assert result.data['isPipelineConfigValid']['__typename'] == 'PipelineConfigValidationInvalid'
-    assert result.data['isPipelineConfigValid']['pipeline']['name'] == 'pandas_hello_world'
+    assert result.data['isPipelineConfigValid']['pipeline']['name'] == 'csv_hello_world'
     assert len(result.data['isPipelineConfigValid']['errors']) == 1
     error_data = result.data['isPipelineConfigValid']['errors'][0]
-    assert ['solids', 'sum_solid', 'inputs', 'num', 'csv'] == field_stack(error_data)
+    assert ['solids', 'sum_solid', 'inputs'] == field_stack(error_data)
     assert error_data['reason'] == 'FIELDS_NOT_DEFINED'
     assert error_data['fieldNames'] == ['extra_one', 'extra_two']
 
 
 def test_root_wrong_type():
-    result = execute_config_graphql(pipeline_name='pandas_hello_world', env_config=123)
+    result = execute_config_graphql(pipeline_name='csv_hello_world', env_config=123)
     assert not result.errors
     assert result.data
     assert result.data['isPipelineConfigValid']['__typename'] == 'PipelineConfigValidationInvalid'
-    assert result.data['isPipelineConfigValid']['pipeline']['name'] == 'pandas_hello_world'
+    assert result.data['isPipelineConfigValid']['pipeline']['name'] == 'csv_hello_world'
     errors = result.data['isPipelineConfigValid']['errors']
     assert len(errors) == 1
     error = errors[0]
@@ -203,14 +193,14 @@ def test_root_wrong_type():
 
 def test_basic_invalid_config_type_mismatch():
     result = execute_config_graphql(
-        pipeline_name='pandas_hello_world',
-        env_config={'solids': {'sum_solid': {'inputs': {'num': {'csv': {'path': 123}}}}}},
+        pipeline_name='csv_hello_world',
+        env_config={'solids': {'sum_solid': {'inputs': {'num': 123}}}},
     )
 
     assert not result.errors
     assert result.data
     assert result.data['isPipelineConfigValid']['__typename'] == 'PipelineConfigValidationInvalid'
-    assert result.data['isPipelineConfigValid']['pipeline']['name'] == 'pandas_hello_world'
+    assert result.data['isPipelineConfigValid']['pipeline']['name'] == 'csv_hello_world'
     assert len(result.data['isPipelineConfigValid']['errors']) == 1
     error_data = result.data['isPipelineConfigValid']['errors'][0]
     assert error_data['message']
@@ -220,25 +210,24 @@ def test_basic_invalid_config_type_mismatch():
     assert error_data['valueRep'] == '123'
     assert error_data['type']['name'] == 'Path'
 
-    assert ['solids', 'sum_solid', 'inputs', 'num', 'csv', 'path'] == field_stack(error_data)
+    assert ['solids', 'sum_solid', 'inputs', 'num'] == field_stack(error_data)
 
 
 def test_basic_invalid_config_missing_field():
     result = execute_config_graphql(
-        pipeline_name='pandas_hello_world',
-        env_config={'solids': {'sum_solid': {'inputs': {'num': {'csv': {}}}}}},
+        pipeline_name='csv_hello_world', env_config={'solids': {'sum_solid': {'inputs': {}}}}
     )
 
     assert not result.errors
     assert result.data
     assert result.data['isPipelineConfigValid']['__typename'] == 'PipelineConfigValidationInvalid'
-    assert result.data['isPipelineConfigValid']['pipeline']['name'] == 'pandas_hello_world'
+    assert result.data['isPipelineConfigValid']['pipeline']['name'] == 'csv_hello_world'
     assert len(result.data['isPipelineConfigValid']['errors']) == 1
     error_data = result.data['isPipelineConfigValid']['errors'][0]
 
-    assert ['solids', 'sum_solid', 'inputs', 'num', 'csv'] == field_stack(error_data)
+    assert ['solids', 'sum_solid', 'inputs'] == field_stack(error_data)
     assert error_data['reason'] == 'MISSING_REQUIRED_FIELD'
-    assert error_data['field']['name'] == 'path'
+    assert error_data['field']['name'] == 'num'
 
 
 def test_mode_resource_config_works():
@@ -608,20 +597,20 @@ def test_config_type_or_error_query_success():
     result = execute_dagster_graphql(
         define_context(),
         CONFIG_TYPE_QUERY,
-        {'pipelineName': 'pandas_hello_world', 'configTypeName': 'PandasHelloWorld.Environment'},
+        {'pipelineName': 'csv_hello_world', 'configTypeName': 'CsvHelloWorld.Environment'},
     )
 
     assert not result.errors
     assert result.data
     assert result.data['configTypeOrError']['__typename'] == 'CompositeConfigType'
-    assert result.data['configTypeOrError']['name'] == 'PandasHelloWorld.Environment'
+    assert result.data['configTypeOrError']['name'] == 'CsvHelloWorld.Environment'
 
 
 def test_config_type_or_error_pipeline_not_found():
     result = execute_dagster_graphql(
         define_context(),
         CONFIG_TYPE_QUERY,
-        {'pipelineName': 'nope', 'configTypeName': 'PandasHelloWorld.Environment'},
+        {'pipelineName': 'nope', 'configTypeName': 'CsvHelloWorld.Environment'},
     )
 
     assert not result.errors
@@ -634,13 +623,13 @@ def test_config_type_or_error_type_not_found():
     result = execute_dagster_graphql(
         define_context(),
         CONFIG_TYPE_QUERY,
-        {'pipelineName': 'pandas_hello_world', 'configTypeName': 'nope'},
+        {'pipelineName': 'csv_hello_world', 'configTypeName': 'nope'},
     )
 
     assert not result.errors
     assert result.data
     assert result.data['configTypeOrError']['__typename'] == 'ConfigTypeNotFoundError'
-    assert result.data['configTypeOrError']['pipeline']['name'] == 'pandas_hello_world'
+    assert result.data['configTypeOrError']['pipeline']['name'] == 'csv_hello_world'
     assert result.data['configTypeOrError']['configTypeName'] == 'nope'
 
 

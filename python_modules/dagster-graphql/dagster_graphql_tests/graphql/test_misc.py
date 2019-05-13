@@ -14,8 +14,6 @@ from dagster import (
 
 from dagster.utils import script_relative_path
 
-from dagster_pandas import DataFrame
-
 from dagster_graphql.implementation.context import DagsterGraphQLContext
 from dagster_graphql.implementation.pipeline_execution_manager import SynchronousExecutionManager
 from dagster_graphql.implementation.pipeline_run_storage import PipelineRunStorage
@@ -32,6 +30,7 @@ sys.path.insert(0, os.path.abspath(script_relative_path('.')))
 from production_query import (  # pylint: disable=wrong-import-position,wrong-import-order
     PRODUCTION_QUERY,
 )
+from setup import PoorMansDataFrame  # pylint: disable=no-name-in-module
 
 
 def test_enum_query():
@@ -126,8 +125,8 @@ def define_circular_dependency_pipeline():
         solids=[
             SolidDefinition(
                 name='csolid',
-                inputs=[InputDefinition('num', DataFrame)],
-                outputs=[OutputDefinition(DataFrame)],
+                inputs=[InputDefinition('num', PoorMansDataFrame)],
+                outputs=[OutputDefinition(PoorMansDataFrame)],
                 transform_fn=lambda *_args: None,
             )
         ],
@@ -183,7 +182,7 @@ def test_pipeline_by_name():
         define_context(),
         '''
     {
-        pipeline(params: {name: "pandas_hello_world_two"}) {
+        pipeline(params: {name: "csv_hello_world_two"}) {
             name
         }
     }''',
@@ -191,7 +190,7 @@ def test_pipeline_by_name():
 
     assert not result.errors
     assert result.data
-    assert result.data['pipeline']['name'] == 'pandas_hello_world_two'
+    assert result.data['pipeline']['name'] == 'csv_hello_world_two'
 
 
 def test_pipeline_or_error_by_name():
@@ -199,7 +198,7 @@ def test_pipeline_or_error_by_name():
         define_context(),
         '''
     {
-        pipelineOrError(params: { name: "pandas_hello_world_two" }) {
+        pipelineOrError(params: { name: "csv_hello_world_two" }) {
           ... on Pipeline {
              name
            }
@@ -209,7 +208,7 @@ def test_pipeline_or_error_by_name():
 
     assert not result.errors
     assert result.data
-    assert result.data['pipelineOrError']['name'] == 'pandas_hello_world_two'
+    assert result.data['pipelineOrError']['name'] == 'csv_hello_world_two'
 
 
 def test_production_query():

@@ -56,12 +56,10 @@ def test_basic_expectations_within_transforms():
 def test_basic_input_output_expectations(snapshot):
     logs = sync_execute_get_events(
         variables={
-            'pipeline': {'name': 'pandas_hello_world_with_expectations'},
+            'pipeline': {'name': 'csv_hello_world_with_expectations'},
             'config': {
                 'solids': {
-                    'sum_solid': {
-                        'inputs': {'num': {'csv': {'path': script_relative_path('../num.csv')}}}
-                    }
+                    'sum_solid': {'inputs': {'num': script_relative_path('../data/num.csv')}}
                 }
             },
         }

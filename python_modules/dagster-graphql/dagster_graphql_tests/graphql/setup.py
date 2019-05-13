@@ -1,11 +1,16 @@
+import csv
+
+from collections import OrderedDict
+from copy import deepcopy
+
 from graphql import graphql
 
 from dagster_graphql.implementation.context import DagsterGraphQLContext
 from dagster_graphql.implementation.pipeline_run_storage import PipelineRunStorage
 from dagster_graphql.implementation.pipeline_execution_manager import SynchronousExecutionManager
 from dagster_graphql.schema import create_schema
-
 from dagster import (
+    as_dagster_type,
     Any,
     Bool,
     DependencyDefinition,
@@ -16,11 +21,14 @@ from dagster import (
     ExpectationResult,
     Field,
     InputDefinition,
+    input_schema,
     Int,
     List,
     ModeDefinition,
     Nullable,
     OutputDefinition,
+    output_schema,
+    Path,
     PipelineDefinition,
     RepositoryDefinition,
     RepositoryTargetInfo,
@@ -31,7 +39,33 @@ from dagster import (
     solid,
 )
 from dagster.utils import script_relative_path
-from dagster_pandas import DataFrame
+
+
+class PoorMansDataFrame_(list):
+    pass
+
+
+@input_schema(Path)
+def df_input_schema(_context, path):
+    with open(path, 'r') as fd:
+        return PoorMansDataFrame_(
+            [OrderedDict(sorted(x.items(), key=lambda x: x[0])) for x in csv.DictReader(fd)]
+        )
+
+
+@output_schema(Path)
+def df_output_schema(_context, path, value):
+    with open(path, 'w') as fd:
+        writer = csv.DictWriter(fd, fieldnames=value[0].keys())
+        writer.writeheader()
+        writer.writerows(rowdicts=value)
+
+    return path
+
+
+PoorMansDataFrame = as_dagster_type(
+    PoorMansDataFrame_, input_schema=df_input_schema, output_schema=df_output_schema
+)
 
 
 def execute_dagster_graphql(context, query, variables=None):
@@ -69,25 +103,32 @@ def define_context(repo_config=None, raise_on_error=True):
     )
 
 
-@lambda_solid(inputs=[InputDefinition('num', DataFrame)], output=OutputDefinition(DataFrame))
+@lambda_solid(
+    inputs=[InputDefinition('num', PoorMansDataFrame)], output=OutputDefinition(PoorMansDataFrame)
+)
 def sum_solid(num):
-    sum_df = num.copy()
-    sum_df['sum'] = sum_df['num1'] + sum_df['num2']
-    return sum_df
+    sum_df = deepcopy(num)
+    for x in sum_df:
+        x['sum'] = int(x['num1']) + int(x['num2'])
+    return PoorMansDataFrame(sum_df)
 
 
-@lambda_solid(inputs=[InputDefinition('sum_df', DataFrame)], output=OutputDefinition(DataFrame))
+@lambda_solid(
+    inputs=[InputDefinition('sum_df', PoorMansDataFrame)],
+    output=OutputDefinition(PoorMansDataFrame),
+)
 def sum_sq_solid(sum_df):
-    sum_sq_df = sum_df.copy()
-    sum_sq_df['sum_sq'] = sum_df['sum'] ** 2
-    return sum_sq_df
+    sum_sq_df = deepcopy(sum_df)
+    for x in sum_sq_df:
+        x['sum_sq'] = int(x['sum']) ** 2
+    return PoorMansDataFrame(sum_sq_df)
 
 
 @lambda_solid(
     inputs=[
         InputDefinition(
             'sum_df',
-            DataFrame,
+            PoorMansDataFrame,
             expectations=[
                 ExpectationDefinition(
                     name='some_expectation',
@@ -97,7 +138,7 @@ def sum_sq_solid(sum_df):
         )
     ],
     output=OutputDefinition(
-        DataFrame,
+        PoorMansDataFrame,
         expectations=[
             ExpectationDefinition(
                 name='other_expectation',
@@ -110,19 +151,13 @@ def df_expectations_solid(sum_df):
     return sum_df
 
 
-def pandas_hello_world_solids_config():
-    return {
-        'solids': {
-            'sum_solid': {'inputs': {'num': {'csv': {'path': script_relative_path('../num.csv')}}}}
-        }
-    }
+def csv_hello_world_solids_config():
+    return {'solids': {'sum_solid': {'inputs': {'num': script_relative_path('../data/num.csv')}}}}
 
 
-def pandas_hello_world_solids_config_fs_storage():
+def csv_hello_world_solids_config_fs_storage():
     return {
-        'solids': {
-            'sum_solid': {'inputs': {'num': {'csv': {'path': script_relative_path('../num.csv')}}}}
-        },
+        'solids': {'sum_solid': {'inputs': {'num': script_relative_path('../data/num.csv')}}},
         'storage': {'filesystem': {}},
     }
 
@@ -133,14 +168,14 @@ def define_repository(repo_config=None):
         pipeline_dict={
             'more_complicated_config': define_more_complicated_config,
             'more_complicated_nested_config': define_more_complicated_nested_config,
-            'pandas_hello_world': get_define_pandas_hello_world('pandas_hello_world'),
-            'pandas_hello_world_with_presets': get_define_pandas_hello_world(
-                'pandas_hello_world_with_presets'
+            'csv_hello_world': get_define_csv_hello_world('csv_hello_world'),
+            'csv_hello_world_with_presets': get_define_csv_hello_world(
+                'csv_hello_world_with_presets'
             ),
-            'pandas_hello_world_two': define_pipeline_two,
-            'pandas_hello_world_with_expectations': define_pandas_hello_world_with_expectations,
+            'csv_hello_world_two': define_pipeline_two,
+            'csv_hello_world_with_expectations': define_csv_hello_world_with_expectations,
             'pipeline_with_list': define_pipeline_with_list,
-            'pandas_hello_world_df_input': define_pipeline_with_pandas_df_input,
+            'csv_hello_world_df_input': define_pipeline_with_csv_df_input,
             'no_config_pipeline': define_no_config_pipeline,
             'scalar_output_pipeline': define_scalar_output_pipeline,
             'pipeline_with_enum_config': define_pipeline_with_enum_config,
@@ -260,7 +295,7 @@ def define_more_complicated_nested_config():
     )
 
 
-def get_define_pandas_hello_world(name):
+def get_define_csv_hello_world(name):
     return lambda: PipelineDefinition(
         name=name,
         solids=[sum_solid, sum_sq_solid],
@@ -271,9 +306,9 @@ def get_define_pandas_hello_world(name):
     )
 
 
-def define_pandas_hello_world_with_expectations():
+def define_csv_hello_world_with_expectations():
     return PipelineDefinition(
-        name='pandas_hello_world_with_expectations',
+        name='csv_hello_world_with_expectations',
         solids=[sum_solid, sum_sq_solid, df_expectations_solid],
         dependencies={
             'sum_solid': {},
@@ -285,7 +320,7 @@ def define_pandas_hello_world_with_expectations():
 
 def define_pipeline_two():
     return PipelineDefinition(
-        name='pandas_hello_world_two', solids=[sum_solid], dependencies={'sum_solid': {}}
+        name='csv_hello_world_two', solids=[sum_solid], dependencies={'sum_solid': {}}
     )
 
 
@@ -304,9 +339,9 @@ def define_pipeline_with_list():
     )
 
 
-def define_pipeline_with_pandas_df_input():
+def define_pipeline_with_csv_df_input():
     return PipelineDefinition(
-        name='pandas_hello_world_df_input',
+        name='csv_hello_world_df_input',
         solids=[sum_solid, sum_sq_solid],
         dependencies={'sum_sq_solid': {'sum_df': DependencyDefinition(sum_solid.name)}},
     )

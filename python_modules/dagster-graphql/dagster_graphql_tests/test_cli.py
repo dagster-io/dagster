@@ -27,7 +27,7 @@ def mult_two(num):
     return num * 2
 
 
-def define_pandas_hello_world():
+def define_csv_hello_world():
     return PipelineDefinition(
         name='math',
         solids=[add_one, mult_two],
@@ -36,7 +36,7 @@ def define_pandas_hello_world():
 
 
 def define_repository():
-    return RepositoryDefinition(name='test', pipeline_dict={'math': define_pandas_hello_world})
+    return RepositoryDefinition(name='test', pipeline_dict={'math': define_csv_hello_world})
 
 
 def test_basic_introspection():
