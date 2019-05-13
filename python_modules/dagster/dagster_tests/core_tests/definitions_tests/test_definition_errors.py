@@ -12,7 +12,6 @@ from dagster import (
     NamedSelector,
     OutputDefinition,
     PermissiveDict,
-    PipelineContextDefinition,
     PipelineDefinition,
     ResourceDefinition,
     Selector,
@@ -182,39 +181,7 @@ def test_double_type_key():
     )
 
 
-def test_pass_config_type_to_field_error_context_definition():
-    with pytest.raises(DagsterInvalidDefinitionError) as exc_info:
-        PipelineDefinition(
-            name='pass_config_type_to_context_def_config_field_error_pipeline',
-            solids=[],
-            context_definitions={
-                'some_context': PipelineContextDefinition(config_field=Dict({'val': Field(Int)}))
-            },
-        )
-
-    assert str(exc_info.value) == (
-        'You have passed a config type "{ val: Int }" in the parameter "config_field" of a '
-        'PipelineContextDefinition. You have likely forgot to '
-        'wrap this type in a Field.'
-    )
-
-
-def test_pass_unrelated_type_to_field_error_context_definition():
-    with pytest.raises(DagsterInvalidDefinitionError) as exc_info:
-        PipelineDefinition(
-            name='pass_unrelated_type_to_context_def_config_field_error_pipeline',
-            solids=[],
-            context_definitions={'some_context': PipelineContextDefinition(config_field='wut')},
-        )
-
-    assert str(exc_info.value) == (
-        'You have passed an object \'wut\' of incorrect type "str" in the parameter '
-        '"config_field" of a PipelineContextDefinition where a Field was expected.'
-    )
-
-
 def test_pass_config_type_to_field_error_solid_definition():
-
     with pytest.raises(DagsterInvalidDefinitionError) as exc_info:
 
         @solid(config_field=Dict({'val': Field(Int)}))
