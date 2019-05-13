@@ -1,7 +1,7 @@
 import re
 from operator import add
 
-from dagster import PipelineDefinition, solid, InputDefinition, Path, PipelineContextDefinition
+from dagster import PipelineDefinition, solid, InputDefinition, Path, ModeDefinition
 from dagster_pyspark import spark_session_resource
 
 
@@ -45,12 +45,12 @@ def whole_pipeline_solid_using_context(context, pagerank_data):
     for (link, rank) in ranks.collect():
         context.log.info("%s has rank: %s." % (link, rank))
 
+    return ranks.collect()
+
 
 def define_pyspark_pagerank_step_three():
     return PipelineDefinition(
         name='pyspark_pagerank_step_three',
         solids=[whole_pipeline_solid_using_context],
-        context_definitions={
-            'local': PipelineContextDefinition(resources={'spark': spark_session_resource})
-        },
+        mode_definitions=[ModeDefinition(resources={'spark': spark_session_resource})],
     )

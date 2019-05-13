@@ -7,9 +7,9 @@ from dagster import (
     Field,
     Int,
     InputDefinition,
+    ModeDefinition,
     OutputDefinition,
     Path,
-    PipelineContextDefinition,
     PipelineDefinition,
     solid,
 )
@@ -63,18 +63,18 @@ def calculate_ranks(context, links):
     return ranks
 
 
-@solid(inputs=[InputDefinition(name='ranks', dagster_type=SparkRDD)], outputs=[])
+@solid(inputs=[InputDefinition(name='ranks', dagster_type=SparkRDD)])
 def log_ranks(context, ranks):
     for (link, rank) in ranks.collect():
         context.log.info("%s has rank: %s." % (link, rank))
+
+    return ranks.collect()
 
 
 def define_pipeline():
     return PipelineDefinition(
         name='pyspark_pagerank',
-        context_definitions={
-            'local': PipelineContextDefinition(resources={'spark': spark_session_resource})
-        },
+        mode_definitions=[ModeDefinition(resources={'spark': spark_session_resource})],
         solids=[parse_pagerank_data, compute_links, calculate_ranks, log_ranks],
         dependencies={
             'compute_links': {'urls': DependencyDefinition('parse_pagerank_data')},

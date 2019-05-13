@@ -6,7 +6,7 @@ from dagster import (
     InputDefinition,
     OutputDefinition,
     Path,
-    PipelineContextDefinition,
+    ModeDefinition,
     PipelineDefinition,
     solid,
 )
@@ -55,6 +55,8 @@ def rest_of_pipeline(context, urls):
     for (link, rank) in ranks.collect():
         context.log.info("%s has rank: %s." % (link, rank))
 
+    return ranks.collect()
+
 
 def define_pyspark_pagerank_step_four():
     return PipelineDefinition(
@@ -63,7 +65,5 @@ def define_pyspark_pagerank_step_four():
         dependencies={
             'rest_of_pipeline': {'urls': DependencyDefinition('parse_pagerank_data_step_four')}
         },
-        context_definitions={
-            'local': PipelineContextDefinition(resources={'spark': spark_session_resource})
-        },
+        mode_definitions=[ModeDefinition(resources={'spark': spark_session_resource})],
     )

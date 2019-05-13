@@ -24,8 +24,12 @@ def whole_pipeline_solid(context, pagerank_data):
     # Initialize the spark context.
     spark = SparkSession.builder.appName("PythonPageRank").getOrCreate()
 
+    context.log.info('Page rank data path {}'.format(pagerank_data))
+
     # two urls per line with space in between)
     lines = spark.read.text(pagerank_data).rdd.map(lambda r: r[0])
+
+    context.log.info('Page rank data {}'.format(lines))
 
     # Loads all URLs from input file and initialize their neighbors.
     links = lines.map(parseNeighbors).distinct().groupByKey().cache()
@@ -49,7 +53,11 @@ def whole_pipeline_solid(context, pagerank_data):
     for (link, rank) in ranks.collect():
         context.log.info("%s has rank: %s." % (link, rank))
 
+    collected_ranks = ranks.collect()
+
     spark.stop()
+
+    return collected_ranks
 
 
 def define_pyspark_pagerank_step_two():

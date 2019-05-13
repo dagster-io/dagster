@@ -82,7 +82,7 @@ def wait_step():
     return "wait"
 
 
-def python_modules_tox_tests(directory, prereqs=None, label=None):
+def python_modules_tox_tests(directory, prereqs=None, label=None, on_integration_image=False):
     label = label if label else directory.replace("/", "-")
     tests = []
     for version in SupportedPythons:
@@ -99,12 +99,14 @@ def python_modules_tox_tests(directory, prereqs=None, label=None):
             "mv .coverage {file}".format(file=coverage),
             "buildkite-agent artifact upload {file}".format(file=coverage),
         ]
-        tests.append(
-            StepBuilder("{label} tests ({ver})".format(label=label, ver=TOX_MAP[version]))
-            .run(*tox_command)
-            .on_python_image(version, ['AWS_DEFAULT_REGION'])
-            .build()
-        )
+        builder = StepBuilder(
+            "{label} tests ({ver})".format(label=label, ver=TOX_MAP[version])
+        ).run(*tox_command)
+        if on_integration_image:
+            builder.on_integration_image(version, ['AWS_DEFAULT_REGION'])
+        else:
+            builder.on_python_image(version, ['AWS_DEFAULT_REGION'])
+        tests.append(builder.build())
 
     return tests
 
@@ -240,7 +242,7 @@ if __name__ == "__main__":
     steps += python_modules_tox_tests("libraries/dagster-spark")
     steps += python_modules_tox_tests("../examples/toys", label='examples-toys')
     steps += python_modules_tox_tests(
-        "../examples/pyspark-pagerank", label='examples-pyspark-pagerank'
+        "../examples/pyspark-pagerank", label='examples-pyspark-pagerank', on_integration_image=True
     )
     steps += airline_demo_tests()
     steps += events_demo_tests()
