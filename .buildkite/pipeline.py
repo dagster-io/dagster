@@ -49,8 +49,12 @@ class StepBuilder:
         self._step["commands"] = list(argc)
         return self
 
+    def base_docker_settings(self):
+        return {"shell": ["/bin/bash", "-xeuc"], "always-pull": True}
+
     def on_python_image(self, ver, env=None):
-        settings = {"always-pull": True, "image": PY_IMAGE_MAP[ver]}
+        settings = self.base_docker_settings()
+        settings["image"] = PY_IMAGE_MAP[ver]
         if env:
             settings['environment'] = env
 
@@ -59,11 +63,10 @@ class StepBuilder:
         return self
 
     def on_integration_image(self, ver, env=None):
-        settings = {
-            "always-pull": True,
-            "image": INTEGRATION_IMAGE_MAP[ver],
-            "volumes": ["/var/run/docker.sock:/var/run/docker.sock"],
-        }
+        settings = self.base_docker_settings()
+        settings["image"] = INTEGRATION_IMAGE_MAP[ver]
+        # map the docker socket to enable docker to be run from inside docker
+        settings["volumes"] = ["/var/run/docker.sock:/var/run/docker.sock"]
 
         if env:
             settings['environment'] = env
@@ -217,7 +220,8 @@ if __name__ == "__main__":
             "yarn run ts",
             "yarn run jest",
             "yarn run check-prettier",
-            "yarn generate-types",
+            "yarn run download-schema",
+            "yarn run generate-types",
             "git diff --exit-code",
             "mv coverage/lcov.info lcov.dagit.$BUILDKITE_BUILD_ID.info",
             "buildkite-agent artifact upload lcov.dagit.$BUILDKITE_BUILD_ID.info",
