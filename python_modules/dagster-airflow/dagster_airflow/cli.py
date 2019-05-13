@@ -1,9 +1,11 @@
+import contextlib
 import os
 import sys
 
 import click
 import yaml
 
+from dagster.core.definitions.entrypoint import LoaderEntrypoint
 from dagster.utils.indenting_printer import IndentingStringIoPrinter
 
 if sys.version_info.major >= 3:
@@ -23,7 +25,8 @@ def _construct_yml(config_file, dag_name):
             'filesystem': {'base_dir': '/tmp/dagster-airflow/{}'.format(dag_name)}
         }
 
-    with StringIO() as f:
+    # See http://bit.ly/309sTOu
+    with contextlib.closing(StringIO()) as f:
         yaml.dump(configs, f, default_flow_style=False, allow_unicode=True)
         return f.getvalue()
 
@@ -53,6 +56,10 @@ def scaffold(dag_name, module_name, fn_name, output_path, config_file):
     if not output_path:
         raise 'You must specify --output-path or set AIRFLOW_HOME to use this script.'
 
+    # Load the pipeline to determine the pipeline name
+    pipeline = LoaderEntrypoint.from_module_target(module_name, fn_name).perform_load()
+    pipeline_name = pipeline.name
+
     # We construct the YAML config and then put it directly in the DAG file
     yml = _construct_yml(config_file, dag_name)
 
@@ -71,18 +78,8 @@ def scaffold(dag_name, module_name, fn_name, output_path, config_file):
     printer.line('import datetime')
     printer.line('import yaml')
     printer.blank_line()
-
+    printer.line('from dagster import RepositoryTargetInfo')
     printer.line('from dagster_airflow.factory import make_airflow_dag')
-    printer.blank_line()
-    printer.comment(
-        'NOTE: you must ensure that {module_name} is installed or available on sys.path.'.format(
-            module_name=module_name
-        )
-    )
-    printer.comment('otherwise, this import will fail.')
-    printer.line(
-        'from {module_name} import {fn_name}'.format(module_name=module_name, fn_name=fn_name)
-    )
     printer.blank_line()
     printer.blank_line()
     printer.line('CONFIG = \'\'\'')
@@ -103,13 +100,29 @@ def scaffold(dag_name, module_name, fn_name, output_path, config_file):
     printer.blank_line()
     printer.line('dag, tasks = make_airflow_dag(')
     with printer.with_indent():
-        printer.line('pipeline={fn_name}(),'.format(fn_name=fn_name))
+        printer.comment(
+            'NOTE: you must ensure that {module_name} is installed or available on sys.path'.format(
+                module_name=module_name
+            )
+        )
+        printer.comment('otherwise, this import will fail.')
+        printer.line('repository_target_info=RepositoryTargetInfo(')
+        with printer.with_indent():
+            printer.line(
+                'module_name=\'{module_name}\', fn_name=\'{fn_name}\''.format(
+                    module_name=module_name, fn_name=fn_name
+                )
+            )
+        printer.line('),')
+        printer.line('pipeline_name=\'{pipeline_name}\','.format(pipeline_name=pipeline_name))
         printer.line("env_config=yaml.load(CONFIG),")
         printer.line("dag_kwargs={'default_args': DEFAULT_ARGS, 'max_active_runs': 1}")
     printer.line(')')
 
     # Ensure output_path/dags exists
-    os.makedirs(os.path.join(output_path, 'dags'), exist_ok=True)
+    dags_path = os.path.join(output_path, 'dags')
+    if not os.path.isdir(dags_path):
+        os.makedirs(dags_path)
 
     dag_file = os.path.join(output_path, 'dags', dag_name + '.py')
     with open(dag_file, 'wb') as f:

@@ -175,14 +175,15 @@ def airflow_tests():
             .run(
                 "cd python_modules/dagster-airflow/dagster_airflow_tests/test_project",
                 "./build.sh",
-                "mkdir -p /home/circleci/airflow",
+                "mkdir -p /airflow",
+                "export AIRFLOW_HOME=/airflow",
                 "cd ../../",
                 "pip install tox",
                 "tox -e {ver}".format(ver=TOX_MAP[version]),
                 "mv .coverage {file}".format(file=coverage),
                 "buildkite-agent artifact upload {file}".format(file=coverage),
             )
-            .on_integration_image(version)
+            .on_integration_image(version, ['AIRFLOW_HOME'])
             .build()
         )
     return tests
