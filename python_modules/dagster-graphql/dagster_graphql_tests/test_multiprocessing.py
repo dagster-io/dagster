@@ -5,6 +5,7 @@ from collections import OrderedDict
 from copy import deepcopy
 
 from dagster import (
+    ExecutionTargetHandle,
     as_dagster_type,
     DependencyDefinition,
     input_schema,
@@ -14,7 +15,6 @@ from dagster import (
     OutputDefinition,
     Path,
     PipelineDefinition,
-    RepositoryTargetInfo,
 )
 from dagster.core.events import DagsterEventType
 from dagster.core.execution.api import create_execution_plan, ExecutionSelector
@@ -67,7 +67,7 @@ def get_events_of_type(events, event_type):
 
 def test_running():
     run_id = make_new_run_id()
-    repository_target_info = RepositoryTargetInfo.for_pipeline_fn(define_passing_pipeline)
+    exc_target_handle = ExecutionTargetHandle.for_pipeline_fn(define_passing_pipeline)
     pipeline = define_passing_pipeline()
     env_config = {
         'solids': {'sum_solid': {'inputs': {'num': script_relative_path('data/num.csv')}}}
@@ -84,7 +84,7 @@ def test_running():
     )
     execution_manager = MultiprocessingExecutionManager()
     execution_manager.execute_pipeline(
-        repository_target_info, pipeline, pipeline_run, raise_on_error=False
+        exc_target_handle, pipeline, pipeline_run, raise_on_error=False
     )
     execution_manager.join()
     assert pipeline_run.status == PipelineRunStatus.SUCCESS
@@ -100,7 +100,7 @@ def test_running():
 
 def test_failing():
     run_id = make_new_run_id()
-    repository_target_info = RepositoryTargetInfo.for_pipeline_fn(define_failing_pipeline)
+    exc_target_handle = ExecutionTargetHandle.for_pipeline_fn(define_failing_pipeline)
     pipeline = define_failing_pipeline()
     env_config = {
         'solids': {'sum_solid': {'inputs': {'num': script_relative_path('data/num.csv')}}}
@@ -117,7 +117,7 @@ def test_failing():
     )
     execution_manager = MultiprocessingExecutionManager()
     execution_manager.execute_pipeline(
-        repository_target_info, pipeline, pipeline_run, raise_on_error=False
+        exc_target_handle, pipeline, pipeline_run, raise_on_error=False
     )
     execution_manager.join()
     assert pipeline_run.status == PipelineRunStatus.FAILURE
@@ -126,7 +126,7 @@ def test_failing():
 
 def test_execution_crash():
     run_id = make_new_run_id()
-    repository_target_info = RepositoryTargetInfo.for_pipeline_fn(define_crashy_pipeline)
+    exc_target_handle = ExecutionTargetHandle.for_pipeline_fn(define_crashy_pipeline)
     pipeline = define_crashy_pipeline()
     env_config = {
         'solids': {'sum_solid': {'inputs': {'num': script_relative_path('data/num.csv')}}}
@@ -143,7 +143,7 @@ def test_execution_crash():
     )
     execution_manager = MultiprocessingExecutionManager()
     execution_manager.execute_pipeline(
-        repository_target_info, pipeline, pipeline_run, raise_on_error=False
+        exc_target_handle, pipeline, pipeline_run, raise_on_error=False
     )
     execution_manager.join()
     assert pipeline_run.status == PipelineRunStatus.FAILURE

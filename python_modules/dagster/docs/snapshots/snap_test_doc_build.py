@@ -783,8 +783,6 @@ snapshots['test_build_all_docs 3'] = '''
 </li>
       <li><a href="sections/api/apidocs/types.html#dagster.List">List() (in module dagster)</a>
 </li>
-      <li><a href="sections/api/apidocs/pipeline.html#dagster.RepositoryDefinition.load_for_target_info">load_for_target_info() (dagster.RepositoryDefinition static method)</a>
-</li>
       <li><a href="sections/api/apidocs/pipeline.html#dagster.InitResourceContext.log_manager">log_manager (dagster.InitResourceContext attribute)</a>
 </li>
   </ul></td>
@@ -20437,12 +20435,6 @@ handle constructing the dictionary of pipeline name to functions for you</p>
 <dd class="field-odd"><p><a class="reference internal" href="#dagster.PipelineDefinition" title="dagster.PipelineDefinition">PipelineDefinition</a></p>
 </dd>
 </dl>
-</dd></dl>
-
-<dl class="staticmethod">
-<dt id="dagster.RepositoryDefinition.load_for_target_info">
-<em class="property">static </em><code class="descname">load_for_target_info</code><span class="sig-paren">(</span><em>repo_target_info</em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dagster/core/definitions/repository.html#RepositoryDefinition.load_for_target_info"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dagster.RepositoryDefinition.load_for_target_info" title="Permalink to this definition">¶</a></dt>
-<dd><p>Builds a RepositoryDefinition from a RepositoryTargetInfo object.</p>
 </dd></dl>
 
 </dd></dl>

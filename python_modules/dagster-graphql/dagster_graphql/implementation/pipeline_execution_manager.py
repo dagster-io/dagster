@@ -11,10 +11,9 @@ import gevent
 import six
 
 from dagster import (
+    ExecutionTargetHandle,
     InProcessExecutorConfig,
     PipelineDefinition,
-    RepositoryDefinition,
-    RepositoryTargetInfo,
     RunConfig,
     check,
     execute_pipeline,
@@ -27,7 +26,7 @@ from dagster_graphql.implementation.pipeline_run_storage import PipelineRun
 
 
 class PipelineExecutionManager(object):
-    def execute_pipeline(self, repository_info, pipeline, pipeline_run, raise_on_error):
+    def execute_pipeline(self, exc_target_handle, pipeline, pipeline_run, raise_on_error):
         raise NotImplementedError()
 
 
@@ -235,8 +234,8 @@ class MultiprocessingExecutionManager(PipelineExecutionManager):
                     return True
             gevent.sleep(0.1)
 
-    def execute_pipeline(self, repository_info, pipeline, pipeline_run, raise_on_error):
-        check.inst_param(repository_info, 'repository_info', RepositoryTargetInfo)
+    def execute_pipeline(self, exc_target_handle, pipeline, pipeline_run, raise_on_error):
+        check.inst_param(exc_target_handle, 'exc_target_handle', ExecutionTargetHandle)
         check.invariant(
             raise_on_error is False, 'Multiprocessing execute_pipeline does not rethrow user error'
         )
@@ -245,7 +244,7 @@ class MultiprocessingExecutionManager(PipelineExecutionManager):
         p = self._multiprocessing_context.Process(
             target=execute_pipeline_through_queue,
             args=(
-                repository_info,
+                exc_target_handle,
                 pipeline_run.selector.name,
                 pipeline_run.selector.solid_subset,
                 pipeline_run.config,
@@ -275,7 +274,7 @@ class RunProcessWrapper(namedtuple('RunProcessWrapper', 'pipeline_run process me
 
 
 def execute_pipeline_through_queue(
-    repository_info,
+    exc_target_handle,
     pipeline_name,
     solid_subset,
     environment_dict,
@@ -303,7 +302,7 @@ def execute_pipeline_through_queue(
     )
 
     try:
-        repository = RepositoryDefinition.load_for_target_info(repository_info)
+        repository = exc_target_handle.build_repository_definition()
     except:  # pylint: disable=W0702
         repo_error = sys.exc_info()
         message_queue.put(MultiprocessingError(serializable_error_info_from_exc_info(repo_error)))

@@ -1,7 +1,7 @@
 # pylint: disable=redefined-outer-name
 import os
 
-from dagster import RepositoryTargetInfo
+from dagster import ExecutionTargetHandle
 from dagster.utils import script_relative_path
 
 try:
@@ -21,9 +21,7 @@ from .marks import airflow, slow
 @slow
 @airflow
 class TestAirflowPython_0IngestExecution:
-    repository_target_info = RepositoryTargetInfo.for_pipeline_fn(
-        define_airline_demo_ingest_pipeline
-    )
+    exc_target_handle = ExecutionTargetHandle.for_pipeline_fn(define_airline_demo_ingest_pipeline)
     pipeline_name = 'airline_demo_ingest_pipeline'
     config_yaml = [
         script_relative_path(os.path.join('..', 'environments', 'local_base.yml')),
@@ -38,7 +36,7 @@ class TestAirflowPython_0IngestExecution:
 @slow
 @airflow
 class TestAirflowPython_1WarehouseExecution:
-    repository_target_info = RepositoryTargetInfo.for_pipeline_fn(
+    exc_target_handle = ExecutionTargetHandle.for_pipeline_fn(
         define_airline_demo_warehouse_pipeline
     )
     pipeline_name = 'airline_demo_warehouse_pipeline'

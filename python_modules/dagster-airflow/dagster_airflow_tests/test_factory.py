@@ -5,7 +5,7 @@ import json
 import re
 import uuid
 
-from dagster import RepositoryTargetInfo
+from dagster import ExecutionTargetHandle
 from dagster.utils import script_relative_path
 
 # pylint: disable=unused-import
@@ -21,7 +21,7 @@ from dagster_airflow_tests.test_project.dagster_airflow_demo import define_demo_
 
 
 class TestExecuteDagPythonFilesystemStorage(object):
-    repository_target_info = RepositoryTargetInfo.for_pipeline_fn(define_demo_execution_pipeline)
+    exc_target_handle = ExecutionTargetHandle.for_pipeline_fn(define_demo_execution_pipeline)
     pipeline_name = 'demo_pipeline'
     config_yaml = [
         script_relative_path('test_project/env.yml'),
@@ -59,7 +59,7 @@ class TestExecuteDagPythonFilesystemStorage(object):
 
 
 class TestExecuteDagPythonS3Storage(object):
-    repository_target_info = RepositoryTargetInfo.for_pipeline_fn(define_demo_execution_pipeline)
+    exc_target_handle = ExecutionTargetHandle.for_pipeline_fn(define_demo_execution_pipeline)
     pipeline_name = 'demo_pipeline'
     config_yaml = [
         script_relative_path('test_project/env.yml'),
@@ -99,7 +99,7 @@ class TestExecuteDagPythonS3Storage(object):
 
 @nettest
 class TestExecuteDagContainerizedS3Storage(object):
-    repository_target_info = RepositoryTargetInfo.for_pipeline_fn(define_demo_execution_pipeline)
+    exc_target_handle = ExecutionTargetHandle.for_pipeline_fn(define_demo_execution_pipeline)
     pipeline_name = 'demo_pipeline'
     config_yaml = [
         script_relative_path('test_project/env.yml'),
@@ -137,7 +137,7 @@ class TestExecuteDagContainerizedS3Storage(object):
 
 
 class TestExecuteDagContainerizedFilesystemStorage(object):
-    repository_target_info = RepositoryTargetInfo.for_pipeline_fn(define_demo_execution_pipeline)
+    exc_target_handle = ExecutionTargetHandle.for_pipeline_fn(define_demo_execution_pipeline)
     pipeline_name = 'demo_pipeline'
     config_yaml = [
         script_relative_path('test_project/env.yml'),

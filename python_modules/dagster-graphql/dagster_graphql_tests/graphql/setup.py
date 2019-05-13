@@ -12,6 +12,7 @@ from dagster_graphql.schema import create_schema
 from dagster import (
     as_dagster_type,
     Any,
+    ExecutionTargetHandle,
     Bool,
     DependencyDefinition,
     Dict,
@@ -31,7 +32,6 @@ from dagster import (
     Path,
     PipelineDefinition,
     RepositoryDefinition,
-    RepositoryTargetInfo,
     SolidDefinition,
     String,
     lambda_solid,
@@ -94,7 +94,7 @@ def execute_dagster_graphql(context, query, variables=None):
 # See https://github.com/dagster-io/dagster/issues/1345
 def define_context(repo_config=None, raise_on_error=True):
     return DagsterGraphQLContext(
-        repository_target_info=RepositoryTargetInfo.for_pipeline_fn(
+        exc_target_handle=ExecutionTargetHandle.for_repo_fn(
             define_repository, kwargs={'repo_config': repo_config}
         ),
         pipeline_runs=PipelineRunStorage(),

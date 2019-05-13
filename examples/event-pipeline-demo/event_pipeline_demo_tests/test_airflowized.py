@@ -1,6 +1,6 @@
 import pytest
 
-from dagster import RepositoryTargetInfo
+from dagster import ExecutionTargetHandle
 from dagster.utils import script_relative_path
 
 # pylint: disable=unused-import
@@ -12,7 +12,7 @@ from event_pipeline_demo.pipelines import define_event_ingest_pipeline
 @pytest.mark.skip
 class TestAirflowizedEventPipeline(object):
     config_yaml = [script_relative_path('../environments/default.yml')]
-    repository_target_info = RepositoryTargetInfo.for_pipeline_fn(define_event_ingest_pipeline)
+    exc_target_handle = ExecutionTargetHandle.for_pipeline_fn(define_event_ingest_pipeline)
     pipeline_name = 'event_ingest_pipeline'
 
     # pylint: disable=redefined-outer-name

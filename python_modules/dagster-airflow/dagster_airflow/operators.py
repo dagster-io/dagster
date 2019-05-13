@@ -75,7 +75,7 @@ class DagsterOperator(with_metaclass(ABCMeta)):  # pylint:disable=no-init
     @abstractmethod
     def operator_for_solid(
         cls,
-        repository_target_info,
+        exc_target_handle,
         pipeline_name,
         env_config,
         solid_name,
@@ -315,7 +315,7 @@ class DagsterDockerOperator(ModifiedDockerOperator, DagsterOperator):
     @classmethod
     def operator_for_solid(
         cls,
-        repository_target_info,
+        exc_target_handle,
         pipeline_name,
         env_config,
         solid_name,
@@ -423,7 +423,7 @@ class DagsterDockerOperator(ModifiedDockerOperator, DagsterOperator):
 
 class DagsterPythonOperator(PythonOperator, DagsterOperator):
     @classmethod
-    def make_python_callable(cls, repository_target_info, pipeline_name, env_config, step_keys):
+    def make_python_callable(cls, exc_target_handle, pipeline_name, env_config, step_keys):
         try:
             from dagster_graphql.cli import execute_query_from_cli
         except ImportError:
@@ -454,7 +454,7 @@ class DagsterPythonOperator(PythonOperator, DagsterOperator):
                 )
             )
 
-            res = json.loads(execute_query_from_cli(repository_target_info, query, variables=None))
+            res = json.loads(execute_query_from_cli(exc_target_handle, query, variables=None))
             cls.handle_errors(res, None)
             return cls.handle_result(res)
 
@@ -463,7 +463,7 @@ class DagsterPythonOperator(PythonOperator, DagsterOperator):
     @classmethod
     def operator_for_solid(
         cls,
-        repository_target_info,
+        exc_target_handle,
         pipeline_name,
         env_config,
         solid_name,
@@ -484,7 +484,7 @@ class DagsterPythonOperator(PythonOperator, DagsterOperator):
             task_id=solid_name,
             provide_context=True,
             python_callable=cls.make_python_callable(
-                repository_target_info,
+                exc_target_handle,
                 pipeline_name,
                 format_config_for_graphql(env_config),
                 step_keys

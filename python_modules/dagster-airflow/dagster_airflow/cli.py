@@ -78,7 +78,7 @@ def scaffold(dag_name, module_name, fn_name, output_path, config_file):
     printer.line('import datetime')
     printer.line('import yaml')
     printer.blank_line()
-    printer.line('from dagster import RepositoryTargetInfo')
+    printer.line('from dagster import ExecutionTargetHandle')
     printer.line('from dagster_airflow.factory import make_airflow_dag')
     printer.blank_line()
     printer.blank_line()
@@ -106,7 +106,7 @@ def scaffold(dag_name, module_name, fn_name, output_path, config_file):
             )
         )
         printer.comment('otherwise, this import will fail.')
-        printer.line('repository_target_info=RepositoryTargetInfo(')
+        printer.line('exc_target_handle=ExecutionTargetHandle.for_pipeline_module(')
         with printer.with_indent():
             printer.line(
                 'module_name=\'{module_name}\', fn_name=\'{fn_name}\''.format(

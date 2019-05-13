@@ -1,4 +1,3 @@
-import inspect
 import os
 from collections import namedtuple
 from glob import glob
@@ -7,75 +6,10 @@ import six
 import yaml
 
 from dagster import check
-from dagster.core.definitions import LoaderEntrypoint
-from dagster.core.errors import (
-    DagsterInvalidDefinitionError,
-    DagsterInvariantViolationError,
-    InvalidPipelineLoadingComboError,
-    InvalidRepositoryLoadingComboError,
-)
+from dagster.core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
 from dagster.utils.yaml_utils import merge_yamls
 
 from .pipeline import PipelineDefinition
-
-EPHEMERAL_NAME = '<<unnamed>>'
-
-
-class RepositoryTargetInfo:
-    def __init__(
-        self, repository_yaml=None, module_name=None, python_file=None, fn_name=None, kwargs=None
-    ):
-        self.repository_yaml = check.opt_str_param(repository_yaml, 'repository_yaml')
-        self.module_name = check.opt_str_param(module_name, 'module_name')
-        self.python_file = check.opt_str_param(python_file, 'python_file')
-        self.fn_name = check.opt_str_param(fn_name, 'fn_name')
-        self.kwargs = check.opt_dict_param(kwargs, 'kwargs')
-
-    def get_entrypoint(self):
-        def _repo_load_invariant(condition):
-            if not condition:
-                raise InvalidRepositoryLoadingComboError()
-
-        if self.repository_yaml:
-            _repo_load_invariant(self.module_name is None)
-            _repo_load_invariant(self.python_file is None)
-            _repo_load_invariant(self.fn_name is None)
-            _repo_load_invariant(not self.kwargs)
-            return LoaderEntrypoint.from_yaml(self.repository_yaml)
-        elif self.module_name and self.fn_name:
-            _repo_load_invariant(self.repository_yaml is None)
-            _repo_load_invariant(self.python_file is None)
-            return LoaderEntrypoint.from_module_target(
-                module_name=self.module_name, fn_name=self.fn_name, kwargs=self.kwargs
-            )
-        elif self.python_file and self.fn_name:
-            _repo_load_invariant(self.repository_yaml is None)
-            _repo_load_invariant(self.module_name is None)
-            return LoaderEntrypoint.from_file_target(
-                python_file=self.python_file, fn_name=self.fn_name, kwargs=self.kwargs
-            )
-        else:
-            raise InvalidRepositoryLoadingComboError()
-
-    @staticmethod
-    def for_pipeline_fn(pipeline_fn, kwargs=None):  # pylint: disable=unused-argument
-        '''This builder is a bit magical, but it inspects its caller to determine how to build a
-        RepositoryTargetInfo object via python_file and fn_name.
-
-        This will work since fn_name is ensured to be in scope in the python_file caller's scope.
-        '''
-        # Retrieve the calling file
-        stack = inspect.stack()
-        previous_stack_frame = stack[1]
-        python_file = previous_stack_frame[1]
-
-        # Retrieve the original name of pipeline_fn
-        frame = inspect.currentframe()
-        args, _, _, values = inspect.getargvalues(frame)  # pylint: disable=deprecated-method
-        fn_name = values[args[0]].__name__
-        check.invariant(fn_name == pipeline_fn.__name__)
-
-        return RepositoryTargetInfo(python_file=python_file, fn_name=fn_name, kwargs=kwargs)
 
 
 class RepositoryDefinition(object):
@@ -131,24 +65,6 @@ class RepositoryDefinition(object):
         return RepositoryDefinition(
             name, {pipeline.name: lambdify(pipeline) for pipeline in pipelines}, *args, **kwargs
         )
-
-    @staticmethod
-    def load_for_target_info(repo_target_info):
-        '''Builds a RepositoryDefinition from a RepositoryTargetInfo object.
-        '''
-        check.inst_param(repo_target_info, 'repo_target_info', RepositoryTargetInfo)
-        entrypoint = repo_target_info.get_entrypoint()
-
-        obj = entrypoint.perform_load()
-
-        if isinstance(obj, RepositoryDefinition):
-            return obj
-        elif isinstance(obj, PipelineDefinition):
-            return RepositoryDefinition(name=EPHEMERAL_NAME, pipeline_dict={obj.name: lambda: obj})
-        else:
-            raise InvalidPipelineLoadingComboError(
-                'entry point must return a repository or pipeline'
-            )
 
     def has_pipeline(self, name):
         check.str_param(name, 'name')

@@ -1,11 +1,11 @@
 import sys
 
 from dagster import (
+    ExecutionTargetHandle,
     Field,
     Int,
     PipelineDefinition,
     RepositoryDefinition,
-    RepositoryTargetInfo,
     solid,
 )
 
@@ -61,7 +61,7 @@ PIPELINES = '''
 
 def test_pipelines_python_error():
     ctx = DagsterGraphQLContext(
-        repository_target_info=RepositoryTargetInfo.for_pipeline_fn(define_error_pipeline_repo),
+        exc_target_handle=ExecutionTargetHandle.for_repo_fn(define_error_pipeline_repo),
         pipeline_runs=PipelineRunStorage(),
         execution_manager=SynchronousExecutionManager(),
     )

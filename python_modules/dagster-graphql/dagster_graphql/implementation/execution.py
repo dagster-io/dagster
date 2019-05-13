@@ -87,7 +87,7 @@ def start_pipeline_execution(
                         )
 
             graphene_info.context.execution_manager.execute_pipeline(
-                graphene_info.context.repository_target_info,
+                graphene_info.context.exc_target_handle,
                 pipeline.get_dagster_pipeline(),
                 run,
                 raise_on_error=graphene_info.context.raise_on_error,

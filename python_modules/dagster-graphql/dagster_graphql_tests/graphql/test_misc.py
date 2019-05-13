@@ -3,12 +3,12 @@ import sys
 
 
 from dagster import (
+    ExecutionTargetHandle,
     DependencyDefinition,
     InputDefinition,
     OutputDefinition,
     PipelineDefinition,
     RepositoryDefinition,
-    RepositoryTargetInfo,
     SolidDefinition,
 )
 
@@ -165,7 +165,7 @@ def define_test_repository():
 def test_pipelines_or_error_invalid():
 
     context = DagsterGraphQLContext(
-        repository_target_info=RepositoryTargetInfo.for_pipeline_fn(define_test_repository),
+        exc_target_handle=ExecutionTargetHandle.for_repo_fn(define_test_repository),
         pipeline_runs=PipelineRunStorage(),
         execution_manager=SynchronousExecutionManager(),
     )

@@ -161,3 +161,10 @@ def get_multiprocessing_context():
         return multiprocessing.get_context('spawn')
     else:
         return multiprocessing
+
+
+def all_none(kwargs):
+    for value in kwargs.values():
+        if value is not None:
+            return False
+    return True

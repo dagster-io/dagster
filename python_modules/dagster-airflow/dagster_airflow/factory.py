@@ -3,7 +3,7 @@ import re
 
 from airflow import DAG
 
-from dagster import check, RepositoryDefinition, RepositoryTargetInfo
+from dagster import check, ExecutionTargetHandle
 from dagster.core.execution.api import create_execution_plan
 
 from .operators import DagsterDockerOperator, DagsterOperator, DagsterPythonOperator
@@ -43,7 +43,7 @@ def _rename_for_airflow(name):
 
 
 def _make_airflow_dag(
-    repository_target_info,
+    exc_target_handle,
     pipeline_name,
     env_config=None,
     dag_id=None,
@@ -53,7 +53,7 @@ def _make_airflow_dag(
     operator=DagsterPythonOperator,
 ):
 
-    check.inst_param(repository_target_info, 'repository_target_info', RepositoryTargetInfo)
+    check.inst_param(exc_target_handle, 'exc_target_handle', ExecutionTargetHandle)
     env_config = check.opt_dict_param(env_config, 'env_config', key_type=str)
 
     # Only used for Airflow; internally we continue to use pipeline.name
@@ -78,8 +78,7 @@ def _make_airflow_dag(
 
     dag = DAG(dag_id=dag_id, description=dag_description, **dag_kwargs)
 
-    repo = RepositoryDefinition.load_for_target_info(repository_target_info)
-    pipeline = repo.get_pipeline(pipeline_name)
+    pipeline = exc_target_handle.build_pipeline_definition()
     execution_plan = create_execution_plan(pipeline, env_config)
 
     tasks = {}
@@ -91,7 +90,7 @@ def _make_airflow_dag(
         step_keys = [step.key for step in solid_steps]
 
         task = operator.operator_for_solid(
-            repository_target_info=repository_target_info,
+            exc_target_handle=exc_target_handle,
             pipeline_name=pipeline_name,
             env_config=env_config,
             solid_name=solid_name,
@@ -115,7 +114,7 @@ def _make_airflow_dag(
 
 
 def make_airflow_dag(
-    repository_target_info,
+    exc_target_handle,
     pipeline_name,
     env_config=None,
     dag_id=None,
@@ -124,7 +123,7 @@ def make_airflow_dag(
     op_kwargs=None,
 ):
     return _make_airflow_dag(
-        repository_target_info=repository_target_info,
+        exc_target_handle=exc_target_handle,
         pipeline_name=pipeline_name,
         env_config=env_config,
         dag_id=dag_id,
@@ -135,7 +134,7 @@ def make_airflow_dag(
 
 
 def make_airflow_dag_containerized(
-    repository_target_info,
+    exc_target_handle,
     pipeline_name,
     image,
     env_config=None,
@@ -147,7 +146,7 @@ def make_airflow_dag_containerized(
     op_kwargs = check.opt_dict_param(op_kwargs, 'op_kwargs', key_type=str)
     op_kwargs['image'] = image
     return _make_airflow_dag(
-        repository_target_info=repository_target_info,
+        exc_target_handle=exc_target_handle,
         pipeline_name=pipeline_name,
         env_config=env_config,
         dag_id=dag_id,

@@ -7,32 +7,9 @@ import click
 from papermill.iorw import load_notebook_node, write_ipynb
 import nbformat
 
-from dagster import check, RepositoryTargetInfo
-from dagster.cli.dynamic_loader import repository_target_argument, load_target_info_from_cli_args
-from dagster.core.definitions import LoaderEntrypoint
-from dagster.core.errors import InvalidRepositoryLoadingComboError
-from dagster.utils import load_yaml_from_path, safe_isfile
-
-
-def get_acceptable_entrypoint(repo_target_info):
-    check.inst_param(repo_target_info, 'repo_target_info', RepositoryTargetInfo)
-    if repo_target_info.repository_yaml:
-        check.str_param(repo_target_info.repository_yaml, 'repository_yaml')
-        config = load_yaml_from_path(repo_target_info.repository_yaml)
-        repository_config = check.dict_elem(config, 'repository')
-        module_name = check.opt_str_elem(repository_config, 'module')
-        fn_name = check.str_elem(repository_config, 'fn')
-        if module_name:
-            return LoaderEntrypoint.from_module_target(module_name, fn_name)
-        return None
-    elif repo_target_info.module_name and repo_target_info.fn_name:
-        return LoaderEntrypoint.from_module_target(
-            repo_target_info.module_name, repo_target_info.fn_name
-        )
-    elif repo_target_info.python_file and repo_target_info.fn_name:
-        return None
-    else:
-        raise InvalidRepositoryLoadingComboError()
+from dagster import check, ExecutionTargetHandle
+from dagster.cli.pipeline import repository_target_argument
+from dagster.utils import all_none, safe_isfile
 
 
 def get_notebook_scaffolding(register_repo_info):
@@ -121,12 +98,6 @@ def create_notebook(notebook, force_overwrite, **kwargs):
 
 
 def get_register_repo_info(cli_args, allow_none=True):
-    def all_none(kwargs):
-        for value in kwargs.values():
-            if value is not None:
-                return False
-        return True
-
     scaffolding_with_repo = True
     if all_none(cli_args):
         if os.path.exists(os.path.join(os.getcwd(), 'repository.yml')):
@@ -136,8 +107,8 @@ def get_register_repo_info(cli_args, allow_none=True):
 
     register_repo_info = None
     if scaffolding_with_repo:
-        repository_target_info = load_target_info_from_cli_args(cli_args)
-        entrypoint = get_acceptable_entrypoint(repository_target_info)
+        exc_target_handle = ExecutionTargetHandle.for_repo_cli_args(cli_args)
+        entrypoint = exc_target_handle.entrypoint
 
         if entrypoint:
             module = entrypoint.module_name

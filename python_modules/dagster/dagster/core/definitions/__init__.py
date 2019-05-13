@@ -1,3 +1,5 @@
+from .exc_target_handle import ExecutionTargetHandle
+
 from .context import PipelineContextDefinition
 
 from .dependency import (
@@ -33,7 +35,7 @@ from .materialization import Materialization
 
 from .mode import ModeDefinition
 
-from .repository import RepositoryDefinition, RepositoryTargetInfo, PipelinePreset
+from .repository import RepositoryDefinition, PipelinePreset
 
 from .pipeline import PipelineDefinition
 

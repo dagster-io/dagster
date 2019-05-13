@@ -1,7 +1,7 @@
 from __future__ import absolute_import, unicode_literals
 
 import json
-from dagster import RepositoryTargetInfo
+from dagster import ExecutionTargetHandle
 from dagit import app
 from dagster_graphql.implementation.pipeline_run_storage import PipelineRunStorage
 
@@ -9,7 +9,7 @@ from dagster_graphql.implementation.pipeline_run_storage import PipelineRunStora
 def test_smoke_app():
     pipeline_run_storage = PipelineRunStorage()
     flask_app = app.create_app(
-        RepositoryTargetInfo(
+        ExecutionTargetHandle.for_repo_module(
             module_name='dagster.tutorials.intro_tutorial.repos', fn_name='define_repo'
         ),
         pipeline_run_storage,

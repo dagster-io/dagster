@@ -1,6 +1,7 @@
 from dagster.core import types
 
 from dagster.core.definitions import (
+    ExecutionTargetHandle,
     DependencyDefinition,
     ExpectationDefinition,
     ExpectationResult,
@@ -9,7 +10,6 @@ from dagster.core.definitions import (
     PipelineContextDefinition,
     PipelineDefinition,
     RepositoryDefinition,
-    RepositoryTargetInfo,
     Result,
     Materialization,
     ModeDefinition,

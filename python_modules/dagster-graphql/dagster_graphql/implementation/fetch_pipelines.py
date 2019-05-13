@@ -2,11 +2,9 @@ import sys
 
 from graphql.execution.base import ResolveInfo
 
-from dagster import check, RepositoryDefinition
+from dagster import check
 from dagster.core.errors import DagsterInvalidDefinitionError
-
 from dagster.core.execution.api import ExecutionSelector
-
 from dagster.utils.error import serializable_error_info_from_exc_info
 
 from .either import EitherError, EitherValue
@@ -62,15 +60,12 @@ def _get_pipelines(graphene_info):
                 )
             )
 
-    return process_pipelines(
-        RepositoryDefinition.load_for_target_info(graphene_info.context.repository_target_info)
-    )
+    return process_pipelines(graphene_info.context.exc_target_handle.build_repository_definition())
 
 
 def _pipeline_or_error_from_repository(graphene_info, selector):
-    repository = RepositoryDefinition.load_for_target_info(
-        graphene_info.context.repository_target_info
-    )
+    repository = graphene_info.context.exc_target_handle.build_repository_definition()
+
     if not repository.has_pipeline(selector.name):
         return EitherError(
             graphene_info.schema.type_named('PipelineNotFoundError')(pipeline_name=selector.name)
@@ -89,7 +84,7 @@ def _pipeline_or_error_from_repository(graphene_info, selector):
 
 
 def get_pipeline_presets(graphene_info, pipeline_name):
-    repo = RepositoryDefinition.load_for_target_info(graphene_info.context.repository_target_info)
+    repo = graphene_info.context.exc_target_handle.build_repository_definition()
 
     return [
         graphene_info.schema.type_named('PipelinePreset')(preset)

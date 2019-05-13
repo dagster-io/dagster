@@ -6,6 +6,7 @@ import pytest
 
 from click.testing import CliRunner
 
+from dagster import lambda_solid, PipelineDefinition, RepositoryDefinition
 from dagster.core.runs import base_run_directory
 from dagster.cli.pipeline import (
     execute_print_command,
@@ -26,13 +27,26 @@ def no_print(_):
     return None
 
 
+@lambda_solid
+def do_something():
+    return 1
+
+
+def define_foo_pipeline():
+    return PipelineDefinition(name='foo', solids=[do_something])
+
+
+def define_bar_repo():
+    return RepositoryDefinition('bar', {'foo': define_foo_pipeline})
+
+
 def test_list_command():
     runner = CliRunner()
 
     execute_list_command(
         {
             'repository_yaml': None,
-            'python_file': script_relative_path('test_dynamic_loader.py'),
+            'python_file': script_relative_path('test_cli_commands.py'),
             'module_name': None,
             'fn_name': 'define_bar_repo',
         },
@@ -41,7 +55,7 @@ def test_list_command():
 
     result = runner.invoke(
         pipeline_list_command,
-        ['-f', script_relative_path('test_dynamic_loader.py'), '-n', 'define_bar_repo'],
+        ['-f', script_relative_path('test_cli_commands.py'), '-n', 'define_bar_repo'],
     )
     assert result.exit_code == 0
     assert result.output == (
@@ -131,7 +145,7 @@ def test_list_command():
         execute_list_command(
             {
                 'repository_yaml': None,
-                'python_file': script_relative_path('test_dynamic_loader.py'),
+                'python_file': script_relative_path('test_cli_commands.py'),
                 'module_name': None,
                 'fn_name': None,
             },
@@ -139,7 +153,7 @@ def test_list_command():
         )
 
     result = runner.invoke(
-        pipeline_list_command, ['-f', script_relative_path('test_dynamic_loader.py')]
+        pipeline_list_command, ['-f', script_relative_path('test_cli_commands.py')]
     )
     assert result.exit_code == 1
     assert isinstance(result.exception, InvalidRepositoryLoadingComboError)
@@ -164,7 +178,7 @@ def valid_execute_args():
         {
             'repository_yaml': None,
             'pipeline_name': ('foo',),
-            'python_file': script_relative_path('test_dynamic_loader.py'),
+            'python_file': script_relative_path('test_cli_commands.py'),
             'module_name': None,
             'fn_name': 'define_bar_repo',
         },
@@ -185,7 +199,7 @@ def valid_execute_args():
         {
             'repository_yaml': None,
             'pipeline_name': (),
-            'python_file': script_relative_path('test_dynamic_loader.py'),
+            'python_file': script_relative_path('test_cli_commands.py'),
             'module_name': None,
             'fn_name': 'define_foo_pipeline',
         },
@@ -196,10 +210,10 @@ def valid_cli_args():
     return [
         ['-y', script_relative_path('repository_file.yml'), 'foo'],
         ['-y', script_relative_path('repository_module.yml'), 'repo_demo_pipeline'],
-        ['-f', script_relative_path('test_dynamic_loader.py'), '-n', 'define_bar_repo', 'foo'],
+        ['-f', script_relative_path('test_cli_commands.py'), '-n', 'define_bar_repo', 'foo'],
         ['-m', 'dagster.tutorials.intro_tutorial.repos', '-n', 'define_repo', 'repo_demo_pipeline'],
         ['-m', 'dagster.tutorials.intro_tutorial.repos', '-n', 'define_repo_demo_pipeline'],
-        ['-f', script_relative_path('test_dynamic_loader.py'), '-n', 'define_foo_pipeline'],
+        ['-f', script_relative_path('test_cli_commands.py'), '-n', 'define_foo_pipeline'],
     ]
 
 

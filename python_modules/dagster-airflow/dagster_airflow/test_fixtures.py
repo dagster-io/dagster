@@ -24,7 +24,7 @@ def dagster_airflow_python_operator_pipeline(request):
         from dagster_airflow.test_fixtures import dagster_airflow_python_operator_pipeline
 
         class TestMyPipeline(object):
-            pipeline = define_my_pipeline()
+            exc_target_handle = ExecutionTargetHandle.for_pipeline_fn(define_pipeline)
             config = {'solids': {'my_solid': 'foo'}}
             # alternatively, pass a list of globs to be assembled into a config yaml
             # config_yaml = ['environments/test_*.yml']
@@ -37,7 +37,7 @@ def dagster_airflow_python_operator_pipeline(request):
                 results = dagster_airflow_python_operator_pipeline
                 assert len(results) = 3
     '''
-    repository_target_info = getattr(request.cls, 'repository_target_info')
+    exc_target_handle = getattr(request.cls, 'exc_target_handle')
     pipeline_name = getattr(request.cls, 'pipeline_name')
     config = getattr(request.cls, 'config', None)
     config_yaml = getattr(request.cls, 'config_yaml', None)
@@ -48,9 +48,7 @@ def dagster_airflow_python_operator_pipeline(request):
     run_id = getattr(request.cls, 'run_id', str(uuid.uuid4()))
     execution_date = getattr(request.cls, 'execution_date', datetime.datetime.utcnow())
 
-    dag, tasks = make_airflow_dag(
-        repository_target_info, pipeline_name, config, op_kwargs=op_kwargs
-    )
+    dag, tasks = make_airflow_dag(exc_target_handle, pipeline_name, config, op_kwargs=op_kwargs)
 
     assert isinstance(dag, DAG)
 
@@ -93,7 +91,7 @@ def dagster_airflow_docker_operator_pipeline(request):
                 assert len(results) = 3
     '''
 
-    repository_target_info = getattr(request.cls, 'repository_target_info')
+    exc_target_handle = getattr(request.cls, 'exc_target_handle')
     pipeline_name = getattr(request.cls, 'pipeline_name')
     image = getattr(request.cls, 'image')
     config = getattr(request.cls, 'config', None)
@@ -106,7 +104,7 @@ def dagster_airflow_docker_operator_pipeline(request):
     execution_date = getattr(request.cls, 'execution_date', datetime.datetime.utcnow())
 
     dag, tasks = make_airflow_dag_containerized(
-        repository_target_info, pipeline_name, image, config, op_kwargs=op_kwargs
+        exc_target_handle, pipeline_name, image, config, op_kwargs=op_kwargs
     )
 
     assert isinstance(dag, DAG)
