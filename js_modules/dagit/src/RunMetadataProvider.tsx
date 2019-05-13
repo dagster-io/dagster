@@ -98,9 +98,11 @@ function extractMetadataFromLogs(
           }
         });
       } else if (log.__typename === "ExecutionStepSkippedEvent") {
-        metadata.steps[name] = produce(metadata.steps[name] || {}, step => {
-          step.state = IStepState.SKIPPED;
-        });
+        metadata.steps[name] = {
+          state: IStepState.SKIPPED,
+          transitionedAt: timestamp,
+          displayEvents: []
+        };
       } else if (log.__typename === "StepMaterializationEvent") {
         metadata.steps[name] = produce(metadata.steps[name] || {}, step => {
           step.displayEvents.push({
