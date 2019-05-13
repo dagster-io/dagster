@@ -27348,14 +27348,15 @@ We are going to record the results of computations in that key value store.</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">bigco</span> <span class="k">import</span> <span class="n">PublicCloudConn</span><span class="p">,</span> <span class="n">set_value_in_cloud_store</span>
 </pre></div>
 </div>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">PublicCloudStore</span><span class="p">:</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>
+<span class="k">class</span> <span class="nc">PublicCloudStore</span><span class="p">:</span>
     <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">username</span><span class="p">,</span> <span class="n">password</span><span class="p">):</span>
         <span class="c1"># create credential and store it</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">conn</span> <span class="o">=</span> <span class="n">PublicCloudConn</span><span class="p">(</span><span class="n">username</span><span class="p">,</span> <span class="n">password</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">record_value</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">log</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
         <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Setting key=</span><span class="si">{key}</span><span class="s1"> value=</span><span class="si">{value}</span><span class="s1"> in cloud&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="n">key</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="n">value</span><span class="p">))</span>
-        <span class="n">set_value_in_cloud_store</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">conn</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
+    <span class="p">)</span>
 
 
 <span class="k">def</span> <span class="nf">define_cloud_store_resource</span><span class="p">():</span>
@@ -27366,7 +27367,6 @@ We are going to record the results of computations in that key value store.</p>
         <span class="n">config_field</span><span class="o">=</span><span class="n">Field</span><span class="p">(</span><span class="n">Dict</span><span class="p">({</span><span class="s1">&#39;username&#39;</span><span class="p">:</span> <span class="n">Field</span><span class="p">(</span><span class="n">String</span><span class="p">),</span> <span class="s1">&#39;password&#39;</span><span class="p">:</span> <span class="n">Field</span><span class="p">(</span><span class="n">String</span><span class="p">)})),</span>
         <span class="n">description</span><span class="o">=</span><span class="s1">&#39;&#39;&#39;This represents some cloud-hosted key value store.</span>
 <span class="s1">        Username and password must be provided via configuration for this to</span>
-<span class="s1">        work&#39;&#39;&#39;</span><span class="p">,</span>
 </pre></div>
 </div>
 <p>The core of a resource are the definition of its configuration (the <code class="docutils literal notranslate"><span class="pre">config_field</span></code>)
@@ -27374,7 +27374,8 @@ and then the function that can actually construct the resource. Notice that all 
 configuration specified for a given resource is passed to its constructor under the
 <code class="docutils literal notranslate"><span class="pre">resource_config</span></code> key of the <code class="docutils literal notranslate"><span class="pre">init_context</span></code> parameter.</p>
 <p>Let’s now attach this resource to a pipeline and use it in a solid.</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="nd">@solid</span><span class="p">(</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>
+<span class="nd">@solid</span><span class="p">(</span>
     <span class="n">inputs</span><span class="o">=</span><span class="p">[</span><span class="n">InputDefinition</span><span class="p">(</span><span class="s1">&#39;num_one&#39;</span><span class="p">,</span> <span class="n">Int</span><span class="p">),</span> <span class="n">InputDefinition</span><span class="p">(</span><span class="s1">&#39;num_two&#39;</span><span class="p">,</span> <span class="n">Int</span><span class="p">)],</span>
     <span class="n">outputs</span><span class="o">=</span><span class="p">[</span><span class="n">OutputDefinition</span><span class="p">(</span><span class="n">Int</span><span class="p">)],</span>
 <span class="p">)</span>
@@ -27388,13 +27389,12 @@ configuration specified for a given resource is passed to its constructor under 
     <span class="k">return</span> <span class="n">PipelineDefinition</span><span class="p">(</span>
         <span class="n">name</span><span class="o">=</span><span class="s1">&#39;resource_test_pipeline&#39;</span><span class="p">,</span>
         <span class="n">solids</span><span class="o">=</span><span class="p">[</span><span class="n">add_ints</span><span class="p">],</span>
-        <span class="n">context_definitions</span><span class="o">=</span><span class="p">{</span>
-            <span class="s1">&#39;local&#39;</span><span class="p">:</span> <span class="n">PipelineContextDefinition</span><span class="p">(</span>
-                <span class="n">resources</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;store&#39;</span><span class="p">:</span> <span class="n">define_in_memory_store_resource</span><span class="p">()}</span>
-            <span class="p">),</span>
-            <span class="s1">&#39;cloud&#39;</span><span class="p">:</span> <span class="n">PipelineContextDefinition</span><span class="p">(</span><span class="n">resources</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;store&#39;</span><span class="p">:</span> <span class="n">define_cloud_store_resource</span><span class="p">()}),</span>
-        <span class="p">},</span>
+        <span class="n">mode_definitions</span><span class="o">=</span><span class="p">[</span>
+            <span class="n">ModeDefinition</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;local&#39;</span><span class="p">,</span> <span class="n">resources</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;store&#39;</span><span class="p">:</span> <span class="n">define_in_memory_store_resource</span><span class="p">()}),</span>
+            <span class="n">ModeDefinition</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;cloud&#39;</span><span class="p">,</span> <span class="n">resources</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;store&#39;</span><span class="p">:</span> <span class="n">define_cloud_store_resource</span><span class="p">()}),</span>
+        <span class="p">],</span>
     <span class="p">)</span>
+
 </pre></div>
 </div>
 <p>Resources are attached to pipeline context definitions. A pipeline context
@@ -27406,15 +27406,15 @@ by altering configuration, while not changing your code.</p>
 single resource, the cloud store resource.</p>
 <p>In order to invoke this pipeline, we pass it the following configuration:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">environment_dict</span><span class="o">=</span><span class="p">{</span>
-    <span class="s1">&#39;context&#39;</span><span class="p">:</span> <span class="p">{</span>
-        <span class="s1">&#39;cloud&#39;</span><span class="p">:</span> <span class="p">{</span>
-            <span class="s1">&#39;resources&#39;</span><span class="p">:</span> <span class="p">{</span>
-                <span class="s1">&#39;store&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;config&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;username&#39;</span><span class="p">:</span> <span class="s1">&#39;some_user&#39;</span><span class="p">,</span> <span class="s1">&#39;password&#39;</span><span class="p">:</span> <span class="s1">&#39;some_password&#39;</span><span class="p">}}</span>
-            <span class="p">}</span>
-        <span class="p">}</span>
+    <span class="s1">&#39;resources&#39;</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s1">&#39;store&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;config&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;username&#39;</span><span class="p">:</span> <span class="s1">&#39;some_user&#39;</span><span class="p">,</span> <span class="s1">&#39;password&#39;</span><span class="p">:</span> <span class="s1">&#39;some_password&#39;</span><span class="p">}}</span>
     <span class="p">},</span>
     <span class="s1">&#39;solids&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;add_ints&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;inputs&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;num_one&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;value&#39;</span><span class="p">:</span> <span class="mi">2</span><span class="p">},</span> <span class="s1">&#39;num_two&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;value&#39;</span><span class="p">:</span> <span class="mi">6</span><span class="p">}}}},</span>
 <span class="p">},</span>
+
+
+<span class="n">lt</span> <span class="o">=</span> <span class="n">execute_pipeline</span><span class="p">(</span>
+<span class="n">define_resource_test_pipeline</span><span class="p">(),</span>
 </pre></div>
 </div>
 <p>Note how we are telling the configuration to create a cloud context by
@@ -27426,45 +27426,41 @@ with an in memory version of that key value store and not develop against the li
 public cloud version.</p>
 <p>First, we need a version of the store that implements the same interface as the production key-value
 store; this version can be used in testing contexts without touching the public cloud:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">InMemoryStore</span><span class="p">:</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>
+<span class="k">class</span> <span class="nc">InMemoryStore</span><span class="p">:</span>
     <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">values</span> <span class="o">=</span> <span class="p">{}</span>
 
     <span class="k">def</span> <span class="nf">record_value</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">log</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
         <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Setting key=</span><span class="si">{key}</span><span class="s1"> value=</span><span class="si">{value}</span><span class="s1"> in memory&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="n">key</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="n">value</span><span class="p">))</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">values</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span>
 </pre></div>
 </div>
 <p>Next we package this up as a resource.</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">define_in_memory_store_resource</span><span class="p">():</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>
+<span class="k">def</span> <span class="nf">define_in_memory_store_resource</span><span class="p">():</span>
     <span class="k">return</span> <span class="n">ResourceDefinition</span><span class="p">(</span>
         <span class="n">resource_fn</span><span class="o">=</span><span class="k">lambda</span> <span class="n">_</span><span class="p">:</span> <span class="n">InMemoryStore</span><span class="p">(),</span>
         <span class="n">description</span><span class="o">=</span><span class="s1">&#39;&#39;&#39;An in-memory key value store that requires </span>
 <span class="s1">        no configuration. Useful for unit testing.&#39;&#39;&#39;</span><span class="p">,</span>
-    <span class="p">)</span>
 </pre></div>
 </div>
 <p>And lastly add a new context definition to represent this new operating “mode”:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">define_resource_test_pipeline</span><span class="p">():</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>
+<span class="k">def</span> <span class="nf">define_resource_test_pipeline</span><span class="p">():</span>
     <span class="k">return</span> <span class="n">PipelineDefinition</span><span class="p">(</span>
         <span class="n">name</span><span class="o">=</span><span class="s1">&#39;resource_test_pipeline&#39;</span><span class="p">,</span>
         <span class="n">solids</span><span class="o">=</span><span class="p">[</span><span class="n">add_ints</span><span class="p">],</span>
-        <span class="n">context_definitions</span><span class="o">=</span><span class="p">{</span>
-<span class="hll">            <span class="s1">&#39;local&#39;</span><span class="p">:</span> <span class="n">PipelineContextDefinition</span><span class="p">(</span>
-</span><span class="hll">                <span class="n">resources</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;store&#39;</span><span class="p">:</span> <span class="n">define_in_memory_store_resource</span><span class="p">()}</span>
-</span><span class="hll">            <span class="p">),</span>
-</span>            <span class="s1">&#39;cloud&#39;</span><span class="p">:</span> <span class="n">PipelineContextDefinition</span><span class="p">(</span><span class="n">resources</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;store&#39;</span><span class="p">:</span> <span class="n">define_cloud_store_resource</span><span class="p">()}),</span>
-        <span class="p">},</span>
+<span class="hll">        <span class="n">mode_definitions</span><span class="o">=</span><span class="p">[</span>
+</span><span class="hll">            <span class="n">ModeDefinition</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;local&#39;</span><span class="p">,</span> <span class="n">resources</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;store&#39;</span><span class="p">:</span> <span class="n">define_in_memory_store_resource</span><span class="p">()}),</span>
+</span><span class="hll">            <span class="n">ModeDefinition</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;cloud&#39;</span><span class="p">,</span> <span class="n">resources</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;store&#39;</span><span class="p">:</span> <span class="n">define_cloud_store_resource</span><span class="p">()}),</span>
+</span>        <span class="p">],</span>
     <span class="p">)</span>
+
 </pre></div>
 </div>
 <p>Now we can simply change configuration and the “in-memory” version of the
 resource will be used instead of the cloud version:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">result</span> <span class="o">=</span> <span class="n">execute_pipeline</span><span class="p">(</span>
-    <span class="n">define_resource_test_pipeline</span><span class="p">(),</span>
-    <span class="n">environment_dict</span><span class="o">=</span><span class="p">{</span>
-<span class="hll">        <span class="s1">&#39;context&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;local&#39;</span><span class="p">:</span> <span class="p">{}},</span>
-</span>        <span class="s1">&#39;solids&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;add_ints&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;inputs&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;num_one&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;value&#39;</span><span class="p">:</span> <span class="mi">2</span><span class="p">},</span> <span class="s1">&#39;num_two&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;value&#39;</span><span class="p">:</span> <span class="mi">6</span><span class="p">}}}},</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>        <span class="s1">&#39;solids&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;add_ints&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;inputs&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;num_one&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;value&#39;</span><span class="p">:</span> <span class="mi">2</span><span class="p">},</span> <span class="s1">&#39;num_two&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;value&#39;</span><span class="p">:</span> <span class="mi">6</span><span class="p">}}}}</span>
     <span class="p">},</span>
 <span class="p">)</span>
 </pre></div>
