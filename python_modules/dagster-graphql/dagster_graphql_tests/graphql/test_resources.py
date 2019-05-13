@@ -2,8 +2,8 @@ from .setup import define_context, execute_dagster_graphql
 
 RESOURCE_QUERY = '''
 {
-  pipeline(params: { name: "context_config_pipeline" }) {
-    contexts {
+  pipeline(params: { name: "multi_mode_with_resources" }) {
+    modes {
       name
       resources {
         name
@@ -28,10 +28,14 @@ RESOURCE_QUERY = '''
 '''
 
 
-def test_context_fetch_resources():
+def test_mode_fetch_resources(snapshot):
     result = execute_dagster_graphql(define_context(), RESOURCE_QUERY)
 
     assert not result.errors
     assert result.data
     assert result.data['pipeline']
-    assert result.data['pipeline']['contexts']
+    assert result.data['pipeline']['modes']
+    for mode_data in result.data['pipeline']['modes']:
+        assert mode_data['resources']
+
+    snapshot.assert_match(result.data)

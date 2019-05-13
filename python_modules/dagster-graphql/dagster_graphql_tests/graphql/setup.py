@@ -5,7 +5,6 @@ from dagster_graphql.implementation.pipeline_run_storage import PipelineRunStora
 from dagster_graphql.implementation.pipeline_execution_manager import SynchronousExecutionManager
 from dagster_graphql.schema import create_schema
 
-from dagster.utils import script_relative_path
 from dagster import (
     Any,
     Bool,
@@ -22,17 +21,16 @@ from dagster import (
     ModeDefinition,
     Nullable,
     OutputDefinition,
-    PipelineContextDefinition,
     PipelineDefinition,
     RepositoryDefinition,
     RepositoryTargetInfo,
-    ResourceDefinition,
     SolidDefinition,
     String,
     lambda_solid,
     resource,
     solid,
 )
+from dagster.utils import script_relative_path
 from dagster_pandas import DataFrame
 
 
@@ -133,7 +131,6 @@ def define_repository(repo_config=None):
     return RepositoryDefinition(
         name='test',
         pipeline_dict={
-            'context_config_pipeline': define_context_config_pipeline,
             'more_complicated_config': define_more_complicated_config,
             'more_complicated_nested_config': define_more_complicated_nested_config,
             'pandas_hello_world': get_define_pandas_hello_world('pandas_hello_world'),
@@ -200,29 +197,6 @@ def define_pipeline_with_secret():
         pass
 
     return PipelineDefinition(name='secret_pipeline', solids=[solid_with_secret])
-
-
-def define_context_config_pipeline():
-    return PipelineDefinition(
-        name='context_config_pipeline',
-        solids=[],
-        context_definitions={
-            'context_one': PipelineContextDefinition(
-                context_fn=lambda *args, **kwargs: None, config_field=Field(String)
-            ),
-            'context_two': PipelineContextDefinition(
-                context_fn=lambda *args, **kwargs: None, config_field=Field(Int)
-            ),
-            'context_with_resources': PipelineContextDefinition(
-                resources={
-                    'resource_one': ResourceDefinition(
-                        resource_fn=lambda *args, **kwargs: None, config_field=Field(Int)
-                    ),
-                    'resource_two': ResourceDefinition(resource_fn=lambda *args, **kwargs: None),
-                }
-            ),
-        },
-    )
 
 
 def define_more_complicated_config():

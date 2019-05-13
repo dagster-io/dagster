@@ -5,9 +5,9 @@ from dagster.core.types.config import ALL_CONFIG_BUILTINS
 from .setup import execute_dagster_graphql, define_context, pandas_hello_world_solids_config
 
 CONFIG_VALIDATION_QUERY = '''
-query PipelineQuery($config: PipelineConfig, $pipeline: ExecutionSelector!)
+query PipelineQuery($config: PipelineConfig, $pipeline: ExecutionSelector!, $mode: String)
 {
-    isPipelineConfigValid(config: $config, pipeline: $pipeline) {
+    isPipelineConfigValid(config: $config, pipeline: $pipeline, mode: $mode) {
         __typename
         ... on PipelineConfigValidationValid {
             pipeline { name }
@@ -89,11 +89,11 @@ def find_errors(result, field_stack_to_find, reason):
             yield error_data
 
 
-def execute_config_graphql(pipeline_name, env_config):
+def execute_config_graphql(pipeline_name, env_config, mode=None):
     return execute_dagster_graphql(
         define_context(),
         CONFIG_VALIDATION_QUERY,
-        {'config': env_config, 'pipeline': {'name': pipeline_name}},
+        {'config': env_config, 'pipeline': {'name': pipeline_name}, 'mode': mode},
     )
 
 
@@ -241,68 +241,67 @@ def test_basic_invalid_config_missing_field():
     assert error_data['field']['name'] == 'path'
 
 
-def test_context_config_works():
+def test_mode_resource_config_works():
     result = execute_config_graphql(
-        pipeline_name='context_config_pipeline',
-        env_config={'context': {'context_one': {'config': 'kj23k4j3'}}},
+        pipeline_name='multi_mode_with_resources',
+        env_config={'resources': {'op': {'config': 2}}},
+        mode='add_mode',
     )
 
     assert not result.errors
     assert result.data
     assert result.data['isPipelineConfigValid']['__typename'] == 'PipelineConfigValidationValid'
-    assert result.data['isPipelineConfigValid']['pipeline']['name'] == 'context_config_pipeline'
+    assert result.data['isPipelineConfigValid']['pipeline']['name'] == 'multi_mode_with_resources'
 
     result = execute_config_graphql(
-        pipeline_name='context_config_pipeline',
-        env_config={'context': {'context_two': {'config': 38934}}},
+        pipeline_name='multi_mode_with_resources',
+        env_config={'resources': {'op': {'config': 2}}},
+        mode='mult_mode',
     )
 
     assert not result.errors
     assert result.data
     assert result.data['isPipelineConfigValid']['__typename'] == 'PipelineConfigValidationValid'
-    assert result.data['isPipelineConfigValid']['pipeline']['name'] == 'context_config_pipeline'
+    assert result.data['isPipelineConfigValid']['pipeline']['name'] == 'multi_mode_with_resources'
 
-
-def test_context_config_selector_error():
     result = execute_config_graphql(
-        pipeline_name='context_config_pipeline', env_config={'context': {}}
+        pipeline_name='multi_mode_with_resources',
+        env_config={'resources': {'op': {'config': {'num_one': 2, 'num_two': 3}}}},
+        mode='double_adder',
+    )
+
+    assert not result.errors
+    assert result.data
+    assert result.data['isPipelineConfigValid']['__typename'] == 'PipelineConfigValidationValid'
+    assert result.data['isPipelineConfigValid']['pipeline']['name'] == 'multi_mode_with_resources'
+
+
+def test_missing_resource():
+    result = execute_config_graphql(
+        pipeline_name='multi_mode_with_resources', env_config={'resources': {}}, mode='add_mode'
     )
 
     assert not result.errors
     assert result.data
     assert result.data['isPipelineConfigValid']['__typename'] == 'PipelineConfigValidationInvalid'
     error_data = single_error_data(result)
-    assert error_data['reason'] == 'SELECTOR_FIELD_ERROR'
-    assert error_data['incomingFields'] == []
+    assert error_data['reason'] == 'MISSING_REQUIRED_FIELD'
+    assert error_data['field']['name'] == 'op'
 
 
-def test_context_config_wrong_selector():
+def test_undefined_resource():
     result = execute_config_graphql(
-        pipeline_name='context_config_pipeline', env_config={'context': {'not_defined': {}}}
+        pipeline_name='multi_mode_with_resources',
+        env_config={'resources': {'nope': {}}},
+        mode='add_mode',
     )
 
     assert not result.errors
     assert result.data
     assert result.data['isPipelineConfigValid']['__typename'] == 'PipelineConfigValidationInvalid'
-    error_data = single_error_data(result)
-    assert error_data['reason'] == 'FIELD_NOT_DEFINED'
-    assert error_data['fieldName'] == 'not_defined'
-
-
-def test_context_config_multiple_selectors():
-    result = execute_config_graphql(
-        pipeline_name='context_config_pipeline',
-        env_config={
-            'context': {'context_one': {'config': 'kdjfd'}, 'context_two': {'config': 123}}
-        },
-    )
-
-    assert not result.errors
-    assert result.data
-    assert result.data['isPipelineConfigValid']['__typename'] == 'PipelineConfigValidationInvalid'
-    error_data = single_error_data(result)
-    assert error_data['reason'] == 'SELECTOR_FIELD_ERROR'
-    assert error_data['incomingFields'] == ['context_one', 'context_two']
+    assert {'FieldNotDefinedConfigError', 'MissingFieldConfigError'} == {
+        error_data['__typename'] for error_data in result.data['isPipelineConfigValid']['errors']
+    }
 
 
 def test_more_complicated_works():
