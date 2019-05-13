@@ -2,8 +2,9 @@ from dagster import (
     Dict,
     Field,
     Int,
-    PipelineContextDefinition,
+    ModeDefinition,
     PipelineDefinition,
+    ResourceDefinition,
     SolidDefinition,
     String,
     check,
@@ -78,39 +79,46 @@ def test_basic_solids_config():
     }
 
 
+def dummy_resource(config_field):
+    return ResourceDefinition(lambda: None, config_field)
+
+
 def test_two_modes():
     pipeline_def = PipelineDefinition(
         name='TwoModePipelines',
         solids=[],
-        context_definitions={
-            'context_one': PipelineContextDefinition(
-                context_fn=lambda *args: fail_me(),
-                config_field=Field(Dict({'context_one_field': Field(String)})),
+        mode_definitions=[
+            ModeDefinition(
+                'mode_one',
+                resources={'value': dummy_resource(Field(Dict({'mode_one_field': Field(String)})))},
             ),
-            'context_two': PipelineContextDefinition(
-                context_fn=lambda *args: fail_me(),
-                config_field=Field(Dict({'context_two_field': Field(Int)})),
+            ModeDefinition(
+                'mode_two',
+                resources={'value': dummy_resource(Field(Dict({'mode_two_field': Field(Int)})))},
             ),
-        },
+        ],
     )
 
-    assert scaffold_pipeline_config(pipeline_def) == {'context': {}}
+    assert scaffold_pipeline_config(pipeline_def, mode='mode_one') == {
+        'resources': {'value': {'config': {'mode_one_field': ''}}}
+    }
 
-    assert scaffold_pipeline_config(pipeline_def, skip_optional=False) == {
-        'context': {
-            'context_one': {
-                'config': {'context_one_field': ''},
-                'persistence': {'file': {}},
-                'resources': {},
-            },
-            'context_two': {
-                'config': {'context_two_field': 0},
-                'persistence': {'file': {}},
-                'resources': {},
-            },
-        },
+    assert scaffold_pipeline_config(pipeline_def, mode='mode_one', skip_optional=False) == {
         'solids': {},
         'expectations': {'evaluate': True},
+        'storage': {'in_memory': {}, 'filesystem': {'base_dir': ''}, 's3': {'s3_bucket': ''}},
         'execution': {},
-        'storage': {'filesystem': {'base_dir': ''}, 'in_memory': {}, 's3': {'s3_bucket': ''}},
+        'resources': {'value': {'config': {'mode_one_field': ''}}},
+    }
+
+    assert scaffold_pipeline_config(pipeline_def, mode='mode_two') == {
+        'resources': {'value': {'config': {'mode_two_field': 0}}}
+    }
+
+    assert scaffold_pipeline_config(pipeline_def, mode='mode_two', skip_optional=False) == {
+        'solids': {},
+        'expectations': {'evaluate': True},
+        'storage': {'in_memory': {}, 'filesystem': {'base_dir': ''}, 's3': {'s3_bucket': ''}},
+        'execution': {},
+        'resources': {'value': {'config': {'mode_two_field': 0}}},
     }

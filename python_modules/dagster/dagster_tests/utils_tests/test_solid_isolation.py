@@ -3,14 +3,14 @@ import pytest
 from dagster import (
     DagsterInvariantViolationError,
     DependencyDefinition,
-    ExecutionContext,
     Field,
     InputDefinition,
     Int,
     OutputDefinition,
-    PipelineContextDefinition,
+    ModeDefinition,
     PipelineDefinition,
     lambda_solid,
+    resource,
     solid,
     types,
 )
@@ -100,38 +100,35 @@ def test_single_solid_with_config():
 
 
 def test_single_solid_with_context_config():
-    ran = {'check_context_config_for_two': 0}
+    @resource(config_field=Field(Int, is_optional=True, default_value=2))
+    def num_resource(init_context):
+        return init_context.resource_config
+
+    ran = {'count': 0}
 
     @solid
     def check_context_config_for_two(context):
-        assert context.resources == 2
-        ran['check_context_config_for_two'] += 1
+        assert context.resources.num == 2
+        ran['count'] += 1
 
     pipeline_def = PipelineDefinition(
         solids=[check_context_config_for_two],
-        context_definitions={
-            'test_context': PipelineContextDefinition(
-                config_field=Field(Int, is_optional=True, default_value=2),
-                context_fn=lambda init_context: ExecutionContext(
-                    resources=init_context.context_config
-                ),
-            )
-        },
+        mode_definitions=[ModeDefinition(resources={'num': num_resource})],
     )
 
     result = execute_solid(
         pipeline_def,
         'check_context_config_for_two',
-        environment_dict={'context': {'test_context': {'config': 2}}},
+        environment_dict={'resources': {'num': {'config': 2}}},
     )
 
     assert result.success
-    assert ran['check_context_config_for_two'] == 1
+    assert ran['count'] == 1
 
     result = execute_solid(pipeline_def, 'check_context_config_for_two')
 
     assert result.success
-    assert ran['check_context_config_for_two'] == 2
+    assert ran['count'] == 2
 
 
 def test_single_solid_error():

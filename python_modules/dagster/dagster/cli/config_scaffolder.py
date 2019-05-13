@@ -4,11 +4,11 @@ from dagster.core.definitions import create_environment_type
 from dagster.core.types.config import ConfigType
 
 
-def scaffold_pipeline_config(pipeline_def, skip_optional=True):
+def scaffold_pipeline_config(pipeline_def, skip_optional=True, mode=None):
     check.inst_param(pipeline_def, 'pipeline_def', PipelineDefinition)
     check.bool_param(skip_optional, 'skip_optional')
 
-    env_config_type = create_environment_type(pipeline_def)
+    env_config_type = create_environment_type(pipeline_def, mode=mode)
 
     env_dict = {}
 

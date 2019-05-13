@@ -5,10 +5,8 @@ import pytest
 from dagster import (
     DagsterInvariantViolationError,
     DependencyDefinition,
-    ExecutionContext,
     InputDefinition,
     OutputDefinition,
-    PipelineContextDefinition,
     PipelineDefinition,
     Result,
     RunConfig,
@@ -20,16 +18,6 @@ from dagster import (
 
 from dagster.core.test_utils import single_output_transform
 from dagster.core.errors import DagsterExecutionStepExecutionError
-
-
-def silencing_default_context():
-    return {'default': PipelineContextDefinition(context_fn=lambda *_args: ExecutionContext())}
-
-
-def silencing_pipeline(solids, dependencies=None):
-    return PipelineDefinition(
-        solids=solids, dependencies=dependencies, context_definitions=silencing_default_context()
-    )
 
 
 def create_root_success_solid(name):
@@ -53,7 +41,7 @@ def create_root_transform_failure_solid(name):
 
 
 def test_transform_failure_pipeline():
-    pipeline = silencing_pipeline(solids=[create_root_transform_failure_solid('failing')])
+    pipeline = PipelineDefinition(solids=[create_root_transform_failure_solid('failing')])
     pipeline_result = execute_pipeline(pipeline, run_config=RunConfig.nonthrowing_in_process())
 
     assert not pipeline_result.success
@@ -98,7 +86,7 @@ def test_failure_midstream():
         output=OutputDefinition(),
     )
 
-    pipeline = silencing_pipeline(
+    pipeline = PipelineDefinition(
         solids=[solid_a, solid_b, solid_c, solid_d],
         dependencies={
             'C': {'A': DependencyDefinition(solid_a.name), 'B': DependencyDefinition(solid_b.name)},
@@ -168,7 +156,7 @@ def test_failure_propagation():
         output=OutputDefinition(),
     )
 
-    pipeline = silencing_pipeline(
+    pipeline = PipelineDefinition(
         solids=[solid_a, solid_b, solid_c, solid_d, solid_e, solid_f],
         dependencies={
             'B': {'A': DependencyDefinition(solid_a.name)},
