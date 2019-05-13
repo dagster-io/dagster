@@ -20,6 +20,22 @@ from dagster.utils.test import get_temp_file_name
 from dagster_pandas import DataFrame
 
 
+def check_parquet_support():
+    try:
+        import pyarrow  # pylint: disable=unused-import
+
+        return
+    except ImportError:
+        pass
+
+    try:
+        import fastparquet  # pylint: disable=unused-import
+
+        return
+    except ImportError:
+        pytest.skip('Skipping parquet test as neither pyarrow nor fastparquet is present.')
+
+
 def test_dataframe_csv_from_inputs():
     called = {}
 
@@ -156,6 +172,8 @@ def test_dataframe_csv_missing_input_collision():
 
 
 def test_dataframe_parquet_from_inputs():
+    check_parquet_support()
+
     called = {}
 
     @solid(inputs=[InputDefinition('df', DataFrame)])
@@ -225,6 +243,8 @@ def test_dataframe_csv_materialization():
 
 
 def test_dataframe_parquet_materialization():
+    check_parquet_support()
+
     @solid(outputs=[OutputDefinition(DataFrame)])
     def return_df(_context):
         return pd.DataFrame({'num1': [1, 3], 'num2': [2, 4]})
