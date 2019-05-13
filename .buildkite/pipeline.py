@@ -235,6 +235,9 @@ if __name__ == "__main__":
     steps += python_modules_tox_tests("libraries/dagster-snowflake")
     steps += python_modules_tox_tests("libraries/dagster-spark")
     steps += python_modules_tox_tests("../examples/toys", label='examples-toys')
+    steps += python_modules_tox_tests(
+        "../examples/pyspark-pagerank", label='examples-pyspark-pagerank'
+    )
     steps += airline_demo_tests()
     steps += events_demo_tests()
     steps += airflow_tests()

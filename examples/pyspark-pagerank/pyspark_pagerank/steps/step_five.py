@@ -2,10 +2,7 @@ import re
 from operator import add
 
 from dagster import (
-    Dict,
     DependencyDefinition,
-    Field,
-    Int,
     InputDefinition,
     OutputDefinition,
     Path,
@@ -14,7 +11,7 @@ from dagster import (
     solid,
 )
 
-from dagster_framework.pyspark import spark_session_resource, SparkRDD
+from dagster_pyspark import spark_session_resource, SparkRDD
 
 
 def parseNeighbors(urls):

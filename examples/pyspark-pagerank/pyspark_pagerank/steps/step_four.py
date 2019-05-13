@@ -10,7 +10,7 @@ from dagster import (
     PipelineDefinition,
     solid,
 )
-from dagster_framework.pyspark import spark_session_resource, SparkRDD
+from dagster_pyspark import spark_session_resource, SparkRDD
 
 
 def computeContribs(urls, rank):
@@ -42,7 +42,7 @@ def rest_of_pipeline(context, urls):
     iterations = 2
 
     # Calculates and updates URL ranks continuously using PageRank algorithm.
-    for iteration in range(iterations):
+    for _iteration in range(iterations):
         # Calculates URL contributions to the rank of other URLs.
         contribs = links.join(ranks).flatMap(
             lambda url_urls_rank: computeContribs(url_urls_rank[1][0], url_urls_rank[1][1])

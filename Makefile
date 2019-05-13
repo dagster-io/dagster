@@ -41,6 +41,7 @@ install_dev_python_modules:
 	pip install -e examples/event-pipeline-demo
 	pip install -e examples/airline-demo
 	pip install -e examples/toys
+	pip install -e examples/pyspark-pagerank
 
 rebuild_dagit:
 	cd js_modules/dagit/; yarn install && yarn build-for-python
