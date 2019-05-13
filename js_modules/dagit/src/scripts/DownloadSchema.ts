@@ -19,15 +19,15 @@ const types = schemaJson.__schema.types.map(
     const { name, kind } = type;
     const possibleTypes = type.possibleTypes
       ? type.possibleTypes.map(t => ({
-        name: t.name
-      }))
+          name: t.name
+        }))
       : null;
     return { name, kind, possibleTypes };
   }
 );
 
 writeFileSync(
-  "./src/filteredSchema.json",
+  "./src/filteredSchema.generated.json",
   JSON.stringify({
     __schema: {
       types
