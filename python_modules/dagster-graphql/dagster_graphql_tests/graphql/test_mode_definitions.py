@@ -73,6 +73,22 @@ query ModesQuery($pipelineName: String!, $mode: String)
           }
         }
       }
+      loggers {
+        name
+        configField {
+          configType {
+            name
+            ... on CompositeConfigType {
+              fields {
+                name
+                configType {
+                  name
+                }
+              }
+            }
+          }
+        }
+      }
     }
   }
 }

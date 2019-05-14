@@ -269,6 +269,12 @@ type ListRuntimeType implements RuntimeType & WrappingRuntimeType {
   ofType: RuntimeType!
 }
 
+type Logger {
+  name: String!
+  description: String
+  configField: ConfigTypeField
+}
+
 enum LogLevel {
   CRITICAL
   ERROR
@@ -332,6 +338,7 @@ type Mode {
   name: String!
   description: String
   resources: [Resource!]!
+  loggers: [Logger!]!
 }
 
 type Mutation {

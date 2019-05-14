@@ -3,6 +3,7 @@ from __future__ import absolute_import
 from dagster import (
     ExpectationDefinition,
     InputDefinition,
+    LoggerDefinition,
     ModeDefinition,
     OutputDefinition,
     PipelineDefinition,
@@ -148,6 +149,29 @@ class DauphinResource(dauphin.ObjectType):
         )
 
 
+class DauphinLogger(dauphin.ObjectType):
+    class Meta:
+        name = 'Logger'
+
+    def __init__(self, logger_name, logger):
+        self.name = check.str_param(logger_name, 'logger_name')
+        self._logger = check.inst_param(logger, 'logger', LoggerDefinition)
+        self.description = logger.description
+
+    name = dauphin.NonNull(dauphin.String)
+    description = dauphin.String()
+    configField = dauphin.Field('ConfigTypeField')
+
+    def resolve_configField(self, graphene_info):
+        return (
+            graphene_info.schema.type_named('ConfigTypeField')(
+                name="config", field=self._logger.config_field
+            )
+            if self._logger.config_field
+            else None
+        )
+
+
 class DauphinMode(dauphin.ObjectType):
     def __init__(self, mode_definition):
         self._mode_definition = check.inst_param(mode_definition, 'mode_definition', ModeDefinition)
@@ -158,6 +182,7 @@ class DauphinMode(dauphin.ObjectType):
     name = dauphin.NonNull(dauphin.String)
     description = dauphin.String()
     resources = dauphin.non_null_list('Resource')
+    loggers = dauphin.non_null_list('Logger')
 
     def resolve_name(self, _graphene_info):
         return self._mode_definition.name
@@ -166,7 +191,12 @@ class DauphinMode(dauphin.ObjectType):
         return self._mode_definition.description
 
     def resolve_resources(self, _graphene_info):
-        return [DauphinResource(*item) for item in self._mode_definition.resource_defs.items()]
+        return [
+            DauphinResource(*item) for item in sorted(self._mode_definition.resource_defs.items())
+        ]
+
+    def resolve_loggers(self, _graphene_info):
+        return [DauphinLogger(*item) for item in sorted(self._mode_definition.loggers.items())]
 
 
 class DauphinSolid(dauphin.ObjectType):

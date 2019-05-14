@@ -211,6 +211,30 @@ snapshots['test_query_multi_mode 1'] = {
         'modes': [
             {
                 'description': 'Mode that adds things',
+                'loggers': [
+                    {
+                        'configField': {
+                            'configType': {
+                                'fields': [
+                                    {
+                                        'configType': {
+                                            'name': 'String'
+                                        },
+                                        'name': 'log_level'
+                                    },
+                                    {
+                                        'configType': {
+                                            'name': 'String'
+                                        },
+                                        'name': 'name'
+                                    }
+                                ],
+                                'name': None
+                            }
+                        },
+                        'name': 'console'
+                    }
+                ],
                 'name': 'add_mode',
                 'resources': [
                     {
@@ -225,6 +249,30 @@ snapshots['test_query_multi_mode 1'] = {
             },
             {
                 'description': 'Mode that multiplies things',
+                'loggers': [
+                    {
+                        'configField': {
+                            'configType': {
+                                'fields': [
+                                    {
+                                        'configType': {
+                                            'name': 'String'
+                                        },
+                                        'name': 'log_level'
+                                    },
+                                    {
+                                        'configType': {
+                                            'name': 'String'
+                                        },
+                                        'name': 'name'
+                                    }
+                                ],
+                                'name': None
+                            }
+                        },
+                        'name': 'console'
+                    }
+                ],
                 'name': 'mult_mode',
                 'resources': [
                     {
@@ -239,6 +287,30 @@ snapshots['test_query_multi_mode 1'] = {
             },
             {
                 'description': 'Mode that adds two numbers to thing',
+                'loggers': [
+                    {
+                        'configField': {
+                            'configType': {
+                                'fields': [
+                                    {
+                                        'configType': {
+                                            'name': 'String'
+                                        },
+                                        'name': 'log_level'
+                                    },
+                                    {
+                                        'configType': {
+                                            'name': 'String'
+                                        },
+                                        'name': 'name'
+                                    }
+                                ],
+                                'name': None
+                            }
+                        },
+                        'name': 'console'
+                    }
+                ],
                 'name': 'double_adder',
                 'resources': [
                     {
@@ -473,6 +545,30 @@ snapshots['test_query_multi_mode 2'] = {
         'modes': [
             {
                 'description': 'Mode that adds things',
+                'loggers': [
+                    {
+                        'configField': {
+                            'configType': {
+                                'fields': [
+                                    {
+                                        'configType': {
+                                            'name': 'String'
+                                        },
+                                        'name': 'log_level'
+                                    },
+                                    {
+                                        'configType': {
+                                            'name': 'String'
+                                        },
+                                        'name': 'name'
+                                    }
+                                ],
+                                'name': None
+                            }
+                        },
+                        'name': 'console'
+                    }
+                ],
                 'name': 'add_mode',
                 'resources': [
                     {
@@ -487,6 +583,30 @@ snapshots['test_query_multi_mode 2'] = {
             },
             {
                 'description': 'Mode that multiplies things',
+                'loggers': [
+                    {
+                        'configField': {
+                            'configType': {
+                                'fields': [
+                                    {
+                                        'configType': {
+                                            'name': 'String'
+                                        },
+                                        'name': 'log_level'
+                                    },
+                                    {
+                                        'configType': {
+                                            'name': 'String'
+                                        },
+                                        'name': 'name'
+                                    }
+                                ],
+                                'name': None
+                            }
+                        },
+                        'name': 'console'
+                    }
+                ],
                 'name': 'mult_mode',
                 'resources': [
                     {
@@ -501,6 +621,30 @@ snapshots['test_query_multi_mode 2'] = {
             },
             {
                 'description': 'Mode that adds two numbers to thing',
+                'loggers': [
+                    {
+                        'configField': {
+                            'configType': {
+                                'fields': [
+                                    {
+                                        'configType': {
+                                            'name': 'String'
+                                        },
+                                        'name': 'log_level'
+                                    },
+                                    {
+                                        'configType': {
+                                            'name': 'String'
+                                        },
+                                        'name': 'name'
+                                    }
+                                ],
+                                'name': None
+                            }
+                        },
+                        'name': 'console'
+                    }
+                ],
                 'name': 'double_adder',
                 'resources': [
                     {

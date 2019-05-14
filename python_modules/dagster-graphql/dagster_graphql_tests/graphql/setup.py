@@ -1,14 +1,11 @@
 import csv
+import logging
 
 from collections import OrderedDict
 from copy import deepcopy
 
 from graphql import graphql
 
-from dagster_graphql.implementation.context import DagsterGraphQLContext
-from dagster_graphql.implementation.pipeline_run_storage import PipelineRunStorage
-from dagster_graphql.implementation.pipeline_execution_manager import SynchronousExecutionManager
-from dagster_graphql.schema import create_schema
 from dagster import (
     as_dagster_type,
     Any,
@@ -25,6 +22,7 @@ from dagster import (
     input_schema,
     Int,
     List,
+    logger,
     ModeDefinition,
     Nullable,
     OutputDefinition,
@@ -38,7 +36,13 @@ from dagster import (
     resource,
     solid,
 )
+from dagster.core.log_manager import coerce_valid_log_level
 from dagster.utils import script_relative_path
+
+from dagster_graphql.implementation.context import DagsterGraphQLContext
+from dagster_graphql.implementation.pipeline_run_storage import PipelineRunStorage
+from dagster_graphql.implementation.pipeline_execution_manager import SynchronousExecutionManager
+from dagster_graphql.schema import create_schema
 
 
 class PoorMansDataFrame_(list):
@@ -184,6 +188,7 @@ def define_repository(repo_config=None):
             'pipeline_with_step_metadata': define_pipeline_with_step_metadata,
             'pipeline_with_expectations': define_pipeline_with_expectation,
             'multi_mode_with_resources': define_multi_mode_with_resources_pipeline,
+            'multi_mode_with_loggers': define_multi_mode_with_loggers_pipeline,
         },
         repo_config=repo_config,
     )
@@ -457,6 +462,51 @@ def define_multi_mode_with_resources_pipeline():
                 name='double_adder',
                 resources={'op': double_adder_resource},
                 description='Mode that adds two numbers to thing',
+            ),
+        ],
+    )
+
+
+def define_multi_mode_with_loggers_pipeline():
+    @logger(config_field=Field(String))
+    def foo_logger(init_context):
+        logger_ = logging.Logger('foo')
+        logger_.setLevel(coerce_valid_log_level(init_context.logger_config))
+        return logger_
+
+    @logger(config_field=Field(Dict({'log_level': Field(String), 'prefix': Field(String)})))
+    def bar_logger(init_context):
+        class BarLogger(logging.Logger):
+            def __init__(self, name, prefix, *args, **kwargs):
+                self.prefix = prefix
+                super(BarLogger, self).__init__(name, *args, **kwargs)
+
+            def log(self, lvl, msg, *args, **kwargs):  # pylint: disable=arguments-differ
+                msg = self.prefix + msg
+                super(BarLogger, self).log(lvl, msg, *args, **kwargs)
+
+        logger_ = BarLogger('bar', init_context.logger_config['prefix'])
+        logger_.setLevel(coerce_valid_log_level(init_context.logger_config['log_level']))
+
+    @solid
+    def return_six(context):
+        context.critical('OMG!')
+        return 6
+
+    return PipelineDefinition(
+        name='multi_mode_with_loggers',
+        solids=[return_six],
+        mode_definitions=[
+            ModeDefinition(
+                name='foo_mode', loggers={'foo': foo_logger}, description='Mode with foo logger'
+            ),
+            ModeDefinition(
+                name='bar_mode', loggers={'bar': bar_logger}, description='Mode with bar logger'
+            ),
+            ModeDefinition(
+                name='foobar_mode',
+                loggers={'foo': foo_logger, 'bar': bar_logger},
+                description='Mode with multiple loggers',
             ),
         ],
     )
