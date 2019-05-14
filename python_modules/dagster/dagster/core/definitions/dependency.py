@@ -254,10 +254,6 @@ class DependencyStructure(object):
     def __init__(self, handle_dict):
         self._handle_dict = check.inst_param(handle_dict, 'handle_dict', InputToOutputHandleDict)
 
-    def has_dep(self, solid_input_handle):
-        check.inst_param(solid_input_handle, 'solid_input_handle', SolidInputHandle)
-        return solid_input_handle in self._handle_dict
-
     def deps_of_solid(self, solid_name):
         check.str_param(solid_name, 'solid_name')
 
@@ -286,10 +282,28 @@ class DependencyStructure(object):
 
         return result
 
-    def get_dep(self, solid_input_handle):
+    def has_singular_dep(self, solid_input_handle):
         check.inst_param(solid_input_handle, 'solid_input_handle', SolidInputHandle)
-        check.invariant(len(self._handle_dict[solid_input_handle]) == 1)
-        return self._handle_dict[solid_input_handle][0]
+        return len(self._handle_dict.get(solid_input_handle, [])) == 1
+
+    def get_singular_dep(self, solid_input_handle):
+        check.inst_param(solid_input_handle, 'solid_input_handle', SolidInputHandle)
+        deps = self._handle_dict[solid_input_handle]
+        check.invariant(
+            len(deps) == 1,
+            'Can not call get_singular_dep when number of deps is not 1, got {n}'.format(
+                n=len(deps)
+            ),
+        )
+        return deps[0]
+
+    def has_deps(self, solid_input_handle):
+        check.inst_param(solid_input_handle, 'solid_input_handle', SolidInputHandle)
+        return solid_input_handle in self._handle_dict
+
+    def get_deps(self, solid_input_handle):
+        check.inst_param(solid_input_handle, 'solid_input_handle', SolidInputHandle)
+        return self._handle_dict[solid_input_handle]
 
     def input_handles(self):
         return list(self._handle_dict.keys())

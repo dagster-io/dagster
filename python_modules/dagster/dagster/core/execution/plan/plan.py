@@ -17,11 +17,12 @@ from dagster.core.errors import DagsterInvariantViolationError
 from dagster.core.system_config.objects import EnvironmentConfig
 from dagster.core.utils import toposort
 
+from .compute import create_compute_step
 from .expectations import create_expectations_subplan, decorate_with_expectations
 from .input_thunk import create_input_thunk_execution_step
 from .materialization_thunk import decorate_with_output_materializations
 from .objects import ExecutionStep, ExecutionValueSubplan, StepInput, StepKind, StepOutputHandle
-from .compute import create_compute_step
+from .utility import create_join_outputs_step
 
 
 class _PlanBuilder:
@@ -109,7 +110,7 @@ class _PlanBuilder:
             # Create and add execution plan steps for solid inputs
             step_inputs = []
             for input_name, input_def in solid.definition.input_dict.items():
-                prev_step_output_handle = get_input_source_step_handle(
+                prev_step_output_handle = get_input_source_step_handles(
                     self,
                     solid,
                     input_name,
@@ -224,7 +225,7 @@ def create_subplan_for_output(
     )
 
 
-def get_input_source_step_handle(
+def get_input_source_step_handles(
     plan_builder, solid, input_name, input_def, dependency_structure, handle, parent_step_inputs
 ):
     check.inst_param(plan_builder, 'plan_builder', _PlanBuilder)
@@ -250,13 +251,25 @@ def get_input_source_step_handle(
         plan_builder.add_step(step_creation_data.step)
         return step_creation_data.step_output_handle
 
-    if input_def.runtime_type.is_nothing:
-        return None
-
     input_handle = solid.input_handle(input_name)
-    if dependency_structure.has_dep(input_handle):
-        solid_output_handle = dependency_structure.get_dep(input_handle)
+    if dependency_structure.has_singular_dep(input_handle):
+        solid_output_handle = dependency_structure.get_singular_dep(input_handle)
         return plan_builder.get_output_handle(solid_output_handle)
+
+    if dependency_structure.has_deps(input_handle):
+        solid_output_handles = dependency_structure.get_deps(input_handle)
+        join_data = create_join_outputs_step(
+            plan_builder.pipeline_name,
+            input_handle,
+            solid_output_handles,
+            {
+                solid_output_handle: plan_builder.get_output_handle(solid_output_handle)
+                for solid_output_handle in solid_output_handles
+            },
+            handle,
+        )
+        plan_builder.add_step(join_data.step)
+        return join_data.step_output_handle
 
     if solid.parent_maps_input(input_name):
         parent_name = solid.parent_mapped_input(input_name).definition.name
@@ -264,6 +277,14 @@ def get_input_source_step_handle(
         if parent_name in parent_inputs:
             return parent_inputs[parent_name].prev_output_handle
 
+    # At this point we have an input that is not hooked up to
+    # the output of another solid or provided via environment config.
+
+    # We will allow this for "Nothing" type inputs and continue.
+    if input_def.runtime_type.is_nothing:
+        return None
+
+    # Otherwise we throw an error.
     raise DagsterInvariantViolationError(
         (
             'In pipeline {pipeline_name} solid {solid_name}, input {input_name} '

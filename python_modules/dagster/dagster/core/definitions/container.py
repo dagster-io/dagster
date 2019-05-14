@@ -7,13 +7,7 @@ from dagster import check
 from dagster.core.errors import DagsterInvalidDefinitionError
 from dagster.core.utils import toposort_flatten
 
-from .dependency import (
-    MultiDependencyDefinition,
-    IDependencyDefinition,
-    DependencyStructure,
-    Solid,
-    SolidInstance,
-)
+from .dependency import DependencyStructure, IDependencyDefinition, Solid, SolidInstance
 
 
 class IContainSolids(six.with_metaclass(ABCMeta)):  # pylint: disable=no-init
@@ -282,24 +276,6 @@ def _validate_dependencies(dependencies, solid_dict, alias_to_name):
 
                 _validate_input_output_pair(input_def, output_def, from_solid, dep)
 
-            if isinstance(dep_def, MultiDependencyDefinition):
-                _validate_fanin_dependency(
-                    dep_def,
-                    solid_dict[from_solid].definition.input_def_named(from_input),
-                    from_solid,
-                )
-
-
-def _validate_fanin_dependency(_dependency_definition, input_def, from_solid):
-    if not input_def.runtime_type.is_nothing:
-        raise DagsterInvalidDefinitionError(
-            (
-                'A FanInDependency can not be used to satisfy the input "{input_def.name}" '
-                'to solid "{from_solid}" since it expects a value of type '
-                '"{input_def.runtime_type.name}". FanInDependency only supports type "Nothing".'
-            ).format(input_def=input_def, from_solid=from_solid)
-        )
-
 
 def _validate_input_output_pair(input_def, output_def, from_solid, dep):
     # Currently, we opt to be overly permissive with input/output type mismatches.
@@ -310,8 +286,9 @@ def _validate_input_output_pair(input_def, output_def, from_solid, dep):
             (
                 'Input "{input_def.name}" to solid "{from_solid}" can not depend on the output '
                 '"{output_def.name}" from solid "{dep.solid}". '
-                'Input "{input_def.name}" expects a value of type {input_def.runtime_type.name} '
-                'and output "{output_def.name}" returns type {output_def.runtime_type.name}{extra}.'
+                'Input "{input_def.name}" expects a value of type '
+                '{input_def.runtime_type.display_name} and output "{output_def.name}" returns '
+                'type {output_def.runtime_type.display_name}{extra}.'
             ).format(
                 from_solid=from_solid,
                 dep=dep,

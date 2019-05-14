@@ -199,10 +199,11 @@ def execute_step_in_memory(step_context, inputs, intermediates_manager):
         raise
 
 
-def _error_check_step_outputs(step, step_output_iter):
-    check.inst_param(step, 'step', ExecutionStep)
+def _error_check_step_outputs(step_context, step_output_iter):
+    check.inst_param(step_context, 'step_context', SystemStepExecutionContext)
     check.generator_param(step_output_iter, 'step_output_iter')
 
+    step = step_context.step
     output_names = list([output_def.name for output_def in step.step_outputs])
     seen_outputs = set()
 
@@ -236,19 +237,23 @@ def _error_check_step_outputs(step, step_output_iter):
         seen_outputs.add(step_output_value.output_name)
 
     for step_output_def in step.step_outputs:
-        if (
-            not step_output_def.name in seen_outputs
-            and not step_output_def.optional
-            and not step_output_def.runtime_type.is_nothing
-        ):
-            raise DagsterStepOutputNotFoundError(
-                'Core compute for solid "{handle}" did not return an output '
-                'for non-optional output "{step_output_def.name}"'.format(
-                    handle=str(step.solid_handle), step_output_def=step_output_def
-                ),
-                step_key=step.key,
-                output_name=step_output_def.name,
-            )
+        if not step_output_def.name in seen_outputs and not step_output_def.optional:
+            if step_output_def.runtime_type.is_nothing:
+                step_context.log.info(
+                    'Emitting implicit Nothing for output "{output}" on solid {solid}'.format(
+                        output=step_output_def.name, solid={str(step.solid_handle)}
+                    )
+                )
+                yield StepOutputValue(output_name=step_output_def.name, value=None)
+            else:
+                raise DagsterStepOutputNotFoundError(
+                    'Core compute for solid "{handle}" did not return an output '
+                    'for non-optional output "{step_output_def.name}"'.format(
+                        handle=str(step.solid_handle), step_output_def=step_output_def
+                    ),
+                    step_key=step.key,
+                    output_name=step_output_def.name,
+                )
 
 
 def _execute_steps_core_loop(step_context, inputs, intermediates_manager):
@@ -269,7 +274,7 @@ def _execute_steps_core_loop(step_context, inputs, intermediates_manager):
             _iterate_step_outputs_within_boundary(step_context, evaluated_inputs)
         )
     for step_output in check.generator(
-        _error_check_step_outputs(step_context.step, step_output_iterator)
+        _error_check_step_outputs(step_context, step_output_iterator)
     ):
 
         if isinstance(step_output, StepOutputValue):

@@ -51,7 +51,7 @@ def create_input_thunk_execution_step(
 
     input_handle = solid.input_handle(input_name)
 
-    if dependency_structure.has_dep(input_handle):
+    if dependency_structure.has_deps(input_handle):
         raise DagsterInvariantViolationError(
             (
                 'In pipeline {pipeline_name} solid {solid_name}, input {input_name} '

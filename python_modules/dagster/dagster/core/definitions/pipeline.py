@@ -4,10 +4,10 @@ from dagster.core.execution.config import RunConfig
 from dagster.core.types.runtime import construct_runtime_type_dictionary
 
 from .container import IContainSolids, create_execution_structure, validate_dependency_dict
-from .dependency import DependencyDefinition, SolidHandle, SolidInstance
+from .dependency import DependencyDefinition, MultiDependencyDefinition, SolidHandle, SolidInstance
 from .mode import ModeDefinition
-from .solid import ISolidDefinition
 from .preset import PresetDefinition
+from .solid import ISolidDefinition
 
 
 def _check_solids_arg(pipeline_name, solid_defs):
@@ -340,19 +340,35 @@ def _build_sub_pipeline(pipeline_def, solid_names):
     deps = {_dep_key_of(solid): {} for solid in solids}
 
     def _out_handle_of_inp(input_handle):
-        if pipeline_def.dependency_structure.has_dep(input_handle):
-            output_handle = pipeline_def.dependency_structure.get_dep(input_handle)
-            if output_handle.solid.name in solid_name_set:
-                return output_handle
-        return None
+        if pipeline_def.dependency_structure.has_deps(input_handle):
+            output_handles = pipeline_def.dependency_structure.get_deps(input_handle)
+            return [
+                output_handle
+                for output_handle in output_handles
+                if output_handle.solid.name in solid_name_set
+            ]
+        return []
 
     for solid in solids:
         for input_handle in solid.input_handles():
-            output_handle = _out_handle_of_inp(input_handle)
-            if output_handle:
-                deps[_dep_key_of(solid)][input_handle.input_def.name] = DependencyDefinition(
-                    solid=output_handle.solid.name, output=output_handle.output_def.name
+            output_handles = _out_handle_of_inp(input_handle)
+            if output_handles:
+                inner_dep = (
+                    DependencyDefinition(
+                        solid=output_handles[0].solid.name, output=output_handles[0].output_def.name
+                    )
+                    if len(output_handles) == 1
+                    else MultiDependencyDefinition(
+                        [
+                            DependencyDefinition(
+                                solid=output_handle.solid.name,
+                                output=output_handles.output_def.name,
+                            )
+                            for output_handle in output_handles
+                        ]
+                    )
                 )
+                deps[_dep_key_of(solid)][input_handle.input_def.name] = inner_dep
 
     return PipelineDefinition(
         name=pipeline_def.name,

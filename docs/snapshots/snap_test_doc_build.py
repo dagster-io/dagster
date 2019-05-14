@@ -1764,7 +1764,7 @@ intend micro versions to reflect a regular release schedule and minor versions t
 milestones in the framework's capability.
 
 Upcoming Release
------
+----------------
 **API Changes**
 
 - Rename ``transform_fn`` on SolidDefinition to ``compute_fn``. Also renames the tag produced on the associated steps from ``transform`` to ``compute``.
@@ -4427,13 +4427,13 @@ in the dagster-pandas library, building it step by step along the way.
 Basic Typing
 ^^^^^^^^^^^^
 
-.. literalinclude:: ../../../../../libraries/dagster-pandas/dagster_pandas/data_frame.py
+.. literalinclude:: ../../../../python_modules/libraries/dagster-pandas/dagster_pandas/data_frame.py
    :lines: 1, 84-92, 94
 
 What this code doing is annotating/registering an existing type as a dagster type. Now one can
 include this type and use it as an input or output of a solid. The system will do a typecheck
 to ensure that the object is of type ``pd.DataFrame``.
-
+`
 Now one can use it to define a solid:
 
 .. code-block:: py
@@ -4514,7 +4514,7 @@ API that removes some boilerplate around manipulating the config_value dictionar
 user-provided function takes the unpacked key and value of config_value directly, since in the
 case of a selector, the config_value dictionary has only 1 (key, value) pair.
 
-.. literalinclude:: ../../../../../libraries/dagster-pandas/dagster_pandas/data_frame.py
+.. literalinclude:: ../../../../python_modules/libraries/dagster-pandas/dagster_pandas/data_frame.py
    :lines: 57-81
 
 You'll note that we no longer need to manipulate the ``config_value`` dictionary. It grabs
@@ -4522,8 +4522,8 @@ that key and value for you and calls the provided function.
 
 Finally insert this into the original declaration:
 
-.. literalinclude:: ../../../../../libraries/dagster-pandas/dagster_pandas/data_frame.py
-   :lines: 84-92 
+.. literalinclude:: ../../../../python_modules/libraries/dagster-pandas/dagster_pandas/data_frame.py
+   :lines: 84-92
    :emphasize-lines: 7
 
 Now if you run a pipeline with this solid from dagit you will be able to provide sources for
@@ -4540,7 +4540,7 @@ persistent store. Outputs are purely *optional* for any computation, whereas inp
 for a computation to proceed. You will likely want outputs as for a pipeline to be useful it
 should produce some materialization that outlives the computation.
 
-.. literalinclude:: ../../../../../libraries/dagster-pandas/dagster_pandas/data_frame.py
+.. literalinclude:: ../../../../python_modules/libraries/dagster-pandas/dagster_pandas/data_frame.py
    :lines: 31-54
 
 This has a similar aesthetic to an input schema but performs a different function. Notice that
@@ -4550,10 +4550,10 @@ how to materialize the value.
 
 One connects the output schema to the type as follows:
 
-.. literalinclude:: ../../../../../libraries/dagster-pandas/dagster_pandas/data_frame.py
+.. literalinclude:: ../../../../python_modules/libraries/dagster-pandas/dagster_pandas/data_frame.py
    :lines: 84-92
    :emphasize-lines: 8
- 
+
 Now we can provide a list of materializations to a given execution.
 
 .. image:: types_figure_two.png
@@ -27766,10 +27766,24 @@ own dagster types to fully utilize the system. We’ll go over that here.</p>
 in the dagster-pandas library, building it step by step along the way.</p>
 <div class="section" id="basic-typing">
 <h2>Basic Typing<a class="headerlink" href="#basic-typing" title="Permalink to this headline">¶</a></h2>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+
+
+<span class="n">DataFrame</span> <span class="o">=</span> <span class="n">as_dagster_type</span><span class="p">(</span>
+    <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span>
+    <span class="n">name</span><span class="o">=</span><span class="s1">&#39;PandasDataFrame&#39;</span><span class="p">,</span>
+    <span class="n">description</span><span class="o">=</span><span class="s1">&#39;&#39;&#39;Two-dimensional size-mutable, potentially heterogeneous</span>
+<span class="s1">    tabular data structure with labeled axes (rows and columns).</span>
+<span class="s1">    See http://pandas.pydata.org/&#39;&#39;&#39;</span><span class="p">,</span>
+    <span class="n">input_schema</span><span class="o">=</span><span class="n">dataframe_input_schema</span><span class="p">,</span>
+<span class="p">)</span>
+</pre></div>
+</div>
 <p>What this code doing is annotating/registering an existing type as a dagster type. Now one can
 include this type and use it as an input or output of a solid. The system will do a typecheck
-to ensure that the object is of type <code class="docutils literal notranslate"><span class="pre">pd.DataFrame</span></code>.</p>
-<p>Now one can use it to define a solid:</p>
+to ensure that the object is of type <code class="docutils literal notranslate"><span class="pre">pd.DataFrame</span></code>.
+`
+Now one can use it to define a solid:</p>
 <div class="highlight-py notranslate"><div class="highlight"><pre><span></span> <span class="nd">@lambda_solid</span><span class="p">(</span>
 <span class="hll">     <span class="n">inputs</span><span class="o">=</span><span class="p">[</span><span class="n">InputDefinition</span><span class="p">(</span><span class="s1">&#39;num&#39;</span><span class="p">,</span> <span class="n">DataFrame</span><span class="p">)],</span>
 </span><span class="hll">     <span class="n">output</span><span class="o">=</span><span class="n">OutputDefinition</span><span class="p">(</span><span class="n">DataFrame</span><span class="p">),</span>
@@ -27837,9 +27851,47 @@ values have been applied.</p>
 API that removes some boilerplate around manipulating the config_value dictionary. Instead, the
 user-provided function takes the unpacked key and value of config_value directly, since in the
 case of a selector, the config_value dictionary has only 1 (key, value) pair.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>
+
+<span class="nd">@input_selector_schema</span><span class="p">(</span>
+    <span class="n">NamedSelector</span><span class="p">(</span>
+        <span class="s1">&#39;DataFrameInputSchema&#39;</span><span class="p">,</span>
+        <span class="p">{</span>
+            <span class="s1">&#39;csv&#39;</span><span class="p">:</span> <span class="n">define_csv_dict_field</span><span class="p">(),</span>
+            <span class="s1">&#39;parquet&#39;</span><span class="p">:</span> <span class="n">define_path_dict_field</span><span class="p">(),</span>
+            <span class="s1">&#39;table&#39;</span><span class="p">:</span> <span class="n">define_path_dict_field</span><span class="p">(),</span>
+        <span class="p">},</span>
+    <span class="p">)</span>
+<span class="p">)</span>
+<span class="k">def</span> <span class="nf">dataframe_input_schema</span><span class="p">(</span><span class="n">_context</span><span class="p">,</span> <span class="n">file_type</span><span class="p">,</span> <span class="n">file_options</span><span class="p">):</span>
+    <span class="n">check</span><span class="o">.</span><span class="n">str_param</span><span class="p">(</span><span class="n">file_type</span><span class="p">,</span> <span class="s1">&#39;file_type&#39;</span><span class="p">)</span>
+    <span class="n">check</span><span class="o">.</span><span class="n">dict_param</span><span class="p">(</span><span class="n">file_options</span><span class="p">,</span> <span class="s1">&#39;file_options&#39;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">file_type</span> <span class="o">==</span> <span class="s1">&#39;csv&#39;</span><span class="p">:</span>
+        <span class="n">path</span> <span class="o">=</span> <span class="n">file_options</span><span class="p">[</span><span class="s1">&#39;path&#39;</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="o">**</span><span class="n">dict_without_keys</span><span class="p">(</span><span class="n">file_options</span><span class="p">,</span> <span class="s1">&#39;path&#39;</span><span class="p">))</span>
+    <span class="k">elif</span> <span class="n">file_type</span> <span class="o">==</span> <span class="s1">&#39;parquet&#39;</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_parquet</span><span class="p">(</span><span class="n">file_options</span><span class="p">[</span><span class="s1">&#39;path&#39;</span><span class="p">])</span>
+    <span class="k">elif</span> <span class="n">file_type</span> <span class="o">==</span> <span class="s1">&#39;table&#39;</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_table</span><span class="p">(</span><span class="n">file_options</span><span class="p">[</span><span class="s1">&#39;path&#39;</span><span class="p">])</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="n">DagsterInvariantViolationError</span><span class="p">(</span>
+</pre></div>
+</div>
 <p>You’ll note that we no longer need to manipulate the <code class="docutils literal notranslate"><span class="pre">config_value</span></code> dictionary. It grabs
 that key and value for you and calls the provided function.</p>
 <p>Finally insert this into the original declaration:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>
+
+<span class="n">DataFrame</span> <span class="o">=</span> <span class="n">as_dagster_type</span><span class="p">(</span>
+    <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span>
+    <span class="n">name</span><span class="o">=</span><span class="s1">&#39;PandasDataFrame&#39;</span><span class="p">,</span>
+    <span class="n">description</span><span class="o">=</span><span class="s1">&#39;&#39;&#39;Two-dimensional size-mutable, potentially heterogeneous</span>
+<span class="hll"><span class="s1">    tabular data structure with labeled axes (rows and columns).</span>
+</span><span class="s1">    See http://pandas.pydata.org/&#39;&#39;&#39;</span><span class="p">,</span>
+    <span class="n">input_schema</span><span class="o">=</span><span class="n">dataframe_input_schema</span><span class="p">,</span>
+</pre></div>
+</div>
 <p>Now if you run a pipeline with this solid from dagit you will be able to provide sources for
 these inputs via config:</p>
 <img alt="../../../_images/types_figure_one.png" src="../../../_images/types_figure_one.png" />
@@ -27851,11 +27903,48 @@ for taking the in-memory object flowed through your computation and materializin
 persistent store. Outputs are purely <em>optional</em> for any computation, whereas inputs <em>must</em> be provided
 for a computation to proceed. You will likely want outputs as for a pipeline to be useful it
 should produce some materialization that outlives the computation.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="nd">@output_selector_schema</span><span class="p">(</span>
+    <span class="n">NamedSelector</span><span class="p">(</span>
+        <span class="s1">&#39;DataFrameOutputSchema&#39;</span><span class="p">,</span>
+        <span class="p">{</span>
+            <span class="s1">&#39;csv&#39;</span><span class="p">:</span> <span class="n">define_csv_dict_field</span><span class="p">(),</span>
+            <span class="s1">&#39;parquet&#39;</span><span class="p">:</span> <span class="n">define_path_dict_field</span><span class="p">(),</span>
+            <span class="s1">&#39;table&#39;</span><span class="p">:</span> <span class="n">define_path_dict_field</span><span class="p">(),</span>
+        <span class="p">},</span>
+    <span class="p">)</span>
+<span class="p">)</span>
+<span class="k">def</span> <span class="nf">dataframe_output_schema</span><span class="p">(</span><span class="n">_context</span><span class="p">,</span> <span class="n">file_type</span><span class="p">,</span> <span class="n">file_options</span><span class="p">,</span> <span class="n">pandas_df</span><span class="p">):</span>
+    <span class="n">check</span><span class="o">.</span><span class="n">str_param</span><span class="p">(</span><span class="n">file_type</span><span class="p">,</span> <span class="s1">&#39;file_type&#39;</span><span class="p">)</span>
+    <span class="n">check</span><span class="o">.</span><span class="n">dict_param</span><span class="p">(</span><span class="n">file_options</span><span class="p">,</span> <span class="s1">&#39;file_options&#39;</span><span class="p">)</span>
+    <span class="n">check</span><span class="o">.</span><span class="n">inst_param</span><span class="p">(</span><span class="n">pandas_df</span><span class="p">,</span> <span class="s1">&#39;pandas_df&#39;</span><span class="p">,</span> <span class="n">DataFrame</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">file_type</span> <span class="o">==</span> <span class="s1">&#39;csv&#39;</span><span class="p">:</span>
+        <span class="n">path</span> <span class="o">=</span> <span class="n">file_options</span><span class="p">[</span><span class="s1">&#39;path&#39;</span><span class="p">]</span>
+        <span class="n">pandas_df</span><span class="o">.</span><span class="n">to_csv</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="o">**</span><span class="n">dict_without_keys</span><span class="p">(</span><span class="n">file_options</span><span class="p">,</span> <span class="s1">&#39;path&#39;</span><span class="p">))</span>
+    <span class="k">elif</span> <span class="n">file_type</span> <span class="o">==</span> <span class="s1">&#39;parquet&#39;</span><span class="p">:</span>
+        <span class="n">pandas_df</span><span class="o">.</span><span class="n">to_parquet</span><span class="p">(</span><span class="n">file_options</span><span class="p">[</span><span class="s1">&#39;path&#39;</span><span class="p">])</span>
+    <span class="k">elif</span> <span class="n">file_type</span> <span class="o">==</span> <span class="s1">&#39;table&#39;</span><span class="p">:</span>
+        <span class="n">pandas_df</span><span class="o">.</span><span class="n">to_csv</span><span class="p">(</span><span class="n">file_options</span><span class="p">[</span><span class="s1">&#39;path&#39;</span><span class="p">],</span> <span class="n">sep</span><span class="o">=</span><span class="s1">&#39;</span><span class="se">\\t</span><span class="s1">&#39;</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">check</span><span class="o">.</span><span class="n">failed</span><span class="p">(</span><span class="s1">&#39;Unsupported file_type </span><span class="si">{file_type}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">file_type</span><span class="o">=</span><span class="n">file_type</span><span class="p">))</span>
+</pre></div>
+</div>
 <p>This has a similar aesthetic to an input schema but performs a different function. Notice that
 it takes a third argument, <code class="docutils literal notranslate"><span class="pre">pandas_df</span></code> (it can be named anything), that is the value that was
 outputted from the solid in question. It then takes the configuration data as “instructions” as to
 how to materialize the value.</p>
 <p>One connects the output schema to the type as follows:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>
+
+<span class="n">DataFrame</span> <span class="o">=</span> <span class="n">as_dagster_type</span><span class="p">(</span>
+    <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span>
+    <span class="n">name</span><span class="o">=</span><span class="s1">&#39;PandasDataFrame&#39;</span><span class="p">,</span>
+    <span class="n">description</span><span class="o">=</span><span class="s1">&#39;&#39;&#39;Two-dimensional size-mutable, potentially heterogeneous</span>
+<span class="s1">    tabular data structure with labeled axes (rows and columns).</span>
+<span class="hll"><span class="s1">    See http://pandas.pydata.org/&#39;&#39;&#39;</span><span class="p">,</span>
+</span>    <span class="n">input_schema</span><span class="o">=</span><span class="n">dataframe_input_schema</span><span class="p">,</span>
+</pre></div>
+</div>
 <p>Now we can provide a list of materializations to a given execution.</p>
 <img alt="../../../_images/types_figure_two.png" src="../../../_images/types_figure_two.png" />
 <p>You’ll note you can provide an arbitrary number of materializations. You can materialize any
