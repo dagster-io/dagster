@@ -24,7 +24,7 @@
     "graphql": "^14.1.1",
     "graphql-tag": "^2.10.1",
     "highlight.js": "^9.13.1",
-    "immer": "^1.8.0",
+    "immer": "^3.1.2",
     "lodash": "^4.17.11",
     "query-string": "^6.1.0",
     "react": "^16.4.2",
@@ -37,7 +37,6 @@
     "react-virtualized": "^9.21.0",
     "styled-components": "^3.3.3",
     "subscriptions-transport-ws": "^0.9.15",
-    "ts-node": "^8.0.3",
     "yaml": "^1.0.1",
     "yaml-language-server": "^0.0.19"
   },
@@ -47,7 +46,7 @@
     "@types/dagre": "^0.7.40",
     "@types/graphql": "^14.0.5",
     "@types/highlight.js": "^9.12.3",
-    "@types/jest": "^23.3.1",
+    "@types/jest": "^23.3.14",
     "@types/lodash": "^4.14.120",
     "@types/node": "^10.5.5",
     "@types/prop-types": "^15.5.6",
@@ -62,14 +61,17 @@
     "@types/yaml": "^1.0.0",
     "apollo": "^2.3.1",
     "babel-core": "^6.23.0",
-    "babel-jest": "^23.4.2",
+    "babel-jest": "^24.8.0",
     "babel-plugin-graphql-tag": "^1.6.0",
-    "jest": "^23.5.0",
+    "child-process": "^1.0.2",
+    "fs": "0.0.1-security",
+    "jest": "^23.6.0",
     "prettier": "^1.14.0",
-    "react-scripts-ts": "2.16.0",
+    "react-scripts-ts": "^4.0.8",
     "react-test-renderer": "^16.4.2",
     "ts-jest": "^23.1.4",
-    "typescript": "^3.0.1",
+    "ts-node": "^8.1.0",
+    "typescript": "^3.4.5",
     "typescript-babel-jest": "^1.0.5"
   },
   "scripts": {
@@ -111,5 +113,11 @@
     ],
     "testRegex": "/__tests__/.*\\.test\\.(ts|tsx)$",
     "testURL": "http://localhost"
-  }
+  },
+  "browserslist": [
+    ">0.2%",
+    "not dead",
+    "not ie <= 11",
+    "not op_mini all"
+  ]
 }
