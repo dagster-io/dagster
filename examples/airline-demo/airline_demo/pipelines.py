@@ -1,11 +1,6 @@
 """Pipeline definitions for the airline_demo."""
 
-from dagster import (
-    DependencyDefinition,
-    PipelineContextDefinition,
-    PipelineDefinition,
-    SolidInstance,
-)
+from dagster import DependencyDefinition, ModeDefinition, PipelineDefinition, SolidInstance
 
 from dagster_aws.s3.resources import s3_resource
 from dagster_aws.s3.solids import download_from_s3_to_bytes, put_object_to_s3_bytes
@@ -38,37 +33,37 @@ from .solids import (
 )
 
 
-test_context = PipelineContextDefinition(
+test_mode = ModeDefinition(
+    name='test',
     resources={
         'spark': spark_session_local,
         'db_info': redshift_db_info_resource,
         'tempfile': tempfile_resource,
         's3': s3_resource,
-    }
+    },
 )
 
 
-local_context = PipelineContextDefinition(
+local_mode = ModeDefinition(
+    name='local',
     resources={
         'spark': spark_session_local,
         's3': s3_resource,
         'db_info': postgres_db_info_resource,
         'tempfile': tempfile_resource,
-    }
+    },
 )
 
 
-prod_context = PipelineContextDefinition(
+prod_mode = ModeDefinition(
+    name='prod',
     resources={
         'spark': spark_session_local,  # FIXME
         's3': s3_resource,
         'db_info': redshift_db_info_resource,
         'tempfile': tempfile_resource,
-    }
+    },
 )
-
-
-CONTEXT_DEFINITIONS = {'test': test_context, 'local': local_context, 'prod': prod_context}
 
 
 def define_airline_demo_ingest_pipeline():
@@ -211,7 +206,7 @@ def define_airline_demo_ingest_pipeline():
         name="airline_demo_ingest_pipeline",
         solids=solids,
         dependencies=dependencies,
-        context_definitions=CONTEXT_DEFINITIONS,
+        mode_definitions=[test_mode, local_mode, prod_mode],
     )
 
 
@@ -262,5 +257,5 @@ def define_airline_demo_warehouse_pipeline():
                 'file_obj': DependencyDefinition('delays_by_geography')
             },
         },
-        context_definitions=CONTEXT_DEFINITIONS,
+        mode_definitions=[test_mode, local_mode, prod_mode],
     )

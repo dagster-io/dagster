@@ -4,6 +4,7 @@ from dagster import (
     lambda_solid,
     Int,
     InputDefinition,
+    ModeDefinition,
     SolidInstance,
     DependencyDefinition,
     OutputDefinition,
@@ -60,4 +61,5 @@ def define_composition_pipeline():
         name='composition',
         solids=[add_four, div_four],
         dependencies={'div_four': {'num': DependencyDefinition('add_four')}},
+        mode_definitions=[ModeDefinition()],
     )

@@ -5,6 +5,7 @@ from dagster import (
     solid,
     Materialization,
     Result,
+    ModeDefinition,
     Nothing,
     OutputDefinition,
     InputDefinition,
@@ -187,4 +188,5 @@ def define_many_events_pipeline():
                 },
             },
         ),
+        mode_definitions=[ModeDefinition()],
     )

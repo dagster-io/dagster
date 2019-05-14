@@ -357,7 +357,7 @@ def test_execute_multi_mode_loggers_with_single_logger():
         environment_dict={'loggers': {'foo': {'config': {'log_level': 'DEBUG'}}}},
     )
 
-    assert len(bar_logger_captured_results) == 0
+    assert not bar_logger_captured_results
 
     original_messages = parse_captured_results(foo_logger_captured_results)
 

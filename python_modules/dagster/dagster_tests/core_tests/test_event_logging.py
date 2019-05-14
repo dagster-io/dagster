@@ -81,7 +81,9 @@ def test_single_solid_pipeline_success():
         mode_definitions=[mode_def(_event_callback)],
     )
 
-    result = execute_pipeline(pipeline_def, {'loggers': {'callback': {}}})
+    result = execute_pipeline(
+        pipeline_def, {'loggers': {'callback': {}}}, RunConfig(mode='default')
+    )
     assert result.success
     assert events
 
@@ -124,7 +126,9 @@ def test_single_solid_pipeline_failure():
     result = execute_pipeline(
         pipeline_def,
         {'loggers': {'callback': {}}},
-        run_config=RunConfig(executor_config=InProcessExecutorConfig(raise_on_error=False)),
+        run_config=RunConfig(
+            executor_config=InProcessExecutorConfig(raise_on_error=False), mode='default'
+        ),
     )
     assert not result.success
 

@@ -248,8 +248,8 @@ class PipelinePreset(
             files = glob(file_glob)
             if not files:
                 raise DagsterInvalidDefinitionError(
-                    'File or glob pattern "{file_glob}" for "environment_files" in preset "{name}" for '
-                    'pipeline "{pipeline_name}" produced no results.'.format(
+                    'File or glob pattern "{file_glob}" for "environment_files" in preset '
+                    '"{name}" for pipeline "{pipeline_name}" produced no results.'.format(
                         name=self.name, file_glob=file_glob, pipeline_name=self.pipeline_name
                     )
                 )
@@ -261,8 +261,9 @@ class PipelinePreset(
         except yaml.YAMLError as err:
             six.raise_from(
                 DagsterInvariantViolationError(
-                    'Encountered error attempting to parse yaml. Parsing files {file_set} loaded by '
-                    'file/patterns {files} on preset "{name}" for pipeline "{pipeline_name}".'.format(
+                    'Encountered error attempting to parse yaml. Parsing files {file_set} '
+                    'loaded by file/patterns {files} on preset "{name}" for pipeline '
+                    '"{pipeline_name}".'.format(
                         file_set=file_set,
                         files=self.environment_files,
                         name=self.name,

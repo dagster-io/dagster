@@ -3,6 +3,7 @@ import time
 from dagster import (
     DependencyDefinition,
     InputDefinition,
+    ModeDefinition,
     MultipleResults,
     OutputDefinition,
     PipelineDefinition,
@@ -72,4 +73,5 @@ def define_spew_pipeline():
                 'input_0': DependencyDefinition('solid_f', 'output_0')
             },
         },
+        mode_definitions=[ModeDefinition()],
     )

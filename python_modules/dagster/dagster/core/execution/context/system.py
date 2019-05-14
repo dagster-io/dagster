@@ -205,6 +205,10 @@ class SystemStepExecutionContext(SystemPipelineExecutionContext):
             self.solid.resource_mapper_fn, self.solid_def.resources
         )
 
+    @property
+    def mode(self):
+        return self._pipeline_context_data.run_config.mode
+
 
 class SystemTransformExecutionContext(SystemStepExecutionContext):
     @property

@@ -6,6 +6,7 @@ from dagster import (
     Field,
     InputDefinition,
     Int,
+    ModeDefinition,
     PipelineDefinition,
     RepositoryDefinition,
     String,
@@ -37,11 +38,14 @@ def define_demo_execution_pipeline():
         name='demo_pipeline',
         solids=[multiply_the_word, count_letters],
         dependencies={'count_letters': {'word': DependencyDefinition('multiply_the_word')}},
+        mode_definitions=[ModeDefinition()],
     )
 
 
 def define_demo_error_pipeline():
-    return PipelineDefinition(name='demo_error_pipeline', solids=[error_solid])
+    return PipelineDefinition(
+        name='demo_error_pipeline', solids=[error_solid], mode_definitions=[ModeDefinition()]
+    )
 
 
 def define_demo_execution_repo():

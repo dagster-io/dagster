@@ -25,7 +25,7 @@ rm -rf \
   dagster/dist \
   dagster-graphql/*.egg-info \
   dagster-graphql/.tox \
-  dagster-graphql/build
+  dagster-graphql/build \
   dagster-graphql/dist \
   dagster-aws/*.egg-info \
   dagster-aws/.tox \

@@ -46,6 +46,7 @@ def _make_airflow_dag(
     exc_target_handle,
     pipeline_name,
     env_config=None,
+    mode='default',
     dag_id=None,
     dag_description=None,
     dag_kwargs=None,
@@ -55,6 +56,7 @@ def _make_airflow_dag(
 
     check.inst_param(exc_target_handle, 'exc_target_handle', ExecutionTargetHandle)
     env_config = check.opt_dict_param(env_config, 'env_config', key_type=str)
+    mode = check.str_param(mode, 'mode')
 
     # Only used for Airflow; internally we continue to use pipeline.name
     dag_id = check.opt_str_param(dag_id, 'dag_id', _rename_for_airflow(pipeline_name))
@@ -79,7 +81,7 @@ def _make_airflow_dag(
     dag = DAG(dag_id=dag_id, description=dag_description, **dag_kwargs)
 
     pipeline = exc_target_handle.build_pipeline_definition()
-    execution_plan = create_execution_plan(pipeline, env_config)
+    execution_plan = create_execution_plan(pipeline, env_config, mode=mode)
 
     tasks = {}
 
@@ -93,6 +95,7 @@ def _make_airflow_dag(
             exc_target_handle=exc_target_handle,
             pipeline_name=pipeline_name,
             env_config=env_config,
+            mode=mode,
             solid_name=solid_name,
             step_keys=step_keys,
             dag=dag,
@@ -117,6 +120,7 @@ def make_airflow_dag(
     exc_target_handle,
     pipeline_name,
     env_config=None,
+    mode='default',
     dag_id=None,
     dag_description=None,
     dag_kwargs=None,
@@ -126,6 +130,7 @@ def make_airflow_dag(
         exc_target_handle=exc_target_handle,
         pipeline_name=pipeline_name,
         env_config=env_config,
+        mode=mode,
         dag_id=dag_id,
         dag_description=dag_description,
         dag_kwargs=dag_kwargs,
@@ -138,6 +143,7 @@ def make_airflow_dag_containerized(
     pipeline_name,
     image,
     env_config=None,
+    mode='default',
     dag_id=None,
     dag_description=None,
     dag_kwargs=None,
@@ -149,6 +155,7 @@ def make_airflow_dag_containerized(
         exc_target_handle=exc_target_handle,
         pipeline_name=pipeline_name,
         env_config=env_config,
+        mode=mode,
         dag_id=dag_id,
         dag_description=dag_description,
         dag_kwargs=dag_kwargs,

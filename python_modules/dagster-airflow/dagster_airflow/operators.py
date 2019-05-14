@@ -78,6 +78,7 @@ class DagsterOperator(with_metaclass(ABCMeta)):  # pylint:disable=no-init
         exc_target_handle,
         pipeline_name,
         env_config,
+        mode,
         solid_name,
         step_keys,
         dag,
@@ -244,6 +245,7 @@ class DagsterDockerOperator(ModifiedDockerOperator, DagsterOperator):
         step=None,
         config=None,
         pipeline_name=None,
+        mode='default',
         step_keys=None,
         s3_bucket_name=None,
         *args,
@@ -252,6 +254,7 @@ class DagsterDockerOperator(ModifiedDockerOperator, DagsterOperator):
         self.step = step
         self.config = config
         self.pipeline_name = pipeline_name
+        self.mode = mode
         self.step_keys = step_keys
         self.docker_conn_id_set = kwargs.get('docker_conn_id') is not None
         self.s3_bucket_name = s3_bucket_name
@@ -318,6 +321,7 @@ class DagsterDockerOperator(ModifiedDockerOperator, DagsterOperator):
         exc_target_handle,
         pipeline_name,
         env_config,
+        mode,
         solid_name,
         step_keys,
         dag,
@@ -341,6 +345,7 @@ class DagsterDockerOperator(ModifiedDockerOperator, DagsterOperator):
             dag=dag,
             tmp_dir=tmp_dir,
             pipeline_name=pipeline_name,
+            mode=mode,
             step_keys=step_keys,
             task_id=solid_name,
             host_tmp_dir=host_tmp_dir,
@@ -365,6 +370,7 @@ class DagsterDockerOperator(ModifiedDockerOperator, DagsterOperator):
         return QUERY_TEMPLATE.format(
             config=self.config.strip('\n'),
             run_id=self.run_id,
+            mode=self.mode,
             step_keys=step_keys,
             pipeline_name=self.pipeline_name,
         )
@@ -423,7 +429,7 @@ class DagsterDockerOperator(ModifiedDockerOperator, DagsterOperator):
 
 class DagsterPythonOperator(PythonOperator, DagsterOperator):
     @classmethod
-    def make_python_callable(cls, exc_target_handle, pipeline_name, env_config, step_keys):
+    def make_python_callable(cls, exc_target_handle, pipeline_name, mode, env_config, step_keys):
         try:
             from dagster_graphql.cli import execute_query_from_cli
         except ImportError:
@@ -437,6 +443,7 @@ class DagsterPythonOperator(PythonOperator, DagsterOperator):
             query = QUERY_TEMPLATE.format(
                 config=env_config,
                 run_id=run_id,
+                mode=mode,
                 step_keys=json.dumps(step_keys),
                 pipeline_name=pipeline_name,
             )
@@ -449,6 +456,7 @@ class DagsterPythonOperator(PythonOperator, DagsterOperator):
                 + QUERY_TEMPLATE.format(
                     config='REDACTED',
                     run_id=run_id,
+                    mode=mode,
                     step_keys=json.dumps(step_keys),
                     pipeline_name=pipeline_name,
                 )
@@ -466,6 +474,7 @@ class DagsterPythonOperator(PythonOperator, DagsterOperator):
         exc_target_handle,
         pipeline_name,
         env_config,
+        mode,
         solid_name,
         step_keys,
         dag,
@@ -486,6 +495,7 @@ class DagsterPythonOperator(PythonOperator, DagsterOperator):
             python_callable=cls.make_python_callable(
                 exc_target_handle,
                 pipeline_name,
+                mode,
                 format_config_for_graphql(env_config),
                 step_keys
             ),
