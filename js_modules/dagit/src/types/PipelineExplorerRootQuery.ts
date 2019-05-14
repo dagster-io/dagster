@@ -432,11 +432,158 @@ export interface PipelineExplorerRootQuery_pipeline_modes_resources {
   configField: PipelineExplorerRootQuery_pipeline_modes_resources_configField | null;
 }
 
+export interface PipelineExplorerRootQuery_pipeline_modes_loggers_configField_configType_EnumConfigType_innerTypes_EnumConfigType_innerTypes {
+  __typename: "EnumConfigType" | "CompositeConfigType" | "RegularConfigType" | "ListConfigType" | "NullableConfigType";
+  key: string;
+}
+
+export interface PipelineExplorerRootQuery_pipeline_modes_loggers_configField_configType_EnumConfigType_innerTypes_EnumConfigType {
+  __typename: "EnumConfigType" | "RegularConfigType" | "ListConfigType" | "NullableConfigType";
+  key: string;
+  name: string | null;
+  description: string | null;
+  isList: boolean;
+  isNullable: boolean;
+  isSelector: boolean;
+  innerTypes: PipelineExplorerRootQuery_pipeline_modes_loggers_configField_configType_EnumConfigType_innerTypes_EnumConfigType_innerTypes[];
+}
+
+export interface PipelineExplorerRootQuery_pipeline_modes_loggers_configField_configType_EnumConfigType_innerTypes_CompositeConfigType_innerTypes {
+  __typename: "EnumConfigType" | "CompositeConfigType" | "RegularConfigType" | "ListConfigType" | "NullableConfigType";
+  key: string;
+}
+
+export interface PipelineExplorerRootQuery_pipeline_modes_loggers_configField_configType_EnumConfigType_innerTypes_CompositeConfigType_fields_configType {
+  __typename: "EnumConfigType" | "CompositeConfigType" | "RegularConfigType" | "ListConfigType" | "NullableConfigType";
+  key: string;
+}
+
+export interface PipelineExplorerRootQuery_pipeline_modes_loggers_configField_configType_EnumConfigType_innerTypes_CompositeConfigType_fields {
+  __typename: "ConfigTypeField";
+  name: string;
+  description: string | null;
+  isOptional: boolean;
+  configType: PipelineExplorerRootQuery_pipeline_modes_loggers_configField_configType_EnumConfigType_innerTypes_CompositeConfigType_fields_configType;
+}
+
+export interface PipelineExplorerRootQuery_pipeline_modes_loggers_configField_configType_EnumConfigType_innerTypes_CompositeConfigType {
+  __typename: "CompositeConfigType";
+  key: string;
+  name: string | null;
+  description: string | null;
+  isList: boolean;
+  isNullable: boolean;
+  isSelector: boolean;
+  innerTypes: PipelineExplorerRootQuery_pipeline_modes_loggers_configField_configType_EnumConfigType_innerTypes_CompositeConfigType_innerTypes[];
+  fields: PipelineExplorerRootQuery_pipeline_modes_loggers_configField_configType_EnumConfigType_innerTypes_CompositeConfigType_fields[];
+}
+
+export type PipelineExplorerRootQuery_pipeline_modes_loggers_configField_configType_EnumConfigType_innerTypes = PipelineExplorerRootQuery_pipeline_modes_loggers_configField_configType_EnumConfigType_innerTypes_EnumConfigType | PipelineExplorerRootQuery_pipeline_modes_loggers_configField_configType_EnumConfigType_innerTypes_CompositeConfigType;
+
+export interface PipelineExplorerRootQuery_pipeline_modes_loggers_configField_configType_EnumConfigType {
+  __typename: "EnumConfigType" | "RegularConfigType" | "ListConfigType" | "NullableConfigType";
+  key: string;
+  name: string | null;
+  description: string | null;
+  isList: boolean;
+  isNullable: boolean;
+  isSelector: boolean;
+  innerTypes: PipelineExplorerRootQuery_pipeline_modes_loggers_configField_configType_EnumConfigType_innerTypes[];
+}
+
+export interface PipelineExplorerRootQuery_pipeline_modes_loggers_configField_configType_CompositeConfigType_innerTypes_EnumConfigType_innerTypes {
+  __typename: "EnumConfigType" | "CompositeConfigType" | "RegularConfigType" | "ListConfigType" | "NullableConfigType";
+  key: string;
+}
+
+export interface PipelineExplorerRootQuery_pipeline_modes_loggers_configField_configType_CompositeConfigType_innerTypes_EnumConfigType {
+  __typename: "EnumConfigType" | "RegularConfigType" | "ListConfigType" | "NullableConfigType";
+  key: string;
+  name: string | null;
+  description: string | null;
+  isList: boolean;
+  isNullable: boolean;
+  isSelector: boolean;
+  innerTypes: PipelineExplorerRootQuery_pipeline_modes_loggers_configField_configType_CompositeConfigType_innerTypes_EnumConfigType_innerTypes[];
+}
+
+export interface PipelineExplorerRootQuery_pipeline_modes_loggers_configField_configType_CompositeConfigType_innerTypes_CompositeConfigType_innerTypes {
+  __typename: "EnumConfigType" | "CompositeConfigType" | "RegularConfigType" | "ListConfigType" | "NullableConfigType";
+  key: string;
+}
+
+export interface PipelineExplorerRootQuery_pipeline_modes_loggers_configField_configType_CompositeConfigType_innerTypes_CompositeConfigType_fields_configType {
+  __typename: "EnumConfigType" | "CompositeConfigType" | "RegularConfigType" | "ListConfigType" | "NullableConfigType";
+  key: string;
+}
+
+export interface PipelineExplorerRootQuery_pipeline_modes_loggers_configField_configType_CompositeConfigType_innerTypes_CompositeConfigType_fields {
+  __typename: "ConfigTypeField";
+  name: string;
+  description: string | null;
+  isOptional: boolean;
+  configType: PipelineExplorerRootQuery_pipeline_modes_loggers_configField_configType_CompositeConfigType_innerTypes_CompositeConfigType_fields_configType;
+}
+
+export interface PipelineExplorerRootQuery_pipeline_modes_loggers_configField_configType_CompositeConfigType_innerTypes_CompositeConfigType {
+  __typename: "CompositeConfigType";
+  key: string;
+  name: string | null;
+  description: string | null;
+  isList: boolean;
+  isNullable: boolean;
+  isSelector: boolean;
+  innerTypes: PipelineExplorerRootQuery_pipeline_modes_loggers_configField_configType_CompositeConfigType_innerTypes_CompositeConfigType_innerTypes[];
+  fields: PipelineExplorerRootQuery_pipeline_modes_loggers_configField_configType_CompositeConfigType_innerTypes_CompositeConfigType_fields[];
+}
+
+export type PipelineExplorerRootQuery_pipeline_modes_loggers_configField_configType_CompositeConfigType_innerTypes = PipelineExplorerRootQuery_pipeline_modes_loggers_configField_configType_CompositeConfigType_innerTypes_EnumConfigType | PipelineExplorerRootQuery_pipeline_modes_loggers_configField_configType_CompositeConfigType_innerTypes_CompositeConfigType;
+
+export interface PipelineExplorerRootQuery_pipeline_modes_loggers_configField_configType_CompositeConfigType_fields_configType {
+  __typename: "EnumConfigType" | "CompositeConfigType" | "RegularConfigType" | "ListConfigType" | "NullableConfigType";
+  key: string;
+}
+
+export interface PipelineExplorerRootQuery_pipeline_modes_loggers_configField_configType_CompositeConfigType_fields {
+  __typename: "ConfigTypeField";
+  name: string;
+  description: string | null;
+  isOptional: boolean;
+  configType: PipelineExplorerRootQuery_pipeline_modes_loggers_configField_configType_CompositeConfigType_fields_configType;
+}
+
+export interface PipelineExplorerRootQuery_pipeline_modes_loggers_configField_configType_CompositeConfigType {
+  __typename: "CompositeConfigType";
+  key: string;
+  name: string | null;
+  description: string | null;
+  isList: boolean;
+  isNullable: boolean;
+  isSelector: boolean;
+  innerTypes: PipelineExplorerRootQuery_pipeline_modes_loggers_configField_configType_CompositeConfigType_innerTypes[];
+  fields: PipelineExplorerRootQuery_pipeline_modes_loggers_configField_configType_CompositeConfigType_fields[];
+}
+
+export type PipelineExplorerRootQuery_pipeline_modes_loggers_configField_configType = PipelineExplorerRootQuery_pipeline_modes_loggers_configField_configType_EnumConfigType | PipelineExplorerRootQuery_pipeline_modes_loggers_configField_configType_CompositeConfigType;
+
+export interface PipelineExplorerRootQuery_pipeline_modes_loggers_configField {
+  __typename: "ConfigTypeField";
+  configType: PipelineExplorerRootQuery_pipeline_modes_loggers_configField_configType;
+}
+
+export interface PipelineExplorerRootQuery_pipeline_modes_loggers {
+  __typename: "Logger";
+  name: string;
+  description: string | null;
+  configField: PipelineExplorerRootQuery_pipeline_modes_loggers_configField | null;
+}
+
 export interface PipelineExplorerRootQuery_pipeline_modes {
   __typename: "Mode";
   name: string;
   description: string | null;
   resources: PipelineExplorerRootQuery_pipeline_modes_resources[];
+  loggers: PipelineExplorerRootQuery_pipeline_modes_loggers[];
 }
 
 export interface PipelineExplorerRootQuery_pipeline {

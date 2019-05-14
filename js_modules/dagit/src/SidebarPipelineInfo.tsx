@@ -40,6 +40,15 @@ export default class SidebarPipelineInfo extends React.Component<
               }
             }
           }
+          loggers {
+            name
+            description
+            configField {
+              configType {
+                ...ConfigTypeSchemaFragment
+              }
+            }
+          }
         }
       }
 
@@ -86,6 +95,24 @@ export default class SidebarPipelineInfo extends React.Component<
                   </div>
                 </ContextResourceContainer>
               ))}
+              {mode.loggers.map(logger => (
+                <ContextLoggerContainer key={logger.name}>
+                  <Icon
+                    iconSize={14}
+                    icon={IconNames.LAYERS}
+                    color={Colors.DARK_GRAY2}
+                  />
+                  <div>
+                    <ContextLoggerHeader>{logger.name}</ContextLoggerHeader>
+                    <Description
+                      description={logger.description || NO_DESCRIPTION}
+                    />
+                    {logger.configField && (
+                      <ConfigTypeSchema type={logger.configField.configType} />
+                    )}
+                  </div>
+                </ContextLoggerContainer>
+              ))}
             </SectionItemContainer>
           ))}
         </SidebarSection>
@@ -99,6 +126,20 @@ const ContextResourceHeader = styled(SectionItemHeader)`
 `;
 
 const ContextResourceContainer = styled.div`
+  display: flex;
+  align-items: flex-start;
+  padding-top: 15px;
+  & .bp3-icon {
+    padding-top: 7px;
+    padding-right: 10px;
+  }
+`;
+
+const ContextLoggerHeader = styled(SectionItemHeader)`
+  font-size: 13px;
+`;
+
+const ContextLoggerContainer = styled.div`
   display: flex;
   align-items: flex-start;
   padding-top: 15px;
