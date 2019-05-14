@@ -723,7 +723,7 @@ type StepExpectationResultEvent implements MessageEvent & StepEvent {
 }
 
 enum StepKind {
-  TRANSFORM
+  COMPUTE
   INPUT_EXPECTATION
   OUTPUT_EXPECTATION
   JOIN

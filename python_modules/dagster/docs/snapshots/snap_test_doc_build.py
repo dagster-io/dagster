@@ -1113,7 +1113,7 @@ snapshots['test_build_all_docs 4'] = '''
 </li>
 <li class="toctree-l1"><a class="reference internal" href="sections/reference/reference.html">Reference</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="sections/reference/reference.html#solid">Solid</a></li>
-<li class="toctree-l2"><a class="reference internal" href="sections/reference/reference.html#transform-function">Transform Function</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sections/reference/reference.html#compute-function">Compute Function</a></li>
 <li class="toctree-l2"><a class="reference internal" href="sections/reference/reference.html#result">Result</a></li>
 <li class="toctree-l2"><a class="reference internal" href="sections/reference/reference.html#dependency-definition">Dependency Definition</a></li>
 <li class="toctree-l2"><a class="reference internal" href="sections/reference/reference.html#intermediates">Intermediates</a></li>
@@ -1757,11 +1757,18 @@ snapshots['test_build_all_docs 12'] = '''Release Notes
 Dagster versions follow the guidelines in `PEP 440 <https://www.python.org/dev/peps/pep-0440//>`_.
 
 To make dependency management easier in the context of a monorepo with many installable projects,
-package versions move in lockstep with each other and with git tags. 
+package versions move in lockstep with each other and with git tags.
 
 As the API is still in flux, we aren't following strict semantic versioning rules at this point, but roughly
 intend micro versions to reflect a regular release schedule and minor versions to reflect
 milestones in the framework's capability.
+
+Upcoming Release
+-----
+**API Changes**
+
+- Rename ``transform_fn`` on SolidDefinition to ``compute_fn``. Also renames the tag produced on the associated steps from ``transform`` to ``compute``.
+
 
 0.4.2
 -----
@@ -1903,7 +1910,7 @@ milestones in the framework's capability.
 **GraphQL**
 
 - ``StartSubplanExecutionInvalidStepsError`` and ``InvalidSubplanExecutionError`` replaced
-  with more exact ``StartSubplanExecutionInvalidStepError`` and 
+  with more exact ``StartSubplanExecutionInvalidStepError`` and
   ``InvalidSubplanMissingInputError``
 
 **Dagit**
@@ -1975,7 +1982,7 @@ milestones in the framework's capability.
 **API Changes**
 
 - New decorator-based ``@resource`` API as a more concise alternative to ``ResourceDefinition``
-- Dagster config type system now supports enum types. (``dagster.Enum`` and ``dagster.EnumType``) 
+- Dagster config type system now supports enum types. (``dagster.Enum`` and ``dagster.EnumType``)
 - New top level properties ``resources`` and ``log`` on ``info``.
 - The context stack in ``RuntimeExecutionContext`` is no longer modifiable by the user during a
   transform. It has been renamed to ``tags``.
@@ -1987,7 +1994,7 @@ milestones in the framework's capability.
   solid subset and have slightly improved call signatures.
 - The config and runtime type system split is now reflected in the GraphQL frontend. This was the
   infrastructure piece that allowed the fix to #598. ``runtimeTypeOrError`` and
-  ``configTypeOrError`` are now top level fields, and there are ``configTypes`` and 
+  ``configTypeOrError`` are now top level fields, and there are ``configTypes`` and
   ``runtimeTypes`` fields on ``Pipeline``. Top-level field type and types property on ``Pipeline``
   has been eliminated.
 - ``StepTag has been renamed to ``StepKind``
@@ -4029,7 +4036,7 @@ snapshots['test_build_all_docs 28'] = '''Multiple Outputs
 ----------------
 
 So far all of our examples have been solids that have a single output. But
-solids can have an arbitrary number of outputs. Downstream solids can 
+solids can have an arbitrary number of outputs. Downstream solids can
 depend on any number of these outputs. Additionally, these outputs do
 not *necessarily* have to be fired, therefore unlocking the ability for
 downstream solids to be invoked conditionally based on something that
@@ -4054,16 +4061,16 @@ Notice how ``return_dict_results`` has two outputs. For the first time
 we have provided the name argument to an :py:class:`OutputDefinition <dagster.OutputDefinition>`.
 (The name of an output defaults to ``'result'``, as it does for a
 :py:class:`DependencyDefinition <dagster.DependencyDefinition>`) Output names must be unique
-and each result returned by a solid's transform function must have a name that corresponds to
+and each result returned by a solid's compute function must have a name that corresponds to
 one of these outputs.
 
 So from ``return_dict_results`` we used :py:class:`MultipleResults <dagster.MultipleResults>`
-to return all outputs from this transform.
+to return all outputs from this compute.
 
 Just as this tutorial gives us the first example of a named
 :py:class:`OutputDefinition <dagster.OutputDefinition>`, this is also the first time that we've
 seen a named :py:class:`DependencyDefinition <dagster.DependencyDefinition>`. Recall that dependencies
-point to a particular **output** of a solid, rather than to the solid itself. 
+point to a particular **output** of a solid, rather than to the solid itself.
 
 With this we can run the pipeline (condensed here for brevity):
 
@@ -4088,9 +4095,9 @@ Iterator of ``Result``
 ^^^^^^^^^^^^^^^^^^^^^^
 
 The :py:class:`MultipleResults <dagster.MultipleResults>` class is not the only way
-to return multiple results from a solid transform function. You can also yield
+to return multiple results from a solid compute function. You can also yield
 multiple instances of the ``Result`` object. (Note: this is actually the core
-specification of the transform function: all other forms are implemented in terms of
+specification of the compute function: all other forms are implemented in terms of
 the iterator form.)
 
 .. literalinclude:: ../../../../dagster/tutorials/intro_tutorial/multiple_outputs.py
@@ -4633,16 +4640,16 @@ so that their inputs can be read from external configuration files. Solids can a
 Solids are defined using the :func:`@lambda_solid <dagster.lambda_solid>` or
 :func:`@solid <dagster.solid>` decorators, or using the underlying
 :class:`SolidDefinition <dagster.SolidDefinition>` class. These APIs wrap an underlying
-`transform function`, making its metadata queryable by higher-level tools.
+`compute function`, making its metadata queryable by higher-level tools.
 
-Transform Function
+Compute Function
 ^^^^^^^^^^^^^^^^^^
 
 .. image:: transform_fn.png
     :scale: 40 %
     :align: center
 
-The user-supplied function which forms the heart of a solid definition. The transform functions are 
+The user-supplied function which forms the heart of a solid definition. The compute functions are
 the business logic defined by you as the user; this business logic is what will be executed when the
 solid is invoked by the Dagster engine.
 
@@ -4654,10 +4661,10 @@ Result
     :scale: 40 %
     :align: center
 
-A result is how a solid's transform function communicates the value of an output, and its
+A result is how a solid's compute function communicates the value of an output, and its
 name, to Dagster.
 
-Solid transform functions are expected to yield a stream of results. Implementers of a solid must
+Solid compute functions are expected to yield a stream of results. Implementers of a solid must
 ensure their tranform yields :class:`Result <dagster.Result>` objects.
 
 In the common case where only a single result is yielded, the machinery provides sugar allowing
@@ -4837,7 +4844,7 @@ Execution Step
 
 Execution steps are concrete computations, one or more of which corresponds to a solid in a pipeline
 that has been compiled with a config. Some execution steps are generated in order to compute the
-core transform functions of solids, but execution steps may also be generated in order to
+core compute functions of solids, but execution steps may also be generated in order to
 materialize outputs, check expectations against outputs, etc.
 
 Users do not directly instantiate or manipulate execution steps.
@@ -20368,7 +20375,7 @@ snapshots['test_build_all_docs 53'] = '''
 <hr class="docutils" />
 <dl class="class">
 <dt id="dagster.SolidDefinition">
-<em class="property">class </em><code class="descclassname">dagster.</code><code class="descname">SolidDefinition</code><span class="sig-paren">(</span><em>name</em>, <em>inputs</em>, <em>transform_fn</em>, <em>outputs</em>, <em>config_field=None</em>, <em>description=None</em>, <em>metadata=None</em>, <em>resources=None</em>, <em>step_metadata_fn=None</em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dagster/core/definitions/solid.html#SolidDefinition"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dagster.SolidDefinition" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">dagster.</code><code class="descname">SolidDefinition</code><span class="sig-paren">(</span><em>name</em>, <em>inputs</em>, <em>compute_fn</em>, <em>outputs</em>, <em>config_field=None</em>, <em>description=None</em>, <em>metadata=None</em>, <em>resources=None</em>, <em>step_metadata_fn=None</em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dagster/core/definitions/solid.html#SolidDefinition"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dagster.SolidDefinition" title="Permalink to this definition">¶</a></dt>
 <dd><p>A solid (a name extracted from the acronym of “software-structured data” (SSD)) represents
 a unit of computation within a data pipeline.</p>
 <p>As its core, a solid is a function. It accepts inputs (which are values produced from
@@ -20389,7 +20396,7 @@ is generally used by framework authors.</p>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>name</strong> (<em>str</em>) – Name of the solid.</p></li>
 <li><p><strong>inputs</strong> (<em>List</em><em>[</em><a class="reference internal" href="#dagster.InputDefinition" title="dagster.InputDefinition"><em>InputDefinition</em></a><em>]</em>) – Inputs of the solid.</p></li>
-<li><p><strong>(</strong><strong>Callable</strong><strong>[</strong><strong>[</strong><strong>SystemTransformExecutionContext</strong><strong>, </strong><strong>]</strong><strong>, </strong><strong>Iterable</strong><strong>[</strong><strong>Union</strong><strong>[</strong><strong>Result</strong><strong>,</strong> (<em>transform_fn</em>) – <p>Materialization]]]): The core of the solid, the function that does the actual
+<li><p><strong>(</strong><strong>Callable</strong><strong>[</strong><strong>[</strong><strong>SystemTransformExecutionContext</strong><strong>, </strong><strong>]</strong><strong>, </strong><strong>Iterable</strong><strong>[</strong><strong>Union</strong><strong>[</strong><strong>Result</strong><strong>,</strong> (<em>compute_fn</em>) – <p>Materialization]]]): The core of the solid, the function that does the actual
 computation. The arguments passed to this function after context are deteremined by
 <code class="docutils literal notranslate"><span class="pre">inputs</span></code>.</p>
 <p>This function yields <a class="reference internal" href="#dagster.Result" title="dagster.Result"><code class="xref py py-class docutils literal notranslate"><span class="pre">Result</span></code></a> according to <code class="docutils literal notranslate"><span class="pre">outputs</span></code> or
@@ -20412,7 +20419,7 @@ certain metadata to be attached to a solid.</p></li>
     <span class="n">name</span><span class="o">=</span><span class="s2">&quot;add_one&quot;</span><span class="p">,</span>
     <span class="n">inputs</span><span class="o">=</span><span class="p">[</span><span class="n">InputDefinition</span><span class="p">(</span><span class="s2">&quot;num&quot;</span><span class="p">,</span> <span class="n">Int</span><span class="p">)],</span>
     <span class="n">outputs</span><span class="o">=</span><span class="p">[</span><span class="n">OutputDefinition</span><span class="p">(</span><span class="n">Int</span><span class="p">)],</span> <span class="c1"># default name (&quot;result&quot;)</span>
-    <span class="n">transform_fn</span><span class="o">=</span><span class="n">_add_one</span><span class="p">,</span>
+    <span class="n">compute_fn</span><span class="o">=</span><span class="n">_add_one</span><span class="p">,</span>
 <span class="p">)</span>
 </pre></div>
 </div>
@@ -20421,7 +20428,7 @@ certain metadata to be attached to a solid.</p></li>
 <dl class="class">
 <dt id="dagster.InputDefinition">
 <em class="property">class </em><code class="descclassname">dagster.</code><code class="descname">InputDefinition</code><span class="sig-paren">(</span><em>name</em>, <em>dagster_type=None</em>, <em>expectations=None</em>, <em>description=None</em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dagster/core/definitions/input.html#InputDefinition"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dagster.InputDefinition" title="Permalink to this definition">¶</a></dt>
-<dd><p>An InputDefinition instance represents an argument to a transform defined within a solid.
+<dd><p>An InputDefinition instance represents an argument to a compute defined within a solid.
 Inputs are values within the dagster type system that are created from previous solids.</p>
 <dl class="attribute">
 <dt id="dagster.InputDefinition.name">
@@ -20531,8 +20538,8 @@ the default name of “result”.</p>
 <dl class="class">
 <dt id="dagster.Result">
 <em class="property">class </em><code class="descclassname">dagster.</code><code class="descname">Result</code><a class="reference internal" href="../../../_modules/dagster/core/definitions/result.html#Result"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dagster.Result" title="Permalink to this definition">¶</a></dt>
-<dd><p>A solid transform function return a stream of Result objects.
-An implementator of a SolidDefinition must provide a transform that
+<dd><p>A solid compute function return a stream of Result objects.
+An implementator of a SolidDefinition must provide a compute that
 yields objects of this type.</p>
 <dl class="attribute">
 <dt id="dagster.Result.value">
@@ -20602,17 +20609,17 @@ should return a single value.</p>
 <code class="descclassname">&#64;</code><code class="descclassname">dagster.</code><code class="descname">solid</code><span class="sig-paren">(</span><em>name=None</em>, <em>inputs=None</em>, <em>outputs=None</em>, <em>config_field=None</em>, <em>description=None</em>, <em>resources=None</em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dagster/core/definitions/decorators.html#solid"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dagster.solid" title="Permalink to this definition">¶</a></dt>
 <dd><p>(decorator) Create a solid with specified parameters.</p>
 <p>This shortcut simplifies the core solid API by exploding arguments into kwargs of the
-transform function and omitting additional parameters when they are not needed.
+compute function and omitting additional parameters when they are not needed.
 Parameters are otherwise as in the core API, <a class="reference internal" href="#dagster.SolidDefinition" title="dagster.SolidDefinition"><code class="xref py py-class docutils literal notranslate"><span class="pre">SolidDefinition</span></code></a>.</p>
-<p>The decorated function will be used as the solid’s transform function. Unlike in the core API,
-the transform function does not have to yield <a class="reference internal" href="#dagster.Result" title="dagster.Result"><code class="xref py py-class docutils literal notranslate"><span class="pre">Result</span></code></a> object directly. Several
+<p>The decorated function will be used as the solid’s compute function. Unlike in the core API,
+the compute function does not have to yield <a class="reference internal" href="#dagster.Result" title="dagster.Result"><code class="xref py py-class docutils literal notranslate"><span class="pre">Result</span></code></a> object directly. Several
 simpler alternatives are available:</p>
 <ol class="arabic simple">
 <li><p>Return a value. This is returned as a <a class="reference internal" href="#dagster.Result" title="dagster.Result"><code class="xref py py-class docutils literal notranslate"><span class="pre">Result</span></code></a> for a single output solid.</p></li>
 <li><p>Return a <a class="reference internal" href="#dagster.Result" title="dagster.Result"><code class="xref py py-class docutils literal notranslate"><span class="pre">Result</span></code></a>. Works like yielding result.</p></li>
 <li><p>Return an instance of <a class="reference internal" href="#dagster.MultipleResults" title="dagster.MultipleResults"><code class="xref py py-class docutils literal notranslate"><span class="pre">MultipleResults</span></code></a>. Works like yielding several results for
 multiple outputs. Useful for solids that have multiple outputs.</p></li>
-<li><p>Yield <a class="reference internal" href="#dagster.Result" title="dagster.Result"><code class="xref py py-class docutils literal notranslate"><span class="pre">Result</span></code></a>. Same as default transform behaviour.</p></li>
+<li><p>Yield <a class="reference internal" href="#dagster.Result" title="dagster.Result"><code class="xref py py-class docutils literal notranslate"><span class="pre">Result</span></code></a>. Same as default compute behaviour.</p></li>
 </ol>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -20689,7 +20696,7 @@ multiple outputs. Useful for solids that have multiple outputs.</p></li>
 <em class="property">class </em><code class="descclassname">dagster.</code><code class="descname">MultipleResults</code><a class="reference internal" href="../../../_modules/dagster/core/definitions/decorators.html#MultipleResults"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dagster.MultipleResults" title="Permalink to this definition">¶</a></dt>
 <dd><p>A shortcut to output multiple results.</p>
 <p>When using the <a class="reference internal" href="#dagster.solid" title="dagster.solid"><code class="xref py py-func docutils literal notranslate"><span class="pre">&#64;solid</span></code></a> API, you may return an instance of
-<code class="docutils literal notranslate"><span class="pre">MultipleResults</span></code> from a decorated transform function instead of yielding multiple results.</p>
+<code class="docutils literal notranslate"><span class="pre">MultipleResults</span></code> from a decorated compute function instead of yielding multiple results.</p>
 <dl class="attribute">
 <dt id="dagster.MultipleResults.results">
 <code class="descname">results</code><a class="headerlink" href="#dagster.MultipleResults.results" title="Permalink to this definition">¶</a></dt>
@@ -21954,6 +21961,13 @@ package versions move in lockstep with each other and with git tags.</p>
 <p>As the API is still in flux, we aren’t following strict semantic versioning rules at this point, but roughly
 intend micro versions to reflect a regular release schedule and minor versions to reflect
 milestones in the framework’s capability.</p>
+<div class="section" id="upcoming-release">
+<h2>Upcoming Release<a class="headerlink" href="#upcoming-release" title="Permalink to this headline">¶</a></h2>
+<p><strong>API Changes</strong></p>
+<ul class="simple">
+<li><p>Rename <code class="docutils literal notranslate"><span class="pre">transform_fn</span></code> on SolidDefinition to <code class="docutils literal notranslate"><span class="pre">compute_fn</span></code>. Also renames the tag produced on the associated steps from <code class="docutils literal notranslate"><span class="pre">transform</span></code> to <code class="docutils literal notranslate"><span class="pre">compute</span></code>.</p></li>
+</ul>
+</div>
 <div class="section" id="id1">
 <h2>0.4.2<a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h2>
 <p><strong>API Changes</strong></p>
@@ -26471,10 +26485,10 @@ happened during the computation.</p>
 we have provided the name argument to an <a class="reference internal" href="../../api/apidocs/solids.html#dagster.OutputDefinition" title="dagster.OutputDefinition"><code class="xref py py-class docutils literal notranslate"><span class="pre">OutputDefinition</span></code></a>.
 (The name of an output defaults to <code class="docutils literal notranslate"><span class="pre">\'result\'</span></code>, as it does for a
 <a class="reference internal" href="../../api/apidocs/pipeline.html#dagster.DependencyDefinition" title="dagster.DependencyDefinition"><code class="xref py py-class docutils literal notranslate"><span class="pre">DependencyDefinition</span></code></a>) Output names must be unique
-and each result returned by a solid’s transform function must have a name that corresponds to
+and each result returned by a solid’s compute function must have a name that corresponds to
 one of these outputs.</p>
 <p>So from <code class="docutils literal notranslate"><span class="pre">return_dict_results</span></code> we used <a class="reference internal" href="../../api/apidocs/solids.html#dagster.MultipleResults" title="dagster.MultipleResults"><code class="xref py py-class docutils literal notranslate"><span class="pre">MultipleResults</span></code></a>
-to return all outputs from this transform.</p>
+to return all outputs from this compute.</p>
 <p>Just as this tutorial gives us the first example of a named
 <a class="reference internal" href="../../api/apidocs/solids.html#dagster.OutputDefinition" title="dagster.OutputDefinition"><code class="xref py py-class docutils literal notranslate"><span class="pre">OutputDefinition</span></code></a>, this is also the first time that we’ve
 seen a named <a class="reference internal" href="../../api/apidocs/pipeline.html#dagster.DependencyDefinition" title="dagster.DependencyDefinition"><code class="xref py py-class docutils literal notranslate"><span class="pre">DependencyDefinition</span></code></a>. Recall that dependencies
@@ -26500,9 +26514,9 @@ point to a particular <strong>output</strong> of a solid, rather than to the sol
 <div class="section" id="iterator-of-result">
 <h2>Iterator of <code class="docutils literal notranslate"><span class="pre">Result</span></code><a class="headerlink" href="#iterator-of-result" title="Permalink to this headline">¶</a></h2>
 <p>The <a class="reference internal" href="../../api/apidocs/solids.html#dagster.MultipleResults" title="dagster.MultipleResults"><code class="xref py py-class docutils literal notranslate"><span class="pre">MultipleResults</span></code></a> class is not the only way
-to return multiple results from a solid transform function. You can also yield
+to return multiple results from a solid compute function. You can also yield
 multiple instances of the <code class="docutils literal notranslate"><span class="pre">Result</span></code> object. (Note: this is actually the core
-specification of the transform function: all other forms are implemented in terms of
+specification of the compute function: all other forms are implemented in terms of
 the iterator form.)</p>
 <div class="literal-block-wrapper docutils container" id="id2">
 <div class="code-block-caption"><span class="caption-text">multiple_outputs.py</span><a class="headerlink" href="#id2" title="Permalink to this code">¶</a></div>
@@ -28340,21 +28354,21 @@ so that their inputs can be read from external configuration files. Solids can a
 <p>Solids are defined using the <a class="reference internal" href="../api/apidocs/solids.html#dagster.lambda_solid" title="dagster.lambda_solid"><code class="xref py py-func docutils literal notranslate"><span class="pre">&#64;lambda_solid</span></code></a> or
 <a class="reference internal" href="../api/apidocs/solids.html#dagster.solid" title="dagster.solid"><code class="xref py py-func docutils literal notranslate"><span class="pre">&#64;solid</span></code></a> decorators, or using the underlying
 <a class="reference internal" href="../api/apidocs/solids.html#dagster.SolidDefinition" title="dagster.SolidDefinition"><code class="xref py py-class docutils literal notranslate"><span class="pre">SolidDefinition</span></code></a> class. These APIs wrap an underlying
-<cite>transform function</cite>, making its metadata queryable by higher-level tools.</p>
+<cite>compute function</cite>, making its metadata queryable by higher-level tools.</p>
 </div>
-<div class="section" id="transform-function">
-<h2>Transform Function<a class="headerlink" href="#transform-function" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="compute-function">
+<h2>Compute Function<a class="headerlink" href="#compute-function" title="Permalink to this headline">¶</a></h2>
 <a class="reference internal image-reference" href="../../_images/transform_fn.png"><img alt="../../_images/transform_fn.png" class="align-center" src="../../_images/transform_fn.png" style="width: 254.8px; height: 102.4px;" /></a>
-<p>The user-supplied function which forms the heart of a solid definition. The transform functions are
+<p>The user-supplied function which forms the heart of a solid definition. The compute functions are
 the business logic defined by you as the user; this business logic is what will be executed when the
 solid is invoked by the Dagster engine.</p>
 </div>
 <div class="section" id="result">
 <h2>Result<a class="headerlink" href="#result" title="Permalink to this headline">¶</a></h2>
 <a class="reference internal image-reference" href="../../_images/result.png"><img alt="../../_images/result.png" class="align-center" src="../../_images/result.png" style="width: 224.8px; height: 107.60000000000001px;" /></a>
-<p>A result is how a solid’s transform function communicates the value of an output, and its
+<p>A result is how a solid’s compute function communicates the value of an output, and its
 name, to Dagster.</p>
-<p>Solid transform functions are expected to yield a stream of results. Implementers of a solid must
+<p>Solid compute functions are expected to yield a stream of results. Implementers of a solid must
 ensure their tranform yields <a class="reference internal" href="../api/apidocs/solids.html#dagster.Result" title="dagster.Result"><code class="xref py py-class docutils literal notranslate"><span class="pre">Result</span></code></a> objects.</p>
 <p>In the common case where only a single result is yielded, the machinery provides sugar allowing
 the user to return a value instead of yielding it, and automatically wrapping the value in the
@@ -28486,7 +28500,7 @@ multiprocess, using Airflow).</p>
 <h2>Execution Step<a class="headerlink" href="#execution-step" title="Permalink to this headline">¶</a></h2>
 <p>Execution steps are concrete computations, one or more of which corresponds to a solid in a pipeline
 that has been compiled with a config. Some execution steps are generated in order to compute the
-core transform functions of solids, but execution steps may also be generated in order to
+core compute functions of solids, but execution steps may also be generated in order to
 materialize outputs, check expectations against outputs, etc.</p>
 <p>Users do not directly instantiate or manipulate execution steps.</p>
 </div>
@@ -28542,7 +28556,7 @@ may often also be shimmed through config. Inputs are defined using the
 <li class="toctree-l1"><a class="reference internal" href="../api/api.html">API Docs</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Reference</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#solid">Solid</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#transform-function">Transform Function</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#compute-function">Compute Function</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#result">Result</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#dependency-definition">Dependency Definition</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#intermediates">Intermediates</a></li>

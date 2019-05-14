@@ -1,7 +1,7 @@
 from dagster import InputDefinition, OutputDefinition, Result, SolidDefinition, check, lambda_solid
 
 
-def _transform_fn(context, inputs):
+def _compute_fn(context, inputs):
     passed_rows = []
     seen = set()
     for row in inputs.values():
@@ -32,7 +32,7 @@ def create_root_solid(name):
     inp = InputDefinition(input_name)
 
     return SolidDefinition(
-        name=name, inputs=[inp], transform_fn=_transform_fn, outputs=[OutputDefinition()]
+        name=name, inputs=[inp], compute_fn=_compute_fn, outputs=[OutputDefinition()]
     )
 
 
@@ -40,7 +40,7 @@ def create_solid_with_deps(name, *solid_deps):
     inputs = [InputDefinition(solid_dep.name) for solid_dep in solid_deps]
 
     return SolidDefinition(
-        name=name, inputs=inputs, transform_fn=_transform_fn, outputs=[OutputDefinition()]
+        name=name, inputs=inputs, compute_fn=_compute_fn, outputs=[OutputDefinition()]
     )
 
 

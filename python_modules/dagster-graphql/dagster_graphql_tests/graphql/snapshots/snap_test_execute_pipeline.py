@@ -52,7 +52,7 @@ snapshots['test_successful_pipeline_reexecution 1'] = {
                         '__typename': 'ExecutionStepStartEvent',
                         'level': 'INFO',
                         'step': {
-                            'kind': 'TRANSFORM'
+                            'kind': 'COMPUTE'
                         }
                     },
                     {
@@ -71,8 +71,8 @@ snapshots['test_successful_pipeline_reexecution 1'] = {
                         'level': 'INFO',
                         'outputName': 'result',
                         'step': {
-                            'key': 'sum_solid.transform',
-                            'kind': 'TRANSFORM'
+                            'key': 'sum_solid.compute',
+                            'kind': 'COMPUTE'
                         }
                     },
                     {
@@ -87,7 +87,7 @@ snapshots['test_successful_pipeline_reexecution 1'] = {
                         '__typename': 'ExecutionStepStartEvent',
                         'level': 'INFO',
                         'step': {
-                            'kind': 'TRANSFORM'
+                            'kind': 'COMPUTE'
                         }
                     },
                     {
@@ -106,8 +106,8 @@ snapshots['test_successful_pipeline_reexecution 1'] = {
                         'level': 'INFO',
                         'outputName': 'result',
                         'step': {
-                            'key': 'sum_sq_solid.transform',
-                            'kind': 'TRANSFORM'
+                            'key': 'sum_sq_solid.compute',
+                            'kind': 'COMPUTE'
                         }
                     },
                     {
@@ -149,7 +149,7 @@ snapshots['test_successful_pipeline_reexecution 2'] = {
                         '__typename': 'ExecutionStepStartEvent',
                         'level': 'INFO',
                         'step': {
-                            'kind': 'TRANSFORM'
+                            'kind': 'COMPUTE'
                         }
                     },
                     {
@@ -168,8 +168,8 @@ snapshots['test_successful_pipeline_reexecution 2'] = {
                         'level': 'INFO',
                         'outputName': 'result',
                         'step': {
-                            'key': 'sum_sq_solid.transform',
-                            'kind': 'TRANSFORM'
+                            'key': 'sum_sq_solid.compute',
+                            'kind': 'COMPUTE'
                         }
                     },
                     {

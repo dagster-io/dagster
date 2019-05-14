@@ -4,11 +4,18 @@ Release Notes
 Dagster versions follow the guidelines in `PEP 440 <https://www.python.org/dev/peps/pep-0440//>`_.
 
 To make dependency management easier in the context of a monorepo with many installable projects,
-package versions move in lockstep with each other and with git tags. 
+package versions move in lockstep with each other and with git tags.
 
 As the API is still in flux, we aren't following strict semantic versioning rules at this point, but roughly
 intend micro versions to reflect a regular release schedule and minor versions to reflect
 milestones in the framework's capability.
+
+Upcoming Release
+-----
+**API Changes**
+
+- Rename ``transform_fn`` on SolidDefinition to ``compute_fn``. Also renames the tag produced on the associated steps from ``transform`` to ``compute``.
+
 
 0.4.2
 -----
@@ -150,7 +157,7 @@ milestones in the framework's capability.
 **GraphQL**
 
 - ``StartSubplanExecutionInvalidStepsError`` and ``InvalidSubplanExecutionError`` replaced
-  with more exact ``StartSubplanExecutionInvalidStepError`` and 
+  with more exact ``StartSubplanExecutionInvalidStepError`` and
   ``InvalidSubplanMissingInputError``
 
 **Dagit**
@@ -222,7 +229,7 @@ milestones in the framework's capability.
 **API Changes**
 
 - New decorator-based ``@resource`` API as a more concise alternative to ``ResourceDefinition``
-- Dagster config type system now supports enum types. (``dagster.Enum`` and ``dagster.EnumType``) 
+- Dagster config type system now supports enum types. (``dagster.Enum`` and ``dagster.EnumType``)
 - New top level properties ``resources`` and ``log`` on ``info``.
 - The context stack in ``RuntimeExecutionContext`` is no longer modifiable by the user during a
   transform. It has been renamed to ``tags``.
@@ -234,7 +241,7 @@ milestones in the framework's capability.
   solid subset and have slightly improved call signatures.
 - The config and runtime type system split is now reflected in the GraphQL frontend. This was the
   infrastructure piece that allowed the fix to #598. ``runtimeTypeOrError`` and
-  ``configTypeOrError`` are now top level fields, and there are ``configTypes`` and 
+  ``configTypeOrError`` are now top level fields, and there are ``configTypes`` and
   ``runtimeTypes`` fields on ``Pipeline``. Top-level field type and types property on ``Pipeline``
   has been eliminated.
 - ``StepTag has been renamed to ``StepKind``

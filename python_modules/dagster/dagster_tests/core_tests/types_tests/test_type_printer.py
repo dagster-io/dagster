@@ -134,7 +134,7 @@ def define_solid_for_test_type(name, runtime_type):
         inputs=[],
         outputs=[],
         config_field=Field(runtime_type),
-        transform_fn=lambda _info, _inputs: None,
+        compute_fn=lambda _info, _inputs: None,
     )
 
 

@@ -36,7 +36,7 @@ def test_basic_solids_config():
                 inputs=[],
                 outputs=[],
                 config_field=Field(Dict(fields={'required_int': Field(Int)})),
-                transform_fn=lambda *_args: fail_me(),
+                compute_fn=lambda *_args: fail_me(),
             )
         ],
     )

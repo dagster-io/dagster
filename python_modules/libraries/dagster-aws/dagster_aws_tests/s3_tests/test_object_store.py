@@ -108,9 +108,9 @@ def test_using_s3_for_subplan(s3_bucket):
 
     execution_plan = create_execution_plan(pipeline, environment_dict=environment_dict)
 
-    assert execution_plan.get_step_by_key('return_one.transform')
+    assert execution_plan.get_step_by_key('return_one.compute')
 
-    step_keys = ['return_one.transform']
+    step_keys = ['return_one.compute']
 
     run_id = str(uuid.uuid4())
 
@@ -124,34 +124,34 @@ def test_using_s3_for_subplan(s3_bucket):
             )
         )
 
-        assert get_step_output(return_one_step_events, 'return_one.transform')
+        assert get_step_output(return_one_step_events, 'return_one.compute')
         with scoped_pipeline_context(
             pipeline, environment_dict, RunConfig(run_id=run_id)
         ) as context:
-            assert has_s3_intermediate(context, s3_bucket, run_id, 'return_one.transform')
-            assert get_s3_intermediate(context, s3_bucket, run_id, 'return_one.transform', Int) == 1
+            assert has_s3_intermediate(context, s3_bucket, run_id, 'return_one.compute')
+            assert get_s3_intermediate(context, s3_bucket, run_id, 'return_one.compute', Int) == 1
 
         add_one_step_events = list(
             execute_plan(
                 execution_plan,
                 environment_dict=environment_dict,
                 run_config=RunConfig(run_id=run_id),
-                step_keys_to_execute=['add_one.transform'],
+                step_keys_to_execute=['add_one.compute'],
             )
         )
 
-        assert get_step_output(add_one_step_events, 'add_one.transform')
+        assert get_step_output(add_one_step_events, 'add_one.compute')
         with scoped_pipeline_context(
             pipeline, environment_dict, RunConfig(run_id=run_id)
         ) as context:
-            assert has_s3_intermediate(context, s3_bucket, run_id, 'add_one.transform')
-            assert get_s3_intermediate(context, s3_bucket, run_id, 'add_one.transform', Int) == 2
+            assert has_s3_intermediate(context, s3_bucket, run_id, 'add_one.compute')
+            assert get_s3_intermediate(context, s3_bucket, run_id, 'add_one.compute', Int) == 2
     finally:
         with scoped_pipeline_context(
             pipeline, environment_dict, RunConfig(run_id=run_id)
         ) as context:
-            rm_s3_intermediate(context, s3_bucket, run_id, 'return_one.transform')
-            rm_s3_intermediate(context, s3_bucket, run_id, 'add_one.transform')
+            rm_s3_intermediate(context, s3_bucket, run_id, 'return_one.compute')
+            rm_s3_intermediate(context, s3_bucket, run_id, 'add_one.compute')
 
 
 class FancyStringS3TypeStoragePlugin(TypeStoragePlugin):  # pylint:disable=no-init

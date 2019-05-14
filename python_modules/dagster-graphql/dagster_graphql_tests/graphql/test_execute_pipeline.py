@@ -117,7 +117,7 @@ def test_subscription_query_error():
     assert run_logs['__typename'] == 'PipelineRunLogsSubscriptionSuccess'
 
     step_run_log_entry = _get_step_run_log_entry(
-        run_logs, 'throw_a_thing.transform', 'ExecutionStepFailureEvent'
+        run_logs, 'throw_a_thing.compute', 'ExecutionStepFailureEvent'
     )
 
     assert step_run_log_entry
@@ -125,7 +125,7 @@ def test_subscription_query_error():
 
     assert (
         step_run_log_entry['message']
-        == 'DagsterEventType.STEP_FAILURE for step throw_a_thing.transform'
+        == 'DagsterEventType.STEP_FAILURE for step throw_a_thing.compute'
     )
     assert step_run_log_entry['error']
     assert step_run_log_entry['level'] == 'ERROR'
@@ -201,8 +201,8 @@ def test_basic_inmemory_sync_execution():
 
     assert first_event_of_type(logs, 'PipelineStartEvent')['level'] == 'INFO'
 
-    sum_solid_output = get_step_output_event(logs, 'sum_solid.transform')
-    assert sum_solid_output['step']['key'] == 'sum_solid.transform'
+    sum_solid_output = get_step_output_event(logs, 'sum_solid.compute')
+    assert sum_solid_output['step']['key'] == 'sum_solid.compute'
 
 
 def test_basic_filesystem_sync_execution():
@@ -228,8 +228,8 @@ def test_basic_filesystem_sync_execution():
 
     assert first_event_of_type(logs, 'PipelineStartEvent')['level'] == 'INFO'
 
-    sum_solid_output = get_step_output_event(logs, 'sum_solid.transform')
-    assert sum_solid_output['step']['key'] == 'sum_solid.transform'
+    sum_solid_output = get_step_output_event(logs, 'sum_solid.compute')
+    assert sum_solid_output['step']['key'] == 'sum_solid.compute'
     assert sum_solid_output['outputName'] == 'result'
     output_path = sum_solid_output['intermediateMaterialization']['path']
 
@@ -293,10 +293,10 @@ def test_successful_pipeline_reexecution(snapshot):
     )
 
     assert has_filesystem_intermediate(run_id, 'sum_solid.inputs.num.read', 'input_thunk_output')
-    assert has_filesystem_intermediate(run_id, 'sum_solid.transform')
-    assert has_filesystem_intermediate(run_id, 'sum_sq_solid.transform')
+    assert has_filesystem_intermediate(run_id, 'sum_solid.compute')
+    assert has_filesystem_intermediate(run_id, 'sum_sq_solid.compute')
     assert (
-        str(get_filesystem_intermediate(run_id, 'sum_sq_solid.transform', PoorMansDataFrame))
+        str(get_filesystem_intermediate(run_id, 'sum_sq_solid.compute', PoorMansDataFrame))
         == expected_value_repr
     )
 
@@ -308,11 +308,11 @@ def test_successful_pipeline_reexecution(snapshot):
         variables={
             'pipeline': {'name': 'csv_hello_world'},
             'config': csv_hello_world_solids_config_fs_storage(),
-            'stepKeys': ['sum_sq_solid.transform'],
+            'stepKeys': ['sum_sq_solid.compute'],
             'executionMetadata': {'runId': new_run_id},
             'reexecutionConfig': {
                 'previousRunId': run_id,
-                'stepOutputHandles': [{'stepKey': 'sum_solid.transform', 'outputName': 'result'}],
+                'stepOutputHandles': [{'stepKey': 'sum_solid.compute', 'outputName': 'result'}],
             },
             'mode': 'default',
         },
@@ -327,18 +327,18 @@ def test_successful_pipeline_reexecution(snapshot):
     assert has_event_of_type(logs, 'PipelineSuccessEvent')
     assert not has_event_of_type(logs, 'PipelineFailureEvent')
 
-    assert not get_step_output_event(logs, 'sum_solid.transform')
-    assert get_step_output_event(logs, 'sum_sq_solid.transform')
+    assert not get_step_output_event(logs, 'sum_solid.compute')
+    assert get_step_output_event(logs, 'sum_sq_solid.compute')
 
     snapshot.assert_match(result_two.data)
 
     assert not has_filesystem_intermediate(
         new_run_id, 'sum_solid.inputs.num.read', 'input_thunk_output'
     )
-    assert has_filesystem_intermediate(new_run_id, 'sum_solid.transform')
-    assert has_filesystem_intermediate(new_run_id, 'sum_sq_solid.transform')
+    assert has_filesystem_intermediate(new_run_id, 'sum_solid.compute')
+    assert has_filesystem_intermediate(new_run_id, 'sum_sq_solid.compute')
     assert (
-        str(get_filesystem_intermediate(new_run_id, 'sum_sq_solid.transform', PoorMansDataFrame))
+        str(get_filesystem_intermediate(new_run_id, 'sum_sq_solid.compute', PoorMansDataFrame))
         == expected_value_repr
     )
 
@@ -368,7 +368,7 @@ def test_pipeline_reexecution_invalid_step_in_subset():
             'executionMetadata': {'runId': new_run_id},
             'reexecutionConfig': {
                 'previousRunId': run_id,
-                'stepOutputHandles': [{'stepKey': 'sum_solid.transform', 'outputName': 'result'}],
+                'stepOutputHandles': [{'stepKey': 'sum_solid.compute', 'outputName': 'result'}],
             },
             'mode': 'default',
         },
@@ -400,7 +400,7 @@ def test_pipeline_reexecution_invalid_step_in_step_output_handle():
         variables={
             'pipeline': {'name': 'csv_hello_world'},
             'config': csv_hello_world_solids_config(),
-            'stepKeys': ['sum_sq_solid.transform'],
+            'stepKeys': ['sum_sq_solid.compute'],
             'executionMetadata': {'runId': new_run_id},
             'reexecutionConfig': {
                 'previousRunId': run_id,
@@ -438,12 +438,12 @@ def test_pipeline_reexecution_invalid_output_in_step_output_handle():
         variables={
             'pipeline': {'name': 'csv_hello_world'},
             'config': csv_hello_world_solids_config(),
-            'stepKeys': ['sum_sq_solid.transform'],
+            'stepKeys': ['sum_sq_solid.compute'],
             'executionMetadata': {'runId': new_run_id},
             'reexecutionConfig': {
                 'previousRunId': run_id,
                 'stepOutputHandles': [
-                    {'stepKey': 'sum_solid.transform', 'outputName': 'invalid_output'}
+                    {'stepKey': 'sum_solid.compute', 'outputName': 'invalid_output'}
                 ],
             },
             'mode': 'default',
@@ -452,7 +452,7 @@ def test_pipeline_reexecution_invalid_output_in_step_output_handle():
 
     query_result = result_two.data['startPipelineExecution']
     assert query_result['__typename'] == 'InvalidOutputError'
-    assert query_result['stepKey'] == 'sum_solid.transform'
+    assert query_result['stepKey'] == 'sum_solid.compute'
     assert query_result['invalidOutputName'] == 'invalid_output'
 
 

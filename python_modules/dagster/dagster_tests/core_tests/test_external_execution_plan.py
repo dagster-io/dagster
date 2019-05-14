@@ -59,9 +59,9 @@ def test_using_file_system_for_subplan():
 
     execution_plan = create_execution_plan(pipeline, environment_dict=environment_dict)
 
-    assert execution_plan.get_step_by_key('return_one.transform')
+    assert execution_plan.get_step_by_key('return_one.compute')
 
-    step_keys = ['return_one.transform']
+    step_keys = ['return_one.compute']
 
     run_id = str(uuid.uuid4())
 
@@ -74,22 +74,22 @@ def test_using_file_system_for_subplan():
         )
     )
 
-    assert get_step_output(return_one_step_events, 'return_one.transform')
-    assert has_filesystem_intermediate(run_id, 'return_one.transform')
-    assert get_filesystem_intermediate(run_id, 'return_one.transform', Int) == 1
+    assert get_step_output(return_one_step_events, 'return_one.compute')
+    assert has_filesystem_intermediate(run_id, 'return_one.compute')
+    assert get_filesystem_intermediate(run_id, 'return_one.compute', Int) == 1
 
     add_one_step_events = list(
         execute_plan(
             execution_plan,
             environment_dict=environment_dict,
             run_config=RunConfig(run_id=run_id),
-            step_keys_to_execute=['add_one.transform'],
+            step_keys_to_execute=['add_one.compute'],
         )
     )
 
-    assert get_step_output(add_one_step_events, 'add_one.transform')
-    assert has_filesystem_intermediate(run_id, 'add_one.transform')
-    assert get_filesystem_intermediate(run_id, 'add_one.transform', Int) == 2
+    assert get_step_output(add_one_step_events, 'add_one.compute')
+    assert has_filesystem_intermediate(run_id, 'add_one.compute')
+    assert get_filesystem_intermediate(run_id, 'add_one.compute', Int) == 2
 
 
 def test_using_file_system_for_subplan_multiprocessing():
@@ -99,9 +99,9 @@ def test_using_file_system_for_subplan_multiprocessing():
 
     execution_plan = create_execution_plan(pipeline, environment_dict=environment_dict)
 
-    assert execution_plan.get_step_by_key('return_one.transform')
+    assert execution_plan.get_step_by_key('return_one.compute')
 
-    step_keys = ['return_one.transform']
+    step_keys = ['return_one.compute']
 
     run_id = str(uuid.uuid4())
 
@@ -119,9 +119,9 @@ def test_using_file_system_for_subplan_multiprocessing():
         )
     )
 
-    assert get_step_output(return_one_step_events, 'return_one.transform')
-    assert has_filesystem_intermediate(run_id, 'return_one.transform')
-    assert get_filesystem_intermediate(run_id, 'return_one.transform', Int) == 1
+    assert get_step_output(return_one_step_events, 'return_one.compute')
+    assert has_filesystem_intermediate(run_id, 'return_one.compute')
+    assert get_filesystem_intermediate(run_id, 'return_one.compute', Int) == 1
 
     add_one_step_events = list(
         execute_plan(
@@ -133,13 +133,13 @@ def test_using_file_system_for_subplan_multiprocessing():
                     handle=ExecutionTargetHandle.for_pipeline_fn(define_inty_pipeline)
                 ),
             ),
-            step_keys_to_execute=['add_one.transform'],
+            step_keys_to_execute=['add_one.compute'],
         )
     )
 
-    assert get_step_output(add_one_step_events, 'add_one.transform')
-    assert has_filesystem_intermediate(run_id, 'add_one.transform')
-    assert get_filesystem_intermediate(run_id, 'add_one.transform', Int) == 2
+    assert get_step_output(add_one_step_events, 'add_one.compute')
+    assert has_filesystem_intermediate(run_id, 'add_one.compute')
+    assert get_filesystem_intermediate(run_id, 'add_one.compute', Int) == 2
 
 
 def test_execute_step_wrong_step_key():
@@ -169,7 +169,7 @@ def test_using_file_system_for_subplan_missing_input():
             execution_plan,
             environment_dict=environment_dict,
             run_config=RunConfig(run_id=run_id),
-            step_keys_to_execute=['add_one.transform'],
+            step_keys_to_execute=['add_one.compute'],
         )
 
 

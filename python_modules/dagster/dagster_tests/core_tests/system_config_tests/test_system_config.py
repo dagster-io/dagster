@@ -129,9 +129,7 @@ def test_provided_default_on_resources_config():
             )
         ],
         solids=[
-            SolidDefinition(
-                name='some_solid', inputs=[], outputs=[], transform_fn=lambda *args: None
-            )
+            SolidDefinition(name='some_solid', inputs=[], outputs=[], compute_fn=lambda *args: None)
         ],
     )
 
@@ -153,9 +151,7 @@ def test_provided_default_on_resources_config():
 def test_default_environment():
     pipeline_def = PipelineDefinition(
         solids=[
-            SolidDefinition(
-                name='some_solid', inputs=[], outputs=[], transform_fn=lambda *args: None
-            )
+            SolidDefinition(name='some_solid', inputs=[], outputs=[], compute_fn=lambda *args: None)
         ]
     )
 
@@ -235,14 +231,14 @@ def define_test_solids_config_pipeline():
                 config_field=Field(Int, is_optional=True),
                 inputs=[],
                 outputs=[],
-                transform_fn=lambda *args: None,
+                compute_fn=lambda *args: None,
             ),
             SolidDefinition(
                 name='string_config_solid',
                 config_field=Field(String, is_optional=True),
                 inputs=[],
                 outputs=[],
-                transform_fn=lambda *args: None,
+                compute_fn=lambda *args: None,
             ),
         ]
     )
@@ -281,10 +277,10 @@ def test_solid_dictionary_some_no_config():
                 config_field=Field(Int),
                 inputs=[],
                 outputs=[],
-                transform_fn=lambda *args: None,
+                compute_fn=lambda *args: None,
             ),
             SolidDefinition(
-                name='no_config_solid', inputs=[], outputs=[], transform_fn=lambda *args: None
+                name='no_config_solid', inputs=[], outputs=[], compute_fn=lambda *args: None
             ),
         ]
     )
@@ -320,10 +316,10 @@ def test_whole_environment():
                 config_field=Field(Int),
                 inputs=[],
                 outputs=[],
-                transform_fn=lambda *args: None,
+                compute_fn=lambda *args: None,
             ),
             SolidDefinition(
-                name='no_config_solid', inputs=[], outputs=[], transform_fn=lambda *args: None
+                name='no_config_solid', inputs=[], outputs=[], compute_fn=lambda *args: None
             ),
         ],
     )
@@ -388,13 +384,13 @@ def test_optional_solid_with_no_config():
                 config_field=Field(Int),
                 inputs=[],
                 outputs=[],
-                transform_fn=lambda context, _inputs: _assert_config_none(context, 234),
+                compute_fn=lambda context, _inputs: _assert_config_none(context, 234),
             ),
             SolidDefinition(
                 name='no_config_solid',
                 inputs=[],
                 outputs=[],
-                transform_fn=lambda context, _inputs: _assert_config_none(context, None),
+                compute_fn=lambda context, _inputs: _assert_config_none(context, None),
             ),
         ],
     )
@@ -414,7 +410,7 @@ def test_optional_solid_with_optional_scalar_config():
                 config_field=Field(Int, is_optional=True),
                 inputs=[],
                 outputs=[],
-                transform_fn=lambda context, _inputs: _assert_config_none(context, 234),
+                compute_fn=lambda context, _inputs: _assert_config_none(context, 234),
             )
         ],
     )
@@ -448,7 +444,7 @@ def test_optional_solid_with_required_scalar_config():
                 config_field=Field(Int),
                 inputs=[],
                 outputs=[],
-                transform_fn=lambda context, _inputs: _assert_config_none(context, 234),
+                compute_fn=lambda context, _inputs: _assert_config_none(context, 234),
             )
         ],
     )
@@ -481,7 +477,7 @@ def test_required_solid_with_required_subfield():
                 config_field=Field(Dict({'required_field': Field(String)})),
                 inputs=[],
                 outputs=[],
-                transform_fn=lambda *_args: None,
+                compute_fn=lambda *_args: None,
             )
         ],
     )
@@ -525,7 +521,7 @@ def test_optional_solid_with_optional_subfield():
                 ),
                 inputs=[],
                 outputs=[],
-                transform_fn=lambda *_args: None,
+                compute_fn=lambda *_args: None,
             )
         ],
     )

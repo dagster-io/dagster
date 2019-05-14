@@ -7,7 +7,7 @@ def test_execution_plan_create_metadata():
         name='solid_metadata_creation',
         inputs=[],
         outputs=[],
-        transform_fn=lambda *args, **kwargs: None,
+        compute_fn=lambda *args, **kwargs: None,
         config_field=Field(Dict({'str_value': Field(String)})),
         step_metadata_fn=lambda env_config: {
             'computed': env_config.solids['solid_metadata_creation'].config['str_value'] + '1'
@@ -22,7 +22,7 @@ def test_execution_plan_create_metadata():
         },
     )
 
-    transform_step = execution_plan.get_step_by_key('solid_metadata_creation.transform')
+    transform_step = execution_plan.get_step_by_key('solid_metadata_creation.compute')
     assert transform_step
 
     assert transform_step.metadata == {'computed': 'foobar1'}

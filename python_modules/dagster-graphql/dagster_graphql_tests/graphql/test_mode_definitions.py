@@ -19,7 +19,7 @@ def test_multi_mode_successful():
             'config': {'resources': {'op': {'config': 2}}},
         }
     )
-    assert get_step_output(add_mode_logs, 'apply_to_three.transform')['valueRepr'] == '5'
+    assert get_step_output(add_mode_logs, 'apply_to_three.compute')['valueRepr'] == '5'
 
     mult_mode_logs = sync_execute_get_events(
         {
@@ -28,7 +28,7 @@ def test_multi_mode_successful():
             'config': {'resources': {'op': {'config': 2}}},
         }
     )
-    assert get_step_output(mult_mode_logs, 'apply_to_three.transform')['valueRepr'] == '6'
+    assert get_step_output(mult_mode_logs, 'apply_to_three.compute')['valueRepr'] == '6'
 
     double_adder_mode_logs = sync_execute_get_events(
         {
@@ -37,7 +37,7 @@ def test_multi_mode_successful():
             'config': {'resources': {'op': {'config': {'num_one': 2, 'num_two': 4}}}},
         }
     )
-    assert get_step_output(double_adder_mode_logs, 'apply_to_three.transform')['valueRepr'] == '9'
+    assert get_step_output(double_adder_mode_logs, 'apply_to_three.compute')['valueRepr'] == '9'
 
 
 MODE_QUERY = '''

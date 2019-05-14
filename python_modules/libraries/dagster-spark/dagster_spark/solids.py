@@ -82,7 +82,7 @@ class SparkSolidDefinition(SolidDefinition):
             'This solid is a generic representation of a parameterized Spark job.',
         )
 
-        def _spark_transform_fn(context, _):
+        def _spark_compute_fn(context, _):
             '''Define Spark execution.
 
             This function defines how we'll execute the Spark job and invokes spark-submit.
@@ -103,7 +103,7 @@ class SparkSolidDefinition(SolidDefinition):
             description=description,
             inputs=[InputDefinition('spark_inputs', List(Path))],
             outputs=[OutputDefinition(dagster_type=List(Path), name='paths')],
-            transform_fn=_spark_transform_fn,
+            compute_fn=_spark_compute_fn,
             config_field=define_spark_config(),
             metadata={'kind': 'spark', 'main_class': main_class},
             step_metadata_fn=functools.partial(

@@ -649,7 +649,7 @@ def define_dagstermill_solid(name, notebook_path, inputs=None, outputs=None, con
     return SolidDefinition(
         name=name,
         inputs=inputs,
-        transform_fn=_dm_solid_transform(name, notebook_path),
+        compute_fn=_dm_solid_transform(name, notebook_path),
         outputs=outputs,
         config_field=config_field,
         description='This solid is backed by the notebook at {path}'.format(path=notebook_path),

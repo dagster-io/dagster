@@ -34,7 +34,7 @@ class EmrRunJobFlowSolidDefinition(SolidDefinition):
 
         description = check.opt_str_param(description, 'description', 'EMR create job flow solid.')
 
-        def _transform_fn(context, _):  # pylint: disable=too-many-locals
+        def _compute_fn(context, _):  # pylint: disable=too-many-locals
             client = boto3.client('emr')
 
             # kick off the EMR job flow
@@ -85,6 +85,6 @@ class EmrRunJobFlowSolidDefinition(SolidDefinition):
             description=description,
             inputs=[InputDefinition(_START, Nothing)],
             outputs=[OutputDefinition(String)],
-            transform_fn=_transform_fn,
+            compute_fn=_compute_fn,
             config_field=define_emr_run_job_flow_config(),
         )

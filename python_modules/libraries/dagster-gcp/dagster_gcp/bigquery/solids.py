@@ -53,7 +53,7 @@ class BigQuerySolidDefinition(SolidDefinition):
         sql_queries = check.list_param(sql_queries, 'sql queries', of_type=str)
         description = check.opt_str_param(description, 'description', 'BigQuery query')
 
-        def _transform_fn(context, _):
+        def _compute_fn(context, _):
             query_job_config = _preprocess_config(context.solid_config.get('query_job_config', {}))
 
             # Retrieve results as pandas DataFrames
@@ -75,7 +75,7 @@ class BigQuerySolidDefinition(SolidDefinition):
             description=description,
             inputs=[InputDefinition(_START, Nothing)],
             outputs=[OutputDefinition(List(DataFrame))],
-            transform_fn=_transform_fn,
+            compute_fn=_compute_fn,
             config_field=define_bigquery_query_config(),
             metadata={'kind': 'sql', 'sql': '\n'.join(sql_queries)},
         )
@@ -110,7 +110,7 @@ class BigQueryLoadSolidDefinition(SolidDefinition):
             description, 'description', 'BigQuery load_table_from_dataframe'
         )
 
-        def _transform_fn(context, inputs):
+        def _compute_fn(context, inputs):
             destination = context.solid_config.get('destination')
             load_job_config = _preprocess_config(context.solid_config.get('load_job_config', {}))
             cfg = LoadJobConfig(**load_job_config) if load_job_config else None
@@ -131,7 +131,7 @@ class BigQueryLoadSolidDefinition(SolidDefinition):
             description=description,
             inputs=self._inputs_for_source(source),
             outputs=[OutputDefinition(Nothing)],
-            transform_fn=_transform_fn,
+            compute_fn=_compute_fn,
             config_field=define_bigquery_load_config(),
         )
 
@@ -148,7 +148,7 @@ class BigQueryCreateDatasetSolidDefinition(SolidDefinition):
         name = check.str_param(name, 'name')
         description = check.opt_str_param(description, 'description', 'BigQuery create_dataset')
 
-        def _transform_fn(context, _):
+        def _compute_fn(context, _):
             (dataset, exists_ok) = [context.solid_config.get(k) for k in ('dataset', 'exists_ok')]
             context.log.info('executing BQ create_dataset for dataset %s' % (dataset))
             context.resources.bq.create_dataset(dataset, exists_ok)
@@ -159,7 +159,7 @@ class BigQueryCreateDatasetSolidDefinition(SolidDefinition):
             description=description,
             inputs=[InputDefinition(_START, Nothing)],
             outputs=[OutputDefinition(Nothing)],
-            transform_fn=_transform_fn,
+            compute_fn=_compute_fn,
             config_field=define_bigquery_create_dataset_config(),
         )
 
@@ -176,7 +176,7 @@ class BigQueryDeleteDatasetSolidDefinition(SolidDefinition):
         name = check.str_param(name, 'name')
         description = check.opt_str_param(description, 'description', 'BigQuery delete_dataset')
 
-        def _transform_fn(context, _):
+        def _compute_fn(context, _):
             (dataset, delete_contents, not_found_ok) = [
                 context.solid_config.get(k) for k in ('dataset', 'delete_contents', 'not_found_ok')
             ]
@@ -193,6 +193,6 @@ class BigQueryDeleteDatasetSolidDefinition(SolidDefinition):
             description=description,
             inputs=[InputDefinition(_START, Nothing)],
             outputs=[OutputDefinition(Nothing)],
-            transform_fn=_transform_fn,
+            compute_fn=_compute_fn,
             config_field=define_bigquery_delete_dataset_config(),
         )

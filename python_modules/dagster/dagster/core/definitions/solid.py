@@ -76,7 +76,7 @@ class SolidDefinition(ISolidDefinition):
         name (str): Name of the solid.
         inputs (List[InputDefinition]): Inputs of the solid.
 
-        transform_fn (Callable[[SystemTransformExecutionContext, ], Iterable[Union[Result,
+        compute_fn (Callable[[SystemTransformExecutionContext, ], Iterable[Union[Result,
             Materialization]]]): The core of the solid, the function that does the actual
             computation. The arguments passed to this function after context are deteremined by
             ``inputs``.
@@ -102,7 +102,7 @@ class SolidDefinition(ISolidDefinition):
                 name="add_one",
                 inputs=[InputDefinition("num", Int)],
                 outputs=[OutputDefinition(Int)], # default name ("result")
-                transform_fn=_add_one,
+                compute_fn=_add_one,
             )
     '''
 
@@ -110,7 +110,7 @@ class SolidDefinition(ISolidDefinition):
         self,
         name,
         inputs,
-        transform_fn,
+        compute_fn,
         outputs,
         config_field=None,
         description=None,
@@ -119,7 +119,7 @@ class SolidDefinition(ISolidDefinition):
         step_metadata_fn=None,
     ):
         self.name = check_valid_name(name)
-        self.transform_fn = check.callable_param(transform_fn, 'transform_fn')
+        self.compute_fn = check.callable_param(compute_fn, 'compute_fn')
         self.description = check.opt_str_param(description, 'description')
         self.config_field = check_user_facing_opt_field_param(
             config_field,

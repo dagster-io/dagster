@@ -29,7 +29,7 @@ def create_single_node_pipeline(name, called):
                 name=name + '_solid',
                 inputs=[],
                 outputs=[],
-                transform_fn=lambda *_args, **_kwargs: None,
+                compute_fn=lambda *_args, **_kwargs: None,
             )
         ],
     )

@@ -7,7 +7,7 @@ from dagster.core.execution.context.transform import TransformExecutionContext
 from .objects import ExecutionStep, StepInput, StepKind, StepOutput, StepOutputValue
 
 
-def create_transform_step(pipeline_name, environment_config, solid, step_inputs, handle):
+def create_compute_step(pipeline_name, environment_config, solid, step_inputs, handle):
     check.str_param(pipeline_name, 'pipeline_name')
     check.inst_param(solid, 'solid', Solid)
     check.list_param(step_inputs, 'step_inputs', of_type=StepInput)
@@ -15,7 +15,7 @@ def create_transform_step(pipeline_name, environment_config, solid, step_inputs,
 
     return ExecutionStep(
         pipeline_name=pipeline_name,
-        key_suffix='transform',
+        key_suffix='compute',
         step_inputs=step_inputs,
         step_outputs=[
             StepOutput(
@@ -24,24 +24,24 @@ def create_transform_step(pipeline_name, environment_config, solid, step_inputs,
             for name, output_def in solid.definition.output_dict.items()
         ],
         compute_fn=lambda step_context, inputs: _execute_core_transform(
-            step_context.for_transform(), inputs, solid.definition.transform_fn
+            step_context.for_transform(), inputs, solid.definition.compute_fn
         ),
-        kind=StepKind.TRANSFORM,
+        kind=StepKind.COMPUTE,
         solid_handle=handle,
         metadata=solid.step_metadata_fn(environment_config) if solid.step_metadata_fn else {},
     )
 
 
-def _yield_transform_results(transform_context, inputs, transform_fn):
+def _yield_transform_results(transform_context, inputs, compute_fn):
     check.inst_param(transform_context, 'transform_context', SystemTransformExecutionContext)
     step = transform_context.step
-    gen = transform_fn(TransformExecutionContext(transform_context), inputs)
+    gen = compute_fn(TransformExecutionContext(transform_context), inputs)
 
     if isinstance(gen, Result):
         raise DagsterInvariantViolationError(
             (
                 'Transform for solid {solid_name} returned a Result rather than '
-                'yielding it. The transform_fn of the core SolidDefinition must yield '
+                'yielding it. The compute_fn of the core SolidDefinition must yield '
                 'its results'
             ).format(solid_name=step.solid_handle.name)
         )
@@ -72,9 +72,9 @@ def _yield_transform_results(transform_context, inputs, transform_fn):
             )
 
 
-def _execute_core_transform(transform_context, inputs, transform_fn):
+def _execute_core_transform(transform_context, inputs, compute_fn):
     '''
-    Execute the user-specified transform for the solid. Wrap in an error boundary and do
+    Execute the user-specified compute for the solid. Wrap in an error boundary and do
     all relevant logging and metrics tracking
     '''
     check.inst_param(transform_context, 'transform_context', SystemTransformExecutionContext)
@@ -83,11 +83,11 @@ def _execute_core_transform(transform_context, inputs, transform_fn):
     step = transform_context.step
 
     transform_context.log.debug(
-        'Executing core transform for solid {solid}.'.format(solid=step.solid_handle.name)
+        'Executing core compute for solid {solid}.'.format(solid=step.solid_handle.name)
     )
 
     all_results = []
-    for step_output in _yield_transform_results(transform_context, inputs, transform_fn):
+    for step_output in _yield_transform_results(transform_context, inputs, compute_fn):
         yield step_output
         if isinstance(step_output, StepOutputValue):
             all_results.append(step_output)

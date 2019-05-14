@@ -129,7 +129,7 @@ def define_circular_dependency_pipeline():
                 name='csolid',
                 inputs=[InputDefinition('num', PoorMansDataFrame)],
                 outputs=[OutputDefinition(PoorMansDataFrame)],
-                transform_fn=lambda *_args: None,
+                compute_fn=lambda *_args: None,
             )
         ],
         dependencies={'csolid': {'num': DependencyDefinition('csolid')}},

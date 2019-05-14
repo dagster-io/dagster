@@ -77,7 +77,7 @@ class DauphinStepKind(dauphin.Enum):
     class Meta:
         name = 'StepKind'
 
-    TRANSFORM = 'TRANSFORM'
+    COMPUTE = 'COMPUTE'
     INPUT_EXPECTATION = 'INPUT_EXPECTATION'
     OUTPUT_EXPECTATION = 'OUTPUT_EXPECTATION'
     JOIN = 'JOIN'
@@ -91,8 +91,8 @@ class DauphinStepKind(dauphin.Enum):
     def description(self):
         # self ends up being the internal class "EnumMeta" in dauphin
         # so we can't do a dictionary lookup which is awesome
-        if self == DauphinStepKind.TRANSFORM:
-            return 'This is the user-defined transform step'
+        if self == DauphinStepKind.COMPUTE:
+            return 'This is the user-defined computation step'
         elif self == DauphinStepKind.INPUT_EXPECTATION:
             return 'Expectation defined on an input'
         elif self == DauphinStepKind.OUTPUT_EXPECTATION:

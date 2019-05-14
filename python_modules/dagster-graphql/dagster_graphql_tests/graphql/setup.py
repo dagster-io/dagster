@@ -242,7 +242,7 @@ def define_more_complicated_config():
                 name='a_solid_with_three_field_config',
                 inputs=[],
                 outputs=[],
-                transform_fn=lambda *_args: None,
+                compute_fn=lambda *_args: None,
                 config_field=Field(
                     Dict(
                         {
@@ -267,7 +267,7 @@ def define_more_complicated_nested_config():
                 name='a_solid_with_multilayered_config',
                 inputs=[],
                 outputs=[],
-                transform_fn=lambda *_args: None,
+                compute_fn=lambda *_args: None,
                 config_field=Field(
                     Dict(
                         {
@@ -346,7 +346,7 @@ def define_pipeline_with_list():
                 name='solid_with_list',
                 inputs=[],
                 outputs=[],
-                transform_fn=lambda *_args: None,
+                compute_fn=lambda *_args: None,
                 config_field=Field(List(Int)),
             )
         ],
@@ -423,7 +423,7 @@ def define_pipeline_with_step_metadata():
         name='solid_metadata_creation',
         inputs=[],
         outputs=[],
-        transform_fn=lambda *args, **kwargs: None,
+        compute_fn=lambda *args, **kwargs: None,
         config_field=Field(Dict({'str_value': Field(String)})),
         step_metadata_fn=lambda env_config: {
             'computed': env_config.solids['solid_metadata_creation'].config['str_value'] + '1'

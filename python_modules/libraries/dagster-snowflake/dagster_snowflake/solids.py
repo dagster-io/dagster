@@ -51,7 +51,7 @@ class SnowflakeSolidDefinition(SolidDefinition):
             'This solid is a generic representation of a parameterized Snowflake query.',
         )
 
-        def _snowflake_transform_fn(context, _):  # pylint: disable=too-many-locals
+        def _snowflake_compute_fn(context, _):  # pylint: disable=too-many-locals
             '''Define Snowflake execution.
 
             This function defines how we'll execute the Snowflake SQL query.
@@ -156,7 +156,7 @@ class SnowflakeSolidDefinition(SolidDefinition):
             description=description,
             inputs=[InputDefinition(SnowflakeSolidDefinition.INPUT_READY, Nothing)],
             outputs=[OutputDefinition(List(dagster_pd.DataFrame))],
-            transform_fn=_snowflake_transform_fn,
+            compute_fn=_snowflake_compute_fn,
             config_field=define_snowflake_config(),
             metadata={'kind': 'sql', 'sql': '\n'.join(sql_queries)},
         )
