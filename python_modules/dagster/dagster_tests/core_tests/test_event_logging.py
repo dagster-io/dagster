@@ -1,21 +1,39 @@
+import logging
+
 from collections import defaultdict
 
 from dagster import (
+    execute_pipeline,
     InProcessExecutorConfig,
+    lambda_solid,
+    ModeDefinition,
     PipelineDefinition,
     RunConfig,
-    execute_pipeline,
-    lambda_solid,
 )
 
-from dagster.core.events.logging import EventRecord
+from dagster.core.events.log import construct_event_logger, EventRecord
 from dagster.core.events import DagsterEventType
-from dagster.utils.logging import ERROR, INFO
+from dagster.core.loggers import colored_console_logger
+
+
+def mode_def(event_callback):
+    return ModeDefinition(
+        loggers={
+            'callback': construct_event_logger(event_callback),
+            'console': colored_console_logger,
+        }
+    )
 
 
 def single_dagster_event(events, event_type):
     assert event_type in events
     return events[event_type][0]
+
+
+def define_event_logging_pipeline(name, solids, event_callback, deps=None):
+    return PipelineDefinition(
+        name=name, solids=solids, description=deps, mode_definitions=[mode_def(event_callback)]
+    )
 
 
 def test_empty_pipeline():
@@ -26,9 +44,13 @@ def test_empty_pipeline():
         if record.is_dagster_event:
             events[record.dagster_event.event_type].append(record)
 
-    pipeline_def = PipelineDefinition(name='empty_pipeline', solids=[])
+    pipeline_def = PipelineDefinition(
+        name='empty_pipeline', solids=[], mode_definitions=[mode_def(_event_callback)]
+    )
 
-    result = execute_pipeline(pipeline_def, run_config=RunConfig(event_callback=_event_callback))
+    result = execute_pipeline(
+        pipeline_def, {'loggers': {'callback': {}, 'console': {}}}, RunConfig(mode='default')
+    )
     assert result.success
     assert events
 
@@ -53,9 +75,13 @@ def test_single_solid_pipeline_success():
         if record.is_dagster_event:
             events[record.dagster_event.event_type].append(record)
 
-    pipeline_def = PipelineDefinition(name='single_solid_pipeline', solids=[solid_one])
+    pipeline_def = PipelineDefinition(
+        name='single_solid_pipeline',
+        solids=[solid_one],
+        mode_definitions=[mode_def(_event_callback)],
+    )
 
-    result = execute_pipeline(pipeline_def, run_config=RunConfig(event_callback=_event_callback))
+    result = execute_pipeline(pipeline_def, {'loggers': {'callback': {}}})
     assert result.success
     assert events
 
@@ -89,14 +115,16 @@ def test_single_solid_pipeline_failure():
         if record.is_dagster_event:
             events[record.dagster_event.event_type].append(record)
 
-    pipeline_def = PipelineDefinition(name='single_solid_pipeline', solids=[solid_one])
+    pipeline_def = PipelineDefinition(
+        name='single_solid_pipeline',
+        solids=[solid_one],
+        mode_definitions=[mode_def(_event_callback)],
+    )
 
     result = execute_pipeline(
         pipeline_def,
-        run_config=RunConfig(
-            event_callback=_event_callback,
-            executor_config=InProcessExecutorConfig(raise_on_error=False),
-        ),
+        {'loggers': {'callback': {}}},
+        run_config=RunConfig(executor_config=InProcessExecutorConfig(raise_on_error=False)),
     )
     assert not result.success
 
@@ -105,11 +133,11 @@ def test_single_solid_pipeline_failure():
 
     assert start_event.dagster_event.solid_name == 'solid_one'
     assert start_event.dagster_event.solid_definition_name == 'solid_one'
-    assert start_event.level == INFO
+    assert start_event.level == logging.INFO
 
     failure_event = single_dagster_event(events, DagsterEventType.STEP_FAILURE)
     assert failure_event.pipeline_name == 'single_solid_pipeline'
 
     assert failure_event.dagster_event.solid_name == 'solid_one'
     assert failure_event.dagster_event.solid_definition_name == 'solid_one'
-    assert failure_event.level == ERROR
+    assert failure_event.level == logging.ERROR

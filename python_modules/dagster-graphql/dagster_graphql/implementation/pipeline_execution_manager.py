@@ -1,6 +1,7 @@
 from __future__ import absolute_import
 from collections import namedtuple
 import copy
+import logging
 import os
 import sys
 import time
@@ -18,10 +19,9 @@ from dagster import (
     check,
     execute_pipeline,
 )
-from dagster.core.events.logging import DagsterEventRecord
+from dagster.core.events.log import DagsterEventRecord
 from dagster.core.events import DagsterEvent, DagsterEventType, PipelineProcessStartedData
 from dagster.utils.error import serializable_error_info_from_exc_info, SerializableErrorInfo
-from dagster.utils.logging import level_from_string
 from dagster.utils import get_multiprocessing_context
 from dagster_graphql.implementation.pipeline_run_storage import PipelineRun
 
@@ -51,7 +51,7 @@ def build_synthetic_pipeline_error_record(run_id, error_info, pipeline_name):
         + error_info.message
         + '\nStack Trace:\n'
         + '\n'.join(error_info.stack),
-        level=level_from_string('ERROR'),
+        level=logging.ERROR,
         run_id=run_id,
         timestamp=time.time(),
         error_info=error_info,
@@ -68,7 +68,7 @@ def build_process_start_event(run_id, pipeline_name):
     return DagsterEventRecord(
         message=message,
         user_message=message,
-        level=level_from_string('INFO'),
+        level=logging.INFO,
         run_id=run_id,
         timestamp=time.time(),
         error_info=None,
@@ -85,7 +85,7 @@ def build_process_started_event(run_id, pipeline_name, process_id):
     return DagsterEventRecord(
         message=message,
         user_message=message,
-        level=level_from_string('INFO'),
+        level=logging.INFO,
         run_id=run_id,
         timestamp=time.time(),
         error_info=None,

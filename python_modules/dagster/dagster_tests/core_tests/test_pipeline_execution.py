@@ -2,11 +2,14 @@ import dagster.check as check
 
 from dagster import (
     DependencyDefinition,
+    InProcessExecutorConfig,
     InputDefinition,
     Int,
     OutputDefinition,
+    PipelineContextDefinition,
     PipelineDefinition,
     Result,
+    RunConfig,
     SolidInstance,
     execute_pipeline,
     execute_pipeline_iterator,
@@ -495,3 +498,33 @@ def test_pipeline_streaming_multiple_outputs():
     assert two_output_step_event.step_output_data.value_repr == '2'
     assert two_output_step_event.step_output_data.output_name == 'two'
     assert events == [1, 2]
+
+
+def test_pipeline_init_failure():
+    stub_solid = define_stub_solid('stub', None)
+    env_config = {'context': {'failing': {}}}
+
+    def failing_context_fn(*args, **kwargs):
+        raise Exception()
+
+    pipeline_def = PipelineDefinition(
+        [stub_solid],
+        'failing_init_pipeline',
+        context_definitions={'failing': PipelineContextDefinition(context_fn=failing_context_fn)},
+    )
+
+    result = execute_pipeline(
+        pipeline_def,
+        environment_dict=env_config,
+        run_config=RunConfig(executor_config=InProcessExecutorConfig(raise_on_error=False)),
+    )
+
+    assert result.success is False
+
+    assert len(result.event_list) == 1
+
+    event = result.event_list[0]
+
+    assert event.event_type_value == 'PIPELINE_INIT_FAILURE'
+
+    assert event.pipeline_init_failure_data

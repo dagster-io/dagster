@@ -21,6 +21,8 @@ from .expectation import ExpectationDefinition, ExpectationResult
 
 from .input import InputDefinition, InputMapping
 
+from .logger import LoggerDefinition
+
 from .output import OutputDefinition, OutputMapping
 
 from .resource import ResourceDefinition

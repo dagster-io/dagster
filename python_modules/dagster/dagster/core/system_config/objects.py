@@ -39,7 +39,7 @@ class SolidConfig(namedtuple('_SolidConfig', 'config inputs outputs')):
 class EnvironmentConfig(
     namedtuple(
         '_EnvironmentConfig',
-        'context solids expectations execution storage resources original_config_dict',
+        'context solids expectations execution storage resources loggers original_config_dict',
     )
 ):
     def __new__(
@@ -50,6 +50,7 @@ class EnvironmentConfig(
         execution=None,
         storage=None,
         resources=None,
+        loggers=None,
         original_config_dict=None,
     ):
         check.opt_inst_param(context, 'context', ContextConfig)
@@ -73,6 +74,7 @@ class EnvironmentConfig(
             execution=execution,
             storage=storage,
             resources=resources,
+            loggers=check.opt_dict_param(loggers, 'loggers', key_type=str, value_type=dict),
             original_config_dict=original_config_dict,
         )
 

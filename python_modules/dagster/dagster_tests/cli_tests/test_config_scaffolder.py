@@ -67,11 +67,12 @@ def test_basic_solids_config():
     assert scaffold_pipeline_config(pipeline_def, skip_optional=False) == {
         'context': {
             'default': {
-                'config': {'log_level': 'DEBUG|INFO|WARNING|ERROR|CRITICAL'},
+                'config': {'log_level': 'CRITICAL|DEBUG|ERROR|INFO|WARNING'},
                 'persistence': {'file': {}},
                 'resources': {},
             }
         },
+        'loggers': {'console': {'config': {'log_level': '', 'name': ''}}},
         'solids': {'required_field_solid': {'config': {'required_int': 0}}},
         'expectations': {'evaluate': True},
         'execution': {},
@@ -104,6 +105,7 @@ def test_two_modes():
     }
 
     assert scaffold_pipeline_config(pipeline_def, mode='mode_one', skip_optional=False) == {
+        'loggers': {'console': {'config': {'log_level': '', 'name': ''}}},
         'solids': {},
         'expectations': {'evaluate': True},
         'storage': {'in_memory': {}, 'filesystem': {'base_dir': ''}, 's3': {'s3_bucket': ''}},
@@ -121,4 +123,5 @@ def test_two_modes():
         'storage': {'in_memory': {}, 'filesystem': {'base_dir': ''}, 's3': {'s3_bucket': ''}},
         'execution': {},
         'resources': {'value': {'config': {'mode_two_field': 0}}},
+        'loggers': {'console': {'config': {'log_level': '', 'name': ''}}},
     }

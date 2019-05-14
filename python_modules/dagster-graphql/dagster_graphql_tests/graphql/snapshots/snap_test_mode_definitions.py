@@ -95,6 +95,9 @@ snapshots['test_query_multi_mode 1'] = {
                 'name': None
             },
             {
+                'name': None
+            },
+            {
                 'name': 'Float'
             },
             {
@@ -120,6 +123,9 @@ snapshots['test_query_multi_mode 1'] = {
             },
             {
                 'name': 'MultiModeWithResources.ExpectationsConfig'
+            },
+            {
+                'name': 'MultiModeWithResources.LoggerConfig'
             },
             {
                 'name': 'MultiModeWithResources.Mode.AddMode.Environment'
@@ -162,6 +168,9 @@ snapshots['test_query_multi_mode 1'] = {
             },
             {
                 'name': 'String.MaterializationSchema'
+            },
+            {
+                'name': 'multi_mode_with_resources.LoggerConfig.console'
             }
         ],
         'environmentType': {
@@ -174,6 +183,11 @@ snapshots['test_query_multi_mode 1'] = {
                 {
                     'configType': {
                         'name': 'MultiModeWithResources.ExpectationsConfig'
+                    }
+                },
+                {
+                    'configType': {
+                        'name': 'MultiModeWithResources.LoggerConfig'
                     }
                 },
                 {
@@ -343,6 +357,9 @@ snapshots['test_query_multi_mode 2'] = {
                 'name': None
             },
             {
+                'name': None
+            },
+            {
                 'name': 'Float'
             },
             {
@@ -368,6 +385,9 @@ snapshots['test_query_multi_mode 2'] = {
             },
             {
                 'name': 'MultiModeWithResources.ExpectationsConfig'
+            },
+            {
+                'name': 'MultiModeWithResources.LoggerConfig'
             },
             {
                 'name': 'MultiModeWithResources.Mode.AddMode.Environment'
@@ -410,6 +430,9 @@ snapshots['test_query_multi_mode 2'] = {
             },
             {
                 'name': 'String.MaterializationSchema'
+            },
+            {
+                'name': 'multi_mode_with_resources.LoggerConfig.console'
             }
         ],
         'environmentType': {
@@ -422,6 +445,11 @@ snapshots['test_query_multi_mode 2'] = {
                 {
                     'configType': {
                         'name': 'MultiModeWithResources.ExpectationsConfig'
+                    }
+                },
+                {
+                    'configType': {
+                        'name': 'MultiModeWithResources.LoggerConfig'
                     }
                 },
                 {

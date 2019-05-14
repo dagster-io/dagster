@@ -1,14 +1,12 @@
 import json
 
 from dagster import check
+from dagster.core.log_manager import coerce_valid_log_level
 from dagster.utils.error import SerializableErrorInfo
-
-from dagster.utils.logging import (
-    DEBUG,
+from dagster.utils.log import (
     StructuredLoggerHandler,
     JsonEventLoggerHandler,
     StructuredLoggerMessage,
-    check_valid_level_param,
     construct_single_handler_logger,
 )
 
@@ -30,7 +28,7 @@ class EventRecord(object):
 
         self._error_info = check.opt_inst_param(error_info, 'error_info', SerializableErrorInfo)
         self._message = check.str_param(message, 'message')
-        self._level = check_valid_level_param(level)
+        self._level = coerce_valid_log_level(level)
         self._user_message = check.str_param(user_message, 'user_message')
         self._run_id = check.str_param(run_id, 'run_id')
         self._timestamp = check.float_param(timestamp, 'timestamp')
@@ -133,13 +131,13 @@ def construct_event_record(logger_message):
 
 def construct_event_logger(event_record_callback):
     '''
-    Callback receives a stream of event_records
+    Callback receives a stream of event_records. Piggybacks on the logging machinery.
     '''
     check.callable_param(event_record_callback, 'event_record_callback')
 
     return construct_single_handler_logger(
         'event-logger',
-        DEBUG,
+        'debug',
         StructuredLoggerHandler(
             lambda logger_message: event_record_callback(construct_event_record(logger_message))
         ),
@@ -151,7 +149,7 @@ def construct_json_event_logger(json_path):
     check.str_param(json_path, 'json_path')
     return construct_single_handler_logger(
         "json-event-record-logger",
-        DEBUG,
+        'debug',
         JsonEventLoggerHandler(
             json_path,
             lambda record: construct_event_record(

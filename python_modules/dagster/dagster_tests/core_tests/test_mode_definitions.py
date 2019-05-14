@@ -1,19 +1,26 @@
+import logging
+
 import pytest
 
 from dagster import (
     DagsterInvalidDefinitionError,
     DagsterInvariantViolationError,
+    Dict,
+    execute_pipeline,
+    execute_solids,
+    Field,
+    logger,
     ModeDefinition,
+    PipelineConfigEvaluationError,
     PipelineContextDefinition,
     PipelineDefinition,
-    RunConfig,
-    execute_pipeline,
     resource,
+    RunConfig,
     solid,
-    execute_solids,
+    String,
 )
-
 from dagster.core.definitions.environment_schema import create_environment_type
+from dagster.core.log_manager import coerce_valid_log_level
 
 from ..test_repository import (
     define_modeless_pipeline,
@@ -277,3 +284,140 @@ def test_subset_with_mode_definitions():
     assert execute_solids(pipeline_def, solid_names=['requires_a'])['requires_a'].success is True
 
     assert called == {'a': 2, 'b': 1}
+
+
+def define_multi_mode_with_loggers_pipeline():
+    foo_logger_captured_results = []
+    bar_logger_captured_results = []
+
+    @logger(
+        config_field=Field(
+            Dict({'log_level': Field(String, is_optional=True, default_value='INFO')})
+        )
+    )
+    def foo_logger(init_context):
+        logger_ = logging.Logger('foo')
+        logger_.log = lambda level, msg, **kwargs: foo_logger_captured_results.append((level, msg))
+        logger_.setLevel(coerce_valid_log_level(init_context.logger_config['log_level']))
+        return logger_
+
+    @logger(
+        config_field=Field(
+            Dict({'log_level': Field(String, is_optional=True, default_value='INFO')})
+        )
+    )
+    def bar_logger(init_context):
+        logger_ = logging.Logger('bar')
+        logger_.log = lambda level, msg, **kwargs: bar_logger_captured_results.append((level, msg))
+        logger_.setLevel(coerce_valid_log_level(init_context.logger_config['log_level']))
+        return logger_
+
+    @solid
+    def return_six(context):
+        context.log.critical('Here we are')
+        return 6
+
+    return (
+        PipelineDefinition(
+            name='multi_mode',
+            solids=[return_six],
+            mode_definitions=[
+                ModeDefinition(name='foo_mode', loggers={'foo': foo_logger}),
+                ModeDefinition(name='foo_bar_mode', loggers={'foo': foo_logger, 'bar': bar_logger}),
+            ],
+        ),
+        foo_logger_captured_results,
+        bar_logger_captured_results,
+    )
+
+
+def parse_captured_results(captured_results):
+    parsed_captured_results = [
+        [y.strip().split(' = ') for y in x[1].strip().split('\n')] for x in captured_results
+    ]
+    # the captured results are a list of lists of two-member lists [log_msg_key, log_msg_value]
+    # this double list comprehension grabs the log_msg_value where log_msg_key == 'orig_message'
+    original_messages = [
+        item[1]
+        for result in parsed_captured_results
+        for item in result
+        if item[0] == 'orig_message'
+    ]
+    return original_messages
+
+
+def test_execute_multi_mode_loggers_with_single_logger():
+    pipeline_def, foo_logger_captured_results, bar_logger_captured_results = (
+        define_multi_mode_with_loggers_pipeline()
+    )
+
+    execute_pipeline(
+        pipeline_def,
+        run_config=RunConfig(mode='foo_mode'),
+        environment_dict={'loggers': {'foo': {'config': {'log_level': 'DEBUG'}}}},
+    )
+
+    assert len(bar_logger_captured_results) == 0
+
+    original_messages = parse_captured_results(foo_logger_captured_results)
+
+    assert len(list(filter(lambda x: x == '"Here we are"', original_messages))) == 1
+
+
+def test_execute_multi_mode_loggers_with_single_logger_extra_config():
+    pipeline_def, _, __ = define_multi_mode_with_loggers_pipeline()
+
+    with pytest.raises(PipelineConfigEvaluationError):
+        execute_pipeline(
+            pipeline_def,
+            run_config=RunConfig(mode='foo_mode'),
+            environment_dict={
+                'loggers': {
+                    'foo': {'config': {'log_level': 'DEBUG'}},
+                    'bar': {'config': {'log_level': 'DEBUG'}},
+                }
+            },
+        )
+
+
+def test_execute_multi_mode_loggers_with_multiple_loggers():
+    pipeline_def, foo_logger_captured_results, bar_logger_captured_results = (
+        define_multi_mode_with_loggers_pipeline()
+    )
+
+    execute_pipeline(
+        pipeline_def,
+        run_config=RunConfig(mode='foo_bar_mode'),
+        environment_dict={
+            'loggers': {
+                'foo': {'config': {'log_level': 'DEBUG'}},
+                'bar': {'config': {'log_level': 'DEBUG'}},
+            }
+        },
+    )
+
+    foo_original_messages = parse_captured_results(foo_logger_captured_results)
+
+    assert len(list(filter(lambda x: x == '"Here we are"', foo_original_messages))) == 1
+
+    bar_original_messages = parse_captured_results(bar_logger_captured_results)
+
+    assert len(list(filter(lambda x: x == '"Here we are"', bar_original_messages))) == 1
+
+
+def test_execute_multi_mode_loggers_with_multiple_loggers_single_config():
+    pipeline_def, foo_logger_captured_results, bar_logger_captured_results = (
+        define_multi_mode_with_loggers_pipeline()
+    )
+
+    execute_pipeline(
+        pipeline_def,
+        run_config=RunConfig(mode='foo_bar_mode'),
+        environment_dict={'loggers': {'foo': {'config': {'log_level': 'DEBUG'}}}},
+    )
+
+    foo_original_messages = parse_captured_results(foo_logger_captured_results)
+
+    assert len(list(filter(lambda x: x == '"Here we are"', foo_original_messages))) == 1
+
+    assert not bar_logger_captured_results

@@ -35,7 +35,7 @@ from dagster.core.definitions.environment_configs import (
     define_solid_dictionary_cls,
     EnvironmentClassCreationData,
 )
-
+from dagster.core.loggers import default_loggers
 from dagster.core.types.evaluator import evaluate_config_value
 
 from dagster.core.test_utils import throwing_evaluate_config_value
@@ -48,6 +48,7 @@ def create_creation_data(pipeline_def):
         pipeline_def.context_definitions,
         pipeline_def.dependency_structure,
         mode_definition=None,
+        loggers=default_loggers(),
     )
 
 

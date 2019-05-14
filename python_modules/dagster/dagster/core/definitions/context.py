@@ -5,7 +5,7 @@ from dagster.core.types.field_utils import check_user_facing_opt_field_param
 from dagster.core.execution.context.execution import ExecutionContext
 from dagster.core.system_config.objects import DEFAULT_CONTEXT_NAME
 
-from dagster.utils.logging import LogLevelEnum, level_from_string
+from dagster.utils.log import LogLevelEnum
 
 from .resource import ResourceDefinition
 
@@ -44,7 +44,7 @@ class PipelineContextDefinition(object):
         config_field (Field): The configuration for the pipeline context.
 
         context_fn (callable):
-            Signature is (**pipeline**: `PipelineDefintion`, **config_value**: `Any`) :
+            Signature is (**pipeline**: `PipelineDefinition`, **config_value**: `Any`) :
             `ExecutionContext`.
 
             A callable that either returns *or* yields an ``ExecutionContext``.
@@ -69,9 +69,8 @@ class PipelineContextDefinition(object):
         self.description = description
 
 
-def _default_context_fn(init_context):
-    log_level = level_from_string(init_context.context_config['log_level'])
-    return ExecutionContext.console_logging(log_level)
+def _default_context_fn(_init_context):
+    return ExecutionContext()
 
 
 def _default_config_field():

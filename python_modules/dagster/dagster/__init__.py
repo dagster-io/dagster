@@ -18,9 +18,10 @@ from dagster.core.definitions import (
     SolidInstance,
 )
 
-from dagster.core.definitions.resource import ResourceDefinition, resource
-
+# These specific imports are to avoid circular import issues
 from dagster.core.definitions.decorators import MultipleResults, lambda_solid, solid
+from dagster.core.definitions.logger import logger, LoggerDefinition
+from dagster.core.definitions.resource import resource, ResourceDefinition
 
 from dagster.core.events import DagsterEventType
 
@@ -37,6 +38,8 @@ from dagster.core.execution.context_creation_pipeline import PipelineConfigEvalu
 from dagster.core.execution.context.init import InitContext, InitResourceContext
 
 from dagster.core.execution.context.execution import ExecutionContext
+
+from dagster.core.execution.context.logger import InitLoggerContext
 
 from dagster.core.execution.results import PipelineExecutionResult, SolidExecutionResult
 
@@ -101,6 +104,7 @@ __all__ = [
     'ExpectationResult',
     'Field',
     'InputDefinition',
+    'LoggerDefinition',
     'Materialization',
     'ModeDefinition',
     'OutputDefinition',
@@ -113,6 +117,7 @@ __all__ = [
     'SolidInstance',
     # Decorators
     'lambda_solid',
+    'logger',
     'resource',
     'solid',
     'MultipleResults',
@@ -122,6 +127,7 @@ __all__ = [
     'DagsterEventType',
     'ExecutionContext',
     'InitContext',
+    'InitLoggerContext',
     'InitResourceContext',
     'InProcessExecutorConfig',
     'MultiprocessExecutorConfig',

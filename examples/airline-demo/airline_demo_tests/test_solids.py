@@ -6,7 +6,6 @@ requiring, e.g., a connection to S3, Spark, and a database.
 We lever pytest marks to isolate subsets of tests with different requirements. E.g., to run only
 those tests that don't require Spark, `pytest -m "not spark"`.
 """
-import logging
 import os
 
 import pyspark
@@ -14,7 +13,6 @@ import pytest
 
 from dagster import (
     DependencyDefinition,
-    ExecutionContext,
     PipelineContextDefinition,
     PipelineDefinition,
     execute_solid,
@@ -28,19 +26,13 @@ from .marks import nettest, postgres, redshift, skip, spark
 
 
 def _tempfile_context():
-    return {
-        'test': PipelineContextDefinition(
-            context_fn=lambda info: ExecutionContext.console_logging(log_level=logging.DEBUG),
-            resources={'tempfile': tempfile_resource},
-        )
-    }
+    return {'test': PipelineContextDefinition(resources={'tempfile': tempfile_resource})}
 
 
 def _spark_context():
     return {
         'test': PipelineContextDefinition(
-            context_fn=lambda info: ExecutionContext.console_logging(log_level=logging.DEBUG),
-            resources={'spark': spark_session_local, 'tempfile': tempfile_resource},
+            resources={'spark': spark_session_local, 'tempfile': tempfile_resource}
         )
     }
 

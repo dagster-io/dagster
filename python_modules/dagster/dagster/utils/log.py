@@ -2,28 +2,17 @@ from __future__ import absolute_import
 
 import copy
 import logging
+import sys
 import traceback
 
 from collections import namedtuple
-from logging import CRITICAL, DEBUG, ERROR, INFO, WARNING
-
-import coloredlogs
 
 from dagster import check, seven
 from dagster.core.types.config import Enum, EnumValue
+from dagster.core.definitions.logger import logger
+from dagster.core.log_manager import coerce_valid_log_level, PYTHON_LOGGING_LEVELS_MAPPING
 
-VALID_LEVELS = set([CRITICAL, DEBUG, ERROR, INFO, WARNING])
-
-LOOKUP = {'CRITICAL': CRITICAL, 'DEBUG': DEBUG, 'ERROR': ERROR, 'INFO': INFO, 'WARNING': WARNING}
-
-VALID_LEVEL_STRINGS = ['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL']
-
-LogLevelEnum = Enum('log_level', list(map(EnumValue, VALID_LEVEL_STRINGS)))
-
-
-def level_from_string(string):
-    check.str_param(string, 'string')
-    return LOOKUP[string]
+LogLevelEnum = Enum('log_level', list(map(EnumValue, PYTHON_LOGGING_LEVELS_MAPPING.keys())))
 
 
 class JsonFileHandler(logging.Handler):
@@ -67,7 +56,7 @@ class StructuredLoggerMessage(
             cls,
             check.str_param(name, 'name'),
             check.str_param(message, 'message'),
-            check_valid_level_param(level),
+            coerce_valid_log_level(level),
             check.dict_param(meta, 'meta'),
             check.inst_param(record, 'record', logging.LogRecord),
         )
@@ -114,30 +103,26 @@ class StructuredLoggerHandler(logging.Handler):
             logging.exception(str(e))
 
 
-def check_valid_level_param(level):
-    check.param_invariant(
-        level in VALID_LEVELS,
-        'level',
-        'Must be valid python logging level. Got {level}'.format(level=level),
-    )
-    return level
-
-
 def construct_single_handler_logger(name, level, handler):
     check.str_param(name, 'name')
-    check_valid_level_param(level)
     check.inst_param(handler, 'handler', logging.Handler)
 
-    klass = logging.getLoggerClass()
-    logger = klass(name, level=level)
-    logger.addHandler(handler)
-    return logger
+    level = coerce_valid_log_level(level)
+
+    @logger
+    def single_handler_logger(_init_context):
+        klass = logging.getLoggerClass()
+        logger_ = klass(name, level=level)
+        logger_.addHandler(handler)
+        return logger_
+
+    return single_handler_logger
 
 
 def define_structured_logger(name, callback, level):
     check.str_param(name, 'name')
     check.callable_param(callback, 'callback')
-    check_valid_level_param(level)
+    level = coerce_valid_log_level(level)
 
     return construct_single_handler_logger(name, level, StructuredLoggerHandler(callback))
 
@@ -145,25 +130,20 @@ def define_structured_logger(name, callback, level):
 def define_json_file_logger(name, json_path, level):
     check.str_param(name, 'name')
     check.str_param(json_path, 'json_path')
-    check_valid_level_param(level)
+    level = coerce_valid_log_level(level)
 
     stream_handler = JsonFileHandler(json_path)
     stream_handler.setFormatter(define_default_formatter())
     return construct_single_handler_logger(name, level, stream_handler)
 
 
-def define_colored_console_logger(name, level=INFO):
-    check.str_param(name, 'name')
-    check.param_invariant(
-        level in VALID_LEVELS,
-        'level',
-        'Must be valid python logging level. Got {level}'.format(level=level),
-    )
-
-    klass = logging.getLoggerClass()
-    logger = klass(name, level=level)
-    coloredlogs.install(logger=logger, level=level, fmt=default_format_string())
-    return logger
+def get_stack_trace_array(exception):
+    check.inst_param(exception, 'exception', Exception)
+    if hasattr(exception, '__traceback__'):
+        tb = exception.__traceback__
+    else:
+        _exc_type, _exc_value, tb = sys.exc_info()
+    return traceback.format_tb(tb)
 
 
 def default_format_string():
@@ -172,29 +152,3 @@ def default_format_string():
 
 def define_default_formatter():
     return logging.Formatter(default_format_string())
-
-
-def debug_format_string():
-    return '''%(name)s.%(levelname)s: %(message)s
-    time: %(asctime)s relative: %(relativeCreated)dms
-    path: %(pathname)s line: %(lineno)d'''
-
-
-def define_debug_formatter():
-    return logging.Formatter(debug_format_string())
-
-
-def get_formatted_stack_trace(exception):
-    check.inst_param(exception, 'exception', Exception)
-    return ''.join(get_stack_trace_array(exception))
-
-
-def get_stack_trace_array(exception):
-    check.inst_param(exception, 'exception', Exception)
-    if hasattr(exception, '__traceback__'):
-        tb = exception.__traceback__
-    else:
-        import sys
-
-        _exc_type, _exc_value, tb = sys.exc_info()
-    return traceback.format_tb(tb)

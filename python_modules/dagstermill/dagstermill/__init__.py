@@ -39,10 +39,11 @@ from dagster import (
 from dagster.core.definitions.dependency import Solid
 from dagster.core.definitions.environment_configs import construct_environment_config
 from dagster.core.errors import DagsterSubprocessExecutionError
-from dagster.core.events.logging import construct_json_event_logger, EventRecord
+from dagster.core.events.log import construct_json_event_logger, EventRecord
 from dagster.core.events import DagsterEvent
 from dagster.core.execution.api import yield_pipeline_execution_context
 from dagster.core.execution.config import RunConfig
+from dagster.core.execution.context.logger import InitLoggerContext
 from dagster.core.execution.context.system import (
     SystemPipelineExecutionContext,
     SystemTransformExecutionContext,
@@ -51,7 +52,7 @@ from dagster.core.execution.context.transform import (
     AbstractTransformExecutionContext,
     TransformExecutionContext,
 )
-from dagster.core.log import DagsterLog
+from dagster.core.log_manager import DagsterLogManager
 from dagster.core.types.marshal import (
     serialize_to_file,
     deserialize_from_file,
@@ -234,7 +235,11 @@ class Manager:
 
             loggers = None
             if output_log_path != 0:  # there is no output log
-                event_logger = construct_json_event_logger(output_log_path)
+                event_logger_def = construct_json_event_logger(output_log_path)
+                init_logger_context = InitLoggerContext(
+                    {}, self.pipeline_def, event_logger_def, run_id
+                )
+                event_logger = event_logger_def.logger_fn(init_logger_context)
                 loggers = [event_logger]
             # do not include event_callback in ExecutionMetadata,
             # since that'll be taken care of by side-channel established by event_logger

@@ -2,22 +2,38 @@ import json
 import logging
 import re
 
-from dagster import PipelineDefinition, solid, execute_pipeline
+from contextlib import contextmanager
+
+import pytest
+
+from dagster import check, execute_pipeline, PipelineDefinition, solid
 from dagster.core.definitions import SolidHandle
 from dagster.core.events import DagsterEvent
 from dagster.core.execution.plan.objects import StepFailureData
-from dagster.core.log import DAGSTER_DEFAULT_LOGGER, DagsterLog
-from dagster.utils.logging import INFO
+from dagster.core.execution.context.logger import InitLoggerContext
+from dagster.core.log_manager import DagsterLogManager
+from dagster.core.loggers import colored_console_logger
 from dagster.utils.error import SerializableErrorInfo
 
 REGEX_UUID = r'[a-z-0-9]{8}\-[a-z-0-9]{4}\-[a-z-0-9]{4}\-[a-z-0-9]{4}\-[a-z-0-9]{12}'
 REGEX_TS = r'\d{4}\-\d{2}\-\d{2}T\d{2}:\d{2}:\d{2}\.\d{6}'
 
+DAGSTER_DEFAULT_LOGGER = 'dagster'
 
-def _setup_logger(name):
-    class TestLogger(logging.Logger):
-        def __init__(self, name):
-            super(TestLogger, self).__init__(name)
+
+@contextmanager
+def _setup_logger(name, log_levels=None):
+    '''Test helper that creates a new logger.
+
+    Args:
+        name (str): The name of the logger.
+        log_levels (Optional[Dict[str, int]]): Any non-standard log levels to expose on the logger
+            (e.g., logger.success)
+    '''
+    log_levels = check.opt_dict_param(log_levels, 'log_levels')
+
+    class TestLogger(logging.Logger):  # py27 compat
+        pass
 
     logger = TestLogger(name)
 
@@ -26,10 +42,16 @@ def _setup_logger(name):
     def log_fn(msg, *args, **kwargs):  # pylint:disable=unused-argument
         captured_results.append(msg)
 
-    for level in ['debug', 'info', 'warning', 'error', 'critical']:
-        setattr(logger, level, log_fn)
+    def int_log_fn(lvl, msg, *args, **kwargs):  # pylint:disable=unused-argument
+        captured_results.append(msg)
 
-    return captured_results, logger
+    for level in ['debug', 'info', 'warning', 'error', 'critical'] + list(
+        [x.lower() for x in log_levels.keys()]
+    ):
+        setattr(logger, level, log_fn)
+        setattr(logger, 'log', int_log_fn)
+
+    yield (captured_results, logger)
 
 
 def _regex_match_kv_pair(regex, kv_pairs):
@@ -42,24 +64,51 @@ def _validate_basic(kv_pairs):
     assert _regex_match_kv_pair(r'log_timestamp="{0}"'.format(REGEX_TS), kv_pairs)
 
 
+def test_logging_no_loggers_registered():
+    dl = DagsterLogManager('none', {}, [])
+    dl.debug('test')
+    dl.info('test')
+    dl.warning('test')
+    dl.error('test')
+    dl.critical('test')
+
+
 def test_logging_basic():
-    captured_results, logger = _setup_logger('test')
+    with _setup_logger('test') as (captured_results, logger):
 
-    dl = DagsterLog('123', {}, [logger])
-    dl.info('test')
+        dl = DagsterLogManager('123', {}, [logger])
+        dl.debug('test')
+        dl.info('test')
+        dl.warning('test')
+        dl.error('test')
+        dl.critical('test')
 
-    kv_pairs = set(captured_results[0].strip().split())
-    _validate_basic(kv_pairs)
+        kv_pairs = captured_results[0].replace(' ', '').split('\n')[1:]
+        _validate_basic(kv_pairs)
 
 
-def test_multiline_logging_basic():
-    captured_results, logger = _setup_logger(DAGSTER_DEFAULT_LOGGER)
+def test_logging_custom_log_levels():
+    with _setup_logger('test', {'FOO': 3}) as (_captured_results, logger):
 
-    dl = DagsterLog('123', {}, [logger])
-    dl.info('test')
+        dl = DagsterLogManager('123', {}, [logger])
+        with pytest.raises(AttributeError):
+            dl.foo('test')  # pylint: disable=no-member
 
-    kv_pairs = captured_results[0].replace(' ', '').split('\n')[1:]
-    _validate_basic(kv_pairs)
+
+def test_logging_integer_log_levels():
+    with _setup_logger('test', {'FOO': 3}) as (_captured_results, logger):
+
+        dl = DagsterLogManager('123', {}, [logger])
+        with pytest.raises(AttributeError):
+            dl.log(3, 'test')  # pylint: disable=no-member
+
+
+def test_logging_bad_custom_log_levels():
+    with _setup_logger('test') as (_, logger):
+
+        dl = DagsterLogManager('123', {}, [logger])
+        with pytest.raises(check.CheckError):
+            dl._log('test', 'foobar', {})  # pylint: disable=protected-access
 
 
 def test_multiline_logging_complex():
@@ -99,12 +148,12 @@ def test_multiline_logging_complex():
         ),
     }
 
-    captured_results, logger = _setup_logger(DAGSTER_DEFAULT_LOGGER)
+    with _setup_logger(DAGSTER_DEFAULT_LOGGER) as (captured_results, logger):
 
-    dl = DagsterLog('123', {}, [logger])
-    dl.info(msg, **kwargs)
+        dl = DagsterLogManager('123', {}, [logger])
+        dl.info(msg, **kwargs)
 
-    kv_pairs = set(captured_results[0].split('\n')[1:])
+        kv_pairs = set(captured_results[0].split('\n')[1:])
 
     expected_pairs = [
         '        orig_message = "DagsterEventType.STEP_FAILURE for step start.materialization.output.result.0"',
@@ -161,9 +210,17 @@ def test_default_context_logging():
     def default_context_transform(context):
         called['yes'] = True
         for logger in context.log.loggers:
-            assert logger.level == INFO
+            assert logger.level == logging.INFO
 
     pipeline = PipelineDefinition(solids=[default_context_transform])
     execute_pipeline(pipeline)
 
     assert called['yes']
+
+
+def test_colored_console_logger_with_integer_log_level():
+    colored_console_logger.logger_fn(
+        InitLoggerContext(
+            {'name': 'dagster', 'log_level': 4}, PipelineDefinition([]), colored_console_logger, ''
+        )
+    )

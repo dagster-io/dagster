@@ -7,7 +7,7 @@ from graphql.execution.executors.gevent import GeventExecutor as Executor
 
 from dagster import check, seven, RepositoryTargetInfo
 from dagster.cli.dynamic_loader import load_target_info_from_cli_args, repository_target_argument
-from dagster.utils.logging import get_stack_trace_array
+from dagster.utils.log import get_stack_trace_array
 
 from .implementation.context import DagsterGraphQLContext
 from .implementation.pipeline_execution_manager import SynchronousExecutionManager

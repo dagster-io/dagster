@@ -65,7 +65,7 @@ def safe_isfile(path):
     '''
     try:
         return os.path.isfile(path)
-    except (ValueError):
+    except ValueError:
         return False
 
 
@@ -94,9 +94,10 @@ class frozendict(dict):
 
     # https://docs.python.org/3/library/pickle.html#object.__reduce__
     #
-    # For a dict, the default behavior for pickle is to iteratively call __setitem__ (see 5th item in __reduce__ tuple).
-    # Since we want to disable __setitem__ and still inherit dict, we override this behavior by defining __reduce__.
-    # We return the 3rd item in the tuple, which is passed to __setstate__ allowing us to restore the frozendict.
+    # For a dict, the default behavior for pickle is to iteratively call __setitem__ (see 5th item
+    #  in __reduce__ tuple). Since we want to disable __setitem__ and still inherit dict, we
+    # override this behavior by defining __reduce__. We return the 3rd item in the tuple, which is
+    # passed to __setstate__, allowing us to restore the frozendict.
 
     def __reduce__(self):
         return (frozendict, (), dict(self))

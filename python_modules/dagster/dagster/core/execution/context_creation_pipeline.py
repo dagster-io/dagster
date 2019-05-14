@@ -6,15 +6,10 @@ import time
 from contextlib2 import ExitStack
 
 from dagster import check
-from dagster.utils import merge_dicts
-from dagster.utils.logging import define_colored_console_logger
-from dagster.utils.error import serializable_error_info_from_exc_info
-
 from dagster.core.definitions import PipelineDefinition, create_environment_type
-from dagster.core.definitions.resource import ResourcesBuilder, ResourcesSource
 from dagster.core.definitions.environment_configs import construct_environment_config
-
-
+from dagster.core.definitions.mode import ModeDefinition
+from dagster.core.definitions.resource import ResourcesBuilder, ResourcesSource
 from dagster.core.errors import (
     DagsterError,
     DagsterInvariantViolationError,
@@ -23,21 +18,16 @@ from dagster.core.errors import (
     DagsterResourceFunctionError,
     user_code_error_boundary,
 )
-
 from dagster.core.events import DagsterEvent, PipelineInitFailureData
-from dagster.core.events.logging import construct_event_logger
-
-
+from dagster.core.events.log import construct_event_logger
 from dagster.core.intermediates_manager import (
     ObjectStoreIntermediatesManager,
     InMemoryIntermediatesManager,
     IntermediatesManager,
 )
-
-from dagster.core.log import DagsterLog
-
+from dagster.core.log_manager import DagsterLogManager
+from dagster.core.loggers import default_loggers, default_system_loggers
 from dagster.core.object_store import FileSystemObjectStore, construct_type_storage_plugin_registry
-
 from dagster.core.runs import (
     DagsterRunMeta,
     FileSystemRunStorage,
@@ -45,18 +35,20 @@ from dagster.core.runs import (
     RunStorage,
     RunStorageMode,
 )
-
 from dagster.core.system_config.objects import EnvironmentConfig
 from dagster.core.types.evaluator import (
     EvaluationError,
     evaluate_config_value,
     friendly_string_for_error,
 )
+from dagster.utils import merge_dicts
+from dagster.utils.error import serializable_error_info_from_exc_info
 
 from .config import RunConfig
 from .context.execution import ExecutionContext
 from .context.init import InitContext, InitResourceContext
 from .context.system import SystemPipelineExecutionContextData, SystemPipelineExecutionContext
+from .context.logger import InitLoggerContext
 from .resource_creation_adapter import ResourceCreationAdapter
 
 
@@ -166,14 +158,12 @@ def scoped_pipeline_context(pipeline_def, environment_config, run_config, interm
             else None
         )
 
-        import logging
-
         with user_code_context_manager(
             lambda: (
                 context_definition.context_fn(init_context)
                 if context_definition
                 # hardcoded default for now until we have top-level logging as well
-                else ExecutionContext.console_logging(logging.INFO)
+                else ExecutionContext()
             ),
             DagsterContextFunctionError,
             'Error executing context_fn on ContextDefinition {name}'.format(
@@ -181,6 +171,17 @@ def scoped_pipeline_context(pipeline_def, environment_config, run_config, interm
             ),
         ) as execution_context:
             check.inst(execution_context, ExecutionContext)
+
+            loggers = _create_loggers(
+                environment_config,
+                run_config,
+                execution_context,
+                pipeline_def,
+                pipeline_def.get_mode_definition(run_config.mode),
+            )
+            log_manager = DagsterLogManager(
+                run_id=run_config.run_id, logging_tags={}, loggers=loggers
+            )
 
             resource_creation_adapter = ResourceCreationAdapter(
                 execution_context=execution_context,
@@ -190,7 +191,11 @@ def scoped_pipeline_context(pipeline_def, environment_config, run_config, interm
             )
 
             with _create_resources(
-                pipeline_def, resource_creation_adapter, environment_config, run_config.run_id
+                pipeline_def,
+                resource_creation_adapter,
+                environment_config,
+                run_config.run_id,
+                log_manager,
             ) as resources:
 
                 yield construct_pipeline_execution_context(
@@ -201,6 +206,7 @@ def scoped_pipeline_context(pipeline_def, environment_config, run_config, interm
                     environment_config,
                     run_storage,
                     intermediates_manager,
+                    log_manager,
                 )
 
     except DagsterError as dagster_error:
@@ -219,7 +225,7 @@ def scoped_pipeline_context(pipeline_def, environment_config, run_config, interm
         yield DagsterEvent.pipeline_init_failure(
             pipeline_name=pipeline_def.name,
             failure_data=PipelineInitFailureData(error=error_info),
-            log=_create_context_free_log(run_config, pipeline_def),
+            log_manager=_create_context_free_log_manager(init_context, run_config, pipeline_def),
         )
 
 
@@ -242,27 +248,28 @@ def yield_pipeline_execution_context(pipeline_def, environment_dict, run_config)
 def construct_pipeline_execution_context(
     run_config,
     execution_context,
-    pipeline,
+    pipeline_def,
     resources,
     environment_config,
     run_storage,
     intermediates_manager,
+    log_manager,
 ):
     check.inst_param(run_config, 'run_config', RunConfig)
     check.inst_param(execution_context, 'execution_context', ExecutionContext)
-    check.inst_param(pipeline, 'pipeline', PipelineDefinition)
+    check.inst_param(pipeline_def, 'pipeline', PipelineDefinition)
     check.opt_inst_param(resources, 'resources', ResourcesBuilder)
     check.inst_param(environment_config, 'environment_config', EnvironmentConfig)
     check.inst_param(run_storage, 'run_storage', RunStorage)
     check.inst_param(intermediates_manager, 'intermediates_manager', IntermediatesManager)
+    check.inst_param(log_manager, 'log_manager', DagsterLogManager)
 
-    loggers = _create_loggers(run_config, execution_context)
-    logging_tags = get_logging_tags(execution_context, run_config, pipeline)
-    log = DagsterLog(run_config.run_id, logging_tags, loggers)
+    logging_tags = get_logging_tags(execution_context, run_config, pipeline_def)
+    log_manager.logging_tags = logging_tags
 
     return SystemPipelineExecutionContext(
         SystemPipelineExecutionContextData(
-            pipeline_def=pipeline,
+            pipeline_def=pipeline_def,
             run_config=run_config,
             resources=resources,
             environment_config=environment_config,
@@ -270,12 +277,12 @@ def construct_pipeline_execution_context(
             intermediates_manager=intermediates_manager,
         ),
         logging_tags=logging_tags,
-        log=log,
+        log_manager=log_manager,
     )
 
 
 @contextmanager
-def _create_resources(pipeline_def, resource_creation_adapter, environment, run_id):
+def _create_resources(pipeline_def, resource_creation_adapter, environment, run_id, log_manager):
     check.inst_param(
         resource_creation_adapter, 'resource_creation_adapter', ResourceCreationAdapter
     )
@@ -301,6 +308,7 @@ def _create_resources(pipeline_def, resource_creation_adapter, environment, run_
                 resource_creation_adapter.get_resource_config(resource_name),
                 environment,
                 run_id,
+                log_manager,
             )
 
             resource_obj = stack.enter_context(
@@ -317,7 +325,9 @@ def _create_resources(pipeline_def, resource_creation_adapter, environment, run_
         yield ResourcesBuilder(resources, ResourcesSource.PIPELINE_CONTEXT_DEF)
 
 
-def _create_resource_fn_lambda(pipeline_def, resource_def, resource_config, environment, run_id):
+def _create_resource_fn_lambda(
+    pipeline_def, resource_def, resource_config, environment, run_id, log_manager
+):
     return lambda: resource_def.resource_fn(
         InitResourceContext(
             pipeline_def=pipeline_def,
@@ -325,6 +335,7 @@ def _create_resource_fn_lambda(pipeline_def, resource_def, resource_config, envi
             context_config=environment.context.config if environment.context else None,
             resource_config=resource_config,
             run_id=run_id,
+            log_manager=log_manager,
         )
     )
 
@@ -396,33 +407,85 @@ def construct_intermediates_manager(run_config, environment_config, pipeline_def
         )
 
 
-def _create_loggers(run_config, execution_context):
+def _create_loggers(environment_config, run_config, execution_context, pipeline_def, mode_def):
+    check.inst_param(environment_config, 'environment_config', EnvironmentConfig)
     check.inst_param(run_config, 'run_config', RunConfig)
     check.inst_param(execution_context, 'execution_context', ExecutionContext)
+    check.inst_param(pipeline_def, 'pipeline_def', PipelineDefinition)
+    check.opt_inst_param(mode_def, 'mode_def', ModeDefinition)
+
+    loggers = []
+    # The following can be simplified after we drop context_definitions and can guarantee
+    # that at least one mode exists on a PipelineDefinition
+    for logger_key, logger_def in (
+        mode_def.loggers.items() if mode_def and mode_def.loggers else execution_context.loggers
+    ) or default_loggers().items():
+        if logger_key in environment_config.loggers:
+            loggers.append(
+                logger_def.logger_fn(
+                    InitLoggerContext(
+                        environment_config.loggers.get(logger_key, {}).get('config'),
+                        pipeline_def,
+                        logger_def,
+                        run_config.run_id,
+                    )
+                )
+            )
+
+    if run_config.loggers:
+        for logger in run_config.loggers:
+            loggers.append(logger)
+
+    if not loggers:
+        for (logger_def, logger_config) in default_system_loggers():
+            loggers.append(
+                logger_def.logger_fn(
+                    InitLoggerContext(logger_config, pipeline_def, logger_def, run_config.run_id)
+                )
+            )
 
     if run_config.event_callback:
-        return execution_context.loggers + [construct_event_logger(run_config.event_callback)]
-    elif run_config.loggers:
-        return execution_context.loggers + run_config.loggers
-    else:
-        return execution_context.loggers
+        init_logger_context = InitLoggerContext({}, pipeline_def, logger_def, run_config.run_id)
+        loggers.append(
+            construct_event_logger(run_config.event_callback).logger_fn(init_logger_context)
+        )
+
+    return loggers
 
 
-def _create_context_free_log(run_config, pipeline_def):
+def _create_context_free_log_manager(init_context, run_config, pipeline_def):
     '''In the event of pipeline initialization failure, we want to be able to log the failure
-    without a dependency on the ExecutionContext to initialize DagsterLog
+    without a dependency on the ExecutionContext to initialize DagsterLogManager.
+    Args:
+        init_context (dagster.core.init_context.InitContext)
+        run_config (dagster.core.execution_context.RunConfig)
+        pipeline_def (dagster.definitions.PipelineDefinition)
     '''
+    check.inst_param(init_context, 'init_context', InitContext)
     check.inst_param(run_config, 'run_config', RunConfig)
     check.inst_param(pipeline_def, 'pipeline_def', PipelineDefinition)
 
+    loggers = []
     # Use the default logger
-    loggers = [define_colored_console_logger('dagster')]
+    for (logger_def, logger_config) in default_system_loggers():
+        loggers += [
+            logger_def.logger_fn(
+                InitLoggerContext(logger_config, pipeline_def, logger_def, run_config.run_id)
+            )
+        ]
     if run_config.event_callback:
-        loggers += [construct_event_logger(run_config.event_callback)]
+        event_logger_def = construct_event_logger(run_config.event_callback)
+        loggers += [
+            event_logger_def.logger_fn(
+                InitLoggerContext({}, pipeline_def, event_logger_def, run_config.run_id)
+            )
+        ]
     elif run_config.loggers:
         loggers += run_config.loggers
 
-    return DagsterLog(run_config.run_id, get_logging_tags(None, run_config, pipeline_def), loggers)
+    return DagsterLogManager(
+        run_config.run_id, get_logging_tags(None, run_config, pipeline_def), loggers
+    )
 
 
 def _ensure_gen(thing_or_gen):

@@ -58,14 +58,13 @@ class PipelineDefinition(IContainSolids, object):
         solids (List[SolidDefinition]):
             The set of solid definitions used in this pipeline.
         name (Optional[str])
-        despcription (Optional[str])
+        description (Optional[str])
         context_definitions (Optional[Dict[str, PipelineContextDefinition]]):
             A mapping of context names to PipelineContextDefinition.
         dependencies (Optional[Dict[Union[str, SolidInstance], Dict[str, DependencyDefinition]]]):
             A structure that declares where each solid gets its inputs. The keys at the top
             level dict are either string names of solids or SolidInstances. The values
             are dicts that map input names to DependencyDefinitions.
-
 
     Attributes:
         name (str):
@@ -81,9 +80,8 @@ class PipelineDefinition(IContainSolids, object):
             The context definitions available for consumers of this pipelines. For example, a
             unit-testing environment and a production environment probably have very different
             configuration and requirements. There would be one context definition per
-            environment.
-
-            Only one context will be used at runtime, selected by environment configuration.
+            environment. Only one context will be used at runtime, selected by environment
+            configuration.
         dependency_structure (DependencyStructure):
             Used mostly internally. This has the same information as the dependencies data
             structure, but indexed for fast usage.

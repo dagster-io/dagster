@@ -1,6 +1,5 @@
 from __future__ import print_function
 
-import logging
 import re
 import textwrap
 
@@ -260,15 +259,6 @@ def format_argument_dict(arg_def_dict):
 def pipeline_graphviz_command(only_solids, **kwargs):
     pipeline = create_pipeline_from_cli_args(kwargs)
     build_graphviz_graph(pipeline, only_solids).view(cleanup=True)
-
-
-LOGGING_DICT = {
-    'DEBUG': logging.DEBUG,
-    'INFO': logging.INFO,
-    'WARN': logging.WARN,
-    'ERROR': logging.ERROR,
-    'CRITICAL': logging.CRITICAL,
-}
 
 
 @click.command(

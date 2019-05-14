@@ -1,6 +1,8 @@
 from collections import namedtuple
 
 from dagster import check
+from dagster.core.definitions import SolidHandle
+from dagster.core.errors import DagsterInvalidDefinitionError
 from dagster.core.system_config.objects import (
     ContextConfig,
     EnvironmentConfig,
@@ -10,14 +12,17 @@ from dagster.core.system_config.objects import (
     StorageConfig,
 )
 from dagster.core.types import Bool, Dict, Field, List, NamedDict, NamedSelector, String
-from dagster.core.types.config import ConfigType, ConfigTypeAttributes
+from dagster.core.types.config import ALL_CONFIG_BUILTINS, ConfigType, ConfigTypeAttributes
 from dagster.core.types.default_applier import apply_default_values
 from dagster.core.types.field_utils import FieldImpl, check_opt_field_param
+from dagster.core.types.iterate_types import iterate_config_types
 from dagster.utils import camelcase, merge_dicts, single_item
 
 from .context import PipelineContextDefinition
 from .dependency import DependencyStructure, Solid, SolidHandle, SolidInputHandle
+from .logger import LoggerDefinition
 from .mode import ModeDefinition
+from .pipeline_creation import construct_runtime_type_dictionary
 from .resource import ResourceDefinition
 from .solid import CompositeSolidDefinition, ISolidDefinition, SolidDefinition
 
@@ -155,11 +160,17 @@ def define_solid_config_cls(name, config_field, inputs_field, outputs_field):
 class EnvironmentClassCreationData(
     namedtuple(
         'EnvironmentClassCreationData',
-        'pipeline_name solids context_definitions dependency_structure mode_definition',
+        'pipeline_name solids context_definitions dependency_structure mode_definition loggers',
     )
 ):
     def __new__(
-        cls, pipeline_name, solids, context_definitions, dependency_structure, mode_definition
+        cls,
+        pipeline_name,
+        solids,
+        context_definitions,
+        dependency_structure,
+        mode_definition,
+        loggers,
     ):
         return super(EnvironmentClassCreationData, cls).__new__(
             cls,
@@ -177,6 +188,7 @@ class EnvironmentClassCreationData(
             mode_definition=check.opt_inst_param(
                 mode_definition, 'mode_definition', ModeDefinition
             ),
+            loggers=check.dict_param(loggers, 'loggers', key_type=str, value_type=LoggerDefinition),
         )
 
 
@@ -224,6 +236,26 @@ def get_additional_fields(pipeline_name, creation_data):
         }
 
 
+def define_logger_dictionary_cls(name, creation_data):
+    check.str_param(name, 'name')
+    check.inst_param(creation_data, 'creation_data', EnvironmentClassCreationData)
+
+    fields = {}
+
+    for logger_name, logger_definition in creation_data.loggers.items():
+        fields[logger_name] = Field(
+            SystemNamedDict(
+                '{pipeline_name}.LoggerConfig.{logger_name}'.format(
+                    pipeline_name=creation_data.pipeline_name, logger_name=logger_name
+                ),
+                remove_none_entries({'config': logger_definition.config_field}),
+            ),
+            is_optional=True,
+        )
+
+    return SystemNamedDict(name, fields)
+
+
 def define_environment_cls(creation_data):
     check.inst_param(creation_data, 'creation_data', EnvironmentClassCreationData)
     pipeline_name = camelcase(creation_data.pipeline_name)
@@ -261,6 +293,12 @@ def define_environment_cls(creation_data):
                     'execution': Field(
                         define_execution_config_cls(
                             '{pipeline_name}.ExecutionConfig'.format(pipeline_name=pipeline_name)
+                        )
+                    ),
+                    'loggers': Field(
+                        define_logger_dictionary_cls(
+                            '{pipeline_name}.LoggerConfig'.format(pipeline_name=pipeline_name),
+                            creation_data,
                         )
                     ),
                 },
@@ -481,6 +519,7 @@ def construct_environment_config(config_value):
         if 'context' in config_value
         else None,
         storage=construct_storage_config(config_value.get('storage')),
+        loggers=config_value.get('loggers'),
         original_config_dict=config_value,
         resources=config_value.get('resources'),
     )
@@ -517,3 +556,100 @@ def construct_solid_dictionary(solid_dict_value, parent_handle=None, config_map=
             construct_solid_dictionary(value['solids'], key, config_map)
 
     return config_map
+
+
+def iterate_solid_def_types(solid_def):
+
+    if isinstance(solid_def, SolidDefinition):
+        if solid_def.config_field:
+            for runtime_type in iterate_config_types(solid_def.config_field.config_type):
+                yield runtime_type
+    elif isinstance(solid_def, CompositeSolidDefinition):
+        for solid in solid_def.solids:
+            for def_type in iterate_solid_def_types(solid.definition):
+                yield def_type
+
+    else:
+        check.invariant('Unexpected ISolidDefinition type {type}'.format(type=type(solid_def)))
+
+
+def _gather_all_schemas(solid_defs):
+    runtime_types = construct_runtime_type_dictionary(solid_defs)
+    for rtt in runtime_types.values():
+        if rtt.input_schema:
+            for ct in iterate_config_types(rtt.input_schema.schema_type):
+                yield ct
+        if rtt.output_schema:
+            for ct in iterate_config_types(rtt.output_schema.schema_type):
+                yield ct
+
+
+def _gather_all_config_types(solid_defs, context_definitions, environment_type):
+    check.list_param(solid_defs, 'solid_defs', ISolidDefinition)
+    check.dict_param(
+        context_definitions,
+        'context_definitions',
+        key_type=str,
+        value_type=PipelineContextDefinition,
+    )
+
+    check.inst_param(environment_type, 'environment_type', ConfigType)
+
+    for solid_def in solid_defs:
+        for runtime_type in iterate_solid_def_types(solid_def):
+            yield runtime_type
+
+    for context_definition in context_definitions.values():
+        if context_definition.config_field:
+            context_config_type = context_definition.config_field.config_type
+            for runtime_type in iterate_config_types(context_config_type):
+                yield runtime_type
+
+    for runtime_type in iterate_config_types(environment_type):
+        yield runtime_type
+
+
+def construct_config_type_dictionary(solid_defs, context_definitions, environment_type):
+    check.list_param(solid_defs, 'solid_defs', ISolidDefinition)
+    check.dict_param(
+        context_definitions,
+        'context_definitions',
+        key_type=str,
+        value_type=PipelineContextDefinition,
+    )
+    check.inst_param(environment_type, 'environment_type', ConfigType)
+
+    type_dict_by_name = {t.name: t for t in ALL_CONFIG_BUILTINS}
+    type_dict_by_key = {t.key: t for t in ALL_CONFIG_BUILTINS}
+    all_types = list(
+        _gather_all_config_types(solid_defs, context_definitions, environment_type)
+    ) + list(_gather_all_schemas(solid_defs))
+
+    for config_type in all_types:
+        name = config_type.name
+        if name and name in type_dict_by_name:
+            if type(config_type) is not type(type_dict_by_name[name]):
+                raise DagsterInvalidDefinitionError(
+                    (
+                        'Type names must be unique. You have constructed two different '
+                        'instances of types with the same name "{name}".'
+                    ).format(name=name)
+                )
+        elif name:
+            type_dict_by_name[config_type.name] = config_type
+
+        key = config_type.key
+
+        if key in type_dict_by_key:
+            if type(config_type) is not type(type_dict_by_key[key]):
+                raise DagsterInvalidDefinitionError(
+                    (
+                        'Type keys must be unique. You have constructed two different '
+                        'instances of types with the same key "{key}".'
+                    ).format(key=key)
+                )
+
+        else:
+            type_dict_by_key[config_type.key] = config_type
+
+    return type_dict_by_name, type_dict_by_key

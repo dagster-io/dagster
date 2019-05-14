@@ -1,15 +1,16 @@
 from __future__ import absolute_import
+
 import json
+import logging
+
 import yaml
 
 from dagster import check
-from dagster.core.events.logging import EventRecord
+from dagster.core.events.log import EventRecord
 from dagster.core.events import DagsterEventType
 
-from dagster.utils.logging import CRITICAL, DEBUG, ERROR, INFO, WARNING, check_valid_level_param
 from dagster.core.execution.plan.plan import ExecutionPlan
 from dagster.core.execution.plan.objects import StepFailureData
-
 from dagster_graphql import dauphin
 from dagster_graphql.implementation.fetch_pipelines import get_pipeline_or_raise
 from dagster_graphql.implementation.pipeline_run_storage import PipelineRunStatus, PipelineRun
@@ -64,21 +65,21 @@ class DauphinLogLevel(dauphin.Enum):
     WARNING = 'WARNING'
     DEBUG = 'DEBUG'
 
-    @staticmethod
-    def from_level(level):
-        check_valid_level_param(level)
-        if level == CRITICAL:
+    @classmethod
+    def from_level(cls, level):
+        check.int_param(level, 'level')
+        if level == logging.CRITICAL:
             return DauphinLogLevel.CRITICAL
-        elif level == ERROR:
+        elif level == logging.ERROR:
             return DauphinLogLevel.ERROR
-        elif level == INFO:
+        elif level == logging.INFO:
             return DauphinLogLevel.INFO
-        elif level == WARNING:
+        elif level == logging.WARNING:
             return DauphinLogLevel.WARNING
-        elif level == DEBUG:
+        elif level == logging.DEBUG:
             return DauphinLogLevel.DEBUG
         else:
-            check.failed('unknown log level')
+            check.failed('Invalid log level: {level}'.format(level=level))
 
 
 class DauphinMessageEvent(dauphin.Interface):
