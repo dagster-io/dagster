@@ -42,10 +42,10 @@ from dagster.core.execution.plan.objects import (
 
 from dagster.core.execution.plan.plan import ExecutionPlan
 
-from .engine_base import BaseEngine
+from .engine_base import IEngine
 
 
-class InProcessEngine(BaseEngine):  # pylint: disable=no-init
+class InProcessEngine(IEngine):  # pylint: disable=no-init
     @staticmethod
     def execute(pipeline_context, execution_plan, step_keys_to_execute=None):
         check.inst_param(pipeline_context, 'pipeline_context', SystemPipelineExecutionContext)

@@ -2,6 +2,7 @@ from time import sleep
 
 from dagster import (
     DependencyDefinition,
+    ExecutionTargetHandle,
     Field,
     InputDefinition,
     Int,
@@ -96,7 +97,9 @@ if __name__ == '__main__':
     result = execute_pipeline(
         pipeline,
         run_config=RunConfig(
-            executor_config=MultiprocessExecutorConfig(define_sleepy_pipeline),
+            executor_config=MultiprocessExecutorConfig(
+                ExecutionTargetHandle.for_pipeline_fn(define_sleepy_pipeline)
+            ),
             storage_mode=RunStorageMode.FILESYSTEM,
         ),
     )

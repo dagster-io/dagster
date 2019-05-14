@@ -1,5 +1,6 @@
 from dagster import (
     resource,
+    ExecutionTargetHandle,
     MultiprocessExecutorConfig,
     ModeDefinition,
     PipelineDefinition,
@@ -56,7 +57,9 @@ if __name__ == '__main__':
     result = execute_pipeline(
         pipeline,
         run_config=RunConfig(
-            executor_config=MultiprocessExecutorConfig(define_resource_pipeline),
+            executor_config=MultiprocessExecutorConfig(
+                ExecutionTargetHandle.for_pipeline_fn(define_resource_pipeline)
+            ),
             storage_mode=RunStorageMode.FILESYSTEM,
         ),
     )

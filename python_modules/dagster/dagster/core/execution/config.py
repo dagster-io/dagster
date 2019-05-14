@@ -94,8 +94,13 @@ class InProcessExecutorConfig(ExecutorConfig):
 
 
 class MultiprocessExecutorConfig(ExecutorConfig):
-    def __init__(self, pipeline_fn, max_concurrent=None):
-        self.pipeline_fn = check.callable_param(pipeline_fn, 'pipeline_fn')
+    def __init__(self, exc_target_handle, max_concurrent=None):
+        from dagster import ExecutionTargetHandle
+
+        self.exc_target_handle = check.inst_param(
+            exc_target_handle, 'exc_target_handle', ExecutionTargetHandle
+        )
+
         max_concurrent = (
             max_concurrent if max_concurrent is not None else multiprocessing.cpu_count()
         )

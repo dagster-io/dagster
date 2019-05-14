@@ -1,5 +1,6 @@
 from dagster import (
     DependencyDefinition,
+    ExecutionTargetHandle,
     InProcessExecutorConfig,
     InputDefinition,
     MultiprocessExecutorConfig,
@@ -29,7 +30,9 @@ def test_diamond_multi_execution():
     result = execute_pipeline(
         pipeline,
         run_config=RunConfig(
-            executor_config=MultiprocessExecutorConfig(define_diamond_pipeline),
+            executor_config=MultiprocessExecutorConfig(
+                ExecutionTargetHandle.for_pipeline_fn(define_diamond_pipeline)
+            ),
             storage_mode=RunStorageMode.FILESYSTEM,
         ),
     )
@@ -100,7 +103,9 @@ def test_error_pipeline_multiprocess():
     result = execute_pipeline(
         pipeline,
         run_config=RunConfig(
-            executor_config=MultiprocessExecutorConfig(define_error_pipeline),
+            executor_config=MultiprocessExecutorConfig(
+                ExecutionTargetHandle.for_pipeline_fn(define_error_pipeline)
+            ),
             storage_mode=RunStorageMode.FILESYSTEM,
         ),
     )
