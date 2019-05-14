@@ -106,14 +106,14 @@ class PipelineDefinition(IContainSolids, object):
                 ).format(self.name)
             )
 
-        check.invariant(
-            not (context_definitions and mode_definitions),
-            'Cannot specify both context_definitions and modes',
-        )
-
-        self.mode_definitions = check.opt_list_param(
+        mode_definitions = check.opt_list_param(
             mode_definitions, 'mode_definitions', of_type=ModeDefinition
         )
+
+        if not context_definitions and not mode_definitions:
+            mode_definitions = [ModeDefinition()]
+
+        self.mode_definitions = mode_definitions
 
         solids = check.list_param(
             _check_solids_arg(self.name, solids), 'solids', of_type=ISolidDefinition
@@ -184,7 +184,7 @@ class PipelineDefinition(IContainSolids, object):
         return bool(self._get_mode_definition(mode))
 
     def get_default_mode_name(self):
-        return None if self.is_modeless else self.mode_definitions[0].name
+        return self.mode_definitions[0].name
 
     def get_mode_definition(self, mode=None):
         check.opt_str_param(mode, 'mode')
@@ -193,7 +193,6 @@ class PipelineDefinition(IContainSolids, object):
             if self.is_modeless:
                 return None
             else:
-                check.invariant(self.is_single_mode)
                 return self.mode_definitions[0]
 
         mode_def = self._get_mode_definition(mode)

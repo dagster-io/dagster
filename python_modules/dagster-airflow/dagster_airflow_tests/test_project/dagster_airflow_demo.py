@@ -43,9 +43,7 @@ def define_demo_execution_pipeline():
 
 
 def define_demo_error_pipeline():
-    return PipelineDefinition(
-        name='demo_error_pipeline', solids=[error_solid], mode_definitions=[ModeDefinition()]
-    )
+    return PipelineDefinition(name='demo_error_pipeline', solids=[error_solid])
 
 
 def define_demo_execution_repo():

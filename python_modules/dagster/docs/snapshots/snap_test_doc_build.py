@@ -24600,8 +24600,8 @@ We’ll replace the config field in our solid definition with a structured, stro
  9
 10
 11
-12</pre></div></td><td class="code"><div class="highlight"><pre><span></span><span class="n">context</span><span class="p">:</span>
-  <span class="n">default</span><span class="p">:</span>
+12</pre></div></td><td class="code"><div class="highlight"><pre><span></span><span class="n">loggers</span><span class="p">:</span>
+  <span class="n">console</span><span class="p">:</span>
     <span class="n">config</span><span class="p">:</span>
       <span class="n">log_level</span><span class="p">:</span> <span class="n">DEBUG</span>
 
@@ -24629,8 +24629,8 @@ We’ll replace the config field in our solid definition with a structured, stro
  9
 10
 11
-12</pre></div></td><td class="code"><div class="highlight"><pre><span></span><span class="n">context</span><span class="p">:</span>
-  <span class="n">default</span><span class="p">:</span>
+12</pre></div></td><td class="code"><div class="highlight"><pre><span></span><span class="n">loggers</span><span class="p">:</span>
+  <span class="n">console</span><span class="p">:</span>
     <span class="n">config</span><span class="p">:</span>
       <span class="n">log_level</span><span class="p">:</span> <span class="n">DEBUG</span>
 
@@ -24682,8 +24682,8 @@ to catch this before execution.</p>
  9
 10
 11
-12</pre></div></td><td class="code"><div class="highlight"><pre><span></span><span class="n">context</span><span class="p">:</span>
-  <span class="n">default</span><span class="p">:</span>
+12</pre></div></td><td class="code"><div class="highlight"><pre><span></span><span class="n">loggers</span><span class="p">:</span>
+  <span class="n">console</span><span class="p">:</span>
     <span class="n">config</span><span class="p">:</span>
       <span class="n">log_level</span><span class="p">:</span> <span class="n">DEBUG</span>
 
@@ -24726,8 +24726,8 @@ actionable error message before the pipeline is ever executed.</p>
  9
 10
 11
-12</pre></div></td><td class="code"><div class="highlight"><pre><span></span><span class="n">context</span><span class="p">:</span>
-  <span class="n">default</span><span class="p">:</span>
+12</pre></div></td><td class="code"><div class="highlight"><pre><span></span><span class="n">loggers</span><span class="p">:</span>
+  <span class="n">console</span><span class="p">:</span>
     <span class="n">config</span><span class="p">:</span>
       <span class="n">log_level</span><span class="p">:</span> <span class="n">DEBUG</span>
 
@@ -27053,8 +27053,8 @@ execute our pipeline from the command line.</p>
  9
 10
 11
-12</pre></div></td><td class="code"><div class="highlight"><pre><span></span><span class="nt">context</span><span class="p">:</span>
-  <span class="nt">default</span><span class="p">:</span>
+12</pre></div></td><td class="code"><div class="highlight"><pre><span></span><span class="nt">loggers</span><span class="p">:</span>
+  <span class="nt">console</span><span class="p">:</span>
     <span class="nt">config</span><span class="p">:</span>
       <span class="nt">log_level</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">DEBUG</span>
 
@@ -27084,8 +27084,8 @@ for config.</p>
 <p>Let’s split up our env.yml into two parts:</p>
 <div class="literal-block-wrapper docutils container" id="id4">
 <div class="code-block-caption"><span class="caption-text">constant_env.yml</span><a class="headerlink" href="#id4" title="Permalink to this code">¶</a></div>
-<div class="highlight-YAML notranslate"><div class="highlight"><pre><span></span><span class="nt">context</span><span class="p">:</span>
-  <span class="nt">default</span><span class="p">:</span>
+<div class="highlight-YAML notranslate"><div class="highlight"><pre><span></span><span class="nt">loggers</span><span class="p">:</span>
+  <span class="nt">console</span><span class="p">:</span>
     <span class="nt">config</span><span class="p">:</span>
       <span class="nt">log_level</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">DEBUG</span>
 </pre></div>

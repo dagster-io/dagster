@@ -381,7 +381,7 @@ def test_pipeline_execution_disjoint_subset():
             'add_one': {'inputs': {'num': {'value': 2}}},
             'add_three': {'inputs': {'num': {'value': 5}}},
         },
-        'context': {'default': {'config': {'log_level': 'ERROR'}}},
+        'loggers': {'console': {'config': {'log_level': 'ERROR'}}},
     }
 
     pipeline_def = define_created_disjoint_three_part_pipeline()

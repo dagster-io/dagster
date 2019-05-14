@@ -33,7 +33,7 @@ def test_hello_world_with_output():
 def test_add_pipeline():
     pipeline = define_add_pipeline()
     result = execute_pipeline(
-        pipeline, {'context': {'default': {'config': {'log_level': 'ERROR'}}}}
+        pipeline, {'loggers': {'console': {'config': {'log_level': 'ERROR'}}}}
     )
     assert result.success
     assert result.result_for_solid('add_two_numbers').transformed_value() == 3
@@ -63,7 +63,7 @@ def test_error_notebook():
 def test_tutorial_pipeline():
     pipeline = define_tutorial_pipeline()
     result = execute_pipeline(
-        pipeline, {'context': {'default': {'config': {'log_level': 'DEBUG'}}}}
+        pipeline, {'loggers': {'console': {'config': {'log_level': 'DEBUG'}}}}
     )
     assert result.success
 
