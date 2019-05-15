@@ -30,12 +30,6 @@ jobs:
             git config --global user.name "$GITHUB_NAME"
 
       - run:
-          name: Clean Phabricator Tags
-          command: |
-            git fetch -p -P origin
-            git tag | grep phabricator | xargs git push -d origin
-
-      - run:
           name: Merge master
           command: |
             git fetch --all
@@ -77,3 +71,9 @@ jobs:
             python -m venv .
             source bin/activate
             make install_dev_python_modules
+
+      - run:
+          name: Clean Phabricator Tags
+          command: |
+            git fetch -p -P origin
+            git tag | grep phabricator | xargs git push -d origin
