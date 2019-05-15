@@ -11,7 +11,7 @@ from dagster.utils.log import get_stack_trace_array
 
 from .implementation.context import DagsterGraphQLContext
 from .implementation.pipeline_execution_manager import SynchronousExecutionManager
-from .implementation.pipeline_run_storage import InMemoryPipelineRun, PipelineRunStorage
+from .implementation.pipeline_run_storage import PipelineRunStorage
 
 from .schema import create_schema
 from .version import __version__
@@ -27,15 +27,17 @@ def create_dagster_graphql_cli():
     return ui
 
 
-def execute_query_from_cli(handle, query, variables):
+def execute_query(handle, query, variables=None, pipeline_run_storage=None):
     check.inst_param(handle, 'handle', ExecutionTargetHandle)
     check.str_param(query, 'query')
-    check.opt_str_param(variables, 'variables')
+    check.opt_dict_param(variables, 'variables')
 
     query = query.strip('\'" \n\t')
 
-    create_pipeline_run = InMemoryPipelineRun
-    pipeline_run_storage = PipelineRunStorage(create_pipeline_run=create_pipeline_run)
+    # We allow external creation of the pipeline_run_storage to support testing contexts where we
+    # need access to the underlying run storage
+    pipeline_run_storage = pipeline_run_storage or PipelineRunStorage()
+
     execution_manager = SynchronousExecutionManager()
 
     context = DagsterGraphQLContext(
@@ -49,7 +51,7 @@ def execute_query_from_cli(handle, query, variables):
         request_string=query,
         schema=create_schema(),
         context=context,
-        variables=json.loads(variables) if variables else None,
+        variables=variables,
         executor=Executor(),
     )
 
@@ -68,9 +70,23 @@ def execute_query_from_cli(handle, query, variables):
             if hasattr(python_error, 'original_error') and python_error.original_error:
                 error_dict['stack_trace'] = get_stack_trace_array(python_error.original_error)
 
+    return result_dict
+
+
+def execute_query_from_cli(handle, query, variables=None):
+    check.inst_param(handle, 'handle', ExecutionTargetHandle)
+    check.str_param(query, 'query')
+    check.opt_str_param(variables, 'variables')
+
+    query = query.strip('\'" \n\t')
+
+    result_dict = execute_query(handle, query, json.loads(variables) if variables else None)
     str_res = seven.json.dumps(result_dict)
 
+    # Since this the entry point for CLI execution, some tests depend on us putting the result on
+    # stdout
     print(str_res)
+
     return str_res
 
 

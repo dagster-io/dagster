@@ -258,6 +258,7 @@ if __name__ == "__main__":
     steps += python_modules_tox_tests("dagster")
     steps += python_modules_tox_tests("dagit", ["apt-get update", "apt-get install -y xdg-utils"])
     steps += python_modules_tox_tests("dagster-graphql")
+    steps += python_modules_tox_tests("dagster-dask")
     steps += python_modules_tox_tests("dagstermill")
     steps += python_modules_tox_tests("libraries/dagster-pandas")
     steps += python_modules_tox_tests("libraries/dagster-ge")

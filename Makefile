@@ -29,6 +29,7 @@ install_dev_python_modules:
 	pip install -r python_modules/dagit/dev-requirements.txt
 	pip install -e python_modules/dagstermill
 	SLUGIFY_USES_TEXT_UNIDECODE=yes pip install -e python_modules/dagster-airflow
+	pip install -e python_modules/dagster-dask
 	pip install -e python_modules/libraries/dagster-aws
 	pip install -r python_modules/libraries/dagster-aws/dev-requirements.txt
 	pip install -e python_modules/libraries/dagster-gcp

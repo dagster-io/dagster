@@ -9,17 +9,16 @@ from dagster import (
     InputDefinition,
     Int,
     ModeDefinition,
-    MultiprocessExecutorConfig,
     OutputDefinition,
     PipelineDefinition,
     Result,
     SolidInstance,
     RunConfig,
-    execute_pipeline,
     lambda_solid,
     solid,
     RunStorageMode,
 )
+from dagster_dask import execute_on_dask
 
 
 @solid(
@@ -56,7 +55,7 @@ def hammer(context, chase_duration):
 
 
 @solid(
-    config_field=Field(Int, is_optional=True, default_value=5),
+    config_field=Field(Int, is_optional=True, default_value=1),
     outputs=[
         OutputDefinition(Int, 'out_1'),
         OutputDefinition(Int, 'out_2'),
@@ -116,15 +115,9 @@ def define_hammer_pipeline():
 
 
 if __name__ == '__main__':
-    pipeline = define_hammer_pipeline()
-    result = execute_pipeline(
-        pipeline,
-        run_config=RunConfig(
-            executor_config=MultiprocessExecutorConfig(
-                handle=ExecutionTargetHandle.for_pipeline_fn(define_hammer_pipeline)
-            ),
-            storage_mode=RunStorageMode.FILESYSTEM,
-        ),
+    result = execute_on_dask(
+        ExecutionTargetHandle.for_pipeline_fn(define_hammer_pipeline),
+        env_config={'storage': {'filesystem': {}}},
+        run_config=RunConfig(storage_mode=RunStorageMode.FILESYSTEM),
     )
-
     print('Total Hammer Time: ', result.result_for_solid('total').transformed_value())
