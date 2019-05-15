@@ -75,12 +75,13 @@
     "typescript-babel-jest": "^1.0.5"
   },
   "scripts": {
+    "preinstall": "node src/scripts/yarnCheck.js",
     "start": "react-scripts-ts start",
     "build": "react-scripts-ts build",
-    "build-for-python": "npm run build && cd ../../python_modules/dagit/dagit && mkdir -p webapp && cp -r ../../../js_modules/dagit/build ./webapp/",
+    "build-for-python": "yarn run build && cd ../../python_modules/dagit/dagit && mkdir -p webapp && cp -r ../../../js_modules/dagit/build ./webapp/",
     "eject": "react-scripts-ts eject",
     "prettier": "prettier --write \"./src/**/*.tsx\"",
-    "test": "npm run ts && npm run jest && npm run check-prettier",
+    "test": "yarn run ts && yarn run jest && yarn run check-prettier",
     "jest": "jest -w 1",
     "check-prettier": "prettier --list-different \"./src/**/*.tsx\"",
     "ts": "tsc -p .",
