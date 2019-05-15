@@ -1,4 +1,5 @@
 import inspect
+import os
 import sys
 
 from collections import namedtuple
@@ -293,7 +294,7 @@ def _get_python_file_from_previous_stack_frame():
         check.inst(previous_stack_frame, tuple)
 
     python_file = previous_stack_frame[1]
-    return python_file
+    return os.path.abspath(python_file)
 
 
 class _ExecutionTargetMode(Enum):

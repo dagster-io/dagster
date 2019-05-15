@@ -5,7 +5,11 @@ import pytest
 from dagster import ExecutionTargetHandle, PipelineDefinition, RepositoryDefinition, lambda_solid
 
 from dagster.core.definitions import LoaderEntrypoint
-from dagster.core.definitions.exc_target_handle import EPHEMERAL_NAME, _ExecutionTargetMode
+from dagster.core.definitions.exc_target_handle import (
+    EPHEMERAL_NAME,
+    _ExecutionTargetMode,
+    _get_python_file_from_previous_stack_frame,
+)
 from dagster.core.errors import InvalidPipelineLoadingComboError
 from dagster.utils import script_relative_path
 
@@ -302,3 +306,21 @@ def define_foo_pipeline():
 
 def define_bar_repo():
     return RepositoryDefinition('bar', {'foo': define_foo_pipeline})
+
+
+def test_get_python_file_from_previous_stack_frame():
+    def nest_fn_call():
+        # This ensures that `python_file` is this file
+        python_file = _get_python_file_from_previous_stack_frame()
+        return python_file
+
+    # We check out dagster as 'workdir' in Buildkite, so we match the rest of the path to
+    # python_modules/dagster/dagster_tests/core_tests/definitions_tests/test_exc_target_handle.py
+    assert nest_fn_call().split('/')[-6:] == [
+        'python_modules',
+        'dagster',
+        'dagster_tests',
+        'core_tests',
+        'definitions_tests',
+        'test_exc_target_handle.py',
+    ]
