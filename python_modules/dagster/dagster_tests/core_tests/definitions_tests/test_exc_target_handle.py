@@ -1,5 +1,7 @@
 import imp
 import importlib
+import os
+
 import pytest
 
 from dagster import ExecutionTargetHandle, PipelineDefinition, RepositoryDefinition, lambda_solid
@@ -316,7 +318,7 @@ def test_get_python_file_from_previous_stack_frame():
 
     # We check out dagster as 'workdir' in Buildkite, so we match the rest of the path to
     # python_modules/dagster/dagster_tests/core_tests/definitions_tests/test_exc_target_handle.py
-    assert nest_fn_call().split('/')[-6:] == [
+    assert nest_fn_call().split(os.sep)[-6:] == [
         'python_modules',
         'dagster',
         'dagster_tests',
