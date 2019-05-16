@@ -8,6 +8,7 @@ from dagster import (
     DependencyDefinition,
     InputDefinition,
     Int,
+    Materialization,
     MultiDependencyDefinition,
     Nothing,
     OutputDefinition,
@@ -240,3 +241,47 @@ def test_invalid_fanin():
                 },
             },
         )
+
+
+def test_valid_nothing_fns():
+    @lambda_solid(output=OutputDefinition(Nothing))
+    def just_pass():
+        pass
+
+    @solid(outputs=[OutputDefinition(Nothing)])
+    def just_pass2(_context):
+        pass
+
+    @lambda_solid(output=OutputDefinition(Nothing))
+    def ret_none():
+        return None
+
+    @solid(outputs=[OutputDefinition(Nothing)])
+    def yield_none(_context):
+        yield Result(None)
+
+    @solid(outputs=[OutputDefinition(Nothing)])
+    def yield_stuff(_context):
+        yield Materialization(None)
+
+    pipeline = PipelineDefinition(
+        name='fn_test', solids=[just_pass, just_pass2, ret_none, yield_none, yield_stuff]
+    )
+    result = execute_pipeline(pipeline)
+    assert result.success
+
+
+def test_invalid_nothing_fns():
+    @lambda_solid(output=OutputDefinition(Nothing))
+    def ret_val():
+        return 'val'
+
+    @solid(outputs=[OutputDefinition(Nothing)])
+    def yield_val(_context):
+        yield Result('val')
+
+    with pytest.raises(DagsterInvariantViolationError):
+        execute_pipeline(PipelineDefinition(name='fn_test', solids=[ret_val]))
+
+    with pytest.raises(DagsterInvariantViolationError):
+        execute_pipeline(PipelineDefinition(name='fn_test', solids=[yield_val]))

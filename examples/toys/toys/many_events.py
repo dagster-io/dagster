@@ -86,8 +86,6 @@ def many_table_materializations(_context):
     for table in raw_tables:
         yield Materialization(path='/path/to/{}'.format(table), description='This is a table.')
 
-    yield Result(None)
-
 
 @solid(
     inputs=[InputDefinition('start', Nothing)],
@@ -114,8 +112,6 @@ def many_materializations_and_passing_expectations(_context):
         yield ExpectationResult(
             success=True, name='row_count', message='Row count passed for {}'.format(table)
         )
-
-    yield Result(None)
 
 
 @solid(
