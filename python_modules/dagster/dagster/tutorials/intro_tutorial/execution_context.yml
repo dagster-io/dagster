@@ -1,4 +1,3 @@
-context:
-  default:
-    config:
-      log_level: DEBUG
+loggers:
+  console:
+    log_level: DEBUG

@@ -1,3 +1,15 @@
 repository:
-  file: pipeline.py
+  file: graphql/setup.py
   fn: define_repository
+
+  kwargs:
+    repo_config:
+      pipelines:
+        csv_hello_world_with_presets:
+          presets:
+            test:
+              environment_files:
+                - environments/csv_hello_world_test.yml
+            prod:
+              environment_files:
+                - environments/csv_hello_world_prod.yml

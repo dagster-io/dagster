@@ -23,17 +23,18 @@ fragment PipelineFragment on Pipeline {
     ...SolidFragment
     __typename
   }
-  contexts {
+  modes {
     name
     description
-    config {
-      ...ConfigFieldFragment
-      __typename
+    resources {
+      name
+      configField {
+        ...ConfigFieldFragment
+        __typename
+      }
     }
-    __typename
   }
   ...PipelineGraphFragment
-  ...ConfigEditorFragment
   __typename
 }
 
@@ -47,9 +48,11 @@ fragment SolidFragment on Solid {
       value
       __typename
     }
-    configDefinition {
-      ...ConfigFieldFragment
-      __typename
+    ... on SolidDefinition {
+      configDefinition {
+        ...ConfigFieldFragment
+        __typename
+      }
     }
     __typename
   }
@@ -219,37 +222,6 @@ fragment SolidNodeFragment on Solid {
       expectations {
         name
         description
-        __typename
-      }
-      __typename
-    }
-    __typename
-  }
-  __typename
-}
-
-fragment ConfigEditorFragment on Pipeline {
-  name
-  ...ConfigExplorerFragment
-  __typename
-}
-
-fragment ConfigExplorerFragment on Pipeline {
-  contexts {
-    name
-    description
-    config {
-      ...ConfigFieldFragment
-      __typename
-    }
-    __typename
-  }
-  solids {
-    definition {
-      name
-      description
-      configDefinition {
-        ...ConfigFieldFragment
         __typename
       }
       __typename

@@ -23,10 +23,9 @@ def test_run_local():
     result = execute_pipeline(
         define_resource_test_pipeline(),
         environment_dict={
-            'context': {'local': {}},
-            'solids': {'add_ints': {'inputs': {'num_one': {'value': 2}, 'num_two': {'value': 3}}}},
+            'solids': {'add_ints': {'inputs': {'num_one': {'value': 2}, 'num_two': {'value': 3}}}}
         },
-        run_config=RunConfig(event_callback=_event_callback),
+        run_config=RunConfig(mode='local', event_callback=_event_callback),
     )
 
     assert result.success
@@ -45,16 +44,12 @@ def test_run_cloud():
     result = execute_pipeline(
         define_resource_test_pipeline(),
         environment_dict={
-            'context': {
-                'cloud': {
-                    'resources': {
-                        'store': {'config': {'username': 'some_user', 'password': 'some_password'}}
-                    }
-                }
+            'resources': {
+                'store': {'config': {'username': 'some_user', 'password': 'some_password'}}
             },
             'solids': {'add_ints': {'inputs': {'num_one': {'value': 2}, 'num_two': {'value': 6}}}},
         },
-        run_config=RunConfig(event_callback=_event_callback),
+        run_config=RunConfig(event_callback=_event_callback, mode='cloud'),
     )
 
     assert result.success

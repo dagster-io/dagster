@@ -5,7 +5,7 @@ import six
 
 from dagster import check
 
-from .execution_context import SystemPipelineExecutionContext
+from dagster.core.execution.context.system import SystemPipelineExecutionContext
 from .object_store import ObjectStore
 from .runs import RunStorageMode
 from .types.runtime import RuntimeType
@@ -14,7 +14,7 @@ from .types.runtime import RuntimeType
 class StepOutputHandle(namedtuple('_StepOutputHandle', 'step_key output_name')):
     @staticmethod
     def from_step(step, output_name='result'):
-        from .execution_plan.objects import ExecutionStep
+        from .execution.plan.objects import ExecutionStep
 
         check.inst_param(step, 'step', ExecutionStep)
 
@@ -49,7 +49,7 @@ class IntermediatesManager(six.with_metaclass(ABCMeta)):  # pylint: disable=no-i
         return len(self.uncovered_inputs(context, step)) == 0
 
     def uncovered_inputs(self, context, step):
-        from .execution_plan.objects import ExecutionStep
+        from .execution.plan.objects import ExecutionStep
 
         check.inst_param(step, 'step', ExecutionStep)
         uncovered_inputs = []
@@ -115,7 +115,12 @@ class ObjectStoreIntermediatesManager(IntermediatesManager):
         check.inst_param(context, 'context', SystemPipelineExecutionContext)
         check.inst_param(runtime_type, 'runtime_type', RuntimeType)
         check.inst_param(step_output_handle, 'step_output_handle', StepOutputHandle)
-        check.invariant(not self.has_intermediate(context, step_output_handle))
+
+        if self.has_intermediate(context, step_output_handle):
+            context.log.warning(
+                'Replacing existing intermediate for %s.%s'
+                % (step_output_handle.step_key, step_output_handle.output_name)
+            )
 
         return self._object_store.set_value(
             obj=value,

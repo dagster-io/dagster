@@ -15,7 +15,7 @@ export interface PipelineRunPipelineRunEventFragment_LogMessageEvent_step {
 }
 
 export interface PipelineRunPipelineRunEventFragment_LogMessageEvent {
-  __typename: "LogMessageEvent" | "PipelineStartEvent" | "PipelineSuccessEvent" | "PipelineFailureEvent" | "ExecutionStepStartEvent" | "ExecutionStepSuccessEvent" | "ExecutionStepOutputEvent" | "ExecutionStepSkippedEvent" | "PipelineProcessStartEvent" | "StepExpectationResultEvent";
+  __typename: "LogMessageEvent" | "PipelineStartEvent" | "PipelineSuccessEvent" | "PipelineFailureEvent" | "ExecutionStepStartEvent" | "ExecutionStepSuccessEvent" | "ExecutionStepOutputEvent" | "ExecutionStepSkippedEvent" | "PipelineProcessStartEvent";
   message: string;
   timestamp: string;
   level: LogLevel;
@@ -96,4 +96,25 @@ export interface PipelineRunPipelineRunEventFragment_StepMaterializationEvent {
   materialization: PipelineRunPipelineRunEventFragment_StepMaterializationEvent_materialization;
 }
 
-export type PipelineRunPipelineRunEventFragment = PipelineRunPipelineRunEventFragment_LogMessageEvent | PipelineRunPipelineRunEventFragment_PipelineInitFailureEvent | PipelineRunPipelineRunEventFragment_ExecutionStepFailureEvent | PipelineRunPipelineRunEventFragment_PipelineProcessStartedEvent | PipelineRunPipelineRunEventFragment_StepMaterializationEvent;
+export interface PipelineRunPipelineRunEventFragment_StepExpectationResultEvent_step {
+  __typename: "ExecutionStep";
+  name: string;
+}
+
+export interface PipelineRunPipelineRunEventFragment_StepExpectationResultEvent_expectationResult {
+  __typename: "ExpectationResult";
+  success: boolean;
+  name: string | null;
+  resultMetadataJsonString: string | null;
+}
+
+export interface PipelineRunPipelineRunEventFragment_StepExpectationResultEvent {
+  __typename: "StepExpectationResultEvent";
+  message: string;
+  timestamp: string;
+  level: LogLevel;
+  step: PipelineRunPipelineRunEventFragment_StepExpectationResultEvent_step | null;
+  expectationResult: PipelineRunPipelineRunEventFragment_StepExpectationResultEvent_expectationResult;
+}
+
+export type PipelineRunPipelineRunEventFragment = PipelineRunPipelineRunEventFragment_LogMessageEvent | PipelineRunPipelineRunEventFragment_PipelineInitFailureEvent | PipelineRunPipelineRunEventFragment_ExecutionStepFailureEvent | PipelineRunPipelineRunEventFragment_PipelineProcessStartedEvent | PipelineRunPipelineRunEventFragment_StepMaterializationEvent | PipelineRunPipelineRunEventFragment_StepExpectationResultEvent;

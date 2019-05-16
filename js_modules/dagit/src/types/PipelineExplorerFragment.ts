@@ -7,321 +7,41 @@
 // GraphQL fragment: PipelineExplorerFragment
 // ====================================================
 
-export interface PipelineExplorerFragment_contexts_config_configType_EnumConfigType_innerTypes_EnumConfigType_innerTypes {
-  __typename: "EnumConfigType" | "CompositeConfigType" | "RegularConfigType" | "ListConfigType" | "NullableConfigType";
-  key: string;
-}
-
-export interface PipelineExplorerFragment_contexts_config_configType_EnumConfigType_innerTypes_EnumConfigType {
-  __typename: "EnumConfigType" | "RegularConfigType" | "ListConfigType" | "NullableConfigType";
-  key: string;
-  name: string | null;
-  description: string | null;
-  isList: boolean;
-  isNullable: boolean;
-  isSelector: boolean;
-  innerTypes: PipelineExplorerFragment_contexts_config_configType_EnumConfigType_innerTypes_EnumConfigType_innerTypes[];
-}
-
-export interface PipelineExplorerFragment_contexts_config_configType_EnumConfigType_innerTypes_CompositeConfigType_innerTypes {
-  __typename: "EnumConfigType" | "CompositeConfigType" | "RegularConfigType" | "ListConfigType" | "NullableConfigType";
-  key: string;
-}
-
-export interface PipelineExplorerFragment_contexts_config_configType_EnumConfigType_innerTypes_CompositeConfigType_fields_configType {
-  __typename: "EnumConfigType" | "CompositeConfigType" | "RegularConfigType" | "ListConfigType" | "NullableConfigType";
-  key: string;
-}
-
-export interface PipelineExplorerFragment_contexts_config_configType_EnumConfigType_innerTypes_CompositeConfigType_fields {
-  __typename: "ConfigTypeField";
-  name: string;
-  description: string | null;
-  isOptional: boolean;
-  configType: PipelineExplorerFragment_contexts_config_configType_EnumConfigType_innerTypes_CompositeConfigType_fields_configType;
-}
-
-export interface PipelineExplorerFragment_contexts_config_configType_EnumConfigType_innerTypes_CompositeConfigType {
-  __typename: "CompositeConfigType";
-  key: string;
-  name: string | null;
-  description: string | null;
-  isList: boolean;
-  isNullable: boolean;
-  isSelector: boolean;
-  innerTypes: PipelineExplorerFragment_contexts_config_configType_EnumConfigType_innerTypes_CompositeConfigType_innerTypes[];
-  fields: PipelineExplorerFragment_contexts_config_configType_EnumConfigType_innerTypes_CompositeConfigType_fields[];
-}
-
-export type PipelineExplorerFragment_contexts_config_configType_EnumConfigType_innerTypes = PipelineExplorerFragment_contexts_config_configType_EnumConfigType_innerTypes_EnumConfigType | PipelineExplorerFragment_contexts_config_configType_EnumConfigType_innerTypes_CompositeConfigType;
-
-export interface PipelineExplorerFragment_contexts_config_configType_EnumConfigType {
-  __typename: "EnumConfigType" | "RegularConfigType" | "ListConfigType" | "NullableConfigType";
-  key: string;
-  name: string | null;
-  description: string | null;
-  isList: boolean;
-  isNullable: boolean;
-  isSelector: boolean;
-  innerTypes: PipelineExplorerFragment_contexts_config_configType_EnumConfigType_innerTypes[];
-}
-
-export interface PipelineExplorerFragment_contexts_config_configType_CompositeConfigType_innerTypes_EnumConfigType_innerTypes {
-  __typename: "EnumConfigType" | "CompositeConfigType" | "RegularConfigType" | "ListConfigType" | "NullableConfigType";
-  key: string;
-}
-
-export interface PipelineExplorerFragment_contexts_config_configType_CompositeConfigType_innerTypes_EnumConfigType {
-  __typename: "EnumConfigType" | "RegularConfigType" | "ListConfigType" | "NullableConfigType";
-  key: string;
-  name: string | null;
-  description: string | null;
-  isList: boolean;
-  isNullable: boolean;
-  isSelector: boolean;
-  innerTypes: PipelineExplorerFragment_contexts_config_configType_CompositeConfigType_innerTypes_EnumConfigType_innerTypes[];
-}
-
-export interface PipelineExplorerFragment_contexts_config_configType_CompositeConfigType_innerTypes_CompositeConfigType_innerTypes {
-  __typename: "EnumConfigType" | "CompositeConfigType" | "RegularConfigType" | "ListConfigType" | "NullableConfigType";
-  key: string;
-}
-
-export interface PipelineExplorerFragment_contexts_config_configType_CompositeConfigType_innerTypes_CompositeConfigType_fields_configType {
-  __typename: "EnumConfigType" | "CompositeConfigType" | "RegularConfigType" | "ListConfigType" | "NullableConfigType";
-  key: string;
-}
-
-export interface PipelineExplorerFragment_contexts_config_configType_CompositeConfigType_innerTypes_CompositeConfigType_fields {
-  __typename: "ConfigTypeField";
-  name: string;
-  description: string | null;
-  isOptional: boolean;
-  configType: PipelineExplorerFragment_contexts_config_configType_CompositeConfigType_innerTypes_CompositeConfigType_fields_configType;
-}
-
-export interface PipelineExplorerFragment_contexts_config_configType_CompositeConfigType_innerTypes_CompositeConfigType {
-  __typename: "CompositeConfigType";
-  key: string;
-  name: string | null;
-  description: string | null;
-  isList: boolean;
-  isNullable: boolean;
-  isSelector: boolean;
-  innerTypes: PipelineExplorerFragment_contexts_config_configType_CompositeConfigType_innerTypes_CompositeConfigType_innerTypes[];
-  fields: PipelineExplorerFragment_contexts_config_configType_CompositeConfigType_innerTypes_CompositeConfigType_fields[];
-}
-
-export type PipelineExplorerFragment_contexts_config_configType_CompositeConfigType_innerTypes = PipelineExplorerFragment_contexts_config_configType_CompositeConfigType_innerTypes_EnumConfigType | PipelineExplorerFragment_contexts_config_configType_CompositeConfigType_innerTypes_CompositeConfigType;
-
-export interface PipelineExplorerFragment_contexts_config_configType_CompositeConfigType_fields_configType {
-  __typename: "EnumConfigType" | "CompositeConfigType" | "RegularConfigType" | "ListConfigType" | "NullableConfigType";
-  key: string;
-}
-
-export interface PipelineExplorerFragment_contexts_config_configType_CompositeConfigType_fields {
-  __typename: "ConfigTypeField";
-  name: string;
-  description: string | null;
-  isOptional: boolean;
-  configType: PipelineExplorerFragment_contexts_config_configType_CompositeConfigType_fields_configType;
-}
-
-export interface PipelineExplorerFragment_contexts_config_configType_CompositeConfigType {
-  __typename: "CompositeConfigType";
-  key: string;
-  name: string | null;
-  description: string | null;
-  isList: boolean;
-  isNullable: boolean;
-  isSelector: boolean;
-  innerTypes: PipelineExplorerFragment_contexts_config_configType_CompositeConfigType_innerTypes[];
-  fields: PipelineExplorerFragment_contexts_config_configType_CompositeConfigType_fields[];
-}
-
-export type PipelineExplorerFragment_contexts_config_configType = PipelineExplorerFragment_contexts_config_configType_EnumConfigType | PipelineExplorerFragment_contexts_config_configType_CompositeConfigType;
-
-export interface PipelineExplorerFragment_contexts_config {
-  __typename: "ConfigTypeField";
-  configType: PipelineExplorerFragment_contexts_config_configType;
-}
-
-export interface PipelineExplorerFragment_contexts_resources_config_configType_EnumConfigType_innerTypes_EnumConfigType_innerTypes {
-  __typename: "EnumConfigType" | "CompositeConfigType" | "RegularConfigType" | "ListConfigType" | "NullableConfigType";
-  key: string;
-}
-
-export interface PipelineExplorerFragment_contexts_resources_config_configType_EnumConfigType_innerTypes_EnumConfigType {
-  __typename: "EnumConfigType" | "RegularConfigType" | "ListConfigType" | "NullableConfigType";
-  key: string;
-  name: string | null;
-  description: string | null;
-  isList: boolean;
-  isNullable: boolean;
-  isSelector: boolean;
-  innerTypes: PipelineExplorerFragment_contexts_resources_config_configType_EnumConfigType_innerTypes_EnumConfigType_innerTypes[];
-}
-
-export interface PipelineExplorerFragment_contexts_resources_config_configType_EnumConfigType_innerTypes_CompositeConfigType_innerTypes {
-  __typename: "EnumConfigType" | "CompositeConfigType" | "RegularConfigType" | "ListConfigType" | "NullableConfigType";
-  key: string;
-}
-
-export interface PipelineExplorerFragment_contexts_resources_config_configType_EnumConfigType_innerTypes_CompositeConfigType_fields_configType {
-  __typename: "EnumConfigType" | "CompositeConfigType" | "RegularConfigType" | "ListConfigType" | "NullableConfigType";
-  key: string;
-}
-
-export interface PipelineExplorerFragment_contexts_resources_config_configType_EnumConfigType_innerTypes_CompositeConfigType_fields {
-  __typename: "ConfigTypeField";
-  name: string;
-  description: string | null;
-  isOptional: boolean;
-  configType: PipelineExplorerFragment_contexts_resources_config_configType_EnumConfigType_innerTypes_CompositeConfigType_fields_configType;
-}
-
-export interface PipelineExplorerFragment_contexts_resources_config_configType_EnumConfigType_innerTypes_CompositeConfigType {
-  __typename: "CompositeConfigType";
-  key: string;
-  name: string | null;
-  description: string | null;
-  isList: boolean;
-  isNullable: boolean;
-  isSelector: boolean;
-  innerTypes: PipelineExplorerFragment_contexts_resources_config_configType_EnumConfigType_innerTypes_CompositeConfigType_innerTypes[];
-  fields: PipelineExplorerFragment_contexts_resources_config_configType_EnumConfigType_innerTypes_CompositeConfigType_fields[];
-}
-
-export type PipelineExplorerFragment_contexts_resources_config_configType_EnumConfigType_innerTypes = PipelineExplorerFragment_contexts_resources_config_configType_EnumConfigType_innerTypes_EnumConfigType | PipelineExplorerFragment_contexts_resources_config_configType_EnumConfigType_innerTypes_CompositeConfigType;
-
-export interface PipelineExplorerFragment_contexts_resources_config_configType_EnumConfigType {
-  __typename: "EnumConfigType" | "RegularConfigType" | "ListConfigType" | "NullableConfigType";
-  key: string;
-  name: string | null;
-  description: string | null;
-  isList: boolean;
-  isNullable: boolean;
-  isSelector: boolean;
-  innerTypes: PipelineExplorerFragment_contexts_resources_config_configType_EnumConfigType_innerTypes[];
-}
-
-export interface PipelineExplorerFragment_contexts_resources_config_configType_CompositeConfigType_innerTypes_EnumConfigType_innerTypes {
-  __typename: "EnumConfigType" | "CompositeConfigType" | "RegularConfigType" | "ListConfigType" | "NullableConfigType";
-  key: string;
-}
-
-export interface PipelineExplorerFragment_contexts_resources_config_configType_CompositeConfigType_innerTypes_EnumConfigType {
-  __typename: "EnumConfigType" | "RegularConfigType" | "ListConfigType" | "NullableConfigType";
-  key: string;
-  name: string | null;
-  description: string | null;
-  isList: boolean;
-  isNullable: boolean;
-  isSelector: boolean;
-  innerTypes: PipelineExplorerFragment_contexts_resources_config_configType_CompositeConfigType_innerTypes_EnumConfigType_innerTypes[];
-}
-
-export interface PipelineExplorerFragment_contexts_resources_config_configType_CompositeConfigType_innerTypes_CompositeConfigType_innerTypes {
-  __typename: "EnumConfigType" | "CompositeConfigType" | "RegularConfigType" | "ListConfigType" | "NullableConfigType";
-  key: string;
-}
-
-export interface PipelineExplorerFragment_contexts_resources_config_configType_CompositeConfigType_innerTypes_CompositeConfigType_fields_configType {
-  __typename: "EnumConfigType" | "CompositeConfigType" | "RegularConfigType" | "ListConfigType" | "NullableConfigType";
-  key: string;
-}
-
-export interface PipelineExplorerFragment_contexts_resources_config_configType_CompositeConfigType_innerTypes_CompositeConfigType_fields {
-  __typename: "ConfigTypeField";
-  name: string;
-  description: string | null;
-  isOptional: boolean;
-  configType: PipelineExplorerFragment_contexts_resources_config_configType_CompositeConfigType_innerTypes_CompositeConfigType_fields_configType;
-}
-
-export interface PipelineExplorerFragment_contexts_resources_config_configType_CompositeConfigType_innerTypes_CompositeConfigType {
-  __typename: "CompositeConfigType";
-  key: string;
-  name: string | null;
-  description: string | null;
-  isList: boolean;
-  isNullable: boolean;
-  isSelector: boolean;
-  innerTypes: PipelineExplorerFragment_contexts_resources_config_configType_CompositeConfigType_innerTypes_CompositeConfigType_innerTypes[];
-  fields: PipelineExplorerFragment_contexts_resources_config_configType_CompositeConfigType_innerTypes_CompositeConfigType_fields[];
-}
-
-export type PipelineExplorerFragment_contexts_resources_config_configType_CompositeConfigType_innerTypes = PipelineExplorerFragment_contexts_resources_config_configType_CompositeConfigType_innerTypes_EnumConfigType | PipelineExplorerFragment_contexts_resources_config_configType_CompositeConfigType_innerTypes_CompositeConfigType;
-
-export interface PipelineExplorerFragment_contexts_resources_config_configType_CompositeConfigType_fields_configType {
-  __typename: "EnumConfigType" | "CompositeConfigType" | "RegularConfigType" | "ListConfigType" | "NullableConfigType";
-  key: string;
-}
-
-export interface PipelineExplorerFragment_contexts_resources_config_configType_CompositeConfigType_fields {
-  __typename: "ConfigTypeField";
-  name: string;
-  description: string | null;
-  isOptional: boolean;
-  configType: PipelineExplorerFragment_contexts_resources_config_configType_CompositeConfigType_fields_configType;
-}
-
-export interface PipelineExplorerFragment_contexts_resources_config_configType_CompositeConfigType {
-  __typename: "CompositeConfigType";
-  key: string;
-  name: string | null;
-  description: string | null;
-  isList: boolean;
-  isNullable: boolean;
-  isSelector: boolean;
-  innerTypes: PipelineExplorerFragment_contexts_resources_config_configType_CompositeConfigType_innerTypes[];
-  fields: PipelineExplorerFragment_contexts_resources_config_configType_CompositeConfigType_fields[];
-}
-
-export type PipelineExplorerFragment_contexts_resources_config_configType = PipelineExplorerFragment_contexts_resources_config_configType_EnumConfigType | PipelineExplorerFragment_contexts_resources_config_configType_CompositeConfigType;
-
-export interface PipelineExplorerFragment_contexts_resources_config {
-  __typename: "ConfigTypeField";
-  configType: PipelineExplorerFragment_contexts_resources_config_configType;
-}
-
-export interface PipelineExplorerFragment_contexts_resources {
-  __typename: "Resource";
-  name: string;
-  description: string | null;
-  config: PipelineExplorerFragment_contexts_resources_config | null;
-}
-
-export interface PipelineExplorerFragment_contexts {
-  __typename: "PipelineContext";
-  name: string;
-  description: string | null;
-  config: PipelineExplorerFragment_contexts_config | null;
-  resources: PipelineExplorerFragment_contexts_resources[];
-}
-
-export interface PipelineExplorerFragment_solids_definition_metadata {
+export interface PipelineExplorerFragment_solids_definition_CompositeSolidDefinition_metadata {
   __typename: "MetadataItemDefinition";
   key: string;
   value: string;
 }
 
-export interface PipelineExplorerFragment_solids_definition_configDefinition_configType {
+export interface PipelineExplorerFragment_solids_definition_CompositeSolidDefinition {
+  __typename: "CompositeSolidDefinition";
+  metadata: PipelineExplorerFragment_solids_definition_CompositeSolidDefinition_metadata[];
+}
+
+export interface PipelineExplorerFragment_solids_definition_SolidDefinition_metadata {
+  __typename: "MetadataItemDefinition";
+  key: string;
+  value: string;
+}
+
+export interface PipelineExplorerFragment_solids_definition_SolidDefinition_configDefinition_configType {
   __typename: "EnumConfigType" | "CompositeConfigType" | "RegularConfigType" | "ListConfigType" | "NullableConfigType";
   name: string | null;
   description: string | null;
 }
 
-export interface PipelineExplorerFragment_solids_definition_configDefinition {
+export interface PipelineExplorerFragment_solids_definition_SolidDefinition_configDefinition {
   __typename: "ConfigTypeField";
-  configType: PipelineExplorerFragment_solids_definition_configDefinition_configType;
+  configType: PipelineExplorerFragment_solids_definition_SolidDefinition_configDefinition_configType;
 }
 
-export interface PipelineExplorerFragment_solids_definition {
+export interface PipelineExplorerFragment_solids_definition_SolidDefinition {
   __typename: "SolidDefinition";
-  metadata: PipelineExplorerFragment_solids_definition_metadata[];
-  configDefinition: PipelineExplorerFragment_solids_definition_configDefinition | null;
+  metadata: PipelineExplorerFragment_solids_definition_SolidDefinition_metadata[];
+  configDefinition: PipelineExplorerFragment_solids_definition_SolidDefinition_configDefinition | null;
 }
+
+export type PipelineExplorerFragment_solids_definition = PipelineExplorerFragment_solids_definition_CompositeSolidDefinition | PipelineExplorerFragment_solids_definition_SolidDefinition;
 
 export interface PipelineExplorerFragment_solids_inputs_definition_type {
   __typename: "RegularRuntimeType" | "ListRuntimeType" | "NullableRuntimeType";
@@ -360,7 +80,7 @@ export interface PipelineExplorerFragment_solids_inputs_dependsOn {
 export interface PipelineExplorerFragment_solids_inputs {
   __typename: "Input";
   definition: PipelineExplorerFragment_solids_inputs_definition;
-  dependsOn: PipelineExplorerFragment_solids_inputs_dependsOn | null;
+  dependsOn: PipelineExplorerFragment_solids_inputs_dependsOn[];
 }
 
 export interface PipelineExplorerFragment_solids_outputs_definition_type {
@@ -423,11 +143,311 @@ export interface PipelineExplorerFragment_environmentType {
   name: string | null;
 }
 
+export interface PipelineExplorerFragment_modes_resources_configField_configType_EnumConfigType_innerTypes_EnumConfigType_innerTypes {
+  __typename: "EnumConfigType" | "CompositeConfigType" | "RegularConfigType" | "ListConfigType" | "NullableConfigType";
+  key: string;
+}
+
+export interface PipelineExplorerFragment_modes_resources_configField_configType_EnumConfigType_innerTypes_EnumConfigType {
+  __typename: "EnumConfigType" | "RegularConfigType" | "ListConfigType" | "NullableConfigType";
+  key: string;
+  name: string | null;
+  description: string | null;
+  isList: boolean;
+  isNullable: boolean;
+  isSelector: boolean;
+  innerTypes: PipelineExplorerFragment_modes_resources_configField_configType_EnumConfigType_innerTypes_EnumConfigType_innerTypes[];
+}
+
+export interface PipelineExplorerFragment_modes_resources_configField_configType_EnumConfigType_innerTypes_CompositeConfigType_innerTypes {
+  __typename: "EnumConfigType" | "CompositeConfigType" | "RegularConfigType" | "ListConfigType" | "NullableConfigType";
+  key: string;
+}
+
+export interface PipelineExplorerFragment_modes_resources_configField_configType_EnumConfigType_innerTypes_CompositeConfigType_fields_configType {
+  __typename: "EnumConfigType" | "CompositeConfigType" | "RegularConfigType" | "ListConfigType" | "NullableConfigType";
+  key: string;
+}
+
+export interface PipelineExplorerFragment_modes_resources_configField_configType_EnumConfigType_innerTypes_CompositeConfigType_fields {
+  __typename: "ConfigTypeField";
+  name: string;
+  description: string | null;
+  isOptional: boolean;
+  configType: PipelineExplorerFragment_modes_resources_configField_configType_EnumConfigType_innerTypes_CompositeConfigType_fields_configType;
+}
+
+export interface PipelineExplorerFragment_modes_resources_configField_configType_EnumConfigType_innerTypes_CompositeConfigType {
+  __typename: "CompositeConfigType";
+  key: string;
+  name: string | null;
+  description: string | null;
+  isList: boolean;
+  isNullable: boolean;
+  isSelector: boolean;
+  innerTypes: PipelineExplorerFragment_modes_resources_configField_configType_EnumConfigType_innerTypes_CompositeConfigType_innerTypes[];
+  fields: PipelineExplorerFragment_modes_resources_configField_configType_EnumConfigType_innerTypes_CompositeConfigType_fields[];
+}
+
+export type PipelineExplorerFragment_modes_resources_configField_configType_EnumConfigType_innerTypes = PipelineExplorerFragment_modes_resources_configField_configType_EnumConfigType_innerTypes_EnumConfigType | PipelineExplorerFragment_modes_resources_configField_configType_EnumConfigType_innerTypes_CompositeConfigType;
+
+export interface PipelineExplorerFragment_modes_resources_configField_configType_EnumConfigType {
+  __typename: "EnumConfigType" | "RegularConfigType" | "ListConfigType" | "NullableConfigType";
+  key: string;
+  name: string | null;
+  description: string | null;
+  isList: boolean;
+  isNullable: boolean;
+  isSelector: boolean;
+  innerTypes: PipelineExplorerFragment_modes_resources_configField_configType_EnumConfigType_innerTypes[];
+}
+
+export interface PipelineExplorerFragment_modes_resources_configField_configType_CompositeConfigType_innerTypes_EnumConfigType_innerTypes {
+  __typename: "EnumConfigType" | "CompositeConfigType" | "RegularConfigType" | "ListConfigType" | "NullableConfigType";
+  key: string;
+}
+
+export interface PipelineExplorerFragment_modes_resources_configField_configType_CompositeConfigType_innerTypes_EnumConfigType {
+  __typename: "EnumConfigType" | "RegularConfigType" | "ListConfigType" | "NullableConfigType";
+  key: string;
+  name: string | null;
+  description: string | null;
+  isList: boolean;
+  isNullable: boolean;
+  isSelector: boolean;
+  innerTypes: PipelineExplorerFragment_modes_resources_configField_configType_CompositeConfigType_innerTypes_EnumConfigType_innerTypes[];
+}
+
+export interface PipelineExplorerFragment_modes_resources_configField_configType_CompositeConfigType_innerTypes_CompositeConfigType_innerTypes {
+  __typename: "EnumConfigType" | "CompositeConfigType" | "RegularConfigType" | "ListConfigType" | "NullableConfigType";
+  key: string;
+}
+
+export interface PipelineExplorerFragment_modes_resources_configField_configType_CompositeConfigType_innerTypes_CompositeConfigType_fields_configType {
+  __typename: "EnumConfigType" | "CompositeConfigType" | "RegularConfigType" | "ListConfigType" | "NullableConfigType";
+  key: string;
+}
+
+export interface PipelineExplorerFragment_modes_resources_configField_configType_CompositeConfigType_innerTypes_CompositeConfigType_fields {
+  __typename: "ConfigTypeField";
+  name: string;
+  description: string | null;
+  isOptional: boolean;
+  configType: PipelineExplorerFragment_modes_resources_configField_configType_CompositeConfigType_innerTypes_CompositeConfigType_fields_configType;
+}
+
+export interface PipelineExplorerFragment_modes_resources_configField_configType_CompositeConfigType_innerTypes_CompositeConfigType {
+  __typename: "CompositeConfigType";
+  key: string;
+  name: string | null;
+  description: string | null;
+  isList: boolean;
+  isNullable: boolean;
+  isSelector: boolean;
+  innerTypes: PipelineExplorerFragment_modes_resources_configField_configType_CompositeConfigType_innerTypes_CompositeConfigType_innerTypes[];
+  fields: PipelineExplorerFragment_modes_resources_configField_configType_CompositeConfigType_innerTypes_CompositeConfigType_fields[];
+}
+
+export type PipelineExplorerFragment_modes_resources_configField_configType_CompositeConfigType_innerTypes = PipelineExplorerFragment_modes_resources_configField_configType_CompositeConfigType_innerTypes_EnumConfigType | PipelineExplorerFragment_modes_resources_configField_configType_CompositeConfigType_innerTypes_CompositeConfigType;
+
+export interface PipelineExplorerFragment_modes_resources_configField_configType_CompositeConfigType_fields_configType {
+  __typename: "EnumConfigType" | "CompositeConfigType" | "RegularConfigType" | "ListConfigType" | "NullableConfigType";
+  key: string;
+}
+
+export interface PipelineExplorerFragment_modes_resources_configField_configType_CompositeConfigType_fields {
+  __typename: "ConfigTypeField";
+  name: string;
+  description: string | null;
+  isOptional: boolean;
+  configType: PipelineExplorerFragment_modes_resources_configField_configType_CompositeConfigType_fields_configType;
+}
+
+export interface PipelineExplorerFragment_modes_resources_configField_configType_CompositeConfigType {
+  __typename: "CompositeConfigType";
+  key: string;
+  name: string | null;
+  description: string | null;
+  isList: boolean;
+  isNullable: boolean;
+  isSelector: boolean;
+  innerTypes: PipelineExplorerFragment_modes_resources_configField_configType_CompositeConfigType_innerTypes[];
+  fields: PipelineExplorerFragment_modes_resources_configField_configType_CompositeConfigType_fields[];
+}
+
+export type PipelineExplorerFragment_modes_resources_configField_configType = PipelineExplorerFragment_modes_resources_configField_configType_EnumConfigType | PipelineExplorerFragment_modes_resources_configField_configType_CompositeConfigType;
+
+export interface PipelineExplorerFragment_modes_resources_configField {
+  __typename: "ConfigTypeField";
+  configType: PipelineExplorerFragment_modes_resources_configField_configType;
+}
+
+export interface PipelineExplorerFragment_modes_resources {
+  __typename: "Resource";
+  name: string;
+  description: string | null;
+  configField: PipelineExplorerFragment_modes_resources_configField | null;
+}
+
+export interface PipelineExplorerFragment_modes_loggers_configField_configType_EnumConfigType_innerTypes_EnumConfigType_innerTypes {
+  __typename: "EnumConfigType" | "CompositeConfigType" | "RegularConfigType" | "ListConfigType" | "NullableConfigType";
+  key: string;
+}
+
+export interface PipelineExplorerFragment_modes_loggers_configField_configType_EnumConfigType_innerTypes_EnumConfigType {
+  __typename: "EnumConfigType" | "RegularConfigType" | "ListConfigType" | "NullableConfigType";
+  key: string;
+  name: string | null;
+  description: string | null;
+  isList: boolean;
+  isNullable: boolean;
+  isSelector: boolean;
+  innerTypes: PipelineExplorerFragment_modes_loggers_configField_configType_EnumConfigType_innerTypes_EnumConfigType_innerTypes[];
+}
+
+export interface PipelineExplorerFragment_modes_loggers_configField_configType_EnumConfigType_innerTypes_CompositeConfigType_innerTypes {
+  __typename: "EnumConfigType" | "CompositeConfigType" | "RegularConfigType" | "ListConfigType" | "NullableConfigType";
+  key: string;
+}
+
+export interface PipelineExplorerFragment_modes_loggers_configField_configType_EnumConfigType_innerTypes_CompositeConfigType_fields_configType {
+  __typename: "EnumConfigType" | "CompositeConfigType" | "RegularConfigType" | "ListConfigType" | "NullableConfigType";
+  key: string;
+}
+
+export interface PipelineExplorerFragment_modes_loggers_configField_configType_EnumConfigType_innerTypes_CompositeConfigType_fields {
+  __typename: "ConfigTypeField";
+  name: string;
+  description: string | null;
+  isOptional: boolean;
+  configType: PipelineExplorerFragment_modes_loggers_configField_configType_EnumConfigType_innerTypes_CompositeConfigType_fields_configType;
+}
+
+export interface PipelineExplorerFragment_modes_loggers_configField_configType_EnumConfigType_innerTypes_CompositeConfigType {
+  __typename: "CompositeConfigType";
+  key: string;
+  name: string | null;
+  description: string | null;
+  isList: boolean;
+  isNullable: boolean;
+  isSelector: boolean;
+  innerTypes: PipelineExplorerFragment_modes_loggers_configField_configType_EnumConfigType_innerTypes_CompositeConfigType_innerTypes[];
+  fields: PipelineExplorerFragment_modes_loggers_configField_configType_EnumConfigType_innerTypes_CompositeConfigType_fields[];
+}
+
+export type PipelineExplorerFragment_modes_loggers_configField_configType_EnumConfigType_innerTypes = PipelineExplorerFragment_modes_loggers_configField_configType_EnumConfigType_innerTypes_EnumConfigType | PipelineExplorerFragment_modes_loggers_configField_configType_EnumConfigType_innerTypes_CompositeConfigType;
+
+export interface PipelineExplorerFragment_modes_loggers_configField_configType_EnumConfigType {
+  __typename: "EnumConfigType" | "RegularConfigType" | "ListConfigType" | "NullableConfigType";
+  key: string;
+  name: string | null;
+  description: string | null;
+  isList: boolean;
+  isNullable: boolean;
+  isSelector: boolean;
+  innerTypes: PipelineExplorerFragment_modes_loggers_configField_configType_EnumConfigType_innerTypes[];
+}
+
+export interface PipelineExplorerFragment_modes_loggers_configField_configType_CompositeConfigType_innerTypes_EnumConfigType_innerTypes {
+  __typename: "EnumConfigType" | "CompositeConfigType" | "RegularConfigType" | "ListConfigType" | "NullableConfigType";
+  key: string;
+}
+
+export interface PipelineExplorerFragment_modes_loggers_configField_configType_CompositeConfigType_innerTypes_EnumConfigType {
+  __typename: "EnumConfigType" | "RegularConfigType" | "ListConfigType" | "NullableConfigType";
+  key: string;
+  name: string | null;
+  description: string | null;
+  isList: boolean;
+  isNullable: boolean;
+  isSelector: boolean;
+  innerTypes: PipelineExplorerFragment_modes_loggers_configField_configType_CompositeConfigType_innerTypes_EnumConfigType_innerTypes[];
+}
+
+export interface PipelineExplorerFragment_modes_loggers_configField_configType_CompositeConfigType_innerTypes_CompositeConfigType_innerTypes {
+  __typename: "EnumConfigType" | "CompositeConfigType" | "RegularConfigType" | "ListConfigType" | "NullableConfigType";
+  key: string;
+}
+
+export interface PipelineExplorerFragment_modes_loggers_configField_configType_CompositeConfigType_innerTypes_CompositeConfigType_fields_configType {
+  __typename: "EnumConfigType" | "CompositeConfigType" | "RegularConfigType" | "ListConfigType" | "NullableConfigType";
+  key: string;
+}
+
+export interface PipelineExplorerFragment_modes_loggers_configField_configType_CompositeConfigType_innerTypes_CompositeConfigType_fields {
+  __typename: "ConfigTypeField";
+  name: string;
+  description: string | null;
+  isOptional: boolean;
+  configType: PipelineExplorerFragment_modes_loggers_configField_configType_CompositeConfigType_innerTypes_CompositeConfigType_fields_configType;
+}
+
+export interface PipelineExplorerFragment_modes_loggers_configField_configType_CompositeConfigType_innerTypes_CompositeConfigType {
+  __typename: "CompositeConfigType";
+  key: string;
+  name: string | null;
+  description: string | null;
+  isList: boolean;
+  isNullable: boolean;
+  isSelector: boolean;
+  innerTypes: PipelineExplorerFragment_modes_loggers_configField_configType_CompositeConfigType_innerTypes_CompositeConfigType_innerTypes[];
+  fields: PipelineExplorerFragment_modes_loggers_configField_configType_CompositeConfigType_innerTypes_CompositeConfigType_fields[];
+}
+
+export type PipelineExplorerFragment_modes_loggers_configField_configType_CompositeConfigType_innerTypes = PipelineExplorerFragment_modes_loggers_configField_configType_CompositeConfigType_innerTypes_EnumConfigType | PipelineExplorerFragment_modes_loggers_configField_configType_CompositeConfigType_innerTypes_CompositeConfigType;
+
+export interface PipelineExplorerFragment_modes_loggers_configField_configType_CompositeConfigType_fields_configType {
+  __typename: "EnumConfigType" | "CompositeConfigType" | "RegularConfigType" | "ListConfigType" | "NullableConfigType";
+  key: string;
+}
+
+export interface PipelineExplorerFragment_modes_loggers_configField_configType_CompositeConfigType_fields {
+  __typename: "ConfigTypeField";
+  name: string;
+  description: string | null;
+  isOptional: boolean;
+  configType: PipelineExplorerFragment_modes_loggers_configField_configType_CompositeConfigType_fields_configType;
+}
+
+export interface PipelineExplorerFragment_modes_loggers_configField_configType_CompositeConfigType {
+  __typename: "CompositeConfigType";
+  key: string;
+  name: string | null;
+  description: string | null;
+  isList: boolean;
+  isNullable: boolean;
+  isSelector: boolean;
+  innerTypes: PipelineExplorerFragment_modes_loggers_configField_configType_CompositeConfigType_innerTypes[];
+  fields: PipelineExplorerFragment_modes_loggers_configField_configType_CompositeConfigType_fields[];
+}
+
+export type PipelineExplorerFragment_modes_loggers_configField_configType = PipelineExplorerFragment_modes_loggers_configField_configType_EnumConfigType | PipelineExplorerFragment_modes_loggers_configField_configType_CompositeConfigType;
+
+export interface PipelineExplorerFragment_modes_loggers_configField {
+  __typename: "ConfigTypeField";
+  configType: PipelineExplorerFragment_modes_loggers_configField_configType;
+}
+
+export interface PipelineExplorerFragment_modes_loggers {
+  __typename: "Logger";
+  name: string;
+  description: string | null;
+  configField: PipelineExplorerFragment_modes_loggers_configField | null;
+}
+
+export interface PipelineExplorerFragment_modes {
+  __typename: "Mode";
+  name: string;
+  description: string | null;
+  resources: PipelineExplorerFragment_modes_resources[];
+  loggers: PipelineExplorerFragment_modes_loggers[];
+}
+
 export interface PipelineExplorerFragment {
   __typename: "Pipeline";
   name: string;
   description: string | null;
-  contexts: PipelineExplorerFragment_contexts[];
   solids: PipelineExplorerFragment_solids[];
   environmentType: PipelineExplorerFragment_environmentType;
+  modes: PipelineExplorerFragment_modes[];
 }

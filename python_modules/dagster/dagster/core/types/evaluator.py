@@ -260,6 +260,7 @@ def hard_create_config_value(config_type, config_value):
 
 def evaluate_config_value(config_type, config_value):
     check.inst_param(config_type, 'config_type', ConfigType)
+
     errors = validate_config(config_type, config_value)
     if errors:
         return EvaluateValueResult(success=False, value=None, errors=errors)

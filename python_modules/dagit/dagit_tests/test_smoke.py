@@ -1,18 +1,19 @@
 from __future__ import absolute_import, unicode_literals
 
 import json
-from dagster.tutorials.intro_tutorial.repos import define_repo
-
-from dagster.cli.dynamic_loader import RepositoryContainer
-
+from dagster import ExecutionTargetHandle
 from dagit import app
 from dagster_graphql.implementation.pipeline_run_storage import PipelineRunStorage
 
 
 def test_smoke_app():
-    repository_container = RepositoryContainer(repository=define_repo())
     pipeline_run_storage = PipelineRunStorage()
-    flask_app = app.create_app(repository_container, pipeline_run_storage)
+    flask_app = app.create_app(
+        ExecutionTargetHandle.for_repo_module(
+            module_name='dagster.tutorials.intro_tutorial.repos', fn_name='define_repo'
+        ),
+        pipeline_run_storage,
+    )
     client = flask_app.test_client()
 
     result = client.post('/graphql', data={'query': 'query { pipelines { nodes { name }}}'})

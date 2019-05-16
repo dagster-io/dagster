@@ -11,6 +11,17 @@ type CompositeConfigType implements ConfigType {
   fields: [ConfigTypeField!]!
 }
 
+type CompositeSolidDefinition implements ISolidDefinition & SolidContainer {
+  name: String!
+  description: String
+  metadata: [MetadataItemDefinition!]!
+  inputDefinitions: [InputDefinition!]!
+  outputDefinitions: [OutputDefinition!]!
+  solids: [Solid!]!
+  inputMappings: [InputMapping!]!
+  outputMappings: [OutputMapping!]!
+}
+
 interface ConfigType {
   key: String!
   name: String
@@ -120,7 +131,7 @@ type ExecutionStep {
   key: String!
   inputs: [ExecutionStepInput!]!
   outputs: [ExecutionStepOutput!]!
-  solidHandle: String!
+  solidHandleID: String!
   kind: StepKind!
   metadata: [MetadataItemDefinition!]!
 }
@@ -192,6 +203,7 @@ type Expectation {
 
 type ExpectationResult {
   success: Boolean!
+  name: String
   message: String
   resultMetadataJsonString: String
 }
@@ -215,7 +227,7 @@ type FieldsNotDefinedConfigError implements PipelineConfigValidationError {
 type Input {
   solid: Solid!
   definition: InputDefinition!
-  dependsOn: Output
+  dependsOn: [Output!]!
 }
 
 type InputDefinition {
@@ -224,6 +236,11 @@ type InputDefinition {
   description: String
   type: RuntimeType!
   expectations: [Expectation!]!
+}
+
+type InputMapping {
+  mappedInput: Input!
+  definition: InputDefinition!
 }
 
 type InvalidDefinitionError implements Error {
@@ -238,6 +255,14 @@ type InvalidOutputError {
 
 type InvalidStepError {
   invalidStepKey: String!
+}
+
+interface ISolidDefinition {
+  name: String!
+  description: String
+  metadata: [MetadataItemDefinition!]!
+  inputDefinitions: [InputDefinition!]!
+  outputDefinitions: [OutputDefinition!]!
 }
 
 type ListConfigType implements ConfigType & WrappingConfigType {
@@ -266,6 +291,12 @@ type ListRuntimeType implements RuntimeType & WrappingRuntimeType {
   outputSchemaType: ConfigType
   innerTypes: [RuntimeType!]!
   ofType: RuntimeType!
+}
+
+type Logger {
+  name: String!
+  description: String
+  configField: ConfigTypeField
 }
 
 enum LogLevel {
@@ -327,9 +358,16 @@ type MissingRunIdErrorEvent {
   invalidRunId: String!
 }
 
+type Mode {
+  name: String!
+  description: String
+  resources: [Resource!]!
+  loggers: [Logger!]!
+}
+
 type Mutation {
-  startPipelineExecution(config: PipelineConfig, executionMetadata: ExecutionMetadata, pipeline: ExecutionSelector!, reexecutionConfig: ReexecutionConfig, stepKeys: [String!]): StartPipelineExecutionResult!
-  executePlan(config: PipelineConfig, executionMetadata: ExecutionMetadata, pipelineName: String!, stepKeys: [String!]): ExecutePlanResult!
+  startPipelineExecution(config: PipelineConfig, executionMetadata: ExecutionMetadata, mode: String, pipeline: ExecutionSelector!, reexecutionConfig: ReexecutionConfig, stepKeys: [String!]): StartPipelineExecutionResult!
+  executePlan(config: PipelineConfig, executionMetadata: ExecutionMetadata, mode: String, pipelineName: String!, stepKeys: [String!]): ExecutePlanResult!
 }
 
 type NullableConfigType implements ConfigType & WrappingConfigType {
@@ -374,6 +412,11 @@ type OutputDefinition {
   expectations: [Expectation!]!
 }
 
+type OutputMapping {
+  mappedOutput: Output!
+  definition: OutputDefinition!
+}
+
 type PageInfo {
   lastCursor: Cursor
   hasNextPage: Boolean
@@ -382,15 +425,16 @@ type PageInfo {
   totalCount: Int!
 }
 
-type Pipeline {
+type Pipeline implements SolidContainer {
+  solids: [Solid!]!
   name: String!
   description: String
-  solids: [Solid!]!
-  contexts: [PipelineContext!]!
-  environmentType: ConfigType!
-  configTypes: [ConfigType!]!
+  environmentType(mode: String): ConfigType!
+  configTypes(mode: String): [ConfigType!]!
   runtimeTypes: [RuntimeType!]!
   runs: [PipelineRun!]!
+  modes: [Mode!]!
+  solidHandles: [SolidHandle!]!
 }
 
 scalar PipelineConfig
@@ -415,13 +459,6 @@ type PipelineConfigValidationValid {
 
 type PipelineConnection {
   nodes: [Pipeline!]!
-}
-
-type PipelineContext {
-  name: String!
-  description: String
-  config: ConfigTypeField
-  resources: [Resource!]!
 }
 
 interface PipelineEvent {
@@ -547,12 +584,12 @@ type Query {
   pipeline(params: ExecutionSelector!): Pipeline!
   pipelinesOrError: PipelinesOrError!
   pipelines: PipelineConnection!
-  configTypeOrError(pipelineName: String!, configTypeName: String!): ConfigTypeOrError!
+  configTypeOrError(pipelineName: String!, configTypeName: String!, mode: String): ConfigTypeOrError!
   runtimeTypeOrError(pipelineName: String!, runtimeTypeName: String!): RuntimeTypeOrError!
   pipelineRuns: [PipelineRun!]!
   pipelineRunOrError(runId: ID!): PipelineRunOrError!
-  isPipelineConfigValid(pipeline: ExecutionSelector!, config: PipelineConfig): PipelineConfigValidationResult!
-  executionPlan(pipeline: ExecutionSelector!, config: PipelineConfig): ExecutionPlanResult!
+  isPipelineConfigValid(pipeline: ExecutionSelector!, config: PipelineConfig, mode: String): PipelineConfigValidationResult!
+  executionPlan(pipeline: ExecutionSelector!, config: PipelineConfig, mode: String): ExecutionPlanResult!
   presetsForPipeline(pipelineName: String!): [PipelinePreset!]
 }
 
@@ -590,7 +627,7 @@ type RegularRuntimeType implements RuntimeType {
 type Resource {
   name: String!
   description: String
-  config: ConfigTypeField
+  configField: ConfigTypeField
 }
 
 type RuntimeMismatchConfigError implements PipelineConfigValidationError {
@@ -635,18 +672,28 @@ type SelectorTypeConfigError implements PipelineConfigValidationError {
 
 type Solid {
   name: String!
-  definition: SolidDefinition!
+  definition: ISolidDefinition!
   inputs: [Input!]!
   outputs: [Output!]!
 }
 
-type SolidDefinition {
+interface SolidContainer {
+  solids: [Solid!]!
+}
+
+type SolidDefinition implements ISolidDefinition {
   name: String!
   description: String
   metadata: [MetadataItemDefinition!]!
   inputDefinitions: [InputDefinition!]!
   outputDefinitions: [OutputDefinition!]!
   configDefinition: ConfigTypeField
+}
+
+type SolidHandle {
+  handleID: String!
+  solid: Solid!
+  parent: Solid
 }
 
 type SolidNotFoundError implements Error {

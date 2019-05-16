@@ -2,6 +2,7 @@ START_PIPELINE_EXECUTION_QUERY = '''
 mutation (
     $pipeline: ExecutionSelector!,
     $config: PipelineConfig,
+    $mode: String,
     $stepKeys: [String!],
     $executionMetadata: ExecutionMetadata,
     $reexecutionConfig: ReexecutionConfig
@@ -9,6 +10,7 @@ mutation (
     startPipelineExecution(
         pipeline: $pipeline,
         config: $config,
+        mode: $mode,
         stepKeys: $stepKeys,
         executionMetadata: $executionMetadata,
         reexecutionConfig: $reexecutionConfig
@@ -34,6 +36,13 @@ mutation (
                             intermediateMaterialization {
                                 path
                                 description
+                            }
+                        }
+                        ... on StepExpectationResultEvent {
+                            expectationResult {
+                                success
+                                name
+                                resultMetadataJsonString
                             }
                         }
                     }
@@ -116,9 +125,12 @@ subscription subscribeTest($runId: ID!) {
         ... on PipelineRunLogsSubscriptionSuccess {
             messages {
                 __typename
+                ... on ExecutionStepOutputEvent {
+                    valueRepr
+                }
                 ... on MessageEvent {
                     message
-                    step { key solidHandle }
+                    step { key solidHandleID }
                     level
                 }
                 ... on ExecutionStepFailureEvent {
@@ -137,6 +149,7 @@ subscription subscribeTest($runId: ID!) {
                 ... on StepExpectationResultEvent {
                     expectationResult {
                         success
+                        name
                         message
                         resultMetadataJsonString
                     }

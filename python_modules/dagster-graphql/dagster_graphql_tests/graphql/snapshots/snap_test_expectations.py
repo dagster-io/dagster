@@ -12,28 +12,30 @@ snapshots['test_basic_input_output_expectations 1'] = [
         '__typename': 'StepExpectationResultEvent',
         'expectationResult': {
             'message': None,
-            'resultMetadataJsonString': '{}',
+            'name': None,
+            'resultMetadataJsonString': None,
             'success': True
         },
         'level': 'INFO',
         'message': 'DagsterEventType.STEP_EXPECTATION_RESULT for step df_expectations_solid.output.sum_df.expectation.some_expectation',
         'step': {
             'key': 'df_expectations_solid.output.sum_df.expectation.some_expectation',
-            'solidHandle': 'df_expectations_solid'
+            'solidHandleID': 'df_expectations_solid'
         }
     },
     {
         '__typename': 'StepExpectationResultEvent',
         'expectationResult': {
             'message': None,
-            'resultMetadataJsonString': '{}',
+            'name': None,
+            'resultMetadataJsonString': None,
             'success': True
         },
         'level': 'INFO',
         'message': 'DagsterEventType.STEP_EXPECTATION_RESULT for step df_expectations_solid.output.result.expectation.other_expectation',
         'step': {
             'key': 'df_expectations_solid.output.result.expectation.other_expectation',
-            'solidHandle': 'df_expectations_solid'
+            'solidHandleID': 'df_expectations_solid'
         }
     }
 ]

@@ -21,6 +21,7 @@ export interface IExecutionSession {
   key: string;
   name: string;
   config: string;
+  mode: string | null;
   solidSubset: string[] | null;
 
   // this is set when you execute the session and freeze it
@@ -34,6 +35,7 @@ const DEFAULT_SESSION: IExecutionSession = {
   key: "default",
   name: "Workspace",
   config: "",
+  mode: null,
   solidSubset: null,
   runId: undefined,
   configChangedSinceRun: false

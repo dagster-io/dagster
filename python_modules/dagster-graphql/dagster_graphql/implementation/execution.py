@@ -8,21 +8,21 @@ from graphql.execution.base import ResolveInfo
 from dagster import RunConfig, check
 
 from dagster.core.events import DagsterEventType
-from dagster.core.execution import ExecutionSelector, create_execution_plan, execute_plan
-from dagster.core.execution_context import ReexecutionConfig, make_new_run_id
-
+from dagster.core.execution.api import ExecutionSelector, create_execution_plan, execute_plan
+from dagster.core.execution.config import ReexecutionConfig
+from dagster.core.utils import make_new_run_id
 
 from dagster_graphql.schema.runs import from_event_record, from_dagster_event_record
 
-
-from .fetch_pipelines import _pipeline_or_error_from_container
 from .fetch_runs import _config_or_error_from_pipeline
+from .fetch_pipelines import _pipeline_or_error_from_repository
 
 
 def start_pipeline_execution(
     graphene_info,
     selector,
     environment_dict,
+    mode,
     step_keys_to_execute,
     reexecution_config,
     graphql_execution_metadata,
@@ -31,6 +31,7 @@ def start_pipeline_execution(
     check.inst_param(selector, 'selector', ExecutionSelector)
     check.opt_dict_param(environment_dict, 'environment_dict', key_type=str)
     check.opt_list_param(step_keys_to_execute, 'step_keys_to_execute', of_type=str)
+    check.opt_str_param(mode, 'mode')
     check.opt_inst_param(reexecution_config, 'reexecution_config', ReexecutionConfig)
     graphql_execution_metadata = check.opt_dict_param(
         graphql_execution_metadata, 'graphql_execution_metadata'
@@ -44,12 +45,19 @@ def start_pipeline_execution(
         def _start_execution(validated_config_either):
             new_run_id = run_id if run_id else make_new_run_id()
             execution_plan = create_execution_plan(
-                pipeline.get_dagster_pipeline(), validated_config_either.value
+                pipeline.get_dagster_pipeline(),
+                validated_config_either.value,
+                # TODO core UI change
+                # https://github.com/dagster-io/dagster/issues/1343
+                mode=mode if mode else pipeline.get_dagster_pipeline().get_default_mode_name(),
             )
             run = pipeline_run_storage.create_run(
                 new_run_id,
                 selector,
                 environment_dict,
+                # TODO core UI change
+                # https://github.com/dagster-io/dagster/issues/1343
+                mode if mode else pipeline.get_dagster_pipeline().get_default_mode_name(),
                 execution_plan,
                 reexecution_config,
                 step_keys_to_execute,
@@ -79,7 +87,7 @@ def start_pipeline_execution(
                         )
 
             graphene_info.context.execution_manager.execute_pipeline(
-                graphene_info.context.repository_container,
+                graphene_info.context.exc_target_handle,
                 pipeline.get_dagster_pipeline(),
                 run,
                 raise_on_error=graphene_info.context.raise_on_error,
@@ -89,10 +97,17 @@ def start_pipeline_execution(
                 run=graphene_info.schema.type_named('PipelineRun')(run)
             )
 
-        config_or_error = _config_or_error_from_pipeline(graphene_info, pipeline, environment_dict)
+        config_or_error = _config_or_error_from_pipeline(
+            graphene_info,
+            pipeline,
+            environment_dict,
+            # TODO core UI change
+            # https://github.com/dagster-io/dagster/issues/1343
+            mode=mode if mode else pipeline.get_dagster_pipeline().get_default_mode_name(),
+        )
         return config_or_error.chain(_start_execution)
 
-    pipeline_or_error = _pipeline_or_error_from_container(graphene_info, selector)
+    pipeline_or_error = _pipeline_or_error_from_repository(graphene_info, selector)
     return pipeline_or_error.chain(get_config_and_start_execution).value()
 
 
@@ -125,27 +140,33 @@ def get_pipeline_run_observable(graphene_info, run_id, after=None):
         )
 
     return (
-        _pipeline_or_error_from_container(graphene_info, run.selector)
+        _pipeline_or_error_from_repository(graphene_info, run.selector)
         .chain(get_observable)
         .value_or_raise()
     )
 
 
 ExecutePlanArgs = namedtuple(
-    'ExecutePlanArgs', 'graphene_info pipeline_name environment_dict execution_metadata step_keys'
+    'ExecutePlanArgs',
+    'graphene_info pipeline_name environment_dict mode execution_metadata step_keys',
 )
 
 
-def do_execute_plan(graphene_info, pipeline_name, environment_dict, execution_metadata, step_keys):
+def do_execute_plan(
+    graphene_info, pipeline_name, environment_dict, mode, execution_metadata, step_keys
+):
+    check.opt_str_param(mode, 'mode')
+
     execute_plan_args = ExecutePlanArgs(
         graphene_info=graphene_info,
         pipeline_name=pipeline_name,
         environment_dict=environment_dict,
+        mode=mode,
         execution_metadata=execution_metadata,
         step_keys=step_keys,
     )
     return (
-        _pipeline_or_error_from_container(graphene_info, ExecutionSelector(pipeline_name))
+        _pipeline_or_error_from_repository(graphene_info, ExecutionSelector(pipeline_name))
         .chain(
             lambda dauphin_pipeline: _execute_plan_resolve_config(
                 execute_plan_args, dauphin_pipeline
@@ -159,7 +180,10 @@ def _execute_plan_resolve_config(execute_plan_args, dauphin_pipeline):
     check.inst_param(execute_plan_args, 'execute_plan_args', ExecutePlanArgs)
     return (
         _config_or_error_from_pipeline(
-            execute_plan_args.graphene_info, dauphin_pipeline, execute_plan_args.environment_dict
+            execute_plan_args.graphene_info,
+            dauphin_pipeline,
+            execute_plan_args.environment_dict,
+            execute_plan_args.mode,
         )
         .chain(
             lambda evaluate_env_config_result: _execute_plan_chain_actual_execute_or_error(
@@ -189,6 +213,7 @@ def _execute_plan_chain_actual_execute_or_error(
     execution_plan = create_execution_plan(
         pipeline=dauphin_pipeline.get_dagster_pipeline(),
         environment_dict=execute_plan_args.environment_dict,
+        mode=execute_plan_args.mode,
     )
 
     if execute_plan_args.step_keys:
@@ -200,7 +225,9 @@ def _execute_plan_chain_actual_execute_or_error(
 
     event_records = []
 
-    run_config = RunConfig(run_id=run_id, tags=tags, event_callback=event_records.append)
+    run_config = RunConfig(
+        run_id=run_id, mode=execute_plan_args.mode, tags=tags, event_callback=event_records.append
+    )
 
     execute_plan(
         execution_plan=execution_plan,

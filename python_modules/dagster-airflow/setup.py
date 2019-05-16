@@ -60,6 +60,7 @@ def _do_setup(name='dagster-airflow'):
             # aws
             'boto3==1.9.*',
         ],
+        entry_points={"console_scripts": ['dagster-airflow = dagster_airflow.cli:main']},
     )
 
 

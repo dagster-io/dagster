@@ -8,7 +8,7 @@ except ImportError:
 
 import pytest
 
-from dagster import execute_solid, PipelineContextDefinition, PipelineDefinition
+from dagster import execute_solid, PipelineDefinition, ModeDefinition
 from dagster_aws.s3.resources import s3_resource
 from dagster_aws.s3.solids import download_from_s3_to_bytes, download_from_s3_to_file
 
@@ -19,9 +19,7 @@ def test_download_from_s3_to_file():
         result = execute_solid(
             PipelineDefinition(
                 [download_from_s3_to_file],
-                context_definitions={
-                    'test': PipelineContextDefinition(resources={'s3': s3_resource})
-                },
+                mode_definitions=[ModeDefinition(resources={'s3': s3_resource})],
             ),
             'download_from_s3_to_file',
             environment_dict={
@@ -46,7 +44,7 @@ def test_download_from_s3_to_bytes():
     result = execute_solid(
         PipelineDefinition(
             [download_from_s3_to_bytes],
-            context_definitions={'test': PipelineContextDefinition(resources={'s3': s3_resource})},
+            mode_definitions=[ModeDefinition(resources={'s3': s3_resource})],
         ),
         'download_from_s3_to_bytes',
         environment_dict={

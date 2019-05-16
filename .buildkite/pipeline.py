@@ -1,6 +1,6 @@
 import yaml
 
-DOCKER_PLUGIN = "docker#v3.1.0"
+DOCKER_PLUGIN = "docker#v3.2.0"
 
 TIMEOUT_IN_MIN = 15
 
@@ -49,8 +49,12 @@ class StepBuilder:
         self._step["commands"] = list(argc)
         return self
 
+    def base_docker_settings(self):
+        return {"shell": ["/bin/bash", "-xeuc"], "always-pull": True}
+
     def on_python_image(self, ver, env=None):
-        settings = {"always-pull": True, "image": PY_IMAGE_MAP[ver]}
+        settings = self.base_docker_settings()
+        settings["image"] = PY_IMAGE_MAP[ver]
         if env:
             settings['environment'] = env
 
@@ -59,11 +63,10 @@ class StepBuilder:
         return self
 
     def on_integration_image(self, ver, env=None):
-        settings = {
-            "always-pull": True,
-            "image": INTEGRATION_IMAGE_MAP[ver],
-            "volumes": ["/var/run/docker.sock:/var/run/docker.sock"],
-        }
+        settings = self.base_docker_settings()
+        settings["image"] = INTEGRATION_IMAGE_MAP[ver]
+        # map the docker socket to enable docker to be run from inside docker
+        settings["volumes"] = ["/var/run/docker.sock:/var/run/docker.sock"]
 
         if env:
             settings['environment'] = env
@@ -79,8 +82,8 @@ def wait_step():
     return "wait"
 
 
-def python_modules_tox_tests(directory, prereqs=None):
-    label = directory.replace("/", "-")
+def python_modules_tox_tests(directory, prereqs=None, label=None, on_integration_image=False):
+    label = label if label else directory.replace("/", "-")
     tests = []
     for version in SupportedPythons:
         coverage = ".coverage.{label}.{version}.$BUILDKITE_BUILD_ID".format(
@@ -96,12 +99,14 @@ def python_modules_tox_tests(directory, prereqs=None):
             "mv .coverage {file}".format(file=coverage),
             "buildkite-agent artifact upload {file}".format(file=coverage),
         ]
-        tests.append(
-            StepBuilder("{label} tests ({ver})".format(label=label, ver=TOX_MAP[version]))
-            .run(*tox_command)
-            .on_python_image(version, ['AWS_DEFAULT_REGION'])
-            .build()
-        )
+        builder = StepBuilder(
+            "{label} tests ({ver})".format(label=label, ver=TOX_MAP[version])
+        ).run(*tox_command)
+        if on_integration_image:
+            builder.on_integration_image(version, ['AWS_DEFAULT_REGION'])
+        else:
+            builder.on_python_image(version, ['AWS_DEFAULT_REGION'])
+        tests.append(builder.build())
 
     return tests
 
@@ -170,14 +175,15 @@ def airflow_tests():
             .run(
                 "cd python_modules/dagster-airflow/dagster_airflow_tests/test_project",
                 "./build.sh",
-                "mkdir -p /home/circleci/airflow",
+                "mkdir -p /airflow",
+                "export AIRFLOW_HOME=/airflow",
                 "cd ../../",
                 "pip install tox",
                 "tox -e {ver}".format(ver=TOX_MAP[version]),
                 "mv .coverage {file}".format(file=coverage),
                 "buildkite-agent artifact upload {file}".format(file=coverage),
             )
-            .on_integration_image(version)
+            .on_integration_image(version, ['AIRFLOW_HOME'])
             .build()
         )
     return tests
@@ -217,7 +223,8 @@ if __name__ == "__main__":
             "yarn run ts",
             "yarn run jest",
             "yarn run check-prettier",
-            "yarn generate-types",
+            "yarn run download-schema",
+            "yarn run generate-types",
             "git diff --exit-code",
             "mv coverage/lcov.info lcov.dagit.$BUILDKITE_BUILD_ID.info",
             "buildkite-agent artifact upload lcov.dagit.$BUILDKITE_BUILD_ID.info",
@@ -234,6 +241,10 @@ if __name__ == "__main__":
     steps += python_modules_tox_tests("libraries/dagster-aws")
     steps += python_modules_tox_tests("libraries/dagster-snowflake")
     steps += python_modules_tox_tests("libraries/dagster-spark")
+    steps += python_modules_tox_tests("../examples/toys", label='examples-toys')
+    steps += python_modules_tox_tests(
+        "../examples/pyspark-pagerank", label='examples-pyspark-pagerank', on_integration_image=True
+    )
     steps += airline_demo_tests()
     steps += events_demo_tests()
     steps += airflow_tests()

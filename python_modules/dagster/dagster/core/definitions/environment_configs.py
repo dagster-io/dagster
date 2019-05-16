@@ -2,6 +2,7 @@ from collections import namedtuple
 
 from dagster import check
 from dagster.core.definitions import SolidHandle
+from dagster.core.errors import DagsterInvalidDefinitionError
 from dagster.core.system_config.objects import (
     ContextConfig,
     EnvironmentConfig,
@@ -11,16 +12,19 @@ from dagster.core.system_config.objects import (
     StorageConfig,
 )
 from dagster.core.types import Bool, Dict, Field, List, NamedDict, NamedSelector, String
-from dagster.core.types.config import ConfigType, ConfigTypeAttributes
+from dagster.core.types.config import ALL_CONFIG_BUILTINS, ConfigType, ConfigTypeAttributes
 from dagster.core.types.default_applier import apply_default_values
 from dagster.core.types.field_utils import FieldImpl, check_opt_field_param
-from dagster.utils import camelcase, single_item, merge_dicts
+from dagster.core.types.iterate_types import iterate_config_types
+from dagster.utils import camelcase, merge_dicts, single_item
 
 from .context import PipelineContextDefinition
-from .dependency import DependencyStructure, Solid, SolidInputHandle
+from .dependency import DependencyStructure, Solid, SolidHandle, SolidInputHandle
+from .logger import LoggerDefinition
 from .mode import ModeDefinition
+from .pipeline_creation import construct_runtime_type_dictionary
 from .resource import ResourceDefinition
-from .solid import SolidDefinition
+from .solid import CompositeSolidDefinition, ISolidDefinition, SolidDefinition
 
 
 def SystemNamedDict(name, fields, description=None):
@@ -56,16 +60,23 @@ def define_maybe_optional_selector_field(config_cls):
     )
 
 
-def define_resource_dictionary_cls(name, resources):
+def define_resource_cls(parent_name, resource_name, resource_def):
+    return SystemNamedDict(
+        '{parent_name}.{resource_name}'.format(
+            parent_name=parent_name, resource_name=camelcase(resource_name)
+        ),
+        {'config': resource_def.config_field},
+    )
+
+
+def define_resource_dictionary_cls(name, resource_defs):
     check.str_param(name, 'name')
-    check.dict_param(resources, 'resources', key_type=str, value_type=ResourceDefinition)
+    check.dict_param(resource_defs, 'resource_defs', key_type=str, value_type=ResourceDefinition)
 
     fields = {}
-    for resource_name, resource in resources.items():
-        if resource.config_field:
-            fields[resource_name] = Field(
-                SystemNamedDict(name + '.' + resource_name, {'config': resource.config_field})
-            )
+    for resource_name, resource_def in resource_defs.items():
+        if resource_def.config_field:
+            fields[resource_name] = Field(define_resource_cls(name, resource_name, resource_def))
 
     return SystemNamedDict(name=name, fields=fields)
 
@@ -149,11 +160,17 @@ def define_solid_config_cls(name, config_field, inputs_field, outputs_field):
 class EnvironmentClassCreationData(
     namedtuple(
         'EnvironmentClassCreationData',
-        'pipeline_name solids context_definitions dependency_structure mode_definition',
+        'pipeline_name solids context_definitions dependency_structure mode_definition loggers',
     )
 ):
     def __new__(
-        cls, pipeline_name, solids, context_definitions, dependency_structure, mode_definition
+        cls,
+        pipeline_name,
+        solids,
+        context_definitions,
+        dependency_structure,
+        mode_definition,
+        loggers,
     ):
         return super(EnvironmentClassCreationData, cls).__new__(
             cls,
@@ -171,6 +188,7 @@ class EnvironmentClassCreationData(
             mode_definition=check.opt_inst_param(
                 mode_definition, 'mode_definition', ModeDefinition
             ),
+            loggers=check.dict_param(loggers, 'loggers', key_type=str, value_type=LoggerDefinition),
         )
 
 
@@ -189,15 +207,24 @@ def define_context_cls(pipeline_def):
     )
 
 
+def define_mode_resources_dictionary_cls(pipeline_name, mode_definition):
+    check.str_param(pipeline_name, 'pipeline_name')
+    check.inst_param(mode_definition, 'mode_definition', ModeDefinition)
+
+    return define_resource_dictionary_cls(
+        '{pipeline_name}.Mode.{mode}.Resources'.format(
+            pipeline_name=pipeline_name, mode=camelcase(mode_definition.name)
+        ),
+        mode_definition.resource_defs,
+    )
+
+
 def get_additional_fields(pipeline_name, creation_data):
     if creation_data.mode_definition:
         check.invariant(not creation_data.context_definitions)
         return {
             'resources': Field(
-                define_resource_dictionary_cls(
-                    '{pipeline_name}.Mode.{mode}.Resources',
-                    creation_data.mode_definition.resource_defs,
-                )
+                define_mode_resources_dictionary_cls(pipeline_name, creation_data.mode_definition)
             )
         }
     else:
@@ -209,12 +236,36 @@ def get_additional_fields(pipeline_name, creation_data):
         }
 
 
+def define_logger_dictionary_cls(name, creation_data):
+    check.str_param(name, 'name')
+    check.inst_param(creation_data, 'creation_data', EnvironmentClassCreationData)
+
+    fields = {}
+
+    for logger_name, logger_definition in creation_data.loggers.items():
+        fields[logger_name] = Field(
+            SystemNamedDict(
+                '{pipeline_name}.LoggerConfig.{logger_name}'.format(
+                    pipeline_name=creation_data.pipeline_name, logger_name=logger_name
+                ),
+                remove_none_entries({'config': logger_definition.config_field}),
+            ),
+            is_optional=True,
+        )
+
+    return SystemNamedDict(name, fields)
+
+
 def define_environment_cls(creation_data):
     check.inst_param(creation_data, 'creation_data', EnvironmentClassCreationData)
     pipeline_name = camelcase(creation_data.pipeline_name)
 
     return SystemNamedDict(
-        name='{pipeline_name}.Environment'.format(pipeline_name=pipeline_name),
+        name='{pipeline_name}.Mode.{mode_name}.Environment'.format(
+            pipeline_name=pipeline_name, mode_name=camelcase(creation_data.mode_definition.name)
+        )
+        if creation_data.mode_definition
+        else '{pipeline_name}.Environment'.format(pipeline_name=pipeline_name),
         fields=remove_none_entries(
             merge_dicts(
                 {
@@ -223,7 +274,9 @@ def define_environment_cls(creation_data):
                             '{pipeline_name}.SolidsConfigDictionary'.format(
                                 pipeline_name=pipeline_name
                             ),
-                            creation_data,
+                            creation_data.solids,
+                            creation_data.dependency_structure,
+                            creation_data.pipeline_name,
                         )
                     ),
                     'expectations': Field(
@@ -240,6 +293,12 @@ def define_environment_cls(creation_data):
                     'execution': Field(
                         define_execution_config_cls(
                             '{pipeline_name}.ExecutionConfig'.format(pipeline_name=pipeline_name)
+                        )
+                    ),
+                    'loggers': Field(
+                        define_logger_dictionary_cls(
+                            '{pipeline_name}.LoggerConfig'.format(pipeline_name=pipeline_name),
+                            creation_data,
                         )
                     ),
                 },
@@ -285,18 +344,20 @@ def define_storage_config_cls(name):
 
 
 def solid_has_configurable_inputs(solid_def):
-    check.inst_param(solid_def, 'solid_def', SolidDefinition)
+    check.inst_param(solid_def, 'solid_def', ISolidDefinition)
     return any(map(lambda inp: inp.runtime_type.input_schema, solid_def.input_dict.values()))
 
 
 def solid_has_configurable_outputs(solid_def):
-    check.inst_param(solid_def, 'solid_def', SolidDefinition)
+    check.inst_param(solid_def, 'solid_def', ISolidDefinition)
     return any(map(lambda out: out.runtime_type.output_schema, solid_def.output_dict.values()))
 
 
-def get_inputs_field(creation_data, solid):
-    check.inst_param(creation_data, 'creation_data', EnvironmentClassCreationData)
+def get_inputs_field(solid, handle, dependency_structure, pipeline_name):
     check.inst_param(solid, 'solid', Solid)
+    check.inst_param(handle, 'handle', SolidHandle)
+    check.inst_param(dependency_structure, 'dependency_structure', DependencyStructure)
+    check.str_param(pipeline_name, 'pipeline_name')
 
     if not solid_has_configurable_inputs(solid.definition):
         return None
@@ -307,7 +368,7 @@ def get_inputs_field(creation_data, solid):
             inp_handle = SolidInputHandle(solid, inp)
             # If this input is not satisfied by a dependency you must
             # provide it via config
-            if not creation_data.dependency_structure.has_dep(inp_handle):
+            if not dependency_structure.has_dep(inp_handle) and not solid.parent_maps_input(name):
                 inputs_field_fields[name] = FieldImpl(inp.runtime_type.input_schema.schema_type)
 
     if not inputs_field_fields:
@@ -315,18 +376,18 @@ def get_inputs_field(creation_data, solid):
 
     return Field(
         SystemNamedDict(
-            '{pipeline_name}.{solid_name}.Inputs'.format(
-                pipeline_name=camelcase(creation_data.pipeline_name),
-                solid_name=camelcase(solid.name),
+            '{pipeline_name}.{solid_handle}.Inputs'.format(
+                pipeline_name=camelcase(pipeline_name), solid_handle=handle.camelcase()
             ),
             inputs_field_fields,
         )
     )
 
 
-def get_outputs_field(creation_data, solid):
-    check.inst_param(creation_data, 'creation_data', EnvironmentClassCreationData)
+def get_outputs_field(solid, handle, pipeline_name):
     check.inst_param(solid, 'solid', Solid)
+    check.inst_param(handle, 'handle', SolidHandle)
+    check.str_param(pipeline_name, 'pipeline_name')
 
     solid_def = solid.definition
 
@@ -341,8 +402,8 @@ def get_outputs_field(creation_data, solid):
             )
 
     output_entry_dict = SystemNamedDict(
-        '{pipeline_name}.{solid_name}.Outputs'.format(
-            pipeline_name=camelcase(creation_data.pipeline_name), solid_name=camelcase(solid.name)
+        '{pipeline_name}.{solid_handle}.Outputs'.format(
+            pipeline_name=camelcase(pipeline_name), solid_handle=handle.camelcase()
         ),
         output_dict_fields,
     )
@@ -351,31 +412,93 @@ def get_outputs_field(creation_data, solid):
 
 
 def solid_has_config_entry(solid_def):
-    check.inst_param(solid_def, 'solid_def', SolidDefinition)
+    check.inst_param(solid_def, 'solid_def', ISolidDefinition)
+
+    has_solid_config = False
+    if isinstance(solid_def, CompositeSolidDefinition):
+        has_solid_config = any(
+            map(solid_has_config_entry, [solid.definition for solid in solid_def.solids])
+        )
+    elif isinstance(solid_def, SolidDefinition):
+        has_solid_config = solid_def.config_field
+    else:
+        check.invariant('Unexpected ISolidDefinition type {type}'.format(type=type(solid_def)))
+
     return (
-        solid_def.config_field
+        has_solid_config
         or solid_has_configurable_inputs(solid_def)
         or solid_has_configurable_outputs(solid_def)
     )
 
 
-def define_solid_dictionary_cls(name, creation_data):
+def define_isolid_field(solid, handle, dependency_structure, pipeline_name):
+    check.inst_param(solid, 'solid', Solid)
+    check.inst_param(handle, 'handle', SolidHandle)
+
+    check.str_param(pipeline_name, 'pipeline_name')
+
+    if isinstance(solid.definition, CompositeSolidDefinition):
+        composite_def = solid.definition
+        solid_cfg = Field(
+            define_solid_dictionary_cls(
+                '{pipeline_name}.CompositeSolidsDict.{solid_handle}'.format(
+                    pipeline_name=camelcase(pipeline_name), solid_handle=handle.camelcase()
+                ),
+                composite_def.solids,
+                composite_def.dependency_structure,
+                pipeline_name,
+                handle,
+            )
+        )
+        return Field(
+            SystemNamedDict(
+                '{name}CompositeSolidConfig'.format(name=str(handle)),
+                remove_none_entries(
+                    {
+                        'solids': solid_cfg,
+                        'inputs': get_inputs_field(
+                            solid, handle, dependency_structure, pipeline_name
+                        ),
+                        'outputs': get_outputs_field(solid, handle, pipeline_name),
+                    }
+                ),
+            )
+        )
+
+    elif isinstance(solid.definition, SolidDefinition):
+        solid_config_type = define_solid_config_cls(
+            '{pipeline_name}.SolidConfig.{solid_handle}'.format(
+                pipeline_name=camelcase(pipeline_name), solid_handle=handle.camelcase()
+            ),
+            solid.definition.config_field,
+            inputs_field=get_inputs_field(solid, handle, dependency_structure, pipeline_name),
+            outputs_field=get_outputs_field(solid, handle, pipeline_name),
+        )
+        return Field(solid_config_type)
+    else:
+        check.invariant(
+            'Unexpected ISolidDefinition type {type}'.format(type=type(solid.definition))
+        )
+
+
+def define_solid_dictionary_cls(
+    name, solids, dependency_structure, pipeline_name, parent_handle=None
+):
     check.str_param(name, 'name')
-    check.inst_param(creation_data, 'creation_data', EnvironmentClassCreationData)
+    check.list_param(solids, 'solids', of_type=Solid)
+    check.inst_param(dependency_structure, 'dependency_structure', DependencyStructure)
+    check.str_param(pipeline_name, 'pipeline_name')
+    check.opt_inst_param(parent_handle, 'parent_handle', SolidHandle)
 
     fields = {}
-    for solid in creation_data.solids:
+    for solid in solids:
         if solid_has_config_entry(solid.definition):
-            solid_config_type = define_solid_config_cls(
-                '{pipeline_name}.SolidConfig.{solid_name}'.format(
-                    pipeline_name=camelcase(creation_data.pipeline_name),
-                    solid_name=camelcase(solid.name),
-                ),
-                solid.definition.config_field,
-                inputs_field=get_inputs_field(creation_data, solid),
-                outputs_field=get_outputs_field(creation_data, solid),
+            fields[solid.name] = define_isolid_field(
+                solid,
+                SolidHandle(solid.name, solid.definition.name, parent_handle),
+                dependency_structure,
+                pipeline_name,
             )
-            fields[solid.name] = Field(solid_config_type)
 
     return SystemNamedDict(name, fields)
 
@@ -396,6 +519,7 @@ def construct_environment_config(config_value):
         if 'context' in config_value
         else None,
         storage=construct_storage_config(config_value.get('storage')),
+        loggers=config_value.get('loggers'),
         original_config_dict=config_value,
         resources=config_value.get('resources'),
     )
@@ -419,12 +543,113 @@ def construct_context_config(config_value):
     )
 
 
-def construct_solid_dictionary(solid_dict_value):
-    return {
-        str(SolidHandle(key, None)): SolidConfig(
-            config=value.get('config'),
-            inputs=value.get('inputs', {}),
-            outputs=value.get('outputs', []),
+def construct_solid_dictionary(solid_dict_value, parent_handle=None, config_map=None):
+    config_map = {} if config_map is None else config_map
+    for name, value in solid_dict_value.items():
+        key = SolidHandle(name, None, parent_handle)
+        config = value.get('config')
+        config_map[str(key)] = SolidConfig(
+            config=config, inputs=value.get('inputs', {}), outputs=value.get('outputs', [])
         )
-        for key, value in solid_dict_value.items()
-    }
+        # solids implies a composite solid config
+        if value.get('solids'):
+            construct_solid_dictionary(value['solids'], key, config_map)
+
+    return config_map
+
+
+def iterate_solid_def_types(solid_def):
+
+    if isinstance(solid_def, SolidDefinition):
+        if solid_def.config_field:
+            for runtime_type in iterate_config_types(solid_def.config_field.config_type):
+                yield runtime_type
+    elif isinstance(solid_def, CompositeSolidDefinition):
+        for solid in solid_def.solids:
+            for def_type in iterate_solid_def_types(solid.definition):
+                yield def_type
+
+    else:
+        check.invariant('Unexpected ISolidDefinition type {type}'.format(type=type(solid_def)))
+
+
+def _gather_all_schemas(solid_defs):
+    runtime_types = construct_runtime_type_dictionary(solid_defs)
+    for rtt in runtime_types.values():
+        if rtt.input_schema:
+            for ct in iterate_config_types(rtt.input_schema.schema_type):
+                yield ct
+        if rtt.output_schema:
+            for ct in iterate_config_types(rtt.output_schema.schema_type):
+                yield ct
+
+
+def _gather_all_config_types(solid_defs, context_definitions, environment_type):
+    check.list_param(solid_defs, 'solid_defs', ISolidDefinition)
+    check.dict_param(
+        context_definitions,
+        'context_definitions',
+        key_type=str,
+        value_type=PipelineContextDefinition,
+    )
+
+    check.inst_param(environment_type, 'environment_type', ConfigType)
+
+    for solid_def in solid_defs:
+        for runtime_type in iterate_solid_def_types(solid_def):
+            yield runtime_type
+
+    for context_definition in context_definitions.values():
+        if context_definition.config_field:
+            context_config_type = context_definition.config_field.config_type
+            for runtime_type in iterate_config_types(context_config_type):
+                yield runtime_type
+
+    for runtime_type in iterate_config_types(environment_type):
+        yield runtime_type
+
+
+def construct_config_type_dictionary(solid_defs, context_definitions, environment_type):
+    check.list_param(solid_defs, 'solid_defs', ISolidDefinition)
+    check.dict_param(
+        context_definitions,
+        'context_definitions',
+        key_type=str,
+        value_type=PipelineContextDefinition,
+    )
+    check.inst_param(environment_type, 'environment_type', ConfigType)
+
+    type_dict_by_name = {t.name: t for t in ALL_CONFIG_BUILTINS}
+    type_dict_by_key = {t.key: t for t in ALL_CONFIG_BUILTINS}
+    all_types = list(
+        _gather_all_config_types(solid_defs, context_definitions, environment_type)
+    ) + list(_gather_all_schemas(solid_defs))
+
+    for config_type in all_types:
+        name = config_type.name
+        if name and name in type_dict_by_name:
+            if type(config_type) is not type(type_dict_by_name[name]):
+                raise DagsterInvalidDefinitionError(
+                    (
+                        'Type names must be unique. You have constructed two different '
+                        'instances of types with the same name "{name}".'
+                    ).format(name=name)
+                )
+        elif name:
+            type_dict_by_name[config_type.name] = config_type
+
+        key = config_type.key
+
+        if key in type_dict_by_key:
+            if type(config_type) is not type(type_dict_by_key[key]):
+                raise DagsterInvalidDefinitionError(
+                    (
+                        'Type keys must be unique. You have constructed two different '
+                        'instances of types with the same key "{key}".'
+                    ).format(key=key)
+                )
+
+        else:
+            type_dict_by_key[config_type.key] = config_type
+
+    return type_dict_by_name, type_dict_by_key

@@ -1,3 +1,4 @@
+import atexit
 import os
 import time
 
@@ -7,16 +8,15 @@ from enum import Enum
 import gevent
 import gevent.lock
 import pyrsistent
-import atexit
 
 from rx import Observable
 
 from dagster import check, seven
-from dagster.core.events.logging import EventRecord
+from dagster.core.events.log import EventRecord
 from dagster.core.events import DagsterEventType
-from dagster.core.execution import ExecutionSelector
-from dagster.core.execution_context import ReexecutionConfig
-from dagster.core.execution_plan.plan import ExecutionPlan
+from dagster.core.execution.api import ExecutionSelector
+from dagster.core.execution.config import ReexecutionConfig
+from dagster.core.execution.plan.plan import ExecutionPlan
 
 
 class PipelineRunStatus(Enum):
@@ -55,7 +55,14 @@ class PipelineRunStorage(object):
 
 class PipelineRun(object):
     def __init__(
-        self, run_id, selector, env_config, execution_plan, reexecution_config, step_keys_to_execute
+        self,
+        run_id,
+        selector,
+        env_config,
+        mode,
+        execution_plan,
+        reexecution_config,
+        step_keys_to_execute,
     ):
         self.__subscribers = []
 
@@ -63,12 +70,17 @@ class PipelineRun(object):
         self._run_id = check.str_param(run_id, 'run_id')
         self._selector = check.inst_param(selector, 'selector', ExecutionSelector)
         self._env_config = check.opt_dict_param(env_config, 'environment_config', key_type=str)
+        self._mode = check.opt_str_param(mode, 'mode')
         self._execution_plan = check.inst_param(execution_plan, 'execution_plan', ExecutionPlan)
         self._reexecution_config = check.opt_inst_param(
             reexecution_config, 'reexecution_config', ReexecutionConfig
         )
         check.opt_list_param(step_keys_to_execute, 'step_keys_to_execute', of_type=str)
         self._step_keys_to_execute = step_keys_to_execute
+
+    @property
+    def mode(self):
+        return self._mode
 
     @property
     def run_id(self):

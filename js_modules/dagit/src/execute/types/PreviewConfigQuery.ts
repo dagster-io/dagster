@@ -80,4 +80,5 @@ export interface PreviewConfigQuery {
 export interface PreviewConfigQueryVariables {
   pipeline: ExecutionSelector;
   config: any;
+  mode?: string | null;
 }

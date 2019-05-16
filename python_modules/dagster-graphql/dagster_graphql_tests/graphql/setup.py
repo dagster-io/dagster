@@ -1,15 +1,15 @@
+import csv
+import logging
+
+from collections import OrderedDict
+from copy import deepcopy
+
 from graphql import graphql
 
-from dagster_graphql.implementation.context import DagsterGraphQLContext
-from dagster_graphql.implementation.pipeline_run_storage import PipelineRunStorage
-from dagster_graphql.implementation.pipeline_execution_manager import SynchronousExecutionManager
-from dagster_graphql.schema import create_schema
-
-from dagster.cli.dynamic_loader import RepositoryContainer
-
-from dagster.utils import script_relative_path
 from dagster import (
+    as_dagster_type,
     Any,
+    ExecutionTargetHandle,
     Bool,
     DependencyDefinition,
     Dict,
@@ -19,20 +19,60 @@ from dagster import (
     ExpectationResult,
     Field,
     InputDefinition,
+    input_schema,
     Int,
     List,
+    logger,
+    ModeDefinition,
     Nullable,
     OutputDefinition,
-    PipelineContextDefinition,
+    output_schema,
+    Path,
     PipelineDefinition,
     RepositoryDefinition,
-    ResourceDefinition,
     SolidDefinition,
+    SolidInstance,
+    CompositeSolidDefinition,
+    Float,
     String,
     lambda_solid,
+    resource,
     solid,
 )
-from dagster_pandas import DataFrame
+from dagster.core.log_manager import coerce_valid_log_level
+from dagster.utils import script_relative_path
+
+from dagster_graphql.implementation.context import DagsterGraphQLContext
+from dagster_graphql.implementation.pipeline_run_storage import PipelineRunStorage
+from dagster_graphql.implementation.pipeline_execution_manager import SynchronousExecutionManager
+from dagster_graphql.schema import create_schema
+
+
+class PoorMansDataFrame_(list):
+    pass
+
+
+@input_schema(Path)
+def df_input_schema(_context, path):
+    with open(path, 'r') as fd:
+        return PoorMansDataFrame_(
+            [OrderedDict(sorted(x.items(), key=lambda x: x[0])) for x in csv.DictReader(fd)]
+        )
+
+
+@output_schema(Path)
+def df_output_schema(_context, path, value):
+    with open(path, 'w') as fd:
+        writer = csv.DictWriter(fd, fieldnames=value[0].keys())
+        writer.writeheader()
+        writer.writerows(rowdicts=value)
+
+    return path
+
+
+PoorMansDataFrame = as_dagster_type(
+    PoorMansDataFrame_, input_schema=df_input_schema, output_schema=df_output_schema
+)
 
 
 def execute_dagster_graphql(context, query, variables=None):
@@ -57,34 +97,45 @@ def execute_dagster_graphql(context, query, variables=None):
     return result
 
 
-def define_context(raise_on_error=True):
+# TODO: super lame to pass throught repo_config
+# See https://github.com/dagster-io/dagster/issues/1345
+def define_context(repo_config=None, raise_on_error=True):
     return DagsterGraphQLContext(
-        RepositoryContainer(repository=define_repository()),
-        PipelineRunStorage(),
+        exc_target_handle=ExecutionTargetHandle.for_repo_fn(
+            define_repository, kwargs={'repo_config': repo_config}
+        ),
+        pipeline_runs=PipelineRunStorage(),
         execution_manager=SynchronousExecutionManager(),
         raise_on_error=raise_on_error,
     )
 
 
-@lambda_solid(inputs=[InputDefinition('num', DataFrame)], output=OutputDefinition(DataFrame))
+@lambda_solid(
+    inputs=[InputDefinition('num', PoorMansDataFrame)], output=OutputDefinition(PoorMansDataFrame)
+)
 def sum_solid(num):
-    sum_df = num.copy()
-    sum_df['sum'] = sum_df['num1'] + sum_df['num2']
-    return sum_df
+    sum_df = deepcopy(num)
+    for x in sum_df:
+        x['sum'] = int(x['num1']) + int(x['num2'])
+    return PoorMansDataFrame(sum_df)
 
 
-@lambda_solid(inputs=[InputDefinition('sum_df', DataFrame)], output=OutputDefinition(DataFrame))
+@lambda_solid(
+    inputs=[InputDefinition('sum_df', PoorMansDataFrame)],
+    output=OutputDefinition(PoorMansDataFrame),
+)
 def sum_sq_solid(sum_df):
-    sum_sq_df = sum_df.copy()
-    sum_sq_df['sum_sq'] = sum_df['sum'] ** 2
-    return sum_sq_df
+    sum_sq_df = deepcopy(sum_df)
+    for x in sum_sq_df:
+        x['sum_sq'] = int(x['sum']) ** 2
+    return PoorMansDataFrame(sum_sq_df)
 
 
 @lambda_solid(
     inputs=[
         InputDefinition(
             'sum_df',
-            DataFrame,
+            PoorMansDataFrame,
             expectations=[
                 ExpectationDefinition(
                     name='some_expectation',
@@ -94,7 +145,7 @@ def sum_sq_solid(sum_df):
         )
     ],
     output=OutputDefinition(
-        DataFrame,
+        PoorMansDataFrame,
         expectations=[
             ExpectationDefinition(
                 name='other_expectation',
@@ -107,35 +158,31 @@ def df_expectations_solid(sum_df):
     return sum_df
 
 
-def pandas_hello_world_solids_config():
-    return {
-        'solids': {
-            'sum_solid': {'inputs': {'num': {'csv': {'path': script_relative_path('../num.csv')}}}}
-        }
-    }
+def csv_hello_world_solids_config():
+    return {'solids': {'sum_solid': {'inputs': {'num': script_relative_path('../data/num.csv')}}}}
 
 
-def pandas_hello_world_solids_config_fs_storage():
+def csv_hello_world_solids_config_fs_storage():
     return {
-        'solids': {
-            'sum_solid': {'inputs': {'num': {'csv': {'path': script_relative_path('../num.csv')}}}}
-        },
+        'solids': {'sum_solid': {'inputs': {'num': script_relative_path('../data/num.csv')}}},
         'storage': {'filesystem': {}},
     }
 
 
-def define_repository():
+def define_repository(repo_config=None):
     return RepositoryDefinition(
         name='test',
         pipeline_dict={
-            'context_config_pipeline': define_context_config_pipeline,
             'more_complicated_config': define_more_complicated_config,
             'more_complicated_nested_config': define_more_complicated_nested_config,
-            'pandas_hello_world': define_pandas_hello_world,
-            'pandas_hello_world_two': define_pipeline_two,
-            'pandas_hello_world_with_expectations': define_pandas_hello_world_with_expectations,
+            'csv_hello_world': get_define_csv_hello_world('csv_hello_world'),
+            'csv_hello_world_with_presets': get_define_csv_hello_world(
+                'csv_hello_world_with_presets'
+            ),
+            'csv_hello_world_two': define_pipeline_two,
+            'csv_hello_world_with_expectations': define_csv_hello_world_with_expectations,
             'pipeline_with_list': define_pipeline_with_list,
-            'pandas_hello_world_df_input': define_pipeline_with_pandas_df_input,
+            'csv_hello_world_df_input': define_pipeline_with_csv_df_input,
             'no_config_pipeline': define_no_config_pipeline,
             'scalar_output_pipeline': define_scalar_output_pipeline,
             'pipeline_with_enum_config': define_pipeline_with_enum_config,
@@ -143,7 +190,11 @@ def define_repository():
             'secret_pipeline': define_pipeline_with_secret,
             'pipeline_with_step_metadata': define_pipeline_with_step_metadata,
             'pipeline_with_expectations': define_pipeline_with_expectation,
+            'multi_mode_with_resources': define_multi_mode_with_resources_pipeline,
+            'multi_mode_with_loggers': define_multi_mode_with_loggers_pipeline,
+            'composites_pipeline': define_composites_pipeline,
         },
+        repo_config=repo_config,
     )
 
 
@@ -151,18 +202,32 @@ def define_pipeline_with_expectation():
     @solid(outputs=[])
     def emit_successful_expectation(_context):
         yield ExpectationResult(
-            success=True, message='Successful', result_metadata={'reason': 'Just because.'}
+            success=True,
+            name='always_true',
+            message='Successful',
+            result_metadata={'reason': 'Just because.'},
         )
 
     @solid(outputs=[])
     def emit_failed_expectation(_context):
         yield ExpectationResult(
-            success=False, message='Failure', result_metadata={'reason': 'Relentless pessimism.'}
+            success=False,
+            name='always_false',
+            message='Failure',
+            result_metadata={'reason': 'Relentless pessimism.'},
         )
+
+    @solid(outputs=[])
+    def emit_successful_expectation_no_metadata(_context):
+        yield ExpectationResult(success=True, name='no_metadata', message='Successful')
 
     return PipelineDefinition(
         name='pipeline_with_expectations',
-        solids=[emit_successful_expectation, emit_failed_expectation],
+        solids=[
+            emit_successful_expectation,
+            emit_failed_expectation,
+            emit_successful_expectation_no_metadata,
+        ],
     )
 
 
@@ -176,29 +241,6 @@ def define_pipeline_with_secret():
         pass
 
     return PipelineDefinition(name='secret_pipeline', solids=[solid_with_secret])
-
-
-def define_context_config_pipeline():
-    return PipelineDefinition(
-        name='context_config_pipeline',
-        solids=[],
-        context_definitions={
-            'context_one': PipelineContextDefinition(
-                context_fn=lambda *args, **kwargs: None, config_field=Field(String)
-            ),
-            'context_two': PipelineContextDefinition(
-                context_fn=lambda *args, **kwargs: None, config_field=Field(Int)
-            ),
-            'context_with_resources': PipelineContextDefinition(
-                resources={
-                    'resource_one': ResourceDefinition(
-                        resource_fn=lambda *args, **kwargs: None, config_field=Field(Int)
-                    ),
-                    'resource_two': ResourceDefinition(resource_fn=lambda *args, **kwargs: None),
-                }
-            ),
-        },
-    )
 
 
 def define_more_complicated_config():
@@ -262,9 +304,9 @@ def define_more_complicated_nested_config():
     )
 
 
-def define_pandas_hello_world():
-    return PipelineDefinition(
-        name='pandas_hello_world',
+def get_define_csv_hello_world(name):
+    return lambda: PipelineDefinition(
+        name=name,
         solids=[sum_solid, sum_sq_solid],
         dependencies={
             'sum_solid': {},
@@ -273,9 +315,9 @@ def define_pandas_hello_world():
     )
 
 
-def define_pandas_hello_world_with_expectations():
+def define_csv_hello_world_with_expectations():
     return PipelineDefinition(
-        name='pandas_hello_world_with_expectations',
+        name='csv_hello_world_with_expectations',
         solids=[sum_solid, sum_sq_solid, df_expectations_solid],
         dependencies={
             'sum_solid': {},
@@ -287,7 +329,7 @@ def define_pandas_hello_world_with_expectations():
 
 def define_pipeline_two():
     return PipelineDefinition(
-        name='pandas_hello_world_two', solids=[sum_solid], dependencies={'sum_solid': {}}
+        name='csv_hello_world_two', solids=[sum_solid], dependencies={'sum_solid': {}}
     )
 
 
@@ -306,9 +348,9 @@ def define_pipeline_with_list():
     )
 
 
-def define_pipeline_with_pandas_df_input():
+def define_pipeline_with_csv_df_input():
     return PipelineDefinition(
-        name='pandas_hello_world_df_input',
+        name='csv_hello_world_df_input',
         solids=[sum_solid, sum_sq_solid],
         dependencies={'sum_sq_solid': {'sum_df': DependencyDefinition(sum_solid.name)}},
     )
@@ -383,3 +425,141 @@ def define_pipeline_with_step_metadata():
         },
     )
     return PipelineDefinition(name='pipeline_with_step_metadata', solids=[solid_def])
+
+
+def define_multi_mode_with_resources_pipeline():
+    @resource(config_field=Field(Int))
+    def adder_resource(init_context):
+        return lambda x: x + init_context.resource_config
+
+    @resource(config_field=Field(Int))
+    def multer_resource(init_context):
+        return lambda x: x * init_context.resource_config
+
+    @resource(config_field=Field(Dict({'num_one': Field(Int), 'num_two': Field(Int)})))
+    def double_adder_resource(init_context):
+        return (
+            lambda x: x
+            + init_context.resource_config['num_one']
+            + init_context.resource_config['num_two']
+        )
+
+    @solid
+    def apply_to_three(context):
+        return context.resources.op(3)
+
+    return PipelineDefinition(
+        name='multi_mode_with_resources',
+        solids=[apply_to_three],
+        mode_definitions=[
+            ModeDefinition(
+                name='add_mode',
+                resources={'op': adder_resource},
+                description='Mode that adds things',
+            ),
+            ModeDefinition(
+                name='mult_mode',
+                resources={'op': multer_resource},
+                description='Mode that multiplies things',
+            ),
+            ModeDefinition(
+                name='double_adder',
+                resources={'op': double_adder_resource},
+                description='Mode that adds two numbers to thing',
+            ),
+        ],
+    )
+
+
+def define_multi_mode_with_loggers_pipeline():
+    @logger(config_field=Field(String))
+    def foo_logger(init_context):
+        logger_ = logging.Logger('foo')
+        logger_.setLevel(coerce_valid_log_level(init_context.logger_config))
+        return logger_
+
+    @logger(config_field=Field(Dict({'log_level': Field(String), 'prefix': Field(String)})))
+    def bar_logger(init_context):
+        class BarLogger(logging.Logger):
+            def __init__(self, name, prefix, *args, **kwargs):
+                self.prefix = prefix
+                super(BarLogger, self).__init__(name, *args, **kwargs)
+
+            def log(self, lvl, msg, *args, **kwargs):  # pylint: disable=arguments-differ
+                msg = self.prefix + msg
+                super(BarLogger, self).log(lvl, msg, *args, **kwargs)
+
+        logger_ = BarLogger('bar', init_context.logger_config['prefix'])
+        logger_.setLevel(coerce_valid_log_level(init_context.logger_config['log_level']))
+
+    @solid
+    def return_six(context):
+        context.critical('OMG!')
+        return 6
+
+    return PipelineDefinition(
+        name='multi_mode_with_loggers',
+        solids=[return_six],
+        mode_definitions=[
+            ModeDefinition(
+                name='foo_mode', loggers={'foo': foo_logger}, description='Mode with foo logger'
+            ),
+            ModeDefinition(
+                name='bar_mode', loggers={'bar': bar_logger}, description='Mode with bar logger'
+            ),
+            ModeDefinition(
+                name='foobar_mode',
+                loggers={'foo': foo_logger, 'bar': bar_logger},
+                description='Mode with multiple loggers',
+            ),
+        ],
+    )
+
+
+def define_composites_pipeline():
+    @lambda_solid(inputs=[InputDefinition('num', Int)])
+    def add_one(num):
+        return num + 1
+
+    @lambda_solid(inputs=[InputDefinition('num')])
+    def div_two(num):
+        return num / 2
+
+    add_two = CompositeSolidDefinition(
+        'add_two',
+        solids=[add_one],
+        dependencies={
+            SolidInstance('add_one', 'adder_1'): {},
+            SolidInstance('add_one', 'adder_2'): {'num': DependencyDefinition('adder_1')},
+        },
+        input_mappings=[InputDefinition('num', Int).mapping_to('adder_1', 'num')],
+        output_mappings=[OutputDefinition(Int).mapping_from('adder_2')],
+    )
+
+    add_four = CompositeSolidDefinition(
+        'add_four',
+        solids=[add_two],
+        dependencies={
+            SolidInstance('add_two', 'adder_1'): {},
+            SolidInstance('add_two', 'adder_2'): {'num': DependencyDefinition('adder_1')},
+        },
+        input_mappings=[InputDefinition('num', Int).mapping_to('adder_1', 'num')],
+        output_mappings=[OutputDefinition(Int).mapping_from('adder_2')],
+    )
+
+    div_four = CompositeSolidDefinition(
+        'div_four',
+        solids=[div_two],
+        dependencies={
+            SolidInstance('div_two', 'div_1'): {},
+            SolidInstance('div_two', 'div_2'): {'num': DependencyDefinition('div_1')},
+        },
+        input_mappings=[InputDefinition('num', Int).mapping_to('div_1', 'num')],
+        output_mappings=[OutputDefinition(Float).mapping_from('div_2')],
+    )
+
+    return PipelineDefinition(
+        name='composites_pipeline',
+        solids=[add_four, div_four],
+        dependencies={'div_four': {'num': DependencyDefinition('add_four')}},
+    )

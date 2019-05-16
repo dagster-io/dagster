@@ -6,10 +6,11 @@ from dagster import (
     Field,
     InputDefinition,
     Int,
+    ModeDefinition,
     OutputDefinition,
-    PipelineContextDefinition,
     PipelineDefinition,
     ResourceDefinition,
+    RunConfig,
     String,
     solid,
 )
@@ -79,25 +80,20 @@ def define_resource_test_pipeline():
     return PipelineDefinition(
         name='resource_test_pipeline',
         solids=[add_ints],
-        context_definitions={
-            'local': PipelineContextDefinition(
-                resources={'store': define_in_memory_store_resource()}
-            ),
-            'cloud': PipelineContextDefinition(resources={'store': define_cloud_store_resource()}),
-        },
+        mode_definitions=[
+            ModeDefinition(name='local', resources={'store': define_in_memory_store_resource()}),
+            ModeDefinition(name='cloud', resources={'store': define_cloud_store_resource()}),
+        ],
     )
 
 
 if __name__ == '__main__':
     result = execute_pipeline(
         define_resource_test_pipeline(),
+        run_config=RunConfig(mode='cloud'),
         environment_dict={
-            'context': {
-                'cloud': {
-                    'resources': {
-                        'store': {'config': {'username': 'some_user', 'password': 'some_password'}}
-                    }
-                }
+            'resources': {
+                'store': {'config': {'username': 'some_user', 'password': 'some_password'}}
             },
             'solids': {'add_ints': {'inputs': {'num_one': {'value': 2}, 'num_two': {'value': 6}}}},
         },
@@ -105,8 +101,8 @@ if __name__ == '__main__':
 
     result = execute_pipeline(
         define_resource_test_pipeline(),
+        run_config=RunConfig(mode='local'),
         environment_dict={
-            'context': {'local': {}},
-            'solids': {'add_ints': {'inputs': {'num_one': {'value': 2}, 'num_two': {'value': 6}}}},
+            'solids': {'add_ints': {'inputs': {'num_one': {'value': 2}, 'num_two': {'value': 6}}}}
         },
     )

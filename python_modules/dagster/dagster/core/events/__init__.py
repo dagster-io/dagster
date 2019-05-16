@@ -3,7 +3,7 @@ from enum import Enum
 
 from dagster import check
 from dagster.core.definitions import ExpectationResult, Materialization, SolidHandle
-from dagster.core.log import DagsterLog
+from dagster.core.log_manager import DagsterLogManager
 from dagster.utils.error import SerializableErrorInfo
 
 
@@ -53,7 +53,7 @@ def _assert_type(method, expected_type, actual_type):
 
 
 def _validate_event_specific_data(event_type, event_specific_data):
-    from dagster.core.execution_plan.objects import StepOutputData, StepFailureData, StepSuccessData
+    from dagster.core.execution.plan.objects import StepOutputData, StepFailureData, StepSuccessData
 
     if event_type == DagsterEventType.STEP_OUTPUT:
         check.inst_param(event_specific_data, 'event_specific_data', StepOutputData)
@@ -78,7 +78,7 @@ class DagsterEvent(
 ):
     @staticmethod
     def from_step(event_type, step_context, event_specific_data=None):
-        from dagster.core.execution_context import SystemStepExecutionContext
+        from dagster.core.execution.context.system import SystemStepExecutionContext
 
         check.inst_param(step_context, 'step_context', SystemStepExecutionContext)
 
@@ -105,7 +105,7 @@ class DagsterEvent(
 
     @staticmethod
     def from_pipeline(event_type, pipeline_context):
-        from dagster.core.execution import SystemPipelineExecutionContext
+        from dagster.core.execution.context.system import SystemPipelineExecutionContext
 
         check.inst_param(pipeline_context, 'pipeline_context', SystemPipelineExecutionContext)
         pipeline_name = pipeline_context.pipeline_def.name
@@ -169,7 +169,7 @@ class DagsterEvent(
 
     @property
     def step_kind(self):
-        from dagster.core.execution_plan.objects import StepKind
+        from dagster.core.execution.plan.objects import StepKind
 
         return StepKind(self.step_kind_value)
 
@@ -292,9 +292,9 @@ class DagsterEvent(
         return DagsterEvent.from_pipeline(DagsterEventType.PIPELINE_FAILURE, pipeline_context)
 
     @staticmethod
-    def pipeline_init_failure(pipeline_name, failure_data, log):
+    def pipeline_init_failure(pipeline_name, failure_data, log_manager):
         check.inst_param(failure_data, 'failure_data', PipelineInitFailureData)
-        check.inst_param(log, 'log', DagsterLog)
+        check.inst_param(log_manager, 'log_manager', DagsterLogManager)
         # this failure happens trying to bring up context so can't use from_pipeline
 
         event = DagsterEvent(
@@ -302,7 +302,7 @@ class DagsterEvent(
             pipeline_name=pipeline_name,
             event_specific_data=failure_data,
         )
-        log.error(
+        log_manager.error(
             '{event_type} for pipeline {pipeline_name}'.format(
                 event_type=DagsterEventType.PIPELINE_INIT_FAILURE, pipeline_name=pipeline_name
             ),

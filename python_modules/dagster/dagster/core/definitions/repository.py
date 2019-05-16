@@ -49,6 +49,23 @@ class RepositoryDefinition(object):
             enforce_solid_def_uniqueness, 'enforce_solid_def_uniqueness'
         )
 
+    @staticmethod
+    def eager_construction(name, pipelines, *args, **kwargs):
+        '''Useful help when you are unconcerned about the the performance of
+        pipeline construction. You can just pass a list of pipelines and it will
+        handle constructing the dictionary of pipeline name to functions for you'''
+
+        check.list_param(pipelines, 'pipelines', of_type=PipelineDefinition)
+
+        # avoids lint violation cell-var-from-loop and crazy loop scoping rules
+        # see https://stackoverflow.com/questions/12423614/
+        def lambdify(item):
+            return lambda: item
+
+        return RepositoryDefinition(
+            name, {pipeline.name: lambdify(pipeline) for pipeline in pipelines}, *args, **kwargs
+        )
+
     def has_pipeline(self, name):
         check.str_param(name, 'name')
         return name in self.pipeline_dict
@@ -195,8 +212,10 @@ class RepositoryDefinition(object):
         if not preset:
             preset_names = [name for name in self.get_presets_for_pipeline(pipeline_name)]
             raise DagsterInvariantViolationError(
-                'Could not find preset for "{preset_name}". Available presets for pipeline "{pipeline_name}" '
-                'are {preset_names}.'.format(
+                (
+                    'Could not find preset for "{preset_name}". Available presets '
+                    'for pipeline "{pipeline_name}" are {preset_names}.'
+                ).format(
                     preset_name=preset_name, preset_names=preset_names, pipeline_name=pipeline_name
                 )
             )

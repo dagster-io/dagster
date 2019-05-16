@@ -4,8 +4,8 @@ import datetime
 import json
 import re
 import uuid
-import pytest
 
+from dagster import ExecutionTargetHandle
 from dagster.utils import script_relative_path
 
 # pylint: disable=unused-import
@@ -13,14 +13,16 @@ from dagster_airflow.test_fixtures import (
     dagster_airflow_docker_operator_pipeline,
     dagster_airflow_python_operator_pipeline,
 )
+from dagster_airflow.factory import _rename_for_airflow, AIRFLOW_MAX_DAG_NAME_LEN
 
-from .conftest import IMAGE
-from .marks import nettest
-from .test_project.dagster_airflow_demo import define_demo_execution_pipeline
+from dagster_airflow_tests.conftest import IMAGE
+from dagster_airflow_tests.marks import nettest
+from dagster_airflow_tests.test_project.dagster_airflow_demo import define_demo_execution_pipeline
 
 
 class TestExecuteDagPythonFilesystemStorage(object):
-    pipeline = define_demo_execution_pipeline()
+    exc_target_handle = ExecutionTargetHandle.for_pipeline_fn(define_demo_execution_pipeline)
+    pipeline_name = 'demo_pipeline'
     config_yaml = [
         script_relative_path('test_project/env.yml'),
         script_relative_path('test_project/env_filesystem.yml'),
@@ -53,11 +55,12 @@ class TestExecuteDagPythonFilesystemStorage(object):
                 re.sub(
                     '{u\'', '{\'', re.sub(' u\'', ' \'', re.sub('^u\'', '\'', result['valueRepr']))
                 ).replace('\'', '"')
-            ) == json.loads(expected_results[result['step']['solidHandle']].replace('\'', '"'))
+            ) == json.loads(expected_results[result['step']['solidHandleID']].replace('\'', '"'))
 
 
 class TestExecuteDagPythonS3Storage(object):
-    pipeline = define_demo_execution_pipeline()
+    exc_target_handle = ExecutionTargetHandle.for_pipeline_fn(define_demo_execution_pipeline)
+    pipeline_name = 'demo_pipeline'
     config_yaml = [
         script_relative_path('test_project/env.yml'),
         script_relative_path('test_project/env_s3.yml'),
@@ -91,12 +94,13 @@ class TestExecuteDagPythonS3Storage(object):
                 re.sub(
                     '\{u\'', '{\'', re.sub(' u\'', ' \'', re.sub('^u\'', '\'', result['valueRepr']))
                 ).replace('\'', '"')
-            ) == json.loads(expected_results[result['step']['solidHandle']].replace('\'', '"'))
+            ) == json.loads(expected_results[result['step']['solidHandleID']].replace('\'', '"'))
 
 
 @nettest
 class TestExecuteDagContainerizedS3Storage(object):
-    pipeline = define_demo_execution_pipeline()
+    exc_target_handle = ExecutionTargetHandle.for_pipeline_fn(define_demo_execution_pipeline)
+    pipeline_name = 'demo_pipeline'
     config_yaml = [
         script_relative_path('test_project/env.yml'),
         script_relative_path('test_project/env_s3.yml'),
@@ -106,7 +110,6 @@ class TestExecuteDagContainerizedS3Storage(object):
     image = IMAGE
 
     # pylint: disable=redefined-outer-name
-    @pytest.mark.skip_on_circle  # issue 1323
     def test_execute_dag_containerized(self, dagster_airflow_docker_operator_pipeline):
         expected_results = {
             'multiply_the_word': '"barbar"',
@@ -130,11 +133,12 @@ class TestExecuteDagContainerizedS3Storage(object):
                 re.sub(
                     '\{u\'', '{\'', re.sub(' u\'', ' \'', re.sub('^u\'', '\'', result['valueRepr']))
                 ).replace('\'', '"')
-            ) == json.loads(expected_results[result['step']['solidHandle']].replace('\'', '"'))
+            ) == json.loads(expected_results[result['step']['solidHandleID']].replace('\'', '"'))
 
 
 class TestExecuteDagContainerizedFilesystemStorage(object):
-    pipeline = define_demo_execution_pipeline()
+    exc_target_handle = ExecutionTargetHandle.for_pipeline_fn(define_demo_execution_pipeline)
+    pipeline_name = 'demo_pipeline'
     config_yaml = [
         script_relative_path('test_project/env.yml'),
         script_relative_path('test_project/env_filesystem.yml'),
@@ -145,7 +149,6 @@ class TestExecuteDagContainerizedFilesystemStorage(object):
     image = IMAGE
 
     # pylint: disable=redefined-outer-name
-    @pytest.mark.skip_on_circle  # issue 1323
     def test_execute_dag_containerized(self, dagster_airflow_docker_operator_pipeline):
         expected_results = {
             'multiply_the_word': '"barbar"',
@@ -168,4 +171,20 @@ class TestExecuteDagContainerizedFilesystemStorage(object):
                 re.sub(
                     '{u\'', '{\'', re.sub(' u\'', ' \'', re.sub('^u\'', '\'', result['valueRepr']))
                 ).replace('\'', '"')
-            ) == json.loads(expected_results[result['step']['solidHandle']].replace('\'', '"'))
+            ) == json.loads(expected_results[result['step']['solidHandleID']].replace('\'', '"'))
+
+
+def test_rename_for_airflow():
+    pairs = [
+        ('foo', 'foo'),
+        ('this-is-valid', 'this-is-valid'),
+        (
+            'a' * AIRFLOW_MAX_DAG_NAME_LEN + 'very long strings are disallowed',
+            'a' * AIRFLOW_MAX_DAG_NAME_LEN,
+        ),
+        ('a name with illegal spaces', 'a_name_with_illegal_spaces'),
+        ('a#name$with@special*chars!!!', 'a_name_with_special_chars___'),
+    ]
+
+    for before, after in pairs:
+        assert after == _rename_for_airflow(before)

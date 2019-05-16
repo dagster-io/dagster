@@ -4,11 +4,11 @@ from dagster.core.definitions import create_environment_type
 from dagster.core.types.config import ConfigType
 
 
-def scaffold_pipeline_config(pipeline_def, skip_optional=True):
+def scaffold_pipeline_config(pipeline_def, skip_optional=True, mode=None):
     check.inst_param(pipeline_def, 'pipeline_def', PipelineDefinition)
     check.bool_param(skip_optional, 'skip_optional')
 
-    env_config_type = create_environment_type(pipeline_def)
+    env_config_type = create_environment_type(pipeline_def, mode=mode)
 
     env_dict = {}
 
@@ -49,6 +49,6 @@ def scaffold_type(config_type, skip_optional=True):
     elif config_type.is_list:
         return []
     elif config_type.is_enum:
-        return '|'.join(map(lambda v: v.config_value, config_type.enum_values))
+        return '|'.join(sorted(map(lambda v: v.config_value, config_type.enum_values)))
     else:
         check.failed('Do not know how to scaffold {type_name}'.format(type_name=config_type.name))

@@ -16,8 +16,9 @@ from dagster.core.errors import (
     user_code_error_boundary,
 )
 
-from dagster.core.execution_context import (
-    ExecutorConfig,
+from dagster.core.execution.config import ExecutorConfig
+
+from dagster.core.execution.context.system import (
     SystemPipelineExecutionContext,
     SystemStepExecutionContext,
 )
@@ -30,7 +31,7 @@ from dagster.core.intermediates_manager import IntermediatesManager
 
 from dagster.utils.error import serializable_error_info_from_exc_info
 
-from dagster.core.execution_plan.objects import (
+from dagster.core.execution.plan.objects import (
     ExecutionStep,
     StepOutputHandle,
     StepOutputValue,
@@ -39,12 +40,12 @@ from dagster.core.execution_plan.objects import (
     StepSuccessData,
 )
 
-from dagster.core.execution_plan.plan import ExecutionPlan
+from dagster.core.execution.plan.plan import ExecutionPlan
 
-from .engine_base import BaseEngine
+from .engine_base import IEngine
 
 
-class InProcessEngine(BaseEngine):  # pylint: disable=no-init
+class InProcessEngine(IEngine):  # pylint: disable=no-init
     @staticmethod
     def execute(pipeline_context, execution_plan, step_keys_to_execute=None):
         check.inst_param(pipeline_context, 'pipeline_context', SystemPipelineExecutionContext)
@@ -70,7 +71,6 @@ class InProcessEngine(BaseEngine):  # pylint: disable=no-init
         # It would be good to implement a reference tracking algorithm here so we could
         # garbage collection results that are no longer needed by any steps
         # https://github.com/dagster-io/dagster/issues/811
-
         for step_level in step_levels:
             for step in step_level:
                 if step_key_set and step.key not in step_key_set:
@@ -256,7 +256,6 @@ def _execute_steps_core_loop(step_context, inputs, intermediates_manager):
         evaluated_inputs[input_name] = _get_evaluated_input(
             step_context.step, input_name, input_value
         )
-
     yield DagsterEvent.step_start_event(step_context)
 
     with time_execution_scope() as timer_result:

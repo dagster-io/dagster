@@ -48,14 +48,14 @@ interface ILayoutSolid {
     definition: {
       name: string;
     };
-    dependsOn: {
+    dependsOn: Array<{
       definition: {
         name: string;
       };
       solid: {
         name: string;
       };
-    } | null;
+    }>;
   }>;
   outputs: Array<{
     definition: {
@@ -115,14 +115,14 @@ function getDagrePipelineLayoutHeavy(
     // Give Dagre the dependency edges and build a flat set of them so we
     // can reference them in a single pass later
     solid.inputs.forEach(input => {
-      if (input.dependsOn) {
-        g.setEdge(input.dependsOn.solid.name, solid.name);
+      input.dependsOn.forEach(dep => {
+        g.setEdge(dep.solid.name, solid.name);
 
         connections.push({
           from: {
             point: { x: 0, y: 0 },
-            solidName: input.dependsOn.solid.name,
-            edgeName: input.dependsOn.definition.name
+            solidName: dep.solid.name,
+            edgeName: dep.definition.name
           },
           to: {
             point: { x: 0, y: 0 },
@@ -130,7 +130,7 @@ function getDagrePipelineLayoutHeavy(
             edgeName: input.definition.name
           }
         });
-      }
+      });
     });
   });
 

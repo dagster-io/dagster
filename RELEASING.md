@@ -25,7 +25,7 @@ then for version 0.3.0 only when you know that the process is going to succeed w
 This ensures a clean release history.
 
 *WARNING*: Keep in mind that there is no undo in some of the third-party systems (e.g., PyPI) we use to
-release softeware.
+release software.
 
 You should also run releases from a clean clone of the repository. This is to guard against any
 issues that might be introduced by local build artifacts.

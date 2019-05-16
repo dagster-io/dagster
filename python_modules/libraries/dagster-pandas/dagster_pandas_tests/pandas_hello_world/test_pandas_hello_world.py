@@ -2,7 +2,7 @@ import os
 
 import pytest
 
-from dagster.core.execution import execute_pipeline
+from dagster import execute_pipeline
 from dagster.utils import script_relative_path
 from dagster.cli.pipeline import do_execute_command, print_pipeline
 from dagster.core.errors import DagsterExecutionStepExecutionError

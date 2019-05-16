@@ -100,5 +100,5 @@ And then run the pipeline:
     Error 1: Undefined field "multiply_the_word_with_typed_config" at path root:solids
     Error 2: Missing required field "multiply_the_word" at path root:solids Expected: "{ count_letters?: DemoConfigurationSchema.SolidConfig.CountLetters multiply_the_word: DemoConfigurationSchema.SolidConfig.MultiplyTheWord }"
 
-Next, we'll see how to use the  :doc:`Execution Context <execution_context>` to further configure
+Next, we’ll see how to use the :doc:`Execution Context <execution_context>` to further configure
 how pipeline execution interacts with its environment.

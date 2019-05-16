@@ -6,20 +6,17 @@ from dagster import (
     DagsterExecutionStepNotFoundError,
     DagsterStepOutputNotFoundError,
     DependencyDefinition,
+    ExecutionTargetHandle,
     InputDefinition,
     Int,
+    MultiprocessExecutorConfig,
     OutputDefinition,
     PipelineDefinition,
     RunConfig,
     lambda_solid,
 )
 
-from dagster.core.execution import (
-    MultiprocessExecutorConfig,
-    DagsterEventType,
-    create_execution_plan,
-    execute_plan,
-)
+from dagster.core.execution.api import DagsterEventType, create_execution_plan, execute_plan
 from dagster.core.object_store import get_filesystem_intermediate, has_filesystem_intermediate
 
 
@@ -113,7 +110,10 @@ def test_using_file_system_for_subplan_multiprocessing():
             execution_plan,
             environment_dict=environment_dict,
             run_config=RunConfig(
-                run_id=run_id, executor_config=MultiprocessExecutorConfig(define_inty_pipeline)
+                run_id=run_id,
+                executor_config=MultiprocessExecutorConfig(
+                    exc_target_handle=ExecutionTargetHandle.for_pipeline_fn(define_inty_pipeline)
+                ),
             ),
             step_keys_to_execute=step_keys,
         )
@@ -128,7 +128,10 @@ def test_using_file_system_for_subplan_multiprocessing():
             execution_plan,
             environment_dict=environment_dict,
             run_config=RunConfig(
-                run_id=run_id, executor_config=MultiprocessExecutorConfig(define_inty_pipeline)
+                run_id=run_id,
+                executor_config=MultiprocessExecutorConfig(
+                    exc_target_handle=ExecutionTargetHandle.for_pipeline_fn(define_inty_pipeline)
+                ),
             ),
             step_keys_to_execute=['add_one.transform'],
         )

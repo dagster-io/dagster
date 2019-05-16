@@ -12,16 +12,16 @@ except ImportError:
 from dagster_pandas import DataFrame
 
 from dagster import (
-    solid,
-    execute_pipeline,
     DependencyDefinition,
     InputDefinition,
     List,
+    ModeDefinition,
     Nothing,
     OutputDefinition,
     Path,
-    PipelineContextDefinition,
     PipelineDefinition,
+    execute_pipeline,
+    solid,
 )
 from dagster.core.definitions import create_environment_type
 from dagster.core.types.evaluator import evaluate_config_value
@@ -35,6 +35,10 @@ from dagster_gcp import (
     BigQueryLoadSolidDefinition,
     BigQueryLoadSource,
 )
+
+
+def bq_modes():
+    return [ModeDefinition(resources={'bq': bigquery_resource})]
 
 
 def test_simple_queries():
@@ -52,12 +56,7 @@ def test_simple_queries():
         ],
     )
 
-    pipeline = PipelineDefinition(
-        solids=[solid_inst],
-        context_definitions={
-            'default': PipelineContextDefinition(resources={'bq': bigquery_resource})
-        },
-    )
+    pipeline = PipelineDefinition(solids=[solid_inst], mode_definitions=bq_modes())
     pipeline_result = execute_pipeline(pipeline)
     res = pipeline_result.result_for_solid(solid_inst.name)
     assert res.success
@@ -123,9 +122,7 @@ def test_bad_config():
     pipeline_def = PipelineDefinition(
         name='test_config_pipeline',
         solids=[BigQuerySolidDefinition('test', ['SELECT 1'])],
-        context_definitions={
-            'default': PipelineContextDefinition(resources={'bq': bigquery_resource})
-        },
+        mode_definitions=bq_modes(),
     )
 
     env_type = create_environment_type(pipeline_def)
@@ -137,12 +134,7 @@ def test_bad_config():
 
 def test_create_delete_dataset():
     create_solid = BigQueryCreateDatasetSolidDefinition('test')
-    create_pipeline = PipelineDefinition(
-        solids=[create_solid],
-        context_definitions={
-            'default': PipelineContextDefinition(resources={'bq': bigquery_resource})
-        },
-    )
+    create_pipeline = PipelineDefinition(solids=[create_solid], mode_definitions=bq_modes())
     config = {'solids': {'test': {'config': {'dataset': 'foo', 'exists_ok': True}}}}
 
     assert execute_pipeline(create_pipeline, config).result_for_solid(create_solid.name).success
@@ -153,12 +145,7 @@ def test_create_delete_dataset():
     assert 'Dataset "foo" already exists and exists_ok is false' in str(exc_info.value)
 
     delete_solid = BigQueryDeleteDatasetSolidDefinition('test')
-    delete_pipeline = PipelineDefinition(
-        solids=[delete_solid],
-        context_definitions={
-            'default': PipelineContextDefinition(resources={'bq': bigquery_resource})
-        },
-    )
+    delete_pipeline = PipelineDefinition(solids=[delete_solid], mode_definitions=bq_modes())
     config = {'solids': {'test': {'config': {'dataset': 'foo'}}}}
 
     # Delete should succeed
@@ -202,9 +189,7 @@ def test_pd_df_load():
             'query_solid': {'start': DependencyDefinition('load_solid')},
             'delete_solid': {'start': DependencyDefinition('query_solid')},
         },
-        context_definitions={
-            'default': PipelineContextDefinition(resources={'bq': bigquery_resource})
-        },
+        mode_definitions=bq_modes(),
     )
     result = execute_pipeline(pipeline, config)
     assert result.success
@@ -260,9 +245,7 @@ def test_gcs_load():
             'query_solid': {'start': DependencyDefinition('load_solid')},
             'delete_solid': {'start': DependencyDefinition('query_solid')},
         },
-        context_definitions={
-            'default': PipelineContextDefinition(resources={'bq': bigquery_resource})
-        },
+        mode_definitions=bq_modes(),
     )
     result = execute_pipeline(pipeline, config)
     assert result.success

@@ -5,10 +5,10 @@ import { ConfigEditorValidationFragment } from "./types/ConfigEditorValidationFr
 export const CONFIG_EDITOR_PIPELINE_FRAGMENT = gql`
   fragment ConfigEditorPipelineFragment on Pipeline {
     name
-    environmentType {
+    environmentType(mode: $mode) {
       key
     }
-    configTypes {
+    configTypes(mode: $mode) {
       __typename
       key
       name

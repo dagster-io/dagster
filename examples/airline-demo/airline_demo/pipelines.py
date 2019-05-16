@@ -1,9 +1,7 @@
 """Pipeline definitions for the airline_demo."""
-import logging
 
 from dagster import (
     DependencyDefinition,
-    ExecutionContext,
     PipelineContextDefinition,
     PipelineDefinition,
     SolidInstance,
@@ -41,35 +39,32 @@ from .solids import (
 
 
 test_context = PipelineContextDefinition(
-    context_fn=lambda _: ExecutionContext.console_logging(log_level=logging.DEBUG),
     resources={
         'spark': spark_session_local,
         'db_info': redshift_db_info_resource,
         'tempfile': tempfile_resource,
         's3': s3_resource,
-    },
+    }
 )
 
 
 local_context = PipelineContextDefinition(
-    context_fn=lambda _: ExecutionContext.console_logging(log_level=logging.DEBUG),
     resources={
         'spark': spark_session_local,
         's3': s3_resource,
         'db_info': postgres_db_info_resource,
         'tempfile': tempfile_resource,
-    },
+    }
 )
 
 
 prod_context = PipelineContextDefinition(
-    context_fn=lambda _: ExecutionContext.console_logging(log_level=logging.DEBUG),
     resources={
         'spark': spark_session_local,  # FIXME
         's3': s3_resource,
         'db_info': redshift_db_info_resource,
         'tempfile': tempfile_resource,
-    },
+    }
 )
 
 

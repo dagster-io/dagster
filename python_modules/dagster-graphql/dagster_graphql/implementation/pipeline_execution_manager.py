@@ -1,6 +1,7 @@
 from __future__ import absolute_import
 from collections import namedtuple
 import copy
+import logging
 import os
 import sys
 import time
@@ -9,18 +10,23 @@ import atexit
 import gevent
 import six
 
-from dagster import InProcessExecutorConfig, PipelineDefinition, RunConfig, check, execute_pipeline
-from dagster.cli.dynamic_loader import RepositoryContainer
-from dagster.core.events.logging import DagsterEventRecord
+from dagster import (
+    ExecutionTargetHandle,
+    InProcessExecutorConfig,
+    PipelineDefinition,
+    RunConfig,
+    check,
+    execute_pipeline,
+)
+from dagster.core.events.log import DagsterEventRecord
 from dagster.core.events import DagsterEvent, DagsterEventType, PipelineProcessStartedData
 from dagster.utils.error import serializable_error_info_from_exc_info, SerializableErrorInfo
-from dagster.utils.logging import level_from_string
 from dagster.utils import get_multiprocessing_context
 from dagster_graphql.implementation.pipeline_run_storage import PipelineRun
 
 
 class PipelineExecutionManager(object):
-    def execute_pipeline(self, repository_container, pipeline, pipeline_run, raise_on_error):
+    def execute_pipeline(self, exc_target_handle, pipeline, pipeline_run, raise_on_error):
         raise NotImplementedError()
 
 
@@ -44,7 +50,7 @@ def build_synthetic_pipeline_error_record(run_id, error_info, pipeline_name):
         + error_info.message
         + '\nStack Trace:\n'
         + '\n'.join(error_info.stack),
-        level=level_from_string('ERROR'),
+        level=logging.ERROR,
         run_id=run_id,
         timestamp=time.time(),
         error_info=error_info,
@@ -61,7 +67,7 @@ def build_process_start_event(run_id, pipeline_name):
     return DagsterEventRecord(
         message=message,
         user_message=message,
-        level=level_from_string('INFO'),
+        level=logging.INFO,
         run_id=run_id,
         timestamp=time.time(),
         error_info=None,
@@ -78,7 +84,7 @@ def build_process_started_event(run_id, pipeline_name, process_id):
     return DagsterEventRecord(
         message=message,
         user_message=message,
-        level=level_from_string('INFO'),
+        level=logging.INFO,
         run_id=run_id,
         timestamp=time.time(),
         error_info=None,
@@ -96,7 +102,7 @@ def build_process_started_event(run_id, pipeline_name, process_id):
 
 
 class SynchronousExecutionManager(PipelineExecutionManager):
-    def execute_pipeline(self, repository_container, pipeline, pipeline_run, raise_on_error):
+    def execute_pipeline(self, _, pipeline, pipeline_run, raise_on_error):
         check.inst_param(pipeline, 'pipeline', PipelineDefinition)
         try:
             return execute_pipeline(
@@ -104,6 +110,7 @@ class SynchronousExecutionManager(PipelineExecutionManager):
                 pipeline_run.config,
                 run_config=RunConfig(
                     pipeline_run.run_id,
+                    mode=pipeline_run.mode,
                     event_callback=pipeline_run.handle_new_event,
                     executor_config=InProcessExecutorConfig(raise_on_error=raise_on_error),
                     reexecution_config=pipeline_run.reexecution_config,
@@ -227,7 +234,8 @@ class MultiprocessingExecutionManager(PipelineExecutionManager):
                     return True
             gevent.sleep(0.1)
 
-    def execute_pipeline(self, repository_container, pipeline, pipeline_run, raise_on_error):
+    def execute_pipeline(self, exc_target_handle, pipeline, pipeline_run, raise_on_error):
+        check.inst_param(exc_target_handle, 'exc_target_handle', ExecutionTargetHandle)
         check.invariant(
             raise_on_error is False, 'Multiprocessing execute_pipeline does not rethrow user error'
         )
@@ -236,13 +244,14 @@ class MultiprocessingExecutionManager(PipelineExecutionManager):
         p = self._multiprocessing_context.Process(
             target=execute_pipeline_through_queue,
             args=(
-                repository_container.repository_info,
+                exc_target_handle,
                 pipeline_run.selector.name,
                 pipeline_run.selector.solid_subset,
                 pipeline_run.config,
             ),
             kwargs={
                 'run_id': pipeline_run.run_id,
+                'mode': pipeline_run.mode,
                 'message_queue': message_queue,
                 'reexecution_config': pipeline_run.reexecution_config,
                 'step_keys_to_execute': pipeline_run.step_keys_to_execute,
@@ -265,10 +274,11 @@ class RunProcessWrapper(namedtuple('RunProcessWrapper', 'pipeline_run process me
 
 
 def execute_pipeline_through_queue(
-    repository_info,
+    exc_target_handle,
     pipeline_name,
     solid_subset,
     environment_dict,
+    mode,
     run_id,
     message_queue,
     reexecution_config,
@@ -278,30 +288,29 @@ def execute_pipeline_through_queue(
     Execute pipeline using message queue as a transport
     """
 
+    check.opt_str_param(mode, 'mode')
+
     message_queue.put(ProcessStartedSentinel(os.getpid()))
 
     run_config = RunConfig(
         run_id,
+        mode=mode,
         event_callback=message_queue.put,
         executor_config=InProcessExecutorConfig(raise_on_error=False),
         reexecution_config=reexecution_config,
         step_keys_to_execute=step_keys_to_execute,
     )
 
-    repository_container = RepositoryContainer(repository_info)
-    if repository_container.repo_error:
-        message_queue.put(
-            MultiprocessingError(
-                serializable_error_info_from_exc_info(repository_container.repo_error)
-            )
-        )
+    try:
+        repository = exc_target_handle.build_repository_definition()
+    except:  # pylint: disable=W0702
+        repo_error = sys.exc_info()
+        message_queue.put(MultiprocessingError(serializable_error_info_from_exc_info(repo_error)))
         return
 
     try:
         result = execute_pipeline(
-            repository_container.repository.get_pipeline(pipeline_name).build_sub_pipeline(
-                solid_subset
-            ),
+            repository.get_pipeline(pipeline_name).build_sub_pipeline(solid_subset),
             environment_dict,
             run_config=run_config,
         )

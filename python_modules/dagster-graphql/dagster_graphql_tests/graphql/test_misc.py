@@ -3,6 +3,7 @@ import sys
 
 
 from dagster import (
+    ExecutionTargetHandle,
     DependencyDefinition,
     InputDefinition,
     OutputDefinition,
@@ -11,17 +12,17 @@ from dagster import (
     SolidDefinition,
 )
 
-from dagster.cli.dynamic_loader import RepositoryContainer
-
 from dagster.utils import script_relative_path
-
-from dagster_pandas import DataFrame
 
 from dagster_graphql.implementation.context import DagsterGraphQLContext
 from dagster_graphql.implementation.pipeline_execution_manager import SynchronousExecutionManager
 from dagster_graphql.implementation.pipeline_run_storage import PipelineRunStorage
 
-from .setup import define_context, define_repository, execute_dagster_graphql
+from dagster_graphql_tests.graphql.setup import (
+    define_context,
+    define_repository,
+    execute_dagster_graphql,
+)
 
 # This is needed to find production query in all cases
 sys.path.insert(0, os.path.abspath(script_relative_path('.')))
@@ -29,6 +30,7 @@ sys.path.insert(0, os.path.abspath(script_relative_path('.')))
 from production_query import (  # pylint: disable=wrong-import-position,wrong-import-order
     PRODUCTION_QUERY,
 )
+from setup import PoorMansDataFrame  # pylint: disable=no-name-in-module
 
 
 def test_enum_query():
@@ -87,20 +89,22 @@ fragment innerInfo on ConfigType {
       }
       isOptional
     }
-  }  
+  }
 }
 
 {
-  pipeline(params: { name: "more_complicated_nested_config" }) { 
+  pipeline(params: { name: "more_complicated_nested_config" }) {
     name
     solids {
       name
       definition {
-        configDefinition {
-          configType {
-            ...innerInfo
-            innerTypes {
+        ... on SolidDefinition {
+          configDefinition {
+            configType {
               ...innerInfo
+              innerTypes {
+                ...innerInfo
+              }
             }
           }
         }
@@ -123,8 +127,8 @@ def define_circular_dependency_pipeline():
         solids=[
             SolidDefinition(
                 name='csolid',
-                inputs=[InputDefinition('num', DataFrame)],
-                outputs=[OutputDefinition(DataFrame)],
+                inputs=[InputDefinition('num', PoorMansDataFrame)],
+                outputs=[OutputDefinition(PoorMansDataFrame)],
                 transform_fn=lambda *_args: None,
             )
         ],
@@ -154,15 +158,20 @@ def test_pipelines_or_error():
     }
 
 
-def test_pipelines_or_error_invalid():
-    repository = RepositoryDefinition(
+def define_test_repository():
+    return RepositoryDefinition(
         name='test', pipeline_dict={'pipeline': define_circular_dependency_pipeline}
     )
+
+
+def test_pipelines_or_error_invalid():
+
     context = DagsterGraphQLContext(
-        RepositoryContainer(repository=repository),
-        PipelineRunStorage(),
+        exc_target_handle=ExecutionTargetHandle.for_repo_fn(define_test_repository),
+        pipeline_runs=PipelineRunStorage(),
         execution_manager=SynchronousExecutionManager(),
     )
+
     result = execute_dagster_graphql(
         context, '{ pipelinesOrError { ... on InvalidDefinitionError { message } } }'
     )
@@ -175,7 +184,7 @@ def test_pipeline_by_name():
         define_context(),
         '''
     {
-        pipeline(params: {name: "pandas_hello_world_two"}) {
+        pipeline(params: {name: "csv_hello_world_two"}) {
             name
         }
     }''',
@@ -183,7 +192,7 @@ def test_pipeline_by_name():
 
     assert not result.errors
     assert result.data
-    assert result.data['pipeline']['name'] == 'pandas_hello_world_two'
+    assert result.data['pipeline']['name'] == 'csv_hello_world_two'
 
 
 def test_pipeline_or_error_by_name():
@@ -191,7 +200,7 @@ def test_pipeline_or_error_by_name():
         define_context(),
         '''
     {
-        pipelineOrError(params: { name: "pandas_hello_world_two" }) {
+        pipelineOrError(params: { name: "csv_hello_world_two" }) {
           ... on Pipeline {
              name
            }
@@ -201,7 +210,7 @@ def test_pipeline_or_error_by_name():
 
     assert not result.errors
     assert result.data
-    assert result.data['pipelineOrError']['name'] == 'pandas_hello_world_two'
+    assert result.data['pipelineOrError']['name'] == 'csv_hello_world_two'
 
 
 def test_production_query():

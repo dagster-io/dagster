@@ -21,7 +21,8 @@ export default class PipelineExecutionRoot extends React.Component<
         {({ data, onSave }) => {
           const vars = {
             name: pipelineName,
-            solidSubset: data.sessions[data.current].solidSubset
+            solidSubset: data.sessions[data.current].solidSubset,
+            mode: data.sessions[data.current].mode
           };
           return (
             <Query
@@ -52,7 +53,11 @@ export default class PipelineExecutionRoot extends React.Component<
 }
 
 export const PIPELINE_EXECUTION_ROOT_QUERY = gql`
-  query PipelineExecutionRootQuery($name: String!, $solidSubset: [String!]) {
+  query PipelineExecutionRootQuery(
+    $name: String!
+    $solidSubset: [String!]
+    $mode: String
+  ) {
     pipeline(params: { name: $name, solidSubset: $solidSubset }) {
       name
       ...PipelineExecutionContainerFragment

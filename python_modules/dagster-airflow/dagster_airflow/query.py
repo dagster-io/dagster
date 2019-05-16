@@ -28,7 +28,6 @@ mutation(
     }}
     ... on PipelineNotFoundError {{
         message
-        stack
         pipelineName
     }}
     ... on ExecutePlanSuccess {{
@@ -40,7 +39,7 @@ mutation(
         step {{
           key
           kind
-          solidHandle
+          solidHandleID
         }}
         __typename
         ... on ExecutionStepOutputEvent {{

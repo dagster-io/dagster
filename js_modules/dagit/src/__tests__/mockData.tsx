@@ -39,50 +39,6 @@ const MOCKS = [
         pipeline: {
           name: "pandas_hello_world",
           description: null,
-          contexts: [
-            {
-              name: "default",
-              description: null,
-              __typename: "PipelineContext",
-              config: {
-                configType: {
-                  key: "Dict.29",
-                  name: null,
-                  description: "A configuration dictionary with typed fields",
-                  isList: false,
-                  isNullable: false,
-                  isSelector: false,
-                  innerTypes: [
-                    {
-                      key: "log_level",
-                      __typename: "EnumConfigType",
-                      name: "log_level",
-                      description: null,
-                      isList: false,
-                      isNullable: false,
-                      isSelector: false,
-                      innerTypes: []
-                    }
-                  ],
-                  fields: [
-                    {
-                      name: "log_level",
-                      description: null,
-                      isOptional: true,
-                      configType: {
-                        key: "log_level",
-                        __typename: "EnumConfigType"
-                      },
-                      __typename: "ConfigTypeField"
-                    }
-                  ],
-                  __typename: "CompositeConfigType"
-                },
-                __typename: "ConfigTypeField"
-              },
-              resources: []
-            }
-          ],
           solids: [
             {
               name: "sum_solid",

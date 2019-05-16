@@ -4,25 +4,31 @@ import styled from "styled-components";
 
 const SHOW_ALERT_EVENT = "show-alert";
 
-export const showCustomAlert = (opts: { message: string }) => {
+interface ICustomAlert {
+  message: string;
+  title: string;
+  pre: boolean;
+}
+
+export const showCustomAlert = (opts: Partial<ICustomAlert>) => {
   document.dispatchEvent(
     new CustomEvent(SHOW_ALERT_EVENT, {
-      detail: opts.message
+      detail: JSON.stringify(
+        Object.assign({ message: "", title: "Error", pre: false }, opts)
+      )
     })
   );
 };
 
 export default class CustomAlertProvider extends React.Component<
   {},
-  { text: string | null }
+  Partial<ICustomAlert>
 > {
-  state = {
-    text: null
-  };
+  state: Partial<ICustomAlert> = {};
 
   componentDidMount() {
     document.addEventListener(SHOW_ALERT_EVENT, (e: CustomEvent) => {
-      this.setState({ text: e.detail });
+      this.setState(JSON.parse(e.detail));
     });
   }
 
@@ -30,20 +36,23 @@ export default class CustomAlertProvider extends React.Component<
     return (
       <Dialog
         icon="info-sign"
-        onClose={() => this.setState({ text: null })}
-        style={{ width: "auto", maxWidth: "80vw" }}
-        title={"Error"}
         usePortal={true}
-        isOpen={!!this.state.text}
+        onClose={() => this.setState({ message: undefined })}
+        style={{ width: "auto", maxWidth: "80vw" }}
+        title={this.state.title}
+        isOpen={!!this.state.message}
       >
-        <Body>{this.state.text}</Body>
-
+        <Body>
+          <div style={{ whiteSpace: this.state.pre ? "pre-wrap" : "initial" }}>
+            {this.state.message}
+          </div>
+        </Body>
         <div className={Classes.DIALOG_FOOTER}>
           <div className={Classes.DIALOG_FOOTER_ACTIONS}>
             <Button
               intent="primary"
               autoFocus={true}
-              onClick={() => this.setState({ text: null })}
+              onClick={() => this.setState({ message: undefined })}
             >
               OK
             </Button>

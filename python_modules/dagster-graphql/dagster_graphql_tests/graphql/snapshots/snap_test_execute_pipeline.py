@@ -125,7 +125,7 @@ snapshots['test_successful_pipeline_reexecution 1'] = {
                 ]
             },
             'pipeline': {
-                'name': 'pandas_hello_world'
+                'name': 'csv_hello_world'
             }
         }
     }
@@ -187,7 +187,7 @@ snapshots['test_successful_pipeline_reexecution 2'] = {
                 ]
             },
             'pipeline': {
-                'name': 'pandas_hello_world'
+                'name': 'csv_hello_world'
             }
         }
     }

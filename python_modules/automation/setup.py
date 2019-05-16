@@ -29,10 +29,9 @@ setup(
         'boto3==1.9.*',
         'click>=6.7',
         'faker>=1.0.4',
-        'pandas',
+        'google-cloud-storage',
         'pytablereader',
         'random_useragent>=1.0',
         'requests',
     ],
-    entry_points={"console_scripts": ['generate_synthetic_events = generate_synthetic_events:run']},
 )

@@ -18,8 +18,9 @@ from dagster import (
     lambda_solid,
 )
 
-from dagster.core.execution import (
-    DagsterEventType,
+from dagster.core.events import DagsterEventType
+
+from dagster.core.execution.api import (
     create_execution_plan,
     execute_plan,
     yield_pipeline_execution_context,

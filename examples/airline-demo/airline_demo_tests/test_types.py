@@ -6,12 +6,13 @@ import pyspark
 
 from dagster import (
     DependencyDefinition,
-    lambda_solid,
     PipelineDefinition,
     RunConfig,
     RunStorageMode,
+    execute_pipeline,
+    lambda_solid,
 )
-from dagster.core.execution import execute_pipeline
+
 from dagster.core.object_store import FileSystemObjectStore
 
 from dagster_aws.s3.object_store import S3ObjectStore

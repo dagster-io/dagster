@@ -193,3 +193,10 @@ DAG runs interact with their environment, or you may want to manually edit DAG a
 # Testing
 
 Docker must be running for the test suite to pass. -->
+
+# Running tests
+
+To run the dagster-airflow tests, you will need to build the dagster-airflow-demo image. Run:
+
+    cd dagster_airflow_tests/test_project
+    . build.sh

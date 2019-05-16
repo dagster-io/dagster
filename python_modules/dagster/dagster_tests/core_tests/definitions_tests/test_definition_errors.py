@@ -12,7 +12,6 @@ from dagster import (
     NamedSelector,
     OutputDefinition,
     PermissiveDict,
-    PipelineContextDefinition,
     PipelineDefinition,
     ResourceDefinition,
     Selector,
@@ -115,7 +114,7 @@ def test_invalid_item_in_solid_list():
 def test_one_layer_off_dependencies():
     with pytest.raises(
         DagsterInvalidDefinitionError,
-        match="Received a DependencyDefinition one layer too high under key B",
+        match="Received a IDependencyDefinition one layer too high under key B",
     ):
         PipelineDefinition(solids=solid_a_b_list(), dependencies={'B': DependencyDefinition('A')})
 
@@ -123,7 +122,7 @@ def test_one_layer_off_dependencies():
 def test_malformed_dependencies():
     with pytest.raises(
         DagsterInvalidDefinitionError,
-        match='Expected DependencyDefinition for solid "B" input "b_input"',
+        match='Expected IDependencyDefinition for solid "B" input "b_input"',
     ):
         PipelineDefinition(
             solids=solid_a_b_list(),
@@ -182,39 +181,7 @@ def test_double_type_key():
     )
 
 
-def test_pass_config_type_to_field_error_context_definition():
-    with pytest.raises(DagsterInvalidDefinitionError) as exc_info:
-        PipelineDefinition(
-            name='pass_config_type_to_context_def_config_field_error_pipeline',
-            solids=[],
-            context_definitions={
-                'some_context': PipelineContextDefinition(config_field=Dict({'val': Field(Int)}))
-            },
-        )
-
-    assert str(exc_info.value) == (
-        'You have passed a config type "{ val: Int }" in the parameter "config_field" of a '
-        'PipelineContextDefinition. You have likely forgot to '
-        'wrap this type in a Field.'
-    )
-
-
-def test_pass_unrelated_type_to_field_error_context_definition():
-    with pytest.raises(DagsterInvalidDefinitionError) as exc_info:
-        PipelineDefinition(
-            name='pass_unrelated_type_to_context_def_config_field_error_pipeline',
-            solids=[],
-            context_definitions={'some_context': PipelineContextDefinition(config_field='wut')},
-        )
-
-    assert str(exc_info.value) == (
-        'You have passed an object \'wut\' of incorrect type "str" in the parameter '
-        '"config_field" of a PipelineContextDefinition where a Field was expected.'
-    )
-
-
 def test_pass_config_type_to_field_error_solid_definition():
-
     with pytest.raises(DagsterInvalidDefinitionError) as exc_info:
 
         @solid(config_field=Dict({'val': Field(Int)}))

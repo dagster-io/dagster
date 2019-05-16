@@ -1,0 +1,3 @@
+repository:
+  file: test_repository.py
+  fn: define_repository

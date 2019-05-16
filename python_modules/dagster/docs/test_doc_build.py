@@ -38,6 +38,7 @@ def _path_starts_with(path, starts_with):
 # (probably hard since tests are collected before fixtures are executed -- but maybe we can lever
 # the checked-in snapshots for this) or collect the test failures and display all of them.
 @pytest.mark.docs
+@pytest.mark.skipif(sys.version_info < (3, 6), reason="We don't support building docs in python 2")
 def test_build_all_docs(snapshot):
     pwd = os.getcwd()
     try:

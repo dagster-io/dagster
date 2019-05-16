@@ -293,10 +293,21 @@ def _check_list_items(obj_list, of_type):
     for obj in obj_list:
 
         if not isinstance(obj, of_type):
+            if isinstance(obj, type):
+                additional_message = (
+                    ' Did you pass a class where you were expecting an instance of the class?'
+                )
+            else:
+                additional_message = ''
             raise_with_traceback(
                 CheckError(
                     'Member of list mismatches type. Expected {of_type}. Got {obj_repr} of type '
-                    '{obj_type}.'.format(of_type=of_type, obj_repr=repr(obj), obj_type=type(obj))
+                    '{obj_type}.{additional_message}'.format(
+                        of_type=of_type,
+                        obj_repr=repr(obj),
+                        obj_type=type(obj),
+                        additional_message=additional_message,
+                    )
                 )
             )
     return obj_list
@@ -309,10 +320,21 @@ def _check_set_items(obj_set, of_type):
     for obj in obj_set:
 
         if not isinstance(obj, of_type):
+            if isinstance(obj, type):
+                additional_message = (
+                    ' Did you pass a class where you were expecting an instance of the class?'
+                )
+            else:
+                additional_message = ''
             raise_with_traceback(
                 CheckError(
                     'Member of set mismatches type. Expected {of_type}. Got {obj_repr} of type '
-                    '{obj_type}.'.format(of_type=of_type, obj_repr=repr(obj), obj_type=type(obj))
+                    '{obj_type}.{additional_message}'.format(
+                        of_type=of_type,
+                        obj_repr=repr(obj),
+                        obj_type=type(obj),
+                        additional_message=additional_message,
+                    )
                 )
             )
     return obj_set

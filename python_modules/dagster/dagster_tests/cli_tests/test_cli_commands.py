@@ -6,6 +6,7 @@ import pytest
 
 from click.testing import CliRunner
 
+from dagster import lambda_solid, PipelineDefinition, RepositoryDefinition
 from dagster.core.runs import base_run_directory
 from dagster.cli.pipeline import (
     execute_print_command,
@@ -17,7 +18,7 @@ from dagster.cli.pipeline import (
     pipeline_print_command,
     pipeline_scaffold_command,
 )
-from dagster.cli.dynamic_loader import InvalidRepositoryLoadingComboError
+from dagster.core.errors import InvalidRepositoryLoadingComboError
 
 from dagster.utils import script_relative_path
 
@@ -26,13 +27,26 @@ def no_print(_):
     return None
 
 
+@lambda_solid
+def do_something():
+    return 1
+
+
+def define_foo_pipeline():
+    return PipelineDefinition(name='foo', solids=[do_something])
+
+
+def define_bar_repo():
+    return RepositoryDefinition('bar', {'foo': define_foo_pipeline})
+
+
 def test_list_command():
     runner = CliRunner()
 
     execute_list_command(
         {
             'repository_yaml': None,
-            'python_file': script_relative_path('test_dynamic_loader.py'),
+            'python_file': script_relative_path('test_cli_commands.py'),
             'module_name': None,
             'fn_name': 'define_bar_repo',
         },
@@ -41,7 +55,7 @@ def test_list_command():
 
     result = runner.invoke(
         pipeline_list_command,
-        ['-f', script_relative_path('test_dynamic_loader.py'), '-n', 'define_bar_repo'],
+        ['-f', script_relative_path('test_cli_commands.py'), '-n', 'define_bar_repo'],
     )
     assert result.exit_code == 0
     assert result.output == (
@@ -131,7 +145,7 @@ def test_list_command():
         execute_list_command(
             {
                 'repository_yaml': None,
-                'python_file': script_relative_path('test_dynamic_loader.py'),
+                'python_file': script_relative_path('test_cli_commands.py'),
                 'module_name': None,
                 'fn_name': None,
             },
@@ -139,7 +153,7 @@ def test_list_command():
         )
 
     result = runner.invoke(
-        pipeline_list_command, ['-f', script_relative_path('test_dynamic_loader.py')]
+        pipeline_list_command, ['-f', script_relative_path('test_cli_commands.py')]
     )
     assert result.exit_code == 1
     assert isinstance(result.exception, InvalidRepositoryLoadingComboError)
@@ -164,7 +178,7 @@ def valid_execute_args():
         {
             'repository_yaml': None,
             'pipeline_name': ('foo',),
-            'python_file': script_relative_path('test_dynamic_loader.py'),
+            'python_file': script_relative_path('test_cli_commands.py'),
             'module_name': None,
             'fn_name': 'define_bar_repo',
         },
@@ -185,7 +199,7 @@ def valid_execute_args():
         {
             'repository_yaml': None,
             'pipeline_name': (),
-            'python_file': script_relative_path('test_dynamic_loader.py'),
+            'python_file': script_relative_path('test_cli_commands.py'),
             'module_name': None,
             'fn_name': 'define_foo_pipeline',
         },
@@ -196,10 +210,10 @@ def valid_cli_args():
     return [
         ['-y', script_relative_path('repository_file.yml'), 'foo'],
         ['-y', script_relative_path('repository_module.yml'), 'repo_demo_pipeline'],
-        ['-f', script_relative_path('test_dynamic_loader.py'), '-n', 'define_bar_repo', 'foo'],
+        ['-f', script_relative_path('test_cli_commands.py'), '-n', 'define_bar_repo', 'foo'],
         ['-m', 'dagster.tutorials.intro_tutorial.repos', '-n', 'define_repo', 'repo_demo_pipeline'],
         ['-m', 'dagster.tutorials.intro_tutorial.repos', '-n', 'define_repo_demo_pipeline'],
-        ['-f', script_relative_path('test_dynamic_loader.py'), '-n', 'define_foo_pipeline'],
+        ['-f', script_relative_path('test_cli_commands.py'), '-n', 'define_foo_pipeline'],
     ]
 
 
@@ -220,25 +234,93 @@ def test_print_command():
         assert result.exit_code == 0
 
 
+def test_execute_mode_command():
+    runner = CliRunner()
+
+    add_result = runner_pipeline_execute(
+        runner,
+        [
+            '-y',
+            script_relative_path('../repository.yml'),
+            '--env',
+            script_relative_path('../environments/multi_mode_with_resources/add_mode.yml'),
+            '-d',
+            'add_mode',
+            'multi_mode_with_resources',  # pipeline name
+        ],
+    )
+
+    # this is quite horrific and fragile easiest way to check for correcness
+    assert 'Step apply_to_three.transform emitted 5 for output result' in add_result.stdout
+
+    mult_result = runner_pipeline_execute(
+        runner,
+        [
+            '-y',
+            script_relative_path('../repository.yml'),
+            '--env',
+            script_relative_path('../environments/multi_mode_with_resources/mult_mode.yml'),
+            '-d',
+            'mult_mode',
+            'multi_mode_with_resources',  # pipeline name
+        ],
+    )
+
+    assert 'Step apply_to_three.transform emitted 12 for output result' in mult_result.stdout
+
+    double_adder_result = runner_pipeline_execute(
+        runner,
+        [
+            '-y',
+            script_relative_path('../repository.yml'),
+            '--env',
+            script_relative_path('../environments/multi_mode_with_resources/double_adder_mode.yml'),
+            '-d',
+            'double_adder_mode',
+            'multi_mode_with_resources',  # pipeline name
+        ],
+    )
+
+    assert (
+        'Step apply_to_three.transform emitted 25 for output result' in double_adder_result.stdout
+    )
+
+
 def test_execute_command():
     for cli_args in valid_execute_args():
         execute_execute_command(env=None, raise_on_error=True, cli_args=cli_args)
 
     for cli_args in valid_execute_args():
         execute_execute_command(
-            env=[script_relative_path('env.yml')], raise_on_error=True, cli_args=cli_args
+            env=[script_relative_path('default_log_error_env.yml')],
+            raise_on_error=True,
+            cli_args=cli_args,
         )
 
     runner = CliRunner()
 
     for cli_args in valid_cli_args():
-        result = runner.invoke(pipeline_execute_command, cli_args)
-        assert result.exit_code == 0
+        runner_pipeline_execute(runner, cli_args)
 
-        result = runner.invoke(
-            pipeline_execute_command, ['--env', script_relative_path('env.yml')] + cli_args
+        runner_pipeline_execute(
+            runner, ['--env', script_relative_path('default_log_error_env.yml')] + cli_args
         )
-        assert result.exit_code == 0
+
+
+def runner_pipeline_execute(runner, cli_args):
+    result = runner.invoke(pipeline_execute_command, cli_args)
+    if result.exit_code != 0:
+        # CliRunner captures stdout so printing it out here
+        raise Exception(
+            (
+                'dagster pipeline execute commands with cli_args {cli_args} '
+                'returned exit_code {exit_code} with stdout:\n"{stdout}" and '
+                '\nresult as string: "{result}"'
+            ).format(
+                cli_args=cli_args, exit_code=result.exit_code, stdout=result.stdout, result=result
+            )
+        )
+    return result
 
 
 def test_scaffold_command():

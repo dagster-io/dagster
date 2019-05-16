@@ -338,7 +338,7 @@ def Selector(fields):
 def NamedSelector(name, fields, description=None, type_attributes=DEFAULT_TYPE_ATTRIBUTES):
     '''
     A :py:class`Selector` with a name, allowing it to be referenced by that name.
-    
+
     Args:
         name (str):
         fields (Dict[str, Field])

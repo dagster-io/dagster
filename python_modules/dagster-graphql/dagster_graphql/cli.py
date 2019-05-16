@@ -5,13 +5,9 @@ import click
 from graphql import graphql
 from graphql.execution.executors.gevent import GeventExecutor as Executor
 
-from dagster import check, seven
-from dagster.cli.dynamic_loader import (
-    RepositoryContainer,
-    load_target_info_from_cli_args,
-    repository_target_argument,
-)
-from dagster.utils.logging import get_stack_trace_array
+from dagster import check, seven, ExecutionTargetHandle
+from dagster.cli.pipeline import repository_target_argument
+from dagster.utils.log import get_stack_trace_array
 
 from .implementation.context import DagsterGraphQLContext
 from .implementation.pipeline_execution_manager import SynchronousExecutionManager
@@ -31,7 +27,8 @@ def create_dagster_graphql_cli():
     return ui
 
 
-def execute_query_from_cli(repository_container, query, variables):
+def execute_query_from_cli(exc_target_handle, query, variables):
+    check.inst_param(exc_target_handle, 'exc_target_handle', ExecutionTargetHandle)
     check.str_param(query, 'query')
     check.opt_str_param(variables, 'variables')
 
@@ -42,7 +39,7 @@ def execute_query_from_cli(repository_container, query, variables):
     execution_manager = SynchronousExecutionManager()
 
     context = DagsterGraphQLContext(
-        repository_container=repository_container,
+        exc_target_handle=exc_target_handle,
         pipeline_runs=pipeline_run_storage,
         execution_manager=execution_manager,
         version=__version__,
@@ -87,24 +84,22 @@ def execute_query_from_cli(repository_container, query, variables):
         '\n\n{warning}'.format(warning=REPO_TARGET_WARNING)
     )
     + '\n\n Examples:'
-    '\n\n1. dagit'
-    '\n\n2. dagit -y path/to/repository.yml'
-    '\n\n3. dagit -f path/to/file.py -n define_repo'
-    '\n\n4. dagit -m some_module -n define_repo'
-    '\n\n5. dagit -f path/to/file.py -n define_pipeline'
-    '\n\n6. dagit -m some_module -n define_pipeline',
+    '\n\n1. dagster-graphql'
+    '\n\n2. dagster-graphql -y path/to/repository.yml'
+    '\n\n3. dagster-graphql -f path/to/file.py -n define_repo'
+    '\n\n4. dagster-graphql -m some_module -n define_repo'
+    '\n\n5. dagster-graphql -f path/to/file.py -n define_pipeline'
+    '\n\n6. dagster-graphql -m some_module -n define_pipeline',
 )
 @click.option('--variables', '-v', type=click.STRING)
 @click.version_option(version=__version__)
 @click.argument('query', type=click.STRING)
 def ui(variables, query, **kwargs):
-    repository_target_info = load_target_info_from_cli_args(kwargs)
-
-    repository_container = RepositoryContainer(repository_target_info)
+    exc_target_handle = ExecutionTargetHandle.for_repo_cli_args(kwargs)
 
     query = query.strip('\'" \n\t')
 
-    execute_query_from_cli(repository_container, query, variables)
+    execute_query_from_cli(exc_target_handle, query, variables)
 
 
 def main():

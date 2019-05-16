@@ -8,7 +8,8 @@ def sync_execute_get_run_log_data(variables, raise_on_error=True):
 
     assert result.data
 
-    assert result.data['startPipelineExecution']['__typename'] == 'StartPipelineExecutionSuccess'
+    if result.data['startPipelineExecution']['__typename'] != 'StartPipelineExecutionSuccess':
+        raise Exception(result.data)
     run_id = result.data['startPipelineExecution']['run']['runId']
 
     subscription = execute_dagster_graphql(context, SUBSCRIPTION_QUERY, variables={'runId': run_id})

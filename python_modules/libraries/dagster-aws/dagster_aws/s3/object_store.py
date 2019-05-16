@@ -3,7 +3,7 @@ from io import BytesIO
 import boto3
 
 from dagster import RunStorageMode, check
-from dagster.core.execution_context import SystemPipelineExecutionContext
+from dagster.core.execution.context.system import SystemPipelineExecutionContext
 from dagster.core.types.runtime import resolve_to_runtime_type, RuntimeType
 from dagster.core.object_store import ObjectStore
 
@@ -37,9 +37,9 @@ class S3ObjectStore(ObjectStore):
 
         key = self.key_for_paths(paths)
 
-        check.invariant(
-            not self.has_object(context, paths), 'Key already exists: {key}!'.format(key=key)
-        )
+        if self.has_object(context, paths):
+            context.log.warning('Removing existing S3 key: {key}'.format(key=key))
+            self.rm_object(context, paths)
 
         with BytesIO() as bytes_io:
             runtime_type.serialization_strategy.serialize_value(context, obj, bytes_io)

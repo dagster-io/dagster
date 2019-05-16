@@ -1,7 +1,10 @@
+from .exc_target_handle import ExecutionTargetHandle
+
 from .context import PipelineContextDefinition
 
 from .dependency import (
     DependencyDefinition,
+    MultiDependencyDefinition,
     Solid,
     SolidHandle,
     SolidInputHandle,
@@ -15,11 +18,15 @@ from .environment_schema import (
     create_environment_type,
 )
 
+from .entrypoint import LoaderEntrypoint
+
 from .expectation import ExpectationDefinition, ExpectationResult
 
-from .input import InputDefinition
+from .input import InputDefinition, InputMapping
 
-from .output import OutputDefinition
+from .logger import LoggerDefinition
+
+from .output import OutputDefinition, OutputMapping
 
 from .resource import ResourceDefinition
 
@@ -31,8 +38,8 @@ from .mode import ModeDefinition
 
 from .repository import RepositoryDefinition, PipelinePreset
 
-from .pipeline import PipelineDefinition, solids_in_topological_order
+from .pipeline import PipelineDefinition
 
-from .pipeline_creation import create_execution_structure
+from .container import solids_in_topological_order, create_execution_structure, IContainSolids
 
-from .solid import SolidDefinition, ISolidDefinition
+from .solid import SolidDefinition, ISolidDefinition, CompositeSolidDefinition

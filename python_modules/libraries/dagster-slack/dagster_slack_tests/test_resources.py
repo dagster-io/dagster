@@ -1,6 +1,6 @@
 import responses
 
-from dagster import execute_pipeline, solid, PipelineContextDefinition, PipelineDefinition
+from dagster import execute_pipeline, solid, PipelineDefinition, ModeDefinition
 
 from dagster_slack import slack_resource
 
@@ -27,21 +27,11 @@ def test_slack_resource():
     pipeline = PipelineDefinition(
         name='test_slack_resource',
         solids=[slack_solid],
-        context_definitions={
-            'default': PipelineContextDefinition(resources={'slack': slack_resource})
-        },
+        mode_definitions=[ModeDefinition(resources={'slack': slack_resource})],
     )
 
     result = execute_pipeline(
         pipeline,
-        {
-            'context': {
-                'default': {
-                    'resources': {
-                        'slack': {'config': {'token': 'xoxp-1234123412341234-12341234-1234'}}
-                    }
-                }
-            }
-        },
+        {'resources': {'slack': {'config': {'token': 'xoxp-1234123412341234-12341234-1234'}}}},
     )
     assert result.success

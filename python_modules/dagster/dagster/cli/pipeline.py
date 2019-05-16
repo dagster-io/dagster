@@ -1,28 +1,25 @@
 from __future__ import print_function
 
-import logging
 import re
 import textwrap
 
 import click
 import yaml
 
-from dagster import InProcessExecutorConfig, PipelineDefinition, RunConfig, check
+from dagster import (
+    ExecutionTargetHandle,
+    InProcessExecutorConfig,
+    PipelineDefinition,
+    RunConfig,
+    check,
+    execute_pipeline,
+)
 from dagster.core.definitions import solids_in_topological_order, Solid
-from dagster.core.execution import execute_pipeline
 from dagster.utils import load_yaml_from_glob_list
 from dagster.utils.indenting_printer import IndentingPrinter
 from dagster.visualize import build_graphviz_graph
 
 from .config_scaffolder import scaffold_pipeline_config
-from .dynamic_loader import (
-    PipelineTargetInfo,
-    load_pipeline_from_target_info,
-    load_repository_from_target_info,
-    load_target_info_from_cli_args,
-    pipeline_target_command,
-    repository_target_argument,
-)
 
 
 def create_pipeline_cli_group():
@@ -40,6 +37,59 @@ REPO_TARGET_WARNING = (
 )
 
 
+def apply_click_params(command, *click_params):
+    for click_param in click_params:
+        command = click_param(command)
+    return command
+
+
+def repository_target_argument(f):
+    return apply_click_params(
+        f,
+        click.option(
+            '--repository-yaml',
+            '-y',
+            type=click.STRING,
+            help=(
+                'Path to config file. Defaults to ./repository.yml. if --python-file '
+                'and --module-name are not specified'
+            ),
+        ),
+        click.option(
+            '--python-file',
+            '-f',
+            help='Specify python file where repository or pipeline function lives.',
+        ),
+        click.option(
+            '--module-name', '-m', help='Specify module where repository or pipeline function lives'
+        ),
+        click.option('--fn-name', '-n', help='Function that returns either repository or pipeline'),
+    )
+
+
+def pipeline_target_command(f):
+    # f = repository_config_argument(f)
+    # nargs=-1 is used right now to make this argument optional
+    # it can only handle 0 or 1 pipeline names
+    # see .pipeline.create_pipeline_from_cli_args
+    return apply_click_params(
+        f,
+        click.option(
+            '--repository-yaml',
+            '-y',
+            type=click.STRING,
+            help=(
+                'Path to config file. Defaults to ./repository.yml. if --python-file '
+                'and --module-name are not specified'
+            ),
+        ),
+        click.argument('pipeline_name', nargs=-1),
+        click.option('--python-file', '-f'),
+        click.option('--module-name', '-m'),
+        click.option('--fn-name', '-n'),
+    )
+
+
 @click.command(
     name='list',
     help="List the pipelines in a repository. {warning}".format(warning=REPO_TARGET_WARNING),
@@ -50,8 +100,7 @@ def pipeline_list_command(**kwargs):
 
 
 def execute_list_command(cli_args, print_fn):
-    repository_target_info = load_target_info_from_cli_args(cli_args)
-    repository = load_repository_from_target_info(repository_target_info)
+    repository = ExecutionTargetHandle.for_repo_cli_args(cli_args).build_repository_definition()
 
     title = 'Repository {name}'.format(name=repository.name)
     print_fn(title)
@@ -83,43 +132,8 @@ def format_description(desc, indent):
     return filled
 
 
-def load_pipeline_target_from_cli_args(kwargs):
-    check.dict_param(kwargs, 'kwargs')
-
-    pipeline_names = list(kwargs['pipeline_name'])
-
-    if not pipeline_names:
-        pipeline_name = None
-    elif len(pipeline_names) == 1:
-        pipeline_name = pipeline_names[0]
-    else:
-        check.failed(
-            'Can only handle zero or one pipeline args. Got {pipeline_names}'.format(
-                pipeline_names=repr(pipeline_names)
-            )
-        )
-
-    if (
-        kwargs['pipeline_name']
-        and kwargs['repository_yaml'] is None
-        and kwargs['module_name'] is None
-        and kwargs['python_file'] is None
-    ):
-        repository_yaml = 'repository.yml'
-    else:
-        repository_yaml = kwargs['repository_yaml']
-
-    return PipelineTargetInfo(
-        repository_yaml=repository_yaml,
-        pipeline_name=pipeline_name,
-        python_file=kwargs['python_file'],
-        module_name=kwargs['module_name'],
-        fn_name=kwargs['fn_name'],
-    )
-
-
 def create_pipeline_from_cli_args(kwargs):
-    return load_pipeline_from_target_info(load_pipeline_target_from_cli_args(kwargs))
+    return ExecutionTargetHandle.for_pipeline_cli_args(kwargs).build_pipeline_definition()
 
 
 def get_pipeline_instructions(command_name):
@@ -257,15 +271,6 @@ def pipeline_graphviz_command(only_solids, **kwargs):
     build_graphviz_graph(pipeline, only_solids).view(cleanup=True)
 
 
-LOGGING_DICT = {
-    'DEBUG': logging.DEBUG,
-    'INFO': logging.INFO,
-    'WARN': logging.WARN,
-    'ERROR': logging.ERROR,
-    'CRITICAL': logging.CRITICAL,
-}
-
-
 @click.command(
     name='execute',
     help='Execute a pipeline.\n\n{instructions}'.format(
@@ -302,38 +307,39 @@ LOGGING_DICT = {
         'on RepositoryDefinition, typically managed under the config key in repository.yml.'
     ),
 )
-def pipeline_execute_command(env, raise_on_error, preset, **kwargs):
+@click.option('-d', '--mode', type=click.STRING)
+def pipeline_execute_command(env, raise_on_error, preset, mode, **kwargs):
     check.invariant(isinstance(env, tuple))
 
     if preset:
         if env:
             raise click.UsageError('Can not use --preset with --env.')
-        return execute_execute_command_with_preset(preset, raise_on_error, kwargs)
+        return execute_execute_command_with_preset(preset, raise_on_error, kwargs, mode)
 
     env = list(env)
-    execute_execute_command(env, raise_on_error, kwargs)
+    execute_execute_command(env, raise_on_error, kwargs, mode)
 
 
-def execute_execute_command(env, raise_on_error, cli_args):
+def execute_execute_command(env, raise_on_error, cli_args, mode=None):
     pipeline = create_pipeline_from_cli_args(cli_args)
-    return do_execute_command(pipeline, env, raise_on_error)
+    return do_execute_command(pipeline, env, raise_on_error, mode)
 
 
-def execute_execute_command_with_preset(preset, raise_on_error, cli_args):
-    pipeline_target = load_pipeline_target_from_cli_args(cli_args)
+def execute_execute_command_with_preset(preset, raise_on_error, cli_args, mode):
+    pipeline = ExecutionTargetHandle.for_pipeline_cli_args(cli_args).build_pipeline_definition()
     cli_args.pop('pipeline_name')
-    repository_target_info = load_target_info_from_cli_args(cli_args)
+    repository = ExecutionTargetHandle.for_repo_cli_args(cli_args).build_repository_definition()
+    kwargs = repository.get_preset_pipeline(pipeline.name, preset)
 
-    repository = load_repository_from_target_info(repository_target_info)
     return execute_pipeline(
         run_config=RunConfig(
-            executor_config=InProcessExecutorConfig(raise_on_error=raise_on_error)
+            mode=mode, executor_config=InProcessExecutorConfig(raise_on_error=raise_on_error)
         ),
-        **(repository.get_preset_pipeline(pipeline_target.pipeline_name, preset))
+        **kwargs
     )
 
 
-def do_execute_command(pipeline, env_file_list, raise_on_error):
+def do_execute_command(pipeline, env_file_list, raise_on_error, mode=None):
     check.inst_param(pipeline, 'pipeline', PipelineDefinition)
     env_file_list = check.opt_list_param(env_file_list, 'env_file_list', of_type=str)
 
@@ -343,7 +349,7 @@ def do_execute_command(pipeline, env_file_list, raise_on_error):
         pipeline,
         environment_dict=environment_dict,
         run_config=RunConfig(
-            executor_config=InProcessExecutorConfig(raise_on_error=raise_on_error)
+            mode=mode, executor_config=InProcessExecutorConfig(raise_on_error=raise_on_error)
         ),
     )
 

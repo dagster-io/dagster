@@ -1,6 +1,7 @@
 '''The dagster-airflow operators.'''
 import ast
 import json
+import logging
 import os
 
 from abc import ABCMeta, abstractmethod
@@ -36,8 +37,7 @@ def parse_raw_res(raw_res):
     # FIXME
     # Unfortunately, log lines don't necessarily come back in order...
     # This is error-prone, if something else logs JSON
-    lines = list(filter(None, reversed(raw_res.decode('utf-8').split('\n'))))
-    last_line = lines[0] if lines else raw_res
+    lines = list(filter(None, reversed(raw_res.split('\n'))))
 
     for line in lines:
         try:
@@ -47,7 +47,7 @@ def parse_raw_res(raw_res):
         except JSONDecodeError:
             continue
 
-    return (res, last_line)
+    return (res, raw_res)
 
 
 def airflow_storage_exception(tmp_dir):
@@ -74,14 +74,22 @@ class DagsterOperator(with_metaclass(ABCMeta)):  # pylint:disable=no-init
     @classmethod
     @abstractmethod
     def operator_for_solid(
-        cls, pipeline, env_config, solid_name, step_keys, dag, dag_id, op_kwargs
+        cls,
+        exc_target_handle,
+        pipeline_name,
+        env_config,
+        solid_name,
+        step_keys,
+        dag,
+        dag_id,
+        op_kwargs,
     ):
         pass
 
     @classmethod
-    def handle_errors(cls, res, last_line):
+    def handle_errors(cls, res, raw_res):
         if res is None:
-            raise AirflowException('Unhandled error type. Response: {}'.format(last_line))
+            raise AirflowException('Unhandled error type. Raw response: {}'.format(raw_res))
 
         if res.get('errors'):
             raise AirflowException('Internal error in GraphQL request. Response: {}'.format(res))
@@ -103,10 +111,8 @@ class DagsterOperator(with_metaclass(ABCMeta)):  # pylint:disable=no-init
 
         if res_type == 'PipelineNotFoundError':
             raise AirflowException(
-                'Pipeline {pipeline_name} not found: {message}:\n{stack_entries}'.format(
-                    pipeline_name=res_data['pipelineName'],
-                    message=res_data['message'],
-                    stack_entries='\n'.join(res_data['stack']),
+                'Pipeline "{pipeline_name}" not found: {message}:'.format(
+                    pipeline_name=res_data['pipelineName'], message=res_data['message']
                 )
             )
 
@@ -195,19 +201,22 @@ class ModifiedDockerOperator(DockerOperator):
             )
             self.cli.start(self.container['Id'])
 
+            res = []
             line = ''
             for new_line in self.cli.logs(container=self.container['Id'], stream=True):
                 line = new_line.strip()
                 if hasattr(line, 'decode'):
                     line = line.decode('utf-8')
                 self.log.info(line)
+                res.append(line)
 
             result = self.cli.wait(self.container['Id'])
             if result['StatusCode'] != 0:
                 raise AirflowException('docker container failed: ' + repr(result))
 
             if self.xcom_push_flag:
-                return self.cli.logs(container=self.container['Id']) if self.xcom_all else str(line)
+                # Try to avoid any kind of race condition?
+                return '\n'.join(res) + '\n' if self.xcom_all else str(line)
 
     # This is a class-private name on DockerOperator for no good reason --
     # all that the status quo does is inhibit extension of the class.
@@ -305,7 +314,15 @@ class DagsterDockerOperator(ModifiedDockerOperator, DagsterOperator):
 
     @classmethod
     def operator_for_solid(
-        cls, pipeline, env_config, solid_name, step_keys, dag, dag_id, op_kwargs
+        cls,
+        exc_target_handle,
+        pipeline_name,
+        env_config,
+        solid_name,
+        step_keys,
+        dag,
+        dag_id,
+        op_kwargs,
     ):
         tmp_dir = op_kwargs.pop('tmp_dir', DOCKER_TEMPDIR)
         host_tmp_dir = op_kwargs.pop('host_tmp_dir', seven.get_system_temp_directory())
@@ -323,7 +340,7 @@ class DagsterDockerOperator(ModifiedDockerOperator, DagsterOperator):
             config=format_config_for_graphql(env_config),
             dag=dag,
             tmp_dir=tmp_dir,
-            pipeline_name=pipeline.name,
+            pipeline_name=pipeline_name,
             step_keys=step_keys,
             task_id=solid_name,
             host_tmp_dir=host_tmp_dir,
@@ -382,9 +399,10 @@ class DagsterDockerOperator(ModifiedDockerOperator, DagsterOperator):
 
             raw_res = super(DagsterDockerOperator, self).execute(context)
             self.log.info('Finished executing container.')
-            (res, last_line) = parse_raw_res(raw_res)
 
-            self.handle_errors(res, last_line)
+            (res, raw_res) = parse_raw_res(raw_res)
+
+            self.handle_errors(res, raw_res)
 
             return self.handle_result(res)
 
@@ -405,18 +423,14 @@ class DagsterDockerOperator(ModifiedDockerOperator, DagsterOperator):
 
 class DagsterPythonOperator(PythonOperator, DagsterOperator):
     @classmethod
-    def make_python_callable(cls, dag_id, pipeline, env_config, step_keys):
+    def make_python_callable(cls, exc_target_handle, pipeline_name, env_config, step_keys):
         try:
-            from dagster import RepositoryDefinition
-            from dagster.cli.dynamic_loader import RepositoryContainer
             from dagster_graphql.cli import execute_query_from_cli
         except ImportError:
             raise AirflowException(
                 'To use the DagsterPythonOperator, dagster and dagster_graphql must be installed '
                 'in your Airflow environment.'
             )
-        repository = RepositoryDefinition('<<ephemeral repository>>', {dag_id: lambda: pipeline})
-        repository_container = RepositoryContainer(repository=repository)
 
         def python_callable(**kwargs):
             run_id = kwargs.get('dag_run').run_id
@@ -424,9 +438,23 @@ class DagsterPythonOperator(PythonOperator, DagsterOperator):
                 config=env_config,
                 run_id=run_id,
                 step_keys=json.dumps(step_keys),
-                pipeline_name=pipeline.name,
+                pipeline_name=pipeline_name,
             )
-            res = json.loads(execute_query_from_cli(repository_container, query, variables=None))
+
+            # TODO: This removes config that we need to scrub for secrets, but it's very useful
+            # for debugging to understand the GraphQL query that's being executed. We should update
+            # to include the sanitized config.
+            logging.info(
+                'Executing GraphQL query:\n'
+                + QUERY_TEMPLATE.format(
+                    config='REDACTED',
+                    run_id=run_id,
+                    step_keys=json.dumps(step_keys),
+                    pipeline_name=pipeline_name,
+                )
+            )
+
+            res = json.loads(execute_query_from_cli(exc_target_handle, query, variables=None))
             cls.handle_errors(res, None)
             return cls.handle_result(res)
 
@@ -434,21 +462,32 @@ class DagsterPythonOperator(PythonOperator, DagsterOperator):
 
     @classmethod
     def operator_for_solid(
-        cls, pipeline, env_config, solid_name, step_keys, dag, dag_id, op_kwargs
+        cls,
+        exc_target_handle,
+        pipeline_name,
+        env_config,
+        solid_name,
+        step_keys,
+        dag,
+        dag_id,
+        op_kwargs,
     ):
         if 'storage' not in env_config:
             raise airflow_storage_exception('/tmp/special_place')
 
         # black 18.9b0 doesn't support py27-compatible formatting of the below invocation (omitting
-        # the trailing comma after **op_kwargs) -- black 19.3b0 supports multiple python versions, but
-        # currently doesn't know what to do with from __future__ import print_function -- see
+        # the trailing comma after **op_kwargs) -- black 19.3b0 supports multiple python versions,
+        # but currently doesn't know what to do with from __future__ import print_function -- see
         # https://github.com/ambv/black/issues/768
         # fmt: off
         return PythonOperator(
             task_id=solid_name,
             provide_context=True,
             python_callable=cls.make_python_callable(
-                dag_id, pipeline, format_config_for_graphql(env_config), step_keys
+                exc_target_handle,
+                pipeline_name,
+                format_config_for_graphql(env_config),
+                step_keys
             ),
             dag=dag,
             **op_kwargs

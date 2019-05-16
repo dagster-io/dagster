@@ -1,15 +1,14 @@
-# For some reason pylint is not finding the Mapping class
-from collections import Mapping  # pylint: disable=no-name-in-module
 import contextlib
 import errno
 import inspect
+import multiprocessing
 import os
 import re
+
 import yaml
-import multiprocessing
 
 from dagster import check
-
+from dagster.seven.abc import Mapping
 from .yaml_utils import load_yaml_from_path, load_yaml_from_globs, load_yaml_from_glob_list
 
 
@@ -66,7 +65,7 @@ def safe_isfile(path):
     '''
     try:
         return os.path.isfile(path)
-    except (ValueError):
+    except ValueError:
         return False
 
 
@@ -95,9 +94,10 @@ class frozendict(dict):
 
     # https://docs.python.org/3/library/pickle.html#object.__reduce__
     #
-    # For a dict, the default behavior for pickle is to iteratively call __setitem__ (see 5th item in __reduce__ tuple).
-    # Since we want to disable __setitem__ and still inherit dict, we override this behavior by defining __reduce__.
-    # We return the 3rd item in the tuple, which is passed to __setstate__ allowing us to restore the frozendict.
+    # For a dict, the default behavior for pickle is to iteratively call __setitem__ (see 5th item
+    #  in __reduce__ tuple). Since we want to disable __setitem__ and still inherit dict, we
+    # override this behavior by defining __reduce__. We return the 3rd item in the tuple, which is
+    # passed to __setstate__, allowing us to restore the frozendict.
 
     def __reduce__(self):
         return (frozendict, (), dict(self))
@@ -161,3 +161,10 @@ def get_multiprocessing_context():
         return multiprocessing.get_context('spawn')
     else:
         return multiprocessing
+
+
+def all_none(kwargs):
+    for value in kwargs.values():
+        if value is not None:
+            return False
+    return True

@@ -72,7 +72,7 @@ def types_dict_of_result(subset_result, top_key):
 
 def do_test_subset(query, top_key):
     subset_result = execute_dagster_graphql(
-        define_context(), query, {'name': 'pandas_hello_world', 'solidSubset': ['sum_sq_solid']}
+        define_context(), query, {'name': 'csv_hello_world', 'solidSubset': ['sum_sq_solid']}
     )
 
     assert not subset_result.errors
@@ -83,32 +83,32 @@ def do_test_subset(query, top_key):
     ]
 
     subset_types_dict = types_dict_of_result(subset_result, top_key)
-    assert field_names_of(subset_types_dict, 'PandasHelloWorld.SumSqSolid.Inputs') == {'sum_df'}
-    assert 'PandasHelloWorld.SumSolid.Inputs' not in subset_types_dict
+    assert field_names_of(subset_types_dict, 'CsvHelloWorld.SumSqSolid.Inputs') == {'sum_df'}
+    assert 'CsvHelloWorld.SumSolid.Inputs' not in subset_types_dict
 
     full_types_dict = types_dict_of_result(
-        execute_dagster_graphql(define_context(), query, {'name': 'pandas_hello_world'}), top_key
+        execute_dagster_graphql(define_context(), query, {'name': 'csv_hello_world'}), top_key
     )
 
-    assert 'PandasHelloWorld.SumSolid.Inputs' in full_types_dict
-    assert 'PandasHelloWorld.SumSqSolid.Inputs' not in full_types_dict
+    assert 'CsvHelloWorld.SumSolid.Inputs' in full_types_dict
+    assert 'CsvHelloWorld.SumSqSolid.Inputs' not in full_types_dict
 
-    assert field_names_of(full_types_dict, 'PandasHelloWorld.SumSolid.Inputs') == {'num'}
+    assert field_names_of(full_types_dict, 'CsvHelloWorld.SumSolid.Inputs') == {'num'}
 
 
-def test_pandas_hello_world_pipeline_subset():
+def test_csv_hello_world_pipeline_subset():
     do_test_subset(PIPELINE_SUBSET_QUERY, 'pipeline')
 
 
-def test_pandas_hello_world_pipeline_or_error_subset():
+def test_csv_hello_world_pipeline_or_error_subset():
     do_test_subset(PIPELINE_OR_ERROR_SUBSET_QUERY, 'pipelineOrError')
 
 
-def test_pandas_hello_world_pipeline_or_error_subset_wrong_solid_name():
+def test_csv_hello_world_pipeline_or_error_subset_wrong_solid_name():
     result = execute_dagster_graphql(
         define_context(),
         PIPELINE_OR_ERROR_SUBSET_QUERY,
-        {'name': 'pandas_hello_world', 'solidSubset': ['nope']},
+        {'name': 'csv_hello_world', 'solidSubset': ['nope']},
     )
 
     assert not result.errors

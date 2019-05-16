@@ -2,15 +2,15 @@ from graphql.execution.base import ResolveInfo
 
 from dagster import check
 from dagster.core.definitions import create_environment_schema
-from dagster.core.execution import ExecutionSelector, create_execution_plan
+from dagster.core.execution.api import ExecutionSelector, create_execution_plan
 from dagster.core.types.evaluator import evaluate_config_value
 
 from .either import EitherError, EitherValue
-from .fetch_pipelines import _pipeline_or_error_from_container
+from .fetch_pipelines import _pipeline_or_error_from_repository
 
 
-def _config_or_error_from_pipeline(graphene_info, pipeline, env_config):
-    configuration_schema = create_environment_schema(pipeline.get_dagster_pipeline())
+def _config_or_error_from_pipeline(graphene_info, pipeline, env_config, mode):
+    configuration_schema = create_environment_schema(pipeline.get_dagster_pipeline(), mode)
 
     validated_config = evaluate_config_value(configuration_schema.environment_type, env_config)
 
@@ -47,34 +47,56 @@ def get_runs(graphene_info):
     ]
 
 
-def validate_pipeline_config(graphene_info, selector, config):
+def validate_pipeline_config(graphene_info, selector, config, mode):
     check.inst_param(graphene_info, 'graphene_info', ResolveInfo)
     check.inst_param(selector, 'selector', ExecutionSelector)
+    check.opt_str_param(mode, 'mode')
 
     def do_validation(pipeline):
-        config_or_error = _config_or_error_from_pipeline(graphene_info, pipeline, config)
+        config_or_error = _config_or_error_from_pipeline(
+            graphene_info,
+            pipeline,
+            config,
+            # TODO core UI change
+            # https://github.com/dagster-io/dagster/issues/1343
+            mode=mode if mode else pipeline.get_dagster_pipeline().get_default_mode_name(),
+        )
         return config_or_error.chain(
             lambda config: graphene_info.schema.type_named('PipelineConfigValidationValid')(
                 pipeline
             )
         )
 
-    pipeline_or_error = _pipeline_or_error_from_container(graphene_info, selector)
+    pipeline_or_error = _pipeline_or_error_from_repository(graphene_info, selector)
     return pipeline_or_error.chain(do_validation).value()
 
 
-def get_execution_plan(graphene_info, selector, config):
+def get_execution_plan(graphene_info, selector, config, mode):
     check.inst_param(graphene_info, 'graphene_info', ResolveInfo)
     check.inst_param(selector, 'selector', ExecutionSelector)
+    check.opt_str_param(mode, 'mode')
 
     def create_plan(pipeline):
-        config_or_error = _config_or_error_from_pipeline(graphene_info, pipeline, config)
+        config_or_error = _config_or_error_from_pipeline(
+            graphene_info,
+            pipeline,
+            config,
+            # TODO core UI change
+            # https://github.com/dagster-io/dagster/issues/1343
+            mode=mode if mode else pipeline.get_dagster_pipeline().get_default_mode_name(),
+        )
         return config_or_error.chain(
             lambda evaluate_value_result: graphene_info.schema.type_named('ExecutionPlan')(
                 pipeline,
-                create_execution_plan(pipeline.get_dagster_pipeline(), evaluate_value_result.value),
+                create_execution_plan(
+                    pipeline.get_dagster_pipeline(),
+                    evaluate_value_result.value,
+                    # TODO core UI change
+                    # https://github.com/dagster-io/dagster/issues/1343
+                    mode=mode if mode else pipeline.get_dagster_pipeline().get_default_mode_name(),
+                ),
             )
         )
 
-    pipeline_or_error = _pipeline_or_error_from_container(graphene_info, selector)
+    pipeline_or_error = _pipeline_or_error_from_repository(graphene_info, selector)
     return pipeline_or_error.chain(create_plan).value()

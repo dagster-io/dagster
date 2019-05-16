@@ -28,18 +28,22 @@ export default class SidebarPipelineInfo extends React.Component<
       fragment SidebarPipelineInfoFragment on Pipeline {
         name
         description
-        contexts {
+        modes {
           name
           description
-          config {
-            configType {
-              ...ConfigTypeSchemaFragment
-            }
-          }
           resources {
             name
             description
-            config {
+            configField {
+              configType {
+                ...ConfigTypeSchemaFragment
+              }
+            }
+          }
+          loggers {
+            name
+            description
+            configField {
               configType {
                 ...ConfigTypeSchemaFragment
               }
@@ -64,17 +68,12 @@ export default class SidebarPipelineInfo extends React.Component<
             description={pipeline ? pipeline.description : NO_DESCRIPTION}
           />
         </SidebarSection>
-        <SidebarSection title={"Contexts"}>
-          {pipeline.contexts.map(context => (
-            <SectionItemContainer key={context.name}>
-              <SectionItemHeader>{context.name}</SectionItemHeader>
-              <Description
-                description={context.description || NO_DESCRIPTION}
-              />
-              {context.config && (
-                <ConfigTypeSchema type={context.config.configType} />
-              )}
-              {context.resources.map(resource => (
+        <SidebarSection title={"Modes"}>
+          {pipeline.modes.map(mode => (
+            <SectionItemContainer key={mode.name}>
+              <SectionItemHeader>{mode.name}</SectionItemHeader>
+              <Description description={mode.description || NO_DESCRIPTION} />
+              {mode.resources.map(resource => (
                 <ContextResourceContainer key={resource.name}>
                   <Icon
                     iconSize={14}
@@ -88,11 +87,31 @@ export default class SidebarPipelineInfo extends React.Component<
                     <Description
                       description={resource.description || NO_DESCRIPTION}
                     />
-                    {resource.config && (
-                      <ConfigTypeSchema type={resource.config.configType} />
+                    {resource.configField && (
+                      <ConfigTypeSchema
+                        type={resource.configField.configType}
+                      />
                     )}
                   </div>
                 </ContextResourceContainer>
+              ))}
+              {mode.loggers.map(logger => (
+                <ContextLoggerContainer key={logger.name}>
+                  <Icon
+                    iconSize={14}
+                    icon={IconNames.LAYERS}
+                    color={Colors.DARK_GRAY2}
+                  />
+                  <div>
+                    <ContextLoggerHeader>{logger.name}</ContextLoggerHeader>
+                    <Description
+                      description={logger.description || NO_DESCRIPTION}
+                    />
+                    {logger.configField && (
+                      <ConfigTypeSchema type={logger.configField.configType} />
+                    )}
+                  </div>
+                </ContextLoggerContainer>
               ))}
             </SectionItemContainer>
           ))}
@@ -107,6 +126,20 @@ const ContextResourceHeader = styled(SectionItemHeader)`
 `;
 
 const ContextResourceContainer = styled.div`
+  display: flex;
+  align-items: flex-start;
+  padding-top: 15px;
+  & .bp3-icon {
+    padding-top: 7px;
+    padding-right: 10px;
+  }
+`;
+
+const ContextLoggerHeader = styled(SectionItemHeader)`
+  font-size: 13px;
+`;
+
+const ContextLoggerContainer = styled.div`
   display: flex;
   align-items: flex-start;
   padding-top: 15px;

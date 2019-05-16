@@ -1,6 +1,6 @@
 import responses
 
-from dagster import execute_pipeline, solid, PipelineContextDefinition, PipelineDefinition
+from dagster import execute_pipeline, solid, PipelineDefinition, ModeDefinition
 
 from dagster_pagerduty import pagerduty_resource
 
@@ -34,20 +34,14 @@ def test_pagerduty_resource():
     pipeline = PipelineDefinition(
         name='test_pagerduty_resource',
         solids=[pagerduty_solid],
-        context_definitions={
-            'default': PipelineContextDefinition(resources={'pagerduty': pagerduty_resource})
-        },
+        mode_definitions=[ModeDefinition(resources={'pagerduty': pagerduty_resource})],
     )
 
     result = execute_pipeline(
         pipeline,
         {
-            'context': {
-                'default': {
-                    'resources': {
-                        'pagerduty': {'config': {'routing_key': '0123456789abcdef0123456789abcdef'}}
-                    }
-                }
+            'resources': {
+                'pagerduty': {'config': {'routing_key': '0123456789abcdef0123456789abcdef'}}
             }
         },
     )

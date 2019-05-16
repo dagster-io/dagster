@@ -2,12 +2,14 @@ import dagster.check as check
 
 from dagster import (
     DependencyDefinition,
+    InProcessExecutorConfig,
     InputDefinition,
     Int,
     OutputDefinition,
+    PipelineContextDefinition,
     PipelineDefinition,
     Result,
-    SolidDefinition,
+    RunConfig,
     SolidInstance,
     execute_pipeline,
     execute_pipeline_iterator,
@@ -19,11 +21,17 @@ from dagster.core.types import Nullable, List, String
 
 from dagster.core.definitions import Solid, solids_in_topological_order
 from dagster.core.definitions.dependency import DependencyStructure
-from dagster.core.definitions.pipeline import _create_adjacency_lists
+from dagster.core.definitions.container import _create_adjacency_lists
 
-from dagster.core.execution import SolidExecutionResult, step_output_event_filter
+from dagster.core.execution.api import step_output_event_filter
+from dagster.core.execution.results import SolidExecutionResult
 
-from dagster.core.utility_solids import define_stub_solid
+from dagster.core.utility_solids import (
+    define_stub_solid,
+    create_root_solid,
+    create_solid_with_deps,
+    input_set,
+)
 
 from dagster.utils.test import execute_solid
 
@@ -57,39 +65,6 @@ def make_transform():
         return result
 
     return transform
-
-
-def _transform_fn(context, inputs):
-    passed_rows = []
-    seen = set()
-    for row in inputs.values():
-        for item in row:
-            key = list(item.keys())[0]
-            if key not in seen:
-                seen.add(key)
-                passed_rows.append(item)
-
-    result = []
-    result.extend(passed_rows)
-    result.append({context.solid.name: 'transform_called'})
-    yield Result(result)
-
-
-def create_solid_with_deps(name, *solid_deps):
-    inputs = [InputDefinition(solid_dep.name) for solid_dep in solid_deps]
-
-    return SolidDefinition(
-        name=name, inputs=inputs, transform_fn=_transform_fn, outputs=[OutputDefinition()]
-    )
-
-
-def create_root_solid(name):
-    input_name = name + '_input'
-    inp = InputDefinition(input_name)
-
-    return SolidDefinition(
-        name=name, inputs=[inp], transform_fn=_transform_fn, outputs=[OutputDefinition()]
-    )
 
 
 def _do_construct(solids, dependencies):
@@ -185,10 +160,6 @@ def test_diamond_toposort():
         'C',
         'D',
     ]
-
-
-def input_set(name):
-    return {name: 'input_set'}
 
 
 def transform_called(name):
@@ -527,3 +498,33 @@ def test_pipeline_streaming_multiple_outputs():
     assert two_output_step_event.step_output_data.value_repr == '2'
     assert two_output_step_event.step_output_data.output_name == 'two'
     assert events == [1, 2]
+
+
+def test_pipeline_init_failure():
+    stub_solid = define_stub_solid('stub', None)
+    env_config = {'context': {'failing': {}}}
+
+    def failing_context_fn(*args, **kwargs):
+        raise Exception()
+
+    pipeline_def = PipelineDefinition(
+        [stub_solid],
+        'failing_init_pipeline',
+        context_definitions={'failing': PipelineContextDefinition(context_fn=failing_context_fn)},
+    )
+
+    result = execute_pipeline(
+        pipeline_def,
+        environment_dict=env_config,
+        run_config=RunConfig(executor_config=InProcessExecutorConfig(raise_on_error=False)),
+    )
+
+    assert result.success is False
+
+    assert len(result.event_list) == 1
+
+    event = result.event_list[0]
+
+    assert event.event_type_value == 'PIPELINE_INIT_FAILURE'
+
+    assert event.pipeline_init_failure_data

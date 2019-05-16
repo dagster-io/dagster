@@ -2,10 +2,10 @@ from dagster import check
 
 from dagster.core.types import Field, Dict
 from dagster.core.types.field_utils import check_user_facing_opt_field_param
-from dagster.core.user_context import ExecutionContext
+from dagster.core.execution.context.execution import ExecutionContext
 from dagster.core.system_config.objects import DEFAULT_CONTEXT_NAME
 
-from dagster.utils.logging import LogLevelEnum, level_from_string
+from dagster.utils.log import LogLevelEnum
 
 from .resource import ResourceDefinition
 
@@ -44,29 +44,13 @@ class PipelineContextDefinition(object):
         config_field (Field): The configuration for the pipeline context.
 
         context_fn (callable):
-            Signature is (**pipeline**: `PipelineDefintion`, **config_value**: `Any`) :
+            Signature is (**pipeline**: `PipelineDefinition`, **config_value**: `Any`) :
             `ExecutionContext`.
 
             A callable that either returns *or* yields an ``ExecutionContext``.
 
         description (str): A description of what this context represents
     '''
-
-    @staticmethod
-    def passthrough_context_definition(context_params):
-        '''Create a context definition from a pre-existing context. This can be useful
-        in testing contexts where you may want to create a context manually and then
-        pass it into a one-off PipelineDefinition
-
-        Args:
-            context (ExecutionContext): The context that will provided to the pipeline.
-        Returns:
-            PipelineContextDefinition: The passthrough context definition.
-        '''
-
-        check.inst_param(context_params, 'context', ExecutionContext)
-        context_definition = PipelineContextDefinition(context_fn=lambda *_args: context_params)
-        return {DEFAULT_CONTEXT_NAME: context_definition}
 
     def __init__(self, context_fn=None, config_field=None, resources=None, description=None):
         if config_field is None and context_fn is None:
@@ -85,9 +69,8 @@ class PipelineContextDefinition(object):
         self.description = description
 
 
-def _default_context_fn(init_context):
-    log_level = level_from_string(init_context.context_config['log_level'])
-    return ExecutionContext.console_logging(log_level)
+def _default_context_fn(_init_context):
+    return ExecutionContext()
 
 
 def _default_config_field():

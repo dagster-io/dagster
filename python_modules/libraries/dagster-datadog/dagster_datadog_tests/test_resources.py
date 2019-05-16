@@ -1,4 +1,4 @@
-from dagster import execute_pipeline, solid, PipelineContextDefinition, PipelineDefinition
+from dagster import execute_pipeline, solid, ModeDefinition, PipelineDefinition
 from dagster_datadog import datadog_resource
 
 try:
@@ -78,21 +78,11 @@ def test_datadog_resource(
     pipeline = PipelineDefinition(
         name='test_datadog_resource',
         solids=[datadog_solid],
-        context_definitions={
-            'default': PipelineContextDefinition(resources={'datadog': datadog_resource})
-        },
+        mode_definitions=[ModeDefinition(resources={'datadog': datadog_resource})],
     )
 
     result = execute_pipeline(
         pipeline,
-        {
-            'context': {
-                'default': {
-                    'resources': {
-                        'datadog': {'config': {'api_key': 'NOT_USED', 'app_key': 'NOT_USED'}}
-                    }
-                }
-            }
-        },
+        {'resources': {'datadog': {'config': {'api_key': 'NOT_USED', 'app_key': 'NOT_USED'}}}},
     )
     assert result.success
