@@ -248,44 +248,6 @@ snapshots['test_query_multi_mode 1'] = {
                 ]
             },
             {
-                'description': 'Mode that multiplies things',
-                'loggers': [
-                    {
-                        'configField': {
-                            'configType': {
-                                'fields': [
-                                    {
-                                        'configType': {
-                                            'name': 'String'
-                                        },
-                                        'name': 'log_level'
-                                    },
-                                    {
-                                        'configType': {
-                                            'name': 'String'
-                                        },
-                                        'name': 'name'
-                                    }
-                                ],
-                                'name': None
-                            }
-                        },
-                        'name': 'console'
-                    }
-                ],
-                'name': 'mult_mode',
-                'resources': [
-                    {
-                        'configField': {
-                            'configType': {
-                                'name': 'Int'
-                            }
-                        },
-                        'name': 'op'
-                    }
-                ]
-            },
-            {
                 'description': 'Mode that adds two numbers to thing',
                 'loggers': [
                     {
@@ -331,6 +293,44 @@ snapshots['test_query_multi_mode 1'] = {
                                     }
                                 ],
                                 'name': None
+                            }
+                        },
+                        'name': 'op'
+                    }
+                ]
+            },
+            {
+                'description': 'Mode that multiplies things',
+                'loggers': [
+                    {
+                        'configField': {
+                            'configType': {
+                                'fields': [
+                                    {
+                                        'configType': {
+                                            'name': 'String'
+                                        },
+                                        'name': 'log_level'
+                                    },
+                                    {
+                                        'configType': {
+                                            'name': 'String'
+                                        },
+                                        'name': 'name'
+                                    }
+                                ],
+                                'name': None
+                            }
+                        },
+                        'name': 'console'
+                    }
+                ],
+                'name': 'mult_mode',
+                'resources': [
+                    {
+                        'configField': {
+                            'configType': {
+                                'name': 'Int'
                             }
                         },
                         'name': 'op'
@@ -582,44 +582,6 @@ snapshots['test_query_multi_mode 2'] = {
                 ]
             },
             {
-                'description': 'Mode that multiplies things',
-                'loggers': [
-                    {
-                        'configField': {
-                            'configType': {
-                                'fields': [
-                                    {
-                                        'configType': {
-                                            'name': 'String'
-                                        },
-                                        'name': 'log_level'
-                                    },
-                                    {
-                                        'configType': {
-                                            'name': 'String'
-                                        },
-                                        'name': 'name'
-                                    }
-                                ],
-                                'name': None
-                            }
-                        },
-                        'name': 'console'
-                    }
-                ],
-                'name': 'mult_mode',
-                'resources': [
-                    {
-                        'configField': {
-                            'configType': {
-                                'name': 'Int'
-                            }
-                        },
-                        'name': 'op'
-                    }
-                ]
-            },
-            {
                 'description': 'Mode that adds two numbers to thing',
                 'loggers': [
                     {
@@ -665,6 +627,44 @@ snapshots['test_query_multi_mode 2'] = {
                                     }
                                 ],
                                 'name': None
+                            }
+                        },
+                        'name': 'op'
+                    }
+                ]
+            },
+            {
+                'description': 'Mode that multiplies things',
+                'loggers': [
+                    {
+                        'configField': {
+                            'configType': {
+                                'fields': [
+                                    {
+                                        'configType': {
+                                            'name': 'String'
+                                        },
+                                        'name': 'log_level'
+                                    },
+                                    {
+                                        'configType': {
+                                            'name': 'String'
+                                        },
+                                        'name': 'name'
+                                    }
+                                ],
+                                'name': None
+                            }
+                        },
+                        'name': 'console'
+                    }
+                ],
+                'name': 'mult_mode',
+                'resources': [
+                    {
+                        'configField': {
+                            'configType': {
+                                'name': 'Int'
                             }
                         },
                         'name': 'op'

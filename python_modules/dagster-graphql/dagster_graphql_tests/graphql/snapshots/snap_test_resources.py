@@ -25,20 +25,6 @@ snapshots['test_mode_fetch_resources 1'] = {
                 ]
             },
             {
-                'name': 'mult_mode',
-                'resources': [
-                    {
-                        'configField': {
-                            'configType': {
-                                'name': 'Int'
-                            }
-                        },
-                        'description': None,
-                        'name': 'op'
-                    }
-                ]
-            },
-            {
                 'name': 'double_adder',
                 'resources': [
                     {
@@ -59,6 +45,20 @@ snapshots['test_mode_fetch_resources 1'] = {
                                     }
                                 ],
                                 'name': None
+                            }
+                        },
+                        'description': None,
+                        'name': 'op'
+                    }
+                ]
+            },
+            {
+                'name': 'mult_mode',
+                'resources': [
+                    {
+                        'configField': {
+                            'configType': {
+                                'name': 'Int'
                             }
                         },
                         'description': None,

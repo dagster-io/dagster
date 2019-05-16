@@ -95,13 +95,12 @@ class DauphinPipeline(dauphin.ObjectType):
             check.failed('Not a config type or runtime type')
 
     def resolve_modes(self, graphene_info):
-        return sorted(
-            [
-                graphene_info.schema.type_named('Mode')(mode_definition)
-                for mode_definition in self._pipeline.mode_definitions
-            ],
-            key=lambda item: item.name,
-        )
+        return [
+            graphene_info.schema.type_named('Mode')(mode_definition)
+            for mode_definition in sorted(
+                self._pipeline.mode_definitions, key=lambda item: item.name
+            )
+        ]
 
     def resolve_solid_handles(self, _graphene_info):
         return sorted(
@@ -109,10 +108,10 @@ class DauphinPipeline(dauphin.ObjectType):
         )
 
     def resolve_presets(self, _graphene_info):
-        return sorted(
-            [DauphinPipelinePreset(preset) for preset in self._pipeline.get_presets()],
-            key=lambda p: p.name,
-        )
+        return [
+            DauphinPipelinePreset(preset)
+            for preset in sorted(self._pipeline.get_presets(), key=lambda item: item.name)
+        ]
 
 
 class DauphinPipelineConnection(dauphin.ObjectType):
