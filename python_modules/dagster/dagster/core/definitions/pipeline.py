@@ -7,6 +7,7 @@ from .dependency import DependencyDefinition, SolidHandle, SolidInstance
 from .mode import ModeDefinition
 from .pipeline_creation import construct_runtime_type_dictionary
 from .solid import ISolidDefinition
+from .preset import PresetDefinition
 
 
 def _check_solids_arg(pipeline_name, solid_defs):
@@ -95,6 +96,7 @@ class PipelineDefinition(IContainSolids, object):
         context_definitions=None,
         dependencies=None,
         mode_definitions=None,
+        preset_definitions=None,
     ):
         self.name = check.opt_str_param(name, 'name', '<<unnamed>>')
         self.description = check.opt_str_param(description, 'description')
@@ -155,6 +157,19 @@ class PipelineDefinition(IContainSolids, object):
         self._dependency_structure = dependency_structure
 
         self._runtime_type_dict = construct_runtime_type_dictionary(solids)
+
+        self._preset_dict = {}
+        for preset in check.opt_list_param(
+            preset_definitions, 'preset_definitions', PresetDefinition
+        ):
+            if preset.name in self._preset_dict:
+                raise DagsterInvalidDefinitionError(
+                    (
+                        'Two PresetDefinitions seen with the name "{name}" in "{pipeline_name}". '
+                        'PresetDefinitions must have unique names.'
+                    ).format(name=preset.name, pipeline_name=self.name)
+                )
+            self._preset_dict[preset.name] = preset
 
         # Validate solid resource dependencies
         _validate_resource_dependencies(self.context_definitions, self.mode_definitions, solids)
@@ -316,6 +331,29 @@ class PipelineDefinition(IContainSolids, object):
 
     def build_sub_pipeline(self, solid_subset):
         return self if solid_subset is None else _build_sub_pipeline(self, solid_subset)
+
+    def get_presets(self):
+        return list(self._preset_dict.values())
+
+    def get_preset(self, name):
+        check.str_param(name, 'name')
+        if name not in self._preset_dict:
+            raise DagsterInvariantViolationError(
+                (
+                    'Could not find preset for "{name}". Available presets '
+                    'for pipeline "{pipeline_name}" are {preset_names}.'
+                ).format(
+                    name=name, preset_names=list(self._preset_dict.keys()), pipeline_name=self.name
+                )
+            )
+
+        preset = self._preset_dict[name]
+
+        pipeline = self
+        if preset.solid_subset is not None:
+            pipeline = pipeline.build_sub_pipeline(preset.solid_subset)
+
+        return {'pipeline': pipeline, 'environment_dict': preset.environment_dict}
 
 
 def _dep_key_of(solid):

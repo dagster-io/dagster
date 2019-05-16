@@ -1,12 +1,3 @@
 repository:
   file: repo.py
   fn: define_repo
-
-  kwargs:
-    repo_config:
-      pipelines:
-        error_monster:
-          presets:
-            passing:
-              environment_files:
-                - environments/error.yml

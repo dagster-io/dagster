@@ -1,50 +1,49 @@
 import csv
 import logging
-
 from collections import OrderedDict
 from copy import deepcopy
 
 from graphql import graphql
 
 from dagster import (
-    as_dagster_type,
     Any,
-    ExecutionTargetHandle,
     Bool,
+    CompositeSolidDefinition,
     DependencyDefinition,
     Dict,
     Enum,
     EnumValue,
+    ExecutionTargetHandle,
     ExpectationDefinition,
     ExpectationResult,
     Field,
+    Float,
     InputDefinition,
-    input_schema,
     Int,
     List,
-    logger,
     ModeDefinition,
     Nullable,
     OutputDefinition,
-    output_schema,
     Path,
     PipelineDefinition,
+    PresetDefinition,
     RepositoryDefinition,
     SolidDefinition,
     SolidInstance,
-    CompositeSolidDefinition,
-    Float,
     String,
+    as_dagster_type,
+    input_schema,
     lambda_solid,
+    logger,
+    output_schema,
     resource,
     solid,
 )
 from dagster.core.log_manager import coerce_valid_log_level
 from dagster.utils import script_relative_path
-
 from dagster_graphql.implementation.context import DagsterGraphQLContext
-from dagster_graphql.implementation.pipeline_run_storage import PipelineRunStorage
 from dagster_graphql.implementation.pipeline_execution_manager import SynchronousExecutionManager
+from dagster_graphql.implementation.pipeline_run_storage import PipelineRunStorage
 from dagster_graphql.schema import create_schema
 
 
@@ -97,13 +96,9 @@ def execute_dagster_graphql(context, query, variables=None):
     return result
 
 
-# TODO: super lame to pass throught repo_config
-# See https://github.com/dagster-io/dagster/issues/1345
-def define_context(repo_config=None, raise_on_error=True):
+def define_context(raise_on_error=True):
     return DagsterGraphQLContext(
-        exc_target_handle=ExecutionTargetHandle.for_repo_fn(
-            define_repository, kwargs={'repo_config': repo_config}
-        ),
+        exc_target_handle=ExecutionTargetHandle.for_repo_fn(define_repository),
         pipeline_runs=PipelineRunStorage(),
         execution_manager=SynchronousExecutionManager(),
         raise_on_error=raise_on_error,
@@ -169,16 +164,13 @@ def csv_hello_world_solids_config_fs_storage():
     }
 
 
-def define_repository(repo_config=None):
+def define_repository():
     return RepositoryDefinition(
         name='test',
         pipeline_dict={
             'more_complicated_config': define_more_complicated_config,
             'more_complicated_nested_config': define_more_complicated_nested_config,
-            'csv_hello_world': get_define_csv_hello_world('csv_hello_world'),
-            'csv_hello_world_with_presets': get_define_csv_hello_world(
-                'csv_hello_world_with_presets'
-            ),
+            'csv_hello_world': define_csv_hello_world,
             'csv_hello_world_two': define_pipeline_two,
             'csv_hello_world_with_expectations': define_csv_hello_world_with_expectations,
             'pipeline_with_list': define_pipeline_with_list,
@@ -194,7 +186,6 @@ def define_repository(repo_config=None):
             'multi_mode_with_loggers': define_multi_mode_with_loggers_pipeline,
             'composites_pipeline': define_composites_pipeline,
         },
-        repo_config=repo_config,
     )
 
 
@@ -304,14 +295,28 @@ def define_more_complicated_nested_config():
     )
 
 
-def get_define_csv_hello_world(name):
-    return lambda: PipelineDefinition(
-        name=name,
+def define_csv_hello_world():
+    return PipelineDefinition(
+        name='csv_hello_world',
         solids=[sum_solid, sum_sq_solid],
         dependencies={
             'sum_solid': {},
             'sum_sq_solid': {'sum_df': DependencyDefinition(sum_solid.name)},
         },
+        preset_definitions=[
+            PresetDefinition(
+                name='prod',
+                environment_files=[
+                    script_relative_path('../environments/csv_hello_world_prod.yml')
+                ],
+            ),
+            PresetDefinition(
+                name='test',
+                environment_files=[
+                    script_relative_path('../environments/csv_hello_world_test.yml')
+                ],
+            ),
+        ],
     )
 
 

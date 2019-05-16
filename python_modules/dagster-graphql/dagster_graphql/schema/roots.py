@@ -12,7 +12,6 @@ from dagster_graphql.implementation.fetch_pipelines import (
     get_pipeline_or_raise,
     get_pipelines,
     get_pipelines_or_raise,
-    get_pipeline_presets,
 )
 from dagster_graphql.implementation.fetch_runs import (
     get_execution_plan,
@@ -72,11 +71,6 @@ class DauphinQuery(dauphin.ObjectType):
         },
     )
 
-    presetsForPipeline = dauphin.Field(
-        dauphin.List(dauphin.NonNull('PipelinePreset')),
-        args={'pipelineName': dauphin.Argument(dauphin.NonNull('String'))},
-    )
-
     def resolve_configTypeOrError(self, graphene_info, **kwargs):
         return get_config_type(
             graphene_info, kwargs['pipelineName'], kwargs['configTypeName'], kwargs.get('mode')
@@ -113,9 +107,6 @@ class DauphinQuery(dauphin.ObjectType):
 
     def resolve_executionPlan(self, graphene_info, pipeline, config, **kwargs):
         return get_execution_plan(graphene_info, pipeline.to_selector(), config, kwargs.get('mode'))
-
-    def resolve_presetsForPipeline(self, graphene_info, pipelineName):
-        return get_pipeline_presets(graphene_info, pipelineName)
 
 
 class DauphinStepOutputHandle(dauphin.InputObjectType):

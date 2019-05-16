@@ -435,6 +435,7 @@ type Pipeline implements SolidContainer {
   runs: [PipelineRun!]!
   modes: [Mode!]!
   solidHandles: [SolidHandle!]!
+  presets: [PipelinePreset!]!
 }
 
 scalar PipelineConfig
@@ -590,7 +591,6 @@ type Query {
   pipelineRunOrError(runId: ID!): PipelineRunOrError!
   isPipelineConfigValid(pipeline: ExecutionSelector!, config: PipelineConfig, mode: String): PipelineConfigValidationResult!
   executionPlan(pipeline: ExecutionSelector!, config: PipelineConfig, mode: String): ExecutionPlanResult!
-  presetsForPipeline(pipelineName: String!): [PipelinePreset!]
 }
 
 input ReexecutionConfig {

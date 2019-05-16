@@ -19845,7 +19845,7 @@ snapshots['test_build_all_docs 52'] = '''
 <h1>Pipelines<a class="headerlink" href="#pipelines" title="Permalink to this headline">¶</a></h1>
 <dl class="class">
 <dt id="dagster.PipelineDefinition">
-<em class="property">class </em><code class="descclassname">dagster.</code><code class="descname">PipelineDefinition</code><span class="sig-paren">(</span><em>solids</em>, <em>name=None</em>, <em>description=None</em>, <em>context_definitions=None</em>, <em>dependencies=None</em>, <em>mode_definitions=None</em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dagster/core/definitions/pipeline.html#PipelineDefinition"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dagster.PipelineDefinition" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">dagster.</code><code class="descname">PipelineDefinition</code><span class="sig-paren">(</span><em>solids</em>, <em>name=None</em>, <em>description=None</em>, <em>context_definitions=None</em>, <em>dependencies=None</em>, <em>mode_definitions=None</em>, <em>preset_definitions=None</em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dagster/core/definitions/pipeline.html#PipelineDefinition"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dagster.PipelineDefinition" title="Permalink to this definition">¶</a></dt>
 <dd><p>A instance of a PipelineDefinition represents a pipeline in dagster.</p>
 <p>A pipeline is comprised of:</p>
 <ul class="simple">
@@ -20381,7 +20381,7 @@ schema for this data is defined by <code class="docutils literal notranslate"><s
 <h1>Repositories<a class="headerlink" href="#repositories" title="Permalink to this headline">¶</a></h1>
 <dl class="class">
 <dt id="dagster.RepositoryDefinition">
-<em class="property">class </em><code class="descclassname">dagster.</code><code class="descname">RepositoryDefinition</code><span class="sig-paren">(</span><em>name</em>, <em>pipeline_dict</em>, <em>repo_config=None</em>, <em>enforce_solid_def_uniqueness=True</em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dagster/core/definitions/repository.html#RepositoryDefinition"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dagster.RepositoryDefinition" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">dagster.</code><code class="descname">RepositoryDefinition</code><span class="sig-paren">(</span><em>name</em>, <em>pipeline_dict</em>, <em>enforce_solid_def_uniqueness=True</em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dagster/core/definitions/repository.html#RepositoryDefinition"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dagster.RepositoryDefinition" title="Permalink to this definition">¶</a></dt>
 <dd><p>Define a repository that contains a collection of pipelines.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>

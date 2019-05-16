@@ -36,10 +36,12 @@ from .materialization import Materialization
 
 from .mode import ModeDefinition
 
-from .repository import RepositoryDefinition, PipelinePreset
+from .repository import RepositoryDefinition
 
 from .pipeline import PipelineDefinition
 
 from .container import solids_in_topological_order, create_execution_structure, IContainSolids
 
 from .solid import SolidDefinition, ISolidDefinition, CompositeSolidDefinition
+
+from .preset import PresetDefinition

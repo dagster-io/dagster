@@ -81,14 +81,3 @@ def _pipeline_or_error_from_repository(graphene_info, selector):
         pipeline = orig_pipeline.build_sub_pipeline(selector.solid_subset)
 
         return EitherValue(graphene_info.schema.type_named('Pipeline')(pipeline))
-
-
-def get_pipeline_presets(graphene_info, pipeline_name):
-    repo = graphene_info.context.exc_target_handle.build_repository_definition()
-
-    return [
-        graphene_info.schema.type_named('PipelinePreset')(preset)
-        for preset in sorted(
-            repo.get_presets_for_pipeline(pipeline_name).values(), key=lambda p: p.name
-        )
-    ]

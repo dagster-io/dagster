@@ -17,6 +17,7 @@ from dagster.core.definitions import (
     SolidDefinition,
     CompositeSolidDefinition,
     SolidInstance,
+    PresetDefinition,
 )
 
 # These specific imports are to avoid circular import issues

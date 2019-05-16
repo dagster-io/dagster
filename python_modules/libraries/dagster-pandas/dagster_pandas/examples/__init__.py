@@ -11,6 +11,7 @@ from dagster import (
     OutputDefinition,
     PipelineDefinition,
     RepositoryDefinition,
+    PresetDefinition,
     execute_pipeline,
     types,
 )
@@ -51,4 +52,12 @@ def define_papermill_pandas_hello_world_pipeline():
     return PipelineDefinition(
         name='papermill_pandas_hello_world_pipeline',
         solids=[define_papermill_pandas_hello_world_solid()],
+        preset_definitions=[
+            PresetDefinition(
+                'test', environment_files=['environments/papermill_pandas_hello_world_test.yml']
+            ),
+            PresetDefinition(
+                'prod', environment_files=['environments/papermill_pandas_hello_world_prod.yml']
+            ),
+        ],
     )

@@ -1,27 +1,21 @@
-context:
-  errorable_context:
+resources:
+  errorable_resource:
     config:
-      throw_on_context_init: false
-    resources:
-      errorable_resource:
-        config:
-          throw_on_resource_init: false
+      throw_on_resource_init: false
+
+expectations:
+  evaluate: false
 
 solids:
   end:
     config:
-      throw_in_solid: false
       return_wrong_type: false
-
+      throw_in_solid: false
   middle:
     config:
-      throw_in_solid: false
       return_wrong_type: false
-
+      throw_in_solid: false
   start:
     config:
-      throw_in_solid: false
       return_wrong_type: false
-
-expectations:
-  evaluate: false
+      throw_in_solid: false
