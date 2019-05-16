@@ -75,5 +75,4 @@ jobs:
       - run:
           name: Clean Phabricator Tags
           command: |
-            git fetch -p -P origin
             git tag | grep phabricator | xargs git push -d origin
