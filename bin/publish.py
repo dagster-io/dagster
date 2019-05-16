@@ -410,7 +410,7 @@ def check_git_status():
         )
 
 
-def check_for_cruft():
+def check_for_cruft(autoclean):
     CRUFTY_DIRECTORIES = ['.tox', 'build', 'dist', '*.egg-info', '__pycache__', '.pytest_cache']
     found_cruft = []
     for module_name in MODULE_NAMES:
@@ -430,14 +430,17 @@ def check_for_cruft():
                     )
 
     if found_cruft:
-        wipeout = input(
-            'Found potentially crufty directories:\n'
-            '    {found_cruft}'
-            'We strongly recommend releasing from a fresh git clone!\n'
-            'Automatically remove these directories and continue? (Y/n)'.format(
-                found_cruft='\n    '.join(found_cruft)
+        if autoclean:
+            wipeout = 'Y'
+        else:
+            wipeout = input(
+                'Found potentially crufty directories:\n'
+                '    {found_cruft}'
+                'We strongly recommend releasing from a fresh git clone!\n'
+                'Automatically remove these directories and continue? (Y/n)'.format(
+                    found_cruft='\n    '.join(found_cruft)
+                )
             )
-        )
         if wipeout == 'Y':
             for cruft_dir in found_cruft:
                 subprocess.check_output(['rm', '-rfv', cruft_dir])
@@ -455,13 +458,16 @@ def check_for_cruft():
                 found_pyc_files.append(os.path.join(root, file_))
 
     if found_pyc_files:
-        wipeout = input(
-            'Found {n_files} .pyc files.\n'
-            'We strongly recommend releasing from a fresh git clone!\n'
-            'Automatically remove these files and continue? (Y/n)'.format(
-                n_files=len(found_pyc_files)
+        if autoclean:
+            wipeout = 'Y'
+        else:
+            wipeout = input(
+                'Found {n_files} .pyc files.\n'
+                'We strongly recommend releasing from a fresh git clone!\n'
+                'Automatically remove these files and continue? (Y/n)'.format(
+                    n_files=len(found_pyc_files)
+                )
             )
-        )
         if wipeout == 'Y':
             for file_ in found_pyc_files:
                 os.unlink(file_)
@@ -616,7 +622,8 @@ def cli():
 
 @cli.command()
 @click.option('--nightly', is_flag=True)
-def publish(nightly):
+@click.option('--autoclean', is_flag=True)
+def publish(nightly, autoclean):
     """Publishes (uploads) all submodules to PyPI.
 
     Appropriate credentials must be available to twine, e.g. in a ~/.pypirc file, and users must
@@ -651,7 +658,7 @@ def publish(nightly):
         print('... and match git tag on most recent commit...')
         check_git_status()
     print('... and that there is no cruft present...')
-    check_for_cruft()
+    check_for_cruft(autoclean)
     print('... and that the directories look like we expect')
     check_directory_structure()
 
