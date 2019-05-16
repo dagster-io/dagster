@@ -8,7 +8,6 @@ from dagster.core.definitions import (
     ExpectationResult,
     InputDefinition,
     OutputDefinition,
-    PipelineContextDefinition,
     PipelineDefinition,
     RepositoryDefinition,
     Result,
@@ -37,9 +36,7 @@ from dagster.core.execution.config import (
 
 from dagster.core.execution.context_creation_pipeline import PipelineConfigEvaluationError
 
-from dagster.core.execution.context.init import InitContext, InitResourceContext
-
-from dagster.core.execution.context.execution import ExecutionContext
+from dagster.core.execution.context.init import InitResourceContext
 
 from dagster.core.execution.context.logger import InitLoggerContext
 
@@ -110,7 +107,6 @@ __all__ = [
     'Materialization',
     'ModeDefinition',
     'OutputDefinition',
-    'PipelineContextDefinition',
     'PipelineDefinition',
     'RepositoryDefinition',
     'ResourceDefinition',
@@ -127,8 +123,6 @@ __all__ = [
     'execute_pipeline_iterator',
     'execute_pipeline',
     'DagsterEventType',
-    'ExecutionContext',
-    'InitContext',
     'InitLoggerContext',
     'InitResourceContext',
     'InProcessExecutorConfig',

@@ -3,7 +3,7 @@ import { Button, Menu, MenuItem } from "@blueprintjs/core";
 import { Select } from "@blueprintjs/select";
 import { PipelineExecutionContainerFragment } from "./types/PipelineExecutionContainerFragment";
 
-interface ConfigEditorModePickerProps {
+interface IConfigEditorModePickerProps {
   pipeline: PipelineExecutionContainerFragment;
   modeName: string | null;
   onModeChange: (mode: string) => void;
@@ -15,19 +15,27 @@ interface Mode {
 
 const ModeSelect = Select.ofType<Mode>();
 
-export default class ConfigEditorModePicker extends React.Component<
-  ConfigEditorModePickerProps
+export default class ConfigEditorModePicker extends React.PureComponent<
+  IConfigEditorModePickerProps
 > {
   render() {
+    const singleMode = this.props.pipeline.modes.length == 1;
     const currentMode = this.props.modeName
       ? this.props.pipeline.modes.find(m => m.name == this.props.modeName)
+      : singleMode
+      ? this.props.pipeline.modes[0]
       : null;
+
+    if (currentMode) {
+      this.props.onModeChange(currentMode.name);
+    }
 
     return (
       <div>
         <ModeSelect
           activeItem={currentMode}
           filterable={true}
+          disabled={singleMode}
           items={this.props.pipeline.modes}
           itemPredicate={(query, mode) =>
             query.length === 0 || mode.name.includes(query)
@@ -44,6 +52,7 @@ export default class ConfigEditorModePicker extends React.Component<
         >
           <Button
             text={currentMode ? "Mode: " + currentMode.name : "Select Mode"}
+            disabled={singleMode}
             icon="insert"
             rightIcon="caret-down"
           />

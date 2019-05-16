@@ -499,7 +499,7 @@ def define_multi_mode_with_loggers_pipeline():
 
     @solid
     def return_six(context):
-        context.critical('OMG!')
+        context.log.critical('OMG!')
         return 6
 
     return PipelineDefinition(

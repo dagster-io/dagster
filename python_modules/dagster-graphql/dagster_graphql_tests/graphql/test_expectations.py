@@ -25,7 +25,9 @@ def get_expectation_result(logs, solid_name):
 
 
 def test_basic_expectations_within_transforms():
-    logs = sync_execute_get_events(variables={'pipeline': {'name': 'pipeline_with_expectations'}})
+    logs = sync_execute_get_events(
+        variables={'pipeline': {'name': 'pipeline_with_expectations'}, 'mode': 'default'}
+    )
 
     emit_failed_expectation_event = get_expectation_result(logs, 'emit_failed_expectation')
     assert emit_failed_expectation_event['expectationResult']['success'] is False
@@ -62,6 +64,7 @@ def test_basic_input_output_expectations(snapshot):
                     'sum_solid': {'inputs': {'num': script_relative_path('../data/num.csv')}}
                 }
             },
+            'mode': 'default',
         }
     )
 

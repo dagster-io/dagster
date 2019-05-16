@@ -82,8 +82,8 @@ def test_basic_variables():
 
 
 START_PIPELINE_EXECUTION_QUERY = '''
-mutation ($pipeline: ExecutionSelector!, $config: PipelineConfig) {
-    startPipelineExecution(pipeline: $pipeline, config: $config) {
+mutation ($pipeline: ExecutionSelector!, $config: PipelineConfig, $mode: String!) {
+    startPipelineExecution(pipeline: $pipeline, config: $config, mode: $mode) {
         __typename
         ... on StartPipelineExecutionSuccess {
             run {
@@ -120,6 +120,7 @@ def test_start_execution():
         {
             "pipeline": {"name": "math"},
             "config": {"solids": {"add_one": {"inputs": {"num": {"value": 123}}}}},
+            "mode": "default",
         }
     )
 

@@ -10,9 +10,7 @@ class InitLoggerContext(
     namedtuple('InitLoggerContext', 'logger_config pipeline_def logger_def run_id')
 ):
     '''
-    Similar to InitContext, but is logger-specific. It includes all the properties
-    in the InitContext, plus the logger config and the logger definition.
-
+    Logger-specific initialization context.
 
     Attributes:
         logger_config (Any): The configuration data provided by the environment config. The

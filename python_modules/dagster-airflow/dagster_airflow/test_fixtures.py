@@ -42,7 +42,7 @@ def dagster_airflow_python_operator_pipeline(request):
     config = getattr(request.cls, 'config', None)
     config_yaml = getattr(request.cls, 'config_yaml', None)
     op_kwargs = getattr(request.cls, 'op_kwargs', {})
-    mode = getattr(request.cls, 'mode', 'default')
+    mode = getattr(request.cls, 'mode', None)
 
     if config is None and config_yaml is not None:
         config = load_yaml_from_glob_list(config_yaml)

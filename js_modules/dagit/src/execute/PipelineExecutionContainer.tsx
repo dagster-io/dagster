@@ -153,7 +153,7 @@ export default class PipelineExecutionContainer extends React.Component<
 
   buildExecutionVariables = () => {
     const { currentSession, pipeline } = this.props;
-    if (!currentSession || !pipeline) return;
+    if (!currentSession || !pipeline || !currentSession.mode) return;
 
     let config = {};
     try {
@@ -225,7 +225,20 @@ export default class PipelineExecutionContainer extends React.Component<
                     onConfigChange={this.onConfigChange}
                     checkConfig={async config => {
                       if (!pipeline) return { isValid: true };
-
+                      if (!currentSession.mode) {
+                        return {
+                          isValid: false,
+                          errors: [
+                            // FIXME this should be specific -- we should have an enumerated
+                            // validation error when there is no mode provided
+                            {
+                              message: "Must specify a mode",
+                              path: ["root"],
+                              reason: "MISSING_REQUIRED_FIELD"
+                            }
+                          ]
+                        };
+                      }
                       const { data } = await client.query<
                         PreviewConfigQuery,
                         PreviewConfigQueryVariables
@@ -238,7 +251,7 @@ export default class PipelineExecutionContainer extends React.Component<
                             name: pipeline.name,
                             solidSubset: currentSession.solidSubset
                           },
-                          mode: currentSession.mode
+                          mode: currentSession.mode || "default"
                         }
                       });
 
@@ -259,13 +272,13 @@ export default class PipelineExecutionContainer extends React.Component<
                   onChange={this.onSolidSubsetChange}
                 />
 
-                {pipeline && pipeline.modes.length ? ( // only render if modes for now
+                {pipeline && (
                   <ConfigEditorModePicker
                     pipeline={pipeline}
                     onModeChange={this.onModeChange}
                     modeName={currentSession.mode}
                   />
-                ) : null}
+                )}
               </SessionSettingsFooter>
             </Split>
             <PanelDivider
@@ -295,7 +308,7 @@ const START_PIPELINE_EXECUTION_MUTATION = gql`
   mutation StartPipelineExecution(
     $pipeline: ExecutionSelector!
     $config: PipelineConfig!
-    $mode: String
+    $mode: String!
   ) {
     startPipelineExecution(pipeline: $pipeline, config: $config, mode: $mode) {
       __typename
@@ -321,7 +334,7 @@ const PREVIEW_CONFIG_QUERY = gql`
   query PreviewConfigQuery(
     $pipeline: ExecutionSelector!
     $config: PipelineConfig!
-    $mode: String
+    $mode: String!
   ) {
     isPipelineConfigValid(pipeline: $pipeline, config: $config, mode: $mode) {
       ...ConfigEditorValidationFragment

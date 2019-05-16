@@ -12,7 +12,6 @@ from dagster import (
     logger,
     ModeDefinition,
     PipelineConfigEvaluationError,
-    PipelineContextDefinition,
     PipelineDefinition,
     resource,
     RunConfig,
@@ -66,14 +65,6 @@ def test_wrong_single_mode():
             .transformed_value()
             == 2
         )
-
-
-def test_context():
-    PipelineDefinition(
-        name='both_context_and_resources',
-        solids=[],
-        context_definitions={'some_context': PipelineContextDefinition()},
-    )
 
 
 def test_mode_double_default_name():

@@ -2,7 +2,7 @@ START_PIPELINE_EXECUTION_QUERY = '''
 mutation (
     $pipeline: ExecutionSelector!,
     $config: PipelineConfig,
-    $mode: String,
+    $mode: String!,
     $stepKeys: [String!],
     $executionMetadata: ExecutionMetadata,
     $reexecutionConfig: ReexecutionConfig
@@ -66,12 +66,14 @@ mutation (
     $pipeline: ExecutionSelector!,
     $config: PipelineConfig,
     $stepKeys: [String!],
+    $mode: String!,
     $executionMetadata: ExecutionMetadata,
     $reexecutionConfig: ReexecutionConfig
 ) {
     startPipelineExecution(
         pipeline: $pipeline,
         config: $config,
+        mode: $mode,
         stepKeys: $stepKeys,
         executionMetadata: $executionMetadata,
         reexecutionConfig: $reexecutionConfig

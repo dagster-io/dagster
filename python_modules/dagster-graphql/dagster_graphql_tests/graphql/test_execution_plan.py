@@ -15,8 +15,8 @@ from .setup import (
 
 
 EXECUTION_PLAN_QUERY = '''
-query PipelineQuery($config: PipelineConfig, $pipeline: ExecutionSelector!) {
-  executionPlan(config: $config, pipeline: $pipeline) {
+query PipelineQuery($config: PipelineConfig, $pipeline: ExecutionSelector!, $mode: String!) {
+  executionPlan(config: $config, pipeline: $pipeline, mode: $mode) {
     __typename
     ... on ExecutionPlan {
       pipeline { name }
@@ -58,12 +58,14 @@ mutation (
     $pipelineName: String!
     $config: PipelineConfig
     $stepKeys: [String!]
+    $mode: String!
     $executionMetadata: ExecutionMetadata
 ) {
     executePlan(
         pipelineName: $pipelineName
         config: $config
         stepKeys: $stepKeys
+        mode: $mode
         executionMetadata: $executionMetadata
     ) {
         __typename
@@ -130,6 +132,7 @@ def test_success_whole_execution_plan(snapshot):
             'config': csv_hello_world_solids_config_fs_storage(),
             'stepKeys': None,
             'executionMetadata': {'runId': run_id},
+            'mode': 'default',
         },
     )
 
@@ -159,6 +162,7 @@ def test_success_whole_execution_plan_with_filesystem_config(snapshot):
             'config': merge_dicts(csv_hello_world_solids_config(), {'storage': {'filesystem': {}}}),
             'stepKeys': None,
             'executionMetadata': {'runId': run_id},
+            'mode': 'default',
         },
     )
 
@@ -188,6 +192,7 @@ def test_success_whole_execution_plan_with_in_memory_config(snapshot):
             'config': merge_dicts(csv_hello_world_solids_config(), {'storage': {'in_memory': {}}}),
             'stepKeys': None,
             'executionMetadata': {'runId': run_id},
+            'mode': 'default',
         },
     )
 
@@ -217,6 +222,7 @@ def test_successful_one_part_execute_plan(snapshot):
             'config': csv_hello_world_solids_config_fs_storage(),
             'stepKeys': ['sum_solid.inputs.num.read', 'sum_solid.transform'],
             'executionMetadata': {'runId': run_id},
+            'mode': 'default',
         },
     )
 
@@ -257,6 +263,7 @@ def test_successful_two_part_execute_plan(snapshot):
             'config': csv_hello_world_solids_config_fs_storage(),
             'stepKeys': ['sum_solid.inputs.num.read', 'sum_solid.transform'],
             'executionMetadata': {'runId': run_id},
+            'mode': 'default',
         },
     )
 
@@ -272,6 +279,7 @@ def test_successful_two_part_execute_plan(snapshot):
             'config': csv_hello_world_solids_config_fs_storage(),
             'stepKeys': ['sum_sq_solid.transform'],
             'executionMetadata': {'runId': run_id},
+            'mode': 'default',
         },
     )
 
@@ -314,6 +322,7 @@ def test_invalid_config_execute_plan(snapshot):
                 'sum_sq_solid.transform',
             ],
             'executionMetadata': {'runId': 'kdjkfjdfd'},
+            'mode': 'default',
         },
     )
 
@@ -337,6 +346,7 @@ def test_pipeline_not_found_error_execute_plan(snapshot):
                 'sum_sq_solid.transform',
             ],
             'executionMetadata': {'runId': 'kdjkfjdfd'},
+            'mode': 'default',
         },
     )
 
@@ -350,7 +360,11 @@ def test_pipeline_with_execution_metadata(snapshot):
     result = execute_dagster_graphql(
         define_context(),
         EXECUTION_PLAN_QUERY,
-        variables={'pipeline': {'name': 'pipeline_with_step_metadata'}, 'config': environment_dict},
+        variables={
+            'pipeline': {'name': 'pipeline_with_step_metadata'},
+            'config': environment_dict,
+            'mode': 'default',
+        },
     )
 
     steps_data = result.data['executionPlan']['steps']
@@ -378,7 +392,11 @@ def test_basic_execute_plan_with_materialization():
         result = execute_dagster_graphql(
             define_context(),
             EXECUTION_PLAN_QUERY,
-            variables={'pipeline': {'name': 'csv_hello_world'}, 'config': environment_dict},
+            variables={
+                'pipeline': {'name': 'csv_hello_world'},
+                'config': environment_dict,
+                'mode': 'default',
+            },
         )
 
         steps_data = result.data['executionPlan']['steps']
@@ -405,6 +423,7 @@ def test_basic_execute_plan_with_materialization():
                     'sum_sq_solid.transform',
                 ],
                 'executionMetadata': {'runId': 'kdjkfjdfd'},
+                'mode': 'default',
             },
         )
 

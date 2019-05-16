@@ -17,15 +17,6 @@ Pipelines
 Contexts, Resources, and Logging
 ================================
 
-.. autoclass:: PipelineContextDefinition
-    :members:
-
-.. autoclass:: InitContext
-    :members:
-
-.. autoclass:: ExecutionContext
-    :members:
-
 .. autoclass:: ResourceDefinition
     :members:
 

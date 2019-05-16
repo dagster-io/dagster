@@ -93,10 +93,6 @@ class DagsterExecutionStepExecutionError(DagsterUserCodeExecutionError):
         super(DagsterExecutionStepExecutionError, self).__init__(*args, **kwargs)
 
 
-class DagsterContextFunctionError(DagsterUserCodeExecutionError):
-    '''Indicates an error occured during the body of context_fn in a PipelineContextDefinition'''
-
-
 class DagsterResourceFunctionError(DagsterUserCodeExecutionError):
     '''Indicates an error occured during the body of resource_fn in a ResourceDefinition'''
 

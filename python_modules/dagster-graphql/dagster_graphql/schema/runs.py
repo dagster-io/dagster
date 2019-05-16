@@ -28,6 +28,7 @@ class DauphinPipelineRun(dauphin.ObjectType):
     logs = dauphin.NonNull('LogMessageConnection')
     executionPlan = dauphin.NonNull('ExecutionPlan')
     config = dauphin.NonNull(dauphin.String)
+    mode = dauphin.NonNull(dauphin.String)
 
     def __init__(self, pipeline_run):
         super(DauphinPipelineRun, self).__init__(

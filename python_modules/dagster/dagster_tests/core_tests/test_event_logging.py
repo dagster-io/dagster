@@ -48,9 +48,7 @@ def test_empty_pipeline():
         name='empty_pipeline', solids=[], mode_definitions=[mode_def(_event_callback)]
     )
 
-    result = execute_pipeline(
-        pipeline_def, {'loggers': {'callback': {}, 'console': {}}}, RunConfig(mode='default')
-    )
+    result = execute_pipeline(pipeline_def, {'loggers': {'callback': {}, 'console': {}}})
     assert result.success
     assert events
 
@@ -81,9 +79,7 @@ def test_single_solid_pipeline_success():
         mode_definitions=[mode_def(_event_callback)],
     )
 
-    result = execute_pipeline(
-        pipeline_def, {'loggers': {'callback': {}}}, RunConfig(mode='default')
-    )
+    result = execute_pipeline(pipeline_def, {'loggers': {'callback': {}}})
     assert result.success
     assert events
 
@@ -126,9 +122,7 @@ def test_single_solid_pipeline_failure():
     result = execute_pipeline(
         pipeline_def,
         {'loggers': {'callback': {}}},
-        run_config=RunConfig(
-            executor_config=InProcessExecutorConfig(raise_on_error=False), mode='default'
-        ),
+        run_config=RunConfig(executor_config=InProcessExecutorConfig(raise_on_error=False)),
     )
     assert not result.success
 

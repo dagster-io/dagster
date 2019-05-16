@@ -40,14 +40,6 @@ def check_run_config_param(run_config, pipeline_def):
     check.inst_param(pipeline_def, 'pipeline_def', PipelineDefinition)
 
     if run_config and run_config.mode:
-        if pipeline_def.is_modeless:
-            raise DagsterInvariantViolationError(
-                (
-                    'You have attempted to execute pipeline {name} with mode {mode} '
-                    'when it has no modes defined'
-                ).format(name=pipeline_def.name, mode=run_config.mode)
-            )
-
         if not pipeline_def.has_mode_definition(run_config.mode):
             raise DagsterInvariantViolationError(
                 (
@@ -58,7 +50,7 @@ def check_run_config_param(run_config, pipeline_def):
                 )
             )
     else:
-        if not (pipeline_def.is_modeless or pipeline_def.is_single_mode):
+        if not pipeline_def.is_single_mode:
             raise DagsterInvariantViolationError(
                 (
                     'Pipeline {name} has multiple modes (Avaiable modes: {modes}) and you have '

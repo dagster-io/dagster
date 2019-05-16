@@ -9,12 +9,11 @@ from dagster import check
 from dagster.core.definitions import PipelineDefinition, create_environment_type
 from dagster.core.definitions.environment_configs import construct_environment_config
 from dagster.core.definitions.mode import ModeDefinition
-from dagster.core.definitions.resource import ResourcesBuilder, ResourcesSource
+from dagster.core.definitions.resource import ResourcesBuilder
 from dagster.core.errors import (
     DagsterError,
     DagsterInvariantViolationError,
     DagsterUserCodeExecutionError,
-    DagsterContextFunctionError,
     DagsterResourceFunctionError,
     user_code_error_boundary,
 )
@@ -45,11 +44,9 @@ from dagster.utils import merge_dicts
 from dagster.utils.error import serializable_error_info_from_exc_info
 
 from .config import RunConfig
-from .context.execution import ExecutionContext
-from .context.init import InitContext, InitResourceContext
+from .context.init import InitResourceContext
 from .context.system import SystemPipelineExecutionContextData, SystemPipelineExecutionContext
 from .context.logger import InitLoggerContext
-from .resource_creation_adapter import ResourceCreationAdapter
 
 
 class PipelineConfigEvaluationError(Exception):
@@ -78,7 +75,7 @@ class PipelineConfigEvaluationError(Exception):
 def create_environment_config(pipeline, environment_dict=None, mode=None):
     check.inst_param(pipeline, 'pipeline', PipelineDefinition)
     check.opt_dict_param(environment_dict, 'environment')
-    check.opt_str_param(mode, 'mode')
+    mode = check.opt_str_param(mode, 'mode', default=pipeline.get_default_mode_name())
 
     environment_type = create_environment_type(pipeline, mode)
 
@@ -144,70 +141,28 @@ def scoped_pipeline_context(pipeline_def, environment_config, run_config, interm
         )
     )
 
-    init_context = InitContext(
-        context_config=environment_config.context.config if environment_config.context else {},
-        pipeline_def=pipeline_def,
-        run_id=run_config.run_id,
-    )
-
     try:
-
-        context_definition = (
-            pipeline_def.context_definitions[environment_config.context.name]
-            if environment_config.context
-            else None
+        loggers = _create_loggers(
+            environment_config,
+            run_config,
+            pipeline_def,
+            pipeline_def.get_mode_definition(run_config.mode),
         )
+        log_manager = DagsterLogManager(run_id=run_config.run_id, logging_tags={}, loggers=loggers)
 
-        with user_code_context_manager(
-            lambda: (
-                context_definition.context_fn(init_context)
-                if context_definition
-                # hardcoded default for now until we have top-level logging as well
-                else ExecutionContext()
-            ),
-            DagsterContextFunctionError,
-            'Error executing context_fn on ContextDefinition {name}'.format(
-                name=environment_config.context.name if environment_config.context else 'NOCONTEXT'
-            ),
-        ) as execution_context:
-            check.inst(execution_context, ExecutionContext)
+        with _create_resources(
+            pipeline_def, environment_config, run_config, log_manager
+        ) as resources:
 
-            loggers = _create_loggers(
-                environment_config,
+            yield construct_pipeline_execution_context(
                 run_config,
-                execution_context,
                 pipeline_def,
-                pipeline_def.get_mode_definition(run_config.mode),
-            )
-            log_manager = DagsterLogManager(
-                run_id=run_config.run_id, logging_tags={}, loggers=loggers
-            )
-
-            resource_creation_adapter = ResourceCreationAdapter(
-                execution_context=execution_context,
-                context_definition=context_definition,
-                mode_definition=pipeline_def.get_mode_definition(run_config.mode),
-                environment_config=environment_config,
-            )
-
-            with _create_resources(
-                pipeline_def,
-                resource_creation_adapter,
+                resources,
                 environment_config,
-                run_config.run_id,
+                run_storage,
+                intermediates_manager,
                 log_manager,
-            ) as resources:
-
-                yield construct_pipeline_execution_context(
-                    run_config,
-                    execution_context,
-                    pipeline_def,
-                    resources,
-                    environment_config,
-                    run_storage,
-                    intermediates_manager,
-                    log_manager,
-                )
+            )
 
     except DagsterError as dagster_error:
         user_facing_exc_info = (
@@ -225,7 +180,7 @@ def scoped_pipeline_context(pipeline_def, environment_config, run_config, interm
         yield DagsterEvent.pipeline_init_failure(
             pipeline_name=pipeline_def.name,
             failure_data=PipelineInitFailureData(error=error_info),
-            log_manager=_create_context_free_log_manager(init_context, run_config, pipeline_def),
+            log_manager=_create_context_free_log_manager(run_config, pipeline_def),
         )
 
 
@@ -249,7 +204,6 @@ def yield_pipeline_execution_context(pipeline_def, environment_dict, run_config)
 
 def construct_pipeline_execution_context(
     run_config,
-    execution_context,
     pipeline_def,
     resources,
     environment_config,
@@ -258,7 +212,6 @@ def construct_pipeline_execution_context(
     log_manager,
 ):
     check.inst_param(run_config, 'run_config', RunConfig)
-    check.inst_param(execution_context, 'execution_context', ExecutionContext)
     check.inst_param(pipeline_def, 'pipeline', PipelineDefinition)
     check.opt_inst_param(resources, 'resources', ResourcesBuilder)
     check.inst_param(environment_config, 'environment_config', EnvironmentConfig)
@@ -266,7 +219,7 @@ def construct_pipeline_execution_context(
     check.inst_param(intermediates_manager, 'intermediates_manager', IntermediatesManager)
     check.inst_param(log_manager, 'log_manager', DagsterLogManager)
 
-    logging_tags = get_logging_tags(execution_context, run_config, pipeline_def)
+    logging_tags = get_logging_tags(run_config, pipeline_def)
     log_manager.logging_tags = logging_tags
 
     return SystemPipelineExecutionContext(
@@ -284,32 +237,21 @@ def construct_pipeline_execution_context(
 
 
 @contextmanager
-def _create_resources(pipeline_def, resource_creation_adapter, environment, run_id, log_manager):
-    check.inst_param(
-        resource_creation_adapter, 'resource_creation_adapter', ResourceCreationAdapter
-    )
-
-    if resource_creation_adapter.is_resource_override:
-        yield ResourcesBuilder(
-            resource_creation_adapter.get_override_resources(),
-            ResourcesSource.CUSTOM_EXECUTION_CONTEXT,
-        )
-        return
-
+def _create_resources(pipeline_def, environment_config, run_config, log_manager):
     resources = {}
 
+    mode_definition = pipeline_def.get_mode_definition(run_config.mode)
     # See https://bit.ly/2zIXyqw
     # The "ExitStack" allows one to stack up N context managers and then yield
     # something. We do this so that resources can cleanup after themselves. We
     # can potentially have many resources so we need to use this abstraction.
     with ExitStack() as stack:
-        for resource_name, resource_def in resource_creation_adapter.resource_defs.items():
+        for resource_name, resource_def in mode_definition.resource_defs.items():
             user_fn = _create_resource_fn_lambda(
                 pipeline_def,
                 resource_def,
-                resource_creation_adapter.get_resource_config(resource_name),
-                environment,
-                run_id,
+                environment_config.resources.get(resource_name, {}).get('config'),
+                run_config.run_id,
                 log_manager,
             )
 
@@ -324,17 +266,14 @@ def _create_resources(pipeline_def, resource_creation_adapter, environment, run_
             )
 
             resources[resource_name] = resource_obj
-        yield ResourcesBuilder(resources, ResourcesSource.PIPELINE_CONTEXT_DEF)
+        yield ResourcesBuilder(resources)
 
 
-def _create_resource_fn_lambda(
-    pipeline_def, resource_def, resource_config, environment, run_id, log_manager
-):
+def _create_resource_fn_lambda(pipeline_def, resource_def, resource_config, run_id, log_manager):
     return lambda: resource_def.resource_fn(
         InitResourceContext(
             pipeline_def=pipeline_def,
             resource_def=resource_def,
-            context_config=environment.context.config if environment.context else None,
             resource_config=resource_config,
             run_id=run_id,
             log_manager=log_manager,
@@ -409,19 +348,14 @@ def construct_intermediates_manager(run_config, environment_config, pipeline_def
         )
 
 
-def _create_loggers(environment_config, run_config, execution_context, pipeline_def, mode_def):
+def _create_loggers(environment_config, run_config, pipeline_def, mode_def):
     check.inst_param(environment_config, 'environment_config', EnvironmentConfig)
     check.inst_param(run_config, 'run_config', RunConfig)
-    check.inst_param(execution_context, 'execution_context', ExecutionContext)
     check.inst_param(pipeline_def, 'pipeline_def', PipelineDefinition)
-    check.opt_inst_param(mode_def, 'mode_def', ModeDefinition)
+    check.inst_param(mode_def, 'mode_def', ModeDefinition)
 
     loggers = []
-    # The following can be simplified after we drop context_definitions and can guarantee
-    # that at least one mode exists on a PipelineDefinition
-    for logger_key, logger_def in (
-        mode_def.loggers.items() if mode_def and mode_def.loggers else execution_context.loggers
-    ) or default_loggers().items():
+    for logger_key, logger_def in mode_def.loggers.items() or default_loggers().items():
         if logger_key in environment_config.loggers:
             loggers.append(
                 logger_def.logger_fn(
@@ -455,15 +389,13 @@ def _create_loggers(environment_config, run_config, execution_context, pipeline_
     return loggers
 
 
-def _create_context_free_log_manager(init_context, run_config, pipeline_def):
+def _create_context_free_log_manager(run_config, pipeline_def):
     '''In the event of pipeline initialization failure, we want to be able to log the failure
     without a dependency on the ExecutionContext to initialize DagsterLogManager.
     Args:
-        init_context (dagster.core.init_context.InitContext)
         run_config (dagster.core.execution_context.RunConfig)
         pipeline_def (dagster.definitions.PipelineDefinition)
     '''
-    check.inst_param(init_context, 'init_context', InitContext)
     check.inst_param(run_config, 'run_config', RunConfig)
     check.inst_param(pipeline_def, 'pipeline_def', PipelineDefinition)
 
@@ -485,9 +417,7 @@ def _create_context_free_log_manager(init_context, run_config, pipeline_def):
     elif run_config.loggers:
         loggers += run_config.loggers
 
-    return DagsterLogManager(
-        run_config.run_id, get_logging_tags(None, run_config, pipeline_def), loggers
-    )
+    return DagsterLogManager(run_config.run_id, get_logging_tags(run_config, pipeline_def), loggers)
 
 
 def _ensure_gen(thing_or_gen):
@@ -530,28 +460,8 @@ def user_code_context_manager(user_fn, error_cls, msg):
         check.invariant(stopped, 'Must yield one item. Yielded more than one item')
 
 
-def get_logging_tags(user_context_params, run_config, pipeline):
-    check.opt_inst_param(user_context_params, 'user_context_params', ExecutionContext)
+def get_logging_tags(run_config, pipeline):
     check.opt_inst_param(run_config, 'run_config', RunConfig)
     check.inst_param(pipeline, 'pipeline', PipelineDefinition)
 
-    user_tags = user_context_params.tags if user_context_params else {}
-    run_tags = run_config.tags if run_config else {}
-
-    base_tags = merge_dicts({'pipeline': pipeline.name}, user_tags)
-
-    if run_config and run_config.tags:
-        user_keys = set(user_tags.keys())
-        provided_keys = set(run_tags.keys())
-        if not user_keys.isdisjoint(provided_keys):
-            raise DagsterInvariantViolationError(
-                (
-                    'You have specified tags and user-defined tags '
-                    'that overlap. User keys: {user_keys}. Reentrant keys: '
-                    '{provided_keys}.'
-                ).format(user_keys=user_keys, provided_keys=provided_keys)
-            )
-
-        return merge_dicts(base_tags, run_tags)
-    else:
-        return base_tags
+    return merge_dicts({'pipeline': pipeline.name}, run_config.tags if run_config else {})

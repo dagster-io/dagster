@@ -5,9 +5,10 @@ from dagster import (
     InProcessExecutorConfig,
     InputDefinition,
     Int,
+    ModeDefinition,
     OutputDefinition,
-    PipelineContextDefinition,
     PipelineDefinition,
+    ResourceDefinition,
     Result,
     RunConfig,
     SolidInstance,
@@ -502,15 +503,19 @@ def test_pipeline_streaming_multiple_outputs():
 
 def test_pipeline_init_failure():
     stub_solid = define_stub_solid('stub', None)
-    env_config = {'context': {'failing': {}}}
+    env_config = {}
 
-    def failing_context_fn(*args, **kwargs):
+    def failing_resource_fn(*args, **kwargs):
         raise Exception()
 
     pipeline_def = PipelineDefinition(
         [stub_solid],
         'failing_init_pipeline',
-        context_definitions={'failing': PipelineContextDefinition(context_fn=failing_context_fn)},
+        mode_definitions=[
+            ModeDefinition(
+                resources={'failing': ResourceDefinition(resource_fn=failing_resource_fn)}
+            )
+        ],
     )
 
     result = execute_pipeline(

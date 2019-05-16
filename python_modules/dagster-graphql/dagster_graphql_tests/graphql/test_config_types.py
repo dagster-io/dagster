@@ -5,7 +5,7 @@ from dagster.core.types.config import ALL_CONFIG_BUILTINS
 from .setup import execute_dagster_graphql, define_context, csv_hello_world_solids_config
 
 CONFIG_VALIDATION_QUERY = '''
-query PipelineQuery($config: PipelineConfig, $pipeline: ExecutionSelector!, $mode: String)
+query PipelineQuery($config: PipelineConfig, $pipeline: ExecutionSelector!, $mode: String!)
 {
     isPipelineConfigValid(config: $config, pipeline: $pipeline, mode: $mode) {
         __typename
@@ -89,7 +89,7 @@ def find_errors(result, field_stack_to_find, reason):
             yield error_data
 
 
-def execute_config_graphql(pipeline_name, env_config, mode=None):
+def execute_config_graphql(pipeline_name, env_config, mode):
     return execute_dagster_graphql(
         define_context(),
         CONFIG_VALIDATION_QUERY,
@@ -98,7 +98,7 @@ def execute_config_graphql(pipeline_name, env_config, mode=None):
 
 
 def test_pipeline_not_found():
-    result = execute_config_graphql(pipeline_name='nope', env_config={})
+    result = execute_config_graphql(pipeline_name='nope', env_config={}, mode='default')
 
     assert not result.errors
     assert result.data
@@ -108,7 +108,7 @@ def test_pipeline_not_found():
 
 def test_basic_valid_config():
     result = execute_config_graphql(
-        pipeline_name='csv_hello_world', env_config=csv_hello_world_solids_config()
+        pipeline_name='csv_hello_world', env_config=csv_hello_world_solids_config(), mode='default'
     )
 
     assert not result.errors
@@ -124,6 +124,7 @@ def test_root_field_not_defined():
             'solids': {'sum_solid': {'inputs': {'num': script_relative_path('../data/num.csv')}}},
             'nope': {},
         },
+        mode='default',
     )
 
     assert not result.errors
@@ -142,6 +143,7 @@ def test_basic_invalid_not_defined_field():
     result = execute_config_graphql(
         pipeline_name='csv_hello_world',
         env_config={'solids': {'sum_solid': {'inputs': {'num': 'foo.txt', 'extra': 'nope'}}}},
+        mode='default',
     )
 
     assert not result.errors
@@ -165,6 +167,7 @@ def test_multiple_not_defined_fields():
                 }
             }
         },
+        mode='default',
     )
 
     assert not result.errors
@@ -179,7 +182,7 @@ def test_multiple_not_defined_fields():
 
 
 def test_root_wrong_type():
-    result = execute_config_graphql(pipeline_name='csv_hello_world', env_config=123)
+    result = execute_config_graphql(pipeline_name='csv_hello_world', env_config=123, mode='default')
     assert not result.errors
     assert result.data
     assert result.data['isPipelineConfigValid']['__typename'] == 'PipelineConfigValidationInvalid'
@@ -195,6 +198,7 @@ def test_basic_invalid_config_type_mismatch():
     result = execute_config_graphql(
         pipeline_name='csv_hello_world',
         env_config={'solids': {'sum_solid': {'inputs': {'num': 123}}}},
+        mode='default',
     )
 
     assert not result.errors
@@ -215,7 +219,9 @@ def test_basic_invalid_config_type_mismatch():
 
 def test_basic_invalid_config_missing_field():
     result = execute_config_graphql(
-        pipeline_name='csv_hello_world', env_config={'solids': {'sum_solid': {'inputs': {}}}}
+        pipeline_name='csv_hello_world',
+        env_config={'solids': {'sum_solid': {'inputs': {}}}},
+        mode='default',
     )
 
     assert not result.errors
@@ -308,6 +314,7 @@ def test_more_complicated_works():
                 }
             }
         },
+        mode='default',
     )
 
     assert not result.errors
@@ -322,6 +329,7 @@ def test_multiple_missing_fields():
     result = execute_config_graphql(
         pipeline_name='more_complicated_nested_config',
         env_config={'solids': {'a_solid_with_multilayered_config': {'config': {}}}},
+        mode='default',
     )
 
     assert not result.errors
@@ -357,6 +365,7 @@ def test_more_complicated_multiple_errors():
                 }
             }
         },
+        mode='default',
     )
 
     assert not result.errors
@@ -418,6 +427,7 @@ def test_config_list():
     result = execute_config_graphql(
         pipeline_name='pipeline_with_list',
         env_config={'solids': {'solid_with_list': {'config': [1, 2]}}},
+        mode='default',
     )
 
     assert not result.errors
@@ -431,6 +441,7 @@ def test_config_list_invalid():
     result = execute_config_graphql(
         pipeline_name='pipeline_with_list',
         env_config={'solids': {'solid_with_list': {'config': 'foo'}}},
+        mode='default',
     )
 
     assert not result.errors
@@ -446,6 +457,7 @@ def test_config_list_item_invalid():
     result = execute_config_graphql(
         pipeline_name='pipeline_with_list',
         env_config={'solids': {'solid_with_list': {'config': [1, 'foo']}}},
+        mode='default',
     )
 
     assert not result.errors
@@ -563,11 +575,12 @@ fragment configTypeFragment on ConfigType {
 '''
 
 CONFIG_TYPE_QUERY = '''
-query ConfigTypeQuery($pipelineName: String! $configTypeName: String!)
+query ConfigTypeQuery($pipelineName: String! $configTypeName: String! $mode: String!)
 {
     configTypeOrError(
         pipelineName: $pipelineName
         configTypeName: $configTypeName
+        mode: $mode
     ) {
         __typename
         ... on RegularConfigType {
@@ -600,6 +613,7 @@ def test_config_type_or_error_query_success():
         {
             'pipelineName': 'csv_hello_world',
             'configTypeName': 'CsvHelloWorld.Mode.Default.Environment',
+            'mode': 'default',
         },
     )
 
@@ -613,7 +627,7 @@ def test_config_type_or_error_pipeline_not_found():
     result = execute_dagster_graphql(
         define_context(),
         CONFIG_TYPE_QUERY,
-        {'pipelineName': 'nope', 'configTypeName': 'CsvHelloWorld.Environment'},
+        {'pipelineName': 'nope', 'configTypeName': 'CsvHelloWorld.Environment', 'mode': 'default'},
     )
 
     assert not result.errors
@@ -626,7 +640,7 @@ def test_config_type_or_error_type_not_found():
     result = execute_dagster_graphql(
         define_context(),
         CONFIG_TYPE_QUERY,
-        {'pipelineName': 'csv_hello_world', 'configTypeName': 'nope'},
+        {'pipelineName': 'csv_hello_world', 'configTypeName': 'nope', 'mode': 'default'},
     )
 
     assert not result.errors
@@ -645,6 +659,7 @@ def test_config_type_or_error_nested_complicated():
             'configTypeName': (
                 'MoreComplicatedNestedConfig.SolidConfig.ASolidWithMultilayeredConfig'
             ),
+            'mode': 'default',
         },
     )
 
@@ -660,7 +675,9 @@ def test_config_type_or_error_nested_complicated():
 
 def test_graphql_secret_field():
     result = execute_dagster_graphql(
-        define_context(), ALL_CONFIG_TYPES_QUERY, {'pipelineName': 'secret_pipeline'}
+        define_context(),
+        ALL_CONFIG_TYPES_QUERY,
+        {'pipelineName': 'secret_pipeline', 'mode': 'default'},
     )
 
     password_type_count = 0
