@@ -1,11 +1,11 @@
 from dagster import check
 from dagster.core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
+from dagster.core.types.runtime import construct_runtime_type_dictionary
 
 from .container import IContainSolids, create_execution_structure, validate_dependency_dict
 from .context import PipelineContextDefinition, default_pipeline_context_definitions
 from .dependency import DependencyDefinition, SolidHandle, SolidInstance
 from .mode import ModeDefinition
-from .pipeline_creation import construct_runtime_type_dictionary
 from .solid import ISolidDefinition
 from .preset import PresetDefinition
 

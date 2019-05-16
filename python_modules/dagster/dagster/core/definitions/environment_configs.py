@@ -16,13 +16,13 @@ from dagster.core.types.config import ALL_CONFIG_BUILTINS, ConfigType, ConfigTyp
 from dagster.core.types.default_applier import apply_default_values
 from dagster.core.types.field_utils import FieldImpl, check_opt_field_param
 from dagster.core.types.iterate_types import iterate_config_types
+from dagster.core.types.runtime import construct_runtime_type_dictionary
 from dagster.utils import camelcase, merge_dicts, single_item
 
 from .context import PipelineContextDefinition
 from .dependency import DependencyStructure, Solid, SolidHandle, SolidInputHandle
 from .logger import LoggerDefinition
 from .mode import ModeDefinition
-from .pipeline_creation import construct_runtime_type_dictionary
 from .resource import ResourceDefinition
 from .solid import CompositeSolidDefinition, ISolidDefinition, SolidDefinition
 
@@ -343,23 +343,13 @@ def define_storage_config_cls(name):
     )
 
 
-def solid_has_configurable_inputs(solid_def):
-    check.inst_param(solid_def, 'solid_def', ISolidDefinition)
-    return any(map(lambda inp: inp.runtime_type.input_schema, solid_def.input_dict.values()))
-
-
-def solid_has_configurable_outputs(solid_def):
-    check.inst_param(solid_def, 'solid_def', ISolidDefinition)
-    return any(map(lambda out: out.runtime_type.output_schema, solid_def.output_dict.values()))
-
-
 def get_inputs_field(solid, handle, dependency_structure, pipeline_name):
     check.inst_param(solid, 'solid', Solid)
     check.inst_param(handle, 'handle', SolidHandle)
     check.inst_param(dependency_structure, 'dependency_structure', DependencyStructure)
     check.str_param(pipeline_name, 'pipeline_name')
 
-    if not solid_has_configurable_inputs(solid.definition):
+    if not solid.definition.has_configurable_inputs:
         return None
 
     inputs_field_fields = {}
@@ -391,7 +381,7 @@ def get_outputs_field(solid, handle, pipeline_name):
 
     solid_def = solid.definition
 
-    if not solid_has_configurable_outputs(solid_def):
+    if not solid_def.has_configurable_outputs:
         return None
 
     output_dict_fields = {}
@@ -409,26 +399,6 @@ def get_outputs_field(solid, handle, pipeline_name):
     )
 
     return Field(List(output_entry_dict), is_optional=True)
-
-
-def solid_has_config_entry(solid_def):
-    check.inst_param(solid_def, 'solid_def', ISolidDefinition)
-
-    has_solid_config = False
-    if isinstance(solid_def, CompositeSolidDefinition):
-        has_solid_config = any(
-            map(solid_has_config_entry, [solid.definition for solid in solid_def.solids])
-        )
-    elif isinstance(solid_def, SolidDefinition):
-        has_solid_config = solid_def.config_field
-    else:
-        check.invariant('Unexpected ISolidDefinition type {type}'.format(type=type(solid_def)))
-
-    return (
-        has_solid_config
-        or solid_has_configurable_inputs(solid_def)
-        or solid_has_configurable_outputs(solid_def)
-    )
 
 
 def define_isolid_field(solid, handle, dependency_structure, pipeline_name):
@@ -492,7 +462,7 @@ def define_solid_dictionary_cls(
 
     fields = {}
     for solid in solids:
-        if solid_has_config_entry(solid.definition):
+        if solid.definition.has_config_entry:
             fields[solid.name] = define_isolid_field(
                 solid,
                 SolidHandle(solid.name, solid.definition.name, parent_handle),
