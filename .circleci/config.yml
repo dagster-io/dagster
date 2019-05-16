@@ -63,7 +63,7 @@ jobs:
 
       - run:
           name: Publish nightlies
-          command: python bin/publish.py publish --nightly
+          command: python bin/publish.py publish --nightly --autoclean
 
       - run:
           name: Test dev setup script

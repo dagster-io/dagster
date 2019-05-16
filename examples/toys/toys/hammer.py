@@ -8,6 +8,7 @@ from dagster import (
     Field,
     InputDefinition,
     Int,
+    ModeDefinition,
     MultiprocessExecutorConfig,
     OutputDefinition,
     PipelineDefinition,
@@ -110,6 +111,7 @@ def define_hammer_pipeline():
                 'in_4': DependencyDefinition('hammer_4', 'total'),
             },
         },
+        mode_definitions=[ModeDefinition()],
     )
 
 

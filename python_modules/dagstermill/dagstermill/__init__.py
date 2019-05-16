@@ -30,6 +30,7 @@ from dagster import (
     RepositoryDefinition,
     Result,
     Materialization,
+    ModeDefinition,
     PipelineDefinition,
     SolidDefinition,
     check,
@@ -133,7 +134,9 @@ class Manager:
         self.repository_def = repository_def
 
     def define_out_of_pipeline_context(self, context_config):
-        pipeline_def = PipelineDefinition([], name='Ephemeral Notebook Pipeline')
+        pipeline_def = PipelineDefinition(
+            [], name='Ephemeral Notebook Pipeline', mode_definitions=[ModeDefinition()]
+        )
 
         # BUG: If the context cleans up after itself (e.g. closes a db connection or similar)
         # This will instigate that process *before* return. We are going to have to
@@ -193,6 +196,7 @@ class Manager:
     def populate_context(
         self,
         run_id,
+        mode,
         solid_def_name,
         pipeline_def_name,
         marshal_dir,
@@ -207,7 +211,11 @@ class Manager:
         self.marshal_dir = marshal_dir
 
         if self.repository_def is None:
-            self.pipeline_def = PipelineDefinition([], name='Dummy Pipeline (No Repo Registration)')
+            self.pipeline_def = PipelineDefinition(
+                [],
+                name='Dummy Pipeline (No Repo Registration)',
+                mode_definitions=[ModeDefinition()],
+            )
             self.input_name_type_dict = dict_to_enum(input_name_type_dict)
             self.output_name_type_dict = dict_to_enum(output_name_type_dict)
             for _, runtime_type_enum in self.input_name_type_dict.items():
@@ -225,7 +233,7 @@ class Manager:
                         'notebook by calling dm.register_repository(repository_def).'
                     )
             with yield_pipeline_execution_context(
-                self.pipeline_def, {}, RunConfig(run_id=run_id)
+                self.pipeline_def, {}, RunConfig(run_id=run_id, mode=mode)
             ) as pipeline_context:
                 self.context = DagstermillInNotebookExecutionContext(pipeline_context)
         else:
@@ -243,7 +251,7 @@ class Manager:
                 loggers = [event_logger]
             # do not include event_callback in ExecutionMetadata,
             # since that'll be taken care of by side-channel established by event_logger
-            execution_metadata = RunConfig(run_id, loggers=loggers)
+            execution_metadata = RunConfig(run_id, loggers=loggers, mode=mode)
             # See block comment above referencing this issue
             # See https://github.com/dagster-io/dagster/issues/796
             with yield_pipeline_execution_context(
@@ -363,6 +371,7 @@ def populate_context(dm_context_data):
     check.dict_param(dm_context_data, 'dm_context_data')
     return MANAGER_FOR_NOTEBOOK_INSTANCE.populate_context(
         dm_context_data['run_id'],
+        dm_context_data['mode'],
         dm_context_data['solid_def_name'],
         dm_context_data['pipeline_name'],
         dm_context_data['marshal_dir'],
@@ -429,6 +438,7 @@ def get_papermill_parameters(transform_context, inputs, output_log_path):
     check.dict_param(inputs, 'inputs', key_type=six.string_types)
 
     run_id = transform_context.run_id
+    mode = transform_context.mode
 
     marshal_dir = '/tmp/dagstermill/{run_id}/marshal'.format(run_id=run_id)
     if not os.path.exists(marshal_dir):
@@ -440,6 +450,7 @@ def get_papermill_parameters(transform_context, inputs, output_log_path):
 
     dm_context_dict = {
         'run_id': run_id,
+        'mode': mode,
         'pipeline_name': transform_context.pipeline_def.name,
         'solid_def_name': transform_context.solid_def.name,
         'marshal_dir': marshal_dir,

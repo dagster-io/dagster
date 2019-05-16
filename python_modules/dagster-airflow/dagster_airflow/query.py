@@ -4,10 +4,12 @@ mutation(
   $config: PipelineConfig = {config},
   $pipelineName: String = "{pipeline_name}",
   $runId: String = "{run_id}",
+  $mode: String = "{mode}",
   $stepKeys: [String!] = {step_keys}
 ) {{
   executePlan(
     config: $config,
+    mode: $mode,
     executionMetadata: {{
       runId: $runId
     }},

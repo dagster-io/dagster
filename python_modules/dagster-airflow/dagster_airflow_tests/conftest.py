@@ -8,13 +8,19 @@ fixtures, read: https://docs.pytest.org/en/latest/fixture.html.
 import os
 import shutil
 import subprocess
+import tempfile
 import uuid
 
 import docker
 import pytest
 
+
+from click.testing import CliRunner
+
 from dagster import check
 from dagster.utils import load_yaml_from_path, mkdir_p, pushd, script_relative_path
+
+from dagster_airflow.cli import scaffold
 
 IMAGE = 'dagster-airflow-demo'
 
@@ -39,6 +45,74 @@ def temp_dir():
     mkdir_p(dir_path)
     yield dir_path
     shutil.rmtree(dir_path)
+
+
+@pytest.fixture(scope='module')
+def clean_airflow_home(airflow_home):
+    '''Ensure that the existing contents of AIRFLOW_HOME do not interfere with test.'''
+    tempdir_path = tempfile.mkdtemp()
+
+    file_paths = os.listdir(airflow_home)
+    for file_path in file_paths:
+        shutil.move(os.path.join(airflow_home, file_path), tempdir_path)
+
+    yield
+
+    file_paths = os.listdir(tempdir_path)
+    for file_path in file_paths:
+        shutil.move(os.path.join(tempdir_path, file_path), os.path.join(airflow_home, file_path))
+
+    shutil.rmtree(tempdir_path)
+
+
+@pytest.fixture(scope='module')
+def create_airflow_dags(clean_airflow_home):
+    runner = CliRunner()
+
+    runner.invoke(
+        scaffold,
+        [
+            '--dag-name',
+            'toys_log_spew',
+            '--module-name',
+            'toys.log_spew',
+            '--fn-name',
+            'define_spew_pipeline',
+        ],
+    )
+    runner.invoke(
+        scaffold,
+        [
+            '--dag-name',
+            'toys_many_events',
+            '--module-name',
+            'toys.many_events',
+            '--fn-name',
+            'define_many_events_pipeline',
+        ],
+    )
+    runner.invoke(
+        scaffold,
+        [
+            '--dag-name',
+            'toys_resources',
+            '--module-name',
+            'toys.resources',
+            '--fn-name',
+            'define_resources_pipeline',
+        ],
+    )
+    runner.invoke(
+        scaffold,
+        [
+            '--dag-name',
+            'toys_sleepy',
+            '--module-name',
+            'toys.sleepy',
+            '--fn-name',
+            'define_sleepy_pipeline',
+        ],
+    )
 
 
 @pytest.fixture(scope='session')

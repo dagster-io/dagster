@@ -15,7 +15,7 @@ from airline_demo.pipelines import (  # pylint: disable=unused-import
     define_airline_demo_warehouse_pipeline,
 )
 
-from .marks import airflow, slow
+from .marks import airflow, slow  # pylint: disable=wrong-import-position
 
 
 @slow
@@ -28,6 +28,7 @@ class TestAirflowPython_0IngestExecution:
         script_relative_path(os.path.join('..', 'environments', 'local_airflow.yml')),
         script_relative_path(os.path.join('..', 'environments', 'local_fast_ingest.yml')),
     ]
+    mode = 'local'
 
     def test_airflow_run_ingest_pipeline(self, dagster_airflow_python_operator_pipeline):
         pass
@@ -45,6 +46,7 @@ class TestAirflowPython_1WarehouseExecution:
         script_relative_path(os.path.join('..', 'environments', 'local_airflow.yml')),
         script_relative_path(os.path.join('..', 'environments', 'local_warehouse.yml')),
     ]
+    mode = 'local'
 
     def test_airflow_run_warehouse_pipeline(self, dagster_airflow_python_operator_pipeline):
         pass

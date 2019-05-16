@@ -235,7 +235,9 @@ def yield_pipeline_execution_context(pipeline_def, environment_dict, run_config)
     check.dict_param(environment_dict, 'environment_dict', key_type=str)
     check.inst_param(run_config, 'run_config', RunConfig)
 
-    environment_config = create_environment_config(pipeline_def, environment_dict)
+    environment_config = create_environment_config(
+        pipeline_def, environment_dict, mode=run_config.mode
+    )
     intermediates_manager = construct_intermediates_manager(
         run_config, environment_config, pipeline_def
     )

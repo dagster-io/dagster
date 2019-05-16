@@ -13,10 +13,11 @@ import pytest
 
 from dagster import (
     DependencyDefinition,
-    PipelineContextDefinition,
-    PipelineDefinition,
     execute_solid,
     lambda_solid,
+    ModeDefinition,
+    PipelineDefinition,
+    RunConfig,
 )
 
 from airline_demo.solids import sql_solid, ingest_csv_to_spark, unzip_file
@@ -24,17 +25,11 @@ from airline_demo.resources import spark_session_local, tempfile_resource
 
 from .marks import nettest, postgres, redshift, skip, spark
 
+tempfile_mode = ModeDefinition(name='tempfile', resources={'tempfile': tempfile_resource})
 
-def _tempfile_context():
-    return {'test': PipelineContextDefinition(resources={'tempfile': tempfile_resource})}
-
-
-def _spark_context():
-    return {
-        'test': PipelineContextDefinition(
-            resources={'spark': spark_session_local, 'tempfile': tempfile_resource}
-        )
-    }
+spark_mode = ModeDefinition(
+    name='spark', resources={'spark': spark_session_local, 'tempfile': tempfile_resource}
+)
 
 
 def test_sql_solid_with_bad_materialization_strategy():
@@ -74,11 +69,12 @@ def test_unzip_file_tempfile():
                     'archive_member': DependencyDefinition('nonce'),
                 }
             },
-            context_definitions=_tempfile_context(),
+            mode_definitions=[tempfile_mode],
         ),
         'unzip_file',
         inputs={'archive_file': archive_file, 'archive_member': 'test/test_file'},
         environment_dict={},
+        run_config=RunConfig(mode='tempfile'),
     )
     assert result.success
     assert result.transformed_value().read() == b'test\n'
@@ -96,11 +92,12 @@ def test_ingest_csv_to_spark():
         PipelineDefinition(
             [nonce, ingest_csv_to_spark],
             dependencies={'ingest_csv_to_spark': {'input_csv_file': DependencyDefinition('nonce')}},
-            context_definitions=_spark_context(),
+            mode_definitions=[spark_mode],
         ),
         'ingest_csv_to_spark',
         inputs={'input_csv_file': input_csv_file},
-        environment_dict={'context': {'test': {}}},
+        environment_dict={},
+        run_config=RunConfig(mode='spark'),
     )
     assert result.success
     assert isinstance(result.transformed_value(), pyspark.sql.dataframe.DataFrame)

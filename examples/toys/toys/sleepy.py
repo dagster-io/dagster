@@ -7,6 +7,7 @@ from dagster import (
     InputDefinition,
     Int,
     List,
+    ModeDefinition,
     MultiprocessExecutorConfig,
     OutputDefinition,
     PipelineDefinition,
@@ -89,6 +90,7 @@ def define_sleepy_pipeline():
                 'in_4': DependencyDefinition('sleeper_4', 'total'),
             },
         },
+        mode_definitions=[ModeDefinition()],
     )
 
 

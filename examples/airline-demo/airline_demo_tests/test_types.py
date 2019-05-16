@@ -19,7 +19,7 @@ from dagster_aws.s3.object_store import S3ObjectStore
 
 from airline_demo.solids import ingest_csv_to_spark
 
-from .test_solids import _spark_context
+from .test_solids import spark_mode
 
 
 def test_spark_data_frame_serialization_file_system():
@@ -33,7 +33,7 @@ def test_spark_data_frame_serialization_file_system():
     pipeline_def = PipelineDefinition(
         [nonce, ingest_csv_to_spark],
         dependencies={'ingest_csv_to_spark': {'input_csv_file': DependencyDefinition('nonce')}},
-        context_definitions=_spark_context(),
+        mode_definitions=[spark_mode],
     )
 
     run_id = str(uuid.uuid4())
@@ -42,7 +42,7 @@ def test_spark_data_frame_serialization_file_system():
     object_store = FileSystemObjectStore(run_id=run_id)
 
     result = execute_pipeline(
-        pipeline_def, run_config=RunConfig(run_id=run_id, storage_mode=storage_mode)
+        pipeline_def, run_config=RunConfig(run_id=run_id, storage_mode=storage_mode, mode='spark')
     )
 
     assert result.success
@@ -52,7 +52,7 @@ def test_spark_data_frame_serialization_file_system():
 
     assert '_SUCCESS' in os.listdir(result_dir)
 
-    spark = _spark_context()['test'].resource_defs['spark'].resource_fn(None)
+    spark = spark_mode.resource_defs['spark'].resource_fn(None)
 
     df = spark.read.parquet(result_dir)
     assert isinstance(df, pyspark.sql.dataframe.DataFrame)
@@ -70,7 +70,7 @@ def test_spark_data_frame_serialization_s3():
     pipeline_def = PipelineDefinition(
         [nonce, ingest_csv_to_spark],
         dependencies={'ingest_csv_to_spark': {'input_csv_file': DependencyDefinition('nonce')}},
-        context_definitions=_spark_context(),
+        mode_definitions=[spark_mode],
     )
 
     run_id = str(uuid.uuid4())
@@ -81,7 +81,7 @@ def test_spark_data_frame_serialization_s3():
     result = execute_pipeline(
         pipeline_def,
         environment_dict={'storage': {'s3': {'s3_bucket': 'dagster-airflow-scratch'}}},
-        run_config=RunConfig(run_id=run_id, storage_mode=storage_mode),
+        run_config=RunConfig(run_id=run_id, storage_mode=storage_mode, mode='spark'),
     )
 
     assert result.success

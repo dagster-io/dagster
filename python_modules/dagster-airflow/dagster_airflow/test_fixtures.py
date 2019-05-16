@@ -42,13 +42,16 @@ def dagster_airflow_python_operator_pipeline(request):
     config = getattr(request.cls, 'config', None)
     config_yaml = getattr(request.cls, 'config_yaml', None)
     op_kwargs = getattr(request.cls, 'op_kwargs', {})
+    mode = getattr(request.cls, 'mode', 'default')
 
     if config is None and config_yaml is not None:
         config = load_yaml_from_glob_list(config_yaml)
     run_id = getattr(request.cls, 'run_id', str(uuid.uuid4()))
     execution_date = getattr(request.cls, 'execution_date', datetime.datetime.utcnow())
 
-    dag, tasks = make_airflow_dag(exc_target_handle, pipeline_name, config, op_kwargs=op_kwargs)
+    dag, tasks = make_airflow_dag(
+        exc_target_handle, pipeline_name, config, mode=mode, op_kwargs=op_kwargs
+    )
 
     assert isinstance(dag, DAG)
 

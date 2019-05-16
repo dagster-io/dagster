@@ -140,27 +140,33 @@ def build_pipeline_with_input_stubs(pipeline_def, inputs):
     )
 
 
-def execute_solids(pipeline_def, solid_names, inputs=None, environment_dict=None):
+def execute_solids(pipeline_def, solid_names, inputs=None, environment_dict=None, run_config=None):
     check.inst_param(pipeline_def, 'pipeline_def', PipelineDefinition)
     check.list_param(solid_names, 'solid_names', of_type=str)
     inputs = check.opt_dict_param(inputs, 'inputs', key_type=str, value_type=dict)
     environment_dict = check.opt_dict_param(environment_dict, 'environment_dict')
+    run_config = check.opt_inst_param(run_config, 'run_config', RunConfig)
 
     sub_pipeline = pipeline_def.build_sub_pipeline(solid_names)
     stubbed_pipeline = build_pipeline_with_input_stubs(sub_pipeline, inputs)
-    result = execute_pipeline(stubbed_pipeline, environment_dict)
+    result = execute_pipeline(stubbed_pipeline, environment_dict, run_config)
 
     return {sr.solid.name: sr for sr in result.solid_result_list}
 
 
-def execute_solid(pipeline_def, solid_name, inputs=None, environment_dict=None):
+def execute_solid(pipeline_def, solid_name, inputs=None, environment_dict=None, run_config=None):
     check.inst_param(pipeline_def, 'pipeline_def', PipelineDefinition)
     check.str_param(solid_name, 'solid_name')
     inputs = check.opt_dict_param(inputs, 'inputs', key_type=str)
     environment_dict = check.opt_dict_param(environment_dict, 'environment')
+    run_config = check.opt_inst_param(run_config, 'run_config', RunConfig)
 
     return execute_solids(
-        pipeline_def, [solid_name], {solid_name: inputs} if inputs else None, environment_dict
+        pipeline_def,
+        [solid_name],
+        {solid_name: inputs} if inputs else None,
+        environment_dict,
+        run_config,
     )[solid_name]
 
 

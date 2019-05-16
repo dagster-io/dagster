@@ -45,8 +45,6 @@ def execute_query_from_cli(exc_target_handle, query, variables):
         version=__version__,
     )
 
-    # import pdb; pdb.set_trace()
-
     result = graphql(
         request_string=query,
         schema=create_schema(),
