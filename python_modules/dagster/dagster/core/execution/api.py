@@ -48,7 +48,7 @@ def check_run_config_param(run_config, pipeline_def):
         if not pipeline_def.is_single_mode:
             raise DagsterInvariantViolationError(
                 (
-                    'Pipeline {name} has multiple modes (Avaiable modes: {modes}) and you have '
+                    'Pipeline {name} has multiple modes (Available modes: {modes}) and you have '
                     'attempted to execute it without specifying a mode. Set '
                     'mode property on the RunConfig object.'
                 ).format(name=pipeline_def.name, modes=pipeline_def.available_modes)
@@ -57,7 +57,9 @@ def check_run_config_param(run_config, pipeline_def):
     return (
         check.inst_param(run_config, 'run_config', RunConfig)
         if run_config
-        else RunConfig(executor_config=InProcessExecutorConfig())
+        else RunConfig(
+            executor_config=InProcessExecutorConfig(), mode=pipeline_def.get_default_mode_name()
+        )
     )
 
 

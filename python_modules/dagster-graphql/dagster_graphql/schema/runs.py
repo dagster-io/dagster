@@ -32,7 +32,7 @@ class DauphinPipelineRun(dauphin.ObjectType):
 
     def __init__(self, pipeline_run):
         super(DauphinPipelineRun, self).__init__(
-            runId=pipeline_run.run_id, status=pipeline_run.status
+            runId=pipeline_run.run_id, status=pipeline_run.status, mode=pipeline_run.mode
         )
         self._pipeline_run = check.inst_param(pipeline_run, 'pipeline_run', PipelineRun)
 
