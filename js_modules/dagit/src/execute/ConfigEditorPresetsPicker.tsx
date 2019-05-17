@@ -4,12 +4,12 @@ import { Select } from "@blueprintjs/select";
 import { Query, QueryResult } from "react-apollo";
 import {
   ConfigPresetsQuery,
-  ConfigPresetsQuery_presetsForPipeline
+  ConfigPresetsQuery_pipeline_presets
 } from "./types/ConfigPresetsQuery";
 import gql from "graphql-tag";
 import { IExecutionSession } from "../LocalStorage";
 
-type Preset = ConfigPresetsQuery_presetsForPipeline;
+type Preset = ConfigPresetsQuery_pipeline_presets;
 
 const PresetSelect = Select.ofType<Preset>();
 
@@ -33,9 +33,10 @@ export default class ConfigEditorPresetsPicker extends React.Component<
         variables={{ pipelineName }}
       >
         {({ data }: QueryResult<ConfigPresetsQuery, any>) => {
-          const presets = ((data && data.presetsForPipeline) || []).sort(
-            (a, b) => a.name.localeCompare(b.name)
-          );
+          const presets = (
+            (data && data.pipeline && data.pipeline.presets) ||
+            []
+          ).sort((a, b) => a.name.localeCompare(b.name));
 
           return (
             <div>
@@ -73,10 +74,13 @@ export default class ConfigEditorPresetsPicker extends React.Component<
 
 export const CONFIG_PRESETS_QUERY = gql`
   query ConfigPresetsQuery($pipelineName: String!) {
-    presetsForPipeline(pipelineName: $pipelineName) {
-      solidSubset
+    pipeline(params: { name: $pipelineName }) {
       name
-      environment
+      presets {
+        name
+        solidSubset
+        environment
+      }
     }
   }
 `;

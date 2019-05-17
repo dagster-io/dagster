@@ -73,7 +73,7 @@ def test_single_solid_with_multiple_inputs():
         pipeline_def,
         'add_solid',
         inputs={'num_one': 2, 'num_two': 3},
-        environment_dict={'context': {'default': {'config': {'log_level': 'DEBUG'}}}},
+        environment_dict={'loggers': {'console': {'config': {'log_level': 'DEBUG'}}}},
     )
 
     assert result.success

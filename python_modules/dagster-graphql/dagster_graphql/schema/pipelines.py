@@ -6,13 +6,10 @@ from dagster import (
     ModeDefinition,
     PipelineDefinition,
     ResourceDefinition,
+    PresetDefinition,
     check,
 )
-from dagster.core.definitions import (
-    PipelinePreset,
-    create_environment_schema,
-    create_environment_type,
-)
+from dagster.core.definitions import create_environment_schema, create_environment_type
 from dagster_graphql import dauphin
 
 from .config_types import to_dauphin_config_type
@@ -38,6 +35,7 @@ class DauphinPipeline(dauphin.ObjectType):
     runs = dauphin.non_null_list('PipelineRun')
     modes = dauphin.non_null_list('Mode')
     solid_handles = dauphin.non_null_list('SolidHandle')
+    presets = dauphin.non_null_list('PipelinePreset')
 
     def __init__(self, pipeline):
         super(DauphinPipeline, self).__init__(name=pipeline.name, description=pipeline.description)
@@ -97,18 +95,23 @@ class DauphinPipeline(dauphin.ObjectType):
             check.failed('Not a config type or runtime type')
 
     def resolve_modes(self, graphene_info):
-        return sorted(
-            [
-                graphene_info.schema.type_named('Mode')(mode_definition)
-                for mode_definition in self._pipeline.mode_definitions
-            ],
-            key=lambda item: item.name,
-        )
+        return [
+            graphene_info.schema.type_named('Mode')(mode_definition)
+            for mode_definition in sorted(
+                self._pipeline.mode_definitions, key=lambda item: item.name
+            )
+        ]
 
     def resolve_solid_handles(self, _graphene_info):
         return sorted(
             build_dauphin_solid_handles(self._pipeline), key=lambda item: str(item.handleID)
         )
+
+    def resolve_presets(self, _graphene_info):
+        return [
+            DauphinPipelinePreset(preset)
+            for preset in sorted(self._pipeline.get_presets(), key=lambda item: item.name)
+        ]
 
 
 class DauphinPipelineConnection(dauphin.ObjectType):
@@ -222,13 +225,13 @@ class DauphinPipelinePreset(dauphin.ObjectType):
     environment = dauphin.String()
 
     def __init__(self, preset):
-        self.preset = check.inst_param(preset, 'preset', PipelinePreset)
+        self._preset = check.inst_param(preset, 'preset', PresetDefinition)
 
     def resolve_name(self, _graphene_info):
-        return self.preset.name
+        return self._preset.name
 
     def resolve_solidSubset(self, _graphene_info):
-        return self.preset.solid_subset
+        return self._preset.solid_subset
 
     def resolve_environment(self, _graphene_info):
-        return self.preset.environment_yaml
+        return self._preset.environment_yaml

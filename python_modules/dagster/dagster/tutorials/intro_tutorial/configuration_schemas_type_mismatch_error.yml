@@ -1,5 +1,5 @@
-context:
-  default:
+loggers:
+  console:
     config:
       log_level: DEBUG
 

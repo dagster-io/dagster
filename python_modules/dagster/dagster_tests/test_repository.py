@@ -18,14 +18,6 @@ def define_empty_pipeline():
     return PipelineDefinition(name='empty_pipeline', solids=[])
 
 
-def define_modeless_pipeline():
-    @solid
-    def return_one(_context):
-        return 1
-
-    return PipelineDefinition(name='modeless', solids=[return_one])
-
-
 def define_single_mode_pipeline():
     @solid
     def return_two(_context):
@@ -89,7 +81,6 @@ def define_repository():
         name='dagster_test_repository',
         pipelines=[
             define_empty_pipeline(),
-            define_modeless_pipeline(),
             define_single_mode_pipeline(),
             define_multi_mode_pipeline(),
             define_multi_mode_with_resources_pipeline(),

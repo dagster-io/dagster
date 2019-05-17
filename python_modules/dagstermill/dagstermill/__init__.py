@@ -134,9 +134,7 @@ class Manager:
         self.repository_def = repository_def
 
     def define_out_of_pipeline_context(self, context_config):
-        pipeline_def = PipelineDefinition(
-            [], name='Ephemeral Notebook Pipeline', mode_definitions=[ModeDefinition()]
-        )
+        pipeline_def = PipelineDefinition([], name='Ephemeral Notebook Pipeline')
 
         # BUG: If the context cleans up after itself (e.g. closes a db connection or similar)
         # This will instigate that process *before* return. We are going to have to
@@ -211,11 +209,7 @@ class Manager:
         self.marshal_dir = marshal_dir
 
         if self.repository_def is None:
-            self.pipeline_def = PipelineDefinition(
-                [],
-                name='Dummy Pipeline (No Repo Registration)',
-                mode_definitions=[ModeDefinition()],
-            )
+            self.pipeline_def = PipelineDefinition([], name='Dummy Pipeline (No Repo Registration)')
             self.input_name_type_dict = dict_to_enum(input_name_type_dict)
             self.output_name_type_dict = dict_to_enum(output_name_type_dict)
             for _, runtime_type_enum in self.input_name_type_dict.items():

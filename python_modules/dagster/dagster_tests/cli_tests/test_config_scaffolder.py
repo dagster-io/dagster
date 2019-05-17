@@ -49,33 +49,26 @@ def test_basic_solids_config():
     required_solid_config_type = solids_config_type.fields['required_field_solid'].config_type
     assert required_solid_config_type.fields['config'].is_optional is False
 
-    context_config_type = env_config_type.fields['context'].config_type
+    assert set(env_config_type.fields['loggers'].config_type.fields.keys()) == set(['console'])
 
-    assert 'default' in context_config_type.fields
-    assert context_config_type.fields['default'].is_optional
+    console_logger_config_type = env_config_type.fields['loggers'].config_type.fields['console']
 
-    default_context_config_type = context_config_type.fields['default'].config_type
+    assert set(console_logger_config_type.config_type.fields.keys()) == set(['config'])
 
-    assert set(default_context_config_type.fields.keys()) == set(
-        ['config', 'resources', 'persistence']
-    )
+    assert console_logger_config_type.config_type.fields['config'].is_optional
 
-    default_context_user_config_type = default_context_config_type.fields['config'].config_type
+    console_logger_config_config_type = console_logger_config_type.config_type.fields[
+        'config'
+    ].config_type
 
-    assert set(default_context_user_config_type.fields.keys()) == set(['log_level'])
+    assert set(console_logger_config_config_type.fields.keys()) == set(['log_level', 'name'])
 
     assert scaffold_pipeline_config(pipeline_def, skip_optional=False) == {
-        'context': {
-            'default': {
-                'config': {'log_level': 'CRITICAL|DEBUG|ERROR|INFO|WARNING'},
-                'persistence': {'file': {}},
-                'resources': {},
-            }
-        },
         'loggers': {'console': {'config': {'log_level': '', 'name': ''}}},
         'solids': {'required_field_solid': {'config': {'required_int': 0}}},
         'expectations': {'evaluate': True},
         'execution': {},
+        'resources': {},
         'storage': {'filesystem': {'base_dir': ''}, 'in_memory': {}, 's3': {'s3_bucket': ''}},
     }
 

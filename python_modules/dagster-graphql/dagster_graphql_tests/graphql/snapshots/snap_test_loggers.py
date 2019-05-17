@@ -15,20 +15,6 @@ snapshots['test_mode_fetch_loggers 1'] = {
                     {
                         'configField': {
                             'configType': {
-                                'name': 'String'
-                            }
-                        },
-                        'description': None,
-                        'name': 'foo'
-                    }
-                ],
-                'name': 'foo_mode'
-            },
-            {
-                'loggers': [
-                    {
-                        'configField': {
-                            'configType': {
                                 'fields': [
                                     {
                                         'configType': {
@@ -51,6 +37,20 @@ snapshots['test_mode_fetch_loggers 1'] = {
                     }
                 ],
                 'name': 'bar_mode'
+            },
+            {
+                'loggers': [
+                    {
+                        'configField': {
+                            'configType': {
+                                'name': 'String'
+                            }
+                        },
+                        'description': None,
+                        'name': 'foo'
+                    }
+                ],
+                'name': 'foo_mode'
             },
             {
                 'loggers': [

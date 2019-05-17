@@ -23,17 +23,14 @@ from dagster.core.definitions.environment_schema import create_environment_type
 from dagster.core.log_manager import coerce_valid_log_level
 
 from ..test_repository import (
-    define_modeless_pipeline,
     define_multi_mode_pipeline,
     define_multi_mode_with_resources_pipeline,
     define_single_mode_pipeline,
 )
 
 
-def test_basic_mode_definition():
-    pipeline_def = PipelineDefinition(
-        name='takes a mode', solids=[], mode_definitions=[ModeDefinition()]
-    )
+def test_default_mode_definition():
+    pipeline_def = PipelineDefinition(name='takes a mode', solids=[])
     assert pipeline_def
 
 
@@ -44,20 +41,8 @@ def test_mode_takes_a_name():
     assert pipeline_def
 
 
-def test_execute_modeless():
-    pipeline_result = execute_pipeline(define_modeless_pipeline())
-    assert pipeline_result.result_for_solid('return_one').transformed_value() == 1
-
-
-def test_modeless_env_type_name():
-    env_type = create_environment_type(define_modeless_pipeline())
-    assert env_type.key == 'Modeless.Environment'
-    assert env_type.name == 'Modeless.Environment'
-
-
 def test_execute_single_mode():
     single_mode_pipeline = define_single_mode_pipeline()
-    assert single_mode_pipeline.is_modeless is False
     assert single_mode_pipeline.is_single_mode is True
 
     assert (
@@ -83,14 +68,12 @@ def test_wrong_single_mode():
         )
 
 
-def test_mode_and_context():
-    with pytest.raises(DagsterInvalidDefinitionError):
-        PipelineDefinition(
-            name='both_context_and_resources',
-            solids=[],
-            context_definitions={'some_context': PipelineContextDefinition()},
-            mode_definitions=[ModeDefinition()],
-        )
+def test_context():
+    PipelineDefinition(
+        name='both_context_and_resources',
+        solids=[],
+        context_definitions={'some_context': PipelineContextDefinition()},
+    )
 
 
 def test_mode_double_default_name():

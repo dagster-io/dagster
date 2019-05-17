@@ -21,5 +21,5 @@ def define_execution_context_pipeline():
 if __name__ == '__main__':
     execute_pipeline(
         define_execution_context_pipeline(),
-        {'context': {'default': {'config': {'log_level': 'DEBUG'}}}},
+        {'loggers': {'console': {'config': {'log_level': 'DEBUG'}}}},
     )

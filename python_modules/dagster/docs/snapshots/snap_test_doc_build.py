@@ -19845,7 +19845,7 @@ snapshots['test_build_all_docs 52'] = '''
 <h1>Pipelines<a class="headerlink" href="#pipelines" title="Permalink to this headline">¶</a></h1>
 <dl class="class">
 <dt id="dagster.PipelineDefinition">
-<em class="property">class </em><code class="descclassname">dagster.</code><code class="descname">PipelineDefinition</code><span class="sig-paren">(</span><em>solids</em>, <em>name=None</em>, <em>description=None</em>, <em>context_definitions=None</em>, <em>dependencies=None</em>, <em>mode_definitions=None</em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dagster/core/definitions/pipeline.html#PipelineDefinition"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dagster.PipelineDefinition" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">dagster.</code><code class="descname">PipelineDefinition</code><span class="sig-paren">(</span><em>solids</em>, <em>name=None</em>, <em>description=None</em>, <em>context_definitions=None</em>, <em>dependencies=None</em>, <em>mode_definitions=None</em>, <em>preset_definitions=None</em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dagster/core/definitions/pipeline.html#PipelineDefinition"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dagster.PipelineDefinition" title="Permalink to this definition">¶</a></dt>
 <dd><p>A instance of a PipelineDefinition represents a pipeline in dagster.</p>
 <p>A pipeline is comprised of:</p>
 <ul class="simple">
@@ -20381,7 +20381,7 @@ schema for this data is defined by <code class="docutils literal notranslate"><s
 <h1>Repositories<a class="headerlink" href="#repositories" title="Permalink to this headline">¶</a></h1>
 <dl class="class">
 <dt id="dagster.RepositoryDefinition">
-<em class="property">class </em><code class="descclassname">dagster.</code><code class="descname">RepositoryDefinition</code><span class="sig-paren">(</span><em>name</em>, <em>pipeline_dict</em>, <em>repo_config=None</em>, <em>enforce_solid_def_uniqueness=True</em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dagster/core/definitions/repository.html#RepositoryDefinition"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dagster.RepositoryDefinition" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">dagster.</code><code class="descname">RepositoryDefinition</code><span class="sig-paren">(</span><em>name</em>, <em>pipeline_dict</em>, <em>enforce_solid_def_uniqueness=True</em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dagster/core/definitions/repository.html#RepositoryDefinition"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dagster.RepositoryDefinition" title="Permalink to this definition">¶</a></dt>
 <dd><p>Define a repository that contains a collection of pipelines.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -24600,8 +24600,8 @@ We’ll replace the config field in our solid definition with a structured, stro
  9
 10
 11
-12</pre></div></td><td class="code"><div class="highlight"><pre><span></span><span class="n">context</span><span class="p">:</span>
-  <span class="n">default</span><span class="p">:</span>
+12</pre></div></td><td class="code"><div class="highlight"><pre><span></span><span class="n">loggers</span><span class="p">:</span>
+  <span class="n">console</span><span class="p">:</span>
     <span class="n">config</span><span class="p">:</span>
       <span class="n">log_level</span><span class="p">:</span> <span class="n">DEBUG</span>
 
@@ -24629,8 +24629,8 @@ We’ll replace the config field in our solid definition with a structured, stro
  9
 10
 11
-12</pre></div></td><td class="code"><div class="highlight"><pre><span></span><span class="n">context</span><span class="p">:</span>
-  <span class="n">default</span><span class="p">:</span>
+12</pre></div></td><td class="code"><div class="highlight"><pre><span></span><span class="n">loggers</span><span class="p">:</span>
+  <span class="n">console</span><span class="p">:</span>
     <span class="n">config</span><span class="p">:</span>
       <span class="n">log_level</span><span class="p">:</span> <span class="n">DEBUG</span>
 
@@ -24682,8 +24682,8 @@ to catch this before execution.</p>
  9
 10
 11
-12</pre></div></td><td class="code"><div class="highlight"><pre><span></span><span class="n">context</span><span class="p">:</span>
-  <span class="n">default</span><span class="p">:</span>
+12</pre></div></td><td class="code"><div class="highlight"><pre><span></span><span class="n">loggers</span><span class="p">:</span>
+  <span class="n">console</span><span class="p">:</span>
     <span class="n">config</span><span class="p">:</span>
       <span class="n">log_level</span><span class="p">:</span> <span class="n">DEBUG</span>
 
@@ -24726,8 +24726,8 @@ actionable error message before the pipeline is ever executed.</p>
  9
 10
 11
-12</pre></div></td><td class="code"><div class="highlight"><pre><span></span><span class="n">context</span><span class="p">:</span>
-  <span class="n">default</span><span class="p">:</span>
+12</pre></div></td><td class="code"><div class="highlight"><pre><span></span><span class="n">loggers</span><span class="p">:</span>
+  <span class="n">console</span><span class="p">:</span>
     <span class="n">config</span><span class="p">:</span>
       <span class="n">log_level</span><span class="p">:</span> <span class="n">DEBUG</span>
 
@@ -27053,8 +27053,8 @@ execute our pipeline from the command line.</p>
  9
 10
 11
-12</pre></div></td><td class="code"><div class="highlight"><pre><span></span><span class="nt">context</span><span class="p">:</span>
-  <span class="nt">default</span><span class="p">:</span>
+12</pre></div></td><td class="code"><div class="highlight"><pre><span></span><span class="nt">loggers</span><span class="p">:</span>
+  <span class="nt">console</span><span class="p">:</span>
     <span class="nt">config</span><span class="p">:</span>
       <span class="nt">log_level</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">DEBUG</span>
 
@@ -27084,8 +27084,8 @@ for config.</p>
 <p>Let’s split up our env.yml into two parts:</p>
 <div class="literal-block-wrapper docutils container" id="id4">
 <div class="code-block-caption"><span class="caption-text">constant_env.yml</span><a class="headerlink" href="#id4" title="Permalink to this code">¶</a></div>
-<div class="highlight-YAML notranslate"><div class="highlight"><pre><span></span><span class="nt">context</span><span class="p">:</span>
-  <span class="nt">default</span><span class="p">:</span>
+<div class="highlight-YAML notranslate"><div class="highlight"><pre><span></span><span class="nt">loggers</span><span class="p">:</span>
+  <span class="nt">console</span><span class="p">:</span>
     <span class="nt">config</span><span class="p">:</span>
       <span class="nt">log_level</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">DEBUG</span>
 </pre></div>

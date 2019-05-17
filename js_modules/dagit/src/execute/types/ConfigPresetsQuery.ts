@@ -7,15 +7,21 @@
 // GraphQL query operation: ConfigPresetsQuery
 // ====================================================
 
-export interface ConfigPresetsQuery_presetsForPipeline {
+export interface ConfigPresetsQuery_pipeline_presets {
   __typename: "PipelinePreset";
-  solidSubset: string[] | null;
   name: string;
+  solidSubset: string[] | null;
   environment: string | null;
 }
 
+export interface ConfigPresetsQuery_pipeline {
+  __typename: "Pipeline";
+  name: string;
+  presets: ConfigPresetsQuery_pipeline_presets[];
+}
+
 export interface ConfigPresetsQuery {
-  presetsForPipeline: ConfigPresetsQuery_presetsForPipeline[] | null;
+  pipeline: ConfigPresetsQuery_pipeline;
 }
 
 export interface ConfigPresetsQueryVariables {

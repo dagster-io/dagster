@@ -234,7 +234,11 @@ def _error_check_step_outputs(step, step_output_iter):
         seen_outputs.add(step_output_value.output_name)
 
     for step_output_def in step.step_outputs:
-        if not step_output_def.name in seen_outputs and not step_output_def.optional:
+        if (
+            not step_output_def.name in seen_outputs
+            and not step_output_def.optional
+            and not step_output_def.runtime_type.is_nothing
+        ):
             raise DagsterStepOutputNotFoundError(
                 'Core transform for solid "{step.solid_handle.name}" did not return an output '
                 'for non-optional output "{step_output_def.name}"'.format(

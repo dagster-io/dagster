@@ -8,7 +8,7 @@ def test_intro_tutorial_expectations_step_one():
     result = execute_pipeline(
         define_expectations_tutorial_pipeline(),
         {
-            'context': {'default': {'config': {'log_level': 'DEBUG'}}},
+            'loggers': {'console': {'config': {'log_level': 'DEBUG'}}},
             'solids': {'add_ints': {'inputs': {'num_one': {'value': 2}, 'num_two': {'value': 3}}}},
         },
     )
@@ -18,7 +18,7 @@ def test_intro_tutorial_expectations_step_one():
 
 def define_failing_environment_config():
     return {
-        'context': {'default': {'config': {'log_level': 'DEBUG'}}},
+        'loggers': {'console': {'config': {'log_level': 'DEBUG'}}},
         'solids': {'add_ints': {'inputs': {'num_one': {'value': -2}, 'num_two': {'value': 3}}}},
     }
 

@@ -138,7 +138,7 @@ export default class SolidNode extends React.Component<ISolidNodeProps> {
       if (!item) return <g key={i} />;
 
       const { name, type } = item.definition;
-      const showText = width == 0 && !minified && !type.isNothing;
+      const showText = width == 0 && !minified;
 
       const connections: Array<{ a: string; b: string }> = [];
       let title = `${name}: ${type.displayName}`;

@@ -51,7 +51,6 @@ export default class SidebarSolidInfo extends React.Component<
             name
             description
             type {
-              isNothing
               ...RuntimeTypeWithTooltipFragment
             }
             expectations {
@@ -73,7 +72,6 @@ export default class SidebarSolidInfo extends React.Component<
             name
             description
             type {
-              isNothing
               ...RuntimeTypeWithTooltipFragment
             }
             expectations {
@@ -91,9 +89,8 @@ export default class SidebarSolidInfo extends React.Component<
   };
 
   renderInputs() {
-    return this.props.solid.inputs
-      .filter(input => !input.definition.type.isNothing)
-      .map(({ definition, dependsOn }, i: number) => (
+    return this.props.solid.inputs.map(
+      ({ definition, dependsOn }, i: number) => (
         <SectionItemContainer key={i}>
           <SectionItemHeader>{definition.name}</SectionItemHeader>
           <TypeWrapper>
@@ -104,13 +101,15 @@ export default class SidebarSolidInfo extends React.Component<
             <Text>
               Depends on:{" "}
               {dependsOn.map(i => (
-                <Link to={`./${i.solid.name}`}>
-                  <Code>
-                    {i.solid.name !== DEFAULT_RESULT_NAME
-                      ? `${i.solid.name}:${i.definition.name}`
-                      : i.solid.name}
-                  </Code>
-                </Link>
+                <div>
+                  <Link to={`./${i.solid.name}`}>
+                    <Code>
+                      {i.solid.name !== DEFAULT_RESULT_NAME
+                        ? `${i.solid.name}:${i.definition.name}`
+                        : i.solid.name}
+                    </Code>
+                  </Link>
+                </div>
               ))}
             </Text>
           )}
@@ -126,32 +125,31 @@ export default class SidebarSolidInfo extends React.Component<
             </UL>
           ) : null}
         </SectionItemContainer>
-      ));
+      )
+    );
   }
 
   renderOutputs() {
-    return this.props.solid.outputs
-      .filter(output => !output.definition.type.isNothing)
-      .map((output, i: number) => (
-        <SectionItemContainer key={i}>
-          <SectionItemHeader>{output.definition.name}</SectionItemHeader>
-          <TypeWrapper>
-            <TypeWithTooltip type={output.definition.type} />
-          </TypeWrapper>
-          <Description description={output.definition.description} />
-          {output.definition.expectations.length > 0 ? (
-            <H6>Expectations</H6>
-          ) : null}
-          <UL>
-            {output.definition.expectations.map((expectation, i) => (
-              <li key={i}>
-                {expectation.name}
-                <Description description={expectation.description} />
-              </li>
-            ))}
-          </UL>
-        </SectionItemContainer>
-      ));
+    return this.props.solid.outputs.map((output, i: number) => (
+      <SectionItemContainer key={i}>
+        <SectionItemHeader>{output.definition.name}</SectionItemHeader>
+        <TypeWrapper>
+          <TypeWithTooltip type={output.definition.type} />
+        </TypeWrapper>
+        <Description description={output.definition.description} />
+        {output.definition.expectations.length > 0 ? (
+          <H6>Expectations</H6>
+        ) : null}
+        <UL>
+          {output.definition.expectations.map((expectation, i) => (
+            <li key={i}>
+              {expectation.name}
+              <Description description={expectation.description} />
+            </li>
+          ))}
+        </UL>
+      </SectionItemContainer>
+    ));
   }
 
   public render() {

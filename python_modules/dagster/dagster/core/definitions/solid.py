@@ -1,4 +1,4 @@
-from abc import ABCMeta
+from abc import ABCMeta, abstractproperty
 
 import six
 
@@ -36,6 +36,18 @@ class ISolidDefinition(six.with_metaclass(ABCMeta)):
     def output_def_named(self, name):
         check.str_param(name, 'name')
         return self.output_dict[name]
+
+    @property
+    def has_configurable_inputs(self):
+        return any([inp.runtime_type.input_schema for inp in self.input_dict.values()])
+
+    @property
+    def has_configurable_outputs(self):
+        return any([out.runtime_type.output_schema for out in self.output_dict.values()])
+
+    @abstractproperty
+    def has_config_entry(self):
+        raise NotImplementedError()
 
 
 class SolidDefinition(ISolidDefinition):
@@ -125,6 +137,10 @@ class SolidDefinition(ISolidDefinition):
 
         super(SolidDefinition, self).__init__(name, input_dict, output_dict, description, metadata)
 
+    @property
+    def has_config_entry(self):
+        return self.config_field or self.has_configurable_inputs or self.has_configurable_outputs
+
 
 class CompositeSolidDefinition(ISolidDefinition, IContainSolids):
     def __init__(
@@ -182,6 +198,11 @@ class CompositeSolidDefinition(ISolidDefinition, IContainSolids):
             resources.update(solid.definition.resources)
 
         return resources
+
+    @property
+    def has_config_entry(self):
+        has_solid_config = any([solid.definition.has_config_entry for solid in self.solids])
+        return has_solid_config or self.has_configurable_inputs or self.has_configurable_outputs
 
     def mapped_input(self, solid_name, input_name):
         for mapping in self.input_mappings:

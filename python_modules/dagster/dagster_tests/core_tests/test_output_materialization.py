@@ -16,10 +16,6 @@ from dagster import (
     RuntimeType,
     output_schema,
 )
-from dagster.core.definitions.environment_configs import (
-    solid_has_config_entry,
-    solid_has_configurable_outputs,
-)
 from dagster.core.errors import DagsterInvariantViolationError
 from dagster.core.execution.api import create_execution_plan
 from dagster.core.execution.context_creation_pipeline import create_environment_config
@@ -85,8 +81,8 @@ def one_input_no_output_pipeline():
 
 def test_solid_has_config_entry():
     pipeline = single_int_output_pipeline()
-    assert solid_has_configurable_outputs(pipeline.solid_named('return_one').definition)
-    assert solid_has_config_entry(pipeline.solid_named('return_one').definition)
+    assert pipeline.solid_named('return_one').definition.has_configurable_outputs
+    assert pipeline.solid_named('return_one').definition.has_config_entry
 
 
 def test_basic_json_default_output_config_schema():

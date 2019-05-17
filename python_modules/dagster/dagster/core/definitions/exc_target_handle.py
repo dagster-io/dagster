@@ -27,77 +27,73 @@ class ExecutionTargetHandle:
     '''
 
     @staticmethod
-    def for_pipeline_fn(fn_name, kwargs=None):  # pylint: disable=unused-argument
+    def for_pipeline_fn(fn_name):  # pylint: disable=unused-argument
         '''This builder is a bit magical, but it inspects its caller to determine how to build a
         ExecutionTargetHandle object via python_file and fn_name.
 
         This will work since fn_name is ensured to be in scope in the python_file caller's scope.
         '''
         return ExecutionTargetHandle.for_pipeline_python_file(
-            python_file=_get_python_file_from_previous_stack_frame(),
-            fn_name=fn_name.__name__,
-            kwargs=kwargs,
+            python_file=_get_python_file_from_previous_stack_frame(), fn_name=fn_name.__name__
         )
 
     @staticmethod
-    def for_repo_fn(fn_name, kwargs=None):  # pylint: disable=unused-argument
+    def for_repo_fn(fn_name):  # pylint: disable=unused-argument
         '''This builder is a bit magical, but it inspects its caller to determine how to build a
         ExecutionTargetHandle object via python_file and fn_name.
 
         This will work since fn_name is ensured to be in scope in the python_file caller's scope.
         '''
         return ExecutionTargetHandle.for_repo_python_file(
-            python_file=_get_python_file_from_previous_stack_frame(),
-            fn_name=fn_name.__name__,
-            kwargs=kwargs,
+            python_file=_get_python_file_from_previous_stack_frame(), fn_name=fn_name.__name__
         )
 
     @staticmethod
-    def for_repo_yaml(repository_yaml, kwargs=None):
+    def for_repo_yaml(repository_yaml):
         '''Builds an ExecutionTargetHandle for a repository.yml file.
         '''
         return ExecutionTargetHandle(
-            _ExecutionTargetHandleData(repository_yaml=repository_yaml, kwargs=kwargs),
+            _ExecutionTargetHandleData(repository_yaml=repository_yaml),
             _ExecutionTargetMode.REPOSITORY,
         )
 
     @staticmethod
-    def for_repo_python_file(python_file, fn_name, kwargs=None):
+    def for_repo_python_file(python_file, fn_name):
         '''Builds an ExecutionTargetHandle for a repository python file and function which is expected
         to return a RepositoryDefinition instance.
         '''
         return ExecutionTargetHandle(
-            _ExecutionTargetHandleData(python_file=python_file, fn_name=fn_name, kwargs=kwargs),
+            _ExecutionTargetHandleData(python_file=python_file, fn_name=fn_name),
             _ExecutionTargetMode.REPOSITORY,
         )
 
     @staticmethod
-    def for_repo_module(module_name, fn_name, kwargs=None):
+    def for_repo_module(module_name, fn_name):
         '''Builds an ExecutionTargetHandle for a repository module and function which is expected
         to return a RepositoryDefinition instance.
         '''
         return ExecutionTargetHandle(
-            _ExecutionTargetHandleData(module_name=module_name, fn_name=fn_name, kwargs=kwargs),
+            _ExecutionTargetHandleData(module_name=module_name, fn_name=fn_name),
             _ExecutionTargetMode.REPOSITORY,
         )
 
     @staticmethod
-    def for_pipeline_python_file(python_file, fn_name, kwargs=None):
+    def for_pipeline_python_file(python_file, fn_name):
         '''Builds an ExecutionTargetHandle for a pipeline python file and function which is expected
         to return a PipelineDefinition instance.
         '''
         return ExecutionTargetHandle(
-            _ExecutionTargetHandleData(python_file=python_file, fn_name=fn_name, kwargs=kwargs),
+            _ExecutionTargetHandleData(python_file=python_file, fn_name=fn_name),
             _ExecutionTargetMode.PIPELINE,
         )
 
     @staticmethod
-    def for_pipeline_module(module_name, fn_name, kwargs=None):
+    def for_pipeline_module(module_name, fn_name):
         '''Builds an ExecutionTargetHandle for a pipeline python module and function which is expected
         to return a PipelineDefinition instance.
         '''
         return ExecutionTargetHandle(
-            _ExecutionTargetHandleData(module_name=module_name, fn_name=fn_name, kwargs=kwargs),
+            _ExecutionTargetHandleData(module_name=module_name, fn_name=fn_name),
             _ExecutionTargetMode.PIPELINE,
         )
 
@@ -305,7 +301,7 @@ class _ExecutionTargetMode(Enum):
 class _ExecutionTargetHandleData(
     namedtuple(
         '_ExecutionTargetHandleData',
-        'repository_yaml module_name python_file fn_name pipeline_name kwargs',
+        'repository_yaml module_name python_file fn_name pipeline_name',
     )
 ):
     def __new__(
@@ -315,7 +311,6 @@ class _ExecutionTargetHandleData(
         python_file=None,
         fn_name=None,
         pipeline_name=None,
-        kwargs=None,
     ):
         return super(_ExecutionTargetHandleData, cls).__new__(
             cls,
@@ -324,7 +319,6 @@ class _ExecutionTargetHandleData(
             python_file=check.opt_str_param(python_file, 'python_file'),
             fn_name=check.opt_str_param(fn_name, 'fn_name'),
             pipeline_name=check.opt_str_param(pipeline_name, 'pipeline_name'),
-            kwargs=check.opt_dict_param(kwargs, 'kwargs'),
         )
 
     def get_repository_entrypoint(self):
@@ -332,11 +326,11 @@ class _ExecutionTargetHandleData(
             return LoaderEntrypoint.from_yaml(self.repository_yaml)
         elif self.module_name and self.fn_name:
             return LoaderEntrypoint.from_module_target(
-                module_name=self.module_name, fn_name=self.fn_name, kwargs=self.kwargs
+                module_name=self.module_name, fn_name=self.fn_name
             )
         elif self.python_file and self.fn_name:
             return LoaderEntrypoint.from_file_target(
-                python_file=self.python_file, fn_name=self.fn_name, kwargs=self.kwargs
+                python_file=self.python_file, fn_name=self.fn_name
             )
         else:
             raise InvalidRepositoryLoadingComboError()

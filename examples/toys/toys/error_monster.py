@@ -8,6 +8,7 @@ from dagster import (
     ModeDefinition,
     OutputDefinition,
     PipelineDefinition,
+    PresetDefinition,
     ResourceDefinition,
     SolidInstance,
     String,
@@ -93,6 +94,9 @@ def define_error_monster_pipeline():
             ModeDefinition(
                 name='errorable_mode', resources={'errorable_resource': define_errorable_resource()}
             )
+        ],
+        preset_definitions=[
+            PresetDefinition('passing', environment_files=['environments/error.yml'])
         ],
     )
 

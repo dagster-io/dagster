@@ -4,6 +4,7 @@ from dagster import (
     InputDefinition,
     OutputDefinition,
     PipelineDefinition,
+    PresetDefinition,
     lambda_solid,
 )
 import dagster_pandas as dagster_pd
@@ -56,4 +57,12 @@ def define_pandas_hello_world_pipeline():
             'sum_solid': {},
             'sum_sq_solid': {'sum_df': DependencyDefinition(sum_solid.name)},
         },
+        preset_definitions=[
+            PresetDefinition(
+                'test', environment_files=['environments/pandas_hello_world_test.yml']
+            ),
+            PresetDefinition(
+                'prod', environment_files=['environments/pandas_hello_world_prod.yml']
+            ),
+        ],
     )

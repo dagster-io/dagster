@@ -597,13 +597,16 @@ def test_config_type_or_error_query_success():
     result = execute_dagster_graphql(
         define_context(),
         CONFIG_TYPE_QUERY,
-        {'pipelineName': 'csv_hello_world', 'configTypeName': 'CsvHelloWorld.Environment'},
+        {
+            'pipelineName': 'csv_hello_world',
+            'configTypeName': 'CsvHelloWorld.Mode.Default.Environment',
+        },
     )
 
     assert not result.errors
     assert result.data
     assert result.data['configTypeOrError']['__typename'] == 'CompositeConfigType'
-    assert result.data['configTypeOrError']['name'] == 'CsvHelloWorld.Environment'
+    assert result.data['configTypeOrError']['name'] == 'CsvHelloWorld.Mode.Default.Environment'
 
 
 def test_config_type_or_error_pipeline_not_found():
