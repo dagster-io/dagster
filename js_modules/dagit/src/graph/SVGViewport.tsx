@@ -148,14 +148,21 @@ export default class SVGViewport extends React.Component<
     return { x: e.clientX - ownerRect.left, y: e.clientY - ownerRect.top };
   }
 
-  public smoothZoomToSVGCoords(x: number, y: number, targetScale: number) {
+  public smoothZoomToSVGCoords(x: number, y: number, scale: number) {
     const el = this.element.current!;
     var ownerRect = el.getBoundingClientRect();
-    this.smoothZoom({
-      x: -x * targetScale + ownerRect.width / 2,
-      y: -y * targetScale + ownerRect.height / 2,
-      scale: targetScale
-    });
+    x = -x * scale + ownerRect.width / 2;
+    y = -y * scale + ownerRect.height / 2;
+
+    if (
+      Math.abs(this.state.scale - scale) < 0.01 &&
+      Math.abs(this.state.x - x) < 1 &&
+      Math.abs(this.state.y - y) < 1
+    ) {
+      return false;
+    }
+    this.smoothZoom({ x, y, scale });
+    return true;
   }
 
   public smoothZoom(to: { x: number; y: number; scale: number }) {

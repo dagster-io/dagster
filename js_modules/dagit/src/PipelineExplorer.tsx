@@ -2,21 +2,28 @@ import * as React from "react";
 import gql from "graphql-tag";
 import styled from "styled-components";
 import { History } from "history";
-import { Colors } from "@blueprintjs/core";
+import { Icon, Colors } from "@blueprintjs/core";
 import { Route } from "react-router";
+import { Link } from "react-router-dom";
 import { parse as parseQueryString } from "query-string";
 import { PipelineExplorerFragment } from "./types/PipelineExplorerFragment";
 import { PipelineExplorerSolidFragment } from "./types/PipelineExplorerSolidFragment";
 import PipelineGraph from "./graph/PipelineGraph";
-import { getDagrePipelineLayout } from "./graph/getFullSolidLayout";
+import {
+  getDagrePipelineLayout,
+  IFullPipelineLayout
+} from "./graph/getFullSolidLayout";
 import { PanelDivider } from "./PanelDivider";
 import SidebarTabbedContainer from "./SidebarTabbedContainer";
 import { SolidJumpBar } from "./PipelineJumpComponents";
 
 interface IPipelineExplorerProps {
   history: History;
+  path: string[];
   pipeline: PipelineExplorerFragment;
+  solids: PipelineExplorerSolidFragment[];
   solid: PipelineExplorerSolidFragment | undefined;
+  parentSolid: PipelineExplorerSolidFragment | undefined;
 }
 
 interface IPipelineExplorerState {
@@ -32,11 +39,9 @@ export default class PipelineExplorer extends React.Component<
       fragment PipelineExplorerFragment on Pipeline {
         name
         description
-        ...PipelineGraphFragment
         ...SidebarTabbedContainerPipelineFragment
       }
 
-      ${PipelineGraph.fragments.PipelineGraphFragment}
       ${SidebarTabbedContainer.fragments.SidebarTabbedContainerPipelineFragment}
     `,
     PipelineExplorerSolidFragment: gql`
@@ -60,28 +65,69 @@ export default class PipelineExplorer extends React.Component<
   }
 
   handleClickSolid = (solidName: string) => {
-    const { history, pipeline } = this.props;
-    history.push(`/${pipeline.name}/explore/${solidName}`);
+    const { history, pipeline, path } = this.props;
+    const next = [...path];
+    next[next.length - 1] = solidName;
+    history.push(`/${pipeline.name}/explore/${next.join("/")}`);
+  };
+
+  handleExpandCompositeSolid = (solidName: string) => {
+    const { history, pipeline, path } = this.props;
+    const next = [...path];
+    next[next.length - 1] = solidName;
+    next.push("");
+    history.push(`/${pipeline.name}/explore/${next.join("/")}`);
   };
 
   handleClickBackground = () => {
-    const { history, pipeline } = this.props;
-    history.push(`/${pipeline.name}/explore`);
+    this.handleClickSolid("");
+  };
+
+  _layoutCacheKey: string | undefined;
+  _layoutCache: IFullPipelineLayout | undefined;
+
+  getLayout = (solids: PipelineExplorerSolidFragment[]) => {
+    const key = solids.map(s => s.name).join("|");
+    if (this._layoutCacheKey === key && this._layoutCache) {
+      return this._layoutCache;
+    }
+    this._layoutCache = getDagrePipelineLayout(solids);
+    this._layoutCacheKey = key;
+    return this._layoutCache;
   };
 
   public render() {
-    const { pipeline, solid } = this.props;
+    const { pipeline, parentSolid, solid, solids, path } = this.props;
     const { filter, graphVW } = this.state;
 
     return (
       <PipelinesContainer>
         <PipelinePanel key="graph" style={{ width: `${graphVW}vw` }}>
-          <SearchOverlay>
+          <PathOverlay>
+            <Link style={{ padding: 3 }} to={`/${pipeline.name}/explore/`}>
+              <Icon icon="diagram-tree" />
+            </Link>
+            <Icon icon="chevron-right" />
+            {path.slice(0, path.length - 1).map((name, idx) => (
+              <>
+                <Link
+                  style={{ padding: 3 }}
+                  to={`/${pipeline.name}/explore/${path
+                    .slice(0, idx + 1)
+                    .join("/")}`}
+                >
+                  {name}
+                </Link>
+                <Icon icon="chevron-right" />
+              </>
+            ))}
             <SolidJumpBar
-              solids={pipeline.solids}
+              solids={solids}
               selectedSolid={solid}
               onItemSelect={solid => this.handleClickSolid(solid.name)}
             />
+          </PathOverlay>
+          <SearchOverlay>
             <SolidSearchInput
               type="text"
               placeholder="Filter..."
@@ -90,12 +136,15 @@ export default class PipelineExplorer extends React.Component<
             />
           </SearchOverlay>
           <PipelineGraph
-            pipeline={pipeline}
+            pipelineName={pipeline.name}
+            solids={solids}
+            selectedSolid={solid}
+            parentSolid={parentSolid}
             onClickSolid={this.handleClickSolid}
             onClickBackground={this.handleClickBackground}
-            layout={getDagrePipelineLayout(pipeline)}
-            selectedSolid={solid}
-            highlightedSolids={pipeline.solids.filter(
+            onExpandCompositeSolid={this.handleExpandCompositeSolid}
+            layout={this.getLayout(solids)}
+            highlightedSolids={solids.filter(
               s => filter && s.name.includes(filter)
             )}
           />
@@ -114,6 +163,8 @@ export default class PipelineExplorer extends React.Component<
               <SidebarTabbedContainer
                 pipeline={pipeline}
                 solid={solid}
+                parentSolid={parentSolid}
+                onExpandCompositeSolid={this.handleExpandCompositeSolid}
                 {...parseQueryString(location.search || "")}
               />
             )}
@@ -122,10 +173,6 @@ export default class PipelineExplorer extends React.Component<
       </PipelinesContainer>
     );
   }
-}
-
-function getConfigStorageKey(pipeline: PipelineExplorerFragment) {
-  return `dagit.pipelineConfigStorage.${pipeline.name}`;
 }
 
 const PipelinesContainer = styled.div`
@@ -150,13 +197,25 @@ const RightInfoPanel = styled.div`
 `;
 
 const SearchOverlay = styled.div`
-  background: rgba(0, 0, 0, 0.2);
+  background: rgba(245, 248, 250, 0.7);
   z-index: 2;
-  padding: 7px;
+  padding: 7px 5px;
   display: inline-flex;
   align-items: stretch;
   position: absolute;
   right: 0;
+`;
+
+const PathOverlay = styled.div`
+  background: rgba(245, 248, 250, 0.7);
+  z-index: 2;
+  padding: 7px;
+  padding-left: 10px;
+  max-width: 80%;
+  display: inline-flex;
+  align-items: center;
+  position: absolute;
+  left: 0;
 `;
 
 const SolidSearchInput = styled.input`

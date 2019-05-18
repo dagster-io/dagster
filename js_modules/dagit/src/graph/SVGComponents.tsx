@@ -268,3 +268,34 @@ export class SVGFlowLayoutFiller extends React.PureComponent {
     return <g />;
   }
 }
+
+interface SVGLabeledRectProps {
+  x: number;
+  y: number;
+  minified: boolean;
+  width: number;
+  height: number;
+  label: string;
+}
+export const SVGLabeledRect: React.FunctionComponent<
+  SVGLabeledRectProps
+> = props => (
+  <g>
+    <SVGMonospaceText
+      x={props.x}
+      y={props.y}
+      width={props.width}
+      size={props.minified ? 30 : 16}
+      text={props.label}
+      fill={"#979797"}
+    />
+    <rect
+      {...props}
+      y={props.y + (props.minified ? 34 : 20)}
+      height={props.height - (props.minified ? 34 : 20)}
+      fill={"transparent"}
+      stroke="#979797"
+      strokeWidth={1}
+    />
+  </g>
+);

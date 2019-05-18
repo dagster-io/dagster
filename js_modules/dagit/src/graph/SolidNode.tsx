@@ -18,10 +18,12 @@ import {
 import SolidTags from "./SolidTags";
 import SolidConfigPort from "./SolidConfigPort";
 import { DEFAULT_RESULT_NAME } from "../Util";
+import { number } from "prop-types";
 
 interface ISolidNodeProps {
   layout: IFullSolidLayout;
   solid: SolidNodeFragment;
+  parentSolid?: SolidNodeFragment;
   highlightedConnections: { a: string; b: string }[];
   minified: boolean;
   selected: boolean;
@@ -37,6 +39,7 @@ export default class SolidNode extends React.Component<ISolidNodeProps> {
       fragment SolidNodeFragment on Solid {
         name
         definition {
+          __typename
           metadata {
             key
             value
@@ -46,6 +49,34 @@ export default class SolidNode extends React.Component<ISolidNodeProps> {
               configType {
                 name
                 description
+              }
+            }
+          }
+          ... on CompositeSolidDefinition {
+            inputMappings {
+              definition {
+                name
+              }
+              mappedInput {
+                definition {
+                  name
+                }
+                solid {
+                  name
+                }
+              }
+            }
+            outputMappings {
+              definition {
+                name
+              }
+              mappedOutput {
+                definition {
+                  name
+                }
+                solid {
+                  name
+                }
               }
             }
           }
@@ -129,7 +160,7 @@ export default class SolidNode extends React.Component<ISolidNodeProps> {
     items: Array<SolidNodeFragment_inputs | SolidNodeFragment_outputs>,
     layout: { [ioName: string]: { layout: ILayout } }
   ) {
-    const { solid, minified, highlightedConnections } = this.props;
+    const { solid, parentSolid, minified, highlightedConnections } = this.props;
 
     return Object.keys(layout).map((key, i) => {
       const { x, y, width, height } = layout[key].layout;
@@ -143,6 +174,7 @@ export default class SolidNode extends React.Component<ISolidNodeProps> {
       const connections: Array<{ a: string; b: string }> = [];
       let title = `${name}: ${type.displayName}`;
       let clickTarget: string | null = null;
+      let mapping: { definition: { name: string } } | undefined = undefined;
 
       if ("dependsOn" in item && item.dependsOn) {
         title +=
@@ -152,6 +184,16 @@ export default class SolidNode extends React.Component<ISolidNodeProps> {
             .join("\n");
         clickTarget =
           item.dependsOn.length === 1 ? item.dependsOn[0].solid.name : null;
+
+        mapping =
+          parentSolid &&
+          parentSolid.definition.__typename === "CompositeSolidDefinition"
+            ? parentSolid.definition.inputMappings.find(
+                m =>
+                  m.mappedInput.solid.name === solid.name &&
+                  m.mappedInput.definition.name === key
+              )
+            : undefined;
 
         connections.push(
           ...item.dependsOn.map(o => ({
@@ -168,6 +210,16 @@ export default class SolidNode extends React.Component<ISolidNodeProps> {
             .join("\n");
         clickTarget =
           item.dependedBy.length === 1 ? item.dependedBy[0].solid.name : null;
+
+        mapping =
+          parentSolid &&
+          parentSolid.definition.__typename === "CompositeSolidDefinition"
+            ? parentSolid.definition.outputMappings.find(
+                m =>
+                  m.mappedOutput.solid.name === solid.name &&
+                  m.mappedOutput.definition.name === key
+              )
+            : undefined;
 
         connections.push(
           ...item.dependedBy.map(o => ({
@@ -192,6 +244,16 @@ export default class SolidNode extends React.Component<ISolidNodeProps> {
           onClick={() => clickTarget && this.props.onDoubleClick(clickTarget)}
         >
           <title>{title}</title>
+          {mapping && (
+            <ExternalMappingDot
+              rx={x + 8 + 7}
+              ry={y + 8 + 7}
+              length={45}
+              direction={"dependedBy" in item ? 1 : -1}
+              minified={minified}
+              text={mapping.definition.name}
+            />
+          )}
           <SVGFlowLayoutRect
             x={x}
             y={y}
@@ -276,10 +338,27 @@ export default class SolidNode extends React.Component<ISolidNodeProps> {
     );
   }
 
+  public renderCompositeMark() {
+    const { x, y, width, height } = this.props.layout.solid;
+    return (
+      <rect
+        x={x - 6}
+        y={y - 6}
+        width={width + 12}
+        height={height + 12}
+        fill={PipelineColorScale("solid")}
+        stroke="#979797"
+        strokeWidth={1}
+      />
+    );
+  }
+
   public render() {
     const { solid, layout, dim, selected, minified } = this.props;
     const { metadata } = solid.definition;
     const { x, y, width, height } = layout.solid;
+
+    console.log(solid);
 
     let configDefinition = null;
     if (solid.definition.__typename === "SolidDefinition") {
@@ -295,6 +374,8 @@ export default class SolidNode extends React.Component<ISolidNodeProps> {
         opacity={dim ? 0.3 : 1}
       >
         {selected && this.renderSelectedBox()}
+        {solid.definition.__typename === "CompositeSolidDefinition" &&
+          this.renderCompositeMark()}
         {this.renderSolid()}
         {this.renderIO("input", solid.inputs, layout.inputs)}
         {this.renderIO("output", solid.outputs, layout.outputs)}
@@ -315,3 +396,55 @@ export default class SolidNode extends React.Component<ISolidNodeProps> {
     );
   }
 }
+
+interface ExternalMappingDotProps {
+  rx: number;
+  ry: number;
+  minified: boolean;
+  length: number;
+  direction: -1 | 1;
+  text: string;
+}
+
+const ExternalMappingDot = ({
+  rx,
+  ry,
+  minified,
+  length,
+  direction,
+  text
+}: ExternalMappingDotProps) => {
+  const textSize = SVGMonospaceText.intrinsicSizeForProps({ size: 14, text });
+  const dotRadius = 10;
+  const dotCX = rx - length;
+  const dotCY = ry + length * direction;
+
+  return (
+    <g>
+      <line
+        stroke={Colors.VIOLET3}
+        strokeWidth={4}
+        x1={rx}
+        y1={ry}
+        x2={dotCX}
+        y2={dotCY}
+      />
+      {!minified && (
+        <SVGMonospaceText
+          x={dotCX - (textSize.width + dotRadius + 4)}
+          y={dotCY - textSize.height / 2}
+          text={text}
+          fill={Colors.VIOLET3}
+          size={14}
+        />
+      )}
+      <ellipse
+        fill={Colors.VIOLET3}
+        cx={dotCX}
+        cy={dotCY}
+        rx={dotRadius}
+        ry={dotRadius}
+      />
+    </g>
+  );
+};
