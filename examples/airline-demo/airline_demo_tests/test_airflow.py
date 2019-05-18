@@ -21,7 +21,7 @@ from .marks import airflow, slow  # pylint: disable=wrong-import-position
 @slow
 @airflow
 class TestAirflowPython_0IngestExecution:
-    exc_target_handle = ExecutionTargetHandle.for_pipeline_fn(define_airline_demo_ingest_pipeline)
+    handle = ExecutionTargetHandle.for_pipeline_fn(define_airline_demo_ingest_pipeline)
     pipeline_name = 'airline_demo_ingest_pipeline'
     config_yaml = [
         script_relative_path(os.path.join('..', 'environments', 'local_base.yml')),
@@ -37,9 +37,7 @@ class TestAirflowPython_0IngestExecution:
 @slow
 @airflow
 class TestAirflowPython_1WarehouseExecution:
-    exc_target_handle = ExecutionTargetHandle.for_pipeline_fn(
-        define_airline_demo_warehouse_pipeline
-    )
+    handle = ExecutionTargetHandle.for_pipeline_fn(define_airline_demo_warehouse_pipeline)
     pipeline_name = 'airline_demo_warehouse_pipeline'
     config_yaml = [
         script_relative_path(os.path.join('..', 'environments', 'local_base.yml')),

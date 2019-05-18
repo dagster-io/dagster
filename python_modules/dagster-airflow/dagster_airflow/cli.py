@@ -106,7 +106,7 @@ def scaffold(dag_name, module_name, fn_name, output_path, config_file):
             )
         )
         printer.comment('otherwise, this import will fail.')
-        printer.line('exc_target_handle=ExecutionTargetHandle.for_pipeline_module(')
+        printer.line('handle=ExecutionTargetHandle.for_pipeline_module(')
         with printer.with_indent():
             printer.line(
                 'module_name=\'{module_name}\', fn_name=\'{fn_name}\''.format(

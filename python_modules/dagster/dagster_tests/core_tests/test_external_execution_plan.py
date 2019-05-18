@@ -112,7 +112,7 @@ def test_using_file_system_for_subplan_multiprocessing():
             run_config=RunConfig(
                 run_id=run_id,
                 executor_config=MultiprocessExecutorConfig(
-                    exc_target_handle=ExecutionTargetHandle.for_pipeline_fn(define_inty_pipeline)
+                    handle=ExecutionTargetHandle.for_pipeline_fn(define_inty_pipeline)
                 ),
             ),
             step_keys_to_execute=step_keys,
@@ -130,7 +130,7 @@ def test_using_file_system_for_subplan_multiprocessing():
             run_config=RunConfig(
                 run_id=run_id,
                 executor_config=MultiprocessExecutorConfig(
-                    exc_target_handle=ExecutionTargetHandle.for_pipeline_fn(define_inty_pipeline)
+                    handle=ExecutionTargetHandle.for_pipeline_fn(define_inty_pipeline)
                 ),
             ),
             step_keys_to_execute=['add_one.transform'],

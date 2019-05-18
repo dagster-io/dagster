@@ -20,7 +20,7 @@ class InProcessExecutorChildProcessCommand(ChildProcessCommand):
         from dagster.core.execution.api import yield_pipeline_execution_context
 
         check.inst(self.run_config.executor_config, MultiprocessExecutorConfig)
-        pipeline = self.run_config.executor_config.exc_target_handle.build_pipeline_definition()
+        pipeline = self.run_config.executor_config.handle.build_pipeline_definition()
 
         with yield_pipeline_execution_context(
             pipeline, self.environment_dict, self.run_config.with_tags(pid=str(os.getpid()))

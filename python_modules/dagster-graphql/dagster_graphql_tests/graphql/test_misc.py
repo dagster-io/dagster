@@ -167,7 +167,7 @@ def define_test_repository():
 def test_pipelines_or_error_invalid():
 
     context = DagsterGraphQLContext(
-        exc_target_handle=ExecutionTargetHandle.for_repo_fn(define_test_repository),
+        handle=ExecutionTargetHandle.for_repo_fn(define_test_repository),
         pipeline_runs=PipelineRunStorage(),
         execution_manager=SynchronousExecutionManager(),
     )

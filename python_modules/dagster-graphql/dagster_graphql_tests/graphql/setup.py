@@ -98,7 +98,7 @@ def execute_dagster_graphql(context, query, variables=None):
 
 def define_context(raise_on_error=True):
     return DagsterGraphQLContext(
-        exc_target_handle=ExecutionTargetHandle.for_repo_fn(define_repository),
+        handle=ExecutionTargetHandle.for_repo_fn(define_repository),
         pipeline_runs=PipelineRunStorage(),
         execution_manager=SynchronousExecutionManager(),
         raise_on_error=raise_on_error,

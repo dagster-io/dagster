@@ -107,8 +107,8 @@ def get_register_repo_info(cli_args, allow_none=True):
 
     register_repo_info = None
     if scaffolding_with_repo:
-        exc_target_handle = ExecutionTargetHandle.for_repo_cli_args(cli_args)
-        entrypoint = exc_target_handle.entrypoint
+        handle = ExecutionTargetHandle.for_repo_cli_args(cli_args)
+        entrypoint = handle.entrypoint
 
         if entrypoint:
             module = entrypoint.module_name

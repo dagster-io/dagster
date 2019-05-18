@@ -27,8 +27,8 @@ def create_dagster_graphql_cli():
     return ui
 
 
-def execute_query_from_cli(exc_target_handle, query, variables):
-    check.inst_param(exc_target_handle, 'exc_target_handle', ExecutionTargetHandle)
+def execute_query_from_cli(handle, query, variables):
+    check.inst_param(handle, 'handle', ExecutionTargetHandle)
     check.str_param(query, 'query')
     check.opt_str_param(variables, 'variables')
 
@@ -39,7 +39,7 @@ def execute_query_from_cli(exc_target_handle, query, variables):
     execution_manager = SynchronousExecutionManager()
 
     context = DagsterGraphQLContext(
-        exc_target_handle=exc_target_handle,
+        handle=handle,
         pipeline_runs=pipeline_run_storage,
         execution_manager=execution_manager,
         version=__version__,
@@ -93,11 +93,11 @@ def execute_query_from_cli(exc_target_handle, query, variables):
 @click.version_option(version=__version__)
 @click.argument('query', type=click.STRING)
 def ui(variables, query, **kwargs):
-    exc_target_handle = ExecutionTargetHandle.for_repo_cli_args(kwargs)
+    handle = ExecutionTargetHandle.for_repo_cli_args(kwargs)
 
     query = query.strip('\'" \n\t')
 
-    execute_query_from_cli(exc_target_handle, query, variables)
+    execute_query_from_cli(handle, query, variables)
 
 
 def main():

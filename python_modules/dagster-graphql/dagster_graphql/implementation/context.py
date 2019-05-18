@@ -5,16 +5,9 @@ from .pipeline_execution_manager import PipelineExecutionManager
 
 class DagsterGraphQLContext(object):
     def __init__(
-        self,
-        exc_target_handle,
-        pipeline_runs,
-        execution_manager,
-        raise_on_error=False,
-        version=None,
+        self, handle, pipeline_runs, execution_manager, raise_on_error=False, version=None
     ):
-        self.exc_target_handle = check.inst_param(
-            exc_target_handle, 'exc_target_handle', ExecutionTargetHandle
-        )
+        self.handle = check.inst_param(handle, 'handle', ExecutionTargetHandle)
         self.pipeline_runs = check.inst_param(pipeline_runs, 'pipeline_runs', PipelineRunStorage)
         self.execution_manager = check.inst_param(
             execution_manager, 'pipeline_execution_manager', PipelineExecutionManager
