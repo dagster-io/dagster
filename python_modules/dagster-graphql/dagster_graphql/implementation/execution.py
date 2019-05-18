@@ -45,19 +45,13 @@ def start_pipeline_execution(
         def _start_execution(validated_config_either):
             new_run_id = run_id if run_id else make_new_run_id()
             execution_plan = create_execution_plan(
-                pipeline.get_dagster_pipeline(),
-                validated_config_either.value,
-                # TODO core UI change
-                # https://github.com/dagster-io/dagster/issues/1343
-                mode=mode if mode else pipeline.get_dagster_pipeline().get_default_mode_name(),
+                pipeline.get_dagster_pipeline(), validated_config_either.value, mode=mode
             )
             run = pipeline_run_storage.create_run(
                 new_run_id,
                 selector,
                 environment_dict,
-                # TODO core UI change
-                # https://github.com/dagster-io/dagster/issues/1343
-                mode if mode else pipeline.get_dagster_pipeline().get_default_mode_name(),
+                mode,
                 execution_plan,
                 reexecution_config,
                 step_keys_to_execute,
@@ -98,12 +92,7 @@ def start_pipeline_execution(
             )
 
         config_or_error = _config_or_error_from_pipeline(
-            graphene_info,
-            pipeline,
-            environment_dict,
-            # TODO core UI change
-            # https://github.com/dagster-io/dagster/issues/1343
-            mode=mode if mode else pipeline.get_dagster_pipeline().get_default_mode_name(),
+            graphene_info, pipeline, environment_dict, mode=mode
         )
         return config_or_error.chain(_start_execution)
 

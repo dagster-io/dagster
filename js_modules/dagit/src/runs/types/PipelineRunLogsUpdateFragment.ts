@@ -184,5 +184,6 @@ export interface PipelineRunLogsUpdateFragment {
   pipeline: PipelineRunLogsUpdateFragment_pipeline;
   logs: PipelineRunLogsUpdateFragment_logs;
   config: string;
+  mode: string;
   executionPlan: PipelineRunLogsUpdateFragment_executionPlan;
 }

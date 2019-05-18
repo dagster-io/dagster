@@ -3,7 +3,6 @@ from dagster.core.errors import DagsterInvalidDefinitionError, DagsterInvariantV
 from dagster.core.types.runtime import construct_runtime_type_dictionary
 
 from .container import IContainSolids, create_execution_structure, validate_dependency_dict
-from .context import PipelineContextDefinition, default_pipeline_context_definitions
 from .dependency import DependencyDefinition, SolidHandle, SolidInstance
 from .mode import ModeDefinition
 from .solid import ISolidDefinition
@@ -45,12 +44,6 @@ class PipelineDefinition(IContainSolids, object):
     - Solids:
         Each solid represents a functional unit of data computation.
 
-    - Context Definitions:
-        Pipelines can be designed to execute in a number of different operating environments
-        (e.g. prod, dev, unittest) that require different configuration and setup. A context
-        definition defines how a context (of type ExecutionContext) is created and what
-        configuration is necessary to create it.
-
     - Dependencies:
         Solids within a pipeline are arranged as a DAG (directed, acyclic graph). Dependencies
         determine how the values produced by solids flow through the DAG.
@@ -60,8 +53,6 @@ class PipelineDefinition(IContainSolids, object):
             The set of solid definitions used in this pipeline.
         name (Optional[str])
         description (Optional[str])
-        context_definitions (Optional[Dict[str, PipelineContextDefinition]]):
-            A mapping of context names to PipelineContextDefinition.
         dependencies (Optional[Dict[Union[str, SolidInstance], Dict[str, DependencyDefinition]]]):
             A structure that declares where each solid gets its inputs. The keys at the top
             level dict are either string names of solids or SolidInstances. The values
@@ -77,12 +68,6 @@ class PipelineDefinition(IContainSolids, object):
         dependencies (Dict[str, Dict[str, DependencyDefinition]]) :
             Dependencies that constitute the structure of the pipeline. This is a two-dimensional
             array that maps solid_name => input_name => DependencyDefinition instance
-        context_definitions (Dict[str, PipelineContextDefinition]):
-            The context definitions available for consumers of this pipelines. For example, a
-            unit-testing environment and a production environment probably have very different
-            configuration and requirements. There would be one context definition per
-            environment. Only one context will be used at runtime, selected by environment
-            configuration.
         dependency_structure (DependencyStructure):
             Used mostly internally. This has the same information as the dependencies data
             structure, but indexed for fast usage.
@@ -93,7 +78,6 @@ class PipelineDefinition(IContainSolids, object):
         solids,
         name=None,
         description=None,
-        context_definitions=None,
         dependencies=None,
         mode_definitions=None,
         preset_definitions=None,
@@ -101,18 +85,11 @@ class PipelineDefinition(IContainSolids, object):
         self.name = check.opt_str_param(name, 'name', '<<unnamed>>')
         self.description = check.opt_str_param(description, 'description')
 
-        if context_definitions and mode_definitions:
-            raise DagsterInvalidDefinitionError(
-                (
-                    'Cannot specify both context definitions and mode definitions on pipeline "{}"'
-                ).format(self.name)
-            )
-
         mode_definitions = check.opt_list_param(
             mode_definitions, 'mode_definitions', of_type=ModeDefinition
         )
 
-        if not context_definitions and not mode_definitions:
+        if not mode_definitions:
             mode_definitions = [ModeDefinition()]
 
         self.mode_definitions = mode_definitions
@@ -121,31 +98,16 @@ class PipelineDefinition(IContainSolids, object):
             _check_solids_arg(self.name, solids), 'solids', of_type=ISolidDefinition
         )
 
-        if self.mode_definitions:
-            self.context_definitions = {}
-            seen_modes = set()
-            for mode_def in mode_definitions:
-                if mode_def.name in seen_modes:
-                    raise DagsterInvalidDefinitionError(
-                        (
-                            'Two modes seen with the name "{mode_name}" in "{pipeline_name}". '
-                            'Modes must have unique names.'
-                        ).format(mode_name=mode_def.name, pipeline_name=self.name)
-                    )
-                seen_modes.add(mode_def.name)
-        else:
-            self.context_definitions = (
-                default_pipeline_context_definitions()
-                if not context_definitions
-                else check.dict_param(
-                    context_definitions,
-                    'context_definitions',
-                    key_type=str,
-                    value_type=PipelineContextDefinition,
+        seen_modes = set()
+        for mode_def in mode_definitions:
+            if mode_def.name in seen_modes:
+                raise DagsterInvalidDefinitionError(
+                    (
+                        'Two modes seen with the name "{mode_name}" in "{pipeline_name}". '
+                        'Modes must have unique names.'
+                    ).format(mode_name=mode_def.name, pipeline_name=self.name)
                 )
-            )
-
-            check.invariant(self.context_definitions)
+            seen_modes.add(mode_def.name)
 
         self.dependencies = validate_dependency_dict(dependencies)
 
@@ -172,7 +134,7 @@ class PipelineDefinition(IContainSolids, object):
             self._preset_dict[preset.name] = preset
 
         # Validate solid resource dependencies
-        _validate_resource_dependencies(self.context_definitions, self.mode_definitions, solids)
+        _validate_resource_dependencies(self.mode_definitions, solids)
 
     def _get_mode_definition(self, mode):
         check.str_param(mode, 'mode')
@@ -182,9 +144,8 @@ class PipelineDefinition(IContainSolids, object):
 
         return None
 
-    @property
-    def is_modeless(self):
-        return not self.mode_definitions
+    def get_default_mode(self):
+        return self.mode_definitions[0]
 
     @property
     def is_single_mode(self):
@@ -204,11 +165,8 @@ class PipelineDefinition(IContainSolids, object):
     def get_mode_definition(self, mode=None):
         check.opt_str_param(mode, 'mode')
         if mode is None:
-            check.invariant(self.is_modeless or self.is_single_mode)
-            if self.is_modeless:
-                return None
-            else:
-                return self.mode_definitions[0]
+            check.invariant(self.is_single_mode)
+            return self.get_default_mode()
 
         mode_def = self._get_mode_definition(mode)
 
@@ -300,10 +258,6 @@ class PipelineDefinition(IContainSolids, object):
         check.str_param(name, 'name')
         return self._runtime_type_dict[name]
 
-    def has_context(self, name):
-        check.str_param(name, 'name')
-        return name in self.context_definitions
-
     def all_runtime_types(self):
         return self._runtime_type_dict.values()
 
@@ -391,33 +345,18 @@ def _build_sub_pipeline(pipeline_def, solid_names):
     return PipelineDefinition(
         name=pipeline_def.name,
         solids=list({solid.definition for solid in solids}),
-        context_definitions=pipeline_def.context_definitions,
         mode_definitions=pipeline_def.mode_definitions,
         dependencies=deps,
     )
 
 
-def _validate_resource_dependencies(context_definitions, mode_definitions, solids):
+def _validate_resource_dependencies(mode_definitions, solids):
     '''This validation ensures that each pipeline context provides the resources that are required
     by each solid.
     '''
-    check.opt_dict_param(
-        context_definitions, 'context_definitions', str, value_type=PipelineContextDefinition
-    )
-    check.opt_list_param(mode_definitions, 'mode_definintions', of_type=ModeDefinition)
+    check.list_param(mode_definitions, 'mode_definintions', of_type=ModeDefinition)
     check.list_param(solids, 'solids', of_type=ISolidDefinition)
 
-    check.invariant(context_definitions or mode_definitions)
-    check.invariant(not (context_definitions and mode_definitions))
-
-    if context_definitions:
-        _validate_resource_deps_on_context_defs(context_definitions, solids)
-    else:
-        check.invariant(mode_definitions)
-        _validate_resources_on_mode_defs(mode_definitions, solids)
-
-
-def _validate_resources_on_mode_defs(mode_definitions, solids):
     for mode_def in mode_definitions:
         mode_resources = set(mode_def.resource_defs.keys())
         for solid in solids:
@@ -428,21 +367,4 @@ def _validate_resources_on_mode_defs(mode_definitions, solids):
                             'Resource "{resource}" is required by solid {solid_name}, but is not '
                             'provided by mode "{mode_name}"'
                         ).format(resource=resource, solid_name=solid.name, mode_name=mode_def.name)
-                    )
-
-
-def _validate_resource_deps_on_context_defs(context_definitions, solids):
-    for context_name, context in context_definitions.items():
-        context_resources = set(context.resource_defs.keys())
-
-        for solid in solids:
-            for resource in solid.resources:
-                if resource not in context_resources:
-                    raise DagsterInvalidDefinitionError(
-                        (
-                            'Resource "{resource}" is required by solid {solid_name}, but is not '
-                            'provided by context "{context_name}"'
-                        ).format(
-                            resource=resource, solid_name=solid.name, context_name=context_name
-                        )
                     )

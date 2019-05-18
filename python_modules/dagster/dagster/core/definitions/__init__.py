@@ -1,7 +1,5 @@
 from .exc_target_handle import ExecutionTargetHandle
 
-from .context import PipelineContextDefinition
-
 from .dependency import (
     DependencyDefinition,
     MultiDependencyDefinition,

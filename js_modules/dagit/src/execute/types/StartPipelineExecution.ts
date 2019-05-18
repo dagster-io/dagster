@@ -47,5 +47,5 @@ export interface StartPipelineExecution {
 export interface StartPipelineExecutionVariables {
   pipeline: ExecutionSelector;
   config: any;
-  mode?: string | null;
+  mode: string;
 }

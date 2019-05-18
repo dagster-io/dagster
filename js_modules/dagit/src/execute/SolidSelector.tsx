@@ -183,6 +183,9 @@ class SolidSelector extends React.PureComponent<
         name => !!pipeline.solids.find(s => s.name === name)
       );
 
+    const allSolidsSelected =
+      !highlighted.length || highlighted.length === pipeline.solids.length;
+
     return (
       <div>
         <Dialog
@@ -232,8 +235,9 @@ class SolidSelector extends React.PureComponent<
           <div className={Classes.DIALOG_FOOTER}>
             <div className={Classes.DIALOG_FOOTER_ACTIONS}>
               <div style={{ alignSelf: "center" }}>
-                {highlighted.length || "All"} solid
-                {highlighted.length !== 1 ? "s" : ""} selected
+                {allSolidsSelected ? "All" : highlighted.length} solid
+                {highlighted.length !== 1 || allSolidsSelected ? "s" : ""}{" "}
+                selected
               </div>
               <Button onClick={() => this.setState({ open: false })}>
                 Cancel

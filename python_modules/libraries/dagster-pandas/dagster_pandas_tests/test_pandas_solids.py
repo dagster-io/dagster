@@ -2,7 +2,6 @@ import pandas as pd
 
 from dagster import (
     DependencyDefinition,
-    ExecutionContext,
     InputDefinition,
     OutputDefinition,
     PipelineDefinition,
@@ -22,7 +21,7 @@ def _dataframe_solid(name, inputs, transform_fn):
     )
 
 
-def get_solid_transformed_value(_context, solid_inst):
+def get_solid_transformed_value(solid_inst):
     pipeline = PipelineDefinition(
         solids=[load_num_csv_solid('load_csv'), solid_inst],
         dependencies={
@@ -41,10 +40,6 @@ def get_solid_transformed_value(_context, solid_inst):
 
 def get_num_csv_environment(solids_config):
     return {'solids': solids_config}
-
-
-def create_test_context():
-    return ExecutionContext()
 
 
 def create_sum_table():
@@ -81,7 +76,7 @@ def sum_sq_table_renamed_input(sum_table_renamed):
 
 
 def test_pandas_csv_in_memory():
-    df = get_solid_transformed_value(None, create_sum_table())
+    df = get_solid_transformed_value(create_sum_table())
     assert isinstance(df, pd.DataFrame)
     assert df.to_dict('list') == {'num1': [1, 3], 'num2': [2, 4], 'sum': [3, 7]}
 
@@ -130,8 +125,7 @@ def test_no_transform_solid():
         inputs=[InputDefinition('num_csv', DataFrame)],
         transform_fn=lambda _context, inputs: inputs['num_csv'],
     )
-    context = create_test_context()
-    df = get_solid_transformed_value(context, num_table)
+    df = get_solid_transformed_value(num_table)
     assert df.to_dict('list') == {'num1': [1, 3], 'num2': [2, 4]}
 
 

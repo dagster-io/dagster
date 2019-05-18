@@ -245,7 +245,7 @@ class DagsterDockerOperator(ModifiedDockerOperator, DagsterOperator):
         step=None,
         config=None,
         pipeline_name=None,
-        mode='default',
+        mode=None,
         step_keys=None,
         s3_bucket_name=None,
         *args,

@@ -53,14 +53,7 @@ def validate_pipeline_config(graphene_info, selector, config, mode):
     check.opt_str_param(mode, 'mode')
 
     def do_validation(pipeline):
-        config_or_error = _config_or_error_from_pipeline(
-            graphene_info,
-            pipeline,
-            config,
-            # TODO core UI change
-            # https://github.com/dagster-io/dagster/issues/1343
-            mode=mode if mode else pipeline.get_dagster_pipeline().get_default_mode_name(),
-        )
+        config_or_error = _config_or_error_from_pipeline(graphene_info, pipeline, config, mode)
         return config_or_error.chain(
             lambda config: graphene_info.schema.type_named('PipelineConfigValidationValid')(
                 pipeline
@@ -77,23 +70,12 @@ def get_execution_plan(graphene_info, selector, config, mode):
     check.opt_str_param(mode, 'mode')
 
     def create_plan(pipeline):
-        config_or_error = _config_or_error_from_pipeline(
-            graphene_info,
-            pipeline,
-            config,
-            # TODO core UI change
-            # https://github.com/dagster-io/dagster/issues/1343
-            mode=mode if mode else pipeline.get_dagster_pipeline().get_default_mode_name(),
-        )
+        config_or_error = _config_or_error_from_pipeline(graphene_info, pipeline, config, mode)
         return config_or_error.chain(
             lambda evaluate_value_result: graphene_info.schema.type_named('ExecutionPlan')(
                 pipeline,
                 create_execution_plan(
-                    pipeline.get_dagster_pipeline(),
-                    evaluate_value_result.value,
-                    # TODO core UI change
-                    # https://github.com/dagster-io/dagster/issues/1343
-                    mode=mode if mode else pipeline.get_dagster_pipeline().get_default_mode_name(),
+                    pipeline.get_dagster_pipeline(), evaluate_value_result.value, mode
                 ),
             )
         )

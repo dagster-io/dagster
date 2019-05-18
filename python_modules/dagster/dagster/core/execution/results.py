@@ -87,6 +87,7 @@ class SolidExecutionResult(object):
     '''Execution result for one solid of the pipeline.
 
     Attributes:
+      FIXME: This is very inaccurate!
       context (ExecutionContext): ExecutionContext of that particular Pipeline run.
       solid (SolidDefinition): Solid for which this result is
     '''

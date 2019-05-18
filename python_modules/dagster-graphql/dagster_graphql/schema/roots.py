@@ -39,7 +39,7 @@ class DauphinQuery(dauphin.ObjectType):
         dauphin.NonNull('ConfigTypeOrError'),
         pipelineName=dauphin.Argument(dauphin.NonNull(dauphin.String)),
         configTypeName=dauphin.Argument(dauphin.NonNull(dauphin.String)),
-        mode=dauphin.Argument(dauphin.String),
+        mode=dauphin.Argument(dauphin.NonNull(dauphin.String)),
     )
 
     runtimeTypeOrError = dauphin.Field(
@@ -58,7 +58,7 @@ class DauphinQuery(dauphin.ObjectType):
         args={
             'pipeline': dauphin.Argument(dauphin.NonNull('ExecutionSelector')),
             'config': dauphin.Argument('PipelineConfig'),
-            'mode': dauphin.Argument(dauphin.String),
+            'mode': dauphin.Argument(dauphin.NonNull(dauphin.String)),
         },
     )
 
@@ -67,7 +67,7 @@ class DauphinQuery(dauphin.ObjectType):
         args={
             'pipeline': dauphin.Argument(dauphin.NonNull('ExecutionSelector')),
             'config': dauphin.Argument('PipelineConfig'),
-            'mode': dauphin.Argument(dauphin.String),
+            'mode': dauphin.Argument(dauphin.NonNull(dauphin.String)),
         },
     )
 
@@ -141,7 +141,7 @@ class DauphinStartPipelineExecutionMutation(dauphin.Mutation):
     class Arguments:
         pipeline = dauphin.NonNull('ExecutionSelector')
         config = dauphin.Argument('PipelineConfig')
-        mode = dauphin.Argument(dauphin.String)
+        mode = dauphin.Argument(dauphin.NonNull(dauphin.String))
         stepKeys = dauphin.List(dauphin.NonNull(dauphin.String))
         executionMetadata = dauphin.Argument('ExecutionMetadata')
         reexecutionConfig = dauphin.Argument('ReexecutionConfig')
@@ -213,7 +213,7 @@ class DauphinExecutePlan(dauphin.Mutation):
     class Arguments:
         pipelineName = dauphin.NonNull(dauphin.String)
         config = dauphin.Argument('PipelineConfig')
-        mode = dauphin.Argument(dauphin.String)
+        mode = dauphin.Argument(dauphin.NonNull(dauphin.String))
         stepKeys = dauphin.List(dauphin.NonNull(dauphin.String))
         executionMetadata = dauphin.Argument(DauphinExecutionMetadata)
 

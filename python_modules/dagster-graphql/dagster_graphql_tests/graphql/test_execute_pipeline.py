@@ -32,6 +32,7 @@ def test_basic_start_pipeline_execution():
         variables={
             'pipeline': {'name': 'csv_hello_world'},
             'config': csv_hello_world_solids_config(),
+            'mode': 'default',
         },
     )
 
@@ -51,6 +52,7 @@ def test_basic_start_pipeline_execution_config_failure():
         variables={
             'pipeline': {'name': 'csv_hello_world'},
             'config': {'solids': {'sum_solid': {'inputs': {'num': 384938439}}}},
+            'mode': 'default',
         },
     )
 
@@ -66,6 +68,7 @@ def test_basis_start_pipeline_not_found_error():
         variables={
             'pipeline': {'name': 'sjkdfkdjkf'},
             'config': {'solids': {'sum_solid': {'inputs': {'num': 'test.csv'}}}},
+            'mode': 'default',
         },
     )
 
@@ -86,6 +89,7 @@ def test_basic_start_pipeline_execution_and_subscribe():
                     'sum_solid': {'inputs': {'num': script_relative_path('../data/num.csv')}}
                 }
             },
+            'mode': 'default',
         }
     )
 
@@ -106,7 +110,8 @@ def test_basic_start_pipeline_execution_and_subscribe():
 
 def test_subscription_query_error():
     run_logs = sync_execute_get_run_log_data(
-        variables={'pipeline': {'name': 'naughty_programmer_pipeline'}}, raise_on_error=False
+        variables={'pipeline': {'name': 'naughty_programmer_pipeline'}, 'mode': 'default'},
+        raise_on_error=False,
     )
 
     assert run_logs['__typename'] == 'PipelineRunLogsSubscriptionSuccess'
@@ -161,7 +166,7 @@ def test_basic_sync_execution_no_config():
     result = execute_dagster_graphql(
         context,
         START_PIPELINE_EXECUTION_QUERY,
-        variables={'pipeline': {'name': 'no_config_pipeline'}, 'config': None},
+        variables={'pipeline': {'name': 'no_config_pipeline'}, 'config': None, 'mode': 'default'},
     )
 
     assert not result.errors
@@ -181,6 +186,7 @@ def test_basic_inmemory_sync_execution():
         variables={
             'config': csv_hello_world_solids_config(),
             'pipeline': {'name': 'csv_hello_world'},
+            'mode': 'default',
         },
     )
 
@@ -207,6 +213,7 @@ def test_basic_filesystem_sync_execution():
         variables={
             'config': merge_dicts(csv_hello_world_solids_config(), {'storage': {'filesystem': {}}}),
             'pipeline': {'name': 'csv_hello_world'},
+            'mode': 'default',
         },
     )
 
@@ -269,6 +276,7 @@ def test_successful_pipeline_reexecution(snapshot):
             'pipeline': {'name': 'csv_hello_world'},
             'config': csv_hello_world_solids_config_fs_storage(),
             'executionMetadata': {'runId': run_id},
+            'mode': 'default',
         },
     )
 
@@ -306,6 +314,7 @@ def test_successful_pipeline_reexecution(snapshot):
                 'previousRunId': run_id,
                 'stepOutputHandles': [{'stepKey': 'sum_solid.transform', 'outputName': 'result'}],
             },
+            'mode': 'default',
         },
     )
 
@@ -343,6 +352,7 @@ def test_pipeline_reexecution_invalid_step_in_subset():
             'pipeline': {'name': 'csv_hello_world'},
             'config': csv_hello_world_solids_config(),
             'executionMetadata': {'runId': run_id},
+            'mode': 'default',
         },
     )
 
@@ -360,6 +370,7 @@ def test_pipeline_reexecution_invalid_step_in_subset():
                 'previousRunId': run_id,
                 'stepOutputHandles': [{'stepKey': 'sum_solid.transform', 'outputName': 'result'}],
             },
+            'mode': 'default',
         },
     )
 
@@ -377,6 +388,7 @@ def test_pipeline_reexecution_invalid_step_in_step_output_handle():
             'pipeline': {'name': 'csv_hello_world'},
             'config': csv_hello_world_solids_config(),
             'executionMetadata': {'runId': run_id},
+            'mode': 'default',
         },
     )
 
@@ -396,6 +408,7 @@ def test_pipeline_reexecution_invalid_step_in_step_output_handle():
                     {'stepKey': 'invalid_in_step_output_handle', 'outputName': 'result'}
                 ],
             },
+            'mode': 'default',
         },
     )
 
@@ -413,6 +426,7 @@ def test_pipeline_reexecution_invalid_output_in_step_output_handle():
             'pipeline': {'name': 'csv_hello_world'},
             'config': csv_hello_world_solids_config(),
             'executionMetadata': {'runId': run_id},
+            'mode': 'default',
         },
     )
 
@@ -432,6 +446,7 @@ def test_pipeline_reexecution_invalid_output_in_step_output_handle():
                     {'stepKey': 'sum_solid.transform', 'outputName': 'invalid_output'}
                 ],
             },
+            'mode': 'default',
         },
     )
 
@@ -455,7 +470,11 @@ def test_basic_start_pipeline_execution_with_materialization():
         }
 
         run_logs = sync_execute_get_run_log_data(
-            variables={'pipeline': {'name': 'csv_hello_world'}, 'config': environment_dict}
+            variables={
+                'pipeline': {'name': 'csv_hello_world'},
+                'config': environment_dict,
+                'mode': 'default',
+            }
         )
 
         step_mat_event = None

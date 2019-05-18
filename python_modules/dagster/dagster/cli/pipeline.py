@@ -194,14 +194,6 @@ def print_pipeline(pipeline, full, print_fn):
     if not full:
         return
 
-    with printer.with_indent():
-        printer.line('Context Definitions:')
-
-        with printer.with_indent():
-
-            for context_name, context_definition in pipeline.context_definitions.items():
-                print_context_definition(printer, context_name, context_definition)
-
     printer.line('Solids:')
     for solid in pipeline.solids:
         with printer.with_indent():
@@ -214,16 +206,6 @@ def print_description(printer, desc):
             printer.line('Description:')
             with printer.with_indent():
                 printer.line(format_description(desc, printer.current_indent_str))
-
-
-def print_context_definition(printer, context_name, context_definition):
-    printer.line('Name: {context_name}'.format(context_name=context_name))
-
-    print_description(printer, context_definition.description)
-
-    printer.line(
-        'Type: {runtime_type}'.format(runtime_type=context_definition.config_field.config_type.name)
-    )
 
 
 def print_solid(printer, solid):

@@ -52,6 +52,7 @@ export class PipelineRun extends React.Component<
 
         config
         runId
+        mode
         pipeline {
           name
           solids {
@@ -166,7 +167,8 @@ export class PipelineRun extends React.Component<
         },
         config: yaml.parse(run.config),
         stepKeys: [stepName],
-        reexecutionConfig: reexecutionConfig
+        reexecutionConfig: reexecutionConfig,
+        mode: run.mode
       }
     });
 
@@ -262,12 +264,14 @@ const REEXECUTE_STEP_MUTATION = gql`
   mutation ReexecuteStep(
     $pipeline: ExecutionSelector!
     $config: PipelineConfig!
+    $mode: String!
     $stepKeys: [String!]
     $reexecutionConfig: ReexecutionConfig
   ) {
     startPipelineExecution(
       pipeline: $pipeline
       config: $config
+      mode: $mode
       stepKeys: $stepKeys
       reexecutionConfig: $reexecutionConfig
     ) {

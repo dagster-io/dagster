@@ -133,8 +133,7 @@ of solids which have data `dependencies <#dependency-definition>`__ on each othe
 dependencies), along with a set of associated pipeline context definitions, which declare the various
 environments in which a pipeline can execute.
 
-Pipelines are defined using the :class:`PipelineDefinition <dagster.PipelineDefinition>` class, and
-their contexts are defined using :class:`PipelineContextDefinition <dagster.PipelineContextDefinition>`.
+Pipelines are defined using the :class:`PipelineDefinition <dagster.PipelineDefinition>` class.
 
 When a pipeline is combined with a given config conforming to one of its declared contexts, it can
 be compiled by the Dagster engine into an execution plan that can be executed on various compute

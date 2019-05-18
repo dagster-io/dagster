@@ -8,8 +8,6 @@ access to resources, logging, and other shared state throughout the execution.
 The inheritance structure of contexts is currently as follows:
 ====================================================================================================
 
-ExecutionContext                                (user facing, used to construct )
- |
  construct_pipeline_execution_context()
  |
  V

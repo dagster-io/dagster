@@ -1,3 +1,6 @@
+import graphql
+import pytest
+
 from .setup import execute_dagster_graphql, define_context
 from .utils import sync_execute_get_events
 
@@ -38,7 +41,7 @@ def test_multi_mode_successful():
 
 
 MODE_QUERY = '''
-query ModesQuery($pipelineName: String!, $mode: String)
+query ModesQuery($pipelineName: String!, $mode: String!)
 {
   pipeline(params: { name: $pipelineName }) {
     configTypes(mode: $mode) {
@@ -110,19 +113,8 @@ def get_pipeline(result, name):
 
 
 def test_query_multi_mode(snapshot):
-    modeless_result = execute_modes_query('multi_mode_with_resources', mode=None)
-    snapshot.assert_match(modeless_result.data)
+    with pytest.raises(graphql.error.base.GraphQLError):
+        modeless_result = execute_modes_query('multi_mode_with_resources', mode=None)
 
     modeless_result = execute_modes_query('multi_mode_with_resources', mode='add_mode')
     snapshot.assert_match(modeless_result.data)
-
-
-# delete once https://github.com/dagster-io/dagster/issues/1343 is resolved
-def test_multi_mode_default_mode():
-    add_mode_logs = sync_execute_get_events(
-        {
-            'pipeline': {'name': 'multi_mode_with_resources'},
-            'config': {'resources': {'op': {'config': 2}}},
-        }
-    )
-    assert get_step_output(add_mode_logs, 'apply_to_three.transform')['valueRepr'] == '5'

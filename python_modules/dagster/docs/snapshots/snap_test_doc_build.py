@@ -621,23 +621,11 @@ snapshots['test_build_all_docs 3'] = '''
 <h2 id="C">C</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="sections/api/apidocs/pipeline.html#dagster.PipelineContextDefinition.config_field">config_field (dagster.PipelineContextDefinition attribute)</a>
-</li>
       <li><a href="sections/api/apidocs/types.html#dagster.ConfigType">ConfigType (class in dagster)</a>
-</li>
-      <li><a href="sections/api/apidocs/execution.html#dagster.SolidExecutionResult.context">context (dagster.SolidExecutionResult attribute)</a>, <a href="sections/api/apidocs/execution.html#dagster.SolidExecutionResult.context">[1]</a>
 </li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="sections/api/apidocs/pipeline.html#dagster.InitContext.context_config">context_config (dagster.InitContext attribute)</a>
-
-      <ul>
-        <li><a href="sections/api/apidocs/pipeline.html#dagster.InitResourceContext.context_config">(dagster.InitResourceContext attribute)</a>
-</li>
-      </ul></li>
-      <li><a href="sections/api/apidocs/pipeline.html#dagster.PipelineDefinition.context_definitions">context_definitions (dagster.PipelineDefinition attribute)</a>
-</li>
-      <li><a href="sections/api/apidocs/pipeline.html#dagster.PipelineContextDefinition.context_fn">context_fn (dagster.PipelineContextDefinition attribute)</a>
+      <li><a href="sections/api/apidocs/execution.html#dagster.SolidExecutionResult.context">context (dagster.SolidExecutionResult attribute)</a>, <a href="sections/api/apidocs/execution.html#dagster.SolidExecutionResult.context">[1]</a>
 </li>
   </ul></td>
 </tr></table>
@@ -661,10 +649,10 @@ snapshots['test_build_all_docs 3'] = '''
 </li>
       <li><a href="sections/api/apidocs/errors.html#dagster.DagsterUserCodeExecutionError">DagsterUserCodeExecutionError</a>
 </li>
-      <li><a href="sections/api/apidocs/pipeline.html#dagster.PipelineDefinition.dependencies">dependencies (dagster.PipelineDefinition attribute)</a>
-</li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="sections/api/apidocs/pipeline.html#dagster.PipelineDefinition.dependencies">dependencies (dagster.PipelineDefinition attribute)</a>
+</li>
       <li><a href="sections/api/apidocs/pipeline.html#dagster.PipelineDefinition.dependency_structure">dependency_structure (dagster.PipelineDefinition attribute)</a>
 </li>
       <li><a href="sections/api/apidocs/pipeline.html#dagster.DependencyDefinition">DependencyDefinition (class in dagster)</a>
@@ -675,8 +663,6 @@ snapshots['test_build_all_docs 3'] = '''
         <li><a href="sections/api/apidocs/solids.html#dagster.InputDefinition.description">(dagster.InputDefinition attribute)</a>
 </li>
         <li><a href="sections/api/apidocs/solids.html#dagster.OutputDefinition.description">(dagster.OutputDefinition attribute)</a>
-</li>
-        <li><a href="sections/api/apidocs/pipeline.html#dagster.PipelineContextDefinition.description">(dagster.PipelineContextDefinition attribute)</a>
 </li>
         <li><a href="sections/api/apidocs/pipeline.html#dagster.PipelineDefinition.description">(dagster.PipelineDefinition attribute)</a>
 </li>
@@ -703,8 +689,6 @@ snapshots['test_build_all_docs 3'] = '''
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="sections/api/apidocs/utilities.html#dagster.execute_solids">execute_solids() (in module dagster)</a>
 </li>
-      <li><a href="sections/api/apidocs/pipeline.html#dagster.ExecutionContext">ExecutionContext (class in dagster)</a>
-</li>
       <li><a href="sections/api/apidocs/solids.html#dagster.ExpectationDefinition.expectation_fn">expectation_fn (dagster.ExpectationDefinition attribute)</a>
 </li>
       <li><a href="sections/api/apidocs/solids.html#dagster.ExpectationDefinition">ExpectationDefinition (class in dagster)</a>
@@ -723,6 +707,8 @@ snapshots['test_build_all_docs 3'] = '''
 </li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="sections/api/apidocs/execution.html#dagster.SolidExecutionResult.FIXME">FIXME (dagster.SolidExecutionResult attribute)</a>, <a href="sections/api/apidocs/execution.html#dagster.SolidExecutionResult.FIXME">[1]</a>
+</li>
       <li><a href="sections/api/apidocs/types.html#dagster.Float">Float (in module dagster)</a>
 </li>
       <li><a href="sections/api/apidocs/solids.html#dagster.MultipleResults.from_dict">from_dict() (dagster.MultipleResults static method)</a>
@@ -753,18 +739,16 @@ snapshots['test_build_all_docs 3'] = '''
 <h2 id="I">I</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="sections/api/apidocs/pipeline.html#dagster.InitContext">InitContext (class in dagster)</a>
-</li>
       <li><a href="sections/api/apidocs/pipeline.html#dagster.InitLoggerContext">InitLoggerContext (class in dagster)</a>
 </li>
       <li><a href="sections/api/apidocs/pipeline.html#dagster.InitResourceContext">InitResourceContext (class in dagster)</a>
 </li>
       <li><a href="sections/api/apidocs/execution.html#dagster.InProcessExecutorConfig">InProcessExecutorConfig (class in dagster)</a>
 </li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="sections/api/apidocs/types.html#dagster.input_schema">input_schema() (in module dagster)</a>
 </li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="sections/api/apidocs/types.html#dagster.input_selector_schema">input_selector_schema() (in module dagster)</a>
 </li>
       <li><a href="sections/api/apidocs/solids.html#dagster.InputDefinition">InputDefinition (class in dagster)</a>
@@ -859,19 +843,15 @@ snapshots['test_build_all_docs 3'] = '''
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="sections/api/apidocs/types.html#dagster.Path">Path (in module dagster)</a>
 </li>
-      <li><a href="sections/api/apidocs/pipeline.html#dagster.InitContext.pipeline_def">pipeline_def (dagster.InitContext attribute)</a>
+      <li><a href="sections/api/apidocs/pipeline.html#dagster.InitLoggerContext.pipeline_def">pipeline_def (dagster.InitLoggerContext attribute)</a>
 
       <ul>
-        <li><a href="sections/api/apidocs/pipeline.html#dagster.InitLoggerContext.pipeline_def">(dagster.InitLoggerContext attribute)</a>
-</li>
         <li><a href="sections/api/apidocs/pipeline.html#dagster.InitResourceContext.pipeline_def">(dagster.InitResourceContext attribute)</a>
 </li>
       </ul></li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="sections/api/apidocs/errors.html#dagster.PipelineConfigEvaluationError">PipelineConfigEvaluationError</a>
-</li>
-      <li><a href="sections/api/apidocs/pipeline.html#dagster.PipelineContextDefinition">PipelineContextDefinition (class in dagster)</a>
 </li>
       <li><a href="sections/api/apidocs/pipeline.html#dagster.PipelineDefinition">PipelineDefinition (class in dagster)</a>
 </li>
@@ -899,15 +879,13 @@ snapshots['test_build_all_docs 3'] = '''
 </li>
       <li><a href="sections/api/apidocs/execution.html#dagster.PipelineExecutionResult.result_for_solid">result_for_solid() (dagster.PipelineExecutionResult method)</a>
 </li>
-      <li><a href="sections/api/apidocs/solids.html#dagster.MultipleResults.results">results (dagster.MultipleResults attribute)</a>
-</li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="sections/api/apidocs/pipeline.html#dagster.InitContext.run_id">run_id (dagster.InitContext attribute)</a>
+      <li><a href="sections/api/apidocs/solids.html#dagster.MultipleResults.results">results (dagster.MultipleResults attribute)</a>
+</li>
+      <li><a href="sections/api/apidocs/pipeline.html#dagster.InitLoggerContext.run_id">run_id (dagster.InitLoggerContext attribute)</a>
 
       <ul>
-        <li><a href="sections/api/apidocs/pipeline.html#dagster.InitLoggerContext.run_id">(dagster.InitLoggerContext attribute)</a>
-</li>
         <li><a href="sections/api/apidocs/pipeline.html#dagster.InitResourceContext.run_id">(dagster.InitResourceContext attribute)</a>
 </li>
       </ul></li>
@@ -1478,8 +1456,7 @@ snapshots['test_build_all_docs 7'] = '''
             <div class="body" role="main">
                 
   <h1>All modules for which code is available</h1>
-<ul><li><a href="dagster/core/definitions/context.html">dagster.core.definitions.context</a></li>
-<li><a href="dagster/core/definitions/decorators.html">dagster.core.definitions.decorators</a></li>
+<ul><li><a href="dagster/core/definitions/decorators.html">dagster.core.definitions.decorators</a></li>
 <li><a href="dagster/core/definitions/dependency.html">dagster.core.definitions.dependency</a></li>
 <li><a href="dagster/core/definitions/expectation.html">dagster.core.definitions.expectation</a></li>
 <li><a href="dagster/core/definitions/input.html">dagster.core.definitions.input</a></li>
@@ -1494,7 +1471,6 @@ snapshots['test_build_all_docs 7'] = '''
 <li><a href="dagster/core/errors.html">dagster.core.errors</a></li>
 <li><a href="dagster/core/execution/api.html">dagster.core.execution.api</a></li>
 <li><a href="dagster/core/execution/config.html">dagster.core.execution.config</a></li>
-<li><a href="dagster/core/execution/context/execution.html">dagster.core.execution.context.execution</a></li>
 <li><a href="dagster/core/execution/context/init.html">dagster.core.execution.context.init</a></li>
 <li><a href="dagster/core/execution/context/logger.html">dagster.core.execution.context.logger</a></li>
 <li><a href="dagster/core/execution/context_creation_pipeline.html">dagster.core.execution.context_creation_pipeline</a></li>
@@ -4762,8 +4738,7 @@ of solids which have data `dependencies <#dependency-definition>`__ on each othe
 dependencies), along with a set of associated pipeline context definitions, which declare the various
 environments in which a pipeline can execute.
 
-Pipelines are defined using the :class:`PipelineDefinition <dagster.PipelineDefinition>` class, and
-their contexts are defined using :class:`PipelineContextDefinition <dagster.PipelineContextDefinition>`.
+Pipelines are defined using the :class:`PipelineDefinition <dagster.PipelineDefinition>` class.
 
 When a pipeline is combined with a given config conforming to one of its declared contexts, it can
 be compiled by the Dagster engine into an execution plan that can be executed on various compute
@@ -19521,12 +19496,18 @@ node. For the ‘synchronous’ API, see <a class="reference internal" href="#da
 <em class="property">class </em><code class="descclassname">dagster.</code><code class="descname">SolidExecutionResult</code><span class="sig-paren">(</span><em>solid</em>, <em>step_events_by_kind</em>, <em>reconstruct_context</em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dagster/core/execution/results.html#SolidExecutionResult"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dagster.SolidExecutionResult" title="Permalink to this definition">¶</a></dt>
 <dd><p>Execution result for one solid of the pipeline.</p>
 <dl class="attribute">
+<dt id="dagster.SolidExecutionResult.FIXME">
+<code class="descname">FIXME</code><a class="headerlink" href="#dagster.SolidExecutionResult.FIXME" title="Permalink to this definition">¶</a></dt>
+<dd><p>This is very inaccurate!</p>
+</dd></dl>
+
+<dl class="attribute">
 <dt id="dagster.SolidExecutionResult.context">
 <code class="descname">context</code><a class="headerlink" href="#dagster.SolidExecutionResult.context" title="Permalink to this definition">¶</a></dt>
 <dd><p>ExecutionContext of that particular Pipeline run.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type</dt>
-<dd class="field-odd"><p><a class="reference internal" href="pipeline.html#dagster.ExecutionContext" title="dagster.ExecutionContext">ExecutionContext</a></p>
+<dd class="field-odd"><p>ExecutionContext</p>
 </dd>
 </dl>
 </dd></dl>
@@ -19616,11 +19597,17 @@ for subset rexecution.</p></li>
 <dd><p>Execution result for one solid of the pipeline.</p>
 <dl class="attribute">
 <dt>
+<code class="descname">FIXME</code></dt>
+<dd><p>This is very inaccurate!</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt>
 <code class="descname">context</code></dt>
 <dd><p>ExecutionContext of that particular Pipeline run.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type</dt>
-<dd class="field-odd"><p><a class="reference internal" href="pipeline.html#dagster.ExecutionContext" title="dagster.ExecutionContext">ExecutionContext</a></p>
+<dd class="field-odd"><p>ExecutionContext</p>
 </dd>
 </dl>
 </dd></dl>
@@ -19686,31 +19673,8 @@ Returns None if execution result isn’t a success.</p>
       <span class="s1">&#39;config&#39;</span><span class="p">:</span> <span class="n">_</span><span class="p">,</span>
 
        <span class="c1"># materialize input values, keyed by input name</span>
-       <span class="s1">&#39;inputs&#39;</span><span class="p">:</span> <span class="p">{</span>
-         <span class="s1">&#39;_input_name_&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;value&#39;</span><span class="p">:</span> <span class="n">_value_</span><span class="p">}</span>
-        <span class="p">}</span>
-      <span class="p">}</span>
-    <span class="p">},</span>
-
-    <span class="c1"># configuration for PipelineContextDefinitions</span>
-    <span class="s1">&#39;context&#39;</span><span class="p">:</span> <span class="p">{</span>
-
-      <span class="c1"># these keys align with the names defined via context_definitions on PipelineDefinition</span>
-      <span class="s1">&#39;_context_name_&#39;</span><span class="p">:</span> <span class="p">{</span>
-
-        <span class="c1"># pass any config data that was defined via config_field</span>
-        <span class="s1">&#39;config&#39;</span><span class="p">:</span> <span class="n">_</span><span class="p">,</span>
-
-        <span class="c1"># configuration for ResourceDefinitions</span>
-        <span class="s1">&#39;resources&#39;</span><span class="p">:</span> <span class="p">{</span>
-
-          <span class="c1"># these keys align with the names defined via resources on PipelineContextDefinitions</span>
-          <span class="s1">&#39;_resource_name_&#39;</span><span class="p">:</span> <span class="p">{</span>
-
-            <span class="c1"># pass any data that was defined via config_field</span>
-            <span class="s1">&#39;config&#39;</span><span class="p">:</span> <span class="n">_</span>
-          <span class="p">}</span>
-        <span class="p">}</span>
+      <span class="s1">&#39;inputs&#39;</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s1">&#39;_input_name_&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;value&#39;</span><span class="p">:</span> <span class="n">_value_</span><span class="p">}</span>
       <span class="p">}</span>
     <span class="p">}</span>
   <span class="p">}</span>
@@ -19845,20 +19809,12 @@ snapshots['test_build_all_docs 52'] = '''
 <h1>Pipelines<a class="headerlink" href="#pipelines" title="Permalink to this headline">¶</a></h1>
 <dl class="class">
 <dt id="dagster.PipelineDefinition">
-<em class="property">class </em><code class="descclassname">dagster.</code><code class="descname">PipelineDefinition</code><span class="sig-paren">(</span><em>solids</em>, <em>name=None</em>, <em>description=None</em>, <em>context_definitions=None</em>, <em>dependencies=None</em>, <em>mode_definitions=None</em>, <em>preset_definitions=None</em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dagster/core/definitions/pipeline.html#PipelineDefinition"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dagster.PipelineDefinition" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">dagster.</code><code class="descname">PipelineDefinition</code><span class="sig-paren">(</span><em>solids</em>, <em>name=None</em>, <em>description=None</em>, <em>dependencies=None</em>, <em>mode_definitions=None</em>, <em>preset_definitions=None</em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dagster/core/definitions/pipeline.html#PipelineDefinition"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dagster.PipelineDefinition" title="Permalink to this definition">¶</a></dt>
 <dd><p>A instance of a PipelineDefinition represents a pipeline in dagster.</p>
 <p>A pipeline is comprised of:</p>
 <ul class="simple">
 <li><dl class="simple">
 <dt>Solids:</dt><dd><p>Each solid represents a functional unit of data computation.</p>
-</dd>
-</dl>
-</li>
-<li><dl class="simple">
-<dt>Context Definitions:</dt><dd><p>Pipelines can be designed to execute in a number of different operating environments
-(e.g. prod, dev, unittest) that require different configuration and setup. A context
-definition defines how a context (of type ExecutionContext) is created and what
-configuration is necessary to create it.</p>
 </dd>
 </dl>
 </li>
@@ -19875,7 +19831,6 @@ determine how the values produced by solids flow through the DAG.</p>
 <li><p><strong>solids</strong> (<em>List</em><em>[</em><a class="reference internal" href="solids.html#dagster.SolidDefinition" title="dagster.SolidDefinition"><em>SolidDefinition</em></a><em>]</em>) – The set of solid definitions used in this pipeline.</p></li>
 <li><p><strong>name</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em>) – </p></li>
 <li><p><strong>description</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em>) – </p></li>
-<li><p><strong>context_definitions</strong> (<em>Optional</em><em>[</em><em>Dict</em><em>[</em><em>str</em><em>, </em><a class="reference internal" href="#dagster.PipelineContextDefinition" title="dagster.PipelineContextDefinition"><em>PipelineContextDefinition</em></a><em>]</em><em>]</em>) – A mapping of context names to PipelineContextDefinition.</p></li>
 <li><p><strong>dependencies</strong> (<em>Optional</em><em>[</em><em>Dict</em><em>[</em><em>Union</em><em>[</em><em>str</em><em>, </em><a class="reference internal" href="#dagster.SolidInstance" title="dagster.SolidInstance"><em>SolidInstance</em></a><em>]</em><em>, </em><em>Dict</em><em>[</em><em>str</em><em>, </em><a class="reference internal" href="#dagster.DependencyDefinition" title="dagster.DependencyDefinition"><em>DependencyDefinition</em></a><em>]</em><em>]</em><em>]</em>) – A structure that declares where each solid gets its inputs. The keys at the top
 level dict are either string names of solids or SolidInstances. The values
 are dicts that map input names to DependencyDefinitions.</p></li>
@@ -19923,21 +19878,6 @@ array that maps solid_name =&gt; input_name =&gt; DependencyDefinition instance<
 <dl class="field-list simple">
 <dt class="field-odd">Type</dt>
 <dd class="field-odd"><p>Dict[str, Dict[str, <a class="reference internal" href="#dagster.DependencyDefinition" title="dagster.DependencyDefinition">DependencyDefinition</a>]]</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="attribute">
-<dt id="dagster.PipelineDefinition.context_definitions">
-<code class="descname">context_definitions</code><a class="headerlink" href="#dagster.PipelineDefinition.context_definitions" title="Permalink to this definition">¶</a></dt>
-<dd><p>The context definitions available for consumers of this pipelines. For example, a
-unit-testing environment and a production environment probably have very different
-configuration and requirements. There would be one context definition per
-environment. Only one context will be used at runtime, selected by environment
-configuration.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Type</dt>
-<dd class="field-odd"><p>Dict[str, <a class="reference internal" href="#dagster.PipelineContextDefinition" title="dagster.PipelineContextDefinition">PipelineContextDefinition</a>]</p>
 </dd>
 </dl>
 </dd></dl>
@@ -20074,130 +20014,6 @@ of the same solid.</p></li>
 <div class="section" id="contexts-resources-and-logging">
 <h1>Contexts, Resources, and Logging<a class="headerlink" href="#contexts-resources-and-logging" title="Permalink to this headline">¶</a></h1>
 <dl class="class">
-<dt id="dagster.PipelineContextDefinition">
-<em class="property">class </em><code class="descclassname">dagster.</code><code class="descname">PipelineContextDefinition</code><span class="sig-paren">(</span><em>context_fn=None</em>, <em>config_field=None</em>, <em>resources=None</em>, <em>description=None</em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dagster/core/definitions/context.html#PipelineContextDefinition"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dagster.PipelineContextDefinition" title="Permalink to this definition">¶</a></dt>
-<dd><p>Defines a context type supported by a pipeline.</p>
-<p>Pipelines declare the different context types they support, in the form
-of PipelineContextDefinitions. For example a pipeline could declare a context
-definition for different operating environments: unittest, integration tests,
-production and so forth. The user provides a context function that returns an
-<code class="docutils literal notranslate"><span class="pre">ExecutionContext</span></code> that is passed to every solid. One can hang resources
-(such as db connections) off of that context. Thus the pipeline author
-has complete control over how the author of each individual solid within
-the pipeline interacts with its operating environment.</p>
-<p>The <code class="docutils literal notranslate"><span class="pre">PipelineContextDefinition</span></code> is passed to the <code class="docutils literal notranslate"><span class="pre">PipelineDefinition</span></code> in
-a dictionary keyed by its name so the name is not present in this object.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>context_fn</strong> (<em>Callable</em>) – <p>Signature of context_fn:
-(pipeline: PipelineDefintion, config_value: Any) =&gt; ExecutionContext</p>
-<p>Returns <em>or</em> yields an ExecutionContext.</p>
-<p>If it yields a context, the code after the yield executes after pipeline
-completion, just like a python context manager.</p>
-</p></li>
-<li><p><strong>config_field</strong> (<em>Field</em>) – Define the configuration for the context</p></li>
-<li><p><strong>description</strong> (<em>str</em>) – </p></li>
-</ul>
-</dd>
-</dl>
-<dl class="attribute">
-<dt id="dagster.PipelineContextDefinition.config_field">
-<code class="descname">config_field</code><a class="headerlink" href="#dagster.PipelineContextDefinition.config_field" title="Permalink to this definition">¶</a></dt>
-<dd><p>The configuration for the pipeline context.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Type</dt>
-<dd class="field-odd"><p>Field</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="attribute">
-<dt id="dagster.PipelineContextDefinition.context_fn">
-<code class="descname">context_fn</code><a class="headerlink" href="#dagster.PipelineContextDefinition.context_fn" title="Permalink to this definition">¶</a></dt>
-<dd><p>Signature is (<strong>pipeline</strong>: <cite>PipelineDefinition</cite>, <strong>config_value</strong>: <cite>Any</cite>) :
-<cite>ExecutionContext</cite>.</p>
-<p>A callable that either returns <em>or</em> yields an <code class="docutils literal notranslate"><span class="pre">ExecutionContext</span></code>.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Type</dt>
-<dd class="field-odd"><p>callable</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="attribute">
-<dt id="dagster.PipelineContextDefinition.description">
-<code class="descname">description</code><a class="headerlink" href="#dagster.PipelineContextDefinition.description" title="Permalink to this definition">¶</a></dt>
-<dd><p>A description of what this context represents</p>
-<dl class="field-list simple">
-<dt class="field-odd">Type</dt>
-<dd class="field-odd"><p>str</p>
-</dd>
-</dl>
-</dd></dl>
-
-</dd></dl>
-
-<dl class="class">
-<dt id="dagster.InitContext">
-<em class="property">class </em><code class="descclassname">dagster.</code><code class="descname">InitContext</code><a class="reference internal" href="../../../_modules/dagster/core/execution/context/init.html#InitContext"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dagster.InitContext" title="Permalink to this definition">¶</a></dt>
-<dd><p>InitContext is the context object provided to context creation functions.
-In effect, it is the state available to those functions, and any function that
-is called prior to pipeline execution, plus the configuration value for that context.</p>
-<dl class="attribute">
-<dt id="dagster.InitContext.context_config">
-<code class="descname">context_config</code><a class="headerlink" href="#dagster.InitContext.context_config" title="Permalink to this definition">¶</a></dt>
-<dd><p>The configuration data provided by the environment config. The schema for this
-data is defined by <code class="docutils literal notranslate"><span class="pre">config_field</span></code> on the <a class="reference internal" href="#dagster.PipelineContextDefinition" title="dagster.PipelineContextDefinition"><code class="xref py py-class docutils literal notranslate"><span class="pre">PipelineContextDefinition</span></code></a></p>
-<dl class="field-list simple">
-<dt class="field-odd">Type</dt>
-<dd class="field-odd"><p>Any</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="attribute">
-<dt id="dagster.InitContext.pipeline_def">
-<code class="descname">pipeline_def</code><a class="headerlink" href="#dagster.InitContext.pipeline_def" title="Permalink to this definition">¶</a></dt>
-<dd><p>The pipeline definition currently being executed.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Type</dt>
-<dd class="field-odd"><p><a class="reference internal" href="#dagster.PipelineDefinition" title="dagster.PipelineDefinition">PipelineDefinition</a></p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="attribute">
-<dt id="dagster.InitContext.run_id">
-<code class="descname">run_id</code><a class="headerlink" href="#dagster.InitContext.run_id" title="Permalink to this definition">¶</a></dt>
-<dd><p>The ID for this run of the pipeline.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Type</dt>
-<dd class="field-odd"><p>str</p>
-</dd>
-</dl>
-</dd></dl>
-
-</dd></dl>
-
-<dl class="class">
-<dt id="dagster.ExecutionContext">
-<em class="property">class </em><code class="descclassname">dagster.</code><code class="descname">ExecutionContext</code><a class="reference internal" href="../../../_modules/dagster/core/execution/context/execution.html#ExecutionContext"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dagster.ExecutionContext" title="Permalink to this definition">¶</a></dt>
-<dd><p>The user-facing object in the context creation function. The user constructs
-this in order to effect the context creation process. This could be named
-SystemPipelineExecutionContextCreationData although that seemed excessively verbose.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>loggers</strong> (<em>List</em><em>[</em><em>Logger</em><em>]</em>) – </p></li>
-<li><p><strong>(</strong><strong>)</strong> (<em>resources</em>) – </p></li>
-<li><p><strong>tags</strong> (<em>dict</em><em>[</em><em>str</em><em>, </em><em>str</em><em>]</em>) – </p></li>
-</ul>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="class">
 <dt id="dagster.ResourceDefinition">
 <em class="property">class </em><code class="descclassname">dagster.</code><code class="descname">ResourceDefinition</code><span class="sig-paren">(</span><em>resource_fn</em>, <em>config_field=None</em>, <em>description=None</em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dagster/core/definitions/resource.html#ResourceDefinition"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dagster.ResourceDefinition" title="Permalink to this definition">¶</a></dt>
 <dd><p>Resources are pipeline-scoped ways to make external resources (like database connections)
@@ -20225,20 +20041,7 @@ resource_fn in a ResourceDefinition.</p>
 <dl class="class">
 <dt id="dagster.InitResourceContext">
 <em class="property">class </em><code class="descclassname">dagster.</code><code class="descname">InitResourceContext</code><a class="reference internal" href="../../../_modules/dagster/core/execution/context/init.html#InitResourceContext"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dagster.InitResourceContext" title="Permalink to this definition">¶</a></dt>
-<dd><p>Similar to InitContext, but is resource specific. It includes all the properties
-in the InitContext, plus the resource config and the resource definition.</p>
-<dl class="attribute">
-<dt id="dagster.InitResourceContext.context_config">
-<code class="descname">context_config</code><a class="headerlink" href="#dagster.InitResourceContext.context_config" title="Permalink to this definition">¶</a></dt>
-<dd><p>The configuration data provided by the environment config. The schema for this
-data is defined by <code class="docutils literal notranslate"><span class="pre">config_field</span></code> on the <a class="reference internal" href="#dagster.PipelineContextDefinition" title="dagster.PipelineContextDefinition"><code class="xref py py-class docutils literal notranslate"><span class="pre">PipelineContextDefinition</span></code></a></p>
-<dl class="field-list simple">
-<dt class="field-odd">Type</dt>
-<dd class="field-odd"><p>Any</p>
-</dd>
-</dl>
-</dd></dl>
-
+<dd><p>Resource-specific initialization context.</p>
 <dl class="attribute">
 <dt id="dagster.InitResourceContext.resource_config">
 <code class="descname">resource_config</code><a class="headerlink" href="#dagster.InitResourceContext.resource_config" title="Permalink to this definition">¶</a></dt>
@@ -20326,8 +20129,7 @@ logger_fn in a LoggerDefinition.</p>
 <dl class="class">
 <dt id="dagster.InitLoggerContext">
 <em class="property">class </em><code class="descclassname">dagster.</code><code class="descname">InitLoggerContext</code><a class="reference internal" href="../../../_modules/dagster/core/execution/context/logger.html#InitLoggerContext"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dagster.InitLoggerContext" title="Permalink to this definition">¶</a></dt>
-<dd><p>Similar to InitContext, but is logger-specific. It includes all the properties
-in the InitContext, plus the logger config and the logger definition.</p>
+<dd><p>Logger-specific initialization context.</p>
 <dl class="attribute">
 <dt id="dagster.InitLoggerContext.logger_config">
 <code class="descname">logger_config</code><a class="headerlink" href="#dagster.InitLoggerContext.logger_config" title="Permalink to this definition">¶</a></dt>
@@ -28605,8 +28407,7 @@ so you can use its existing repertoire of expectartions with Dagster.</p>
 of solids which have data <a class="reference external" href="#dependency-definition">dependencies</a> on each other (but no circular
 dependencies), along with a set of associated pipeline context definitions, which declare the various
 environments in which a pipeline can execute.</p>
-<p>Pipelines are defined using the <a class="reference internal" href="../api/apidocs/pipeline.html#dagster.PipelineDefinition" title="dagster.PipelineDefinition"><code class="xref py py-class docutils literal notranslate"><span class="pre">PipelineDefinition</span></code></a> class, and
-their contexts are defined using <a class="reference internal" href="../api/apidocs/pipeline.html#dagster.PipelineContextDefinition" title="dagster.PipelineContextDefinition"><code class="xref py py-class docutils literal notranslate"><span class="pre">PipelineContextDefinition</span></code></a>.</p>
+<p>Pipelines are defined using the <a class="reference internal" href="../api/apidocs/pipeline.html#dagster.PipelineDefinition" title="dagster.PipelineDefinition"><code class="xref py py-class docutils literal notranslate"><span class="pre">PipelineDefinition</span></code></a> class.</p>
 <p>When a pipeline is combined with a given config conforming to one of its declared contexts, it can
 be compiled by the Dagster engine into an execution plan that can be executed on various compute
 substrates.</p>

@@ -45,7 +45,6 @@ def create_creation_data(pipeline_def):
     return EnvironmentClassCreationData(
         pipeline_def.name,
         pipeline_def.solids,
-        pipeline_def.context_definitions,
         pipeline_def.dependency_structure,
         mode_definition=None,
         loggers=default_loggers(),

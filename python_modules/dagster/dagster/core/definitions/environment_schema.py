@@ -1,7 +1,6 @@
 from collections import namedtuple
 
 from dagster import check
-from dagster.core.loggers import default_loggers
 from dagster.core.types.config import ConfigType
 
 from .environment_configs import (
@@ -53,28 +52,23 @@ class EnvironmentSchema(
 
 def create_environment_schema(pipeline_def, mode=None):
     check.inst_param(pipeline_def, 'pipeline_def', PipelineDefinition)
-    check.opt_str_param(mode, 'mode')
+    mode = check.opt_str_param(mode, 'mode', default=pipeline_def.get_default_mode_name())
     mode_definition = pipeline_def.get_mode_definition(mode)
 
     environment_cls = define_environment_cls(
         EnvironmentClassCreationData(
             pipeline_name=pipeline_def.name,
             solids=pipeline_def.solids,
-            context_definitions=pipeline_def.context_definitions
-            if mode_definition is None
-            else None,
             dependency_structure=pipeline_def.dependency_structure,
             mode_definition=mode_definition,
-            # The following can be simplified after we drop context_definitions and can guarantee
-            # that at least one mode exists on a PipelineDefinition
-            loggers=mode_definition.loggers if mode_definition else default_loggers(),
+            loggers=mode_definition.loggers,
         )
     )
 
     environment_type = environment_cls.inst()
 
     config_type_dict_by_name, config_type_dict_by_key = construct_config_type_dictionary(
-        pipeline_def.solid_defs, pipeline_def.context_definitions, environment_type
+        pipeline_def.solid_defs, environment_type
     )
 
     return EnvironmentSchema(

@@ -47,6 +47,7 @@ export interface ReexecuteStep {
 export interface ReexecuteStepVariables {
   pipeline: ExecutionSelector;
   config: any;
+  mode: string;
   stepKeys?: string[] | null;
   reexecutionConfig?: ReexecutionConfig | null;
 }
