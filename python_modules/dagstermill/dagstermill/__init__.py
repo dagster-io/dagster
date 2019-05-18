@@ -41,7 +41,7 @@ from dagster.core.definitions.dependency import Solid
 from dagster.core.errors import DagsterSubprocessExecutionError
 from dagster.core.events.log import construct_json_event_logger, EventRecord
 from dagster.core.events import DagsterEvent
-from dagster.core.execution.api import yield_pipeline_execution_context
+from dagster.core.execution.api import scoped_pipeline_context
 from dagster.core.execution.config import RunConfig
 from dagster.core.execution.context.logger import InitLoggerContext
 from dagster.core.execution.context.system import (
@@ -139,7 +139,7 @@ class Manager:
         # This will instigate that process *before* return. We are going to have to
         # manage this manually (without an if block) in order to make this work.
         # See https://github.com/dagster-io/dagster/issues/796
-        with yield_pipeline_execution_context(
+        with scoped_pipeline_context(
             pipeline_def,
             {} if context_config is None else {'context': context_config},
             RunConfig(run_id=''),
@@ -225,7 +225,7 @@ class Manager:
                         'that are not pickling, then you must register a repository within '
                         'notebook by calling dm.register_repository(repository_def).'
                     )
-            with yield_pipeline_execution_context(
+            with scoped_pipeline_context(
                 self.pipeline_def, {}, RunConfig(run_id=run_id, mode=mode)
             ) as pipeline_context:
                 self.context = DagstermillInNotebookExecutionContext(pipeline_context)
@@ -244,11 +244,11 @@ class Manager:
                 loggers = [event_logger]
             # do not include event_callback in ExecutionMetadata,
             # since that'll be taken care of by side-channel established by event_logger
-            execution_metadata = RunConfig(run_id, loggers=loggers, mode=mode)
+            run_config = RunConfig(run_id, loggers=loggers, mode=mode)
             # See block comment above referencing this issue
             # See https://github.com/dagster-io/dagster/issues/796
-            with yield_pipeline_execution_context(
-                self.pipeline_def, environment_dict, execution_metadata
+            with scoped_pipeline_context(
+                self.pipeline_def, environment_dict, run_config
             ) as pipeline_context:
                 self.context = DagstermillInNotebookExecutionContext(pipeline_context)
 

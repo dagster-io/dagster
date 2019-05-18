@@ -25,12 +25,7 @@ from dagster.core.execution.plan.plan import ExecutionPlan
 from dagster.core.engine.engine_multiprocessing import MultiprocessingEngine
 from dagster.core.engine.engine_inprocess import InProcessEngine
 
-from .context_creation_pipeline import (
-    construct_intermediates_manager,
-    create_environment_config,
-    scoped_pipeline_context,
-    yield_pipeline_execution_context,
-)
+from .context_creation_pipeline import create_environment_config, scoped_pipeline_context
 from .config import RunConfig, InProcessExecutorConfig, MultiprocessExecutorConfig
 from .context.system import SystemPipelineExecutionContext
 from .results import PipelineExecutionResult
@@ -147,14 +142,8 @@ def execute_pipeline_iterator(pipeline, environment_dict=None, run_config=None):
     check.inst_param(pipeline, 'pipeline', PipelineDefinition)
     environment_dict = check.opt_dict_param(environment_dict, 'environment_dict')
     run_config = check_run_config_param(run_config, pipeline)
-    environment_config = create_environment_config(pipeline, environment_dict)
-    intermediates_manager = construct_intermediates_manager(
-        run_config, environment_config, pipeline
-    )
 
-    with scoped_pipeline_context(
-        pipeline, environment_config, run_config, intermediates_manager
-    ) as pipeline_context:
+    with scoped_pipeline_context(pipeline, environment_dict, run_config) as pipeline_context:
         return _execute_pipeline_iterator(pipeline_context)
 
 
@@ -180,24 +169,21 @@ def execute_pipeline(pipeline, environment_dict=None, run_config=None):
     check.inst_param(pipeline, 'pipeline', PipelineDefinition)
     environment_dict = check.opt_dict_param(environment_dict, 'environment_dict')
     run_config = check_run_config_param(run_config, pipeline)
-    environment_config = create_environment_config(pipeline, environment_dict, run_config.mode)
-    intermediates_manager = construct_intermediates_manager(
-        run_config, environment_config, pipeline
-    )
 
-    with scoped_pipeline_context(
-        pipeline, environment_config, run_config, intermediates_manager
-    ) as pipeline_context:
+    with scoped_pipeline_context(pipeline, environment_dict, run_config) as pipeline_context:
         event_list = list(_execute_pipeline_iterator(pipeline_context))
 
-    return PipelineExecutionResult(
-        pipeline,
-        run_config.run_id,
-        event_list,
-        lambda: scoped_pipeline_context(
-            pipeline, environment_config, run_config, intermediates_manager
-        ),
-    )
+        return PipelineExecutionResult(
+            pipeline,
+            run_config.run_id,
+            event_list,
+            lambda: scoped_pipeline_context(
+                pipeline,
+                environment_dict,
+                run_config,
+                intermediates_manager=pipeline_context.intermediates_manager,
+            ),
+        )
 
 
 def invoke_executor_on_plan(pipeline_context, execution_plan, step_keys_to_execute=None):
@@ -278,7 +264,7 @@ def execute_plan(execution_plan, environment_dict=None, run_config=None, step_ke
                     'Execution plan does not contain step "{}"'.format(step_key), step_key=step_key
                 )
 
-    with yield_pipeline_execution_context(
+    with scoped_pipeline_context(
         execution_plan.pipeline_def, environment_dict, run_config
     ) as pipeline_context:
 

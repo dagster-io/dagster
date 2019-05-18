@@ -17,12 +17,12 @@ class InProcessExecutorChildProcessCommand(ChildProcessCommand):
         self.step_key = step_key
 
     def execute(self):
-        from dagster.core.execution.api import yield_pipeline_execution_context
+        from dagster.core.execution.api import scoped_pipeline_context
 
         check.inst(self.run_config.executor_config, MultiprocessExecutorConfig)
         pipeline = self.run_config.executor_config.handle.build_pipeline_definition()
 
-        with yield_pipeline_execution_context(
+        with scoped_pipeline_context(
             pipeline, self.environment_dict, self.run_config.with_tags(pid=str(os.getpid()))
         ) as pipeline_context:
 

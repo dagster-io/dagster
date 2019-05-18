@@ -17,7 +17,7 @@ from dagster import (
     execute_pipeline,
 )
 from dagster.core.definitions.logger import LoggerDefinition
-from dagster.core.execution.api import RunConfig, yield_pipeline_execution_context
+from dagster.core.execution.api import RunConfig, scoped_pipeline_context
 from dagster.core.execution.context_creation_pipeline import (
     _create_loggers,
     create_environment_config,
@@ -167,7 +167,5 @@ def execute_solid(pipeline_def, solid_name, inputs=None, environment_dict=None, 
 
 @contextmanager
 def yield_empty_pipeline_context(run_id=None):
-    with yield_pipeline_execution_context(
-        PipelineDefinition([]), {}, RunConfig(run_id=run_id)
-    ) as context:
+    with scoped_pipeline_context(PipelineDefinition([]), {}, RunConfig(run_id=run_id)) as context:
         yield context
