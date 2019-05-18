@@ -7,18 +7,6 @@
 // GraphQL fragment: PipelineExplorerSolidFragment
 // ====================================================
 
-export interface PipelineExplorerSolidFragment_definition_CompositeSolidDefinition_metadata {
-  __typename: "MetadataItemDefinition";
-  key: string;
-  value: string;
-}
-
-export interface PipelineExplorerSolidFragment_definition_CompositeSolidDefinition {
-  __typename: "CompositeSolidDefinition";
-  metadata: PipelineExplorerSolidFragment_definition_CompositeSolidDefinition_metadata[];
-  description: string | null;
-}
-
 export interface PipelineExplorerSolidFragment_definition_SolidDefinition_metadata {
   __typename: "MetadataItemDefinition";
   key: string;
@@ -171,7 +159,75 @@ export interface PipelineExplorerSolidFragment_definition_SolidDefinition {
   description: string | null;
 }
 
-export type PipelineExplorerSolidFragment_definition = PipelineExplorerSolidFragment_definition_CompositeSolidDefinition | PipelineExplorerSolidFragment_definition_SolidDefinition;
+export interface PipelineExplorerSolidFragment_definition_CompositeSolidDefinition_metadata {
+  __typename: "MetadataItemDefinition";
+  key: string;
+  value: string;
+}
+
+export interface PipelineExplorerSolidFragment_definition_CompositeSolidDefinition_inputMappings_definition {
+  __typename: "InputDefinition";
+  name: string;
+}
+
+export interface PipelineExplorerSolidFragment_definition_CompositeSolidDefinition_inputMappings_mappedInput_definition {
+  __typename: "InputDefinition";
+  name: string;
+}
+
+export interface PipelineExplorerSolidFragment_definition_CompositeSolidDefinition_inputMappings_mappedInput_solid {
+  __typename: "Solid";
+  name: string;
+}
+
+export interface PipelineExplorerSolidFragment_definition_CompositeSolidDefinition_inputMappings_mappedInput {
+  __typename: "Input";
+  definition: PipelineExplorerSolidFragment_definition_CompositeSolidDefinition_inputMappings_mappedInput_definition;
+  solid: PipelineExplorerSolidFragment_definition_CompositeSolidDefinition_inputMappings_mappedInput_solid;
+}
+
+export interface PipelineExplorerSolidFragment_definition_CompositeSolidDefinition_inputMappings {
+  __typename: "InputMapping";
+  definition: PipelineExplorerSolidFragment_definition_CompositeSolidDefinition_inputMappings_definition;
+  mappedInput: PipelineExplorerSolidFragment_definition_CompositeSolidDefinition_inputMappings_mappedInput;
+}
+
+export interface PipelineExplorerSolidFragment_definition_CompositeSolidDefinition_outputMappings_definition {
+  __typename: "OutputDefinition";
+  name: string;
+}
+
+export interface PipelineExplorerSolidFragment_definition_CompositeSolidDefinition_outputMappings_mappedOutput_definition {
+  __typename: "OutputDefinition";
+  name: string;
+}
+
+export interface PipelineExplorerSolidFragment_definition_CompositeSolidDefinition_outputMappings_mappedOutput_solid {
+  __typename: "Solid";
+  name: string;
+}
+
+export interface PipelineExplorerSolidFragment_definition_CompositeSolidDefinition_outputMappings_mappedOutput {
+  __typename: "Output";
+  definition: PipelineExplorerSolidFragment_definition_CompositeSolidDefinition_outputMappings_mappedOutput_definition;
+  solid: PipelineExplorerSolidFragment_definition_CompositeSolidDefinition_outputMappings_mappedOutput_solid;
+}
+
+export interface PipelineExplorerSolidFragment_definition_CompositeSolidDefinition_outputMappings {
+  __typename: "OutputMapping";
+  definition: PipelineExplorerSolidFragment_definition_CompositeSolidDefinition_outputMappings_definition;
+  mappedOutput: PipelineExplorerSolidFragment_definition_CompositeSolidDefinition_outputMappings_mappedOutput;
+}
+
+export interface PipelineExplorerSolidFragment_definition_CompositeSolidDefinition {
+  __typename: "CompositeSolidDefinition";
+  metadata: PipelineExplorerSolidFragment_definition_CompositeSolidDefinition_metadata[];
+  inputMappings: PipelineExplorerSolidFragment_definition_CompositeSolidDefinition_inputMappings[];
+  outputMappings: PipelineExplorerSolidFragment_definition_CompositeSolidDefinition_outputMappings[];
+  description: string | null;
+}
+
+export type PipelineExplorerSolidFragment_definition = PipelineExplorerSolidFragment_definition_SolidDefinition | PipelineExplorerSolidFragment_definition_CompositeSolidDefinition;
 
 export interface PipelineExplorerSolidFragment_inputs_definition_type {
   __typename: "RegularRuntimeType" | "ListRuntimeType" | "NullableRuntimeType";

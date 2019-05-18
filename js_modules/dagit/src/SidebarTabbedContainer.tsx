@@ -15,6 +15,8 @@ interface ISidebarTabbedContainerProps {
   typeExplorer?: string;
   pipeline: SidebarTabbedContainerPipelineFragment;
   solid?: SidebarTabbedContainerSolidFragment;
+  parentSolid?: SidebarTabbedContainerSolidFragment;
+  onExpandCompositeSolid: (solidName: string) => void;
 }
 
 interface ITabInfo {
@@ -63,7 +65,7 @@ export default class SidebarTabbedContainer extends React.Component<
   };
 
   render() {
-    const { typeExplorer, types, solid, pipeline } = this.props;
+    const { typeExplorer, types, solid, parentSolid, pipeline } = this.props;
 
     let content = <div />;
     let activeTab = "info";
@@ -80,7 +82,23 @@ export default class SidebarTabbedContainer extends React.Component<
       activeTab = "types";
       content = <TypeListContainer pipelineName={pipeline.name} />;
     } else if (solid) {
-      content = <SidebarSolidInfo solid={solid} key={solid.name} />;
+      content = (
+        <SidebarSolidInfo
+          solid={solid}
+          key={solid.name}
+          showingSubsolids={false}
+          onExpandCompositeSolid={this.props.onExpandCompositeSolid}
+        />
+      );
+    } else if (parentSolid) {
+      content = (
+        <SidebarSolidInfo
+          solid={parentSolid}
+          key={parentSolid.name}
+          showingSubsolids={true}
+          onExpandCompositeSolid={this.props.onExpandCompositeSolid}
+        />
+      );
     } else {
       content = <SidebarPipelineInfo pipeline={pipeline} key={pipeline.name} />;
     }

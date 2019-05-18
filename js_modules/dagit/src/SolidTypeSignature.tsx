@@ -10,8 +10,7 @@ interface ISolidTypeSignature {
 }
 
 export default class SolidTypeSignature extends React.Component<
-  ISolidTypeSignature,
-  {}
+  ISolidTypeSignature
 > {
   static fragments = {
     SolidTypeSignatureFragment: gql`

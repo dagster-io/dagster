@@ -78,18 +78,6 @@ export interface SidebarTabbedContainerSolidFragment_inputs {
   dependsOn: SidebarTabbedContainerSolidFragment_inputs_dependsOn[];
 }
 
-export interface SidebarTabbedContainerSolidFragment_definition_CompositeSolidDefinition_metadata {
-  __typename: "MetadataItemDefinition";
-  key: string;
-  value: string;
-}
-
-export interface SidebarTabbedContainerSolidFragment_definition_CompositeSolidDefinition {
-  __typename: "CompositeSolidDefinition";
-  description: string | null;
-  metadata: SidebarTabbedContainerSolidFragment_definition_CompositeSolidDefinition_metadata[];
-}
-
 export interface SidebarTabbedContainerSolidFragment_definition_SolidDefinition_metadata {
   __typename: "MetadataItemDefinition";
   key: string;
@@ -242,7 +230,75 @@ export interface SidebarTabbedContainerSolidFragment_definition_SolidDefinition 
   configDefinition: SidebarTabbedContainerSolidFragment_definition_SolidDefinition_configDefinition | null;
 }
 
-export type SidebarTabbedContainerSolidFragment_definition = SidebarTabbedContainerSolidFragment_definition_CompositeSolidDefinition | SidebarTabbedContainerSolidFragment_definition_SolidDefinition;
+export interface SidebarTabbedContainerSolidFragment_definition_CompositeSolidDefinition_metadata {
+  __typename: "MetadataItemDefinition";
+  key: string;
+  value: string;
+}
+
+export interface SidebarTabbedContainerSolidFragment_definition_CompositeSolidDefinition_inputMappings_definition {
+  __typename: "InputDefinition";
+  name: string;
+}
+
+export interface SidebarTabbedContainerSolidFragment_definition_CompositeSolidDefinition_inputMappings_mappedInput_definition {
+  __typename: "InputDefinition";
+  name: string;
+}
+
+export interface SidebarTabbedContainerSolidFragment_definition_CompositeSolidDefinition_inputMappings_mappedInput_solid {
+  __typename: "Solid";
+  name: string;
+}
+
+export interface SidebarTabbedContainerSolidFragment_definition_CompositeSolidDefinition_inputMappings_mappedInput {
+  __typename: "Input";
+  definition: SidebarTabbedContainerSolidFragment_definition_CompositeSolidDefinition_inputMappings_mappedInput_definition;
+  solid: SidebarTabbedContainerSolidFragment_definition_CompositeSolidDefinition_inputMappings_mappedInput_solid;
+}
+
+export interface SidebarTabbedContainerSolidFragment_definition_CompositeSolidDefinition_inputMappings {
+  __typename: "InputMapping";
+  definition: SidebarTabbedContainerSolidFragment_definition_CompositeSolidDefinition_inputMappings_definition;
+  mappedInput: SidebarTabbedContainerSolidFragment_definition_CompositeSolidDefinition_inputMappings_mappedInput;
+}
+
+export interface SidebarTabbedContainerSolidFragment_definition_CompositeSolidDefinition_outputMappings_definition {
+  __typename: "OutputDefinition";
+  name: string;
+}
+
+export interface SidebarTabbedContainerSolidFragment_definition_CompositeSolidDefinition_outputMappings_mappedOutput_definition {
+  __typename: "OutputDefinition";
+  name: string;
+}
+
+export interface SidebarTabbedContainerSolidFragment_definition_CompositeSolidDefinition_outputMappings_mappedOutput_solid {
+  __typename: "Solid";
+  name: string;
+}
+
+export interface SidebarTabbedContainerSolidFragment_definition_CompositeSolidDefinition_outputMappings_mappedOutput {
+  __typename: "Output";
+  definition: SidebarTabbedContainerSolidFragment_definition_CompositeSolidDefinition_outputMappings_mappedOutput_definition;
+  solid: SidebarTabbedContainerSolidFragment_definition_CompositeSolidDefinition_outputMappings_mappedOutput_solid;
+}
+
+export interface SidebarTabbedContainerSolidFragment_definition_CompositeSolidDefinition_outputMappings {
+  __typename: "OutputMapping";
+  definition: SidebarTabbedContainerSolidFragment_definition_CompositeSolidDefinition_outputMappings_definition;
+  mappedOutput: SidebarTabbedContainerSolidFragment_definition_CompositeSolidDefinition_outputMappings_mappedOutput;
+}
+
+export interface SidebarTabbedContainerSolidFragment_definition_CompositeSolidDefinition {
+  __typename: "CompositeSolidDefinition";
+  description: string | null;
+  metadata: SidebarTabbedContainerSolidFragment_definition_CompositeSolidDefinition_metadata[];
+  inputMappings: SidebarTabbedContainerSolidFragment_definition_CompositeSolidDefinition_inputMappings[];
+  outputMappings: SidebarTabbedContainerSolidFragment_definition_CompositeSolidDefinition_outputMappings[];
+}
+
+export type SidebarTabbedContainerSolidFragment_definition = SidebarTabbedContainerSolidFragment_definition_SolidDefinition | SidebarTabbedContainerSolidFragment_definition_CompositeSolidDefinition;
 
 export interface SidebarTabbedContainerSolidFragment {
   __typename: "Solid";

@@ -35,7 +35,7 @@ const AppRoutes = () => (
       component={PipelineRunsRoot}
     />
     <Route
-      path="/:pipelineName/explore/:solidName?"
+      path="/:pipelineName/explore/:rest?"
       component={PipelineExplorerRoot}
     />
     <Route

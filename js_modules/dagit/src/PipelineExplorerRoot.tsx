@@ -1,4 +1,5 @@
 import * as React from "react";
+import { uniqBy } from "lodash";
 import { match } from "react-router";
 import gql from "graphql-tag";
 import { History } from "history";
@@ -9,42 +10,68 @@ import PipelineExplorer from "./PipelineExplorer";
 import { PipelineExplorerRootQuery } from "./types/PipelineExplorerRootQuery";
 
 interface IPipelineExplorerRootProps {
+  location: { pathname: string };
   match: match<{ pipelineName: string; solidName: string }>;
   history: History<any>;
 }
-
-export default class PipelineExplorerRoot extends React.Component<
+const PipelineExplorerRoot: React.FunctionComponent<
   IPipelineExplorerRootProps
-> {
-  render() {
-    const { pipelineName, solidName } = this.props.match.params;
+> = props => {
+  const pathSolids = props.location.pathname
+    .substr(props.location.pathname.indexOf("explore") + 8)
+    .split("/");
+  const parentSolidName = pathSolids[pathSolids.length - 2];
+  const selectedSolidName = pathSolids[pathSolids.length - 1];
 
-    return (
-      <Query
-        query={PIPELINE_EXPLORER_ROOT_QUERY}
-        fetchPolicy="cache-and-network"
-        partialRefetch={true}
-        variables={{ name: pipelineName }}
-      >
-        {(queryResult: QueryResult<PipelineExplorerRootQuery, any>) => (
-          <Loading queryResult={queryResult}>
-            {result => (
+  return (
+    <Query
+      query={PIPELINE_EXPLORER_ROOT_QUERY}
+      fetchPolicy="cache-and-network"
+      partialRefetch={true}
+      variables={{ name: props.match.params.pipelineName }}
+    >
+      {(queryResult: QueryResult<PipelineExplorerRootQuery, any>) => (
+        <Loading queryResult={queryResult}>
+          {({ pipeline }) => {
+            let names = pipeline.solids.map(s => s.name);
+            let parent = undefined;
+
+            if (parentSolidName) {
+              parent = pipeline.solidHandles.find(
+                h => h.solid.name === parentSolidName
+              )!.solid;
+              if (parent.definition.__typename === "CompositeSolidDefinition") {
+                names = parent.definition.solids.map(s => s.name);
+              }
+            }
+
+            let solids = pipeline.solidHandles
+              .filter(h => names.includes(h.solid.name))
+              .map(h => h.solid);
+
+            // TODO: Currently solidHandles returns lots of duplicate entries
+            solids = uniqBy(solids, a => a.name);
+
+            const selected = selectedSolidName
+              ? solids.find(s => s.name === selectedSolidName)
+              : undefined;
+
+            return (
               <PipelineExplorer
-                history={this.props.history}
-                pipeline={result.pipeline}
-                solid={
-                  solidName
-                    ? result.pipeline.solids.find(s => s.name === solidName)
-                    : undefined
-                }
+                history={props.history}
+                path={pathSolids}
+                pipeline={pipeline}
+                solids={solids}
+                solid={selected}
+                parentSolid={parent}
               />
-            )}
-          </Loading>
-        )}
-      </Query>
-    );
-  }
-}
+            );
+          }}
+        </Loading>
+      )}
+    </Query>
+  );
+};
 
 export const PIPELINE_EXPLORER_ROOT_QUERY = gql`
   query PipelineExplorerRootQuery($name: String!) {
@@ -52,7 +79,21 @@ export const PIPELINE_EXPLORER_ROOT_QUERY = gql`
       name
       ...PipelineExplorerFragment
       solids {
-        ...PipelineExplorerSolidFragment
+        name
+      }
+      solidHandles {
+        solid {
+          name
+          ...PipelineExplorerSolidFragment
+          definition {
+            __typename
+            ... on CompositeSolidDefinition {
+              solids {
+                name
+              }
+            }
+          }
+        }
       }
     }
   }
@@ -60,3 +101,5 @@ export const PIPELINE_EXPLORER_ROOT_QUERY = gql`
   ${PipelineExplorer.fragments.PipelineExplorerFragment}
   ${PipelineExplorer.fragments.PipelineExplorerSolidFragment}
 `;
+
+export default PipelineExplorerRoot;
