@@ -7,7 +7,6 @@ from contextlib2 import ExitStack
 
 from dagster import check
 from dagster.core.definitions import PipelineDefinition, create_environment_type
-from dagster.core.definitions.environment_configs import construct_environment_config
 from dagster.core.definitions.mode import ModeDefinition
 from dagster.core.definitions.resource import ResourcesBuilder
 from dagster.core.errors import (
@@ -84,7 +83,7 @@ def create_environment_config(pipeline, environment_dict=None, mode=None):
     if not result.success:
         raise PipelineConfigEvaluationError(pipeline, result.errors, environment_dict)
 
-    return construct_environment_config(result.value)
+    return EnvironmentConfig.from_dict(result.value)
 
 
 def construct_run_storage(run_config, environment_config):

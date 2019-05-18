@@ -27,8 +27,6 @@ from dagster.core.system_config.objects import EnvironmentConfig, ExpectationsCo
 from dagster.core.definitions import create_environment_type, create_environment_schema
 
 from dagster.core.definitions.environment_configs import (
-    construct_environment_config,
-    construct_solid_dictionary,
     define_resource_cls,
     define_expectations_config_cls,
     define_solid_config_cls,
@@ -36,6 +34,7 @@ from dagster.core.definitions.environment_configs import (
     EnvironmentClassCreationData,
 )
 from dagster.core.loggers import default_loggers
+from dagster.core.system_config.objects import construct_solid_dictionary
 from dagster.core.types.evaluator import evaluate_config_value
 
 from dagster.core.test_utils import throwing_evaluate_config_value
@@ -147,7 +146,7 @@ def test_provided_default_on_resources_config():
 
     assert some_resource_field.default_value == {'config': {'with_default_int': 23434}}
 
-    value = construct_environment_config(throwing_evaluate_config_value(env_type, {}))
+    value = EnvironmentConfig.from_dict(throwing_evaluate_config_value(env_type, {}))
     assert value.resources == {'some_resource': {'config': {'with_default_int': 23434}}}
 
 
@@ -160,7 +159,7 @@ def test_default_environment():
         ]
     )
 
-    env_obj = construct_environment_config(
+    env_obj = EnvironmentConfig.from_dict(
         throwing_evaluate_config_value(create_environment_type(pipeline_def), {})
     )
 
@@ -346,7 +345,7 @@ def test_whole_environment():
         == 'SomePipeline.ExpectationsConfig'
     )
 
-    env = construct_environment_config(
+    env = EnvironmentConfig.from_dict(
         throwing_evaluate_config_value(
             environment_type,
             {
@@ -432,7 +431,7 @@ def test_optional_solid_with_optional_scalar_config():
 
     assert solids_default_obj['int_config_solid'].config is None
 
-    env_obj = construct_environment_config(throwing_evaluate_config_value(env_type, {}))
+    env_obj = EnvironmentConfig.from_dict(throwing_evaluate_config_value(env_type, {}))
 
     assert env_obj.solids['int_config_solid'].config is None
 
@@ -500,7 +499,7 @@ def test_required_solid_with_required_subfield():
     assert env_type.fields['execution'].is_optional
     assert env_type.fields['expectations'].is_optional
 
-    env_obj = construct_environment_config(
+    env_obj = EnvironmentConfig.from_dict(
         throwing_evaluate_config_value(
             env_type, {'solids': {'int_config_solid': {'config': {'required_field': 'foobar'}}}}
         )
@@ -652,7 +651,7 @@ def test_optional_and_required_context():
         env_type, 'resources', 'required_resource', 'config', 'required_field'
     ).is_required
 
-    env_obj = construct_environment_config(
+    env_obj = EnvironmentConfig.from_dict(
         throwing_evaluate_config_value(
             env_type, {'resources': {'required_resource': {'config': {'required_field': 'foo'}}}}
         )

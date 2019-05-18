@@ -38,7 +38,6 @@ from dagster import (
     types,
 )
 from dagster.core.definitions.dependency import Solid
-from dagster.core.definitions.environment_configs import construct_environment_config
 from dagster.core.errors import DagsterSubprocessExecutionError
 from dagster.core.events.log import construct_json_event_logger, EventRecord
 from dagster.core.events import DagsterEvent
