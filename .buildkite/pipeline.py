@@ -239,6 +239,7 @@ if __name__ == "__main__":
     steps += python_modules_tox_tests("libraries/dagster-pandas")
     steps += python_modules_tox_tests("libraries/dagster-ge")
     steps += python_modules_tox_tests("libraries/dagster-aws")
+    steps += python_modules_tox_tests("libraries/dagster-slack")
     steps += python_modules_tox_tests("libraries/dagster-snowflake")
     steps += python_modules_tox_tests("libraries/dagster-spark")
     steps += python_modules_tox_tests("../examples/toys", label='examples-toys')
