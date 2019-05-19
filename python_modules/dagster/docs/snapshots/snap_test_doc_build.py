@@ -18826,10 +18826,10 @@ true;return this};m.prototype.value=function(){return this._wrapped}}).call(this
 '''
 
 snapshots['test_build_all_docs 48'] = '''
-/* 
+/*
  *
  *  First, theme overrides
- *   
+ *
  */
 
 
@@ -18884,11 +18884,11 @@ a.reference {
     -moz-transition: color 0.3s ease-in-out;
     -o-transition: color 0.3s ease-in-out;
     transition: color 0.3s ease-in-out;
-    padding-left: 6px; 
+    padding-left: 6px;
 }
 
 .sphinxsidebar h3 > a:hover {
-    color: #2391EB;   
+    color: #2391EB;
 }
 
 .sphinxsidebar li.toctree-l1 > a {
@@ -18913,7 +18913,7 @@ a.reference {
 .sphinxsidebar li.toctree-l1 > ul {
     list-style: none;
   }
-  
+
 .sphinxsidebar li.toctree-l1 > ul li::before {
     content: "\\2022";
     color: #1C2844;
@@ -18979,10 +18979,10 @@ a.reference {
     border-bottom: none;
 }
 
-/* 
+/*
  *
- *  Now for dagster-specific stuff 
- *   
+ *  Now for dagster-specific stuff
+ *
  */
 
  .logo_img {
@@ -19011,11 +19011,11 @@ a.reference {
 }
 
 .get_started {
-\tbackground-color:#299cee;
+\tbackground-color:hsl(205, 85%, 55%);
 \t-moz-border-radius:30px;
 \t-webkit-border-radius:30px;
 \tborder-radius:30px;
-\tborder:1px solid #2f82bd;
+\tborder:1px solid hsl(205, 60%, 45%);
 \tdisplay:inline-block;
 \tcursor:pointer;
 \tcolor:#ffffff;
@@ -19025,10 +19025,10 @@ a.reference {
     text-shadow:0px 1px 1px #2f6627;
 }
 .get_started:hover {
-\tbackground-color:#248AD4;
+\tbackground-color: hsl(205, 85%, 60%);
     color:#ffffff;
-    border: 1px solid rgb(39, 58, 104);
-    text-decoration: none;    
+    border: 1px solid hsl(205, 60%, 50%);
+    text-decoration: none;
 }
 .get_started:active {
 \tposition:relative;
@@ -19059,7 +19059,6 @@ a.reference {
     font-size: 100%;
     text-align: center;
 }
-
 '''
 
 snapshots['test_build_all_docs 49'] = '''
