@@ -14,9 +14,9 @@ class SlackConnection:
                 cls,
                 channel='#noise',
                 username='dagsterbot',
-                text='https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+                text='Hello from Dagster!',
                 # pylint: disable=line-too-long
-                icon_url='https://user-images.githubusercontent.com/609349/56463858-9d2eab80-6391-11e9-8288-e606fdf674b5.png',
+                icon_url='https://user-images.githubusercontent.com/609349/57993619-9ff2ee00-7a6e-11e9-9184-b3414e3eeb30.png',
                 attachments=None,
             ):
                 '''slack_resource.chat.post_message() : chat.postMessage
