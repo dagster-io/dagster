@@ -107,7 +107,9 @@ def many_materializations_and_passing_expectations(_context):
     for table in tables:
         yield Materialization(path='/path/to/{}'.format(table), description='This is a table.')
         yield ExpectationResult(
-            success=True, name='row_count', message='Row count passed for {}'.format(table)
+            success=True,
+            name='{table}.row_count'.format(table=table),
+            message='Row count passed for {table}'.format(table=table),
         )
 
 

@@ -1,0 +1,151 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`renders given materializations and passing expectations 1`] = `
+<div
+  className="sc-jTzLTM cVyhBU"
+>
+  <div
+    className="succeeded sc-fjdhpX cSXITg"
+    onClick={[Function]}
+    style={
+      Object {
+        "transitionDelay": "200ms",
+      }
+    }
+  >
+    <div
+      className="sc-VigVT dNQoxS"
+      style={
+        Object {
+          "transitionDelay": "200ms",
+        }
+      }
+    />
+    <div
+      style={
+        Object {
+          "alignItems": "center",
+          "display": "inline-flex",
+        }
+      }
+    >
+      <div
+        className="sc-gzVnrw dtdrIX"
+        onClick={[Function]}
+      >
+        <div
+          className="sc-dnqmqq izOzVY"
+          style={
+            Object {
+              "transitionDelay": "200ms",
+            }
+          }
+          title="Succeeded"
+        />
+        <div
+          style={
+            Object {
+              "width": 4,
+            }
+          }
+        />
+        <div
+          className="sc-htoDjs AhYuy"
+          onClick={[Function]}
+        />
+      </div>
+      <div
+        className="sc-gqjmRU jxxYey"
+        title="many_materializations_and_passing_expectations"
+      >
+        many_materializations_and_passing_expectations
+      </div>
+      <div
+        className="sc-gZMcBi liqILZ"
+        style={
+          Object {
+            "minWidth": 47.6,
+          }
+        }
+      >
+        21 msec
+      </div>
+    </div>
+  </div>
+</div>
+`;
+
+exports[`renders given materializations and passing expectations 2`] = `
+<div
+  className="sc-jTzLTM cVyhBU"
+>
+  <div
+    className="succeeded sc-fjdhpX cSXITg"
+    onClick={[Function]}
+    style={
+      Object {
+        "transitionDelay": "200ms",
+      }
+    }
+  >
+    <div
+      className="sc-VigVT dNQoxS"
+      style={
+        Object {
+          "transitionDelay": "200ms",
+        }
+      }
+    />
+    <div
+      style={
+        Object {
+          "alignItems": "center",
+          "display": "inline-flex",
+        }
+      }
+    >
+      <div
+        className="sc-gzVnrw dtdrIX"
+        onClick={[Function]}
+      >
+        <div
+          className="sc-dnqmqq izOzVY"
+          style={
+            Object {
+              "transitionDelay": "200ms",
+            }
+          }
+          title="Succeeded"
+        />
+        <div
+          style={
+            Object {
+              "width": 4,
+            }
+          }
+        />
+        <div
+          className="sc-htoDjs AhYuy"
+          onClick={[Function]}
+        />
+      </div>
+      <div
+        className="sc-gqjmRU jxxYey"
+        title="many_materializations_and_passing_expectations"
+      >
+        many_materializations_and_passing_expectations
+      </div>
+      <div
+        className="sc-gZMcBi liqILZ"
+        style={
+          Object {
+            "minWidth": 47.6,
+          }
+        }
+      >
+        21 msec
+      </div>
+    </div>
+  </div>
+</div>
+`;

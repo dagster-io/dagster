@@ -1,20 +1,25 @@
 import * as React from "react";
 import styled from "styled-components";
 import { Colors, Spinner, Intent, Icon } from "@blueprintjs/core";
-import { IStepState, IStepDisplayEvent } from "./RunMetadataProvider";
-import { DisplayEvent } from "./DisplayEvent";
+import {
+  IExpectationResult,
+  IMaterialization,
+  IStepState
+} from "./RunMetadataProvider";
+import { DisplayEventsContainer } from "./DisplayEventsContainer";
 import { formatElapsedTime } from "./Util";
 import { IconNames } from "@blueprintjs/icons";
 
-interface IExecutionPlanBoxProps {
+export interface IExecutionPlanBoxProps {
   state: IStepState;
   stepKey: string;
   start: number | undefined;
   elapsed: number | undefined;
   delay: number;
-  displayEvents: IStepDisplayEvent[];
-  onShowStateDetails?: (stepKey: string) => void;
-  onApplyStepFilter?: (stepKey: string) => void;
+  materializations: IMaterialization[];
+  expectationResults: IExpectationResult[];
+  onShowStateDetails?: (stepName: string) => void;
+  onApplyStepFilter?: (stepName: string) => void;
   executionArtifactsPersisted: boolean;
   onReexecuteStep?: (stepKey: string) => void;
 }
@@ -26,7 +31,7 @@ interface ReexecuteButtonProps {
   onReexecuteStep?: (stepKey: string) => void;
 }
 
-interface IExecutionPlanBoxState {
+export interface IExecutionPlanBoxState {
   expanded: boolean;
   v: number;
 }
@@ -140,7 +145,8 @@ export class ExecutionPlanBox extends React.Component<
       start,
       stepKey: stepKey,
       delay,
-      displayEvents,
+      expectationResults,
+      materializations,
       onApplyStepFilter,
       onReexecuteStep,
       onShowStateDetails,
@@ -173,7 +179,7 @@ export class ExecutionPlanBox extends React.Component<
                 alignItems: "center"
               }}
             >
-              <ExeuctionStateWrap
+              <ExecutionStateWrap
                 onClick={() =>
                   onShowStateDetails && onShowStateDetails(stepKey)
                 }
@@ -188,24 +194,24 @@ export class ExecutionPlanBox extends React.Component<
                   />
                 )}
                 <div style={{ width: 4 }} />
-                {displayEvents.length > 0 && (
+                {(expectationResults.length > 0 ||
+                  materializations.length > 0) && (
                   <DisclosureTriangle
                     onClick={() => this.setState({ expanded: !expanded })}
                     expanded={expanded}
                   />
                 )}
-              </ExeuctionStateWrap>
+              </ExecutionStateWrap>
               <ExecutionPlanBoxName title={stepKey}>
                 {stepKey}
               </ExecutionPlanBoxName>
               {elapsed !== undefined && <ExecutionTime elapsed={elapsed} />}
             </div>
             {expanded && (
-              <DisplayEventsContainer>
-                {displayEvents.map((e, idx) => (
-                  <DisplayEvent event={e} key={`${idx}`} />
-                ))}
-              </DisplayEventsContainer>
+              <DisplayEventsContainer
+                materializations={materializations}
+                expectationResults={expectationResults}
+              />
             )}
           </ExecutionPlanBoxContainer>
           <ReexecuteButton
@@ -220,13 +226,13 @@ export class ExecutionPlanBox extends React.Component<
   }
 }
 
-const ExeuctionStateWrap = styled.div`
+const ExecutionStateWrap = styled.div`
   display: flex;
   margin-right: 5px;
   align-items: center;
 `;
 
-const DisclosureTriangle = styled.div<{ expanded: boolean }>`
+export const DisclosureTriangle = styled.div<{ expanded: boolean }>`
   width: 0;
   height: 0;
   border-left: 5px solid transparent;
@@ -355,10 +361,4 @@ const ExecutionPlanBoxContainer = styled.div<{ state: IStepState }>`
     border: 2px solid ${({ state }) =>
       state === IStepState.WAITING ? Colors.LIGHT_GRAY4 : Colors.WHITE};
   }
-`;
-
-const DisplayEventsContainer = styled.div`
-  color: ${Colors.BLACK};
-  border-top: 1px solid rgba(0, 0, 0, 0.15);
-  margin-top: 4px;
 `;

@@ -28,7 +28,8 @@ const EMPTY_STEP_METADATA: IStepMetadata = {
   start: undefined,
   elapsed: undefined,
   transitionedAt: 0,
-  displayEvents: []
+  expectationResults: [],
+  materializations: []
 };
 
 export default class ExecutionPlan extends React.PureComponent<
@@ -111,12 +112,12 @@ export default class ExecutionPlan extends React.PureComponent<
 
             return (
               <ExecutionPlanBox
-                key={step.key}
                 state={metadata.state}
                 start={metadata.start}
                 elapsed={metadata.elapsed}
                 stepKey={step.key}
-                displayEvents={metadata.displayEvents}
+                expectationResults={metadata.expectationResults}
+                materializations={metadata.materializations}
                 onShowStateDetails={onShowStateDetails}
                 onApplyStepFilter={onApplyStepFilter}
                 onReexecuteStep={onReexecuteStep}

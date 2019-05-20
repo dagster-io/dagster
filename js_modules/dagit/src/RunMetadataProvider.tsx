@@ -12,29 +12,50 @@ export enum IStepState {
   FAILED = "failed"
 }
 
+export enum IExpectationResultStatus {
+  PASSED = "Passed",
+  FAILED = "Failed"
+}
+
+export enum IStepDisplayIconType {
+  SUCCESS = "dot-success",
+  FAILURE = "dot-failure",
+  PENDING = "dot-pending",
+  FILE = "file",
+  LINK = "link",
+  NONE = "none"
+}
+
+export enum IStepDisplayActionType {
+  OPEN_IN_TAB = "open-in-tab",
+  COPY = "copy",
+  SHOW_IN_MODAL = "show-in-modal",
+  NONE = "none"
+}
 export interface IStepDisplayEvent {
-  icon:
-    | "dot-success"
-    | "dot-failure"
-    | "dot-pending"
-    | "file"
-    | "link"
-    | "none";
+  icon: IStepDisplayIconType;
   text: string;
   items: {
     text: string; // shown in gray on the left
-    action: "open-in-tab" | "copy" | "show-in-modal" | "none";
+    action: IStepDisplayActionType;
     actionText: string; // shown after `text`, optionally with a click action
     actionValue: string; // value passed to the click action
   }[];
 }
+
+export interface IExpectationResult extends IStepDisplayEvent {
+  status: IExpectationResultStatus;
+}
+
+export interface IMaterialization extends IStepDisplayEvent {}
 
 export interface IStepMetadata {
   state: IStepState;
   start?: number;
   elapsed?: number;
   transitionedAt: number;
-  displayEvents: IStepDisplayEvent[];
+  expectationResults: IExpectationResult[];
+  materializations: IMaterialization[];
 }
 
 export interface IRunMetadataDict {
@@ -87,7 +108,8 @@ function extractMetadataFromLogs(
           state: IStepState.RUNNING,
           start: timestamp,
           transitionedAt: timestamp,
-          displayEvents: []
+          expectationResults: [],
+          materializations: []
         };
       } else if (log.__typename === "ExecutionStepSuccessEvent") {
         metadata.steps[stepKey] = produce(
@@ -104,20 +126,22 @@ function extractMetadataFromLogs(
         metadata.steps[stepKey] = {
           state: IStepState.SKIPPED,
           transitionedAt: timestamp,
-          displayEvents: []
+          expectationResults: [],
+          materializations: []
         };
       } else if (log.__typename === "StepMaterializationEvent") {
         metadata.steps[stepKey] = produce(
           metadata.steps[stepKey] || {},
           step => {
-            step.displayEvents.push({
-              icon: "link",
-              text: "Materialization",
+            let text = (log.materialization.path || "").split("/").pop()!;
+            step.materializations.push({
+              icon: IStepDisplayIconType.LINK,
+              text: text || "Materialization",
               items: [
                 {
-                  text: (log.materialization.path || "").split("/").pop()!,
+                  text: text,
                   actionText: "[Copy Path]",
-                  action: "copy",
+                  action: IStepDisplayActionType.COPY,
                   actionValue: log.materialization.path || ""
                 }
               ]
@@ -128,19 +152,22 @@ function extractMetadataFromLogs(
         metadata.steps[stepKey] = produce(
           metadata.steps[stepKey] || {},
           step => {
-            step.displayEvents.push({
+            step.expectationResults.push({
+              status: log.expectationResult.success
+                ? IExpectationResultStatus.PASSED
+                : IExpectationResultStatus.FAILED,
               icon: log.expectationResult.success
-                ? "dot-success"
-                : "dot-failure",
+                ? IStepDisplayIconType.SUCCESS
+                : IStepDisplayIconType.FAILURE,
               text: log.expectationResult.name
-                ? "Expectation: " + log.expectationResult.name
+                ? log.expectationResult.name
                 : "Expectation",
               items: log.expectationResult.resultMetadataJsonString
                 ? [
                     {
                       text: "",
                       actionText: "[Show Metadata]",
-                      action: "show-in-modal",
+                      action: IStepDisplayActionType.SHOW_IN_MODAL,
                       // take JSON string, parse, and then pretty print
                       actionValue: JSON.stringify(
                         JSON.parse(
