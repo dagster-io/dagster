@@ -46,7 +46,7 @@ class StepBuilder:
         self._step = {"label": label, "timeout_in_minutes": TIMEOUT_IN_MIN}
 
     def run(self, *argc):
-        self._step["commands"] = list(argc)
+        self._step["commands"] = map(lambda cmd: "time " + cmd, argc)
         return self
 
     def base_docker_settings(self):
