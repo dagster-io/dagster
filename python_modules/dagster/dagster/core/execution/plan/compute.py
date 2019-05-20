@@ -43,7 +43,7 @@ def _yield_transform_results(transform_context, inputs, compute_fn):
                 'Transform for solid {solid_name} returned a Result rather than '
                 'yielding it. The compute_fn of the core SolidDefinition must yield '
                 'its results'
-            ).format(solid_name=step.solid_handle.name)
+            ).format(solid_name=str(step.solid_handle))
         )
 
     if gen is None:
@@ -53,7 +53,7 @@ def _yield_transform_results(transform_context, inputs, compute_fn):
         if isinstance(result, Result):
             transform_context.log.info(
                 'Solid {solid} emitted output "{output}" value {value}'.format(
-                    solid=step.solid_handle.name,
+                    solid=str(step.solid_handle),
                     output=result.output_name,
                     value=repr(result.value),
                 )
@@ -68,7 +68,7 @@ def _yield_transform_results(transform_context, inputs, compute_fn):
                 (
                     'Transform for solid {solid_name} yielded {result} rather an '
                     'an instance of the Result or Materialization class.'
-                ).format(result=repr(result), solid_name=step.solid_handle.name)
+                ).format(result=repr(result), solid_name=str(step.solid_handle))
             )
 
 
@@ -83,7 +83,7 @@ def _execute_core_transform(transform_context, inputs, compute_fn):
     step = transform_context.step
 
     transform_context.log.debug(
-        'Executing core compute for solid {solid}.'.format(solid=step.solid_handle.name)
+        'Executing core compute for solid {solid}.'.format(solid=str(step.solid_handle))
     )
 
     all_results = []
@@ -98,6 +98,6 @@ def _execute_core_transform(transform_context, inputs, compute_fn):
         omitted_outputs = solid_output_names.difference(emitted_result_names)
         transform_context.log.info(
             'Solid {solid} did not fire outputs {outputs}'.format(
-                solid=step.solid_handle.name, outputs=repr(omitted_outputs)
+                solid=str(step.solid_handle), outputs=repr(omitted_outputs)
             )
         )
