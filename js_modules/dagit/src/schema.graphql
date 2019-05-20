@@ -694,7 +694,7 @@ type SolidDefinition implements ISolidDefinition {
 type SolidHandle {
   handleID: String!
   solid: Solid!
-  parent: Solid
+  parent: SolidHandle
 }
 
 type SolidNotFoundError implements Error {
