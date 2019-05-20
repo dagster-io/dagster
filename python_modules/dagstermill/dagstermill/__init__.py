@@ -4,6 +4,7 @@ import base64
 import copy
 import json
 import os
+import pickle
 import subprocess
 import uuid
 
@@ -24,17 +25,18 @@ from papermill.iorw import load_notebook_node, write_ipynb
 import scrapbook as sb
 
 from dagster import (
+    check,
     DagsterRuntimeCoercionError,
+    ExpectationResult,
     InputDefinition,
-    OutputDefinition,
-    RepositoryDefinition,
-    Result,
     Materialization,
     ModeDefinition,
+    OutputDefinition,
     PipelineDefinition,
-    SolidDefinition,
-    check,
+    RepositoryDefinition,
+    Result,
     seven,
+    SolidDefinition,
     types,
 )
 from dagster.core.definitions.dependency import Solid
@@ -147,7 +149,7 @@ class Manager:
             self.context = DagstermillInNotebookExecutionContext(pipeline_context)
         return self.context
 
-    def yield_result(self, value, output_name):
+    def yield_result(self, value, output_name='result'):
         if not self.populated_by_papermill:
             return value
 
@@ -174,6 +176,9 @@ class Manager:
                 sb.glue(output_name, out_file)
             else:
                 raise DagstermillError(
+                    # Discuss this in the docs and improve error message
+                    # https://github.com/dagster-io/dagster/issues/1275
+                    # https://github.com/dagster-io/dagster/issues/1276
                     'Output Definition for output {output_name} requires repo registration '
                     'since it has a complex serialization format'.format(output_name=output_name)
                 )
@@ -189,6 +194,19 @@ class Manager:
 
             out_file = os.path.join(self.marshal_dir, 'output-{}'.format(output_name))
             sb.glue(output_name, write_value(runtime_type, value, out_file))
+
+    def yield_materialization(self, path, description):
+        if not self.populated_by_papermill:
+            return Materialization(path, description)
+
+        materialization_id = 'materialization-{materialization_uuid}'.format(
+            materialization_uuid=str(uuid.uuid4())
+        )
+        out_file_path = os.path.join(self.marshal_dir, materialization_id)
+        with open(out_file_path, 'wb') as fd:
+            fd.write(pickle.dumps(Materialization(path, description)))
+
+        sb.glue(materialization_id, out_file_path)
 
     def populate_context(
         self,
@@ -357,7 +375,26 @@ def register_repository(repo_def):
 
 
 def yield_result(value, output_name='result'):
+    '''Explicitly yield a Result.
+    
+    Args:
+        value (Any): The value of the Result to yield.
+        output_name (Optional[str]): The name of the Result to yield. Default: 'result'.
+
+    '''
     return MANAGER_FOR_NOTEBOOK_INSTANCE.yield_result(value, output_name)
+
+
+def yield_materialization(path, description=''):
+    '''Explicitly yield an additional Materialization.
+
+    Args:
+        path (str): The path to the materialized artifact.
+        description (Optional[str]): A description of the materialized artifact.
+
+    '''
+
+    return MANAGER_FOR_NOTEBOOK_INSTANCE.yield_materialization(path, description)
 
 
 def populate_context(dm_context_data):
@@ -632,6 +669,12 @@ def _dm_solid_transform(name, notebook_path):
                     value = read_value(output_def.runtime_type, data_dict[output_name])
 
                     yield Result(value, output_name)
+
+            for key, value in output_nb.scraps.items():
+                print(output_nb.scraps)
+                if key.startswith('materialization-'):
+                    with open(value.data, 'rb') as fd:
+                        yield pickle.loads(fd.read())
 
         finally:
             if do_cleanup and os.path.exists(temp_path):

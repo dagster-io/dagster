@@ -48,6 +48,21 @@ def define_hello_world_with_output_pipeline():
     )
 
 
+def define_hello_world_explicit_yield():
+    return dm.define_dagstermill_solid(
+        'hello_world_explicit_yield_pipeline',
+        nb_test_path('hello_world_explicit_yield'),
+        [],
+        [OutputDefinition()],
+    )
+
+
+def define_hello_world_explicit_yield_pipeline():
+    return PipelineDefinition(
+        name='hello_world_explicit_yield_pipeline', solids=[define_hello_world_explicit_yield()]
+    )
+
+
 # This probably should be moved to a library because it is immensely useful for testing
 def solid_definition(fn):
     return check.inst(fn(), SolidDefinition)
