@@ -1,5 +1,6 @@
 from dagster import check
 from dagster.core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
+from dagster.core.execution.config import RunConfig
 from dagster.core.types.runtime import construct_runtime_type_dictionary
 
 from .container import IContainSolids, create_execution_structure, validate_dependency_dict
@@ -130,6 +131,13 @@ class PipelineDefinition(IContainSolids, object):
                         'Two PresetDefinitions seen with the name "{name}" in "{pipeline_name}". '
                         'PresetDefinitions must have unique names.'
                     ).format(name=preset.name, pipeline_name=self.name)
+                )
+            if preset.mode not in seen_modes:
+                raise DagsterInvalidDefinitionError(
+                    (
+                        'PresetDefinition "{name}" in "{pipeline_name}" '
+                        'references mode "{mode}" which is not defined.'
+                    ).format(name=preset.name, pipeline_name=self.name, mode=preset.mode)
                 )
             self._preset_dict[preset.name] = preset
 
@@ -307,7 +315,11 @@ class PipelineDefinition(IContainSolids, object):
         if preset.solid_subset is not None:
             pipeline = pipeline.build_sub_pipeline(preset.solid_subset)
 
-        return {'pipeline': pipeline, 'environment_dict': preset.environment_dict}
+        return {
+            'pipeline': pipeline,
+            'environment_dict': preset.environment_dict,
+            'run_config': RunConfig(mode=preset.mode),
+        }
 
 
 def _dep_key_of(solid):

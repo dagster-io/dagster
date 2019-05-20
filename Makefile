@@ -43,6 +43,9 @@ install_dev_python_modules:
 	pip install -e examples/toys
 	pip install -e examples/pyspark-pagerank
 
+graphql:
+	cd js_modules/dagit/; make generate-types
+
 rebuild_dagit:
 	cd js_modules/dagit/; yarn install && yarn build-for-python
 

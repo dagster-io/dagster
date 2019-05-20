@@ -1,6 +1,12 @@
 """Pipeline definitions for the airline_demo."""
 
-from dagster import DependencyDefinition, ModeDefinition, PipelineDefinition, SolidInstance
+from dagster import (
+    DependencyDefinition,
+    ModeDefinition,
+    PipelineDefinition,
+    SolidInstance,
+    PresetDefinition,
+)
 
 from dagster_aws.s3.resources import s3_resource
 from dagster_aws.s3.solids import download_from_s3_to_bytes, put_object_to_s3_bytes
@@ -207,6 +213,24 @@ def define_airline_demo_ingest_pipeline():
         solids=solids,
         dependencies=dependencies,
         mode_definitions=[test_mode, local_mode, prod_mode],
+        preset_definitions=[
+            PresetDefinition(
+                name='local_fast',
+                mode='local',
+                environment_files=[
+                    'environments/local_base.yml',
+                    'environments/local_fast_ingest.yml',
+                ],
+            ),
+            PresetDefinition(
+                name='local_full',
+                mode='local',
+                environment_files=[
+                    'environments/local_base.yml',
+                    'environments/local_full_ingest.yml',
+                ],
+            ),
+        ],
     )
 
 
@@ -258,4 +282,14 @@ def define_airline_demo_warehouse_pipeline():
             },
         },
         mode_definitions=[test_mode, local_mode, prod_mode],
+        preset_definitions=[
+            PresetDefinition(
+                name='local',
+                mode='local',
+                environment_files=[
+                    'environments/local_base.yml',
+                    'environments/local_warehouse.yml',
+                ],
+            )
+        ],
     )
