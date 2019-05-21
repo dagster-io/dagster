@@ -17,6 +17,7 @@ const NoOp = () => {};
 
 interface IPipelineGraphProps {
   pipelineName: string;
+  backgroundColor: string;
   layout: IFullPipelineLayout;
   solids: PipelineGraphSolidFragment[];
   parentSolid?: PipelineGraphSolidFragment;
@@ -82,6 +83,7 @@ class PipelineGraphContents extends React.PureComponent<
             width={layout.width - 1}
             height={layout.height - 1}
             label={parentSolid.name}
+            fill={Colors.LIGHT_GRAY5}
             minified={minified}
           />
         )}
@@ -227,6 +229,8 @@ export default class PipelineGraph extends React.Component<
       layout,
       interactor,
       pipelineName,
+      parentSolid,
+      backgroundColor,
       onClickBackground,
       onDoubleClickSolid
     } = this.props;
@@ -236,6 +240,7 @@ export default class PipelineGraph extends React.Component<
         ref={this.viewportEl}
         key={pipelineName}
         interactor={interactor || SVGViewport.Interactors.PanAndZoom}
+        backgroundColor={backgroundColor}
         graphWidth={layout.width}
         graphHeight={layout.height}
         onKeyDown={this.onKeyDown}
@@ -247,6 +252,42 @@ export default class PipelineGraph extends React.Component<
             onClick={onClickBackground}
             onDoubleClick={this.unfocus}
           >
+            <defs>
+              <marker
+                id="mapping-arrow-in"
+                markerWidth="2"
+                markerHeight="4"
+                refX="-7"
+                refY="0"
+                orient="auto"
+                markerUnits="strokeWidth"
+                viewBox="0,-2,2,4"
+              >
+                <path
+                  d="M0,-2 L2,0 L0,2"
+                  stroke="#8F398F"
+                  strokeWidth="0.75"
+                  fill="transparent"
+                />
+              </marker>
+              <marker
+                id="mapping-arrow-out"
+                markerWidth="2"
+                markerHeight="4"
+                refX="-4"
+                refY="0"
+                orient="auto"
+                markerUnits="strokeWidth"
+                viewBox="0,-2,2,4"
+              >
+                <path
+                  d="M2,-2 L0,0 L2,2"
+                  stroke="#8F398F"
+                  strokeWidth="0.75"
+                  fill="transparent"
+                />
+              </marker>
+            </defs>
             <PipelineGraphContents
               layout={layout}
               minified={scale < 0.99}

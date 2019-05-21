@@ -1,5 +1,6 @@
 import * as React from "react";
 import gql from "graphql-tag";
+import * as Color from "color";
 import styled from "styled-components";
 import { History } from "history";
 import { Icon, Colors } from "@blueprintjs/core";
@@ -100,16 +101,23 @@ export default class PipelineExplorer extends React.Component<
     const { pipeline, parentSolid, solid, solids, path } = this.props;
     const { filter, graphVW } = this.state;
 
+    const backgroundColor = parentSolid
+      ? Colors.LIGHT_GRAY3
+      : Colors.LIGHT_GRAY5;
+
+    const backgroundTranslucent = Color(backgroundColor)
+      .fade(0.6)
+      .toString();
     return (
       <PipelinesContainer>
         <PipelinePanel key="graph" style={{ width: `${graphVW}vw` }}>
-          <PathOverlay>
+          <PathOverlay style={{ background: backgroundTranslucent }}>
             <Link style={{ padding: 3 }} to={`/${pipeline.name}/explore/`}>
               <Icon icon="diagram-tree" />
             </Link>
             <Icon icon="chevron-right" />
             {path.slice(0, path.length - 1).map((name, idx) => (
-              <>
+              <React.Fragment key={idx}>
                 <Link
                   style={{ padding: 3 }}
                   to={`/${pipeline.name}/explore/${path
@@ -119,7 +127,7 @@ export default class PipelineExplorer extends React.Component<
                   {name}
                 </Link>
                 <Icon icon="chevron-right" />
-              </>
+              </React.Fragment>
             ))}
             <SolidJumpBar
               solids={solids}
@@ -127,7 +135,7 @@ export default class PipelineExplorer extends React.Component<
               onItemSelect={solid => this.handleClickSolid(solid.name)}
             />
           </PathOverlay>
-          <SearchOverlay>
+          <SearchOverlay style={{ background: backgroundTranslucent }}>
             <SolidSearchInput
               type="text"
               placeholder="Filter..."
@@ -137,6 +145,7 @@ export default class PipelineExplorer extends React.Component<
           </SearchOverlay>
           <PipelineGraph
             pipelineName={pipeline.name}
+            backgroundColor={backgroundColor}
             solids={solids}
             selectedSolid={solid}
             parentSolid={parentSolid}
@@ -197,7 +206,6 @@ const RightInfoPanel = styled.div`
 `;
 
 const SearchOverlay = styled.div`
-  background: rgba(245, 248, 250, 0.7);
   z-index: 2;
   padding: 7px 5px;
   display: inline-flex;
@@ -207,7 +215,6 @@ const SearchOverlay = styled.div`
 `;
 
 const PathOverlay = styled.div`
-  background: rgba(245, 248, 250, 0.7);
   z-index: 2;
   padding: 7px;
   padding-left: 10px;
